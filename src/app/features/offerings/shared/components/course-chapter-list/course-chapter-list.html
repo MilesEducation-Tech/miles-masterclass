@@ -1,7 +1,10 @@
 <div class="lg:w-9/12 sm:w-10/12 w-full mx-auto flex flex-col space-y-8 overflow-hidden">
   @for (chapter of masterclass.courseChapters(); track chapter.id) {
     <div class="flex sm:space-x-4 max-sm:space-y-4 max-sm:flex-col items-center group">
-      <div
+      <button
+        type="button"
+        tabindex="-1"
+        aria-hidden="true"
         class="sm:w-1/2 w-full aspect-video relative rounded-2xl overflow-hidden group/thumbnail cursor-pointer"
         (click)="masterclass.navigateToChapter(chapter.id)"
       >
@@ -101,12 +104,12 @@
             </div>
           </div>
         }
-      </div>
+      </button>
       <div class="sm:w-1/2 w-full flex justify-center flex-col space-y-2">
         <p class="description">Chapter {{ $index + 1 }}</p>
-        <div
-          class="flex flex-col w-fit relative group/title cursor-pointer"
-          role="button"
+        <button
+          type="button"
+          class="flex flex-col w-fit relative group/title cursor-pointer text-left"
           (click)="masterclass.navigateToChapter(chapter.id)"
         >
           <h2 class="title line-clamp-2 mb-1 w-fit">
@@ -116,7 +119,7 @@
               {{ chapter.chapter_name }}
             </span>
           </h2>
-        </div>
+        </button>
         <p class="description line-clamp-3">{{ chapter.description }}</p>
         <p class="text-accent">
           {{ chapter.quiz_details.overall_chapter_questions }} Quiz Questions

@@ -50,10 +50,12 @@
 
             <!-- Track Quiz Button (CPE mode) -->
             @if (current()?.quiz_details?.overall_chapter_questions && cpeMode()) {
-              <div
-                class="bg-[#161E25] md:py-3 py-1.5 px-4 rounded-lg flex flex-col md:w-2/3 w-full"
+              <button
+                type="button"
+                class="bg-[#161E25] md:py-3 py-1.5 px-4 rounded-lg flex flex-col md:w-2/3 w-full text-left"
                 [class]="isQuizEnabled() ? 'cursor-pointer' : 'cursor-not-allowed'"
-                (click)="isQuizEnabled() && handleTrackQuiz()"
+                [disabled]="!isQuizEnabled()"
+                (click)="handleTrackQuiz()"
               >
                 <div class="flex items-center justify-between">
                   <span class="flex items-center gap-2">
@@ -67,7 +69,7 @@
                     current()!.quiz_details.overall_chapter_questions > 1 ? 'questions' : 'question'
                   }}
                 </div>
-              </div>
+              </button>
             }
           </div>
         </div>
@@ -89,23 +91,23 @@
           <div class="flex flex-col gap-4 w-full">
             @if (next(); as nextChapter) {
               <p class="text-base uppercase text-white">Next Chapter</p>
-              <div
-                class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm"
+              <button
+                type="button"
+                class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
                 [class]="
                   (chapterWiseDetails()?.status && cpeMode()) || !cpeMode()
                     ? 'cursor-pointer'
                     : 'cursor-not-allowed'
                 "
-                (click)="
-                  ((chapterWiseDetails()?.status && cpeMode()) || !cpeMode()) &&
-                    navigate.emit(nextChapter.id)
-                "
+                [disabled]="!((chapterWiseDetails()?.status && cpeMode()) || !cpeMode())"
+                (click)="navigate.emit(nextChapter.id)"
               >
                 <div class="w-[90px] m-2 overflow-hidden flex items-center">
                   <div class="w-full h-14 bg-[#4a5560] rounded-md overflow-hidden">
                     @if (nextChapter.chapter_thumbnail) {
                       <img
                         [src]="nextChapter.chapter_thumbnail"
+                        alt=""
                         class="w-full h-full object-cover"
                       />
                     }
@@ -117,28 +119,31 @@
                     {{ nextChapter.chapter_name }}
                   </div>
                 </div>
-              </div>
+              </button>
             } @else if (cpeMode()) {
               <!-- Final Assessment -->
               @if (userAssessmentDetails()?.status === 'Exam_Passed') {
-                <div
-                  class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative cursor-pointer backdrop-blur-sm"
+                <button
+                  type="button"
+                  class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative cursor-pointer backdrop-blur-sm text-left"
                   (click)="viewFinalAssessmentReport.emit()"
                 >
                   <div class="flex flex-col gap-1 m-2">
                     <div class="text-base text-blue-400 font-semibold">Up Next</div>
                     <div class="text-base text-white line-clamp-1 font-semibold">Check Result</div>
                   </div>
-                </div>
+                </button>
               } @else {
-                <div
-                  class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm"
+                <button
+                  type="button"
+                  class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
                   [class]="
                     chapterWiseDetails()?.status && cpeMode()
                       ? 'cursor-pointer'
                       : 'cursor-not-allowed'
                   "
-                  (click)="chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit()"
+                  [disabled]="!(chapterWiseDetails()?.status && cpeMode())"
+                  (click)="startFinalAssessment.emit()"
                 >
                   <div class="flex flex-col gap-1 m-2">
                     <div class="text-base text-blue-400 font-semibold">Up Next</div>
@@ -146,20 +151,21 @@
                       Final Assessment
                     </div>
                   </div>
-                </div>
+                </button>
               }
             }
           </div>
 
           <!-- Previous Chapter Button -->
           @if (previous(); as prev) {
-            <div
+            <button
+              type="button"
               class="rounded-full flex justify-center items-center px-4 py-2 bg-white/20 gap-2 mt-4 cursor-pointer backdrop-blur-sm hover:bg-white/30 transition-colors"
               (click)="navigate.emit(prev.id)"
             >
-              <span class="text-white text-lg">←</span>
+              <span class="text-white text-lg" aria-hidden="true">←</span>
               <p class="text-white text-sm">Back to Previous Chapter</p>
-            </div>
+            </button>
           }
         </div>
       </div>
@@ -191,22 +197,25 @@
       <div class="flex flex-col gap-4 w-full">
         @if (next(); as nextChapter) {
           <p class="text-base uppercase text-white">Next Chapter</p>
-          <div
-            class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm"
+          <button
+            type="button"
+            class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
             [class]="
               (chapterWiseDetails()?.status && cpeMode()) || !cpeMode()
                 ? 'cursor-pointer'
                 : 'cursor-not-allowed'
             "
-            (click)="
-              ((chapterWiseDetails()?.status && cpeMode()) || !cpeMode()) &&
-                navigate.emit(nextChapter.id)
-            "
+            [disabled]="!((chapterWiseDetails()?.status && cpeMode()) || !cpeMode())"
+            (click)="navigate.emit(nextChapter.id)"
           >
             <div class="w-[90px] m-2 overflow-hidden flex items-center">
               <div class="w-full h-14 bg-[#4a5560] rounded-md overflow-hidden">
                 @if (nextChapter.chapter_thumbnail) {
-                  <img [src]="nextChapter.chapter_thumbnail" class="w-full h-full object-cover" />
+                  <img
+                    [src]="nextChapter.chapter_thumbnail"
+                    alt=""
+                    class="w-full h-full object-cover"
+                  />
                 }
               </div>
             </div>
@@ -216,44 +225,48 @@
                 {{ nextChapter.chapter_name }}
               </div>
             </div>
-          </div>
+          </button>
         } @else if (cpeMode()) {
           @if (userAssessmentDetails()?.status === 'Exam_Passed') {
-            <div
-              class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative cursor-pointer backdrop-blur-sm"
+            <button
+              type="button"
+              class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative cursor-pointer backdrop-blur-sm text-left"
               (click)="viewFinalAssessmentReport.emit()"
             >
               <div class="flex flex-col gap-1 m-2">
                 <div class="text-base text-blue-400 font-semibold">Up Next</div>
                 <div class="text-base text-white line-clamp-1 font-semibold">Check Result</div>
               </div>
-            </div>
+            </button>
           } @else {
-            <div
-              class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm"
+            <button
+              type="button"
+              class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
               [class]="
                 chapterWiseDetails()?.status && cpeMode() ? 'cursor-pointer' : 'cursor-not-allowed'
               "
-              (click)="chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit()"
+              [disabled]="!(chapterWiseDetails()?.status && cpeMode())"
+              (click)="startFinalAssessment.emit()"
             >
               <div class="flex flex-col gap-1 m-2">
                 <div class="text-base text-blue-400 font-semibold">Up Next</div>
                 <div class="text-base text-white line-clamp-1 font-semibold">Final Assessment</div>
               </div>
-            </div>
+            </button>
           }
         }
       </div>
 
       <!-- Mobile Previous Chapter -->
       @if (previous(); as prev) {
-        <div
+        <button
+          type="button"
           class="rounded-full flex justify-center items-center px-4 py-2 bg-white/20 gap-2 mt-4 cursor-pointer backdrop-blur-sm"
           (click)="navigate.emit(prev.id)"
         >
-          <span class="text-white text-lg">←</span>
+          <span class="text-white text-lg" aria-hidden="true">←</span>
           <p class="text-white text-sm">Back to Previous Chapter</p>
-        </div>
+        </button>
       }
     </div>
   </div>

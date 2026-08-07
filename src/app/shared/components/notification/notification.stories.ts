@@ -12,8 +12,8 @@ class MockNotificationService {
     this.toasts.update((t) => t.filter((toast) => toast.id !== id));
   }
 
-  pauseTimer(id: string) {}
-  resumeTimer(id: string) {}
+  pauseTimer = (_id: string): void => undefined;
+  resumeTimer = (_id: string): void => undefined;
 }
 
 class MockNotificationWithToasts extends MockNotificationService {
