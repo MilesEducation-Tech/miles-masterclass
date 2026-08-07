@@ -22,13 +22,11 @@ export class CartDrawerDialog {
   // Swap in the new backend's service — the template needs no changes.
 
   private readonly facade: any = {
-
     cartData: signal<any>(null),
 
     loading: signal<any>(null),
 
     removeCartItem: (..._args: any[]): any => null,
-
   };
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
@@ -41,7 +39,9 @@ export class CartDrawerDialog {
 
   // Monthly (EMI): show the monthly payable alongside the annual total when any
   // item was added with pay_method 'monthly'. Derived as total ÷ 12.
-  readonly hasMonthly = computed(() => this.cartItems().some((i: any) => i.pay_method === 'monthly'));
+  readonly hasMonthly = computed(() =>
+    this.cartItems().some((i: any) => i.pay_method === 'monthly'),
+  );
   readonly monthlyAmount = computed(() => this.totalAmount() / 12);
 
   close(): void {

@@ -48,7 +48,6 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
   // Swap in the new backend's service — the template needs no changes.
 
   private readonly facade: any = {
-
     clearAssessmentData: signal<any>(null),
 
     courseId: null as any,
@@ -62,7 +61,6 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
     submitAssessment: (..._args: any[]): any => null,
 
     updateQuestion: (..._args: any[]): any => null,
-
   };
   private readonly dialog = inject(Dialog);
   private readonly utils = inject(Utils);

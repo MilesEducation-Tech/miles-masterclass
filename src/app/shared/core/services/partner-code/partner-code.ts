@@ -40,19 +40,21 @@ export class PartnerCode {
     if (!partner_code) return of(false);
 
     this.loading.set(true);
-    return this.http.post('', { partner_code }) /* ponytail: applyPartnerCode endpoint removed with the backend */.pipe(
-      tap(() => {
-        this.auth.fetchMyProfile();
-        this.notification.success('Partner Code', 'Partner code applied successfully');
-        this.loading.set(false);
-      }),
-      map(() => true),
-      catchError((error: unknown) => {
-        this.logger.error('Failed to apply partner code', error);
-        this.notification.error('Partner Code', 'Failed to apply partner code');
-        this.loading.set(false);
-        return of(false);
-      }),
-    );
+    return this.http
+      .post('', { partner_code }) /* ponytail: applyPartnerCode endpoint removed with the backend */
+      .pipe(
+        tap(() => {
+          this.auth.fetchMyProfile();
+          this.notification.success('Partner Code', 'Partner code applied successfully');
+          this.loading.set(false);
+        }),
+        map(() => true),
+        catchError((error: unknown) => {
+          this.logger.error('Failed to apply partner code', error);
+          this.notification.error('Partner Code', 'Failed to apply partner code');
+          this.loading.set(false);
+          return of(false);
+        }),
+      );
   }
 }

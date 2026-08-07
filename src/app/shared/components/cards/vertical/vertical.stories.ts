@@ -15,9 +15,7 @@ const meta: Meta<Vertical> = {
   tags: ['autodocs'],
   decorators: [
     moduleMetadata({
-      providers: [
-        { provide: Utils, useClass: MockUtils },
-      ],
+      providers: [{ provide: Utils, useClass: MockUtils }],
     }),
     (story) => ({
       template: `<div style="width: 300px;">${story().template ?? ''}</div>`,

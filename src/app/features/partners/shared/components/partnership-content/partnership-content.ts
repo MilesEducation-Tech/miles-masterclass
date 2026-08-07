@@ -1,5 +1,13 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Component, DestroyRef, inject, input, linkedSignal, PLATFORM_ID, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  input,
+  linkedSignal,
+  PLATFORM_ID,
+  signal,
+} from '@angular/core';
 import { Carousel } from '../../../../../shared/components/carousel/carousel';
 import { Horizontal } from '../../../../../shared/components/cards/horizontal/horizontal';
 import { Square } from '../../../../../shared/components/cards/square/square';
@@ -61,9 +69,7 @@ export class PartnershipContent {
   // ponytail: ApiClient was deleted with the Django strip. This placeholder
   // keeps the template bindings compiling and renders the empty state.
   // Swap in the new backend's service — the template needs no changes.
-  private readonly http: any = {
-
-  };
+  private readonly http: any = {};
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 

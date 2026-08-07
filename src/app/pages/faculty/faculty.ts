@@ -155,9 +155,7 @@ export class Faculty {
   // ponytail: ApiClient was deleted with the Django strip. This placeholder
   // keeps the template bindings compiling and renders the empty state.
   // Swap in the new backend's service — the template needs no changes.
-  private readonly http: any = {
-
-  };
+  private readonly http: any = {};
   private readonly auth = inject(Auth);
   private readonly analytics = inject(Analytics);
   private readonly logger = inject(Logger);

@@ -73,9 +73,7 @@ export class WebinarDetailsDialog implements OnInit {
     // the `loadAbout` content until it's reopened.
     return this.facade.findById(initial.id) ?? initial;
   });
-  protected readonly contentAbout = computed<any>(() =>
-    upcomingToContentAbout(this.webinar()),
-  );
+  protected readonly contentAbout = computed<any>(() => upcomingToContentAbout(this.webinar()));
 
   /**
    * Pull the long-form content (`v2/webinar/:id/about/`) as soon as the dialog

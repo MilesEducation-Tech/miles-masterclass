@@ -24,12 +24,7 @@ export class TrackerToolbar {
   readonly downloadNasba = output<void>();
   readonly downloadAll = output<void>();
 
-  protected readonly studyFilterOptions: any[] = [
-    'All',
-    'Accounting',
-    'Ethics',
-    'Others',
-  ];
+  protected readonly studyFilterOptions: any[] = ['All', 'Accounting', 'Ethics', 'Others'];
 
   protected onYear(event: Event): void {
     this.yearChange.emit(Number((event.target as HTMLSelectElement).value));

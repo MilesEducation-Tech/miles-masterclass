@@ -1,4 +1,3 @@
-
 /** URL-facing segment used when navigating to a course. */
 export type CourseUrlSegment = 'masterclass' | 'micro-learning' | 'podcast' | 'webinar';
 

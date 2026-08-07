@@ -1,6 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { form, minLength, required, validate, FormField as AngularFormField } from '@angular/forms/signals';
+import {
+  form,
+  minLength,
+  required,
+  validate,
+  FormField as AngularFormField,
+} from '@angular/forms/signals';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Forms } from '../../../../shared/components/ui/forms/forms';
 import { AriaInput } from '../../../../shared/components/ui/aria/aria-input/aria-input';

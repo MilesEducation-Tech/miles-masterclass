@@ -2,7 +2,6 @@ import { Routes } from '@angular/router';
 import { authGuard } from '../../shared/core/guards/auth/auth-guard';
 import { paymentGuard } from '../../shared/core/guards/payment/payment.guard';
 
-
 /**
  * Payment feature routes. Lazy-loaded from `features.ts` via
  * `loadChildren: () => import('./payment/payment.routes').then(m => m.PAYMENT_ROUTES)`.

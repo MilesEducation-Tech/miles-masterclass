@@ -1,4 +1,3 @@
-
 export const featureConfig: any = {
   home: {
     public: ['track', 'comingSoon', 'instructor'],

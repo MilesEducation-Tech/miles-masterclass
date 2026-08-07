@@ -45,7 +45,6 @@ export class NetworkFirmsDialog implements OnInit {
   // Swap in the new backend's service — the template needs no changes.
 
   protected readonly facade: any = {
-
     createFirm: (..._args: any[]): any => null,
 
     firmsForNetwork: (..._args: any[]): any => null,
@@ -57,7 +56,6 @@ export class NetworkFirmsDialog implements OnInit {
     reloadPartnerCodes: signal<any[]>([]),
 
     standaloneFirms: signal<any[]>([]),
-
   };
 
   /** null = standalone mode (no network). */

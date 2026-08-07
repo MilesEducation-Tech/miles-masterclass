@@ -40,7 +40,6 @@ export class MasterclassCourse {
   // Swap in the new backend's service — the template needs no changes.
 
   protected readonly masterclassService: any = {
-
     clear: signal<any>(null),
 
     courseChapters: signal<any[]>([]),
@@ -48,7 +47,6 @@ export class MasterclassCourse {
     courseDetails: signal<any[]>([]),
 
     loadCourse: (..._args: any[]): any => null,
-
   };
   private readonly auth = inject(Auth);
 

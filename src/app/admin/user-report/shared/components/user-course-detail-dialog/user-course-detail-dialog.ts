@@ -38,9 +38,7 @@ export class UserCourseDetailDialog implements OnInit {
   // Swap in the new backend's service — the template needs no changes.
 
   private readonly facade: any = {
-
     getCourseDetail: (..._args: any[]): any => null,
-
   };
 
   protected readonly courses = signal<any[]>([]);

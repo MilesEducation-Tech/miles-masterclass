@@ -40,13 +40,11 @@ export class ChapterQuiz {
   // Swap in the new backend's service — the template needs no changes.
 
   private readonly facade: any = {
-
     submitQuizAnswer: (..._args: any[]): any => null,
 
     updateChapterStatus: (..._args: any[]): any => null,
 
     updateUserSelectedOption: (..._args: any[]): any => null,
-
   };
 
   readonly currentQuestionIndex = signal(0);

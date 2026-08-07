@@ -96,10 +96,7 @@ export class CertificateDownloadDialog implements OnInit {
 
   // Swap in the new backend's service — the template needs no changes.
 
-  private readonly api: any = {
-
-
-  };
+  private readonly api: any = {};
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -270,10 +267,7 @@ export class CertificateDownloadDialog implements OnInit {
       );
   }
 
-  private async runDownload(
-    certs: any[],
-    variant: CertificateVariant,
-  ): Promise<void> {
+  private async runDownload(certs: any[], variant: CertificateVariant): Promise<void> {
     const items: BlobDownloadItem[] = certs.map((cert) => ({
       url: pickUrl(cert, variant)!,
       suggestedName: buildPdfFileName(

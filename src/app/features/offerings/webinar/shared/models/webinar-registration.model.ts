@@ -1,4 +1,3 @@
-
 /**
  * Pre-login webinar registration API contracts.
  *

@@ -138,11 +138,7 @@ export class UsersTable {
    * returns each metric's ids already bucketed by course type, so pass them
    * straight through (nullish guards for any missing bucket).
    */
-  protected openCourseDetail(
-    row: any,
-    category: any,
-    courseIds: any | undefined,
-  ): void {
+  protected openCourseDetail(row: any, category: any, courseIds: any | undefined): void {
     const buckets: any = {
       masterclass_id: courseIds?.masterclass_id ?? [],
       podcast_id: courseIds?.podcast_id ?? [],

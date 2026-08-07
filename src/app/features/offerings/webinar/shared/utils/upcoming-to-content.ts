@@ -1,4 +1,3 @@
-
 /**
  * Adapts an `UpcomingPremiere` (webinar payload) into the `Content` shape so it
  * can be rendered by the existing `<app-horizontal>` / `<app-vertical>` cards

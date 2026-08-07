@@ -53,11 +53,9 @@ export class MicroLearningQuizDialog {
   // Swap in the new backend's service — the template needs no changes.
 
   private readonly facade: any = {
-
     markActiveReelActionStatus: (..._args: any[]): any => null,
 
     startFinalAssessment: signal<any>(null),
-
   };
 
   get reelRef(): any {

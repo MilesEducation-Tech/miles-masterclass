@@ -41,13 +41,11 @@ export class FinalAssessmentReport {
   // Swap in the new backend's service — the template needs no changes.
 
   private readonly facade: any = {
-
     courseId: null as any,
 
     getAssessmentReport: (..._args: any[]): any => null,
 
     getCourseDetails: (..._args: any[]): any => null,
-
   };
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);

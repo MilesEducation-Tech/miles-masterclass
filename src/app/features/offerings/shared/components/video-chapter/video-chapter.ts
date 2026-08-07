@@ -67,9 +67,7 @@ export class VideoChapter {
   // ponytail: MasterclassFacade was deleted with the Django strip. This placeholder
   // keeps the template bindings compiling and renders the empty state.
   // Swap in the new backend's service — the template needs no changes.
-  private readonly masterclassFacade: any = {
-
-  };
+  private readonly masterclassFacade: any = {};
   private readonly dialog = inject(Dialog);
   private readonly analytics = inject(Analytics);
 

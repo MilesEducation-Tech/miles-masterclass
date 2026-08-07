@@ -26,9 +26,13 @@ import { Dialog } from '../../../../../../shared/core/services/dialog/dialog';
 import { Logger } from '../../../../../../shared/core/services/logger/logger';
 import { NotificationService } from '../../../../../../shared/core/services/notification/notification';
 import { Storage } from '../../../../../../shared/core/services/storage/storage';
-import { WebinarRegistrationDirectEnrolled, WebinarRegistrationRequest, WebinarRegistrationResult, WebinarRegistrationVerifyRequest, isWebinarRegistrationAccessBlocked } from '../../models/webinar-registration.model';
-
-// ponytail: were RouteResponse/RouteParams aliases over PROFILE_ROUTES.
+import {
+  WebinarRegistrationDirectEnrolled,
+  WebinarRegistrationRequest,
+  WebinarRegistrationResult,
+  WebinarRegistrationVerifyRequest,
+  isWebinarRegistrationAccessBlocked,
+} from '../../models/webinar-registration.model';
 
 // ponytail: Django endpoint paths for webinar registration + OTP verification.
 // Repoint at the new backend's routes.
@@ -88,9 +92,7 @@ export class WebinarRegistrationForm {
   // ponytail: ApiClient was deleted with the Django strip. This placeholder
   // keeps the template bindings compiling and renders the empty state.
   // Swap in the new backend's service — the template needs no changes.
-  private readonly http: any = {
-
-  };
+  private readonly http: any = {};
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly storage = inject(Storage);

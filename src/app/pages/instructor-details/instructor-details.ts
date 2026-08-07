@@ -66,10 +66,7 @@ export class InstructorDetails {
 
   // Swap in the new backend's service — the template needs no changes.
 
-  private readonly api: any = {
-
-
-  };
+  private readonly api: any = {};
   private readonly analytics = inject(Analytics);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -83,9 +80,7 @@ export class InstructorDetails {
     },
     loader: ({ params, abortSignal }) =>
       firstValueFrom(
-        this.api
-          .get(`instructor/${params.id}/`)
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
+        this.api.get(`instructor/${params.id}/`).pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
       ),
   });
 

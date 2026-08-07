@@ -57,9 +57,7 @@ export class CreateSubCompanyDialog {
   // Swap in the new backend's service — the template needs no changes.
 
   private readonly facade: any = {
-
     partnerCodes: null as any,
-
   };
 
   /** Available partner codes for the network — the multi-select options. */

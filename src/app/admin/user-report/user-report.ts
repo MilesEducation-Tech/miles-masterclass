@@ -80,11 +80,7 @@ export class UserReport {
   }
 
   /** Open the drill-down for one metric bucket. No-op with a toast when empty. */
-  protected openCourseDetail(
-    row: any,
-    category: any,
-    courseIds: any,
-  ): void {
+  protected openCourseDetail(row: any, category: any, courseIds: any): void {
     if (!hasCourseIds(courseIds)) {
       this.notification.info('No course data', 'There are no courses for this field.');
       return;

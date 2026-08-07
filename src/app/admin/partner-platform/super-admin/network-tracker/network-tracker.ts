@@ -64,9 +64,7 @@ export class NetworkTracker {
       ),
   });
 
-  private readonly header = computed<any | undefined>(() =>
-    this.headerResource.value(),
-  );
+  private readonly header = computed<any | undefined>(() => this.headerResource.value());
   protected readonly headerLoading = computed(() => this.headerResource.isLoading());
   protected readonly networkName = computed(() => this.header()?.summary.network.name ?? 'Network');
   protected readonly subCompanies = computed<any[]>(() => this.header()?.sub_companies ?? []);
@@ -115,9 +113,7 @@ export class NetworkTracker {
       ),
   });
 
-  protected readonly coupons = computed<any[]>(
-    () => this.couponsResource.value()?.coupons ?? [],
-  );
+  protected readonly coupons = computed<any[]>(() => this.couponsResource.value()?.coupons ?? []);
   protected readonly couponsLoading = computed(() => this.couponsResource.isLoading());
   protected readonly couponsError = computed(() =>
     this.couponsResource.error() ? 'Failed to load coupons.' : null,

@@ -27,7 +27,6 @@ export class SubscriptionDialog {
   // Swap in the new backend's service — the template needs no changes.
 
   private readonly facade: any = {
-
     addToCart: (..._args: any[]): any => null,
 
     loadMyBucket: (..._args: any[]): any => null,
@@ -45,7 +44,6 @@ export class SubscriptionDialog {
     recommendedPlansError: signal<any>(null),
 
     recommendedPlansLoading: signal<any>(null),
-
   };
 
   // Dialog only ever shows the recommended plan (server-filtered via

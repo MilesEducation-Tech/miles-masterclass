@@ -6,14 +6,7 @@ import {
 } from '../utils/course.util';
 
 export type ButtonKind =
-  | 'registered'
-  | 'resume'
-  | 'exam'
-  | 'retake'
-  | 'feedback'
-  | 'download'
-  | 'view-details'
-  | 'none';
+  'registered' | 'resume' | 'exam' | 'retake' | 'feedback' | 'download' | 'view-details' | 'none';
 
 export interface TrackerTableRow {
   key: string;

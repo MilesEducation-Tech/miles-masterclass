@@ -1,4 +1,3 @@
-
 export const MOCK_INSTRUCTOR: any = {
   id: 1,
   first_name: 'Sarah',

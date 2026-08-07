@@ -31,7 +31,6 @@ export class CourseResources {
   // Swap in the new backend's service — the template needs no changes.
 
   protected readonly masterclassFacade: any = {
-
     courseDetails: signal<any[]>([]),
 
     downloadExerciseFiles: (..._args: any[]): any => null,
@@ -39,7 +38,6 @@ export class CourseResources {
     downloadingExerciseFiles: signal<any[]>([]),
 
     openAdditionalResources: signal<any[]>([]),
-
   };
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);

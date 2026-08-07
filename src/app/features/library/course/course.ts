@@ -65,7 +65,9 @@ export class Course {
 
   /** Route slug ('micro-learning', etc.) passed to `app-vertical`. */
   readonly routeType = computed(
-    () => this.tabs.find((t: any) => t.apiType === this.facade.courseType())?.routeType ?? 'masterclass',
+    () =>
+      this.tabs.find((t: any) => t.apiType === this.facade.courseType())?.routeType ??
+      'masterclass',
   );
 
   readonly groups = computed<readonly any[]>(() => {

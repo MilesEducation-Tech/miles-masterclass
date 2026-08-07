@@ -25,7 +25,6 @@ export class PodcastChapter {
   // Swap in the new backend's service — the template needs no changes.
 
   readonly chapterFacade: any = {
-
     chapterNavigation: signal<any>(null),
 
     clear: signal<any>(null),
@@ -43,7 +42,6 @@ export class PodcastChapter {
     selectedChapterId: signal<any>(null),
 
     trackActivity: (..._args: any[]): any => null,
-
   };
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);

@@ -38,11 +38,9 @@ const userWithFullProfile = (): any =>
     email: 'a@b.com',
   }) as unknown as any;
 
-const activePlan = (): any =>
-  ({ id: 1, subscription_status: 'active' }) as unknown as any;
+const activePlan = (): any => ({ id: 1, subscription_status: 'active' }) as unknown as any;
 
-const inactivePlan = (): any =>
-  ({ id: 1, subscription_status: 'Expired' }) as unknown as any;
+const inactivePlan = (): any => ({ id: 1, subscription_status: 'Expired' }) as unknown as any;
 
 describe('EngagementDialog', () => {
   let service: EngagementDialog;

@@ -35,8 +35,7 @@ describe('activePlanGuard', () => {
 
     const authMock = {
       currentPlan: () => currentPlan,
-      isPlanActive: (plan: any | null) =>
-        plan?.subscription_status?.toLowerCase() === 'active',
+      isPlanActive: (plan: any | null) => plan?.subscription_status?.toLowerCase() === 'active',
       hasActivePlanFromCookie: () => cookieActive,
     };
 

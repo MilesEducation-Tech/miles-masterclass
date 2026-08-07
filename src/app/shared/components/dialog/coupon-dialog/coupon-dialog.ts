@@ -31,11 +31,9 @@ export class CouponDialog implements OnInit {
   // Swap in the new backend's service — the template needs no changes.
 
   private readonly facade: any = {
-
     applyCoupon: (..._args: any[]): any => null,
 
     getCoupons: signal<any[]>([]),
-
   };
   private readonly logger = inject(Logger);
 

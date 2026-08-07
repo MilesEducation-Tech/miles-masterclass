@@ -64,9 +64,7 @@ export class Carousel {
   // ponytail: SectionFiltersFacade was deleted with the Django strip. This placeholder
   // keeps the template bindings compiling and renders the empty state.
   // Swap in the new backend's service — the template needs no changes.
-  private readonly sectionFilters: any = {
-
-  };
+  private readonly sectionFilters: any = {};
 
   private readonly swiperContainerRef = viewChild<ElementRef<HTMLElement>>('swiperContainer');
   private swiperEl: ElementRef<HTMLElement> | null = null;

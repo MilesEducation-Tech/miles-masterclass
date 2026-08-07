@@ -1,4 +1,3 @@
-
 /**
  * Default CPE requirement (credits/year) when the server-provided
  * `user_state_board` list is empty or lacks a numeric target.
@@ -182,10 +181,7 @@ export function deriveCredits(raw: any | null, mode: boolean): any | null {
   };
 }
 
-export function deriveFieldsOfStudy(
-  raw: any | null,
-  mode: boolean,
-): any[] {
+export function deriveFieldsOfStudy(raw: any | null, mode: boolean): any[] {
   if (!raw) return [];
   const breakdown = pickBreakdown(raw, mode);
   return [
@@ -195,10 +191,7 @@ export function deriveFieldsOfStudy(
   ];
 }
 
-export function deriveDeliveryModes(
-  raw: any | null,
-  mode: boolean,
-): any[] {
+export function deriveDeliveryModes(raw: any | null, mode: boolean): any[] {
   if (!raw) return [];
   const breakdown = pickBreakdown(raw, mode);
   return [

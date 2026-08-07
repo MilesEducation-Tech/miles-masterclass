@@ -1,4 +1,12 @@
-import { Component, DestroyRef, ElementRef, PLATFORM_ID, inject, viewChild, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  PLATFORM_ID,
+  inject,
+  viewChild,
+  signal,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Route } from '@angular/router';
 import { Observable, Subject, of } from 'rxjs';
@@ -50,9 +58,7 @@ export class MicroLearning {
   // ponytail: ApiClient was deleted with the Django strip. This placeholder
   // keeps the template bindings compiling and renders the empty state.
   // Swap in the new backend's service — the template needs no changes.
-  private readonly http: any = {
-
-  };
+  private readonly http: any = {};
   private readonly logger = inject(Logger);
   private readonly destroyRef = inject(DestroyRef);
 

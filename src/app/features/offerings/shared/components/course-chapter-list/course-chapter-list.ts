@@ -35,13 +35,11 @@ export class CourseChapterList {
   // Swap in the new backend's service — the template needs no changes.
 
   readonly masterclass: any = {
-
     courseChapters: signal<any[]>([]),
 
     courseDetails: signal<any[]>([]),
 
     navigateToChapter: (..._args: any[]): any => null,
-
   };
 
   getChapterCompletedStatus(chapterId: number) {
@@ -49,10 +47,11 @@ export class CourseChapterList {
       (this.masterclass.courseDetails()?.cpe_mode_details?.cpe_mode === true &&
         this.masterclass
           .courseDetails()
-          ?.chapter_wise_details?.find((chapter: any) => chapter.chapter_id === chapterId)?.status) ||
+          ?.chapter_wise_details?.find((chapter: any) => chapter.chapter_id === chapterId)
+          ?.status) ||
       (this.masterclass.courseDetails()?.cpe_mode_details?.cpe_mode === false &&
-        this.masterclass.courseChapters()?.find((chapter: any) => chapter.id === chapterId)?.play_history
-          ?.is_completed)
+        this.masterclass.courseChapters()?.find((chapter: any) => chapter.id === chapterId)
+          ?.play_history?.is_completed)
     );
   }
 }

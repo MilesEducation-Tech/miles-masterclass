@@ -407,9 +407,7 @@ export function v2CardToUpcoming(card: WebinarV2Card): WebinarV2Adapted {
         added: true,
         user_enrollments: {
           id: card.registration.enrollment_id ?? -1,
-          webinar_dates: session
-            ? toWebinarDate(session, joinUrl)
-            : ({} as any['webinar_dates']),
+          webinar_dates: session ? toWebinarDate(session, joinUrl) : ({} as any['webinar_dates']),
           feedback_submitted: false,
           attendance_status: attendance,
           active_plan: null,

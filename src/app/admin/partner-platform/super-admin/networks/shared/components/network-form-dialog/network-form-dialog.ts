@@ -59,10 +59,7 @@ export class NetworkFormDialog implements OnInit {
 
   // Swap in the new backend's service — the template needs no changes.
 
-  private readonly facade: any = {
-
-
-  };
+  private readonly facade: any = {};
 
   private readonly editing = signal(false);
   protected readonly isEdit = computed(() => this.editing());

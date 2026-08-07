@@ -13,7 +13,6 @@ export interface ProfileCompletionDialogResult {
   saved: boolean;
 }
 
-
 interface ProfileCompletionFormState {
   sector_id: number | null;
   job_role_id: number | null;
@@ -34,10 +33,7 @@ export class ProfileCompletionDialog {
 
   // Swap in the new backend's service — the template needs no changes.
 
-  private readonly http: any = {
-
-
-  };
+  private readonly http: any = {};
   private readonly auth = inject(Auth);
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
@@ -111,7 +107,10 @@ export class ProfileCompletionDialog {
     const { sector_id, job_role_id } = this.model();
     this.loading.set(true);
     this.http
-      .patch('', { sector_id, job_role_id }) /* ponytail: saveProfile endpoint removed with the backend */
+      .patch('', {
+        sector_id,
+        job_role_id,
+      }) /* ponytail: saveProfile endpoint removed with the backend */
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res: any) => {

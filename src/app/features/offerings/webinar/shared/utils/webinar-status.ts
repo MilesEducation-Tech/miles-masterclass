@@ -1,4 +1,3 @@
-
 /** Eastern Time short-name abbreviations — DST-aware. */
 export type EasternAbbrev = 'EST' | 'EDT';
 
@@ -129,10 +128,7 @@ export function liveStateOf(
  * soonest upcoming; otherwise the most recently ended (so the UI can still
  * label the card as "Ended" rather than showing nothing).
  */
-export function nextSessionOf(
-  webinar: any,
-  now: Date = new Date(),
-): any | null {
+export function nextSessionOf(webinar: any, now: Date = new Date()): any | null {
   const sessions = webinar.webinar_dates ?? [];
   if (!sessions.length) return null;
   const live = sessions.find((s: any) => liveStateOf(s, now, webinar.webinar_duration) === 'live');
@@ -224,11 +220,7 @@ export function needsSubscription(webinar: any, hasActivePlan: boolean): boolean
  *   - Booked + ended session + `'Absent'` / `'Pending'` → `watch-recording`
  *     (if a recording exists) or `ended`.
  */
-export function ctaFor(
-  webinar: any,
-  isAuthed: boolean,
-  now: Date = new Date(),
-): WebinarCta {
+export function ctaFor(webinar: any, isAuthed: boolean, now: Date = new Date()): WebinarCta {
   // Source of truth for "registered": the presence of a `user_enrollments`
   // record. The `added` boolean on the public filter payload can be stale
   // (or appear without an underlying enrollment row), so the CTA only flips

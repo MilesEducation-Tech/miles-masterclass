@@ -59,9 +59,6 @@ interface ProfileFormState {
   job_role_id: number | null;
 }
 
-// ponytail: these were RouteResponse/RouteParams aliases over PROFILE_ROUTES.
-// Retype them against the new backend's profile endpoints.
-
 @Component({
   selector: 'app-profile',
   imports: [Forms, AriaInput, Button, AngularFormField, AriaAutocomplete, AriaMultiselect],
@@ -376,7 +373,9 @@ export class Profile {
     // ponytail: was a `getProfessionalCourseList` GET.
     const courses: any[] = [];
     if (courses.length > 0) {
-      this.professionalCourseOptions.set(courses.map((c: any) => ({ label: c.title, value: c.id })));
+      this.professionalCourseOptions.set(
+        courses.map((c: any) => ({ label: c.title, value: c.id })),
+      );
     }
   }
 

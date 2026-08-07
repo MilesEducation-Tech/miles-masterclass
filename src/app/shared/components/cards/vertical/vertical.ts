@@ -29,9 +29,7 @@ export class Vertical {
   // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
   // keeps the template bindings compiling and renders the empty state.
   // Swap in the new backend's service — the template needs no changes.
-  private readonly feature: any = {
-
-  };
+  private readonly feature: any = {};
   private readonly destroyRef = inject(DestroyRef);
 
   card = model.required<any>();

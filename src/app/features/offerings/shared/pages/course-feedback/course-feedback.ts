@@ -41,10 +41,7 @@ export class CourseFeedback {
 
   // Swap in the new backend's service — the template needs no changes.
 
-  private readonly facade: any = {
-
-
-  };
+  private readonly facade: any = {};
   private readonly destroyRef = inject(DestroyRef);
   readonly router = inject(Router);
   readonly route = inject(ActivatedRoute);

@@ -59,7 +59,10 @@ export class CourseRelatedSection {
    * is presentation logic, not transport: hand it the new backend's response
    * and `instructorCarousels` renders as before.
    */
-  protected buildInstructorCarousels(details: any, coursesByInstructorId: Map<number, any[]>): void {
+  protected buildInstructorCarousels(
+    details: any,
+    coursesByInstructorId: Map<number, any[]>,
+  ): void {
     const nameById = this.buildNameMap(details);
     const out: InstructorCarousel[] = [];
     for (const [iid, courses] of coursesByInstructorId) {

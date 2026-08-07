@@ -32,13 +32,7 @@ const TYPE_LABELS: Record<any, string> = {
   webinar: 'Webinars',
 };
 
-const TYPE_ORDER: any[] = [
-  'masterclass',
-  'podcast',
-  'micro_learning',
-  'nano_learning',
-  'webinar',
-];
+const TYPE_ORDER: any[] = ['masterclass', 'podcast', 'micro_learning', 'nano_learning', 'webinar'];
 
 /**
  * Maps a search result's type onto the URL segment its detail page lives at.
