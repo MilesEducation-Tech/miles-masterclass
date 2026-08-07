@@ -6,9 +6,8 @@ import {
   getTotalCredits,
   getUrlSegment,
 } from './course.util';
-import { ReportRow } from '../../../../shared/core/models/cpe-tracker.model';
 
-function row(overrides: Partial<ReportRow>): ReportRow {
+function row(overrides: Partial<any>): any {
   return {
     id: 1,
     master_class: null,
@@ -20,7 +19,7 @@ function row(overrides: Partial<ReportRow>): ReportRow {
     field_of_study: [],
     all_classes_completed: false,
     ...overrides,
-  } as ReportRow;
+  } as any;
 }
 
 describe('course.util', () => {

@@ -1,10 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { Subject } from 'rxjs';
-import { BadgeItem } from '../../../core/models/cpe-tracker.model';
 import { DialogRef } from '../../../core/services/dialog/dialog';
 import { BadgeClaimUpsellDialog, BadgeClaimUpsellDialogResult } from './badge-claim-upsell-dialog';
 
-function makeBadge(): BadgeItem {
+function makeBadge(): any {
   return {
     id: 1,
     name: 'CAIRA — Level 1',

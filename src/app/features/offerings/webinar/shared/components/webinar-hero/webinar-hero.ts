@@ -10,8 +10,6 @@ import { Auth } from '../../../../../../shared/core/services/auth/auth';
 import { Logger } from '../../../../../../shared/core/services/logger/logger';
 import { NotificationService } from '../../../../../../shared/core/services/notification/notification';
 import { Utils } from '../../../../../../shared/core/services/utils/utils';
-import { UpcomingPremiere } from '../../../../../../shared/core/models/feature.model';
-import { WebinarFacade } from '../../services/webinar-facade/webinar-facade';
 import { ctaFor, formatStartsIn, nextSessionOf, webinarTagFor } from '../../utils/webinar-status';
 import {
   WebinarRegistrationForm,
@@ -50,14 +48,21 @@ const ZOOM_LOGO = `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/
   providers: [provideIcons({ heroVideoCameraSolid, phosphorShareFatFill })],
 })
 export class WebinarHero {
-  private readonly facade = inject(WebinarFacade);
+  // ponytail: WebinarFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly facade: any = {
+    openCertificateDownloadDialog: (..._args: any[]): any => null,
+    openDetails: (..._args: any[]): any => null,
+    registerAndEnroll: (..._args: any[]): any => null,
+  };
   private readonly auth = inject(Auth);
   private readonly utils = inject(Utils);
   private readonly notification = inject(NotificationService);
   private readonly logger = inject(Logger);
 
   protected readonly zoomLogo = ZOOM_LOGO;
-  readonly webinar = input.required<UpcomingPremiere>();
+  readonly webinar = input.required<any>();
   /**
    * Hide the "Learn More" CTA in the auth-path card. Set `true` when the hero
    * is rendered on the webinar details page itself — opening the details
@@ -189,7 +194,7 @@ export class WebinarHero {
         // `enroll` swallows its own failures (it toasts, then returns the
         // untouched webinar), so this only guards against an unexpected throw
         // upstream of that — without it the button would stay stuck disabled.
-        error: (err) => {
+        error: (err: any) => {
           this.logger.error('WebinarHero.book: unexpected enrol failure', err);
           this.notification.error(
             'Booking failed',

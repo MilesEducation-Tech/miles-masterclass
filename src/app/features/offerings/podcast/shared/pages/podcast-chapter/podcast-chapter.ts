@@ -3,7 +3,6 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { VideoChapter } from '../../../../shared/components/video-chapter/video-chapter';
 import { AudioChapter } from '../../../../shared/components/audio-chapter/audio-chapter';
 import { Backward } from '../../../../../../shared/components/backward/backward';
-import { ChapterFacade } from '../../../../shared/services/chapter-facade/chapter-facade';
 import { Utils } from '../../../../../../shared/core/services/utils/utils';
 import { Auth } from '../../../../../../shared/core/services/auth/auth';
 import { Logger } from '../../../../../../shared/core/services/logger/logger';
@@ -19,7 +18,33 @@ export class PodcastChapter {
   courseTitle = input<string>();
   chapterId = input<string>();
 
-  readonly chapterFacade = inject(ChapterFacade);
+  // ponytail: ChapterFacade was deleted with the Django strip. This placeholder
+
+  // keeps the template bindings compiling and renders the empty state.
+
+  // Swap in the new backend's service — the template needs no changes.
+
+  readonly chapterFacade: any = {
+
+    chapterNavigation: signal<any>(null),
+
+    clear: signal<any>(null),
+
+    courseChapters: signal<any[]>([]),
+
+    courseDetails: signal<any[]>([]),
+
+    fetchQuizReport: (..._args: any[]): any => null,
+
+    loadCourse: (..._args: any[]): any => null,
+
+    loading: signal<any>(null),
+
+    selectedChapterId: signal<any>(null),
+
+    trackActivity: (..._args: any[]): any => null,
+
+  };
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -40,7 +65,7 @@ export class PodcastChapter {
     const chapters = this.chapterFacade.courseChapters();
     const currentId = this.chapterFacade.selectedChapterId();
     if (!currentId) return 0;
-    const idx = chapters.findIndex((c) => c.id === currentId);
+    const idx = chapters.findIndex((c: any) => c.id === currentId);
     return idx >= 0 ? idx : 0;
   });
 
@@ -118,7 +143,7 @@ export class PodcastChapter {
 
     return this.chapterFacade
       .courseDetails()
-      ?.chapter_wise_details?.find((detail) => detail.chapter_id === currentChapterId);
+      ?.chapter_wise_details?.find((detail: any) => detail.chapter_id === currentChapterId);
   });
 
   readonly courseNavigation = signal('../../..');
@@ -133,7 +158,7 @@ export class PodcastChapter {
     }
 
     const chapters = this.chapterFacade.courseChapters();
-    const chapter = chapters.find((c) => c.id === chapterId);
+    const chapter = chapters.find((c: any) => c.id === chapterId);
 
     let slug = '';
     if (chapter) {

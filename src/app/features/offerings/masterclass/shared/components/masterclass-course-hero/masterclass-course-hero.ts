@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { VideoPoster } from '../../../../../../shared/components/video-poster/video-poster';
 import { Button } from '../../../../../../shared/components/ui/button/button';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -17,7 +17,6 @@ import { Auth } from '../../../../../../shared/core/services/auth/auth';
 
 import { Progress } from '../../../../../../shared/components/ui/progress/progress';
 import { cn } from '../../../../../../shared/utils/cn';
-import { MasterclassFacade } from '../../../../shared/services/masterclass-facade/masterclass-facade';
 import { RatingStar } from '../../../../../../shared/components/rating-star/rating-star';
 import { Utils } from '../../../../../../shared/core/services/utils/utils';
 import { CategoriesList } from '../../../../../../shared/components/categories-list/categories-list';
@@ -55,7 +54,19 @@ import { CairaCredlyBadge } from '../../../../../../shared/components/cards/cair
 })
 export class MasterclassCourseHero {
   readonly auth = inject(Auth);
-  readonly masterclass = inject(MasterclassFacade);
+  // ponytail: MasterclassFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  readonly masterclass: any = {
+    courseDetails: signal<any[]>([]),
+    currentProgress: signal<any[]>([]),
+    launchCourse: signal<any>(null),
+    openCertificateDownloadDialog: signal<any>(null),
+    openShareDialog: signal<any>(null),
+    startFinalAssessment: (..._args: any[]): any => null,
+    submitFeedback: signal<any>(null),
+    toggleCpeMode: (..._args: any[]): any => null,
+  };
   readonly utils = inject(Utils);
   cn = cn;
 
@@ -87,7 +98,7 @@ export class MasterclassCourseHero {
 
     this.utils.toggleBookmarkCourse(+id).subscribe((response) => {
       if (response.status) {
-        this.masterclass.courseDetails.update((course) =>
+        this.masterclass.courseDetails.update((course: any) =>
           course ? { ...course, added_bookmark: response.is_bookmarked } : course,
         );
       }
@@ -97,7 +108,7 @@ export class MasterclassCourseHero {
   addToCart(courseId: number, isAddedToCart: boolean) {
     this.utils.addCourseToCart(courseId, isAddedToCart).subscribe((response) => {
       if (response.status) {
-        this.masterclass.courseDetails.update((course) =>
+        this.masterclass.courseDetails.update((course: any) =>
           course ? { ...course, is_added_to_cart: response.in_cart } : course,
         );
       }

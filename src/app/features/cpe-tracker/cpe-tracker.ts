@@ -1,6 +1,5 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { CpeTrackerFacade } from './shared/services/cpe-tracker-facade/cpe-tracker-facade';
 import { CourseRouter } from './shared/services/course-router/course-router';
 import { TrackerTableRow } from './shared/mappers/report-to-table';
 import { getCourseId } from './shared/utils/course.util';
@@ -9,7 +8,6 @@ import { BadgeSwiper } from './shared/components/badge-swiper/badge-swiper';
 import { TrackerToolbar } from './shared/components/tracker-toolbar/tracker-toolbar';
 import { TrackerTable } from './shared/components/tracker-table/tracker-table';
 import { Utils } from '../../shared/core/services/utils/utils';
-import { RawCourseType } from '../../shared/core/models/cpe-tracker.model';
 
 /**
  * Maps the raw `course_details.type` discriminator to the v3 route segment.
@@ -20,7 +18,7 @@ import { RawCourseType } from '../../shared/core/models/cpe-tracker.model';
  * `/premiere/...` route in `features/offerings/offerings.ts` today; flip the
  * value here if that ever changes.
  */
-const COURSE_TYPE_TO_URL_SEGMENT: Record<RawCourseType, string> = {
+const COURSE_TYPE_TO_URL_SEGMENT: Record<any, string> = {
   masterclass: 'masterclass',
   podcast: 'podcast',
   nano_learning: 'micro-learning',
@@ -35,7 +33,33 @@ const COURSE_TYPE_TO_URL_SEGMENT: Record<RawCourseType, string> = {
   styleUrl: './cpe-tracker.css',
 })
 export class CpeTracker {
-  protected readonly facade = inject(CpeTrackerFacade);
+  // ponytail: CpeTrackerFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  protected readonly facade: any = {
+    badges: signal<any[]>([]),
+    claimBadge: (..._args: any[]): any => null,
+    credits: signal<any[]>([]),
+    currentPage: signal<any>(null),
+    downloadAllCertificates: signal<any[]>([]),
+    downloadCertificateForRow: (..._args: any[]): any => null,
+    downloadNasba: signal<any>(null),
+    isLoadingReport: signal<any>(null),
+    loadAll: signal<any>(null),
+    nextPage: signal<any>(null),
+    openBadgeInfo: signal<any>(null),
+    openCompliance: signal<any>(null),
+    pagedTableRows: signal<any[]>([]),
+    pageWindow: signal<any>(null),
+    prevPage: signal<any>(null),
+    selectedYear: signal<any>(null),
+    setStudyFilter: (..._args: any[]): any => null,
+    setYear: (..._args: any[]): any => null,
+    shareBadge: (..._args: any[]): any => null,
+    studyFilter: signal<any>(null),
+    totalPages: signal<any[]>([]),
+    yearOptions: signal<any[]>([]),
+  };
   private readonly courseRouter = inject(CourseRouter);
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);

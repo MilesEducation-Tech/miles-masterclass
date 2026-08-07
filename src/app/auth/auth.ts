@@ -1,7 +1,6 @@
 import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
 import { Component, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Route, Router, RouterOutlet } from '@angular/router';
-import { AuthFacade } from './shared/services/auth-facade';
 import { environment } from '../../environments/environment';
 import { NgIcon } from '@ng-icons/core';
 import { svglGoogle, svglAppleDark } from '@ng-icons/svgl';
@@ -26,7 +25,12 @@ export class Auth {
   private readonly authService = inject(AuthService);
   private readonly dialog = inject(Dialog);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  authFacade = inject(AuthFacade);
+  // ponytail: AuthFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  readonly authFacade: any = {
+    auth_type: signal<any>(null),
+  };
 
   auth_type = this.authFacade.auth_type;
 
@@ -98,7 +102,8 @@ export const authRoutes: Route[] = [
   {
     path: '',
     component: Auth,
-    providers: [AuthFacade], // Scoped to auth routes - destroyed when leaving
+    // ponytail: route-scoped facade providers removed with the Django strip.
+    // Re-add `providers: [YourService]` here when the new backend lands.
     children: [
       { path: '', redirectTo: 'login', pathMatch: 'full' },
       {

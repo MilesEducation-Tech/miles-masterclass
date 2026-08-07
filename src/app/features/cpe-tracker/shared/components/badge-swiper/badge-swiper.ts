@@ -14,7 +14,6 @@ import { Swiper, SwiperOptions } from 'swiper/types';
 import { Navigation } from 'swiper/modules';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronLeft, lucideChevronRight } from '@ng-icons/lucide';
-import { BadgeItem } from '../../../../../shared/core/models/cpe-tracker.model';
 import { ensureSwiperElement } from '../../../../../shared/utils/swiper/ensure-swiper-element';
 import { BadgeHeroCard } from '../../../../../shared/components/cards/badge-hero-card/badge-hero-card';
 import { Button } from '../../../../../shared/components/ui/button/button';
@@ -38,10 +37,10 @@ export class BadgeSwiper {
   private swiperEl: ElementRef<SwiperEl> | null = null;
   private initTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  readonly badges = input.required<BadgeItem[]>();
+  readonly badges = input.required<any[]>();
 
-  readonly claim = output<BadgeItem>();
-  readonly share = output<BadgeItem>();
+  readonly claim = output<any>();
+  readonly share = output<any>();
   readonly openInfo = output<void>();
 
   @ViewChild('swiperContainer')
@@ -61,11 +60,11 @@ export class BadgeSwiper {
     });
   }
 
-  protected onClaim(badge: BadgeItem): void {
+  protected onClaim(badge: any): void {
     this.claim.emit(badge);
   }
 
-  protected onShare(badge: BadgeItem): void {
+  protected onShare(badge: any): void {
     this.share.emit(badge);
   }
 

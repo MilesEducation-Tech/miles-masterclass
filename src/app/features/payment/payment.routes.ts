@@ -1,45 +1,7 @@
-import { isPlatformBrowser } from '@angular/common';
-import { inject, PLATFORM_ID } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { ResolveFn, Routes } from '@angular/router';
-import { filter, map, take } from 'rxjs/operators';
+import { Routes } from '@angular/router';
 import { authGuard } from '../../shared/core/guards/auth/auth-guard';
 import { paymentGuard } from '../../shared/core/guards/payment/payment.guard';
-import { PaymentFacade } from './shared/service/payment-facade/payment-facade';
 
-/**
- * Ensures the cart bucket is loaded before any child route activates.
- *
- * Parent-route resolvers run **before** any child route's `canActivate`, so by
- * the time `paymentGuard` evaluates on `/billing` or `/review`, the cart state
- * is guaranteed populated — even on hard refresh / deep-link where the
- * `Payment` shell component hasn't been constructed yet (guards run before
- * components instantiate).
- *
- * Skipped during SSR: the bucket endpoint is authenticated and cart state is a
- * browser-session concept; the protected pages are configured as
- * `RenderMode.Client` in `app.routes.server.ts`.
- */
-const cartResolver: ResolveFn<boolean> = () => {
-  if (!isPlatformBrowser(inject(PLATFORM_ID))) return true;
-
-  const facade = inject(PaymentFacade);
-
-  // Always fetch fresh on entry to the payment flow — the cart can change
-  // outside the shell (e.g. add-to-cart on the plan page, which is a sibling
-  // route), so a cached `cartData` would show stale items/totals. The resolver
-  // runs once per shell activation, so this is at most one fetch per entry.
-  facade.loadMyBucket({ force: true });
-
-  // Wait for the in-flight request to settle, then unblock activation.
-  // `take(1)` completes the stream so the router doesn't hold an open
-  // subscription after navigation.
-  return toObservable(facade.loading).pipe(
-    filter((loading) => !loading),
-    take(1),
-    map(() => true),
-  );
-};
 
 /**
  * Payment feature routes. Lazy-loaded from `features.ts` via
@@ -74,7 +36,6 @@ export const PAYMENT_ROUTES: Routes = [
     path: '',
     // Load the cart bucket once per shell activation. Children's guards rely
     // on this data being present.
-    resolve: { cart: cartResolver },
     loadComponent: () => import('./payment').then((m) => m.Payment),
     children: [
       {

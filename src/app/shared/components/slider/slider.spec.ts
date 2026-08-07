@@ -1,9 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { Slider } from './slider';
-import { Content } from '../../core/models/track.model';
 
 describe('Slider', () => {
-  const mockItems: Content[] = [
+  const mockItems: any[] = [
     {
       id: 1,
       thumbnail: 'https://example.com/1.jpg',

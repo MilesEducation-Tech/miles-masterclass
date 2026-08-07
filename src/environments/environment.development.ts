@@ -11,8 +11,6 @@ export const environment = {
    */
   SITE_URL: 'https://uat.milesmasterclass.com',
 
-  BASE_API_URL: 'https://uat-api.milesmasterclass.com/api/',
-
   S3_BUCKET_URL: 'https://d1pp0977rsxmiq.cloudfront.net/',
   GCS_URL: 'https://asset.milesmasterclass.com/media/web-app/',
 

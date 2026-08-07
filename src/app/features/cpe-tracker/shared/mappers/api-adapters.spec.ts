@@ -1,9 +1,4 @@
 import {
-  RawReportRow,
-  RawStatistics,
-  RawUserBadge,
-} from '../../../../shared/core/models/cpe-tracker.model';
-import {
   DEFAULT_CPE_REQUIREMENT,
   deriveCredits,
   deriveDeliveryModes,
@@ -14,7 +9,7 @@ import {
   toReportRow,
 } from './api-adapters';
 
-const rawReport: RawReportRow = {
+const rawReport: any = {
   id: 5670,
   course_details: {
     course_category: 'Accounting',
@@ -59,7 +54,7 @@ const rawReport: RawReportRow = {
   updated_by: null,
 };
 
-const rawBadge: RawUserBadge = {
+const rawBadge: any = {
   id: 4123,
   badge: {
     id: 1,
@@ -78,7 +73,7 @@ const rawBadge: RawUserBadge = {
   progress_percentage: 8.33,
 };
 
-const rawStats: RawStatistics = {
+const rawStats: any = {
   user_state_board: [],
   overall_credits_earned: 2.5,
   overall_upcoming_credits: 18.0,
@@ -282,7 +277,7 @@ describe('statistics derivations', () => {
   });
 
   it('resolveCpeRequirement uses the first state-board requirement when present', () => {
-    const stats: RawStatistics = {
+    const stats: any = {
       ...rawStats,
       user_state_board: [{ id: 1, name: 'CA', required_credits: 80 }],
     };

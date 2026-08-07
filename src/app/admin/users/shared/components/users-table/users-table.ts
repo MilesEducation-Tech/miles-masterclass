@@ -1,3 +1,4 @@
+import { hasCourseIds } from '../../../../user-report/shared/utils/course-ids';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -8,11 +9,6 @@ import { HasPermissionDirective } from '../../../../shared/directives/has-permis
 import { PERM } from '../../../../../shared/core/models/admin/admin-rbac.model';
 import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
 import { NotificationService } from '../../../../../shared/core/services/notification/notification';
-import { PartnerUser, PartnerUserCourseBuckets } from '../../models/partner-user.model';
-import {
-  CourseDetailCategory,
-  hasCourseIds,
-} from '../../../../user-report/shared/models/user-report.model';
 import {
   UserCourseDetailDialog,
   UserCourseDetailDialogData,
@@ -30,14 +26,14 @@ export class UsersTable {
   private readonly dialog = inject(Dialog);
   private readonly notification = inject(NotificationService);
 
-  readonly rows = input.required<PartnerUser[]>();
+  readonly rows = input.required<any[]>();
   readonly isLoading = input<boolean>(false);
   readonly currentPage = input<number>(1);
   readonly totalCount = input<number>(0);
   readonly hasNext = input<boolean>(false);
   readonly hasPrev = input<boolean>(false);
 
-  readonly blockToggle = output<PartnerUser>();
+  readonly blockToggle = output<any>();
   readonly prevPage = output<void>();
   readonly nextPage = output<void>();
 
@@ -59,7 +55,7 @@ export class UsersTable {
     return { from, to, total };
   });
 
-  protected onToggle(user: PartnerUser): void {
+  protected onToggle(user: any): void {
     this.blockToggle.emit(user);
   }
 
@@ -70,11 +66,11 @@ export class UsersTable {
    */
   private readonly revealedEmails = signal<ReadonlySet<number>>(new Set());
 
-  protected isEmailRevealed(row: PartnerUser): boolean {
+  protected isEmailRevealed(row: any): boolean {
     return this.revealedEmails().has(row.id);
   }
 
-  protected toggleEmailReveal(row: PartnerUser): void {
+  protected toggleEmailReveal(row: any): void {
     this.revealedEmails.update((prev) => {
       const next = new Set(prev);
       if (next.has(row.id)) {
@@ -89,11 +85,11 @@ export class UsersTable {
   /** Row ids whose phone number is currently shown in full. */
   private readonly revealedPhones = signal<ReadonlySet<number>>(new Set());
 
-  protected isPhoneRevealed(row: PartnerUser): boolean {
+  protected isPhoneRevealed(row: any): boolean {
     return this.revealedPhones().has(row.id);
   }
 
-  protected togglePhoneReveal(row: PartnerUser): void {
+  protected togglePhoneReveal(row: any): void {
     this.revealedPhones.update((prev) => {
       const next = new Set(prev);
       if (next.has(row.id)) {
@@ -106,7 +102,7 @@ export class UsersTable {
   }
 
   /** Whether the phone cell holds a maskable value (not empty / "N/A"). */
-  protected hasPhone(row: PartnerUser): boolean {
+  protected hasPhone(row: any): boolean {
     return !!row.phone && row.phone !== 'N/A';
   }
 
@@ -143,11 +139,11 @@ export class UsersTable {
    * straight through (nullish guards for any missing bucket).
    */
   protected openCourseDetail(
-    row: PartnerUser,
-    category: CourseDetailCategory,
-    courseIds: PartnerUserCourseBuckets | undefined,
+    row: any,
+    category: any,
+    courseIds: any | undefined,
   ): void {
-    const buckets: PartnerUserCourseBuckets = {
+    const buckets: any = {
       masterclass_id: courseIds?.masterclass_id ?? [],
       podcast_id: courseIds?.podcast_id ?? [],
       nano_learning_id: courseIds?.nano_learning_id ?? [],

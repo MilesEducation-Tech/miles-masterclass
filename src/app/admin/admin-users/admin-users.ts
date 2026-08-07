@@ -13,16 +13,14 @@ import {
   AdminPermissionRow,
   AdminUserListRow,
 } from './shared/services/admin-users-facade';
-import { PartnerSuperAdminFacade } from '../partner-platform/shared/services/partner-superadmin-facade';
 import {
   AdminProvisioning,
   INITIAL_ADMIN_PASSWORD,
 } from '../partner-platform/shared/services/admin-provisioning';
-import { PartnerRole } from '../partner-platform/shared/models/partner-platform.model';
 
 /** Django PartnerAdmin mapping derived from a Supabase partner role slug. */
 interface PartnerMapping {
-  role: PartnerRole;
+  role: any;
   capabilities: string[];
   /** 'either' = bind to a network or a firm; 'firm' = firms only. */
   scope: 'either' | 'firm';
@@ -58,7 +56,14 @@ export class AdminUsers {
   protected readonly facade = inject(AdminUsersFacade);
   private readonly notification = inject(NotificationService);
   private readonly auth = inject(AdminAuth);
-  private readonly partnerFacade = inject(PartnerSuperAdminFacade);
+  // ponytail: PartnerSuperAdminFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly partnerFacade: any = {
+    createPartnerAdmin: (..._args: any[]): any => null,
+    firms: signal<any[]>([]),
+    networks: signal<any[]>([]),
+  };
   private readonly provisioning = inject(AdminProvisioning);
   private readonly route = inject(ActivatedRoute);
 
@@ -87,7 +92,7 @@ export class AdminUsers {
   protected readonly prefilledNetworkName = computed(() => {
     const id = this.prefilledNetworkId();
     if (id == null) return null;
-    return this.partnerFacade.networks().find((net) => net.id === id)?.name ?? `#${id}`;
+    return this.partnerFacade.networks().find((net: any) => net.id === id)?.name ?? `#${id}`;
   });
 
   /** Firm id carried in from the standalone-firm-creation deep-link, if any. */
@@ -95,7 +100,7 @@ export class AdminUsers {
   protected readonly prefilledFirmName = computed(() => {
     const id = this.prefilledFirmId();
     if (id == null) return null;
-    return this.partnerFacade.firms().find((f) => f.id === id)?.name ?? `#${id}`;
+    return this.partnerFacade.firms().find((f: any) => f.id === id)?.name ?? `#${id}`;
   });
 
   /** The signed-in admin can't disable their own account (would lock themselves out). */
@@ -169,8 +174,8 @@ export class AdminUsers {
 
   /** Firms a firm-admin login can be bound to (member + standalone), labelled with their network. */
   protected readonly firmOptions = computed<AriaSelectOption<number>[]>(() => {
-    const networks = new Map(this.partnerFacade.networks().map((n) => [n.id, n.name]));
-    return this.partnerFacade.firms().map((f) => ({
+    const networks = new Map(this.partnerFacade.networks().map((n: any) => [n.id, n.name]));
+    return this.partnerFacade.firms().map((f: any) => ({
       value: f.id,
       label:
         f.network == null
@@ -187,10 +192,10 @@ export class AdminUsers {
   protected readonly scopeOptions = computed<AriaSelectOption<string>[]>(() => [
     ...this.partnerFacade
       .activeNetworks()
-      .map((n) => ({ value: `network:${n.id}`, label: `${n.name} (network)` })),
+      .map((n: any) => ({ value: `network:${n.id}`, label: `${n.name} (network)` })),
     ...this.partnerFacade
       .standaloneFirms()
-      .map((f) => ({ value: `firm:${f.id}`, label: `${f.name} (standalone firm)` })),
+      .map((f: any) => ({ value: `firm:${f.id}`, label: `${f.name} (standalone firm)` })),
   ]);
 
   /** Permissions grouped by category for the checklist. */

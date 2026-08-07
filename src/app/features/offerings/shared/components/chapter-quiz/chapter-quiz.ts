@@ -10,8 +10,6 @@ import {
 } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CourseChapter, QuizQuestion } from '../../../../../shared/core/models/course.model';
-import { ChapterFacade } from '../../services/chapter-facade/chapter-facade';
 import { Button } from '../../../../../shared/components/ui/button/button';
 
 @Component({
@@ -21,8 +19,8 @@ import { Button } from '../../../../../shared/components/ui/button/button';
   styleUrl: './chapter-quiz.css',
 })
 export class ChapterQuiz {
-  readonly questions = input.required<QuizQuestion[]>();
-  readonly current = input.required<CourseChapter>();
+  readonly questions = input.required<any[]>();
+  readonly current = input.required<any>();
   readonly chapterId = input.required<number>();
   readonly isLastChapter = input(false);
   readonly navigateNext = output<void>();
@@ -35,7 +33,21 @@ export class ChapterQuiz {
    */
   readonly lastAnswerSubmitted = output<void>();
 
-  private readonly facade = inject(ChapterFacade);
+  // ponytail: ChapterFacade was deleted with the Django strip. This placeholder
+
+  // keeps the template bindings compiling and renders the empty state.
+
+  // Swap in the new backend's service — the template needs no changes.
+
+  private readonly facade: any = {
+
+    submitQuizAnswer: (..._args: any[]): any => null,
+
+    updateChapterStatus: (..._args: any[]): any => null,
+
+    updateUserSelectedOption: (..._args: any[]): any => null,
+
+  };
 
   readonly currentQuestionIndex = signal(0);
   readonly selectedOption = signal<string | null>(null);
@@ -133,11 +145,11 @@ export class ChapterQuiz {
     this.isLoading.set(false);
   }
 
-  getOptionText(question: QuizQuestion, option: string): string {
+  getOptionText(question: any, option: string): string {
     return (question as any)[`option_${option}`] || '';
   }
 
-  getDescription(question: QuizQuestion, option: string | null): string {
+  getDescription(question: any, option: string | null): string {
     if (!option) return '';
     return (question as any)[`description_option_${option}`] || '';
   }

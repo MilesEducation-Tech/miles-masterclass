@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { ReportRow } from '../../../../../shared/core/models/cpe-tracker.model';
 import { ButtonKind, TrackerTableRow } from '../../mappers/report-to-table';
 
 export interface ButtonAction {
@@ -32,7 +31,7 @@ export class CourseActionResolver {
     return ACTION_MAP[row.actionKind] ?? ACTION_MAP.none;
   }
 
-  resolveFromReport(report: ReportRow, actionKind: ButtonKind): ButtonAction {
+  resolveFromReport(report: any, actionKind: ButtonKind): ButtonAction {
     void report;
     return ACTION_MAP[actionKind] ?? ACTION_MAP.none;
   }

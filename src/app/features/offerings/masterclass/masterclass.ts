@@ -1,7 +1,6 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { Route } from '@angular/router';
 import { environment } from '../../../../environments/environment';
-import { FeatureFacade } from '../../shared/services/feature-facade/feature-facade';
 import { Horizontal } from '../../../shared/components/cards/horizontal/horizontal';
 import { Vertical } from '../../../shared/components/cards/vertical/vertical';
 import { Carousel } from '../../../shared/components/carousel/carousel';
@@ -13,10 +12,7 @@ import {
 import { Slider } from '../../../shared/components/slider/slider';
 import { SliderSkeleton } from '../../../shared/components/skeleton/slider-skeleton/slider-skeleton';
 import { authGuard } from '../../../shared/core/guards/auth/auth-guard';
-import { ChapterFacade } from '../shared/services/chapter-facade/chapter-facade';
-import { FinalAssessmentFacade } from '../shared/services/final-assessment-facade/final-assessment-facade';
 import { canDeactivateExamGuard } from '../../../shared/core/guards/can-deactivate-exam-guard';
-import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
 import { ComingSoon } from '../../../shared/components/cards/coming-soon/coming-soon';
 import { Faq } from '../../../pages/faq/faq';
 import { PartnerContentList } from '../../partners/shared/components/partner-content-list/partner-content-list';
@@ -40,7 +36,22 @@ import { SectionNav, SectionNavItem } from '../../../shared/components/section-n
 })
 export class Masterclass {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
-  readonly feature: FeatureFacade = inject(FeatureFacade);
+  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  readonly feature: any = {
+    getResource: (..._args: any[]): any => ({
+      items: signal<any[]>([]),
+      isLoading: signal(false),
+      hasMore: signal(false),
+      error: signal(null),
+      loadNextPage: () => undefined,
+      loadNextTrackPage: () => undefined,
+      setFilters: () => undefined,
+      setTrackFilters: () => undefined,
+      webp: signal(null),
+    }),
+  };
 
   // Swiper configurations for templates
   readonly swiperConfigEven = swiperConfigEven;
@@ -146,7 +157,8 @@ export const masterclassRoutes: Route[] = [
       {
         path: 'chapter/:chapterId/:chapterTitle',
         canActivate: [authGuard],
-        providers: [ChapterFacade],
+        // ponytail: route-scoped facade providers removed with the Django strip.
+        // Re-add `providers: [YourService]` here when the new backend lands.
         data: { layout: 'plain' },
         loadComponent: () =>
           import('./shared/pages/masterclass-chapter/masterclass-chapter').then(
@@ -156,7 +168,8 @@ export const masterclassRoutes: Route[] = [
       {
         path: 'final-assessment/:sessionId/exam',
         canActivate: [authGuard],
-        providers: [FinalAssessmentFacade],
+        // ponytail: route-scoped facade providers removed with the Django strip.
+        // Re-add `providers: [YourService]` here when the new backend lands.
         canDeactivate: [canDeactivateExamGuard],
         data: { layout: 'plain' },
         loadComponent: () =>
@@ -167,7 +180,8 @@ export const masterclassRoutes: Route[] = [
       {
         path: 'final-assessment/:sessionId/report',
         canActivate: [authGuard],
-        providers: [FinalAssessmentFacade],
+        // ponytail: route-scoped facade providers removed with the Django strip.
+        // Re-add `providers: [YourService]` here when the new backend lands.
         data: { layout: 'plain' },
         loadComponent: () =>
           import('../shared/pages/final-assessment-report/final-assessment-report').then(
@@ -177,7 +191,8 @@ export const masterclassRoutes: Route[] = [
       {
         path: 'feedback',
         canActivate: [authGuard],
-        providers: [FeedbackFacade],
+        // ponytail: route-scoped facade providers removed with the Django strip.
+        // Re-add `providers: [YourService]` here when the new backend lands.
         loadComponent: () =>
           import('../shared/pages/course-feedback/course-feedback').then((m) => m.CourseFeedback),
       },

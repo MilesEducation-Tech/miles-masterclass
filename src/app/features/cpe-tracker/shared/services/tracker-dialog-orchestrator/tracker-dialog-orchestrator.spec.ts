@@ -1,12 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { BadgeItem } from '../../../../../shared/core/models/cpe-tracker.model';
 import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
 import { BadgeClaimUpsellDialog } from '../../../../../shared/components/dialog/badge-claim-upsell-dialog/badge-claim-upsell-dialog';
 import { BadgeInfoDialog } from '../../../../../shared/components/dialog/badge-info-dialog/badge-info-dialog';
 import { TrackerDialogOrchestrator } from './tracker-dialog-orchestrator';
 
-function makeBadge(overrides: Partial<BadgeItem> = {}): BadgeItem {
+function makeBadge(overrides: Partial<any> = {}): any {
   return {
     id: 1,
     name: 'CAIRA — Level 1',

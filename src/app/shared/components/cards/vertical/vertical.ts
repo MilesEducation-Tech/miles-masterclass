@@ -15,8 +15,6 @@ import { faSolidInfo, faSolidPlay, faSolidRobot } from '@ng-icons/font-awesome/s
 import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
 import { NgIcon } from '@ng-icons/core';
 import { Utils } from '../../../core/services/utils/utils';
-import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
-import { Content } from '../../../core/models/course.model';
 import { CategoriesList } from '../../categories-list/categories-list';
 import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
 
@@ -28,10 +26,15 @@ import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
 })
 export class Vertical {
   private readonly utils = inject(Utils);
-  private readonly feature = inject(FeatureFacade);
+  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly feature: any = {
+
+  };
   private readonly destroyRef = inject(DestroyRef);
 
-  card = model.required<Content>();
+  card = model.required<any>();
   type = input<'masterclass' | 'podcast' | 'micro-learning' | 'webinar'>('masterclass');
   /** When true, clicking the card emits `cardClicked` instead of routing. */
   disableNavigation = input<boolean>(false);
@@ -44,7 +47,7 @@ export class Vertical {
     () => this.card().thumbnail || this.card().horizontal_thumbnail || null,
   );
 
-  readonly cardClicked = output<Content>();
+  readonly cardClicked = output<any>();
 
   icons = signal({
     faSolidPlay,

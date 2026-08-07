@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Utils } from '../../../../../shared/core/services/utils/utils';
-import { ReportRow } from '../../../../../shared/core/models/cpe-tracker.model';
 import { getCourseId, getCourseName, getUrlSegment } from '../../utils/course.util';
 import { toSlug } from '../../utils/slug.util';
 
@@ -16,7 +15,7 @@ export class CourseRouter {
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
 
-  navigateToCourse(row: ReportRow): void {
+  navigateToCourse(row: any): void {
     const id = getCourseId(row);
     if (id === null) return;
     const segment = getUrlSegment(row);
@@ -35,11 +34,11 @@ export class CourseRouter {
    * (`getUrlSegment` already maps `'webinar'` correctly, and `'premiere'`
    * upstream is normalized to `'webinar'` in `api-adapters`).
    */
-  navigateToRegistered(row: ReportRow): void {
+  navigateToRegistered(row: any): void {
     this.navigateToCourse(row);
   }
 
-  navigateToResume(row: ReportRow): void {
+  navigateToResume(row: any): void {
     this.navigateToCourse(row);
   }
 
@@ -49,11 +48,11 @@ export class CourseRouter {
    * (e.g. completed exam in upcoming mode, no feedback object in completed
    * mode).
    */
-  navigateToCourseDetail(row: ReportRow): void {
+  navigateToCourseDetail(row: any): void {
     this.navigateToCourse(row);
   }
 
-  navigateToFeedback(row: ReportRow): void {
+  navigateToFeedback(row: any): void {
     const id = getCourseId(row);
     if (id === null) return;
     const segment = getUrlSegment(row);
@@ -79,7 +78,7 @@ export class CourseRouter {
    * - Webinar rows have no exam path; we fall back to the course detail page
    *   so the CTA stays well-behaved if it's ever reached for a webinar.
    */
-  navigateToExam(row: ReportRow): void {
+  navigateToExam(row: any): void {
     const id = getCourseId(row);
     if (id === null) {
       this.navigateToCourse(row);

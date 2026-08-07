@@ -2,10 +2,6 @@ import { DecimalPipe } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideDownload } from '@ng-icons/lucide';
-import {
-  CreditsSummary,
-  StudyModeFilter,
-} from '../../../../../shared/core/models/cpe-tracker.model';
 import { Button } from '../../../../../shared/components/ui/button/button';
 
 @Component({
@@ -19,16 +15,16 @@ import { Button } from '../../../../../shared/components/ui/button/button';
 export class TrackerToolbar {
   readonly selectedYear = input.required<number>();
   readonly yearOptions = input.required<number[]>();
-  readonly credits = input<CreditsSummary | null>(null);
-  readonly studyFilter = input.required<StudyModeFilter>();
+  readonly credits = input<any | null>(null);
+  readonly studyFilter = input.required<any>();
 
   readonly yearChange = output<number>();
-  readonly studyFilterChange = output<StudyModeFilter>();
+  readonly studyFilterChange = output<any>();
   readonly openCompliance = output<void>();
   readonly downloadNasba = output<void>();
   readonly downloadAll = output<void>();
 
-  protected readonly studyFilterOptions: StudyModeFilter[] = [
+  protected readonly studyFilterOptions: any[] = [
     'All',
     'Accounting',
     'Ethics',
@@ -40,6 +36,6 @@ export class TrackerToolbar {
   }
 
   protected onStudyFilter(event: Event): void {
-    this.studyFilterChange.emit((event.target as HTMLSelectElement).value as StudyModeFilter);
+    this.studyFilterChange.emit((event.target as HTMLSelectElement).value as any);
   }
 }

@@ -1,10 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, map, of, tap } from 'rxjs';
-import { ApiClient } from '../api-client/api-client';
+import { Observable, catchError, map, of, tap, EMPTY } from 'rxjs';
 import { Auth } from '../auth/auth';
 import { Logger } from '../logger/logger';
 import { NotificationService } from '../notification/notification';
-import { PROFILE_ROUTES } from '../../models/profile.model';
 
 /**
  * Centralises the "apply a partner code" flow used in:
@@ -18,7 +16,12 @@ import { PROFILE_ROUTES } from '../../models/profile.model';
   providedIn: 'root',
 })
 export class PartnerCode {
-  private readonly http = inject(ApiClient);
+  // ponytail: ApiClient was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly http: any = {
+    post: (..._args: any[]): any => EMPTY,
+  };
   private readonly auth = inject(Auth);
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
@@ -37,7 +40,7 @@ export class PartnerCode {
     if (!partner_code) return of(false);
 
     this.loading.set(true);
-    return this.http.post(PROFILE_ROUTES.applyPartnerCode.path, { partner_code }).pipe(
+    return this.http.post('', { partner_code }) /* ponytail: applyPartnerCode endpoint removed with the backend */.pipe(
       tap(() => {
         this.auth.fetchMyProfile();
         this.notification.success('Partner Code', 'Partner code applied successfully');

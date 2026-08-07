@@ -22,11 +22,8 @@ import {
   WebinarClaimCard,
   WebinarClaimState,
 } from './shared/components/webinar-claim-card/webinar-claim-card';
-import { WebinarFacade } from './shared/services/webinar-facade/webinar-facade';
-import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
 import { upcomingToContent } from './shared/utils/upcoming-to-content';
 import { Faq } from '../../../pages/faq/faq';
-import { UpcomingPremiere } from '../../../shared/core/models/feature.model';
 
 /**
  * Default timezone for every `DatePipe` rendered under the webinar feature.
@@ -42,7 +39,23 @@ import { UpcomingPremiere } from '../../../shared/core/models/feature.model';
   styleUrl: './webinar.css',
 })
 export class Webinar {
-  protected readonly facade = inject(WebinarFacade);
+  // ponytail: WebinarFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  protected readonly facade: any = {
+    absent: signal<any[]>([]),
+    attended: signal<any[]>([]),
+    liveOrNextUp: signal<any>(null),
+    loadHomePage: signal<any>(null),
+    loading: signal<any>(null),
+    loadMoreAbsent: signal<any>(null),
+    loadMoreAttended: signal<any>(null),
+    loadMoreFeatured: signal<any>(null),
+    loadMoreMissed: signal<any>(null),
+    missed: signal<any[]>([]),
+    openCertificateDownloadDialog: (..._args: any[]): any => null,
+    upcomingList: signal<any[]>([]),
+  };
   private readonly utils = inject(Utils);
 
   protected readonly swiperConfigEven = swiperConfigEven;
@@ -79,7 +92,7 @@ export class Webinar {
    * Returns `null` when nothing qualifies or the user dismissed the card.
    */
   protected readonly claimCard = computed<{
-    webinar: UpcomingPremiere;
+    webinar: any;
     state: WebinarClaimState;
   } | null>(() => {
     if (this.claimDismissed()) return null;
@@ -120,7 +133,7 @@ export class Webinar {
     });
   }
 
-  protected onClaimPrimary(webinar: UpcomingPremiere, state: WebinarClaimState): void {
+  protected onClaimPrimary(webinar: any, state: WebinarClaimState): void {
     if (state === 'feedback') {
       // Build the absolute feedback URL — `WebinarFacade.submitFeedback` only
       // works from the detail route (`/webinar/:id/:title`) because it appends
@@ -141,7 +154,8 @@ export const webinarRoutes: Route[] = [
   {
     path: '',
     component: Webinar,
-    providers: [WebinarFacade],
+    // ponytail: route-scoped facade providers removed with the Django strip.
+    // Re-add `providers: [YourService]` here when the new backend lands.
   },
   {
     path: ':courseId/:courseTitle',
@@ -158,7 +172,8 @@ export const webinarRoutes: Route[] = [
         // webinar variant of the backend.
         path: 'feedback',
         canActivate: [authGuard],
-        providers: [FeedbackFacade],
+        // ponytail: route-scoped facade providers removed with the Django strip.
+        // Re-add `providers: [YourService]` here when the new backend lands.
         loadComponent: () =>
           import('../shared/pages/course-feedback/course-feedback').then((m) => m.CourseFeedback),
       },

@@ -1,4 +1,3 @@
-import { Content, ContentDetails } from '../../core/models/course.model';
 import { COURSE_BRAND_NAMES } from '../../core/models/seo.constants';
 import { SeoConfig } from '../../core/models/seo.models';
 
@@ -11,12 +10,12 @@ const TITLE_SUFFIX: Record<CourseSeoKind, string> = {
 };
 
 /**
- * Source of fallback SEO data — masterclass/podcast pages pass `ContentDetails`,
- * micro-learning passes `MicroLearningReel` (which extends `Content`). Both
- * carry the fields we use here, with `course_overview` only on `ContentDetails`
+ * Source of fallback SEO data — masterclass/podcast pages pass `any`,
+ * micro-learning passes `MicroLearningReel` (which extends `any`). Both
+ * carry the fields we use here, with `course_overview` only on `any`
  * and `trailer_link` optional on both.
  */
-export type CourseSeoSource = ContentDetails | (Content & { trailer_link?: string | null });
+export type CourseSeoSource = any | (any & { trailer_link?: string | null });
 
 /**
  * Build a fallback `SeoConfig` from a populated course/reel record. Used by the

@@ -1,7 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideLinkedin, lucideLock } from '@ng-icons/lucide';
-import { BadgeItem } from '../../../core/models/cpe-tracker.model';
 import { Button } from '../../ui/button/button';
 import {
   badgeHaloHex,
@@ -29,11 +28,11 @@ export type BadgeState = 'coming_soon' | 'claimable' | 'claimed' | 'unlocked' | 
   host: { class: 'block w-full' },
 })
 export class BadgeHeroCard {
-  readonly badge = input.required<BadgeItem>();
+  readonly badge = input.required<any>();
   readonly layout = input<BadgeHeroLayout>('hero');
 
-  readonly claim = output<BadgeItem>();
-  readonly share = output<BadgeItem>();
+  readonly claim = output<any>();
+  readonly share = output<any>();
 
   protected readonly state = computed<BadgeState>(() => {
     const b = this.badge();

@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { CurrentPlanData } from '../../../../../shared/core/models/auth.model';
 
 export type AccessDecision = 'allow' | 'upsellTrial' | 'claimPrompt';
 
@@ -11,7 +10,7 @@ export type AccessDecision = 'allow' | 'upsellTrial' | 'claimPrompt';
   providedIn: 'root',
 })
 export class CertificateAccessPolicy {
-  decide(plan: CurrentPlanData | null): AccessDecision {
+  decide(plan: any | null): AccessDecision {
     if (!plan) return 'upsellTrial';
     if (plan.subscription_status.toLocaleLowerCase() !== 'active') return 'upsellTrial';
 
@@ -21,7 +20,7 @@ export class CertificateAccessPolicy {
     // return 'claimPrompt';
   }
 
-  decideBulk(plan: CurrentPlanData | null): AccessDecision {
+  decideBulk(plan: any | null): AccessDecision {
     if (!plan) return 'upsellTrial';
     if (plan.trial_duration && plan.trial_duration > 0) return 'upsellTrial';
     if (plan.subscription_status.toLocaleLowerCase() !== 'active') return 'upsellTrial';

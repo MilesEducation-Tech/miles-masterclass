@@ -1,4 +1,4 @@
-import { Component, DestroyRef, effect, inject, input } from '@angular/core';
+import { Component, DestroyRef, effect, inject, input, signal } from '@angular/core';
 import { CourseAbout } from '../../../../../../shared/components/course-about/course-about';
 import { CourseRelatedSection } from '../../../../../../shared/components/course-related-section/course-related-section';
 import { CourseChapterList } from '../../../../shared/components/course-chapter-list/course-chapter-list';
@@ -11,7 +11,6 @@ import { setupCourseSeo } from '../../../../../../shared/utils/seo/course-seo-se
 // NOTE: Podcast detail currently shares MasterclassFacade with the masterclass
 // page. That cross-feature reuse is pre-existing — see code-review notes; out
 // of scope for this SEO pass.
-import { MasterclassFacade } from '../../../../shared/services/masterclass-facade/masterclass-facade';
 import { PodcastCourseHero } from '../../components/podcast-course-hero/podcast-course-hero';
 
 @Component({
@@ -32,7 +31,23 @@ export class PodcastCourse {
   readonly courseId = input<string>();
   readonly courseTitle = input<string>();
 
-  protected readonly masterclassService = inject(MasterclassFacade);
+  // ponytail: MasterclassFacade was deleted with the Django strip. This placeholder
+
+  // keeps the template bindings compiling and renders the empty state.
+
+  // Swap in the new backend's service — the template needs no changes.
+
+  protected readonly masterclassService: any = {
+
+    clear: signal<any>(null),
+
+    courseChapters: signal<any[]>([]),
+
+    courseDetails: signal<any[]>([]),
+
+    loadCourse: (..._args: any[]): any => null,
+
+  };
   private readonly auth = inject(Auth);
 
   constructor() {

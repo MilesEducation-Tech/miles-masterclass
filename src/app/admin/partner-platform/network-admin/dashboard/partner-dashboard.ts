@@ -1,8 +1,6 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
 import { StatCard } from '../../shared/components/stat-card/stat-card';
-import { PartnerAdminMe } from '../../shared/services/partner-admin-me';
-import { PartnerNetworkFacade } from '../../shared/services/partner-network-facade';
 
 /**
  * Network-admin dashboard (`/admin/partner/dashboard`). Renders the seat +
@@ -16,8 +14,23 @@ import { PartnerNetworkFacade } from '../../shared/services/partner-network-faca
   host: { class: 'block w-full' },
 })
 export class PartnerDashboard {
-  protected readonly facade = inject(PartnerNetworkFacade);
-  protected readonly me = inject(PartnerAdminMe);
+  // ponytail: PartnerNetworkFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  protected readonly facade: any = {
+    dashboard: signal<any>(null),
+    dashboardError: signal<any>(null),
+    dashboardLoading: signal<any>(null),
+  };
+  // ponytail: PartnerAdminMe was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  protected readonly me: any = {
+    firm: signal<any>(null),
+    isLoading: signal<any>(null),
+    isPartnerAdmin: signal<any>(null),
+    network: signal<any>(null),
+  };
 
   /** Header title: the network name for a network admin, the firm name for a firm admin. */
   protected readonly title = computed(

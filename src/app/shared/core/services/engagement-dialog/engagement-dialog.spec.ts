@@ -6,12 +6,10 @@ import { EngagementDialog } from './engagement-dialog';
 import { Auth } from '../auth/auth';
 import { Dialog } from '../dialog/dialog';
 import { Storage } from '../storage/storage';
-import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
-import { CurrentPlanData, User } from '../../models/auth.model';
 
 interface AuthStub {
-  currentUser: ReturnType<typeof signal<User | null>>;
-  currentPlan: ReturnType<typeof signal<CurrentPlanData | null>>;
+  currentUser: ReturnType<typeof signal<any | null>>;
+  currentPlan: ReturnType<typeof signal<any | null>>;
   isAuthenticated: ReturnType<typeof signal<boolean>>;
 }
 
@@ -22,29 +20,29 @@ interface StorageStub {
   removeSession: ReturnType<typeof vi.fn>;
 }
 
-const userWithoutSector = (): User =>
+const userWithoutSector = (): any =>
   ({
     id: 1,
     sector: null,
     job_role: null,
     is_existing_user: true,
     email: 'a@b.com',
-  }) as unknown as User;
+  }) as unknown as any;
 
-const userWithFullProfile = (): User =>
+const userWithFullProfile = (): any =>
   ({
     id: 1,
     sector: 'Industry',
     job_role: 'FP&A',
     is_existing_user: true,
     email: 'a@b.com',
-  }) as unknown as User;
+  }) as unknown as any;
 
-const activePlan = (): CurrentPlanData =>
-  ({ id: 1, subscription_status: 'active' }) as unknown as CurrentPlanData;
+const activePlan = (): any =>
+  ({ id: 1, subscription_status: 'active' }) as unknown as any;
 
-const inactivePlan = (): CurrentPlanData =>
-  ({ id: 1, subscription_status: 'Expired' }) as unknown as CurrentPlanData;
+const inactivePlan = (): any =>
+  ({ id: 1, subscription_status: 'Expired' }) as unknown as any;
 
 describe('EngagementDialog', () => {
   let service: EngagementDialog;
@@ -54,8 +52,8 @@ describe('EngagementDialog', () => {
 
   beforeEach(() => {
     auth = {
-      currentUser: signal<User | null>(null),
-      currentPlan: signal<CurrentPlanData | null>(null),
+      currentUser: signal<any | null>(null),
+      currentPlan: signal<any | null>(null),
       isAuthenticated: signal(false),
     };
 
@@ -82,7 +80,6 @@ describe('EngagementDialog', () => {
         { provide: Auth, useValue: auth },
         { provide: Storage, useValue: storage },
         { provide: Dialog, useValue: { open: vi.fn(), getOpenDialogCount: () => 0 } },
-        { provide: FeatureFacade, useValue: { refreshPersonalized: vi.fn() } },
         { provide: Router, useValue: router },
       ],
     });

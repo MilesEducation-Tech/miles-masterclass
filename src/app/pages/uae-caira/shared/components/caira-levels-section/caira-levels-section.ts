@@ -1,9 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, signal } from '@angular/core';
 
 import { Carousel } from '../../../../../shared/components/carousel/carousel';
 import { Horizontal } from '../../../../../shared/components/cards/horizontal/horizontal';
 import { swiperConfigEven } from '../../../../../shared/core/config/swiper.config';
-import { UaeCairaFacade } from '../../services/uae-caira-facade/uae-caira-facade';
 
 /**
  * "CAIRA Levels 1/2/3" section. Renders one `app-carousel` per CAIRA level,
@@ -18,6 +17,11 @@ import { UaeCairaFacade } from '../../services/uae-caira-facade/uae-caira-facade
   styleUrl: './caira-levels-section.css',
 })
 export class CairaLevelsSection {
-  protected readonly facade = inject(UaeCairaFacade);
+  // ponytail: UaeCairaFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  protected readonly facade: any = {
+    levels: signal<any[]>([]),
+  };
   protected readonly swiperConfigEven = swiperConfigEven;
 }

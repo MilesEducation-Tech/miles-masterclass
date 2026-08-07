@@ -6,17 +6,12 @@ import { Forms } from '../../../../../../../shared/components/ui/forms/forms';
 import { AriaInput } from '../../../../../../../shared/components/ui/aria/aria-input/aria-input';
 import { AriaSelect } from '../../../../../../../shared/components/ui/aria/aria-select/aria-select';
 import { AriaSelectOption } from '../../../../../../../shared/core/models/aria.model';
-import {
-  CreatePartnerCodeRequest,
-  Network,
-  SuperFirm,
-} from '../../../../../shared/models/partner-platform.model';
 
 export interface CreatePartnerCodeDialogData {
   /** Active networks the code can be scoped to. */
-  networks: Network[];
+  networks: any[];
   /** Active firms the code can be scoped to (member or standalone). */
-  firms: SuperFirm[];
+  firms: any[];
 }
 
 /**
@@ -45,7 +40,7 @@ interface PartnerCodeFormModel {
   templateUrl: './create-partner-code-dialog.html',
 })
 export class CreatePartnerCodeDialog implements OnInit {
-  dialogRef!: DialogRef<CreatePartnerCodeDialog, CreatePartnerCodeRequest | undefined>;
+  dialogRef!: DialogRef<CreatePartnerCodeDialog, any | undefined>;
   data!: CreatePartnerCodeDialogData;
 
   protected readonly scopeOptions = signal<AriaSelectOption<ScopeValue>[]>([]);
@@ -90,7 +85,7 @@ export class CreatePartnerCodeDialog implements OnInit {
     if (this.form().invalid()) return;
     const v = this.model();
     const [kind, id] = v.scope.split(':');
-    const payload: CreatePartnerCodeRequest = {
+    const payload: any = {
       code: v.code.trim(),
       discounted_price: Number(v.discounted_price),
       // Network OR firm, never both; neither = global.

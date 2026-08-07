@@ -1,5 +1,4 @@
-import { FeatureFacade } from './../../shared/services/feature-facade/feature-facade';
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { Route } from '@angular/router';
 import { Carousel } from '../../../shared/components/carousel/carousel';
 import { environment } from '../../../../environments/environment';
@@ -12,9 +11,6 @@ import { PodcastHero } from './shared/components/podcast-hero/podcast-hero';
 import { ComingSoon } from '../../../shared/components/cards/coming-soon/coming-soon';
 import { authGuard } from '../../../shared/core/guards/auth/auth-guard';
 import { canDeactivateExamGuard } from '../../../shared/core/guards/can-deactivate-exam-guard';
-import { FinalAssessmentFacade } from '../shared/services/final-assessment-facade/final-assessment-facade';
-import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
-import { ChapterFacade } from '../shared/services/chapter-facade/chapter-facade';
 import { Faq } from '../../../pages/faq/faq';
 import { PartnerContentList } from '../../partners/shared/components/partner-content-list/partner-content-list';
 
@@ -29,7 +25,22 @@ import { PartnerContentList } from '../../partners/shared/components/partner-con
 })
 export class Podcast {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
-  readonly feature: FeatureFacade = inject(FeatureFacade);
+  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  readonly feature: any = {
+    getResource: (..._args: any[]): any => ({
+      items: signal<any[]>([]),
+      isLoading: signal(false),
+      hasMore: signal(false),
+      error: signal(null),
+      loadNextPage: () => undefined,
+      loadNextTrackPage: () => undefined,
+      setFilters: () => undefined,
+      setTrackFilters: () => undefined,
+      webp: signal(null),
+    }),
+  };
 
   // Swiper configurations for templates
   readonly swiperConfigPodcast = swiperConfigPodcast;
@@ -87,7 +98,8 @@ export const podcastRoutes: Route[] = [
       {
         path: 'chapter/:chapterId/:chapterTitle',
         canActivate: [authGuard],
-        providers: [ChapterFacade],
+        // ponytail: route-scoped facade providers removed with the Django strip.
+        // Re-add `providers: [YourService]` here when the new backend lands.
         data: { layout: 'plain' },
         loadComponent: () =>
           import('./shared/pages/podcast-chapter/podcast-chapter').then((m) => m.PodcastChapter),
@@ -95,7 +107,8 @@ export const podcastRoutes: Route[] = [
       {
         path: 'final-assessment/:sessionId/exam',
         canActivate: [authGuard],
-        providers: [FinalAssessmentFacade],
+        // ponytail: route-scoped facade providers removed with the Django strip.
+        // Re-add `providers: [YourService]` here when the new backend lands.
         canDeactivate: [canDeactivateExamGuard],
         data: { layout: 'plain' },
         loadComponent: () =>
@@ -106,7 +119,8 @@ export const podcastRoutes: Route[] = [
       {
         path: 'final-assessment/:sessionId/report',
         canActivate: [authGuard],
-        providers: [FinalAssessmentFacade],
+        // ponytail: route-scoped facade providers removed with the Django strip.
+        // Re-add `providers: [YourService]` here when the new backend lands.
         data: { layout: 'plain' },
         loadComponent: () =>
           import('../shared/pages/final-assessment-report/final-assessment-report').then(
@@ -116,7 +130,8 @@ export const podcastRoutes: Route[] = [
       {
         path: 'feedback',
         canActivate: [authGuard],
-        providers: [FeedbackFacade],
+        // ponytail: route-scoped facade providers removed with the Django strip.
+        // Re-add `providers: [YourService]` here when the new backend lands.
         loadComponent: () =>
           import('../shared/pages/course-feedback/course-feedback').then((m) => m.CourseFeedback),
       },

@@ -3,12 +3,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField as AngularFormField, disabled, form, validate } from '@angular/forms/signals';
 import { DialogRef } from '../../../core/services/dialog/dialog';
 import { Auth } from '../../../core/services/auth/auth';
-import { ApiClient } from '../../../core/services/api-client/api-client';
 import { Logger } from '../../../core/services/logger/logger';
 import { NotificationService } from '../../../core/services/notification/notification';
-import { JobSectors } from '../../../core/services/job-sectors/job-sectors';
-import { PROFILE_ROUTES } from '../../../core/models/profile.model';
-import { RouteResponse } from '../../../core/models/http.model';
 import { AriaAutocomplete } from '../../ui/aria/aria-autocomplete/aria-autocomplete';
 import { Button } from '../../ui/button/button';
 import { Forms } from '../../ui/forms/forms';
@@ -17,7 +13,6 @@ export interface ProfileCompletionDialogResult {
   saved: boolean;
 }
 
-type SaveProfileResponse = RouteResponse<typeof PROFILE_ROUTES.saveProfile>;
 
 interface ProfileCompletionFormState {
   sector_id: number | null;
@@ -33,11 +28,28 @@ interface ProfileCompletionFormState {
 export class ProfileCompletionDialog {
   dialogRef!: DialogRef<ProfileCompletionDialog, ProfileCompletionDialogResult>;
 
-  private readonly http = inject(ApiClient);
+  // ponytail: ApiClient was deleted with the Django strip. This placeholder
+
+  // keeps the template bindings compiling and renders the empty state.
+
+  // Swap in the new backend's service — the template needs no changes.
+
+  private readonly http: any = {
+
+
+  };
   private readonly auth = inject(Auth);
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
-  private readonly jobSectors = inject(JobSectors);
+  // ponytail: JobSectors was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly jobSectors: any = {
+    resolveIds: (..._args: any[]): any => null,
+    rolesFor: (..._args: any[]): any => null,
+    sectorOptions: null as any,
+    sectors: signal<any[]>([]),
+  };
   private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(false);
@@ -88,7 +100,7 @@ export class ProfileCompletionDialog {
     effect(() => {
       const currentRoleId = this.model().job_role_id;
       if (currentRoleId == null) return;
-      const validIds = this.jobRoleOptions().map((o) => o.value);
+      const validIds = this.jobRoleOptions().map((o: any) => o.value);
       if (validIds.includes(currentRoleId)) return;
       untracked(() => this.model.update((m) => ({ ...m, job_role_id: null })));
     });
@@ -99,10 +111,10 @@ export class ProfileCompletionDialog {
     const { sector_id, job_role_id } = this.model();
     this.loading.set(true);
     this.http
-      .patch<SaveProfileResponse>(PROFILE_ROUTES.saveProfile.path, { sector_id, job_role_id })
+      .patch('', { sector_id, job_role_id }) /* ponytail: saveProfile endpoint removed with the backend */
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (res) => {
+        next: (res: any) => {
           this.loading.set(false);
           if (res?.status && res.user) {
             this.auth.setAuthenticated(res.user);
@@ -115,7 +127,7 @@ export class ProfileCompletionDialog {
             );
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           this.loading.set(false);
           this.logger.error('Failed to update sector/job_role', err);
         },

@@ -1,7 +1,6 @@
 import { reportToTable } from './report-to-table';
-import { CreditMode, ReportRow } from '../../../../shared/core/models/cpe-tracker.model';
 
-function row(overrides: Partial<ReportRow>): ReportRow {
+function row(overrides: any): any {
   return {
     id: overrides.id ?? 1,
     master_class: 1,
@@ -23,7 +22,7 @@ function row(overrides: Partial<ReportRow>): ReportRow {
   };
 }
 
-function pick(r: ReportRow, mode: CreditMode) {
+function pick(r: any, mode: any) {
   return reportToTable([r], [], 'All', mode)[0];
 }
 

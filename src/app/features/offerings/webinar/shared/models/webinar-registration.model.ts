@@ -1,4 +1,3 @@
-import { LmsUserType } from '../../../../../shared/core/models/auth.model';
 
 /**
  * Pre-login webinar registration API contracts.
@@ -77,7 +76,7 @@ export type WebinarRegistrationResult =
  */
 export interface WebinarRegistrationAccessBlocked {
   is_lms_access_blocked: boolean;
-  lms_user_type: LmsUserType | null;
+  lms_user_type: any | null;
 }
 
 export interface WebinarRegistrationResponse {

@@ -1,8 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BadgeItem } from '../../../../../shared/core/models/cpe-tracker.model';
 import { BadgeSwiper } from './badge-swiper';
 
-function makeBadge(overrides: Partial<BadgeItem> = {}): BadgeItem {
+function makeBadge(overrides: Partial<any> = {}): any {
   return {
     id: 1,
     name: 'CAIRA — Level 1',

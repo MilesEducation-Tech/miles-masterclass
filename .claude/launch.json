@@ -1,11 +1,12 @@
 {
   "version": "0.0.1",
+  "autoPort": true,
   "configurations": [
     {
       "name": "dev",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["ng", "serve", "--port", "4100", "--configuration", "local"],
-      "port": 4100
+      "runtimeArgs": ["ng", "serve", "--configuration", "local"],
+      "port": 4200
     }
   ]
 }

@@ -1,12 +1,10 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, DestroyRef, computed, inject } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take } from 'rxjs';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
 import { Dialog } from '../../../../shared/core/services/dialog/dialog';
-import { PartnerSuperAdminFacade } from '../../shared/services/partner-superadmin-facade';
-import { CreatePartnerCodeRequest, PartnerCode } from '../../shared/models/partner-platform.model';
 import {
   CreatePartnerCodeDialog,
   CreatePartnerCodeDialogData,
@@ -24,19 +22,30 @@ import {
   host: { class: 'block w-full' },
 })
 export class PartnerCodes {
-  protected readonly facade = inject(PartnerSuperAdminFacade);
+  // ponytail: PartnerSuperAdminFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  protected readonly facade: any = {
+    activeNetworks: signal<any[]>([]),
+    createPartnerCode: (..._args: any[]): any => null,
+    firms: signal<any[]>([]),
+    networks: signal<any[]>([]),
+    partnerCodes: signal<any[]>([]),
+    partnerCodesError: signal<any>(null),
+    partnerCodesLoading: signal<any>(null),
+  };
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);
 
   /** id → name lookups for the "Assigned to" column. */
   private readonly networkNames = computed(
-    () => new Map(this.facade.networks().map((n) => [n.id, n.name])),
+    () => new Map(this.facade.networks().map((n: any) => [n.id, n.name])),
   );
   private readonly firmNames = computed(
-    () => new Map(this.facade.firms().map((f) => [f.id, f.name])),
+    () => new Map(this.facade.firms().map((f: any) => [f.id, f.name])),
   );
 
-  protected assignedLabel(code: PartnerCode): string {
+  protected assignedLabel(code: any): string {
     if (code.partner_network != null) {
       return `Network — ${this.networkNames().get(code.partner_network) ?? `#${code.partner_network}`}`;
     }
@@ -47,12 +56,12 @@ export class PartnerCodes {
   }
 
   protected openCreate(): void {
-    const ref = this.dialog.open<CreatePartnerCodeDialog, CreatePartnerCodeRequest | undefined>(
+    const ref = this.dialog.open<CreatePartnerCodeDialog, any | undefined>(
       CreatePartnerCodeDialog,
       {
         data: {
           networks: this.facade.activeNetworks(),
-          firms: this.facade.firms().filter((f) => f.is_active),
+          firms: this.facade.firms().filter((f: any) => f.is_active),
         } satisfies CreatePartnerCodeDialogData,
         maxWidth: '520px',
         ariaLabel: 'Create partner code',

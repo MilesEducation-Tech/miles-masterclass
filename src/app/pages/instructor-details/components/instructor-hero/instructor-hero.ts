@@ -2,7 +2,6 @@ import { NgOptimizedImage } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { svglFacebook, svglInstagram, svglLinkedin, svglYoutube } from '@ng-icons/svgl';
-import { InstructorListItem } from '../../../../shared/core/models/library.model';
 
 @Component({
   selector: 'app-instructor-hero',
@@ -11,7 +10,7 @@ import { InstructorListItem } from '../../../../shared/core/models/library.model
   viewProviders: [provideIcons({ svglLinkedin, svglFacebook, svglInstagram, svglYoutube })],
 })
 export class InstructorHero {
-  readonly instructor = input.required<InstructorListItem>();
+  readonly instructor = input.required<any>();
 
   readonly fullName = computed(() => {
     const i = this.instructor();

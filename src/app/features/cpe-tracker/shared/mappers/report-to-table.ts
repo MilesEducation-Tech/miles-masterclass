@@ -1,11 +1,4 @@
 import {
-  CreditMode,
-  FieldOfStudyCredit,
-  ReportRow,
-  StudyModeBreakdown,
-  StudyModeFilter,
-} from '../../../../shared/core/models/cpe-tracker.model';
-import {
   getCourseId,
   getCourseName,
   getDeliveryMethod,
@@ -26,14 +19,14 @@ export interface TrackerTableRow {
   key: string;
   id: number | null;
   courseName: string;
-  fieldsOfStudy: FieldOfStudyCredit[];
+  fieldsOfStudy: any[];
   deliveryMethod: string;
   totalCredits: number;
   completedAt: string | null;
   registeredAt: string | null;
   cairaLevel: number | null;
   actionKind: ButtonKind;
-  raw: ReportRow;
+  raw: any;
 }
 
 /**
@@ -48,7 +41,7 @@ export interface TrackerTableRow {
  * the row to `Retake` once a retake is allowed, so a lingering `Exam_Failed`
  * means no retake path is available from here.
  */
-function pickUpcomingAction(row: ReportRow): ButtonKind {
+function pickUpcomingAction(row: any): ButtonKind {
   if (row.transaction_type === 'webinar') {
     return row.attendance_status === 'Present' ? 'view-details' : 'registered';
   }
@@ -67,17 +60,17 @@ function pickUpcomingAction(row: ReportRow): ButtonKind {
  *   feedback submitted → Download (per-row certificate)
  *   anything else (no feedback object on the row) → View Details
  */
-function pickCompletedAction(row: ReportRow): ButtonKind {
+function pickCompletedAction(row: any): ButtonKind {
   const feedback = row.user_feedback_details;
   if (!feedback) return 'view-details';
   return feedback.user_feedback_submitted ? 'download' : 'feedback';
 }
 
-function pickAction(row: ReportRow, mode: CreditMode): ButtonKind {
+function pickAction(row: any, mode: any): ButtonKind {
   return mode === 'upcoming' ? pickUpcomingAction(row) : pickCompletedAction(row);
 }
 
-function matchesStudyFilter(fields: FieldOfStudyCredit[], filter: StudyModeFilter): boolean {
+function matchesStudyFilter(fields: any[], filter: any): boolean {
   if (filter === 'All') return true;
   const lower = fields.map((f) => f.name.toLowerCase());
   if (filter === 'Accounting') return lower.some((n) => n.includes('account'));
@@ -87,10 +80,10 @@ function matchesStudyFilter(fields: FieldOfStudyCredit[], filter: StudyModeFilte
 
 /** Pure transform: report rows + active filter + credit mode → table rows. */
 export function reportToTable(
-  rows: ReportRow[],
-  _studyModes: StudyModeBreakdown[],
-  filter: StudyModeFilter,
-  mode: CreditMode,
+  rows: any[],
+  _studyModes: any[],
+  filter: any,
+  mode: any,
 ): TrackerTableRow[] {
   return rows
     .filter((row) => matchesStudyFilter(row.field_of_study, filter))

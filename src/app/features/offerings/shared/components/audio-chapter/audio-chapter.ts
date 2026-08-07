@@ -1,9 +1,4 @@
 import {
-  CourseChapter,
-  ChapterWiseDetails,
-  UserAssessmentDetails,
-} from '../../../../../shared/core/models/course.model';
-import {
   Component,
   computed,
   input,
@@ -42,13 +37,13 @@ import { faClipboard } from '@ng-icons/font-awesome/regular';
 })
 export class AudioChapter {
   // --- Inputs ---
-  readonly current = model<CourseChapter | null>(null);
-  readonly previous = input<CourseChapter | null>(null);
-  readonly next = input<CourseChapter | null>(null);
+  readonly current = model<any | null>(null);
+  readonly previous = input<any | null>(null);
+  readonly next = input<any | null>(null);
   readonly cpeMode = input(false);
   readonly chapterIndex = input(0);
-  readonly chapterWiseDetails = input<ChapterWiseDetails | undefined>(undefined);
-  readonly userAssessmentDetails = input<UserAssessmentDetails | undefined>(undefined);
+  readonly chapterWiseDetails = input<any | undefined>(undefined);
+  readonly userAssessmentDetails = input<any | undefined>(undefined);
 
   // --- Outputs ---
   readonly navigate = output<number>();
@@ -144,7 +139,7 @@ export class AudioChapter {
             this.cpeMode() &&
             chapter.play_history?.is_completed &&
             chapter.quiz_details?.questions?.length &&
-            !chapter.quiz_details.questions.every((q) => q.user_selected_option)
+            !chapter.quiz_details.questions.every((q: any) => q.user_selected_option)
           ) {
             this.previewMode.set('quiz');
           } else {
@@ -245,7 +240,7 @@ export class AudioChapter {
     if (
       this.cpeMode() &&
       chapter?.quiz_details?.questions?.length &&
-      !chapter.quiz_details.questions.every((q) => q.user_selected_option)
+      !chapter.quiz_details.questions.every((q: any) => q.user_selected_option)
     ) {
       this.previewMode.set('quiz');
     } else if (!this.cpeMode()) {

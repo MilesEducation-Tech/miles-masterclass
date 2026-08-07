@@ -2,12 +2,10 @@ import { Component, DestroyRef, inject, input, model, signal } from '@angular/co
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Utils } from '../../../core/services/utils/utils';
 import { RecordDisk } from '../../record-disk/record-disk';
-import { Content } from '../../../core/models/course.model';
 import { Button } from '../../ui/button/button';
 import { NgIconComponent } from '@ng-icons/core';
 import { faSolidPlay, faSolidInfo, faSolidRobot } from '@ng-icons/font-awesome/solid';
 import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
-import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
 import { Logger } from '../../../core/services/logger/logger';
 import { CategoriesList } from '../../categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../../core/pipes/total-cpe-credits/total-cpe-credits.pipe';
@@ -31,11 +29,16 @@ import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
 })
 export class Hover {
   private readonly utils = inject(Utils);
-  private readonly feature = inject(FeatureFacade);
+  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly feature: any = {
+    getAbout: (..._args: any[]): any => null,
+  };
   private readonly logger = inject(Logger);
   private readonly destroyRef = inject(DestroyRef);
 
-  card = model.required<Content>();
+  card = model.required<any>();
   type = input<'masterclass' | 'podcast' | 'micro-learning'>('masterclass');
 
   isHovering = signal(false);

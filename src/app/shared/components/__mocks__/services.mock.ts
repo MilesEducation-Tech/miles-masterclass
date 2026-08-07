@@ -1,4 +1,3 @@
-import { of } from 'rxjs';
 
 export class MockUtils {
   navigateTo() {}
@@ -6,12 +5,6 @@ export class MockUtils {
   openVideoDialog() {}
   slugify(text: string) {
     return text.toLowerCase().replace(/\s+/g, '-');
-  }
-}
-
-export class MockFeatureFacade {
-  getAbout(id: number) {
-    return of(null);
   }
 }
 

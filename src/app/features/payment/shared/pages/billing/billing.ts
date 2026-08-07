@@ -7,7 +7,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { PaymentFacade } from '../../service/payment-facade/payment-facade';
 import { Auth } from '../../../../../shared/core/services/auth/auth';
 import { NotificationService } from '../../../../../shared/core/services/notification/notification';
 import { locationJsonMin } from '../../../../../shared/core/constant/location-min';
@@ -23,11 +22,28 @@ import { Forms } from '../../../../../shared/components/ui/forms/forms';
 import { AriaInput } from '../../../../../shared/components/ui/aria/aria-input/aria-input';
 import { Button } from '../../../../../shared/components/ui/button/button';
 import { AriaAutocomplete } from '../../../../../shared/components/ui/aria/aria-autocomplete/aria-autocomplete';
-import {
-  BillingAddressPayload,
-  UserAddress,
-} from '../../../../../shared/core/models/payment.model';
 import { Address } from '../../components/address/address';
+
+/**
+ * Fields the billing form renders and validates. This is the form's own shape,
+ * not a wire payload — it stays here so the signal-forms schema keeps its field
+ * typing. Map it onto the new backend's address payload at the edges.
+ *
+ * `zipcode` is a string here (it is an <input> value) even though the old API
+ * took a number — the conversion happened at submit.
+ */
+interface BillingFormState {
+  name: string;
+  phone_no: string;
+  email_id: string;
+  address1: string;
+  locality: string;
+  landmark: string;
+  country: string;
+  state: string;
+  city: string;
+  zipcode: string;
+}
 
 @Component({
   selector: 'app-billing',
@@ -39,7 +55,18 @@ import { Address } from '../../components/address/address';
   },
 })
 export class Billing {
-  readonly facade = inject(PaymentFacade);
+  // ponytail: PaymentFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  readonly facade: any = {
+    billingAddress: signal<any[]>([]),
+    deleteAddress: (..._args: any[]): any => null,
+    isEditingAddress: null as any,
+    loadBillingAddress: signal<any[]>([]),
+    saveBillingAddress: (..._args: any[]): any => null,
+    selectedAddressId: null as any,
+    updateBillingAddress: (..._args: any[]): any => null,
+  };
   readonly auth = inject(Auth);
   readonly notification = inject(NotificationService);
 
@@ -54,9 +81,7 @@ export class Billing {
   readonly showForm = this.facade.isEditingAddress;
   readonly editingAddressId = signal<number | null>(null);
 
-  readonly initialFormState = linkedSignal<
-    { name: string } & Omit<BillingAddressPayload, 'zipcode'> & { zipcode: string }
-  >(() => {
+  readonly initialFormState = linkedSignal<BillingFormState>(() => {
     const user = this.auth.currentUser();
     return {
       name: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : '',
@@ -72,9 +97,7 @@ export class Billing {
     };
   });
 
-  readonly billingForm = form<
-    { name: string } & Omit<BillingAddressPayload, 'zipcode'> & { zipcode: string }
-  >(this.initialFormState, (s) => {
+  readonly billingForm = form<BillingFormState>(this.initialFormState, (s) => {
     required(s.name, { message: 'Name is required' });
     required(s.email_id, { message: 'Email is required' });
     required(s.phone_no, { message: 'Phone Number is required' });
@@ -149,11 +172,11 @@ export class Billing {
     });
   }
 
-  selectAddress(address: UserAddress): void {
+  selectAddress(address: any): void {
     this.selectedAddressId.set(address.id);
   }
 
-  onEditAddress(address: UserAddress): void {
+  onEditAddress(address: any): void {
     if (this.showForm()) {
       this.notification.info(
         'Action Blocked',
@@ -177,7 +200,7 @@ export class Billing {
     this.showForm.set(true);
   }
 
-  onDeleteAddress(address: UserAddress): void {
+  onDeleteAddress(address: any): void {
     if (this.showForm()) {
       this.notification.info(
         'Action Blocked',
@@ -210,7 +233,7 @@ export class Billing {
     if (this.billingForm().invalid()) return;
 
     const formValue = this.billingForm().value();
-    const payload: BillingAddressPayload = {
+    const payload: any = {
       phone_no: formValue.phone_no,
       email_id: formValue.email_id,
       address1: formValue.address1,

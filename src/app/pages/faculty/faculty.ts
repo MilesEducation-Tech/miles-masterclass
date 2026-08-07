@@ -21,18 +21,17 @@ import { Forms } from '../../shared/components/ui/forms/forms';
 import { Otp } from '../../shared/components/ui/otp/otp';
 import { Spinner } from '../../shared/components/ui/spinner/spinner';
 import { dialCodeWithLength } from '../../shared/core/constant/dial-code';
-import { placeSuggestions } from '../../shared/core/services/location-autocomplete/location-autocomplete';
 import { logo, mcGrawHillLogo } from '../../shared/core/constant/icon';
-import { CountryCodeOption, User, VerifyOTPResponse } from '../../shared/core/models/auth.model';
 import { Analytics } from '../../shared/core/services/analytics/analytics';
-import { ApiClient } from '../../shared/core/services/api-client/api-client';
 import { Auth } from '../../shared/core/services/auth/auth';
 import { Logger } from '../../shared/core/services/logger/logger';
 import { NotificationService } from '../../shared/core/services/notification/notification';
 import { Utils } from '../../shared/core/services/utils/utils';
 
-const FACULTY_REGISTER_URL = 'v2/faculty/register/';
-const FACULTY_VERIFY_URL = 'v2/faculty/verify/';
+// ponytail: Django endpoint paths for faculty register + OTP verify.
+// Repoint at the new backend's routes.
+const FACULTY_REGISTER_URL = '';
+const FACULTY_VERIFY_URL = '';
 const RESEND_TIMER_SECONDS = 30;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -115,7 +114,7 @@ interface FacultyRegisterResponse {
     /** Present on non-prod only, for QA autofill. */
     otp_dev?: number;
     /** Returned on the no-OTP update path so we can refresh the cached user. */
-    user?: User;
+    user?: any;
   };
 }
 
@@ -153,7 +152,12 @@ interface FacultyRegisterResponse {
   styleUrl: './faculty.css',
 })
 export class Faculty {
-  private readonly http = inject(ApiClient);
+  // ponytail: ApiClient was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly http: any = {
+
+  };
   private readonly auth = inject(Auth);
   private readonly analytics = inject(Analytics);
   private readonly logger = inject(Logger);
@@ -185,7 +189,7 @@ export class Faculty {
    * so the form re-seeds if `currentUser()` lands after first render (SSR
    * hydration, or a profile fetch resolving) instead of staying stuck empty.
    */
-  private mapUserToForm(user: User | null): FacultyFormState {
+  private mapUserToForm(user: any | null): FacultyFormState {
     return {
       first_name: user?.first_name || '',
       last_name: user?.last_name || '',
@@ -243,7 +247,7 @@ export class Faculty {
   // but the dropdown only needs one option per *dial code*. Keep the first
   // occurrence of each code so the phone-length validator still gets sane
   // min/max bounds.
-  protected readonly countryCodes = signal<CountryCodeOption[]>(
+  protected readonly countryCodes = signal<any[]>(
     Array.from(
       dialCodeWithLength
         .reduce((acc, item) => {
@@ -252,18 +256,15 @@ export class Faculty {
             acc.set(code, { ...item, value: code, label: code });
           }
           return acc;
-        }, new Map<string, CountryCodeOption>())
+        }, new Map<string, any>())
         .values(),
     ),
   );
 
-  // Same location lookup the profile and webinar forms use — our own
-  // `v2/locations/autocomplete/`, which proxies Google Places server-side.
+  // ponytail: `placeSuggestions` came from the deleted LocationAutocomplete
+  // service. Point this at the new backend's place search.
   protected readonly locationQuery = signal('');
-  protected readonly locationOptions = placeSuggestions(
-    this.locationQuery,
-    computed(() => this.model().location),
-  );
+  protected readonly locationOptions = signal<any[]>([]);
 
   /**
    * Whether this submission has to be verified by email. Sent as `otp_required`
@@ -366,10 +367,10 @@ export class Faculty {
     const otpRequired = this.otpRequired();
 
     this.http
-      .post<FacultyRegisterResponse>(FACULTY_REGISTER_URL, this.buildRegisterPayload(otpRequired))
+      .post(FACULTY_REGISTER_URL, this.buildRegisterPayload(otpRequired))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
+        next: (response: any) => {
           this.submitting.set(false);
           if (!response.status) {
             const msg = response.message || 'Unable to submit. Please try again.';
@@ -379,7 +380,7 @@ export class Faculty {
           }
           this.handleRegisterResult(response.data ?? {}, response.message, otpRequired);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.submitting.set(false);
           this.error.set(err?.error?.message || 'Something went wrong. Please try again.');
           this.logger.error('Faculty: register failed', err);
@@ -401,10 +402,10 @@ export class Faculty {
     };
 
     this.http
-      .post<VerifyOTPResponse>(FACULTY_VERIFY_URL, payload)
+      .post(FACULTY_VERIFY_URL, payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
+        next: (response: any) => {
           this.verifying.set(false);
           if (!response.status || !response.data) {
             this.error.set(response.message || 'Invalid OTP. Please try again.');
@@ -421,7 +422,7 @@ export class Faculty {
           // keeps their country/profession context.
           this.router.navigateByUrl(this.utils.localePath());
         },
-        error: (err) => {
+        error: (err: any) => {
           this.verifying.set(false);
           this.error.set(err?.error?.message || 'Failed to verify OTP. Please try again.');
           this.logger.error('Faculty: verify OTP failed', err);
@@ -440,10 +441,10 @@ export class Faculty {
     this.error.set(null);
 
     this.http
-      .post<FacultyRegisterResponse>(FACULTY_REGISTER_URL, this.buildRegisterPayload(true))
+      .post(FACULTY_REGISTER_URL, this.buildRegisterPayload(true))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
+        next: (response: any) => {
           this.resending.set(false);
           if (!response.status) {
             this.error.set(response.message || 'Could not resend OTP.');
@@ -451,7 +452,7 @@ export class Faculty {
           }
           this.handleRegisterResult(response.data ?? {}, response.message, true);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.resending.set(false);
           this.error.set(err?.error?.message || 'Could not resend OTP.');
           this.logger.error('Faculty: resend OTP failed', err);
@@ -517,7 +518,7 @@ export class Faculty {
    * Post-verification login, mirroring `AuthFacade.verifyOtp` so both entry
    * points leave identical auth + analytics state behind.
    */
-  private completeAutoLogin(token: string, refreshToken: string, user: User): void {
+  private completeAutoLogin(token: string, refreshToken: string, user: any): void {
     this.auth.storeTokens(token, refreshToken);
     this.auth.setAuthenticated(user);
     // Identify BEFORE the activation events — the `currentUser` effect also

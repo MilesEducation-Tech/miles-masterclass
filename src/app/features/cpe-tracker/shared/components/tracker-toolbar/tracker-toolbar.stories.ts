@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { argsToTemplate } from '@storybook/angular';
 import { TrackerToolbar } from './tracker-toolbar';
-import { CreditsSummary } from '../../../../../shared/core/models/cpe-tracker.model';
 
-const credits: CreditsSummary = { total: 95, earned: 95, required: 120, pending: 25 };
+const credits: any = { total: 95, earned: 95, required: 120, pending: 25 };
 
 const meta: Meta<TrackerToolbar> = {
   title: 'CPE Tracker/Toolbar',

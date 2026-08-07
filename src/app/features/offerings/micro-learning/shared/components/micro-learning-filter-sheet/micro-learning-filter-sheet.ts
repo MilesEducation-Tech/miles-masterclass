@@ -2,15 +2,14 @@ import { Component, computed, OnInit, signal } from '@angular/core';
 import { DialogRef } from '../../../../../../shared/core/services/dialog/dialog';
 import { Button } from '../../../../../../shared/components/ui/button/button';
 import { cn } from '../../../../../../shared/utils/cn';
-import { MicroLearningFilterOption } from '../../../../../../shared/core/models/micro-learning-course.model';
 
 export interface MicroLearningFilterSheetData {
   title: string;
-  options: MicroLearningFilterOption[];
+  options: any[];
   visibleCount?: number;
 }
 
-export type MicroLearningFilterSheetResult = MicroLearningFilterOption[] | undefined;
+export type MicroLearningFilterSheetResult = any[] | undefined;
 
 const DEFAULT_VISIBLE_COUNT = 5;
 
@@ -25,10 +24,10 @@ export class MicroLearningFilterSheet implements OnInit {
   data!: MicroLearningFilterSheetData;
 
   readonly cn = cn;
-  readonly options = signal<MicroLearningFilterOption[]>([]);
+  readonly options = signal<any[]>([]);
   readonly showAll = signal<boolean>(false);
 
-  readonly visibleOptions = computed<MicroLearningFilterOption[]>(() => {
+  readonly visibleOptions = computed<any[]>(() => {
     const all = this.options();
     const limit = this.data?.visibleCount ?? DEFAULT_VISIBLE_COUNT;
     return this.showAll() ? all : all.slice(0, limit);

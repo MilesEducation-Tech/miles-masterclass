@@ -1,8 +1,3 @@
-import {
-  UpcomingPremiere,
-  WebinarAttendanceStatus,
-  WebinarDate,
-} from '../../../../../shared/core/models/feature.model';
 
 /** Eastern Time short-name abbreviations — DST-aware. */
 export type EasternAbbrev = 'EST' | 'EDT';
@@ -95,7 +90,7 @@ const DURATION_UNIT_MS = 1_000;
  * case for every row on the webinar listing, since the v2 card payload has no
  * duration field.
  */
-function effectiveEndOf(session: WebinarDate, durationInUnits = 0): number {
+function effectiveEndOf(session: any, durationInUnits = 0): number {
   const start = new Date(session.start_date).getTime();
   const declaredEnd = new Date(session.end_date).getTime();
   const byDuration =
@@ -116,7 +111,7 @@ function effectiveEndOf(session: WebinarDate, durationInUnits = 0): number {
  * `effectiveEndOf`; pass `durationInUnits` to honour `start + duration`).
  */
 export function liveStateOf(
-  session: WebinarDate,
+  session: any,
   now: Date = new Date(),
   durationInUnits = 0,
 ): WebinarLiveState {
@@ -135,17 +130,17 @@ export function liveStateOf(
  * label the card as "Ended" rather than showing nothing).
  */
 export function nextSessionOf(
-  webinar: UpcomingPremiere,
+  webinar: any,
   now: Date = new Date(),
-): WebinarDate | null {
+): any | null {
   const sessions = webinar.webinar_dates ?? [];
   if (!sessions.length) return null;
-  const live = sessions.find((s) => liveStateOf(s, now, webinar.webinar_duration) === 'live');
+  const live = sessions.find((s: any) => liveStateOf(s, now, webinar.webinar_duration) === 'live');
   if (live) return live;
   const t = now.getTime();
   const upcoming = sessions
-    .filter((s) => new Date(s.start_date).getTime() > t && !s.is_webinar_ended)
-    .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+    .filter((s: any) => new Date(s.start_date).getTime() > t && !s.is_webinar_ended)
+    .sort((a: any, b: any) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
   if (upcoming.length) return upcoming[0];
   const ended = [...sessions].sort(
     (a, b) => new Date(b.end_date).getTime() - new Date(a.end_date).getTime(),
@@ -154,14 +149,14 @@ export function nextSessionOf(
 }
 
 /** Convenience wrapper: aggregate state for a webinar based on its sessions. */
-export function webinarTagFor(webinar: UpcomingPremiere, now: Date = new Date()): WebinarLiveTag {
+export function webinarTagFor(webinar: any, now: Date = new Date()): WebinarLiveTag {
   const session = nextSessionOf(webinar, now);
   if (!session) return 'ended';
   return liveStateOf(session, now, webinar.webinar_duration);
 }
 
 /** Milliseconds until the start of a session. Negative means it has started. */
-export function startsInMs(session: WebinarDate, now: Date = new Date()): number {
+export function startsInMs(session: any, now: Date = new Date()): number {
   return new Date(session.start_date).getTime() - now.getTime();
 }
 
@@ -172,7 +167,7 @@ export function startsInMs(session: WebinarDate, now: Date = new Date()): number
  * start instant has been reached (use the live/ended tag instead).
  */
 export function formatStartsIn(
-  session: WebinarDate | null | undefined,
+  session: any | null | undefined,
   now: Date = new Date(),
 ): string | null {
   if (!session) return null;
@@ -196,7 +191,7 @@ export function formatStartsIn(
  * accepted both, the CTA only `'Present'`, so a v2 attendee landed in the
  * Attended carousel with an "Ended" button and no route to feedback.
  */
-export function hasAttended(status: WebinarAttendanceStatus | undefined | null): boolean {
+export function hasAttended(status: any | undefined | null): boolean {
   return status === 'Present' || status === 'Attended';
 }
 
@@ -210,7 +205,7 @@ export function hasAttended(status: WebinarAttendanceStatus | undefined | null):
  * there), which would paywall an already-attended webinar — safe only because
  * `enroll()` returns early on an existing enrollment, before this is reached.
  */
-export function needsSubscription(webinar: UpcomingPremiere, hasActivePlan: boolean): boolean {
+export function needsSubscription(webinar: any, hasActivePlan: boolean): boolean {
   return !webinar.is_free && !hasActivePlan;
 }
 
@@ -230,7 +225,7 @@ export function needsSubscription(webinar: UpcomingPremiere, hasActivePlan: bool
  *     (if a recording exists) or `ended`.
  */
 export function ctaFor(
-  webinar: UpcomingPremiere,
+  webinar: any,
   isAuthed: boolean,
   now: Date = new Date(),
 ): WebinarCta {

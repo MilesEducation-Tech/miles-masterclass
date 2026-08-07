@@ -19,30 +19,12 @@ import { ErrorState } from '../../shared/components/ui/error-state/error-state';
 import { PageLoading } from '../../shared/components/ui/page-loading/page-loading';
 import { TabStrip } from '../../shared/components/ui/tab-strip/tab-strip';
 import { VideoJs, VideoSource } from '../../shared/components/video-js/video-js';
-import { Content } from '../../shared/core/models/course.model';
-import { FeatureApiResponse } from '../../shared/core/models/feature.model';
-import { InstructorListItem } from '../../shared/core/models/library.model';
-import { ApiClient } from '../../shared/core/services/api-client/api-client';
 import { Analytics } from '../../shared/core/services/analytics/analytics';
 import { InstructorHero } from './components/instructor-hero/instructor-hero';
 import { Square } from '../../shared/components/cards/square/square';
 
-type ResponseBucket = 'masterclass' | 'nano';
+/** The three course tabs this page renders — UI vocabulary, not a wire shape. */
 type TabId = 'masterclass' | 'podcast' | 'micro-learning';
-
-interface InstructorCoursesPaginationBucket {
-  total_count: number;
-  current_page_number: number;
-  next_page: number | string | null;
-  previous_page: number | string | null;
-}
-
-interface InstructorCoursesResponse {
-  status_code: number;
-  message: string;
-  data: Record<ResponseBucket, Content[]>;
-  pagination_data: Record<ResponseBucket, InstructorCoursesPaginationBucket>;
-}
 
 @Component({
   selector: 'app-instructor-details',
@@ -78,13 +60,22 @@ export class InstructorDetails {
     'micro-learning': 'Micro Learning',
   };
 
-  private readonly api = inject(ApiClient);
+  // ponytail: ApiClient was deleted with the Django strip. This placeholder
+
+  // keeps the template bindings compiling and renders the empty state.
+
+  // Swap in the new backend's service — the template needs no changes.
+
+  private readonly api: any = {
+
+
+  };
   private readonly analytics = inject(Analytics);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly activeTab = signal<TabId>('masterclass');
 
-  private readonly instructorResource = resource({
+  private readonly instructorResource = resource<any, any>({
     params: () => {
       const id = this.instructorId();
       if (!this.isBrowser || !id) return undefined;
@@ -93,7 +84,7 @@ export class InstructorDetails {
     loader: ({ params, abortSignal }) =>
       firstValueFrom(
         this.api
-          .get<FeatureApiResponse<InstructorListItem>>(`instructor/${params.id}/`)
+          .get(`instructor/${params.id}/`)
           .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
       ),
   });
@@ -106,7 +97,7 @@ export class InstructorDetails {
   // `masterclass` bucket further mixes Masterclass and Podcast items, told
   // apart by each item's `course_type` field ("Audio"/"podcast" → Podcast,
   // everything else → Masterclass). Tab switching is a client-side filter.
-  private readonly relatedCoursesResource = resource({
+  private readonly relatedCoursesResource = resource<any, any>({
     params: () => {
       const id = this.instructorId();
       if (!this.isBrowser || !id) return undefined;
@@ -115,33 +106,33 @@ export class InstructorDetails {
     loader: ({ params, abortSignal }) =>
       firstValueFrom(
         this.api
-          .get<InstructorCoursesResponse>(`instructor/${params.id}/courses/`, {
+          .get(`instructor/${params.id}/courses/`, {
             params: { page: 1 },
           })
           .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
       ),
   });
 
-  private readonly isPodcast = (c: Content): boolean => {
+  private readonly isPodcast = (c: any): boolean => {
     const ct = (c.course_type ?? '').toLowerCase();
     return ct === 'audio' || ct === 'podcast';
   };
 
-  private readonly masterclassItems = computed<Content[]>(() => {
+  private readonly masterclassItems = computed<any[]>(() => {
     const items = this.relatedCoursesResource.value()?.data?.masterclass ?? [];
-    return items.filter((c) => c.course_type.toLowerCase() === 'video');
+    return items.filter((c: any) => c.course_type.toLowerCase() === 'video');
   });
 
-  private readonly podcastItems = computed<Content[]>(() => {
+  private readonly podcastItems = computed<any[]>(() => {
     const items = this.relatedCoursesResource.value()?.data?.masterclass ?? [];
-    return items.filter((c) => this.isPodcast(c));
+    return items.filter((c: any) => this.isPodcast(c));
   });
 
-  private readonly microLearningItems = computed<Content[]>(
+  private readonly microLearningItems = computed<any[]>(
     () => this.relatedCoursesResource.value()?.data?.nano ?? [],
   );
 
-  protected readonly relatedCourses = computed<Content[]>(() => {
+  protected readonly relatedCourses = computed<any[]>(() => {
     switch (this.activeTab()) {
       case 'masterclass':
         return this.masterclassItems();

@@ -2,7 +2,6 @@ import { NgOptimizedImage } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { svglFacebook, svglInstagram, svglLinkedin, svglYoutube } from '@ng-icons/svgl';
-import { InstructorListItem } from '../../../core/models/library.model';
 
 @Component({
   selector: 'app-instructor-card',
@@ -12,8 +11,8 @@ import { InstructorListItem } from '../../../core/models/library.model';
   viewProviders: [provideIcons({ svglLinkedin, svglFacebook, svglInstagram, svglYoutube })],
 })
 export class InstructorCard {
-  instructor = input.required<InstructorListItem>();
-  readonly cardClicked = output<InstructorListItem>();
+  instructor = input.required<any>();
+  readonly cardClicked = output<any>();
 
   /**
    * Available social handles for the floating top-right chip strip on the

@@ -4,13 +4,9 @@ import { inject } from '@angular/core';
 import { Auth } from '../shared/core/services/auth/auth';
 import { guestGuard } from '../shared/core/guards/guest/guest-guard';
 import { uaeCairaMatchGuard } from '../shared/core/guards/uae-caira-match.guard';
-import { WebinarFacade } from './offerings/webinar/shared/services/webinar-facade/webinar-facade';
-import { UaeCairaFacade } from '../pages/uae-caira/shared/services/uae-caira-facade/uae-caira-facade';
-import { Tracks } from './shared/services/tracks/tracks';
 import { Faq } from '../pages/faq/faq';
 import { TermsOfService } from '../pages/terms-of-service/terms-of-service';
 import { PrivacyPolicy } from '../pages/privacy-policy/privacy-policy';
-import { MasterclassFacade } from './offerings/shared/services/masterclass-facade/masterclass-facade';
 import { Compliance } from '../pages/compliance/compliance';
 
 export const featuresRoutes: Route[] = [
@@ -22,7 +18,8 @@ export const featuresRoutes: Route[] = [
     // bookmark/profile changes via `applyBookmarkChange`/`refreshPersonalized`
     // to the very resources the offering pages render. Re-providing it here
     // would fork a route-scoped copy that those broadcasts never reach.
-    providers: [Tracks],
+    // ponytail: route-scoped facade providers removed with the Django strip.
+    // Re-add `providers: [YourService]` here when the new backend lands.
     children: [
       {
         path: '',
@@ -41,7 +38,7 @@ export const featuresRoutes: Route[] = [
       {
         path: 'home',
         canMatch: [uaeCairaMatchGuard],
-        providers: [WebinarFacade, UaeCairaFacade],
+        // ponytail: route-scoped facade providers removed with the Django strip.
         loadComponent: () => import('../pages/uae-caira/uae-caira').then((m) => m.UaeCaira),
       },
       {
@@ -144,7 +141,8 @@ export const featuresRoutes: Route[] = [
       },
       {
         path: '',
-        providers: [MasterclassFacade],
+        // ponytail: route-scoped facade providers removed with the Django strip.
+        // Re-add `providers: [YourService]` here when the new backend lands.
         loadChildren: () => import('./offerings/offerings').then((m) => m.offeringsRoutes),
       },
     ],

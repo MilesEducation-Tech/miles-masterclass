@@ -9,30 +9,15 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { HttpContext } from '@angular/common/http';
 import { Router, NavigationEnd, Event as RouterEvent } from '@angular/router';
-import { EMPTY, Observable } from 'rxjs';
-import { filter, tap } from 'rxjs/operators';
+import { EMPTY, Observable, of } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { DynamicRouteParams, ProfessionType, CountryCode } from '../../models/route-params.model';
 import { PROFESSIONS } from '../../constant/profession';
 import { Dialog } from '../dialog/dialog';
 import { UtilsDialog, DialogButton } from '../../../components/dialog/utils-dialog/utils-dialog';
 import { ShareDialog, ShareDialogData } from '../../../components/dialog/share-dialog/share-dialog';
-import { ApiClient } from '../api-client/api-client';
 import { Analytics } from '../analytics/analytics';
-import { MASTERCLASS_ROUTES } from '../../models/masterclass.model';
-import {
-  RouteParams,
-  RouteResponse,
-  RouteRequest,
-  SKIP_ERROR_NOTIFICATION,
-} from '../../models/http.model';
-import {
-  Content,
-  ContentDetails,
-  FinalAssessmentExamResponse,
-  QuizQuestion,
-} from '../../models/course.model';
 import { Storage } from '../storage/storage';
 import {
   CertificateDialogData,
@@ -41,17 +26,9 @@ import {
 import { VideoDialog, VideoDialogData } from '../../../components/dialog/video-dialog/video-dialog';
 import { NotificationService } from '../notification/notification';
 import { Viewport, ScreenInfo } from '../viewport/viewport';
-// CartDrawerDialog is loaded lazily in openCartDrawer() — this service is
-// eagerly instantiated (injected by the header/footer chrome), so a static
-// import would pull the dialog and its `@angular/forms` dependency into the
-// initial bundle.
-import { PaymentFacade } from '../../../../features/payment/shared/service/payment-facade/payment-facade';
-import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
 import { Auth } from '../auth/auth';
 import { Logger } from '../logger/logger';
 import { UtilsDialogData } from '../../../components/dialog/utils-dialog/utils-dialog';
-
-type StartFinalAssessmentParams = RouteParams<typeof MASTERCLASS_ROUTES.startFinalAssessment>;
 
 /**
  * Permissive view of a server-side `user_badge` object. The wire shape varies
@@ -68,7 +45,9 @@ export type ApiCourseType = 'masterclass' | 'podcast' | 'micro_learning';
 export type CourseIdKey = 'masterclass_id' | 'podcast_id' | 'nano_learning_id';
 
 /** Shape accepted by `openCourseInfoDialog`. */
-export type CourseInfoInput = Content | ContentDetails;
+// ponytail: was `Content | ContentDetails` from the deleted course model. Retype
+// against the new backend's course payload.
+export type CourseInfoInput = any;
 
 /**
  * Utility service for common platform-wide operations.
@@ -84,12 +63,9 @@ export type CourseInfoInput = Content | ContentDetails;
 export class Utils {
   private readonly router = inject(Router);
   private readonly dialog = inject(Dialog);
-  private readonly http = inject(ApiClient);
   private readonly storage = inject(Storage);
   private readonly injector = inject(Injector);
   private readonly notification = inject(NotificationService);
-  private readonly payment = inject(PaymentFacade);
-  private readonly featureFacade = inject(FeatureFacade);
   private readonly auth = inject(Auth);
   private readonly analytics = inject(Analytics);
   private readonly logger = inject(Logger);
@@ -283,8 +259,10 @@ export class Utils {
     dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!(result?.result && result?.action === 'confirm')) return;
 
-      const cached: QuizQuestion[] =
-        this.storage.getLocal(`final_assessment_questions_${courseId}`) || [];
+      // ponytail: the `startFinalAssessment` POST that minted a session_id and
+      // cached the question set is gone with the backend. Only the locally
+      // cached path still navigates; without a session there is nowhere to go.
+      const cached: any[] = this.storage.getLocal(`final_assessment_questions_${courseId}`) || [];
       if (cached.length) {
         const session_id = this.storage.getLocal('session_id');
         this.router.navigate([
@@ -293,35 +271,11 @@ export class Utils {
         return;
       }
 
-      const params: StartFinalAssessmentParams = {};
-      if (courseType === 'masterclass') params.masterclass_id = +courseId;
-      else if (courseType === 'podcast') params.podcast_id = +courseId;
-      else if (courseType === 'micro_learning') params.nano_learning_id = +courseId;
-
-      const context = new HttpContext().set(SKIP_ERROR_NOTIFICATION, true);
-      this.http
-        .post<FinalAssessmentExamResponse>(
-          MASTERCLASS_ROUTES.startFinalAssessment.path,
-          {},
-          { params, context },
-        )
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (value) => {
-            this.storage.setLocal('session_id', value.session_id.toString());
-            this.storage.setLocal(`final_assessment_questions_${courseId}`, value.questions);
-            this.router.navigate([
-              `${this._country()}/${this._profession()}/${urlSegment}/${courseId}/${courseTitle}/final-assessment/${value.session_id}/exam`,
-            ]);
-          },
-          error: (error) => {
-            this.logger.error('Failed to start final assessment', error);
-          },
-        });
+      this.logger.warn('startFinalAssessment: no backend configured', { courseId, courseType });
     });
   }
 
-  openCertificateDownloadDialog(content: ContentDetails) {
+  openCertificateDownloadDialog(content: any) {
     const userPlan = this.auth.currentPlan();
 
     // Course is excluded from subscription — must be purchased individually.
@@ -425,15 +379,15 @@ export class Utils {
    * callers pipe their own error handling / analytics. The server is
    * idempotent, so a repeat claim returns the same badge + `credly_accept_url`.
    */
-  claimBadge(badgeId: number): Observable<RouteResponse<typeof MASTERCLASS_ROUTES.claimBadge>> {
-    const path = MASTERCLASS_ROUTES.claimBadge.path.replace(':id', String(badgeId));
-    return this.http.get<RouteResponse<typeof MASTERCLASS_ROUTES.claimBadge>>(path);
+  // ponytail: no claim endpoint — resolves to null so callers' `.subscribe(...)`
+  // and `claimAcceptUrl(...)` chains stay intact.
+  claimBadge(badgeId: number): Observable<any> {
+    this.logger.warn('claimBadge: no backend configured', { badgeId });
+    return of(null);
   }
 
   /** Credly accept URL from a claim response, or `null` when none was issued. */
-  claimAcceptUrl(
-    res: RouteResponse<typeof MASTERCLASS_ROUTES.claimBadge> | null | undefined,
-  ): string | null {
+  claimAcceptUrl(res: any | null | undefined): string | null {
     return res?.credly_accept_url ?? null;
   }
 
@@ -583,7 +537,7 @@ export class Utils {
     });
   }
 
-  toggleBookmarkCourse(courseId: number, options?: { course_type: string }) {
+  toggleBookmarkCourse(courseId: number, options?: { course_type: string }): Observable<any> {
     // Guarded centrally so every bookmark surface (cards, Remind Me, dialog)
     // gets the same login prompt — callers don't need to repeat the check.
     // Returning EMPTY (instead of throwing) keeps `.subscribe(...)` quiet at
@@ -593,64 +547,29 @@ export class Utils {
       return EMPTY;
     }
 
+    // ponytail: the bookmark POST and the FeatureFacade fan-out that flipped
+    // every cached card in lockstep both went with the backend. Reconnect here
+    // and re-add the cache fan-out at the same time.
     const rawCourseType = options?.course_type ?? this.getApiCourseType();
-    // Content tagged as `video` is served from the masterclass bookmark
-    // endpoint — the bookmark API doesn't recognize a `video` course type, so
-    // we collapse it here rather than asking every caller to remember.
     const courseType = rawCourseType === 'video' ? 'masterclass' : rawCourseType;
-    return this.http
-      .post<RouteResponse<typeof MASTERCLASS_ROUTES.toggleBookmark>>(
-        MASTERCLASS_ROUTES.toggleBookmark.path,
-        { course_id: courseId, course_type: courseType },
-      )
-      .pipe(
-        tap((response) => {
-          if (response.status) {
-            this.notification.success(
-              response.is_bookmarked ? 'Bookmarked' : 'Bookmark Removed',
-              response.message,
-            );
-            // Fan out to every cached feature list so any visible card flips
-            // its bookmark icon in lockstep, and the dedicated bookmark listing
-            // (if loaded) adds/removes the course locally — no extra round-trip.
-            this.featureFacade.applyBookmarkChange(courseId, response.is_bookmarked, courseType);
-            this.analytics.trackEvent(response.is_bookmarked ? 'bookmark_add' : 'bookmark_remove', {
-              course_id: courseId,
-              course_type: courseType,
-            });
-          }
-        }),
-      );
+    this.logger.warn('toggleBookmarkCourse: no backend configured', { courseId, courseType });
+    return EMPTY;
   }
 
-  addCourseToCart(courseId: number, isAddedToCart: boolean) {
+  addCourseToCart(courseId: number, isAddedToCart: boolean): Observable<any> {
     if (isAddedToCart) {
       this.notification.info('Already in Cart', 'This course is already in your cart.');
       this.openCartDrawer();
       return EMPTY;
     }
-    const courseType = this.getApiCourseType();
-    const body: RouteRequest<typeof MASTERCLASS_ROUTES.addToCart> = {
-      item_id: courseId,
-      item_type: courseType,
-    };
-    return this.http
-      .post<RouteResponse<typeof MASTERCLASS_ROUTES.addToCart>>(
-        MASTERCLASS_ROUTES.addToCart.path,
-        body,
-      )
-      .pipe(
-        tap((response) => {
-          if (response.status) {
-            this.notification.success('Added to Cart', response.message);
-            this.openCartDrawer();
-          }
-        }),
-      );
+    // ponytail: no add-to-cart endpoint. Still opens the drawer so the cart
+    // design remains reachable from every course surface.
+    this.logger.warn('addCourseToCart: no backend configured', { courseId });
+    this.openCartDrawer();
+    return EMPTY;
   }
 
   async openCartDrawer(): Promise<void> {
-    this.payment.loadMyBucket({ force: true });
     const { CartDrawerDialog } =
       await import('../../../components/dialog/cart-drawer-dialog/cart-drawer-dialog');
     this.dialog.open(CartDrawerDialog, {
@@ -664,54 +583,46 @@ export class Utils {
     });
   }
 
+  /**
+   * ponytail: the `additionalResources` GET is gone. The dialog-rendering half
+   * is kept below — feed it the new backend's resource list and the "links"
+   * dialog design works unchanged.
+   */
   openAdditionalResources(courseId: number): void {
-    const path = MASTERCLASS_ROUTES.additionalResources.path.replace(
-      ':courseId',
-      courseId.toString(),
-    );
-    this.http
-      .get<RouteResponse<typeof MASTERCLASS_ROUTES.additionalResources>>(path)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          // Map each resource to its openable URL (hosted file first, else the
-          // external link). Resources with neither are dropped — there'd be
-          // nothing to open.
-          const links = (response.data ?? [])
-            .map((r) => ({
-              label: r.title,
-              description: r.description,
-              href: r.resource_file ?? r.resource_link ?? '',
-            }))
-            .filter((link) => !!link.href);
+    this.logger.warn('openAdditionalResources: no backend configured', { courseId });
+    this.showAdditionalResources([]);
+  }
 
-          if (links.length) {
-            this.dialog.open(UtilsDialog, {
-              maxWidth: '100%',
-              enterAnimationDuration: '300ms',
-              exitAnimationDuration: '300ms',
-              data: {
-                title: 'Additional Resources',
-                containerClass: 'max-w-lg text-left!',
-                content: [{ type: 'links', items: links }],
-                buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
-              },
-            });
-          } else {
-            this.notification.info(
-              'No Resources',
-              'No additional resources are available for this course.',
-            );
-          }
-        },
-        error: (error) => {
-          this.logger.error('Failed to fetch additional resources', error);
-          this.notification.error(
-            'Error',
-            'Failed to fetch additional resources. Please try again later.',
-          );
+  private showAdditionalResources(resources: any[]): void {
+    // Map each resource to its openable URL (hosted file first, else the
+    // external link). Resources with neither are dropped — there'd be
+    // nothing to open.
+    const links = resources
+      .map((r) => ({
+        label: r.title,
+        description: r.description,
+        href: r.resource_file ?? r.resource_link ?? '',
+      }))
+      .filter((link) => !!link.href);
+
+    if (links.length) {
+      this.dialog.open(UtilsDialog, {
+        maxWidth: '100%',
+        enterAnimationDuration: '300ms',
+        exitAnimationDuration: '300ms',
+        data: {
+          title: 'Additional Resources',
+          containerClass: 'max-w-lg text-left!',
+          content: [{ type: 'links', items: links }],
+          buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
         },
       });
+    } else {
+      this.notification.info(
+        'No Resources',
+        'No additional resources are available for this course.',
+      );
+    }
   }
 }
 

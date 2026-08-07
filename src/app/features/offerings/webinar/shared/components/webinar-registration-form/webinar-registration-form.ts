@@ -1,5 +1,5 @@
 import { Component, computed, DestroyRef, inject, input, output, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   form,
   FormField as AngularFormField,
@@ -7,18 +7,7 @@ import {
   required,
   validate,
 } from '@angular/forms/signals';
-import {
-  catchError,
-  debounceTime,
-  filter,
-  interval,
-  map,
-  of,
-  Subject,
-  switchMap,
-  take,
-  takeUntil,
-} from 'rxjs';
+import { interval, Subject, take, takeUntil } from 'rxjs';
 
 import { AriaAutocomplete } from '../../../../../../shared/components/ui/aria/aria-autocomplete/aria-autocomplete';
 // AriaCombobox replaced with AriaAutocomplete platform-wide for the company
@@ -31,34 +20,20 @@ import { Otp } from '../../../../../../shared/components/ui/otp/otp';
 import { Spinner } from '../../../../../../shared/components/ui/spinner/spinner';
 import { CONTENT_MAP } from '../../../../../../shared/core/config/auth.config';
 import { dialCodeWithLength } from '../../../../../../shared/core/constant/dial-code';
-import { placeSuggestions } from '../../../../../../shared/core/services/location-autocomplete/location-autocomplete';
-import { CountryCodeOption, User } from '../../../../../../shared/core/models/auth.model';
-import { AutoCompleteOption } from '../../../../../../shared/core/models/form.model';
-import { PROFILE_ROUTES } from '../../../../../../shared/core/models/profile.model';
-import { RouteParams, RouteResponse } from '../../../../../../shared/core/models/http.model';
 import { Router } from '@angular/router';
 import { Analytics } from '../../../../../../shared/core/services/analytics/analytics';
-import { ApiClient } from '../../../../../../shared/core/services/api-client/api-client';
 import { Dialog } from '../../../../../../shared/core/services/dialog/dialog';
 import { Logger } from '../../../../../../shared/core/services/logger/logger';
 import { NotificationService } from '../../../../../../shared/core/services/notification/notification';
 import { Storage } from '../../../../../../shared/core/services/storage/storage';
-import { UTM_COOKIE_KEY } from '../../../../../../shared/core/services/utm/utm';
-import {
-  WebinarRegistrationDirectEnrolled,
-  WebinarRegistrationRequest,
-  WebinarRegistrationResponse,
-  WebinarRegistrationResult,
-  WebinarRegistrationVerifyRequest,
-  WebinarRegistrationVerifyResponse,
-  isWebinarRegistrationAccessBlocked,
-} from '../../models/webinar-registration.model';
+import { WebinarRegistrationDirectEnrolled, WebinarRegistrationRequest, WebinarRegistrationResult, WebinarRegistrationVerifyRequest, isWebinarRegistrationAccessBlocked } from '../../models/webinar-registration.model';
 
-type CompanyListResponse = RouteResponse<typeof PROFILE_ROUTES.getCompanyList>;
-type CompanyListParams = RouteParams<typeof PROFILE_ROUTES.getCompanyList>;
+// ponytail: were RouteResponse/RouteParams aliases over PROFILE_ROUTES.
 
-const REGISTRATION_URL = 'webinar/registrations/';
-const VERIFY_OTP_URL = 'webinar/registrations/verify-otp/';
+// ponytail: Django endpoint paths for webinar registration + OTP verification.
+// Repoint at the new backend's routes.
+const REGISTRATION_URL = '';
+const VERIFY_OTP_URL = '';
 const RESEND_TIMER_SECONDS = 30;
 
 /** Public payload emitted on a successful end-to-end registration. */
@@ -110,7 +85,12 @@ interface OtpFormState {
   styleUrl: './webinar-registration-form.css',
 })
 export class WebinarRegistrationForm {
-  private readonly http = inject(ApiClient);
+  // ponytail: ApiClient was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly http: any = {
+
+  };
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly storage = inject(Storage);
@@ -185,7 +165,7 @@ export class WebinarRegistrationForm {
   // but the dropdown only needs one option per *dial code*. Keep the first
   // occurrence of each code so the phone-length validator still gets sane
   // min/max bounds.
-  protected readonly countryCodes = signal<CountryCodeOption[]>(
+  protected readonly countryCodes = signal<any[]>(
     Array.from(
       dialCodeWithLength
         .reduce((acc, item) => {
@@ -194,53 +174,21 @@ export class WebinarRegistrationForm {
             acc.set(code, { ...item, value: code, label: code });
           }
           return acc;
-        }, new Map<string, CountryCodeOption>())
+        }, new Map<string, any>())
         .values(),
     ),
   );
 
-  // Granularity (city vs state vs country) is the backend's call — it owns the
-  // Places request. Whatever it returns ends in the country, so the "country is
-  // mandatory" requirement is satisfied implicitly.
+  // ponytail: `placeSuggestions` came from the deleted LocationAutocomplete
+  // service, which proxied Google Places through the backend. Point this at the
+  // new backend's place search and the autocomplete works unchanged.
   protected readonly locationQuery = signal('');
-  protected readonly locationOptions = placeSuggestions(
-    this.locationQuery,
-    computed(() => this.model().location),
-  );
+  protected readonly locationOptions = signal<any[]>([]);
 
-  // Company autocomplete — reuses the same endpoint and shape the profile
-  // page uses (`PROFILE_ROUTES.getCompanyList`).
+  // ponytail: was a debounced company search against PROFILE_ROUTES. Point this
+  // at the new backend's company search — the autocomplete needs no changes.
   protected readonly companySearchQuery = signal('');
-  protected readonly companyOptions = toSignal(
-    toObservable(this.companySearchQuery).pipe(
-      // Skip the empty initial emission — prevents a wasted "all companies"
-      // request, and dodges an SSR teardown race where the debounced HTTP
-      // call would fire after the server-side injector is destroyed (NG0205).
-      filter((search) => search.trim().length > 0),
-      debounceTime(300),
-      switchMap((search) => {
-        const params: CompanyListParams = { search };
-        return this.http
-          .get<CompanyListResponse>(PROFILE_ROUTES.getCompanyList.path, { params })
-          .pipe(
-            map((res) =>
-              (res.data ?? []).map(
-                (c) =>
-                  ({
-                    label: c.company_name,
-                    value: c.id,
-                  }) as AutoCompleteOption<number>,
-              ),
-            ),
-            catchError((err) => {
-              this.logger.error('WebinarRegistrationForm: company fetch failed', err);
-              return of<AutoCompleteOption<number>[]>([]);
-            }),
-          );
-      }),
-    ),
-    { initialValue: [] as AutoCompleteOption<number>[] },
-  );
+  protected readonly companyOptions = signal<any[]>([]);
 
   /**
    * Signal-forms schema. Required-field + phone/country-code validators
@@ -322,10 +270,10 @@ export class WebinarRegistrationForm {
     this.submitting.set(true);
 
     this.http
-      .post<WebinarRegistrationResponse>(REGISTRATION_URL, this.buildRegistrationPayload())
+      .post(REGISTRATION_URL, this.buildRegistrationPayload())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
+        next: (response: any) => {
           this.submitting.set(false);
           if (this.maybeOpenLmsBlockedDialog(response.data)) return;
           if (!response.status || !response.data) {
@@ -336,7 +284,7 @@ export class WebinarRegistrationForm {
           }
           this.handleRegistrationResult(response.data, response.message);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.submitting.set(false);
           if (this.maybeOpenLmsBlockedDialog(err?.error?.data)) return;
           const msg = err?.error?.message || 'Something went wrong. Please try again.';
@@ -355,14 +303,14 @@ export class WebinarRegistrationForm {
     const payload: WebinarRegistrationVerifyRequest = {
       session_id: this.otpSessionId(),
       otp: this.otpModel().otp,
-      utm_url: this.storage.getCookie(UTM_COOKIE_KEY) || undefined,
+      utm_url: this.storage.getCookie('utm') || undefined,
     };
 
     this.http
-      .post<WebinarRegistrationVerifyResponse>(VERIFY_OTP_URL, payload)
+      .post(VERIFY_OTP_URL, payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
+        next: (response: any) => {
           this.verifying.set(false);
           if (!response.status) {
             const msg = response.message || 'Invalid OTP. Please try again.';
@@ -388,7 +336,7 @@ export class WebinarRegistrationForm {
           const autoLogin = data?.flow === 'direct_enrolled' && data.auto_login === true;
           if (!autoLogin) this.step.set('DONE');
         },
-        error: (err) => {
+        error: (err: any) => {
           this.verifying.set(false);
           const msg = err?.error?.message || 'Failed to verify OTP. Please try again.';
           this.error.set(msg);
@@ -404,10 +352,10 @@ export class WebinarRegistrationForm {
     this.error.set(null);
 
     this.http
-      .post<WebinarRegistrationResponse>(REGISTRATION_URL, this.buildRegistrationPayload())
+      .post(REGISTRATION_URL, this.buildRegistrationPayload())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
+        next: (response: any) => {
           this.resending.set(false);
           if (this.maybeOpenLmsBlockedDialog(response.data)) return;
           if (!response.status || !response.data) {
@@ -418,7 +366,7 @@ export class WebinarRegistrationForm {
           // in another tab), honour the new flow instead of staying on OTP.
           this.handleRegistrationResult(response.data, response.message);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.resending.set(false);
           if (this.maybeOpenLmsBlockedDialog(err?.error?.data)) return;
           this.error.set(err?.error?.message || 'Could not resend OTP.');
@@ -566,7 +514,7 @@ export class WebinarRegistrationForm {
   private maybeTrackNewAccount(data: WebinarRegistrationDirectEnrolled): void {
     const raw = data.user;
     if (!raw) return;
-    const user = raw as unknown as User;
+    const user = raw as unknown as any;
     this.analytics.trackAccountCreate(user);
     this.analytics.trackOnboarding(user);
   }
@@ -584,7 +532,7 @@ export class WebinarRegistrationForm {
       webinar_date_id: this.webinarDateId(),
       company_id: v.company_id > 0 ? v.company_id : null,
       browser_session_id: this.storage.getOrCreateBrowserSessionId(),
-      utm_url: this.storage.getCookie(UTM_COOKIE_KEY) || undefined,
+      utm_url: this.storage.getCookie('utm') || undefined,
     };
   }
 

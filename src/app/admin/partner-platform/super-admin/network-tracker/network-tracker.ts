@@ -4,20 +4,10 @@ import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
 import { StatCard } from '../../shared/components/stat-card/stat-card';
-import { PartnerSuperAdminFacade } from '../../shared/services/partner-superadmin-facade';
-import {
-  Coupon,
-  CouponPagination,
-  CouponsResponse,
-  CouponStatusFilter,
-  Firm,
-  NetworkTrackerResponse,
-  partnerLoadError,
-} from '../../shared/models/partner-platform.model';
 import { CouponTrackerTable } from '../../../coupon-tracker/shared/components/coupon-tracker-table/coupon-tracker-table';
 
 const PAGE_SIZE = 20;
-const STATUS_TABS: { value: CouponStatusFilter; label: string }[] = [
+const STATUS_TABS: { value: any; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'available', label: 'Available' },
   { value: 'shared', label: 'Shared' },
@@ -25,7 +15,7 @@ const STATUS_TABS: { value: CouponStatusFilter; label: string }[] = [
   { value: 'expired', label: 'Expired' },
 ];
 
-const EMPTY_PAGINATION: CouponPagination = {
+const EMPTY_PAGINATION: any = {
   total_count: 0,
   current_page_number: 1,
   next_page: null,
@@ -46,7 +36,12 @@ const EMPTY_PAGINATION: CouponPagination = {
   host: { class: 'block w-full' },
 })
 export class NetworkTracker {
-  private readonly superFacade = inject(PartnerSuperAdminFacade);
+  // ponytail: PartnerSuperAdminFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly superFacade: any = {
+    networkTracker: (..._args: any[]): any => null,
+  };
   private readonly route = inject(ActivatedRoute);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -56,7 +51,7 @@ export class NetworkTracker {
   protected readonly networkId = signal<number>(Number(this.route.snapshot.paramMap.get('id')));
   /** null = all firms in the network. */
   protected readonly selectedFirmId = signal<number | null>(null);
-  protected readonly statusFilter = signal<CouponStatusFilter>('all');
+  protected readonly statusFilter = signal<any>('all');
   protected readonly pageNumber = signal(1);
 
   // ---- Header (summary + sub-companies) ------------------------------------
@@ -69,12 +64,12 @@ export class NetworkTracker {
       ),
   });
 
-  private readonly header = computed<NetworkTrackerResponse | undefined>(() =>
+  private readonly header = computed<any | undefined>(() =>
     this.headerResource.value(),
   );
   protected readonly headerLoading = computed(() => this.headerResource.isLoading());
   protected readonly networkName = computed(() => this.header()?.summary.network.name ?? 'Network');
-  protected readonly subCompanies = computed<Firm[]>(() => this.header()?.sub_companies ?? []);
+  protected readonly subCompanies = computed<any[]>(() => this.header()?.sub_companies ?? []);
 
   protected readonly cards = computed(() => {
     const s = this.header()?.summary;
@@ -116,19 +111,19 @@ export class NetworkTracker {
             page_size: PAGE_SIZE,
           })
           .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { coupons: [], pagination_data: EMPTY_PAGINATION } as CouponsResponse },
+        { defaultValue: { coupons: [], pagination_data: EMPTY_PAGINATION } as any },
       ),
   });
 
-  protected readonly coupons = computed<Coupon[]>(
+  protected readonly coupons = computed<any[]>(
     () => this.couponsResource.value()?.coupons ?? [],
   );
   protected readonly couponsLoading = computed(() => this.couponsResource.isLoading());
   protected readonly couponsError = computed(() =>
-    partnerLoadError(this.couponsResource.error(), 'Failed to load coupons.'),
+    this.couponsResource.error() ? 'Failed to load coupons.' : null,
   );
 
-  private readonly pagination = computed<CouponPagination>(
+  private readonly pagination = computed<any>(
     () => this.couponsResource.value()?.pagination_data ?? EMPTY_PAGINATION,
   );
   protected readonly currentPage = computed(() => this.pageNumber());
@@ -136,11 +131,11 @@ export class NetworkTracker {
   protected readonly hasPrev = computed(() => this.pagination().previous_page != null);
   protected readonly hasNext = computed(() => this.pagination().next_page != null);
 
-  protected isActiveTab(value: CouponStatusFilter): boolean {
+  protected isActiveTab(value: any): boolean {
     return this.statusFilter() === value;
   }
 
-  protected selectStatus(value: CouponStatusFilter): void {
+  protected selectStatus(value: any): void {
     this.statusFilter.set(value);
     this.pageNumber.set(1);
   }

@@ -5,10 +5,6 @@ import { lucideRotateCw, lucideSend } from '@ng-icons/lucide';
 import { Button } from '../../../../../shared/components/ui/button/button';
 import { Spinner } from '../../../../../shared/components/ui/spinner/spinner';
 import { NotificationService } from '../../../../../shared/core/services/notification/notification';
-import {
-  Coupon,
-  CouponStatus,
-} from '../../../../partner-platform/shared/models/partner-platform.model';
 
 interface StatusChip {
   label: string;
@@ -16,7 +12,7 @@ interface StatusChip {
   fg: string;
 }
 
-const STATUS_CHIPS: Record<CouponStatus, StatusChip> = {
+const STATUS_CHIPS: Record<any, StatusChip> = {
   available: { label: 'Available', bg: 'var(--mm-info-bg)', fg: 'var(--mm-info-fg)' },
   shared: { label: 'Shared', bg: 'var(--mm-warn-bg)', fg: 'var(--mm-warn-fg)' },
   applied: { label: 'Applied', bg: 'var(--mm-success-bg)', fg: 'var(--mm-success-fg)' },
@@ -34,7 +30,7 @@ const STATUS_CHIPS: Record<CouponStatus, StatusChip> = {
 export class CouponTrackerTable {
   private readonly notification = inject(NotificationService);
 
-  readonly rows = input.required<Coupon[]>();
+  readonly rows = input.required<any[]>();
   readonly isLoading = input<boolean>(false);
   /** Coupon:send capability — shows the send column and resend buttons. */
   readonly sendEnabled = input<boolean>(false);
@@ -46,8 +42,8 @@ export class CouponTrackerTable {
   readonly hasNext = input<boolean>(false);
   readonly hasPrev = input<boolean>(false);
 
-  readonly share = output<{ coupon: Coupon; email: string }>();
-  readonly resend = output<Coupon>();
+  readonly share = output<{ coupon: any; email: string }>();
+  readonly resend = output<any>();
   readonly prevPage = output<void>();
   readonly nextPage = output<void>();
 
@@ -66,20 +62,20 @@ export class CouponTrackerTable {
   /** Per-row "Send to" input drafts, keyed by coupon id. */
   private readonly emailDrafts = signal<Readonly<Record<number, string>>>({});
 
-  protected emailDraft(row: Coupon): string {
+  protected emailDraft(row: any): string {
     return this.emailDrafts()[row.id] ?? '';
   }
 
-  protected onDraftInput(row: Coupon, event: Event): void {
+  protected onDraftInput(row: any, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.emailDrafts.update((drafts) => ({ ...drafts, [row.id]: value }));
   }
 
-  protected canSend(row: Coupon): boolean {
+  protected canSend(row: any): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(this.emailDraft(row).trim());
   }
 
-  protected onSend(row: Coupon): void {
+  protected onSend(row: any): void {
     const email = this.emailDraft(row).trim();
     if (!email) {
       this.notification.info('Missing email', 'Type the email to send this coupon to.');
@@ -89,7 +85,7 @@ export class CouponTrackerTable {
     this.emailDrafts.update((drafts) => ({ ...drafts, [row.id]: '' }));
   }
 
-  protected chip(status: CouponStatus): StatusChip {
+  protected chip(status: any): StatusChip {
     return STATUS_CHIPS[status];
   }
 

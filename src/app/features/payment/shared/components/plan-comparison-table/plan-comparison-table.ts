@@ -1,13 +1,9 @@
 import { Component, computed, input } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
-import {
-  PlanFeatureDetail,
-  SubscriptionPlan,
-} from '../../../../../shared/core/models/payment.model';
 import { proCrownIcon } from '../../constants/plan-icons';
 
 interface ComparisonColumn {
-  plan: SubscriptionPlan;
+  plan: any;
   isRecommended: boolean;
   isSelected: boolean;
 }
@@ -19,18 +15,18 @@ interface ComparisonColumn {
   styleUrl: './plan-comparison-table.css',
 })
 export class PlanComparisonTable {
-  readonly plans = input.required<SubscriptionPlan[]>();
+  readonly plans = input.required<any[]>();
   readonly selectedPlanId = input<number | null>(null);
 
   protected readonly proCrownIcon = proCrownIcon;
 
   // Recommended plan anchors the row order so the Pro column reads top-to-bottom
   // exactly as designed; features only present on other plans append below.
-  protected readonly rows = computed<PlanFeatureDetail[]>(() => {
+  protected readonly rows = computed<any[]>(() => {
     const ordered = [...this.plans()].sort(
       (a, b) => Number(b.is_recommended) - Number(a.is_recommended),
     );
-    const map = new Map<number, PlanFeatureDetail>();
+    const map = new Map<number, any>();
     for (const plan of ordered) {
       for (const f of plan.features) {
         if (f.planfeature) map.set(f.planfeature.id, f.planfeature);
@@ -56,7 +52,7 @@ export class PlanComparisonTable {
     return `1fr ${'6.5rem '.repeat(planCount).trim()}`;
   });
 
-  protected planHasFeature(plan: SubscriptionPlan, featureId: number): boolean {
-    return plan.features.some((f) => f.planfeature?.id === featureId);
+  protected planHasFeature(plan: any, featureId: number): boolean {
+    return plan.features.some((f: any) => f.planfeature?.id === featureId);
   }
 }

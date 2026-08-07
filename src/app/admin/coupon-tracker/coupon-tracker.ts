@@ -5,17 +5,10 @@ import { AriaInput } from '../../shared/components/ui/aria/aria-input/aria-input
 import { Button } from '../../shared/components/ui/button/button';
 import { Dialog } from '../../shared/core/services/dialog/dialog';
 import { NotificationService } from '../../shared/core/services/notification/notification';
-import { PartnerNetworkFacade } from '../partner-platform/shared/services/partner-network-facade';
-import { PartnerSuperAdminFacade } from '../partner-platform/shared/services/partner-superadmin-facade';
-import { PartnerAdminMe } from '../partner-platform/shared/services/partner-admin-me';
 import {
   AdminProvisioning,
   INITIAL_ADMIN_PASSWORD,
 } from '../partner-platform/shared/services/admin-provisioning';
-import {
-  Coupon,
-  CouponStatusFilter,
-} from '../partner-platform/shared/models/partner-platform.model';
 import { CouponTrackerTable } from './shared/components/coupon-tracker-table/coupon-tracker-table';
 import {
   CreateSubCompanyDialog,
@@ -23,7 +16,7 @@ import {
   CreateSubCompanyResult,
 } from './shared/components/create-sub-company-dialog/create-sub-company-dialog';
 
-const STATUS_TABS: { value: CouponStatusFilter; label: string }[] = [
+const STATUS_TABS: { value: any; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'available', label: 'Available' },
   { value: 'shared', label: 'Shared' },
@@ -47,9 +40,47 @@ const STATUS_TABS: { value: CouponStatusFilter; label: string }[] = [
   host: { class: 'block w-full' },
 })
 export class CouponTracker {
-  protected readonly facade = inject(PartnerNetworkFacade);
-  protected readonly me = inject(PartnerAdminMe);
-  private readonly superFacade = inject(PartnerSuperAdminFacade);
+  // ponytail: PartnerNetworkFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  protected readonly facade: any = {
+    coupons: signal<any[]>([]),
+    createSubCompany: (..._args: any[]): any => null,
+    dashboard: signal<any>(null),
+    error: signal<any>(null),
+    hasNextPage: signal<any>(null),
+    hasPrevPage: signal<any>(null),
+    isLoading: signal<any>(null),
+    pageNumber: signal<any>(null),
+    pageSize: null as any,
+    reload: signal<any>(null),
+    selectedFirmId: signal<any>(null),
+    selectFirm: (..._args: any[]): any => null,
+    sendCoupon: (..._args: any[]): any => null,
+    setPage: (..._args: any[]): any => null,
+    setSearch: (..._args: any[]): any => null,
+    setStatusFilter: (..._args: any[]): any => null,
+    statusFilter: signal<any>(null),
+    subCompanies: signal<any[]>([]),
+    totalCount: signal<any>(null),
+  };
+  // ponytail: PartnerAdminMe was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  protected readonly me: any = {
+    can: (..._args: any[]): any => null,
+    firm: signal<any>(null),
+    isLoading: signal<any>(null),
+    isNetworkAdmin: signal<any>(null),
+    isPartnerAdmin: signal<any>(null),
+    network: signal<any>(null),
+  };
+  // ponytail: PartnerSuperAdminFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly superFacade: any = {
+    createPartnerAdmin: (..._args: any[]): any => null,
+  };
   private readonly provisioning = inject(AdminProvisioning);
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -87,11 +118,11 @@ export class CouponTracker {
       .subscribe((value) => this.facade.setSearch(value));
   }
 
-  protected isActiveTab(value: CouponStatusFilter): boolean {
+  protected isActiveTab(value: any): boolean {
     return this.facade.statusFilter() === value;
   }
 
-  protected selectStatus(value: CouponStatusFilter): void {
+  protected selectStatus(value: any): void {
     this.facade.setStatusFilter(value);
   }
 
@@ -113,11 +144,11 @@ export class CouponTracker {
     this.facade.setPage(this.currentPage() + 1);
   }
 
-  protected onShare(event: { coupon: Coupon; email: string }): void {
+  protected onShare(event: { coupon: any; email: string }): void {
     void this.facade.sendCoupon(event.coupon, event.email);
   }
 
-  protected onResend(coupon: Coupon): void {
+  protected onResend(coupon: any): void {
     if (coupon.sent_to_email) void this.facade.sendCoupon(coupon, coupon.sent_to_email);
   }
 

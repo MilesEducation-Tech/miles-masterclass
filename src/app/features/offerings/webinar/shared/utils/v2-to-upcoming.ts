@@ -1,11 +1,11 @@
 /**
  * The v2 webinar wire format, and the adapters that turn it into the
- * `UpcomingPremiere` model every webinar surface already renders.
+ * `any` model every webinar surface already renders.
  *
  * Types and adapters live together on purpose: this file is the ONLY place that
  * knows v2's shape. `WebinarHero`, `PremiereListItem`, `Horizontal`,
  * `WebinarDetailsDialog`, `ctaFor`, `nextSessionOf` and `upcomingToContent` all
- * keep reading `UpcomingPremiere` unchanged — adding a v2 branch to each of them
+ * keep reading `any` unchanged — adding a v2 branch to each of them
  * instead would be six parallel code paths for the same cards. Only
  * `WebinarFacade` imports the wire types, and only to type its own requests.
  *
@@ -17,15 +17,6 @@
  * Reference: `docs/Webinar_V2_API.md`.
  */
 
-import { FieldOfStudy, InstructorDetails } from '../../../../../shared/core/models/course.model';
-import {
-  RegisteredWebinar,
-  UpcomingPremiere,
-  UserBadge,
-  WebinarAttendanceStatus,
-  WebinarDate,
-  WebinarEnrollment,
-} from '../../../../../shared/core/models/feature.model';
 import { hasAttended } from './webinar-status';
 
 // ---- wire types ------------------------------------------------------------
@@ -86,7 +77,7 @@ export interface WebinarV2Badge {
  * already; the adapter normalises whichever arrives.
  */
 export interface WebinarV2Credentialing {
-  /** Current form: flat boolean. Maps straight to `UpcomingPremiere`. */
+  /** Current form: flat boolean. Maps straight to `any`. */
   has_individual_badge?: boolean;
   /** Current form: CAiRA programme level, `null` when not part of it. */
   caira_level?: number | null;
@@ -106,7 +97,7 @@ export interface WebinarV2Registration {
   enrollment_id?: number;
   webinar_date_id?: number;
   join_url?: string | null;
-  attendance_status?: WebinarAttendanceStatus;
+  attendance_status?: any;
   attended_minutes?: number;
   polls_answered?: number;
 }
@@ -155,7 +146,7 @@ export interface WebinarV2Card extends WebinarV2Credentialing {
    * `v2CardToUpcoming` and inherited by the rest.
    */
   no_question_answered?: number;
-  fields_of_study: FieldOfStudy[];
+  fields_of_study: any[];
   /** Soonest upcoming session; `null` if none. Doubles as the `webinar_date_id` to register with. */
   next_session: WebinarV2Session | null;
   registration: WebinarV2Registration;
@@ -209,7 +200,7 @@ export interface WebinarV2About extends WebinarV2Credentialing {
    */
   included_for_caira?: boolean;
   instructor_details: WebinarV2Instructor | null;
-  fields_of_study: FieldOfStudy[];
+  fields_of_study: any[];
   next_session: WebinarV2Session | null;
 }
 
@@ -238,7 +229,7 @@ export interface WebinarV2Details extends WebinarV2Credentialing {
   series_name: string | null;
   /** Polls the learner must answer live to earn credit. Renders in CourseAbout. */
   no_question_answered?: number;
-  fields_of_study: FieldOfStudy[];
+  fields_of_study: any[];
   next_session: WebinarV2Session | null;
   registration: WebinarV2Registration;
   instructor_details: WebinarV2Instructor | null;
@@ -247,7 +238,7 @@ export interface WebinarV2Details extends WebinarV2Credentialing {
     user_rating?: number | null;
     [key: string]: unknown;
   } | null;
-  user_badge: UserBadge | null;
+  user_badge: any | null;
   active_plan: unknown | null;
 }
 
@@ -265,20 +256,20 @@ export interface WebinarV2EnrollmentWebinar extends WebinarV2Credentialing {
   series: string | null;
   series_name: string | null;
   /** Drives the credits badge and category chips on the enrollment cards. */
-  fields_of_study?: FieldOfStudy[];
+  fields_of_study?: any[];
 }
 
 /** `GET v2/webinar/enrollments/`. Enrollment-centric, not webinar-centric. */
 export interface WebinarV2Enrollment {
   /** Enrollment id, NOT the webinar id — the webinar id lives on `webinar.id`. */
   id: number;
-  attendance_status: WebinarAttendanceStatus;
+  attendance_status: any;
   join_url: string | null;
   webinar: WebinarV2EnrollmentWebinar;
   session: WebinarV2Session;
   eligibility: WebinarV2Eligibility;
   /** Minted Credly badge, `null` until earned. Feeds the certificate dialog. */
-  user_badge?: UserBadge | null;
+  user_badge?: any | null;
   feedback_submitted: boolean;
   /** Row-level, NOT under `webinar` — unlike `details/`, which nests it. */
   instructor_details?: WebinarV2Instructor | null;
@@ -286,8 +277,8 @@ export interface WebinarV2Enrollment {
 
 // ---- adapters --------------------------------------------------------------
 
-/** v2 fields with no `UpcomingPremiere` equivalent, carried along for later use. */
-export type WebinarV2Adapted = UpcomingPremiere & {
+/** v2 fields with no `any` equivalent, carried along for later use. */
+export type WebinarV2Adapted = any & {
   series?: string | null;
   series_name?: string | null;
   eligibility?: WebinarV2Eligibility;
@@ -300,7 +291,7 @@ export type WebinarV2Adapted = UpcomingPremiere & {
  * `instructorNames()` filters out the blank names, so the byline stays hidden
  * rather than rendering a stray "By".
  */
-function emptyInstructor(): InstructorDetails {
+function emptyInstructor(): any {
   return { id: 0, first_name: '', last_name: '', other_instructors: [] };
 }
 
@@ -310,7 +301,7 @@ function emptyInstructor(): InstructorDetails {
  * `start_date`/`end_date` against the wall clock, and the flag exists only so
  * the backend can force-end a session early (which v2 doesn't report).
  */
-function toWebinarDate(session: WebinarV2Session, joinUrl: string | null): WebinarDate {
+function toWebinarDate(session: WebinarV2Session, joinUrl: string | null): any {
   return {
     id: session.id,
     session_title: session.session_title ?? '',
@@ -349,9 +340,9 @@ function credentialing(src: WebinarV2Credentialing): {
   };
 }
 
-/** Defaults for every `UpcomingPremiere` field v2 does not send. */
+/** Defaults for every `any` field v2 does not send. */
 function baseDefaults(): Omit<
-  UpcomingPremiere,
+  any,
   | 'id'
   | 'webinar_title'
   | 'webinar_dates'
@@ -400,7 +391,7 @@ function baseDefaults(): Omit<
   };
 }
 
-/** `GET v2/webinar/filter/` (and `home_section/`) row → `UpcomingPremiere`. */
+/** `GET v2/webinar/filter/` (and `home_section/`) row → `any`. */
 export function v2CardToUpcoming(card: WebinarV2Card): WebinarV2Adapted {
   const joinUrl = card.registration?.join_url ?? null;
   const session = card.next_session;
@@ -411,14 +402,14 @@ export function v2CardToUpcoming(card: WebinarV2Card): WebinarV2Adapted {
   // `details/` reports the real post-session outcome here; the list endpoints
   // don't send it at all, so an absent value stays 'Pending'.
   const attendance = card.registration?.attendance_status ?? 'Pending';
-  const registered: RegisteredWebinar = card.registration?.is_registered
+  const registered: any = card.registration?.is_registered
     ? {
         added: true,
         user_enrollments: {
           id: card.registration.enrollment_id ?? -1,
           webinar_dates: session
             ? toWebinarDate(session, joinUrl)
-            : ({} as WebinarEnrollment['webinar_dates']),
+            : ({} as any['webinar_dates']),
           feedback_submitted: false,
           attendance_status: attendance,
           active_plan: null,
@@ -465,7 +456,7 @@ export function v2CardToUpcoming(card: WebinarV2Card): WebinarV2Adapted {
  * read. Field names differ (`linkedin_link` vs `linkedin`), and
  * `other_instructors` is required downstream so it always gets an array.
  */
-function toInstructor(src: WebinarV2Instructor | null | undefined): InstructorDetails {
+function toInstructor(src: WebinarV2Instructor | null | undefined): any {
   if (!src) return emptyInstructor();
   return {
     id: src.id,
@@ -488,7 +479,7 @@ function toInstructor(src: WebinarV2Instructor | null | undefined): InstructorDe
 }
 
 /**
- * `GET v2/webinar/details/?id=` → `UpcomingPremiere`. The detail page's base
+ * `GET v2/webinar/details/?id=` → `any`. The detail page's base
  * record: card fields plus per-user state.
  *
  * Still missing the long-form content (`course_overview`, `topics`,
@@ -534,7 +525,7 @@ export function v2DetailsToUpcoming(d: WebinarV2Details): WebinarV2Adapted {
  * "Book Now". Only the content fields are taken, and `webinar_dates` /
  * `registered_webinar` are explicitly preserved from `base`.
  */
-export function applyV2About(base: UpcomingPremiere, about: WebinarV2About): WebinarV2Adapted {
+export function applyV2About(base: any, about: WebinarV2About): WebinarV2Adapted {
   return {
     ...base,
     course_overview: about.course_overview ?? '',
@@ -566,12 +557,12 @@ export function applyV2About(base: UpcomingPremiere, about: WebinarV2About): Web
   };
 }
 
-/** `GET v2/webinar/enrollments/` row → `UpcomingPremiere`. */
+/** `GET v2/webinar/enrollments/` row → `any`. */
 export function v2EnrollmentToUpcoming(row: WebinarV2Enrollment): WebinarV2Adapted {
   const w = row.webinar;
   const session = toWebinarDate(row.session, row.join_url);
 
-  const enrollment: WebinarEnrollment = {
+  const enrollment: any = {
     id: row.id,
     webinar_dates: session,
     feedback_submitted: row.feedback_submitted,

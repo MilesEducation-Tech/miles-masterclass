@@ -2,14 +2,12 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronLeft, heroChevronRight, heroXMark } from '@ng-icons/heroicons/outline';
-import { PaymentFacade } from '../../service/payment-facade/payment-facade';
 
 import { Button } from '../../../../../shared/components/ui/button/button';
 import { svglStripe } from '@ng-icons/svgl';
 import { Router } from '@angular/router';
 import { Utils } from '../../../../../shared/core/services/utils/utils';
 import { Auth } from '../../../../../shared/core/services/auth/auth';
-import { CouponList } from '../../../../../shared/core/models/payment.model';
 
 @Component({
   selector: 'app-price-overview',
@@ -20,7 +18,29 @@ import { CouponList } from '../../../../../shared/core/models/payment.model';
   styleUrl: './price-overview.css',
 })
 export class PriceOverview {
-  readonly facade = inject(PaymentFacade);
+  // ponytail: PaymentFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  readonly facade: any = {
+    applyCoupon: (..._args: any[]): any => null,
+    cartData: null as any,
+    coupons: signal<any[]>([]),
+    invoiceCouponDetails: signal<any[]>([]),
+    invoiceCurrency: signal<any>(null),
+    invoiceCurrencySymbol: signal<any>(null),
+    invoiceGrandTotal: signal<any>(null),
+    invoiceItemCount: signal<any>(null),
+    invoiceProductDiscount: signal<any>(null),
+    invoiceSubTotal: signal<any>(null),
+    invoiceTaxAmount: signal<any>(null),
+    invoiceTotalDiscount: signal<any>(null),
+    invoiceTotalDiscountPercent: signal<any>(null),
+    isEditingAddress: signal<any[]>([]),
+    loadCoupons: signal<any[]>([]),
+    openCouponDialog: signal<any>(null),
+    orderData: null as any,
+    removeCoupon: (..._args: any[]): any => null,
+  };
   readonly router = inject(Router);
   readonly utils = inject(Utils);
   private readonly auth = inject(Auth);
@@ -33,7 +53,7 @@ export class PriceOverview {
 
   /** First directly-applicable coupon shown inline; the rest live behind "Show more". */
   readonly firstCoupon = computed(
-    () => this.facade.coupons().find((c) => c.coupon_applicable) ?? null,
+    () => this.facade.coupons().find((c: any) => c.coupon_applicable) ?? null,
   );
   readonly applyingCoupon = signal(false);
   readonly round = Math.round;
@@ -48,7 +68,7 @@ export class PriceOverview {
     });
   }
 
-  discountLabel(coupon: CouponList): string {
+  discountLabel(coupon: any): string {
     const discount = Math.round(coupon.discount);
     if (coupon.discount_type === 'percent') return `${discount}% Off`;
     return `${this.currencyPipe.transform(discount, 'USD', 'symbol', '1.0-0')} Off`;
@@ -168,7 +188,7 @@ export class PriceOverview {
   // carts are subscription-only. Revisit if mixed monthly + one-time carts ship.
   readonly hasMonthly = computed(() => {
     if (this.isInvoice()) return false;
-    return this.cartData()?.cartitem_data.some((i) => i.pay_method === 'monthly') ?? false;
+    return this.cartData()?.cartitem_data.some((i: any) => i.pay_method === 'monthly') ?? false;
   });
 
   readonly monthlyPayable = computed(() => this.grandTotal() / 12);

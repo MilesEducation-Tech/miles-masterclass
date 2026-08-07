@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, effect, inject, input } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
 import { CourseAbout } from '../../../../../../shared/components/course-about/course-about';
 import { CourseRelatedSection } from '../../../../../../shared/components/course-related-section/course-related-section';
 import { CourseChapterList } from '../../../../shared/components/course-chapter-list/course-chapter-list';
@@ -12,7 +12,6 @@ import { Faq } from '../../../../../../pages/faq/faq';
 import { Auth } from '../../../../../../shared/core/services/auth/auth';
 import { AppDownloadPrompt } from '../../../../../../shared/core/services/app-download-prompt/app-download-prompt';
 import { setupCourseSeo } from '../../../../../../shared/utils/seo/course-seo-setup';
-import { MasterclassFacade } from '../../../../shared/services/masterclass-facade/masterclass-facade';
 import { MasterclassCourseHero } from '../../components/masterclass-course-hero/masterclass-course-hero';
 
 @Component({
@@ -34,7 +33,23 @@ export class MasterclassCourse {
   readonly courseId = input<string>();
   readonly courseTitle = input<string>();
 
-  protected readonly masterclassService = inject(MasterclassFacade);
+  // ponytail: MasterclassFacade was deleted with the Django strip. This placeholder
+
+  // keeps the template bindings compiling and renders the empty state.
+
+  // Swap in the new backend's service — the template needs no changes.
+
+  protected readonly masterclassService: any = {
+
+    clear: signal<any>(null),
+
+    courseChapters: signal<any[]>([]),
+
+    courseDetails: signal<any[]>([]),
+
+    loadCourse: (..._args: any[]): any => null,
+
+  };
   private readonly auth = inject(Auth);
 
   /** Dynamic navigation items based on available data */

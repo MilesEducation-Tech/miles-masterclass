@@ -1,14 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { applicationConfig, moduleMetadata } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
 import { Vertical } from './vertical';
 import {
   MOCK_MASTERCLASS_CARD,
   MOCK_PODCAST_CARD,
   MOCK_MICROLEARNING_CARD,
 } from '../../__mocks__/content.mock';
-import { MockUtils, MockFeatureFacade } from '../../__mocks__/services.mock';
+import { MockUtils } from '../../__mocks__/services.mock';
 import { Utils } from '../../../core/services/utils/utils';
-import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
 
 const meta: Meta<Vertical> = {
   title: 'Cards/Vertical',
@@ -18,7 +17,6 @@ const meta: Meta<Vertical> = {
     moduleMetadata({
       providers: [
         { provide: Utils, useClass: MockUtils },
-        { provide: FeatureFacade, useClass: MockFeatureFacade },
       ],
     }),
     (story) => ({

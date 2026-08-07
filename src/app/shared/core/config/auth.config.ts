@@ -1,5 +1,4 @@
 import { UtilsDialogData } from '../../components/dialog/utils-dialog/utils-dialog';
-import { LmsUserType } from '../models/auth.model';
 
 /**
  * LMS-migration prompts shown when a user with blocked LMS access attempts to
@@ -9,7 +8,7 @@ import { LmsUserType } from '../models/auth.model';
  * app-download layout supersedes the typed content list when subtitle/footer
  * are present.
  */
-export const CONTENT_MAP: Record<LmsUserType, UtilsDialogData> = {
+export const CONTENT_MAP: Record<any, UtilsDialogData> = {
   caira: {
     containerClass: '',
     title: 'CAIRA Has a New Home!',

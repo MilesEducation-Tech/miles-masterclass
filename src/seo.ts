@@ -37,12 +37,6 @@ const COUNTRY = (process.env['SITEMAP_COUNTRY'] ?? CANONICAL_COUNTRY).toLowerCas
 const PROFESSION = CANONICAL_PROFESSION;
 const PREFIX = `/${COUNTRY}/${PROFESSION}`;
 
-/**
- * Backend API base. Defaults to the build's environment (so a UAT build hits
- * the UAT API), with a trailing slash trimmed. Override via `SITEMAP_API_BASE`.
- */
-const API_BASE = (process.env['SITEMAP_API_BASE'] ?? environment.BASE_API_URL).replace(/\/+$/, '');
-
 /** How long a generated sitemap is reused before regeneration (default 6h). */
 const SITEMAP_TTL_MS = Number(process.env['SITEMAP_TTL_MS'] ?? 6 * 60 * 60 * 1000);
 
@@ -135,78 +129,27 @@ interface CatalogItem {
   title: string;
 }
 
-type ApiRow = Record<string, unknown>;
-
-/**
- * Follow an API's absolute `pagination_data.next_page` links from `firstUrl`,
- * mapping each row via `pick` (rows that map to `null` are skipped). Bounded by
- * a page guard so a malformed `next_page` loop can't run forever; returns
- * whatever was gathered before any non-OK page.
+/*
+ * ponytail: the sitemap's dynamic half — course catalog, instructors and
+ * webinars — was paged out of the Django endpoints, which went with the backend
+ * strip. The three stubs below keep `collectLocs()` intact, so the sitemap still
+ * emits every static route and robots.txt is unaffected. Fill them in against
+ * the new backend to get dynamic URLs back.
  */
-async function fetchPaginated(
-  firstUrl: string,
-  pick: (row: ApiRow) => CatalogItem | null,
-): Promise<CatalogItem[]> {
-  const items: CatalogItem[] = [];
-  let next: string | null = firstUrl;
-  let guard = 0;
 
-  while (next && guard++ < 100) {
-    const response: globalThis.Response = await fetch(next, {
-      headers: { accept: 'application/json' },
-    });
-    if (!response.ok) break;
-    const json = (await response.json()) as {
-      data?: ApiRow[];
-      pagination_data?: { next_page?: string | null };
-    };
-    for (const row of json.data ?? []) {
-      const item = pick(row);
-      if (item) items.push(item);
-    }
-    next = json.pagination_data?.next_page ?? null;
-  }
-
-  return items;
+/** Published courses of a type. ponytail: paged `v2/library/`. */
+function fetchCatalog(_courseType: string): Promise<CatalogItem[]> {
+  return Promise.resolve([]);
 }
 
-/** Course catalog row (`v2/library/`) → `{ id, title }`. */
-function pickCourse(row: ApiRow): CatalogItem | null {
-  const { id, title } = row;
-  return typeof id === 'number' && typeof title === 'string' && title ? { id, title } : null;
-}
-
-/** Instructor row (`instructor/`) → `{ id, title: "First Last" }`. */
-function pickInstructor(row: ApiRow): CatalogItem | null {
-  const { id, first_name, last_name } = row;
-  const name = `${(first_name as string) ?? ''} ${(last_name as string) ?? ''}`.trim();
-  return typeof id === 'number' && name ? { id, title: name } : null;
-}
-
-/** All published courses of a type, paged through `v2/library/`. */
-function fetchCatalog(courseType: string): Promise<CatalogItem[]> {
-  return fetchPaginated(`${API_BASE}/v2/library/?course_type=${courseType}&page=1`, pickCourse);
-}
-
-/** Public instructor detail pages, paged through `instructor/`. */
+/** Public instructor detail pages. ponytail: paged `instructor/`. */
 function fetchInstructors(): Promise<CatalogItem[]> {
-  return fetchPaginated(`${API_BASE}/instructor/?page=1`, pickInstructor);
+  return Promise.resolve([]);
 }
 
-/** Webinars exposed via the public `webinar/filter/` feed. */
-async function fetchWebinars(): Promise<CatalogItem[]> {
-  const response = await fetch(`${API_BASE}/webinar/filter/`, {
-    headers: { accept: 'application/json' },
-  });
-  if (!response.ok) return [];
-  const json = (await response.json()) as {
-    data?: { id?: number; webinar_title?: string }[];
-  };
-  return (json.data ?? [])
-    .filter((w): w is { id: number; webinar_title: string } => {
-      return typeof w?.id === 'number' && !!w.webinar_title;
-    })
-    .map((w) => ({ id: w.id, title: w.webinar_title }));
+/** Webinars. ponytail: read the public `webinar/filter/` feed. */
+function fetchWebinars(): Promise<CatalogItem[]> {
+  return Promise.resolve([]);
 }
 
 /** Gather every crawlable absolute URL. Catalog failures degrade gracefully. */

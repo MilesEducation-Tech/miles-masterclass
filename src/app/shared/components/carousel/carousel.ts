@@ -1,3 +1,4 @@
+import { apiDataToDialogShape, dialogShapeToSelection, isEmptySelection } from './filter-selection';
 import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import {
   afterNextRender,
@@ -28,15 +29,6 @@ import { filterIcon } from '../../core/constant/icon';
 import { Dialog } from '../../core/services/dialog/dialog';
 import { FilterDialog } from '../dialog/filter-dialog/filter-dialog';
 import { Hover } from '../cards/hover/hover';
-import {
-  apiDataToDialogShape,
-  ApiCourseType,
-  CourseFilterSelection,
-  dialogShapeToSelection,
-  isEmptySelection,
-  SectionApiKey,
-} from '../../core/models/library-filters.model';
-import { SectionFiltersFacade } from '../../../features/shared/services/section-filters-facade/section-filters-facade';
 
 /**
  * Carousel filter configuration. When `courseType` + `section` are both set
@@ -46,8 +38,8 @@ import { SectionFiltersFacade } from '../../../features/shared/services/section-
  */
 export interface CarouselFilterConfig {
   filterEnabled: boolean;
-  courseType?: ApiCourseType;
-  section?: SectionApiKey;
+  courseType?: any;
+  section?: any;
   trackId?: number;
 }
 
@@ -69,7 +61,12 @@ export class Carousel {
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(Dialog);
   private readonly injector = inject(Injector);
-  private readonly sectionFilters = inject(SectionFiltersFacade);
+  // ponytail: SectionFiltersFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly sectionFilters: any = {
+
+  };
 
   private readonly swiperContainerRef = viewChild<ElementRef<HTMLElement>>('swiperContainer');
   private swiperEl: ElementRef<HTMLElement> | null = null;
@@ -92,7 +89,7 @@ export class Carousel {
    * pre-check options when re-opening the dialog and (b) drive the filter
    * badge count alongside `appliedFilters` (client-mode badge).
    */
-  private readonly apiSelection = signal<CourseFilterSelection | null>(null);
+  private readonly apiSelection = signal<any | null>(null);
 
   shouldHoverAnimate = input<boolean>(false);
 
@@ -103,7 +100,7 @@ export class Carousel {
    * `FeatureResource.setFilters($event)` (or `setTrackFilters(trackId, $event)`
    * for the track section).
    */
-  readonly filtersChanged = output<CourseFilterSelection>();
+  readonly filtersChanged = output<any>();
 
   constructor() {
     this.destroyRef.onDestroy(() => this.cleanup());
@@ -340,7 +337,7 @@ export class Carousel {
     this.sectionFilters
       .fetch(cfg.courseType!, cfg.section!, cfg.trackId)
       .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe((data) => {
+      .subscribe((data: any) => {
         if (!data) {
           // Fall back silently — no toast, no empty dialog.
           this.extractClientFilters();

@@ -1,8 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { CertificateAccessPolicy } from './certificate-access-policy';
-import { CurrentPlanData } from '../../../../../shared/core/models/auth.model';
 
-const activePlan: CurrentPlanData = {
+const activePlan: any = {
   id: 1,
   remaining_days: 30,
   paid_amount: 99,
@@ -15,8 +14,8 @@ const activePlan: CurrentPlanData = {
   valid_to: '2027-01-01',
 };
 
-const trialPlan: CurrentPlanData = { ...activePlan, trial_duration: 7 };
-const cancelledPlan: CurrentPlanData = { ...activePlan, subscription_status: 'cancelled' };
+const trialPlan: any = { ...activePlan, trial_duration: 7 };
+const cancelledPlan: any = { ...activePlan, subscription_status: 'cancelled' };
 
 describe('CertificateAccessPolicy', () => {
   let policy: CertificateAccessPolicy;

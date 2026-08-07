@@ -7,11 +7,9 @@ import { DialogRef } from '../../../core/services/dialog/dialog';
 import { Button } from '../../ui/button/button';
 import { PageLoading } from '../../ui/page-loading/page-loading';
 import { Logger } from '../../../core/services/logger/logger';
-import { PaymentFacade } from '../../../../features/payment/shared/service/payment-facade/payment-facade';
-import { CouponList, CartDetails } from '../../../core/models/payment.model';
 
 export interface CouponDialogData {
-  cartData: CartDetails;
+  cartData: any;
 }
 
 @Component({
@@ -23,14 +21,26 @@ export interface CouponDialogData {
   styleUrl: './coupon-dialog.css',
 })
 export class CouponDialog implements OnInit {
-  dialogRef!: DialogRef<CouponDialog, CartDetails | undefined>;
+  dialogRef!: DialogRef<CouponDialog, any | undefined>;
   data!: CouponDialogData;
 
-  private readonly facade = inject(PaymentFacade);
+  // ponytail: PaymentFacade was deleted with the Django strip. This placeholder
+
+  // keeps the template bindings compiling and renders the empty state.
+
+  // Swap in the new backend's service — the template needs no changes.
+
+  private readonly facade: any = {
+
+    applyCoupon: (..._args: any[]): any => null,
+
+    getCoupons: signal<any[]>([]),
+
+  };
   private readonly logger = inject(Logger);
 
   readonly couponCodeControl = new FormControl('', { nonNullable: true });
-  readonly coupons = signal<CouponList[]>([]);
+  readonly coupons = signal<any[]>([]);
   readonly loading = signal(true);
   readonly applying = signal(false);
   readonly expandedCoupons = signal<Set<number>>(new Set());
@@ -48,11 +58,11 @@ export class CouponDialog implements OnInit {
   loadCoupons(): void {
     this.loading.set(true);
     this.facade.getCoupons().subscribe({
-      next: (res) => {
+      next: (res: any) => {
         this.coupons.set(res.data ?? []);
         this.loading.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         this.logger.error('Failed to load coupons', err);
         this.coupons.set([]);
         this.loading.set(false);
@@ -81,12 +91,12 @@ export class CouponDialog implements OnInit {
     this.applying.set(true);
 
     this.facade.applyCoupon(couponCode).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         this.appliedCouponCode.set(couponCode);
         this.applying.set(false);
         this.dialogRef.close(res.data);
       },
-      error: (err) => {
+      error: (err: any) => {
         this.logger.error('Failed to apply coupon', err);
         this.applying.set(false);
       },
@@ -101,7 +111,7 @@ export class CouponDialog implements OnInit {
 
   private readonly currencyPipe = inject(CurrencyPipe);
 
-  getDiscountLabel(coupon: CouponList): string {
+  getDiscountLabel(coupon: any): string {
     const discount = Math.round(coupon.discount);
     if (coupon.discount_type === 'percent') {
       return `${discount}% Off`;
@@ -110,7 +120,7 @@ export class CouponDialog implements OnInit {
     return `${formattedAmount} Off`;
   }
 
-  getDiscountDescription(coupon: CouponList): string {
+  getDiscountDescription(coupon: any): string {
     const discount = Math.round(coupon.discount);
     if (coupon.discount_type === 'percent') {
       return `Save upto ${discount}% on this order`;

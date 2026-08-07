@@ -1,11 +1,10 @@
 import { Component, computed, signal } from '@angular/core';
 import { DialogRef } from '../../../core/services/dialog/dialog';
-import { BadgeItem } from '../../../core/models/cpe-tracker.model';
 import { BadgeHeroCard } from '../../cards/badge-hero-card/badge-hero-card';
 import { Button } from '../../ui/button/button';
 
 export interface BadgeInfoDialogData {
-  badges: BadgeItem[];
+  badges: any[];
 }
 
 export type BadgeInfoAction = 'claim' | 'share' | 'close';
@@ -13,7 +12,7 @@ export type BadgeInfoAction = 'claim' | 'share' | 'close';
 export interface BadgeInfoDialogResult {
   action: BadgeInfoAction;
   result: boolean;
-  data?: BadgeItem;
+  data?: any;
 }
 
 @Component({
@@ -33,11 +32,11 @@ export class BadgeInfoDialog {
 
   protected readonly badges = computed(() => this._data()?.badges ?? []);
 
-  protected onClaim(badge: BadgeItem): void {
+  protected onClaim(badge: any): void {
     this.dialogRef.close({ action: 'claim', result: true, data: badge });
   }
 
-  protected onShare(badge: BadgeItem): void {
+  protected onShare(badge: any): void {
     this.dialogRef.close({ action: 'share', result: true, data: badge });
   }
 

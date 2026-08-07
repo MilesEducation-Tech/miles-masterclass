@@ -1,10 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { Subject } from 'rxjs';
-import { BadgeItem } from '../../../core/models/cpe-tracker.model';
 import { DialogRef } from '../../../core/services/dialog/dialog';
 import { BadgeInfoDialog, BadgeInfoDialogResult } from './badge-info-dialog';
 
-function makeBadge(overrides: Partial<BadgeItem> = {}): BadgeItem {
+function makeBadge(overrides: Partial<any> = {}): any {
   return {
     id: 1,
     name: 'CAIRA — Level 1',
@@ -24,7 +23,7 @@ function makeBadge(overrides: Partial<BadgeItem> = {}): BadgeItem {
   };
 }
 
-function setupFixture(badges: BadgeItem[]) {
+function setupFixture(badges: any[]) {
   const fixture = TestBed.createComponent(BadgeInfoDialog);
   const closes = new Subject<BadgeInfoDialogResult | undefined>();
   const close = vi.fn();

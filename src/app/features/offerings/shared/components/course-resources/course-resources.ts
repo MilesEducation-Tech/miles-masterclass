@@ -1,9 +1,8 @@
-import { Component, computed, DestroyRef, inject, input } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideVideo, lucideFileText, lucideDownload, lucideBot } from '@ng-icons/lucide';
-import { MasterclassFacade } from '../../services/masterclass-facade/masterclass-facade';
 import {
   VideoDialog,
   VideoDialogData,
@@ -25,7 +24,23 @@ import {
 export class CourseResources {
   readonly courseType = input<string>('masterclass');
 
-  protected readonly masterclassFacade = inject(MasterclassFacade);
+  // ponytail: MasterclassFacade was deleted with the Django strip. This placeholder
+
+  // keeps the template bindings compiling and renders the empty state.
+
+  // Swap in the new backend's service — the template needs no changes.
+
+  protected readonly masterclassFacade: any = {
+
+    courseDetails: signal<any[]>([]),
+
+    downloadExerciseFiles: (..._args: any[]): any => null,
+
+    downloadingExerciseFiles: signal<any[]>([]),
+
+    openAdditionalResources: signal<any[]>([]),
+
+  };
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -110,10 +125,10 @@ export class CourseResources {
     this.masterclassFacade
       .fetchCourseContent({ id: details.id, course_type: this.courseType() })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
+      .subscribe((response: any) => {
         if (response?.data?.glossary_transcript_text) {
           this.glossaryCache = response.data.glossary_transcript_text;
-          this.openGlossaryDialog(this.glossaryCache);
+          if (this.glossaryCache) this.openGlossaryDialog(this.glossaryCache);
         }
       });
   }

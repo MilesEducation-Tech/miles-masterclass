@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { CourseActionResolver } from './course-action-resolver';
 import { ButtonKind, TrackerTableRow } from '../../mappers/report-to-table';
-import { ReportRow } from '../../../../../shared/core/models/cpe-tracker.model';
 
 function makeTableRow(actionKind: ButtonKind): TrackerTableRow {
   return {
@@ -15,7 +14,7 @@ function makeTableRow(actionKind: ButtonKind): TrackerTableRow {
     registeredAt: null,
     cairaLevel: null,
     actionKind,
-    raw: {} as ReportRow,
+    raw: {} as any,
   };
 }
 
@@ -51,7 +50,7 @@ describe('CourseActionResolver', () => {
   });
 
   it('resolveFromReport returns the same action regardless of the report payload', () => {
-    const action = service.resolveFromReport({} as ReportRow, 'exam');
+    const action = service.resolveFromReport({} as any, 'exam');
     expect(action.label).toBe('Take Exam');
   });
 });

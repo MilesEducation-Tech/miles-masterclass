@@ -15,15 +15,11 @@ import { NgIcon } from '@ng-icons/core';
 import { faSolidInfo, faSolidPlay, faSolidRobot } from '@ng-icons/font-awesome/solid';
 import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
 import { Utils } from '../../../core/services/utils/utils';
-import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
 import { Auth } from '../../../core/services/auth/auth';
-import { Content } from '../../../core/models/course.model';
-import { UpcomingPremiere } from '../../../core/models/feature.model';
 import { Logger } from '../../../core/services/logger/logger';
 import { CategoriesList } from '../../categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../../core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
-import { WebinarFacade } from '../../../../features/offerings/webinar/shared/services/webinar-facade/webinar-facade';
 import {
   ctaFor,
   webinarTagFor,
@@ -45,7 +41,12 @@ import {
 })
 export class Horizontal {
   private readonly utils = inject(Utils);
-  private readonly feature = inject(FeatureFacade);
+  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly feature: any = {
+
+  };
   private readonly logger = inject(Logger);
   private readonly auth = inject(Auth);
   /**
@@ -54,7 +55,10 @@ export class Horizontal {
    * webinar feature (masterclass / podcast / micro-learning) get `null` here
    * and fall back to the legacy Trailer button.
    */
-  private readonly webinarFacade = inject(WebinarFacade, { optional: true });
+  // ponytail: WebinarFacade went with the Django strip. The webinar CTAs below
+  // already handle a null facade (cards outside the webinar feature always got
+  // null), so they degrade to the same no-op path.
+  private readonly webinarFacade: any = null;
   /**
    * Captured at the card's mount site so we can hand the route-scoped injector
    * to `Utils.openCourseInfoDialog`. The webinar details dialog needs it to
@@ -63,7 +67,7 @@ export class Horizontal {
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly destroyRef = inject(DestroyRef);
 
-  card = model.required<Content>();
+  card = model.required<any>();
   type = input<'masterclass' | 'podcast' | 'micro-learning' | 'webinar'>('masterclass');
   /**
    * Mark the first card(s) of an above-the-fold rail as the LCP candidate.
@@ -97,9 +101,9 @@ export class Horizontal {
    * `upcomingToContent` mapper. Non-null only when the card represents a
    * webinar AND the facade is available — both gate the CTA bar.
    */
-  protected readonly webinar = computed<UpcomingPremiere | null>(() => {
+  protected readonly webinar = computed<any | null>(() => {
     if (this.type() !== 'webinar' || !this.webinarFacade) return null;
-    const w = (this.card()._webinar as UpcomingPremiere | undefined) ?? null;
+    const w = (this.card()._webinar as any | undefined) ?? null;
     return w;
   });
 
@@ -214,7 +218,7 @@ export class Horizontal {
     if (!w) return;
     const url =
       w.registered_webinar?.user_enrollments?.join_url ??
-      w.webinar_dates?.find((s) => s.join_url)?.join_url ??
+      w.webinar_dates?.find((s: any) => s.join_url)?.join_url ??
       null;
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
   }

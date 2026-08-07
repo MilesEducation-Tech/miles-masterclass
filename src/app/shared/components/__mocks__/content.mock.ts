@@ -1,12 +1,5 @@
-import {
-  Content,
-  ContentAbout,
-  CourseCategoryDetails,
-  FieldOfStudy,
-  InstructorDetails,
-} from '../../core/models/course.model';
 
-export const MOCK_INSTRUCTOR: InstructorDetails = {
+export const MOCK_INSTRUCTOR: any = {
   id: 1,
   first_name: 'Sarah',
   last_name: 'Johnson',
@@ -18,19 +11,19 @@ export const MOCK_INSTRUCTOR: InstructorDetails = {
   other_instructors: [],
 };
 
-export const MOCK_CATEGORY: CourseCategoryDetails = {
+export const MOCK_CATEGORY: any = {
   id: 1,
   course_name: 'CPA',
   course_category: 'Accounting',
   description: 'Certified Public Accountant preparation courses',
 };
 
-export const MOCK_FIELDS_OF_STUDY: FieldOfStudy[] = [
+export const MOCK_FIELDS_OF_STUDY: any[] = [
   { id: 45, name: 'Information Technology', cpe_credits: 0.5 },
   { id: 39, name: 'Economics', cpe_credits: 0.5 },
 ];
 
-export const MOCK_MASTERCLASS_CARD: Content = {
+export const MOCK_MASTERCLASS_CARD: any = {
   id: 101,
   title: 'Advanced CPA Exam Strategies',
   thumbnail: 'https://placehold.co/400x600/1a1a2e/ffffff?text=CPA+Strategies',
@@ -53,7 +46,7 @@ export const MOCK_MASTERCLASS_CARD: Content = {
   allDataFetched: false,
 };
 
-export const MOCK_PODCAST_CARD: Content = {
+export const MOCK_PODCAST_CARD: any = {
   ...MOCK_MASTERCLASS_CARD,
   id: 102,
   title: 'CPA Insights Podcast: Tax Season Tips',
@@ -65,7 +58,7 @@ export const MOCK_PODCAST_CARD: Content = {
   class_credits: 1,
 };
 
-export const MOCK_MICROLEARNING_CARD: Content = {
+export const MOCK_MICROLEARNING_CARD: any = {
   ...MOCK_MASTERCLASS_CARD,
   id: 103,
   title: 'Quick Guide: GAAP Fundamentals',
@@ -76,7 +69,7 @@ export const MOCK_MICROLEARNING_CARD: Content = {
   class_credits: 0.5,
 };
 
-export const MOCK_CONTENT_ABOUT: ContentAbout = {
+export const MOCK_CONTENT_ABOUT: any = {
   id: 101,
   title: 'Advanced CPA Exam Strategies',
   thumbnail: 'https://placehold.co/400x600/1a1a2e/ffffff?text=CPA+Strategies',
@@ -155,7 +148,7 @@ export const MOCK_CONTENT_ABOUT: ContentAbout = {
   allowed_email_domains: [],
 };
 
-export const MOCK_CARDS: Content[] = [
+export const MOCK_CARDS: any[] = [
   MOCK_MASTERCLASS_CARD,
   MOCK_PODCAST_CARD,
   MOCK_MICROLEARNING_CARD,

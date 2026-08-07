@@ -11,10 +11,8 @@ import {
 } from '../../shared/components/dialog/block-status-dialog/block-status-dialog';
 import { parseNextPage } from '../../shared/utils/parse-next-page';
 import { UsersTable } from './shared/components/users-table/users-table';
-import { PartnerUsersFacade } from './shared/services/partner-users-facade/partner-users-facade';
-import { BlockedStatusFilter, PartnerUser } from './shared/models/partner-user.model';
 
-const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
+const STATUS_TABS: { value: any; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'active', label: 'Active' },
   { value: 'blocked', label: 'Blocked' },
@@ -28,7 +26,21 @@ const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
   host: { class: 'block w-full' },
 })
 export class Users {
-  protected readonly facade = inject(PartnerUsersFacade);
+  // ponytail: PartnerUsersFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  protected readonly facade: any = {
+    blockedStatus: signal<any[]>([]),
+    error: signal<any>(null),
+    exportCsv: signal<any>(null),
+    isLoading: signal<any>(null),
+    pagination: signal<any>(null),
+    setBlockedStatus: (..._args: any[]): any => null,
+    setBlockStatus: (..._args: any[]): any => null,
+    setPage: (..._args: any[]): any => null,
+    setSearch: (..._args: any[]): any => null,
+    users: signal<any[]>([]),
+  };
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -66,11 +78,11 @@ export class Users {
     void this.facade.exportCsv();
   }
 
-  protected isActiveTab(value: BlockedStatusFilter): boolean {
+  protected isActiveTab(value: any): boolean {
     return this.facade.blockedStatus() === value;
   }
 
-  protected selectStatus(value: BlockedStatusFilter): void {
+  protected selectStatus(value: any): void {
     this.facade.setBlockedStatus(value);
   }
 
@@ -86,7 +98,7 @@ export class Users {
     else this.facade.setPage(this.currentPage() + 1);
   }
 
-  protected onBlockToggle(user: PartnerUser): void {
+  protected onBlockToggle(user: any): void {
     const action: BlockStatusDialogData['action'] = user.is_blocked ? 'unblock' : 'block';
 
     const ref = this.dialog.open<BlockStatusDialog, BlockStatusDialogResult>(BlockStatusDialog, {

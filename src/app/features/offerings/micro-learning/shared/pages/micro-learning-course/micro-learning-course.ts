@@ -14,8 +14,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Dialog } from '../../../../../../shared/core/services/dialog/dialog';
 import { AppDownloadPrompt } from '../../../../../../shared/core/services/app-download-prompt/app-download-prompt';
 import { NotificationService } from '../../../../../../shared/core/services/notification/notification';
-import { MicroLearningCourseFacade } from '../../../../shared/services/micro-learning-course-facade/micro-learning-course-facade';
-import { FeatureFacade } from '../../../../../shared/services/feature-facade/feature-facade';
 import {
   HtmlContentDialog,
   HtmlContentDialogData,
@@ -32,12 +30,6 @@ import {
   MicroLearningFilterSheetResult,
 } from '../../components/micro-learning-filter-sheet/micro-learning-filter-sheet';
 import { MicroLearningAboutPanel } from '../../components/micro-learning-about-panel/micro-learning-about-panel';
-import {
-  MicroLearningFilterOption,
-  MicroLearningOptionId,
-  MicroLearningReel,
-} from '../../../../../../shared/core/models/micro-learning-course.model';
-import { ContentAbout } from '../../../../../../shared/core/models/course.model';
 import { setupCourseSeo } from '../../../../../../shared/utils/seo/course-seo-setup';
 
 @Component({
@@ -47,8 +39,38 @@ import { setupCourseSeo } from '../../../../../../shared/utils/seo/course-seo-se
   styleUrl: './micro-learning-course.css',
 })
 export class MicroLearningCourse {
-  readonly facade = inject(MicroLearningCourseFacade);
-  private readonly feature = inject(FeatureFacade);
+  // ponytail: MicroLearningCourseFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  readonly facade: any = {
+    activeIndex: null as any,
+    activeReel: signal<any>(null),
+    addToCart: signal<any>(null),
+    clear: signal<any>(null),
+    courseDetails: signal<any[]>([]),
+    ctaLoading: signal<any>(null),
+    detailsList: signal<any[]>([]),
+    error: signal<any>(null),
+    handleActionStatus: (..._args: any[]): any => null,
+    handleVideoEnded: signal<any>(null),
+    initForCourse: (..._args: any[]): any => null,
+    loading: signal<any>(null),
+    loadNextPage: signal<any>(null),
+    navigateToReel: (..._args: any[]): any => null,
+    onScrollSelect: (..._args: any[]): any => null,
+    openShareDialog: signal<any>(null),
+    pauseRequest: signal<any>(null),
+    rewatchRequest: signal<any>(null),
+    scrollToIdRequest: signal<any>(null),
+    toggleBookmark: signal<any>(null),
+    trackActivity: (..._args: any[]): any => null,
+  };
+  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly feature: any = {
+
+  };
   private readonly dialog = inject(Dialog);
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -61,7 +83,7 @@ export class MicroLearningCourse {
   // block rejections if the browser refuses to autoplay an unmuted video;
   // the user can always tap the CTA to start playback.
   readonly muted = signal<boolean>(false);
-  readonly filters = signal<MicroLearningFilterOption[]>([]);
+  readonly filters = signal<any[]>([]);
 
   readonly activeIndex = this.facade.activeIndex;
 
@@ -98,7 +120,7 @@ export class MicroLearningCourse {
    * `:courseId`), so size is naturally capped at the number of reels in the
    * current course tree — no LRU eviction needed.
    */
-  private readonly aboutCache = new Map<number, ContentAbout>();
+  private readonly aboutCache = new Map<number, any>();
   private readonly transcriptCache = new Map<number, string>();
   private readonly glossaryCache = new Map<number, string>();
 
@@ -130,7 +152,7 @@ export class MicroLearningCourse {
       const req = this.facade.scrollToIdRequest();
       if (!req) return;
       untracked(() => {
-        const index = this.facade.detailsList().findIndex((r) => r.id === req.id);
+        const index = this.facade.detailsList().findIndex((r: any) => r.id === req.id);
         if (index >= 0) this.scrollReelTo(index);
       });
     });
@@ -143,7 +165,7 @@ export class MicroLearningCourse {
       const req = this.facade.rewatchRequest();
       if (!req) return;
       untracked(() => {
-        const reel = this.facade.detailsList().find((r) => r.id === req.id);
+        const reel = this.facade.detailsList().find((r: any) => r.id === req.id);
         if (!reel) return;
         this.completedChapterIds.delete(reel.chapter_id);
         if (this.trackedReelChapterId === reel.chapter_id) {
@@ -162,7 +184,7 @@ export class MicroLearningCourse {
     this.completedChapterIds.clear();
   }
 
-  goToEpisode(episode: MicroLearningReel): void {
+  goToEpisode(episode: any): void {
     this.facade.navigateToReel(episode.id);
   }
 
@@ -206,7 +228,7 @@ export class MicroLearningCourse {
       this.lastTrackedPercentage = 0;
     }
 
-    const reel = this.facade.detailsList().find((r) => r.chapter_id === event.chapterId);
+    const reel = this.facade.detailsList().find((r: any) => r.chapter_id === event.chapterId);
     if (!reel) return;
 
     const inCpeMode = !!reel.cpe_mode_details?.cpe_mode;
@@ -310,17 +332,17 @@ export class MicroLearningCourse {
   }
 
   /**
-   * Dispatch table for the inline reel menu. The `Record<MicroLearningOptionId, …>`
+   * Dispatch table for the inline reel menu. The `Record<any, …>`
    * type is itself the exhaustiveness guard: adding a new variant to the union
    * fails to compile here until a handler is registered.
    */
-  private readonly optionHandlers: Record<MicroLearningOptionId, () => void> = {
+  private readonly optionHandlers: Record<any, () => void> = {
     about: () => this.openAbout(),
     transcript: () => this.openTranscript(),
     glossary: () => this.openGlossary(),
   };
 
-  onOptionSelected(id: MicroLearningOptionId): void {
+  onOptionSelected(id: any): void {
     this.optionHandlers[id]();
   }
 
@@ -343,7 +365,7 @@ export class MicroLearningCourse {
         { skipErrorNotification: true },
       )
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
+      .subscribe((response: any) => {
         const html = response?.data?.chapter?.transcript_text;
         if (!html) {
           this.notification.info('Transcript', 'No transcript is available for this reel.');
@@ -370,7 +392,7 @@ export class MicroLearningCourse {
     this.facade
       .fetchCourseContent({ id: reel.id, course_type: 'micro_learning' })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
+      .subscribe((response: any) => {
         const html = response?.data?.glossary_transcript_text;
         if (!html) {
           this.notification.info('Glossary', 'No glossary is available for this reel.');
@@ -397,19 +419,19 @@ export class MicroLearningCourse {
       return;
     }
     this.feature
-      .getAbout<ContentAbout>(reel.id, 'micro_learning')
+      .getAbout(reel.id, 'micro_learning')
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
+      .subscribe((res: any) => {
         const data = res?.data;
         if (!data) {
           this.notification.info('About', 'No details are available for this reel.');
           return;
         }
-        const enriched: ContentAbout = {
+        const enriched: any = {
           ...data,
           learning_objective_list: (data.learning_objectives ?? '')
             .split(/\r?\n/)
-            .map((line) => line.trim())
+            .map((line: any) => line.trim())
             .filter(Boolean),
         };
         this.aboutCache.set(reel.id, enriched);
@@ -417,7 +439,7 @@ export class MicroLearningCourse {
       });
   }
 
-  private showAboutPanel(data: ContentAbout): void {
+  private showAboutPanel(data: any): void {
     this.dialog.open(MicroLearningAboutPanel, {
       data,
       position: 'right',

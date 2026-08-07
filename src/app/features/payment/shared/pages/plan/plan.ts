@@ -1,7 +1,6 @@
 import { Component, computed, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { PaymentFacade } from '../../service/payment-facade/payment-facade';
 import { PlanScrollingGallery } from '../../components/plan-scrolling-gallery/plan-scrolling-gallery';
 import { PlanComparisonTable } from '../../components/plan-comparison-table/plan-comparison-table';
 import { PlanSelectionCard } from '../../components/plan-selection-card/plan-selection-card';
@@ -9,7 +8,6 @@ import { PromoOffer } from '../../components/promo-offer/promo-offer';
 import { PromoCoupons } from '../../components/promo-coupons/promo-coupons';
 import { PageLoading } from '../../../../../shared/components/ui/page-loading/page-loading';
 import { ErrorState } from '../../../../../shared/components/ui/error-state/error-state';
-import { SubscriptionPlan } from '../../../../../shared/core/models/payment.model';
 import { Auth } from '../../../../../shared/core/services/auth/auth';
 import { NotificationService } from '../../../../../shared/core/services/notification/notification';
 import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
@@ -18,7 +16,7 @@ import { UtilsDialog } from '../../../../../shared/components/dialog/utils-dialo
 import { SIGNUP_DIALOG_DATA } from '../../../../../shared/core/constant/payment';
 
 interface BillingCard {
-  plan: SubscriptionPlan;
+  plan: any;
   kind: 'yearly' | 'monthly' | 'enterprise';
 }
 
@@ -37,7 +35,19 @@ interface BillingCard {
   styleUrl: './plan.css',
 })
 export class Plan {
-  private readonly facade = inject(PaymentFacade);
+  // ponytail: PaymentFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly facade: any = {
+    addToCart: (..._args: any[]): any => null,
+    loadMyBucket: (..._args: any[]): any => null,
+    loadSubscriptionPlans: signal<any[]>([]),
+    openFirmSponsorshipDialog: (..._args: any[]): any => null,
+    plansError: signal<any>(null),
+    plansLoading: signal<any>(null),
+    promptPartnerCodeOrSubscribe: (..._args: any[]): any => null,
+    subscriptionPlans: signal<any[]>([]),
+  };
   private readonly router = inject(Router);
   private readonly auth = inject(Auth);
   private readonly notification = inject(NotificationService);
@@ -48,7 +58,7 @@ export class Plan {
   // Starter (unlimited free trial) plans are hidden from this page — the
   // free-trial path was retired from the marketing/comparison surface.
   protected readonly plans = computed(() =>
-    this.facade.subscriptionPlans().filter((p) => !p.is_unlimited_trial_enabled),
+    this.facade.subscriptionPlans().filter((p: any) => !p.is_unlimited_trial_enabled),
   );
   protected readonly loading = computed(() => this.facade.plansLoading());
   protected readonly error = computed(() => this.facade.plansError());
@@ -66,15 +76,15 @@ export class Plan {
   } | null>(() => {
     const item = this.facade
       .cartData()
-      ?.cartitem_data.find((i) => i.item_details.delivery_mode === 'subscription');
+      ?.cartitem_data.find((i: any) => i.item_details.delivery_mode === 'subscription');
     if (item) return { planId: item.item_details.id, cycle: item.pay_method ?? null };
-    const flagged = this.plans().find((p) => p.is_added_to_cart);
+    const flagged = this.plans().find((p: any) => p.is_added_to_cart);
     return flagged ? { planId: flagged.id, cycle: null } : null;
   });
 
   protected readonly selectedPlanId = signal<number | null>(null);
   protected readonly selectedPlan = computed(
-    () => this.plans().find((p) => p.id === this.selectedPlanId()) ?? null,
+    () => this.plans().find((p: any) => p.id === this.selectedPlanId()) ?? null,
   );
 
   // Which billing card the user picked for the selected priced plan.
@@ -84,14 +94,14 @@ export class Plan {
   // A priced plan renders as two billing cards (Yearly + Monthly), the
   // Enterprise (pay_per_course) plan as one. All cards are equal width.
   // Monthly (EMI) is country-dependent — driven by the backend's `emi_available`.
-  private monthlyForPlan(plan: SubscriptionPlan): boolean {
+  private monthlyForPlan(plan: any): boolean {
     return !!plan.price_detail?.emi_available;
   }
 
   protected readonly displayCards = computed<BillingCard[]>(() => {
     const all = this.plans();
-    const enterprise = all.filter((p) => p.subscription_type === 'pay_per_course');
-    const priced = all.filter((p) => p.subscription_type !== 'pay_per_course');
+    const enterprise = all.filter((p: any) => p.subscription_type === 'pay_per_course');
+    const priced = all.filter((p: any) => p.subscription_type !== 'pay_per_course');
 
     const cards: BillingCard[] = [];
     for (const plan of priced) {
@@ -117,7 +127,7 @@ export class Plan {
         !!locked.cycle && card.kind !== 'enterprise' && card.kind !== locked.cycle;
       if (differentPlan || differentCycle) {
         const name =
-          this.plans().find((p) => p.id === locked.planId)?.subscription_name ?? 'A plan';
+          this.plans().find((p: any) => p.id === locked.planId)?.subscription_name ?? 'A plan';
         const cycleSuffix = locked.cycle ? ` (${locked.cycle} billing)` : '';
         this.notification.info(
           'Plan already in cart',
@@ -182,7 +192,7 @@ export class Plan {
       if (all.length === 0) return;
 
       const locked = this.cartSubscription();
-      const lockedPlan = locked ? all.find((p) => p.id === locked.planId) : undefined;
+      const lockedPlan = locked ? all.find((p: any) => p.id === locked.planId) : undefined;
       if (locked && lockedPlan) {
         this.selectedPlanId.set(lockedPlan.id);
         if (locked.cycle) this.selectedCycle.set(locked.cycle);
@@ -190,7 +200,7 @@ export class Plan {
       }
 
       if (this.selectedPlanId() === null) {
-        const preferred = all.find((p) => p.is_recommended) ?? all[0];
+        const preferred = all.find((p: any) => p.is_recommended) ?? all[0];
         this.selectedPlanId.set(preferred.id);
         this.selectedCycle.set(this.monthlyForPlan(preferred) ? 'monthly' : 'yearly');
       }
@@ -250,7 +260,7 @@ export class Plan {
     this.facade.openFirmSponsorshipDialog(plan, this.effectiveCycle());
   }
 
-  private navigateToConnectUs(plan: SubscriptionPlan): void {
+  private navigateToConnectUs(plan: any): void {
     const { country, profession } = this.utils.getRouteParams();
     this.router.navigate([`/${country}/${profession}/connect-us`], {
       queryParams: { enquiryType: `Interest in ${plan.subscription_name} plan` },

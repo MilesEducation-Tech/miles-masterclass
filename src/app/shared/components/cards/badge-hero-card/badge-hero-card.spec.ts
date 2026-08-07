@@ -1,8 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { BadgeItem } from '../../../core/models/cpe-tracker.model';
 import { BadgeHeroCard } from './badge-hero-card';
 
-function makeBadge(overrides: Partial<BadgeItem> = {}): BadgeItem {
+function makeBadge(overrides: Partial<any> = {}): any {
   return {
     id: 1,
     name: 'CAIRA — Level 1',
@@ -23,7 +22,7 @@ function makeBadge(overrides: Partial<BadgeItem> = {}): BadgeItem {
 }
 
 describe('BadgeHeroCard', () => {
-  function render(badge: BadgeItem, layout: 'hero' | 'grid' = 'hero') {
+  function render(badge: any, layout: 'hero' | 'grid' = 'hero') {
     const fixture = TestBed.createComponent(BadgeHeroCard);
     fixture.componentRef.setInput('badge', badge);
     fixture.componentRef.setInput('layout', layout);
@@ -83,7 +82,7 @@ describe('BadgeHeroCard', () => {
 
   it('emits claim when the claimable CTA is clicked', () => {
     const fixture = render(makeBadge({ is_claimable: true, progress_percentage: 100 }));
-    let emitted: BadgeItem | null = null;
+    let emitted: any | null = null;
     fixture.componentRef.instance.claim.subscribe((b) => (emitted = b));
     const button: HTMLButtonElement | null = fixture.nativeElement.querySelector('button');
     button?.click();
@@ -95,7 +94,7 @@ describe('BadgeHeroCard', () => {
     const fixture = render(
       makeBadge({ is_claimed: true, is_claimable: false, progress_percentage: 100 }),
     );
-    let emitted: BadgeItem | null = null;
+    let emitted: any | null = null;
     fixture.componentRef.instance.share.subscribe((b) => (emitted = b));
     const button: HTMLButtonElement | null = fixture.nativeElement.querySelector('button');
     button?.click();

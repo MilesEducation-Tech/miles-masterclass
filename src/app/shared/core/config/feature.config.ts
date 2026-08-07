@@ -1,6 +1,5 @@
-import { FeatureConfigMap } from '../models/feature.model';
 
-export const featureConfig: FeatureConfigMap = {
+export const featureConfig: any = {
   home: {
     public: ['track', 'comingSoon', 'instructor'],
     userSpecific: [],

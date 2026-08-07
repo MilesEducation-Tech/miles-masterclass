@@ -3,7 +3,6 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
 import { faSolidArrowUpRightFromSquare } from '@ng-icons/font-awesome/solid';
 import { logo } from '../../core/constant/icon';
-import { ContentAbout, ContentDetails } from '../../core/models/course.model';
 import { CategoriesList } from '../categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { DurationPipe } from '../../core/pipes/duration/duration-pipe';
@@ -18,7 +17,7 @@ import { Dialog } from '../../core/services/dialog/dialog';
   styleUrl: './course-about.css',
 })
 export class CourseAbout {
-  card = input.required<ContentAbout | ContentDetails>();
+  card = input.required<any | any>();
   type = input<'masterclass' | 'podcast' | 'micro-learning' | 'webinar'>('masterclass');
 
   private readonly utils = inject(Utils);

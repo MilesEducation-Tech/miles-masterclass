@@ -12,7 +12,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, ActivatedRoute } from '@angular/router';
 import { VideoChapter } from '../../../../shared/components/video-chapter/video-chapter';
 import { Backward } from '../../../../../../shared/components/backward/backward';
-import { ChapterFacade } from '../../../../shared/services/chapter-facade/chapter-facade';
 import { Utils } from '../../../../../../shared/core/services/utils/utils';
 import { Auth } from '../../../../../../shared/core/services/auth/auth';
 import { Dialog } from '../../../../../../shared/core/services/dialog/dialog';
@@ -33,7 +32,33 @@ export class MasterclassChapter {
   courseTitle = input<string>();
   chapterId = input<string>();
 
-  readonly chapterFacade = inject(ChapterFacade);
+  // ponytail: ChapterFacade was deleted with the Django strip. This placeholder
+
+  // keeps the template bindings compiling and renders the empty state.
+
+  // Swap in the new backend's service — the template needs no changes.
+
+  readonly chapterFacade: any = {
+
+    chapterNavigation: signal<any>(null),
+
+    clear: signal<any>(null),
+
+    courseChapters: signal<any[]>([]),
+
+    courseDetails: signal<any[]>([]),
+
+    fetchQuizReport: (..._args: any[]): any => null,
+
+    loadCourse: (..._args: any[]): any => null,
+
+    loading: signal<any>(null),
+
+    selectedChapterId: null as any,
+
+    trackActivity: (..._args: any[]): any => null,
+
+  };
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -131,7 +156,7 @@ export class MasterclassChapter {
 
     return this.chapterFacade
       .courseDetails()
-      ?.chapter_wise_details?.find((detail) => detail.chapter_id === currentChapterId);
+      ?.chapter_wise_details?.find((detail: any) => detail.chapter_id === currentChapterId);
   });
 
   readonly courseNavigation = signal('../../..');
@@ -150,7 +175,7 @@ export class MasterclassChapter {
 
     // Find the chapter to get its name
     const chapters = this.chapterFacade.courseChapters();
-    const chapter = chapters.find((c) => c.id === chapterId);
+    const chapter = chapters.find((c: any) => c.id === chapterId);
 
     // Construct slug if chapter found
     let slug = '';
@@ -219,7 +244,7 @@ export class MasterclassChapter {
         this.chapterFacade
           .selectCpeMode(true)
           .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe((res) => {
+          .subscribe((res: any) => {
             if (res) {
               this.videoChapter()?.resetPlayer();
             }

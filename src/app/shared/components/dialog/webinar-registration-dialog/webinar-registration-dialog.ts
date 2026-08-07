@@ -2,7 +2,6 @@ import { Component, computed } from '@angular/core';
 
 import { Button } from '../../ui/button/button';
 import { DialogRef } from '../../../core/services/dialog/dialog';
-import { UpcomingPremiere } from '../../../core/models/feature.model';
 import {
   WebinarRegistrationForm,
   WebinarRegistrationFormValue,
@@ -10,13 +9,13 @@ import {
 import { nextSessionOf } from '../../../../features/offerings/webinar/shared/utils/webinar-status';
 
 export interface WebinarRegistrationDialogData {
-  webinar: UpcomingPremiere;
+  webinar: any;
   /**
    * Notified after the registration form successfully completes (direct enroll,
    * already enrolled, or OTP verified). The list item / facade can use this to
    * flip the local `registered_webinar.added` flag optimistically.
    */
-  onRegistered?: (payload: WebinarRegistrationFormValue, webinar: UpcomingPremiere) => void;
+  onRegistered?: (payload: WebinarRegistrationFormValue, webinar: any) => void;
 }
 
 /**

@@ -1,3 +1,4 @@
+import { ActionStatus, deriveActionStatus, isReelCompleted } from '../../utils/reel-status';
 import {
   Component,
   computed,
@@ -33,13 +34,6 @@ import {
   VideoJs,
   VideoSource,
 } from '../../../../../../shared/components/video-js/video-js';
-import {
-  ActionStatus,
-  deriveActionStatus,
-  isReelCompleted,
-  MicroLearningOptionId,
-  MicroLearningReel,
-} from '../../../../../../shared/core/models/micro-learning-course.model';
 import { TotalCpeCreditsPipe } from '../../../../../../shared/core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { Auth } from '../../../../../../shared/core/services/auth/auth';
 
@@ -75,7 +69,7 @@ export interface ReelActivityPayload {
   ],
 })
 export class MicroLearningReelCard {
-  readonly episode = input.required<MicroLearningReel>();
+  readonly episode = input.required<any>();
   readonly muted = input<boolean>(false);
   /** True only for the reel currently in view; drives play/pause + tracking. */
   readonly active = input<boolean>(false);
@@ -91,7 +85,7 @@ export class MicroLearningReelCard {
   readonly muteToggled = output<void>();
   readonly shared = output<void>();
   /** Fires when the user picks an item from the inline `[ngMenu]`. */
-  readonly optionSelected = output<MicroLearningOptionId>();
+  readonly optionSelected = output<any>();
   /** Emits the clicked reel's id so the facade acts on this card, not the stale active reel. */
   readonly actionInvoked = output<number>();
   readonly bookmarkToggled = output<void>();
@@ -145,7 +139,7 @@ export class MicroLearningReelCard {
    * own literal — narrowing here keeps the parent contract honest.
    */
   protected onMenuItemSelected(value: string): void {
-    this.optionSelected.emit(value as MicroLearningOptionId);
+    this.optionSelected.emit(value as any);
   }
 
   readonly ctaLabel = computed(() => {

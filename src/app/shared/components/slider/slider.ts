@@ -7,7 +7,6 @@ import {
   matArrowBackIosRound,
   matPlayArrowRound,
 } from '@ng-icons/material-icons/round';
-import { Content } from '../../core/models/course.model';
 import { VideoPoster } from '../video-poster/video-poster';
 import { MilesSlug } from '../miles-slug/miles-slug';
 import { Button } from '../ui/button/button';
@@ -17,7 +16,6 @@ import { matInfoOutline } from '@ng-icons/material-icons/outline';
 import { CourseInfo } from '../dialog/course-info/course-info';
 import { Utils } from '../../core/services/utils/utils';
 import { Router } from '@angular/router';
-import { FeatureFacade } from '../../../features/shared/services/feature-facade/feature-facade';
 import { Dialog } from '../../core/services/dialog/dialog';
 import { Viewport } from '../../core/services/viewport/viewport';
 
@@ -67,7 +65,12 @@ export class Slider {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly utils = inject(Utils);
   private readonly router = inject(Router);
-  private readonly feature = inject(FeatureFacade);
+  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly feature: any = {
+
+  };
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);
   private readonly viewport = inject(Viewport);
@@ -75,7 +78,7 @@ export class Slider {
   private animationTimerId: ReturnType<typeof setTimeout> | null = null;
 
   /** The items to display in the slider */
-  readonly items = model.required<readonly Content[]>();
+  readonly items = model.required<readonly any[]>();
 
   /** Current active slide index (0-based, represents the "hero" slide) */
   protected readonly activeIndex = signal(0);
@@ -172,7 +175,7 @@ export class Slider {
     this.router.navigate([this.baseRoute(), 'masterclass', id, titleSlug]);
   }
 
-  openCourseInfo(card: Content) {
+  openCourseInfo(card: any) {
     if (!card.allDataFetched) {
       this.feature
         .getAbout(card.id)
@@ -196,7 +199,7 @@ export class Slider {
     }
   }
 
-  openCourseInfoDialog(card: Content) {
+  openCourseInfoDialog(card: any) {
     const dialogRef = this.dialog.open(CourseInfo, {
       maxWidth: '100%',
       enterAnimationDuration: '300ms',

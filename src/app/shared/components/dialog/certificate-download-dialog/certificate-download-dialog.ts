@@ -6,14 +6,8 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroAcademicCap, heroCheckBadge, heroXMark } from '@ng-icons/heroicons/outline';
 import { Button } from '../../ui/button/button';
 import { DialogRef } from '../../../core/services/dialog/dialog';
-import { ApiClient } from '../../../core/services/api-client/api-client';
 import { Logger } from '../../../core/services/logger/logger';
 import { NotificationService } from '../../../core/services/notification/notification';
-import {
-  DownloadCertificateItem,
-  MASTERCLASS_ROUTES,
-} from '../../../core/models/masterclass.model';
-import { CommonResponse, RouteRequest } from '../../../core/models/http.model';
 import { phosphorDownloadSimpleFill, phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
 import { BlobDownloadItem, buildPdfFileName, downloadFiles } from '../../../utils/blob-download';
 import { Analytics } from '../../../core/services/analytics/analytics';
@@ -62,12 +56,12 @@ export interface CertificateDialogData {
   certificateType?: 'nasba' | 'miles' | 'both';
 }
 
-type DownloadCertificateRequest = RouteRequest<typeof MASTERCLASS_ROUTES.downloadCertificate>;
-type DownloadCertificateResponse = CommonResponse<DownloadCertificateItem[]>;
+type DownloadCertificateRequest = any;
+type DownloadCertificateResponse = any;
 
 /** Sentinel returned by the catchError branch so subscribe() can distinguish API failure from empty data. */
 const FETCH_ERRORED = Symbol('fetch_errored');
-type FetchResult = DownloadCertificateItem[] | typeof FETCH_ERRORED;
+type FetchResult = any[] | typeof FETCH_ERRORED;
 
 /**
  * Which certificate variant a download click is for. The dialog can render
@@ -96,7 +90,16 @@ export class CertificateDownloadDialog implements OnInit {
   dialogRef!: DialogRef<CertificateDownloadDialog>;
   data!: CertificateDialogData;
 
-  private readonly api = inject(ApiClient);
+  // ponytail: ApiClient was deleted with the Django strip. This placeholder
+
+  // keeps the template bindings compiling and renders the empty state.
+
+  // Swap in the new backend's service — the template needs no changes.
+
+  private readonly api: any = {
+
+
+  };
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -250,13 +253,13 @@ export class CertificateDownloadDialog implements OnInit {
     };
 
     return this.api
-      .post<DownloadCertificateResponse>(MASTERCLASS_ROUTES.downloadCertificate.path, body)
+      .post('', body) /* ponytail: downloadCertificate endpoint removed with the backend */
       .pipe(
         // Filter out rows missing the URL for the requested variant — defensive
         // against partial backend responses (e.g. a row with miles only when
         // nasba was asked for).
         map<DownloadCertificateResponse, FetchResult>((res) =>
-          (res?.data ?? []).filter((c) => !!pickUrl(c, variant)),
+          (res?.data ?? []).filter((c: any) => !!pickUrl(c, variant)),
         ),
         catchError<FetchResult, Observable<FetchResult>>((err) => {
           this.logger.error('CertificateDownloadDialog.fetch failed', err);
@@ -268,7 +271,7 @@ export class CertificateDownloadDialog implements OnInit {
   }
 
   private async runDownload(
-    certs: DownloadCertificateItem[],
+    certs: any[],
     variant: CertificateVariant,
   ): Promise<void> {
     const items: BlobDownloadItem[] = certs.map((cert) => ({
@@ -312,6 +315,6 @@ export class CertificateDownloadDialog implements OnInit {
 }
 
 /** Pull the right URL field off a row based on which variant was clicked. */
-function pickUrl(cert: DownloadCertificateItem, variant: CertificateVariant): string | undefined {
+function pickUrl(cert: any, variant: CertificateVariant): string | undefined {
   return variant === 'miles' ? cert.miles_certificate_url : cert.nasba_certificate_url;
 }

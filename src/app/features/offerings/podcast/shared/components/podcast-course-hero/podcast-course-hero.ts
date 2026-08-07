@@ -1,7 +1,6 @@
-import { Component, computed, DestroyRef, inject, input } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Auth } from '../../../../../../shared/core/services/auth/auth';
-import { MasterclassFacade } from '../../../../shared/services/masterclass-facade/masterclass-facade';
 import { Utils } from '../../../../../../shared/core/services/utils/utils';
 import { cn } from '../../../../../../shared/utils/cn';
 import { Button } from '../../../../../../shared/components/ui/button/button';
@@ -56,7 +55,19 @@ import { CairaCredlyBadge } from '../../../../../../shared/components/cards/cair
 })
 export class PodcastCourseHero {
   readonly auth = inject(Auth);
-  readonly masterclass = inject(MasterclassFacade);
+  // ponytail: MasterclassFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  readonly masterclass: any = {
+    courseDetails: signal<any[]>([]),
+    currentProgress: signal<any[]>([]),
+    launchCourse: signal<any>(null),
+    openCertificateDownloadDialog: signal<any>(null),
+    openShareDialog: signal<any>(null),
+    startFinalAssessment: (..._args: any[]): any => null,
+    submitFeedback: signal<any>(null),
+    toggleCpeMode: (..._args: any[]): any => null,
+  };
   private readonly utils = inject(Utils);
   private readonly destroyRef = inject(DestroyRef);
   cn = cn;
@@ -97,7 +108,7 @@ export class PodcastCourseHero {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
         if (response.status) {
-          this.masterclass.courseDetails.update((course) =>
+          this.masterclass.courseDetails.update((course: any) =>
             course ? { ...course, added_bookmark: response.is_bookmarked } : course,
           );
         }
@@ -116,7 +127,7 @@ export class PodcastCourseHero {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
         if (response.status) {
-          this.masterclass.courseDetails.update((course) =>
+          this.masterclass.courseDetails.update((course: any) =>
             course ? { ...course, is_added_to_cart: response.in_cart } : course,
           );
         }

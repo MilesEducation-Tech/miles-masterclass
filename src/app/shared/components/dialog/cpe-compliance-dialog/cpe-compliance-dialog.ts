@@ -2,12 +2,11 @@ import { DecimalPipe } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
 import { Button } from '../../ui/button/button';
 import { DialogRef } from '../../../core/services/dialog/dialog';
-import { CreditsSummary, StudyModeBreakdown } from '../../../core/models/cpe-tracker.model';
 
 export interface ComplianceDialogData {
   year: number;
-  credits: CreditsSummary;
-  fieldsOfStudy: StudyModeBreakdown[];
+  credits: any;
+  fieldsOfStudy: any[];
   stateBoardName?: string;
 }
 

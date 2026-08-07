@@ -1,241 +1,93 @@
-import {
-  DestroyRef,
-  Injectable,
-  PLATFORM_ID,
-  computed,
-  inject,
-  makeStateKey,
-  signal,
-} from '@angular/core';
-import { TransferState } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { isPlatformBrowser, isPlatformServer } from '@angular/common';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
 import { Storage } from '../storage/storage';
-import { ApiClient } from '../api-client/api-client';
 import { environment } from '../../../../../environments/environment';
-import { AUTH_ROUTES, User, CurrentPlanData } from '../../models/auth.model';
-import { HttpContext } from '@angular/common/http';
-import { RouteRequest, RouteResponse, SKIP_ERROR_NOTIFICATION } from '../../models/http.model';
-import { Logger } from '../logger/logger';
 
-// Type aliases for cleaner usage
-type MyProfileResponse = RouteResponse<typeof AUTH_ROUTES.myProfile>;
-type CurrentPlanResponse = RouteResponse<typeof AUTH_ROUTES.currentPlan>;
-type RefreshTokenRequest = RouteRequest<typeof AUTH_ROUTES.refreshToken>;
-type RefreshTokenResponse = RouteResponse<typeof AUTH_ROUTES.refreshToken>;
-
-/** TransferState key for user data */
-const USER_DATA_KEY = makeStateKey<User | null>(environment.AUTH.transferUserData);
-const AUTH_STATUS_KEY = makeStateKey<boolean>(environment.AUTH.transferAuthStatus);
-
+/**
+ * ponytail: local-only auth stub. The Django token lifecycle (profile fetch,
+ * current-plan fetch, refresh-token rotation, SSR TransferState hydration) was
+ * removed with the backend strip. The public surface below is unchanged, so
+ * every guard, the layout header and `user-avatar-menu` keep compiling and the
+ * logged-in design is still reachable by setting the access-token cookie.
+ *
+ * To reconnect: reinstate `fetchMyProfile` / `fetchCurrentPlan` / `refreshToken`
+ * against the new backend and have them call `setAuthenticated` / `setCurrentPlan`.
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class Auth {
   private readonly storage = inject(Storage);
-  private readonly logger = inject(Logger);
-  private readonly apiClient = inject(ApiClient);
-  private readonly transferState = inject(TransferState);
-  private readonly platformId = inject(PLATFORM_ID);
-  private readonly destroyRef = inject(DestroyRef);
 
-  private readonly isBrowser = isPlatformBrowser(this.platformId);
-  private readonly isServer = isPlatformServer(this.platformId);
-
-  // Internal signal to track auth state changes
+  /** Bumped on every auth mutation so `isAuthenticated` recomputes. */
   private readonly authStateChanged = signal(0);
 
-  // Loading state for profile fetch
   readonly isLoadingProfile = signal(false);
 
-  /**
-   * Computed signal that checks if user is authenticated
-   * Reads access token from cookies (SSR-safe)
-   */
   readonly isAuthenticated = computed(() => {
-    // Trigger re-computation when auth state changes
     this.authStateChanged();
     return this.hasValidToken();
   });
 
-  /**
-   * Signal to store current user data
-   */
-  readonly currentUser = signal<User | null>(null);
-  readonly currentPlan = signal<CurrentPlanData | null>(null);
+  readonly currentUser = signal<any | null>(null);
+  readonly currentPlan = signal<any | null>(null);
 
-  /**
-   * Computed signal for quick user checks
-   */
   readonly isLoggedIn = computed(() => this.isAuthenticated());
 
   /** Whether the user currently holds an active subscription. */
   readonly hasActivePlan = computed(() => this.isPlanActive(this.currentPlan()));
 
-  /**
-   * Internal subject to queue requests while refreshing
-   */
   readonly accessTokenSubject = new BehaviorSubject<string | null>(null);
 
-  /**
-   * Signal to indicate if a refresh token request is in progress
-   */
   readonly isRefreshing = signal(false);
 
   constructor() {
-    // Initialize user data - use TransferState for SSR/client sync
-    this.initializeUserData();
-  }
-
-  /**
-   * Initialize user data from TransferState or localStorage
-   * On server: Load from localStorage (via Storage service) and store in TransferState
-   * On client: Load from TransferState first, then fallback to localStorage
-   */
-  private initializeUserData(): void {
-    if (this.isServer) {
-      // Server: Read user data and store in TransferState for client
-      const userData = this.loadUserFromStorage();
-      const isAuth = this.hasValidToken();
-
-      // Store in TransferState for client hydration
-      this.transferState.set(USER_DATA_KEY, userData);
-      this.transferState.set(AUTH_STATUS_KEY, isAuth);
-
-      if (userData) {
-        this.currentUser.set(userData);
-      }
-    } else if (this.isBrowser) {
-      // Browser: Check TransferState first
-      const transferredUser = this.transferState.get(USER_DATA_KEY, null);
-      const transferredAuth = this.transferState.get(AUTH_STATUS_KEY, false);
-
-      if (transferredUser || transferredAuth) {
-        // Use transferred state and remove it
-        if (transferredUser) {
-          this.currentUser.set(transferredUser);
-        }
-        this.transferState.remove(USER_DATA_KEY);
-        this.transferState.remove(AUTH_STATUS_KEY);
-      } else {
-        // No transferred state, load from localStorage
-        const userData = this.loadUserFromStorage();
-        if (userData) {
-          this.currentUser.set(userData);
-        }
-      }
+    const userData = this.loadUserFromStorage();
+    if (userData) {
+      this.currentUser.set(userData);
     }
   }
 
-  /**
-   * Load user data from localStorage
-   */
-  private loadUserFromStorage(): User | null {
-    const userData = this.storage.getLocal<User>(environment.AUTH.userData);
-    if (userData && this.hasValidToken()) {
-      return userData;
-    }
-    return null;
+  private loadUserFromStorage(): any | null {
+    const userData = this.storage.getLocal<any>(environment.AUTH.userData);
+    return userData && this.hasValidToken() ? userData : null;
   }
 
-  /**
-   * Check if a valid access token exists
-   */
   hasValidToken(): boolean {
     const token = this.storage.getCookie(environment.AUTH.accessToken);
     return !!token && token.length > 0;
   }
 
-  /**
-   * Get the access token
-   */
   getAccessToken(): string | null {
-    const token = this.storage.getCookie(environment.AUTH.accessToken);
-    return token || null;
+    return this.storage.getCookie(environment.AUTH.accessToken) || null;
   }
 
-  /**
-   * Get the refresh token
-   */
   getRefreshToken(): string | null {
-    const token = this.storage.getCookie(environment.AUTH.refreshToken);
-    return token || null;
+    return this.storage.getCookie(environment.AUTH.refreshToken) || null;
   }
 
-  /**
-   * Fetch user profile from API
-   */
+  /** ponytail: no-op until the new backend exposes a profile endpoint. */
   fetchMyProfile(): void {
-    if (!this.isBrowser || !this.hasValidToken()) {
-      return;
-    }
-
-    this.isLoadingProfile.set(true);
-
-    const context = new HttpContext().set(SKIP_ERROR_NOTIFICATION, true);
-    this.apiClient
-      .get<MyProfileResponse>(AUTH_ROUTES.myProfile.path, { context })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          if (response.status_code && response.data) {
-            this.setAuthenticated(response.data);
-            // Fetch current plan after profile. `fetchCurrentPlan` now returns
-            // an Observable (so callers can await/refresh); fire-and-forget
-            // here is fine — `takeUntilDestroyed` keeps it bounded.
-            this.fetchCurrentPlan().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
-          }
-          this.isLoadingProfile.set(false);
-        },
-        error: (error) => {
-          this.logger.error('Failed to fetch profile', error);
-          this.isLoadingProfile.set(false);
-        },
-      });
+    // intentionally empty
   }
 
   /**
-   * Fetches the current plan and propagates it to the `currentPlan` signal.
-   * The signal is **always** reset based on the response — including to
-   * `null` when the API returns no plan — so consumers (e.g. the header
-   * `hasActivePlan` computed) can't end up showing stale post-cancellation
-   * or post-expiry data.
-   *
-   * Returns an Observable so callers (payment-success handlers, the
-   * engagement-dialog re-check before opening, etc.) can await the refresh
-   * before reading the signal. Errors are swallowed (logged) and resolve to
-   * `null` so the caller never has to wire a separate error path.
+   * ponytail: resolves to the locally-held plan (always `null` until something
+   * calls `setAuthenticated`). Kept returning an Observable because callers —
+   * payment-success handlers, the engagement dialog — await it before reading
+   * the signal.
    */
-  fetchCurrentPlan(): Observable<CurrentPlanData | null> {
-    if (!this.hasValidToken()) {
-      this.setCurrentPlan(null);
-      return of(null);
-    }
-
-    const context = new HttpContext().set(SKIP_ERROR_NOTIFICATION, true);
-    return this.apiClient.get<CurrentPlanResponse>(AUTH_ROUTES.currentPlan.path, { context }).pipe(
-      map((response) => response?.data ?? null),
-      tap((plan) => this.setCurrentPlan(plan)),
-      catchError((err) => {
-        this.logger.error('Failed to fetch current plan', err);
-        return of<CurrentPlanData | null>(null);
-      }),
-    );
+  fetchCurrentPlan(): Observable<any | null> {
+    return of(this.currentPlan());
   }
 
   /**
    * Set the `currentPlan` signal and mirror its active status to a cookie.
    *
    * The cookie is what makes the synchronous `activePlanGuard` survive a hard
-   * refresh: on reload the signal starts as `null` (it's only repopulated by
-   * the async `fetchCurrentPlan` that runs after `fetchMyProfile`), so without
-   * a persisted snapshot the guard would wrongly bounce an active subscriber
-   * back to the plan page. Called on every current-plan API resolution, so the
-   * cookie stays in sync with the latest server response.
+   * refresh, since the signal starts as `null` on every reload.
    */
-  private setCurrentPlan(plan: CurrentPlanData | null): void {
+  setCurrentPlan(plan: any | null): void {
     this.currentPlan.set(plan);
     this.storage.setCookie(environment.AUTH.activePlan, this.isPlanActive(plan) ? 'true' : 'false');
   }
@@ -244,79 +96,29 @@ export class Auth {
    * Whether a plan payload represents an active subscription. Single source of
    * truth for the "active" check, shared by the cookie mirror and consumers.
    */
-  isPlanActive(plan: CurrentPlanData | null): boolean {
+  isPlanActive(plan: any | null): boolean {
     return plan?.subscription_status?.toLowerCase() === 'active';
   }
 
   /**
    * Read the cached active-plan flag from the cookie. SSR-safe (reads the
-   * incoming request's Cookie header on the server). Used as a fallback by
-   * `activePlanGuard` when the `currentPlan` signal hasn't been hydrated yet
-   * (e.g. immediately after a hard refresh).
+   * incoming request's Cookie header on the server). Used by `activePlanGuard`
+   * when the `currentPlan` signal hasn't been hydrated yet.
    */
   hasActivePlanFromCookie(): boolean {
     return this.storage.getCookie(environment.AUTH.activePlan) === 'true';
   }
 
-  /**
-   * Attempt to refresh the access token
-   * Returns an Observable of the new access token
-   */
+  /** ponytail: no refresh endpoint to call — resolves to the current token. */
   refreshToken(): Observable<string | null> {
-    const refreshToken = this.getRefreshToken();
-
-    if (!refreshToken) {
-      this.clearAuth();
-      return of(null);
-    }
-
-    const body: RefreshTokenRequest = {
-      refresh_token: refreshToken,
-    };
-
-    const context = new HttpContext().set(SKIP_ERROR_NOTIFICATION, true);
-    return this.apiClient
-      .post<RefreshTokenResponse>(AUTH_ROUTES.refreshToken.path, body, { context })
-      .pipe(
-        tap((response) => {
-          if (response.status && response.result) {
-            this.handleRefreshSuccess(response.result);
-          } else {
-            this.clearAuth();
-          }
-        }),
-        map((response) => response.result?.token || null),
-        catchError((error) => {
-          this.logger.error('Token refresh failed', error);
-          this.clearAuth();
-          return of(null);
-        }),
-      );
+    return of(this.getAccessToken());
   }
 
   /**
-   * Handle successful token refresh
-   */
-  private handleRefreshSuccess(result: { token: string; user: User }): void {
-    const { token, user } = result;
-
-    // Update tokens in storage
-    this.storage.setCookie(environment.AUTH.accessToken, token);
-
-    // Update user state
-    this.setAuthenticated(user);
-
-    // Notify queue
-    this.accessTokenSubject.next(token);
-  }
-
-  /**
-   * Persist the access/refresh token pair after a successful verification.
+   * Persist the access/refresh token pair.
    *
    * Cookies rather than localStorage so `hasValidToken()` can read them during
-   * SSR. Shared by every surface that can log a user in — the login flow
-   * (`AuthFacade.verifyOtp`) and the faculty page's OTP auto-login — so the
-   * expiry/`secure`/`sameSite` options stay identical across both.
+   * SSR.
    */
   storeTokens(token: string, refreshToken: string): void {
     this.storage.setCookie(environment.AUTH.accessToken, token, {
@@ -334,18 +136,12 @@ export class Auth {
     });
   }
 
-  /**
-   * Update auth state after login
-   */
-  setAuthenticated(user: User): void {
+  setAuthenticated(user: any): void {
     this.currentUser.set(user);
     this.storage.setLocal(environment.AUTH.userData, user);
     this.notifyAuthStateChange();
   }
 
-  /**
-   * Clear auth state on logout
-   */
   clearAuth(): void {
     this.currentUser.set(null);
     this.currentPlan.set(null);
@@ -357,9 +153,6 @@ export class Auth {
     this.accessTokenSubject.next(null);
   }
 
-  /**
-   * Trigger re-evaluation of auth state
-   */
   notifyAuthStateChange(): void {
     this.authStateChanged.update((v) => v + 1);
   }

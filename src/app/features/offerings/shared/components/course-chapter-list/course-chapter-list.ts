@@ -1,5 +1,4 @@
-import { Component, inject, input } from '@angular/core';
-import { MasterclassFacade } from '../../services/masterclass-facade/masterclass-facade';
+import { Component, input, signal } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -29,16 +28,30 @@ import { RecordDisk } from '../../../../../shared/components/record-disk/record-
 export class CourseChapterList {
   courseType = input<'masterclass' | 'podcast'>('masterclass');
 
-  readonly masterclass = inject(MasterclassFacade);
+  // ponytail: MasterclassFacade was deleted with the Django strip. This placeholder
+
+  // keeps the template bindings compiling and renders the empty state.
+
+  // Swap in the new backend's service — the template needs no changes.
+
+  readonly masterclass: any = {
+
+    courseChapters: signal<any[]>([]),
+
+    courseDetails: signal<any[]>([]),
+
+    navigateToChapter: (..._args: any[]): any => null,
+
+  };
 
   getChapterCompletedStatus(chapterId: number) {
     return (
       (this.masterclass.courseDetails()?.cpe_mode_details?.cpe_mode === true &&
         this.masterclass
           .courseDetails()
-          ?.chapter_wise_details?.find((chapter) => chapter.chapter_id === chapterId)?.status) ||
+          ?.chapter_wise_details?.find((chapter: any) => chapter.chapter_id === chapterId)?.status) ||
       (this.masterclass.courseDetails()?.cpe_mode_details?.cpe_mode === false &&
-        this.masterclass.courseChapters()?.find((chapter) => chapter.id === chapterId)?.play_history
+        this.masterclass.courseChapters()?.find((chapter: any) => chapter.id === chapterId)?.play_history
           ?.is_completed)
     );
   }

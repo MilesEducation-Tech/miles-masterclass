@@ -5,7 +5,6 @@ import { CairaCredlyBadge } from '../../../../../shared/components/cards/caira-c
 import { CategoriesList } from '../../../../../shared/components/categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../../../../shared/core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { LocalTimeZonePipe } from '../../pipes/local-time-zone.pipe';
-import { WebinarFacade } from '../../../../../features/offerings/webinar/shared/services/webinar-facade/webinar-facade';
 import { nextSessionOf } from '../../../../../features/offerings/webinar/shared/utils/webinar-status';
 
 /**
@@ -24,7 +23,12 @@ import { nextSessionOf } from '../../../../../features/offerings/webinar/shared/
   styleUrl: './caira-webinar-section.css',
 })
 export class CairaWebinarSection {
-  private readonly facade = inject(WebinarFacade);
+  // ponytail: WebinarFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly facade: any = {
+    liveOrNextUp: null as any,
+  };
   private readonly document = inject(DOCUMENT);
 
   /** Live webinar if any, else the soonest upcoming featured webinar. */

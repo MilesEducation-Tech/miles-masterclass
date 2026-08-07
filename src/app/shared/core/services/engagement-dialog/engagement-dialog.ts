@@ -16,8 +16,6 @@ import { EMPTY, Observable, concatMap, filter, firstValueFrom, from, switchMap, 
 import { Auth } from '../auth/auth';
 import { Dialog, DialogRef } from '../dialog/dialog';
 import { Storage } from '../storage/storage';
-import { CurrentPlanData } from '../../models/auth.model';
-import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
 import { offeringTypeFromUrl } from '../../../utils/offering-type';
 import {
   ProfileCompletionDialog,
@@ -71,7 +69,12 @@ export class EngagementDialog {
   private readonly auth = inject(Auth);
   private readonly dialog = inject(Dialog);
   private readonly router = inject(Router);
-  private readonly feature = inject(FeatureFacade);
+  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly feature: any = {
+    refreshPersonalized: (..._args: any[]): any => null,
+  };
   private readonly storage = inject(Storage);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
@@ -171,7 +174,7 @@ export class EngagementDialog {
     return null;
   }
 
-  private hasActiveSubscription(plan: CurrentPlanData | null): boolean {
+  private hasActiveSubscription(plan: any | null): boolean {
     return !!plan && plan.subscription_status?.toLowerCase() === 'active';
   }
 

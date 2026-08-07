@@ -1,9 +1,4 @@
 import {
-  CourseChapter,
-  ChapterWiseDetails,
-  UserAssessmentDetails,
-} from '../../../../../shared/core/models/course.model';
-import {
   Component,
   computed,
   input,
@@ -29,7 +24,6 @@ import { ChapterQuiz } from '../chapter-quiz/chapter-quiz';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faClipboard } from '@ng-icons/font-awesome/regular';
 import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
-import { MasterclassFacade } from '../../services/masterclass-facade/masterclass-facade';
 import { Analytics } from '../../../../../shared/core/services/analytics/analytics';
 import {
   HtmlContentDialog,
@@ -47,13 +41,13 @@ import {
   },
 })
 export class VideoChapter {
-  readonly current = model<CourseChapter | null>(null);
-  readonly previous = input<CourseChapter | null>(null);
-  readonly next = input<CourseChapter | null>(null);
+  readonly current = model<any | null>(null);
+  readonly previous = input<any | null>(null);
+  readonly next = input<any | null>(null);
   readonly activeIndex = input(0);
   readonly cpeMode = input(false);
-  readonly chapterWiseDetails = input<ChapterWiseDetails | undefined>(undefined);
-  readonly userAssessmentDetails = input<UserAssessmentDetails | undefined>(undefined);
+  readonly chapterWiseDetails = input<any | undefined>(undefined);
+  readonly userAssessmentDetails = input<any | undefined>(undefined);
   readonly courseId = input<number | null>(null);
   readonly courseType = input<string>('masterclass');
 
@@ -70,7 +64,12 @@ export class VideoChapter {
 
   private readonly videoPlayer = viewChild(VideoJs);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly masterclassFacade = inject(MasterclassFacade);
+  // ponytail: MasterclassFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly masterclassFacade: any = {
+
+  };
   private readonly dialog = inject(Dialog);
   private readonly analytics = inject(Analytics);
 
@@ -117,7 +116,7 @@ export class VideoChapter {
             this.cpeMode() &&
             chapter.play_history?.is_completed &&
             chapter.quiz_details?.questions?.length &&
-            !chapter.quiz_details.questions.every((q) => q.user_selected_option)
+            !chapter.quiz_details.questions.every((q: any) => q.user_selected_option)
           ) {
             this.previewMode.set('quiz');
           } else {
@@ -269,7 +268,7 @@ export class VideoChapter {
     if (
       this.cpeMode() &&
       chapter?.quiz_details?.questions?.length &&
-      !chapter.quiz_details.questions.every((q) => q.user_selected_option)
+      !chapter.quiz_details.questions.every((q: any) => q.user_selected_option)
     ) {
       this.previewMode.set('quiz');
     } else if (!this.cpeMode()) {
@@ -342,7 +341,7 @@ export class VideoChapter {
       )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
+        next: (response: any) => {
           if (response?.data?.chapter?.transcript_text) {
             this.transcriptCache.set(chapter.id, response.data.chapter.transcript_text);
             this.openTranscriptDialog(response.data.chapter.transcript_text, chapter.chapter_name);

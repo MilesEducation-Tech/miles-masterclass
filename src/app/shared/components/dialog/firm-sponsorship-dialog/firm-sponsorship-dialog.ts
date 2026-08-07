@@ -1,16 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { catchError, debounceTime, finalize, map, of, startWith, switchMap } from 'rxjs';
 import { form, required, FormField as AngularFormField, validate } from '@angular/forms/signals';
 import { DialogRef } from '../../../core/services/dialog/dialog';
 import { Button } from '../../ui/button/button';
 import { AriaInput } from '../../ui/aria/aria-input/aria-input';
 import { AriaAutocomplete } from '../../ui/aria/aria-autocomplete/aria-autocomplete';
 import { Forms } from '../../ui/forms/forms';
-import { ApiClient } from '../../../core/services/api-client/api-client';
 import { Logger } from '../../../core/services/logger/logger';
-import { CompanyList, PROFILE_ROUTES } from '../../../core/models/profile.model';
-import { CommonResponse, RouteParams } from '../../../core/models/http.model';
 import { AutoCompleteOption } from '../../../core/models/form.model';
 import { Auth } from '../../../core/services/auth/auth';
 
@@ -26,8 +21,6 @@ export interface FirmSponsorshipResult {
   consent: boolean;
   skipped: boolean;
 }
-
-type CompanyListParams = RouteParams<typeof PROFILE_ROUTES.getCompanyList>;
 
 interface SponsorshipFormState {
   company: number | null;
@@ -45,7 +38,6 @@ export class FirmSponsorshipDialog {
   dialogRef!: DialogRef<FirmSponsorshipDialog, FirmSponsorshipResult | undefined>;
   data!: FirmSponsorshipDialogData;
 
-  private readonly http = inject(ApiClient);
   private readonly logger = inject(Logger);
   private readonly auth = inject(Auth);
 
@@ -74,33 +66,10 @@ export class FirmSponsorshipDialog {
   // Company search — mirrors the profile component's debounced live search
   readonly companySearchQuery = signal(this.profileCompany()?.company_name ?? '');
 
-  private readonly fetchedCompanyOptions = toSignal(
-    toObservable(this.companySearchQuery).pipe(
-      debounceTime(300),
-      switchMap((search) => {
-        // Pair the loading state with the inner observable lifecycle: set true on
-        // start, finalize to false on completion/error/switchMap cancellation.
-        this.loading.set(true);
-        const params: CompanyListParams = { search };
-        return this.http
-          .get<CommonResponse<CompanyList[]>>(PROFILE_ROUTES.getCompanyList.path, { params })
-          .pipe(
-            map((res) =>
-              (res?.data ?? []).map(
-                (c) => ({ label: c.company_name, value: c.id }) as AutoCompleteOption<number>,
-              ),
-            ),
-            catchError((err) => {
-              this.logger.error('Failed to load companies', err);
-              return of<AutoCompleteOption<number>[]>([]);
-            }),
-            finalize(() => this.loading.set(false)),
-          );
-      }),
-      startWith<AutoCompleteOption<number>[]>([]),
-    ),
-    { initialValue: [] as AutoCompleteOption<number>[] },
-  );
+  // ponytail: was a debounced `getCompanyList` search. Point this signal at the
+  // new backend's company search and the autocomplete works unchanged — the
+  // pinned-company merge below already handles an empty result set.
+  private readonly fetchedCompanyOptions = signal<AutoCompleteOption<number>[]>([]);
 
   // Ensures the user's existing company stays selectable even when not in the fetched page.
   readonly companyOptions = computed<AutoCompleteOption<number>[]>(() => {

@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { argsToTemplate } from '@storybook/angular';
 import { BadgeSwiper } from './badge-swiper';
-import { BadgeItem } from '../../../../../shared/core/models/cpe-tracker.model';
 
-const sampleBadges: BadgeItem[] = [
+const sampleBadges: any[] = [
   {
     id: 1,
     name: 'CAIRA — Level 1',

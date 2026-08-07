@@ -1,12 +1,10 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { FormField as AngularFormField, form, required, validate } from '@angular/forms/signals';
 import { DialogRef } from '../../../../../shared/core/services/dialog/dialog';
 import { Button } from '../../../../../shared/components/ui/button/button';
 import { Forms } from '../../../../../shared/components/ui/forms/forms';
 import { AriaInput } from '../../../../../shared/components/ui/aria/aria-input/aria-input';
-import { PartnerNetworkFacade } from '../../../../partner-platform/shared/services/partner-network-facade';
-import { SubCompanyAllocation } from '../../../../partner-platform/shared/models/partner-platform.model';
 
 export interface CreateSubCompanyDialogData {
   /** Coupons still free to allocate — shown as a hint. */
@@ -23,7 +21,7 @@ export interface CreateSubCompanyResult {
   admin_email: string;
   admin_name: string;
   /** One allocation per selected partner code, with the seat count typed in. */
-  allocations: SubCompanyAllocation[];
+  allocations: any[];
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -52,7 +50,17 @@ export class CreateSubCompanyDialog {
   dialogRef!: DialogRef<CreateSubCompanyDialog, CreateSubCompanyResult | undefined>;
   data!: CreateSubCompanyDialogData;
 
-  private readonly facade = inject(PartnerNetworkFacade);
+  // ponytail: PartnerNetworkFacade was deleted with the Django strip. This placeholder
+
+  // keeps the template bindings compiling and renders the empty state.
+
+  // Swap in the new backend's service — the template needs no changes.
+
+  private readonly facade: any = {
+
+    partnerCodes: null as any,
+
+  };
 
   /** Available partner codes for the network — the multi-select options. */
   protected readonly partnerCodes = this.facade.partnerCodes;

@@ -21,41 +21,46 @@ import { AriaInput } from '../../../../shared/components/ui/aria/aria-input/aria
 import { Button } from '../../../../shared/components/ui/button/button';
 import { AriaAutocomplete } from '../../../../shared/components/ui/aria/aria-autocomplete/aria-autocomplete';
 import { AriaMultiselect } from '../../../../shared/components/ui/aria/aria-multiselect/aria-multiselect';
-import { placeSuggestions } from '../../../../shared/core/services/location-autocomplete/location-autocomplete';
 import { AutoCompleteOption } from '../../../../shared/core/models/form.model';
-import { ApiClient } from '../../../../shared/core/services/api-client/api-client';
 import { NotificationService } from '../../../../shared/core/services/notification/notification';
 import { Logger } from '../../../../shared/core/services/logger/logger';
 import { Analytics } from '../../../../shared/core/services/analytics/analytics';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, ActivatedRoute } from '@angular/router';
-import {
-  ProfessionList,
-  PROFILE_ROUTES,
-  ProfileFormState,
-} from '../../../../shared/core/models/profile.model';
-import { CountryCodeOption, User } from '../../../../shared/core/models/auth.model';
 import { dialCodeWithLength } from '../../../../shared/core/constant/dial-code';
-import { RouteParams, RouteResponse } from '../../../../shared/core/models/http.model';
-import { debounceTime, map, switchMap, catchError } from 'rxjs/operators';
-import { firstValueFrom, of, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { Observable, EMPTY } from 'rxjs';
 import { Dialog } from '../../../../shared/core/services/dialog/dialog';
-import { JobSectors } from '../../../../shared/core/services/job-sectors/job-sectors';
 import { PartnerCode } from '../../../../shared/core/services/partner-code/partner-code';
 import {
   UtilsDialog,
   DialogButton,
 } from '../../../../shared/components/dialog/utils-dialog/utils-dialog';
 
-// Type Definitions using RouteResponse and RouteParams
-type CompanyListResponse = RouteResponse<typeof PROFILE_ROUTES.getCompanyList>;
-type CompanyListParams = RouteParams<typeof PROFILE_ROUTES.getCompanyList>;
-type ProfessionListResponse = RouteResponse<typeof PROFILE_ROUTES.getProfessionList>;
-type StateBoardListResponse = RouteResponse<typeof PROFILE_ROUTES.getStateBoardList>;
-type ProfessionalCourseListResponse = RouteResponse<
-  typeof PROFILE_ROUTES.getProfessionalCourseList
->;
-type SaveProfileResponse = RouteResponse<typeof PROFILE_ROUTES.saveProfile>;
+/**
+ * Fields the profile form renders and validates. This is the form's own shape,
+ * not a wire payload — it stays here so the signal-forms schema keeps its field
+ * typing. Map it onto the new backend's profile payload at the edges.
+ */
+interface ProfileFormState {
+  email: string;
+  first_name: string;
+  last_name: string;
+  country_code: string;
+  location: string;
+  mobile: string;
+  is_currently_working: boolean;
+  terms_accepted: boolean;
+  license_status: string;
+  state_board: number[];
+  professional_courses: number[];
+  company_id: number | null;
+  sector_id: number | null;
+  job_role_id: number | null;
+}
+
+// ponytail: these were RouteResponse/RouteParams aliases over PROFILE_ROUTES.
+// Retype them against the new backend's profile endpoints.
 
 @Component({
   selector: 'app-profile',
@@ -67,7 +72,13 @@ type SaveProfileResponse = RouteResponse<typeof PROFILE_ROUTES.saveProfile>;
   },
 })
 export class Profile {
-  private readonly http = inject(ApiClient);
+  // ponytail: ApiClient was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly http: any = {
+    get: (..._args: any[]): any => EMPTY,
+    patch: (..._args: any[]): any => EMPTY,
+  };
   private readonly auth = inject(Auth);
   private readonly dialog = inject(Dialog);
   private readonly router = inject(Router);
@@ -75,7 +86,15 @@ export class Profile {
   private readonly notification = inject(NotificationService);
   private readonly logger = inject(Logger);
   private readonly analytics = inject(Analytics);
-  private readonly jobSectors = inject(JobSectors);
+  // ponytail: JobSectors was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly jobSectors: any = {
+    resolveIds: (..._args: any[]): any => null,
+    rolesFor: (..._args: any[]): any => null,
+    sectorOptions: null as any,
+    sectors: signal<any[]>([]),
+  };
   private readonly partnerCode = inject(PartnerCode);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -86,7 +105,7 @@ export class Profile {
    * sector list). Shared by the form's source signal and `save()`'s diff
    * baseline so an untouched form diffs to "no change".
    */
-  private mapUserToForm(user: User | null): ProfileFormState {
+  private mapUserToForm(user: any): ProfileFormState {
     return {
       email: user?.email || '',
       first_name: user?.first_name || '',
@@ -114,7 +133,7 @@ export class Profile {
 
   readonly isExistingUser = computed(() => this.auth.currentUser()?.is_existing_user ?? false);
 
-  readonly countryCodes: CountryCodeOption[] = dialCodeWithLength.map((item) => ({
+  readonly countryCodes: any[] = dialCodeWithLength.map((item) => ({
     ...item,
     value: item.CountryCode?.toString() || '',
     label: item.CountryCode?.toString() || '',
@@ -247,38 +266,12 @@ export class Profile {
   // Company Search Signal
   readonly companySearchQuery = signal(this.auth.currentUser()?.company?.[0]?.company_name || '');
 
-  // Profession List (One-time fetch)
-  readonly professions = toSignal(
-    this.http.get<ProfessionListResponse>(PROFILE_ROUTES.getProfessionList.path).pipe(
-      map((res) => res.data ?? []),
-      catchError(() => of([])),
-    ),
-    { initialValue: [] as ProfessionList[] },
-  );
+  // ponytail: the profession list and debounced company search both came from
+  // PROFILE_ROUTES. Point these two signals at the new backend and the
+  // autocompletes work unchanged.
+  readonly professions = signal<any[]>([]);
 
-  // Company Options (Search Stream mapped directly)
-  readonly companyOptions = toSignal(
-    toObservable(this.companySearchQuery).pipe(
-      debounceTime(300),
-      switchMap((search: string) => {
-        const params: CompanyListParams = { search };
-        return this.http
-          .get<CompanyListResponse>(PROFILE_ROUTES.getCompanyList.path, { params })
-          .pipe(
-            map((res) =>
-              (res.data ?? []).map(
-                (c) => ({ label: c.company_name, value: c.id }) as AutoCompleteOption<number>,
-              ),
-            ),
-            catchError((err) => {
-              this.logger.error('Company list fetch failed', err);
-              return of([] as AutoCompleteOption<string>[]);
-            }),
-          );
-      }),
-    ),
-    { initialValue: [] as AutoCompleteOption<string>[] },
-  );
+  readonly companyOptions = signal<AutoCompleteOption<number>[]>([]);
 
   readonly stateBoardOptions = signal<AutoCompleteOption<number>[]>([]);
   readonly professionalCourseOptions = signal<AutoCompleteOption<number>[]>([]);
@@ -345,7 +338,7 @@ export class Profile {
       const currentRoleId = this.profile().job_role_id;
       if (currentRoleId == null) return;
       if (this.jobSectors.sectors().length === 0) return;
-      const validIds = this.jobRoleOptions().map((o) => o.value);
+      const validIds = this.jobRoleOptions().map((o: any) => o.value);
       if (validIds.includes(currentRoleId)) return;
       untracked(() => this.profile.update((p) => ({ ...p, job_role_id: null })));
     });
@@ -356,11 +349,11 @@ export class Profile {
   }
 
   private async fetchStateBoards() {
-    const res = await firstValueFrom(
-      this.http.get<StateBoardListResponse>(PROFILE_ROUTES.getStateBoardList.path),
-    );
-    if (res.data.length > 0) {
-      this.stateBoardOptions.set(res.data.map((b) => ({ label: b.name, value: b.id })));
+    // ponytail: was a `getStateBoardList` GET. Feed `boards` from the new
+    // backend and the name→id seeding below keeps working as-is.
+    const boards: any[] = [];
+    if (boards.length > 0) {
+      this.stateBoardOptions.set(boards.map((b: any) => ({ label: b.name, value: b.id })));
       // Now the name→id map exists, seed the user's saved boards (the API only
       // returns names). Skip if the user has already selected something.
       const ids = this.resolveStateBoardIds(this.auth.currentUser()?.state_board_name);
@@ -380,17 +373,12 @@ export class Profile {
   }
 
   private async fetchProfessionalCourses() {
-    const res = await firstValueFrom(
-      this.http.get<ProfessionalCourseListResponse>(PROFILE_ROUTES.getProfessionalCourseList.path),
-    );
-    if (res.data.length > 0) {
-      this.professionalCourseOptions.set(res.data.map((c) => ({ label: c.title, value: c.id })));
+    // ponytail: was a `getProfessionalCourseList` GET.
+    const courses: any[] = [];
+    if (courses.length > 0) {
+      this.professionalCourseOptions.set(courses.map((c: any) => ({ label: c.title, value: c.id })));
     }
   }
-
-  // ponytail: two list endpoints with the same shape; left separate — a shared
-  // helper only earns its keep at a third caller (different response types + map
-  // shapes make the generic awkward today).
 
   readonly cpaStatusOptions: AutoCompleteOption[] = [
     { label: 'Yes', value: 'yes' },
@@ -398,14 +386,11 @@ export class Profile {
     { label: 'NA', value: 'na' },
   ];
 
-  // Granularity (city vs state vs country) is the backend's call — it owns the
-  // Places request. Whatever it returns ends in the country, so the "country is
-  // mandatory" requirement is satisfied implicitly.
+  // ponytail: `placeSuggestions` came from the deleted LocationAutocomplete
+  // service, which proxied Google Places through the backend. Point this at the
+  // new backend's place search and the location autocomplete works unchanged.
   readonly locationQuery = signal('');
-  readonly locationOptions = placeSuggestions(
-    this.locationQuery,
-    computed(() => this.profile().location),
-  );
+  readonly locationOptions = signal<AutoCompleteOption<string>[]>([]);
 
   applyPartnerCode(): void {
     if (!this.canApplyPartnerCode()) {
@@ -433,15 +418,15 @@ export class Profile {
     // the seeding effect, handles legacy name-only payloads).
     const currentValues = this.profile();
     const user = this.auth.currentUser();
-    const initialValues: Partial<ProfileFormState> = user
+    const initialValues: Partial<any> = user
       ? {
           ...this.mapUserToForm(user),
           state_board: this.resolveStateBoardIds(user.state_board_name),
           ...this.jobSectors.resolveIds(user.sector, user.job_role),
         }
-      : ({} as ProfileFormState);
+      : ({} as any);
 
-    const payload: Partial<ProfileFormState> = {};
+    const payload: Partial<any> = {};
 
     let hasChanges = false;
 
@@ -458,11 +443,13 @@ export class Profile {
     }
 
     try {
-      const res = await firstValueFrom(
-        this.http.patch<SaveProfileResponse>(PROFILE_ROUTES.saveProfile.path, payload),
-      );
+      // ponytail: was a `saveProfile` PATCH. Everything below — the activation
+      // milestone, the onboarding-vs-update GA4 branch, the redirect — is
+      // presentation logic worth keeping; wire `res` to the new backend's
+      // save response and it all runs again.
+      const res: any = null;
 
-      if (res.status) {
+      if (res?.status) {
         const wasComplete = this.auth.currentUser()?.is_profile_completed === true;
         // Capture new-vs-existing BEFORE setAuthenticated swaps in the refreshed
         // user, so the lifecycle branch below reflects the pre-save state.

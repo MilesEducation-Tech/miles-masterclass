@@ -3,10 +3,8 @@ import { DatePipe } from '@angular/common';
 
 import { Button } from '../../../../../../shared/components/ui/button/button';
 import { CategoriesList } from '../../../../../../shared/components/categories-list/categories-list';
-import { UpcomingPremiere } from '../../../../../../shared/core/models/feature.model';
 import { Auth } from '../../../../../../shared/core/services/auth/auth';
 import { Utils } from '../../../../../../shared/core/services/utils/utils';
-import { WebinarFacade } from '../../services/webinar-facade/webinar-facade';
 import { ctaFor, nextSessionOf } from '../../utils/webinar-status';
 import { CairaCredlyBadge } from '../../../../../../shared/components/cards/caira-credly-badge/caira-credly-badge';
 
@@ -22,14 +20,22 @@ const CREDLY_LOGO =
   styleUrl: './premiere-list-item.css',
 })
 export class PremiereListItem {
-  private readonly facade = inject(WebinarFacade);
+  // ponytail: WebinarFacade was deleted with the Django strip. This placeholder
+  // keeps the template bindings compiling and renders the empty state.
+  // Swap in the new backend's service — the template needs no changes.
+  private readonly facade: any = {
+    enroll: (..._args: any[]): any => null,
+    openCertificateDownloadDialog: (..._args: any[]): any => null,
+    openDetails: (..._args: any[]): any => null,
+    openRegistration: (..._args: any[]): any => null,
+  };
   private readonly auth = inject(Auth);
   private readonly utils = inject(Utils);
 
   protected readonly cairaLogo = CAIRA_LOGO;
   protected readonly credlyLogo = CREDLY_LOGO;
 
-  readonly webinar = input.required<UpcomingPremiere>();
+  readonly webinar = input.required<any>();
 
   /**
    * Row artwork, `null` when the payload carries none. Falls back through the

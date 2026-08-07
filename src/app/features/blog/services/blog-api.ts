@@ -11,7 +11,6 @@ import {
 import { Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
-import { SKIP_AUTH_TOKEN, SKIP_ERROR_NOTIFICATION } from '../../../shared/core/models/http.model';
 import { BlogListQuery, BlogPostsResult, WpCategory, WpPost } from '../models/blog.model';
 
 /**
@@ -107,9 +106,14 @@ export class BlogApi {
       .pipe(tap((categories) => this.writeTransfer(key, categories)));
   }
 
-  /** Skip the Miles auth token + global error toast on these public calls. */
+  /**
+   * ponytail: used to carry SKIP_AUTH_TOKEN / SKIP_ERROR_NOTIFICATION so the
+   * Django interceptors left these public WordPress calls alone. Those
+   * interceptors are gone, so an empty context is now equivalent. Re-add skip
+   * tokens here if the new backend's interceptors need opting out of.
+   */
   private blogContext(): HttpContext {
-    return new HttpContext().set(SKIP_AUTH_TOKEN, true).set(SKIP_ERROR_NOTIFICATION, true);
+    return new HttpContext();
   }
 
   /** Browser reads a server-seeded value exactly once, then drops the key. */

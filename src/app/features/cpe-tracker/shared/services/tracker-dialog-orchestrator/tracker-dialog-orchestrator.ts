@@ -22,7 +22,6 @@ import {
   CertificateDialogData,
   CertificateDownloadDialog,
 } from '../../../../../shared/components/dialog/certificate-download-dialog/certificate-download-dialog';
-import { BadgeItem, ReportRow } from '../../../../../shared/core/models/cpe-tracker.model';
 import { getCourseId, getCourseName } from '../../utils/course.util';
 
 export interface DialogResult<T = unknown> {
@@ -53,7 +52,7 @@ export class TrackerDialogOrchestrator {
    * skip silently. (Premiere/webinar rows with no `webinar_session_id` fall
    * into this bucket.)
    */
-  openCertificateDownloadDialog(row: ReportRow): Observable<unknown> | null {
+  openCertificateDownloadDialog(row: any): Observable<unknown> | null {
     const courseId = getCourseId(row);
     if (courseId == null) return null;
 
@@ -109,7 +108,7 @@ export class TrackerDialogOrchestrator {
    * Subscription gate before badge claim. Shows the badge icon + a "Subscribe
    * Now" CTA; callers should route to `payment/plan` on a `confirm` result.
    */
-  openClaimUpsell(badge: BadgeItem): Observable<BadgeClaimUpsellDialogResult | undefined> {
+  openClaimUpsell(badge: any): Observable<BadgeClaimUpsellDialogResult | undefined> {
     return this.dialog.open<BadgeClaimUpsellDialog, BadgeClaimUpsellDialogResult>(
       BadgeClaimUpsellDialog,
       {
@@ -122,9 +121,9 @@ export class TrackerDialogOrchestrator {
 
   /**
    * "View all" badge grid. Children emit per-card `claim`/`share` intents,
-   * which the dialog forwards via `afterClosed$` with `data: BadgeItem`.
+   * which the dialog forwards via `afterClosed$` with `data: any`.
    */
-  openBadgeInfo(badges: BadgeItem[]): Observable<BadgeInfoDialogResult | undefined> {
+  openBadgeInfo(badges: any[]): Observable<BadgeInfoDialogResult | undefined> {
     return this.dialog.open<BadgeInfoDialog, BadgeInfoDialogResult>(BadgeInfoDialog, {
       maxWidth: '100%',
       panelClass: 'bg-transparent shadow-none',

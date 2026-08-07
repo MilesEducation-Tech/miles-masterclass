@@ -1,10 +1,3 @@
-import {
-  Content,
-  ContentAbout,
-  FieldOfStudy,
-  InstructorDetails,
-} from '../../../../../shared/core/models/course.model';
-import { UpcomingPremiere } from '../../../../../shared/core/models/feature.model';
 
 /**
  * Adapts an `UpcomingPremiere` (webinar payload) into the `Content` shape so it
@@ -21,7 +14,7 @@ import { UpcomingPremiere } from '../../../../../shared/core/models/feature.mode
  * equivalent `getAbout` endpoint in the API surface we know about, and the
  * data we need is already on the home-page payload.
  */
-export function upcomingToContent(webinar: UpcomingPremiere): Content {
+export function upcomingToContent(webinar: any): any {
   const instructor = webinar.instructor_details;
   // Coerce `caira_level: string | null` (webinar) → `number | null` (Content).
   const cairaLevelRaw = webinar.caira_level;
@@ -34,14 +27,14 @@ export function upcomingToContent(webinar: UpcomingPremiere): Content {
           ? Number(cairaLevelRaw)
           : null;
 
-  const fieldsOfStudy: FieldOfStudy[] = webinar.fields_of_study ?? [];
+  const fieldsOfStudy: any[] = webinar.fields_of_study ?? [];
 
   // Note: `course.model.ts` `InstructorDetails` is a DIFFERENT shape from the
   // webinar `InstructorDetails` (course version uses `linkedin?: string`,
   // optional non-null fields, and requires `other_instructors`). Map only the
   // overlapping fields so the cards (which use the course shape) render
   // names + thumbnails correctly.
-  const instructorDetails: InstructorDetails = {
+  const instructorDetails: any = {
     id: instructor.id,
     first_name: instructor.first_name,
     last_name: instructor.last_name,
@@ -78,7 +71,7 @@ export function upcomingToContent(webinar: UpcomingPremiere): Content {
         description: null,
         updated_by: null,
         profession: null,
-      } as Content['course_category_details']),
+      } as any['course_category_details']),
     fields_of_study: fieldsOfStudy,
     has_additional_resources: (webinar.additional_resource?.length ?? 0) > 0,
     course_short_overview: webinar.short_course_overview,
@@ -106,11 +99,11 @@ export function upcomingToContent(webinar: UpcomingPremiere): Content {
  * defaults — empty arrays, 0 counts, blank strings — so the corresponding
  * sections render but stay quiet rather than crashing.
  */
-export function upcomingToContentAbout(webinar: UpcomingPremiere): ContentAbout {
+export function upcomingToContentAbout(webinar: any): any {
   const base = upcomingToContent(webinar);
   const learningObjectiveList = (webinar.learning_objectives ?? '')
     .split(/\r?\n/)
-    .map((s) => s.trim())
+    .map((s: any) => s.trim())
     .filter(Boolean);
   const createdAt = webinar.created_at;
 

@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
 import { AssessmentResultDialog } from './assessment-result-dialog';
 import { MockDialogRef } from '../../__mocks__/dialog.mock';
-import { DialogRef } from '../../../core/services/dialog/dialog';
 
 const meta: Meta<AssessmentResultDialog> = {
   title: 'Dialog/AssessmentResult',

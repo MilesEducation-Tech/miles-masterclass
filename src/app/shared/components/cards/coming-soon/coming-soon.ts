@@ -5,7 +5,6 @@ import { faSolidBell, faSolidPlay } from '@ng-icons/font-awesome/solid';
 import { matBookmarkRound } from '@ng-icons/material-icons/round';
 import { Button } from '../../ui/button/button';
 import { CategoriesList } from '../../categories-list/categories-list';
-import { Content } from '../../../core/models/course.model';
 import { Utils } from '../../../core/services/utils/utils';
 
 @Component({
@@ -18,7 +17,7 @@ export class ComingSoon {
   private readonly utils = inject(Utils);
   private readonly destroyRef = inject(DestroyRef);
 
-  card = model.required<Content>();
+  card = model.required<any>();
   index = input.required<number>();
   type = input<'masterclass' | 'podcast' | 'micro-learning'>('masterclass');
 

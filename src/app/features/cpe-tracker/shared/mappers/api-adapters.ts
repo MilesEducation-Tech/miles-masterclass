@@ -1,15 +1,3 @@
-import {
-  BadgeItem,
-  CreditsSummary,
-  RawBadgeStatus,
-  RawCreditBreakdown,
-  RawReportRow,
-  RawStatistics,
-  RawUserBadge,
-  ReportRow,
-  StudyModeBreakdown,
-  TransactionType,
-} from '../../../../shared/core/models/cpe-tracker.model';
 
 /**
  * Default CPE requirement (credits/year) when the server-provided
@@ -17,7 +5,7 @@ import {
  */
 export const DEFAULT_CPE_REQUIREMENT = 40;
 
-const TRANSACTION_TYPE_MAP: Record<string, TransactionType> = {
+const TRANSACTION_TYPE_MAP: Record<string, any> = {
   self_study: 'masterclass',
   masterclass: 'masterclass',
   nano_learning: 'nano_learning',
@@ -28,7 +16,7 @@ const TRANSACTION_TYPE_MAP: Record<string, TransactionType> = {
   premiere: 'webinar',
 };
 
-const DELIVERY_METHOD_MAP: Record<TransactionType, string> = {
+const DELIVERY_METHOD_MAP: Record<any, string> = {
   masterclass: 'QAS Self Study',
   podcast: 'QAS Self Study',
   nano_learning: 'Nano Learning',
@@ -39,7 +27,7 @@ const DELIVERY_METHOD_MAP: Record<TransactionType, string> = {
  * Normalize the server's `transcation_type` (typo preserved on the wire) into
  * the clean `TransactionType` union the UI speaks.
  */
-export function normalizeTransactionType(raw: string | null | undefined): TransactionType {
+export function normalizeTransactionType(raw: string | null | undefined): any {
   if (!raw) return 'masterclass';
   return TRANSACTION_TYPE_MAP[raw] ?? 'masterclass';
 }
@@ -49,7 +37,7 @@ export function normalizeTransactionType(raw: string | null | undefined): Transa
  * server populated for this course type. Webinar rows ship with
  * `course_details: null` and carry the title under `webinar_details`.
  */
-function pickCourseName(raw: RawReportRow): string {
+function pickCourseName(raw: any): string {
   const cd = raw.course_details;
   return (
     cd?.master_class_name ??
@@ -68,7 +56,7 @@ function pickCourseName(raw: RawReportRow): string {
  * may arrive with `course_details: null`, so default to `'masterclass'`
  * when both signals are missing.
  */
-function resolveTransactionType(raw: RawReportRow): TransactionType {
+function resolveTransactionType(raw: any): any {
   const mapped = TRANSACTION_TYPE_MAP[raw.transcation_type ?? ''];
   if (mapped) return mapped;
   const rawType = raw.course_details?.type;
@@ -76,7 +64,7 @@ function resolveTransactionType(raw: RawReportRow): TransactionType {
   return rawType ?? 'masterclass';
 }
 
-export function toReportRow(raw: RawReportRow): ReportRow {
+export function toReportRow(raw: any): any {
   const cd = raw.course_details;
   const transactionType = resolveTransactionType(raw);
 
@@ -123,15 +111,15 @@ export function toReportRow(raw: RawReportRow): ReportRow {
   };
 }
 
-function isClaimable(status: RawBadgeStatus, awardedAt: string | null, progress: number): boolean {
+function isClaimable(status: any, awardedAt: string | null, progress: number): boolean {
   return status === 'unlocked' && !awardedAt && progress >= 100;
 }
 
-function isClaimed(status: RawBadgeStatus, awardedAt: string | null): boolean {
+function isClaimed(status: any, awardedAt: string | null): boolean {
   return status === 'unlocked' && !!awardedAt;
 }
 
-export function toBadgeItem(raw: RawUserBadge): BadgeItem {
+export function toBadgeItem(raw: any): any {
   const levelName = raw.badge.level_name?.trim();
   const fullName = levelName ? `${raw.badge.name} — ${levelName}` : raw.badge.name;
   const required = Number(raw.badge.required_credits);
@@ -157,12 +145,12 @@ export function toBadgeItem(raw: RawUserBadge): BadgeItem {
   };
 }
 
-function pickBreakdown(raw: RawStatistics, mode: boolean): RawCreditBreakdown {
+function pickBreakdown(raw: any, mode: boolean): any {
   return mode ? raw.credits_earned : raw.upcoming_credits;
 }
 
 /** Resolve the user's state-board CPE requirement, or fall back to a default. */
-export function resolveCpeRequirement(raw: RawStatistics | null): number {
+export function resolveCpeRequirement(raw: any | null): number {
   const board = raw?.user_state_board?.[0];
   const required = board?.required_credits;
   return typeof required === 'number' && required > 0 ? required : DEFAULT_CPE_REQUIREMENT;
@@ -174,7 +162,7 @@ export interface StateBoardInfo {
 }
 
 /** Resolve the user's first state board + required credits, with sensible fallbacks. */
-export function resolveStateBoard(raw: RawStatistics | null): StateBoardInfo {
+export function resolveStateBoard(raw: any | null): StateBoardInfo {
   const board = raw?.user_state_board?.[0];
   return {
     name: board?.name?.trim() || 'State Board',
@@ -182,7 +170,7 @@ export function resolveStateBoard(raw: RawStatistics | null): StateBoardInfo {
   };
 }
 
-export function deriveCredits(raw: RawStatistics | null, mode: boolean): CreditsSummary | null {
+export function deriveCredits(raw: any | null, mode: boolean): any | null {
   if (!raw) return null;
   const earned = mode ? raw.overall_credits_earned : raw.overall_upcoming_credits;
   const pending = mode ? raw.overall_upcoming_credits : raw.overall_credits_earned;
@@ -195,9 +183,9 @@ export function deriveCredits(raw: RawStatistics | null, mode: boolean): Credits
 }
 
 export function deriveFieldsOfStudy(
-  raw: RawStatistics | null,
+  raw: any | null,
   mode: boolean,
-): StudyModeBreakdown[] {
+): any[] {
   if (!raw) return [];
   const breakdown = pickBreakdown(raw, mode);
   return [
@@ -208,9 +196,9 @@ export function deriveFieldsOfStudy(
 }
 
 export function deriveDeliveryModes(
-  raw: RawStatistics | null,
+  raw: any | null,
   mode: boolean,
-): StudyModeBreakdown[] {
+): any[] {
   if (!raw) return [];
   const breakdown = pickBreakdown(raw, mode);
   return [
