@@ -1,0 +1,31 @@
+<div class="bg-background text-foreground relative rounded-xl overflow-hidden">
+  @if (data.closeAction ?? true) {
+    <app-button
+      variant="close"
+      class="absolute top-4 right-4 z-10"
+      (clicked)="close()"
+      aria-label="Close scheduler"
+    />
+  }
+
+  <div #widget class="calendly-inline-widget" style="width: 100%; height: 700px"></div>
+
+  @if (loadError()) {
+    <div
+      class="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 text-center bg-background"
+    >
+      <p class="text-sm text-muted-foreground max-w-sm">
+        We couldn't load the scheduler. A content blocker or network issue may be preventing
+        <code class="text-foreground">assets.calendly.com</code> from loading.
+      </p>
+      <a
+        [href]="data.url"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center justify-center h-10 px-4 rounded-md bg-primary text-accent-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+      >
+        Open in a new tab
+      </a>
+    </div>
+  }
+</div>

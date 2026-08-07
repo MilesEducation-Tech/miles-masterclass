@@ -1,0 +1,55 @@
+<div
+  class="bg-linear-to-b from-[#0f2237] to-[#1a3a5c] flex flex-col md:max-w-[640px] w-[95svw] max-h-[85svh] mx-auto overflow-hidden relative rounded-xl"
+  role="dialog"
+>
+  <app-button
+    variant="close"
+    [class]="'absolute top-3 right-3 z-10'"
+    (clicked)="close()"
+    aria-label="Close dialog"
+  />
+
+  <div class="flex-1 overflow-y-auto px-6 py-10 sm:px-12">
+    <p class="text-base sm:text-lg text-white text-center leading-relaxed">
+      If your firm or institution has partnered with Miles Masterclass, you may have received a
+      partner code for exclusive access.
+    </p>
+
+    <p class="text-base sm:text-lg font-semibold text-white text-center mt-8">
+      Choose an option to continue:
+    </p>
+
+    <div class="flex justify-center mt-6">
+      <app-button
+        variant="default"
+        size="lg"
+        class="w-full sm:w-auto"
+        (clicked)="continueToSubscribe()"
+      >
+        Continue to subscribe
+      </app-button>
+    </div>
+
+    <p class="text-center text-white mt-6 mb-4">OR</p>
+
+    <app-forms type="signal" (submitted)="applyCode()">
+      <div class="flex items-stretch gap-0 rounded-lg overflow-hidden max-w-md mx-auto relative">
+        <app-aria-input
+          class="flex-1"
+          id="partner_code"
+          label="Enter Partner Code"
+          placeholder="Enter Partner Code"
+          [formField]="partnerCodeForm.partner_code"
+        />
+        <app-button
+          variant="secondary"
+          type="submit"
+          class="absolute top-1 right-1"
+          [disabled]="!canSubmit()"
+        >
+          {{ loading() ? 'Applying…' : 'Submit' }}
+        </app-button>
+      </div>
+    </app-forms>
+  </div>
+</div>

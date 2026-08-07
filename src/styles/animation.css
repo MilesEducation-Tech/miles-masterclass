@@ -1,0 +1,93 @@
+/* Define keyframe animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-from-right {
+  from {
+    transform: translateX(30px);
+  }
+}
+
+@keyframes slide-to-left {
+  to {
+    transform: translateX(-30px);
+  }
+}
+
+::view-transition-old(root) {
+  animation:
+    90ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
+    300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes slide-out {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.slide-in {
+  animation: slide-in 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.slide-out {
+  animation: slide-out 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Content slide-in animation */
+@keyframes slideIn {
+  0% {
+    filter: blur(5px);
+    transform: translateY(calc(-20% + 75px));
+    opacity: 0;
+  }
+  100% {
+    filter: blur(0);
+    transform: translateY(-20%);
+    opacity: 1;
+  }
+}
+
+/* Header + nav-menu-item dropdown enter animations.
+   Defined globally so these utilities work whether or not the header is in
+   the DOM (e.g. nav-menu-item is reused in user-avatar-menu). */
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes mobileMenuSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

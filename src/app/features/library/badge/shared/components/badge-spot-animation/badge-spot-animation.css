@@ -1,0 +1,55 @@
+@keyframes slide-fade-up {
+  /*
+   * Animates the `transform` property (not `translate`) so the standalone
+   * `translate` CSS property — which Tailwind v4 utilities like
+   * `-translate-x-1/2` write to — stays intact. `transform` and `translate`
+   * are independent CSS properties and compose, so absolute-centered
+   * elements that use `-translate-x-1/2` keep their centering after the
+   * animation's `forwards` end state lands.
+   */
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-fade-left {
+  0% {
+    opacity: 0;
+    translate: 30px 0;
+  }
+  100% {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes slide-fade-right {
+  0% {
+    opacity: 0;
+    translate: -30px 0;
+  }
+  100% {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.animate-slide-fade-up {
+  animation: slide-fade-up 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-slide-fade-left {
+  animation: slide-fade-left 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-slide-fade-right {
+  animation: slide-fade-right 0.6s ease-out forwards;
+  opacity: 0;
+}

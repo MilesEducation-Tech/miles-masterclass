@@ -1,0 +1,278 @@
+<section class="pb-12" aria-labelledby="bulk-heading">
+  <!-- Header -->
+  <div class="mb-6 flex items-start justify-between gap-4 flex-wrap relative z-10">
+    <div>
+      <a
+        routerLink="/admin/seo"
+        class="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors mb-3"
+      >
+        <ng-icon name="heroArrowLeft" class="text-base"></ng-icon>
+        Back to SEO Manager
+      </a>
+      <h2 id="bulk-heading" class="text-3xl font-bold text-slate-100 mb-2">Bulk Upload</h2>
+      <p class="text-slate-400 text-sm max-w-2xl leading-relaxed">
+        Upload a CSV to create or update many pages at once. Rows are validated below — fix any
+        flagged rows inline, then confirm. Existing slugs are overwritten.
+      </p>
+    </div>
+    <button
+      type="button"
+      class="flex items-center gap-2 px-5 py-2.5 bg-slate-800/80 border border-slate-700/60 rounded-xl text-slate-200 text-sm font-semibold hover:bg-slate-700/80 transition-all whitespace-nowrap"
+      (click)="downloadTemplate()"
+    >
+      <ng-icon name="heroDocumentArrowDown" class="text-lg"></ng-icon>
+      Download template
+    </button>
+  </div>
+
+  <!-- Upload control -->
+  <div
+    class="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6 mb-6 flex flex-col sm:flex-row sm:items-center gap-4"
+  >
+    <label
+      class="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-semibold shadow-lg hover:opacity-90 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+    >
+      <ng-icon name="heroArrowUpTray" class="text-xl"></ng-icon>
+      Choose CSV file
+      <input type="file" accept=".csv,text/csv" class="hidden" (change)="onFileSelected($event)" />
+    </label>
+    @if (fileName()) {
+      <span class="text-sm text-slate-400 font-mono truncate">{{ fileName() }}</span>
+    }
+  </div>
+
+  @if (importError()) {
+    <div
+      class="mb-6 text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 flex items-center gap-3"
+      role="alert"
+    >
+      <ng-icon name="heroExclamationCircle" class="text-red-300 shrink-0" />
+      <span class="flex-1">{{ importError() }}</span>
+    </div>
+  }
+
+  @if (rows().length > 0) {
+    <!-- Summary bar -->
+    <div
+      class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6"
+      role="region"
+      aria-label="Import summary"
+    >
+      <div
+        class="bg-slate-800/80 border border-slate-700/50 rounded-2xl p-4 text-center flex flex-col gap-1"
+      >
+        <span class="text-2xl font-bold text-indigo-300">{{ summary().total }}</span>
+        <span class="text-[0.65rem] text-slate-400 uppercase tracking-wider font-semibold"
+          >Rows</span
+        >
+      </div>
+      <div
+        class="bg-slate-800/80 border border-slate-700/50 rounded-2xl p-4 text-center flex flex-col gap-1"
+      >
+        <span class="text-2xl font-bold text-emerald-400">{{ summary().valid }}</span>
+        <span class="text-[0.65rem] text-slate-400 uppercase tracking-wider font-semibold"
+          >Valid</span
+        >
+      </div>
+      <div
+        class="bg-slate-800/80 border border-slate-700/50 rounded-2xl p-4 text-center flex flex-col gap-1"
+      >
+        <span class="text-2xl font-bold text-red-400">{{ summary().invalid }}</span>
+        <span class="text-[0.65rem] text-slate-400 uppercase tracking-wider font-semibold"
+          >Invalid</span
+        >
+      </div>
+      <div
+        class="bg-slate-800/80 border border-slate-700/50 rounded-2xl p-4 text-center flex flex-col gap-1"
+      >
+        <span class="text-2xl font-bold text-sky-300">{{ summary().new }}</span>
+        <span class="text-[0.65rem] text-slate-400 uppercase tracking-wider font-semibold"
+          >New</span
+        >
+      </div>
+      <div
+        class="bg-slate-800/80 border border-slate-700/50 rounded-2xl p-4 text-center flex flex-col gap-1"
+      >
+        <span class="text-2xl font-bold text-amber-400">{{ summary().overwrite }}</span>
+        <span class="text-[0.65rem] text-slate-400 uppercase tracking-wider font-semibold"
+          >Overwrite</span
+        >
+      </div>
+    </div>
+
+    <!-- Editable preview grid -->
+    <div class="bg-slate-800/60 border border-slate-700/50 rounded-2xl overflow-hidden mb-6">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr
+              class="bg-slate-900/60 text-left text-[0.7rem] uppercase tracking-wider text-slate-400"
+            >
+              <th class="px-3 py-3 font-semibold">Status</th>
+              <th class="px-3 py-3 font-semibold min-w-[180px]">Slug</th>
+              <th class="px-3 py-3 font-semibold min-w-[160px]">Name</th>
+              <th class="px-3 py-3 font-semibold">Type</th>
+              <th class="px-3 py-3 font-semibold">Active</th>
+              <th class="px-3 py-3 font-semibold min-w-[220px]">Title</th>
+              <th class="px-3 py-3 font-semibold min-w-[240px]">Description</th>
+              <th class="px-3 py-3 font-semibold min-w-[200px]">Keywords (| separated)</th>
+              <th class="px-3 py-3 font-semibold min-w-[240px]">JSON-LD</th>
+              <th class="px-3 py-3 font-semibold"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track $index) {
+              <tr
+                class="border-t border-slate-700/40 align-top"
+                [class]="row.error ? 'bg-red-500/5' : 'hover:bg-slate-900/30'"
+              >
+                <td class="px-3 py-2">
+                  @if (row.error) {
+                    <span
+                      class="inline-flex items-center gap-1 text-[0.65rem] font-semibold text-red-300 bg-red-500/10 border border-red-500/30 rounded px-2 py-1"
+                      [title]="row.error"
+                    >
+                      <ng-icon name="heroExclamationCircle"></ng-icon>
+                      {{ row.error }}
+                    </span>
+                  } @else if (isExisting(row.page.page_slug)) {
+                    <span
+                      class="text-[0.65rem] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-2 py-1"
+                    >
+                      Overwrite
+                    </span>
+                  } @else {
+                    <span
+                      class="text-[0.65rem] font-semibold text-sky-300 bg-sky-500/10 border border-sky-500/30 rounded px-2 py-1"
+                    >
+                      New
+                    </span>
+                  }
+                </td>
+                <td class="px-3 py-2">
+                  <input
+                    type="text"
+                    class="w-full px-2 py-1.5 bg-slate-900/50 border border-slate-700/60 rounded-lg text-slate-100 text-xs font-mono focus:outline-none focus:border-indigo-500"
+                    [value]="row.page.page_slug"
+                    (input)="updateText($index, 'page_slug', $any($event.target).value)"
+                    aria-label="Page slug"
+                  />
+                </td>
+                <td class="px-3 py-2">
+                  <input
+                    type="text"
+                    class="w-full px-2 py-1.5 bg-slate-900/50 border border-slate-700/60 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-indigo-500"
+                    [value]="row.page.page_name"
+                    (input)="updateText($index, 'page_name', $any($event.target).value)"
+                    aria-label="Page name"
+                  />
+                </td>
+                <td class="px-3 py-2">
+                  <select
+                    class="px-2 py-1.5 bg-slate-900/50 border border-slate-700/60 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer"
+                    [value]="row.page.page_type"
+                    (change)="updateType($index, $any($event.target).value)"
+                    aria-label="Page type"
+                  >
+                    <option value="static">static</option>
+                    <option value="dynamic">dynamic</option>
+                  </select>
+                </td>
+                <td class="px-3 py-2 text-center">
+                  <button
+                    type="button"
+                    class="px-2 py-1 rounded-lg text-[0.65rem] font-bold border transition-all"
+                    [class]="
+                      row.page.is_active
+                        ? 'text-emerald-400 border-emerald-400/30 bg-emerald-500/10'
+                        : 'text-slate-400 border-slate-700/50 bg-slate-900/50'
+                    "
+                    (click)="toggleActive($index)"
+                    [attr.aria-pressed]="row.page.is_active"
+                  >
+                    {{ row.page.is_active ? 'On' : 'Off' }}
+                  </button>
+                </td>
+                <td class="px-3 py-2">
+                  <input
+                    type="text"
+                    class="w-full px-2 py-1.5 bg-slate-900/50 border border-slate-700/60 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-indigo-500"
+                    [value]="row.page.title"
+                    (input)="updateText($index, 'title', $any($event.target).value)"
+                    aria-label="Title"
+                  />
+                </td>
+                <td class="px-3 py-2">
+                  <textarea
+                    rows="2"
+                    class="w-full px-2 py-1.5 bg-slate-900/50 border border-slate-700/60 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-indigo-500 resize-y"
+                    [value]="row.page.description"
+                    (input)="updateText($index, 'description', $any($event.target).value)"
+                    aria-label="Description"
+                  ></textarea>
+                </td>
+                <td class="px-3 py-2">
+                  <input
+                    type="text"
+                    class="w-full px-2 py-1.5 bg-slate-900/50 border border-slate-700/60 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-indigo-500"
+                    [value]="row.page.keywords.join(' | ')"
+                    (input)="updateKeywords($index, $any($event.target).value)"
+                    aria-label="Keywords"
+                  />
+                </td>
+                <td class="px-3 py-2">
+                  <textarea
+                    rows="2"
+                    class="w-full px-2 py-1.5 bg-slate-900/50 border rounded-lg text-slate-100 text-xs font-mono focus:outline-none focus:border-indigo-500 resize-y"
+                    [class]="
+                      row.error === 'Invalid JSON-LD' ? 'border-red-500/50' : 'border-slate-700/60'
+                    "
+                    [value]="row.jsonLdText"
+                    (input)="updateJsonLd($index, $any($event.target).value)"
+                    placeholder="{}"
+                    aria-label="JSON-LD"
+                  ></textarea>
+                </td>
+                <td class="px-3 py-2 text-center">
+                  <button
+                    type="button"
+                    class="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-all"
+                    (click)="removeRow($index)"
+                    [attr.aria-label]="'Remove row ' + ($index + 1)"
+                  >
+                    <ng-icon name="heroTrash" class="text-base"></ng-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-end gap-3">
+      <a
+        routerLink="/admin/seo"
+        class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-700 transition-all"
+      >
+        Cancel
+      </a>
+      <button
+        type="button"
+        class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        [disabled]="!canImport()"
+        (click)="confirmImport()"
+      >
+        @if (importing()) {
+          <div
+            class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+          ></div>
+          Importing...
+        } @else {
+          Confirm Import ({{ summary().valid }})
+        }
+      </button>
+    </div>
+  }
+</section>

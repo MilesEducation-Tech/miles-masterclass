@@ -1,0 +1,130 @@
+<div
+  class="flex w-svw max-md:overflow-auto min-h-svh md:h-dvh flex-col md:px-11 md:pt-8 p-5 space-y-4 md:overflow-hidden"
+>
+  <app-backward label="Back to Course" fallback="/" [routePath]="courseNavigation()" />
+
+  @if (isLoading()) {
+    <app-page-loading message="Loading assessment..." [fullScreen]="true" />
+  } @else if (isAssessmentPassed()) {
+    <div
+      class="flex flex-col h-full text-white p-4 md:p-8 overflow-y-auto space-y-4 rounded-lg items-center justify-center"
+    >
+      <div
+        class="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center text-green-600 mb-4"
+      >
+        <ng-icon name="heroCheckCircle" size="4rem"></ng-icon>
+      </div>
+      <h2 class="text-3xl font-bold text-center">Assessment Completed</h2>
+      <p class="text-gray-300 text-center max-w-md">
+        You have already passed this assessment. You can view your detailed report or return to the
+        course.
+      </p>
+
+      <div class="flex flex-col justify-center items-center sm:flex-row gap-4 w-full max-w-md pt-4">
+        <app-button variant="default" (clicked)="handleDialogAction('report')">
+          <div class="flex items-center justify-center gap-2">
+            View Detailed Report
+            <ng-icon name="heroArrowRight"></ng-icon>
+          </div>
+        </app-button>
+
+        <app-button
+          variant="outline"
+          class="border-gray-500 text-white"
+          (clicked)="handleDialogAction('course')"
+        >
+          Back to Course
+        </app-button>
+      </div>
+    </div>
+  } @else {
+    <div class="flex flex-col h-full text-white p-4 md:p-8 overflow-y-auto space-y-4 rounded-lg">
+      <!-- Progress -->
+      <div class="opacity-60 text-sm font-medium">
+        {{ progressText() }}
+      </div>
+
+      <!-- Question -->
+      @if (currentQuestion()) {
+        <h2 class="text-xl md:text-2xl font-semibold">
+          {{ currentQuestion().question }}
+        </h2>
+
+        <!-- Options -->
+        <div class="flex flex-col gap-2">
+          @for (option of ['a', 'b', 'c', 'd']; track option) {
+            @if (getOptionText(currentQuestion(), option)) {
+              <button
+                class="flex items-start gap-4 p-3 rounded-lg border text-left transition-all"
+                [class.border-[#3E4552]]="selectedOption() !== option"
+                [class.bg-transparent]="selectedOption() !== option"
+                [class.border-blue-500]="selectedOption() === option"
+                [class.bg-[#2C3442]]="selectedOption() === option"
+                [disabled]="isSubmitted()"
+                (click)="selectOption(option)"
+              >
+                <div class="flex flex-col w-full gap-2">
+                  <div class="flex items-start gap-2">
+                    <!-- Radio Indicator -->
+                    <div
+                      class="relative w-5 h-5 rounded-full border-2 mt-0.5 shrink-0"
+                      [class.border-gray-500]="selectedOption() !== option"
+                      [class.border-blue-500]="selectedOption() === option"
+                    >
+                      @if (selectedOption() === option) {
+                        <div class="absolute inset-1 rounded-full bg-blue-500"></div>
+                      }
+                    </div>
+
+                    <span class="text-base leading-relaxed text-gray-200">
+                      {{ getOptionText(currentQuestion(), option) }}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            }
+          }
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="mt-auto flex justify-between items-center pt-6 border-t border-[#3E4552]">
+          <app-button
+            variant="default"
+            class="bg-[#3E4552] hover:bg-[#4B5563]"
+            [disabled]="currentQuestionIndex() === 0"
+            (clicked)="prevQuestion()"
+          >
+            BACK
+          </app-button>
+
+          <div class="flex gap-2">
+            <!-- Skip Button (Visible if no option selected) -->
+            @if (!selectedOption() && !isLastQuestion()) {
+              <app-button
+                variant="outline"
+                class="border-[#3E4552] text-white hover:bg-[#3E4552]"
+                (clicked)="skipQuestion()"
+              >
+                SKIP
+              </app-button>
+            }
+
+            <!-- Next Button (Visible if option selected AND not last question) -->
+            @if (selectedOption() && !isLastQuestion()) {
+              <app-button variant="default" class="min-w-44" (clicked)="nextQuestion()">
+                NEXT
+              </app-button>
+            }
+
+            <!-- Final Submit (Visible on last question) -->
+            @if (isLastQuestion()) {
+              <app-button variant="default" class="min-w-44" (clicked)="submit()">
+                <div class="flex items-center justify-center gap-2">SUBMIT</div>
+              </app-button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

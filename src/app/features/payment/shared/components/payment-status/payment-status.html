@@ -1,0 +1,7 @@
+<div class="flex justify-center flex-col items-center h-auto">
+  <ng-icon [svg]="content().icon" size="150" />
+  <!-- leading-normal, not the text-6xl default of 1: html2canvas draws large glyphs
+       ~25px below the browser baseline, so a 1.0 line box collides with the line under it -->
+  <p class="text-6xl leading-normal font-bold text-center mt-4">{{ content().title }}</p>
+  <p class="text-lg text-center text-gray-300 mt-1">{{ content().message }}</p>
+</div>

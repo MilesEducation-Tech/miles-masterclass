@@ -1,0 +1,187 @@
+<div [class]="wrapperClasses()">
+  @switch (type()) {
+    @case ('textarea') {
+      <div class="relative">
+        <textarea
+          [id]="inputId()"
+          [name]="id()"
+          [placeholder]="placeholder() || ' '"
+          [rows]="rows()"
+          [class]="textareaClasses()"
+          [value]="value()"
+          [disabled]="disabled()"
+          [readonly]="readonly()"
+          [required]="required()"
+          [attr.aria-invalid]="invalid()"
+          [attr.aria-required]="required() || null"
+          [attr.aria-describedby]="describedBy()"
+          (input)="handleInput($any($event).target.value)"
+          (blur)="handleBlur()"
+        ></textarea>
+        @if (label()) {
+          <label [for]="inputId()" class="floating-label">
+            {{ label() }}
+            @if (required()) {
+              <sup class="text-destructive ml-1" aria-label="required">*</sup>
+            }
+          </label>
+        }
+      </div>
+    }
+    @case ('checkbox') {
+      <div class="flex items-start gap-3">
+        <div class="relative flex items-center">
+          <input
+            [id]="inputId()"
+            type="checkbox"
+            [class]="checkboxClasses()"
+            [checked]="isChecked()"
+            [disabled]="disabled()"
+            [required]="required()"
+            [attr.aria-invalid]="invalid()"
+            [attr.aria-required]="required() || null"
+            [attr.aria-describedby]="describedBy()"
+            (change)="handleInput($any($event).target.checked)"
+            (blur)="handleBlur()"
+          />
+          @if (isChecked()) {
+            <ng-icon
+              [svg]="icons().check"
+              strokeWidth="6"
+              color="white"
+              class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-accent font-bold pointer-events-none"
+            />
+          }
+        </div>
+        @if (label()) {
+          <label [for]="inputId()" [class]="checkboxLabelClasses()">
+            {{ label() }}
+            <!-- Optional rich label content, e.g. inline policy links. Anchors are
+                 interactive content, so clicking them does not toggle the checkbox. -->
+            <ng-content select="[labelLink]" />
+            @if (required()) {
+              <sup class="text-destructive ml-1" aria-label="required">*</sup>
+            }
+            @if (description()) {
+              <p class="text-sm text-muted-foreground font-normal mt-1">
+                {{ description() }}
+              </p>
+            }
+          </label>
+        }
+      </div>
+    }
+    @case ('radio') {
+      <div
+        class="space-y-2"
+        role="radiogroup"
+        [attr.aria-labelledby]="label() ? groupLabelId() : null"
+        [attr.aria-required]="required() || null"
+        [attr.aria-invalid]="invalid()"
+        [attr.aria-describedby]="describedBy()"
+      >
+        @if (label()) {
+          <span [id]="groupLabelId()" class="block text-sm font-medium leading-none">
+            {{ label() }}
+            @if (required()) {
+              <sup class="text-destructive ml-1" aria-label="required">*</sup>
+            }
+          </span>
+        }
+        <div class="flex items-center gap-6 pt-1">
+          @for (option of options(); track option.value) {
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                [name]="id()"
+                [value]="option.value"
+                [checked]="value() === option.value"
+                [disabled]="disabled() || option.disabled"
+                (change)="handleInput(option.value)"
+                (blur)="handleBlur()"
+                class="h-4 w-4 border-primary text-accent focus:ring-primary"
+              />
+              <span class="text-sm">{{ option.label }}</span>
+            </label>
+          }
+        </div>
+      </div>
+    }
+    @default {
+      <div class="relative">
+        @if (prefixIcon()) {
+          <div
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+          >
+            <ng-content select="[prefix]" />
+          </div>
+        }
+        <input
+          [id]="inputId()"
+          [name]="id()"
+          [type]="actualType()"
+          [placeholder]="placeholder() || ' '"
+          [class]="inputClasses()"
+          [value]="value()"
+          [attr.autocomplete]="autocomplete()"
+          [readonly]="readonly()"
+          [disabled]="disabled()"
+          [required]="required()"
+          [min]="min()"
+          [max]="max()"
+          [step]="step()"
+          [attr.inputmode]="numericOnly() ? 'numeric' : null"
+          [attr.pattern]="numericOnly() ? '[0-9]*' : null"
+          [attr.aria-invalid]="invalid()"
+          [attr.aria-required]="required() || null"
+          [attr.aria-describedby]="describedBy()"
+          (input)="
+            numericOnly() ? handleNumericInput($event) : handleInput($any($event).target.value)
+          "
+          (blur)="handleBlur()"
+        />
+        @if (label()) {
+          <label [for]="inputId()" class="floating-label">
+            {{ label() }}
+            @if (required()) {
+              <sup class="text-destructive ml-1" aria-label="required">*</sup>
+            }
+          </label>
+        }
+        @if (suffixIcon()) {
+          <div
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+          >
+            <ng-content select="[suffix]" />
+          </div>
+        }
+        @if (type() === 'password' && showPasswordToggle()) {
+          <button
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+            (click)="togglePassword()"
+            [attr.aria-label]="passwordVisible() ? 'Hide password' : 'Show password'"
+          >
+            @if (passwordVisible()) {
+              <ng-icon [svg]="icons().eyeSlash" class="w-4 h-4" />
+            } @else {
+              <ng-icon [svg]="icons().eye" class="w-4 h-4" />
+            }
+          </button>
+        }
+      </div>
+    }
+  }
+  @if (hint() && !displayError()) {
+    <p [id]="hintId()" class="text-sm text-muted-foreground mt-1.5">
+      {{ hint() }}
+    </p>
+  }
+  @if (touched() && displayError()) {
+    <div [id]="errorId()" class="error-messages" role="alert">
+      @for (error of errors(); track error) {
+        <p class="text-sm text-destructive mt-1.5">{{ error.message }}</p>
+      }
+    </div>
+  }
+</div>

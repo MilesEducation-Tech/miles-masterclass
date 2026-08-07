@@ -1,0 +1,38 @@
+<section class="admin-theme flex flex-col gap-8 p-6 text-white min-h-full">
+  @if (!me.isPartnerAdmin() && !me.isLoading()) {
+    <div class="rounded-xl border border-white/10 bg-card p-8 text-center max-w-lg mx-auto mt-10">
+      <h1 class="text-xl font-bold mb-2">Not a partner admin</h1>
+      <p class="text-sm" style="color: var(--mm-fg-3)">
+        Your account isn't provisioned as a partner network admin yet. Ask a super admin to set you
+        up under Admin Users.
+      </p>
+    </div>
+  } @else {
+    <header class="flex flex-col gap-1">
+      <p class="text-base font-semibold" style="color: var(--mm-fg-3)">Dashboard Overview</p>
+      <h1 class="text-3xl font-extrabold leading-tight">
+        {{ title() }}
+      </h1>
+    </header>
+
+    @if (facade.dashboardError()) {
+      <div
+        class="px-3 py-2 text-sm rounded-md"
+        style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
+        role="alert"
+      >
+        {{ facade.dashboardError() }}
+      </div>
+    }
+
+    @if (facade.dashboardLoading() && !facade.dashboard()) {
+      <div class="flex justify-center py-10"><app-spinner size="lg" /></div>
+    } @else {
+      <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+        @for (card of cards(); track card.label) {
+          <app-stat-card [label]="card.label" [value]="card.value" [accent]="card.accent" />
+        }
+      </div>
+    }
+  }
+</section>

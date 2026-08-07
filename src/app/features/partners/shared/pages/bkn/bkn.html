@@ -1,0 +1,70 @@
+<div class="flex flex-col space-y-20 items-center relative w-full overflow-hidden z-0">
+  <div
+    class="absolute -z-10 top-0 -left-1/2 w-full md:aspect-video max-md:h-[80vh] bg-[radial-gradient(circle,rgba(42,133,255,1)_30%,transparent_80%)] blur-[200px]"
+  ></div>
+  <div
+    class="absolute -z-10 top-0 left-1/2 w-full md:aspect-video max-md:h-[80vh] bg-[radial-gradient(circle,#AB8862_30%,transparent_80%)] blur-[200px]"
+  ></div>
+  <section
+    class="h-screen w-11/12 mx-auto flex flex-col justify-end pb-20 items-center relative space-y-12"
+  >
+    <app-partner-content-list [content]="heroContent" />
+    <div
+      class="flex md:space-x-3 max-md:flex-col max-md:space-y-4 items-center md:w-2/3 w-full md:justify-center"
+    >
+      <app-button
+        variant="secondary"
+        class="rounded-md font-semibold px-14"
+        (clicked)="scrollTo('content-section')"
+        >Explore Courses</app-button
+      >
+      <app-button
+        class="text-black bg-white rounded-md font-semibold px-5"
+        variant="ghost"
+        (clicked)="scrollTo('bkn-content-section')"
+        >Schedule Discovery Call</app-button
+      >
+    </div>
+  </section>
+  <section class="flex w-11/12 mx-auto flex-col space-y-10 scroll-mt-24">
+    <app-partner-content-list [content]="complianceContent" />
+    @defer (on viewport; prefetch on idle) {
+      <app-video-list-wrapper [videoList]="videoList" />
+    } @placeholder {
+      <div class="w-full aspect-video"></div>
+    }
+  </section>
+  <section class="flex w-11/12 mx-auto flex-col space-y-10">
+    <app-partner-content-list [content]="partnershipMeansContent" />
+    <app-for-partnership-tabs
+      [tabs]="partnershipTabs"
+      [selectedTab]="'firms'"
+      containerClass="w-full"
+      tabListClass="flex justify-center items-center space-x-6 !mt-14"
+      tabClass="relative md:text-xl leading-relaxed text-base font-semibold cursor-pointer transition-all duration-300 text-gray-400 aria-selected:text-accent
+                after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:bg-accent after:w-0 after:transition-all after:duration-500
+                hover:after:w-full aria-selected:after:w-full
+                focus-visible:outline-none"
+      panelClass="animate-fade-in"
+    />
+  </section>
+  <section id="content-section" class="flex w-11/12 mx-auto flex-col space-y-10">
+    <app-partner-content-list [content]="sampleContent" />
+    <app-partnership-content [content]="partnershipContent" />
+  </section>
+  <section id="bkn-content-section" class="flex w-11/12 mx-auto flex-col space-y-10 scroll-mt-24">
+    <app-partner-content-list [content]="footerContent" />
+    <div class="w-full mx-auto flex justify-center">
+      <app-enquiry-form [enquiry_type]="'Boomer Knowledge Network'" />
+    </div>
+    <div class="flex flex-col">
+      <app-partner-content-list [content]="OrContent" containerClass="gap-4  mb-0!" />
+      <app-button
+        class="w-full md:w-auto mx-auto text-accent"
+        variant="ghost"
+        (clicked)="openScheduler()"
+        >Book a Strategy Call</app-button
+      >
+    </div>
+  </section>
+</div>

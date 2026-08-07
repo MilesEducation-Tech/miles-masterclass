@@ -1,0 +1,25 @@
+<section class="w-11/12 mx-auto">
+  <header class="text-center mb-6">
+    <h2 class="text-2xl sm:text-3xl font-semibold text-foreground">
+      Become an <span class="text-accent">AI-Ready CPA</span> with CAIRA
+    </h2>
+    <p class="text-sm text-muted-foreground mt-2 max-w-2xl mx-auto">
+      Build future-ready, AI-powered accounting skills and earn a Credly-verified digital badge —
+      explore the tracks below.
+    </p>
+  </header>
+
+  @if (cards().length) {
+    <app-carousel
+      [cards]="cards()"
+      [heading]="{ text: 'CAIRA Learning Tracks', subText: '' }"
+      [swiperConfig]="swiperConfigEven"
+      [filterConfig]="{ filterEnabled: false }"
+      skeletonClass="aspect-video"
+    >
+      <ng-template let-card>
+        <app-horizontal [card]="card" type="masterclass" />
+      </ng-template>
+    </app-carousel>
+  }
+</section>

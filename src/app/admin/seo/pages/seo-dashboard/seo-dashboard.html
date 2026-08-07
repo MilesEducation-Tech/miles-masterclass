@@ -1,0 +1,459 @@
+<section class="pb-12" aria-labelledby="dashboard-heading">
+  <!-- Header -->
+  <div class="mb-8 relative z-10">
+    <h2 id="dashboard-heading" class="text-3xl font-bold text-slate-100 mb-2">SEO Manager</h2>
+    <p class="text-slate-400 text-sm max-w-2xl leading-relaxed">
+      Manage search engine optimization for all your pages. Green means good, yellow needs
+      attention, red is poor.
+    </p>
+  </div>
+
+  @if (loadError()) {
+    <div
+      class="mb-6 text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 flex items-center gap-3"
+      role="alert"
+    >
+      <ng-icon name="heroExclamationCircle" class="text-red-300 shrink-0" />
+      <span class="flex-1">{{ loadError() }}</span>
+      <button
+        type="button"
+        class="text-xs font-semibold underline hover:no-underline"
+        (click)="loadPages()"
+      >
+        Retry
+      </button>
+    </div>
+  }
+
+  <!-- Stats Cards -->
+  <div
+    class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8 px-4"
+    role="region"
+    aria-label="SEO Statistics"
+  >
+    <div
+      class="bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-5 text-center flex flex-col gap-1 shadow-lg"
+    >
+      <span class="text-3xl font-bold text-indigo-300">{{ stats().total }}</span>
+      <span class="text-[0.7rem] text-slate-400 uppercase tracking-wider font-semibold"
+        >Total Pages</span
+      >
+    </div>
+    <div
+      class="bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-5 text-center flex flex-col gap-1 shadow-lg"
+    >
+      <span class="text-3xl font-bold text-emerald-400">{{ stats().excellent }}</span>
+      <span class="text-[0.7rem] text-slate-400 uppercase tracking-wider font-semibold"
+        >Excellent SEO</span
+      >
+    </div>
+    <div
+      class="bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-5 text-center flex flex-col gap-1 shadow-lg"
+    >
+      <span class="text-3xl font-bold text-amber-400">{{ stats().needsWork }}</span>
+      <span class="text-[0.7rem] text-slate-400 uppercase tracking-wider font-semibold"
+        >Needs Work</span
+      >
+    </div>
+    <div
+      class="bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-5 text-center flex flex-col gap-1 shadow-lg"
+    >
+      <span class="text-3xl font-bold text-red-400">{{ stats().poor }}</span>
+      <span class="text-[0.7rem] text-slate-400 uppercase tracking-wider font-semibold"
+        >Poor SEO</span
+      >
+    </div>
+    <div
+      class="bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-5 text-center flex flex-col gap-1 shadow-lg"
+    >
+      <span class="text-3xl font-bold text-violet-300">{{ stats().avgScore }}%</span>
+      <span class="text-[0.7rem] text-slate-400 uppercase tracking-wider font-semibold"
+        >Avg Score</span
+      >
+    </div>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <div class="flex flex-col md:flex-row gap-4 mb-8" role="search" aria-label="Filter pages">
+    <div class="flex-1 min-w-[240px] relative">
+      <span
+        class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10 flex items-center justify-center p-0.5"
+        aria-hidden="true"
+      >
+        <ng-icon name="heroMagnifyingGlass" class="text-lg"></ng-icon>
+      </span>
+      <input
+        type="search"
+        class="w-full pl-11 pr-4 py-3 bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all placeholder:text-slate-500 shadow-lg relative z-10"
+        placeholder="Search pages by name or URL..."
+        [value]="searchQuery()"
+        (input)="onSearchInput($event)"
+        aria-label="Search pages"
+      />
+    </div>
+    <div class="min-w-[150px] relative">
+      <label for="filter-type" class="sr-only">Filter by page type</label>
+      <select
+        id="filter-type"
+        class="w-full px-4 py-3 bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-xl text-slate-100 text-sm cursor-pointer focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 appearance-none shadow-lg relative z-10"
+        [value]="filterType()"
+        (change)="onFilterChange($event)"
+      >
+        <option value="all">All Types</option>
+        <option value="static">Static Pages</option>
+        <option value="dynamic">Dynamic Pages</option>
+      </select>
+    </div>
+    <a
+      routerLink="/admin/seo/bulk"
+      class="flex items-center justify-center gap-2 px-6 py-3 bg-slate-800/80 border border-slate-700/60 text-slate-200 rounded-xl font-semibold shadow-lg hover:bg-slate-700/80 active:scale-95 transition-all whitespace-nowrap"
+    >
+      <ng-icon name="heroArrowUpTray" class="text-xl"></ng-icon>
+      Bulk Upload
+    </a>
+    <button
+      class="flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-semibold shadow-lg hover:opacity-90 active:scale-95 transition-all whitespace-nowrap"
+      (click)="openCreateModal()"
+    >
+      <ng-icon name="heroPlus" class="text-xl"></ng-icon>
+      Add Page
+    </button>
+  </div>
+
+  <!-- Loading Skeleton -->
+  @if (loading()) {
+    <div
+      class="flex items-center justify-center gap-4 py-16 text-slate-400 text-sm bg-slate-800/30 border border-slate-700/50 rounded-3xl"
+      role="status"
+      aria-label="Loading pages"
+    >
+      <div
+        class="w-6 h-6 border-2 border-slate-700 border-t-indigo-500 rounded-full animate-spin"
+        aria-hidden="true"
+      ></div>
+      <span>Loading SEO pages...</span>
+    </div>
+  }
+
+  <!-- Pages Grid -->
+  @if (!loading()) {
+    @if (filteredPages().length === 0) {
+      <div
+        class="text-center py-16 px-8 text-slate-500 bg-slate-800/30 border border-slate-700/50 rounded-3xl"
+        role="status"
+      >
+        <span class="text-5xl mb-4 text-slate-600 flex justify-center" aria-hidden="true">
+          <ng-icon name="heroDocumentText"></ng-icon>
+        </span>
+        <p class="text-base m-0">No pages found matching your search.</p>
+      </div>
+    } @else {
+      <div
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8 relative z-0"
+        role="list"
+      >
+        @for (page of filteredPages(); track page.page_slug) {
+          <article
+            class="bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 transition-all duration-300 hover:border-indigo-500/40 hover:shadow-2xl hover:shadow-indigo-500/10 focus-within:ring-2 focus-within:ring-indigo-500/50 flex flex-col group hover:-translate-y-1"
+            role="listitem"
+            [attr.aria-label]="page.page_name + ' - SEO Score: ' + computeSeoScore(page) + '%'"
+          >
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex flex-wrap gap-2 items-center">
+                <span
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.65rem] font-bold uppercase tracking-widest border"
+                  [class]="
+                    page.page_type === 'static'
+                      ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'
+                      : 'bg-fuchsia-500/10 text-fuchsia-300 border-fuchsia-500/20'
+                  "
+                >
+                  <ng-icon
+                    [name]="page.page_type === 'static' ? 'heroDocument' : 'heroCodeBracket'"
+                    class="text-sm"
+                  ></ng-icon>
+                  {{ page.page_type === 'static' ? 'Static' : 'Dynamic' }}
+                </span>
+                <button
+                  class="px-2.5 py-1 rounded-lg text-[0.65rem] font-bold uppercase tracking-widest border bg-slate-900/50 transition-all focus:outline-none hover:bg-slate-700/80"
+                  [class]="
+                    page.is_active
+                      ? 'text-emerald-400 border-emerald-400/20 hover:border-emerald-400/50'
+                      : 'text-slate-400 border-slate-700/50 hover:border-slate-500'
+                  "
+                  (click)="toggleActive(page)"
+                  [attr.aria-label]="
+                    'Toggle SEO ' + (page.is_active ? 'off' : 'on') + ' for ' + page.page_name
+                  "
+                  [attr.aria-pressed]="page.is_active"
+                >
+                  <span
+                    class="inline-block w-1.5 h-1.5 rounded-full mr-1.5 transition-colors"
+                    [class]="
+                      page.is_active
+                        ? 'bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.5)]'
+                        : 'bg-slate-500'
+                    "
+                  ></span>
+                  {{ page.is_active ? 'Active' : 'Inactive' }}
+                </button>
+              </div>
+
+              <!-- Score Badge -->
+              <div
+                class="flex items-baseline gap-0.5 px-3 py-1 rounded-xl font-bold shadow-sm"
+                [class]="getScoreClass(computeSeoScore(page)).badge"
+              >
+                <span class="text-xl">{{ computeSeoScore(page) }}</span>
+                <span class="text-[0.6rem] opacity-70">/100</span>
+              </div>
+            </div>
+
+            <h3
+              class="text-lg font-semibold text-slate-50 m-0 mb-1 leading-tight group-hover:text-indigo-300 transition-colors"
+            >
+              {{ page.page_name }}
+            </h3>
+            <p
+              class="text-[0.7rem] text-slate-400 m-0 mb-4 font-mono break-all bg-slate-900/50 px-2 py-1 rounded border border-slate-700/30 inline-block self-start"
+            >
+              {{ page.page_slug }}
+            </p>
+
+            <!-- Quick Preview -->
+            <div
+              class="bg-slate-900/60 rounded-xl p-4 mb-5 border border-slate-700/50 flex-1 shadow-inner"
+            >
+              @if (page.title) {
+                <p class="text-[0.85rem] text-blue-400 m-0 mb-1.5 font-medium leading-snug">
+                  {{ page.title }}
+                </p>
+              } @else {
+                <p class="text-[0.85rem] text-slate-500 m-0 mb-1.5 italic">No title set</p>
+              }
+              @if (page.description) {
+                <p class="text-[0.75rem] text-slate-400 m-0 leading-relaxed line-clamp-2">
+                  {{ page.description }}
+                </p>
+              } @else {
+                <p class="text-[0.75rem] text-slate-500 m-0 italic">No description set</p>
+              }
+            </div>
+
+            <!-- Score Bar -->
+            <div class="mt-auto">
+              <div
+                class="h-1.5 bg-slate-900/80 rounded-full overflow-hidden mb-2 shadow-inner"
+                role="progressbar"
+                [attr.aria-valuenow]="computeSeoScore(page)"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                [attr.aria-label]="'SEO score: ' + computeSeoScore(page) + '%'"
+              >
+                <div
+                  class="h-full rounded-full transition-all duration-500 ease-out"
+                  [class]="getScoreClass(computeSeoScore(page)).bar"
+                  [style.width.%]="computeSeoScore(page)"
+                ></div>
+              </div>
+              <span
+                class="block text-[0.65rem] font-bold uppercase tracking-wider mb-5"
+                [class]="getScoreClass(computeSeoScore(page)).text"
+              >
+                {{ getScoreLabel(computeSeoScore(page)) }}
+              </span>
+
+              <!-- Actions -->
+              <div class="flex gap-2">
+                <button
+                  class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-indigo-300 text-sm font-semibold hover:bg-indigo-500/20 hover:border-indigo-500/50 hover:text-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-sm"
+                  (click)="editPage(page)"
+                  [attr.aria-label]="'Edit SEO for ' + page.page_name"
+                >
+                  <ng-icon name="heroPencilSquare" class="text-base"></ng-icon>
+                  Edit
+                </button>
+                <button
+                  class="flex items-center justify-center p-2.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all shadow-sm group/trash"
+                  (click)="deletePage(page)"
+                  [attr.aria-label]="'Delete SEO settings for ' + page.page_name"
+                >
+                  <ng-icon
+                    name="heroTrash"
+                    class="text-base group-hover/trash:scale-110 transition-transform"
+                  ></ng-icon>
+                </button>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  }
+
+  <!-- SEO Guidelines Panel -->
+  <aside
+    class="bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 mt-6 shadow-xl"
+    role="complementary"
+    aria-labelledby="guidelines-heading"
+  >
+    <h3
+      id="guidelines-heading"
+      class="text-base font-semibold text-slate-100 m-0 mb-4 flex items-center gap-2"
+    >
+      <ng-icon name="heroInformationCircle" class="text-indigo-400 text-xl"></ng-icon>
+      SEO Quick Reference
+    </h3>
+    <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 m-0 p-0 list-none">
+      <li
+        class="text-[0.8rem] text-slate-400 leading-relaxed p-3 bg-slate-900/50 border border-slate-700/30 rounded-xl"
+      >
+        <strong class="text-slate-200 block mb-1">Page Title</strong> 30–60 chars. Include main
+        keyword. Make it unique.
+      </li>
+      <li
+        class="text-[0.8rem] text-slate-400 leading-relaxed p-3 bg-slate-900/50 border border-slate-700/30 rounded-xl"
+      >
+        <strong class="text-slate-200 block mb-1">Description</strong> 70–160 chars. Summarize
+        content. Add CTA.
+      </li>
+      <li
+        class="text-[0.8rem] text-slate-400 leading-relaxed p-3 bg-slate-900/50 border border-slate-700/30 rounded-xl"
+      >
+        <strong class="text-slate-200 block mb-1">Keywords</strong> 3–15 terms. Natural phrases, no
+        stuffing.
+      </li>
+      <li
+        class="text-[0.8rem] text-slate-400 leading-relaxed p-3 bg-slate-900/50 border border-slate-700/30 rounded-xl"
+      >
+        <strong class="text-slate-200 block mb-1">OG Image</strong> Min 1200×630px. Use clear,
+        branded images.
+      </li>
+      <li
+        class="text-[0.8rem] text-slate-400 leading-relaxed p-3 bg-slate-900/50 border border-slate-700/30 rounded-xl"
+      >
+        <strong class="text-slate-200 block mb-1">Robots</strong> "index, follow" mostly. "noindex"
+        for private apps.
+      </li>
+      <li
+        class="text-[0.8rem] text-slate-400 leading-relaxed p-3 bg-slate-900/50 border border-slate-700/30 rounded-xl flex items-center justify-between"
+      >
+        <span
+          class="flex items-center gap-1.5 text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-1 rounded"
+          ><ng-icon name="heroCheckCircle"></ng-icon> 80+</span
+        >
+        <span
+          class="flex items-center gap-1.5 text-amber-400 font-semibold bg-amber-500/10 px-2 py-1 rounded"
+          ><ng-icon name="heroExclamationCircle"></ng-icon> 40-79</span
+        >
+        <span
+          class="flex items-center gap-1.5 text-red-400 font-semibold bg-red-500/10 px-2 py-1 rounded"
+          ><ng-icon name="heroExclamationCircle"></ng-icon> 0-39</span
+        >
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Create Page Modal -->
+  @if (showCreateModal()) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <div
+        class="bg-slate-800 border border-slate-700 rounded-3xl p-8 max-w-md w-full shadow-2xl relative animate-in zoom-in-95 duration-200"
+      >
+        <button
+          class="absolute top-6 right-6 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg p-1"
+          (click)="closeCreateModal()"
+          aria-label="Close modal"
+        >
+          <ng-icon name="heroXMark" class="text-2xl"></ng-icon>
+        </button>
+
+        <h3 id="modal-title" class="text-2xl font-bold text-slate-100 mb-2">Create New Page</h3>
+        <p class="text-slate-400 text-sm mb-6">Add SEO settings for a new route.</p>
+
+        <div class="flex flex-col gap-4">
+          <div>
+            <label for="new-page-name" class="block text-sm font-medium text-slate-300 mb-1.5"
+              >Page Name</label
+            >
+            <input
+              id="new-page-name"
+              type="text"
+              class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm shadow-inner"
+              placeholder="e.g. Summer Promo"
+              [ngModel]="newPageName()"
+              (ngModelChange)="newPageName.set($event)"
+            />
+          </div>
+
+          <div>
+            <label for="new-page-slug" class="block text-sm font-medium text-slate-300 mb-1.5"
+              >Route Slug</label
+            >
+            <input
+              id="new-page-slug"
+              type="text"
+              class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm shadow-inner font-mono"
+              placeholder="e.g. promo/summer-sale"
+              [ngModel]="newPageSlug()"
+              (ngModelChange)="newPageSlug.set($event)"
+            />
+            <p class="text-[0.65rem] text-slate-500 mt-1">💡 Do not include leading slash.</p>
+          </div>
+
+          <div>
+            <label for="new-page-type" class="block text-sm font-medium text-slate-300 mb-1.5"
+              >Page Type</label
+            >
+            <select
+              id="new-page-type"
+              class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm shadow-inner cursor-pointer appearance-none"
+              [ngModel]="newPageType()"
+              (ngModelChange)="newPageType.set($event)"
+            >
+              <option value="static">Static Route</option>
+              <option value="dynamic">Dynamic Route (e.g. contains :id)</option>
+            </select>
+          </div>
+        </div>
+
+        @if (createError()) {
+          <p
+            class="mt-4 text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2"
+            role="alert"
+          >
+            {{ createError() }}
+          </p>
+        }
+
+        <div class="mt-8 flex justify-end gap-3">
+          <button
+            class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            (click)="closeCreateModal()"
+          >
+            Cancel
+          </button>
+          <button
+            class="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-sm font-semibold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+            [disabled]="!newPageName().trim() || !newPageSlug().trim() || creatingPage()"
+            (click)="createNewPage()"
+          >
+            @if (creatingPage()) {
+              <div
+                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+              ></div>
+              Creating...
+            } @else {
+              Create Page
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</section>

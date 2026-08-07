@@ -1,0 +1,57 @@
+<app-forms type="signal" class="space-y-4!" (submitted)="handleSubmit()">
+  <div class="grid grid-cols-2 gap-4">
+    <app-aria-input
+      id="full_name"
+      label="Full Name"
+      placeholder="Enter your full name"
+      [formField]="enquiryForm.full_name"
+    />
+    <app-aria-input
+      id="email"
+      type="email"
+      label="Email"
+      placeholder="Enter your email"
+      [formField]="enquiryForm.email"
+    />
+    <app-aria-input
+      id="firm_name"
+      label="Firm Name"
+      placeholder="Enter your firm name"
+      [formField]="enquiryForm.firm_name"
+    />
+    <app-aria-multiselect
+      id="help_type"
+      label="How can we help you?"
+      [options]="helpTypeOptions"
+      [formField]="enquiryForm.help_type"
+    />
+    <app-aria-input
+      id="keep_updated"
+      type="checkbox"
+      label="Keep me updated with relevant news and offers"
+      [formField]="enquiryForm.keep_updated"
+    />
+  </div>
+  <p class="text-sm text-muted-foreground">
+    Your information will be handled in accordance with our
+    <a class="underline" [routerLink]="['/', country(), profession(), 'terms-of-service']"
+      >Terms & Conditions</a
+    >
+    and
+    <a class="underline" [routerLink]="['/', country(), profession(), 'privacy-policy']"
+      >Privacy Policy</a
+    >.
+  </p>
+
+  <app-button
+    class="w-full col-span-2"
+    type="submit"
+    variant="default"
+    [disabled]="enquiryForm().invalid() || isLoading()"
+  >
+    @if (isLoading()) {
+      <app-spinner />
+    }
+    Submit
+  </app-button>
+</app-forms>

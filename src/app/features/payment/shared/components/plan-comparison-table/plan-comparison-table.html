@@ -1,0 +1,65 @@
+<div
+  class="comparison grid relative gap-x-2 sm:gap-x-4"
+  [style.grid-template-columns]="gridTemplate()"
+>
+  <!-- Header row: empty left cell + plan name per column -->
+  <div></div>
+  @for (col of columns(); track col.plan.id) {
+    <div
+      class="relative flex items-center justify-center pt-7 pb-4"
+      [class]="col.isSelected ? 'bg-[#1A1F26] border-x border-t border-white/5 rounded-t-2xl' : ''"
+    >
+      @if (col.isRecommended) {
+        <ng-icon
+          [svg]="proCrownIcon"
+          class="absolute -top-2 left-1 -translate-x-1/2 -translate-y-1/2 w-6! h-6! -rotate-12"
+        />
+      }
+      <span
+        class="px-1 text-sm md:text-base font-semibold tracking-wide whitespace-nowrap"
+        [class]="
+          col.isRecommended ? 'text-[#FFCF00]' : col.isSelected ? 'text-white' : 'text-neutral-400'
+        "
+      >
+        {{ col.plan.subscription_name }}
+      </span>
+    </div>
+  }
+
+  <!-- Feature rows -->
+  @for (row of rows(); track row.id; let isLast = $last) {
+    <div class="text-sm text-white py-3 pr-3 leading-snug">
+      {{ row.name }}
+    </div>
+    @for (col of columns(); track col.plan.id) {
+      <div
+        class="flex items-center justify-center py-3"
+        [class]="
+          col.isSelected
+            ? 'bg-[#1A1F26] border-x border-white/5 ' + (isLast ? 'border-b rounded-b-2xl' : '')
+            : ''
+        "
+      >
+        @if (planHasFeature(col.plan, row.id)) {
+          <svg
+            viewBox="0 0 20 20"
+            class="w-5 h-5"
+            [class]="col.isSelected ? 'text-white' : 'text-neutral-500'"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4 10.5l4 4 8-9" />
+          </svg>
+          <span class="sr-only">Included</span>
+        } @else {
+          <span class="text-neutral-500 text-lg leading-none" aria-hidden="true">—</span>
+          <span class="sr-only">Not included</span>
+        }
+      </div>
+    }
+  }
+</div>

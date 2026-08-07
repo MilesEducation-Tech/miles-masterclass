@@ -1,0 +1,85 @@
+<header
+  class="sticky top-0 z-10 flex items-center gap-4 border-b border-border px-8 py-2 backdrop-blur rounded-lg"
+  style="background: rgba(14, 39, 66, 0.6)"
+  role="banner"
+>
+  <button
+    type="button"
+    class="flex h-9 w-9 items-center justify-center rounded-md border border-border transition-colors hover:bg-(--mm-surface-2) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    style="background: var(--mm-surface-2)"
+    (click)="toggleSidebar.emit()"
+    aria-label="Toggle sidebar"
+  >
+    <ng-icon name="lucidePanelLeft" class="text-base text-foreground" aria-hidden="true" />
+  </button>
+
+  <div class="min-w-0 flex-1">
+    <nav
+      aria-label="Breadcrumb"
+      class="flex items-center text-[12px] font-semibold mb-0.5"
+      style="color: var(--mm-fg-3)"
+    >
+      <span>Workspace · </span>
+      <b class="ml-1 text-foreground font-semibold">{{ workspaceLabel }}</b>
+      @for (crumb of crumbs(); track crumb.label) {
+        <span class="mx-2" style="color: var(--mm-fg-3)">·</span>
+        @if (crumb.link) {
+          <a [href]="crumb.link" class="hover:text-foreground transition-colors">
+            {{ crumb.label }}
+          </a>
+        } @else {
+          <span class="text-foreground" aria-current="page">{{ crumb.label }}</span>
+        }
+      }
+    </nav>
+    <h1
+      class="text-[24px] font-bold leading-tight text-white truncate"
+      style="font-family: var(--font-numeric, var(--font-sans))"
+    >
+      {{ title() }}
+    </h1>
+  </div>
+
+  <!-- <div class="ml-auto hidden md:flex items-center gap-[10px]">
+    <div class="relative">
+      <ng-icon
+        name="lucideSearch"
+        class="absolute left-[14px] top-1/2 -translate-y-1/2 text-[14px] pointer-events-none"
+        style="color: var(--mm-fg-3)"
+        aria-hidden="true"
+      />
+      <input
+        type="search"
+        placeholder="Search learners, courses, firms…"
+        class="w-[280px] h-[38px] rounded-lg border border-border pl-[38px] pr-[14px] text-[13px] text-foreground placeholder:text-(--mm-fg-3) focus:outline-none focus:border-(--primary) transition-colors"
+        style="background: var(--mm-surface-2)"
+      />
+    </div>
+
+    <button
+      type="button"
+      class="h-[38px] w-[38px] inline-flex items-center justify-center rounded-lg border border-border text-foreground transition-colors hover:border-input"
+      style="background: var(--mm-surface-2)"
+      aria-label="Notifications"
+    >
+      <ng-icon name="lucideBell" class="text-base" aria-hidden="true" />
+    </button>
+
+    <button
+      type="button"
+      class="h-[38px] w-[38px] inline-flex items-center justify-center rounded-lg border border-border text-foreground transition-colors hover:border-input"
+      style="background: var(--mm-surface-2)"
+      aria-label="Export"
+    >
+      <ng-icon name="lucideDownload" class="text-base" aria-hidden="true" />
+    </button>
+
+    <button
+      type="button"
+      class="h-[38px] px-4 rounded-lg bg-primary text-accent-foreground font-bold text-[13px] inline-flex items-center justify-center gap-1.5 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+    >
+      <ng-icon name="lucidePlus" class="text-sm" aria-hidden="true" />
+      New
+    </button>
+  </div> -->
+</header>

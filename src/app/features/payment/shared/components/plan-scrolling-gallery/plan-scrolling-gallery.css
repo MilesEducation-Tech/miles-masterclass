@@ -1,0 +1,25 @@
+:host {
+  display: block;
+  min-height: 0;
+  flex: 1 1 0;
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+.float-up {
+  animation: float-up 28s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float-up {
+    animation: none;
+  }
+}

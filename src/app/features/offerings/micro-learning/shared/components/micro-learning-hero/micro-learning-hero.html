@@ -1,0 +1,87 @@
+<section
+  class="relative isolate w-full min-h-screen flex items-end overflow-hidden bg-accent text-foreground"
+>
+  <div
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0"
+    style="
+      background:
+        radial-gradient(40% 50% at 30% 55%, rgb(var(--accent-rgb) / 0.18), transparent 65%),
+        radial-gradient(50% 60% at 90% 30%, var(--card) 0%, transparent 60%),
+        linear-gradient(180deg, var(--card) 0%, var(--background) 100%);
+    "
+  ></div>
+  <div
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0 opacity-5"
+    style="
+      background-image:
+        linear-gradient(rgb(255 255 255 / 0.6) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(255 255 255 / 0.6) 1px, transparent 1px);
+      background-size: 48px 48px;
+    "
+  ></div>
+
+  <div
+    class="relative w-full grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-8 sm:gap-12 items-end px-5 py-10 sm:px-12 sm:py-14 lg:px-18"
+  >
+    <div class="max-w-[640px] sm:pt-10">
+      <h1
+        class="mt-6 font-extrabold leading-[0.98] tracking-[-0.03em] text-5xl sm:text-7xl xl:text-[88px] text-foreground"
+      >
+        Master Class-<br />level knowledge,<br />
+        <span class="text-accent">reel-sized.</span>
+      </h1>
+
+      <p class="mt-7 max-w-[440px] text-base sm:text-lg leading-relaxed text-foreground/70">
+        Micro-Learning on-the-go, Bite-sized bursts that turn scrolling into learning
+      </p>
+
+      <div class="mt-8 flex flex-wrap gap-3.5">
+        <app-button variant="default" size="lg" class="gap-2" (clicked)="onStartWatching()">
+          <span class="inline-block h-2 w-2 rounded-full bg-primary-foreground"></span>
+          Start watching
+          <span aria-hidden="true">→</span>
+        </app-button>
+        <app-button
+          variant="outline"
+          size="lg"
+          class="border-foreground/40 text-foreground hover:bg-foreground hover:text-background"
+          (clicked)="onBrowseLibrary()"
+        >
+          Browse library
+        </app-button>
+      </div>
+    </div>
+
+    <div class="relative hidden sm:flex justify-center mr-10">
+      <span
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-0 top-10 -inset-x-5 blur-2xl"
+        style="
+          background: radial-gradient(
+            50% 40% at 50% 40%,
+            rgb(var(--accent-rgb) / 0.35),
+            transparent 65%
+          );
+        "
+      ></span>
+
+      <div class="relative z-10">
+        <app-micro-learning-hero-phone-mockup [feedItems]="phoneFeed" />
+      </div>
+
+      <span
+        class="absolute top-3.5 -left-2 z-20 rounded-md bg-accent px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.08em] text-accent-foreground shadow-lg"
+      >
+        ● Live now
+      </span>
+      <span
+        class="absolute bottom-14 -right-7 z-20 flex items-center gap-2 rounded-lg bg-foreground px-3.5 py-2.5 text-[12px] font-semibold text-background shadow-xl"
+      >
+        <span class="inline-block h-2 w-2 rounded-full bg-accent"></span>
+        2,418 watching
+      </span>
+    </div>
+  </div>
+</section>

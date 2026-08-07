@@ -1,0 +1,17 @@
+{
+    "applinks": {
+        "details": [
+            {
+                "appIDs": [
+                    "J237MT2582.com.miles.masterclass"
+                ],
+                "components": [
+                    {
+                        "/": "/*",
+                        "comment": "Match all paths"
+                    }
+                ]
+            }
+        ]
+    }
+}

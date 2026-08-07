@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/@angular/build/src/builders/dev-server/schema.json",
+  "/blog-api": {
+    "target": "https://wp.milesmasterclass.com/blog/wp-json",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/blog-api": ""
+    },
+    "logLevel": "info"
+  }
+}

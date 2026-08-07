@@ -1,0 +1,141 @@
+<aside
+  class="bg-sidebar text-sidebar-foreground border-r border-sidebar-border h-full flex flex-col transition-[width] duration-200 ease-out rounded-lg overflow-hidden"
+  [class.w-[248px]]="!collapsed()"
+  [class.w-[88px]]="collapsed()"
+  aria-label="Admin navigation"
+>
+  <!-- Brand header -->
+  <div
+    class="flex items-center gap-2 px-2 pb-[18px] pt-[6px] mx-4 mt-4 border-b border-sidebar-border"
+  >
+    <ng-icon
+      [svg]="collapsed() ? logos.logoIcon : logos.logo"
+      [class]="collapsed() ? 'w-full! h-full!' : 'w-2/3! h-auto!'"
+      aria-hidden="true"
+    />
+  </div>
+
+  <!-- Sections -->
+  <nav class="flex-1 overflow-y-auto overflow-x-hidden px-4 pt-[18px]" aria-label="Primary">
+    @for (section of visibleSections(); track section.id) {
+      @if (!collapsed()) {
+        <div
+          class="font-bold text-[10px] tracking-[0.12em] uppercase px-[10px] pt-[14px] pb-2"
+          style="color: var(--mm-fg-3)"
+        >
+          {{ section.label }}
+        </div>
+      } @else if (!$first) {
+        <div class="my-2 mx-[10px] h-px" style="background: var(--sidebar-border)"></div>
+      }
+
+      <ul class="space-y-0.5">
+        @for (item of section.items; track item.id) {
+          <li>
+            <a
+              [routerLink]="item.routerLink"
+              [routerLinkActiveOptions]="{ exact: false }"
+              routerLinkActive="active-nav-item"
+              class="flex items-center gap-3 px-[10px] py-[9px] rounded-[7px] font-semibold text-[13px] border-l-2 border-transparent transition-colors hover:bg-(--mm-surface-2) hover:text-white"
+              [attr.aria-label]="item.label"
+              [class.justify-center]="collapsed()"
+            >
+              <ng-icon [name]="item.iconName" class="text-[18px] shrink-0" aria-hidden="true" />
+              @if (!collapsed()) {
+                <span class="flex-1 truncate">{{ item.label }}</span>
+                @if (item.badge) {
+                  <span
+                    class="ml-auto font-bold text-[10px] px-[7px] py-[2px] rounded-full"
+                    [style.background]="
+                      item.badge.tone === 'warn' ? 'var(--mm-warn)' : 'var(--primary)'
+                    "
+                    style="color: #fff"
+                  >
+                    {{ item.badge.value }}
+                  </span>
+                }
+              }
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  </nav>
+
+  <!-- Account card -->
+  <div class="m-4 relative">
+    <button
+      type="button"
+      class="flex items-center gap-[10px] p-3 rounded-[10px] w-full text-left transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+      style="background: var(--mm-surface-2)"
+      [attr.aria-expanded]="userMenuOpen()"
+      (click)="toggleUserMenu()"
+    >
+      <span
+        class="w-9 h-9 rounded-full inline-flex items-center justify-center font-bold text-[13px] text-white shrink-0"
+        style="background: linear-gradient(135deg, #1f60bd, #2a85ff)"
+        aria-hidden="true"
+      >
+        {{ userInitial() }}
+      </span>
+      @if (!collapsed()) {
+        <span class="flex flex-1 flex-col min-w-0 leading-tight">
+          <span class="font-bold text-[13px] text-white truncate">{{ displayName() }}</span>
+          @if (displayEmail()) {
+            <span class="text-[11px] truncate" style="color: var(--mm-fg-3)">
+              {{ displayEmail() }}
+            </span>
+          }
+        </span>
+        <ng-icon
+          name="lucideChevronRight"
+          class="text-[16px] shrink-0"
+          style="color: var(--mm-fg-3)"
+          aria-hidden="true"
+        />
+      }
+    </button>
+
+    @if (userMenuOpen()) {
+      <button
+        type="button"
+        class="fixed inset-0 z-40 cursor-default"
+        (click)="closeUserMenu()"
+        aria-label="Close menu"
+      ></button>
+
+      <div
+        class="absolute z-50 left-0 right-0 bottom-full mb-2 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1"
+        role="menu"
+      >
+        <div class="px-2 py-2">
+          <div class="font-medium text-sm truncate text-white">{{ displayName() }}</div>
+          @if (displayEmail()) {
+            <div class="text-xs truncate" style="color: var(--mm-fg-3)">{{ displayEmail() }}</div>
+          }
+        </div>
+        <div class="my-1 h-px bg-border"></div>
+        <button
+          type="button"
+          class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left hover:bg-accent hover:text-accent-foreground transition-colors"
+          role="menuitem"
+          (click)="closeUserMenu()"
+        >
+          <ng-icon name="lucideSettings" class="text-base" aria-hidden="true" />
+          Settings
+        </button>
+        <div class="my-1 h-px bg-border"></div>
+        <button
+          type="button"
+          class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left transition-colors hover:bg-(--mm-danger-bg)"
+          style="color: var(--mm-danger-fg)"
+          role="menuitem"
+          (click)="logout()"
+        >
+          <ng-icon name="lucideClock" class="text-base" aria-hidden="true" />
+          Log out
+        </button>
+      </div>
+    }
+  </div>
+</aside>

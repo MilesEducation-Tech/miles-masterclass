@@ -1,0 +1,128 @@
+@if (mounted() && consent.bannerOpen()) {
+  <div
+    class="cb-enter fixed inset-x-0 bottom-0 z-10000 flex justify-center p-3 sm:p-4"
+    role="dialog"
+    aria-modal="false"
+    aria-label="Cookie consent"
+  >
+    <div
+      class="w-full max-w-3xl rounded-2xl border border-white/10 bg-neutral-900/95 text-neutral-100 shadow-2xl backdrop-blur"
+    >
+      @if (!consent.preferencesOpen()) {
+        <!-- Compact banner -->
+        <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div class="space-y-1">
+            <h2 class="text-base font-semibold">We value your privacy</h2>
+            <p class="text-sm text-neutral-300">
+              We use cookies to run the site, understand usage and improve Miles Masterclass. Accept
+              all, reject non-essential, or choose what you’re comfortable with. See our
+              <a
+                href="/us/accounting/privacy-policy"
+                class="underline underline-offset-2 hover:text-white"
+                >privacy policy</a
+              >.
+            </p>
+          </div>
+          <div class="flex shrink-0 flex-wrap gap-2">
+            <button
+              type="button"
+              (click)="customise()"
+              class="rounded-lg border border-white/20 px-4 py-2 text-sm font-medium transition-colors hover:bg-white/10"
+            >
+              Customise
+            </button>
+            <button
+              type="button"
+              (click)="rejectNonEssential()"
+              class="rounded-lg border border-white/20 px-4 py-2 text-sm font-medium transition-colors hover:bg-white/10"
+            >
+              Reject non-essential
+            </button>
+            <button
+              type="button"
+              (click)="acceptAll()"
+              class="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-neutral-900 transition-colors hover:bg-neutral-200"
+            >
+              Accept all
+            </button>
+          </div>
+        </div>
+      } @else {
+        <!-- Preferences panel -->
+        <div class="p-5">
+          <div class="mb-2 flex items-center justify-between">
+            <h2 class="text-base font-semibold">Manage cookie preferences</h2>
+            <button
+              type="button"
+              (click)="acceptAll()"
+              class="text-sm underline underline-offset-2 hover:text-white"
+            >
+              Accept all
+            </button>
+          </div>
+
+          <ul class="max-h-[45vh] divide-y divide-white/10 overflow-y-auto">
+            @for (cat of categories; track cat.id) {
+              <li class="flex items-start justify-between gap-4 py-3">
+                <div class="space-y-0.5">
+                  <p class="flex items-center text-sm font-medium">
+                    {{ cat.title }}
+                    @if (cat.locked) {
+                      <span
+                        class="ml-2 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-300"
+                        >Always on</span
+                      >
+                    }
+                  </p>
+                  <p class="text-xs leading-relaxed text-neutral-400">{{ cat.description }}</p>
+                </div>
+
+                <button
+                  type="button"
+                  role="switch"
+                  [attr.aria-checked]="isOn(cat.id)"
+                  [attr.aria-label]="cat.title"
+                  [disabled]="cat.locked"
+                  (click)="toggle(cat.id)"
+                  [class]="
+                    cn(
+                      'relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
+                      isOn(cat.id) ? 'bg-emerald-500' : 'bg-neutral-600',
+                      cat.locked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                    )
+                  "
+                >
+                  <span
+                    [class]="
+                      cn(
+                        'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+                        isOn(cat.id) ? 'translate-x-5' : 'translate-x-0.5'
+                      )
+                    "
+                  ></span>
+                </button>
+              </li>
+            }
+          </ul>
+
+          <div class="mt-4 flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              (click)="rejectNonEssential()"
+              class="rounded-lg border border-white/20 px-4 py-2 text-sm font-medium transition-colors hover:bg-white/10"
+            >
+              Reject non-essential
+            </button>
+            <button
+              type="button"
+              (click)="saveChoices()"
+              class="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-neutral-900 transition-colors hover:bg-neutral-200"
+            >
+              Save my choices
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

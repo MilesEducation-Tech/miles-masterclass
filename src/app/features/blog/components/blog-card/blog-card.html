@@ -1,0 +1,55 @@
+<a
+  class="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-accent/60 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  [routerLink]="['/blog', post().slug]"
+>
+  <div class="relative aspect-[16/10] overflow-hidden bg-muted">
+    @if (post().featuredImage) {
+      <img
+        [src]="post().featuredImage"
+        [alt]="post().featuredImageAlt"
+        loading="lazy"
+        decoding="async"
+        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+    } @else {
+      <div class="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        Miles Masterclass
+      </div>
+    }
+  </div>
+
+  <div class="flex flex-1 flex-col gap-2 p-4">
+    <div class="flex items-center gap-2 text-[11px] text-muted-foreground">
+      <span>{{ post().displayDate }}</span>
+      <span aria-hidden="true">|</span>
+      <span>{{ post().readingMinutes }} mins Read</span>
+    </div>
+
+    @if (post().categories.length) {
+      <span class="text-xs font-medium text-accent">{{ post().categories[0].name }}</span>
+    }
+
+    <h3
+      class="line-clamp-2 text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-accent"
+    >
+      {{ post().title }}
+    </h3>
+
+    <div class="mt-auto flex items-center gap-2 pt-2">
+      @if (post().authorAvatar) {
+        <img
+          [src]="post().authorAvatar"
+          [alt]="post().author"
+          class="h-6 w-6 rounded-full object-cover"
+        />
+      } @else {
+        <span
+          class="flex h-6 w-6 items-center justify-center rounded-full bg-accent/20 text-[10px] font-semibold text-accent"
+        >
+          {{ post().author.charAt(0) }}
+        </span>
+      }
+      <span class="text-xs text-foreground">{{ post().author }}</span>
+    </div>
+  </div>
+</a>

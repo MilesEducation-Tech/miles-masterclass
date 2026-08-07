@@ -1,0 +1,117 @@
+<div
+  class="w-full h-auto flex flex-col relative rounded-md transition-all overflow-hidden group/card"
+  (mouseenter)="isHovering.set(true)"
+  (mouseleave)="isHovering.set(false)"
+>
+  <button
+    type="button"
+    class="absolute top-3 right-3 z-30 size-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center pointer-events-auto cursor-pointer transition-colors"
+    [attr.aria-label]="card().added_bookmark ? 'Remove bookmark' : 'Add bookmark'"
+    (click)="toggleBookmark($event)"
+  >
+    <ng-icon
+      [svg]="card().added_bookmark ? icons().matBookmarkRound : icons().matBookmarkBorderRound"
+      class="size-5"
+    />
+  </button>
+  <div class="relative w-full aspect-square bg-card-hover px-3 py-4 space-y-3">
+    @if (type() === 'podcast') {
+      <div class="w-3/5 flex items-center justify-center">
+        <!-- Record disk component that animates its disk dynamically on hover -->
+        <app-record-disk
+          class="w-full h-auto aspect-square block cursor-pointer"
+          [coverImage]="card().square_thumbnail || card().thumbnail"
+          [diskImage]="card().square_thumbnail!"
+          [config]="{
+            animate: isHovering(),
+            direction: 'right',
+            slideOutPercent: 45,
+            spinDuration: '3.5s',
+          }"
+          (click)="navigateToCourse(card().id, card().title)"
+        />
+      </div>
+    } @else {
+      <!-- Fallback or masterclass: simply show a cover image/video -->
+      <img
+        [src]="card().square_thumbnail || card().thumbnail"
+        class="w-full h-full object-cover"
+        alt="Cover"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="card().title"
+        (click)="navigateToCourse(card().id, card().title)"
+        (keydown.enter)="navigateToCourse(card().id, card().title)"
+        (keydown.space)="navigateToCourse(card().id, card().title); $event.preventDefault()"
+      />
+    }
+
+    <!-- Title overlay that appears on hover -->
+    <div
+      class="bg-linear-to-t flex flex-col space-y-2 justify-end opacity-0 group-hover/card:opacity-100 transition-opacity duration-300"
+    >
+      <h3
+        class="text-white font-bold text-lg line-clamp-1 cursor-pointer"
+        role="button"
+        tabindex="0"
+        (click)="navigateToCourse(card().id, card().title)"
+        (keydown.enter)="navigateToCourse(card().id, card().title)"
+        (keydown.space)="navigateToCourse(card().id, card().title); $event.preventDefault()"
+      >
+        {{ card().title }}
+      </h3>
+      <p class="text-xs text-zinc-300 line-clamp-2">
+        {{ card().course_short_overview }}
+      </p>
+      <app-categories-list
+        class="text-muted-foreground text-xs w-full"
+        [items]="card().fields_of_study ?? []"
+      />
+      <app-caira-credly-badge
+        [includedForCaira]="card().included_for_caira"
+        [hasIndividualBadge]="card().has_individual_badge"
+        [cairaLevel]="card().caira_level"
+        variant="inline"
+      />
+
+      <div class="flex items-center justify-between space-x-2">
+        <div class="flex items-center space-x-2">
+          <app-button
+            variant="default"
+            class="bg-white text-black hover:bg-white hover:text-black rounded-md gap-2"
+            (clicked)="openVideoDialog()"
+          >
+            <ng-icon [svg]="icons().faSolidPlay" class="size-4" />
+            Trailer
+          </app-button>
+          @if (card().has_additional_resources) {
+            <div
+              class="flex rounded-full justify-center items-center bg-linear-to-r from-white to-transparent to-70% p-px overflow-hidden max-md:hidden"
+              role="button"
+            >
+              <app-button variant="ghost" class="bg-background rounded-full! gap-2">
+                <ng-icon [svg]="icons().faSolidRobot" class="size-4" />
+                AI Kit
+              </app-button>
+            </div>
+          }
+          <app-button
+            variant="ghost"
+            class="flex items-center justify-center size-10 aspect-square bg-secondary rounded-full outline outline-white/40 cursor-pointer p-0"
+            role="button"
+            [disabled]="loading()"
+            (click)="openCourseInfo(); loading.set(true)"
+          >
+            <ng-icon [svg]="icons().faSolidInfo" class="size-8" />
+          </app-button>
+        </div>
+        <app-button
+          variant="outline"
+          class="text-accent hover:bg-transparent border-accent rounded-md cursor-default"
+        >
+          {{ card().fields_of_study | totalCpeCredits: card().class_credits }} CPE
+        </app-button>
+      </div>
+    </div>
+  </div>
+</div>

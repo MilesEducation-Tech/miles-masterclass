@@ -1,0 +1,294 @@
+<section class="admin-theme flex flex-col gap-6 p-6 text-white min-h-full">
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div class="flex flex-col gap-2">
+      <h1 class="text-2xl font-bold leading-tight">Admin Users</h1>
+      <p class="text-sm text-white/70">
+        Configure a new admin's role, domains, and permission overrides, then create them. The login
+        is provisioned automatically with a shared initial password (shown when you create them);
+        the new admin should change it after signing in.
+      </p>
+    </div>
+    @if (!showForm()) {
+      <app-button variant="default" (clicked)="openForm()">New admin user</app-button>
+    }
+  </header>
+
+  @if (facade.error()) {
+    <div
+      class="px-3 py-2 text-sm rounded-md"
+      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
+      role="alert"
+    >
+      Failed to load admin data. Refresh the page or check your connection.
+    </div>
+  }
+
+  <!-- Existing admins -->
+  <div class="rounded-md border border-white/10" style="background: var(--mm-surface-2)">
+    <div class="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+      <h2 class="text-sm font-semibold">Existing admin users</h2>
+      @if (facade.isLoading()) {
+        <app-spinner size="sm" />
+      }
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="text-white/60 text-left">
+          <tr>
+            <th class="px-4 py-2 font-medium">Email</th>
+            <th class="px-4 py-2 font-medium">Name</th>
+            <th class="px-4 py-2 font-medium">Role</th>
+            <th class="px-4 py-2 font-medium">Email domains</th>
+            <th class="px-4 py-2 font-medium">Status</th>
+            <th class="px-4 py-2 font-medium">Last login</th>
+            <th class="px-4 py-2 font-medium text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (admin of facade.admins(); track admin.user_id) {
+            <tr class="border-t border-white/5">
+              <td class="px-4 py-2">{{ admin.email }}</td>
+              <td class="px-4 py-2 text-white/80">{{ admin.full_name || '—' }}</td>
+              <td class="px-4 py-2 text-white/80">{{ admin.role_name || '—' }}</td>
+              <td class="px-4 py-2 text-white/80">{{ admin.domains.join(', ') || '—' }}</td>
+              <td class="px-4 py-2">
+                <span
+                  class="px-2 py-0.5 rounded-full text-xs font-medium"
+                  [style.background]="
+                    admin.is_active ? 'var(--mm-success-bg)' : 'var(--mm-danger-bg)'
+                  "
+                  [style.color]="admin.is_active ? 'var(--mm-success-fg)' : 'var(--mm-danger-fg)'"
+                >
+                  {{ admin.is_active ? 'Active' : 'Disabled' }}
+                </span>
+              </td>
+              <td class="px-4 py-2 text-white/60">
+                {{ (admin.last_login_at | date: 'd MMM y, h:mm a') || 'Never' }}
+              </td>
+              <td class="px-4 py-2 text-right">
+                <div class="inline-flex items-center gap-2">
+                  <app-button
+                    variant="outline"
+                    size="sm"
+                    class="text-white"
+                    (clicked)="editDomains(admin)"
+                  >
+                    Domains
+                  </app-button>
+                  @if (admin.user_id === currentUserId()) {
+                    <span class="text-xs text-white/40">You</span>
+                  } @else {
+                    @if (admin.is_active) {
+                      <app-button
+                        variant="outline"
+                        size="sm"
+                        class="text-white"
+                        (clicked)="toggleActive(admin)"
+                      >
+                        Disable
+                      </app-button>
+                    } @else {
+                      <app-button
+                        variant="outline"
+                        size="sm"
+                        class="text-white"
+                        (clicked)="toggleActive(admin)"
+                      >
+                        Enable
+                      </app-button>
+                    }
+                    <app-button variant="destructive" size="sm" (clicked)="deleteUser(admin)">
+                      Delete
+                    </app-button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            @if (!facade.isLoading()) {
+              <tr>
+                <td colspan="7" class="px-4 py-6 text-center text-white/50">No admin users yet.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Configure new admin -->
+  @if (showForm()) {
+    <div
+      class="rounded-md border border-white/10 p-4 flex flex-col gap-5"
+      style="background: var(--mm-surface-2)"
+    >
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold">Configure new admin</h2>
+        <app-button variant="outline" size="sm" class="text-white" (clicked)="closeForm()">
+          Cancel
+        </app-button>
+      </div>
+
+      @if (prefilledNetworkName()) {
+        <div
+          class="px-3 py-2 text-xs rounded-md"
+          style="background: var(--mm-info-bg); color: var(--mm-info-fg)"
+        >
+          Provisioning an admin for network <b>{{ prefilledNetworkName() }}</b
+          >. Pick a partner role below — the network is pre-selected.
+        </div>
+      }
+
+      @if (prefilledFirmName()) {
+        <div
+          class="px-3 py-2 text-xs rounded-md"
+          style="background: var(--mm-info-bg); color: var(--mm-info-fg)"
+        >
+          Provisioning an admin for firm <b>{{ prefilledFirmName() }}</b
+          >. Pick the firm (sub-company) role below — the firm is pre-selected.
+        </div>
+      }
+
+      <div class="grid gap-4 md:grid-cols-3">
+        <app-aria-input
+          id="new-admin-email"
+          type="email"
+          label="Email"
+          [required]="true"
+          [(value)]="email"
+        />
+        <app-aria-input id="new-admin-name" type="text" label="Full name" [(value)]="fullName" />
+        <app-aria-select
+          id="new-admin-role"
+          label="Role"
+          placeholder="Select a role"
+          [required]="true"
+          [options]="roleOptions()"
+          [(value)]="roleId"
+        />
+      </div>
+
+      <app-aria-input
+        id="new-admin-domains"
+        type="text"
+        label="Email domains"
+        placeholder="acme.com, partner.org"
+        [(value)]="domains"
+      />
+      <p class="-mt-3 text-xs text-white/50">
+        Domains this admin manages on the partner-user screens. Separate multiple with commas.
+      </p>
+
+      <app-aria-input
+        id="new-admin-report-type"
+        type="text"
+        label="Report type (optional)"
+        [(value)]="reportType"
+      />
+      <p class="-mt-3 text-xs text-white/50">
+        Forwarded as the <code>report_type</code> filter on the vendor users screen.
+      </p>
+
+      @if (isPartnerRole()) {
+        <div
+          class="rounded-md border p-4 flex flex-col gap-4"
+          style="background: var(--card); border-color: var(--mm-info)"
+        >
+          <div class="flex flex-col gap-1">
+            <h3 class="text-sm font-semibold">Partner Platform provisioning</h3>
+            <p class="text-xs text-white/60">
+              This role maps to a Django <b>{{ partnerMapping()?.role }}</b> partner admin. Generate
+              & run the SQL to create the Supabase login, click <b>Refresh list</b>, then
+              <b>Register partner admin</b>.
+            </p>
+          </div>
+
+          @if (partnerMapping()?.scope === 'either') {
+            <app-aria-select
+              id="partner-scope"
+              label="Network or firm"
+              placeholder="Select a network or firm"
+              [required]="true"
+              [options]="scopeOptions()"
+              [(value)]="partnerScope"
+            />
+          }
+
+          @if (partnerMapping()?.scope === 'firm') {
+            <app-aria-select
+              id="partner-firm"
+              label="Firm (sub-company)"
+              placeholder="Select a firm"
+              [required]="true"
+              [options]="firmOptions()"
+              [(value)]="partnerFirmId"
+            />
+          }
+
+          <div class="flex flex-col gap-1.5">
+            <p class="text-xs uppercase tracking-wide text-white/50">Django capabilities</p>
+            @if (partnerMapping()?.capabilities?.length) {
+              <div class="flex flex-wrap gap-2">
+                @for (cap of partnerMapping()?.capabilities; track cap) {
+                  <span
+                    class="rounded px-2 py-0.5 text-xs font-mono"
+                    style="background: var(--mm-surface-3); color: var(--mm-fg-2)"
+                    >{{ cap }}</span
+                  >
+                }
+              </div>
+            } @else {
+              <p class="text-xs text-white/50">
+                Super admin — full access (no per-capability grants).
+              </p>
+            }
+          </div>
+        </div>
+      }
+
+      @if (roleId()) {
+        <div class="flex flex-col gap-3">
+          <p class="text-sm font-medium text-white/80">
+            Permissions
+            <span class="text-white/50 font-normal"
+              >— pre-set from the role; tick to grant, untick to deny.</span
+            >
+          </p>
+          @for (group of permissionGroups(); track group.category) {
+            <fieldset class="flex flex-col gap-2">
+              <legend class="text-xs uppercase tracking-wide text-white/50">
+                {{ group.category }}
+              </legend>
+              <div class="grid gap-2 sm:grid-cols-2">
+                @for (perm of group.perms; track perm.key) {
+                  <label class="flex items-start gap-2 cursor-pointer text-sm">
+                    <input
+                      type="checkbox"
+                      class="mt-0.5 h-4 w-4"
+                      [checked]="isChecked(perm.key)"
+                      (change)="toggle(perm.key, $any($event.target).checked)"
+                    />
+                    <span>
+                      {{ perm.label }}
+                      <span class="block text-xs text-white/40">{{ perm.key }}</span>
+                    </span>
+                  </label>
+                }
+              </div>
+            </fieldset>
+          }
+        </div>
+      }
+
+      <div class="flex items-center gap-3">
+        <app-button
+          variant="default"
+          [disabled]="!canSubmit() || isSubmitting()"
+          (clicked)="provision()"
+        >
+          {{ isSubmitting() ? 'Creating…' : 'Create admin' }}
+        </app-button>
+      </div>
+    </div>
+  }
+</section>

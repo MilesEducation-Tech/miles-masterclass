@@ -1,0 +1,55 @@
+@if (hasAnyContent()) {
+  <div class="container mx-auto flex flex-col gap-10">
+    @if (relatedCards().length > 0) {
+      <app-carousel
+        [cards]="relatedCards()"
+        [heading]="{ text: 'Related Courses', subText: '' }"
+        [swiperConfig]="swiperConfig()"
+        [filterConfig]="{ filterEnabled: false }"
+        [skeletonClass]="skeletonClass()"
+        [shouldHoverAnimate]="courseType() === 'podcast'"
+      >
+        <ng-template let-card let-index="index">
+          @if (courseType() === 'podcast') {
+            <app-square
+              [thumbnail]="card.square_thumbnail ?? card.thumbnail"
+              [title]="card.title"
+              [index]="index"
+              [includedForCaira]="card.included_for_caira"
+              [hasIndividualBadge]="card.has_individual_badge"
+              [cairaLevel]="card.caira_level"
+            />
+          } @else {
+            <app-horizontal [card]="card" type="masterclass" />
+          }
+        </ng-template>
+      </app-carousel>
+    }
+
+    @for (group of instructorCarousels(); track group.instructorId) {
+      <app-carousel
+        [cards]="group.cards"
+        [heading]="{ text: 'More by ' + group.fullName, subText: '' }"
+        [swiperConfig]="swiperConfig()"
+        [filterConfig]="{ filterEnabled: false }"
+        [skeletonClass]="skeletonClass()"
+        [shouldHoverAnimate]="courseType() === 'podcast'"
+      >
+        <ng-template let-card let-index="index">
+          @if (courseType() === 'podcast') {
+            <app-square
+              [thumbnail]="card.square_thumbnail ?? card.thumbnail"
+              [title]="card.title"
+              [index]="index"
+              [includedForCaira]="card.included_for_caira"
+              [hasIndividualBadge]="card.has_individual_badge"
+              [cairaLevel]="card.caira_level"
+            />
+          } @else {
+            <app-horizontal [card]="card" type="masterclass" />
+          }
+        </ng-template>
+      </app-carousel>
+    }
+  </div>
+}

@@ -1,0 +1,7 @@
+<div class="flex flex-col gap-3 rounded-xl border border-white/10 bg-card p-6">
+  <p class="text-sm font-semibold" style="color: var(--mm-fg-3)">{{ label() }}</p>
+  <p class="text-4xl font-bold tabular-nums">{{ value() }}</p>
+  <div class="h-1 w-full overflow-hidden rounded-full bg-white/10">
+    <div class="h-full rounded-full" style="width: 100%" [style.background]="accent()"></div>
+  </div>
+</div>

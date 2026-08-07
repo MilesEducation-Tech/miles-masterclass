@@ -1,0 +1,27 @@
+<!-- RatingStar Component -->
+<div [class]="containerClass()" [style.pointer-events]="isReadonly() ? 'none' : 'auto'">
+  @for (star of stars(); track star) {
+    <div class="flex justify-center items-center" [class]="starClass()" (click)="handleRate(star)">
+      <div class="relative inline-block">
+        <!-- Base: Outline Star -->
+        <ng-icon
+          name="heroStar"
+          [size]="size()"
+          class="text-gray-400 cursor-pointer block"
+        ></ng-icon>
+
+        <!-- Overlay: Solid Star (Full or Partial) -->
+        @if (getStarState(star, value()) !== 'empty') {
+          <div
+            class="absolute top-0 left-0 h-full overflow-hidden cursor-pointer text-yellow-400"
+            [style.width]="
+              getStarState(star, value()) === 'full' ? '100%' : getPartialPercent(star, value())
+            "
+          >
+            <ng-icon name="heroStarSolid" [size]="size()" class="block"></ng-icon>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

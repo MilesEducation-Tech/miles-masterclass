@@ -1,0 +1,12 @@
+.index {
+  justify-content: start;
+  display: flex;
+  align-items: end;
+  line-height: 280px;
+  font-size: 16rem;
+  font-weight: 500;
+
+  -webkit-text-fill-color: transparent !important;
+  -webkit-text-stroke: 10px !important;
+  -webkit-text-stroke-color: #ffffff47 !important;
+}

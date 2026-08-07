@@ -1,0 +1,375 @@
+<section class="admin-theme flex flex-col gap-6 p-6 text-white min-h-full">
+  <!-- Header -->
+  <header class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <div class="flex flex-col gap-2">
+      <h1 class="text-2xl font-bold leading-tight">User report</h1>
+      <p class="text-sm text-white/70">
+        Track user registrations, activity, and CPE / CAiRA engagement. Use the
+        <ng-icon name="lucideEye" class="align-text-bottom text-sm" aria-hidden="true" /> icon in
+        any metric to see the courses behind it.
+      </p>
+    </div>
+
+    <app-button
+      variant="primary"
+      size="sm"
+      class="shrink-0 gap-2"
+      [disabled]="facade.isExporting() || !facade.rows().length"
+      (clicked)="exportCsv()"
+    >
+      <ng-icon name="lucideDownload" class="text-base" aria-hidden="true" />
+      {{ facade.isExporting() ? 'Exporting…' : 'Export CSV' }}
+    </app-button>
+  </header>
+
+  <!-- Filters bar -->
+  <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div class="flex w-full max-w-md items-center">
+      <app-aria-input
+        id="user-report-search"
+        type="search"
+        label="Search by name, email or phone"
+        class="w-full"
+        [(value)]="searchInput"
+      />
+    </div>
+
+    @if (facade.rows().length) {
+      <span class="text-xs text-white/50 tabular-nums">
+        {{ pageWindow().total }} total users • Page {{ facade.currentPage() }}
+      </span>
+    }
+  </div>
+
+  <!-- Error banner -->
+  @if (facade.error()) {
+    <div
+      class="px-3 py-2 text-sm rounded-md"
+      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
+      role="alert"
+    >
+      Failed to load the user report. Try refreshing the page or check your connection.
+    </div>
+  }
+
+  <!-- Table -->
+  <div class="text-white">
+    @if (facade.isLoading() && !facade.rows().length) {
+      <div class="flex items-center justify-center py-12 text-neutral-400">
+        <app-spinner size="lg" color="white" trackColor="neutral-600" />
+      </div>
+    }
+
+    @if (facade.rows().length) {
+      <div class="overflow-x-auto rounded-lg border border-white/10">
+        <table class="w-full text-left text-sm">
+          <thead
+            class="text-[11px] uppercase tracking-wider"
+            style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
+          >
+            <tr class="whitespace-nowrap">
+              <th class="px-4 py-3 font-semibold">Name</th>
+              <th class="px-4 py-3 font-semibold">Email</th>
+              <th class="px-4 py-3 font-semibold">Phone</th>
+              <th class="px-4 py-3 font-semibold">Qualification</th>
+              <th class="px-4 py-3 font-semibold">State board</th>
+              <th class="px-4 py-3 font-semibold">Signup</th>
+              <th class="px-4 py-3 font-semibold">Last login</th>
+              <th class="px-4 py-3 font-semibold text-right">CPE completed</th>
+              <th class="px-4 py-3 font-semibold text-right">CPE credits</th>
+              <th class="px-4 py-3 font-semibold text-right">CPE in progress</th>
+              <th class="px-4 py-3 font-semibold text-right">CPE credits (IP)</th>
+              <th class="px-4 py-3 font-semibold text-right">CAiRA earned</th>
+              <th class="px-4 py-3 font-semibold text-right">CAiRA (IP)</th>
+              <th class="px-4 py-3 font-semibold text-right">Preview done</th>
+              <th class="px-4 py-3 font-semibold text-right">Preview (IP)</th>
+              <th class="px-4 py-3 font-semibold text-right">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-white/5">
+            @for (row of facade.rows(); track $index) {
+              <tr class="hover:bg-white/3 transition-colors whitespace-nowrap">
+                <td class="px-4 py-3 font-medium text-neutral-100">{{ row.name || '—' }}</td>
+                <td class="px-4 py-3 text-neutral-300 break-all">{{ row.email || '—' }}</td>
+                <td class="px-4 py-3 text-neutral-300 tabular-nums">{{ row.phone || '—' }}</td>
+                <td class="px-4 py-3 text-neutral-300">
+                  {{ row.professional_qualification || '—' }}
+                </td>
+                <td class="px-4 py-3 text-neutral-300">{{ cleanStateBoard(row.state_board) }}</td>
+                <td class="px-4 py-3 text-neutral-300">
+                  @if (row.date_of_signup && row.date_of_signup !== 'N/A') {
+                    {{ row.date_of_signup | date: 'MMM d, y' }}
+                  } @else {
+                    —
+                  }
+                </td>
+                <td class="px-4 py-3 text-neutral-300">
+                  @if (row.date_of_login && row.date_of_login !== 'N/A') {
+                    {{ row.date_of_login | date: 'MMM d, y' }}
+                  } @else {
+                    —
+                  }
+                </td>
+
+                <!-- CPE completed -->
+                <td class="px-4 py-3 text-right">
+                  <span class="inline-flex items-center justify-end gap-1.5">
+                    <span class="tabular-nums font-medium text-emerald-400">
+                      {{ row.courses_completed_cpe }}
+                    </span>
+                    @if (row.courses_completed_cpe > 0) {
+                      <button
+                        type="button"
+                        class="drill-btn"
+                        (click)="
+                          openCourseDetail(
+                            row,
+                            'CPE Courses Completed',
+                            row.courses_completed_cpe_ids
+                          )
+                        "
+                        aria-label="View completed CPE courses"
+                      >
+                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
+                      </button>
+                    }
+                  </span>
+                </td>
+
+                <!-- CPE credits earned -->
+                <td class="px-4 py-3 text-right">
+                  <span class="inline-flex items-center justify-end gap-1.5">
+                    <span class="tabular-nums font-medium text-emerald-400">
+                      {{ row.cpe_credits_earned | number: '1.0-2' }}
+                    </span>
+                    @if (row.cpe_credits_earned > 0) {
+                      <button
+                        type="button"
+                        class="drill-btn"
+                        (click)="
+                          openCourseDetail(row, 'CPE Credits Earned', row.cpe_credits_earned_ids)
+                        "
+                        aria-label="View CPE credits earned"
+                      >
+                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
+                      </button>
+                    }
+                  </span>
+                </td>
+
+                <!-- CPE in progress -->
+                <td class="px-4 py-3 text-right">
+                  <span class="inline-flex items-center justify-end gap-1.5">
+                    <span class="tabular-nums font-medium text-amber-400">
+                      {{ row.courses_in_progress_cpe }}
+                    </span>
+                    @if (row.courses_in_progress_cpe > 0) {
+                      <button
+                        type="button"
+                        class="drill-btn"
+                        (click)="
+                          openCourseDetail(
+                            row,
+                            'CPE Courses In Progress',
+                            row.courses_in_progress_cpe_ids
+                          )
+                        "
+                        aria-label="View in-progress CPE courses"
+                      >
+                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
+                      </button>
+                    }
+                  </span>
+                </td>
+
+                <!-- CPE credits in progress -->
+                <td class="px-4 py-3 text-right">
+                  <span class="inline-flex items-center justify-end gap-1.5">
+                    <span class="tabular-nums font-medium text-amber-400">
+                      {{ row.cpe_credits_in_progress | number: '1.0-2' }}
+                    </span>
+                    @if (row.cpe_credits_in_progress > 0) {
+                      <button
+                        type="button"
+                        class="drill-btn"
+                        (click)="
+                          openCourseDetail(
+                            row,
+                            'CPE Credits In Progress',
+                            row.cpe_credits_in_progress_ids
+                          )
+                        "
+                        aria-label="View in-progress CPE credits"
+                      >
+                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
+                      </button>
+                    }
+                  </span>
+                </td>
+
+                <!-- CAiRA earned -->
+                <td class="px-4 py-3 text-right">
+                  <span class="inline-flex items-center justify-end gap-1.5">
+                    <span class="tabular-nums font-medium text-sky-400">
+                      {{ row.caira_credits_earned | number: '1.0-2' }}
+                    </span>
+                    @if (row.caira_credits_earned > 0) {
+                      <button
+                        type="button"
+                        class="drill-btn"
+                        (click)="
+                          openCourseDetail(
+                            row,
+                            'CAiRA Credits Earned',
+                            row.caira_credits_earned_ids
+                          )
+                        "
+                        aria-label="View CAiRA credits earned"
+                      >
+                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
+                      </button>
+                    }
+                  </span>
+                </td>
+
+                <!-- CAiRA in progress -->
+                <td class="px-4 py-3 text-right">
+                  <span class="inline-flex items-center justify-end gap-1.5">
+                    <span class="tabular-nums font-medium text-sky-400">
+                      {{ row.caira_credits_in_progress | number: '1.0-2' }}
+                    </span>
+                    @if (row.caira_credits_in_progress > 0) {
+                      <button
+                        type="button"
+                        class="drill-btn"
+                        (click)="
+                          openCourseDetail(
+                            row,
+                            'CAiRA Credits In Progress',
+                            row.caira_credits_in_progress_ids
+                          )
+                        "
+                        aria-label="View in-progress CAiRA credits"
+                      >
+                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
+                      </button>
+                    }
+                  </span>
+                </td>
+
+                <!-- Preview done -->
+                <td class="px-4 py-3 text-right">
+                  <span class="inline-flex items-center justify-end gap-1.5">
+                    <span class="tabular-nums font-medium text-violet-400">
+                      {{ row.courses_completed_preview }}
+                    </span>
+                    @if (row.courses_completed_preview > 0) {
+                      <button
+                        type="button"
+                        class="drill-btn"
+                        (click)="
+                          openCourseDetail(
+                            row,
+                            'Preview Courses Completed',
+                            row.courses_completed_preview_ids
+                          )
+                        "
+                        aria-label="View completed preview courses"
+                      >
+                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
+                      </button>
+                    }
+                  </span>
+                </td>
+
+                <!-- Preview in progress -->
+                <td class="px-4 py-3 text-right">
+                  <span class="inline-flex items-center justify-end gap-1.5">
+                    <span class="tabular-nums font-medium text-violet-400">
+                      {{ row.courses_in_progress_preview }}
+                    </span>
+                    @if (row.courses_in_progress_preview > 0) {
+                      <button
+                        type="button"
+                        class="drill-btn"
+                        (click)="
+                          openCourseDetail(
+                            row,
+                            'Preview Courses In Progress',
+                            row.courses_in_progress_preview_ids
+                          )
+                        "
+                        aria-label="View in-progress preview courses"
+                      >
+                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
+                      </button>
+                    }
+                  </span>
+                </td>
+
+                <!-- All courses -->
+                <td class="px-4 py-3 text-right">
+                  <button
+                    type="button"
+                    class="drill-btn drill-btn-primary"
+                    (click)="openAllCourses(row)"
+                    aria-label="View all courses for this user"
+                  >
+                    <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="mt-6 flex items-center justify-between text-sm text-neutral-400">
+        <span>
+          Showing
+          <span class="font-semibold text-white tabular-nums">
+            {{ pageWindow().from }}-{{ pageWindow().to }}
+          </span>
+          of <span class="tabular-nums">{{ pageWindow().total }}</span>
+        </span>
+        <div class="flex items-center gap-3">
+          <app-button
+            variant="outline"
+            size="sm"
+            class="h-9 w-28 rounded-md border-white/15 bg-transparent text-xs text-white hover:bg-white/5"
+            [disabled]="!facade.hasPrev() || facade.isLoading()"
+            (clicked)="goPrev()"
+          >
+            Prev
+          </app-button>
+          <span class="text-white/70 tabular-nums">Page {{ facade.currentPage() }}</span>
+          <app-button
+            variant="outline"
+            size="sm"
+            class="h-9 w-28 rounded-md border-white/15 bg-transparent text-xs text-white hover:bg-white/5"
+            [disabled]="!facade.hasNext() || facade.isLoading()"
+            (clicked)="goNext()"
+          >
+            Next
+          </app-button>
+        </div>
+      </div>
+    } @else if (!facade.isLoading()) {
+      <div
+        class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/15 py-16 text-center"
+      >
+        <ng-icon name="lucideUsers" class="text-3xl text-white/30" aria-hidden="true" />
+        <p class="text-sm text-neutral-300">No user data found</p>
+        <p class="text-xs text-neutral-500">
+          @if (searchInput()) {
+            Try adjusting your search term.
+          } @else {
+            No user report data is available yet.
+          }
+        </p>
+      </div>
+    }
+  </div>
+</section>

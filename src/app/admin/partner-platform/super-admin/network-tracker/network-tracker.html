@@ -1,0 +1,88 @@
+<section class="admin-theme flex flex-col gap-8 p-6 text-white min-h-full">
+  <!-- Header -->
+  <header class="flex flex-col gap-1">
+    <p class="text-base font-semibold" style="color: var(--mm-fg-3)">Network Tracker</p>
+    <h1 class="text-3xl font-extrabold leading-tight">{{ networkName() }}</h1>
+  </header>
+
+  <!-- Summary stat cards -->
+  @if (headerLoading() && !cards().length) {
+    <div class="flex justify-center py-10"><app-spinner size="lg" /></div>
+  } @else {
+    <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+      @for (card of cards(); track card.label) {
+        <app-stat-card [label]="card.label" [value]="card.value" [accent]="card.accent" />
+      }
+    </div>
+  }
+
+  <!-- Coupons -->
+  <div class="flex flex-col gap-5">
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <h2 class="text-xl font-bold">Coupons</h2>
+
+      <!-- Firm filter -->
+      @if (subCompanies().length) {
+        <div class="flex items-center gap-2">
+          <label for="tracker-firm" class="text-sm" style="color: var(--mm-fg-3)"
+            >Sub-company</label
+          >
+          <select
+            id="tracker-firm"
+            class="form-input max-w-xs"
+            [value]="selectedFirmId() ?? ''"
+            (change)="onSelectFirm($event)"
+          >
+            <option value="">All sub-companies</option>
+            @for (firm of subCompanies(); track firm.id) {
+              <option [value]="firm.id">{{ firm.name }}</option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+
+    <div
+      class="inline-flex w-fit items-center gap-1 rounded-md border border-white/10 p-1"
+      style="background: var(--card, #0e2742)"
+      role="tablist"
+      aria-label="Coupon status filter"
+    >
+      @for (tab of statusTabs; track tab.value) {
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="isActiveTab(tab.value)"
+          class="rounded px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-white/5"
+          [class.bg-primary]="isActiveTab(tab.value)"
+          (click)="selectStatus(tab.value)"
+        >
+          {{ tab.label }}
+        </button>
+      }
+    </div>
+
+    @if (couponsError()) {
+      <div
+        class="px-3 py-2 text-sm rounded-md"
+        style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
+        role="alert"
+      >
+        {{ couponsError() }}
+      </div>
+    }
+
+    <app-coupon-tracker-table
+      [rows]="coupons()"
+      [isLoading]="couponsLoading()"
+      [showFirm]="true"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize"
+      [totalCount]="totalCount()"
+      [hasNext]="hasNext()"
+      [hasPrev]="hasPrev()"
+      (prevPage)="goPrev()"
+      (nextPage)="goNext()"
+    />
+  </div>
+</section>

@@ -1,0 +1,10 @@
+:host {
+  display: contents;
+}
+
+/* Active nav item — left-border accent + tinted background, matching MM admin design */
+.active-nav-item {
+  background: var(--sidebar-accent);
+  color: #fff;
+  border-left-color: var(--sidebar-primary) !important;
+}

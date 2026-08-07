@@ -1,0 +1,182 @@
+<div class="bg-background text-foreground overflow-hidden pb-16 flex flex-col gap-16 md:gap-24">
+  <!-- Hero — BannerCaira (ported from cpa-course caira_uae_page); form bound to the webinar API -->
+  <section
+    id="uae-caira-top"
+    class="relative w-full min-h-[560px] md:min-h-[580px] bg-[#0d1b2a] overflow-hidden contain-[layout]"
+  >
+    <div class="absolute inset-0 z-0 hidden md:block">
+      <img
+        [src]="assets.bannerBgDesk"
+        alt=""
+        aria-hidden="true"
+        class="absolute inset-0 w-full h-full object-cover"
+      />
+    </div>
+    <div class="absolute inset-0 z-0 block md:hidden">
+      <img
+        [src]="assets.bannerBgMob"
+        alt=""
+        aria-hidden="true"
+        class="absolute inset-0 w-full h-full object-cover"
+      />
+    </div>
+
+    <div
+      class="relative z-1 max-w-[1340px] mx-auto px-4 py-7 flex flex-col items-center gap-[18px] md:flex-row md:justify-between md:gap-8 md:px-6 md:py-16"
+    >
+      <div
+        class="w-full flex flex-col items-center text-center md:w-[55%] md:items-start md:text-left"
+      >
+        <div class="hidden md:flex md:items-center md:gap-2 md:mt-2">
+          <img
+            [src]="assets.bannerBadge"
+            alt="CAIRA Certified AI Ready Accountant Badge"
+            class="w-[100px] h-[100px] object-contain shrink-0"
+          />
+          <img
+            [src]="assets.bannerLinkedIn"
+            alt="Showcase badge on LinkedIn"
+            class="w-[140px] mt-[26px] h-auto object-contain"
+          />
+        </div>
+
+        <div class="relative flex flex-col items-center md:items-start">
+          <img
+            [src]="assets.bannerLogo"
+            alt="CAIRA"
+            class="h-[42px] md:h-16 w-auto object-contain"
+          />
+        </div>
+
+        <p class="m-0 text-white text-sm font-bold md:text-[22px]">Certified AI Ready Accountant</p>
+
+        <div class="mt-[15px] leading-[1.15]">
+          <h1
+            class="m-0 text-xl md:text-[38px] font-extrabold text-white leading-normal tracking-[0.76px]"
+          >
+            The Future Belong to
+          </h1>
+          <h2
+            class="m-0 text-[#ffba08] font-bold text-[27px] leading-[33.5px] md:text-5xl md:leading-[43.5px]"
+          >
+            AI-Ready Accountants
+          </h2>
+        </div>
+
+        <p class="mt-[15px] text-[#cfd8e6] text-sm font-medium md:text-lg">
+          3 Levels | 9-Months | NASBA Approved CPE
+        </p>
+      </div>
+
+      <div
+        class="flex items-center w-full pl-2 pr-10 py-2 md:hidden rounded-3xl border border-white/6 bg-[rgba(33,100,167,0.1)] shadow-[inset_0_0_54.9px_0_rgba(166,137,255,0.3)] backdrop-blur-[6px]"
+      >
+        <img
+          [src]="assets.bannerBadge"
+          alt="CAIRA Certified AI Ready Accountant Badge"
+          class="w-[70px] h-[70px] object-contain shrink-0"
+        />
+        <img
+          [src]="assets.bannerShowcaseMob"
+          alt="Showcase badge on LinkedIn"
+          class="w-[180px] ml-7 h-auto object-contain"
+        />
+      </div>
+
+      <!-- Form: live-webinar details header (API) + platform registration form -->
+      @if (heroWebinar(); as w) {
+        <div
+          id="hero-register"
+          class="w-full p-3 md:w-[440px] md:shrink-0 md:p-6 rounded-3xl border border-white/6 bg-[rgba(33,100,167,0.1)] shadow-[inset_0_0_54.9px_0_rgba(166,137,255,0.3)] backdrop-blur-[6px]"
+        >
+          <div class="mb-4">
+            <p class="text-base md:text-lg font-bold text-white leading-snug">
+              {{ w.webinar_title }}
+            </p>
+            @if (heroSession(); as s) {
+              <p class="text-sm text-white/85 mt-1 flex flex-wrap items-center gap-1.5">
+                <span class="inline-block w-2 h-2 rounded-full bg-red-500"></span>
+                <span class="font-semibold">Live:</span>
+                {{ s.start_date | date: "d MMM, EEEE 'at' h:mm a" }}
+                {{ s.start_date | localTimeZone }}
+              </p>
+            }
+            @if (w.instructor_details) {
+              <p class="text-sm text-white/70 mt-0.5">
+                By {{ w.instructor_details.first_name }} {{ w.instructor_details.last_name }}
+              </p>
+            }
+          </div>
+          <app-webinar-registration-form
+            [webinarId]="w.id"
+            [webinarDateId]="heroSession()?.id ?? 0"
+            [webinarTitle]="w.webinar_title"
+            [multiStep]="true"
+          />
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Why CAIRA — feature grid -->
+  <section class="md:w-9/12 w-11/12 mx-auto flex flex-col items-center gap-10">
+    <app-partner-content-list [content]="featuresHeading" />
+    <app-caira-feature-grid [items]="features" />
+  </section>
+
+  <!-- Valued by leading firms — Big-4 + bank logos (Miles CDN) -->
+  <section class="w-11/12 mx-auto text-center">
+    <p class="text-xs sm:text-sm uppercase tracking-[0.2em] text-muted-foreground mb-6">
+      CAIRA-ready accountants are valued by leading firms
+    </p>
+    <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+      @for (logo of partnerLogos; track logo) {
+        <img
+          [src]="logo"
+          alt="Hiring partner"
+          loading="lazy"
+          class="h-9 md:h-10 w-auto object-contain rounded-md bg-white px-3 py-2"
+        />
+      }
+    </div>
+  </section>
+
+  <!-- CAIRA Levels 1 / 2 / 3 — sourced from the course library -->
+  <app-caira-levels-section />
+
+  <!-- Path to the badge — steps -->
+  <section class="md:w-9/12 w-11/12 mx-auto flex flex-col items-center">
+    <app-partner-content-list [content]="stepsHeading" />
+    <div class="mt-12">
+      <app-caira-steps-grid [steps]="steps" />
+    </div>
+  </section>
+
+  <!-- Live webinar details — mirrors the platform WebinarHero -->
+  <app-caira-webinar-section />
+
+  <!-- MilesOne app download (reused platform component) -->
+  <app-app-download />
+
+  <!-- Final CTA -->
+  <section class="w-11/12 mx-auto">
+    <div
+      class="rounded-2xl border border-border bg-card/40 px-6 py-10 md:py-14 text-center flex flex-col items-center gap-4"
+    >
+      <h2 class="text-2xl md:text-4xl font-bold text-foreground">Ready to become AI-ready?</h2>
+      <p class="text-muted-foreground max-w-2xl">
+        Register for the next live webinar and start your CAIRA journey across all three levels.
+      </p>
+      <button
+        type="button"
+        (click)="scrollToTop()"
+        class="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold hover:opacity-90 transition-opacity"
+      >
+        Register now
+      </button>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <app-faq [standalone]="false" />
+</div>

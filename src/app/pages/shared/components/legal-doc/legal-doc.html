@@ -1,0 +1,66 @@
+@let d = doc();
+@let embedded = isEmbedded();
+
+<!-- Hero — hidden in mobile webview embed -->
+@if (!embedded) {
+  <section class="w-full pt-28 pb-10 bg-linear-to-b from-primary/10 to-transparent">
+    <div class="container mx-auto px-4">
+      <h1 class="text-3xl md:text-5xl font-bold text-white">{{ d.title }}</h1>
+      <p class="mt-3 text-sm text-gray-400">
+        Last Updated:
+        <span class="text-gray-200 font-medium">{{ d.lastUpdated | date: 'd MMMM y' }}</span>
+      </p>
+    </div>
+  </section>
+}
+
+<div class="container mx-auto px-4 py-8 md:py-10">
+  <div class="grid grid-cols-1 gap-8" [class.lg:grid-cols-[260px_1fr]]="!embedded">
+    <!-- Sticky left rail (hidden under lg and when embedded) -->
+    @if (!embedded) {
+      <aside class="hidden lg:block lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-6rem)]">
+        <nav
+          class="overflow-y-auto pr-3 max-h-[calc(100vh-7rem)]"
+          role="navigation"
+          aria-label="Document sections"
+        >
+          <ul class="space-y-1 border-l border-white/10">
+            @for (item of navItems(); track item.id) {
+              <li>
+                <button
+                  type="button"
+                  class="block w-full text-left px-4 py-2 text-sm transition-colors border-l-2 -ml-px"
+                  [class.border-primary]="activeSection() === item.id"
+                  [class.text-white]="activeSection() === item.id"
+                  [class.bg-primary]="activeSection() === item.id"
+                  [class.bg-opacity-10]="activeSection() === item.id"
+                  [class.border-transparent]="activeSection() !== item.id"
+                  [class.text-gray-400]="activeSection() !== item.id"
+                  [class.hover:text-gray-100]="activeSection() !== item.id"
+                  [class.hover:border-white/30]="activeSection() !== item.id"
+                  [attr.aria-current]="activeSection() === item.id ? 'true' : null"
+                  (click)="onNavClick(item.id)"
+                >
+                  {{ item.label }}
+                </button>
+              </li>
+            }
+          </ul>
+        </nav>
+      </aside>
+    }
+
+    <!-- Content column -->
+    <article class="max-w-4xl">
+      @if (d.intro?.length) {
+        <div class="mb-10">
+          <app-faq-content [content]="d.intro ?? []" />
+        </div>
+      }
+
+      @for (section of d.sections; track section.navId) {
+        <app-legal-section [section]="section" />
+      }
+    </article>
+  </div>
+</div>

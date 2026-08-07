@@ -1,0 +1,62 @@
+<ul [class]="containerClass()">
+  @for (item of content(); track $index) {
+    <li [class]="item.itemClass">
+      <!-- Default (block) logo row. Skipped when `logosInline` is set — then the
+           logos render inside the heading so text + logo read as one phrase. -->
+      @if (item.logos && item.logos.length > 0 && !item.logosInline) {
+        <div [class]="item.logosClass">
+          <ng-container
+            [ngTemplateOutlet]="logosTpl"
+            [ngTemplateOutletContext]="{ $implicit: item }"
+          />
+        </div>
+      }
+
+      @if (item.heading) {
+        <h3 [class]="item.headingClass">
+          {{ item.heading }}
+          @if (item.logos && item.logos.length > 0 && item.logosInline) {
+            <span [class]="item.logosClass"
+              ><ng-container
+                [ngTemplateOutlet]="logosTpl"
+                [ngTemplateOutletContext]="{ $implicit: item }"
+            /></span>
+          }
+        </h3>
+      }
+      @if (item.subHeadingHtml || item.subHeading) {
+        <!--
+          Section/banner title (e.g. "CPE for the AI-Powered Accountant",
+          "Coming Soon on Master Class"). Rendered as <h2> so these section
+          titles sit one level under the page <h1> instead of being buried at
+          <h4> (audit: broken heading hierarchy). Visual size is driven by the
+          caller's subHeadingClass, so this is a semantic-only change.
+        -->
+        @if (item.subHeadingHtml) {
+          <h2 [class]="item.subHeadingClass" [innerHTML]="item.subHeadingHtml"></h2>
+        } @else {
+          <h2 [class]="item.subHeadingClass">{{ item.subHeading }}</h2>
+        }
+      }
+      @if (item.paragraphHtml) {
+        <p [class]="item.paragraphClass" [innerHTML]="item.paragraphHtml"></p>
+      } @else if (item.paragraph) {
+        <p [class]="item.paragraphClass">{{ item.paragraph }}</p>
+      }
+    </li>
+  }
+</ul>
+
+<!-- Logo loop shared by the block row and the inline-in-heading variant. -->
+<ng-template #logosTpl let-item>
+  @for (logo of item.logos; track $index; let last = $last) {
+    @if ((logo.type ?? 'image') === 'svg') {
+      <ng-icon [svg]="logo.src" [class]="logo.class" [attr.aria-label]="logo.alt || null" />
+    } @else {
+      <img [src]="logo.src" [alt]="logo.alt || ''" [class]="logo.class" />
+    }
+    @if (!last && item.logos.length === 2) {
+      <ng-icon [svg]="iconXPartner" size="32" [attr.aria-label]="null" />
+    }
+  }
+</ng-template>

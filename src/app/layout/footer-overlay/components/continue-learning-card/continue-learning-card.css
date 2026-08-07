@@ -1,0 +1,8 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.continue-learning-card {
+  background-image: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+}

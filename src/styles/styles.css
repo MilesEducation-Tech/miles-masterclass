@@ -1,0 +1,404 @@
+@import 'tailwindcss';
+@import 'video.js/dist/video-js.css';
+@plugin "tailwindcss-animate";
+
+:root {
+  --background: rgb(14, 14, 14);
+  --foreground: rgb(229, 229, 229);
+  --card: rgb(56, 66, 76);
+  --card-hover: rgb(9, 29, 50);
+  --card-foreground: rgb(229, 229, 229);
+  --popover: rgb(38, 38, 38);
+  --popover-foreground: rgb(229, 229, 229);
+  --dialog: rgb(32, 32, 32);
+  --dialog-foreground: rgb(229, 229, 229);
+  --primary: rgb(4, 72, 170);
+  --primary-foreground: rgb(255, 255, 255);
+  --secondary: rgb(38, 38, 38);
+  --secondary-foreground: rgb(229, 229, 229);
+  --muted: rgb(31, 31, 31);
+  --muted-foreground: rgb(163, 163, 163);
+  --accent: rgb(42, 133, 255);
+  --mm-warn: #f6bc53;
+  --accent-foreground: rgb(191, 219, 254);
+  --accent-rgb: 42 133 255;
+  --destructive: rgb(239, 68, 68);
+  --destructive-foreground: rgb(255, 255, 255);
+  --border: rgb(64, 64, 64);
+  --input: rgb(64, 64, 64);
+  --ring: rgb(59, 130, 246);
+  --chart-1: rgb(96, 165, 250);
+  --chart-2: rgb(59, 130, 246);
+  --chart-3: rgb(37, 99, 235);
+  --chart-4: rgb(29, 78, 216);
+  --chart-5: rgb(30, 64, 175);
+  --sidebar: rgb(23, 23, 23);
+  --sidebar-foreground: rgb(229, 229, 229);
+  --sidebar-primary: rgb(59, 130, 246);
+  --sidebar-primary-foreground: rgb(255, 255, 255);
+  --sidebar-accent: rgb(30, 58, 138);
+  --sidebar-accent-foreground: rgb(191, 219, 254);
+  --sidebar-border: rgb(64, 64, 64);
+  --sidebar-ring: rgb(59, 130, 246);
+  --font-sans: Inter, sans-serif;
+  /* Quoted deliberately: an unquoted family name whose component starts with a
+     digit ("4") is invalid per the CSS custom-ident grammar, so the browser
+     dropped the whole declaration and `font-serif` silently inherited Inter. */
+  --font-serif: 'Source Serif 4', serif;
+  --font-mono: JetBrains Mono, monospace;
+  --radius: 0.375rem;
+  --shadow-x: 0;
+  --shadow-y: 1px;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.1;
+  --shadow-color: oklch(100% 0.00011 271.152);
+  --shadow-2xs: 0 1px 3px 0px hsla(0, 0%, 100%, 0.05);
+  --shadow-xs: 0 1px 3px 0px hsla(0, 0%, 100%, 0.05);
+  --shadow-sm: 0 1px 3px 0px hsla(0, 0%, 100%, 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow: 0 1px 3px 0px hsla(0, 0%, 100%, 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0 1px 3px 0px hsla(0, 0%, 100%, 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0 1px 3px 0px hsla(0, 0%, 100%, 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0 1px 3px 0px hsla(0, 0%, 100%, 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+  --shadow-2xl: 0 1px 3px 0px hsla(0, 0%, 100%, 0.25);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+}
+
+/* =====================================================================
+   Admin theme — Miles Masterclass dark navy palette
+   Scoped via .admin-theme on the AdminLayout root so the public site
+   keeps its existing tokens. Tailwind's bg-background / bg-sidebar / etc.
+   resolve to these values inside the admin shell.
+   ===================================================================== */
+.admin-theme {
+  --background: #07182b;
+  --foreground: #f2f5f9;
+  --card: #0e2742;
+  --card-hover: #15324f;
+  --card-foreground: #f2f5f9;
+  --popover: #0e2742;
+  --popover-foreground: #f2f5f9;
+  --dialog: #0e2742;
+  --dialog-foreground: #f2f5f9;
+  --primary: #2a85ff;
+  --primary-foreground: #ffffff;
+  --secondary: #15324f;
+  --secondary-foreground: #f2f5f9;
+  --muted: #15324f;
+  --muted-foreground: #b6c5d6;
+  --accent: rgba(42, 133, 255, 0.16);
+  --accent-foreground: #75b0f5;
+  --accent-rgb: 42 133 255;
+  --destructive: #eb5757;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.16);
+  --ring: #2a85ff;
+
+  --chart-1: #2a85ff;
+  --chart-2: #27ae60;
+  --chart-3: #f2c94c;
+  --chart-4: #eb5757;
+  --chart-5: #75b0f5;
+
+  --sidebar: #0e2742;
+  --sidebar-foreground: #b6c5d6;
+  --sidebar-primary: #2a85ff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(42, 133, 255, 0.12);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #2a85ff;
+
+  /* MM-specific elevation + status tokens (referenced by admin components) */
+  --mm-surface-2: #15324f;
+  --mm-surface-3: #1b3d5e;
+  /* Foreground scale: --foreground (primary) > --mm-fg-2 (secondary body) >
+     --mm-fg-3 (tertiary / labels). --mm-fg-2 mirrors --muted-foreground. */
+  --mm-fg-2: #b6c5d6;
+  --mm-fg-3: #7a8fa8;
+
+  --mm-success: #27ae60;
+  --mm-success-fg: #6ec993;
+  --mm-success-bg: rgba(39, 174, 96, 0.15);
+  --mm-warn: #f2994a;
+  --mm-warn-fg: #f2b98a;
+  --mm-warn-bg: rgba(242, 153, 74, 0.15);
+  --mm-info: #2a85ff;
+  --mm-info-fg: #75b0f5;
+  --mm-info-bg: rgba(42, 133, 255, 0.15);
+  --mm-danger: #eb5757;
+  --mm-danger-fg: #f5b1b1;
+  --mm-danger-bg: rgba(235, 87, 87, 0.15);
+  --mm-yellow: #f2c94c;
+  --mm-yellow-bg: rgba(242, 201, 76, 0.16);
+
+  --font-numeric: 'Inter Tight', 'Inter', system-ui, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-dialog: var(--dialog);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-dialog-foreground: var(--dialog-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-premium: var(--mm-warn);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-miles: var(--mm-yellow);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.sub-title {
+  @apply md:text-lg text-base font-normal text-white;
+}
+
+.title {
+  @apply md:text-2xl text-xl font-bold text-white;
+}
+
+.description {
+  @apply md:text-base text-sm text-neutral-400;
+}
+
+.input {
+  @apply flex w-full rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors;
+}
+
+.label {
+  @apply block text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
+}
+
+.floating-input {
+  @apply p-4 block w-full border-input rounded-lg text-sm border  bg-background ring-offset-background placeholder:text-transparent focus:border-ring focus:ring-ring disabled:opacity-50 disabled:pointer-events-none  text-foreground focus:pt-6 focus:pb-2 [:not(:placeholder-shown)]:pt-6 [:not(:placeholder-shown)]:pb-2 autofill:pt-6 autofill:pb-2 transition-all;
+}
+
+.floating-label {
+  @apply absolute top-0 start-0 p-4 h-full text-sm truncate pointer-events-none transition ease-in-out duration-100 border border-transparent origin-top-left text-muted-foreground peer-disabled:opacity-50 peer-disabled:pointer-events-none;
+}
+
+.container {
+  @apply container max-sm:w-11/12!;
+}
+
+/* Float label on focus, focus-within, or when not showing placeholder */
+.peer:focus ~ .floating-label,
+.peer:focus-within ~ .floating-label,
+.peer:not(:placeholder-shown) ~ .floating-label,
+.floating-label-active {
+  @apply scale-90 translate-x-0.5 -translate-y-1.5 text-muted-foreground;
+}
+
+.auth-card {
+  @apply max-w-xl w-full m-auto h-auto rounded-xl bg-black/10 backdrop-blur-sm sm:p-6 p-3 shadow-2xl flex border-2 border-transparent flex-col space-y-4;
+}
+
+.header {
+  @apply rounded-full bg-black/50 backdrop-blur-sm  shadow-2xl flex border-2 border-transparent transition-all duration-600 ease-in-out;
+}
+
+router-outlet {
+  @apply p-0 m-0;
+}
+
+::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  background-color: var(--background) !important;
+  border-radius: var(--radius-4xl);
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  border-radius: var(--radius-4xl);
+  overflow: hidden;
+  background-color: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--primary);
+  border-radius: var(--radius-4xl);
+  background-image: -webkit-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.2) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.2) 75%,
+    transparent 75%,
+    transparent
+  );
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  > -webkit-scrollbar {
+    display: none !important;
+  }
+}
+
+swiper-container::part(container) {
+  border-radius: 8px;
+  overflow: visible;
+}
+
+swiper-container {
+  --swiper-pagination-color: var(--primary);
+  --swiper-pagination-bullet-inactive-color: var(--foreground);
+  --swiper-pagination-bullet-inactive-opacity: 0.6;
+  --swiper-pagination-bullet-size: 16px;
+  --swiper-pagination-bottom: -32px;
+}
+
+/*
+ * Ticket-card mask utilities. Registered via Tailwind v4's `@utility` so the
+ * usual variants (`md:`, `hover:`, etc.) attach naturally — e.g.
+ * `class="md:x-ticket y-ticket"` swaps the silhouette at the `md` breakpoint,
+ * with Tailwind's cascade ordering making the `md:` rule win on ≥md screens.
+ *
+ *   x-ticket / y-ticket  → wavy edges along one axis (vertical or horizontal).
+ *   top / bottom         → single half-circle notch cut into the top / bottom
+ *                          edge at 70% from the left. `.top` also shifts the
+ *                          element up 23px so its half-circle overlaps the
+ *                          partner above and the notches meet.
+ *   left / right         → 90°-rotated counterparts at 80% from the top.
+ *
+ * Stack these on different breakpoints (the cascade picks the latest match)
+ * to morph a card's silhouette between portrait and landscape ticket forms.
+ */
+@utility x-ticket {
+  --mask:
+    radial-gradient(8.35px at 10.4px 50%, #000 99%, #0000 101%) 0 calc(50% - 16px) / 51% 32px
+      repeat-y,
+    radial-gradient(8.35px at -2.4px 50%, #0000 99%, #000 101%) 8px 50% / calc(51% - 8px) 32px
+      repeat-y,
+    radial-gradient(8.35px at calc(100% - 10.4px) 50%, #000 99%, #0000 101%) 100% calc(50% - 16px) /
+      51% 32px repeat-y,
+    radial-gradient(8.35px at calc(100% + 2.4px) 50%, #0000 99%, #000 101%) calc(100% - 8px) 50% /
+      calc(51% - 8px) 32px repeat-y;
+  -webkit-mask: var(--mask);
+  mask: var(--mask);
+}
+
+@utility y-ticket {
+  --mask:
+    radial-gradient(8.35px at 50% 10.4px, #000 99%, #0000 101%) calc(50% - 16px) 0 / 32px 51%
+      repeat-x,
+    radial-gradient(8.35px at 50% -2.4px, #0000 99%, #000 101%) 50% 8px / 32px calc(51% - 8px)
+      repeat-x,
+    radial-gradient(8.35px at 50% calc(100% - 10.4px), #000 99%, #0000 101%) calc(50% - 16px) 100% /
+      32px 51% repeat-x,
+    radial-gradient(8.35px at 50% calc(100% + 2.4px), #0000 99%, #000 101%) 50% calc(100% - 8px) /
+      32px calc(51% - 8px) repeat-x;
+  -webkit-mask: var(--mask);
+  mask: var(--mask);
+}
+
+@utility top-mask {
+  --mask: radial-gradient(calc(1px + 24px) at 70% -1px, #0000 98%, #000);
+  -webkit-mask: var(--mask);
+  mask: var(--mask);
+  margin-top: -23px;
+}
+
+@utility bottom-mask {
+  --mask: radial-gradient(calc(1px + 24px) at 70% calc(100% + 1px), #0000 98%, #000);
+  -webkit-mask: var(--mask);
+  mask: var(--mask);
+}
+
+@utility left-mask {
+  --mask: radial-gradient(calc(1px + 24px) at -1px 80%, #0000 98%, #000);
+  -webkit-mask: var(--mask);
+  mask: var(--mask);
+}
+
+@utility right-mask {
+  --mask: radial-gradient(calc(1px + 24px) at calc(100% + 1px) 80%, #0000 98%, #000);
+  -webkit-mask: var(--mask);
+  mask: var(--mask);
+}
+
+/* Google Places Autocomplete dropdown is appended to <body>; lift it above the
+   custom dialog overlay (z-index 1000+) so suggestions are clickable in-dialog. */
+.pac-container {
+  z-index: 100000;
+}
+
+/* CDK overlays (aria-select/multiselect dropdowns) default to z-index 1000 and
+   get occluded by the custom dialog service's inline z-index (1000 + 2n). */
+.cdk-overlay-container {
+  z-index: 10000;
+}

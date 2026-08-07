@@ -1,0 +1,50 @@
+<div class="relative overflow-hidden">
+  @if (badges().length) {
+    <app-button
+      variant="outline"
+      size="sm"
+      ariaLabel="View all badges"
+      class="absolute top-4 right-4 z-10 rounded-full border-white/15 bg-black/40 text-xs font-semibold tracking-wider text-white uppercase backdrop-blur hover:bg-black/60 md:right-6"
+      (clicked)="onOpenInfo()"
+    >
+      View all
+    </app-button>
+
+    <app-button
+      variant="ghost"
+      size="icon"
+      ariaLabel="Previous badge"
+      class="absolute top-1/2 left-2 z-10 -translate-y-1/2 rounded-full border border-white/10 bg-black/40 text-white backdrop-blur hover:bg-black/60 md:left-6"
+      (clicked)="onPrev()"
+    >
+      <ng-icon name="lucideChevronLeft" aria-hidden="true" />
+    </app-button>
+
+    <app-button
+      variant="ghost"
+      size="icon"
+      ariaLabel="Next badge"
+      class="absolute top-1/2 right-2 z-10 -translate-y-1/2 rounded-full border border-white/10 bg-black/40 text-white backdrop-blur hover:bg-black/60 md:right-6"
+      (clicked)="onNext()"
+    >
+      <ng-icon name="lucideChevronRight" aria-hidden="true" />
+    </app-button>
+
+    <swiper-container #swiperContainer init="false" class="block w-full">
+      @for (badge of badges(); track badge.id) {
+        <swiper-slide>
+          <app-badge-hero-card
+            layout="hero"
+            [badge]="badge"
+            (claim)="onClaim($event)"
+            (share)="onShare($event)"
+          />
+        </swiper-slide>
+      }
+    </swiper-container>
+  } @else {
+    <div class="flex items-center justify-center py-20 text-sm text-gray-400">
+      No badges yet — complete a course to earn your first.
+    </div>
+  }
+</div>

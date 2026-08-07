@@ -1,0 +1,81 @@
+<section class="admin-theme flex flex-col gap-6 p-6 text-white min-h-full">
+  <header class="flex flex-col gap-2">
+    <h1 class="text-2xl font-bold leading-tight">Leads</h1>
+    <p class="text-sm text-white/70">
+      Firm enquiries captured from the marketing site. Track and update their status here.
+    </p>
+  </header>
+
+  <!-- Filters bar -->
+  <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div class="flex w-full max-w-md items-center">
+      <app-aria-input
+        id="lead-search"
+        type="search"
+        label="Search name, email or firm"
+        class="w-full"
+        [(value)]="searchInput"
+      />
+    </div>
+
+    <div class="flex items-center gap-3">
+      <div
+        class="inline-flex items-center gap-1 rounded-md p-1 border border-white/10"
+        style="background: var(--mm-surface-2)"
+        role="tablist"
+        aria-label="Lead status filter"
+      >
+        @for (tab of statusTabs; track tab.value) {
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="isActiveTab(tab.value)"
+            class="px-3 py-1.5 text-xs font-medium rounded transition-colors"
+            [ngClass]="
+              isActiveTab(tab.value) ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white'
+            "
+            (click)="selectStatus(tab.value)"
+          >
+            {{ tab.label }}
+          </button>
+        }
+      </div>
+
+      <ng-container *hasPermission="PERM.LEADS_EXPORT">
+        <app-button
+          variant="outline"
+          size="sm"
+          class="h-9 rounded-md border-white/15 bg-transparent text-xs text-white hover:bg-white/5"
+          (clicked)="onExport()"
+        >
+          Export CSV
+        </app-button>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Error banner -->
+  @if (facade.error()) {
+    <div
+      class="px-3 py-2 text-sm rounded-md"
+      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
+      role="alert"
+    >
+      Failed to load leads. Try refreshing the page or check your connection.
+    </div>
+  }
+
+  <!-- Table -->
+  <app-leads-table
+    [rows]="facade.rows()"
+    [isLoading]="facade.isLoading()"
+    [currentPage]="facade.currentPage()"
+    [pageSize]="facade.pageSize"
+    [totalCount]="facade.totalCount()"
+    [hasNext]="facade.hasNext()"
+    [hasPrev]="facade.hasPrev()"
+    (statusChange)="onStatusChange($event)"
+    (prevPage)="goPrev()"
+    (nextPage)="goNext()"
+  />
+</section>

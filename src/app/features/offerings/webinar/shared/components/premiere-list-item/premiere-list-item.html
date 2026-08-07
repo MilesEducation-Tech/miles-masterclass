@@ -1,0 +1,105 @@
+<article
+  class="grid grid-cols-[auto_1fr_auto] items-stretch gap-4 sm:gap-6 text-card-foreground border-b border-border py-4"
+>
+  <!-- date pill -->
+  @if (session()) {
+    <div
+      class="flex flex-col items-center justify-center bg-muted rounded-md w-20 sm:w-24 py-3 px-2 text-center"
+    >
+      <span class="text-xs uppercase tracking-wide text-muted-foreground">
+        {{ session()!.start_date | date: 'LLLL' }}
+      </span>
+      <span class="text-2xl sm:text-3xl font-semibold leading-none mt-1">
+        {{ session()!.start_date | date: 'd' }}<sup class="text-xs ml-0.5">{{ dayOrdinal() }}</sup>
+      </span>
+      <span class="text-xs text-muted-foreground mt-1">
+        {{ session()!.start_date | date: 'y' }}
+      </span>
+    </div>
+  }
+
+  <!-- center: details -->
+  <div class="min-w-0 flex flex-col gap-1">
+    @if (webinar().fields_of_study.length) {
+      <app-categories-list
+        class="text-xs sm:text-sm"
+        [items]="webinar().fields_of_study"
+        [showCredits]="true"
+      />
+    }
+    <h3 class="text-base sm:text-lg font-semibold leading-snug truncate">
+      {{ webinar().webinar_title }}
+    </h3>
+    <!-- v2 list payloads carry no instructor, so hide the byline rather than
+         rendering a bare "By ". Populated once the row is hydrated. -->
+    @if (instructorNames().length) {
+      <p class="text-xs text-muted-foreground tracking-wide truncate">
+        By {{ instructorNames().join(', ') }}
+      </p>
+    }
+    <app-caira-credly-badge
+      class="shrink-0"
+      [includedForCaira]="webinar().included_for_caira!"
+      [hasIndividualBadge]="webinar().has_individual_badge!"
+      [cairaLevel]="webinar().caira_level!"
+      variant="inline"
+    />
+    <!-- @if (webinar().has_individual_badge) {
+      <div class="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+        <span
+          class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-semibold tracking-wider"
+          >CAiRA</span
+        >
+        <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5"
+          ><span class="italic">Credly</span>&nbsp;Badge Included</span
+        >
+      </div>
+    } -->
+    <div class="flex flex-wrap gap-2 mt-2">
+      @switch (cta()) {
+        @case ('book') {
+          <app-button variant="default" size="sm" (clicked)="book()">Book Now</app-button>
+        }
+        @case ('joined') {
+          <app-button variant="secondary" size="sm" [disabled]="true">Booked</app-button>
+        }
+        @case ('join-live') {
+          <app-button variant="default" size="sm" (clicked)="joinLive()">Join Live</app-button>
+        }
+        @case ('submit-feedback') {
+          <app-button variant="default" size="sm" (clicked)="submitFeedback()"
+            >Submit Feedback</app-button
+          >
+        }
+        @case ('download-certificate') {
+          <app-button variant="default" size="sm" (clicked)="downloadCertificate()"
+            >Download Certificate</app-button
+          >
+        }
+        @case ('watch-recording') {
+          <app-button variant="default" size="sm" (clicked)="watchRecording()"
+            >Watch Recording</app-button
+          >
+        }
+        @case ('ended') {
+          <app-button variant="secondary" size="sm" [disabled]="true">Ended</app-button>
+        }
+      }
+      <app-button variant="outline" size="sm" (clicked)="openDetails()"> More Info </app-button>
+    </div>
+  </div>
+
+  <!-- right: instructor thumbnail (hidden on small screens) -->
+  <div
+    class="hidden sm:block h-34 aspect-video rounded-md overflow-hidden bg-muted flex-none my-auto"
+  >
+    @if (thumbnail(); as src) {
+      <img
+        [src]="src"
+        [alt]="webinar().webinar_title"
+        class="w-full h-full object-cover aspect-video rounded-md"
+        loading="lazy"
+      />
+    }
+  </div>
+</article>

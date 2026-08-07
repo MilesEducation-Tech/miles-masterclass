@@ -1,0 +1,114 @@
+@for (item of content(); track $index) {
+  @switch (item.type) {
+    @case ('text') {
+      <p class="text-gray-300 mb-4 leading-relaxed">{{ item.value }}</p>
+    }
+    @case ('heading') {
+      @if (item.level === 3) {
+        <h3 class="text-xl font-semibold text-white mt-6 mb-3">{{ item.value }}</h3>
+      }
+      @if (item.level === 4) {
+        <h4 class="text-lg font-semibold text-white mt-5 mb-2">{{ item.value }}</h4>
+      }
+    }
+    @case ('subtext') {
+      <p class="text-gray-400 text-sm mb-2 italic">{{ item.value }}</p>
+    }
+    @case ('description') {
+      <p
+        class="text-gray-300 mb-4 leading-relaxed bg-gray-800 p-4 rounded-lg border-l-4 border-blue-500"
+      >
+        {{ item.value }}
+      </p>
+    }
+    @case ('note') {
+      <div
+        class="mb-4 p-4 rounded-lg border-l-4"
+        [class.bg-blue-900]="item.variant === 'info' || !item.variant"
+        [class.border-blue-500]="item.variant === 'info' || !item.variant"
+        [class.bg-yellow-900]="item.variant === 'warning'"
+        [class.border-yellow-500]="item.variant === 'warning'"
+        [class.bg-green-900]="item.variant === 'success'"
+        [class.border-green-500]="item.variant === 'success'"
+      >
+        <p class="text-gray-200 text-sm leading-relaxed">
+          <span class="font-semibold mr-2">
+            @if (item.variant === 'warning') {
+              ⚠️ Warning:
+            }
+            @if (item.variant === 'success') {
+              ✓ Tip:
+            }
+            @if (item.variant === 'info' || !item.variant) {
+              ℹ️ Note:
+            }
+          </span>
+          {{ item.value }}
+        </p>
+      </div>
+    }
+    @case ('list') {
+      @if (item.ordered) {
+        <ol class="list-decimal list-inside mb-4 space-y-2 text-gray-300 ml-4">
+          @for (listItem of item.items; track $index) {
+            <li class="leading-relaxed">{{ listItem }}</li>
+          }
+        </ol>
+      } @else {
+        <ul class="list-disc list-inside mb-4 space-y-2 text-gray-300 ml-4">
+          @for (listItem of item.items; track $index) {
+            <li class="leading-relaxed">{{ listItem }}</li>
+          }
+        </ul>
+      }
+    }
+    @case ('table') {
+      <div class="mb-6 overflow-x-auto rounded-lg border border-gray-700">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-gray-800 text-gray-200">
+            <tr>
+              @for (header of item.headers; track $index) {
+                <th class="px-4 py-3 font-semibold">{{ header }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-700">
+            @for (row of item.rows; track $index) {
+              <tr class="hover:bg-gray-800 transition-colors">
+                @for (cell of row; track $index) {
+                  <td class="px-4 py-3 text-gray-300">{{ cell }}</td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    @case ('image') {
+      <figure class="mb-6">
+        <img [src]="item.src" [alt]="item.alt" class="w-full rounded-lg border border-gray-700" />
+        @if (item.caption) {
+          <figcaption class="text-gray-400 text-sm mt-2 text-center italic">
+            {{ item.caption }}
+          </figcaption>
+        }
+      </figure>
+    }
+    @case ('code') {
+      <div class="mb-4 rounded-lg overflow-hidden border border-gray-700">
+        <div class="bg-gray-800 px-4 py-2 text-gray-400 text-xs font-mono">
+          {{ item.language || 'code' }}
+        </div>
+        <pre
+          class="bg-gray-900 p-4 overflow-x-auto"
+        ><code class="text-green-400 text-sm font-mono">{{ item.value }}</code></pre>
+      </div>
+    }
+    @case ('rich') {
+      <div
+        class="faq-rich text-gray-300 mb-4 leading-relaxed"
+        [innerHTML]="trustHtml(item.html)"
+      ></div>
+    }
+  }
+}

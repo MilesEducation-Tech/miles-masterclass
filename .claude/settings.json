@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx lint-staged *)",
+      "Bash(git add *)",
+      "Bash(git -C /Users/SACHIN.SINGH/Documents/GitHub/miles-masterclass-v3 status --short src/app/shared/components/video-js/video-js.ts src/app/features/offerings/micro-learning/shared/components/micro-learning-reel-card/micro-learning-reel-card.ts)",
+      "Bash(git -C /Users/SACHIN.SINGH/Documents/GitHub/miles-masterclass-v3 diff --stat src/app/shared/components/video-js/video-js.ts)",
+      "Bash(git -C /Users/SACHIN.SINGH/Documents/GitHub/miles-masterclass-v3 diff src/app/shared/components/video-js/video-js.ts)",
+      "Bash(awk '/^class ProgressControl/,/^class [A-Z][a-zA-Z]+ extends/' /Users/SACHIN.SINGH/Documents/GitHub/miles-masterclass-v3/node_modules/video.js/dist/video.es.js)",
+      "Bash(awk '/^class ControlBar/,/registerComponent..ControlBar/' /Users/SACHIN.SINGH/Documents/GitHub/miles-masterclass-v3/node_modules/video.js/dist/video.es.js)",
+      "Bash(awk '/^class Component\\\\$1/,/^}/' /Users/SACHIN.SINGH/Documents/GitHub/miles-masterclass-v3/node_modules/video.js/dist/video.es.js)"
+    ]
+  }
+}

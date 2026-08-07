@@ -1,0 +1,54 @@
+<app-partner-content-list
+  [content]="[
+    {
+      subHeading: 'Masters of the AI Accounting Era',
+      paragraph: 'Industry legends. AI visionaries. Your new mentors in accounting mastery',
+      subHeadingClass: 'text-white md:text-5xl text-3xl font-bold ',
+      itemClass: 'text-center py-4 md:w-2/3 w-full mx-auto leading-relaxed',
+      paragraphClass: 'text-white md:text-lg text-base font-normal mt-2',
+    },
+  ]"
+/>
+<div class="flex justify-end mb-6">
+  <label
+    class="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-secondary/60 border border-border/40 backdrop-blur-sm text-sm w-full max-w-sm focus-within:ring-2 focus-within:ring-accent transition-shadow"
+  >
+    <ng-icon name="heroMagnifyingGlass" size="16" class="text-muted-foreground shrink-0" />
+    <input
+      type="search"
+      [value]="searchInput()"
+      (input)="onSearchInput($event)"
+      placeholder="Search instructors"
+      class="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
+      aria-label="Search instructors"
+    />
+    @if (searchInput()) {
+      <button
+        type="button"
+        (click)="clearSearch()"
+        aria-label="Clear search"
+        class="text-xs font-medium text-muted-foreground hover:text-foreground"
+      >
+        Clear
+      </button>
+    }
+  </label>
+</div>
+
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+  @for (i of facade.instructorItems(); track i.id) {
+    <app-instructor-card [instructor]="i" (cardClicked)="onInstructorClick($event)" />
+  } @empty {
+    <!-- @if (!facade.isInstructorLoading()) { -->
+    <p class="col-span-full text-center text-muted-foreground py-8">No instructors found.</p>
+    <!-- } -->
+  }
+</div>
+
+@if (facade.isInstructorLoading()) {
+  <div class="text-center py-6 text-muted-foreground">Loading…</div>
+}
+
+@if (facade.instructorPagination()?.next_page) {
+  <div #sentinel class="h-1 w-full"></div>
+}

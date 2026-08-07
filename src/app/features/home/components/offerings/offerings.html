@@ -1,0 +1,94 @@
+<div
+  class="mx-auto py-4"
+  (pointerenter)="pause()"
+  (pointerleave)="resume()"
+  (focusin)="pause()"
+  (focusout)="resume()"
+>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-14">
+    <div class="w-full flex flex-col items-center">
+      @for (offering of offerings(); track offering.id; let i = $index) {
+        <div
+          class="flex w-full mx-auto md:p-4 p-2 rounded-xl cursor-pointer transition-colors duration-300"
+          [class]="
+            selectedOfferingIndex() === i
+              ? 'bg-[#04172A] shadow-lg [box-shadow:0px_0px_6.9px_-1.5px_#3399FF]'
+              : ''
+          "
+          role="button"
+          tabindex="0"
+          [attr.aria-pressed]="selectedOfferingIndex() === i"
+          (click)="setOfferingIndex(i)"
+          (keydown.enter)="setOfferingIndex(i)"
+          (keydown.space)="setOfferingIndex(i); $event.preventDefault()"
+        >
+          <div class="flex justify-start flex-col p-2 w-full">
+            <div class="flex gap-2 items-center">
+              <div class="flex items-start justify-center p-2 w-auto">
+                <div
+                  class="md:size-[42px] size-[34px] aspect-square rounded-full overflow-hidden bg-linear-to-bl from-primary to-white flex items-center justify-center"
+                >
+                  <div
+                    class="md:size-10 size-8 aspect-square rounded-full overflow-hidden flex items-center justify-center bg-[#07121e]"
+                  >
+                    <ng-icon [svg]="offering.icon" class="md:size-6! size-4!" />
+                  </div>
+                </div>
+              </div>
+              <h3
+                class="md:text-xl text-sm uppercase font-semibold transition-colors duration-300"
+                [class]="selectedOfferingIndex() === i ? 'text-white' : 'text-muted-foreground'"
+              >
+                {{ offering.title }}
+                @if (offering.comingSoon) {
+                  <span
+                    class="text-accent bg-primary/20 rounded-full md:px-2 px-1 md:py-1 py-0.5 md:text-xs text-[8px]! ml-2"
+                  >
+                    Coming Soon
+                  </span>
+                }
+              </h3>
+            </div>
+            @if (i === selectedOfferingIndex()) {
+              <p class="md:text-xs text-[10px] text-white/50 md:ml-14 ml-8 px-4">
+                {{ offering.description }}
+              </p>
+              <div class="lg:hidden mt-4 flex justify-center">
+                @if (offering.mockType === 'phone') {
+                  <div class="relative w-[320px] h-[660px]">
+                    <app-floating-assets [assets]="offering.floatingAssets" />
+                    <app-micro-learning-hero-phone-mockup
+                      [feedItems]="offering.phoneFeed ?? emptyFeed"
+                      [media]="offering.media"
+                      [mediaType]="offering.mediaType"
+                    />
+                  </div>
+                } @else {
+                  <app-laptop [offeringData]="offering" />
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+    <div class="max-lg:hidden flex justify-center items-center">
+      @if (selectedOffering(); as current) {
+        @if (current.mockType === 'phone') {
+          <div class="relative w-[320px] h-[660px]">
+            <app-floating-assets [assets]="current.floatingAssets" />
+            <app-micro-learning-hero-phone-mockup
+              [feedItems]="current.phoneFeed ?? emptyFeed"
+              [media]="current.media"
+              [mediaType]="current.mediaType"
+            />
+          </div>
+        } @else {
+          <div class="w-4/5 relative">
+            <app-laptop [offeringData]="current" />
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>

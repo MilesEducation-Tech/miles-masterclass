@@ -1,0 +1,42 @@
+:host {
+  display: block;
+}
+
+/* Small "view courses" affordance shown next to a metric value. */
+.drill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.drill-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.drill-btn:focus-visible {
+  outline: 2px solid var(--ring, #2a85ff);
+  outline-offset: 1px;
+}
+
+/* The row-level "all courses" button reads as the primary drill action. */
+.drill-btn-primary {
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  background: var(--mm-info-bg, rgba(42, 133, 255, 0.15));
+  color: var(--mm-info-fg, #75b0f5);
+}
+
+.drill-btn-primary:hover {
+  background: rgba(42, 133, 255, 0.28);
+  color: #fff;
+}

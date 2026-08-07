@@ -1,0 +1,33 @@
+<app-badge-library-hero />
+
+<div #listSection class="flex items-center justify-between gap-4 mb-6 flex-wrap scroll-mt-24">
+  <app-tab-strip
+    [options]="facade.badgeCategories()"
+    [selected]="facade.badgeCategory()"
+    (selectionChange)="facade.selectBadgeCategory($event)"
+  />
+  <app-select-menu
+    [options]="statusOptions"
+    [value]="facade.badgeStatus()"
+    placeholder="All Badges"
+    (valueChange)="onStatusChange($event)"
+  />
+</div>
+
+<div class="flex flex-col gap-6 md:gap-8">
+  @for (c of cards(); track c.badgeId) {
+    <app-badge-card [card]="c" (buttonAction)="onCardAction($event)" />
+  } @empty {
+    @if (!facade.isBadgeLoading()) {
+      <p class="text-center text-muted-foreground py-8">No badges found.</p>
+    }
+  }
+</div>
+
+@if (facade.isBadgeLoading()) {
+  <div class="text-center py-6 text-muted-foreground">Loading…</div>
+}
+
+@if (facade.badgePagination()?.next_page) {
+  <div #sentinel class="h-1 w-full"></div>
+}

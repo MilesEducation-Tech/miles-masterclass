@@ -1,0 +1,46 @@
+<div class="min-h-[70vh] flex items-center justify-center px-6 py-16">
+  <div
+    class="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border text-center px-8 py-12"
+    style="background: var(--card)"
+  >
+    <!-- soft glow -->
+    <div
+      class="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full blur-3xl opacity-30"
+      style="background: var(--primary)"
+      aria-hidden="true"
+    ></div>
+
+    <div class="relative flex flex-col items-center gap-5">
+      <!-- icon badge -->
+      <span
+        class="w-16 h-16 rounded-2xl inline-flex items-center justify-center"
+        style="background: var(--mm-info-bg); color: var(--primary)"
+      >
+        <ng-icon name="lucideLayoutDashboard" class="text-[30px]" aria-hidden="true" />
+      </span>
+
+      <!-- coming soon pill -->
+      <span
+        class="inline-flex items-center gap-1.5 h-[24px] px-3 rounded-full font-bold text-[11px] tracking-[0.06em] uppercase"
+        style="background: var(--mm-info-bg); color: var(--mm-info-fg)"
+      >
+        <ng-icon name="lucideSparkles" class="text-[12px]" aria-hidden="true" />
+        Coming soon
+      </span>
+
+      <div class="flex flex-col gap-2">
+        <h1 class="font-bold text-[26px] leading-tight text-white m-0">
+          Your dashboard is on the way
+        </h1>
+        <p class="text-[14px] leading-relaxed m-0" style="color: var(--muted-foreground)">
+          Welcome, {{ displayName() }} — we're building your analytics view. Learner activity,
+          credits issued, and course performance will show up here soon.
+        </p>
+      </div>
+
+      <p class="text-[12px] m-0" style="color: var(--mm-fg-3)">
+        In the meantime, use the sidebar to manage courses, users, leads, and reports.
+      </p>
+    </div>
+  </div>
+</div>

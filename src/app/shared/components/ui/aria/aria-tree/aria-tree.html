@@ -1,0 +1,65 @@
+@if (label()) {
+  <p [id]="(id() || 'aria-tree') + '-label'" class="text-sm font-medium leading-none mb-2">
+    {{ label() }}
+  </p>
+}
+<ul
+  ngTree
+  #tree="ngTree"
+  [attr.id]="id() || null"
+  [attr.aria-labelledby]="label() ? (id() || 'aria-tree') + '-label' : null"
+  [value]="value()"
+  (valueChange)="onValuesChange($event)"
+  [multi]="multi()"
+  [disabled]="disabled()"
+  [selectionMode]="selectionMode()"
+  [focusMode]="focusMode()"
+  [orientation]="orientation()"
+  [wrap]="wrap()"
+  [softDisabled]="softDisabled()"
+  [nav]="nav()"
+  [currentType]="currentType()"
+  [class]="hostClasses()"
+>
+  <ng-template
+    [ngTemplateOutlet]="treeNodes"
+    [ngTemplateOutletContext]="{ nodes: nodes(), parent: tree }"
+  />
+</ul>
+
+<ng-template #treeNodes let-childNodes="nodes" let-parent="parent">
+  @for (node of childNodes; track node.value) {
+    <li
+      ngTreeItem
+      #treeItem="ngTreeItem"
+      [parent]="parent"
+      [value]="node.value"
+      [label]="node.label"
+      [disabled]="node.disabled ?? false"
+      class="block px-2 py-1 rounded text-sm cursor-pointer select-none transition-colors hover:bg-secondary/40 aria-selected:bg-accent aria-selected:text-accent-foreground aria-disabled:opacity-50 aria-disabled:cursor-not-allowed outline-none focus-visible:bg-secondary/60"
+    >
+      <span class="inline-flex items-center gap-1.5">
+        @if (node.children?.length) {
+          <ng-icon
+            [svg]="icons().chevronRight"
+            class="w-3.5 h-3.5 transition-transform"
+            [class.rotate-90]="treeItem.expanded()"
+          />
+        } @else {
+          <span class="w-3.5 h-3.5" aria-hidden="true"></span>
+        }
+        <span>{{ node.label }}</span>
+      </span>
+      @if (node.children?.length) {
+        <ul role="group" class="list-none pl-5 mt-0.5">
+          <ng-template ngTreeItemGroup [ownedBy]="treeItem" #group="ngTreeItemGroup">
+            <ng-template
+              [ngTemplateOutlet]="treeNodes"
+              [ngTemplateOutletContext]="{ nodes: node.children, parent: group }"
+            />
+          </ng-template>
+        </ul>
+      }
+    </li>
+  }
+</ng-template>

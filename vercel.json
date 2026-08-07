@@ -1,0 +1,100 @@
+{
+  "version": 2,
+  "name": "miles-masterclass-v3",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "sh vercel.sh",
+  "rewrites": [
+    {
+      "source": "/blog",
+      "destination": "http://45.55.74.171/blog/"
+    },
+    {
+      "source": "/blog/",
+      "destination": "http://45.55.74.171/blog/"
+    },
+    {
+      "source": "/blog/:path*",
+      "destination": "http://45.55.74.171/blog/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/api/index"
+    }
+  ],
+  "functions": {
+    "api/index.mjs": {
+      "includeFiles": "dist/miles-masterclass-v3/**"
+    }
+  },
+  "headers": [
+    {
+      "source": "/blog/wp-admin/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        }
+      ]
+    },
+    {
+      "source": "/blog/wp-login.php",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), browsing-topics=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https: wss:; frame-src 'self' https:; worker-src 'self' blob:; manifest-src 'self' https:; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https:; object-src 'none'"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(js|mjs|css|woff2|woff|ttf|otf|eot|svg|ico)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, max-age=0, must-revalidate"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
+      ]
+    }
+  ]
+}

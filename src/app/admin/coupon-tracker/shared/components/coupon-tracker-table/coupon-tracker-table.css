@@ -1,0 +1,53 @@
+:host {
+  display: block;
+}
+
+/* Eye / resend affordances shown next to emails (same look as Domain users). */
+.drill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.drill-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.drill-btn:focus-visible {
+  outline: 2px solid var(--ring, #2a85ff);
+  outline-offset: 1px;
+}
+
+/* Compact inline email input used by the "Send to email" cell. */
+.send-input {
+  width: 100%;
+  min-width: 11rem;
+  height: 2.25rem;
+  padding: 0 0.625rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: #fff;
+  font-size: 0.75rem;
+  transition: border-color 0.15s ease;
+}
+
+.send-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.send-input:focus-visible {
+  outline: none;
+  border-color: var(--ring, #2a85ff);
+}

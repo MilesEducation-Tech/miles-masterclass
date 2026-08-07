@@ -1,0 +1,1208 @@
+<!doctype html>
+<!--
+  Static visual preview of /admin/coupon-tracker (phase-1 mock data).
+  Mirrors the Angular components in src/app/admin/coupon-tracker/ for
+  documentation screenshots. Open plain for the page state, or with
+  #dialog for the User Progress Report dialog state.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Coupon Tracker — preview</title>
+    <style>
+      :root {
+        --background: #07182b;
+        --sidebar: #0e2742;
+        --border: rgba(255, 255, 255, 0.08);
+        --input: rgba(255, 255, 255, 0.16);
+        --primary: #2a85ff;
+        --mm-surface-2: #15324f;
+        --mm-fg-3: #7a8fa8;
+        --mm-success-fg: #6ec993;
+        --mm-success-bg: rgba(39, 174, 96, 0.15);
+        --mm-warn-fg: #f2b98a;
+        --mm-warn-bg: rgba(242, 153, 74, 0.15);
+        --mm-info-fg: #75b0f5;
+        --mm-info-bg: rgba(42, 133, 255, 0.15);
+        --mm-danger-fg: #f5b1b1;
+        --mm-danger-bg: rgba(235, 87, 87, 0.15);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        background: var(--background);
+        color: #fff;
+        font-family:
+          Inter,
+          'Segoe UI',
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 14px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .shell {
+        display: flex;
+        gap: 8px;
+        padding: 8px;
+        height: 100vh;
+      }
+
+      /* ---- Sidebar ---- */
+      .sidebar {
+        width: 248px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        background: var(--sidebar);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        color: #b6c5d6;
+      }
+      .brand {
+        margin: 16px 16px 0;
+        padding: 6px 8px 18px;
+        border-bottom: 1px solid var(--border);
+      }
+      .brand svg {
+        width: 66%;
+        height: auto;
+        display: block;
+      }
+      .nav {
+        flex: 1;
+        padding: 18px 16px 0;
+      }
+      .nav-section {
+        font-weight: 700;
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 14px 10px 8px;
+        color: var(--mm-fg-3);
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 10px;
+        margin-bottom: 2px;
+        border-radius: 7px;
+        border-left: 2px solid transparent;
+        font-weight: 600;
+        font-size: 13px;
+        color: #b6c5d6;
+        text-decoration: none;
+      }
+      .nav-item svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+      }
+      .nav-item.active {
+        background: var(--mm-surface-2);
+        color: #fff;
+        border-left-color: var(--primary);
+      }
+      .user-card {
+        margin: 12px;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 700;
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+      .user-meta {
+        min-width: 0;
+      }
+      .user-meta .n {
+        font-size: 12px;
+        font-weight: 600;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .user-meta .e {
+        font-size: 10px;
+        color: var(--mm-fg-3);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* ---- Main column ---- */
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 8px 32px;
+        background: rgba(14, 39, 66, 0.6);
+        border-bottom: 1px solid var(--border);
+        border-radius: 8px;
+      }
+      .hamburger {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--mm-surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+      }
+      .crumbs {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--mm-fg-3);
+        margin-bottom: 2px;
+      }
+      .crumbs b {
+        color: #fff;
+      }
+      .topbar h1 {
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #fff;
+      }
+
+      .content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 0;
+      }
+      .page {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding: 24px;
+      }
+      .page-h h2 {
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.25;
+      }
+      .page-h p {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 8px;
+      }
+
+      /* Filters */
+      .filters {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .search {
+        position: relative;
+        width: 100%;
+        max-width: 28rem;
+        height: 44px;
+        border: 1px solid var(--input);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        gap: 8px;
+        color: rgba(255, 255, 255, 0.45);
+      }
+      .search svg {
+        width: 15px;
+        height: 15px;
+      }
+      .search .lbl {
+        font-size: 13px;
+      }
+      .tabs {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        background: var(--mm-surface-2);
+      }
+      .tab {
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .tab.active {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      /* Vendor chips */
+      .chips {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        flex-wrap: wrap;
+      }
+      .chips .lbl {
+        color: rgba(255, 255, 255, 0.6);
+      }
+      .chip {
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-weight: 500;
+      }
+      .chip.info {
+        background: var(--mm-info-bg);
+        color: var(--mm-info-fg);
+      }
+      .chip.success {
+        background: var(--mm-success-bg);
+        color: var(--mm-success-fg);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Table */
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 14px;
+      }
+      thead {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--mm-fg-3);
+        background: var(--mm-surface-2);
+      }
+      th {
+        padding: 12px 16px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      th.r,
+      td.r {
+        text-align: right;
+      }
+      tbody tr {
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      tbody tr:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+      td {
+        padding: 12px 16px;
+        color: #d4d4d4;
+        vertical-align: middle;
+      }
+      td.code {
+        font-weight: 500;
+        color: #f5f5f5;
+        font-variant-numeric: tabular-nums;
+      }
+      td.num {
+        font-variant-numeric: tabular-nums;
+      }
+      tr.expired-row td {
+        opacity: 0.5;
+      }
+      .status {
+        display: inline-flex;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .st-available {
+        background: var(--mm-info-bg);
+        color: var(--mm-info-fg);
+      }
+      .st-shared {
+        background: var(--mm-warn-bg);
+        color: var(--mm-warn-fg);
+      }
+      .st-applied {
+        background: var(--mm-success-bg);
+        color: var(--mm-success-fg);
+      }
+      .st-expired {
+        background: var(--mm-danger-bg);
+        color: var(--mm-danger-fg);
+      }
+
+      .send-cell {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 224px;
+      }
+      .send-input {
+        width: 100%;
+        min-width: 11rem;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: transparent;
+        color: #fff;
+        font-size: 12px;
+        font-family: inherit;
+      }
+      .send-input::placeholder {
+        color: rgba(255, 255, 255, 0.35);
+      }
+      .btn-send {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 32px;
+        padding: 0 12px;
+        border-radius: 6px;
+        border: 0;
+        background: var(--primary);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: inherit;
+      }
+      .btn-send svg {
+        width: 13px;
+        height: 13px;
+      }
+      .btn-send.disabled {
+        opacity: 0.45;
+      }
+      .muted {
+        font-size: 12px;
+        color: #737373;
+      }
+
+      .two-line {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .two-line .d {
+        white-space: nowrap;
+      }
+      .two-line .sub {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: #a3a3a3;
+      }
+      .drill-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border: 0;
+        border-radius: 4px;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.4);
+      }
+      .drill-btn svg {
+        width: 14px;
+        height: 14px;
+      }
+      .drill-btn:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .pagination {
+        margin-top: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 14px;
+        color: #a3a3a3;
+      }
+      .pagination b {
+        color: #fff;
+        font-weight: 600;
+      }
+      .pg-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .btn-outline {
+        height: 36px;
+        width: 112px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: transparent;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: inherit;
+      }
+      .btn-outline.disabled {
+        opacity: 0.4;
+      }
+      .pg-controls .pg {
+        color: rgba(255, 255, 255, 0.7);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ---- Dialog ---- */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 8, 18, 0.64);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        backdrop-filter: blur(2px);
+      }
+      body.show-dialog .overlay {
+        display: flex;
+      }
+      .dialog {
+        width: 560px;
+        max-width: 95vw;
+        border-radius: 12px;
+        overflow: hidden;
+        background: linear-gradient(to bottom right, #0d1a2d, #1a2332);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      }
+      .dlg-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 12px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .dlg-head h3 {
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .dlg-head .sub {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 2px;
+      }
+      .dlg-close {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 0;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 16px;
+        line-height: 1;
+      }
+      .dlg-body {
+        padding: 20px;
+        max-height: 70vh;
+        overflow-y: auto;
+      }
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .sum-card {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px;
+        background: var(--mm-surface-2);
+        font-size: 12px;
+      }
+      .sum-card dt {
+        color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 2px;
+      }
+      .sum-card dd {
+        font-weight: 500;
+        color: #e5e5e5;
+      }
+      .sum-card dd.g {
+        color: var(--mm-success-fg);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .sum-card dd.b {
+        color: var(--mm-info-fg);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .cpe-line {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 12px;
+      }
+      .cpe-line b {
+        color: var(--mm-success-fg);
+        font-variant-numeric: tabular-nums;
+      }
+      .course {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 16px;
+        background: var(--mm-surface-2);
+        margin-bottom: 12px;
+      }
+      .course .badges {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .badge {
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 500;
+      }
+      .bg-type {
+        background: var(--mm-info-bg);
+        color: var(--mm-info-fg);
+      }
+      .bg-caira {
+        background: var(--mm-success-bg);
+        color: var(--mm-success-fg);
+      }
+      .bg-prog {
+        background: var(--mm-warn-bg);
+        color: var(--mm-warn-fg);
+      }
+      .course h4 {
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.35;
+      }
+      .course dl {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 12px;
+        font-size: 12px;
+      }
+      .course dt {
+        color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 2px;
+      }
+      .course dd {
+        font-weight: 500;
+        color: #e5e5e5;
+        font-variant-numeric: tabular-nums;
+      }
+      .course dd.g {
+        color: var(--mm-success-fg);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="brand">
+          <svg
+            width="100%"
+            height="100%"
+            viewBox="0 0 165 48"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M86.6953 47.4705L86.6969 37.0098H89.7643L91.8287 42.0345L93.8639 37.0098H96.7987V47.4705H94.1697L94.1778 41.5302L92.8043 44.9687H90.6574L89.2628 41.3752L89.3178 47.4705H86.6953Z"
+              fill="white"
+            />
+            <path
+              d="M100.098 47.5207C99.6288 47.5207 99.2163 47.4179 98.8603 47.2107C98.5044 47.0034 98.2245 46.7243 98.0255 46.3686C97.8249 46.0144 97.7246 45.6146 97.7246 45.1675V45.1609C97.7246 44.6583 97.8379 44.234 98.0627 43.8864C98.2876 43.5388 98.616 43.2663 99.0464 43.0655C99.4767 42.8664 100.003 42.7424 100.622 42.6951L103.476 42.4846V44.0904L101.053 44.2813C100.777 44.3009 100.577 44.3678 100.447 44.4853C100.318 44.6028 100.255 44.7578 100.255 44.9504V44.9569C100.255 45.1593 100.326 45.3143 100.47 45.422C100.614 45.5298 100.805 45.5836 101.046 45.5836C101.253 45.5836 101.434 45.5444 101.59 45.4677C101.745 45.391 101.868 45.2833 101.957 45.1479C102.046 45.0124 102.09 44.859 102.09 44.6909V42.2757C102.09 42.0505 102.025 41.8726 101.894 41.7404C101.763 41.6098 101.565 41.5429 101.298 41.5429C101.033 41.5429 100.826 41.5984 100.679 41.7126C100.532 41.8269 100.443 41.9623 100.413 42.1206L100.401 42.1908H98.0838L98.0902 42.0994C98.1275 41.569 98.2828 41.1072 98.5562 40.7155C98.828 40.3239 99.2082 40.0203 99.6951 39.8033C100.182 39.5862 100.766 39.4785 101.446 39.4785C102.096 39.4785 102.662 39.5895 103.148 39.8131C103.633 40.0366 104.01 40.3467 104.28 40.7465C104.55 41.1464 104.685 41.6082 104.685 42.1337V47.4228H102.09V46.3669H102.039C101.908 46.6117 101.75 46.8206 101.562 46.9936C101.374 47.1682 101.158 47.2988 100.913 47.3885C100.669 47.4767 100.397 47.5207 100.098 47.5207Z"
+              fill="white"
+            />
+            <path
+              d="M108.902 47.5909C108.167 47.5909 107.549 47.4816 107.048 47.2629C106.546 47.0442 106.158 46.7407 105.883 46.3506C105.608 45.9606 105.444 45.5085 105.389 44.9912L105.383 44.9276H107.889L107.902 44.9847C107.952 45.2099 108.059 45.3861 108.222 45.5134C108.384 45.6407 108.612 45.7044 108.903 45.7044C109.071 45.7044 109.217 45.6848 109.337 45.644C109.457 45.6032 109.55 45.5461 109.615 45.471C109.68 45.3959 109.714 45.3062 109.714 45.2034V45.1968C109.714 45.0565 109.654 44.9423 109.536 44.8558C109.418 44.7693 109.215 44.6958 108.927 44.6338L107.662 44.3727C107.203 44.2781 106.815 44.1279 106.498 43.919C106.18 43.7101 105.943 43.449 105.782 43.1341C105.622 42.8191 105.541 42.4633 105.541 42.0635V42.057C105.541 41.5168 105.672 41.0566 105.935 40.6731C106.197 40.2912 106.572 39.9958 107.061 39.7886C107.551 39.5813 108.132 39.4785 108.808 39.4785C109.529 39.4785 110.131 39.5976 110.615 39.8375C111.099 40.0774 111.463 40.394 111.707 40.789C111.951 41.1839 112.074 41.618 112.074 42.0913V42.1402H109.72L109.714 42.0766C109.698 41.8938 109.612 41.729 109.458 41.5837C109.304 41.4385 109.088 41.365 108.809 41.365C108.652 41.365 108.517 41.3863 108.398 41.4287C108.28 41.4711 108.188 41.5299 108.123 41.6082C108.059 41.6849 108.025 41.7812 108.025 41.8938V41.9003C108.025 41.9901 108.047 42.0684 108.094 42.1369C108.141 42.2055 108.222 42.2642 108.342 42.3165C108.462 42.3687 108.625 42.4176 108.835 42.465L110.102 42.7261C110.858 42.8811 111.409 43.1292 111.76 43.4719C112.111 43.8146 112.286 44.2797 112.286 44.8656V44.8721C112.286 45.4302 112.145 45.9133 111.862 46.3196C111.579 46.726 111.184 47.0393 110.678 47.2596C110.167 47.4816 109.576 47.5909 108.902 47.5909Z"
+              fill="white"
+            />
+            <path
+              d="M116.225 47.5894C115.323 47.5894 114.659 47.3985 114.235 47.015C113.812 46.6331 113.6 45.9836 113.6 45.0681V41.7291H112.676V39.6452H113.6V37.9414H116.195V39.6452H117.423V41.7291H116.195V44.6242C116.195 44.9392 116.259 45.1644 116.387 45.2998C116.515 45.4353 116.712 45.5038 116.979 45.5038C117.076 45.5038 117.157 45.5006 117.224 45.494C117.288 45.4875 117.355 45.4793 117.423 45.4696V47.4834C117.283 47.5111 117.118 47.5356 116.926 47.5568C116.733 47.5797 116.5 47.5894 116.225 47.5894Z"
+              fill="white"
+            />
+            <path
+              d="M121.744 47.5909C120.989 47.5909 120.338 47.4293 119.795 47.1046C119.25 46.7815 118.832 46.3147 118.538 45.706C118.243 45.0973 118.098 44.3743 118.098 43.5339V43.5274C118.098 42.682 118.243 41.9574 118.534 41.3552C118.826 40.7514 119.238 40.288 119.772 39.9648C120.306 39.6401 120.935 39.4785 121.662 39.4785C122.388 39.4785 123.018 39.6384 123.551 39.9567C124.085 40.2765 124.499 40.727 124.792 41.3096C125.085 41.8922 125.232 42.5776 125.232 43.3658V44.1834H119.364V42.5498H124.029L122.833 44.0855V42.9725C122.833 42.6575 122.788 42.3883 122.697 42.1631C122.607 41.9379 122.479 41.7649 122.314 41.6457C122.149 41.5266 121.955 41.4662 121.731 41.4662C121.508 41.4662 121.314 41.5266 121.149 41.6457C120.984 41.7649 120.856 41.9379 120.765 42.1631C120.675 42.3883 120.63 42.6592 120.63 42.9725V44.1002C120.63 44.4151 120.676 44.6844 120.769 44.9096C120.861 45.1348 120.995 45.3078 121.167 45.4269C121.338 45.5461 121.549 45.6065 121.793 45.6065C122.021 45.6065 122.21 45.5657 122.362 45.4824C122.514 45.4008 122.634 45.3062 122.72 45.1968C122.806 45.0891 122.861 44.9977 122.882 44.9227L122.888 44.9015H125.198L125.179 44.9928C125.129 45.2458 125.033 45.5216 124.894 45.8202C124.755 46.1189 124.554 46.4028 124.292 46.6721C124.03 46.9414 123.692 47.1633 123.276 47.3347C122.861 47.506 122.353 47.5909 121.744 47.5909Z"
+              fill="white"
+            />
+            <path
+              d="M126.023 47.4228V39.6482H128.618V41.0419H128.669C128.758 40.5344 128.934 40.1476 129.198 39.88C129.461 39.6123 129.803 39.4785 130.22 39.4785C130.33 39.4785 130.437 39.4883 130.544 39.5063C130.649 39.5258 130.751 39.5536 130.848 39.5911V42.0211C130.738 41.9689 130.618 41.9297 130.49 41.9019C130.361 41.8742 130.23 41.8595 130.094 41.8595C129.769 41.8595 129.497 41.9215 129.277 42.0423C129.057 42.1647 128.893 42.3458 128.783 42.5874C128.673 42.8289 128.618 43.1308 128.618 43.4931V47.4228H126.023Z"
+              fill="white"
+            />
+            <path
+              d="M134.803 47.5906C134.047 47.5906 133.397 47.429 132.853 47.1043C132.308 46.7811 131.891 46.3144 131.596 45.7057C131.302 45.097 131.156 44.3708 131.156 43.5254V43.5189C131.156 42.6784 131.303 41.9571 131.596 41.3533C131.889 40.7495 132.308 40.286 132.85 39.9629C133.392 39.6381 134.038 39.4766 134.783 39.4766C135.463 39.4766 136.058 39.6136 136.571 39.8878C137.084 40.162 137.482 40.5488 137.767 41.0465C138.051 41.5442 138.194 42.1285 138.194 42.8008V42.8433H135.833L135.827 42.7731C135.798 42.4206 135.694 42.1399 135.516 41.931C135.338 41.7221 135.112 41.6177 134.832 41.6177C134.609 41.6177 134.418 41.6911 134.262 41.8396C134.106 41.9881 133.987 42.2035 133.908 42.4875C133.827 42.7715 133.788 43.1174 133.788 43.527V43.5336C133.788 43.9465 133.827 44.2973 133.905 44.5829C133.983 44.8685 134.101 45.0855 134.256 45.2308C134.411 45.376 134.604 45.4495 134.832 45.4495C135.123 45.4495 135.355 45.3467 135.524 45.1394C135.696 44.9321 135.796 44.6515 135.825 44.2941L135.832 44.2239H138.192V44.2663C138.192 44.8995 138.058 45.4674 137.791 45.9668C137.522 46.4662 137.136 46.8627 136.629 47.1532C136.126 47.4453 135.516 47.5906 134.803 47.5906Z"
+              fill="white"
+            />
+            <path d="M138.992 47.4219V37.2598H141.587V47.4219H138.992Z" fill="white" />
+            <path
+              d="M144.707 47.5207C144.238 47.5207 143.826 47.4179 143.47 47.2107C143.114 47.0034 142.834 46.7243 142.635 46.3686C142.434 46.0144 142.334 45.6146 142.334 45.1675V45.1609C142.334 44.6583 142.447 44.234 142.672 43.8864C142.897 43.5388 143.225 43.2663 143.656 43.0655C144.086 42.8664 144.612 42.7424 145.232 42.6951L148.085 42.4846V44.0904L145.662 44.2813C145.387 44.3009 145.186 44.3678 145.057 44.4853C144.927 44.6028 144.864 44.7578 144.864 44.9504V44.9569C144.864 45.1593 144.935 45.3143 145.079 45.422C145.223 45.5298 145.414 45.5836 145.655 45.5836C145.862 45.5836 146.044 45.5444 146.199 45.4677C146.354 45.391 146.477 45.2833 146.566 45.1479C146.655 45.0124 146.699 44.859 146.699 44.6909V42.2757C146.699 42.0505 146.634 41.8726 146.503 41.7404C146.372 41.6098 146.175 41.5429 145.908 41.5429C145.642 41.5429 145.435 41.5984 145.288 41.7126C145.141 41.8269 145.052 41.9623 145.023 42.1206L145.01 42.1908H142.695L142.701 42.0994C142.738 41.569 142.894 41.1072 143.167 40.7155C143.439 40.3239 143.819 40.0203 144.306 39.8033C144.793 39.5862 145.377 39.4785 146.057 39.4785C146.707 39.4785 147.273 39.5895 147.759 39.8131C148.244 40.0366 148.621 40.3467 148.891 40.7465C149.161 41.1464 149.296 41.6082 149.296 42.1337V47.4228H146.701V46.3669H146.65C146.519 46.6117 146.361 46.8206 146.173 46.9936C145.985 47.1682 145.769 47.2988 145.524 47.3885C145.278 47.4767 145.007 47.5207 144.707 47.5207Z"
+              fill="white"
+            />
+            <path
+              d="M153.513 47.5909C152.778 47.5909 152.16 47.4816 151.659 47.2629C151.157 47.0442 150.769 46.7407 150.494 46.3506C150.219 45.9606 150.056 45.5085 150.001 44.9912L149.994 44.9276H152.5L152.513 44.9847C152.563 45.2099 152.67 45.3861 152.833 45.5134C152.995 45.6407 153.223 45.7044 153.515 45.7044C153.683 45.7044 153.828 45.6848 153.948 45.644C154.068 45.6032 154.162 45.5461 154.226 45.471C154.291 45.3959 154.325 45.3062 154.325 45.2034V45.1968C154.325 45.0565 154.265 44.9423 154.147 44.8558C154.029 44.7693 153.827 44.6958 153.539 44.6338L152.274 44.3727C151.814 44.2781 151.426 44.1279 151.109 43.919C150.792 43.7101 150.554 43.449 150.394 43.1341C150.234 42.8191 150.153 42.4633 150.153 42.0635V42.057C150.153 41.5168 150.284 41.0566 150.546 40.6731C150.808 40.2912 151.183 39.9958 151.672 39.7886C152.162 39.5813 152.743 39.4785 153.419 39.4785C154.141 39.4785 154.742 39.5976 155.226 39.8375C155.71 40.0774 156.074 40.394 156.318 40.789C156.563 41.1839 156.686 41.618 156.686 42.0913V42.1402H154.332L154.325 42.0766C154.309 41.8938 154.223 41.729 154.069 41.5837C153.916 41.4385 153.699 41.365 153.421 41.365C153.264 41.365 153.128 41.3863 153.01 41.4287C152.892 41.4711 152.799 41.5299 152.735 41.6082C152.67 41.6849 152.636 41.7812 152.636 41.8938V41.9003C152.636 41.9901 152.659 42.0684 152.706 42.1369C152.753 42.2055 152.833 42.2642 152.953 42.3165C153.073 42.3687 153.236 42.4176 153.447 42.465L154.713 42.7261C155.469 42.8811 156.021 43.1292 156.372 43.4719C156.723 43.8146 156.897 44.2797 156.897 44.8656V44.8721C156.897 45.4302 156.757 45.9133 156.474 46.3196C156.19 46.726 155.796 47.0393 155.289 47.2596C154.78 47.4816 154.188 47.5909 153.513 47.5909Z"
+              fill="white"
+            />
+            <path
+              d="M160.823 47.5909C160.089 47.5909 159.471 47.4816 158.969 47.2629C158.468 47.0442 158.08 46.7407 157.805 46.3506C157.53 45.9606 157.366 45.5085 157.311 44.9912L157.305 44.9276H159.811L159.824 44.9847C159.874 45.2099 159.981 45.3861 160.144 45.5134C160.306 45.6407 160.534 45.7044 160.825 45.7044C160.993 45.7044 161.139 45.6848 161.259 45.644C161.378 45.6032 161.472 45.5461 161.537 45.471C161.602 45.3959 161.636 45.3062 161.636 45.2034V45.1968C161.636 45.0565 161.576 44.9423 161.458 44.8558C161.34 44.7693 161.137 44.6958 160.849 44.6338L159.584 44.3727C159.125 44.2781 158.736 44.1279 158.419 43.919C158.102 43.7101 157.864 43.449 157.704 43.1341C157.544 42.8191 157.463 42.4633 157.463 42.0635V42.057C157.463 41.5168 157.594 41.0566 157.856 40.6731C158.118 40.2912 158.494 39.9958 158.982 39.7886C159.473 39.5813 160.053 39.4785 160.73 39.4785C161.451 39.4785 162.053 39.5976 162.537 39.8375C163.021 40.0774 163.385 40.394 163.629 40.789C163.873 41.1839 163.996 41.618 163.996 42.0913V42.1402H161.642L161.636 42.0766C161.619 41.8938 161.534 41.729 161.38 41.5837C161.226 41.4385 161.01 41.365 160.731 41.365C160.574 41.365 160.438 41.3863 160.32 41.4287C160.202 41.4711 160.11 41.5299 160.045 41.6082C159.981 41.6849 159.947 41.7812 159.947 41.8938V41.9003C159.947 41.9901 159.969 42.0684 160.016 42.1369C160.063 42.2055 160.144 42.2642 160.264 42.3165C160.383 42.3687 160.547 42.4176 160.757 42.465L162.024 42.7261C162.779 42.8811 163.331 43.1292 163.682 43.4719C164.033 43.8146 164.208 44.2797 164.208 44.8656V44.8721C164.208 45.4302 164.067 45.9133 163.784 46.3196C163.501 46.726 163.106 47.0393 162.6 47.2596C162.089 47.4816 161.498 47.5909 160.823 47.5909Z"
+              fill="white"
+            />
+            <path
+              d="M22.4798 11.0293L0 47.5619H10.3347L23.0008 26.9766L24.6963 29.4719L31.7937 39.9212L36.6343 31.9948L22.4798 11.0293Z"
+              fill="white"
+            />
+            <path
+              d="M13.541 47.5613H27.0386L43.471 20.884L61.5406 47.5613H75.1062L42.8659 0L13.541 47.5613Z"
+              fill="white"
+            />
+            <path
+              d="M30.2715 47.5613L36.9709 36.6828L40.0885 41.2718L46.7443 30.4863L58.3264 47.5613H30.2715Z"
+              fill="#3399FF"
+            />
+            <path
+              d="M130.902 20.4447C130.902 23.1635 132.178 25.8007 134.925 25.8007C137.247 25.8007 137.904 24.7971 138.446 23.4997H143.979C143.283 26.1353 141.076 30.486 134.809 30.486C128.194 30.486 125.33 25.1725 125.33 19.4819C125.33 12.662 128.541 7.80859 135.002 7.80859C141.85 7.80859 144.209 13.2054 144.209 18.6023C144.209 19.3546 144.209 19.8148 144.131 20.4431H130.902V20.4447ZM138.64 16.7631C138.601 14.2531 137.673 12.1186 134.964 12.1186C132.334 12.1186 131.25 14.085 131.018 16.7631H138.64Z"
+              fill="white"
+            />
+            <path
+              d="M152.182 23.4576C152.607 25.2152 153.922 26.1764 155.974 26.1764C158.024 26.1764 158.76 25.3817 158.76 24.0435C158.76 22.6628 157.909 22.1194 155.045 21.3655C148.507 19.6079 147.462 17.4325 147.462 14.3791C147.462 11.2001 149.512 7.81055 155.548 7.81055C161.622 7.81055 163.712 11.409 163.866 14.3367H158.604C158.41 13.5419 157.909 12.0356 155.315 12.0356C153.497 12.0356 152.877 12.9136 152.877 13.8765C152.877 14.965 153.497 15.466 156.745 16.3032C163.438 17.9775 164.406 20.445 164.406 23.6257C164.406 27.2241 161.853 30.488 155.778 30.488C149.666 30.488 147.189 27.309 146.725 23.4592H152.182V23.4576Z"
+              fill="white"
+            />
+            <path
+              d="M75.1074 30.4863L75.1123 0H82.4281L87.3512 14.6434L92.2063 0H99.21V30.4863H92.9392L92.9586 13.1714L89.6793 23.1915H84.5572L81.2309 12.721L81.3636 30.4863H75.1074Z"
+              fill="white"
+            />
+            <path
+              d="M104.023 30.4866V30.4817V8.21878H110.331V30.4866H104.023ZM104.023 5.81656V0.00195312H110.331V5.81656H104.023Z"
+              fill="white"
+            />
+            <path d="M121.441 0.00195312H115.154V30.4866H121.441V0.00195312Z" fill="white" />
+          </svg>
+        </div>
+        <nav class="nav">
+          <div class="nav-section">Administration</div>
+          <a class="nav-item" href="#">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="m16 11 2 2 4-4" />
+            </svg>
+            <span>Domain users</span>
+          </a>
+          <a class="nav-item active" href="#">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"
+              />
+              <path d="M13 5v2" />
+              <path d="M13 17v2" />
+              <path d="M13 11v2" />
+            </svg>
+            <span>Coupon Tracker</span>
+          </a>
+        </nav>
+        <div class="user-card">
+          <div class="avatar">M</div>
+          <div class="user-meta">
+            <div class="n">Manoj HR</div>
+            <div class="e">manoj.hr@mileseducation.com</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <div class="main">
+        <header class="topbar">
+          <div class="hamburger">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect width="18" height="18" x="3" y="3" rx="2" />
+              <path d="M9 3v18" />
+            </svg>
+          </div>
+          <div>
+            <nav class="crumbs">
+              Workspace · <b>Miles Masterclass</b> · <span style="color: #fff">Coupon Tracker</span>
+            </nav>
+            <h1>Coupon Tracker</h1>
+          </div>
+        </header>
+
+        <div class="content">
+          <section class="page">
+            <div class="page-h">
+              <h2>Coupon Tracker</h2>
+              <p>
+                Coupons assigned to your company. Send a code to a person's email, track when it is
+                shared and applied, and open the applied user's progress report.
+              </p>
+            </div>
+
+            <div class="filters">
+              <div class="search">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+                <span class="lbl">Search code or email</span>
+              </div>
+              <div class="tabs">
+                <span class="tab active">All</span>
+                <span class="tab">Available</span>
+                <span class="tab">Shared</span>
+                <span class="tab">Applied</span>
+                <span class="tab">Expired</span>
+              </div>
+            </div>
+
+            <div class="chips">
+              <span class="lbl">Managing coupons for:</span>
+              <span class="chip info">Miles Education</span>
+              <span class="lbl">Partner code:</span>
+              <span class="chip success">MILES-EDU-2026</span>
+            </div>
+
+            <div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Coupon code</th>
+                      <th class="r">Purchase cost</th>
+                      <th>Expiry date</th>
+                      <th>Status</th>
+                      <th style="min-width: 224px">Send to email</th>
+                      <th>Shared on / to</th>
+                      <th>Applied on / by</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="code">•••2323</td>
+                      <td class="r num">$299</td>
+                      <td>Dec 31, 2026</td>
+                      <td><span class="status st-available">Available</span></td>
+                      <td>
+                        <span class="send-cell">
+                          <input class="send-input" value="priya.lnd@mileseducation.com" />
+                          <button class="btn-send">
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            >
+                              <path d="m22 2-7 20-4-9-9-4Z" />
+                              <path d="M22 2 11 13" />
+                            </svg>
+                            Send
+                          </button>
+                        </span>
+                      </td>
+                      <td>—</td>
+                      <td>—</td>
+                    </tr>
+                    <tr>
+                      <td class="code">•••8841</td>
+                      <td class="r num">$599</td>
+                      <td>Oct 15, 2026</td>
+                      <td><span class="status st-available">Available</span></td>
+                      <td>
+                        <span class="send-cell">
+                          <input class="send-input" placeholder="name@company.com" />
+                          <button class="btn-send disabled">
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            >
+                              <path d="m22 2-7 20-4-9-9-4Z" />
+                              <path d="M22 2 11 13" />
+                            </svg>
+                            Send
+                          </button>
+                        </span>
+                      </td>
+                      <td>—</td>
+                      <td>—</td>
+                    </tr>
+                    <tr>
+                      <td class="code">•••0917</td>
+                      <td class="r num">$599</td>
+                      <td>Mar 31, 2027</td>
+                      <td><span class="status st-available">Available</span></td>
+                      <td>
+                        <span class="send-cell">
+                          <input class="send-input" placeholder="name@company.com" />
+                          <button class="btn-send disabled">
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            >
+                              <path d="m22 2-7 20-4-9-9-4Z" />
+                              <path d="M22 2 11 13" />
+                            </svg>
+                            Send
+                          </button>
+                        </span>
+                      </td>
+                      <td>—</td>
+                      <td>—</td>
+                    </tr>
+                    <tr>
+                      <td class="code">•••9078</td>
+                      <td class="r num">$299</td>
+                      <td>Nov 30, 2026</td>
+                      <td><span class="status st-shared">Shared</span></td>
+                      <td><span class="muted">—</span></td>
+                      <td>
+                        <span class="two-line">
+                          <span class="d">Jun 28, 2026</span>
+                          <span class="sub">
+                            manoj.hr@mileseducation.com
+                            <button class="drill-btn" title="Resend email">
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              >
+                                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                                <path d="M21 3v5h-5" />
+                              </svg>
+                            </button>
+                          </span>
+                        </span>
+                      </td>
+                      <td>—</td>
+                    </tr>
+                    <tr>
+                      <td class="code">•••3306</td>
+                      <td class="r num">$599</td>
+                      <td>Dec 31, 2026</td>
+                      <td><span class="status st-shared">Shared</span></td>
+                      <td><span class="muted">—</span></td>
+                      <td>
+                        <span class="two-line">
+                          <span class="d">Jul 1, 2026</span>
+                          <span class="sub">
+                            priya.lnd@mileseducation.com
+                            <button class="drill-btn" title="Resend email">
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              >
+                                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                                <path d="M21 3v5h-5" />
+                              </svg>
+                            </button>
+                          </span>
+                        </span>
+                      </td>
+                      <td>—</td>
+                    </tr>
+                    <tr>
+                      <td class="code">•••7742</td>
+                      <td class="r num">$299</td>
+                      <td>Dec 31, 2026</td>
+                      <td><span class="status st-applied">Applied</span></td>
+                      <td><span class="muted">—</span></td>
+                      <td>
+                        <span class="two-line">
+                          <span class="d">Jun 10, 2026</span>
+                          <span class="sub">rahul.verma@mileseducation.com</span>
+                        </span>
+                      </td>
+                      <td>
+                        <span class="two-line">
+                          <span class="d">Jun 14, 2026</span>
+                          <span class="sub">
+                            ra•••ma@mileseducation.com
+                            <button class="drill-btn" title="View progress report">
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              >
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                <circle cx="12" cy="12" r="3" />
+                              </svg>
+                            </button>
+                          </span>
+                        </span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="code">•••1198</td>
+                      <td class="r num">$599</td>
+                      <td>Sep 30, 2026</td>
+                      <td><span class="status st-applied">Applied</span></td>
+                      <td><span class="muted">—</span></td>
+                      <td>
+                        <span class="two-line">
+                          <span class="d">May 22, 2026</span>
+                          <span class="sub">sneha.iyer@mileseducation.com</span>
+                        </span>
+                      </td>
+                      <td>
+                        <span class="two-line">
+                          <span class="d">May 30, 2026</span>
+                          <span class="sub">
+                            sn•••er@mileseducation.com
+                            <button class="drill-btn" title="View progress report">
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              >
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                <circle cx="12" cy="12" r="3" />
+                              </svg>
+                            </button>
+                          </span>
+                        </span>
+                      </td>
+                    </tr>
+                    <tr class="expired-row">
+                      <td class="code">•••4420</td>
+                      <td class="r num">$299</td>
+                      <td>May 31, 2026</td>
+                      <td><span class="status st-expired">Expired</span></td>
+                      <td><span class="muted">Expired — sending disabled</span></td>
+                      <td>—</td>
+                      <td>—</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="pagination">
+                <span>Showing <b>1-8</b> of 10</span>
+                <div class="pg-controls">
+                  <button class="btn-outline disabled">Prev</button>
+                  <span class="pg">Page 1</span>
+                  <button class="btn-outline">Next</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Progress Report dialog (shown with #dialog) -->
+    <div class="overlay">
+      <div class="dialog" role="dialog" aria-modal="true">
+        <div class="dlg-head">
+          <div>
+            <h3>User Progress Report</h3>
+            <div class="sub">Rahul Verma · rahul.verma@mileseducation.com</div>
+          </div>
+          <button class="dlg-close">✕</button>
+        </div>
+        <div class="dlg-body">
+          <dl class="summary">
+            <div class="sum-card">
+              <dt>Signed up</dt>
+              <dd>Jun 14, 2026</dd>
+            </div>
+            <div class="sum-card">
+              <dt>Last login</dt>
+              <dd>Jul 4, 2026</dd>
+            </div>
+            <div class="sum-card">
+              <dt>Completed</dt>
+              <dd class="g">3</dd>
+            </div>
+            <div class="sum-card">
+              <dt>In progress</dt>
+              <dd class="b">2</dd>
+            </div>
+          </dl>
+          <p class="cpe-line">CPE credits earned: <b>12.5</b></p>
+
+          <div class="course">
+            <div class="badges"><span class="badge bg-type">Masterclass</span></div>
+            <h4>US GAAP Fundamentals for Finance Teams</h4>
+            <dl>
+              <div>
+                <dt>CPE credits</dt>
+                <dd class="g">6</dd>
+              </div>
+              <div>
+                <dt>Completed on</dt>
+                <dd>Jun 20, 2026</dd>
+              </div>
+              <div>
+                <dt>Course ID</dt>
+                <dd>5121</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="course">
+            <div class="badges">
+              <span class="badge bg-type">Masterclass</span
+              ><span class="badge bg-caira">CAiRA · L2</span>
+            </div>
+            <h4>AI in Audit: Practical Workflows</h4>
+            <dl>
+              <div>
+                <dt>CPE credits</dt>
+                <dd class="g">4.5</dd>
+              </div>
+              <div>
+                <dt>Completed on</dt>
+                <dd>Jun 27, 2026</dd>
+              </div>
+              <div>
+                <dt>Course ID</dt>
+                <dd>5305</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="course">
+            <div class="badges"><span class="badge bg-type">Micro-learning</span></div>
+            <h4>Excel to Power BI in 90 Minutes</h4>
+            <dl>
+              <div>
+                <dt>CPE credits</dt>
+                <dd class="g">2</dd>
+              </div>
+              <div>
+                <dt>Completed on</dt>
+                <dd>Jul 1, 2026</dd>
+              </div>
+              <div>
+                <dt>Course ID</dt>
+                <dd>5410</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="course">
+            <div class="badges">
+              <span class="badge bg-type">Masterclass</span
+              ><span class="badge bg-caira">CAiRA · L1</span
+              ><span class="badge bg-prog">In progress</span>
+            </div>
+            <h4>Prompt Engineering for Accountants</h4>
+            <dl>
+              <div>
+                <dt>CPE credits</dt>
+                <dd class="g">5</dd>
+              </div>
+              <div>
+                <dt>Completed on</dt>
+                <dd>—</dd>
+              </div>
+              <div>
+                <dt>Course ID</dt>
+                <dd>5522</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // #dialog in the URL shows the User Progress Report state.
+      if (location.hash === '#dialog') document.body.classList.add('show-dialog');
+      window.addEventListener('hashchange', () => {
+        document.body.classList.toggle('show-dialog', location.hash === '#dialog');
+      });
+    </script>
+  </body>
+</html>

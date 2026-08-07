@@ -1,0 +1,79 @@
+@let c = card();
+<div class="flex flex-col space-y-4 group">
+  <div class="flex max-md:flex-col max-md:space-y-2 md:space-x-4">
+    <!-- Visual ─ either: badge ↔ thumbnail hover-swap (course-tied) or static badge (caira/invite-only) -->
+    @if (hasThumbnail()) {
+      <div class="md:w-96 w-full aspect-video relative rounded-md">
+        <div
+          class="absolute inset-0 md:w-24 w-32 aspect-square m-auto blur-[50px] -z-10 rounded-full"
+          [style.background-color]="haloHex()"
+        ></div>
+        <img
+          [src]="c.badgeIconUrl"
+          [alt]="c.title + ' Badge'"
+          class="absolute inset-0 mx-auto transition-all duration-500 h-full aspect-square object-contain opacity-100 group-hover:opacity-0"
+        />
+        <img
+          [src]="c.thumbnailUrl!"
+          [alt]="c.title + ' Cover'"
+          class="absolute inset-0 w-full h-full object-cover transition-all duration-500 opacity-0 group-hover:opacity-100 rounded-md overflow-hidden"
+        />
+      </div>
+    } @else {
+      <div class="md:w-52 w-full md:aspect-square aspect-video rounded-md relative">
+        <div
+          class="absolute inset-0 md:w-24 w-32 aspect-square m-auto blur-[50px] -z-10 rounded-full"
+          [style.background-color]="haloHex()"
+        ></div>
+        <img
+          [src]="c.badgeIconUrl"
+          [alt]="c.title + ' Badge'"
+          class="absolute inset-0 md:w-full h-full aspect-square mx-auto object-contain"
+        />
+      </div>
+    }
+
+    <!-- Text + actions column -->
+    <div
+      class="flex flex-col justify-center space-y-1 max-md:text-center max-md:items-center"
+      [class]="hasThumbnail() ? 'md:w-[calc(100%-24rem)] w-full' : 'w-full md:w-[calc(100%-13rem)]'"
+    >
+      <h2 class="md:text-base text-sm font-bold max-md:text-center">{{ c.title }}</h2>
+      @if (c.instructor) {
+        <p class="md:text-sm text-xs text-gray-300 max-md:hidden">By {{ c.instructor }}</p>
+      }
+      @if (c.fieldsOfStudy.length || c.credits !== null) {
+        <div
+          class="md:text-sm text-xs text-gray-100 flex items-baseline gap-1 max-w-full max-md:justify-center"
+        >
+          @if (c.fieldsOfStudy.length) {
+            <app-categories-list class="min-w-0" [items]="c.fieldsOfStudy" [separator]="'| '" />
+            <span class="text-accent shrink-0"
+              >| {{ c.fieldsOfStudy | totalCpeCredits: c.credits ?? 0 }} CPE</span
+            >
+          } @else if (c.credits !== null) {
+            <span class="text-accent shrink-0">{{ c.credits }} CPE</span>
+          }
+        </div>
+      }
+      <p class="md:text-sm text-xs text-gray-100 line-clamp-3">{{ c.shortOverview }}</p>
+
+      @if (c.isComingSoon) {
+        <p class="md:text-sm text-xs text-accent uppercase mt-6 font-semibold">Coming Soon</p>
+      } @else if (c.buttons.length) {
+        <div class="flex flex-wrap gap-3 mt-4 max-md:justify-center">
+          @for (b of c.buttons; track b.action) {
+            <button
+              type="button"
+              [class]="buttonClass(b)"
+              [disabled]="b.variant === 'disabled'"
+              (click)="onButtonClick(b)"
+            >
+              {{ b.label }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

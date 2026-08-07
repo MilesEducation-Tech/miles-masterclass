@@ -1,0 +1,10 @@
+:host {
+  display: block;
+}
+
+/*
+ * The ticket-mask utilities (`x-ticket`, `y-ticket`, `top`, `bottom`,
+ * `left`, `right`) are registered globally via `@utility` in
+ * `src/styles/styles.css` so they participate in Tailwind's variant system
+ * (`md:`, `hover:`, etc.). Nothing component-scoped is needed here.
+ */

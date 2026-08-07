@@ -1,0 +1,173 @@
+<section class="min-h-screen bg-background text-foreground">
+  <!-- Hero -->
+  <app-blog-banner [images]="bannerImages()" [tall]="true">
+    <div class="container mx-auto px-4 pb-10 pt-28 md:pt-36">
+      <h1 class="max-w-3xl text-3xl font-bold leading-tight md:text-5xl">
+        The AI-Enabled Accountant Starts Here | Miles Masterclass Blog
+      </h1>
+      <p class="mt-4 max-w-2xl text-sm text-muted-foreground md:text-base">
+        Insights, strategies, and practical guides to help CPAs and CMAs lead in the age of AI.
+      </p>
+
+      <form
+        (submit)="onSearch($event, q.value)"
+        class="mt-6 flex max-w-xl items-center gap-3 rounded-full border border-border bg-card/80 px-5 py-3 backdrop-blur transition-colors focus-within:border-accent/60"
+      >
+        <svg
+          class="h-5 w-5 shrink-0 text-muted-foreground"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </svg>
+        <input
+          #q
+          type="search"
+          placeholder="Type Questions, Topic, Issue"
+          aria-label="Search the blog"
+          class="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+        />
+      </form>
+
+      <div class="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
+        <svg
+          class="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <path d="M9 22V12h6v10"></path>
+        </svg>
+        <span class="text-foreground">Blogs</span>
+      </div>
+    </div>
+  </app-blog-banner>
+
+  <div class="container mx-auto px-4 pb-20">
+    @if (loading()) {
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 md:grid-rows-2 md:h-[520px]">
+        @for (skeleton of skeletons; track $index) {
+          <div
+            class="min-h-[240px] animate-pulse rounded-xl bg-muted"
+            [class.md:row-span-2]="$first"
+          ></div>
+        }
+      </div>
+    } @else if (errored()) {
+      <div class="mx-auto max-w-md py-20 text-center">
+        <p class="text-lg font-semibold">We couldn't load the blog</p>
+        <p class="mt-2 text-sm text-muted-foreground">Please try again in a moment.</p>
+      </div>
+    } @else if (featured().length) {
+      <!-- Featured mosaic -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 md:grid-rows-2 md:h-[520px]">
+        <div class="min-h-[260px] sm:col-span-2 md:col-span-1 md:row-span-2 md:min-h-0">
+          <app-blog-feature-card [post]="featured()[0]" size="lg" />
+        </div>
+        @for (post of featured().slice(1); track post.id) {
+          <div class="min-h-[240px] md:min-h-0">
+            <app-blog-feature-card [post]="post" />
+          </div>
+        }
+      </div>
+
+      <!-- Editor's Picks + Spotlight -->
+      <div class="mt-16">
+        <p class="text-sm text-muted-foreground">Explore Some of our favourite articles</p>
+        <h2 class="mt-1 text-2xl font-bold md:text-3xl">Editor's Picks</h2>
+
+        <div class="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
+          <!-- Lead editor pick -->
+          @if (editorLead(); as lead) {
+            <a [routerLink]="['/blog', lead.slug]" class="group block lg:col-span-5">
+              <div class="relative aspect-16/11 overflow-hidden rounded-xl bg-muted">
+                @if (lead.featuredImage) {
+                  <img
+                    [src]="lead.featuredImage"
+                    [alt]="lead.featuredImageAlt"
+                    loading="lazy"
+                    class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                }
+              </div>
+              <div class="mt-4 flex items-center gap-2 text-[11px] text-muted-foreground">
+                <span>{{ lead.displayDate }}</span>
+                <span aria-hidden="true">|</span>
+                <span>{{ lead.readingMinutes }} mins Read</span>
+              </div>
+              @if (lead.categories.length) {
+                <span class="mt-1 block text-xs font-medium text-accent">{{
+                  lead.categories[0].name
+                }}</span>
+              }
+              <h3
+                class="mt-1 line-clamp-2 text-lg font-semibold leading-snug transition-colors group-hover:text-accent"
+              >
+                {{ lead.title }}
+              </h3>
+              <p class="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                {{ lead.excerpt }}
+              </p>
+            </a>
+          }
+
+          <!-- Editor list -->
+          <div class="flex flex-col gap-6 lg:col-span-4">
+            @for (post of editorList(); track post.id) {
+              <app-blog-compact-item [post]="post" [showExcerpt]="true" />
+            }
+          </div>
+
+          <!-- Spotlight panel -->
+          <div class="rounded-2xl border border-border bg-card/50 p-5 lg:col-span-3">
+            <p class="mb-4 text-sm font-semibold text-muted-foreground">Spotlight</p>
+            <div class="flex flex-col gap-5">
+              @for (post of spotlight(); track post.id) {
+                <app-blog-compact-item [post]="post" />
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- View All Blogs -->
+      <div class="mt-16">
+        <div class="flex items-end justify-between">
+          <h2 class="text-2xl font-bold md:text-3xl">View All Blogs</h2>
+          <a
+            [routerLink]="['/blog/all']"
+            class="text-sm font-medium text-accent transition-colors hover:underline"
+          >
+            View all
+          </a>
+        </div>
+        <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          @for (post of viewAll(); track post.id) {
+            <app-blog-card [post]="post" />
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="mx-auto max-w-md py-20 text-center">
+        <p class="text-lg font-semibold">No articles yet</p>
+        <p class="mt-2 text-sm text-muted-foreground">Please check back soon.</p>
+      </div>
+    }
+
+    <!-- FAQ -->
+    <div class="mt-20">
+      <app-faq [standalone]="false" />
+    </div>
+  </div>
+</section>

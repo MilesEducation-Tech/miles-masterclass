@@ -1,0 +1,212 @@
+/* =====================================================================
+   AI Labs — page-scoped styling.
+
+   No colour is declared here. Every value resolves through a project token
+   (`--foreground`, `--muted-foreground`, `--accent`, `--accent-rgb`,
+   `--background`) so the page follows the site palette and moves with it. The
+   source design's raw hexes were mapped to the nearest existing token rather
+   than re-pointed onto this page:
+
+     #000000  page canvas   → --background        (rgb 14 14 14)
+     #3399ff  accent/button → --accent            (rgb 42 133 255), the blue
+                              the rest of the site already uses for CTAs
+     #0c0f14  card surface  → --muted             (rgb 31 31 31), the project's
+                              most-used card surface, and it sits one step above
+                              --background exactly as the source pair does
+     #1f242c  hairline      → --border
+     #acb5c4  card body     → --muted-foreground
+     #a1a1a1  muted body    → --muted-foreground
+     15px radius            → rounded-2xl
+     8–10px button radius   → rounded-xl (--radius-xl, 10px)
+
+   Only the gradient-text treatment has no DS equivalent, and it is built out of
+   DS tokens rather than new colours.
+   ===================================================================== */
+
+/* Brushed-metal heading fill. The DS has no gradient-text treatment, so this is
+   a scoped extension — but its stops are the DS foreground ramp, not new hexes:
+   --muted-foreground → --foreground → --muted-foreground. */
+:host {
+  --ai-metal: linear-gradient(
+    25deg,
+    var(--muted-foreground) 0%,
+    var(--foreground) 38%,
+    var(--foreground) 62%,
+    var(--muted-foreground) 100%
+  );
+  --ai-metal-flat: linear-gradient(
+    90deg,
+    var(--muted-foreground) 0%,
+    var(--foreground) 38%,
+    var(--foreground) 62%,
+    var(--muted-foreground) 100%
+  );
+
+  background-color: var(--background);
+}
+
+/* Gradient-filled heading text, with a solid DS foreground fallback where
+   background-clip:text is unsupported. */
+.ai-metal-text {
+  color: var(--foreground);
+  background-image: var(--ai-metal);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.ai-metal-text--flat {
+  background-image: var(--ai-metal-flat);
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .ai-metal-text {
+    color: transparent;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Hero backdrop: three stacked layers — a sparse starfield over the upper
+   half, a grid receding to a horizon across the lower third, and an accent
+   glow on that horizon. All CSS; the design's version is a raster, but this
+   scales to any viewport and costs no request. To swap the artwork in, give
+   `.ai-hero-backdrop` a background-image and drop the three layers.
+   --------------------------------------------------------------------- */
+.ai-hero-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ai-hero-backdrop > span {
+  position: absolute;
+  display: block;
+}
+
+/* Two dot scales so it doesn't read as a regular lattice. */
+.ai-hero-stars {
+  inset: 0 0 38%;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, var(--foreground), transparent),
+    radial-gradient(1px 1px at 62% 12%, var(--foreground), transparent),
+    radial-gradient(1px 1px at 84% 32%, var(--foreground), transparent),
+    radial-gradient(1px 1px at 33% 46%, var(--foreground), transparent),
+    radial-gradient(1.5px 1.5px at 74% 58%, var(--foreground), transparent),
+    radial-gradient(1px 1px at 46% 72%, var(--foreground), transparent),
+    radial-gradient(1px 1px at 22% 62%, var(--foreground), transparent),
+    radial-gradient(1.5px 1.5px at 91% 8%, var(--foreground), transparent);
+}
+
+.ai-hero-grid {
+  inset: auto 0 0;
+  height: 38%;
+  opacity: 0.24;
+  perspective: 200px;
+  perspective-origin: 50% 0%;
+}
+
+.ai-hero-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0 -60%;
+  transform: rotateX(72deg);
+  transform-origin: 50% 0%;
+  /* --foreground rather than --border: the design's grid is a bright raster,
+     and --border is invisible on this canvas once the 24% opacity above lands. */
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--foreground) 70%, transparent) 0 1px,
+      transparent 1px 56px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--foreground) 70%, transparent) 0 1px,
+      transparent 1px 56px
+    );
+  mask-image: linear-gradient(to bottom, #000, transparent 85%);
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 85%);
+}
+
+.ai-hero-horizon {
+  inset: auto 0 34%;
+  height: 180px;
+  background-image: radial-gradient(
+    60% 100% at 50% 100%,
+    rgb(var(--accent-rgb) / 0.28),
+    transparent 70%
+  );
+}
+
+/* ---------------------------------------------------------------------
+   Hero column divider — fades out at both ends.
+   --------------------------------------------------------------------- */
+.ai-divider-v {
+  width: 1px;
+  background-image: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--foreground) 35%, transparent) 25%,
+    color-mix(in srgb, var(--foreground) 35%, transparent) 75%,
+    transparent
+  );
+}
+
+.ai-divider-h {
+  height: 1px;
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in srgb, var(--foreground) 35%, transparent) 25%,
+    color-mix(in srgb, var(--foreground) 35%, transparent) 75%,
+    transparent
+  );
+}
+
+/* ---------------------------------------------------------------------
+   Decorative bottom band. The design fills this with the Copilot mark and a
+   connected cluster of Microsoft product logos over a coloured wash; those
+   assets don't exist yet, so the wash (accent tokens) and the fade structure
+   render and the logos are pending.
+   --------------------------------------------------------------------- */
+.ai-band {
+  background-image: radial-gradient(
+    120% 100% at 30% 60%,
+    rgb(var(--accent-rgb) / 0.35),
+    rgb(var(--accent-rgb) / 0.12) 45%,
+    transparent 75%
+  );
+}
+
+.ai-band::before,
+.ai-band::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ai-band::before {
+  top: 0;
+  height: 27%;
+  background-image: linear-gradient(to bottom, var(--background), transparent);
+}
+
+.ai-band::after {
+  bottom: 0;
+  height: 43%;
+  background-image: linear-gradient(to top, var(--background), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host *,
+  :host *::before,
+  :host *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

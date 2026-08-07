@@ -1,0 +1,73 @@
+<section class="admin-theme flex flex-col gap-6 p-6 text-white min-h-full">
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div class="flex flex-col gap-2">
+      <h1 class="text-2xl font-bold leading-tight">Vendor Users</h1>
+      <p class="text-sm text-white/70">
+        Manage partner users belonging to your network. Block or unblock access from this view.
+      </p>
+    </div>
+    <app-button variant="outline" size="sm" class="text-white" (clicked)="exportCsv()">
+      Export CSV
+    </app-button>
+  </header>
+
+  <!-- Filters bar -->
+  <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div class="flex w-full max-w-md items-center">
+      <app-aria-input
+        id="user-search"
+        type="search"
+        label="Search name or email"
+        class="w-full"
+        [(value)]="searchInput"
+      />
+    </div>
+
+    <div
+      class="inline-flex items-center gap-1 rounded-md p-1 border border-white/10"
+      style="background: var(--mm-surface-2)"
+      role="tablist"
+      aria-label="Blocked status filter"
+    >
+      @for (tab of statusTabs; track tab.value) {
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="isActiveTab(tab.value)"
+          class="px-3 py-1.5 text-xs font-medium rounded transition-colors"
+          [class.text-white]="isActiveTab(tab.value)"
+          [class.bg-white\/10]="isActiveTab(tab.value)"
+          [class.text-white\/70]="!isActiveTab(tab.value)"
+          [class.hover\:text-white]="!isActiveTab(tab.value)"
+          (click)="selectStatus(tab.value)"
+        >
+          {{ tab.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Error banner -->
+  @if (facade.error()) {
+    <div
+      class="px-3 py-2 text-sm rounded-md"
+      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
+      role="alert"
+    >
+      Failed to load users. Try refreshing the page or check your connection.
+    </div>
+  }
+
+  <!-- Table -->
+  <app-users-table
+    [rows]="facade.users()"
+    [isLoading]="facade.isLoading()"
+    [currentPage]="currentPage()"
+    [totalCount]="totalCount()"
+    [hasNext]="hasNextPage()"
+    [hasPrev]="hasPrevPage()"
+    (blockToggle)="onBlockToggle($event)"
+    (prevPage)="goPrev()"
+    (nextPage)="goNext()"
+  />
+</section>

@@ -1,0 +1,939 @@
+@if (loading()) {
+  <div
+    class="flex items-center justify-center gap-4 py-24 text-slate-400"
+    role="status"
+    aria-label="Loading SEO editor"
+  >
+    <div
+      class="w-6 h-6 border-2 border-slate-700 border-t-indigo-500 rounded-full animate-spin"
+      aria-hidden="true"
+    ></div>
+    <span>Loading page SEO...</span>
+  </div>
+} @else {
+  <section class="px-4 mx-auto pb-12" aria-labelledby="editor-heading">
+    <!-- Top Bar -->
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+      <button
+        class="flex items-center gap-2 px-4 py-2 bg-slate-800/60 border border-slate-700/50 rounded-xl text-slate-400 text-sm font-medium hover:text-slate-200 hover:bg-slate-700/60 transition-all focus:outline-none focus:ring-2 focus:ring-slate-500"
+        (click)="goBack()"
+        aria-label="Back to SEO dashboard"
+      >
+        <ng-icon name="heroArrowLeft"></ng-icon> Back to Dashboard
+      </button>
+      <div class="flex items-center gap-4">
+        <!-- Score Badge -->
+        <div
+          class="flex items-baseline gap-1 px-4 py-1.5 rounded-xl font-bold border shadow-sm"
+          [class]="scoreClass()"
+          role="status"
+          [attr.aria-label]="'SEO Score: ' + seoScore() + ' out of 100'"
+        >
+          <span class="text-2xl">{{ seoScore() }}</span>
+          <span class="text-xs opacity-70">/100</span>
+        </div>
+        <button
+          class="flex items-center gap-2 px-6 py-2.5 bg-linear-to-r from-indigo-500 to-violet-500 border border-indigo-400/20 rounded-xl text-white text-sm font-semibold shadow-lg hover:shadow-indigo-500/20 hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          (click)="save()"
+          [attr.disabled]="saving() || form.invalid || null"
+          [attr.aria-busy]="saving()"
+          aria-label="Save SEO settings"
+        >
+          @if (saving()) {
+            <span
+              class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+              aria-hidden="true"
+            ></span>
+            Saving...
+          } @else {
+            <ng-icon name="heroCheck"></ng-icon> Save Changes
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- Success / Error Toasts -->
+    @if (saveSuccess()) {
+      <div
+        class="flex items-center gap-2 p-4 mb-6 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm font-medium animate-in fade-in slide-in-from-top-2"
+        role="alert"
+        aria-live="polite"
+      >
+        <ng-icon name="heroCheckCircle" class="text-lg"></ng-icon> SEO settings saved successfully!
+      </div>
+    }
+    @if (saveError()) {
+      <div
+        class="flex items-center gap-2 p-4 mb-6 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm font-medium animate-in fade-in slide-in-from-top-2"
+        role="alert"
+        aria-live="assertive"
+      >
+        <ng-icon name="heroExclamationCircle" class="text-lg"></ng-icon> {{ saveError() }}
+      </div>
+    }
+
+    <!-- Page Info -->
+    <div class="mb-8 p-6 bg-slate-800/40 border border-slate-700/50 rounded-2xl backdrop-blur-md">
+      <h2 id="editor-heading" class="text-2xl font-bold text-slate-100 mb-2">
+        {{ page()?.page_name }}
+      </h2>
+      <div class="flex items-center gap-3 text-sm flex-wrap">
+        <span class="text-slate-500 font-medium">Route:</span>
+        <code
+          class="px-2 py-1 bg-slate-900/60 border border-slate-700/50 rounded text-indigo-300 font-mono text-xs break-all"
+          >{{ page()?.page_slug }}</code
+        >
+        <span
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.65rem] font-bold uppercase tracking-widest border"
+          [class]="
+            page()?.page_type === 'static'
+              ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'
+              : 'bg-fuchsia-500/10 text-fuchsia-300 border-fuchsia-500/20'
+          "
+        >
+          <ng-icon
+            [name]="page()?.page_type === 'static' ? 'heroDocument' : 'heroCodeBracket'"
+            class="text-sm"
+          ></ng-icon>
+          {{ page()?.page_type === 'static' ? 'Static' : 'Dynamic' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
+      <!-- Left: Form -->
+      <div class="min-w-0">
+        <!-- Section Tabs -->
+        <nav
+          class="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-none"
+          role="tablist"
+          aria-label="SEO sections"
+        >
+          <button
+            role="tab"
+            class="whitespace-nowrap flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            [class]="
+              activeSection() === 'basic'
+                ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300'
+                : 'bg-slate-800/50 border-slate-700/30 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
+            "
+            [attr.aria-selected]="activeSection() === 'basic'"
+            (click)="setSection('basic')"
+            id="tab-basic"
+            aria-controls="panel-basic"
+          >
+            <ng-icon name="heroDocumentText"></ng-icon> Basic SEO
+          </button>
+          <button
+            role="tab"
+            class="whitespace-nowrap flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            [class]="
+              activeSection() === 'og'
+                ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300'
+                : 'bg-slate-800/50 border-slate-700/30 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
+            "
+            [attr.aria-selected]="activeSection() === 'og'"
+            (click)="setSection('og')"
+            id="tab-og"
+            aria-controls="panel-og"
+          >
+            <span
+              class="font-serif italic font-bold text-base w-4 h-4 inline-flex items-center justify-center leading-none"
+              >f</span
+            >
+            Open Graph
+          </button>
+          <button
+            role="tab"
+            class="whitespace-nowrap flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            [class]="
+              activeSection() === 'twitter'
+                ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300'
+                : 'bg-slate-800/50 border-slate-700/30 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
+            "
+            [attr.aria-selected]="activeSection() === 'twitter'"
+            (click)="setSection('twitter')"
+            id="tab-twitter"
+            aria-controls="panel-twitter"
+          >
+            <span
+              class="font-sans font-black text-base w-4 h-4 inline-flex items-center justify-center leading-none"
+              >𝕏</span
+            >
+            Twitter / X
+          </button>
+          <button
+            role="tab"
+            class="whitespace-nowrap flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            [class]="
+              activeSection() === 'advanced'
+                ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300'
+                : 'bg-slate-800/50 border-slate-700/30 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
+            "
+            [attr.aria-selected]="activeSection() === 'advanced'"
+            (click)="setSection('advanced')"
+            id="tab-advanced"
+            aria-controls="panel-advanced"
+          >
+            <ng-icon name="heroCodeBracket"></ng-icon> Advanced
+          </button>
+        </nav>
+
+        <form
+          [formGroup]="form"
+          (ngSubmit)="save()"
+          class="bg-slate-800/40 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl"
+        >
+          <!-- BASIC SEO SECTION -->
+          @if (activeSection() === 'basic') {
+            <div
+              id="panel-basic"
+              role="tabpanel"
+              aria-labelledby="tab-basic"
+              class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300"
+            >
+              <!-- Title -->
+              <div class="flex flex-col gap-1.5">
+                <label
+                  for="seo-title"
+                  class="text-sm font-semibold text-slate-200 flex items-center gap-2"
+                >
+                  Page Title
+                  <span
+                    class="text-slate-500 hover:text-indigo-400 cursor-help transition-colors group relative"
+                    role="tooltip"
+                  >
+                    <ng-icon name="heroInformationCircle"></ng-icon>
+                    <span
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center font-normal"
+                    >
+                      This is what appears as the clickable blue link in Google. Keep it between
+                      30–60 characters.
+                    </span>
+                  </span>
+                </label>
+                <input
+                  id="seo-title"
+                  type="text"
+                  formControlName="title"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm shadow-inner"
+                  placeholder="e.g. Miles Masterclass - AI-Powered CPE Training"
+                  aria-describedby="title-counter"
+                />
+                <div
+                  id="title-counter"
+                  class="text-[0.7rem] font-medium flex items-center gap-2 mt-1"
+                  [class]="getCharClass(form.value.title?.length ?? 0, limits.title)"
+                >
+                  <span>{{ form.value.title?.length ?? 0 }} / {{ limits.title.ideal }} chars</span>
+                  @if (
+                    (form.value.title?.length ?? 0) < limits.title.min &&
+                    (form.value.title?.length ?? 0) > 0
+                  ) {
+                    <span class="italic opacity-80 font-normal"
+                      >— Too short! Aim for at least {{ limits.title.min }} chars.</span
+                    >
+                  }
+                  @if ((form.value.title?.length ?? 0) > limits.title.max) {
+                    <span class="italic opacity-80 font-normal"
+                      >— Too long! Google may cut this off.</span
+                    >
+                  }
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div class="flex flex-col gap-1.5">
+                <label
+                  for="seo-desc"
+                  class="text-sm font-semibold text-slate-200 flex items-center gap-2"
+                >
+                  Search Description
+                  <span
+                    class="text-slate-500 hover:text-indigo-400 cursor-help transition-colors group relative"
+                    role="tooltip"
+                  >
+                    <ng-icon name="heroInformationCircle"></ng-icon>
+                    <span
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center font-normal"
+                    >
+                      This appears below the title in Google. Summarize what the page is about.
+                      70–160 characters ideal.
+                    </span>
+                  </span>
+                </label>
+                <textarea
+                  id="seo-desc"
+                  formControlName="description"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm shadow-inner resize-y min-h-[100px]"
+                  placeholder="e.g. Finally, CPE that's all about AI in Accounting."
+                  aria-describedby="desc-counter"
+                ></textarea>
+                <div
+                  id="desc-counter"
+                  class="text-[0.7rem] font-medium flex items-center gap-2 mt-1"
+                  [class]="getCharClass(form.value.description?.length ?? 0, limits.description)"
+                >
+                  <span
+                    >{{ form.value.description?.length ?? 0 }} /
+                    {{ limits.description.ideal }} chars</span
+                  >
+                  @if (
+                    (form.value.description?.length ?? 0) < limits.description.min &&
+                    (form.value.description?.length ?? 0) > 0
+                  ) {
+                    <span class="italic opacity-80 font-normal">— Too short! Add more detail.</span>
+                  }
+                  @if ((form.value.description?.length ?? 0) > limits.description.max) {
+                    <span class="italic opacity-80 font-normal">— Too long! May be truncated.</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Keywords -->
+              <div class="flex flex-col gap-1.5">
+                <label
+                  for="seo-keywords"
+                  class="text-sm font-semibold text-slate-200 flex items-center gap-2"
+                >
+                  Keywords
+                  <span
+                    class="text-slate-500 hover:text-indigo-400 cursor-help transition-colors group relative"
+                    role="tooltip"
+                  >
+                    <ng-icon name="heroInformationCircle"></ng-icon>
+                    <span
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center font-normal"
+                    >
+                      Comma-separated keywords. Use 3-15 relevant terms. E.g. "CPE, accounting, AI
+                      training"
+                    </span>
+                  </span>
+                </label>
+                <input
+                  id="seo-keywords"
+                  type="text"
+                  formControlName="keywords"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm shadow-inner"
+                  placeholder="e.g. CPE training, AI accounting, masterclass"
+                  aria-describedby="keywords-hint"
+                />
+                <div id="keywords-hint" class="text-[0.7rem] font-medium text-emerald-400 mt-1">
+                  Separate keywords with commas
+                </div>
+              </div>
+
+              <!-- Robots -->
+              <div class="flex flex-col gap-1.5">
+                <label
+                  for="seo-robots"
+                  class="text-sm font-semibold text-slate-200 flex items-center gap-2"
+                >
+                  Robots Directive
+                  <span
+                    class="text-slate-500 hover:text-indigo-400 cursor-help transition-colors group relative"
+                    role="tooltip"
+                  >
+                    <ng-icon name="heroInformationCircle"></ng-icon>
+                    <span
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center font-normal"
+                    >
+                      Controls if search engines show this page. Use "index, follow" for most pages.
+                      Use "noindex" to hide.
+                    </span>
+                  </span>
+                </label>
+                <select
+                  id="seo-robots"
+                  formControlName="robots"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm shadow-inner cursor-pointer appearance-none"
+                >
+                  <option value="index, follow">Index, Follow (✅ Show in search results)</option>
+                  <option value="noindex, follow">
+                    No Index, Follow (🚫 Hide from search, but follow links)
+                  </option>
+                  <option value="index, nofollow">
+                    Index, No Follow (Show in search, 🚫 don't follow links)
+                  </option>
+                  <option value="noindex, nofollow">
+                    No Index, No Follow (🚫 Completely hidden)
+                  </option>
+                </select>
+              </div>
+
+              <!-- Quick Copy Buttons -->
+              <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-700/50 mt-2">
+                <button
+                  type="button"
+                  class="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700/50 rounded-xl text-slate-300 text-xs font-semibold hover:bg-indigo-500/10 hover:border-indigo-500/30 hover:text-indigo-300 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  (click)="copyToAll()"
+                  aria-label="Copy basic SEO fields to Open Graph and Twitter"
+                >
+                  <ng-icon name="heroArrowsRightLeft"></ng-icon> Copy to OG & Twitter
+                </button>
+                <button
+                  type="button"
+                  class="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700/50 rounded-xl text-slate-300 text-xs font-semibold hover:bg-blue-500/10 hover:border-blue-500/30 hover:text-blue-300 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  (click)="copyToOg()"
+                  aria-label="Copy basic SEO title and description to Open Graph"
+                >
+                  <ng-icon name="heroDocumentDuplicate"></ng-icon> Copy to Open Graph
+                </button>
+                <button
+                  type="button"
+                  class="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700/50 rounded-xl text-slate-300 text-xs font-semibold hover:bg-sky-500/10 hover:border-sky-500/30 hover:text-sky-300 transition-all focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  (click)="copyToTwitter()"
+                  aria-label="Copy basic SEO title and description to Twitter"
+                >
+                  <ng-icon name="heroDocumentDuplicate"></ng-icon> Copy to Twitter
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- OPEN GRAPH SECTION -->
+          @if (activeSection() === 'og') {
+            <div
+              id="panel-og"
+              role="tabpanel"
+              aria-labelledby="tab-og"
+              class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300"
+            >
+              <div
+                class="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-sm text-blue-200"
+                role="note"
+              >
+                <span class="font-serif italic font-bold text-xl leading-none text-blue-400"
+                  >f</span
+                >
+                <p class="m-0 leading-relaxed">
+                  Open Graph tags control how your page looks when shared on
+                  <strong>Facebook</strong>, <strong>LinkedIn</strong>, and other social platforms.
+                </p>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="og-title" class="text-sm font-semibold text-slate-200">OG Title</label>
+                <input
+                  id="og-title"
+                  type="text"
+                  formControlName="og_title"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm shadow-inner"
+                  placeholder="Title for social sharing"
+                />
+                <div
+                  class="text-[0.7rem] font-medium mt-1"
+                  [class]="getCharClass(form.value.og_title?.length ?? 0, limits.ogTitle)"
+                >
+                  {{ form.value.og_title?.length ?? 0 }} / {{ limits.ogTitle.max }} chars
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="og-desc" class="text-sm font-semibold text-slate-200"
+                  >OG Description</label
+                >
+                <textarea
+                  id="og-desc"
+                  formControlName="og_description"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm shadow-inner resize-y min-h-[80px]"
+                  placeholder="Brief description for social sharing"
+                ></textarea>
+                <div
+                  class="text-[0.7rem] font-medium mt-1"
+                  [class]="
+                    getCharClass(form.value.og_description?.length ?? 0, limits.ogDescription)
+                  "
+                >
+                  {{ form.value.og_description?.length ?? 0 }} /
+                  {{ limits.ogDescription.max }} chars
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="og-image" class="text-sm font-semibold text-slate-200"
+                  >OG Image URL</label
+                >
+                <div class="flex items-center gap-3">
+                  <input
+                    id="og-image"
+                    type="url"
+                    formControlName="og_image"
+                    class="flex-1 px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm shadow-inner"
+                    placeholder="https://example.com/image.jpg"
+                  />
+                  <div class="relative shrink-0">
+                    <input
+                      type="file"
+                      id="og-image-upload"
+                      accept="image/*"
+                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                      (change)="onOgImageSelected($event)"
+                      [disabled]="uploadingOgImage()"
+                    />
+                    <!-- <button
+                      type="button"
+                      class="flex items-center justify-center h-full px-4 py-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-400 text-sm font-semibold hover:bg-blue-500/20 transition-all disabled:opacity-50"
+                      [disabled]="uploadingOgImage()"
+                    >
+                      @if (uploadingOgImage()) {
+                        <span
+                          class="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin"
+                        ></span>
+                      } @else {
+                        Upload
+                      }
+                    </button> -->
+                  </div>
+                </div>
+                <span class="text-[0.7rem] text-slate-500 mt-1"
+                  >💡 Must be at least 1200×630 pixels. Full URL starting with https://. Recommended
+                  format: .webp or .jpg.</span
+                >
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="flex flex-col gap-1.5">
+                  <label for="og-type" class="text-sm font-semibold text-slate-200">OG Type</label>
+                  <select
+                    id="og-type"
+                    formControlName="og_type"
+                    class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm shadow-inner cursor-pointer appearance-none"
+                  >
+                    <option value="website">Website</option>
+                    <option value="article">Article</option>
+                    <option value="video">Video</option>
+                    <option value="profile">Profile</option>
+                  </select>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                  <label for="og-sitename" class="text-sm font-semibold text-slate-200"
+                    >OG Site Name</label
+                  >
+                  <input
+                    id="og-sitename"
+                    type="text"
+                    formControlName="og_site_name"
+                    class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm shadow-inner"
+                    placeholder="Miles Masterclass"
+                  />
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="og-locale" class="text-sm font-semibold text-slate-200">Locale</label>
+                <input
+                  id="og-locale"
+                  type="text"
+                  formControlName="og_locale"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm shadow-inner"
+                  placeholder="en_US"
+                />
+              </div>
+
+              <div class="pt-4 border-t border-slate-700/50 mt-2">
+                <button
+                  type="button"
+                  class="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700/50 rounded-xl text-slate-300 text-xs font-semibold hover:bg-blue-500/10 hover:border-blue-500/30 hover:text-blue-300 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  (click)="copyToOg()"
+                >
+                  <ng-icon name="heroDocumentDuplicate"></ng-icon> Copy from Basic SEO
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- TWITTER SECTION -->
+          @if (activeSection() === 'twitter') {
+            <div
+              id="panel-twitter"
+              role="tabpanel"
+              aria-labelledby="tab-twitter"
+              class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300"
+            >
+              <div
+                class="flex items-start gap-3 p-4 bg-sky-500/10 border border-sky-500/20 rounded-xl text-sm text-sky-200"
+                role="note"
+              >
+                <span class="font-sans font-black text-lg leading-none text-sky-400 mt-0.5">𝕏</span>
+                <p class="m-0 leading-relaxed">
+                  Twitter Card tags control how your page appears when shared on
+                  <strong>Twitter/X</strong>.
+                </p>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="tw-card" class="text-sm font-semibold text-slate-200">Card Type</label>
+                <select
+                  id="tw-card"
+                  formControlName="twitter_card"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm shadow-inner cursor-pointer appearance-none"
+                >
+                  <option value="summary_large_image">Summary Large Image (📸 Recommended)</option>
+                  <option value="summary">Summary (smaller image)</option>
+                  <option value="player">Player (for video/audio)</option>
+                  <option value="app">App (for mobile apps)</option>
+                </select>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="tw-title" class="text-sm font-semibold text-slate-200"
+                  >Twitter Title</label
+                >
+                <input
+                  id="tw-title"
+                  type="text"
+                  formControlName="twitter_title"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm shadow-inner"
+                  placeholder="Title for Twitter"
+                />
+                <div
+                  class="text-[0.7rem] font-medium mt-1"
+                  [class]="getCharClass(form.value.twitter_title?.length ?? 0, limits.twitterTitle)"
+                >
+                  {{ form.value.twitter_title?.length ?? 0 }} / {{ limits.twitterTitle.max }} chars
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="tw-desc" class="text-sm font-semibold text-slate-200"
+                  >Twitter Description</label
+                >
+                <textarea
+                  id="tw-desc"
+                  formControlName="twitter_description"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm shadow-inner resize-y min-h-[80px]"
+                  placeholder="Description for Twitter"
+                ></textarea>
+                <div
+                  class="text-[0.7rem] font-medium mt-1"
+                  [class]="
+                    getCharClass(
+                      form.value.twitter_description?.length ?? 0,
+                      limits.twitterDescription
+                    )
+                  "
+                >
+                  {{ form.value.twitter_description?.length ?? 0 }} /
+                  {{ limits.twitterDescription.max }} chars
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="tw-image" class="text-sm font-semibold text-slate-200"
+                  >Twitter Image URL</label
+                >
+                <div class="flex items-center gap-3">
+                  <input
+                    id="tw-image"
+                    type="url"
+                    formControlName="twitter_image"
+                    class="flex-1 px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm shadow-inner"
+                    placeholder="https://example.com/image.jpg"
+                  />
+                  <div class="relative shrink-0">
+                    <input
+                      type="file"
+                      id="tw-image-upload"
+                      accept="image/*"
+                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                      (change)="onTwitterImageSelected($event)"
+                      [disabled]="uploadingTwitterImage()"
+                    />
+                    <!-- <button
+                      type="button"
+                      class="flex items-center justify-center h-full px-4 py-3 bg-sky-500/10 border border-sky-500/30 rounded-xl text-sky-400 text-sm font-semibold hover:bg-sky-500/20 transition-all disabled:opacity-50"
+                      [disabled]="uploadingTwitterImage()"
+                    >
+                      @if (uploadingTwitterImage()) {
+                        <span
+                          class="w-4 h-4 border-2 border-sky-400/30 border-t-sky-400 rounded-full animate-spin"
+                        ></span>
+                      } @else {
+                        Upload
+                      }
+                    </button> -->
+                  </div>
+                </div>
+                <span class="text-[0.7rem] text-slate-500 mt-1"
+                  >💡 Same as OG image is fine if using Summary Large Image. Aspect ratio 2:1, at
+                  least 1200x600 pixels.</span
+                >
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="tw-image-alt" class="text-sm font-semibold text-slate-200"
+                  >Image Alt Text</label
+                >
+                <input
+                  id="tw-image-alt"
+                  type="text"
+                  formControlName="twitter_image_alt"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm shadow-inner"
+                  placeholder="Description of the image for screen readers"
+                />
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="flex flex-col gap-1.5">
+                  <label for="tw-site" class="text-sm font-semibold text-slate-200"
+                    >Site Handle</label
+                  >
+                  <input
+                    id="tw-site"
+                    type="text"
+                    formControlName="twitter_site"
+                    class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm shadow-inner"
+                    placeholder="@MilesEducation"
+                  />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label for="tw-creator" class="text-sm font-semibold text-slate-200"
+                    >Creator Handle</label
+                  >
+                  <input
+                    id="tw-creator"
+                    type="text"
+                    formControlName="twitter_creator"
+                    class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm shadow-inner"
+                    placeholder="@MilesEducation"
+                  />
+                </div>
+              </div>
+
+              <div class="pt-4 border-t border-slate-700/50 mt-2">
+                <button
+                  type="button"
+                  class="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700/50 rounded-xl text-slate-300 text-xs font-semibold hover:bg-sky-500/10 hover:border-sky-500/30 hover:text-sky-300 transition-all focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  (click)="copyToTwitter()"
+                >
+                  <ng-icon name="heroDocumentDuplicate"></ng-icon> Copy from Basic SEO
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- ADVANCED SECTION -->
+          @if (activeSection() === 'advanced') {
+            <div
+              id="panel-advanced"
+              role="tabpanel"
+              aria-labelledby="tab-advanced"
+              class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300"
+            >
+              <div class="flex flex-col gap-1.5">
+                <label
+                  for="seo-canonical"
+                  class="text-sm font-semibold text-slate-200 flex items-center gap-2"
+                >
+                  Canonical URL
+                  <span
+                    class="text-slate-500 hover:text-indigo-400 cursor-help transition-colors group relative"
+                    role="tooltip"
+                  >
+                    <ng-icon name="heroInformationCircle"></ng-icon>
+                    <span
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center font-normal"
+                    >
+                      The "official" URL for this page. Prevents duplicate content issues. Leave
+                      blank if unsure.
+                    </span>
+                  </span>
+                </label>
+                <input
+                  id="seo-canonical"
+                  type="url"
+                  formControlName="canonical_url"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm shadow-inner"
+                  placeholder="https://milesmasterclass.com/us/cpa/masterclass"
+                />
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="flex flex-col gap-1.5">
+                  <label for="seo-author" class="text-sm font-semibold text-slate-200"
+                    >Author</label
+                  >
+                  <input
+                    id="seo-author"
+                    type="text"
+                    formControlName="author"
+                    class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm shadow-inner"
+                    placeholder="Miles Education"
+                  />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label for="seo-publisher" class="text-sm font-semibold text-slate-200"
+                    >Publisher</label
+                  >
+                  <input
+                    id="seo-publisher"
+                    type="text"
+                    formControlName="publisher"
+                    class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm shadow-inner"
+                    placeholder="Miles Masterclass"
+                  />
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label
+                  for="seo-jsonld"
+                  class="text-sm font-semibold text-slate-200 flex items-center gap-2"
+                >
+                  Structured Data (JSON-LD)
+                  <span
+                    class="text-slate-500 hover:text-indigo-400 cursor-help transition-colors group relative"
+                    role="tooltip"
+                  >
+                    <ng-icon name="heroInformationCircle"></ng-icon>
+                    <span
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center font-normal"
+                    >
+                      Advanced: Add schema.org structured data for rich search results. Must be
+                      valid JSON.
+                    </span>
+                  </span>
+                </label>
+                <textarea
+                  id="seo-jsonld"
+                  formControlName="json_ld"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm shadow-inner font-mono resize-y min-h-[150px]"
+                  placeholder='{"@context": "https://schema.org", "@type": "WebPage"}'
+                ></textarea>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="seo-notes" class="text-sm font-semibold text-slate-200"
+                  >Internal Notes</label
+                >
+                <textarea
+                  id="seo-notes"
+                  formControlName="notes"
+                  class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/60 rounded-xl text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm shadow-inner resize-y min-h-[80px]"
+                  placeholder="Any notes about this page's SEO..."
+                ></textarea>
+                <span class="text-[0.7rem] text-slate-500 mt-1"
+                  >💡 Notes for the team. Not visible on the website.</span
+                >
+              </div>
+            </div>
+          }
+        </form>
+      </div>
+
+      <!-- Right: Live Preview -->
+      <aside class="sticky top-24 space-y-5" role="complementary" aria-label="SEO preview">
+        <h3 class="text-base font-semibold text-slate-100 mb-4 flex items-center gap-2">
+          <ng-icon name="heroMagnifyingGlass" class="text-indigo-400 font-bold"></ng-icon> How It
+          Looks
+        </h3>
+
+        <!-- Google Preview -->
+        <div
+          class="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 shadow-lg backdrop-blur-sm"
+        >
+          <h4 class="text-[0.7rem] font-bold text-slate-400 uppercase tracking-widest mb-3">
+            Google Search
+          </h4>
+          <div class="font-sans">
+            <cite class="text-[0.7rem] text-emerald-400 not-italic block mb-0.5 break-all">{{
+              previewUrl()
+            }}</cite>
+            <h3
+              class="text-base text-blue-400 m-0 mb-1 cursor-pointer hover:underline decoration-blue-400"
+            >
+              {{ previewTitle() }}
+            </h3>
+            <p
+              class="text-[0.8rem] text-slate-300 m-0 leading-relaxed line-clamp-2 wrap-break-word"
+            >
+              {{ previewDescription() }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Facebook/LinkedIn Preview -->
+        <div
+          class="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 shadow-lg backdrop-blur-sm"
+        >
+          <h4 class="text-[0.7rem] font-bold text-slate-400 uppercase tracking-widest mb-3">
+            Facebook / LinkedIn
+          </h4>
+          <div class="rounded-xl overflow-hidden border border-slate-700/50 bg-[#1e2736]">
+            @if (form.value.og_image) {
+              <div class="w-full h-40 overflow-hidden bg-slate-900">
+                <img
+                  [src]="form.value.og_image"
+                  alt="OG Preview"
+                  class="w-full h-full object-cover"
+                  (error)="$event.target.remove()"
+                />
+              </div>
+            } @else {
+              <div
+                class="w-full h-40 flex flex-col items-center justify-center bg-slate-900/50 text-slate-600 gap-2 border-b border-slate-700/50"
+                aria-hidden="true"
+              >
+                <span class="text-3xl">📷</span>
+                <small class="text-xs">No image set</small>
+              </div>
+            }
+            <div class="p-3.5 pb-4 bg-[#1e2736]">
+              <small class="text-[0.65rem] text-slate-400 uppercase tracking-wider block mb-1"
+                >milesmasterclass.com</small
+              >
+              <p class="text-[0.9rem] font-bold text-slate-200 m-0 leading-snug line-clamp-2 mb-1">
+                {{ form.value.og_title || previewTitle() }}
+              </p>
+              <p class="text-[0.75rem] text-slate-400 m-0 leading-relaxed line-clamp-1">
+                {{ form.value.og_description || previewDescription() }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Twitter Preview -->
+        <div
+          class="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 shadow-lg backdrop-blur-sm"
+        >
+          <h4 class="text-[0.7rem] font-bold text-slate-400 uppercase tracking-widest mb-3">
+            Twitter / X
+          </h4>
+          <div class="rounded-xl overflow-hidden border border-slate-700/50 bg-transparent">
+            @if (form.value.twitter_image || form.value.og_image) {
+              <div class="w-full h-40 overflow-hidden bg-slate-900">
+                <img
+                  [src]="form.value.twitter_image || form.value.og_image"
+                  alt="Twitter Preview"
+                  class="w-full h-full object-cover"
+                  (error)="$event.target.remove()"
+                />
+              </div>
+            } @else {
+              <div
+                class="w-full h-40 flex flex-col items-center justify-center bg-slate-900/50 text-slate-600 gap-2 border-b border-slate-700/50"
+                aria-hidden="true"
+              >
+                <span class="text-3xl">📷</span>
+                <small class="text-xs">No image set</small>
+              </div>
+            }
+            <div class="p-3 pb-3.5 bg-slate-800/80">
+              <small class="text-[0.65rem] text-slate-400 uppercase tracking-wider block mb-0.5"
+                >milesmasterclass.com</small
+              >
+              <p class="text-[0.9rem] font-bold text-slate-200 m-0 leading-snug line-clamp-2 mb-1">
+                {{ form.value.twitter_title || previewTitle() }}
+              </p>
+              <p class="text-[0.75rem] text-slate-400 m-0 leading-relaxed line-clamp-1">
+                {{ form.value.twitter_description || previewDescription() }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+}

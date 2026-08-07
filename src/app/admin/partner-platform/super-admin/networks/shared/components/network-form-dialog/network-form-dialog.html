@@ -1,0 +1,113 @@
+<div
+  class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] md:w-[520px] mx-auto overflow-hidden relative rounded-xl"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="network-form-title"
+>
+  <div class="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+    <h2 id="network-form-title" class="text-xl font-bold text-white">{{ title() }}</h2>
+    <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
+  </div>
+
+  <app-forms type="signal" class="space-y-0 flex flex-col" (submitted)="submit()">
+    <div class="flex flex-col gap-5 px-6 py-6 max-h-[70svh] overflow-y-auto">
+      <app-aria-input
+        id="net-name"
+        type="text"
+        label="Network name"
+        placeholder="Allinial Global"
+        [formField]="form.name"
+      />
+
+      <app-aria-input
+        id="net-slug"
+        type="text"
+        label="Slug"
+        placeholder="allinial"
+        [hint]="
+          isEdit()
+            ? 'Slug cannot be changed after creation.'
+            : 'Lowercase letters, numbers and hyphens.'
+        "
+        [formField]="form.slug"
+      />
+
+      <app-aria-input
+        id="net-seats"
+        type="number"
+        label="Total seats"
+        [formField]="form.total_seats"
+      />
+
+      @if (isEdit()) {
+        <app-aria-input
+          id="net-active"
+          type="checkbox"
+          label="Active"
+          [formField]="form.is_active"
+        />
+
+        <!-- Stock the network's own pool: mints coupons with no sub-company (§4.4) -->
+        <fieldset class="flex flex-col gap-2 border-t border-white/10 pt-5">
+          <legend class="text-sm font-medium text-white mb-1">Add seats to the network pool</legend>
+          @if (eligibleCodes().length) {
+            <p class="text-xs" style="color: var(--mm-fg-3)">
+              Optional. Mints coupons straight to the network — they show in the tracker with no
+              sub-company until you allocate them to a firm.
+            </p>
+            <div class="flex flex-col gap-1.5 rounded-md border border-white/10 p-2">
+              @for (code of eligibleCodes(); track code.id) {
+                <label
+                  class="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-white/5 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="isSelected(code.id)"
+                    (change)="toggleCode(code.id, $event)"
+                    [attr.aria-label]="'Select partner code ' + code.code"
+                  />
+                  <span class="font-mono text-sm text-neutral-100">{{ code.code }}</span>
+                  @if (code.partner_network === null) {
+                    <span class="text-[10px] uppercase tracking-wide text-neutral-500">global</span>
+                  }
+                  <span class="text-xs text-neutral-400 ml-auto tabular-nums">
+                    {{ +code.discounted_price | currency: 'USD' : 'symbol' : '1.0-2' }}
+                  </span>
+                  @if (isSelected(code.id)) {
+                    <input
+                      type="number"
+                      min="1"
+                      class="w-20 rounded border border-white/15 bg-transparent px-2 py-1 text-sm text-white tabular-nums"
+                      [value]="seatCount(code.id)"
+                      (input)="onSeatCountInput(code.id, $event)"
+                      [attr.aria-label]="'Seats for partner code ' + code.code"
+                    />
+                  }
+                </label>
+              }
+            </div>
+            @if (selectedCount()) {
+              <p class="text-xs" style="color: var(--mm-fg-3)">
+                {{ selectedCount() }} code(s) selected · {{ totalSeats() }} coupon(s) will be minted
+                to the pool.
+              </p>
+            }
+          } @else {
+            <p class="text-xs" style="color: var(--mm-fg-3)">
+              No network or global partner codes yet — create one under Partner Codes first.
+            </p>
+          }
+        </fieldset>
+      }
+    </div>
+
+    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10 bg-white/3">
+      <app-button variant="outline" size="default" class="text-white" (clicked)="close()">
+        Cancel
+      </app-button>
+      <app-button variant="primary" size="default" type="submit">
+        {{ isEdit() ? 'Save changes' : 'Create network' }}
+      </app-button>
+    </div>
+  </app-forms>
+</div>

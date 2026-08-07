@@ -1,0 +1,65 @@
+@let b = badge();
+@let inner = b.badge;
+<div
+  class="w-full aspect-9/16 overflow-hidden rounded-lg flex flex-col relative bg-card border border-border/40 group/card transition-transform hover:scale-[1.02]"
+  [class.cursor-pointer]="!isComingSoon()"
+  [class.opacity-60]="b.status === 'locked' || isComingSoon()"
+  role="button"
+  tabindex="0"
+  [attr.aria-label]="inner.name + ' ' + (inner.level_name ?? '')"
+  [attr.aria-disabled]="isComingSoon() ? 'true' : null"
+  (click)="handleClick()"
+  (keydown.enter)="handleClick()"
+  (keydown.space)="handleClick(); $event.preventDefault()"
+>
+  @if (isComingSoon()) {
+    <div
+      class="absolute top-2 right-2 z-10 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary text-muted-foreground border border-border"
+    >
+      Coming soon
+    </div>
+  }
+
+  <div class="flex-1 flex items-center justify-center px-4 pt-6">
+    <div class="relative w-full aspect-square max-w-[160px]">
+      @if (inner.icon_url) {
+        <img
+          [ngSrc]="inner.icon_url"
+          [alt]="inner.name"
+          fill
+          class="object-contain drop-shadow-lg"
+          draggable="false"
+        />
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-1 px-4 pb-4 text-center">
+    @if (inner.level_name) {
+      <p class="text-[10px] font-semibold uppercase tracking-wider text-accent">
+        {{ inner.level_name }}
+      </p>
+    }
+    <p class="text-sm font-bold text-white line-clamp-1">{{ inner.sub_text ?? inner.name }}</p>
+    <p class="text-xs text-muted-foreground line-clamp-2">{{ inner.description }}</p>
+
+    <div class="mt-2 flex items-center gap-2">
+      <div class="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
+        <div
+          class="h-full bg-accent transition-[width] duration-500"
+          [style.width.%]="progress()"
+        ></div>
+      </div>
+      <span class="text-[10px] font-medium text-muted-foreground tabular-nums">
+        {{ b.current_progress.earned }}/{{ b.current_progress.required }}
+      </span>
+    </div>
+
+    <span
+      class="mt-2 inline-flex self-center items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+      [ngClass]="statusTone()"
+    >
+      {{ statusLabel() }}
+    </span>
+  </div>
+</div>

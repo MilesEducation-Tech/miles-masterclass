@@ -1,0 +1,22 @@
+<div
+  [class]="containerClasses()"
+  [style]="style()"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()"
+>
+  @if (toast().closable) {
+    <button
+      type="button"
+      (click)="onDismiss($event)"
+      class="absolute -top-2 -left-2 w-5 h-5 flex justify-center items-center rounded-full cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 bg-white shadow-sm border border-gray-200"
+      aria-label="Close notification"
+    >
+      <ng-icon name="heroXMark" class="text-sm w-4 h-4 text-current" />
+    </button>
+  }
+
+  <div class="flex-1">
+    <h3 [class]="titleClasses()">{{ toast().title }}</h3>
+    <p class="text-sm leading-relaxed opacity-90">{{ toast().message }}</p>
+  </div>
+</div>

@@ -1,0 +1,5 @@
+.box {
+  mask:
+    radial-gradient(24px at 75% 100%, #0000 98%, #000) 50% calc(100% - 24px) / 96px 100% repeat-x,
+    radial-gradient(24px at 25% 50%, #000 99%, #0000 101%) bottom/96px 48px repeat-x;
+}

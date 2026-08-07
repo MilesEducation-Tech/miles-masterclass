@@ -1,0 +1,260 @@
+<div class="overflow-hidden md:space-y-20 space-y-10 pb-10">
+  <!-- @if (popular.items()) {
+    <app-slider [items]="popular.items()!" />
+  } @else { -->
+  <app-podcast-hero />
+  <!-- } -->
+  <div class="flex flex-col w-11/12 mx-auto md:space-y-20 space-y-10">
+    @if (inprogress.items().length) {
+      @defer (on viewport; prefetch on idle) {
+        <app-carousel
+          [cards]="inprogress.items()!"
+          [heading]="{ text: 'Continue Watching', subText: '' }"
+          [swiperConfig]="swiperConfigPodcast"
+          [filterConfig]="filterConfig"
+          [isLoading]="inprogress.isLoading()"
+          skeletonClass="aspect-square"
+          (loadMore)="inprogress.loadNextPage()"
+          [shouldHoverAnimate]="true"
+        >
+          <ng-template let-card let-index>
+            <app-square
+              [thumbnail]="card.square_thumbnail ?? card.thumbnail"
+              [title]="card.title"
+              [index]="index"
+              [includedForCaira]="card.included_for_caira"
+              [hasIndividualBadge]="card.has_individual_badge"
+              [cairaLevel]="card.caira_level"
+            />
+          </ng-template>
+        </app-carousel>
+      } @placeholder {
+        <div class="flex items-center justify-center min-w-28 aspect-square">
+          <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+        </div>
+      }
+    }
+    @if (recommended.items().length) {
+      @defer (on viewport; prefetch on idle) {
+        <app-carousel
+          [cards]="recommended.items()!"
+          [heading]="{ text: 'Recommended For You', subText: '' }"
+          [swiperConfig]="swiperConfigPodcast"
+          [filterConfig]="{ filterEnabled: true, courseType: 'podcast', section: 'recommended' }"
+          [isLoading]="recommended.isLoading()"
+          skeletonClass="aspect-square"
+          (loadMore)="recommended.loadNextPage()"
+          (filtersChanged)="recommended.setFilters($event)"
+          [shouldHoverAnimate]="true"
+        >
+          <ng-template let-card let-index>
+            <app-square
+              [thumbnail]="card.square_thumbnail ?? card.thumbnail"
+              [title]="card.title"
+              [index]="index"
+              [includedForCaira]="card.included_for_caira"
+              [hasIndividualBadge]="card.has_individual_badge"
+              [cairaLevel]="card.caira_level"
+            />
+          </ng-template>
+        </app-carousel>
+      } @placeholder {
+        <div class="flex items-center justify-center min-w-28 aspect-square">
+          <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+        </div>
+      }
+    }
+    @if (complimentary.items().length) {
+      @defer (on viewport; prefetch on idle) {
+        <app-carousel
+          [cards]="complimentary.items()!"
+          [heading]="{ text: complimentaryHeading(), subText: '' }"
+          [swiperConfig]="swiperConfigPodcast"
+          [filterConfig]="{ filterEnabled: true, courseType: 'podcast', section: 'complimentary' }"
+          [isLoading]="complimentary.isLoading()"
+          skeletonClass="aspect-square"
+          (loadMore)="complimentary.loadNextPage()"
+          (filtersChanged)="complimentary.setFilters($event)"
+          [shouldHoverAnimate]="true"
+        >
+          <ng-template let-card let-index>
+            <app-square
+              [thumbnail]="card.square_thumbnail ?? card.thumbnail"
+              [title]="card.title"
+              [index]="index"
+              [includedForCaira]="card.included_for_caira"
+              [hasIndividualBadge]="card.has_individual_badge"
+              [cairaLevel]="card.caira_level"
+            />
+          </ng-template>
+        </app-carousel>
+      } @placeholder {
+        <div class="flex items-center justify-center min-w-28 aspect-square">
+          <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+        </div>
+      }
+    }
+    @if (becauseYouWatched.items().length) {
+      @defer (on viewport; prefetch on idle) {
+        <app-carousel
+          [cards]="becauseYouWatched.items()!"
+          [heading]="{ text: becauseYouWatchedHeading(), subText: '' }"
+          [swiperConfig]="swiperConfigPodcast"
+          [filterConfig]="filterConfig"
+          [isLoading]="becauseYouWatched.isLoading()"
+          skeletonClass="aspect-square"
+          (loadMore)="becauseYouWatched.loadNextPage()"
+          [shouldHoverAnimate]="true"
+        >
+          <ng-template let-card let-index>
+            <app-square
+              [thumbnail]="card.square_thumbnail ?? card.thumbnail"
+              [title]="card.title"
+              [index]="index"
+              [includedForCaira]="card.included_for_caira"
+              [hasIndividualBadge]="card.has_individual_badge"
+              [cairaLevel]="card.caira_level"
+            />
+          </ng-template>
+        </app-carousel>
+      } @placeholder {
+        <div class="flex items-center justify-center min-w-28 aspect-square">
+          <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+        </div>
+      }
+    }
+    @for (item of track.items(); track $index) {
+      @if (item.content.length) {
+        @defer (on viewport; prefetch on idle) {
+          <app-carousel
+            [cards]="item.content"
+            [heading]="{ text: item.title, subText: item.description }"
+            [swiperConfig]="swiperConfigPodcast"
+            [filterConfig]="{
+              filterEnabled: true,
+              courseType: 'podcast',
+              section: 'track',
+              trackId: item.ids[0],
+            }"
+            [isLoading]="track.isLoading()"
+            [skeletonClass]="$odd ? 'aspect-9/16' : 'aspect-square'"
+            (loadMore)="track.loadNextTrackPage(item.ids[0])"
+            (filtersChanged)="track.setTrackFilters(item.ids[0], $event)"
+            [shouldHoverAnimate]="true"
+          >
+            <ng-template let-card let-index>
+              <app-square
+                [thumbnail]="card.square_thumbnail ?? card.thumbnail"
+                [title]="card.title"
+                [index]="index"
+                [includedForCaira]="card.included_for_caira"
+                [hasIndividualBadge]="card.has_individual_badge"
+                [cairaLevel]="card.caira_level"
+              />
+            </ng-template>
+          </app-carousel>
+        } @placeholder {
+          <div
+            class="flex items-center justify-center min-w-28"
+            [class]="$odd ? 'aspect-9/16' : 'aspect-square'"
+          >
+            <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+          </div>
+        }
+      }
+    }
+    @if (bookmark.items().length) {
+      @defer (on viewport; prefetch on idle) {
+        <app-carousel
+          [cards]="bookmark.items()!"
+          [heading]="{ text: 'My List', subText: '' }"
+          [swiperConfig]="swiperConfigPodcast"
+          [filterConfig]="filterConfig"
+          [isLoading]="bookmark.isLoading()"
+          skeletonClass="aspect-square"
+          (loadMore)="bookmark.loadNextPage()"
+          [shouldHoverAnimate]="true"
+        >
+          <ng-template let-card let-index>
+            <app-square
+              [thumbnail]="card.square_thumbnail ?? card.thumbnail"
+              [title]="card.title"
+              [index]="index"
+              [includedForCaira]="card.included_for_caira"
+              [hasIndividualBadge]="card.has_individual_badge"
+              [cairaLevel]="card.caira_level"
+            />
+          </ng-template>
+        </app-carousel>
+      } @placeholder {
+        <div class="flex items-center justify-center min-w-28 aspect-square">
+          <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+        </div>
+      }
+    }
+    @if (completed.items().length) {
+      @defer (on viewport; prefetch on idle) {
+        <app-carousel
+          [cards]="completed.items()!"
+          [heading]="{ text: 'Courses you\'ve mastered', subText: '' }"
+          [swiperConfig]="swiperConfigPodcast"
+          [filterConfig]="filterConfig"
+          [isLoading]="completed.isLoading()"
+          skeletonClass="aspect-square"
+          (loadMore)="completed.loadNextPage()"
+          [shouldHoverAnimate]="true"
+        >
+          <ng-template let-card let-index>
+            <app-square
+              [thumbnail]="card.square_thumbnail ?? card.thumbnail"
+              [title]="card.title"
+              [index]="index"
+              [includedForCaira]="card.included_for_caira"
+              [hasIndividualBadge]="card.has_individual_badge"
+              [cairaLevel]="card.caira_level"
+            />
+          </ng-template>
+        </app-carousel>
+      } @placeholder {
+        <div class="flex items-center justify-center min-w-28 aspect-square">
+          <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+        </div>
+      }
+    }
+    @if (comingSoon.items().length) {
+      <section class="w-11/12 mx-auto">
+        <div class="flex flex-col space-y-6">
+          @defer (on viewport; prefetch on idle) {
+            <app-partner-content-list
+              [content]="[
+                {
+                  subHeading: 'Coming Soon on Podcast',
+                  paragraph: 'Hit the bell icon for updates and never miss a new CPE course drop!',
+                  subHeadingClass: 'text-white md:text-5xl text-3xl font-bold ',
+                  itemClass: 'text-center py-4 md:w-2/3 w-full mx-auto leading-relaxed',
+                  paragraphClass: 'text-white md:text-lg text-base font-normal mt-2',
+                },
+              ]"
+            />
+            <app-carousel
+              [cards]="comingSoon.items()"
+              [heading]="{ text: '', subText: '' }"
+              [swiperConfig]="swiperConfigComingSoon"
+              [filterConfig]="{ filterEnabled: false }"
+              (loadMore)="comingSoon.loadNextPage()"
+            >
+              <ng-template let-card let-index="$index">
+                <app-coming-soon [card]="card" [index]="index" type="podcast" />
+              </ng-template>
+            </app-carousel>
+          } @placeholder {
+            <div class="flex items-center justify-center min-w-28 aspect-9/16">
+              <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+  </div>
+  <app-faq [standalone]="false" />
+</div>

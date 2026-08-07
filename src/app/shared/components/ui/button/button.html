@@ -1,0 +1,13 @@
+<button
+  [type]="type()"
+  [disabled]="disabled()"
+  [class]="buttonClasses()"
+  [attr.aria-label]="resolvedAriaLabel()"
+  (click)="handleClick($event)"
+>
+  @if (isCloseVariant()) {
+    <ng-icon name="matCloseRound" class="text-xl" aria-hidden="true" />
+  } @else {
+    <ng-content />
+  }
+</button>

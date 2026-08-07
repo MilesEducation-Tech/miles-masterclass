@@ -1,0 +1,152 @@
+<app-section-nav [items]="sectionNavItems()" mode="sidenav" [shareWithHeader]="false" />
+<div class="overflow-hidden flex flex-col md:space-y-20 space-y-10">
+  <!-- Hero Section -->
+  <section id="home-hero">
+    <app-home-hero />
+  </section>
+
+  <!--Master Classes Section -->
+  <section id="home-masterclasses" class="w-11/12 mx-auto scroll-mt-20">
+    <div class="flex flex-col space-y-4">
+      <div class="flex flex-col space-y-1.5 max-md:hidden">
+        <h2 class="md:text-[42px] text-3xl font-bold leading-none max-md:text-center">
+          Expert-led Master Classes on AI in Accounting
+        </h2>
+        <p class="md:text-base text-sm text-[#A8A8A8] max-md:text-center sr-only">
+          Learn real-world AI applications in accounting from the best in the profession.
+        </p>
+      </div>
+      <div class="md:space-y-20 space-y-10 flex flex-col mt-0!">
+        @for (item of track.items(); track $index) {
+          @if (item.content.length) {
+            @defer (on viewport; prefetch on idle) {
+              <app-carousel
+                [cards]="item.content"
+                [heading]="{ text: item.title, subText: item.description }"
+                [swiperConfig]="$even ? swiperConfigOdd : swiperConfigEven"
+                [filterConfig]="{
+                  filterEnabled: true,
+                  courseType: 'masterclass',
+                  section: 'track',
+                  trackId: item.ids[0],
+                }"
+                (loadMore)="track.loadNextTrackPage(item.ids[0])"
+                (filtersChanged)="track.setTrackFilters(item.ids[0], $event)"
+              >
+                <ng-template let-card>
+                  @if ($even) {
+                    <app-vertical [card]="card" />
+                  } @else if ($odd) {
+                    <app-horizontal [card]="card" />
+                  }
+                </ng-template>
+              </app-carousel>
+            } @placeholder {
+              <div
+                class="flex items-center justify-center min-w-28"
+                [class]="$odd ? 'aspect-video' : 'aspect-9/16'"
+              >
+                <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+              </div>
+            }
+          }
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Offerings Section -->
+  <section id="offerings" class="w-11/12 mx-auto scroll-mt-20">
+    <app-partner-content-list
+      [content]="[
+        {
+          subHeading: 'CPE for the AI-Powered Accountant',
+          paragraph:
+            'Master AI and Analytics with insights from top industry experts. Learn practical tools and strategies while earning your CPE credits.',
+          subHeadingClass: 'text-accent md:text-5xl text-3xl font-bold ',
+          itemClass: 'text-center py-4 md:w-2/3 w-full mx-auto leading-relaxed',
+          paragraphClass: 'text-white md:text-lg text-base font-normal mt-2',
+        },
+      ]"
+    />
+    <div class="container mx-auto">
+      <app-offerings />
+    </div>
+  </section>
+
+  <!-- Premiere Section (commented out) -->
+  @if (premiere.items().length) {
+    <!-- <section class="w-11/12 mx-auto ">
+    <div class="flex flex-col space-y-6">
+      <app-section-heading
+        heading="Live Premieres – Be Part of the Conversation"
+        subHeading="Experience the excitement of watching newMaster Classes go live - together."
+      />
+      <div class="md:w-[70%] w-11/12 h-full mx-auto my-10">
+        <app-upcoming-premiere [card]="premiere.items()[0]" />
+      </div>
+    </div>
+  </section> -->
+  }
+
+  <!-- App Download Section -->
+  <section id="app-download" class="w-11/12 mx-auto scroll-mt-20">
+    <app-app-download />
+  </section>
+
+  <!-- Coming Soon Section -->
+  @if (comingSoon.items().length) {
+    <section class="w-11/12 mx-auto">
+      <div class="flex flex-col space-y-6">
+        @defer (on viewport; prefetch on idle) {
+          <app-partner-content-list
+            [content]="[
+              {
+                subHeading: 'Coming Soon on Master Class',
+                paragraph: 'Hit the bell icon for updates and never miss a new CPE course drop!',
+                subHeadingClass: 'text-white md:text-5xl text-3xl font-bold ',
+                itemClass: 'text-center py-4 md:w-2/3 w-full mx-auto leading-relaxed',
+                paragraphClass: 'text-white md:text-lg text-base font-normal mt-2',
+              },
+            ]"
+          />
+          <app-carousel
+            [cards]="comingSoon.items()"
+            [heading]="{ text: '', subText: '' }"
+            [swiperConfig]="swiperConfigComingSoon"
+            [filterConfig]="{ filterEnabled: false }"
+            (loadMore)="comingSoon.loadNextPage()"
+          >
+            <ng-template let-card let-index="$index">
+              <app-coming-soon [card]="card" [index]="index" />
+            </ng-template>
+          </app-carousel>
+        } @placeholder {
+          <div class="flex items-center justify-center min-w-28 aspect-9/16">
+            <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+  <section id="plan" class="flex container mx-auto flex-col space-y-10 scroll-mt-20">
+    <app-plan-benefits heading="Unlimited CPE. One Subscription." [planPointers]="planPointers">
+      <p class="text-gray-400 md:text-lg text-sm">
+        Access our full library of AI-powered CPE content, along with certificates, CPE tracking,
+        and LinkedIn-ready digital badges.
+      </p>
+      <div class="flex gap-3">
+        <app-button
+          variant="ghost"
+          class="bg-white text-black rounded-md"
+          (clicked)="router.navigate(['/auth/login'])"
+          >Get Started</app-button
+        >
+        <app-button variant="secondary" (clicked)="goToPlan()">Subscribe Now</app-button>
+      </div>
+    </app-plan-benefits>
+  </section>
+  <section id="faq" class="scroll-mt-20">
+    <app-faq [standalone]="false" />
+  </section>
+</div>

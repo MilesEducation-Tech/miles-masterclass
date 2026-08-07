@@ -1,0 +1,135 @@
+<div class="overflow-hidden">
+  <app-micro-learning-hero
+    (startWatching)="onStartWatching()"
+    (browseLibrary)="onBrowseLibrary()"
+  />
+  <div #carousels class="flex flex-col w-11/12 mx-auto md:space-y-20 space-y-10 mt-10 sm:mt-16">
+    @if (inprogress.items().length) {
+      @defer (on viewport; prefetch on idle) {
+        <app-carousel
+          [cards]="inprogress.items()!"
+          [heading]="{ text: 'Continue Watching', subText: '' }"
+          [swiperConfig]="swiperConfigOdd"
+          [filterConfig]="filterConfig"
+          [isLoading]="inprogress.isLoading()"
+          skeletonClass="aspect-9/16 min-w-28"
+          (loadMore)="inprogress.loadNextPage()"
+        >
+          <ng-template let-card>
+            <app-vertical [card]="card" type="micro-learning" />
+          </ng-template>
+        </app-carousel>
+      } @placeholder {
+        <div class="flex items-center justify-center min-w-28 aspect-9/16">
+          <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+        </div>
+      }
+    }
+    @for (item of track.items(); track $index) {
+      @if (item.content.length) {
+        @defer (on viewport; prefetch on idle) {
+          <app-carousel
+            [cards]="item.content"
+            [heading]="{ text: item.title, subText: item.description }"
+            [swiperConfig]="swiperConfigOdd"
+            [filterConfig]="{
+              filterEnabled: true,
+              courseType: 'nano_learning',
+              section: 'track',
+              trackId: item.ids[0],
+            }"
+            [isLoading]="track.isLoading()"
+            [skeletonClass]="'aspect-9/16'"
+            (loadMore)="track.loadNextTrackPage(item.ids[0])"
+            (filtersChanged)="track.setTrackFilters(item.ids[0], $event)"
+          >
+            <ng-template let-card>
+              <app-vertical [card]="card" type="micro-learning" />
+            </ng-template>
+          </app-carousel>
+        } @placeholder {
+          <div class="flex items-center justify-center min-w-28 aspect-9/16">
+            <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+          </div>
+        }
+      }
+    }
+    @if (bookmark.items().length) {
+      @defer (on viewport; prefetch on idle) {
+        <app-carousel
+          [cards]="bookmark.items()!"
+          [heading]="{ text: 'My List', subText: '' }"
+          [swiperConfig]="swiperConfigOdd"
+          [filterConfig]="filterConfig"
+          [isLoading]="bookmark.isLoading()"
+          skeletonClass="aspect-9/16 min-w-28"
+          (loadMore)="bookmark.loadNextPage()"
+        >
+          <ng-template let-card>
+            <app-vertical [card]="card" type="micro-learning" />
+          </ng-template>
+        </app-carousel>
+      } @placeholder {
+        <div class="flex items-center justify-center min-w-28 aspect-9/16">
+          <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+        </div>
+      }
+    }
+    @if (completed.items().length) {
+      @defer (on viewport; prefetch on idle) {
+        <app-carousel
+          [cards]="completed.items()!"
+          [heading]="{ text: 'Courses you\'ve mastered', subText: '' }"
+          [swiperConfig]="swiperConfigOdd"
+          [filterConfig]="filterConfig"
+          [isLoading]="completed.isLoading()"
+          skeletonClass="aspect-9/16 min-w-28"
+          (loadMore)="completed.loadNextPage()"
+        >
+          <ng-template let-card>
+            <app-vertical [card]="card" type="micro-learning" />
+          </ng-template>
+        </app-carousel>
+      } @placeholder {
+        <div class="flex items-center justify-center min-w-28 aspect-9/16">
+          <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+        </div>
+      }
+    }
+    @if (comingSoon.items().length) {
+      <section class="w-11/12 mx-auto md:py-20 py-10">
+        <div class="flex flex-col space-y-6">
+          @defer (on viewport; prefetch on idle) {
+            <app-partner-content-list
+              [content]="[
+                {
+                  subHeading: 'Coming Soon on Reels',
+                  paragraph: 'Hit the bell icon for updates and never miss a new CPE course drop!',
+                  subHeadingClass: 'text-white md:text-5xl text-3xl font-bold ',
+                  itemClass: 'text-center py-4 md:w-2/3 w-full mx-auto leading-relaxed',
+                  paragraphClass: 'text-white md:text-lg text-base font-normal mt-2',
+                },
+              ]"
+            />
+            <app-carousel
+              [cards]="comingSoon.items()"
+              [heading]="{ text: '', subText: '' }"
+              [swiperConfig]="swiperConfigComingSoon"
+              [filterConfig]="{ filterEnabled: false }"
+              (loadMore)="comingSoon.loadNextPage()"
+            >
+              <ng-template let-card let-index="$index">
+                <app-coming-soon [card]="card" [index]="index" type="micro-learning" />
+              </ng-template>
+            </app-carousel>
+          } @placeholder {
+            <div class="flex items-center justify-center min-w-28 aspect-9/16">
+              <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+  </div>
+  <app-faq [standalone]="false" />
+</div>

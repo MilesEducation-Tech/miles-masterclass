@@ -1,0 +1,316 @@
+<section class="admin-theme flex flex-col gap-6 p-6 text-white min-h-full">
+  <header class="flex flex-col gap-2">
+    <h1 class="text-2xl font-bold leading-tight">Roles &amp; permissions</h1>
+    <p class="text-sm text-white/70">
+      Define roles and the permissions they grant, and maintain the permission catalog. Changes
+      apply the next time an affected admin's session refreshes.
+    </p>
+  </header>
+
+  @if (facade.error()) {
+    <div
+      class="px-3 py-2 text-sm rounded-md"
+      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
+      role="alert"
+    >
+      Failed to load the RBAC catalog. Refresh the page or check your connection.
+    </div>
+  }
+
+  <!-- ===================== ROLES ===================== -->
+  <ng-container *hasPermission="PERM.ADMIN_ROLES_MANAGE">
+    <div class="rounded-md border border-white/10" style="background: var(--mm-surface-2)">
+      <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <h2 class="text-sm font-semibold">Roles</h2>
+          @if (facade.isLoading()) {
+            <app-spinner size="sm" />
+          }
+        </div>
+        @if (!showRoleForm()) {
+          <app-button variant="default" size="sm" (clicked)="openCreateRole()">Add role</app-button>
+        }
+      </div>
+
+      <!-- Role form -->
+      @if (showRoleForm()) {
+        <div class="p-4 flex flex-col gap-4 border-b border-white/10">
+          <h3 class="text-sm font-semibold">
+            {{ editingRoleId() ? 'Edit role' : 'New role' }}
+          </h3>
+          <div class="grid gap-4 md:grid-cols-3">
+            <app-aria-input id="role-name" label="Name" [required]="true" [(value)]="roleName" />
+            @if (!editingRoleId()) {
+              <app-aria-input
+                id="role-slug"
+                label="Slug (e.g. content_editor)"
+                [required]="true"
+                [(value)]="roleSlug"
+                [invalid]="roleSlugInvalid()"
+              />
+            } @else {
+              <app-aria-input
+                id="role-slug-ro"
+                label="Slug"
+                [value]="roleSlug()"
+                [readonly]="true"
+              />
+            }
+            <app-aria-input id="role-desc" label="Description" [(value)]="roleDescription" />
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <p class="text-sm font-medium text-white/80">Permissions granted by this role</p>
+            @for (group of permissionGroups(); track group.category) {
+              <fieldset class="flex flex-col gap-2">
+                <legend class="text-xs uppercase tracking-wide text-white/50">
+                  {{ group.category }}
+                </legend>
+                <div class="grid gap-2 sm:grid-cols-2">
+                  @for (perm of group.perms; track perm.id) {
+                    <label class="flex items-start gap-2 cursor-pointer text-sm">
+                      <input
+                        type="checkbox"
+                        class="mt-0.5 h-4 w-4"
+                        [checked]="isPermChecked(perm.id)"
+                        (change)="toggleRolePerm(perm.id, $any($event.target).checked)"
+                      />
+                      <span>
+                        {{ perm.label }}
+                        <span class="block text-xs text-white/40">{{ perm.key }}</span>
+                      </span>
+                    </label>
+                  }
+                </div>
+              </fieldset>
+            }
+          </div>
+
+          <div class="flex items-center gap-3">
+            <app-button
+              variant="default"
+              [disabled]="!canSaveRole() || isSaving()"
+              (clicked)="saveRole()"
+            >
+              {{ editingRoleId() ? 'Save role' : 'Create role' }}
+            </app-button>
+            <app-button variant="outline" class="text-white" (clicked)="cancelRoleForm()">
+              Cancel
+            </app-button>
+          </div>
+        </div>
+      }
+
+      <!-- Roles table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="text-white/60 text-left">
+            <tr>
+              <th class="px-4 py-2 font-medium">Name</th>
+              <th class="px-4 py-2 font-medium">Slug</th>
+              <th class="px-4 py-2 font-medium">Description</th>
+              <th class="px-4 py-2 font-medium text-right">Permissions</th>
+              <th class="px-4 py-2 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (role of facade.roles(); track role.id) {
+              <tr class="border-t border-white/5 align-top">
+                <td class="px-4 py-2">
+                  {{ role.name }}
+                  @if (role.is_system) {
+                    <span class="ml-1 text-xs text-white/40">(system)</span>
+                  }
+                </td>
+                <td class="px-4 py-2 text-white/60 font-mono text-xs">{{ role.slug }}</td>
+                <td class="px-4 py-2 text-white/70">{{ role.description || '—' }}</td>
+                <td class="px-4 py-2 text-right text-white/70 tabular-nums">
+                  {{ role.is_system ? 'all' : role.permissionIds.length }}
+                </td>
+                <td class="px-4 py-2 text-right">
+                  @if (role.is_system) {
+                    <span class="text-xs text-white/40">Locked</span>
+                  } @else if (isPendingDelete('role', role.id)) {
+                    <div class="inline-flex items-center gap-2">
+                      <span class="text-xs text-white/70">Delete?</span>
+                      <app-button
+                        variant="destructive"
+                        size="sm"
+                        [disabled]="isSaving()"
+                        (clicked)="confirmDelete()"
+                      >
+                        Yes
+                      </app-button>
+                      <app-button
+                        variant="outline"
+                        size="sm"
+                        class="text-white"
+                        (clicked)="cancelDelete()"
+                      >
+                        No
+                      </app-button>
+                    </div>
+                  } @else {
+                    <div class="inline-flex items-center gap-2">
+                      <app-button
+                        variant="outline"
+                        size="sm"
+                        class="text-white"
+                        (clicked)="openEditRole(role)"
+                      >
+                        Edit
+                      </app-button>
+                      <app-button
+                        variant="destructive"
+                        size="sm"
+                        (clicked)="askDelete('role', role.id)"
+                      >
+                        Delete
+                      </app-button>
+                    </div>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              @if (!facade.isLoading()) {
+                <tr>
+                  <td colspan="5" class="px-4 py-6 text-center text-white/50">No roles yet.</td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ===================== PERMISSIONS ===================== -->
+  <ng-container *hasPermission="PERM.ADMIN_PERMISSIONS_MANAGE">
+    <div class="rounded-md border border-white/10" style="background: var(--mm-surface-2)">
+      <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-2">
+        <h2 class="text-sm font-semibold">Permission catalog</h2>
+        @if (!showPermForm()) {
+          <app-button variant="default" size="sm" (clicked)="openCreatePerm()">
+            Add permission
+          </app-button>
+        }
+      </div>
+
+      <!-- Permission form -->
+      @if (showPermForm()) {
+        <div class="p-4 flex flex-col gap-4 border-b border-white/10">
+          <h3 class="text-sm font-semibold">
+            {{ editingPermId() ? 'Edit permission' : 'New permission' }}
+          </h3>
+          <div class="grid gap-4 md:grid-cols-2">
+            @if (!editingPermId()) {
+              <app-aria-input
+                id="perm-key"
+                label="Key (e.g. reports:courses:read)"
+                [required]="true"
+                [(value)]="permKey"
+                [invalid]="permKeyInvalid()"
+              />
+            } @else {
+              <app-aria-input id="perm-key-ro" label="Key" [value]="permKey()" [readonly]="true" />
+            }
+            <app-aria-input
+              id="perm-category"
+              label="Category"
+              [required]="true"
+              [(value)]="permCategory"
+            />
+            <app-aria-input id="perm-label" label="Label" [required]="true" [(value)]="permLabel" />
+            <app-aria-input id="perm-desc" label="Description" [(value)]="permDescription" />
+          </div>
+          <div class="flex items-center gap-3">
+            <app-button
+              variant="default"
+              [disabled]="!canSavePerm() || isSaving()"
+              (clicked)="savePerm()"
+            >
+              {{ editingPermId() ? 'Save permission' : 'Create permission' }}
+            </app-button>
+            <app-button variant="outline" class="text-white" (clicked)="cancelPermForm()">
+              Cancel
+            </app-button>
+          </div>
+        </div>
+      }
+
+      <!-- Permissions table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="text-white/60 text-left">
+            <tr>
+              <th class="px-4 py-2 font-medium">Key</th>
+              <th class="px-4 py-2 font-medium">Label</th>
+              <th class="px-4 py-2 font-medium">Category</th>
+              <th class="px-4 py-2 font-medium">Description</th>
+              <th class="px-4 py-2 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (perm of facade.permissions(); track perm.id) {
+              <tr class="border-t border-white/5 align-top">
+                <td class="px-4 py-2 font-mono text-xs">{{ perm.key }}</td>
+                <td class="px-4 py-2 text-white/80">{{ perm.label }}</td>
+                <td class="px-4 py-2 text-white/60">{{ perm.category }}</td>
+                <td class="px-4 py-2 text-white/60">{{ perm.description || '—' }}</td>
+                <td class="px-4 py-2 text-right">
+                  @if (isPendingDelete('permission', perm.id)) {
+                    <div class="inline-flex items-center gap-2">
+                      <span class="text-xs text-white/70">Delete?</span>
+                      <app-button
+                        variant="destructive"
+                        size="sm"
+                        [disabled]="isSaving()"
+                        (clicked)="confirmDelete()"
+                      >
+                        Yes
+                      </app-button>
+                      <app-button
+                        variant="outline"
+                        size="sm"
+                        class="text-white"
+                        (clicked)="cancelDelete()"
+                      >
+                        No
+                      </app-button>
+                    </div>
+                  } @else {
+                    <div class="inline-flex items-center gap-2">
+                      <app-button
+                        variant="outline"
+                        size="sm"
+                        class="text-white"
+                        (clicked)="openEditPerm(perm)"
+                      >
+                        Edit
+                      </app-button>
+                      <app-button
+                        variant="destructive"
+                        size="sm"
+                        (clicked)="askDelete('permission', perm.id)"
+                      >
+                        Delete
+                      </app-button>
+                    </div>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              @if (!facade.isLoading()) {
+                <tr>
+                  <td colspan="5" class="px-4 py-6 text-center text-white/50">
+                    No permissions yet.
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+</section>

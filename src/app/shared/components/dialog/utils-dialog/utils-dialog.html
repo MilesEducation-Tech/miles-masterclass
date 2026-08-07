@@ -1,0 +1,304 @@
+<div
+  class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] mx-auto overflow-hidden relative"
+  [class]="showAppDownload ? 'md:w-[640px] xl:w-[800px]' : 'md:max-w-[500px]'"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modal-title"
+  aria-describedby="modal-description"
+>
+  <!-- Close Button -->
+  <div class="absolute top-4 right-4 z-30">
+    <app-button variant="close" size="sm" (clicked)="close()" />
+  </div>
+
+  <!-- Miles One app-download layout: title + subtitle + store badges + QR + phone mockup + footer -->
+  @if (showAppDownload) {
+    <div class="relative flex flex-col min-h-80 rounded-2xl text-white w-full overflow-hidden">
+      @if (data.title) {
+        <h2
+          id="modal-title"
+          class="text-xl sm:text-2xl font-bold leading-tight mb-3 text-left mx-6 mt-6"
+        >
+          {{ data.title }}
+        </h2>
+      }
+
+      @if (data.subtitle) {
+        <p id="modal-description" class="text-sm leading-relaxed text-white/75 mb-6 text-left mx-6">
+          {{ data.subtitle }}
+        </p>
+      }
+
+      <div class="flex flex-col sm:flex-row gap-6 sm:gap-8 w-full my-6 mx-6">
+        <div class="flex max-md:flex-col gap-6">
+          <div class="flex flex-col justify-start gap-2 items-start">
+            <span class="text-xs text-white/60 uppercase tracking-wide">Available on</span>
+            <div class="flex flex-row sm:flex-col gap-2">
+              <a
+                [href]="APP_STORE_URL"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Download on the App Store"
+                class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 border border-white/15 text-white text-[13px] font-medium no-underline whitespace-nowrap transition-colors hover:bg-white/20"
+              >
+                <ng-icon draggable="false" [svg]="appStoreIcon" class="size-5! h-auto!" />
+                <span>App Store</span>
+              </a>
+              <a
+                [href]="PLAY_STORE_URL"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Get it on Google Play"
+                class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 border border-white/15 text-white text-[13px] font-medium no-underline whitespace-nowrap transition-colors hover:bg-white/20"
+              >
+                <ng-icon draggable="false" [svg]="googlePlayIcon" class="size-5! h-auto!" />
+                <span>Play Store</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="rounded-lg overflow-hidden mt-1">
+            <img
+              loading="lazy"
+              [src]="S3_BUCKET_URL + 'static-assests/web-app/commons/miles-one-qr.webp'"
+              alt="Scan to download Miles One app"
+              class="w-[120px] h-[120px] sm:w-[130px] sm:h-[130px] object-contain block"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="relative h-36 w-full z-0">
+        <div class="bg-linear-to-t from-black to-transparent z-10 inset-0 absolute"></div>
+        <div class="flex items-center justify-center shrink-0 absolute right-6 bottom-0 -z-10">
+          <div
+            class="w-[160px] h-[210px] sm:w-[200px] sm:h-[260px] flex items-center justify-center"
+          >
+            <img
+              loading="lazy"
+              [src]="S3_BUCKET_URL + 'static-assests/web-app/commons/miles-one-login.png'"
+              alt="Miles One App"
+              class="w-full h-full object-contain block"
+            />
+          </div>
+        </div>
+        @if (data.footer) {
+          <p
+            class="text-[13px] leading-relaxed text-white/60 m-0 absolute left-0 bottom-4 z-20 mx-6"
+          >
+            {{ data.footer }}
+          </p>
+        }
+      </div>
+    </div>
+  } @else {
+    <!-- Default typed content layout -->
+    <div class="px-8 py-10 text-center" [class]="data.containerClass">
+      <!-- Title -->
+      @if (data.title) {
+        <h2 id="modal-title" class="text-xl font-bold text-white mb-4">{{ data.title }}</h2>
+      }
+
+      <!-- Dynamic Content -->
+      @for (item of data.content; track $index) {
+        @switch (item.type) {
+          @case ('text') {
+            <p id="modal-description" class="text-gray-300 leading-relaxed">{{ item.value }}</p>
+          }
+          @case ('heading') {
+            @if (item.level === 3) {
+              <h3 class="text-xl font-semibold text-white mt-6 mb-3">{{ item.value }}</h3>
+            }
+            @if (item.level === 4) {
+              <h4 class="text-lg font-semibold text-white mt-5 mb-2">{{ item.value }}</h4>
+            }
+          }
+          @case ('subtext') {
+            <p class="text-gray-400 text-sm mb-2 italic">{{ item.value }}</p>
+          }
+          @case ('description') {
+            <p
+              class="text-gray-300 mb-4 leading-relaxed bg-gray-800 p-4 rounded-lg border-l-4 border-blue-500 text-left"
+            >
+              {{ item.value }}
+            </p>
+          }
+          @case ('note') {
+            <div
+              class="mb-4 p-4 rounded-lg border-l-4 text-left"
+              [class.bg-blue-900]="item.variant === 'info' || !item.variant"
+              [class.border-blue-500]="item.variant === 'info' || !item.variant"
+              [class.bg-yellow-900]="item.variant === 'warning'"
+              [class.border-yellow-500]="item.variant === 'warning'"
+              [class.bg-green-900]="item.variant === 'success'"
+              [class.border-green-500]="item.variant === 'success'"
+            >
+              <p class="text-gray-200 text-sm leading-relaxed">
+                <span class="font-semibold mr-2">
+                  @if (item.variant === 'warning') {
+                    ⚠️ Warning:
+                  }
+                  @if (item.variant === 'success') {
+                    ✓ Tip:
+                  }
+                  @if (item.variant === 'info' || !item.variant) {
+                    ℹ️ Note:
+                  }
+                </span>
+                {{ item.value }}
+              </p>
+            </div>
+          }
+          @case ('list') {
+            @if (item.ordered) {
+              <ol class="list-decimal list-inside mb-4 space-y-2 text-gray-300 ml-4 text-left">
+                @for (listItem of item.items; track $index) {
+                  <li class="leading-relaxed">{{ listItem }}</li>
+                }
+              </ol>
+            } @else {
+              <ul class="list-disc list-inside mb-4 space-y-2 text-gray-300 ml-4 text-left">
+                @for (listItem of item.items; track $index) {
+                  <li class="leading-relaxed">{{ listItem }}</li>
+                }
+              </ul>
+            }
+          }
+          @case ('table') {
+            <div class="mb-6 overflow-x-auto rounded-lg border border-gray-700">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-gray-800 text-gray-200">
+                  <tr>
+                    @for (header of item.headers; track $index) {
+                      <th class="px-4 py-3 font-semibold">{{ header }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                  @for (row of item.rows; track $index) {
+                    <tr class="hover:bg-gray-800 transition-colors">
+                      @for (cell of row; track $index) {
+                        <td class="px-4 py-3 text-gray-300">{{ cell }}</td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          @case ('image') {
+            <figure class="mb-6">
+              <img
+                [src]="item.src"
+                [alt]="item.alt"
+                class="w-full rounded-lg border border-gray-700"
+              />
+              @if (item.caption) {
+                <figcaption class="text-gray-400 text-sm mt-2 text-center italic">
+                  {{ item.caption }}
+                </figcaption>
+              }
+            </figure>
+          }
+          @case ('code') {
+            <div class="mb-4 rounded-lg overflow-hidden border border-gray-700 text-left">
+              <div class="bg-gray-800 px-4 py-2 text-gray-400 text-xs font-mono">
+                {{ item.language || 'code' }}
+              </div>
+              <pre
+                class="bg-gray-900 p-4 overflow-x-auto"
+              ><code class="text-green-400 text-sm font-mono">{{ item.value }}</code></pre>
+            </div>
+          }
+          @case ('clickable-list') {
+            <div class="flex flex-col space-y-2 mb-4">
+              @for (listItem of item.items; track $index) {
+                <button
+                  class="text-left px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-200 transition-colors flex items-center justify-between group"
+                  (click)="handleItemClick(listItem.value)"
+                >
+                  <span>{{ listItem.label }}</span>
+                  <span class="text-gray-500 group-hover:text-white transition-colors">→</span>
+                </button>
+              }
+            </div>
+          }
+          @case ('links') {
+            <ul class="flex flex-col gap-2 mb-4 text-left">
+              @for (link of item.items; track link.href) {
+                <li>
+                  <a
+                    [href]="link.href"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="group flex items-start gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-accent/60"
+                  >
+                    <span
+                      class="mt-0.5 shrink-0 grid place-items-center size-9 rounded-lg bg-accent/10 text-accent"
+                      aria-hidden="true"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" class="size-5">
+                        <path
+                          d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z"
+                          stroke="currentColor"
+                          stroke-width="1.6"
+                          stroke-linejoin="round"
+                        />
+                        <path
+                          d="M14 2v6h6"
+                          stroke="currentColor"
+                          stroke-width="1.6"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                      <span
+                        class="block font-medium text-white group-hover:text-accent transition-colors"
+                      >
+                        {{ link.label }}
+                      </span>
+                      @if (link.description) {
+                        <span class="mt-0.5 block text-sm text-gray-400">{{
+                          link.description
+                        }}</span>
+                      }
+                    </span>
+                    <span
+                      class="mt-0.5 shrink-0 text-gray-500 group-hover:text-accent transition-colors"
+                      aria-hidden="true"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" class="size-5">
+                        <path
+                          d="M14 5h5v5m0-5-7 7M19 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4"
+                          stroke="currentColor"
+                          stroke-width="1.6"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        }
+      }
+
+      <!-- Buttons -->
+      @if (data.buttons && data.buttons.length > 0) {
+        <div class="mt-6 flex justify-center gap-3">
+          @for (button of data.buttons; track $index) {
+            <app-button
+              [variant]="button.variant ?? 'default'"
+              (clicked)="handleButtonClick(button.action)"
+            >
+              {{ button.label }}
+            </app-button>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

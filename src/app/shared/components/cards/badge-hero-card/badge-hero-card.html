@@ -1,0 +1,174 @@
+@let b = badge();
+@let s = state();
+<div
+  class="grid gap-8"
+  [class.md:grid-cols-2]="isHero()"
+  [class.md:py-16]="isHero()"
+  [class.py-12]="isHero()"
+  [class.px-6]="isHero()"
+  [class.container]="isHero()"
+  [class.mx-auto]="isHero()"
+  [class.grid-cols-1]="!isHero()"
+  [class.p-6]="!isHero()"
+  [class.rounded-2xl]="!isHero()"
+  [class.bg-white\/5]="!isHero()"
+  [class.border]="!isHero()"
+  [class.border-white\/10]="!isHero()"
+>
+  <!-- Text column -->
+  <div
+    class="flex flex-col justify-center"
+    [class.order-2]="!isHero()"
+    [class.text-center]="!isHero()"
+  >
+    <h2
+      class="bg-linear-to-br bg-clip-text font-extrabold text-transparent leading-none"
+      [class]="levelGradient()"
+      [class.text-5xl]="isHero()"
+      [class.md:text-6xl]="isHero()"
+      [class.text-2xl]="!isHero()"
+    >
+      {{ displayName() }}
+    </h2>
+    @if (b.level) {
+      <p
+        class="mt-2 bg-linear-to-br bg-clip-text font-semibold text-transparent"
+        [class]="levelGradient()"
+        [class.text-2xl]="isHero()"
+        [class.md:text-3xl]="isHero()"
+        [class.text-base]="!isHero()"
+      >
+        {{ b.level }}
+      </p>
+    }
+    @if (b.sub_text) {
+      <p
+        class="font-semibold text-white"
+        [class.mt-6]="isHero()"
+        [class.text-xl]="isHero()"
+        [class.mt-3]="!isHero()"
+        [class.text-sm]="!isHero()"
+      >
+        {{ b.sub_text }}
+      </p>
+    }
+    @if (b.description) {
+      <p
+        class="text-gray-300 leading-relaxed"
+        [class.mt-3]="isHero()"
+        [class.max-w-xl]="isHero()"
+        [class.text-sm]="isHero()"
+        [class.text-xs]="!isHero()"
+        [class.line-clamp-2]="!isHero()"
+        [class.mt-2]="!isHero()"
+      >
+        {{ b.description }}
+      </p>
+    }
+  </div>
+
+  <!-- Visual + CTA column -->
+  <div class="flex flex-col items-center justify-center gap-6" [class.order-1]="!isHero()">
+    @if (b.image_url) {
+      <div
+        class="relative flex items-center justify-center"
+        [class.h-64]="isHero()"
+        [class.w-64]="isHero()"
+        [class.md:h-80]="isHero()"
+        [class.md:w-80]="isHero()"
+        [class.h-40]="!isHero()"
+        [class.w-40]="!isHero()"
+      >
+        <div
+          class="absolute inset-0 rounded-full blur-[30px]"
+          [style.background-color]="haloHex()"
+          [class.opacity-60]="s === 'claimable' || s === 'claimed'"
+          [class.opacity-20]="s !== 'claimable' && s !== 'claimed'"
+          aria-hidden="true"
+        ></div>
+        <img
+          [src]="b.image_url"
+          [alt]="b.name"
+          class="relative h-full w-full object-contain transition-[filter,opacity]"
+          draggable="false"
+        />
+        @if (s === 'locked') {
+          <div
+            class="absolute inset-0 flex items-center justify-center backdrop-blur-[4px]"
+            aria-hidden="true"
+          >
+            <span
+              class="flex h-14 w-14 items-center justify-center rounded-full bg-black/60 text-white"
+            >
+              <ng-icon name="lucideLock" size="24" />
+            </span>
+          </div>
+        }
+      </div>
+    }
+
+    @switch (s) {
+      @case ('coming_soon') {
+        <span
+          class="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-gray-200"
+        >
+          Coming Soon
+        </span>
+      }
+      @case ('claimable') {
+        <app-button
+          variant="default"
+          size="lg"
+          ariaLabel="Share badge on LinkedIn"
+          [class]="progressGradient()"
+          (clicked)="onClaim()"
+        >
+          Share Badge on &nbsp;
+          <ng-icon name="lucideLinkedin" aria-hidden="true" />
+        </app-button>
+      }
+      @case ('claimed') {
+        <app-button variant="primary" size="lg" ariaLabel="Share on LinkedIn" (clicked)="onShare()">
+          Share on &nbsp;
+          <ng-icon name="lucideLinkedin" aria-hidden="true" />
+        </app-button>
+      }
+      @case ('locked') {
+        @if (b.is_coming_soon) {
+          <span
+            class="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-gray-200"
+          >
+            Coming Soon
+          </span>
+        } @else {
+          <div class="flex w-full max-w-sm flex-col items-center gap-2">
+            <div class="relative h-2 w-full overflow-hidden rounded-full bg-white/10">
+              <div
+                class="absolute inset-y-0 left-0 rounded-full bg-linear-to-r transition-[width] duration-500"
+                [class]="progressGradient()"
+                [style.width.%]="progress()"
+              ></div>
+            </div>
+            <span class="text-xs font-medium text-gray-300 tabular-nums">
+              {{ b.earned_credits ?? 0 }} / {{ b.required_credits ?? 0 }} credits
+            </span>
+          </div>
+        }
+      }
+      @case ('unlocked') {
+        <div class="flex w-full max-w-sm flex-col items-center gap-2">
+          <div class="relative h-2 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              class="absolute inset-y-0 left-0 rounded-full bg-linear-to-r transition-[width] duration-500"
+              [class]="progressGradient()"
+              [style.width.%]="progress()"
+            ></div>
+          </div>
+          <span class="text-xs font-medium text-gray-300 tabular-nums">
+            {{ b.earned_credits ?? 0 }} / {{ b.required_credits ?? 0 }} credits
+          </span>
+        </div>
+      }
+    }
+  </div>
+</div>

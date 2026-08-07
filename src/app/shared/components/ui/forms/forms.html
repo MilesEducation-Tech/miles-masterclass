@@ -1,0 +1,26 @@
+<ng-template #content>
+  <ng-content />
+</ng-template>
+
+@switch (type()) {
+  @case ('signal') {
+    <!-- Signal forms use regular form tag -->
+    <form (submit)="handleSubmit($event)" [class]="formClasses()">
+      <ng-container *ngTemplateOutlet="content" />
+    </form>
+  }
+  @case ('model') {
+    <!-- Model forms use regular form tag -->
+    <form (submit)="handleSubmit($event)" [class]="formClasses()">
+      <ng-container *ngTemplateOutlet="content" />
+    </form>
+  }
+  @case ('reactive') {
+    <!-- Reactive forms use [formGroup] -->
+    @if (formGroup()) {
+      <form [formGroup]="formGroup()!" (submit)="handleSubmit($event)" [class]="formClasses()">
+        <ng-container *ngTemplateOutlet="content" />
+      </form>
+    }
+  }
+}

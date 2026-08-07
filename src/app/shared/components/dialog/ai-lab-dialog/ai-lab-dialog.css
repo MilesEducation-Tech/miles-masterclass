@@ -1,0 +1,62 @@
+:host {
+  display: block;
+}
+
+/*
+ * Orbit motion.
+ *
+ * The rings and the icons live in one rotating layer, so an icon is welded to
+ * the ring it sits on — rotating them separately (even at the same speed) lets
+ * them drift apart. Each icon then counter-rotates by the same amount over the
+ * same duration, so it rides the ring without tipping over.
+ *
+ * Origin is the rings' own centre, (264.84, 216.70) of the 530x481.5 box, taken
+ * from the three concentric paths in orbit-rings.svg. Note this is NOT the box
+ * centre, nor the ellipse's centre (265, 228) — spinning about either of those
+ * makes the rings visibly wobble.
+ */
+.ai-orbit-spin {
+  transform-origin: 49.97% 45%;
+  will-change: transform;
+  animation: ai-orbit-spin 90s linear infinite;
+}
+
+.ai-orbit-counter {
+  animation: ai-orbit-counter 90s linear infinite;
+}
+
+/* Small on purpose: enough to read as floating, not enough to lift the icon off
+   its ring. Per-icon delays are set inline in the template. */
+.ai-orbit-float {
+  animation: ai-orbit-float 6s ease-in-out infinite;
+}
+
+@keyframes ai-orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ai-orbit-counter {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes ai-orbit-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-orbit-spin,
+  .ai-orbit-counter,
+  .ai-orbit-float {
+    animation: none;
+  }
+}

@@ -1,0 +1,28 @@
+<ol
+  class="grid md:grid-cols-[repeat(2,250px)] grid-cols-[repeat(1,250px)] lg:grid-cols-[repeat(3,250px)] 2xl:grid-cols-[repeat(4,250px)] gap-6 list-none p-0 m-0"
+>
+  @for (step of steps(); track step.title) {
+    <li class="relative w-full bg-[#071625] py-5 overflow-hidden rounded-lg">
+      <div
+        class="absolute w-full aspect-square rounded-full top-0 left-1/3 bg-source z-0 blur-[120px] pointer-events-none"
+        aria-hidden="true"
+      ></div>
+      <div class="flex justify-center my-6 relative z-10">
+        <ng-icon
+          [svg]="step.icon"
+          class="size-[62px]!"
+          [attr.aria-label]="step.iconLabel ?? step.title"
+        />
+      </div>
+      <div class="flex flex-col items-center relative z-10">
+        <h3 class="text-white text-center font-semibold text-base px-2">
+          {{ step.title }}
+        </h3>
+        <p
+          class="text-[#A8A8A8] text-center font-medium text-sm px-2 mt-2"
+          [innerHTML]="step.description"
+        ></p>
+      </div>
+    </li>
+  }
+</ol>

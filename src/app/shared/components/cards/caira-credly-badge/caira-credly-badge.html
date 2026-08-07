@@ -1,0 +1,37 @@
+@if (visible()) {
+  @if (variant() === 'inline') {
+    <div
+      class="subtitle inline-flex items-center gap-2 bg-transparent border border-input rounded-lg px-2 py-1 text-base! text-white whitespace-nowrap"
+    >
+      @if (showCaira()) {
+        <span class="flex items-center gap-1">
+          <img [src]="cairaLogo" alt="CAIRA" class="h-5 w-auto" draggable="false" />
+          <span class="font-semibold sr-only">L{{ cairaLevel() }}</span>
+        </span>
+      }
+      @if (showSeparator()) {
+        <span class="text-white/40" aria-hidden="true">|</span>
+      }
+      @if (showCredly()) {
+        <img [src]="credlyLogo" alt="Credly" class="h-5 w-auto" draggable="false" />
+      }
+    </div>
+  } @else {
+    <div
+      class="flex items-center gap-2 text-xs px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded-t-lg text-white whitespace-nowrap"
+    >
+      @if (showCaira()) {
+        <span class="flex items-center gap-1">
+          <img [src]="cairaLogo" alt="CAIRA" class="h-3.5 w-auto" draggable="false" />
+          <span class="font-semibold sr-only">L{{ cairaLevel() }}</span>
+        </span>
+      }
+      @if (showSeparator()) {
+        <span class="text-white/40" aria-hidden="true">|</span>
+      }
+      @if (showCredly()) {
+        <img [src]="credlyLogo" alt="Credly" class="h-3.5 w-auto" draggable="false" />
+      }
+    </div>
+  }
+}

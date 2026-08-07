@@ -1,0 +1,134 @@
+<div class="text-white">
+  @if (isLoading() && !rows().length) {
+    <div class="flex items-center justify-center py-12 text-neutral-400">
+      <app-spinner size="lg" color="white" trackColor="neutral-600" />
+    </div>
+  }
+
+  @if (rows().length) {
+    <div class="overflow-x-auto rounded-lg border border-white/10">
+      <table class="w-full text-left text-sm">
+        <thead
+          class="text-[11px] uppercase tracking-wider"
+          style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
+        >
+          <tr class="whitespace-nowrap">
+            <th class="w-8 px-2 py-3"><span class="sr-only">Expand notes</span></th>
+            <th class="px-4 py-3 font-semibold">Name</th>
+            <th class="px-4 py-3 font-semibold">Email</th>
+            <th class="px-4 py-3 font-semibold">Firm</th>
+            <th class="px-4 py-3 font-semibold">Job role</th>
+            <th class="px-4 py-3 font-semibold">Help type</th>
+            <th class="px-4 py-3 font-semibold">Enquiry type</th>
+            <th class="px-4 py-3 font-semibold">Status</th>
+            <th class="px-4 py-3 font-semibold">Created</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          @for (row of rows(); track row.id) {
+            <tr class="hover:bg-white/3 transition-colors align-top">
+              <td class="px-2 py-3 align-middle">
+                @if (row.notes) {
+                  <button
+                    type="button"
+                    class="inline-flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:bg-white/10 hover:text-white transition-colors"
+                    [attr.aria-expanded]="isExpanded(row.id)"
+                    [attr.aria-label]="
+                      (isExpanded(row.id) ? 'Hide' : 'Show') + ' notes for ' + row.full_name
+                    "
+                    (click)="toggleExpand(row.id)"
+                  >
+                    <ng-icon
+                      [name]="isExpanded(row.id) ? 'lucideChevronDown' : 'lucideChevronRight'"
+                      class="text-base"
+                      aria-hidden="true"
+                    />
+                  </button>
+                }
+              </td>
+              <td class="px-4 py-3 text-neutral-100">{{ row.full_name }}</td>
+              <td class="px-4 py-3 text-neutral-300 break-all">{{ row.email }}</td>
+              <td class="px-4 py-3 text-neutral-300">{{ row.firm_name }}</td>
+              <td class="px-4 py-3 text-neutral-300">{{ row.job_role || '—' }}</td>
+              <td class="px-4 py-3 text-neutral-300">{{ helpType(row) || '—' }}</td>
+              <td class="px-4 py-3 text-neutral-300">{{ row.enquiry_type }}</td>
+              <td class="px-4 py-3">
+                @if (canWrite()) {
+                  <select
+                    class="rounded-md border border-white/15 bg-transparent px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
+                    style="background: var(--mm-surface-2)"
+                    [value]="row.status"
+                    [attr.aria-label]="'Status for ' + row.full_name"
+                    (change)="onStatusChange(row.id, $event)"
+                  >
+                    @for (s of statuses; track s) {
+                      <option [value]="s">{{ s }}</option>
+                    }
+                  </select>
+                } @else {
+                  <span
+                    class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium capitalize"
+                    [style.background]="statusStyle[row.status].bg"
+                    [style.color]="statusStyle[row.status].fg"
+                  >
+                    {{ row.status }}
+                  </span>
+                }
+              </td>
+              <td class="px-4 py-3 text-neutral-300 whitespace-nowrap">
+                {{ row.created_at | date: 'MMM d, y' }}
+              </td>
+            </tr>
+            @if (isExpanded(row.id)) {
+              <tr style="background: var(--mm-surface-2)">
+                <td></td>
+                <td colspan="8" class="px-4 py-3">
+                  <div
+                    class="text-[11px] uppercase tracking-wider mb-1"
+                    style="color: var(--mm-fg-3)"
+                  >
+                    Notes
+                  </div>
+                  <p class="text-sm text-neutral-200 whitespace-pre-wrap">{{ row.notes }}</p>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-6 flex items-center justify-between text-sm text-neutral-400">
+      <span>
+        Showing
+        <span class="font-semibold text-white">
+          {{ pageWindow().from }}-{{ pageWindow().to }}
+        </span>
+        of {{ pageWindow().total }}
+      </span>
+      <div class="flex items-center gap-3">
+        <app-button
+          variant="outline"
+          size="sm"
+          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
+          [disabled]="!canPrev()"
+          (clicked)="prevPage.emit()"
+        >
+          Prev
+        </app-button>
+        <span class="text-white/70 tabular-nums">Page {{ currentPage() }}</span>
+        <app-button
+          variant="outline"
+          size="sm"
+          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
+          [disabled]="!canNext()"
+          (clicked)="nextPage.emit()"
+        >
+          Next
+        </app-button>
+      </div>
+    </div>
+  } @else if (!isLoading()) {
+    <p class="py-12 text-center text-sm text-neutral-500">No leads to show.</p>
+  }
+</div>

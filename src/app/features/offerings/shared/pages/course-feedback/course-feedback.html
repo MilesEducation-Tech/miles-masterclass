@@ -1,0 +1,181 @@
+<div
+  class="min-h-screen bg-[#0B0D10] text-white p-6 md:p-12 pt-28! font-sans flex flex-col items-center"
+>
+  @if (!submissionSuccess()) {
+    <!-- Main Header -->
+    <header class="mb-10 text-center space-y-2">
+      <h1 class="text-4xl font-bold tracking-tight text-white mb-2">Course Evaluation Feedback</h1>
+      @if (courseDetails(); as course) {
+        <p class="text-gray-300 text-lg">
+          {{ course.title }}
+          @if (course.instructor_details; as instructor) {
+            by {{ instructor.first_name }} {{ instructor.last_name }}
+          }
+        </p>
+      }
+
+      <!-- User Info -->
+      @if (currentUser(); as user) {
+        <div class="flex flex-col items-center text-blue-500 mt-4 space-y-1">
+          <span class="text-base font-medium"
+            >Name- {{ user.first_name }} {{ user.last_name }}</span
+          >
+          <span class="text-base font-medium">Registered E-mail ID- {{ user.email }}</span>
+        </div>
+      }
+    </header>
+
+    <!-- Feedback Card -->
+    <form
+      class="w-full max-w-5xl bg-[#161E26] border border-[#3E4552] rounded-xl p-8 shadow-2xl"
+      novalidate
+      (submit)="$event.preventDefault(); submit()"
+    >
+      <!-- Form Header -->
+      <div class="flex items-start gap-4 mb-8 border-b border-[#3E4552] padding-b-6 pb-6">
+        <div class="p-2 bg-gray-700/50 rounded text-gray-400">
+          <!-- Book Icon Placeholder -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-8 h-8"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+            />
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-white mb-1">Course Evaluation Form</h2>
+          <p class="text-gray-400 text-sm">
+            Thank you for participating in this self study course. Please take a moment to offer
+            your feedback. Please rank each item below, with 1 being the lowest and 5 being the
+            highest score.
+          </p>
+        </div>
+      </div>
+
+      <!-- Section 1: Ratings -->
+      <div class="mb-10">
+        <!-- Table Header for Ratings -->
+        <div class="hidden md:grid grid-cols-2 gap-4 mb-4 px-4">
+          <div class="flex items-center">
+            <h3 class="text-blue-500 font-semibold">1. Presenters and Course Content</h3>
+          </div>
+          <!-- Question Column Empty -->
+          <div
+            class="grid grid-cols-5 text-blue-500 text-[10px] md:text-xs font-medium text-center items-center h-full"
+          >
+            <span class="flex items-end justify-center w-full">Strongly<br />Disagree</span>
+            <span class="flex items-end justify-center w-full">Disagree</span>
+            <span class="flex items-end justify-center w-full">Neutral</span>
+            <span class="flex items-end justify-center w-full">Agree</span>
+            <span class="flex items-end justify-center w-full">Strongly<br />Agree</span>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          @for (category of categories(); track category.id) {
+            <div
+              class="md:grid md:grid-cols-2 gap-4 items-center px-4 py-3 border-b border-[#3E4552]/50 last:border-0 hover:bg-[#1C2530]/50 transition-colors"
+            >
+              <p class="text-gray-200 text-sm mb-2 md:mb-0 pr-4">
+                {{ category.feedback_category }}
+              </p>
+
+              <!-- Stars aligned with header -->
+              <div class="flex justify-center md:justify-end">
+                <app-rating-star
+                  [value]="getRating(category.id)"
+                  (valueChange)="setRating(category.id, $event)"
+                  [isReadonly]="isReadOnly()"
+                  size="1.5rem"
+                  containerClass="grid grid-cols-5 w-full"
+                  starClass="flex justify-center items-center"
+                ></app-rating-star>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Section 2: Comments -->
+      <div class="mb-8 p-4">
+        <h3 class="text-blue-500 font-semibold mb-4">2. Other Comments</h3>
+        <app-aria-input
+          id="course-feedback-comments"
+          type="textarea"
+          placeholder="Type here"
+          [rows]="4"
+          [(value)]="otherComments"
+          [disabled]="isReadOnly()"
+          class="w-full"
+        ></app-aria-input>
+      </div>
+
+      <!-- Footer Action -->
+      @if (!isReadOnly()) {
+        <div class="flex justify-center pt-4">
+          <app-button variant="default" type="submit" [disabled]="!isValid || isSubmitting()">
+            @if (isSubmitting()) {
+              Submitting...
+            } @else {
+              Submit
+            }
+          </app-button>
+        </div>
+      }
+    </form>
+  } @else {
+    <!-- Success View (Reused) -->
+    <div
+      class="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 max-w-2xl mx-auto"
+    >
+      <div
+        class="w-20 h-20 rounded-full bg-green-900/20 text-green-500 flex items-center justify-center mb-4"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+          class="w-10 h-10"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        </svg>
+      </div>
+
+      <h2 class="text-3xl font-bold text-white">Thank You!</h2>
+      <p class="text-gray-400 text-lg">Your feedback has been submitted successfully.</p>
+
+      @if (certificateUrls(); as urls) {
+        <div class="flex flex-col gap-4 mt-8 w-full">
+          <!-- @if (urls.miles) {
+            <a [href]="urls.miles" target="_blank" rel="noopener noreferrer" class="w-full">
+              <app-button class="w-full bg-white text-black hover:bg-gray-200"
+                >Download Miles Certificate</app-button
+              >
+            </a>
+          } -->
+          @if (urls.nasba) {
+            <a [href]="urls.nasba" target="_blank" rel="noopener noreferrer" class="w-full">
+              <app-button variant="outline" class="w-full text-white border-white hover:bg-white/10"
+                >Download NASBA Certificate</app-button
+              >
+            </a>
+          }
+        </div>
+      }
+
+      <app-button variant="link" class="text-gray-400 mt-8" (clicked)="handleRedirect()"
+        >Return to Home</app-button
+      >
+    </div>
+  }
+</div>

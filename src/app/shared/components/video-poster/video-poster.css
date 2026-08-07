@@ -1,0 +1,9 @@
+@reference '../../../../styles/styles.css';
+
+:host {
+  @apply block w-full h-full;
+}
+
+video {
+  @apply w-full h-full object-cover;
+}

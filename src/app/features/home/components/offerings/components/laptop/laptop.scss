@@ -1,0 +1,371 @@
+video::-webkit-media-controls {
+  display: none;
+}
+
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.laptop {
+  width: 790px;
+  aspect-ratio: 5/3;
+  // height: 410px;
+  perspective: 2400px;
+  perspective-origin: 50% 100%;
+}
+@media screen and (max-width: 1024px) {
+  .laptop {
+    width: 380px;
+    aspect-ratio: 5/3;
+    // height: 220px;
+  }
+}
+.laptop-block {
+  position: absolute;
+  z-index: 6;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 16px;
+  border-radius: 16px 16px 0 0;
+  background-image: linear-gradient(90deg, #212121 23%, #555555 91%);
+  transform: scale(0);
+  transition: all ease 0.32s;
+}
+.laptop-block:after {
+  content: '';
+  background-color: #212121;
+  bottom: -3px;
+  width: 100%;
+  height: 3px;
+  position: absolute;
+}
+.laptop-top {
+  position: relative;
+  width: 85%;
+  margin-left: auto;
+  margin-right: auto;
+  height: calc(100% - 32px);
+  border-radius: 16px;
+  background-color: #212121;
+  box-sizing: border-box;
+  transform-style: preserve-3d;
+  transform-origin: 50% 100%;
+  transform: translate3d(0, 0, 0) rotateX(0deg);
+  transition: all ease 0.32s;
+}
+.laptop-top:before {
+  position: absolute;
+  z-index: 2;
+  content: '';
+  width: 100%;
+  height: 40px;
+  left: 0;
+  bottom: 0;
+  background-color: inherit;
+}
+.laptop-top div {
+  position: absolute;
+  z-index: 3;
+}
+.laptop-top div:first-child {
+  left: 6px;
+  top: 4px;
+  width: calc(100% - 12px);
+  height: calc(100% - 6px);
+  background-color: transparent;
+  border: 1px solid #21212122;
+  border-radius: 16px 16px 0 0;
+  border-bottom: 0;
+}
+.laptop-top div:last-child {
+  background-color: #212121;
+  top: 24px;
+  left: 24px;
+  width: calc(100% - 50px);
+  height: calc(100% - 40px);
+  border-radius: 4px 4px 0 0;
+  overflow: hidden;
+}
+
+@media screen and (max-width: 1024px) {
+  .laptop-top div:last-child {
+    background-color: #212121;
+    top: 12px;
+    left: 12px;
+    width: calc(100% - 24px);
+    height: calc(100% - 24px);
+    border-radius: 4px 4px 0 0;
+    overflow: hidden;
+  }
+}
+.laptop-top div:last-child img {
+  width: 100%;
+  height: 100%;
+}
+.laptop-bottom > div {
+  width: 100%;
+}
+.laptop-bottom > div:first-child {
+  position: relative;
+  height: 25px;
+}
+@media screen and (max-width: 1024px) {
+  .laptop-bottom > div:first-child {
+    height: 15px;
+  }
+}
+.laptop-bottom > div:first-child > div {
+  width: 100%;
+}
+.laptop-bottom > div:first-child > div:first-child {
+  position: relative;
+  z-index: 2;
+  height: 17px;
+  background-color: #555555;
+  border-radius: 4px;
+  overflow: hidden;
+}
+@media screen and (max-width: 1024px) {
+  .laptop-bottom > div:first-child > div:first-child {
+    height: 8px;
+  }
+}
+.laptop-bottom > div:first-child > div:first-child div:first-child {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background-image: linear-gradient(90deg, #212121 23%, #555555 91%);
+  border-radius: 3px;
+}
+.laptop-bottom > div:first-child > div:first-child div:nth-child(2) {
+  transform: rotate(-180deg);
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background-image: linear-gradient(90deg, #212121 23%, #555555 50%);
+  border-radius: 3px;
+}
+.laptop-bottom > div:first-child > div:first-child div:last-child {
+  position: absolute;
+  width: 30%;
+  height: 200%;
+  background-color: #212121;
+  border-radius: 56px;
+  bottom: 0;
+  left: 50%;
+  margin-left: -15%;
+  box-shadow:
+    inset -5px 0 3px 0 #212121,
+    inset 9px 0 5px 0 rgba(0, 0, 0, 0.14);
+}
+.laptop-bottom > div:first-child > div:last-child {
+  position: absolute;
+  z-index: 1;
+  bottom: 0;
+  left: 0;
+  height: 100%;
+  background-color: #212121;
+  border-radius: 38px;
+}
+
+.laptop--closed .laptop-block {
+  top: calc(100% - 50px);
+  transform: scale(1);
+}
+.laptop--closed .laptop-top {
+  overflow: auto;
+  transform: translate3d(0, 0, 0) rotateX(-90deg);
+}
+
+// Floating asset base styles - hidden by default
+.floatingAsset {
+  opacity: 0;
+  visibility: hidden;
+  // transform: translateY(-70px) scale(0.8) rotate(-10deg);
+  transition: all 0.3s ease;
+
+  // Add subtle hover effect (only when visible)
+  // &:hover {
+  //   transform: translateY(-5px) scale(1.05);
+  //   z-index: 999 !important;
+  // }
+}
+
+// Enhanced animated state - default animation
+.floatInit {
+  opacity: 1;
+  visibility: visible;
+  animation: floatInit 2s ease-in-out;
+}
+
+.floatInitBounce {
+  opacity: 1;
+  visibility: visible;
+  animation: floatInitBounce 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.floatInitSlide {
+  opacity: 1;
+  visibility: visible;
+  animation: floatInitSlide 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+@keyframes floatInit {
+  0% {
+    opacity: 0;
+    transform: translateY(-70px) scale(0.8) rotate(-10deg);
+  }
+  // 30% {
+  //   opacity: 0.7;
+  //   transform: translateY(-10px) scale(1.1) rotate(2deg);
+  // }
+  // 60% {
+  //   opacity: 1;
+  //   transform: translateY(5px) scale(0.95) rotate(-1deg);
+  // }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+// Continuous floating animation for after entrance
+@keyframes continuousFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  25% {
+    transform: translateY(-8px) rotate(1deg) scale(1.02);
+  }
+  50% {
+    transform: translateY(-4px) rotate(-0.5deg) scale(1.01);
+  }
+  75% {
+    transform: translateY(-12px) rotate(0.5deg) scale(1.03);
+  }
+}
+
+// Slide-in variant
+@keyframes floatInitSlide {
+  0% {
+    opacity: 0;
+    transform: translateX(-100px) translateY(-30px) scale(0.9);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(10px) translateY(-5px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) scale(1);
+  }
+}
+
+// Bounce variant
+@keyframes floatInitBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(180deg);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2) rotate(10deg);
+  }
+  75% {
+    opacity: 1;
+    transform: scale(0.9) rotate(-5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+// Gentle floating for variant 2
+@keyframes gentleFloat {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.01);
+  }
+}
+
+// Slow floating for variant 3
+@keyframes slowFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-4px) rotate(1deg);
+  }
+  66% {
+    transform: translateY(-8px) rotate(-1deg);
+  }
+}
+
+.slideLeft {
+  opacity: 1;
+  visibility: visible;
+  animation: slideLeft 2s ease-in-out;
+}
+
+@keyframes slideLeft {
+  0% {
+    transform: translateX(-100px) translateY(-30px) scale(0.9);
+  }
+  50% {
+    transform: translateX(10px) translateY(-5px) scale(1.05);
+  }
+  100% {
+    transform: translateX(0) translateY(0) scale(1);
+  }
+}
+
+.slideRight {
+  opacity: 1;
+  visibility: visible;
+  animation: slideRight 2s ease-in-out;
+}
+
+@keyframes slideRight {
+  0% {
+    transform: translateX(100px) translateY(-30px) scale(0.9);
+  }
+  50% {
+    transform: translateX(-10px) translateY(-5px) scale(1.05);
+  }
+  100% {
+    transform: translateX(0) translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .laptop-block,
+  .laptop-top {
+    transition: none !important;
+  }
+  .floatingAsset,
+  .floatInit,
+  .floatInitBounce,
+  .floatInitSlide,
+  .slideLeft,
+  .slideRight {
+    animation: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+  }
+}

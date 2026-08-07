@@ -1,0 +1,157 @@
+<!-- ============================ HERO ============================ -->
+<section class="relative overflow-hidden px-4 py-16 sm:px-6 lg:min-h-[634px] lg:py-24">
+  <div class="ai-hero-backdrop" aria-hidden="true">
+    <span class="ai-hero-stars"></span>
+    <span class="ai-hero-grid"></span>
+    <span class="ai-hero-horizon"></span>
+  </div>
+
+  <div
+    class="relative mx-auto flex max-w-6xl flex-col items-center gap-10 lg:flex-row lg:justify-center lg:gap-[49px]"
+  >
+    <!-- Left: headline + eyebrow -->
+    <div class="w-full text-left lg:max-w-[510px] lg:text-right">
+      <h1 class="font-serif text-3xl leading-tight sm:text-4xl lg:text-5xl lg:leading-[3.5rem]">
+        <span class="block font-normal text-foreground">Build Accounting</span>
+        <span class="ai-metal-text block font-bold">Workflows &amp; AI Agents</span>
+      </h1>
+
+      <p class="mt-5 text-sm text-muted-foreground">
+        A live environment where you build agents that run without you. Microsoft 365 Copilot,
+        Copilot Studio and Power Automate, on lab data.
+      </p>
+
+      <ul
+        class="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm tracking-[0.128em] text-foreground uppercase lg:justify-end"
+      >
+        @for (item of eyebrow; track item; let last = $last) {
+          <li class="flex items-center gap-3">
+            <span>{{ item }}</span>
+            @if (!last) {
+              <span class="size-[3px] rounded-full bg-accent" aria-hidden="true"></span>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+
+    <!-- Divider: vertical beside the columns, horizontal once stacked -->
+    <div class="ai-divider-h w-full lg:hidden" aria-hidden="true"></div>
+    <div class="ai-divider-v hidden h-[364px] shrink-0 lg:block" aria-hidden="true"></div>
+
+    <!-- Right: auth card -->
+    <div class="w-full max-w-[420px] lg:max-w-[386px]">
+      <!-- Never disabled while signing in: the popup can be abandoned without
+           this window ever being told (COOP), so the click that supersedes a
+           dead wait has to stay available. -->
+      <app-button
+        variant="primary"
+        class="h-14 w-full gap-2 rounded-xl bg-accent text-base hover:bg-accent/90"
+        (clicked)="activate()"
+      >
+        @if (auth.isSignedIn()) {
+          <span>Launch AI Lab</span>
+        } @else {
+          <ng-icon [svg]="copilotIcon" class="text-xl" />
+          <span>{{ auth.signingIn() ? 'Waiting for sign-in…' : 'Login to Miles AI Lab' }}</span>
+        }
+      </app-button>
+
+      @if (auth.error(); as err) {
+        <p class="mt-3 text-center text-xs text-destructive" role="alert">{{ err }}</p>
+      } @else if (auth.hint(); as hint) {
+        <!-- Abandoning the popup isn't a failure, so it doesn't read as one. -->
+        <p class="mt-3 text-center text-xs text-muted-foreground" role="status">{{ hint }}</p>
+      }
+
+      <!-- Gated on the session, NOT on `identity`: not every Entra account
+           exposes an email claim, and someone signed in without one still has
+           to be able to get back out. -->
+      @if (auth.isSignedIn()) {
+        @if (auth.identity(); as email) {
+          <p class="mt-3 truncate text-center text-xs text-muted-foreground" [title]="email">
+            Signed in as {{ email }}
+          </p>
+        }
+        <div class="mt-2 flex items-center justify-center gap-2">
+          <!-- <app-button variant="outline" size="sm" class="text-xs" (clicked)="switchAccount()">
+            Switch account
+          </app-button> -->
+          <app-button variant="outline" size="sm" class="text-xs" (clicked)="signOut()">
+            Log out
+          </app-button>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ====================== AGENT CATALOGUE ====================== -->
+<div class="mx-auto max-w-6xl space-y-16 px-4 pb-16 sm:px-6 lg:space-y-[100px] lg:pb-24">
+  @for (section of sections; track section.heading) {
+    <section>
+      <h2 class="ai-metal-text text-xl font-bold sm:text-2xl lg:text-[28px]">
+        {{ section.heading }}
+      </h2>
+
+      <div class="mt-8 grid grid-cols-1 gap-[19px] md:grid-cols-2 lg:grid-cols-3">
+        @for (agent of section.agents; track agent.name) {
+          <article class="overflow-hidden rounded-2xl border border-border bg-muted">
+            @if (agent.thumbnail) {
+              <img
+                [src]="agent.thumbnail"
+                [alt]="agent.thumbnailAlt ?? agent.name + ' Agent'"
+                class="aspect-video w-full object-cover object-top"
+                loading="lazy"
+                decoding="async"
+              />
+            } @else {
+              <!-- Placeholder until catalogue artwork exists. -->
+              <div
+                class="aspect-video w-full bg-linear-to-br from-secondary to-muted"
+                aria-hidden="true"
+              ></div>
+            }
+
+            <div class="px-5 pt-5 pb-6">
+              <!-- Two-tone title: the distinctive name reads bright, the shared
+                   "Agent" suffix recedes. -->
+              <h3 class="text-base">
+                <span class="font-semibold text-foreground">{{ agent.name }}</span>
+                <span class="font-normal text-muted-foreground"> Agent</span>
+              </h3>
+              <p class="mt-3 text-sm text-muted-foreground">{{ agent.description }}</p>
+
+              <app-button
+                size="sm"
+                class="mt-3"
+                [ariaLabel]="
+                  auth.isSignedIn()
+                    ? 'Launch ' + agent.name + ' Agent'
+                    : 'Sign in to launch ' + agent.name + ' Agent'
+                "
+                (clicked)="activate()"
+              >
+                <span>Launch</span>
+                <ng-icon [svg]="sparkleIcon" class="text-base" />
+              </app-button>
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  }
+</div>
+
+<!-- =================== DECORATIVE BOTTOM BAND =================== -->
+<!-- Purely decorative; carries no information and is hidden on small screens. -->
+<div
+  class="ai-band relative hidden aspect-1280/520 w-full overflow-hidden sm:block"
+  aria-hidden="true"
+>
+  <img
+    [ngSrc]="S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/ai-band.webp'"
+    alt="Miles AI Labs Ai Band"
+    fill
+  />
+</div>

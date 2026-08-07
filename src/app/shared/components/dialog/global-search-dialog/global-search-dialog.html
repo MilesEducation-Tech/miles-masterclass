@@ -1,0 +1,99 @@
+<div class="global-search-dialog flex flex-col w-full">
+  <div class="search-bar flex items-center gap-3 px-5 py-4 border-b border-border">
+    <ng-icon name="lucideSearch" class="text-muted-foreground text-2xl shrink-0" />
+    <input
+      #searchInput
+      type="search"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="SearchMaster Classes, podcasts, micro-learning…"
+      class="flex-1 bg-transparent text-foreground text-lg placeholder:text-muted-foreground outline-none"
+      [formControl]="searchControl"
+      (keydown)="onKeyDown($event)"
+      aria-label="Search input"
+    />
+    <button
+      type="button"
+      class="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
+      (click)="close()"
+      aria-label="Close search"
+    >
+      <ng-icon name="lucideX" class="text-xl" />
+    </button>
+  </div>
+
+  <div class="search-body overflow-y-auto max-h-[60vh]">
+    @if (loading()) {
+      <div class="px-5 py-6 text-center text-muted-foreground text-sm">Searching…</div>
+    }
+
+    @if (showPrompt()) {
+      <div class="px-5 py-8 text-center text-muted-foreground text-sm">
+        Type to search across all content. Press
+        <kbd class="px-1.5 py-0.5 mx-1 rounded bg-muted text-foreground text-xs">↑</kbd>
+        <kbd class="px-1.5 py-0.5 mx-1 rounded bg-muted text-foreground text-xs">↓</kbd>
+        to navigate,
+        <kbd class="px-1.5 py-0.5 mx-1 rounded bg-muted text-foreground text-xs">Enter</kbd>
+        to open.
+      </div>
+    }
+
+    @if (showEmpty()) {
+      <div class="px-5 py-8 text-center text-muted-foreground text-sm">
+        No results for “{{ query() }}”.
+      </div>
+    }
+
+    @for (group of groups(); track group.type) {
+      <div class="result-group">
+        <div
+          class="result-group-label px-5 pt-3 pb-1 text-xs uppercase tracking-wide text-muted-foreground"
+        >
+          {{ group.label }}
+        </div>
+        <ul class="result-list">
+          @for (item of group.items; track item.id) {
+            <li>
+              <button
+                type="button"
+                class="result-row flex items-center gap-3 w-full text-left px-5 py-3 hover:bg-card-hover transition-colors"
+                [class.is-focused]="isFocused(item)"
+                (click)="selectResult(item)"
+              >
+                <img
+                  [src]="item.horizontal_thumbnail || item.thumbnail"
+                  alt=""
+                  class="result-thumb w-20 h-12 object-cover rounded shrink-0"
+                  loading="lazy"
+                />
+                <div class="flex-1 min-w-0">
+                  <div class="result-title text-foreground text-sm font-medium truncate">
+                    {{ item.title }}
+                  </div>
+                  <div class="result-meta text-muted-foreground text-xs mt-0.5 truncate">
+                    @if (item.instructors.length > 0) {
+                      {{ item.instructors[0].first_name }} {{ item.instructors[0].last_name }}
+                    }
+                    @if (item.class_credits) {
+                      · {{ item.class_credits }} CPE
+                    }
+                  </div>
+                </div>
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </div>
+
+  <div
+    class="search-footer flex items-center justify-between px-5 py-2 border-t border-border text-xs text-muted-foreground"
+  >
+    <span>
+      <kbd class="px-1.5 py-0.5 rounded bg-muted text-foreground">Esc</kbd>
+      to close
+    </span>
+    <span>Powered by Miles Masterclass</span>
+  </div>
+</div>

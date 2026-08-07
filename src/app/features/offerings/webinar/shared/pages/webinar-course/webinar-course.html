@@ -1,0 +1,39 @@
+@if (webinar(); as w) {
+  <!--
+    Top: full webinar hero (same component as the home rail). For guests this
+    block already includes the inline registration form alongside the card —
+    so the details page covers the entire pre-login + post-login surface in
+    one shot without a separate sign-up section.
+  -->
+  <app-webinar-hero [webinar]="w" [hideLearnMore]="true" />
+
+  <!--
+    Bottom: shared course-about layout (the same one rendered inside
+    `WebinarDetailsDialog`). The `upcomingToContentAbout` adapter fills the
+    masterclass-specific fields with safe defaults so chapters / exam rules
+    etc. collapse to empty sections instead of breaking.
+  -->
+  @if (contentAbout(); as about) {
+    <section class="container mx-auto px-4 sm:px-6 lg:px-12 py-10">
+      <app-course-about [card]="about" [type]="'webinar'" />
+    </section>
+  }
+} @else if (loading()) {
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-12 space-y-4 animate-pulse pt-32">
+    <div class="h-6 w-40 bg-muted rounded"></div>
+    <div class="h-10 w-2/3 bg-muted rounded"></div>
+    <div class="h-64 w-full bg-muted rounded-lg"></div>
+    <div class="h-4 w-full bg-muted rounded"></div>
+    <div class="h-4 w-5/6 bg-muted rounded"></div>
+  </div>
+} @else if (notFound()) {
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-center space-y-3 pt-32">
+    <h1 class="text-2xl font-semibold">Webinar not found</h1>
+    <p class="text-muted-foreground text-sm">
+      We couldn't find this webinar. It may have been removed or the link is incorrect.
+    </p>
+    <a routerLink="../../" class="inline-block text-accent hover:underline text-sm"
+      >Back to webinars</a
+    >
+  </div>
+}
