@@ -137,9 +137,9 @@ pnpm install
 
 | Environment     | Command           | Port   | Description                       |
 | :-------------- | :---------------- | :----- | :-------------------------------- |
-| **Local**       | `pnpm start`      | `4100` | Uses `environment.local.ts`       |
-| **Development** | `pnpm start:dev`  | `4100` | Uses `environment.development.ts` |
-| **Production**  | `pnpm start:prod` | `4100` | Uses `environment.ts` (simulated) |
+| **Local**       | `pnpm start`      | `4101` | Uses `environment.local.ts`       |
+| **Development** | `pnpm start:dev`  | `4101` | Uses `environment.development.ts` |
+| **Production**  | `pnpm start:prod` | `4101` | Uses `environment.ts` (simulated) |
 
 > **Note**: These commands run `ng serve`. For SSR testing, use `pnpm serve:ssr:miles-masterclass-v3`.
 
