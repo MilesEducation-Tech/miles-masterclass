@@ -246,15 +246,6 @@ export class Auth {
     this.accessTokenSubject.next(null);
   }
 
-  /**
-   * ponytail: was the manual bump that drove `isAuthenticated`. The token
-   * signal does that now, so this is a no-op kept for the handful of callers
-   * that still announce a change they have already made.
-   */
-  notifyAuthStateChange(): void {
-    // intentionally empty
-  }
-
   private writeAccessToken(token: string): void {
     this.storage.setCookie(environment.AUTH.accessToken, token, {
       expires: 1,

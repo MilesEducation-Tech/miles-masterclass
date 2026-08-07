@@ -9,7 +9,6 @@ import { logo } from '../shared/core/constant/icon';
 import { guestGuard } from '../shared/core/guards/guest/guest-guard';
 import { canDeactivateExamGuard } from '../shared/core/guards/can-deactivate-exam-guard';
 import { Auth as AuthService } from '../shared/core/services/auth/auth';
-import { AuthFacade } from './shared/services/auth-facade';
 import { Dialog } from '../shared/core/services/dialog/dialog';
 import { UtilsDialog, DialogButton } from '../shared/components/dialog/utils-dialog/utils-dialog';
 import { firstValueFrom } from 'rxjs';
@@ -26,14 +25,13 @@ export class Auth {
   private readonly authService = inject(AuthService);
   private readonly dialog = inject(Dialog);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  // ponytail: AuthFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  readonly authFacade: any = {
-    auth_type: signal<any>(null),
-  };
-
-  auth_type = this.authFacade.auth_type;
+  /**
+   * Which auth surface is showing, so the shell can swap "Back to Home" for
+   * "Logout" on the profile step. Nothing sets it yet — the login page owns its
+   * own state and the profile page has no reason to announce itself — so it
+   * stays a plain signal rather than a service.
+   */
+  readonly auth_type = signal<'login' | 'profile' | null>(null);
 
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
 
@@ -107,10 +105,6 @@ export const authRoutes: Route[] = [
   {
     path: '',
     component: Auth,
-    // Route-scoped, per `angular-conventions`: `providedIn: 'root'` on a feature
-    // facade forks state — an abandoned OTP session would survive a logout and
-    // leak into the next sign-in attempt.
-    providers: [AuthFacade],
     children: [
       { path: '', redirectTo: 'login', pathMatch: 'full' },
       {

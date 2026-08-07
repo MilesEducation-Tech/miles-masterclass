@@ -7,11 +7,11 @@
 <div class="flex flex-col space-y-8">
   <!-- Heading -->
   <div class="flex flex-col space-y-3">
-    @if (authFacade.loginStep() === 'OTP') {
+    @if (loginStep() === 'OTP') {
       <p class="sub-title">OTP Verification</p>
       <p class="description text-sm!">
         We have sent you One Time Password to
-        <strong>{{ authFacade.displayIdentifier() }}</strong>
+        <strong>{{ displayIdentifier() }}</strong>
       </p>
     } @else {
       <p class="sub-title">Step Into the <strong>World of Miles Masterclass</strong></p>
@@ -23,8 +23,8 @@
   </div>
 
   <app-forms type="signal" class="space-y-5! flex flex-col" (submitted)="onSubmit()">
-    @if (authFacade.loginStep() === 'LOGIN') {
-      @if (authFacade.loginType() === 'PHONE') {
+    @if (loginStep() === 'LOGIN') {
+      @if (loginType() === 'PHONE') {
         <div class="flex space-x-2">
           <div class="w-[140px]">
             <app-aria-autocomplete
@@ -32,8 +32,8 @@
               label="Code"
               placeholder="Search..."
               [showClear]="false"
-              [options]="authFacade.countryCodes()"
-              [formField]="authFacade.loginForm.country_code"
+              [options]="countryCodes()"
+              [formField]="loginForm.country_code"
             />
           </div>
           <app-aria-input
@@ -42,7 +42,7 @@
             label="Phone"
             type="tel"
             [numericOnly]="true"
-            [formField]="authFacade.loginForm.identifier"
+            [formField]="loginForm.identifier"
             placeholder="Enter phone number"
           />
         </div>
@@ -56,7 +56,7 @@
             id="identifier"
             label="Email"
             type="email"
-            [formField]="authFacade.loginForm.identifier"
+            [formField]="loginForm.identifier"
             placeholder="Enter email"
           />
           <app-aria-input
@@ -65,7 +65,7 @@
             label="Password"
             type="password"
             autocomplete="current-password"
-            [formField]="authFacade.loginForm.password"
+            [formField]="loginForm.password"
             placeholder="Enter password"
           />
         </div>
@@ -82,15 +82,14 @@
         id="consent"
         type="checkbox"
         class="font-normal text-sm! leading-tight! description"
-        [label]="authFacade.consentLabel()"
-        [formField]="authFacade.loginForm.consent"
+        [label]="consentLabel()"
+        [formField]="loginForm.consent"
       >
         <span labelLink>
-          @if (authFacade.loginType() === 'PHONE') {
-            <a
-              [href]="'mailto:' + authFacade.supportEmail"
-              class="text-accent underline whitespace-nowrap"
-              >{{ authFacade.supportEmail }}</a
+          @if (loginType() === 'PHONE') {
+            <a [href]="'mailto:' + supportEmail" class="text-accent underline whitespace-nowrap">{{
+              supportEmail
+            }}</a
             >. Consent is not a condition of purchase. See our
             <a
               [routerLink]="legalLinks().privacy"
@@ -135,7 +134,7 @@
         label="OTP"
         [length]="6"
         [autoFocus]="true"
-        [formField]="authFacade.otpForm.otp"
+        [formField]="otpForm.otp"
         placeholder="000000"
       />
     }
@@ -147,50 +146,38 @@
       variant="primary"
       size="lg"
       [disabled]="
-        (authFacade.loginStep() === 'OTP'
-          ? authFacade.otpForm().invalid()
-          : authFacade.loginForm().invalid()) || authFacade.isLoading()
+        (loginStep() === 'OTP' ? otpForm().invalid() : loginForm().invalid()) || isLoading()
       "
     >
-      @if (authFacade.isLoading()) {
+      @if (isLoading()) {
         <app-spinner></app-spinner>
       }
-      {{ authFacade.submitLabel() }}
+      {{ submitLabel() }}
     </app-button>
 
-    @if (authFacade.error(); as errorMessage) {
+    @if (error(); as errorMessage) {
       <p class="text-destructive text-sm text-center" role="alert">{{ errorMessage }}</p>
     }
 
-    @if (authFacade.loginStep() === 'OTP') {
+    @if (loginStep() === 'OTP') {
       <!-- The design puts a single Cancel under the OTP field; the resend timer
            keeps its place beside it, since a learner who never receives the
            code needs a way out that isn't "start over". -->
       <div class="flex flex-col space-y-3">
         <div class="flex justify-center items-center text-sm text-muted-foreground">
-          @if (authFacade.canResendOtp()) {
+          @if (canResendOtp()) {
             <span>Didn't receive the OTP?&nbsp;</span>
-            <app-button
-              variant="link"
-              size="link"
-              [disabled]="authFacade.isLoading()"
-              (clicked)="authFacade.resendOtp()"
-            >
+            <app-button variant="link" size="link" [disabled]="isLoading()" (clicked)="resendOtp()">
               Resend OTP
             </app-button>
           } @else {
             <span>
               Resend OTP in
-              <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
+              <strong class="text-foreground">{{ resendTimerDisplay() }}</strong>
             </span>
           }
         </div>
-        <app-button
-          class="w-full"
-          type="button"
-          variant="secondary"
-          (clicked)="authFacade.goBackToLogin()"
-        >
+        <app-button class="w-full" type="button" variant="secondary" (clicked)="goBackToLogin()">
           Cancel
         </app-button>
       </div>
@@ -201,16 +188,16 @@
     Method switcher. Shows the two methods that are NOT active, so it stays a
     two-up row as methods are added. Replaces the old top tab strip.
   -->
-  @if (authFacade.loginStep() === 'LOGIN') {
+  @if (loginStep() === 'LOGIN') {
     <div class="flex gap-3">
-      @for (method of authFacade.otherMethods(); track method.id) {
+      @for (method of otherMethods(); track method.id) {
         <app-button
           class="flex-1"
           type="button"
           [variant]="$first ? 'secondary' : 'outline'"
           [disabled]="!!method.disabled"
           [ariaLabel]="method.disabled ? method.label + ' — coming soon' : method.label"
-          (clicked)="authFacade.selectLoginMethod(method.id)"
+          (clicked)="selectLoginMethod(method.id)"
         >
           <span class="flex items-center gap-3">
             <ng-icon [name]="method.icon" class="w-5! h-5!" />

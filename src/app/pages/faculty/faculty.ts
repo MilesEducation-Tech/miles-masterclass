@@ -513,8 +513,12 @@ export class Faculty {
   }
 
   /**
-   * Post-verification login, mirroring `AuthFacade.verifyOtp` so both entry
-   * points leave identical auth + analytics state behind.
+   * Post-verification login, mirroring what the login page does after
+   * `web/verify-otp` so both entry points leave identical auth + analytics
+   * state behind.
+   *
+   * ponytail: faculty registration has no CAIRA endpoint (see the gap
+   * register), so this path is currently unreachable.
    */
   private completeAutoLogin(token: string, refreshToken: string, user: any): void {
     this.auth.storeTokens(token, refreshToken);

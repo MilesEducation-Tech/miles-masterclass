@@ -1,4 +1,6 @@
+import { HttpContext } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import {
   form,
@@ -7,6 +9,7 @@ import {
   validate,
   FormField as AngularFormField,
 } from '@angular/forms/signals';
+import { Observable, Subject, catchError, defer, map, of, takeUntil, tap } from 'rxjs';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Forms } from '../../../../shared/components/ui/forms/forms';
 import { AriaInput } from '../../../../shared/components/ui/aria/aria-input/aria-input';
@@ -16,8 +19,25 @@ import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideMail, lucideQrCode, lucideSmartphone } from '@ng-icons/lucide';
 import { Utils } from '../../../../shared/core/services/utils/utils';
+import { Auth } from '../../../../shared/core/services/auth/auth';
+import { Logger } from '../../../../shared/core/services/logger/logger';
+import { ApiClient } from '../../../../shared/core/services/api-client/api-client';
+import { CAIRA } from '../../../../shared/core/http/caira.endpoints';
+import { cairaError, userMessage } from '../../../../shared/core/http/caira-error';
+import {
+  CairaFailure,
+  SKIP_ERROR_NOTIFICATION,
+} from '../../../../shared/core/models/caira/envelope.model';
+import {
+  EmailPasswordLoginRequest,
+  LoginResponse,
+  OtpChannel,
+  SendOtpRequest,
+  SendOtpResponse,
+  VerifyOtpRequest,
+  ssoUserToCairaUser,
+} from '../../../../shared/core/models/caira/auth.model';
 import { dialCodeWithLength } from '../../../../shared/core/constant/dial-code';
-import { AuthFacade, LoginOutcome } from '../../services/auth-facade';
 
 export type LoginMethod = 'EMAIL' | 'PHONE' | 'QR';
 
@@ -41,11 +61,33 @@ const LOGIN_METHODS: readonly LoginMethodOption[] = [
   { id: 'QR', label: 'Login with QR', icon: 'lucideQrCode', disabled: true },
 ];
 
+/** Milliseconds before a fresh OTP can be requested. Client-side only — see below. */
+const RESEND_COOLDOWN_MS = 30_000;
+
+/**
+ * Delivery channel for the phone OTP.
+ *
+ * ponytail: product choice, not a technical one — flip to `WHATSAPP` if that is
+ * the intended default. `5` (dev-OTP) is not in the union and #34 rejects it
+ * outright, which is the whole reason web binds #34 rather than the mobile twin.
+ */
+const OTP_DELIVERY = OtpChannel.SMS;
+
+/** What ends a sign-in attempt. Local — nothing outside this screen reacts to it. */
+type LoginOutcome =
+  | { kind: 'authenticated' }
+  | { kind: 'otp-sent' }
+  /** 403 — the learner must finish onboarding in the Miles One app first. */
+  | { kind: 'profile-incomplete'; message: string }
+  /** 409 — two accounts share this number; support has to merge them. */
+  | { kind: 'multiple-accounts'; message: string }
+  | { kind: 'error'; message: string };
+
 /** What the login form collects. The form's own shape, not a wire payload. */
 interface AuthModel {
   identifier: string;
   email: string;
-  /** Email tab only. CAIRA has no email-OTP route, so email login is password-based. */
+  /** Email method only. CAIRA has no email-OTP route, so email login is password-based. */
   password: string;
   country_code: string;
   phone: string;
@@ -80,25 +122,31 @@ interface OtpModel {
 export class Login {
   private readonly utils = inject(Utils);
   private readonly router = inject(Router);
-  private readonly facade = inject(AuthFacade);
+  private readonly api = inject(ApiClient);
+  private readonly auth = inject(Auth);
+  private readonly logger = inject(Logger);
   private readonly destroyRef = inject(DestroyRef);
 
+  readonly isLoading = signal(false);
+  readonly error = signal<string | null>(null);
+
+  /** Set from #34's response and replayed to #35. */
+  private readonly sessionId = signal<string | number | null>(null);
+
   /**
-   * The template binds to `authFacade.*` throughout. The form model and its
-   * validation live here — they are design, not transport — while the network
-   * half lives in `AuthFacade`. Keeping the alias means the template did not
-   * have to change when the backend came back.
+   * Cancels whatever request is in flight.
+   *
+   * Without this, `reset()` clears the signals but leaves the request running:
+   * cancel an OTP mid-verify and the response still lands, stores the tokens
+   * and navigates you into the app seconds after you asked it not to.
    */
-  readonly authFacade = this;
-
-  readonly isLoading = this.facade.isLoading;
-  readonly error = this.facade.error;
+  private readonly cancelled = new Subject<void>();
 
   /**
-   * `OTP` is reachable from the Mobile tab only. The Email tab authenticates in
-   * one step against `web/login-with-email-password` — **CAIRA has no
-   * email-OTP endpoint**. (`otp/generate` / `otp/validate` exist but are
-   * post-login email verification, not a login path.)
+   * `OTP` is reachable from the phone method only. Email authenticates in one
+   * step against `web/login-with-email-password` — **CAIRA has no email-OTP
+   * endpoint**. (`otp/generate` / `otp/validate` exist but are post-login email
+   * verification, not a login path.)
    */
   readonly loginStep = signal<'LOGIN' | 'OTP'>('LOGIN');
 
@@ -144,8 +192,8 @@ export class Login {
     password: '',
     country_code: '+1',
     phone: '',
-    // Neither tab renders a mandatory terms checkbox — acceptance is implied by
-    // the notice above the submit button, so `terms` is held accepted.
+    // Neither method renders a mandatory terms checkbox — acceptance is implied
+    // by the notice above the submit button, so `terms` is held accepted.
     // Promotional consent stays an explicit opt-in and must start unchecked.
     terms: true,
     consent: false,
@@ -155,10 +203,10 @@ export class Login {
 
   readonly loginForm = form<AuthModel>(this.authModel, (loginSchema) => {
     // `validate` rather than `pattern` because the rule depends on the active
-    // tab, and `pattern` expects a static RegExp.
+    // method, and `pattern` expects a static RegExp.
     validate(loginSchema.identifier, ({ value }) => {
       const type = this.loginType();
-      // Let `required` own the empty case so an untouched Mobile field doesn't
+      // Let `required` own the empty case so an untouched Phone field doesn't
       // surface "Must be digits".
       if (!value()) return null;
 
@@ -196,9 +244,9 @@ export class Login {
 
     required(loginSchema.identifier, { message: 'Please enter your email or phone number' });
 
-    // Password is Email-tab only. `when` is the one option `required` supports
-    // (every other validator needs `applyWhen`), which is exactly the shape
-    // this rule needs.
+    // Password is Email-method only. `when` is the one option `required`
+    // supports (every other validator needs `applyWhen`), which is exactly the
+    // shape this rule needs.
     required(loginSchema.password, {
       message: 'Please enter your password',
       when: () => this.loginType() === 'EMAIL',
@@ -210,9 +258,30 @@ export class Login {
     minLength(otpSchema.otp, 6, { message: 'OTP must be 6 digits' });
   });
 
+  // ---------------------------------------------------------------------------
+  // Resend cooldown
+  //
+  // Deadline-based, not tick-counting. Browsers throttle `setInterval` in
+  // background tabs — Chrome to roughly once a minute — and reading the SMS is
+  // exactly when this tab is in the background. Counting ticks would stretch a
+  // 30-second wait into tens of minutes and strand the learner with a disabled
+  // Resend and an OTP that has already expired. Deriving from the clock means a
+  // throttled tick just jumps the countdown forward and self-corrects.
+  //
+  // Cosmetic in any case: **#34 and #35 are both unthrottled server-side**, so
+  // this stops accidental double-taps, not abuse. Rate limiting them is a
+  // backend ask (G-05).
+  // ---------------------------------------------------------------------------
+
+  private readonly cooldownUntil = signal(0);
+  private readonly clock = signal(0);
+  private cooldownHandle: ReturnType<typeof setInterval> | null = null;
+
   /** Seconds remaining before a fresh OTP can be requested. `0` ⇒ resendable. */
-  readonly resendSecondsLeft = this.facade.resendSecondsLeft;
-  readonly canResendOtp = this.facade.canResendOtp;
+  readonly resendSecondsLeft = computed(() =>
+    Math.max(0, Math.ceil((this.cooldownUntil() - this.clock()) / 1000)),
+  );
+  readonly canResendOtp = computed(() => this.resendSecondsLeft() === 0);
   readonly resendTimerDisplay = computed(() => {
     const total = this.resendSecondsLeft();
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
@@ -229,10 +298,16 @@ export class Login {
   });
 
   /**
-   * Marketing-consent text (feeds `sms_consent`). The phone copy ends
-   * mid-sentence at "…or contact": the support mailto, the "Consent is not a
-   * condition of purchase." sentence and the policy links are rendered by the
-   * template's `labelLink` slot immediately after.
+   * Marketing-consent text.
+   *
+   * ⚠️ The checkbox this labels is collected and **never transmitted** — CAIRA's
+   * #33/#34/#35 accept no consent field, and the old API's `sms_consent` has no
+   * counterpart. Either wire it to a backend field or remove the control;
+   * showing an opt-in and discarding the answer is the worst of the three.
+   *
+   * The phone copy ends mid-sentence at "…or contact": the support mailto, the
+   * "Consent is not a condition of purchase." sentence and the policy links are
+   * rendered by the template's `labelLink` slot immediately after.
    */
   readonly consentLabel = computed(() =>
     this.loginType() === 'PHONE'
@@ -241,16 +316,6 @@ export class Login {
   );
 
   readonly supportEmail = 'support@milesmasterclass.com';
-
-  /**
-   * `supportEmail` split at the "@" so the template can place a `<wbr>` between
-   * the parts — without a break opportunity the browser moves the whole address
-   * to the next line, leaving a visible gap after "…or contact".
-   */
-  readonly supportEmailParts = {
-    local: this.supportEmail.slice(0, this.supportEmail.indexOf('@') + 1),
-    domain: this.supportEmail.slice(this.supportEmail.indexOf('@') + 1),
-  };
 
   /** Country/profession-scoped routes for the consent policy links. */
   readonly legalLinks = computed(() => {
@@ -261,6 +326,17 @@ export class Login {
       privacy: `${base}/privacy-policy`,
     };
   });
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.stopCooldown();
+      this.cancelled.complete();
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // User actions
+  // ---------------------------------------------------------------------------
 
   /**
    * Switch sign-in method. The typed identifier (and its touched/dirty state)
@@ -282,7 +358,7 @@ export class Login {
     this.authModel.update((m) => ({ ...m, identifier: '', password: '' }));
     this.loginForm.identifier().reset();
     this.loginForm.password().reset();
-    this.facade.reset();
+    this.reset();
   }
 
   /**
@@ -293,9 +369,9 @@ export class Login {
     this.otpForm().reset();
     this.otpModel.set({ session_id: '', otp: '' });
     this.loginStep.set('LOGIN');
-    // Drops the stored `session_id` and the resend cooldown — going back means
-    // the next attempt starts a fresh OTP session, not a replay of the old one.
-    this.facade.reset();
+    // Drops the stored `session_id`, the cooldown, and — importantly — aborts
+    // any verify still in flight.
+    this.reset();
   }
 
   /**
@@ -307,8 +383,8 @@ export class Login {
 
     const request =
       this.loginType() === 'EMAIL'
-        ? this.facade.loginWithPassword(identifier, password)
-        : this.facade.sendOtp(country_code, identifier);
+        ? this.loginWithPassword(identifier, password)
+        : this.sendOtp(country_code, identifier);
 
     request.subscribe((outcome) => {
       if (outcome.kind === 'otp-sent') {
@@ -321,41 +397,22 @@ export class Login {
 
   /** Step two, phone flow only (#35). */
   verifyOtp(): void {
-    this.facade.verifyOtp(this.otpModel().otp).subscribe((outcome) => {
-      this.handleTerminalOutcome(outcome);
-    });
+    const sessionId = this.sessionId();
+    if (sessionId === null) {
+      this.fail('Your sign-in expired. Please start again.');
+      return;
+    }
+    const body: VerifyOtpRequest = { session_id: sessionId, otp: this.otpModel().otp };
+    this.run<LoginResponse>(this.api.post(CAIRA.verifyOtp, body, silent()), (res) =>
+      this.completeLogin(res),
+    ).subscribe((outcome) => this.handleTerminalOutcome(outcome));
   }
 
   /** Replays #34; the server issues a fresh `session_id`. */
   resendOtp(): void {
     if (!this.canResendOtp() || this.isLoading()) return;
     const { country_code, identifier } = this.authModel();
-    this.facade.resendOtp(country_code, identifier).subscribe();
-  }
-
-  /**
-   * Everything that ends the login attempt.
-   *
-   * `profile-incomplete` is a 403 from the web login gate: the token is
-   * withheld, so there is nothing to route into the app with — the learner has
-   * to finish onboarding in the Miles One app. It is shown as a message rather
-   * than a redirect for that reason. `multiple-accounts` is a 409 that only
-   * support can resolve. Both already populate `facade.error`, so the template
-   * renders them without extra wiring; the switch exists so a future redirect
-   * has an obvious home and so a new outcome kind fails the type check.
-   */
-  private handleTerminalOutcome(outcome: LoginOutcome): void {
-    switch (outcome.kind) {
-      case 'authenticated':
-        void this.router.navigate(['/']);
-        return;
-      case 'profile-incomplete':
-      case 'multiple-accounts':
-      case 'error':
-        return;
-      case 'otp-sent':
-        return;
-    }
+    this.sendOtp(country_code, identifier).subscribe();
   }
 
   onSubmit(): void {
@@ -368,4 +425,209 @@ export class Login {
       this.submitLogin();
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Requests
+  // ---------------------------------------------------------------------------
+
+  /** #33 · email + password. Authenticates in one step — there is no OTP leg. */
+  private loginWithPassword(email: string, password: string): Observable<LoginOutcome> {
+    const body: EmailPasswordLoginRequest = { user_name: email.trim(), password };
+    return this.run<LoginResponse>(
+      this.api.post(CAIRA.loginWithEmailPassword, body, silent()),
+      (res) => this.completeLogin(res),
+    );
+  }
+
+  /** #34 · start the phone flow. Stores `session_id` for the verify step. */
+  private sendOtp(countryCode: string, phone: string): Observable<LoginOutcome> {
+    const body: SendOtpRequest = {
+      phone: phone.trim(),
+      country_code: countryCode.trim(),
+      communication_method: OTP_DELIVERY,
+    };
+    return this.run<SendOtpResponse>(
+      this.api.post(CAIRA.loginWithPhoneOtp, body, silent()),
+      (res) => {
+        const sessionId = res?.result?.session_id;
+        // `=== null` rather than a truthiness test: a numeric session id of `0`
+        // is valid, and the mobile twin's own truthiness bug is exactly this.
+        if (sessionId === undefined || sessionId === null || sessionId === '') {
+          return { kind: 'error', message: 'Could not start sign-in. Please try again.' };
+        }
+        this.sessionId.set(sessionId);
+        this.startCooldown();
+        return { kind: 'otp-sent' };
+      },
+    );
+  }
+
+  /**
+   * Persist the token pair and seed the user from the login payload.
+   *
+   * Setting the access token is what loads the profile: `Auth` keys its
+   * `v2/status` resource on the token signal, so `storeTokens` alone triggers
+   * the fetch. There is deliberately no explicit profile call here — one would
+   * be a no-op anyway, since `resource.reload()` returns false while the
+   * resource is still idle.
+   *
+   * The user seed is a stopgap so the header renders a name immediately;
+   * `v2/status` replaces it a moment later with the fields the login payload
+   * never carries (email, location, tags) that `isProfileComplete` needs.
+   */
+  private completeLogin(res: LoginResponse | null): LoginOutcome {
+    const token = res?.result?.token;
+    if (!token) {
+      this.logger.error('Login succeeded but no token was returned');
+      return { kind: 'error', message: 'Sign-in failed. Please try again.' };
+    }
+
+    // ⚠️ #35's documented example omits `refresh_token` while #33's includes it.
+    // An empty refresh token simply means the session ends when the access
+    // token expires — `Auth.refreshToken` treats a missing one as "give up".
+    this.auth.storeTokens(token, res?.result?.refresh_token ?? '');
+
+    if (res?.result?.user) {
+      this.auth.setAuthenticated(ssoUserToCairaUser(res.result.user));
+    }
+
+    return { kind: 'authenticated' };
+  }
+
+  /**
+   * Shared request plumbing: loading flag, error signal, cancellation, and
+   * translating a `CairaFailure` into an outcome the page can render.
+   *
+   * `defer` matters — setting `isLoading` in the method body would flip it on a
+   * call that is never subscribed, stranding the submit button behind a
+   * permanent spinner.
+   */
+  private run<T>(
+    request: Observable<T>,
+    onSuccess: (value: T) => LoginOutcome,
+  ): Observable<LoginOutcome> {
+    return defer(() => {
+      this.isLoading.set(true);
+      this.error.set(null);
+      return request;
+    }).pipe(
+      map(onSuccess),
+      catchError((err: unknown) => of(this.toOutcome(err))),
+      tap((outcome) => {
+        this.isLoading.set(false);
+        const succeeded = outcome.kind === 'authenticated' || outcome.kind === 'otp-sent';
+        this.error.set(succeeded ? null : outcome.message);
+      }),
+      // Aborts the request when the user cancels or switches method, before the
+      // response can store a token for an attempt they abandoned.
+      takeUntil(this.cancelled),
+      takeUntilDestroyed(this.destroyRef),
+    );
+  }
+
+  /**
+   * Map a failure onto something the form can show.
+   *
+   * The two branches that matter are the ones a generic message would destroy:
+   * `PROFILE_INCOMPLETE` needs to route the learner to onboarding, and
+   * `MULTIPLE_ACCOUNTS` needs to point them at support. `cairaError` classifies
+   * both as `domain` — a wrong password is a 401 but is *not* a token problem,
+   * so it must never reach the refresh path either.
+   */
+  private toOutcome(err: unknown): LoginOutcome {
+    const failure: CairaFailure = cairaError(err);
+
+    if (failure.kind === 'domain') {
+      switch (failure.reason) {
+        case 'PROFILE_INCOMPLETE':
+          return {
+            kind: 'profile-incomplete',
+            message:
+              failure.message ?? 'Please complete your profile on the Miles One app to continue.',
+          };
+        case 'MULTIPLE_ACCOUNTS':
+          return {
+            kind: 'multiple-accounts',
+            message:
+              failure.message ??
+              'Multiple accounts detected for this number. Please contact support.',
+          };
+        case 'throttled':
+          return {
+            kind: 'error',
+            message: 'Too many attempts. Please wait a moment and try again.',
+          };
+        default:
+          return { kind: 'error', message: failure.message ?? userMessage(failure) };
+      }
+    }
+
+    this.logger.error('Login failed', failure);
+    return { kind: 'error', message: userMessage(failure) };
+  }
+
+  /**
+   * Everything that ends the login attempt.
+   *
+   * `profile-incomplete` is a 403 from the web login gate: the token is
+   * withheld, so there is nothing to route into the app with — the learner has
+   * to finish onboarding in the Miles One app. It is shown as a message rather
+   * than a redirect for that reason. `multiple-accounts` is a 409 that only
+   * support can resolve. Both already populate `error`, so the template renders
+   * them without extra wiring; the switch exists so a future redirect has an
+   * obvious home and so a new outcome kind fails the type check.
+   */
+  private handleTerminalOutcome(outcome: LoginOutcome): void {
+    switch (outcome.kind) {
+      case 'authenticated':
+        void this.router.navigate(['/']);
+        return;
+      case 'profile-incomplete':
+      case 'multiple-accounts':
+      case 'error':
+      case 'otp-sent':
+        return;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Internals
+  // ---------------------------------------------------------------------------
+
+  /** Abort anything in flight and clear the attempt's state. */
+  private reset(): void {
+    this.cancelled.next();
+    this.sessionId.set(null);
+    this.error.set(null);
+    this.isLoading.set(false);
+    this.stopCooldown();
+    this.cooldownUntil.set(0);
+  }
+
+  private fail(message: string): void {
+    this.isLoading.set(false);
+    this.error.set(message);
+  }
+
+  private startCooldown(): void {
+    this.stopCooldown();
+    this.cooldownUntil.set(Date.now() + RESEND_COOLDOWN_MS);
+    this.clock.set(Date.now());
+    this.cooldownHandle = setInterval(() => {
+      this.clock.set(Date.now());
+      if (this.resendSecondsLeft() === 0) this.stopCooldown();
+    }, 1000);
+  }
+
+  private stopCooldown(): void {
+    if (this.cooldownHandle !== null) {
+      clearInterval(this.cooldownHandle);
+      this.cooldownHandle = null;
+    }
+  }
+}
+
+/** Login shows its failures inline, next to the field; a toast is noise on top. */
+function silent() {
+  return { context: new HttpContext().set(SKIP_ERROR_NOTIFICATION, true) };
 }
