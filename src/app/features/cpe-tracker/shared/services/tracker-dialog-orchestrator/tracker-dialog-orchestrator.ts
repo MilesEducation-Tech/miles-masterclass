@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
 import {
@@ -35,9 +35,7 @@ export interface DialogResult<T = unknown> {
  * Keeps all dialog copy + config in one place. Components and the facade only
  * know the intent ("open exam rules"), not the shared dialog used to render it.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class TrackerDialogOrchestrator {
   private readonly dialog = inject(Dialog);
 

@@ -4,8 +4,8 @@ import {
   effect,
   EnvironmentInjector,
   inject,
-  Injectable,
   Injector,
+  Service,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -57,9 +57,7 @@ export type CourseInfoInput = any;
  *   const country = utils.country();      // e.g., 'in', 'us'
  *   const profession = utils.profession(); // e.g., 'accounting', 'finance'
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class Utils {
   private readonly router = inject(Router);
   private readonly dialog = inject(Dialog);

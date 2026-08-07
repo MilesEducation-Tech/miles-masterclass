@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Supabase } from '../../../../shared/core/services/supabase/supabase';
 import { Logger } from '../../../../shared/core/services/logger/logger';
 import { NotificationService } from '../../../../shared/core/services/notification/notification';
@@ -29,7 +29,7 @@ export interface ProvisionAdminUserInput {
  * `partner_network_admin` may provision only `partner_subcompany_admin`.
  * Used by both Admin Users (super-admin) and the sub-company create flow.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class AdminProvisioning {
   private readonly supabase = inject(Supabase);
   private readonly logger = inject(Logger);

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import { ButtonKind, TrackerTableRow } from '../../mappers/report-to-table';
 
 export interface ButtonAction {
@@ -23,9 +23,7 @@ const ACTION_MAP: Record<ButtonKind, ButtonAction> = {
  * button action to render. Keeps the OCP-friendly button mapping in one place — new
  * states are added by extending the `ButtonKind` union and the map.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class CourseActionResolver {
   resolve(row: TrackerTableRow): ButtonAction {
     return ACTION_MAP[row.actionKind] ?? ACTION_MAP.none;

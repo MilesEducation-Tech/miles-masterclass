@@ -1,4 +1,4 @@
-import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { inject, PLATFORM_ID, Service } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { environment } from '../../../../../environments/environment';
@@ -28,7 +28,7 @@ import { environment } from '../../../../../environments/environment';
  * Net effect: every request goes out with the anon key in *both* `apikey`
  * and `Authorization: Bearer` headers, and Postgres sees role = `anon`.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class SupabasePublic {
   private client: SupabaseClient | null = null;
   private clientPromise: Promise<SupabaseClient> | null = null;

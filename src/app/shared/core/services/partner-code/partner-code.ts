@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { Observable, catchError, map, of, tap, EMPTY } from 'rxjs';
 import { Auth } from '../auth/auth';
 import { Logger } from '../logger/logger';
@@ -12,9 +12,7 @@ import { NotificationService } from '../notification/notification';
  * Owns the loading flag, success/error toasts, and the post-success profile
  * refresh so callers don't repeat the recipe.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class PartnerCode {
   // ponytail: ApiClient was deleted with the Django strip. This placeholder
   // keeps the template bindings compiling and renders the empty state.

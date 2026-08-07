@@ -1,4 +1,4 @@
-import { inject, Injectable, signal, computed, PLATFORM_ID } from '@angular/core';
+import { computed, inject, PLATFORM_ID, Service, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Logger } from '../logger/logger';
 import html2canvas from 'html2canvas-pro';
@@ -12,7 +12,7 @@ import {
   autoPageFormatMm,
 } from './html-to-pdf.model';
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class HtmlToPdf {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly logger = inject(Logger);

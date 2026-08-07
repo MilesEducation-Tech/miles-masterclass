@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Router } from '@angular/router';
 import { Utils } from '../../../../../shared/core/services/utils/utils';
 import { getCourseId, getCourseName, getUrlSegment } from '../../utils/course.util';
@@ -8,9 +8,7 @@ import { toSlug } from '../../utils/slug.util';
  * Route dispatch for tracker rows. Wraps `Router.navigate` with the
  * context-aware `/:country/:profession_type` prefix derived from `Utils`.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class CourseRouter {
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
