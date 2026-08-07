@@ -114,7 +114,7 @@ Only `resource()`, `takeUntilDestroyed()` and `toSignal()` cancel an in-flight r
 ## Facades
 
 ```ts
-@Injectable() // NOT providedIn: 'root' by default
+@Service({ autoProvided: false }) // route-scoped — NOT an app-wide singleton
 export class SomeFacade {
   private readonly api = inject(ApiClient);
   private readonly destroyRef = inject(DestroyRef);
@@ -138,7 +138,15 @@ Provide them in the **route config**, so two feature trees get independent insta
 { path: 'micro-learning', providers: [MicroLearningCourseFacade], loadChildren: ... }
 ```
 
-`providedIn: 'root'` is reserved for genuinely app-wide services (`FeatureFacade`, `Auth`, `Utils`). Adding it to a feature facade forks state in ways that are very hard to debug — see `FeatureFacade`'s comment in `features.ts` for what breaks.
+Plain `@Service()` (auto-provided) is reserved for genuinely app-wide services (`FeatureFacade`, `Auth`, `Utils`, `ApiClient`). Using it on a feature facade forks state in ways that are very hard to debug — see `FeatureFacade`'s comment in `features.ts` for what breaks.
+
+## Services and state
+
+- **`@Service`, not `@Injectable`** — Angular 22 ships it and it is the house style. `@Service()` for an app-wide singleton, `@Service({ autoProvided: false })` for anything provided in a route or component. See [ADR-0001](../../../docs/adr/0001-service-decorator.md).
+  > DI failures are **runtime**, not compile-time. A green `build:prod` does not prove a decorator change works — boot the app.
+- **No external state store.** NgRx SignalStore was evaluated and rejected; see [ADR-0002](../../../docs/adr/0002-no-external-store.md) for the reasoning and for the three conditions that would reverse it. Don't re-litigate it in a PR — amend the ADR.
+- Reactive reads use **`httpResource`** (runs through the interceptors, cancels in-flight requests when params change). Writes use `ApiClient` + `takeUntilDestroyed`. A bare `.subscribe()` with neither leaks — the deleted `MasterclassFacade.loadCourse` did exactly that.
+- A one-shot load that writes back into the signal it would key on must stay imperative. `Auth.fetchMyProfile` is the worked example: `setAuthenticated` bumps `authStateChanged`, so a resource keyed on auth state would re-fire on its own result.
 
 ## SSR safety
 

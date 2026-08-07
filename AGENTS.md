@@ -91,7 +91,8 @@ Full detail — versions, scripts, build configs, environments — lives in the 
 
 **Do not use**
 
-- NgRx, Akita, or any external store. `@ngrx/*` must not enter `package.json`.
+- NgRx, Akita, or any external store. `@ngrx/*` must not enter `package.json`. SignalStore was evaluated in full and rejected — read [ADR-0002](docs/adr/0002-no-external-store.md) before raising it again; it names the three conditions that would reverse the decision.
+- `@Injectable`. Use `@Service()` / `@Service({ autoProvided: false })` — see [ADR-0001](docs/adr/0001-service-decorator.md).
 - `HttpClient` directly inside a feature — go through `ApiClient`.
 - NgModules, `*ngIf`/`*ngFor` structural directives, or `OnDestroy` (use `DestroyRef`).
 - `npm` or `yarn` — the lockfile is `pnpm-lock.yaml`. Run `pnpm install --frozen-lockfile` after any branch switch.
@@ -105,17 +106,22 @@ Full detail — versions, scripts, build configs, environments — lives in the 
 
 Domain types live in `src/app/shared/core/models/`. The ones that carry rules:
 
-| Model                                                                                                  | Required before anything downstream works                                                                                                                                                             |
-| ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `masterclass.model.ts` — `ContentDetails`, `CourseChapter`, `QuizDetails`                              | A chapter needs `chapterId` + a playable source. Course pages key off `courseId` + a `courseTitle` slug.                                                                                              |
-| `micro-learning-course.model.ts` — `MicroLearningReel`                                                 | A reel has **both** `id` and `chapter_id`. Activity tracking (`myclassactivity`) uses **`chapter_id`**. Completion is derived: 95% watched → `isReelCompleted()`. Never add a second completion flag. |
-| `nano-learning.model.ts`                                                                               | API path segment is `nano_learning` (snake_case); frontend URL segment is `micro-learning` (kebab-case). Never conflate the two.                                                                      |
-| `course.model.ts` — `InstructorDetails`, `FieldOfStudy`, `PriceDetails`, `PlayHistory`, `QuizQuestion` | Credits render from `FieldOfStudy`; never sum credits by hand — use `TotalCpeCreditsPipe`.                                                                                                            |
-| `auth.model.ts` — `User`, `CurrentPlanData`                                                            | A user is authenticated only with a valid access token; plan status comes from `CurrentPlanData`, mirrored to a cookie so synchronous guards can answer on hard refresh.                              |
-| `assessment.model.ts`                                                                                  | An exam session needs a session id. Masterclass uses `:sessionId`, podcast/micro-learning use `:session_id` — both are live, do not "normalise" without fixing every consumer.                        |
-| `seo.models.ts` / `seo.constants.ts`                                                                   | A Supabase `seo_pages` slug excludes the locale prefix. `DYNAMIC_SLUG_PREFIXES` decides who owns a route's SEO.                                                                                       |
-| `admin/admin-rbac.model.ts` — `PERM`                                                                   | Every admin route is gated by a `PERM` constant. Never hardcode a permission string.                                                                                                                  |
-| `http.model.ts` — `CommonResponse<T>`                                                                  | Django responses are wrapped. Unwrap in the facade, not the component.                                                                                                                                |
+| Model                                                                                                  | Required before anything downstream works                                                                                                                                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `masterclass.model.ts` — `ContentDetails`, `CourseChapter`, `QuizDetails`                              | A chapter needs `chapterId` + a playable source. Course pages key off `courseId` + a `courseTitle` slug.                                                                                                                                                                           |
+| `micro-learning-course.model.ts` — `MicroLearningReel`                                                 | A reel has **both** `id` and `chapter_id`. Activity tracking (`myclassactivity`) uses **`chapter_id`**. Completion is derived: 95% watched → `isReelCompleted()`. Never add a second completion flag.                                                                              |
+| `nano-learning.model.ts`                                                                               | API path segment is `nano_learning` (snake_case); frontend URL segment is `micro-learning` (kebab-case). Never conflate the two.                                                                                                                                                   |
+| `course.model.ts` — `InstructorDetails`, `FieldOfStudy`, `PriceDetails`, `PlayHistory`, `QuizQuestion` | Credits render from `FieldOfStudy`; never sum credits by hand — use `TotalCpeCreditsPipe`.                                                                                                                                                                                         |
+| `caira/auth.model.ts` — `CairaUser`                                                                    | A user is authenticated only with a valid access token. **There is no plan model** — CAIRA has no subscriptions; access is `User.enrolled` tag membership. Profile completeness comes from `v2/status`, never from a login response's `onboarding` flag (#33 hardcodes it `true`). |
+| `assessment.model.ts`                                                                                  | An exam session needs a session id. Masterclass uses `:sessionId`, podcast/micro-learning use `:session_id` — both are live, do not "normalise" without fixing every consumer.                                                                                                     |
+| `seo.models.ts` / `seo.constants.ts`                                                                   | A Supabase `seo_pages` slug excludes the locale prefix. `DYNAMIC_SLUG_PREFIXES` decides who owns a route's SEO.                                                                                                                                                                    |
+| `admin/admin-rbac.model.ts` — `PERM`                                                                   | Every admin route is gated by a `PERM` constant. Never hardcode a permission string.                                                                                                                                                                                               |
+| `caira/envelope.model.ts` — `CairaFailure`, the six envelopes                                          | **There is no `CommonResponse<T>`.** CAIRA has six success envelopes and five error vocabularies. Unwrap in the facade, not the component, and classify failures with `cairaError()`.                                                                                              |
+
+> ⚠️ The Django-era rows above (`masterclass.model.ts`, `micro-learning-course.model.ts`,
+> `nano-learning.model.ts`, `course.model.ts`, `assessment.model.ts`) describe models deleted in
+> `241ce4f`. They are the **contract to rebuild**, not files on disk — see
+> `prompts/caira-api-binding.md`. This table is rewritten as each phase lands.
 
 ---
 
@@ -123,12 +129,14 @@ Domain types live in `src/app/shared/core/models/`. The ones that carry rules:
 
 Two backends. Do not cross the wires.
 
-**Django REST** — base `environment.BASE_API_URL`, called through `ApiClient`, auth via `authInterceptor`.
+**CAIRA** — base `environment.BASE_API_URL` (`api.milescaira.com` / `uat-api.milescaira.com`), called through `ApiClient`, auth via the interceptor chain.
 
-- `GET` for reads: course lists, course detail, chapters, CPE tracker report, orders, plans, profile.
-- `POST` for actions: login/signup/refresh, quiz + final-assessment submission, `myclassactivity` progress, cart operations, checkout, feedback, enquiry.
-- `PUT`/`PATCH` for profile and address updates. `DELETE` for cart items and bookmarks.
-- Content-type routes use the API token `nano_learning`, not the URL token `micro-learning`.
+- Paths come from `core/http/caira.endpoints.ts`. **Never a string literal** — trailing slashes are load-bearing, and a 301 from `APPEND_SLASH` drops a POST body.
+- **No `/api/` prefix** — routes are registered at the Django URLconf root.
+- Only `Authorization: Bearer` is read. The old `x-app-type` / `x-platform` / `x-country-code` headers are gone: CAIRA does not allowlist them, so each would fail the CORS preflight.
+- **Auth failures return 403, not 401** — no `authenticate_header()` override. Verified live.
+- `/:country/:profession_type` is **cosmetic**. No CAIRA endpoint takes a country or profession.
+- Surfaces with no CAIRA counterpart are listed in `docs/CAIRA_GAPS.md`. Don't point a component at a dead URL.
 
 **Supabase** — direct client access, RLS-enforced (the `supabase` skill has the split).
 
@@ -136,9 +144,9 @@ Two backends. Do not cross the wires.
 - Admin auth session — the `Supabase` client, persisted.
 - Lead / enquiry capture — the `SupabasePublic` client, anonymous, never persisted.
 
-**Partner Platform** — Django `/partner-admin/...`, tagged with the `IS_ADMIN_REQUEST` context token so `adminTokenInterceptor` attaches the admin token instead of the learner token. See `docs/PARTNER_PLATFORM_API.md`.
+**Partner Platform** — no CAIRA counterpart at all. `IS_ADMIN_REQUEST` and `adminTokenInterceptor` no longer exist; the admin panel is Supabase-only. `docs/PARTNER_PLATFORM_API.md` documents the sunsetting API and is kept for reference only.
 
-Never invent a path. If a route isn't in the code or in `docs/api-and-routes.md`, ask.
+Never invent a path. If a route isn't in `caira.endpoints.ts` or the CAIRA API reference, ask.
 
 ---
 
