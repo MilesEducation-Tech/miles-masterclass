@@ -82,7 +82,11 @@ export class ProfileCompletionDialog {
       if (!user || sectors.length === 0) return;
       untracked(() => {
         if (this.model().sector_id != null) return;
-        const ids = this.jobSectors.resolveIds(user.sector, user.job_role);
+        // ponytail: was `resolveIds(user.sector, user.job_role)`. Neither field
+        // exists on CAIRA's user — the sector/job-role reference data has no
+        // endpoint at all, so there is nothing to pre-select from. The dialog
+        // opens unseeded until that gap is filled.
+        const ids = this.jobSectors.resolveIds(null, null);
         if (ids.sector_id == null) return;
         this.model.set(ids);
       });

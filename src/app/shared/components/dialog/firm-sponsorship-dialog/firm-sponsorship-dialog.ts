@@ -41,7 +41,13 @@ export class FirmSponsorshipDialog {
   private readonly logger = inject(Logger);
   private readonly auth = inject(Auth);
 
-  private readonly profileCompany = computed(() => this.auth.currentUser()?.company?.[0] ?? null);
+  // ponytail: was `currentUser()?.company?.[0]`. CAIRA's user has no company
+  // relation and there is no company lookup endpoint, so there is nothing to
+  // pre-fill from. Firm sponsorship is itself an unbacked surface — see the
+  // gap register.
+  private readonly profileCompany = computed<{ id: number; company_name: string } | null>(
+    () => null,
+  );
 
   readonly loading = signal(false);
 

@@ -1,5 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import {
   form,
   minLength,
@@ -16,11 +16,14 @@ import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
 import { TabStrip } from '../../../../shared/components/ui/tab-strip/tab-strip';
 import { Utils } from '../../../../shared/core/services/utils/utils';
 import { dialCodeWithLength } from '../../../../shared/core/constant/dial-code';
+import { AuthFacade, LoginOutcome } from '../../services/auth-facade';
 
 /** What the login form collects. The form's own shape, not a wire payload. */
 interface AuthModel {
   identifier: string;
   email: string;
+  /** Email tab only. CAIRA has no email-OTP route, so email login is password-based. */
+  password: string;
   country_code: string;
   phone: string;
   terms: boolean;
@@ -50,20 +53,27 @@ interface OtpModel {
 })
 export class Login {
   private readonly utils = inject(Utils);
+  private readonly router = inject(Router);
+  private readonly facade = inject(AuthFacade);
+  private readonly destroyRef = inject(DestroyRef);
 
   /**
-   * ponytail: AuthFacade owned this page's forms as well as its HTTP, so unlike
-   * the other stripped pages the form model had to move here rather than become
-   * a null placeholder — the fields and their validation are design, not
-   * transport. What's gone is only the network half: `sendOtp` / `verifyOtp` /
-   * the resend timer's server round-trip. `authFacade` keeps its name so the
-   * template needed no edits; point the three no-op methods at the new backend.
+   * The template binds to `authFacade.*` throughout. The form model and its
+   * validation live here — they are design, not transport — while the network
+   * half lives in `AuthFacade`. Keeping the alias means the template did not
+   * have to change when the backend came back.
    */
   readonly authFacade = this;
 
-  readonly isLoading = signal(false);
-  readonly error = signal<string | null>(null);
+  readonly isLoading = this.facade.isLoading;
+  readonly error = this.facade.error;
 
+  /**
+   * `OTP` is reachable from the Mobile tab only. The Email tab authenticates in
+   * one step against `web/login-with-email-password` — **CAIRA has no
+   * email-OTP endpoint**. (`otp/generate` / `otp/validate` exist but are
+   * post-login email verification, not a login path.)
+   */
   readonly loginStep = signal<'LOGIN' | 'OTP'>('LOGIN');
 
   /** Source of truth for the login method picked via the tab strip. */
@@ -71,6 +81,15 @@ export class Login {
   readonly loginMethodTabs = ['Mobile', 'Email'] as const;
   readonly selectedTabLabel = computed(() => (this.loginMethod() === 'PHONE' ? 'Mobile' : 'Email'));
   readonly loginType = computed(() => this.loginMethod());
+
+  /**
+   * "Send OTP" is only honest on the Mobile tab — the Email tab signs in
+   * directly against #33 and never reaches the OTP step.
+   */
+  readonly submitLabel = computed(() => {
+    if (this.loginStep() === 'OTP') return 'Verify OTP';
+    return this.loginType() === 'EMAIL' ? 'Log In' : 'Send OTP';
+  });
 
   readonly countryCodes = signal<any[]>(
     Array.from(
@@ -89,6 +108,7 @@ export class Login {
   readonly authModel = signal<AuthModel>({
     identifier: '',
     email: '',
+    password: '',
     country_code: '+1',
     phone: '',
     // Neither tab renders a mandatory terms checkbox — acceptance is implied by
@@ -142,6 +162,14 @@ export class Login {
     });
 
     required(loginSchema.identifier, { message: 'Please enter your email or phone number' });
+
+    // Password is Email-tab only. `when` is the one option `required` supports
+    // (every other validator needs `applyWhen`), which is exactly the shape
+    // this rule needs.
+    required(loginSchema.password, {
+      message: 'Please enter your password',
+      when: () => this.loginType() === 'EMAIL',
+    });
   });
 
   readonly otpForm = form<OtpModel>(this.otpModel, (otpSchema) => {
@@ -150,8 +178,8 @@ export class Login {
   });
 
   /** Seconds remaining before a fresh OTP can be requested. `0` ⇒ resendable. */
-  readonly resendSecondsLeft = signal(0);
-  readonly canResendOtp = computed(() => this.resendSecondsLeft() === 0);
+  readonly resendSecondsLeft = this.facade.resendSecondsLeft;
+  readonly canResendOtp = this.facade.canResendOtp;
   readonly resendTimerDisplay = computed(() => {
     const total = this.resendSecondsLeft();
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
@@ -210,9 +238,13 @@ export class Login {
     const method = label === 'Mobile' ? 'PHONE' : 'EMAIL';
     if (method === this.loginMethod()) return;
     this.loginMethod.set(method);
-    this.authModel.update((m) => ({ ...m, identifier: '' }));
+    // Clear the password too — leaving a typed password in the model while the
+    // Mobile tab is active would send it nowhere, but it would sit in memory
+    // and in any state snapshot for the rest of the session.
+    this.authModel.update((m) => ({ ...m, identifier: '', password: '' }));
     this.loginForm.identifier().reset();
-    this.error.set(null);
+    this.loginForm.password().reset();
+    this.facade.reset();
   }
 
   /**
@@ -223,23 +255,69 @@ export class Login {
     this.otpForm().reset();
     this.otpModel.set({ session_id: '', otp: '' });
     this.loginStep.set('LOGIN');
-    this.isLoading.set(false);
-    this.error.set(null);
+    // Drops the stored `session_id` and the resend cooldown — going back means
+    // the next attempt starts a fresh OTP session, not a replay of the old one.
+    this.facade.reset();
   }
 
-  /** ponytail: sent the OTP. Wire to the new backend, then `loginStep.set('OTP')`. */
+  /**
+   * Step one. Email authenticates outright (#33); phone sends an OTP (#34) and
+   * advances to the OTP step.
+   */
   submitLogin(): void {
-    this.error.set('Login is not wired to a backend yet.');
+    const { identifier, password, country_code } = this.authModel();
+
+    const request =
+      this.loginType() === 'EMAIL'
+        ? this.facade.loginWithPassword(identifier, password)
+        : this.facade.sendOtp(country_code, identifier);
+
+    request.subscribe((outcome) => {
+      if (outcome.kind === 'otp-sent') {
+        this.loginStep.set('OTP');
+        return;
+      }
+      this.handleTerminalOutcome(outcome);
+    });
   }
 
-  /** ponytail: verified the OTP and stored the token pair via `Auth.storeTokens`. */
+  /** Step two, phone flow only (#35). */
   verifyOtp(): void {
-    this.error.set('Login is not wired to a backend yet.');
+    this.facade.verifyOtp(this.otpModel().otp).subscribe((outcome) => {
+      this.handleTerminalOutcome(outcome);
+    });
   }
 
-  /** ponytail: re-sent the OTP and restarted the resend countdown. */
+  /** Replays #34; the server issues a fresh `session_id`. */
   resendOtp(): void {
-    this.error.set('Login is not wired to a backend yet.');
+    if (!this.canResendOtp() || this.isLoading()) return;
+    const { country_code, identifier } = this.authModel();
+    this.facade.resendOtp(country_code, identifier).subscribe();
+  }
+
+  /**
+   * Everything that ends the login attempt.
+   *
+   * `profile-incomplete` is a 403 from the web login gate: the token is
+   * withheld, so there is nothing to route into the app with — the learner has
+   * to finish onboarding in the Miles One app. It is shown as a message rather
+   * than a redirect for that reason. `multiple-accounts` is a 409 that only
+   * support can resolve. Both already populate `facade.error`, so the template
+   * renders them without extra wiring; the switch exists so a future redirect
+   * has an obvious home and so a new outcome kind fails the type check.
+   */
+  private handleTerminalOutcome(outcome: LoginOutcome): void {
+    switch (outcome.kind) {
+      case 'authenticated':
+        void this.router.navigate(['/']);
+        return;
+      case 'profile-incomplete':
+      case 'multiple-accounts':
+      case 'error':
+        return;
+      case 'otp-sent':
+        return;
+    }
   }
 
   onSubmit(): void {

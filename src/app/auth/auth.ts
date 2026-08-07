@@ -9,6 +9,7 @@ import { logo } from '../shared/core/constant/icon';
 import { guestGuard } from '../shared/core/guards/guest/guest-guard';
 import { canDeactivateExamGuard } from '../shared/core/guards/can-deactivate-exam-guard';
 import { Auth as AuthService } from '../shared/core/services/auth/auth';
+import { AuthFacade } from './shared/services/auth-facade';
 import { Dialog } from '../shared/core/services/dialog/dialog';
 import { UtilsDialog, DialogButton } from '../shared/components/dialog/utils-dialog/utils-dialog';
 import { firstValueFrom } from 'rxjs';
@@ -44,8 +45,12 @@ export class Auth {
   });
 
   protected readonly showLogout = computed(() => {
+    // Was `!user.is_existing_user`. A learner parked on the profile page with an
+    // incomplete profile has nowhere to go "back" to, so the button logs out
+    // instead. `isProfileComplete` derives from v2/status, not from the login
+    // response's `onboarding` flag — #33 hardcodes that to true.
     const user = this.authService.currentUser();
-    return this.auth_type() === 'profile' && !!user && !user.is_existing_user;
+    return this.auth_type() === 'profile' && !!user && !this.authService.isProfileComplete();
   });
 
   protected readonly buttonLabel = computed(() => (this.showLogout() ? 'Logout' : 'Back to Home'));
@@ -102,8 +107,10 @@ export const authRoutes: Route[] = [
   {
     path: '',
     component: Auth,
-    // ponytail: route-scoped facade providers removed with the Django strip.
-    // Re-add `providers: [YourService]` here when the new backend lands.
+    // Route-scoped, per `angular-conventions`: `providedIn: 'root'` on a feature
+    // facade forks state — an abandoned OTP session would survive a logout and
+    // leak into the next sign-in attempt.
+    providers: [AuthFacade],
     children: [
       { path: '', redirectTo: 'login', pathMatch: 'full' },
       {

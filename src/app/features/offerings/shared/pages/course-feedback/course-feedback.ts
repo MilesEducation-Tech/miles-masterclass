@@ -143,7 +143,10 @@ export class CourseFeedback {
     // Gate: the feedback flow issues a CPE certificate, which requires a
     // completed profile. Anything other than literal `true` is treated as
     // not-completed so legacy responses that omit the field still prompt.
-    if (this.currentUser()?.is_profile_completed !== true) {
+    // Was `is_profile_completed`, a server-computed boolean CAIRA does not
+    // return. `Auth.isProfileComplete` derives the same condition from
+    // v2/status, and still fails closed while the profile is unloaded.
+    if (!this.auth.isProfileComplete()) {
       this.openProfileIncompleteDialog();
       return;
     }

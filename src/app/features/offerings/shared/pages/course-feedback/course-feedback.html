@@ -17,9 +17,7 @@
       <!-- User Info -->
       @if (currentUser(); as user) {
         <div class="flex flex-col items-center text-blue-500 mt-4 space-y-1">
-          <span class="text-base font-medium"
-            >Name- {{ user.first_name }} {{ user.last_name }}</span
-          >
+          <span class="text-base font-medium">Name- {{ user.firstName }} {{ user.lastName }}</span>
           <span class="text-base font-medium">Registered E-mail ID- {{ user.email }}</span>
         </div>
       }

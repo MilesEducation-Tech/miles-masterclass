@@ -1,0 +1,34 @@
+{
+  "status": true,
+  "heading": "Miles Masterclass",
+  "subheading": "Expert- led CAIRA Level 1 Masterclasses on AI in Accounting",
+  "total_count": 37,
+  "all_courses": [
+    {
+      "id": "bcb813bc-4dd9-4f3e-8a44-bcd59a604de1",
+      "course_name": "Microsoft Copilot: Dawn of the Intelligent System",
+      "level": 1,
+      "course_description": "In ‘Microsoft Copilot: Dawn of the Intelligent System’, the focus is on how Microsoft 365 Copilot is revolutionizing everyday productivity for accounting professionals, particularly those using Word, Excel, Outlook, Teams, and PowerPoint. Across eight episodes, Chris Stegh introduces Copilot as a powerful AI assistant that integrates seamlessly into the Microsoft 365 suite, helping professionals manage large volumes of data, streamline workflows, and automate tasks. Whether it's analyzing spreadsheets, drafting reports, summarizing emails, or organizing meetings, Copilot enhances productivity by providing smarter, faster solutions.\r\nThe episodes cover practical applications of Copilot in core accounting tasks. In Excel, Copilot assists with data cleaning, creating pivot tables, and financial analysis. In Word, it accelerates document creation and comparison, offering summaries and risk assessments. Copilot in Outlook and Teams helps users manage emails, meetings, and client communications more efficiently. Each episode emphasizes the importance of effective prompts and customization, enabling professionals to use AI without losing their personal touch, tone, or professional judgment.\r\nFinally, the series highlights the transformative potential of Agentic AI, where Copilot evolves from simply a task assistant to a strategic partner. By combining human expertise with AI capabilities, accountants can move beyond mechanical tasks and embrace a future where AI works collaboratively to drive insights, decision-making, and enhanced client relationships.",
+      "course_field_of_study": [{ "name": "Information Technology" }],
+      "course_has_badge": true,
+      "course_trailer_url": "https://d1n6nz3tw8nobo.cloudfront.net/videos/ChrisSteghtrailor/ChrisSteghtrailor.m3u8",
+      "course_trailer_thumbnail": "https://milesone-backend-assets.s3.ap-south-1.amazonaws.com/MilesOne/Masterclass/Course_Trailer_Thumbnails/COPILOT_CHRIS_STEGH_Horizontal_1.jpg",
+      "cpe_credit_allocated": 30.0,
+      "active_in_challenge": false,
+      "course_status": 1
+    },
+    {
+      "id": "65b1a9f9-b1b9-43fb-ab30-94d046fd8204",
+      "course_name": "Power BI for Finance: Models, Metrics and Methods",
+      "level": 1,
+      "course_description": "The 'Power BI for Finance: Models, Metrics and Methods' is a hands-on, build-along course led by Cristiano Galvao, designed for finance pros who are tired of “spreadsheet stitching” and want a repeatable, refreshable reporting workflow. You’ll start by turning messy, inconsistent month-end files into a clean consolidation pipeline using Power Query, so the close becomes faster, less fragile, and far less error-prone.  \r\n\r\nFrom there, Cristiano takes you beyond basic cleanup into the skills that make finance reporting actually trusted and useful: enriching internal analysis with credible external context (including web data and PDFs), building reliable time intelligence (MTD, YTD, YoY) on a proper Date table, and structuring a governed model where relationships and measures behave consistently across reports.   \r\n\r\nFinally, you’ll translate numbers into leadership-ready storytelling: clear budget vs actual views that answer “so what?” in seconds, and an executive-ready dashboard that blends revenue, expense, and payroll into a calm, single-page view of financial health using slicers, bookmarks, and clean layout principles.",
+      "course_field_of_study": [{ "name": "Information Technology" }],
+      "course_has_badge": false,
+      "course_trailer_url": "https://d1n6nz3tw8nobo.cloudfront.net/videos/OverviewCristianoGalvao_TopicContent/OverviewCristianoGalvao_TopicContent.m3u8",
+      "course_trailer_thumbnail": "https://milesone-backend-assets.s3.ap-south-1.amazonaws.com/MilesOne/Masterclass/Course_Trailer_Thumbnails/powerbih.webp",
+      "cpe_credit_allocated": 4.5,
+      "active_in_challenge": false,
+      "course_status": 1
+    }
+  ]
+}

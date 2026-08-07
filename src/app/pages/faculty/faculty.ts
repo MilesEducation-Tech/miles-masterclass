@@ -189,8 +189,8 @@ export class Faculty {
    */
   private mapUserToForm(user: any | null): FacultyFormState {
     return {
-      first_name: user?.first_name || '',
-      last_name: user?.last_name || '',
+      first_name: user?.firstName || '',
+      last_name: user?.lastName || '',
       // Seeded from the account email but left editable (see the `disabled`
       // rules below) — swapping it for a different institutional address is
       // exactly what makes the backend answer `otp_required`.
@@ -199,9 +199,9 @@ export class Faculty {
       institution: '',
       role: '',
       location: user?.location || '',
-      country_code: user?.country_code || '',
+      country_code: user?.countryCode || '',
       // The User model calls it `mobile`, the API calls it `phone`.
-      phone: user?.mobile || '',
+      phone: user?.phone || '',
       // Neither consent is ever pre-ticked, even for a user whose profile
       // already carries `terms_accepted` — consent for this offer is given here.
       terms: false,
@@ -332,12 +332,12 @@ export class Faculty {
     // native fieldset only reaches native controls and the country-code picker
     // is a custom listbox — and `[formField]`-bound controls reject a template
     // `[disabled]` binding outright (NG8022).
-    disabled(s.first_name, { when: () => this.locked() || !!this.auth.currentUser()?.first_name });
-    disabled(s.last_name, { when: () => this.locked() || !!this.auth.currentUser()?.last_name });
+    disabled(s.first_name, { when: () => this.locked() || !!this.auth.currentUser()?.firstName });
+    disabled(s.last_name, { when: () => this.locked() || !!this.auth.currentUser()?.lastName });
     disabled(s.country_code, {
-      when: () => this.locked() || !!this.auth.currentUser()?.country_code,
+      when: () => this.locked() || !!this.auth.currentUser()?.countryCode,
     });
-    disabled(s.phone, { when: () => this.locked() || !!this.auth.currentUser()?.mobile });
+    disabled(s.phone, { when: () => this.locked() || !!this.auth.currentUser()?.phone });
     disabled(s.location, { when: () => this.locked() || !!this.auth.currentUser()?.location });
     // Institutional fields are never on the User model → only the lock applies.
     disabled(s.email, { when: () => this.locked() });

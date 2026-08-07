@@ -12,6 +12,17 @@ export const environment = {
    */
   SITE_URL: 'https://www.milesmasterclass.com',
 
+  /**
+   * CAIRA API origin, with a trailing slash. `ApiClient` prepends it to every
+   * relative path; absolute `http(s)://` URLs (WordPress, S3) bypass it.
+   *
+   * Note there is **no `/api/` prefix** — CAIRA registers its routes at the
+   * Django URLconf root, unlike the old `api.milesmasterclass.com/api/`. The
+   * trailing slash here is what supplies the separator, since every path in
+   * `core/http/caira.endpoints.ts` is relative and unprefixed.
+   */
+  BASE_API_URL: 'https://api.milescaira.com/',
+
   S3_BUCKET_URL: 'https://d1pp0977rsxmiq.cloudfront.net/',
   GCS_URL: 'https://asset.milesmasterclass.com/media/web-app/',
 

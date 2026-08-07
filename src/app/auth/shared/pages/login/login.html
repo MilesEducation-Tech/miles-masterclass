@@ -27,8 +27,8 @@
         [selected]="authFacade.selectedTabLabel()"
         (selectionChange)="authFacade.selectLoginMethod($event)"
       />
-      <div class="flex space-x-2">
-        @if (authFacade.loginType() === 'PHONE') {
+      @if (authFacade.loginType() === 'PHONE') {
+        <div class="flex space-x-2">
           <div class="w-[140px]">
             <app-aria-autocomplete
               id="country_code"
@@ -48,7 +48,12 @@
             [formField]="authFacade.loginForm.identifier"
             placeholder="Enter phone number"
           />
-        } @else {
+        </div>
+      } @else {
+        <!-- Email signs in with a password, not an OTP: CAIRA has no email-OTP
+             route. `otp/generate` / `otp/validate` exist but verify an address
+             after login — they are not a login path. -->
+        <div class="flex flex-col space-y-4">
           <app-aria-input
             class="w-full"
             id="identifier"
@@ -57,8 +62,17 @@
             [formField]="authFacade.loginForm.identifier"
             placeholder="Enter email"
           />
-        }
-      </div>
+          <app-aria-input
+            class="w-full"
+            id="password"
+            label="Password"
+            type="password"
+            autocomplete="current-password"
+            [formField]="authFacade.loginForm.password"
+            placeholder="Enter password"
+          />
+        </div>
+      }
       <!-- The mandatory terms checkbox is deliberately not rendered on either tab.
            Acceptance is implied by the "By signing up or logging in…" notice below,
            and `terms` is held accepted in the model so submit behaviour is unchanged. -->
@@ -146,8 +160,11 @@
       @if (authFacade.isLoading()) {
         <app-spinner></app-spinner>
       }
-      {{ authFacade.loginStep() === 'OTP' ? 'Verify OTP' : 'Send OTP' }}
+      {{ authFacade.submitLabel() }}
     </app-button>
+    @if (authFacade.error(); as errorMessage) {
+      <p class="text-destructive text-sm text-center" role="alert">{{ errorMessage }}</p>
+    }
     @if (authFacade.loginStep() === 'OTP') {
       <div class="flex justify-center items-center text-sm text-muted-foreground">
         @if (authFacade.canResendOtp()) {

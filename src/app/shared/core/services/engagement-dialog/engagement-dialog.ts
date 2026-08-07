@@ -1,13 +1,13 @@
 import {
   DestroyRef,
-  Injectable,
-  Injector,
-  PLATFORM_ID,
-  WritableSignal,
   effect,
   inject,
+  Injector,
+  PLATFORM_ID,
+  Service,
   signal,
   untracked,
+  WritableSignal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
@@ -62,9 +62,7 @@ const DISMISSAL_KEYS: Record<DialogKind, string> = {
  *
  * Browser-only — the stream never starts during SSR.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class EngagementDialog {
   private readonly auth = inject(Auth);
   private readonly dialog = inject(Dialog);
@@ -161,13 +159,19 @@ export class EngagementDialog {
     // skipped: the next tick after leaving /payment evaluates normally.
     if (PAYMENT_ROUTE.test(this.router.url)) return null;
 
-    if ((!user.sector || !user.job_role) && !this.isDismissed('profile') && user.is_existing_user) {
+    // ponytail: the profile nudge used to fire on a missing `sector`/`job_role`,
+    // both of which came from reference-data endpoints CAIRA does not have. It
+    // now nudges on the completeness CAIRA *can* report — first name, full name
+    // and email, from v2/status. `is_existing_user` is gone with the same model,
+    // so the "don't nag a brand-new signup" guard is now the completeness check
+    // itself.
+    if (!this.auth.isProfileComplete() && !this.isDismissed('profile')) {
       return 'profile';
     }
     if (
       !this.hasActiveSubscription(this.auth.currentPlan()) &&
       !this.isDismissed('subscription') &&
-      user.is_existing_user
+      this.auth.isProfileComplete()
     ) {
       return 'subscription';
     }
