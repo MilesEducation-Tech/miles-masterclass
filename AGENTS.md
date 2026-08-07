@@ -66,7 +66,7 @@ Where each kind of logic lives. Stay consistent with this across every feature, 
 
 ### No facade layer
 
-**There is no facade pattern in this codebase. Do not add one, and do not name anything `*Facade`.** The Django strip deleted nearly all of them; four survive (`FeatureFacade` and the three admin ones) and are debt, not a template. A component whose state nobody else reads holds that state itself — that is what `5fa5c08` did to the login page.
+**There is no facade pattern in this codebase. Do not add one, and do not name anything `*Facade`.** The Django strip deleted nearly all of them. Four names survive — `FeatureFacade`, `LeadsFacade`, `RbacFacade`, `AdminUsersFacade` — but all four are already `@Service()` + `resource()`/`httpResource`; the pattern is current and only the name is legacy. Read them, don't copy their names. A component whose state nobody else reads holds that state itself — that is what `5fa5c08` did to the login page.
 
 State and reads are structured like `Auth` (`shared/core/services/auth/auth.ts`) — read it before writing a new service:
 
