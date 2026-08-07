@@ -13,10 +13,33 @@ import { AriaInput } from '../../../../shared/components/ui/aria/aria-input/aria
 import { AriaAutocomplete } from '../../../../shared/components/ui/aria/aria-autocomplete/aria-autocomplete';
 import { Otp } from '../../../../shared/components/ui/otp/otp';
 import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
-import { TabStrip } from '../../../../shared/components/ui/tab-strip/tab-strip';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideMail, lucideQrCode, lucideSmartphone } from '@ng-icons/lucide';
 import { Utils } from '../../../../shared/core/services/utils/utils';
 import { dialCodeWithLength } from '../../../../shared/core/constant/dial-code';
 import { AuthFacade, LoginOutcome } from '../../services/auth-facade';
+
+export type LoginMethod = 'EMAIL' | 'PHONE' | 'QR';
+
+interface LoginMethodOption {
+  id: LoginMethod;
+  label: string;
+  icon: string;
+  /**
+   * QR is designed but **not implementable**: the reference puts
+   * `account/qr_login/crypto.py` out of scope, so the curve, KDF, AES mode and
+   * `public_key` encoding of the `{epk, iv, ct}` blob are all unknown and the
+   * browser cannot decrypt what `qr/confirm` returns. Rendered disabled rather
+   * than hidden so the design is intact and the gap is visible. See G-04.
+   */
+  disabled?: boolean;
+}
+
+const LOGIN_METHODS: readonly LoginMethodOption[] = [
+  { id: 'EMAIL', label: 'Login with Email', icon: 'lucideMail' },
+  { id: 'PHONE', label: 'Login with phone', icon: 'lucideSmartphone' },
+  { id: 'QR', label: 'Login with QR', icon: 'lucideQrCode', disabled: true },
+];
 
 /** What the login form collects. The form's own shape, not a wire payload. */
 interface AuthModel {
@@ -45,11 +68,14 @@ interface OtpModel {
     Button,
     AngularFormField,
     Spinner,
-    TabStrip,
+    NgIcon,
     RouterLink,
   ],
   templateUrl: './login.html',
   styleUrl: './login.css',
+  // `[name]` on <ng-icon> resolves against this map. Registered per-component
+  // rather than globally, matching how `header.ts` does it.
+  providers: [provideIcons({ lucideMail, lucideSmartphone, lucideQrCode })],
 })
 export class Login {
   private readonly utils = inject(Utils);
@@ -76,19 +102,26 @@ export class Login {
    */
   readonly loginStep = signal<'LOGIN' | 'OTP'>('LOGIN');
 
-  /** Source of truth for the login method picked via the tab strip. */
-  readonly loginMethod = signal<'PHONE' | 'EMAIL'>('PHONE');
-  readonly loginMethodTabs = ['Mobile', 'Email'] as const;
-  readonly selectedTabLabel = computed(() => (this.loginMethod() === 'PHONE' ? 'Mobile' : 'Email'));
+  /**
+   * Source of truth for the sign-in method.
+   *
+   * Switched from the two buttons at the foot of the card rather than a tab
+   * strip: the design carries three methods, and a three-tab strip crowds the
+   * card while a "here are the other two" row scales.
+   */
+  readonly loginMethod = signal<LoginMethod>('EMAIL');
   readonly loginType = computed(() => this.loginMethod());
 
+  /** The two methods that are *not* active — the bottom switcher's contents. */
+  readonly otherMethods = computed(() => LOGIN_METHODS.filter((m) => m.id !== this.loginMethod()));
+
   /**
-   * "Send OTP" is only honest on the Mobile tab — the Email tab signs in
-   * directly against #33 and never reaches the OTP step.
+   * "Send OTP" is only honest on the phone method — email signs in directly
+   * against #33 and never reaches the OTP step.
    */
   readonly submitLabel = computed(() => {
     if (this.loginStep() === 'OTP') return 'Verify OTP';
-    return this.loginType() === 'EMAIL' ? 'Log In' : 'Send OTP';
+    return this.loginType() === 'EMAIL' ? 'Sign In' : 'Send OTP';
   });
 
   readonly countryCodes = signal<any[]>(
@@ -230,16 +263,21 @@ export class Login {
   });
 
   /**
-   * Switch between the Mobile/Email tabs. The typed identifier (and its
-   * touched/dirty state) is cleared so a half-typed email isn't validated as a
-   * phone number and vice-versa.
+   * Switch sign-in method. The typed identifier (and its touched/dirty state)
+   * is cleared so a half-typed email isn't validated as a phone number and
+   * vice-versa.
    */
-  selectLoginMethod(label: string): void {
-    const method = label === 'Mobile' ? 'PHONE' : 'EMAIL';
+  selectLoginMethod(method: LoginMethod): void {
     if (method === this.loginMethod()) return;
+    // QR is rendered disabled; this is belt-and-braces against a programmatic
+    // call, since selecting it would strand the user on a form that cannot
+    // submit.
+    if (LOGIN_METHODS.find((m) => m.id === method)?.disabled) return;
+
     this.loginMethod.set(method);
+    this.loginStep.set('LOGIN');
     // Clear the password too — leaving a typed password in the model while the
-    // Mobile tab is active would send it nowhere, but it would sit in memory
+    // phone method is active would send it nowhere, but it would sit in memory
     // and in any state snapshot for the rest of the session.
     this.authModel.update((m) => ({ ...m, identifier: '', password: '' }));
     this.loginForm.identifier().reset();

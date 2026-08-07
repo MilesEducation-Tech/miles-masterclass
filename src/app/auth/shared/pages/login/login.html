@@ -1,32 +1,29 @@
-<div class="flex flex-col space-y-6">
-  @if (authFacade.loginStep() === 'OTP') {
-    <div class="flex flex-col space-y-3">
+<!--
+  Layout follows the Figma auth-card: heading block, form, one full-width
+  primary CTA, then a row of the *other* sign-in methods at the foot. Copy is
+  this app's own and deliberately unchanged — only the arrangement is new.
+  The card chrome (logo, padding, blur) comes from `.auth-card` in the shell.
+-->
+<div class="flex flex-col space-y-8">
+  <!-- Heading -->
+  <div class="flex flex-col space-y-3">
+    @if (authFacade.loginStep() === 'OTP') {
       <p class="sub-title">OTP Verification</p>
       <p class="description text-sm!">
         We have sent you One Time Password to
         <strong>{{ authFacade.displayIdentifier() }}</strong>
       </p>
-      <app-button class="w-max" variant="link" size="link" (clicked)="authFacade.goBackToLogin()">
-        {{ authFacade.loginType() === 'PHONE' ? 'Change Mobile' : 'Change Email' }}
-      </app-button>
-    </div>
-  } @else {
-    <div class="flex flex-col space-y-3">
+    } @else {
       <p class="sub-title">Step Into the <strong>World of Miles Masterclass</strong></p>
       <p class="description text-sm!">
         Log in now to explore Master Classes, AI learning pathways, and practical tools that help
         you stay ahead and earn valuable CPE credits.
       </p>
-    </div>
-  }
-  <app-forms type="signal" class="space-y-4! flex flex-col mt-2" (submitted)="onSubmit()">
+    }
+  </div>
+
+  <app-forms type="signal" class="space-y-5! flex flex-col" (submitted)="onSubmit()">
     @if (authFacade.loginStep() === 'LOGIN') {
-      <app-tab-strip
-        tabClass="px-8"
-        [options]="authFacade.loginMethodTabs"
-        [selected]="authFacade.selectedTabLabel()"
-        (selectionChange)="authFacade.selectLoginMethod($event)"
-      />
       @if (authFacade.loginType() === 'PHONE') {
         <div class="flex space-x-2">
           <div class="w-[140px]">
@@ -51,9 +48,9 @@
         </div>
       } @else {
         <!-- Email signs in with a password, not an OTP: CAIRA has no email-OTP
-             route. `otp/generate` / `otp/validate` exist but verify an address
-             after login — they are not a login path. -->
-        <div class="flex flex-col space-y-4">
+             route. `otp/generate` / `otp/validate` verify an address after
+             login — they are not a login path. -->
+        <div class="flex flex-col space-y-5">
           <app-aria-input
             class="w-full"
             id="identifier"
@@ -73,13 +70,14 @@
           />
         </div>
       }
-      <!-- The mandatory terms checkbox is deliberately not rendered on either tab.
-           Acceptance is implied by the "By signing up or logging in…" notice below,
-           and `terms` is held accepted in the model so submit behaviour is unchanged. -->
+
+      <!-- The mandatory terms checkbox is deliberately not rendered on either
+           method. Acceptance is implied by the "By signing up or logging in…"
+           notice below, and `terms` is held accepted in the model. -->
       <hr class="border-white/10" />
-      <!-- `text-justify` flushes both edges of this dense consent paragraph, so the
-           line before the long support address fills the width instead of leaving a
-           gap. Keeps the address unbroken on one line. -->
+      <!-- `text-justify` flushes both edges of this dense consent paragraph, so
+           the line before the long support address fills the width instead of
+           leaving a gap. Keeps the address unbroken on one line. -->
       <app-aria-input
         id="consent"
         type="checkbox"
@@ -87,12 +85,8 @@
         [label]="authFacade.consentLabel()"
         [formField]="authFacade.loginForm.consent"
       >
-        <!--  class="font-normal text-sm! leading-tight! description" -->
         <span labelLink>
           @if (authFacade.loginType() === 'PHONE') {
-            <!-- Kept on one line: the address wraps whole to the next line, and the
-                 label's `text-justify` spreads the short line before it so no gap is
-                 left after "contact". -->
             <a
               [href]="'mailto:' + authFacade.supportEmail"
               class="text-accent underline whitespace-nowrap"
@@ -119,8 +113,6 @@
       <hr class="border-white/10" />
       <p class="description text-sm! text-center font-normal leading-tight!">
         By signing up or logging in, you agree to the Miles Masterclass
-        <!-- `whitespace-nowrap` keeps each policy name intact — without it the line
-             breaks mid-link, e.g. "Terms of" / "Service". -->
         <a
           [routerLink]="legalLinks().terms"
           target="_blank"
@@ -147,10 +139,13 @@
         placeholder="000000"
       />
     }
+
+    <!-- Primary action -->
     <app-button
-      class="w-full mt-2"
+      class="w-full"
       type="submit"
-      variant="default"
+      variant="primary"
+      size="lg"
       [disabled]="
         (authFacade.loginStep() === 'OTP'
           ? authFacade.otpForm().invalid()
@@ -162,32 +157,67 @@
       }
       {{ authFacade.submitLabel() }}
     </app-button>
+
     @if (authFacade.error(); as errorMessage) {
       <p class="text-destructive text-sm text-center" role="alert">{{ errorMessage }}</p>
     }
+
     @if (authFacade.loginStep() === 'OTP') {
-      <div class="flex justify-center items-center text-sm text-muted-foreground">
-        @if (authFacade.canResendOtp()) {
-          <span>Didn't receive the OTP?&nbsp;</span>
-          <app-button
-            variant="link"
-            size="link"
-            [disabled]="authFacade.isLoading()"
-            (clicked)="authFacade.resendOtp()"
-          >
-            Resend OTP
-          </app-button>
-        } @else {
-          <span>
-            Resend OTP in
-            <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
-          </span>
-        }
+      <!-- The design puts a single Cancel under the OTP field; the resend timer
+           keeps its place beside it, since a learner who never receives the
+           code needs a way out that isn't "start over". -->
+      <div class="flex flex-col space-y-3">
+        <div class="flex justify-center items-center text-sm text-muted-foreground">
+          @if (authFacade.canResendOtp()) {
+            <span>Didn't receive the OTP?&nbsp;</span>
+            <app-button
+              variant="link"
+              size="link"
+              [disabled]="authFacade.isLoading()"
+              (clicked)="authFacade.resendOtp()"
+            >
+              Resend OTP
+            </app-button>
+          } @else {
+            <span>
+              Resend OTP in
+              <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
+            </span>
+          }
+        </div>
+        <app-button
+          class="w-full"
+          type="button"
+          variant="secondary"
+          (clicked)="authFacade.goBackToLogin()"
+        >
+          Cancel
+        </app-button>
       </div>
     }
   </app-forms>
-  <!-- <div class="hidden">
-    <app-button class="w-full" variant="default">Signup with password</app-button>
-    <app-button class="w-full" variant="secondary">Signup with OTP</app-button>
-  </div> -->
+
+  <!--
+    Method switcher. Shows the two methods that are NOT active, so it stays a
+    two-up row as methods are added. Replaces the old top tab strip.
+  -->
+  @if (authFacade.loginStep() === 'LOGIN') {
+    <div class="flex gap-3">
+      @for (method of authFacade.otherMethods(); track method.id) {
+        <app-button
+          class="flex-1"
+          type="button"
+          [variant]="$first ? 'secondary' : 'outline'"
+          [disabled]="!!method.disabled"
+          [ariaLabel]="method.disabled ? method.label + ' — coming soon' : method.label"
+          (clicked)="authFacade.selectLoginMethod(method.id)"
+        >
+          <span class="flex items-center gap-3">
+            <ng-icon [name]="method.icon" class="w-5! h-5!" />
+            <span class="text-xs">{{ method.label }}</span>
+          </span>
+        </app-button>
+      }
+    </div>
+  }
 </div>
