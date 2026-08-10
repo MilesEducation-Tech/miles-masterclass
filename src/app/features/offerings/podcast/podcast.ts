@@ -13,6 +13,8 @@ import { authGuard } from '../../../shared/core/guards/auth/auth-guard';
 import { canDeactivateExamGuard } from '../../../shared/core/guards/can-deactivate-exam-guard';
 import { Faq } from '../../../pages/faq/faq';
 import { PartnerContentList } from '../../partners/shared/components/partner-content-list/partner-content-list';
+import { CourseDetail } from '../shared/services/course-detail/course-detail';
+import { ChapterProgress } from '../shared/services/chapter-progress/chapter-progress';
 
 @Component({
   selector: 'app-podcast',
@@ -89,6 +91,9 @@ export const podcastRoutes: Route[] = [
   { path: '', component: Podcast },
   {
     path: ':courseId/:courseTitle',
+    // Same route-scoped `CourseDetail` the masterclass tree uses — CAIRA serves
+    // podcasts from `Masterclass_Course_Detail` too.
+    providers: [CourseDetail],
     children: [
       {
         path: '',
@@ -98,8 +103,10 @@ export const podcastRoutes: Route[] = [
       {
         path: 'chapter/:chapterId/:chapterTitle',
         canActivate: [authGuard],
-        // ponytail: route-scoped facade providers removed with the Django strip.
-        // Re-add `providers: [YourService]` here when the new backend lands.
+        // Route-scoped: the chapter player's #6 / #18 writes. `CourseDetail`
+        // is provided one level up and supplies the chapter list, so this only
+        // owns progress.
+        providers: [ChapterProgress],
         data: { layout: 'plain' },
         loadComponent: () =>
           import('./shared/pages/podcast-chapter/podcast-chapter').then((m) => m.PodcastChapter),

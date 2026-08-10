@@ -18,6 +18,8 @@ import { Faq } from '../../../pages/faq/faq';
 import { PartnerContentList } from '../../partners/shared/components/partner-content-list/partner-content-list';
 import { SectionNav, SectionNavItem } from '../../../shared/components/section-nav/section-nav';
 import { FeatureFacade } from '../../shared/services/feature-facade/feature-facade';
+import { CourseDetail } from '../shared/services/course-detail/course-detail';
+import { ChapterProgress } from '../shared/services/chapter-progress/chapter-progress';
 
 @Component({
   selector: 'app-masterclass',
@@ -135,6 +137,10 @@ export const masterclassRoutes: Route[] = [
   { path: '', component: Masterclass },
   {
     path: ':courseId/:courseTitle',
+    // One `CourseDetail` per course route, shared by the page, hero, chapter
+    // list, resources and related rails. Route-scoped rather than a singleton
+    // so leaving the course disposes it and aborts anything still in flight.
+    providers: [CourseDetail],
     children: [
       {
         path: '',
@@ -146,8 +152,10 @@ export const masterclassRoutes: Route[] = [
       {
         path: 'chapter/:chapterId/:chapterTitle',
         canActivate: [authGuard],
-        // ponytail: route-scoped facade providers removed with the Django strip.
-        // Re-add `providers: [YourService]` here when the new backend lands.
+        // Route-scoped: the chapter player's #6 / #18 writes. `CourseDetail`
+        // is provided one level up and supplies the chapter list, so this only
+        // owns progress.
+        providers: [ChapterProgress],
         data: { layout: 'plain' },
         loadComponent: () =>
           import('./shared/pages/masterclass-chapter/masterclass-chapter').then(

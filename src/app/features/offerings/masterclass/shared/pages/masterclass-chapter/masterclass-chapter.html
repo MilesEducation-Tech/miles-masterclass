@@ -2,21 +2,25 @@
   class="flex w-full max-md:overflow-auto min-h-svh flex-col md:px-11 md:pt-8 p-5 space-y-4 md:overflow-hidden"
 >
   <app-backward label="Back to Course" fallback="/" [routePath]="courseNavigation()" />
+  <!--
+    Every chapter runs in CPE mode — see `CPE_MODE_DEFAULT` in `ChapterProgress`.
+    That drives the player's seek lock, its quiz hand-off on video end, and the
+    next-chapter / final-assessment gates, all of which read `chapterWiseDetails`.
+  -->
   <app-video-chapter
     [current]="navigation().current"
     [previous]="navigation().prev"
     [next]="navigation().next"
     [activeIndex]="navigation().currentIndex"
-    [cpeMode]="cpeMode()"
-    [courseId]="chapterFacade.courseDetails()?.id ?? null"
+    [cpeMode]="chapter.cpeMode()"
+    [chapterWiseDetails]="chapter.chapterWiseDetails()"
+    [courseId]="chapter.courseDetails()?.id ?? null"
     [courseType]="'masterclass'"
-    [chapterWiseDetails]="chapterWiseDetails()"
-    [userAssessmentDetails]="chapterFacade.courseDetails()?.user_assessment_details"
+    [userAssessmentDetails]="chapter.courseDetails()?.user_assessment_details"
     (navigate)="handleNavigation($event)"
-    (paused)="handleVideoEvent('exit')"
-    (ended)="handleVideoCompleted()"
-    (firstChapterEnded)="handleFirstChapterEnded()"
-    (videoExit)="handleVideoEvent('exit', $event)"
+    (paused)="handleExit()"
+    (ended)="handleVideoEnded()"
+    (videoExit)="handleExit($event)"
     (timeUpdate)="updateTime($event)"
     (startFinalAssessment)="startFinalAssessment()"
     (viewFinalAssessmentReport)="handleViewReport()"
