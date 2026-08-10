@@ -112,8 +112,48 @@ describe('CAIRA endpoint registry', () => {
   });
 
   it('does not expose the mobile OTP routes that leak the dev OTP', () => {
-    const paths = Object.values(CAIRA).filter((v): v is string => typeof v === 'string');
+    // `flatMap` rather than a `v is string` predicate: `CAIRA` is `as const`, so
+    // `Object.values` yields a union of string *literals* and functions, and a
+    // predicate widening that to `string` is not assignable to its own parameter
+    // (TS2677). Pre-existing; fixed here because this file is already open.
+    const paths = Object.values(CAIRA).flatMap((v) => (typeof v === 'string' ? [v] : []));
     expect(paths).not.toContain('login-with-phone-otp');
     expect(paths).not.toContain('verify-otp');
+  });
+
+  describe('parity additions', () => {
+    // These five are absent from the API reference and were read off the
+    // shipped LMS. The reference is not the guard here, so the shapes are.
+
+    it('keeps the two same-path levels-page reads on one entry', () => {
+      // The FAQ variant is the same path plus `?type=`, so a second constant
+      // would be two names for one route and would drift.
+      expect(CAIRA.levelsPage).toBe('caira/masterclass/levels-page/');
+    });
+
+    it('keeps the trailing slashes the parity routes require', () => {
+      expect(CAIRA.appStatus).toBe('web/app-status/');
+      expect(CAIRA.webinarRegister).toBe('registerV4/');
+      expect(CAIRA.webinarRegisterStatus('a1b2')).toBe('registerV4/a1b2/status/');
+    });
+
+    it('leaves the activity relay unslashed, as registered', () => {
+      expect(CAIRA.activityEvent).toBe('milesone-activity');
+    });
+
+    it('does not make any parity route pre-token', () => {
+      // All five require a bearer token. A stray entry in CAIRA_PUBLIC_ROUTES
+      // would silently strip it and every call would 403.
+      for (const path of [
+        CAIRA.levelsPage,
+        CAIRA.appStatus,
+        CAIRA.webinarRegister,
+        CAIRA.webinarRegisterStatus('a1b2'),
+        CAIRA.activityEvent,
+      ]) {
+        expect(isPublicCairaRoute(url(path))).toBe(false);
+        expect(shouldAttachToken(url(path), BASE, false)).toBe(true);
+      }
+    });
   });
 });

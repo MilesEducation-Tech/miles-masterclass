@@ -197,6 +197,61 @@ export const CAIRA = {
 
   /** #50 · GET · **trailing slash required** · flat 18-key identity read */
   chatbotUserDetails: 'chatbot/user_details/',
+
+  // -------------------------------------------------------------------------
+  // Parity additions
+  //
+  // Endpoints the shipped CAIRA LMS (`CAIRA-LMS-2026`) calls in production that
+  // the 50-endpoint API reference does not document. Read off
+  // `CairaReadyService` / `CairaStatusService` there; see
+  // `prompts/caira-lms-parity-binding.md` §2.2. Numbered `L*` so they cannot be
+  // mistaken for reference endpoints.
+  // -------------------------------------------------------------------------
+
+  /**
+   * L1 · GET · the CAIRA level tabs, as a
+   * `{ levels: [{ sections: [{ items }] }] }` tree under the boolean-status
+   * envelope.
+   *
+   * `?type=<section name>` narrows to one named section; the LMS reads it twice
+   * — once bare for the tabs, once with `Frequently Asked Questions` for the FAQ
+   * accordion. Two resources, not one read plus a client-side filter: the server
+   * decides what a section is, and the FAQ repeats per level.
+   */
+  levelsPage: 'caira/masterclass/levels-page/',
+
+  /**
+   * L2 · GET · the post-login gate — maintenance window, pathway, onboarding.
+   *
+   * **Polarity is inverted from what the names suggest** (confirmed with the
+   * backend): an all-true response is the happy learner. Read
+   * `is_web_maintenance`, never `is_maintenance` — the latter is the mobile
+   * app's window and is true during releases the web LMS is unaffected by.
+   */
+  appStatus: 'web/app-status/',
+
+  /**
+   * L3 · POST · **no body** · `?webinar_id=<pk>&event_type=webinar`.
+   *
+   * Registration is asynchronous. This returns `{ status: "accepted",
+   * registration_status, attempt_id, status_url }` and the work finishes in the
+   * background; poll `webinarRegisterStatus` with the `attempt_id`.
+   *
+   * This is the endpoint `docs/CAIRA_GAPS.md` G-23 records as having no binding
+   * target. It exists — it is simply absent from the API reference.
+   */
+  webinarRegister: 'registerV4/',
+
+  /** L4 · GET · poll one async registration attempt. `attempt_id` is a string. */
+  webinarRegisterStatus: (attemptId: string) => `registerV4/${attemptId}/status/`,
+
+  /**
+   * L5 · POST · Salesforce activity relay, `{ activity_type, event_parameters }`.
+   *
+   * Fire-and-forget: every caller in the LMS ignores the response, and a failure
+   * must never block a UI transition. Bind it with `SKIP_ERROR_NOTIFICATION`.
+   */
+  activityEvent: 'milesone-activity',
 } as const;
 
 /**
