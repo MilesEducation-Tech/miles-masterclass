@@ -18,6 +18,7 @@ import { Utils } from '../../core/services/utils/utils';
 import { Router } from '@angular/router';
 import { Dialog } from '../../core/services/dialog/dialog';
 import { Viewport } from '../../core/services/viewport/viewport';
+import { CairaUuid } from '../../core/models/caira/envelope.model';
 
 /**
  * A responsive image slider component with animated transitions.
@@ -168,7 +169,7 @@ export class Slider {
     return `/${country}/${profession}`;
   });
 
-  navigateToCourse(id: number, title: string) {
+  navigateToCourse(id: CairaUuid, title: string) {
     const titleSlug = this.utils.slugify(title);
     this.router.navigate([this.baseRoute(), 'masterclass', id, titleSlug]);
   }

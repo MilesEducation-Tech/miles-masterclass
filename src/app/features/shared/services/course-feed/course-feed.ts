@@ -78,6 +78,9 @@ export function courseFeed<TBody, TItem = CourseCard>(
   );
 
   const selected = computed(() => {
+    // `value()` throws once the resource is in an error state, so the failure
+    // has to be checked first — the `try` below only covers a shape mismatch.
+    if (resource.error()) return { items: [] as TItem[], total: 0 };
     const body = resource.value();
     if (!body) return { items: [] as TItem[], total: 0 };
     try {

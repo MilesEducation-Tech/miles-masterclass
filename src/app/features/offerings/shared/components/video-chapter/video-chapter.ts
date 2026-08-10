@@ -29,6 +29,7 @@ import {
   HtmlContentDialog,
   HtmlContentDialogData,
 } from '../../../../../shared/components/dialog/html-content-dialog/html-content-dialog';
+import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.model';
 
 @Component({
   selector: 'app-video-chapter',
@@ -48,10 +49,10 @@ export class VideoChapter {
   readonly cpeMode = input(false);
   readonly chapterWiseDetails = input<any | undefined>(undefined);
   readonly userAssessmentDetails = input<any | undefined>(undefined);
-  readonly courseId = input<number | null>(null);
+  readonly courseId = input<CairaUuid | null>(null);
   readonly courseType = input<string>('masterclass');
 
-  readonly navigate = output<number>();
+  readonly navigate = output<CairaUuid>();
   readonly startFinalAssessment = output<void>();
   readonly viewFinalAssessmentReport = output<void>();
   readonly firstChapterEnded = output<void>();
@@ -71,7 +72,7 @@ export class VideoChapter {
   private readonly dialog = inject(Dialog);
   private readonly analytics = inject(Analytics);
 
-  private transcriptCache = new Map<number, string>();
+  private transcriptCache = new Map<CairaUuid, string>();
 
   readonly currentProgress = signal(0);
 
@@ -81,7 +82,7 @@ export class VideoChapter {
   private lastChapterId = 0;
 
   // Analytics: per-chapter video-milestone dedup (reset on chapter change).
-  private videoTrackedChapter: number | null = null;
+  private videoTrackedChapter: CairaUuid | null = null;
   private videoStartFired = false;
   private readonly firedVideoMilestones = new Set<number>();
   private static readonly VIDEO_MILESTONES = [25, 50, 75, 90] as const;
@@ -212,9 +213,9 @@ export class VideoChapter {
   readonly videoSource = computed<VideoSource[]>(
     () => {
       const chapter = this.current();
-      if (!chapter?.video_url) return [];
+      if (!chapter?.hls_video_url) return [];
 
-      const url = chapter.video_url;
+      const url = chapter.hls_video_url;
       let type = 'video/mp4';
 
       if (url.includes('youtube.com') || url.includes('youtu.be')) {

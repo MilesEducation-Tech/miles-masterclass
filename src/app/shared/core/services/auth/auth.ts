@@ -85,7 +85,9 @@ export class Auth {
    * that, and the last persisted copy on a cold start.
    */
   readonly currentUser = computed<CairaUser | null>(() => {
-    const data = this.profile.value()?.data;
+    // `error()` first — `value()` throws on an errored resource, and this
+    // computed feeds the header on every page.
+    const data = this.profile.error() ? undefined : this.profile.value()?.data;
     if (data) return toCairaUser(data);
     return this.seededUser();
   });

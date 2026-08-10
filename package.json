@@ -60,6 +60,7 @@
     "@angular/platform-server": "^22.0.7",
     "@angular/router": "^22.0.7",
     "@angular/ssr": "^22.0.7",
+    "@code_with_sachin/ngx-style-qr": "^0.1.0",
     "@supabase/supabase-js": "^2.98.0",
     "@types/video.js": "^7.3.58",
     "@videojs/http-streaming": "^3.17.2",

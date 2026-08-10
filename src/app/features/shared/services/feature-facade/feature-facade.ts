@@ -75,7 +75,12 @@ export class FeatureFacade {
     { defaultValue: undefined, injector: this.injector },
   );
 
-  private readonly catalogRows = computed(() => this.catalog.value()?.all_courses ?? []);
+  // `error()` before `value()`: an errored `httpResource` throws
+  // `ResourceValueError` from `value()`, so reading it unguarded turns a failed
+  // catalog request into a render failure on every rail instead of empty rails.
+  private readonly catalogRows = computed(() =>
+    this.catalog.error() ? [] : (this.catalog.value()?.all_courses ?? []),
+  );
 
   /** Per-level rails for the "tracks" section — level is CAIRA's organising dimension. */
   readonly levelRails = computed<CourseLevelRail[]>(() => groupByLevel(this.catalogRows()));

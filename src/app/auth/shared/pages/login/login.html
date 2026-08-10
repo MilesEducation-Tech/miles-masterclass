@@ -7,7 +7,12 @@
 <div class="flex flex-col space-y-8">
   <!-- Heading -->
   <div class="flex flex-col space-y-3">
-    @if (loginStep() === 'OTP') {
+    @if (loginType() === 'QR') {
+      <p class="sub-title">Sign in with <strong>your phone</strong></p>
+      <p class="description text-sm!">
+        Scan the code with the Miles One app, then type the PIN it shows back here.
+      </p>
+    } @else if (loginStep() === 'OTP') {
       <p class="sub-title">OTP Verification</p>
       <p class="description text-sm!">
         We have sent you One Time Password to
@@ -22,167 +27,179 @@
     }
   </div>
 
-  <app-forms type="signal" class="space-y-5! flex flex-col" (submitted)="onSubmit()">
-    @if (loginStep() === 'LOGIN') {
-      @if (loginType() === 'PHONE') {
-        <div class="flex space-x-2">
-          <div class="w-[140px]">
-            <app-aria-autocomplete
-              id="country_code"
-              label="Code"
-              placeholder="Search..."
-              [showClear]="false"
-              [options]="countryCodes()"
-              [formField]="loginForm.country_code"
+  @if (loginType() === 'QR') {
+    <!-- QR owns its whole lifecycle — session, countdown, PIN and token
+         storage — so the page only reacts to the finish. -->
+    <app-qr-login (authenticated)="onQrAuthenticated()" />
+  } @else {
+    <app-forms type="signal" class="space-y-5! flex flex-col" (submitted)="onSubmit()">
+      @if (loginStep() === 'LOGIN') {
+        @if (loginType() === 'PHONE') {
+          <div class="flex space-x-2">
+            <div class="w-[140px]">
+              <app-aria-autocomplete
+                id="country_code"
+                label="Code"
+                placeholder="Search..."
+                [showClear]="false"
+                [options]="countryCodes()"
+                [formField]="loginForm.country_code"
+              />
+            </div>
+            <app-aria-input
+              class="w-full"
+              id="identifier"
+              label="Phone"
+              type="tel"
+              [numericOnly]="true"
+              [formField]="loginForm.identifier"
+              placeholder="Enter phone number"
             />
           </div>
-          <app-aria-input
-            class="w-full"
-            id="identifier"
-            label="Phone"
-            type="tel"
-            [numericOnly]="true"
-            [formField]="loginForm.identifier"
-            placeholder="Enter phone number"
-          />
-        </div>
-      } @else {
-        <!-- Email signs in with a password, not an OTP: CAIRA has no email-OTP
-             route. `otp/generate` / `otp/validate` verify an address after
-             login — they are not a login path. -->
-        <div class="flex flex-col space-y-5">
-          <app-aria-input
-            class="w-full"
-            id="identifier"
-            label="Email"
-            type="email"
-            [formField]="loginForm.identifier"
-            placeholder="Enter email"
-          />
-          <app-aria-input
-            class="w-full"
-            id="password"
-            label="Password"
-            type="password"
-            autocomplete="current-password"
-            [formField]="loginForm.password"
-            placeholder="Enter password"
-          />
-        </div>
-      }
+        } @else {
+          <!-- Email signs in with a password, not an OTP: CAIRA has no email-OTP
+               route. `otp/generate` / `otp/validate` verify an address after
+               login — they are not a login path. -->
+          <div class="flex flex-col space-y-5">
+            <app-aria-input
+              class="w-full"
+              id="identifier"
+              label="Email"
+              type="email"
+              [formField]="loginForm.identifier"
+              placeholder="Enter email"
+            />
+            <app-aria-input
+              class="w-full"
+              id="password"
+              label="Password"
+              type="password"
+              autocomplete="current-password"
+              [formField]="loginForm.password"
+              placeholder="Enter password"
+            />
+          </div>
+        }
 
-      <!-- The mandatory terms checkbox is deliberately not rendered on either
-           method. Acceptance is implied by the "By signing up or logging in…"
-           notice below, and `terms` is held accepted in the model. -->
-      <hr class="border-white/10" />
-      <!-- `text-justify` flushes both edges of this dense consent paragraph, so
-           the line before the long support address fills the width instead of
-           leaving a gap. Keeps the address unbroken on one line. -->
-      <app-aria-input
-        id="consent"
-        type="checkbox"
-        class="font-normal text-sm! leading-tight! description"
-        [label]="consentLabel()"
-        [formField]="loginForm.consent"
-      >
-        <span labelLink>
-          @if (loginType() === 'PHONE') {
-            <a [href]="'mailto:' + supportEmail" class="text-accent underline whitespace-nowrap">{{
-              supportEmail
-            }}</a
-            >. Consent is not a condition of purchase. See our
-            <a
-              [routerLink]="legalLinks().privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-accent underline"
-              >Privacy Policy</a
-            >
-            and
-            <a
-              [routerLink]="legalLinks().terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-accent underline"
-              >Terms of Service</a
-            >.
-          }
-        </span>
-      </app-aria-input>
-      <hr class="border-white/10" />
-      <p class="description text-sm! text-center font-normal leading-tight!">
-        By signing up or logging in, you agree to the Miles Masterclass
-        <a
-          [routerLink]="legalLinks().terms"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-accent underline whitespace-nowrap"
-          >Terms of Service</a
+        <!-- The mandatory terms checkbox is deliberately not rendered on either
+             method. Acceptance is implied by the "By signing up or logging in…"
+             notice below, and `terms` is held accepted in the model. -->
+        <hr class="border-white/10" />
+        <!-- `text-justify` flushes both edges of this dense consent paragraph, so
+             the line before the long support address fills the width instead of
+             leaving a gap. Keeps the address unbroken on one line. -->
+        <app-aria-input
+          id="consent"
+          type="checkbox"
+          class="font-normal text-sm! leading-tight! description"
+          [label]="consentLabel()"
+          [formField]="loginForm.consent"
         >
-        and
-        <a
-          [routerLink]="legalLinks().privacy"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-accent underline whitespace-nowrap"
-          >Privacy Policy</a
-        >.
-      </p>
-    } @else {
-      <app-otp
-        id="otp"
-        label="OTP"
-        [length]="6"
-        [autoFocus]="true"
-        [formField]="otpForm.otp"
-        placeholder="000000"
-      />
-    }
-
-    <!-- Primary action -->
-    <app-button
-      class="w-full"
-      type="submit"
-      variant="primary"
-      size="lg"
-      [disabled]="
-        (loginStep() === 'OTP' ? otpForm().invalid() : loginForm().invalid()) || isLoading()
-      "
-    >
-      @if (isLoading()) {
-        <app-spinner></app-spinner>
+          <span labelLink>
+            @if (loginType() === 'PHONE') {
+              <a
+                [href]="'mailto:' + supportEmail"
+                class="text-accent underline whitespace-nowrap"
+                >{{ supportEmail }}</a
+              >. Consent is not a condition of purchase. See our
+              <a
+                [routerLink]="legalLinks().privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-accent underline"
+                >Privacy Policy</a
+              >
+              and
+              <a
+                [routerLink]="legalLinks().terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-accent underline"
+                >Terms of Service</a
+              >.
+            }
+          </span>
+        </app-aria-input>
+        <hr class="border-white/10" />
+        <p class="description text-sm! text-center font-normal leading-tight!">
+          By signing up or logging in, you agree to the Miles Masterclass
+          <a
+            [routerLink]="legalLinks().terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-accent underline whitespace-nowrap"
+            >Terms of Service</a
+          >
+          and
+          <a
+            [routerLink]="legalLinks().privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-accent underline whitespace-nowrap"
+            >Privacy Policy</a
+          >.
+        </p>
+      } @else {
+        <app-otp
+          id="otp"
+          label="OTP"
+          [length]="6"
+          [autoFocus]="true"
+          [formField]="otpForm.otp"
+          placeholder="000000"
+        />
       }
-      {{ submitLabel() }}
-    </app-button>
 
-    @if (error(); as errorMessage) {
-      <p class="text-destructive text-sm text-center" role="alert">{{ errorMessage }}</p>
-    }
+      <!-- Primary action -->
+      <app-button
+        class="w-full"
+        type="submit"
+        variant="primary"
+        size="lg"
+        [disabled]="
+          (loginStep() === 'OTP' ? otpForm().invalid() : loginForm().invalid()) || isLoading()
+        "
+      >
+        @if (isLoading()) {
+          <app-spinner></app-spinner>
+        }
+        {{ submitLabel() }}
+      </app-button>
 
-    @if (loginStep() === 'OTP') {
-      <!-- The design puts a single Cancel under the OTP field; the resend timer
-           keeps its place beside it, since a learner who never receives the
-           code needs a way out that isn't "start over". -->
-      <div class="flex flex-col space-y-3">
-        <div class="flex justify-center items-center text-sm text-muted-foreground">
-          @if (canResendOtp()) {
-            <span>Didn't receive the OTP?&nbsp;</span>
-            <app-button variant="link" size="link" [disabled]="isLoading()" (clicked)="resendOtp()">
-              Resend OTP
-            </app-button>
-          } @else {
-            <span>
-              Resend OTP in
-              <strong class="text-foreground">{{ resendTimerDisplay() }}</strong>
-            </span>
-          }
+      @if (error(); as errorMessage) {
+        <p class="text-destructive text-sm text-center" role="alert">{{ errorMessage }}</p>
+      }
+
+      @if (loginStep() === 'OTP') {
+        <!-- The design puts a single Cancel under the OTP field; the resend timer
+             keeps its place beside it, since a learner who never receives the
+             code needs a way out that isn't "start over". -->
+        <div class="flex flex-col space-y-3">
+          <div class="flex justify-center items-center text-sm text-muted-foreground">
+            @if (canResendOtp()) {
+              <span>Didn't receive the OTP?&nbsp;</span>
+              <app-button
+                variant="link"
+                size="link"
+                [disabled]="isLoading()"
+                (clicked)="resendOtp()"
+              >
+                Resend OTP
+              </app-button>
+            } @else {
+              <span>
+                Resend OTP in
+                <strong class="text-foreground">{{ resendTimerDisplay() }}</strong>
+              </span>
+            }
+          </div>
+          <app-button class="w-full" type="button" variant="secondary" (clicked)="goBackToLogin()">
+            Cancel
+          </app-button>
         </div>
-        <app-button class="w-full" type="button" variant="secondary" (clicked)="goBackToLogin()">
-          Cancel
-        </app-button>
-      </div>
-    }
-  </app-forms>
+      }
+    </app-forms>
+  }
 
   <!--
     Method switcher. Shows the two methods that are NOT active, so it stays a
@@ -192,7 +209,7 @@
     <div class="flex gap-3">
       @for (method of otherMethods(); track method.id) {
         <app-button
-          class="flex-1"
+          class="flex-1 w-full"
           type="button"
           [variant]="$first ? 'secondary' : 'outline'"
           [disabled]="!!method.disabled"

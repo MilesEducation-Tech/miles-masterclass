@@ -20,6 +20,7 @@ import { Logger } from '../../../core/services/logger/logger';
 import { CategoriesList } from '../../categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../../core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
+import { CairaUuid } from '../../../core/models/caira/envelope.model';
 import {
   ctaFor,
   webinarTagFor,
@@ -144,7 +145,7 @@ export class Horizontal {
     }
   });
 
-  navigateToCourse(id: number, title: string) {
+  navigateToCourse(id: CairaUuid, title: string) {
     this.utils.navigateToCourse(this.type(), id, title);
   }
 

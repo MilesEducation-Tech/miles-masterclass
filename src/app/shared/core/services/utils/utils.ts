@@ -11,7 +11,11 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Router, NavigationEnd, Event as RouterEvent } from '@angular/router';
 import { EMPTY, Observable, of } from 'rxjs';
-import { filter } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
+import { ApiClient } from '../api-client/api-client';
+import { CAIRA } from '../../http/caira.endpoints';
+import { CairaUuid } from '../../models/caira/envelope.model';
+import { BookmarkToggleResponse } from '../../models/caira/course-detail.model';
 import { DynamicRouteParams, ProfessionType, CountryCode } from '../../models/route-params.model';
 import { PROFESSIONS } from '../../constant/profession';
 import { Dialog } from '../dialog/dialog';
@@ -69,6 +73,7 @@ export class Utils {
   private readonly logger = inject(Logger);
   private readonly destroyRef = inject(DestroyRef);
   private readonly viewport = inject(Viewport);
+  private readonly api = inject(ApiClient);
 
   private readonly _country = signal<CountryCode>('us');
   private readonly _profession = signal<ProfessionType>('accounting');
@@ -430,7 +435,12 @@ export class Utils {
     });
   }
 
-  navigateToCourse(type: string, id: number, title: string, state?: Record<string, unknown>) {
+  navigateToCourse(
+    type: string,
+    id: CairaUuid | number,
+    title: string,
+    state?: Record<string, unknown>,
+  ) {
     const titleSlug = this.slugify(title);
     this.router.navigate([`/${this._country()}/${this._profession()}`, type, id, titleSlug], {
       state,
@@ -443,7 +453,7 @@ export class Utils {
    * `course_type` from API responses arrives in snake_case (`micro_learning`);
    * the URL segment is kebab‑case (`micro-learning`), so we normalize here.
    */
-  buildCourseUrl(type: string, id: number, title: string): string {
+  buildCourseUrl(type: string, id: CairaUuid | number, title: string): string {
     const urlSegment = type === 'micro_learning' ? 'micro-learning' : type;
     const titleSlug = this.slugify(title);
     const path = `/${this._country()}/${this._profession()}/${urlSegment}/${id}/${titleSlug}`;
@@ -460,7 +470,7 @@ export class Utils {
    * back to where they were after submit, even when called from places that
    * forget to thread it through.
    */
-  navigateToCourseFeedback(type: string, id: number, title: string, redirect?: string) {
+  navigateToCourseFeedback(type: string, id: CairaUuid | number, title: string, redirect?: string) {
     const titleSlug = this.slugify(title);
     const redirectTo = redirect ?? this.router.url;
     this.router.navigate(
@@ -535,33 +545,53 @@ export class Utils {
     });
   }
 
-  toggleBookmarkCourse(courseId: number, options?: { course_type: string }): Observable<any> {
-    // Guarded centrally so every bookmark surface (cards, Remind Me, dialog)
-    // gets the same login prompt — callers don't need to repeat the check.
-    // Returning EMPTY (instead of throwing) keeps `.subscribe(...)` quiet at
-    // call sites; the toast is the user-facing feedback.
+  /**
+   * #15 · `POST caira/masterclass/<uuid>/bookmark/`.
+   *
+   * A **pure toggle**: CAIRA never reads the request body, so there is nothing
+   * to send and no way to set a specific state. The response's `bookmarked` is
+   * the new state — callers patch from that, never from a local flip.
+   *
+   * `options.course_type` is accepted and ignored. CAIRA has one bookmark
+   * endpoint and it takes a masterclass course id; podcasts are masterclasses
+   * with an audio player. The parameter stays so the five card and dialog call
+   * sites keep compiling.
+   *
+   * Guarded centrally so every bookmark surface gets the same login prompt.
+   * `EMPTY` (rather than an error) keeps `.subscribe(...)` quiet at call sites;
+   * the toast is the user-facing feedback.
+   */
+  toggleBookmarkCourse(
+    courseId: CairaUuid,
+    options?: { course_type: string },
+  ): Observable<{ status: boolean; is_bookmarked: boolean }> {
     if (!this.auth.isLoggedIn()) {
       this.notification.info('Login Required', 'Please log in to bookmark this course.');
       return EMPTY;
     }
+    if (!courseId) return EMPTY;
+    void options;
 
-    // ponytail: the bookmark POST and the FeatureFacade fan-out that flipped
-    // every cached card in lockstep both went with the backend. Reconnect here
-    // and re-add the cache fan-out at the same time.
-    const rawCourseType = options?.course_type ?? this.getApiCourseType();
-    const courseType = rawCourseType === 'video' ? 'masterclass' : rawCourseType;
-    this.logger.warn('toggleBookmarkCourse: no backend configured', { courseId, courseType });
-    return EMPTY;
+    return this.api.post<BookmarkToggleResponse>(CAIRA.bookmark(courseId), null).pipe(
+      map((response) => ({
+        status: response?.status === 'success',
+        is_bookmarked: response?.bookmarked === true,
+      })),
+    );
   }
 
-  addCourseToCart(courseId: number, isAddedToCart: boolean): Observable<any> {
+  /**
+   * ponytail: no cart endpoint exists in CAIRA — there is no payment or
+   * subscription model at all. Kept so the cart design stays reachable.
+   */
+  addCourseToCart(courseId: CairaUuid | number, isAddedToCart: boolean): Observable<any> {
     if (isAddedToCart) {
       this.notification.info('Already in Cart', 'This course is already in your cart.');
       this.openCartDrawer();
       return EMPTY;
     }
-    // ponytail: no add-to-cart endpoint. Still opens the drawer so the cart
-    // design remains reachable from every course surface.
+    // Still opens the drawer so the cart design remains reachable from every
+    // course surface.
     this.logger.warn('addCourseToCart: no backend configured', { courseId });
     this.openCartDrawer();
     return EMPTY;
@@ -582,16 +612,29 @@ export class Utils {
   }
 
   /**
-   * ponytail: the `additionalResources` GET is gone. The dialog-rendering half
-   * is kept below — feed it the new backend's resource list and the "links"
-   * dialog design works unchanged.
+   * ponytail: card surfaces have no resource list to open — #4 carries
+   * `ai_kit` and `exercise_file_url`, but only on the course detail payload,
+   * and the catalog endpoints omit both. From a card there is nothing to fetch:
+   * CAIRA has no per-course resources endpoint. `CourseDetail` calls
+   * `openResourceLinks` directly with the data it already holds.
    */
-  openAdditionalResources(courseId: number): void {
-    this.logger.warn('openAdditionalResources: no backend configured', { courseId });
-    this.showAdditionalResources([]);
+  openAdditionalResources(courseId: CairaUuid | number): void {
+    this.logger.warn('openAdditionalResources: no resource source for a card', { courseId });
+    this.openResourceLinks([]);
   }
 
-  private showAdditionalResources(resources: any[]): void {
+  /**
+   * Render a list of downloadable / external resources as the shared links
+   * dialog, or tell the user there are none.
+   */
+  openResourceLinks(
+    resources: {
+      title?: string | null;
+      description?: string | null;
+      resource_file?: string | null;
+      resource_link?: string | null;
+    }[],
+  ): void {
     // Map each resource to its openable URL (hosted file first, else the
     // external link). Resources with neither are dropped — there'd be
     // nothing to open.

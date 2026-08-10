@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Auth } from '../../../../../../shared/core/services/auth/auth';
 import { Utils } from '../../../../../../shared/core/services/utils/utils';
@@ -22,6 +22,7 @@ import { RecordDisk } from '../../../../../../shared/components/record-disk/reco
 import { CategoriesList } from '../../../../../../shared/components/categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../../../../../shared/core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { CairaCredlyBadge } from '../../../../../../shared/components/cards/caira-credly-badge/caira-credly-badge';
+import { CourseDetail } from '../../../../shared/services/course-detail/course-detail';
 
 @Component({
   selector: 'app-podcast-course-hero',
@@ -55,19 +56,8 @@ import { CairaCredlyBadge } from '../../../../../../shared/components/cards/cair
 })
 export class PodcastCourseHero {
   readonly auth = inject(Auth);
-  // ponytail: MasterclassFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  readonly masterclass: any = {
-    courseDetails: signal<any[]>([]),
-    currentProgress: signal<any[]>([]),
-    launchCourse: signal<any>(null),
-    openCertificateDownloadDialog: signal<any>(null),
-    openShareDialog: signal<any>(null),
-    startFinalAssessment: (..._args: any[]): any => null,
-    submitFeedback: signal<any>(null),
-    toggleCpeMode: (..._args: any[]): any => null,
-  };
+  /** Route-scoped — the same instance `PodcastCourse` keys on the route id. */
+  readonly masterclass = inject(CourseDetail);
   private readonly utils = inject(Utils);
   private readonly destroyRef = inject(DestroyRef);
   cn = cn;
@@ -95,24 +85,12 @@ export class PodcastCourseHero {
   }
 
   /**
-   * Toggle the podcast bookmark via the shared util. Patches the local
-   * `courseDetails` signal on success so the icon flips immediately — the
-   * server is the source of truth via `response.is_bookmarked`. Login gate
-   * and toast are handled centrally by `Utils.toggleBookmarkCourse`.
+   * #15 lives on the service — see `MasterclassCourseHero.toggleBookmark`.
+   * CAIRA has one bookmark endpoint and it takes a masterclass course id, so
+   * there is no podcast variant to pass through any more.
    */
   toggleBookmark() {
-    const id = this.courseId();
-    if (!id) return;
-    this.utils
-      .toggleBookmarkCourse(+id, { course_type: 'podcast' })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
-        if (response.status) {
-          this.masterclass.courseDetails.update((course: any) =>
-            course ? { ...course, added_bookmark: response.is_bookmarked } : course,
-          );
-        }
-      });
+    this.masterclass.toggleBookmark();
   }
 
   /**
@@ -121,13 +99,13 @@ export class PodcastCourseHero {
    * toasts; we just patch the local `courseDetails` signal so the icon flips
    * without re-fetching the whole course payload.
    */
-  addToCart(courseId: number, isAddedToCart: boolean) {
+  addToCart(courseId: string, isAddedToCart: boolean) {
     this.utils
       .addCourseToCart(courseId, isAddedToCart)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
         if (response.status) {
-          this.masterclass.courseDetails.update((course: any) =>
+          this.masterclass.courseDetails.update((course) =>
             course ? { ...course, is_added_to_cart: response.in_cart } : course,
           );
         }

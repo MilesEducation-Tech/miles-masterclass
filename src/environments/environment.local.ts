@@ -20,7 +20,7 @@ export const environment = {
    * `appInterceptor` sent three `x-*` headers that CAIRA does not allowlist.
    * Local should exercise the real CORS path.
    */
-  BASE_API_URL: 'https://uat-api.milescaira.com/',
+  BASE_API_URL: 'https://api.milescaira.com/',
 
   S3_BUCKET_URL: 'https://d1pp0977rsxmiq.cloudfront.net/',
   GCS_URL: 'https://asset.milesmasterclass.com/media/web-app/',

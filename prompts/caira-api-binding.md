@@ -49,7 +49,7 @@ contracts are captured in `docs/caira-contracts/`; `docs/CAIRA_GAPS.md` is writt
 | --- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | **No runtime response validation.** TS interfaces + defaults only.                                                 | No new dependency. Backend drift surfaces as a runtime error in a component, caught by the `unexpected` bucket. Request-side validation (forms, path/query params) is **not** covered by this waiver and stays.                                                           |
 | 2   | **Errors are classified at the boundary into five kinds.**                                                         | `domain` (has `reason`) → typed data, never a toast. `auth` (has `detail`) → refresh or redirect. `unexpected` → toast + `Logger`. One pure function, two consumers (interceptor + the `computed()` over a resource's `error()`).                                         |
-| 3   | **Three login paths: email+password, phone OTP, QR.**                                                              | QR is deferred to its own phase behind a documented blocker (§P8).                                                                                                                                                                                                        |
+| 3   | **Three login paths: email+password, phone OTP, QR.**                                                              | All three are live. QR's transport is verified against the API; only its payload decryption rests on the G-04 assumption (§P8).                                                                                                                                           |
 | 4   | **Uncovered surfaces are left as-is and documented.**                                                              | Payment, partner-platform, micro-learning, podcast, global search keep their placeholders and empty states. No route removal, no nav changes in this branch. Gaps go in `docs/CAIRA_GAPS.md`.                                                                             |
 | 5   | **Wire types never reach a template.** One mapper per domain converts CAIRA shapes to the existing view models.    | Smaller diff than rewriting templates. Landed in `masterclass.model.ts` (`topSectionToCard`, `courseSectionToCard`, `groupByLevel`) — mappers live **beside the wire types**, not in a separate `mappers/` folder.                                                        |
 | 6   | **Endpoint paths are a plain const object, not `RouteConfig` phantom types.**                                      | `caira.endpoints.ts` ships **47 paths**. Typing comes from the call site: `api.get<TopSectionResponse>(...)`. Trailing slashes are load-bearing — `APPEND_SLASH` 301s drop a POST body — so the file is the only source and `caira.endpoints.spec.ts` guards it.          |
@@ -275,33 +275,51 @@ shape. Audit of the components the mappers feed:
 
 Three consequences:
 
-1. **`card` is a two-way `model()`.** The card writes back into the parent's signal — that is how an
-   in-card bookmark toggle mutates the rail in place via `Utils.applyBookmarkChange`. Mapped
-   view-models must live in a **writable** signal and be safe to patch field-by-field. Do not hand a
-   card a `computed()` projection. _(This is the one place `courseFeed()` deviates: `items` is a
-   `computed()`. A bookmark toggle from a rail card therefore needs `reload()` or a local writable
-   copy — resolve it in P3-detail's prompt.)_
+1. **`card` is a `model()`, but nothing binds it two-way — resolved, see Risk 10.** Every one of the
+   ~25 card call sites in `src/` binds `[card]="…"`, not `[(card)]`, so an in-card
+   `card.update(...)` writes to the model's own signal and stops there. That is enough: it flips
+   the card's icon, and nothing above it needs the value. Three facts closed this out:
+
+   - **`Utils.applyBookmarkChange` no longer exists.** It went with the Django strip, so the rail
+     fan-out the two-way binding existed to serve has no caller. Only two stale doc comments
+     mention it (`features.ts:18`, `feature-facade.ts:39`).
+   - **No CAIRA list endpoint reports bookmark state.** `CourseSectionItem` and `TopSectionItem`
+     have no `is_bookmarked`, so `courseSectionToCard` pins `added_bookmark: false` for every rail
+     card on every load. There is no rail truth to keep in sync — see G-31.
+   - **The one surface with real bookmark state is course detail** (#4's `is_bookmarked`), and it
+     is read by one component tree, so `CourseDetail.courseDetails` is a **`linkedSignal`** —
+     writable for the patch, and reset the moment #4 answers again.
+
+   So `courseFeed().items` stays a `computed()` and no writable projection was added. Mapped
+   view-models that a _single_ tree both reads and patches still belong in a writable signal;
+   `linkedSignal` is the shape to reach for.
+
 2. **Empty strings must be coerced to `null` for image URLs.** `ngSrc=""` throws **NG02952** and
    kills the render, and adapted payloads have shipped `''` before. CAIRA's `image_url`,
    `course_thumbnail_url` and `badge_image_url` are all nullable. **Landed** for the catalog — the
    `img()` helper in `masterclass.model.ts`. Every later mapper reuses it.
-3. **The id-type conflict (Decision 8) — partially done.** `CourseCard.id` is `CairaUuid`. Still
-   pending, and each will fail on a UUID:
+3. **The id-type conflict (Decision 8) — masterclass and podcast trees done.** `CourseCard.id`,
+   `CourseDetailCard.id`, `ChapterView.id` and `InstructorProfile.id` are all `CairaUuid`, and
+   every `Number(id)` coercion listed below is gone from the two course trees. Also widened while
+   in there: `Utils.navigateToCourse` / `buildCourseUrl` / `navigateToCourseFeedback` /
+   `openAdditionalResources` / `addCourseToCart` take `CairaUuid | number` (webinars keep integer
+   ids), `toggleBookmarkCourse` takes `CairaUuid`, `video-chapter` / `audio-chapter` emit
+   `output<CairaUuid>()`, and `InstructorDetails.instructorId` dropped its `numberAttribute`
+   transform. **Still pending for P6:**
    - `BadgeCardData.badgeId: number`, `.courseId: number | null` → widen to `string`
    - `TrackerTableRow.id: number | null` → widen to `string | null`
-   - `Number(...)` coercions that yield **`NaN`**: `masterclass-course.ts:85`,
-     `masterclass-chapter.ts:81`/`:90`, `masterclass-course-hero.ts:99`, `course-feedback.ts:68`
-     and `:157`, `final-assessment-report.ts:101` and `:129`, plus the podcast twins
-     (`podcast-course.ts:67`, `podcast-chapter.ts:77`/`:86`, `podcast-course-hero.ts:107`)
-   - numeric signatures to widen: `course-chapter-list.ts getChapterCompletedStatus`,
-     `masterclass-chapter.ts handleNavigation`, `masterclass-course-hero.ts addToCart`,
-     `course-feedback.ts`, `final-assessment-report.ts toggleExpand`
 
    **`v2-to-upcoming.ts` is the exception** — its seven `id: number` declarations are correct,
    because `Webinar.webinar_id` really is an integer. Leave it alone.
 
-   These are type-level edits to `.ts` only. **No template changes** — templates interpolate ids,
-   they do not do arithmetic on them.
+   These are type-level edits to `.ts` only. **No template changes for the ids** — templates
+   interpolate them, they do not do arithmetic on them. Typing the view model _did_ force four
+   unrelated template-shaped fixes, because the placeholders were `any` and nothing was checked
+   before: `price_detail` and `cpe_mode_details` are non-null-typed with dormant values so the
+   dead pricing and CPE-mode branches still compile, the three course still-images are
+   non-nullable `string` (they are bound into `ngSrc` unguarded), and `VideoPoster` now takes
+   `string | null` and binds `[attr.src]` / `[attr.poster]` so a course with no trailer does not
+   render `<video src="">`.
 
 ---
 
@@ -363,22 +381,59 @@ Still open: `signup` and `forget-password` are **empty stub classes** but routed
 no password reset for the phone path; #33 has no reset endpoint at all. Stubs stay, gap logged.
 `profile.ts` (L349/373/388/445) is **not yet bound** — it moves to P3-detail's prompt or its own.
 
-### P3 — Masterclass catalog ✅ listing shipped (`623c6ae`) · detail pending
+### P3 — Masterclass catalog ✅ shipped (listing `623c6ae` · detail this commit)
 
-Endpoints #1, #2, #3 shipped. **#4, #14, #15, #16 pending.**
+Endpoints #1, #2, #3, **#4, #14, #15 and #16 are all bound.**
+
+**Detail, as built.** `CourseDetail` (`features/offerings/shared/services/course-detail/`) is a
+`@Service({ autoProvided: false })` provided on `:courseId/:courseTitle` in **both** the masterclass
+and podcast route trees — a podcast is a masterclass with an audio player and CAIRA serves both from
+`Masterclass_Course_Detail`, so there is one service, not two. `courseId` is the reactive root and is a
+`computed()` **read off the route the service is provided on** — not pushed in by the page. #4 and
+#14 are `httpResource`s keyed on it, and the only reason to skip a request is "no id yet".
+
+**Do not gate a read on `Auth.isAuthenticated()`.** An early version of this service did, reasoning
+that #4 requires a JWT so a signed-out request could only 403. It was wrong twice: the page silently
+did nothing whenever the flag was false for any reason — no request to inspect, no error to render —
+and it bypassed the chain built for exactly this case. `authInterceptor` refreshes an expired token
+and replays; `errorInterceptor` classifies the 403 as `kind: 'auth'` and deliberately does not toast
+it. A 403 is diagnosable, a request that never fires is not.
+
+That leaves the two course pages with **no `effect()` and no `clear()` on destroy**: the old
+`effect() → loadCourse()` wiring, its auth-change re-fetch, and the effect that copied the route
+input into a service signal are all gone. Leaving the course route disposes the route injector and
+the service with it. `courseDetails` is a **`linkedSignal`** (§1.7.1); everything else derived is a
+`computed()`. The only `effect()` anywhere in this phase is the instructor page's analytics call —
+it reports state, it does not propagate it.
+
+Wire types and mappers live in `shared/core/models/caira/course-detail.model.ts`, beside the types
+they map, per Decision 5. `course-detail.model.spec.ts` covers the parts that fail silently: the
+credit-on-first-field rule, the image fallback chains, locked-chapter progress, and #14 winning over
+#4's cached window.
+
+Two consequences worth knowing:
+
+- **`course-related-section` takes its two lists as inputs** rather than injecting the service. #4
+  already carries `related_courses` and `instructor_related_courses`, and the component lives in
+  `shared/components/` — having it reach into a route-scoped feature service would invert the
+  dependency to re-derive what its parent already holds. Its dead `relatedContent` /
+  `instructorCourses` fetch scaffolding is deleted.
+- **`httpResource.value()` throws once the resource is in an error state** —
+  `ResourceValueError`, not `undefined`. Every `computed()` over a resource must therefore check
+  `error()` **before** `value()`, or the first failed request becomes a render failure in every
+  consumer instead of an empty state. This bit `CourseDetail` and the instructor page, and the same
+  latent crash was already shipped in `courseFeed()`, `FeatureFacade.catalogRows` and
+  `Auth.currentUser` (that last one feeds the header on every page) — all five now guard.
+- **`Utils.showAdditionalResources` is now the public `openResourceLinks`.** #4's `ai_kit` and
+  `exercise_file_url` are the resource list; the dialog half was already there. `openAdditionalResources(courseId)`
+  survives for the card surfaces, which have no payload to open (G-32).
 
 Shipped: `masterclass.model.ts` (wire types + `topSectionToCard` / `courseSectionToCard` /
 `groupByLevel` / `img`), `courseFeed()` factory, `FeatureFacade` rebuilt on `httpResource`.
 Four of nine rails have a source; the other five are `emptyCourseFeed()` and every section is
 `@if`-guarded, so they render nothing (G-22).
 
-**Remaining — course detail.** Deliverables: a `@Service({ autoProvided: false })` on the course
-route (not a facade) keyed on the route id, plus detail mappers in `masterclass.model.ts`.
-Consumers: `masterclass-course.ts`, `masterclass-course-hero.ts`, `course-chapter-list.ts`,
-`instructor-details.ts`. **Does the id widening (§1.7)** for the masterclass and podcast trees —
-this is where `Number(id)` stops being viable.
-
-Contract facts to build against:
+Contract facts it was built against:
 
 - Pagination is `limit` / `page`, with **legacy `offset` overriding `page`** when present. Default
   limit 6, clamped to 100. Out-of-range page returns `[]`, not an error. `courseFeed()` grows
@@ -392,9 +447,14 @@ Contract facts to build against:
   (`Masterclass_Course_Name` beside `trailer_video_url`). The mapper is the only place that knows.
 - `#4` `sponser_identification_number` — the misspelling is FE-locked and intentional. Do not "fix" it.
 - `#15` bookmark is a **pure toggle** with no body; any body is ignored. It is not set-state.
-  `Utils.toggleBookmarkCourse` expects `{status, is_bookmarked}` → map from `{status:"success", bookmarked}`.
-  Resolve the `model()`-writeback question from §1.7.1 here.
-- `#16` returns **raw serializer output with no envelope**.
+  `Utils.toggleBookmarkCourse` maps `{status:"success", bookmarked}` → `{status, is_bookmarked}` and
+  the hero patches from the server's answer, never from a local flip. The §1.7.1 `model()`
+  write-back question is closed — see Risk 10.
+- `#16` returns **raw serializer output with no envelope**, and its field list is defined outside the
+  documented module. `toInstructorProfile` reads both naming conventions and flattens
+  `social_media_links` by platform; a UAT capture (P0 item 3) replaces the guesswork without
+  touching anything but the mapper. The instructor page's three course tabs have no endpoint at
+  all — G-29.
 - `#4` is cached server-side per-user over a global base key. Content edits lag. Do not build a
   client-side cache-buster; document it for QA.
 
@@ -525,20 +585,52 @@ shape and are the mapper's target.
 - **There is no registration endpoint in this reference.** `registration.registration_status` is
   read-only. `webinar-registration-form.ts` has no binding target → gap.
 
-### P8 — QR login (blocked)
+### P8 — QR login ✅ shipped · one assumed constant
 
-Endpoints #36, #37, #38.
+Endpoints #36 and #38. (#37 is the phone's call and is deliberately not implemented here.)
 
-**Blocker:** the reference explicitly places `account/qr_login/crypto.py` outside its scope, so the
-inner structure of the `{epk, iv, ct}` blob — curve, KDF, AES mode, and the encoding of `public_key`
-— is undocumented. The browser cannot decrypt without it. Also undocumented: `store.SESSION_TTL`,
-the `make_pin()` format, and whether the dash in `"4324-3456"` is significant to `verify_pin`.
+`QrLogin` (`auth/shared/components/qr-login/`) owns the whole flow, since nothing outside the login
+card reads a QR session: WebCrypto keypair → #36 → render the code with **`@code_with_sachin/ngx-style-qr`**
+(SSR-safe SVG, no runtime deps) → 120 s countdown → PIN → #38 → decrypt → `storeTokens`. The keypair
+is a plain field, not a signal: a private key does not belong in the reactive graph, and it is dropped
+on destroy. `afterNextRender` starts it, so it never runs during SSR.
 
-Do not start until P0 item 4 lands. Then: WebCrypto keypair in-browser (browser-only, never SSR),
-`#36` → render QR of `session_id` → poll `#38` with the typed PIN → decrypt → `storeTokens`.
-`#37` is the phone's call and is not implemented here. `#38` is **single-use** (the session is purged
-before responding) and has a **3-attempt lockout** returning 429 — surface `attempts_remaining` from
-the 401 body.
+**Verified against the live API**, not just typed:
+
+| Case                      | Result                                                        |
+| ------------------------- | ------------------------------------------------------------- |
+| #36 with a P-256 SPKI key | `201 {session_id, expires_in: 120}`                           |
+| #38 before any claim      | `409 not_claimed` → rendered **inline in the card, no toast** |
+| #38, unknown session      | `404` → "expired, please rescan"                              |
+| #36 with no key           | `400 Missing public_key`                                      |
+
+⚠️ **`session_id` is a 32-char hex string with no dashes** (`984c0d7dbbe44a5488f12e662feba034`), not
+the dashed UUID4 the reference describes. Treated as an opaque string throughout.
+
+**The decrypt contract is resolved** (G-04) — not from the reference, which still puts
+`crypto.py` out of scope, but from a client that talked to this same module. The `miles-qr-login-*`
+salt and info matching byte for byte is what identifies it as the same module rather than a
+lookalike:
+
+| Step       | Value                                                                       |
+| ---------- | --------------------------------------------------------------------------- |
+| Key agree  | ECDH **P-256**                                                              |
+| Key encode | **raw uncompressed EC point, base64** — 65 bytes → 88 chars                 |
+| Derive     | HKDF-SHA256, salt `miles-qr-login-salt-v1`, info `miles-qr-login-aesgcm-v1` |
+| Cipher     | AES-256-GCM, tag appended to `ct`                                           |
+
+⚠️ **`raw`, not SPKI** — the correction that mattered, and the one no live probe could have caught.
+#36 does no format validation, so an SPKI key returns a clean `201` and only fails later on the
+phone as `400 Invalid session encryption key`. Both encodings look equally healthy from the browser.
+`qr-crypto.spec.ts` pins the export at 65 bytes with the `0x04` uncompressed marker, and pins the
+salt and info so "tidying" any of them breaks the build rather than production.
+
+**One thing is still open:** the decrypted plaintext's shape. #37 documents
+`{access_token, refresh_token, user_id}`; the sibling client documents `{user_id, session_id,
+token_id}`. Only the first is usable — the second is a set of references and no endpoint in this API
+redeems them. `parseSession` reads the documented shape and, on a mismatch, reports the key names it
+actually received (never the values, which are credentials). That turns the one case no test can
+reach into a one-line diagnosis on the first real scan.
 
 ### P9 — Gaps and docs
 
@@ -673,7 +765,10 @@ End-to-end on UAT (`pnpm start`, port **4101**):
    accurately without them.** This is now the top schedule risk, and the only one blocking work that
    is otherwise ready.
 4. ~~Auth failures are 403, not 401~~ — handled and verified; keep verification step 11.
-5. **QR crypto is unspecified** and may not be recoverable without backend help. P8 may not ship.
+5. **QR crypto is unspecified.** Narrowed, not closed: P8 shipped and every call is verified live,
+   but the final decrypt runs on an assumed construction (G-04). If the backend differs, QR sign-in
+   fails at the last step for real users — it degrades to a clear "use email or phone" message rather
+   than a broken session, but it is the one part of this branch that no test here can settle.
 6. **Server-side caching** on `#4` (per-user over a global base key) will look like a bug to QA.
    Document before test starts.
 7. **No runtime validation** (Decision 1) means a backend shape change lands as a component error
@@ -685,6 +780,10 @@ End-to-end on UAT (`pnpm start`, port **4101**):
 9. **The id widening (§1.7) is a cross-cutting type change** landing inside P3-detail and P6 rather
    than as its own commit. `tsc` catches every site and no templates change, so the risk is churn
    rather than correctness — but it makes those diffs larger than they look.
-10. **The card `model()` write-back conflicts with `courseFeed()`'s `computed()` items** (§1.7.1). A
-    bookmark toggle from a rail card has no writable target today. Unresolved; first surfaces in
-    P3-detail.
+10. ~~**The card `model()` write-back conflicts with `courseFeed()`'s `computed()` items**~~ —
+    **closed, and it was never a conflict.** No template binds `[(card)]`, `Utils.applyBookmarkChange`
+    no longer exists, and no CAIRA list endpoint returns bookmark state, so there is no rail truth
+    to propagate and the card's local `model()` write is sufficient. `courseFeed().items` stays a
+    `computed()`; course detail uses a `linkedSignal`. Full reasoning in §1.7.1. The residual —
+    rail cards always render unbookmarked until the learner opens the course — is G-31, a backend
+    ask, not a client fix.

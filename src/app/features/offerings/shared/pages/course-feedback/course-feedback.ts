@@ -11,6 +11,7 @@ import {
   UtilsDialog,
   UtilsDialogData,
 } from '../../../../../shared/components/dialog/utils-dialog/utils-dialog';
+import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.model';
 
 const PROFILE_INCOMPLETE_DIALOG_DATA: UtilsDialogData = {
   containerClass: 'py-12 px-6',
@@ -65,12 +66,12 @@ export class CourseFeedback {
     effect(() => {
       const id = this.courseId();
       if (id) {
-        this.loadData(Number(id));
+        this.loadData(id);
       }
     });
   }
 
-  loadData(courseId: number) {
+  loadData(courseId: CairaUuid) {
     // Load Categories
     this.facade
       .getFeedbackCategories()
@@ -95,7 +96,7 @@ export class CourseFeedback {
       });
   }
 
-  loadUserFeedback(courseId: number) {
+  loadUserFeedback(courseId: CairaUuid) {
     this.facade
       .getUserFeedback(courseId)
       .pipe(takeUntilDestroyed(this.destroyRef))

@@ -38,6 +38,7 @@ import {
   ssoUserToCairaUser,
 } from '../../../../shared/core/models/caira/auth.model';
 import { dialCodeWithLength } from '../../../../shared/core/constant/dial-code';
+import { QrLogin } from '../../components/qr-login/qr-login';
 
 export type LoginMethod = 'EMAIL' | 'PHONE' | 'QR';
 
@@ -45,20 +46,18 @@ interface LoginMethodOption {
   id: LoginMethod;
   label: string;
   icon: string;
-  /**
-   * QR is designed but **not implementable**: the reference puts
-   * `account/qr_login/crypto.py` out of scope, so the curve, KDF, AES mode and
-   * `public_key` encoding of the `{epk, iv, ct}` blob are all unknown and the
-   * browser cannot decrypt what `qr/confirm` returns. Rendered disabled rather
-   * than hidden so the design is intact and the gap is visible. See G-04.
-   */
   disabled?: boolean;
 }
 
+/**
+ * QR is live. Its one unverifiable step — decrypting `qr/confirm`'s payload —
+ * is isolated in `qr-crypto.ts` behind the G-04 assumption, and fails into
+ * "please use email or phone" rather than a half-signed-in state.
+ */
 const LOGIN_METHODS: readonly LoginMethodOption[] = [
   { id: 'EMAIL', label: 'Login with Email', icon: 'lucideMail' },
   { id: 'PHONE', label: 'Login with phone', icon: 'lucideSmartphone' },
-  { id: 'QR', label: 'Login with QR', icon: 'lucideQrCode', disabled: true },
+  { id: 'QR', label: 'Login with QR', icon: 'lucideQrCode' },
 ];
 
 /** Milliseconds before a fresh OTP can be requested. Client-side only — see below. */
@@ -112,6 +111,7 @@ interface OtpModel {
     Spinner,
     NgIcon,
     RouterLink,
+    QrLogin,
   ],
   templateUrl: './login.html',
   styleUrl: './login.css',
@@ -345,9 +345,6 @@ export class Login {
    */
   selectLoginMethod(method: LoginMethod): void {
     if (method === this.loginMethod()) return;
-    // QR is rendered disabled; this is belt-and-braces against a programmatic
-    // call, since selecting it would strand the user on a form that cannot
-    // submit.
     if (LOGIN_METHODS.find((m) => m.id === method)?.disabled) return;
 
     this.loginMethod.set(method);
@@ -406,6 +403,14 @@ export class Login {
     this.run<LoginResponse>(this.api.post(CAIRA.verifyOtp, body, silent()), (res) =>
       this.completeLogin(res),
     ).subscribe((outcome) => this.handleTerminalOutcome(outcome));
+  }
+
+  /**
+   * QR sign-in finished. `QrLogin` has already stored the token pair, so this
+   * is the same landing the password and OTP paths take.
+   */
+  onQrAuthenticated(): void {
+    this.handleTerminalOutcome({ kind: 'authenticated' });
   }
 
   /** Replays #34; the server issues a fresh `session_id`. */

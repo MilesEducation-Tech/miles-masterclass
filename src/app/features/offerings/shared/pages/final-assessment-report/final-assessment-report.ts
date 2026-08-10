@@ -13,6 +13,7 @@ import { Utils } from '../../../../../shared/core/services/utils/utils';
 import { Logger } from '../../../../../shared/core/services/logger/logger';
 import { DatePipe } from '@angular/common';
 import { PageLoading } from '../../../../../shared/components/ui/page-loading/page-loading';
+import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.model';
 
 @Component({
   selector: 'app-final-assessment-report',
@@ -56,7 +57,7 @@ export class FinalAssessmentReport {
   reportData = signal<any['data'] | null>(null);
   courseDetails = signal<any | null>(null);
   showWrongOnly = signal(false);
-  expandedItems = signal<Set<number>>(new Set());
+  expandedItems = signal<Set<CairaUuid>>(new Set());
   isLoading = signal(true);
 
   // Computed
@@ -98,7 +99,7 @@ export class FinalAssessmentReport {
       const courseId = this.courseId();
 
       if (sessionId) {
-        this.loadReport(Number(sessionId));
+        this.loadReport(sessionId);
       }
 
       if (courseId) {
@@ -108,7 +109,7 @@ export class FinalAssessmentReport {
     });
   }
 
-  loadReport(sessionId: number) {
+  loadReport(sessionId: CairaUuid) {
     this.isLoading.set(true);
     this.facade.getAssessmentReport(sessionId).subscribe({
       next: (data: any) => {
@@ -126,7 +127,7 @@ export class FinalAssessmentReport {
     const courseId = this.courseId();
     if (!courseId) return;
 
-    this.facade.getCourseDetails(Number(courseId)).subscribe({
+    this.facade.getCourseDetails(courseId).subscribe({
       next: (data: any) => {
         this.courseDetails.set(data);
       },
@@ -140,7 +141,7 @@ export class FinalAssessmentReport {
     this.showWrongOnly.update((v) => !v);
   }
 
-  toggleExpand(id: number) {
+  toggleExpand(id: CairaUuid) {
     this.expandedItems.update((set) => {
       const newSet = new Set(set);
       if (newSet.has(id)) {
@@ -152,7 +153,7 @@ export class FinalAssessmentReport {
     });
   }
 
-  isExpanded(id: number) {
+  isExpanded(id: CairaUuid) {
     return this.expandedItems().has(id);
   }
 

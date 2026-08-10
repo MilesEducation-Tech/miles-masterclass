@@ -114,11 +114,18 @@ export interface CardFieldOfStudy {
  * this object must always exist. A null here is a crash on the hero rail, not a
  * blank line.
  */
-export interface CardInstructor {
+export interface CardInstructorPerson {
   id: CairaUuid | null;
   first_name: string;
   last_name: string;
-  other_instructors: { id: CairaUuid | null; first_name: string; last_name: string }[];
+  /** `course-about.html` renders this under the name when present. */
+  designation?: string;
+  /** Instructor portrait, `null` when absent — the about panel falls back to the course art. */
+  horizontal_thumbnail?: string | null;
+}
+
+export interface CardInstructor extends CardInstructorPerson {
+  other_instructors: CardInstructorPerson[];
 }
 
 /**

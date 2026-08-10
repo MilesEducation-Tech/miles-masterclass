@@ -2,8 +2,8 @@
   <video
     #videoEl
     [class]="'w-full h-full object-cover ' + videoClass()"
-    [src]="videoSrc()"
-    [poster]="posterSrc()"
+    [attr.src]="videoSrc()"
+    [attr.poster]="posterSrc()"
     [loop]="loop()"
     [muted]="isMuted()"
     [attr.preload]="preload()"

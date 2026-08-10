@@ -32,6 +32,8 @@
       [courseId]="course.id"
       courseType="podcast"
       [instructors]="course.instructor_details"
+      [relatedCards]="masterclassService.relatedCards()"
+      [instructorCarousels]="masterclassService.instructorCarousels()"
     />
   </section>
 }

@@ -24,6 +24,7 @@ import { RecordDisk } from '../../../../../shared/components/record-disk/record-
 import { Analytics } from '../../../../../shared/core/services/analytics/analytics';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faClipboard } from '@ng-icons/font-awesome/regular';
+import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.model';
 
 @Component({
   selector: 'app-audio-chapter',
@@ -46,7 +47,7 @@ export class AudioChapter {
   readonly userAssessmentDetails = input<any | undefined>(undefined);
 
   // --- Outputs ---
-  readonly navigate = output<number>();
+  readonly navigate = output<CairaUuid>();
   readonly startFinalAssessment = output<void>();
   readonly viewFinalAssessmentReport = output<void>();
   readonly paused = output<void>();
@@ -65,7 +66,7 @@ export class AudioChapter {
   private lastChapterId = 0;
 
   // Analytics: per-chapter media-milestone dedup (reset on chapter change).
-  private mediaTrackedChapter: number | null = null;
+  private mediaTrackedChapter: CairaUuid | null = null;
   private mediaStartFired = false;
   private readonly firedMediaMilestones = new Set<number>();
   private static readonly MEDIA_MILESTONES = [25, 50, 75, 90] as const;
