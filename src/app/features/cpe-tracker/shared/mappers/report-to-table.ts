@@ -10,7 +10,11 @@ export type ButtonKind =
 
 export interface TrackerTableRow {
   key: string;
-  id: number | null;
+  /**
+   * Widened from `number` for CAIRA (Decision 8): badge ids are strings. The
+   * numeric form stays for the Django-era mapper below until it is deleted.
+   */
+  id: string | number | null;
   courseName: string;
   fieldsOfStudy: any[];
   deliveryMethod: string;
