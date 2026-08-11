@@ -1,7 +1,7 @@
 import { Component, DestroyRef, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, catchError, map, of } from 'rxjs';
+import { Observable, catchError, of } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroAcademicCap, heroCheckBadge, heroXMark } from '@ng-icons/heroicons/outline';
 import { Button } from '../../ui/button/button';
@@ -56,8 +56,15 @@ export interface CertificateDialogData {
   certificateType?: 'nasba' | 'miles' | 'both';
 }
 
-type DownloadCertificateRequest = any;
-type DownloadCertificateResponse = any;
+/** What the old bulk endpoint took. Kept as the shape to rebuild against. */
+interface DownloadCertificateRequest {
+  // `CertificateDialogData.courseId` is still the Django-era `number`; CAIRA ids
+  // are uuids. Widened here rather than in the dialog's own contract, which is
+  // part of the id-widening sweep, not this fix.
+  course_id: string | number;
+  course_type: string;
+  certificate_type?: 'nasba' | 'miles';
+}
 
 /** Sentinel returned by the catchError branch so subscribe() can distinguish API failure from empty data. */
 const FETCH_ERRORED = Symbol('fetch_errored');
@@ -249,22 +256,15 @@ export class CertificateDownloadDialog implements OnInit {
       ...(requestType ? { certificate_type: requestType } : {}),
     };
 
-    return this.api
-      .post('', body) /* ponytail: downloadCertificate endpoint removed with the backend */
-      .pipe(
-        // Filter out rows missing the URL for the requested variant — defensive
-        // against partial backend responses (e.g. a row with miles only when
-        // nasba was asked for).
-        map<DownloadCertificateResponse, FetchResult>((res) =>
-          (res?.data ?? []).filter((c: any) => !!pickUrl(c, variant)),
-        ),
-        catchError<FetchResult, Observable<FetchResult>>((err) => {
-          this.logger.error('CertificateDownloadDialog.fetch failed', err);
-          this.notification.error('Download failed', 'Could not load the certificate.');
-          return of(FETCH_ERRORED);
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      );
+    // ponytail: CAIRA has no bulk certificate endpoint. The old one posted
+    // `{course_id, course_type, certificate_type}` and returned a row per field
+    // of study; today a certificate URL arrives on #4 (`certificate_url`) and on
+    // the tracker's badge rows, one at a time. Until a list endpoint exists this
+    // reports the failure instead of posting to an empty URL — the previous
+    // `api: any = {}` threw a TypeError before `catchError` could see it.
+    this.logger.warn('Certificate list endpoint is not bound', body);
+    this.notification.error('Download unavailable', 'Certificates cannot be listed yet.');
+    return of(FETCH_ERRORED).pipe(takeUntilDestroyed(this.destroyRef));
   }
 
   private async runDownload(certs: any[], variant: CertificateVariant): Promise<void> {
