@@ -6,6 +6,7 @@ import { matBookmarkRound } from '@ng-icons/material-icons/round';
 import { Button } from '../../ui/button/button';
 import { CategoriesList } from '../../categories-list/categories-list';
 import { Utils } from '../../../core/services/utils/utils';
+import { CourseCard } from '../../../core/models/caira/masterclass.model';
 
 @Component({
   selector: 'app-coming-soon',
@@ -17,7 +18,7 @@ export class ComingSoon {
   private readonly utils = inject(Utils);
   private readonly destroyRef = inject(DestroyRef);
 
-  card = model.required<any>();
+  card = model.required<CourseCard>();
   index = input.required<number>();
   type = input<'masterclass' | 'podcast' | 'micro-learning'>('masterclass');
 

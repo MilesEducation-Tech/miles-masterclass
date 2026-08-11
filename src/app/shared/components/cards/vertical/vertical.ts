@@ -15,6 +15,7 @@ import { faSolidInfo, faSolidPlay, faSolidRobot } from '@ng-icons/font-awesome/s
 import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
 import { NgIcon } from '@ng-icons/core';
 import { Utils } from '../../../core/services/utils/utils';
+import { CourseCard } from '../../../core/models/caira/masterclass.model';
 import { CategoriesList } from '../../categories-list/categories-list';
 import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
 
@@ -26,13 +27,9 @@ import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
 })
 export class Vertical {
   private readonly utils = inject(Utils);
-  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly feature: any = {};
   private readonly destroyRef = inject(DestroyRef);
 
-  card = model.required<any>();
+  card = model.required<CourseCard>();
   type = input<'masterclass' | 'podcast' | 'micro-learning' | 'webinar'>('masterclass');
   /** When true, clicking the card emits `cardClicked` instead of routing. */
   disableNavigation = input<boolean>(false);
@@ -64,23 +61,7 @@ export class Vertical {
   }
 
   openCourseInfo() {
-    if (!this.card().allDataFetched) {
-      this.feature
-        .getAbout(this.card().id, this.type() === 'micro-learning' ? 'micro_learning' : this.type())
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((res: any) => {
-          const updatedCard = {
-            ...this.card(),
-            ...res.data,
-            allDataFetched: true,
-            learning_objective_list: res.data.learning_objectives.split('\r\n'),
-          };
-          this.card.set(updatedCard);
-          this.utils.openCourseInfoDialog(this.card());
-        });
-    } else {
-      this.utils.openCourseInfoDialog(this.card());
-    }
+    this.utils.openCourseInfo(this.card());
   }
 
   openVideoDialog() {

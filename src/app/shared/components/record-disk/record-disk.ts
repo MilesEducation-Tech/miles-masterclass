@@ -37,11 +37,15 @@ const DEFAULT_CONFIG: Required<RecordDiskConfig> = {
   },
 })
 export class RecordDisk {
-  /** The thumbnail image for the album cover. */
-  readonly coverImage = input.required<string>();
+  /**
+   * The thumbnail image for the album cover. Nullable because CAIRA card
+   * artwork is — the template already guards with `@if (coverImage())` and
+   * binds plain `[src]`, so a missing cover renders the bare disk.
+   */
+  readonly coverImage = input.required<string | null>();
 
   /** The image to display on the center label of the disk. Defaults to coverImage. */
-  readonly diskImage = input<string>();
+  readonly diskImage = input<string | null>();
 
   /** Configuration object controlling disk behavior and appearance. */
   readonly config = input<RecordDiskConfig>({});

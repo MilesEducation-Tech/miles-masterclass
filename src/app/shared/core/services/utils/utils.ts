@@ -9,13 +9,18 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { HttpContext } from '@angular/common/http';
 import { Router, NavigationEnd, Event as RouterEvent } from '@angular/router';
 import { EMPTY, Observable, of } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 import { ApiClient } from '../api-client/api-client';
 import { CAIRA } from '../../http/caira.endpoints';
-import { CairaUuid } from '../../models/caira/envelope.model';
-import { BookmarkToggleResponse } from '../../models/caira/course-detail.model';
+import { CairaUuid, SKIP_ERROR_NOTIFICATION } from '../../models/caira/envelope.model';
+import {
+  BookmarkToggleResponse,
+  CourseDetailResponse,
+  toCourseDetailCard,
+} from '../../models/caira/course-detail.model';
 import { DynamicRouteParams, ProfessionType, CountryCode } from '../../models/route-params.model';
 import { PROFESSIONS } from '../../constant/profession';
 import { Dialog } from '../dialog/dialog';
@@ -513,6 +518,48 @@ export class Utils {
       ariaDescribedBy: 'dialog-description',
       data: card,
     });
+  }
+
+  /**
+   * Open the info dialog with the **full** about section.
+   *
+   * A list card carries only what the rail endpoints return; the dialog renders
+   * `app-course-about`, which wants `course_overview`, `learning_objective_list`
+   * and the instructor list — all of which live on #4. Each card type used to
+   * fetch that through its own `FeatureFacade.getAbout` call; the facade went
+   * with the Django strip, so all three threw on the first click.
+   *
+   * No cache: #4 is already cached server-side per user, and a second click is
+   * cheaper than a stale about panel.
+   */
+  openCourseInfo(card: CourseInfoInput, environmentInjector?: EnvironmentInjector): void {
+    // The webinar branch renders a different dialog from the raw payload the
+    // adapter stashed — there is no #4 for a webinar.
+    if ((card as { _webinar?: unknown })._webinar) {
+      void this.openCourseInfoDialog(card, environmentInjector);
+      return;
+    }
+
+    this.api
+      .get<CourseDetailResponse>(CAIRA.courseDetail(card.id), {
+        // The fallback below is the user-visible handling; a toast on top of it
+        // would report a failure the learner never experiences.
+        context: new HttpContext().set(SKIP_ERROR_NOTIFICATION, true),
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          void this.openCourseInfoDialog(
+            toCourseDetailCard(response.course_details),
+            environmentInjector,
+          );
+        },
+        // Fall back to the card itself — a partial about section beats nothing.
+        error: (error: unknown) => {
+          this.logger.warn('Course about fetch failed', error);
+          void this.openCourseInfoDialog(card, environmentInjector);
+        },
+      });
   }
 
   openVideoDialog(trailerLink: string | null | undefined, title: string) {

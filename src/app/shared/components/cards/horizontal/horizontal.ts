@@ -16,7 +16,7 @@ import { faSolidInfo, faSolidPlay, faSolidRobot } from '@ng-icons/font-awesome/s
 import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
 import { Utils } from '../../../core/services/utils/utils';
 import { Auth } from '../../../core/services/auth/auth';
-import { Logger } from '../../../core/services/logger/logger';
+import { CourseCard } from '../../../core/models/caira/masterclass.model';
 import { CategoriesList } from '../../categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../../core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
@@ -42,11 +42,6 @@ import {
 })
 export class Horizontal {
   private readonly utils = inject(Utils);
-  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly feature: any = {};
-  private readonly logger = inject(Logger);
   private readonly auth = inject(Auth);
   /**
    * `WebinarFacade` lives at the webinar route level — it isn't globally
@@ -66,7 +61,7 @@ export class Horizontal {
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly destroyRef = inject(DestroyRef);
 
-  card = model.required<any>();
+  card = model.required<CourseCard>();
   type = input<'masterclass' | 'podcast' | 'micro-learning' | 'webinar'>('masterclass');
   /**
    * Mark the first card(s) of an above-the-fold rail as the LCP candidate.
@@ -93,7 +88,6 @@ export class Horizontal {
     matBookmarkRound,
     matBookmarkBorderRound,
   });
-  loading = signal(false);
 
   /**
    * Original `UpcomingPremiere` stashed on the adapted `Content` via the
@@ -102,8 +96,10 @@ export class Horizontal {
    */
   protected readonly webinar = computed<any | null>(() => {
     if (this.type() !== 'webinar' || !this.webinarFacade) return null;
-    const w = (this.card()._webinar as any | undefined) ?? null;
-    return w;
+    // Not on `CourseCard` and deliberately not added to it — the adapter stashes
+    // the raw payload on the object it builds, so the cast stays local. Same
+    // structural read as `Utils.openCourseInfoDialog`.
+    return (this.card() as { _webinar?: unknown })._webinar ?? null;
   });
 
   /** Same CTA decision tree used by `WebinarHero` and `PremiereListItem`. */
@@ -150,31 +146,7 @@ export class Horizontal {
   }
 
   openCourseInfo() {
-    if (!this.card().allDataFetched) {
-      this.loading.set(true);
-      this.feature
-        .getAbout(this.card().id, this.type() === 'micro-learning' ? 'micro_learning' : this.type())
-        .subscribe({
-          next: (res: any) => {
-            const updatedCard = {
-              ...this.card(),
-              ...res.data,
-              allDataFetched: true,
-              learning_objective_list: res.data.learning_objectives.split('\r\n'),
-            };
-            this.card.set(updatedCard);
-            this.utils.openCourseInfoDialog(this.card(), this.envInjector);
-            this.loading.set(false);
-          },
-          error: (err: any) => {
-            this.logger.error('Failed to load course info', err);
-            this.loading.set(false);
-          },
-        });
-    } else {
-      this.loading.set(false);
-      this.utils.openCourseInfoDialog(this.card(), this.envInjector);
-    }
+    this.utils.openCourseInfo(this.card(), this.envInjector);
   }
 
   openVideoDialog() {

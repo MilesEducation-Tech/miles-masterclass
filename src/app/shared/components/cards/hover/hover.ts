@@ -6,7 +6,7 @@ import { Button } from '../../ui/button/button';
 import { NgIconComponent } from '@ng-icons/core';
 import { faSolidPlay, faSolidInfo, faSolidRobot } from '@ng-icons/font-awesome/solid';
 import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
-import { Logger } from '../../../core/services/logger/logger';
+import { CourseCard } from '../../../core/models/caira/masterclass.model';
 import { CategoriesList } from '../../categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../../core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
@@ -30,20 +30,12 @@ import { CairaUuid } from '../../../core/models/caira/envelope.model';
 })
 export class Hover {
   private readonly utils = inject(Utils);
-  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly feature: any = {
-    getAbout: (..._args: any[]): any => null,
-  };
-  private readonly logger = inject(Logger);
   private readonly destroyRef = inject(DestroyRef);
 
-  card = model.required<any>();
+  card = model.required<CourseCard>();
   type = input<'masterclass' | 'podcast' | 'micro-learning'>('masterclass');
 
   isHovering = signal(false);
-  loading = signal(false);
 
   icons = signal({
     faSolidPlay,
@@ -58,29 +50,7 @@ export class Hover {
   }
 
   openCourseInfo() {
-    if (!this.card().allDataFetched) {
-      this.loading.set(true);
-      this.feature.getAbout(this.card().id, this.type()).subscribe({
-        next: (res: any) => {
-          const updatedCard = {
-            ...this.card(),
-            ...res.data,
-            allDataFetched: true,
-            learning_objective_list: res.data.learning_objectives.split('\r\n'),
-          };
-          this.card.set(updatedCard);
-          this.utils.openCourseInfoDialog(this.card());
-          this.loading.set(false);
-        },
-        error: (err: any) => {
-          this.logger.error('Failed to load course info', err);
-          this.loading.set(false);
-        },
-      });
-    } else {
-      this.loading.set(false);
-      this.utils.openCourseInfoDialog(this.card());
-    }
+    this.utils.openCourseInfo(this.card());
   }
 
   openVideoDialog() {
