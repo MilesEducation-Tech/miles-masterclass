@@ -7,6 +7,7 @@ import {
   badgeLevelGradient,
   badgeProgressGradient,
 } from '../../../utils/badge-level';
+import { BadgeHeroCardData } from '../../../../features/cpe-tracker/shared/mappers/badge-to-table';
 
 export type BadgeHeroLayout = 'hero' | 'grid';
 
@@ -28,11 +29,11 @@ export type BadgeState = 'coming_soon' | 'claimable' | 'claimed' | 'unlocked' | 
   host: { class: 'block w-full' },
 })
 export class BadgeHeroCard {
-  readonly badge = input.required<any>();
+  readonly badge = input.required<BadgeHeroCardData>();
   readonly layout = input<BadgeHeroLayout>('hero');
 
-  readonly claim = output<any>();
-  readonly share = output<any>();
+  readonly claim = output<BadgeHeroCardData>();
+  readonly share = output<BadgeHeroCardData>();
 
   protected readonly state = computed<BadgeState>(() => {
     const b = this.badge();

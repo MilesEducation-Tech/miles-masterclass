@@ -48,9 +48,4 @@ describe('CourseActionResolver', () => {
     expect(labels.find((a) => a.kind === 'view-details')?.label).toBe('View Details');
     expect(labels.find((a) => a.kind === 'none')?.variant).toBe('ghost');
   });
-
-  it('resolveFromReport returns the same action regardless of the report payload', () => {
-    const action = service.resolveFromReport({} as any, 'exam');
-    expect(action.label).toBe('Take Exam');
-  });
 });

@@ -10,6 +10,7 @@ import {
   input,
   output,
 } from '@angular/core';
+import { BadgeHeroCardData } from '../../mappers/badge-to-table';
 import { Swiper, SwiperOptions } from 'swiper/types';
 import { Navigation } from 'swiper/modules';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -37,10 +38,10 @@ export class BadgeSwiper {
   private swiperEl: ElementRef<SwiperEl> | null = null;
   private initTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  readonly badges = input.required<any[]>();
+  readonly badges = input.required<BadgeHeroCardData[]>();
 
-  readonly claim = output<any>();
-  readonly share = output<any>();
+  readonly claim = output<BadgeHeroCardData>();
+  readonly share = output<BadgeHeroCardData>();
   readonly openInfo = output<void>();
 
   @ViewChild('swiperContainer')
@@ -60,11 +61,11 @@ export class BadgeSwiper {
     });
   }
 
-  protected onClaim(badge: any): void {
+  protected onClaim(badge: BadgeHeroCardData): void {
     this.claim.emit(badge);
   }
 
-  protected onShare(badge: any): void {
+  protected onShare(badge: BadgeHeroCardData): void {
     this.share.emit(badge);
   }
 

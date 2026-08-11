@@ -28,9 +28,4 @@ export class CourseActionResolver {
   resolve(row: TrackerTableRow): ButtonAction {
     return ACTION_MAP[row.actionKind] ?? ACTION_MAP.none;
   }
-
-  resolveFromReport(report: any, actionKind: ButtonKind): ButtonAction {
-    void report;
-    return ACTION_MAP[actionKind] ?? ACTION_MAP.none;
-  }
 }
