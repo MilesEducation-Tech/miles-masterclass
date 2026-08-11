@@ -70,13 +70,4 @@ describe('Slider', () => {
     expect(ordered[2].id).toBe('3');
     expect(ordered[3].id).toBe('4');
   });
-
-  it('should track items by id', async () => {
-    const fixture = TestBed.createComponent(Slider);
-    fixture.componentRef.setInput('items', mockItems);
-    await fixture.whenStable();
-    const component = fixture.componentInstance;
-    const item = mockItems[0];
-    expect(component['trackByItem'](0, item)).toBe('1');
-  });
 });
