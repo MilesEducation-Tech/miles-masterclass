@@ -1,7 +1,7 @@
 <!--
   Every chapter runs in CPE mode — see `CPE_MODE_DEFAULT` in `ChapterProgress`.
-  Both players derive their seek lock, quiz hand-off and next-chapter gate from
-  `cpeMode` + `chapterWiseDetails`.
+  Both players derive their next-chapter and final-assessment gates from
+  `cpeMode` + `completed`; the seek lock follows the server's `is_video_seekable`.
 -->
 @if (podcastFormat() === 'Audio') {
   <!-- Audio: full-screen immersive layout with back button overlay -->
@@ -16,7 +16,7 @@
       [chapterIndex]="chapterIndex()"
       [cpeMode]="chapter.cpeMode()"
       [seekUnlocked]="chapter.isVideoSeekable()"
-      [chapterWiseDetails]="chapter.chapterWiseDetails()"
+      [completed]="chapter.isVideoCompleted()"
       [userAssessmentDetails]="chapter.courseDetails()?.user_assessment_details"
       (navigate)="handleNavigation($event)"
       (paused)="handleExit()"
@@ -40,7 +40,7 @@
       [activeIndex]="navigation().currentIndex"
       [cpeMode]="chapter.cpeMode()"
       [seekUnlocked]="chapter.isVideoSeekable()"
-      [chapterWiseDetails]="chapter.chapterWiseDetails()"
+      [completed]="chapter.isVideoCompleted()"
       [courseId]="chapter.courseDetails()?.id ?? null"
       [courseType]="'podcast'"
       [userAssessmentDetails]="chapter.courseDetails()?.user_assessment_details"

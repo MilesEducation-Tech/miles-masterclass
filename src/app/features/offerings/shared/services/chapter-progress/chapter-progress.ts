@@ -106,6 +106,14 @@ export class ChapterProgress {
    */
   private readonly completedOverride = signal<boolean | null>(null);
 
+  /**
+   * The gate both players read: it decides whether the next chapter opens and
+   * whether the final assessment unlocks.
+   *
+   * ponytail: video completion only. The quiz half of the rule needs #7's
+   * per-question `user_selected_option` (P5) — until then a chapter with an
+   * unanswered quiz counts as done for navigation.
+   */
   readonly isVideoCompleted = computed(
     () => this.completedOverride() ?? this.current()?.play_history?.is_completed ?? false,
   );
@@ -145,26 +153,6 @@ export class ChapterProgress {
    * their next-chapter gate from it.
    */
   readonly cpeMode = computed(() => this.serverCpeMode() ?? CPE_MODE_DEFAULT);
-
-  /**
-   * The per-chapter completion signal both players gate on.
-   *
-   * The Django API sent a `chapter_wise_details` list and the templates read
-   * `?.status` off the entry for the open chapter; CAIRA has no such list, so
-   * it is rebuilt here from the chapter's own state. `status` truthy means the
-   * learner may seek freely, advance to the next chapter, and start the final
-   * assessment.
-   *
-   * ponytail: video completion only. The quiz half of the rule needs #7's
-   * per-question `user_selected_option`, which is P-P4 — until then a chapter
-   * with an unanswered quiz still counts as done for navigation, and the player
-   * still shows the quiz on video end.
-   */
-  readonly chapterWiseDetails = computed(() => {
-    const id = this.chapterId();
-    if (!id) return undefined;
-    return { chapter_id: id, status: this.isVideoCompleted() };
-  });
 
   /**
    * Adopt a mode the backend reported.

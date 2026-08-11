@@ -48,7 +48,8 @@ export class VideoChapter {
   readonly cpeMode = input(false);
   /** The server's `is_video_seekable` for this chapter. Default locked. */
   readonly seekUnlocked = input(false);
-  readonly chapterWiseDetails = input<any | undefined>(undefined);
+  /** The server's completion verdict for this chapter. Default not-complete. */
+  readonly completed = input(false);
   readonly userAssessmentDetails = input<any | undefined>(undefined);
   readonly courseId = input<CairaUuid | null>(null);
   readonly courseType = input<string>('masterclass');
@@ -92,6 +93,12 @@ export class VideoChapter {
    * would lock learners the backend has already let through.
    */
   readonly progressUnlocked = computed(() => !this.cpeMode() || this.seekUnlocked());
+
+  /** Whether the learner may move on. Outside CPE mode nothing holds them. */
+  readonly canAdvance = computed(() => !this.cpeMode() || this.completed());
+
+  /** The final assessment is a CPE-mode gate — it needs the chapter finished. */
+  readonly canStartExam = computed(() => this.cpeMode() && this.completed());
 
   constructor() {
     // Initialize progress from chapter data if available

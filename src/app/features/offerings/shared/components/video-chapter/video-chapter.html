@@ -74,24 +74,10 @@
             role="button"
             tabindex="0"
             [attr.aria-label]="'Go to next chapter: ' + nextChapter.chapter_name"
-            [class]="
-              (chapterWiseDetails()?.status && cpeMode()) || !cpeMode()
-                ? 'cursor-pointer '
-                : 'cursor-not-allowed '
-            "
-            (click)="
-              ((chapterWiseDetails()?.status && cpeMode()) || !cpeMode()) &&
-                navigate.emit(nextChapter.id)
-            "
-            (keydown.enter)="
-              ((chapterWiseDetails()?.status && cpeMode()) || !cpeMode()) &&
-                navigate.emit(nextChapter.id)
-            "
-            (keydown.space)="
-              ((chapterWiseDetails()?.status && cpeMode()) || !cpeMode()) &&
-                navigate.emit(nextChapter.id);
-              $event.preventDefault()
-            "
+            [class]="canAdvance() ? 'cursor-pointer ' : 'cursor-not-allowed '"
+            (click)="canAdvance() && navigate.emit(nextChapter.id)"
+            (keydown.enter)="canAdvance() && navigate.emit(nextChapter.id)"
+            (keydown.space)="canAdvance() && navigate.emit(nextChapter.id); $event.preventDefault()"
           >
             <div class="w-[90px] m-2 overflow-hidden flex items-center">
               <div class="w-full h-14 bg-[#4a5560] rounded-md overflow-hidden">
@@ -146,18 +132,11 @@
               role="button"
               tabindex="0"
               aria-label="Retake final assessment exam"
-              [class]="
-                chapterWiseDetails()?.status && cpeMode()
-                  ? 'cursor-pointer'
-                  : 'cursor-not-allowed opacity-50'
-              "
-              (click)="chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit()"
-              (keydown.enter)="
-                chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit()
-              "
+              [class]="canStartExam() ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'"
+              (click)="canStartExam() && startFinalAssessment.emit()"
+              (keydown.enter)="canStartExam() && startFinalAssessment.emit()"
               (keydown.space)="
-                chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit();
-                $event.preventDefault()
+                canStartExam() && startFinalAssessment.emit(); $event.preventDefault()
               "
             >
               <div
@@ -178,18 +157,11 @@
               role="button"
               tabindex="0"
               aria-label="Start final assessment exam"
-              [class]="
-                chapterWiseDetails()?.status && cpeMode()
-                  ? 'cursor-pointer '
-                  : 'cursor-not-allowed '
-              "
-              (click)="chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit()"
-              (keydown.enter)="
-                chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit()
-              "
+              [class]="canStartExam() ? 'cursor-pointer ' : 'cursor-not-allowed '"
+              (click)="canStartExam() && startFinalAssessment.emit()"
+              (keydown.enter)="canStartExam() && startFinalAssessment.emit()"
               (keydown.space)="
-                chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit();
-                $event.preventDefault()
+                canStartExam() && startFinalAssessment.emit(); $event.preventDefault()
               "
             >
               <div

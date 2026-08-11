@@ -59,12 +59,8 @@
               <button
                 type="button"
                 class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
-                [class]="
-                  (chapterWiseDetails()?.status && cpeMode()) || !cpeMode()
-                    ? 'cursor-pointer'
-                    : 'cursor-not-allowed'
-                "
-                [disabled]="!((chapterWiseDetails()?.status && cpeMode()) || !cpeMode())"
+                [class]="canAdvance() ? 'cursor-pointer' : 'cursor-not-allowed'"
+                [disabled]="!canAdvance()"
                 (click)="navigate.emit(nextChapter.id)"
               >
                 <div class="w-[90px] m-2 overflow-hidden flex items-center">
@@ -102,12 +98,8 @@
                 <button
                   type="button"
                   class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
-                  [class]="
-                    chapterWiseDetails()?.status && cpeMode()
-                      ? 'cursor-pointer'
-                      : 'cursor-not-allowed'
-                  "
-                  [disabled]="!(chapterWiseDetails()?.status && cpeMode())"
+                  [class]="canStartExam() ? 'cursor-pointer' : 'cursor-not-allowed'"
+                  [disabled]="!canStartExam()"
                   (click)="startFinalAssessment.emit()"
                 >
                   <div class="flex flex-col gap-1 m-2">
@@ -165,12 +157,8 @@
           <button
             type="button"
             class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
-            [class]="
-              (chapterWiseDetails()?.status && cpeMode()) || !cpeMode()
-                ? 'cursor-pointer'
-                : 'cursor-not-allowed'
-            "
-            [disabled]="!((chapterWiseDetails()?.status && cpeMode()) || !cpeMode())"
+            [class]="canAdvance() ? 'cursor-pointer' : 'cursor-not-allowed'"
+            [disabled]="!canAdvance()"
             (click)="navigate.emit(nextChapter.id)"
           >
             <div class="w-[90px] m-2 overflow-hidden flex items-center">
@@ -207,10 +195,8 @@
             <button
               type="button"
               class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
-              [class]="
-                chapterWiseDetails()?.status && cpeMode() ? 'cursor-pointer' : 'cursor-not-allowed'
-              "
-              [disabled]="!(chapterWiseDetails()?.status && cpeMode())"
+              [class]="canStartExam() ? 'cursor-pointer' : 'cursor-not-allowed'"
+              [disabled]="!canStartExam()"
               (click)="startFinalAssessment.emit()"
             >
               <div class="flex flex-col gap-1 m-2">

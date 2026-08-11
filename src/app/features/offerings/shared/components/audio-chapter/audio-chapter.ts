@@ -44,7 +44,8 @@ export class AudioChapter {
   /** The server's `is_video_seekable` for this chapter. Default locked. */
   readonly seekUnlocked = input(false);
   readonly chapterIndex = input(0);
-  readonly chapterWiseDetails = input<any | undefined>(undefined);
+  /** The server's completion verdict for this chapter. Default not-complete. */
+  readonly completed = input(false);
   readonly userAssessmentDetails = input<any | undefined>(undefined);
 
   // --- Outputs ---
@@ -79,6 +80,10 @@ export class AudioChapter {
 
   /** Free seeking — the server's verdict, same rule as `VideoChapter`. */
   readonly progressUnlocked = computed(() => !this.cpeMode() || this.seekUnlocked());
+
+  /** Same two gates as `VideoChapter`. */
+  readonly canAdvance = computed(() => !this.cpeMode() || this.completed());
+  readonly canStartExam = computed(() => this.cpeMode() && this.completed());
 
   readonly audioSource = computed<VideoSource[]>(
     () => {

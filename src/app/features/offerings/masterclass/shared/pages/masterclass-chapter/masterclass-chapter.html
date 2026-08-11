@@ -4,8 +4,8 @@
   <app-backward label="Back to Course" fallback="/" [routePath]="courseNavigation()" />
   <!--
     Every chapter runs in CPE mode — see `CPE_MODE_DEFAULT` in `ChapterProgress`.
-    That drives the player's seek lock, its quiz hand-off on video end, and the
-    next-chapter / final-assessment gates, all of which read `chapterWiseDetails`.
+    `cpeMode` + `completed` drive the next-chapter and final-assessment gates;
+    the seek lock follows the server's `is_video_seekable` separately.
   -->
   <app-video-chapter
     [current]="navigation().current"
@@ -14,7 +14,7 @@
     [activeIndex]="navigation().currentIndex"
     [cpeMode]="chapter.cpeMode()"
     [seekUnlocked]="chapter.isVideoSeekable()"
-    [chapterWiseDetails]="chapter.chapterWiseDetails()"
+    [completed]="chapter.isVideoCompleted()"
     [courseId]="chapter.courseDetails()?.id ?? null"
     [courseType]="'masterclass'"
     [userAssessmentDetails]="chapter.courseDetails()?.user_assessment_details"
