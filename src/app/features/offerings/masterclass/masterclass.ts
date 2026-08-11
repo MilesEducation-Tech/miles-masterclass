@@ -163,7 +163,7 @@ export const masterclassRoutes: Route[] = [
           ),
       },
       {
-        path: 'final-assessment/:sessionId/exam',
+        path: 'final-assessment/exam',
         canActivate: [authGuard],
         // ponytail: route-scoped facade providers removed with the Django strip.
         // Re-add `providers: [YourService]` here when the new backend lands.
@@ -175,7 +175,7 @@ export const masterclassRoutes: Route[] = [
           ),
       },
       {
-        path: 'final-assessment/:sessionId/report',
+        path: 'final-assessment/report',
         canActivate: [authGuard],
         // ponytail: route-scoped facade providers removed with the Django strip.
         // Re-add `providers: [YourService]` here when the new backend lands.

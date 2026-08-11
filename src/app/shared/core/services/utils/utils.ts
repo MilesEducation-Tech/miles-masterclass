@@ -267,19 +267,13 @@ export class Utils {
     dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!(result?.result && result?.action === 'confirm')) return;
 
-      // ponytail: the `startFinalAssessment` POST that minted a session_id and
-      // cached the question set is gone with the backend. Only the locally
-      // cached path still navigates; without a session there is nowhere to go.
-      const cached: any[] = this.storage.getLocal(`final_assessment_questions_${courseId}`) || [];
-      if (cached.length) {
-        const session_id = this.storage.getLocal('session_id');
-        this.router.navigate([
-          `${this._country()}/${this._profession()}/${urlSegment}/${courseId}/${courseTitle}/final-assessment/${session_id}/exam`,
-        ]);
-        return;
-      }
-
-      this.logger.warn('startFinalAssessment: no backend configured', { courseId, courseType });
+      // ponytail: the POST that minted a session id is gone, and CAIRA never
+      // had one — an attempt is `(user, course, attempt_number)`. The route is
+      // course-keyed now, so navigation no longer waits on a session; the exam
+      // page reports its own empty state until #9 is bound.
+      this.router.navigate([
+        `${this._country()}/${this._profession()}/${urlSegment}/${courseId}/${courseTitle}/final-assessment/exam`,
+      ]);
     });
   }
 

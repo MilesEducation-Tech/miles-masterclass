@@ -118,13 +118,9 @@ export class MasterclassChapter {
     this.courseDetail.startFinalAssessment(courseId, courseTitle, 'masterclass');
   }
 
-  /**
-   * ponytail: the route still carries a `:sessionId` segment that CAIRA has no
-   * counterpart for. `'latest'` keeps the URL shape while the report page reads
-   * the attempt by course (#11); `legacy-redirects.ts` owns the old links.
-   */
+  /** The report is course-keyed — CAIRA has no assessment session id (#11). */
   protected handleViewReport(): void {
-    this.router.navigate(['../../../', 'final-assessment', 'latest', 'report'], {
+    this.router.navigate(['../../../', 'final-assessment', 'report'], {
       relativeTo: this.route,
     });
   }

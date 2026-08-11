@@ -106,9 +106,9 @@ export class PodcastChapter {
     this.courseDetail.startFinalAssessment(courseId, courseTitle, 'podcast');
   }
 
-  /** ponytail: `:sessionId` has no CAIRA counterpart — see the masterclass twin. */
+  /** Course-keyed, same as the masterclass twin. */
   protected handleViewReport(): void {
-    this.router.navigate(['../../../', 'final-assessment', 'latest', 'report'], {
+    this.router.navigate(['../../../', 'final-assessment', 'report'], {
       relativeTo: this.route,
     });
   }

@@ -31,23 +31,13 @@ import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.mode
   ],
 })
 export class FinalAssessmentReport {
-  // Route params inputs (from withComponentInputBinding)
+  /**
+   * The course is the whole key. CAIRA has no assessment session — an attempt
+   * is `(user, course, attempt_number)` — so the report is course-scoped and
+   * the route no longer carries a `:sessionId`.
+   */
   courseId = input<string>();
-  sessionId = input<string>();
 
-  // ponytail: FinalAssessmentFacade was deleted with the Django strip. This placeholder
-
-  // keeps the template bindings compiling and renders the empty state.
-
-  // Swap in the new backend's service — the template needs no changes.
-
-  private readonly facade: any = {
-    courseId: null as any,
-
-    getAssessmentReport: (..._args: any[]): any => null,
-
-    getCourseDetails: (..._args: any[]): any => null,
-  };
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly utils = inject(Utils);
@@ -95,46 +85,20 @@ export class FinalAssessmentReport {
 
   constructor() {
     effect(() => {
-      const sessionId = this.sessionId();
       const courseId = this.courseId();
-
-      if (sessionId) {
-        this.loadReport(sessionId);
-      }
-
-      if (courseId) {
-        this.facade.courseId.set(courseId); // Ensure facade has courseId if needed for other calls
-        this.loadCourseDetails();
-      }
+      if (courseId) this.loadReport(courseId);
     });
   }
 
-  loadReport(sessionId: CairaUuid) {
-    this.isLoading.set(true);
-    this.facade.getAssessmentReport(sessionId).subscribe({
-      next: (data: any) => {
-        this.reportData.set(data);
-        this.isLoading.set(false);
-      },
-      error: (err: any) => {
-        this.logger.error('Error loading report', err);
-        this.isLoading.set(false);
-      },
-    });
-  }
-
-  loadCourseDetails() {
-    const courseId = this.courseId();
-    if (!courseId) return;
-
-    this.facade.getCourseDetails(courseId).subscribe({
-      next: (data: any) => {
-        this.courseDetails.set(data);
-      },
-      error: (err: any) => {
-        this.logger.error('Error loading course details', err);
-      },
-    });
+  /**
+   * ponytail: the report is a course-scoped `GET .../assessment/result/` (P5).
+   * The facade stub this replaces returned `null`, so `.subscribe` on it threw
+   * the moment the page opened. `reportData` stays null and the template's
+   * empty state renders until the endpoint is bound.
+   */
+  loadReport(courseId: CairaUuid) {
+    this.isLoading.set(false);
+    this.logger.warn('Assessment report is not bound', { courseId });
   }
 
   toggleWrongOnly() {

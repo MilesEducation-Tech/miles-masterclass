@@ -150,7 +150,7 @@ export const microLearningRoutes: Route[] = [
           ),
       },
       {
-        path: 'final-assessment/:sessionId/exam',
+        path: 'final-assessment/exam',
         canActivate: [authGuard],
         // ponytail: route-scoped facade providers removed with the Django strip.
         canDeactivate: [canDeactivateExamGuard],
@@ -161,7 +161,7 @@ export const microLearningRoutes: Route[] = [
           ),
       },
       {
-        path: 'final-assessment/:sessionId/report',
+        path: 'final-assessment/report',
         canActivate: [authGuard],
         // ponytail: route-scoped facade providers removed with the Django strip.
         data: { layout: 'plain' },
