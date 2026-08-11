@@ -366,6 +366,13 @@ export interface InstructorProfile {
  * a `null`-safe path still costs a runtime error the moment a branch flips.
  * They are grouped and marked below.
  */
+/**
+ * Where the learner stands on the final assessment. `null` means they have not
+ * submitted one. Derived — #4 reports neither value directly, see
+ * `assessmentStatus()`.
+ */
+export type AssessmentStatus = 'Exam_Passed' | 'Retake' | null;
+
 export interface CourseDetailCard {
   id: CairaUuid;
   title: string;
@@ -431,10 +438,13 @@ export interface CourseDetailCard {
    * rendering a switch that cannot switch anything.
    */
   cpe_mode_details: { cpe_mode: boolean } | null;
-  /** Empty for the same reason — it only feeds the CPE-mode completion path. */
-  chapter_wise_details: never[];
 
-  user_assessment_details: { status: string | null; session_id: string | null };
+  /**
+   * `status` is the only key. CAIRA identifies an attempt by
+   * `(user, course, attempt_number)` — there is no session id to carry, and the
+   * Django-era `session_id` that used to sit here was pinned `null`.
+   */
+  user_assessment_details: { status: AssessmentStatus };
   user_feedback_details: { user_feedback_submitted: boolean; user_rating: number | null };
   all_classes_completed: boolean;
   show_feedback: boolean;
@@ -641,9 +651,8 @@ function totalDurationSeconds(payload: CourseDetailPayload): number {
  * `'Retake'` (relabel the assessment button). #4 exposes neither directly, but
  * the certificate is only generated on a pass, and `show_feedback` only opens
  * after one — so a submitted assessment without either means a failed attempt.
- * `session_id` has no source here at all; the assessment endpoints (P5) own it.
  */
-function assessmentStatus(payload: CourseDetailPayload): string | null {
+function assessmentStatus(payload: CourseDetailPayload): AssessmentStatus {
   if (!payload.final_assessment_submitted) return null;
   if (payload.masterclass_certificate_generated || payload.show_feedback) return 'Exam_Passed';
   return 'Retake';
@@ -740,9 +749,8 @@ export function toCourseDetailCard(
     ai_kit: payload.ai_kit,
 
     cpe_mode_details: null,
-    chapter_wise_details: [],
 
-    user_assessment_details: { status: assessmentStatus(payload), session_id: null },
+    user_assessment_details: { status: assessmentStatus(payload) },
     user_feedback_details: {
       user_feedback_submitted: payload.feedback_submitted === true,
       user_rating: payload.feedback_average,

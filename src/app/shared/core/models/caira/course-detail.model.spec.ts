@@ -231,6 +231,25 @@ describe('toChapterViews', () => {
     expect(view.is_locked).toBe(true);
   });
 
+  it('reports a question count and never a question list', () => {
+    // The players used to gate the post-video quiz on `quiz_details.questions`,
+    // which no mapper produces — the condition was always false and the whole
+    // hand-off was dead. The question list belongs to #7 (P5); if it ever
+    // appears here, the gate has to be rebuilt deliberately, not inherited.
+    const [view] = toChapterViews(payload({ chapters: [chapter({ total_quiz_questions: 5 })] }));
+    expect(view.quiz_details).toEqual({ overall_chapter_questions: 5 });
+    expect('questions' in view.quiz_details).toBe(false);
+  });
+
+  it('emits one media url — CAIRA has no audio_url/video_url pair', () => {
+    // `AudioChapter` sourced its media from those two Django-era fields and so
+    // never played anything. Both players read `hls_video_url` now.
+    const [view] = toChapterViews(payload({ chapters: [chapter()] }));
+    expect(view.hls_video_url).toBe('https://cdn.test/ch1.m3u8');
+    expect('audio_url' in view).toBe(false);
+    expect('video_url' in view).toBe(false);
+  });
+
   it('carries the server seek verdict independently of completion', () => {
     // A closed course forces `is_video_seekable` true on a chapter the learner
     // never finished. Deriving seek from completion would lock them out.
