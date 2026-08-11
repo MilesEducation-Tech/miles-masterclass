@@ -197,19 +197,19 @@
         </div>
 
         <!-- Transcript Button -->
-        <!-- @if (current()?.transcript) { -->
-        <div
-          class="bg-[#161E25] p-2 rounded-lg flex items-center w-full cursor-pointer"
-          role="button"
-          tabindex="0"
-          aria-label="Open transcript"
-          (click)="openTranscript()"
-          (keydown.enter)="openTranscript()"
-          (keydown.space)="openTranscript(); $event.preventDefault()"
-        >
-          Transcript
-        </div>
-        <!-- } -->
+        @if (current()?.transcript_text) {
+          <div
+            class="bg-[#161E25] p-2 rounded-lg flex items-center w-full cursor-pointer"
+            role="button"
+            tabindex="0"
+            aria-label="Open transcript"
+            (click)="openTranscript()"
+            (keydown.enter)="openTranscript()"
+            (keydown.space)="openTranscript(); $event.preventDefault()"
+          >
+            Transcript
+          </div>
+        }
       </div>
     </div>
   </div>

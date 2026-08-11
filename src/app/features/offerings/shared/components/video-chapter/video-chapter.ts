@@ -11,7 +11,6 @@ import {
   model,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { VideoJs } from '../../../../../shared/components/video-js/video-js';
 import {
   PlayerMode,
@@ -72,14 +71,8 @@ export class VideoChapter {
 
   private readonly videoPlayer = viewChild(VideoJs);
   private readonly destroyRef = inject(DestroyRef);
-  // ponytail: MasterclassFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly masterclassFacade: any = {};
   private readonly dialog = inject(Dialog);
   private readonly analytics = inject(Analytics);
-
-  private transcriptCache = new Map<CairaUuid, string>();
 
   readonly currentProgress = signal(0);
 
@@ -255,39 +248,20 @@ export class VideoChapter {
     }
   }
 
+  /**
+   * #4 already carries `transcript_text` on every unlocked chapter, so there is
+   * nothing to fetch. This used to call a second endpoint through a facade that
+   * no longer exists, which threw on every click.
+   */
   openTranscript() {
     const chapter = this.current();
-    const id = this.courseId();
-    if (!chapter || !id) return;
+    if (!chapter?.transcript_text) return;
 
-    const cached = this.transcriptCache.get(chapter.id);
-    if (cached) {
-      this.openTranscriptDialog(cached, chapter.chapter_name);
-      return;
-    }
-
-    this.masterclassFacade
-      .fetchCourseContent(
-        { id, course_type: this.courseType(), chapter_id: chapter.id },
-        { skipErrorNotification: true },
-      )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response: any) => {
-          if (response?.data?.chapter?.transcript_text) {
-            this.transcriptCache.set(chapter.id, response.data.chapter.transcript_text);
-            this.openTranscriptDialog(response.data.chapter.transcript_text, chapter.chapter_name);
-          }
-        },
-      });
-  }
-
-  private openTranscriptDialog(html: string, chapterName: string) {
     this.dialog.open<HtmlContentDialog, HtmlContentDialogData>(HtmlContentDialog, {
       maxWidth: '100%',
       data: {
-        title: `Transcript - ${chapterName}`,
-        htmlContent: html,
+        title: `Transcript - ${chapter.chapter_name}`,
+        htmlContent: chapter.transcript_text,
       },
     });
   }
