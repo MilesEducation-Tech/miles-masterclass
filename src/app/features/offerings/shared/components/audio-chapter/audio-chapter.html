@@ -1,16 +1,5 @@
 @if (!current()) {
   <app-chapter-skeleton />
-} @else if (previewMode() === 'quiz' && current()?.quiz_details?.questions; as questions) {
-  <div class="relative pt-20 mx-10">
-    <app-chapter-quiz
-      [questions]="questions"
-      [chapterId]="current()!.id"
-      [current]="current()!"
-      [isLastChapter]="isLastChapter()"
-      (navigateNext)="handleQuizNext()"
-      (togglePreviewMode)="previewMode.set($event === 'video' ? 'audio' : $event)"
-    />
-  </div>
 } @else {
   <div
     class="flex w-full md:h-dvh h-auto flex-col relative bg-cover md:bg-top-right bg-center overflow-hidden z-0"
@@ -46,30 +35,6 @@
                 <ng-icon name="faClipboard" size="16" class="text-white" />
                 <span>Transcript</span>
               </div>
-            }
-
-            <!-- Track Quiz Button (CPE mode) -->
-            @if (current()?.quiz_details?.overall_chapter_questions && cpeMode()) {
-              <button
-                type="button"
-                class="bg-[#161E25] md:py-3 py-1.5 px-4 rounded-lg flex flex-col md:w-2/3 w-full text-left"
-                [class]="isQuizEnabled() ? 'cursor-pointer' : 'cursor-not-allowed'"
-                [disabled]="!isQuizEnabled()"
-                (click)="handleTrackQuiz()"
-              >
-                <div class="flex items-center justify-between">
-                  <span class="flex items-center gap-2">
-                    <ng-icon name="faClipboard" size="16" />
-                    <span>Track Quiz</span>
-                  </span>
-                </div>
-                <div class="ml-6 text-xs text-gray-500">
-                  {{ current()!.quiz_details.overall_chapter_questions }}
-                  {{
-                    current()!.quiz_details.overall_chapter_questions > 1 ? 'questions' : 'question'
-                  }}
-                </div>
-              </button>
             }
           </div>
         </div>

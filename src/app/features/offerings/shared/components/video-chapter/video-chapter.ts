@@ -20,7 +20,6 @@ import {
 } from '../../../../../shared/core/models/video-player.model';
 import { ChapterSkeleton } from '../../../../../shared/components/skeleton/chapter-skeleton/chapter-skeleton';
 
-import { ChapterQuiz } from '../chapter-quiz/chapter-quiz';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faClipboard } from '@ng-icons/font-awesome/regular';
 import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
@@ -33,7 +32,7 @@ import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.mode
 
 @Component({
   selector: 'app-video-chapter',
-  imports: [VideoJs, ChapterSkeleton, ChapterQuiz, NgIcon],
+  imports: [VideoJs, ChapterSkeleton, NgIcon],
   templateUrl: './video-chapter.html',
   styleUrl: './video-chapter.css',
   providers: [provideIcons({ faClipboard })],
@@ -57,7 +56,6 @@ export class VideoChapter {
   readonly navigate = output<CairaUuid>();
   readonly startFinalAssessment = output<void>();
   readonly viewFinalAssessmentReport = output<void>();
-  readonly firstChapterEnded = output<void>();
 
   // Video events outputs
   readonly paused = output<void>();
@@ -81,7 +79,6 @@ export class VideoChapter {
   // Track last known time for destroy handler
   private lastTime = 0;
   private lastDuration = 0;
-  private lastChapterId = 0;
 
   // Analytics: per-chapter video-milestone dedup (reset on chapter change).
   private videoTrackedChapter: CairaUuid | null = null;
@@ -102,27 +99,6 @@ export class VideoChapter {
       const chapter = this.current();
 
       if (chapter) {
-        // Only run mode initialization if chapter has changed
-        if (chapter.id !== this.lastChapterId) {
-          this.lastChapterId = chapter.id;
-
-          // Reset video ended state when chapter changes
-          this.videoEnded.set(false);
-
-          // Handle Preview Mode - if completed and quiz pending, show quiz
-          if (
-            this.cpeMode() &&
-            chapter.play_history?.is_completed &&
-            chapter.quiz_details?.questions?.length &&
-            !chapter.quiz_details.questions.every((q: any) => q.user_selected_option)
-          ) {
-            this.previewMode.set('quiz');
-          } else {
-            this.previewMode.set('video');
-          }
-        }
-
-        // Handle Progress (Always update this, even if same chapter)
         if (chapter.play_history && chapter.video_duration) {
           const progress = ((chapter.play_history.time_status ?? 0) / chapter.video_duration) * 100;
           if (progress > untracked(() => this.currentProgress())) {
@@ -133,9 +109,6 @@ export class VideoChapter {
         this.currentProgress.set(0);
         this.lastTime = 0;
         this.lastDuration = 0;
-        this.lastChapterId = 0;
-        this.previewMode.set('video');
-        this.videoEnded.set(false);
       }
     });
 
@@ -241,20 +214,15 @@ export class VideoChapter {
     controls: true,
   }));
 
-  readonly previewMode = signal<'video' | 'quiz'>('video');
-
-  readonly videoEnded = signal(false);
-
-  readonly isQuizEnabled = computed(() => {
-    return (
-      this.current()?.play_history?.is_completed ||
-      this.chapterWiseDetails()?.status ||
-      this.videoEnded()
-    );
-  });
-
+  /**
+   * ponytail: the in-player quiz hand-off lived here and gated on
+   * `quiz_details.questions`, which no CAIRA mapper produces — the condition
+   * was structurally always false, so the branch never ran. `ChapterQuiz` also
+   * needs per-question `user_selected_option` from #7 (P5), which does not
+   * exist yet. When #7 lands, gate on `ChapterView.show_quiz` — already
+   * surfaced as `ChapterProgress.showQuiz`.
+   */
   handleVideoEnded() {
-    this.videoEnded.set(true);
     this.ended.emit();
     this.syncVideoTracking();
     if (!this.firedVideoMilestones.has(100)) {
@@ -262,63 +230,16 @@ export class VideoChapter {
       this.analytics.trackEvent('video_complete', this.videoEventParams());
     }
 
-    const chapter = this.current();
-    if (
-      this.cpeMode() &&
-      chapter?.quiz_details?.questions?.length &&
-      !chapter.quiz_details.questions.every((q: any) => q.user_selected_option)
-    ) {
-      this.previewMode.set('quiz');
-    } else if (!this.cpeMode()) {
-      const isFirstChapter = this.activeIndex() === 0;
+    if (!this.cpeMode()) {
       const nextChapter = this.next();
-
-      if (isFirstChapter && nextChapter) {
-        // First chapter in preview mode — let parent show CPE mode suggestion
-        this.firstChapterEnded.emit();
-      } else if (nextChapter) {
+      if (nextChapter) {
         this.navigate.emit(nextChapter.id);
       } else {
         // Last chapter — reset player to start
         this.videoPlayer()?.seek(0);
         this.videoPlayer()?.pause();
-        this.videoEnded.set(false);
       }
     }
-  }
-
-  handleQuizNext() {
-    // Navigate to next chapter
-    const currentChapter = this.current();
-    if (currentChapter) {
-      // We might need to find the index and emit the next ID.
-      // But the parent handles navigation via `navigate` output with chapter ID.
-      // We need the NEXT chapter ID.
-      // The `next` input holds the next chapter.
-      const nextChapter = this.next();
-      if (nextChapter) {
-        this.navigate.emit(nextChapter.id);
-      } else {
-        this.startFinalAssessment.emit();
-      }
-    }
-  }
-
-  readonly isLastChapter = computed(() => !this.next());
-
-  resetPlayer() {
-    this.videoEnded.set(false);
-    this.currentProgress.set(0);
-    this.lastTime = 0;
-    this.lastDuration = 0;
-    this.previewMode.set('video');
-    // Force seek to bypass CPE mode seek guard, since mode may have already switched
-    this.videoPlayer()?.seek(0, true);
-    this.videoPlayer()?.pause();
-  }
-
-  handleTrackQuiz() {
-    this.previewMode.set('quiz');
   }
 
   openTranscript() {
