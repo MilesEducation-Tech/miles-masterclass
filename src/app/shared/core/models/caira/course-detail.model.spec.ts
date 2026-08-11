@@ -231,6 +231,27 @@ describe('toChapterViews', () => {
     expect(view.is_locked).toBe(true);
   });
 
+  it('carries the server seek verdict independently of completion', () => {
+    // A closed course forces `is_video_seekable` true on a chapter the learner
+    // never finished. Deriving seek from completion would lock them out.
+    const watched = chapter({
+      id: 'chapter-3',
+      user_chapter_progress: {
+        is_video_completed: false,
+        is_video_seekable: true,
+        is_mcq_completed: null,
+        is_chapter_completed: false,
+        last_watched_position_seconds: 42,
+        current_watched_duration_seconds: 42,
+        max_watched_duration_seconds: 42,
+        completed_at: null,
+        quiz_attempted: null,
+      },
+    });
+    const [view] = toChapterViews(payload({ chapters: [watched] }));
+    expect(view.play_history).toEqual({ time_status: 42, is_completed: false, is_seekable: true });
+  });
+
   it('falls back to the course artwork for a chapter with no poster', () => {
     // `[ngSrc]` is bound with no `@if`; an empty value throws NG02952 and kills
     // the whole render, so the fallback chain has to end at a real URL.

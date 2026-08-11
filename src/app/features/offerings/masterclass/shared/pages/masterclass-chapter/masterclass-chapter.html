@@ -13,6 +13,7 @@
     [next]="navigation().next"
     [activeIndex]="navigation().currentIndex"
     [cpeMode]="chapter.cpeMode()"
+    [seekUnlocked]="chapter.isVideoSeekable()"
     [chapterWiseDetails]="chapter.chapterWiseDetails()"
     [courseId]="chapter.courseDetails()?.id ?? null"
     [courseType]="'masterclass'"

@@ -110,7 +110,26 @@ export class ChapterProgress {
     () => this.completedOverride() ?? this.current()?.play_history?.is_completed ?? false,
   );
 
-  /** Server-side seek lock. `is_locked` chapters expose no video at all. */
+  private readonly seekableOverride = signal<boolean | null>(null);
+
+  /**
+   * Whether the learner may seek freely — the **server's** `Is_Video_Seekable`,
+   * not a client rule. It flips at `Max_Watched >= duration * 0.95` and is
+   * forced `true` once the course is closed, which is why a closed course must
+   * not stay locked behind a completion flag the learner never earned.
+   *
+   * #4 reports it per chapter, #18's response can flip it mid-session. Falls
+   * back to completion only when the server omits the key — seek restriction is
+   * a compliance rule, so the default is locked, not open.
+   */
+  readonly isVideoSeekable = computed(
+    () =>
+      this.seekableOverride() ??
+      this.current()?.play_history?.is_seekable ??
+      this.isVideoCompleted(),
+  );
+
+  /** Chapter lock. `is_locked` chapters expose no video at all. */
   readonly isLocked = computed(() => this.current()?.is_locked ?? false);
   readonly showQuiz = computed(() => this.current()?.show_quiz ?? false);
 
@@ -180,6 +199,7 @@ export class ChapterProgress {
     // override; both are per-chapter, not per-course.
     this.maxWatchedSeconds = 0;
     this.completedOverride.set(null);
+    this.seekableOverride.set(null);
     // The mode is per-enrollment, and #6 is what reports it — drop the previous
     // chapter's answer rather than carrying it across.
     this.serverCpeMode.set(null);
@@ -259,8 +279,10 @@ export class ChapterProgress {
           return;
         }
         const completed = response?.data?.is_video_completed;
-        // The server decides. `undefined` means it did not say, so keep #4's.
+        const seekable = response?.data?.is_video_seekable;
+        // The server decides both. `undefined` means it did not say, so keep #4's.
         if (typeof completed === 'boolean') this.completedOverride.set(completed);
+        if (typeof seekable === 'boolean') this.seekableOverride.set(seekable);
       },
       error: (error: unknown) => {
         this.saving = false;
@@ -303,6 +325,7 @@ export class ChapterProgress {
         this.startedChapterId = null;
         this.maxWatchedSeconds = 0;
         this.completedOverride.set(null);
+        this.seekableOverride.set(null);
         this.courseDetail.reload();
       });
   }

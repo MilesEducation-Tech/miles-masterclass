@@ -313,7 +313,12 @@ export interface ChapterView {
   chapter_thumbnail: string;
   /** Seconds. The template divides by it, so a missing duration must not be 0. */
   video_duration: number;
-  play_history: { time_status: number; is_completed: boolean } | null;
+  /**
+   * `is_seekable` is the **server's** seek verdict (`Is_Video_Seekable`), not a
+   * rule the client re-derives: it flips at `Max_Watched >= duration * 0.95`
+   * and is forced `true` once the course is closed.
+   */
+  play_history: { time_status: number; is_completed: boolean; is_seekable: boolean } | null;
   quiz_details: { overall_chapter_questions: number };
   /** Carried through for the chapter player (P4), unread by the list. */
   is_locked: boolean;
@@ -562,6 +567,7 @@ export function toChapterViews(payload: CourseDetailPayload): ChapterView[] {
             ? {
                 time_status: num(progress.last_watched_position_seconds),
                 is_completed: progress.is_chapter_completed === true,
+                is_seekable: progress.is_video_seekable === true,
               }
             : null,
         quiz_details: { overall_chapter_questions: num(chapter.total_quiz_questions) },

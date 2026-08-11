@@ -42,6 +42,8 @@ export class AudioChapter {
   readonly previous = input<any | null>(null);
   readonly next = input<any | null>(null);
   readonly cpeMode = input(false);
+  /** The server's `is_video_seekable` for this chapter. Default locked. */
+  readonly seekUnlocked = input(false);
   readonly chapterIndex = input(0);
   readonly chapterWiseDetails = input<any | undefined>(undefined);
   readonly userAssessmentDetails = input<any | undefined>(undefined);
@@ -77,13 +79,8 @@ export class AudioChapter {
     return `Track ${String(idx + 1).padStart(2, '0')}`;
   });
 
-  readonly progressUnlocked = computed(() => {
-    const currentChapter = this.current();
-    if (!this.cpeMode()) return true;
-    const isCompleted = currentChapter?.play_history?.is_completed;
-    const isStatusCompleted = this.chapterWiseDetails()?.status;
-    return isCompleted || isStatusCompleted;
-  });
+  /** Free seeking — the server's verdict, same rule as `VideoChapter`. */
+  readonly progressUnlocked = computed(() => !this.cpeMode() || this.seekUnlocked());
 
   readonly audioSource = computed<VideoSource[]>(
     () => {

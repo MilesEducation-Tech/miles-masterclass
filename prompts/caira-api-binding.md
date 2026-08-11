@@ -458,13 +458,20 @@ Contract facts it was built against:
 - `#4` is cached server-side per-user over a global base key. Content edits lag. Do not build a
   client-side cache-buster; document it for QA.
 
-### P4 — Chapter player and progress
+### P4 — Chapter player and progress ✅ shipped (`4653ea9`)
 
-Endpoints #6, #17, #18.
+Endpoints #6 and #18. **#17 is deliberately not bound, and the
+`_build_full_course_progress` capture no longer blocks this phase** — that capture only constrains
+#17's response, and the shipped CAIRA LMS never calls it: it writes with #18 and re-reads progress
+from #4's `user_chapter_progress` on the next course load.
 
-A route-scoped `@Service({ autoProvided: false })` on the chapter route keyed on the chapter id,
-plus a progress mapper. Consumers: `masterclass-chapter.ts`, `video-chapter.ts`, `audio-chapter.ts`,
-`course-resources.ts`. **Blocked on the P0 capture of `_build_full_course_progress`.**
+Delivered: `ChapterProgress` (route-scoped `@Service({ autoProvided: false })` on the chapter route,
+injecting the course route's `CourseDetail` instance) · `models/caira/progress.model.ts` ·
+both chapter pages · both players. `course-resources.ts` needs no progress state.
+
+Seeking follows the server's `is_video_seekable` (#4 per chapter, overridden by #18's response), not
+a client re-derivation from completion — a closed course forces the flag open on chapters the
+learner never finished.
 
 - `#6` must be called on chapter open. It creates a 365-day enrollment and the progress row.
 - **`reset_required: true` returns a different, 2-key body** on #6, #10 and #18 — the 365-day window

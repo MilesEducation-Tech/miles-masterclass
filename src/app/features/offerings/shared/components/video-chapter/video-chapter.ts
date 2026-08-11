@@ -47,6 +47,8 @@ export class VideoChapter {
   readonly next = input<any | null>(null);
   readonly activeIndex = input(0);
   readonly cpeMode = input(false);
+  /** The server's `is_video_seekable` for this chapter. Default locked. */
+  readonly seekUnlocked = input(false);
   readonly chapterWiseDetails = input<any | undefined>(undefined);
   readonly userAssessmentDetails = input<any | undefined>(undefined);
   readonly courseId = input<CairaUuid | null>(null);
@@ -87,15 +89,12 @@ export class VideoChapter {
   private readonly firedVideoMilestones = new Set<number>();
   private static readonly VIDEO_MILESTONES = [25, 50, 75, 90] as const;
 
-  readonly progressUnlocked = computed(() => {
-    const currentChapter = this.current();
-    if (!this.cpeMode()) return true;
-
-    const isCompleted = currentChapter?.play_history?.is_completed;
-    const isStatusCompleted = this.chapterWiseDetails()?.status;
-
-    return isCompleted || isStatusCompleted;
-  });
+  /**
+   * Free seeking. The server owns this verdict (`Is_Video_Seekable`) — it is
+   * forced open on a closed course, so re-deriving it from completion here
+   * would lock learners the backend has already let through.
+   */
+  readonly progressUnlocked = computed(() => !this.cpeMode() || this.seekUnlocked());
 
   constructor() {
     // Initialize progress from chapter data if available
