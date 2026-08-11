@@ -24,6 +24,10 @@ import { Analytics } from '../../../../../shared/core/services/analytics/analyti
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faClipboard } from '@ng-icons/font-awesome/regular';
 import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.model';
+import {
+  ChapterView,
+  CourseDetailCard,
+} from '../../../../../shared/core/models/caira/course-detail.model';
 
 @Component({
   selector: 'app-audio-chapter',
@@ -37,16 +41,18 @@ import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.mode
 })
 export class AudioChapter {
   // --- Inputs ---
-  readonly current = model<any | null>(null);
-  readonly previous = input<any | null>(null);
-  readonly next = input<any | null>(null);
+  readonly current = model<ChapterView | null>(null);
+  readonly previous = input<ChapterView | null>(null);
+  readonly next = input<ChapterView | null>(null);
   readonly cpeMode = input(false);
   /** The server's `is_video_seekable` for this chapter. Default locked. */
   readonly seekUnlocked = input(false);
   readonly chapterIndex = input(0);
   /** The server's completion verdict for this chapter. Default not-complete. */
   readonly completed = input(false);
-  readonly userAssessmentDetails = input<any | undefined>(undefined);
+  readonly userAssessmentDetails = input<CourseDetailCard['user_assessment_details'] | undefined>(
+    undefined,
+  );
 
   // --- Outputs ---
   readonly navigate = output<CairaUuid>();
@@ -88,7 +94,9 @@ export class AudioChapter {
   readonly audioSource = computed<VideoSource[]>(
     () => {
       const chapter = this.current();
-      const url = chapter?.audio_url || chapter?.video_url;
+      // CAIRA serves one media URL per chapter whatever the format — the
+      // Django-era `audio_url`/`video_url` pair has no counterpart.
+      const url = chapter?.hls_video_url;
       if (!url) return [];
 
       let type = 'audio/mpeg';

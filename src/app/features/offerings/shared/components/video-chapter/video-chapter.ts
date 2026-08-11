@@ -29,6 +29,10 @@ import {
   HtmlContentDialogData,
 } from '../../../../../shared/components/dialog/html-content-dialog/html-content-dialog';
 import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.model';
+import {
+  ChapterView,
+  CourseDetailCard,
+} from '../../../../../shared/core/models/caira/course-detail.model';
 
 @Component({
   selector: 'app-video-chapter',
@@ -41,16 +45,18 @@ import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.mode
   },
 })
 export class VideoChapter {
-  readonly current = model<any | null>(null);
-  readonly previous = input<any | null>(null);
-  readonly next = input<any | null>(null);
+  readonly current = model<ChapterView | null>(null);
+  readonly previous = input<ChapterView | null>(null);
+  readonly next = input<ChapterView | null>(null);
   readonly activeIndex = input(0);
   readonly cpeMode = input(false);
   /** The server's `is_video_seekable` for this chapter. Default locked. */
   readonly seekUnlocked = input(false);
   /** The server's completion verdict for this chapter. Default not-complete. */
   readonly completed = input(false);
-  readonly userAssessmentDetails = input<any | undefined>(undefined);
+  readonly userAssessmentDetails = input<CourseDetailCard['user_assessment_details'] | undefined>(
+    undefined,
+  );
   readonly courseId = input<CairaUuid | null>(null);
   readonly courseType = input<string>('masterclass');
 
