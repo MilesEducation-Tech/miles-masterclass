@@ -4,12 +4,10 @@ import {
   input,
   output,
   effect,
-  signal,
   viewChild,
   inject,
   DestroyRef,
   model,
-  untracked,
 } from '@angular/core';
 import { VideoJs } from '../../../../../shared/components/video-js/video-js';
 import {
@@ -74,8 +72,6 @@ export class VideoChapter {
   private readonly dialog = inject(Dialog);
   private readonly analytics = inject(Analytics);
 
-  readonly currentProgress = signal(0);
-
   // Track last known time for destroy handler
   private lastTime = 0;
   private lastDuration = 0;
@@ -100,19 +96,10 @@ export class VideoChapter {
   readonly canStartExam = computed(() => this.cpeMode() && this.completed());
 
   constructor() {
-    // Initialize progress from chapter data if available
+    // Drop the last known position when the chapter goes away, so `onDestroy`
+    // cannot emit a `videoExit` for a chapter that is no longer open.
     effect(() => {
-      const chapter = this.current();
-
-      if (chapter) {
-        if (chapter.play_history && chapter.video_duration) {
-          const progress = ((chapter.play_history.time_status ?? 0) / chapter.video_duration) * 100;
-          if (progress > untracked(() => this.currentProgress())) {
-            this.currentProgress.set(progress);
-          }
-        }
-      } else {
-        this.currentProgress.set(0);
+      if (!this.current()) {
         this.lastTime = 0;
         this.lastDuration = 0;
       }
@@ -134,9 +121,7 @@ export class VideoChapter {
     this.lastDuration = event.duration;
 
     if (event.duration > 0) {
-      const progress = (event.currentTime / event.duration) * 100;
-      this.currentProgress.set(progress);
-      this.trackVideoProgress(progress);
+      this.trackVideoProgress((event.currentTime / event.duration) * 100);
     }
 
     this.timeUpdate.emit(event);

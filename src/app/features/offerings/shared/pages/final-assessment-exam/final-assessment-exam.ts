@@ -52,7 +52,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
-  courseNavigation = signal<string>('../../..');
+  courseNavigation = signal<string>('../..');
 
   /**
    * ponytail: the whole exam is #9/#10 (P5) and nothing is bound yet. The
@@ -279,7 +279,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
     if (action === 'report') {
       this.router.navigate(['../report'], { relativeTo: this.route });
     } else if (action === 'course') {
-      this.router.navigate(['../../..'], { relativeTo: this.route });
+      this.router.navigate(['../..'], { relativeTo: this.route });
     } else if (action === 'retake') {
       const details = this.courseDetails();
       if (details) {

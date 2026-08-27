@@ -4,12 +4,10 @@ import {
   input,
   output,
   effect,
-  signal,
   viewChild,
   inject,
   DestroyRef,
   model,
-  untracked,
 } from '@angular/core';
 import { AudioJs } from '../../../../../shared/components/audio-js/audio-js';
 import {
@@ -68,7 +66,6 @@ export class AudioChapter {
   private readonly destroyRef = inject(DestroyRef);
   private readonly analytics = inject(Analytics);
 
-  readonly currentProgress = signal(0);
   private lastTime = 0;
   private lastDuration = 0;
 
@@ -125,17 +122,9 @@ export class AudioChapter {
   }));
 
   constructor() {
+    // Same reason as `VideoChapter`: no stale `audioExit` after the chapter goes.
     effect(() => {
-      const chapter = this.current();
-      if (chapter) {
-        if (chapter.play_history && chapter.video_duration) {
-          const progress = ((chapter.play_history.time_status ?? 0) / chapter.video_duration) * 100;
-          if (progress > untracked(() => this.currentProgress())) {
-            this.currentProgress.set(progress);
-          }
-        }
-      } else {
-        this.currentProgress.set(0);
+      if (!this.current()) {
         this.lastTime = 0;
         this.lastDuration = 0;
       }
@@ -157,9 +146,7 @@ export class AudioChapter {
     this.lastTime = event.currentTime;
     this.lastDuration = event.duration;
     if (event.duration > 0) {
-      const progress = (event.currentTime / event.duration) * 100;
-      this.currentProgress.set(progress);
-      this.trackMediaProgress(progress);
+      this.trackMediaProgress((event.currentTime / event.duration) * 100);
     }
     this.timeUpdate.emit(event);
   }

@@ -271,6 +271,27 @@ describe('toChapterViews', () => {
     expect(view.play_history).toEqual({ time_status: 42, is_completed: false, is_seekable: true });
   });
 
+  it('keeps an omitted seek verdict null so the caller can fall back', () => {
+    // Coercing a missing `is_video_seekable` to `false` would make
+    // `ChapterProgress.isVideoSeekable`'s `?? isVideoCompleted()` unreachable —
+    // `false` is not nullish — and lock seeking on a finished chapter.
+    const noVerdict = chapter({
+      user_chapter_progress: {
+        is_video_completed: true,
+        is_video_seekable: null,
+        is_mcq_completed: null,
+        is_chapter_completed: true,
+        last_watched_position_seconds: 600,
+        current_watched_duration_seconds: 600,
+        max_watched_duration_seconds: 600,
+        completed_at: null,
+        quiz_attempted: null,
+      },
+    });
+    const [view] = toChapterViews(payload({ chapters: [noVerdict] }));
+    expect(view.play_history?.is_seekable).toBeNull();
+  });
+
   it('falls back to the course artwork for a chapter with no poster', () => {
     // `[ngSrc]` is bound with no `@if`; an empty value throws NG02952 and kills
     // the whole render, so the fallback chain has to end at a real URL.

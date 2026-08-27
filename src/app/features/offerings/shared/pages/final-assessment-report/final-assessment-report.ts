@@ -123,7 +123,7 @@ export class FinalAssessmentReport {
 
   backToCourse() {
     // Navigate back to course root
-    this.router.navigate(['../../..'], { relativeTo: this.route });
+    this.router.navigate(['../..'], { relativeTo: this.route });
   }
 
   downloadCertificate() {
@@ -151,7 +151,7 @@ export class FinalAssessmentReport {
     const courseDetails = this.courseDetails();
     if (!courseDetails) return;
 
-    this.router.navigate(['../../..', 'feedback'], {
+    this.router.navigate(['../..', 'feedback'], {
       relativeTo: this.route,
       queryParams: { redirect: this.router.url },
     });

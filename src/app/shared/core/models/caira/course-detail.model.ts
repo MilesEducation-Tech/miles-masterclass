@@ -318,7 +318,7 @@ export interface ChapterView {
    * rule the client re-derives: it flips at `Max_Watched >= duration * 0.95`
    * and is forced `true` once the course is closed.
    */
-  play_history: { time_status: number; is_completed: boolean; is_seekable: boolean } | null;
+  play_history: { time_status: number; is_completed: boolean; is_seekable: boolean | null } | null;
   quiz_details: { overall_chapter_questions: number };
   /** Carried through for the chapter player (P4), unread by the list. */
   is_locked: boolean;
@@ -577,7 +577,7 @@ export function toChapterViews(payload: CourseDetailPayload): ChapterView[] {
             ? {
                 time_status: num(progress.last_watched_position_seconds),
                 is_completed: progress.is_chapter_completed === true,
-                is_seekable: progress.is_video_seekable === true,
+                is_seekable: progress.is_video_seekable,
               }
             : null,
         quiz_details: { overall_chapter_questions: num(chapter.total_quiz_questions) },
