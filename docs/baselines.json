@@ -6,7 +6,7 @@
     "Rationale and the rules behind each metric live in docs/STRUCTURE.md."
   ],
   "stubFacades": 70,
-  "explicitAny": 504,
+  "explicitAny": 501,
   "nullAsAny": 12,
   "sharedImportsFeatures": 8,
   "failingTests": 91,
