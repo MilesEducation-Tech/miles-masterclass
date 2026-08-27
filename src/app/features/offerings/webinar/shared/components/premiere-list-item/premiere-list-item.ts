@@ -1,9 +1,13 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, DestroyRef, computed, inject, input } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 
 import { Button } from '../../../../../../shared/components/ui/button/button';
 import { CategoriesList } from '../../../../../../shared/components/categories-list/categories-list';
 import { Auth } from '../../../../../../shared/core/services/auth/auth';
+import { Dialog } from '../../../../../../shared/core/services/dialog/dialog';
+import { Logger } from '../../../../../../shared/core/services/logger/logger';
+import { Webinars } from '../../services/webinar/webinar';
 import { Utils } from '../../../../../../shared/core/services/utils/utils';
 import { ctaFor, nextSessionOf } from '../../utils/webinar-status';
 import { CairaCredlyBadge } from '../../../../../../shared/components/cards/caira-credly-badge/caira-credly-badge';
@@ -20,15 +24,10 @@ const CREDLY_LOGO =
   styleUrl: './premiere-list-item.css',
 })
 export class PremiereListItem {
-  // ponytail: WebinarFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly facade: any = {
-    enroll: (..._args: any[]): any => null,
-    openCertificateDownloadDialog: (..._args: any[]): any => null,
-    openDetails: (..._args: any[]): any => null,
-    openRegistration: (..._args: any[]): any => null,
-  };
+  private readonly webinars = inject(Webinars);
+  private readonly dialog = inject(Dialog);
+  private readonly logger = inject(Logger);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(Auth);
   private readonly utils = inject(Utils);
 
@@ -99,15 +98,44 @@ export class PremiereListItem {
    */
   protected readonly cta = computed(() => ctaFor(this.webinar(), this.auth.isLoggedIn()));
 
+  /**
+   * G-23 is closed: `registerV4/` (L3) plus its status poll (L4) are live and
+   * already implemented by `Webinars.register()`. This used to call `enroll` on
+   * a stub that returned `null`, so the Book button threw on every click.
+   *
+   * Guests cannot register directly — they get the dialog, which wraps the same
+   * form the hero uses and carries the whole REGISTER → OTP → DONE machine.
+   */
   protected book(): void {
-    // Guests can't enroll directly — show the registration dialog so they can
-    // sign up + (optionally) verify OTP first. `registerAndEnroll` then flips
-    // the local state so the card re-renders into the booked variant.
     if (!this.auth.isLoggedIn()) {
-      this.facade.openRegistration(this.webinar());
+      void this.openRegistrationDialog();
       return;
     }
-    this.facade.enroll(this.webinar()).subscribe();
+
+    this.webinars
+      .register(this.webinar().id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        // `accepted` means the attempt was still pending after the last poll —
+        // the LMS treats that as booked rather than leaving the card spinning.
+        next: (outcome) => {
+          if (outcome === 'failed') {
+            this.logger.warn('Webinar registration failed', this.webinar().id);
+            return;
+          }
+          this.webinars.reload();
+        },
+        error: (error: unknown) => this.logger.error('Webinar registration errored', error),
+      });
+  }
+
+  private async openRegistrationDialog(): Promise<void> {
+    const { WebinarRegistrationDialog } =
+      await import('../../../../../../shared/components/dialog/webinar-registration-dialog/webinar-registration-dialog');
+    this.dialog.open(WebinarRegistrationDialog, {
+      maxWidth: '100%',
+      data: { webinar: this.webinar(), onRegistered: () => this.webinars.reload() },
+    });
   }
 
   protected joinLive(): void {
@@ -134,11 +162,23 @@ export class PremiereListItem {
     this.utils.navigateToCourseFeedback('webinar', w.id, w.webinar_title);
   }
 
+  /**
+   * `Utils` owns the gating dialogs and the download dialog itself. CAIRA has no
+   * bulk certificate endpoint, so the dialog reports that rather than posting to
+   * a dead URL — but the entry point is real, not a stub that throws.
+   */
   protected downloadCertificate(): void {
-    this.facade.openCertificateDownloadDialog(this.webinar());
+    this.utils.openCertificateDownloadDialog(this.webinar());
   }
 
-  protected openDetails(): void {
-    this.facade.openDetails(this.webinar());
+  protected async openDetails(): Promise<void> {
+    const { WebinarDetailsDialog } =
+      await import('../../../../../../shared/components/dialog/webinar-details-dialog/webinar-details-dialog');
+    this.dialog.open(WebinarDetailsDialog, {
+      maxWidth: '100%',
+      enterAnimationDuration: '300ms',
+      exitAnimationDuration: '300ms',
+      data: { webinar: this.webinar() },
+    });
   }
 }
