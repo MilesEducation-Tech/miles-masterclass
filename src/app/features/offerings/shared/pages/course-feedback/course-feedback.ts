@@ -1,17 +1,17 @@
-import { Component, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, ActivatedRoute } from '@angular/router';
 import { RatingStar } from '../../../../../shared/components/rating-star/rating-star';
 import { Button } from '../../../../../shared/components/ui/button/button';
 import { AriaInput } from '../../../../../shared/components/ui/aria/aria-input/aria-input';
 import { Auth } from '../../../../../shared/core/services/auth/auth';
-import { Utils } from '../../../../../shared/core/services/utils/utils';
 import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
 import {
   UtilsDialog,
   UtilsDialogData,
 } from '../../../../../shared/components/dialog/utils-dialog/utils-dialog';
 import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.model';
+import { Feedback } from '../../services/feedback/feedback';
 
 const PROFILE_INCOMPLETE_DIALOG_DATA: UtilsDialogData = {
   containerClass: 'py-12 px-6',
@@ -31,171 +31,45 @@ const PROFILE_INCOMPLETE_DIALOG_DATA: UtilsDialogData = {
   imports: [RatingStar, Button, AriaInput],
   templateUrl: './course-feedback.html',
   styleUrl: './course-feedback.css',
-  // ponytail: route-scoped facade providers removed with the Django strip.
 })
 export class CourseFeedback {
-  courseId = input<string>();
-
-  // ponytail: FeedbackFacade was deleted with the Django strip. This placeholder
-
-  // keeps the template bindings compiling and renders the empty state.
-
-  // Swap in the new backend's service — the template needs no changes.
-
-  private readonly facade: any = {};
   private readonly destroyRef = inject(DestroyRef);
-  readonly router = inject(Router);
-  readonly route = inject(ActivatedRoute);
-  readonly auth = inject(Auth);
-  private readonly utils = inject(Utils);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly auth = inject(Auth);
   private readonly dialog = inject(Dialog);
 
-  currentUser = this.auth.currentUser;
-  categories = signal<any[]>([]);
-  courseDetails = signal<any | null>(null);
-  ratings = signal<Record<number, number>>({});
-  otherComments = signal<string>('');
-  isSubmitting = signal(false);
-  isReadOnly = signal(false);
+  /** #12 / #13, route-scoped. Reads the course from the parent `CourseDetail`. */
+  protected readonly feedback = inject(Feedback);
 
-  // Post-submission state
-  submissionSuccess = signal(false);
-  certificateUrls = signal<{ miles?: string; nasba?: string } | null>(null);
+  protected readonly currentUser = this.auth.currentUser;
 
-  constructor() {
-    effect(() => {
-      const id = this.courseId();
-      if (id) {
-        this.loadData(id);
-      }
-    });
+  protected setRating(questionId: CairaUuid, value: number): void {
+    this.feedback.rate(questionId, value);
   }
 
-  loadData(courseId: CairaUuid) {
-    // Load Categories
-    this.facade
-      .getFeedbackCategories()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (data: any) => this.categories.set(data),
-      });
-
-    // Load Course Details
-    this.facade
-      .getCourseDetails(courseId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (data: any) => {
-          this.courseDetails.set(data);
-          // Check if feedback is already submitted
-          if (data.user_feedback_details?.user_feedback_submitted) {
-            this.isReadOnly.set(true);
-            this.loadUserFeedback(courseId);
-          }
-        },
-      });
+  protected getRating(questionId: CairaUuid): number {
+    return this.feedback.ratings()[questionId] ?? 0;
   }
 
-  loadUserFeedback(courseId: CairaUuid) {
-    this.facade
-      .getUserFeedback(courseId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (data: any) => {
-          if (data && data.length > 0) {
-            const feedback = data[0];
-            const ratingMap: Record<number, number> = {};
-            feedback.feedback_details.forEach((item: any) => {
-              // Note: item.category_details.id is the category ID
-              // But in the example json: "category_details": { "id": 13 }
-              // and "feedback_category": 13 at root of item.
-              // We can use item.feedback_category or item.category_details.id
-              ratingMap[item.category_details.id] = item.feedback_answer;
-            });
-            this.ratings.set(ratingMap);
-            this.otherComments.set(feedback.other_comments || '');
-          }
-        },
-      });
-  }
+  /**
+   * The profile gate stays here: it is a navigation decision, not a data one.
+   * Feedback issues a CPE certificate, which needs a completed profile —
+   * anything other than literal `true` prompts, so an unloaded profile fails
+   * closed rather than submitting.
+   */
+  protected submit(): void {
+    if (!this.feedback.canSubmit()) return;
 
-  setRating(categoryId: number, value: number) {
-    this.ratings.update((current) => ({
-      ...current,
-      [categoryId]: value,
-    }));
-  }
-
-  getRating(categoryId: number): number {
-    return this.ratings()[categoryId] || 0;
-  }
-
-  // Computed
-  get isValid(): boolean {
-    const cats = this.categories();
-    const currentRatings = this.ratings();
-    // Check if all categories are rated
-    return cats.length > 0 && cats.every((cat) => (currentRatings[cat.id] || 0) > 0);
-  }
-
-  submit() {
-    if (!this.isValid || this.isSubmitting()) return;
-
-    // Gate: the feedback flow issues a CPE certificate, which requires a
-    // completed profile. Anything other than literal `true` is treated as
-    // not-completed so legacy responses that omit the field still prompt.
-    // Was `is_profile_completed`, a server-computed boolean CAIRA does not
-    // return. `Auth.isProfileComplete` derives the same condition from
-    // v2/status, and still fails closed while the profile is unloaded.
     if (!this.auth.isProfileComplete()) {
       this.openProfileIncompleteDialog();
       return;
     }
 
-    this.isSubmitting.set(true);
-
-    const feedbacks = Object.entries(this.ratings()).map(([catId, val]) => ({
-      feedback_category: Number(catId),
-      feedback: val,
-    }));
-
-    const courseType = this.utils.getCourseType();
-    const courseIdKey =
-      courseType === 'webinar'
-        ? 'webinar_id'
-        : courseType === 'podcast'
-          ? 'podcast_id'
-          : courseType === 'nano-learning' || courseType === 'micro-learning'
-            ? 'nano_learning_id'
-            : 'masterclass_id';
-
-    const req = {
-      feedbacks,
-      other_comments: this.otherComments(),
-      [courseIdKey]: this.courseId()!,
-    };
-
-    this.facade
-      .submitFeedback(req)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res: any) => {
-          this.isSubmitting.set(false);
-          this.submissionSuccess.set(true);
-          if (res.URL) {
-            this.certificateUrls.set({
-              miles: res.URL.miles_certificate_url,
-              nasba: res.URL.nasba_certificate_url,
-            });
-          }
-        },
-        error: () => {
-          this.isSubmitting.set(false);
-        },
-      });
+    this.feedback.submit();
   }
 
-  handleRedirect() {
+  protected handleRedirect(): void {
     const redirectParams = this.route.snapshot.queryParams['redirect'];
     if (redirectParams) {
       this.router.navigateByUrl(redirectParams);

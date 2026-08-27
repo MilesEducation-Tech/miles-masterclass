@@ -5,8 +5,8 @@
     "When you fix a batch, run `node scripts/check-structure.mjs --update` and commit the diff.",
     "Rationale and the rules behind each metric live in docs/STRUCTURE.md."
   ],
-  "stubFacades": 78,
-  "explicitAny": 550,
+  "stubFacades": 77,
+  "explicitAny": 544,
   "nullAsAny": 13,
   "sharedImportsFeatures": 8,
   "failingTests": 91,

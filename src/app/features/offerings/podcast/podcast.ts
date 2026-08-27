@@ -14,6 +14,7 @@ import { canDeactivateExamGuard } from '../../../shared/core/guards/can-deactiva
 import { Faq } from '../../../pages/faq/faq';
 import { PartnerContentList } from '../../partners/shared/components/partner-content-list/partner-content-list';
 import { CourseDetail } from '../shared/services/course-detail/course-detail';
+import { Feedback } from '../shared/services/feedback/feedback';
 import { ChapterProgress } from '../shared/services/chapter-progress/chapter-progress';
 
 @Component({
@@ -137,8 +138,9 @@ export const podcastRoutes: Route[] = [
       {
         path: 'feedback',
         canActivate: [authGuard],
-        // ponytail: route-scoped facade providers removed with the Django strip.
-        // Re-add `providers: [YourService]` here when the new backend lands.
+        // #12 / #13, scoped to this route. `CourseDetail` is provided one level
+        // up, so `Feedback` reaches the same instance and re-reads nothing.
+        providers: [Feedback],
         loadComponent: () =>
           import('../shared/pages/course-feedback/course-feedback').then((m) => m.CourseFeedback),
       },

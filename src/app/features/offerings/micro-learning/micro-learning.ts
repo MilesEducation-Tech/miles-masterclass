@@ -14,6 +14,8 @@ import { exhaustMap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { authGuard } from '../../../shared/core/guards/auth/auth-guard';
 import { canDeactivateExamGuard } from '../../../shared/core/guards/can-deactivate-exam-guard';
+import { CourseDetail } from '../shared/services/course-detail/course-detail';
+import { Feedback } from '../shared/services/feedback/feedback';
 import { environment } from '../../../../environments/environment';
 import { Logger } from '../../../shared/core/services/logger/logger';
 import {
@@ -137,6 +139,12 @@ export const microLearningRoutes: Route[] = [
   { path: '', component: MicroLearning },
   {
     path: ':courseId/:courseTitle',
+    // `CourseDetail` + `Feedback` are provided here for the same reason as the
+    // masterclass tree: the shared feedback page injects them. Micro-learning is
+    // not a CPE course type yet (G-18), so #4 will not serve a nano_learning id
+    // — the page surfaces that as a load error rather than crashing, and starts
+    // working unchanged the day G-18 closes.
+    providers: [CourseDetail, Feedback],
     children: [
       {
         path: '',
@@ -173,7 +181,6 @@ export const microLearningRoutes: Route[] = [
       {
         path: 'feedback',
         canActivate: [authGuard],
-        // ponytail: route-scoped facade providers removed with the Django strip.
         loadComponent: () =>
           import('../shared/pages/course-feedback/course-feedback').then((m) => m.CourseFeedback),
       },
