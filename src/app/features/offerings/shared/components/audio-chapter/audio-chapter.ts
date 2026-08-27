@@ -19,8 +19,6 @@ import { ChapterSkeleton } from '../../../../../shared/components/skeleton/chapt
 
 import { RecordDisk } from '../../../../../shared/components/record-disk/record-disk';
 import { Analytics } from '../../../../../shared/core/services/analytics/analytics';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import { faClipboard } from '@ng-icons/font-awesome/regular';
 import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.model';
 import {
   ChapterView,
@@ -29,10 +27,9 @@ import {
 
 @Component({
   selector: 'app-audio-chapter',
-  imports: [AudioJs, ChapterSkeleton, NgIcon, RecordDisk],
+  imports: [AudioJs, ChapterSkeleton, RecordDisk],
   templateUrl: './audio-chapter.html',
   styleUrl: './audio-chapter.css',
-  providers: [provideIcons({ faClipboard })],
   host: {
     class: 'block w-full h-full',
   },

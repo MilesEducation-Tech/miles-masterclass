@@ -276,8 +276,14 @@ Tool and module knowledge lives in `.claude/skills/`, not here. Name the ones yo
 Angular itself is covered by the globally installed `angular-developer` skill — do not duplicate it here. Tailwind v4, Storybook, Video.js, RxJS and Swiper have no first-party skill; use `docs/` and the vendor docs.
 
 > ⚠️ The two tables below describe repo-specific skills deleted in `c31f69d` and not yet
-> rebuilt. Until they exist, read the real code and the `docs/` files instead — and say so in
-> the prompt's **Assumptions** section.
+> rebuilt. **Their structural content now lives in [`docs/STRUCTURE.md`](docs/STRUCTURE.md)** —
+> layering, the endpoint-binding recipe, feature-folder shape, naming, and the blocked-feature
+> rule. Read that first. For anything it does not cover, read the real code and say so in the
+> prompt's **Assumptions** section.
+>
+> The originals are recoverable with `git show c31f69d^:.claude/skills/<name>/SKILL.md`, but four
+> of their rules contradict this file and must not be restored: _OnPush always_, _components call
+> facades_, `<Feature>Facade` naming, and `CommonResponse<T>`.
 
 **Foundation** — read the relevant one before touching anything
 

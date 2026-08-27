@@ -28,7 +28,9 @@
     "format": "prettier --check \"src/**/*.{ts,html,css,scss,json,md}\"",
     "format:fix": "prettier --write \"src/**/*.{ts,html,css,scss,json,md}\"",
     "storybook": "ng run miles-masterclass-v3:storybook",
-    "build-storybook": "ng run miles-masterclass-v3:build-storybook"
+    "build-storybook": "ng run miles-masterclass-v3:build-storybook",
+    "check:structure": "node scripts/check-structure.mjs",
+    "verify": "pnpm lint && pnpm check:structure && pnpm build:prod"
   },
   "prettier": {
     "printWidth": 100,
