@@ -16,11 +16,6 @@ import { EMPTY, Observable, concatMap, filter, firstValueFrom, from, switchMap, 
 import { Auth } from '../auth/auth';
 import { Dialog, DialogRef } from '../dialog/dialog';
 import { Storage } from '../storage/storage';
-import { offeringTypeFromUrl } from '../../../utils/offering-type';
-import {
-  ProfileCompletionDialog,
-  ProfileCompletionDialogResult,
-} from '../../../components/dialog/profile-completion-dialog/profile-completion-dialog';
 import { SubscriptionDialog } from '../../../components/dialog/subscription-dialog/subscription-dialog';
 import { AiLabDialog } from '../../../components/dialog/ai-lab-dialog/ai-lab-dialog';
 
@@ -159,15 +154,16 @@ export class EngagementDialog {
     // skipped: the next tick after leaving /payment evaluates normally.
     if (PAYMENT_ROUTE.test(this.router.url)) return null;
 
-    // ponytail: the profile nudge used to fire on a missing `sector`/`job_role`,
-    // both of which came from reference-data endpoints CAIRA does not have. It
-    // now nudges on the completeness CAIRA *can* report — first name, full name
-    // and email, from v2/status. `is_existing_user` is gone with the same model,
-    // so the "don't nag a brand-new signup" guard is now the completeness check
-    // itself.
-    if (!this.auth.isProfileComplete() && !this.isDismissed('profile')) {
-      return 'profile';
-    }
+    // ponytail: the profile nudge is retired, not merely re-gated (G-10).
+    //
+    // It opened `ProfileCompletionDialog` with `disableClose: true`, whose only
+    // exit was a successful Save — and Save collected `sector_id` / `job_role_id`,
+    // two fields CAIRA has no reference-data endpoint for and which `v2/update`
+    // excludes from its body. The save could never succeed, so the dialog was an
+    // unclosable modal over the whole app.
+    //
+    // Users complete the fields CAIRA *does* store on `/auth/profile`. Restore
+    // this nudge when G-10's endpoints land — and give the dialog a skip button.
     if (
       !this.hasActiveSubscription(this.auth.currentPlan()) &&
       !this.isDismissed('subscription') &&
@@ -199,34 +195,6 @@ export class EngagementDialog {
         panelClass: 'rounded-[24px]! overflow-hidden!',
       });
       return from(this.afterClosed(ref)).pipe(switchMap(() => EMPTY));
-    }
-
-    if (kind === 'profile') {
-      // Mark dismissed at open-time and persist to sessionStorage. This
-      // survives a page refresh in the same tab, and prevents a stale
-      // `fetchMyProfile` (or a save that doesn't reflect immediately) from
-      // re-triggering the dialog on the next 20s tick.
-      this.markDismissed('profile');
-      const ref = this.dialog.open<ProfileCompletionDialog, ProfileCompletionDialogResult>(
-        ProfileCompletionDialog,
-        {
-          maxWidth: '95vw',
-          ariaLabel: 'Complete your profile',
-          injector: this.injector,
-          // Sector + job_role are not skippable — block Escape and backdrop
-          // clicks so the only way out is a successful Save (the dialog itself
-          // omits the close + skip buttons).
-          disableClose: true,
-        },
-      );
-      return from(this.afterClosed(ref)).pipe(
-        switchMap((result) => {
-          if (result?.saved) {
-            this.feature.refreshPersonalized(offeringTypeFromUrl(this.router.url));
-          }
-          return EMPTY;
-        }),
-      );
     }
 
     // Subscription: re-validate against the SERVER right before opening. The

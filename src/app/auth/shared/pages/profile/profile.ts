@@ -112,12 +112,6 @@ export class Profile {
   // ponytail: JobSectors was deleted with the Django strip. This placeholder
   // keeps the template bindings compiling and renders the empty state.
   // Swap in the new backend's service — the template needs no changes.
-  private readonly jobSectors: any = {
-    resolveIds: (..._args: any[]): any => null,
-    rolesFor: (..._args: any[]): any => null,
-    sectorOptions: null as any,
-    sectors: signal<any[]>([]),
-  };
   private readonly partnerCode = inject(PartnerCode);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -260,15 +254,6 @@ export class Profile {
       return null;
     });
 
-    // Job Role is required once a Sector is picked. Skipped when the chosen
-    // sector has no roles — otherwise save would be unreachable.
-    validate(s.job_role_id, ({ value }) => {
-      const sectorId = this.profile().sector_id;
-      if (sectorId == null) return null;
-      if (this.jobSectors.rolesFor(sectorId).length === 0) return null;
-      return value() != null ? null : { kind: 'required', message: 'Job Role is required' };
-    });
-
     // Validations for Terms Accepted (Required if New User)
     validate(s.terms_accepted, (val) => {
       const isExistingUser = this.auth.isProfileComplete();
@@ -318,8 +303,16 @@ export class Profile {
   // Job sectors — single source of truth via the JobSectors service. The
   // service holds the cached fetch so the profile page and the engagement
   // dialog don't each hit the endpoint.
-  readonly sectorOptions = this.jobSectors.sectorOptions;
-  readonly jobRoleOptions = computed(() => this.jobSectors.rolesFor(this.profile().sector_id));
+  /**
+   * ponytail: Sector and Job Role are gone from the form, not merely emptied.
+   *
+   * G-10: CAIRA has no reference-data endpoint for either, and `v2/update`
+   * excludes both fields — so the controls could be neither populated nor
+   * saved. Worse, `sectorOptions` aliased `null as any` and the template called
+   * it, which threw during render.
+   *
+   * Restore both controls together with the sectors endpoint.
+   */
 
   constructor() {
     // Effect to handle conditional data fetching
@@ -356,33 +349,11 @@ export class Profile {
     // names once both the user and the sector list are available. Skipped if
     // the user has already started editing (sector_id is non-null), so we
     // never clobber in-progress input.
-    effect(() => {
-      const user = this.auth.currentUser();
-      const sectors = this.jobSectors.sectors();
-      if (!user || sectors.length === 0) return;
-      untracked(() => {
-        if (this.profile().sector_id != null) return;
-        // ponytail: sector/job_role are not on CAIRA's user, so there is
-        // nothing to seed from until the reference-data endpoints exist.
-        const ids = this.jobSectors.resolveIds(null, null);
-        if (ids.sector_id == null) return;
-        this.profile.update((p) => ({ ...p, ...ids }));
-      });
-    });
-
     // Clear `job_role_id` when it stops being a valid option for the current
     // sector — i.e. user picked a new sector whose roles don't include the
     // previously-selected role, or cleared the sector entirely. Gated on the
     // sector list being loaded so the seeded role isn't wiped during the
     // initial render while options are still empty.
-    effect(() => {
-      const currentRoleId = this.profile().job_role_id;
-      if (currentRoleId == null) return;
-      if (this.jobSectors.sectors().length === 0) return;
-      const validIds = this.jobRoleOptions().map((o: any) => o.value);
-      if (validIds.includes(currentRoleId)) return;
-      untracked(() => this.profile.update((p) => ({ ...p, job_role_id: null })));
-    });
   }
 
   onCompanySearch(search: string) {
@@ -466,7 +437,6 @@ export class Profile {
       ? {
           ...this.mapUserToForm(user),
           state_board: this.resolveStateBoardIds(null),
-          ...this.jobSectors.resolveIds(null, null),
         }
       : ({} as any);
 
