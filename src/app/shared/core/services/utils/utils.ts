@@ -543,8 +543,13 @@ export class Utils {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
+          // #4 signals failure with a string `"error"` status and no
+          // `course_details`. `toCourseDetailCard` dereferences its argument
+          // immediately, and a throw here would escape the `error` handler
+          // below — leaving the learner with no dialog at all.
+          const payload = response?.course_details;
           void this.openCourseInfoDialog(
-            toCourseDetailCard(response.course_details),
+            payload ? toCourseDetailCard(payload) : card,
             environmentInjector,
           );
         },

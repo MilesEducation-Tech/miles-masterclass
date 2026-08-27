@@ -357,6 +357,13 @@ export interface InstructorProfile {
 }
 
 /**
+ * Where the learner stands on the final assessment. `null` means they have not
+ * submitted one. Derived — #4 reports neither value directly, see
+ * `assessmentStatus()`.
+ */
+export type AssessmentStatus = 'Exam_Passed' | 'Retake' | null;
+
+/**
  * The course-detail view model — the union of every key
  * `masterclass-course-hero`, `course-about`, `course-resources` and
  * `course-seo-config` read off `courseDetails()`.
@@ -366,13 +373,6 @@ export interface InstructorProfile {
  * a `null`-safe path still costs a runtime error the moment a branch flips.
  * They are grouped and marked below.
  */
-/**
- * Where the learner stands on the final assessment. `null` means they have not
- * submitted one. Derived — #4 reports neither value directly, see
- * `assessmentStatus()`.
- */
-export type AssessmentStatus = 'Exam_Passed' | 'Retake' | null;
-
 export interface CourseDetailCard {
   id: CairaUuid;
   title: string;
