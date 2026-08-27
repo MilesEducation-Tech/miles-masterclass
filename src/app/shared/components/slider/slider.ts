@@ -1,6 +1,5 @@
 import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
 import { Component, computed, DestroyRef, inject, model, PLATFORM_ID, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   matArrowForwardIosRound,
@@ -13,8 +12,8 @@ import { Button } from '../ui/button/button';
 import { CairaCredlyBadge } from '../cards/caira-credly-badge/caira-credly-badge';
 import { TotalCpeCreditsPipe } from '../../core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { matInfoOutline } from '@ng-icons/material-icons/outline';
-import { CourseInfo } from '../dialog/course-info/course-info';
 import { Utils } from '../../core/services/utils/utils';
+import { CourseCard } from '../../core/models/caira/masterclass.model';
 import { Router } from '@angular/router';
 import { Dialog } from '../../core/services/dialog/dialog';
 import { Viewport } from '../../core/services/viewport/viewport';
@@ -66,10 +65,6 @@ export class Slider {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly utils = inject(Utils);
   private readonly router = inject(Router);
-  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly feature: any = {};
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);
   private readonly viewport = inject(Viewport);
@@ -77,7 +72,7 @@ export class Slider {
   private animationTimerId: ReturnType<typeof setTimeout> | null = null;
 
   /** The items to display in the slider */
-  readonly items = model.required<readonly any[]>();
+  readonly items = model.required<readonly CourseCard[]>();
 
   /** Current active slide index (0-based, represents the "hero" slide) */
   protected readonly activeIndex = signal(0);
@@ -174,41 +169,21 @@ export class Slider {
     this.router.navigate([this.baseRoute(), 'masterclass', id, titleSlug]);
   }
 
-  openCourseInfo(card: any) {
-    if (!card.allDataFetched) {
-      this.feature
-        .getAbout(card.id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((res: any) => {
-          const updatedCard = {
-            ...card,
-            ...res.data,
-            allDataFetched: true,
-            learning_objective_list: res.data.learning_objectives.split('\r\n'),
-          };
-          this.items.update((items) => {
-            const updatedItems = [...items];
-            updatedItems[this.activeIndex()] = updatedCard;
-            return updatedItems;
-          });
-          this.openCourseInfoDialog(updatedCard);
-        });
-    } else {
-      this.openCourseInfoDialog(card);
-    }
+  /**
+   * Same fix as the three course cards: the about section lives on #4, and
+   * `Utils.openCourseInfo` fetches it. This used to call `FeatureFacade.getAbout`
+   * on an empty `any = {}` stub, which threw on every info click.
+   */
+  /**
+   * Card artwork for the current breakpoint, `null` when the payload has none.
+   * Empty strings count as missing — `ngSrc=""` throws NG02952.
+   */
+  protected artworkFor(item: CourseCard): string | null {
+    const preferred = this.isMobile() ? item.horizontal_thumbnail : item.thumbnail;
+    return preferred || item.thumbnail || item.horizontal_thumbnail || null;
   }
 
-  openCourseInfoDialog(card: any) {
-    const dialogRef = this.dialog.open(CourseInfo, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      disableClose: true,
-      ariaLabel: 'Confirmation dialog',
-      ariaDescribedBy: 'dialog-description',
-      data: card,
-    });
-
-    dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+  protected openCourseInfo(card: CourseCard): void {
+    this.utils.openCourseInfo(card);
   }
 }
