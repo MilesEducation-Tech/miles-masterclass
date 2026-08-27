@@ -1,5 +1,4 @@
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField as AngularFormField, disabled, form, validate } from '@angular/forms/signals';
 import { DialogRef } from '../../../core/services/dialog/dialog';
 import { Auth } from '../../../core/services/auth/auth';
@@ -110,30 +109,18 @@ export class ProfileCompletionDialog {
     if (this.profileForm().invalid() || this.loading()) return;
     const { sector_id, job_role_id } = this.model();
     this.loading.set(true);
-    this.http
-      .patch('', {
-        sector_id,
-        job_role_id,
-      }) /* ponytail: saveProfile endpoint removed with the backend */
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res: any) => {
-          this.loading.set(false);
-          if (res?.status && res.user) {
-            this.auth.setAuthenticated(res.user);
-            this.notification.success('Profile updated', "We'll tailor your recommendations now.");
-            this.dialogRef.close({ saved: true });
-          } else {
-            this.notification.error(
-              'Profile update failed',
-              res?.message ?? 'Could not save your details. Please try again.',
-            );
-          }
-        },
-        error: (err: any) => {
-          this.loading.set(false);
-          this.logger.error('Failed to update sector/job_role', err);
-        },
-      });
+    // ponytail: this posted to an empty URL through an `any = {}` stub, so the
+    // save threw a TypeError and the dialog hung on its spinner. `CAIRA.updateUser`
+    // exists, but CAIRA's user carries neither `sector_id` nor `job_role_id` —
+    // there is nowhere to put these two values. Failing visibly beats a dialog
+    // that never closes. The real fix is upstream: `EngagementDialog` should not
+    // raise a profile-completion prompt for fields the backend cannot store.
+    this.loading.set(false);
+    this.logger.warn('Profile completion is not bound', { sector_id, job_role_id });
+    this.notification.error(
+      'Profile update unavailable',
+      'We cannot save these details yet. You can continue without them.',
+    );
+    this.dialogRef.close({ saved: false });
   }
 }
