@@ -30,14 +30,11 @@ import {
   WebinarRegistrationDirectEnrolled,
   WebinarRegistrationRequest,
   WebinarRegistrationResult,
-  WebinarRegistrationVerifyRequest,
   isWebinarRegistrationAccessBlocked,
 } from '../../models/webinar-registration.model';
 
 // ponytail: Django endpoint paths for webinar registration + OTP verification.
 // Repoint at the new backend's routes.
-const REGISTRATION_URL = '';
-const VERIFY_OTP_URL = '';
 const RESEND_TIMER_SECONDS = 30;
 
 /** Public payload emitted on a successful end-to-end registration. */
@@ -89,10 +86,6 @@ interface OtpFormState {
   styleUrl: './webinar-registration-form.css',
 })
 export class WebinarRegistrationForm {
-  // ponytail: ApiClient was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly http: any = {};
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly storage = inject(Storage);
@@ -260,6 +253,29 @@ export class WebinarRegistrationForm {
   }
 
   /** Submit the registration form. Branches on the API's `flow` field. */
+  /**
+   * ponytail: guest webinar registration has **no CAIRA endpoint**.
+   *
+   * `registerV4/` (G-23) is not it — that registers an already-authenticated
+   * user and takes no body, while this form collects a name, email and phone to
+   * *create* an account. Account creation is G-08: accounts are made in the
+   * Miles One app and `/auth/signup` is an empty stub, so there is nowhere to
+   * post these fields.
+   *
+   * This used to post to an empty-string URL through an `any = {}` stub, so the
+   * form threw a TypeError and hung on its spinner. Failing visibly is the
+   * honest state until a guest-registration route exists.
+   */
+  private reportUnavailable(action: string): void {
+    this.submitting.set(false);
+    this.verifying.set(false);
+    this.resending.set(false);
+    this.logger.warn(`Webinar ${action} is not bound — see G-08`);
+    this.error.set(
+      'Online registration is unavailable right now. Please sign in, or contact support to reserve your seat.',
+    );
+  }
+
   protected submit(): void {
     // Multi-step: the identity sub-step's CTA (and Enter) submits the <form>,
     // so intercept it and advance to the contact step instead of registering.
@@ -271,29 +287,7 @@ export class WebinarRegistrationForm {
     this.error.set(null);
     this.submitting.set(true);
 
-    this.http
-      .post(REGISTRATION_URL, this.buildRegistrationPayload())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response: any) => {
-          this.submitting.set(false);
-          if (this.maybeOpenLmsBlockedDialog(response.data)) return;
-          if (!response.status || !response.data) {
-            const msg = response.message || 'Unable to register. Please try again.';
-            this.error.set(msg);
-            this.notification.error('Registration failed', msg);
-            return;
-          }
-          this.handleRegistrationResult(response.data, response.message);
-        },
-        error: (err: any) => {
-          this.submitting.set(false);
-          if (this.maybeOpenLmsBlockedDialog(err?.error?.data)) return;
-          const msg = err?.error?.message || 'Something went wrong. Please try again.';
-          this.error.set(msg);
-          this.logger.error('WebinarRegistrationForm: register failed', err);
-        },
-      });
+    this.reportUnavailable('registration');
   }
 
   /** Submit the OTP form (`OTP` step). */
@@ -302,49 +296,9 @@ export class WebinarRegistrationForm {
     this.error.set(null);
     this.verifying.set(true);
 
-    const payload: WebinarRegistrationVerifyRequest = {
-      session_id: this.otpSessionId(),
-      otp: this.otpModel().otp,
-      utm_url: this.storage.getCookie('utm') || undefined,
-    };
-
-    this.http
-      .post(VERIFY_OTP_URL, payload)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response: any) => {
-          this.verifying.set(false);
-          if (!response.status) {
-            const msg = response.message || 'Invalid OTP. Please try again.';
-            this.error.set(msg);
-            return;
-          }
-          const data = response.data;
-          const flow = data?.flow ?? 'direct_enrolled';
-          // A new account created during OTP-verified registration returns a
-          // populated `user` → fire account_create + onboarding.
-          if (data?.flow === 'direct_enrolled') this.maybeTrackNewAccount(data);
-          // OTP verified for the `otp_required` flow = the booking is now
-          // confirmed → count it regardless of the returned flow label.
-          this.trackWebinarRegister();
-          this.notification.success(
-            flow === 'already_enrolled' ? 'Already registered' : 'Registration confirmed',
-            response.message || `You're booked for "${this.webinarTitle() || 'this webinar'}".`,
-          );
-          this.emitResult(flow);
-          // `auto_login` only exists on the `direct_enrolled` variant; for
-          // `already_enrolled` (and any malformed payload) default to "no
-          // auto-login" so the visitor sees the Log-in CTA.
-          const autoLogin = data?.flow === 'direct_enrolled' && data.auto_login === true;
-          if (!autoLogin) this.step.set('DONE');
-        },
-        error: (err: any) => {
-          this.verifying.set(false);
-          const msg = err?.error?.message || 'Failed to verify OTP. Please try again.';
-          this.error.set(msg);
-          this.logger.error('WebinarRegistrationForm: verify failed', err);
-        },
-      });
+    // The request body stays documented as the shape to rebuild against:
+    // `{ session_id, otp, utm_url }`.
+    this.reportUnavailable('OTP verification');
   }
 
   /** Re-send the OTP by re-submitting the registration call. */
@@ -353,28 +307,7 @@ export class WebinarRegistrationForm {
     this.resending.set(true);
     this.error.set(null);
 
-    this.http
-      .post(REGISTRATION_URL, this.buildRegistrationPayload())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response: any) => {
-          this.resending.set(false);
-          if (this.maybeOpenLmsBlockedDialog(response.data)) return;
-          if (!response.status || !response.data) {
-            this.error.set(response.message || 'Could not resend OTP.');
-            return;
-          }
-          // If the backend short-circuited (e.g. user verified elsewhere
-          // in another tab), honour the new flow instead of staying on OTP.
-          this.handleRegistrationResult(response.data, response.message);
-        },
-        error: (err: any) => {
-          this.resending.set(false);
-          if (this.maybeOpenLmsBlockedDialog(err?.error?.data)) return;
-          this.error.set(err?.error?.message || 'Could not resend OTP.');
-          this.logger.error('WebinarRegistrationForm: resend failed', err);
-        },
-      });
+    this.reportUnavailable('registration');
   }
 
   /** DONE-step CTA — sends the visitor to the login page with a return URL. */

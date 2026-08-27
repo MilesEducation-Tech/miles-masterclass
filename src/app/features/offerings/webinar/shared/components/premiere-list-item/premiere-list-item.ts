@@ -1,4 +1,5 @@
 import { Component, DestroyRef, computed, inject, input } from '@angular/core';
+import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 
@@ -24,6 +25,7 @@ const CREDLY_LOGO =
   styleUrl: './premiere-list-item.css',
 })
 export class PremiereListItem {
+  private readonly router = inject(Router);
   private readonly webinars = inject(Webinars);
   private readonly dialog = inject(Dialog);
   private readonly logger = inject(Logger);
@@ -107,8 +109,13 @@ export class PremiereListItem {
    * form the hero uses and carries the whole REGISTER → OTP → DONE machine.
    */
   protected book(): void {
+    // Guests go to login, not to the registration dialog: that dialog's form
+    // creates an account, and account creation has no CAIRA endpoint (G-08).
+    // `registerV4/` below only registers an already-authenticated user.
     if (!this.auth.isLoggedIn()) {
-      void this.openRegistrationDialog();
+      void this.router.navigate(['/auth/login'], {
+        queryParams: { redirect: this.router.url },
+      });
       return;
     }
 
@@ -127,15 +134,6 @@ export class PremiereListItem {
         },
         error: (error: unknown) => this.logger.error('Webinar registration errored', error),
       });
-  }
-
-  private async openRegistrationDialog(): Promise<void> {
-    const { WebinarRegistrationDialog } =
-      await import('../../../../../../shared/components/dialog/webinar-registration-dialog/webinar-registration-dialog');
-    this.dialog.open(WebinarRegistrationDialog, {
-      maxWidth: '100%',
-      data: { webinar: this.webinar(), onRegistered: () => this.webinars.reload() },
-    });
   }
 
   protected joinLive(): void {
