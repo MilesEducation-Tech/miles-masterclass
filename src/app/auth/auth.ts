@@ -113,6 +113,21 @@ export const authRoutes: Route[] = [
         loadComponent: () => import('./shared/pages/login/login').then((m) => m.Login),
       },
       {
+        /**
+         * Hidden twin of `login`, unlinked from anywhere in the UI and
+         * `Disallow`ed in robots.txt. Identical screen; the only difference is
+         * `devOtp`, which forces `communication_method: 5` so a phone sign-in
+         * can be smoke-tested in production without a real SMS/WhatsApp. It
+         * grants nothing on its own — the SSO still has to allow the dev
+         * channel, and #35 verifies the OTP exactly as it does for the public
+         * route.
+         */
+        path: 'qa-login',
+        canActivate: [guestGuard],
+        data: { devOtp: true },
+        loadComponent: () => import('./shared/pages/login/login').then((m) => m.Login),
+      },
+      {
         path: 'signup',
         canActivate: [guestGuard],
         loadComponent: () => import('./shared/pages/signup/signup').then((m) => m.Signup),

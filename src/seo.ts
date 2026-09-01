@@ -248,6 +248,7 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 Disallow: /blog-test
+Disallow: /auth/qa-login
 Allow: /*/payment/plan
 Disallow: /*/payment
 Disallow: /*/chapter/

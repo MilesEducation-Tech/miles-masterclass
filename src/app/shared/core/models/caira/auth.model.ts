@@ -94,14 +94,18 @@ export type WebLoginCode =
 /**
  * OTP delivery channel, per the SSO's enum.
  *
- * `5` is dev-OTP — the SSO returns the code in the response body instead of
- * sending it. #34 **rejects** it outright with `DEV_OTP_NOT_ALLOWED` and strips
- * `otp_dev` from any response, which is exactly why web binds #34 rather than
- * the mobile twin. It is not in this union and must never be sent.
+ * `DEV` (5) is dev-OTP — the SSO returns the code in the response body instead
+ * of sending it. ⚠️ #34 as documented **rejects** it with `DEV_OTP_NOT_ALLOWED`
+ * and strips `otp_dev` from any response; it works only against a backend that
+ * has been configured to allow it. It is sent from the non-production builds
+ * and from the hidden `auth/qa-login` route, never from the public login page.
+ * The mobile twin (#39), which always honours it, stays deliberately unbound —
+ * see `caira.endpoints.ts`.
  */
 export const OtpChannel = {
   SMS: 1,
   WHATSAPP: 2,
+  DEV: 5,
 } as const;
 export type OtpChannel = (typeof OtpChannel)[keyof typeof OtpChannel];
 

@@ -1,7 +1,7 @@
 import { HttpContext } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   form,
   minLength,
@@ -39,6 +39,7 @@ import {
 } from '../../../../shared/core/models/caira/auth.model';
 import { dialCodeWithLength } from '../../../../shared/core/constant/dial-code';
 import { QrLogin } from '../../components/qr-login/qr-login';
+import { environment } from '../../../../../environments/environment';
 
 export type LoginMethod = 'EMAIL' | 'PHONE' | 'QR';
 
@@ -64,11 +65,11 @@ const LOGIN_METHODS: readonly LoginMethodOption[] = [
 const RESEND_COOLDOWN_MS = 30_000;
 
 /**
- * Delivery channel for the phone OTP.
+ * Delivery channel for the *first* phone OTP. Resend lets the learner pick
+ * SMS or WhatsApp explicitly.
  *
  * ponytail: product choice, not a technical one — flip to `WHATSAPP` if that is
- * the intended default. `5` (dev-OTP) is not in the union and #34 rejects it
- * outright, which is the whole reason web binds #34 rather than the mobile twin.
+ * the intended default.
  */
 const OTP_DELIVERY = OtpChannel.SMS;
 
@@ -287,6 +288,32 @@ export class Login {
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
   });
 
+  /** Template needs the channel constants for the two Resend buttons. */
+  readonly otpChannel = OtpChannel;
+
+  /**
+   * Send every OTP on the dev channel (5) instead of SMS/WhatsApp.
+   *
+   * True for the non-production builds, and for the hidden `auth/qa-login`
+   * route in *any* build — that route is how production is smoke-tested without
+   * a real handset. Read from route data rather than the URL so the flag lives
+   * in one place (`authRoutes`).
+   *
+   * The channel picker is hidden while this is on: both buttons would send the
+   * same thing.
+   */
+  readonly devOtp =
+    environment.OTP_DEV_CHANNEL || inject(ActivatedRoute).snapshot.data['devOtp'] === true;
+
+  /**
+   * "Cancel" under the OTP field is really "let me fix what I typed" —
+   * `goBackToLogin()` keeps the identifier, so the learner lands back on the
+   * field they need to edit rather than an empty form.
+   */
+  readonly changeIdentifierLabel = computed(() =>
+    this.loginType() === 'PHONE' ? 'Change mobile number' : 'Change email',
+  );
+
   /** The identifier as it should appear on the OTP confirmation screen. */
   readonly displayIdentifier = computed(() => {
     const model = this.authModel();
@@ -413,11 +440,14 @@ export class Login {
     this.handleTerminalOutcome({ kind: 'authenticated' });
   }
 
-  /** Replays #34; the server issues a fresh `session_id`. */
-  resendOtp(): void {
+  /**
+   * Replays #34 on the chosen channel; the server issues a fresh `session_id`.
+   * The cooldown is shared — picking WhatsApp after SMS still waits.
+   */
+  resendOtp(channel: OtpChannel): void {
     if (!this.canResendOtp() || this.isLoading()) return;
     const { country_code, identifier } = this.authModel();
-    this.sendOtp(country_code, identifier).subscribe();
+    this.sendOtp(country_code, identifier, channel).subscribe();
   }
 
   onSubmit(): void {
@@ -445,11 +475,17 @@ export class Login {
   }
 
   /** #34 · start the phone flow. Stores `session_id` for the verify step. */
-  private sendOtp(countryCode: string, phone: string): Observable<LoginOutcome> {
+  private sendOtp(
+    countryCode: string,
+    phone: string,
+    channel: OtpChannel = OTP_DELIVERY,
+  ): Observable<LoginOutcome> {
+    // One choke point: every send — first attempt and both resends — goes
+    // through here, so the dev override cannot be bypassed by a caller.
     const body: SendOtpRequest = {
       phone: phone.trim(),
       country_code: countryCode.trim(),
-      communication_method: OTP_DELIVERY,
+      communication_method: this.devOtp ? OtpChannel.DEV : channel,
     };
     return this.run<SendOtpResponse>(
       this.api.post(CAIRA.loginWithPhoneOtp, body, silent()),

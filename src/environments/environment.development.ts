@@ -20,6 +20,9 @@ export const environment = {
   appType: 'WA',
   platform: 'masterclass',
 
+  /** Dev-channel OTP (`OtpChannel.DEV`, 5). See the note in `environment.ts`. */
+  OTP_DEV_CHANNEL: true,
+
   LOGGER: {
     LogLevel: LogLevel.DEBUG,
   },

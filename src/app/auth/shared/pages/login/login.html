@@ -171,21 +171,45 @@
       }
 
       @if (loginStep() === 'OTP') {
-        <!-- The design puts a single Cancel under the OTP field; the resend timer
-             keeps its place beside it, since a learner who never receives the
+        <!-- Under the OTP field: resend (SMS or WhatsApp on the phone method) and
+             a way back to the identifier, since a learner who never receives the
              code needs a way out that isn't "start over". -->
         <div class="flex flex-col space-y-3">
-          <div class="flex justify-center items-center text-sm text-muted-foreground">
+          <div class="flex flex-col items-center gap-2 text-sm text-muted-foreground">
             @if (canResendOtp()) {
-              <span>Didn't receive the OTP?&nbsp;</span>
-              <app-button
-                variant="link"
-                size="link"
-                [disabled]="isLoading()"
-                (clicked)="resendOtp()"
-              >
-                Resend OTP
-              </app-button>
+              <span>Didn't receive the OTP?</span>
+              @if (loginType() === 'PHONE' && !devOtp) {
+                <!-- Two channels because a number that can't take SMS often can
+                     take WhatsApp — and vice-versa. -->
+                <div class="flex items-center gap-3">
+                  <app-button
+                    variant="link"
+                    size="link"
+                    [disabled]="isLoading()"
+                    (clicked)="resendOtp(otpChannel.SMS)"
+                  >
+                    Resend via SMS
+                  </app-button>
+                  <span aria-hidden="true">·</span>
+                  <app-button
+                    variant="link"
+                    size="link"
+                    [disabled]="isLoading()"
+                    (clicked)="resendOtp(otpChannel.WHATSAPP)"
+                  >
+                    Resend via WhatsApp
+                  </app-button>
+                </div>
+              } @else {
+                <app-button
+                  variant="link"
+                  size="link"
+                  [disabled]="isLoading()"
+                  (clicked)="resendOtp(otpChannel.SMS)"
+                >
+                  Resend OTP
+                </app-button>
+              }
             } @else {
               <span>
                 Resend OTP in
@@ -194,7 +218,7 @@
             }
           </div>
           <app-button class="w-full" type="button" variant="secondary" (clicked)="goBackToLogin()">
-            Cancel
+            {{ changeIdentifierLabel() }}
           </app-button>
         </div>
       }

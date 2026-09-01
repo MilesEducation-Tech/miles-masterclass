@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { StyleQrComponent } from '@code_with_sachin/ngx-style-qr';
+import { logoIcon } from '../../../../shared/core/constant/icon';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Otp } from '../../../../shared/components/ui/otp/otp';
 import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
@@ -36,6 +37,20 @@ import {
 
 /** How many digits the phone's PIN carries. `make_pin()` produces `4324-3456`. */
 const PIN_DIGITS = 6;
+
+/**
+ * Centre logo — the app's own mark, inlined as a data URI.
+ *
+ * A URL would taint the export canvas and break `download()`; the mark already
+ * lives in the bundle as a string, so there is nothing to fetch. It is white
+ * on a cleared (transparent) patch, matching the white modules on the dark card.
+ * `ecLevel="H"` in the template is what makes the covered modules recoverable.
+ */
+const QR_LOGO = {
+  src: `data:image/svg+xml,${encodeURIComponent(logoIcon)}`,
+  size: 0.22,
+  padding: 2,
+} as const;
 
 /**
  * Cross-device QR sign-in — endpoints #36 and #38.
@@ -73,6 +88,7 @@ export class QrLogin {
   readonly authenticated = output<void>();
 
   protected readonly pinDigits = PIN_DIGITS;
+  protected readonly qrLogo = QR_LOGO;
 
   /**
    * `idle` before the first `start()`, `expired` once the 120 s window closes.

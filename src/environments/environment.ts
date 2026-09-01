@@ -29,6 +29,17 @@ export const environment = {
   appType: 'WA',
   platform: 'masterclass',
 
+  /**
+   * Force phone OTPs onto the dev channel (`OtpChannel.DEV`, 5) — the SSO
+   * returns the code instead of sending it, so sign-in works without a live
+   * SMS/WhatsApp gateway.
+   *
+   * OFF in production: the public login page keeps the real SMS/WhatsApp
+   * choice. The hidden `auth/qa-login` route forces the dev channel regardless
+   * of this flag, which is how production is smoke-tested.
+   */
+  OTP_DEV_CHANNEL: false,
+
   LOGGER: {
     LogLevel: LogLevel.DEBUG,
   },
