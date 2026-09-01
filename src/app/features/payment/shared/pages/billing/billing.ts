@@ -75,7 +75,7 @@ export class Billing {
 
   readonly userName = computed(() => {
     const user = this.auth.currentUser();
-    return user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : '';
+    return user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '';
   });
 
   readonly showForm = this.facade.isEditingAddress;
@@ -84,9 +84,9 @@ export class Billing {
   readonly initialFormState = linkedSignal<BillingFormState>(() => {
     const user = this.auth.currentUser();
     return {
-      name: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : '',
+      name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
       email_id: user?.email || '',
-      phone_no: user?.mobile || '',
+      phone_no: user?.phone || '',
       address1: '',
       locality: '',
       landmark: '',
@@ -216,9 +216,9 @@ export class Billing {
     this.editingAddressId.set(null);
     const user = this.auth.currentUser();
     this.initialFormState.set({
-      name: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : '',
+      name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
       email_id: user?.email || '',
-      phone_no: user?.mobile || '',
+      phone_no: user?.phone || '',
       address1: '',
       locality: '',
       landmark: '',

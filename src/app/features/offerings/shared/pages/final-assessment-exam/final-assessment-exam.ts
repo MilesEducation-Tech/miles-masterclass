@@ -38,30 +38,13 @@ import {
   },
 })
 export class FinalAssessmentExam implements CanDeactivateComponent {
+  /**
+   * CAIRA identifies an attempt by `(user, course, attempt_number)`. There is
+   * no session id, so the route no longer carries one — the course is the whole
+   * key.
+   */
   courseId = input<string>();
-  sessionId = input<string>();
 
-  // ponytail: FinalAssessmentFacade was deleted with the Django strip. This placeholder
-
-  // keeps the template bindings compiling and renders the empty state.
-
-  // Swap in the new backend's service — the template needs no changes.
-
-  private readonly facade: any = {
-    clearAssessmentData: signal<any>(null),
-
-    courseId: null as any,
-
-    isAssessmentPassed: null as any,
-
-    loadAssessmentData: signal<any>(null),
-
-    sessionId: null as any,
-
-    submitAssessment: (..._args: any[]): any => null,
-
-    updateQuestion: (..._args: any[]): any => null,
-  };
   private readonly dialog = inject(Dialog);
   private readonly utils = inject(Utils);
   private readonly logger = inject(Logger);
@@ -69,10 +52,15 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
-  courseNavigation = signal<string>('../../..');
+  courseNavigation = signal<string>('../..');
 
-  // Expose facade signal
-  isAssessmentPassed = this.facade.isAssessmentPassed;
+  /**
+   * ponytail: the whole exam is #9/#10 (P5) and nothing is bound yet. The
+   * facade stub this replaces held `null` for every member, so `isAssessmentPassed()`
+   * threw on `beforeunload` and `loadAssessmentData().subscribe` threw on open.
+   * Local signals keep the page renderable; each seam below names its endpoint.
+   */
+  isAssessmentPassed = signal(false);
 
   // State
   questions = signal<any[]>([]);
@@ -115,17 +103,15 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
   constructor() {
     effect(() => {
       const courseId = this.courseId();
-      const sessionId = this.sessionId();
-      if (courseId && sessionId) {
-        this.facade.courseId.set(courseId);
-        this.facade.sessionId.set(sessionId);
-        this.currentQuestionIndex.set(0);
-        this.questions.set([]);
-        this.isSubmitted.set(false);
-        this.loadQuestions();
-      } else {
-        this.logger.warn('FinalAssessmentExam: Missing inputs', { courseId, sessionId });
-      }
+      if (!courseId) return;
+      // ponytail: the question set is #9/#10 (P5) and nothing fetches it yet.
+      // The facade this replaces held `courseId: null`, so `.set()` on it threw
+      // before the empty state could render. Resetting local state and letting
+      // the template show "no questions" is the honest stand-in.
+      this.currentQuestionIndex.set(0);
+      this.questions.set([]);
+      this.isSubmitted.set(false);
+      this.loadQuestions();
     });
   }
 
@@ -163,7 +149,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
     return dialogRef.afterClosed$.pipe(
       map((result) => {
         if (result?.action === 'confirm') {
-          this.facade.clearAssessmentData();
+          this.questions.set([]);
           return true;
         }
         return false;
@@ -171,19 +157,11 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
     );
   }
 
+  /** ponytail: #9 `GET .../assessment/questions/` fills `questions` here. */
   loadQuestions() {
-    this.isLoading.set(true);
-    this.facade.loadAssessmentData().subscribe({
-      next: (data: any) => {
-        // If passed, questions might be empty, but details are there.
-        this.questions.set(data.questions || []);
-        this.courseDetails.set(data.details);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.isLoading.set(false);
-      },
-    });
+    this.isLoading.set(false);
+    this.questions.set([]);
+    this.logger.warn('Final assessment questions are not bound', { courseId: this.courseId() });
   }
 
   selectOption(optionKey: string) {
@@ -193,9 +171,8 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
     const question = this.currentQuestion();
     if (!question) return;
 
-    this.facade.updateQuestion(question.id, optionKey);
-
-    // Update local state
+    // Answers stay in memory by design — the route is client-rendered and #10
+    // takes the whole set in one submit.
     this.questions.update((questions) => {
       return questions.map((q) => {
         if (q.id === question.id) {
@@ -268,37 +245,15 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
         if (q.user_selected_option) answersRecord[q.id] = q.user_selected_option;
       });
 
-      this.facade.submitAssessment(answersRecord).subscribe({
-        next: (response: any) => {
-          this.isLoading.set(false);
-          this.isSubmitted.set(true);
-          this.facade.clearAssessmentData();
-
-          if (response.status_code) {
-            const data = response.data;
-            const isPassed = data.is_passed;
-            const score = data.result_details.my_percentage;
-            const passingScore = data.result_details.pass_percentage;
-
-            // Construct message
-            let message: string;
-            if (isPassed) {
-              message = `You have successfully passed the assessment with a score of ${score}%.`;
-            } else {
-              message = `You scored ${score}%. Don't give up! Review the material and try again to achieve the passing score of ${passingScore}%.`;
-            }
-
-            this.openResultDialog({
-              isPassed,
-              score,
-              message,
-              passingScore,
-            });
-          }
-        },
-        error: () => {
-          this.isLoading.set(false);
-        },
+      // ponytail: #10 `POST .../assessment/submit/` takes exactly
+      // `questions_to_show` answers and decides pass/fail server-side — never
+      // compare a threshold here. Its 403 `cool_off_active` carries
+      // `cool_off_minutes_remaining` and must render as a countdown, not a
+      // toast. Until it is bound there is nothing to submit to.
+      this.isLoading.set(false);
+      this.logger.warn('Final assessment submit is not bound', {
+        courseId: this.courseId(),
+        answers: Object.keys(answersRecord).length,
       });
     }
   }
@@ -324,7 +279,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
     if (action === 'report') {
       this.router.navigate(['../report'], { relativeTo: this.route });
     } else if (action === 'course') {
-      this.router.navigate(['../../..'], { relativeTo: this.route });
+      this.router.navigate(['../..'], { relativeTo: this.route });
     } else if (action === 'retake') {
       const details = this.courseDetails();
       if (details) {

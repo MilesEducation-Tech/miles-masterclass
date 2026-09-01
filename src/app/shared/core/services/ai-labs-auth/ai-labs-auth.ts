@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { inject, PLATFORM_ID, Service, signal } from '@angular/core';
 import type { AuthChangeEvent, Session, SupabaseClient } from '@supabase/supabase-js';
 import { environment } from '../../../../../environments/environment';
 import { Logger } from '../logger/logger';
@@ -60,7 +60,7 @@ export const AI_LABS_CALLBACK_DONE = 'callback-done';
  * Microsoft accounts is asked which one — without it, Entra silently reuses
  * whichever is already signed in, and Copilot would open as the wrong identity.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class AiLabsAuth {
   private readonly logger = inject(Logger);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));

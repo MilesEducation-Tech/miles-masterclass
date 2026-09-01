@@ -1,4 +1,4 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -10,6 +10,8 @@ import {
 import { DurationPipe } from '../../../../../shared/core/pipes/duration/duration-pipe';
 import { Progress } from '../../../../../shared/components/ui/progress/progress';
 import { RecordDisk } from '../../../../../shared/components/record-disk/record-disk';
+import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.model';
+import { CourseDetail } from '../../services/course-detail/course-detail';
 
 @Component({
   selector: 'app-course-chapter-list',
@@ -28,30 +30,20 @@ import { RecordDisk } from '../../../../../shared/components/record-disk/record-
 export class CourseChapterList {
   courseType = input<'masterclass' | 'podcast'>('masterclass');
 
-  // ponytail: MasterclassFacade was deleted with the Django strip. This placeholder
+  /** Route-scoped — the same instance the course page keys on the route id. */
+  readonly masterclass = inject(CourseDetail);
 
-  // keeps the template bindings compiling and renders the empty state.
-
-  // Swap in the new backend's service — the template needs no changes.
-
-  readonly masterclass: any = {
-    courseChapters: signal<any[]>([]),
-
-    courseDetails: signal<any[]>([]),
-
-    navigateToChapter: (..._args: any[]): any => null,
-  };
-
-  getChapterCompletedStatus(chapterId: number) {
+  /**
+   * Whether a chapter counts as watched.
+   *
+   * This used to branch on CPE vs Preview mode and read `chapter_wise_details`
+   * in the CPE branch. CAIRA has no mode — completion is server-side on the
+   * chapter's own progress row — so both branches collapse to one lookup.
+   */
+  getChapterCompletedStatus(chapterId: CairaUuid): boolean {
     return (
-      (this.masterclass.courseDetails()?.cpe_mode_details?.cpe_mode === true &&
-        this.masterclass
-          .courseDetails()
-          ?.chapter_wise_details?.find((chapter: any) => chapter.chapter_id === chapterId)
-          ?.status) ||
-      (this.masterclass.courseDetails()?.cpe_mode_details?.cpe_mode === false &&
-        this.masterclass.courseChapters()?.find((chapter: any) => chapter.id === chapterId)
-          ?.play_history?.is_completed)
+      this.masterclass.courseChapters().find((chapter) => chapter.id === chapterId)?.play_history
+        ?.is_completed === true
     );
   }
 }

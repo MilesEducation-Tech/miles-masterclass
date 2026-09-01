@@ -11,11 +11,17 @@ export const environment = {
    */
   SITE_URL: 'https://uat.milesmasterclass.com',
 
+  /** UAT CAIRA origin. See the note in `environment.ts`. No `/api/` prefix. */
+  BASE_API_URL: 'https://uat-api.milescaira.com/',
+
   S3_BUCKET_URL: 'https://d1pp0977rsxmiq.cloudfront.net/',
   GCS_URL: 'https://asset.milesmasterclass.com/media/web-app/',
 
   appType: 'WA',
   platform: 'masterclass',
+
+  /** Dev-channel OTP (`OtpChannel.DEV`, 5). See the note in `environment.ts`. */
+  OTP_DEV_CHANNEL: true,
 
   LOGGER: {
     LogLevel: LogLevel.DEBUG,

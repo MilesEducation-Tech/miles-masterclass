@@ -1,0 +1,30 @@
+{
+  "status": true,
+  "total_count": 5,
+  "data": [
+    {
+      "id": "86cfab7e-6f4a-4cc8-8ae1-476aeab41e8e",
+      "course_name": "AI-Empowered Auditing",
+      "course_mini_description": "CPA-focused AI series covering tools, ethics, risk control, skill-building, real demos, and practical hacks for audit productivity.",
+      "course_description": "'AI-Empowered Auditing' is a practical course for audit professionals looking to use AI tools without losing sight of what matters: judgment, ethics, and audit quality. Taught by Raymond Cheng, the program introduces participants to the core technologies reshaping the profession: robotic process automation, machine learning, and large-language models. Learners explore how these tools can accelerate everyday tasks like control testing, lease extraction, and GL reviews, while freeing up time for more critical thinking and client engagement. The course balances practical gains with clear guidance on guardrails - how to protect confidential data, evaluate AI-generated evidence, and comply with standards from regulators like the PCAOB and frameworks like COSO and NIST. Through real-world scenarios, evaluation checklists, and a skills roadmap, participants develop the ability to assess new tools responsibly, document their use effectively, and build AI fluency over time. The goal isn’t just faster audits - it’s smarter, more accountable ones that reflect both technological progress and professional integrity.",
+      "course_trailer_url": "https://d1n6nz3tw8nobo.cloudfront.net/videos/Raymondchengtrailor/Raymondchengtrailor.m3u8",
+      "course_trailer_thumbnail": "https://milesone-backend-assets.s3.ap-south-1.amazonaws.com/MilesOne/Masterclass/Course_Trailer_Thumbnails/trailorthumbnail.png",
+      "course_instructors": [
+        { "id": "9bf12cdf-c611-4d97-bf40-966f4b0454b4", "instructor_name": "Raymond Cheng" }
+      ],
+      "active_in_challenge": false
+    },
+    {
+      "id": "bcb813bc-4dd9-4f3e-8a44-bcd59a604de1",
+      "course_name": "Microsoft Copilot: Dawn of the Intelligent System",
+      "course_mini_description": "Explore how Microsoft 365 Copilot boosts productivity for accounting professionals with AI-powered features across Word, Excel, Teams and more",
+      "course_description": "In ‘Microsoft Copilot: Dawn of the Intelligent System’, the focus is on how Microsoft 365 Copilot is revolutionizing everyday productivity for accounting professionals, particularly those using Word, Excel, Outlook, Teams, and PowerPoint. Across eight episodes, Chris Stegh introduces Copilot as a powerful AI assistant that integrates seamlessly into the Microsoft 365 suite, helping professionals manage large volumes of data, streamline workflows, and automate tasks. Whether it's analyzing spreadsheets, drafting reports, summarizing emails, or organizing meetings, Copilot enhances productivity by providing smarter, faster solutions.\r\nThe episodes cover practical applications of Copilot in core accounting tasks. In Excel, Copilot assists with data cleaning, creating pivot tables, and financial analysis. In Word, it accelerates document creation and comparison, offering summaries and risk assessments. Copilot in Outlook and Teams helps users manage emails, meetings, and client communications more efficiently. Each episode emphasizes the importance of effective prompts and customization, enabling professionals to use AI without losing their personal touch, tone, or professional judgment.\r\nFinally, the series highlights the transformative potential of Agentic AI, where Copilot evolves from simply a task assistant to a strategic partner. By combining human expertise with AI capabilities, accountants can move beyond mechanical tasks and embrace a future where AI works collaboratively to drive insights, decision-making, and enhanced client relationships.",
+      "course_trailer_url": "https://d1n6nz3tw8nobo.cloudfront.net/videos/ChrisSteghtrailor/ChrisSteghtrailor.m3u8",
+      "course_trailer_thumbnail": "https://milesone-backend-assets.s3.ap-south-1.amazonaws.com/MilesOne/Masterclass/Course_Trailer_Thumbnails/COPILOT_CHRIS_STEGH_Horizontal_1.jpg",
+      "course_instructors": [
+        { "id": "63ef01e4-503c-4fe9-be3f-3a191e1b348d", "instructor_name": "Chris Stegh" }
+      ],
+      "active_in_challenge": false
+    }
+  ]
+}

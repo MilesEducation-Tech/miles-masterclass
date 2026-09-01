@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { Route } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { Horizontal } from '../../../shared/components/cards/horizontal/horizontal';
@@ -17,6 +17,10 @@ import { ComingSoon } from '../../../shared/components/cards/coming-soon/coming-
 import { Faq } from '../../../pages/faq/faq';
 import { PartnerContentList } from '../../partners/shared/components/partner-content-list/partner-content-list';
 import { SectionNav, SectionNavItem } from '../../../shared/components/section-nav/section-nav';
+import { FeatureFacade } from '../../shared/services/feature-facade/feature-facade';
+import { CourseDetail } from '../shared/services/course-detail/course-detail';
+import { Feedback } from '../shared/services/feedback/feedback';
+import { ChapterProgress } from '../shared/services/chapter-progress/chapter-progress';
 
 @Component({
   selector: 'app-masterclass',
@@ -36,22 +40,7 @@ import { SectionNav, SectionNavItem } from '../../../shared/components/section-n
 })
 export class Masterclass {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
-  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  readonly feature: any = {
-    getResource: (..._args: any[]): any => ({
-      items: signal<any[]>([]),
-      isLoading: signal(false),
-      hasMore: signal(false),
-      error: signal(null),
-      loadNextPage: () => undefined,
-      loadNextTrackPage: () => undefined,
-      setFilters: () => undefined,
-      setTrackFilters: () => undefined,
-      webp: signal(null),
-    }),
-  };
+  readonly feature = inject(FeatureFacade);
 
   // Swiper configurations for templates
   readonly swiperConfigEven = swiperConfigEven;
@@ -80,20 +69,23 @@ export class Masterclass {
   readonly completed = this.feature.getResource('completed', 'masterclass', { requiresAuth: true });
   readonly comingSoon = this.feature.getResource('comingSoon', 'masterclass');
 
+  /**
+   * Both headings fall back to their generic form: CAIRA returns no rail
+   * metadata, and both rails are unsourced anyway, so neither section renders.
+   * Kept so the bindings stay live if the endpoints ever land.
+   */
   readonly complimentaryHeading = computed(() => {
-    const meta = this.complimentary.metadata();
-    const details = meta?.['details'] as { company_name?: string } | undefined;
-    const companyName = details?.company_name;
-    return companyName
-      ? `Complimentary Courses for ${companyName} Employees`
+    const details = this.complimentary.metadata()?.['details'] as
+      { company_name?: string } | undefined;
+    return details?.company_name
+      ? `Complimentary Courses for ${details.company_name} Employees`
       : 'Complimentary Courses';
   });
 
   readonly becauseYouWatchedHeading = computed(() => {
-    const meta = this.becauseYouWatched.metadata();
-    const watchedCourse = meta?.['watched_course'] as { title?: string } | undefined;
-    const courseTitle = watchedCourse?.title;
-    return courseTitle ? `Because You Watched ${courseTitle}` : 'Because You Watched';
+    const watched = this.becauseYouWatched.metadata()?.['watched_course'] as
+      { title?: string } | undefined;
+    return watched?.title ? `Because You Watched ${watched.title}` : 'Because You Watched';
   });
 
   /**
@@ -146,6 +138,10 @@ export const masterclassRoutes: Route[] = [
   { path: '', component: Masterclass },
   {
     path: ':courseId/:courseTitle',
+    // One `CourseDetail` per course route, shared by the page, hero, chapter
+    // list, resources and related rails. Route-scoped rather than a singleton
+    // so leaving the course disposes it and aborts anything still in flight.
+    providers: [CourseDetail],
     children: [
       {
         path: '',
@@ -157,8 +153,10 @@ export const masterclassRoutes: Route[] = [
       {
         path: 'chapter/:chapterId/:chapterTitle',
         canActivate: [authGuard],
-        // ponytail: route-scoped facade providers removed with the Django strip.
-        // Re-add `providers: [YourService]` here when the new backend lands.
+        // Route-scoped: the chapter player's #6 / #18 writes. `CourseDetail`
+        // is provided one level up and supplies the chapter list, so this only
+        // owns progress.
+        providers: [ChapterProgress],
         data: { layout: 'plain' },
         loadComponent: () =>
           import('./shared/pages/masterclass-chapter/masterclass-chapter').then(
@@ -166,7 +164,7 @@ export const masterclassRoutes: Route[] = [
           ),
       },
       {
-        path: 'final-assessment/:sessionId/exam',
+        path: 'final-assessment/exam',
         canActivate: [authGuard],
         // ponytail: route-scoped facade providers removed with the Django strip.
         // Re-add `providers: [YourService]` here when the new backend lands.
@@ -178,7 +176,7 @@ export const masterclassRoutes: Route[] = [
           ),
       },
       {
-        path: 'final-assessment/:sessionId/report',
+        path: 'final-assessment/report',
         canActivate: [authGuard],
         // ponytail: route-scoped facade providers removed with the Django strip.
         // Re-add `providers: [YourService]` here when the new backend lands.
@@ -191,8 +189,9 @@ export const masterclassRoutes: Route[] = [
       {
         path: 'feedback',
         canActivate: [authGuard],
-        // ponytail: route-scoped facade providers removed with the Django strip.
-        // Re-add `providers: [YourService]` here when the new backend lands.
+        // #12 / #13, scoped to this route. `CourseDetail` is provided one level
+        // up, so `Feedback` reaches the same instance and re-reads nothing.
+        providers: [Feedback],
         loadComponent: () =>
           import('../shared/pages/course-feedback/course-feedback').then((m) => m.CourseFeedback),
       },

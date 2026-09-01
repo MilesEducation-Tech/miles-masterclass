@@ -9,6 +9,16 @@ import {
   untracked,
 } from '@angular/core';
 import { Auth } from '../../../../shared/core/services/auth/auth';
+import { ApiClient } from '../../../../shared/core/services/api-client/api-client';
+import { CAIRA } from '../../../../shared/core/http/caira.endpoints';
+import { cairaError, userMessage } from '../../../../shared/core/http/caira-error';
+import {
+  CairaUser,
+  StatusResponse,
+  UpdateUserRequest,
+  UpdateUserResponse,
+  toCairaUser,
+} from '../../../../shared/core/models/caira/auth.model';
 import {
   disabled,
   form,
@@ -29,7 +39,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, ActivatedRoute } from '@angular/router';
 import { dialCodeWithLength } from '../../../../shared/core/constant/dial-code';
 import { map } from 'rxjs/operators';
-import { Observable, EMPTY } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import { Dialog } from '../../../../shared/core/services/dialog/dialog';
 import { PartnerCode } from '../../../../shared/core/services/partner-code/partner-code';
 import {
@@ -38,9 +48,31 @@ import {
 } from '../../../../shared/components/dialog/utils-dialog/utils-dialog';
 
 /**
+ * Translate the changed slice of the form into a `v2/update` body.
+ *
+ * Only the fields CAIRA accepts are forwarded. The other six
+ * (`is_currently_working`, `terms_accepted`, `license_status`, `state_board`,
+ * `professional_courses`, `company_id` / `sector_id` / `job_role_id`) have no
+ * counterpart on the endpoint, so sending them would be silently dropped by the
+ * serializer at best — dropping them here makes that explicit.
+ *
+ * Note `location` maps to `city`, and `mobile` / `country_code` are **not**
+ * writable through this endpoint at all: the phone number is owned by the SSO
+ * and changed through the Miles One app.
+ */
+function toUpdateRequest(changed: Partial<ProfileFormState>): UpdateUserRequest {
+  const body: UpdateUserRequest = {};
+  if (changed.first_name !== undefined) body.first_name = changed.first_name;
+  if (changed.last_name !== undefined) body.last_name = changed.last_name;
+  if (changed.email !== undefined) body.email = changed.email;
+  if (changed.location !== undefined) body.city = changed.location;
+  return body;
+}
+
+/**
  * Fields the profile form renders and validates. This is the form's own shape,
  * not a wire payload — it stays here so the signal-forms schema keeps its field
- * typing. Map it onto the new backend's profile payload at the edges.
+ * typing. `toUpdateRequest` maps it onto `v2/update` at the edge.
  */
 interface ProfileFormState {
   email: string;
@@ -69,13 +101,7 @@ interface ProfileFormState {
   },
 })
 export class Profile {
-  // ponytail: ApiClient was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly http: any = {
-    get: (..._args: any[]): any => EMPTY,
-    patch: (..._args: any[]): any => EMPTY,
-  };
+  private readonly api = inject(ApiClient);
   private readonly auth = inject(Auth);
   private readonly dialog = inject(Dialog);
   private readonly router = inject(Router);
@@ -86,41 +112,41 @@ export class Profile {
   // ponytail: JobSectors was deleted with the Django strip. This placeholder
   // keeps the template bindings compiling and renders the empty state.
   // Swap in the new backend's service — the template needs no changes.
-  private readonly jobSectors: any = {
-    resolveIds: (..._args: any[]): any => null,
-    rolesFor: (..._args: any[]): any => null,
-    sectorOptions: null as any,
-    sectors: signal<any[]>([]),
-  };
   private readonly partnerCode = inject(PartnerCode);
   private readonly destroyRef = inject(DestroyRef);
 
   /**
-   * Map the authenticated user onto the form shape. The API returns
-   * sector / job_role as `{ id, name }` objects, so the ids are seeded directly
-   * (the autocomplete shows the existing selection without waiting for the
-   * sector list). Shared by the form's source signal and `save()`'s diff
-   * baseline so an untouched form diffs to "no change".
+   * Map the authenticated user onto the form shape. Shared by the form's source
+   * signal and `save()`'s diff baseline, so an untouched form diffs to
+   * "no change".
+   *
+   * Six of the thirteen fields have **no CAIRA counterpart** and seed empty:
+   * `is_currently_working`, `terms_accepted`, `license_status`,
+   * `professional_courses`, `company_id`, `sector_id` and `job_role_id`. Their
+   * values came from `User` columns and reference-data endpoints that the
+   * backend does not expose — see the gap register. They stay in the form so
+   * the template renders unchanged and so they light up the moment endpoints
+   * land.
+   *
+   * The seven that do map are the ones `v2/status` returns and `v2/update`
+   * accepts.
    */
-  private mapUserToForm(user: any): ProfileFormState {
+  private mapUserToForm(user: CairaUser | null): ProfileFormState {
     return {
       email: user?.email || '',
-      first_name: user?.first_name || '',
-      last_name: user?.last_name || '',
-      country_code: user?.country_code || '',
+      first_name: user?.firstName || '',
+      last_name: user?.lastName || '',
+      country_code: user?.countryCode || '',
       location: user?.location || '',
-      mobile: user?.mobile || '',
-      is_currently_working: user?.is_currently_working || false,
-      terms_accepted: user?.terms_accepted || false,
-      license_status: user ? user.license_status || '' : 'NA',
-      // The API only returns state boards by name; the form is keyed by id, so
-      // this seeds empty and `fetchStateBoards()` resolves the saved names→ids
-      // once the board list lands.
+      mobile: user?.phone || '',
+      is_currently_working: false,
+      terms_accepted: false,
+      license_status: '',
       state_board: [],
-      professional_courses: user?.professional_courses || [],
-      company_id: user?.company?.[0]?.id || null,
-      sector_id: user?.sector?.id ?? null,
-      job_role_id: user?.job_role?.id ?? null,
+      professional_courses: [],
+      company_id: null,
+      sector_id: null,
+      job_role_id: null,
     };
   }
 
@@ -128,7 +154,15 @@ export class Profile {
     this.mapUserToForm(this.auth.currentUser()),
   );
 
-  readonly isExistingUser = computed(() => this.auth.currentUser()?.is_existing_user ?? false);
+  /**
+   * Drives the "returning learner" branches — the CPA-status field, the
+   * partner-code prompt, the terms checkbox.
+   *
+   * Was `user.is_existing_user`. CAIRA has no such column; the nearest true
+   * statement is "this profile is already filled in", which `v2/status` can
+   * answer.
+   */
+  readonly isExistingUser = computed(() => this.auth.isProfileComplete());
 
   readonly countryCodes: any[] = dialCodeWithLength.map((item) => ({
     ...item,
@@ -188,8 +222,8 @@ export class Profile {
 
     // Disabling logic
     disabled(s.email, { when: () => !!this.auth.currentUser()?.email });
-    disabled(s.country_code, { when: () => !!this.auth.currentUser()?.country_code });
-    disabled(s.mobile, { when: () => !!this.auth.currentUser()?.mobile });
+    disabled(s.country_code, { when: () => !!this.auth.currentUser()?.countryCode });
+    disabled(s.mobile, { when: () => !!this.auth.currentUser()?.phone });
     disabled(s.location, { when: () => !!this.auth.currentUser()?.location });
 
     // Conditional Validation for State Boards (Required if CPA is Yes).
@@ -220,18 +254,9 @@ export class Profile {
       return null;
     });
 
-    // Job Role is required once a Sector is picked. Skipped when the chosen
-    // sector has no roles — otherwise save would be unreachable.
-    validate(s.job_role_id, ({ value }) => {
-      const sectorId = this.profile().sector_id;
-      if (sectorId == null) return null;
-      if (this.jobSectors.rolesFor(sectorId).length === 0) return null;
-      return value() != null ? null : { kind: 'required', message: 'Job Role is required' };
-    });
-
     // Validations for Terms Accepted (Required if New User)
     validate(s.terms_accepted, (val) => {
-      const isExistingUser = this.auth.currentUser()?.is_existing_user;
+      const isExistingUser = this.auth.isProfileComplete();
       if (!isExistingUser && !val.value()) {
         return {
           kind: 'required',
@@ -261,7 +286,9 @@ export class Profile {
   // Data Fetching
 
   // Company Search Signal
-  readonly companySearchQuery = signal(this.auth.currentUser()?.company?.[0]?.company_name || '');
+  // ponytail: seeded from `currentUser().company[0].company_name`. CAIRA's
+  // user has no company relation and there is no company lookup endpoint.
+  readonly companySearchQuery = signal('');
 
   // ponytail: the profession list and debounced company search both came from
   // PROFILE_ROUTES. Point these two signals at the new backend and the
@@ -276,8 +303,16 @@ export class Profile {
   // Job sectors — single source of truth via the JobSectors service. The
   // service holds the cached fetch so the profile page and the engagement
   // dialog don't each hit the endpoint.
-  readonly sectorOptions = this.jobSectors.sectorOptions;
-  readonly jobRoleOptions = computed(() => this.jobSectors.rolesFor(this.profile().sector_id));
+  /**
+   * ponytail: Sector and Job Role are gone from the form, not merely emptied.
+   *
+   * G-10: CAIRA has no reference-data endpoint for either, and `v2/update`
+   * excludes both fields — so the controls could be neither populated nor
+   * saved. Worse, `sectorOptions` aliased `null as any` and the template called
+   * it, which threw during render.
+   *
+   * Restore both controls together with the sectors endpoint.
+   */
 
   constructor() {
     // Effect to handle conditional data fetching
@@ -314,31 +349,11 @@ export class Profile {
     // names once both the user and the sector list are available. Skipped if
     // the user has already started editing (sector_id is non-null), so we
     // never clobber in-progress input.
-    effect(() => {
-      const user = this.auth.currentUser();
-      const sectors = this.jobSectors.sectors();
-      if (!user || sectors.length === 0) return;
-      untracked(() => {
-        if (this.profile().sector_id != null) return;
-        const ids = this.jobSectors.resolveIds(user.sector, user.job_role);
-        if (ids.sector_id == null) return;
-        this.profile.update((p) => ({ ...p, ...ids }));
-      });
-    });
-
     // Clear `job_role_id` when it stops being a valid option for the current
     // sector — i.e. user picked a new sector whose roles don't include the
     // previously-selected role, or cleared the sector entirely. Gated on the
     // sector list being loaded so the seeded role isn't wiped during the
     // initial render while options are still empty.
-    effect(() => {
-      const currentRoleId = this.profile().job_role_id;
-      if (currentRoleId == null) return;
-      if (this.jobSectors.sectors().length === 0) return;
-      const validIds = this.jobRoleOptions().map((o: any) => o.value);
-      if (validIds.includes(currentRoleId)) return;
-      untracked(() => this.profile.update((p) => ({ ...p, job_role_id: null })));
-    });
   }
 
   onCompanySearch(search: string) {
@@ -353,7 +368,8 @@ export class Profile {
       this.stateBoardOptions.set(boards.map((b: any) => ({ label: b.name, value: b.id })));
       // Now the name→id map exists, seed the user's saved boards (the API only
       // returns names). Skip if the user has already selected something.
-      const ids = this.resolveStateBoardIds(this.auth.currentUser()?.state_board_name);
+      // ponytail: was `currentUser().state_board_name`. No CAIRA equivalent.
+      const ids = this.resolveStateBoardIds(null);
       if (ids.length > 0 && this.profile().state_board.length === 0) {
         this.profile.update((p) => ({ ...p, state_board: ids }));
       }
@@ -420,8 +436,7 @@ export class Profile {
     const initialValues: Partial<any> = user
       ? {
           ...this.mapUserToForm(user),
-          state_board: this.resolveStateBoardIds(user.state_board_name),
-          ...this.jobSectors.resolveIds(user.sector, user.job_role),
+          state_board: this.resolveStateBoardIds(null),
         }
       : ({} as any);
 
@@ -441,41 +456,60 @@ export class Profile {
       return;
     }
 
+    // Capture new-vs-existing BEFORE the save, so the GA4 lifecycle branch
+    // below reflects the pre-save state rather than the refreshed profile.
+    const wasComplete = this.auth.isProfileComplete();
+    this.isSaving.set(true);
+
     try {
-      // ponytail: was a `saveProfile` PATCH. Everything below — the activation
-      // milestone, the onboarding-vs-update GA4 branch, the redirect — is
-      // presentation logic worth keeping; wire `res` to the new backend's
-      // save response and it all runs again.
-      const res: any = null;
+      const res = await firstValueFrom(
+        this.api.post<UpdateUserResponse>(CAIRA.updateUser, toUpdateRequest(payload)),
+      );
 
-      if (res?.status) {
-        const wasComplete = this.auth.currentUser()?.is_profile_completed === true;
-        // Capture new-vs-existing BEFORE setAuthenticated swaps in the refreshed
-        // user, so the lifecycle branch below reflects the pre-save state.
-        const wasNewUser = !this.auth.currentUser()?.is_existing_user;
-        this.auth.setAuthenticated(res.user);
-        // Activation milestone — fire only on the first false→true transition.
-        if (
-          !wasComplete &&
-          (res.user as { is_profile_completed?: boolean })?.is_profile_completed
-        ) {
-          this.analytics.trackEvent('profile_completed');
-        }
-        // CPE-parity GA4 lifecycle: a new user's first profile completion =
-        // `onboarding`; any later save by an existing user = `profile_update`.
-        if (wasNewUser) {
-          this.analytics.trackOnboarding(res.user, this.auth.currentPlan());
-        } else {
-          this.analytics.trackProfileUpdate(res.user, this.auth.currentPlan());
-        }
+      // ⚠️ #43 returns **200 even when the email was rejected** — the address is
+      // simply not saved and `email_verification` explains why. Reporting a
+      // blanket success here would tell the learner their email changed when it
+      // did not.
+      if (res?.email_verification) {
+        this.notification.error(
+          'Email not updated',
+          'We could not verify that email address. Your other changes were saved.',
+        );
+      } else {
         this.notification.success('Profile', 'Profile saved successfully');
-        this.isSaving.set(true);
-
-        const redirect = this.route.snapshot.queryParams['redirect'];
-        await this.router.navigateByUrl(redirect || '/');
       }
+
+      // #43's `data` has 18 keys to #42's 19 (no `is_test_user`) and its
+      // `mo_education` is not guaranteed to be the `{text,value}` dict, so the
+      // canonical read is a fresh v2/status rather than this response body.
+      const refreshed = await firstValueFrom(this.api.get<StatusResponse>(CAIRA.status)).catch(
+        () => null,
+      );
+      const user = refreshed?.data ? toCairaUser(refreshed.data) : null;
+      if (user) this.auth.setAuthenticated(user);
+
+      // Activation milestone — only on the first incomplete→complete transition.
+      if (!wasComplete && this.auth.isProfileComplete()) {
+        this.analytics.trackEvent('profile_completed');
+      }
+      // CPE-parity GA4 lifecycle: a new user's first completion = `onboarding`;
+      // any later save by an existing user = `profile_update`.
+      if (!wasComplete) {
+        this.analytics.trackOnboarding(user, this.auth.currentPlan());
+      } else {
+        this.analytics.trackProfileUpdate(user, this.auth.currentPlan());
+      }
+
+      const redirect = this.route.snapshot.queryParams['redirect'];
+      await this.router.navigateByUrl(redirect || '/');
     } catch (error: unknown) {
-      this.logger.error('Failed to save profile', error);
+      const failure = cairaError(error);
+      this.logger.error('Failed to save profile', failure);
+      // `errorInterceptor` only toasts `unexpected`; a validation failure here
+      // is the user's to fix and needs to be said out loud.
+      if (failure.kind !== 'unexpected') {
+        this.notification.error('Profile', userMessage(failure));
+      }
       this.isSaving.set(false);
     }
   }

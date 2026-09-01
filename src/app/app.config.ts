@@ -18,7 +18,10 @@ import {
   withHttpTransferCacheOptions,
 } from '@angular/platform-browser';
 import { provideIconsProvider } from './configuration/ng-icon';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { appInterceptor } from './shared/core/interceptors/app/app-interceptor';
+import { errorInterceptor } from './shared/core/interceptors/error/error-interceptor';
+import { authInterceptor } from './shared/core/interceptors/auth/auth-interceptor';
 import { Network } from './shared/core/services/network/network';
 import { UpdateChecker } from './shared/core/services/update-checker/update-checker';
 import { Analytics } from './shared/core/services/analytics/analytics';
@@ -26,10 +29,20 @@ import { Analytics } from './shared/core/services/analytics/analytics';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    // ponytail: no interceptors — the Django app/auth/admin-token chain went with
-    // the backend strip. HttpClient stays for the WordPress blog and SeoManager.
-    // Re-add withInterceptors([...]) when the new backend needs auth headers.
-    provideHttpClient(),
+    /**
+     * CAIRA interceptor chain. Order is load-bearing: requests run top-down,
+     * responses and errors unwind bottom-up.
+     *
+     * - `appInterceptor` outermost, so its `finalize` sees the loading bar
+     *   through to the end of any retry.
+     * - `errorInterceptor` **above** `authInterceptor`, so a request that a
+     *   token refresh rescues never reaches the toast. Reversing these two
+     *   would show an error for every request that then quietly succeeded.
+     *
+     * There is no admin-token interceptor: the admin panel authenticates
+     * against Supabase and never calls this API.
+     */
+    provideHttpClient(withInterceptors([appInterceptor, errorInterceptor, authInterceptor])),
     provideClientHydration(
       withEventReplay(),
       withHttpTransferCacheOptions({

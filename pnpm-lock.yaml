@@ -41,6 +41,9 @@ importers:
       '@angular/ssr':
         specifier: ^22.0.7
         version: 22.0.8(2a285a77f44bff085f4224593a4aadfc)
+      '@code_with_sachin/ngx-style-qr':
+        specifier: ^0.1.0
+        version: 0.1.0(@angular/common@22.0.8(@angular/core@22.0.8(@angular/compiler@22.0.8)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.8(@angular/compiler@22.0.8)(rxjs@7.8.2))
       '@supabase/supabase-js':
         specifier: ^2.98.0
         version: 2.110.8
@@ -1077,6 +1080,12 @@ packages:
   '@babel/types@7.29.7':
     resolution: {integrity: sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==}
     engines: {node: '>=6.9.0'}
+
+  '@code_with_sachin/ngx-style-qr@0.1.0':
+    resolution: {integrity: sha512-4IHVgEjIAn+ew0KXsCft4IbTwX/hh/+yLZ0kjdrFzGhbold/PC/+fxIUH0R4OvisEOAzYjM6jt3NWFLlo8dZNA==}
+    peerDependencies:
+      '@angular/common': ^22.0.0
+      '@angular/core': ^22.0.0
 
   '@csstools/color-helpers@6.1.0':
     resolution: {integrity: sha512-064IFJdjTfUqnjpCVpMOdbr8FLQBhinbZj6yRv2An2E41O/pLEXqfFRWqGq/SxlE5PEUYTlvWsG2r8MswAVvkg==}
@@ -7503,6 +7512,12 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
+
+  '@code_with_sachin/ngx-style-qr@0.1.0(@angular/common@22.0.8(@angular/core@22.0.8(@angular/compiler@22.0.8)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.8(@angular/compiler@22.0.8)(rxjs@7.8.2))':
+    dependencies:
+      '@angular/common': 22.0.8(@angular/core@22.0.8(@angular/compiler@22.0.8)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 22.0.8(@angular/compiler@22.0.8)(rxjs@7.8.2)
+      tslib: 2.8.1
 
   '@csstools/color-helpers@6.1.0': {}
 

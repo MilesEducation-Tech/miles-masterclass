@@ -218,7 +218,7 @@
                 <!-- Logged-in user info + profile actions -->
                 @if (isLoggedIn() && userData(); as u) {
                   @let initials =
-                    ((u.first_name[0] || '') + (u.last_name[0] || '')).trim().toUpperCase() ||
+                    ((u.firstName[0] || '') + (u.lastName[0] || '')).trim().toUpperCase() ||
                     (u.email[0] || '').toUpperCase() ||
                     'U';
                   <div class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-muted mb-2">
@@ -230,7 +230,7 @@
                     </span>
                     <div class="flex flex-col min-w-0">
                       <div class="text-sm font-semibold text-foreground truncate">
-                        {{ u.first_name }} {{ u.last_name }}
+                        {{ u.firstName }} {{ u.lastName }}
                       </div>
                       <div class="text-xs text-muted-foreground truncate">{{ u.email }}</div>
                     </div>

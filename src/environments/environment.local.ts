@@ -10,11 +10,26 @@ export const environment = {
    */
   SITE_URL: 'http://localhost:4100',
 
+  /**
+   * Local dev points at the **UAT** CAIRA origin.
+   *
+   * Deliberately a direct cross-origin call rather than a `proxy.conf.json`
+   * rewrite like `/blog-api`. A same-origin proxy would hide CORS locally and
+   * let a preflight failure surface for the first time in UAT — and a failing
+   * preflight is the single most likely day-one problem, because the deleted
+   * `appInterceptor` sent three `x-*` headers that CAIRA does not allowlist.
+   * Local should exercise the real CORS path.
+   */
+  BASE_API_URL: 'https://api.milescaira.com/',
+
   S3_BUCKET_URL: 'https://d1pp0977rsxmiq.cloudfront.net/',
   GCS_URL: 'https://asset.milesmasterclass.com/media/web-app/',
 
   appType: 'WA',
   platform: 'masterclass',
+
+  /** Dev-channel OTP (`OtpChannel.DEV`, 5). See the note in `environment.ts`. */
+  OTP_DEV_CHANNEL: false,
 
   LOGGER: {
     LogLevel: LogLevel.DEBUG,

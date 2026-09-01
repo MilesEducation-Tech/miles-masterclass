@@ -38,6 +38,8 @@
         [courseId]="course.id"
         courseType="masterclass"
         [instructors]="course.instructor_details"
+        [relatedCards]="masterclassService.relatedCards()"
+        [instructorCarousels]="masterclassService.instructorCarousels()"
       />
     </section>
   }

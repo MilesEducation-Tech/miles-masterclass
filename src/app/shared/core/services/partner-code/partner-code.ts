@@ -1,6 +1,5 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, map, of, tap, EMPTY } from 'rxjs';
-import { Auth } from '../auth/auth';
+import { inject, Service, signal } from '@angular/core';
+import { Observable, of } from 'rxjs';
 import { Logger } from '../logger/logger';
 import { NotificationService } from '../notification/notification';
 
@@ -12,17 +11,8 @@ import { NotificationService } from '../notification/notification';
  * Owns the loading flag, success/error toasts, and the post-success profile
  * refresh so callers don't repeat the recipe.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class PartnerCode {
-  // ponytail: ApiClient was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly http: any = {
-    post: (..._args: any[]): any => EMPTY,
-  };
-  private readonly auth = inject(Auth);
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
 
@@ -39,22 +29,12 @@ export class PartnerCode {
     const partner_code = rawCode.trim();
     if (!partner_code) return of(false);
 
-    this.loading.set(true);
-    return this.http
-      .post('', { partner_code }) /* ponytail: applyPartnerCode endpoint removed with the backend */
-      .pipe(
-        tap(() => {
-          this.auth.fetchMyProfile();
-          this.notification.success('Partner Code', 'Partner code applied successfully');
-          this.loading.set(false);
-        }),
-        map(() => true),
-        catchError((error: unknown) => {
-          this.logger.error('Failed to apply partner code', error);
-          this.notification.error('Partner Code', 'Failed to apply partner code');
-          this.loading.set(false);
-          return of(false);
-        }),
-      );
+    // ponytail: CAIRA has no partner-code endpoint. The stub this replaces
+    // returned `EMPTY`, so the observable completed without emitting and the
+    // caller's `subscribe` never ran — no toast, no error, a dead button.
+    // Failing visibly is the honest state until an endpoint exists.
+    this.logger.warn('Partner code endpoint is not bound', { partner_code });
+    this.notification.error('Partner Code', 'Partner codes cannot be applied yet.');
+    return of(false);
   }
 }

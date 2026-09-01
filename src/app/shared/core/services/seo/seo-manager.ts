@@ -2,7 +2,7 @@ import { isPlatformServer } from '@angular/common';
 import {
   DOCUMENT,
   inject,
-  Injectable,
+  Service,
   makeStateKey,
   PLATFORM_ID,
   TransferState,
@@ -26,13 +26,12 @@ const TIMEOUT_BROWSER_MS = 1500;
 const TIMEOUT_SERVER_MS = 4500;
 
 type ManagedTagSelector =
-  | { name: string; property?: undefined }
-  | { property: string; name?: undefined };
+  { name: string; property?: undefined } | { property: string; name?: undefined };
 
 /** Result of `loadFromSupabase`. Lets callers tell apart row-found vs fallback vs failure. */
 export type SeoLoadStatus = 'row' | 'fallback' | 'failed';
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class SeoManager {
   private readonly titleService = inject(Title);
   private readonly metaService = inject(Meta);

@@ -87,11 +87,15 @@ export class VideoPoster {
   /** Reference to the video element */
   private readonly videoElement = viewChild<ElementRef<HTMLVideoElement>>('videoEl');
 
-  /** Video source URL (e.g., thumbnail_gif) */
-  readonly videoSrc = input.required<string>();
+  /**
+   * Video source URL (e.g. `thumbnail_gif`), or `null` when the record has no
+   * motion asset. Bound as an **attribute** so `null` removes `src` entirely —
+   * `<video src="">` resolves to the page URL and fires a media error.
+   */
+  readonly videoSrc = input.required<string | null>();
 
-  /** Poster image URL (e.g., horizontal_thumbnail) */
-  readonly posterSrc = input.required<string>();
+  /** Poster image URL (e.g. `horizontal_thumbnail`), `null` when absent. */
+  readonly posterSrc = input.required<string | null>();
 
   /** Delay in milliseconds before video starts playing (default: 3000ms) */
   readonly posterDelay = input<number>(3000);

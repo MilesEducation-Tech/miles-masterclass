@@ -39,9 +39,9 @@
     <!-- Meta Info -->
     <div class="flex justify-between items-center text-sm mb-8 border-b border-[#3E4552] pb-4">
       <div class="text-gray-400">
-        @if (reportData()?.exam_passes_date) {
+        @if (reportData()?.passedAt) {
           Exam Completed on:
-          {{ reportData()?.exam_passes_date | date: 'longDate' }}
+          {{ reportData()?.passedAt | date: 'longDate' }}
         }
       </div>
       <div class="font-bold">
@@ -79,8 +79,8 @@
       @for (item of filteredQuestions(); track item.id; let i = $index) {
         <div
           class="rounded-lg border border-[#3E4552] bg-[#161E26] overflow-hidden transition-all duration-200"
-          [class.border-l-4]="!item.is_correct"
-          [class.border-l-red-500]="!item.is_correct"
+          [class.border-l-4]="!item.isCorrect"
+          [class.border-l-red-500]="!item.isCorrect"
         >
           <!-- Header / Summary -->
           <div
@@ -95,13 +95,13 @@
             <div class="flex gap-4 items-center flex-1 pr-4">
               <span class="text-gray-400 w-6 shrink-0">{{ i + 1 }}.</span>
               <span class="text-gray-200 font-medium line-clamp-2 md:line-clamp-1 select-none">{{
-                item.question_object.question
+                item.question
               }}</span>
             </div>
 
             <div class="flex items-center gap-4 shrink-0">
               <!-- Badge -->
-              @if (item.is_correct) {
+              @if (item.isCorrect) {
                 <div
                   class="px-4 py-1 rounded-full bg-[#E6F4EA] text-[#1E8E3E] text-sm font-bold min-w-[100px] text-center"
                 >
@@ -148,24 +148,22 @@
                       >Your Answer</span
                     >
                     <span
-                      [class.text-red-400]="!item.is_correct"
-                      [class.text-green-400]="item.is_correct"
+                      [class.text-red-400]="!item.isCorrect"
+                      [class.text-green-400]="item.isCorrect"
                       class="text-base"
                     >
-                      {{ getOptionText(item.question_object, item.answer) }}
+                      {{ item.selectedText }}
                     </span>
                   </div>
 
                   <!-- Correct Answer (if wrong) -->
-                  @if (!item.is_correct) {
+                  @if (!item.isCorrect) {
                     <div class="flex flex-col gap-1">
                       <span class="text-xs font-semibold text-green-500 uppercase tracking-wide"
                         >Correct Answer</span
                       >
                       <p class="text-gray-200 text-base">
-                        {{
-                          getOptionText(item.question_object, item.question_object.correct_option)
-                        }}
+                        {{ item.correctText }}
                       </p>
                     </div>
                   }
@@ -177,7 +175,7 @@
                       >Explanation</span
                     >
                     <p class="text-gray-300 leading-relaxed">
-                      {{ getExplanation(item) }}
+                      {{ item.explanation }}
                     </p>
                   </div>
                 </div>

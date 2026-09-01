@@ -53,7 +53,7 @@
             </span>
           </div>
 
-          @if (row.id !== null) {
+          @if (row.id !== null && titleNavigable()) {
             <app-button
               variant="ghost"
               size="sm"

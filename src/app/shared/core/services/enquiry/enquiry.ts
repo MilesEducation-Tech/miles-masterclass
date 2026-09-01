@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { catchError, from, map, Observable, throwError } from 'rxjs';
 import { Logger } from '../logger/logger';
 import { SupabasePublic } from '../supabase/supabase-public';
@@ -20,7 +20,7 @@ export interface EnquiryResponse {
 
 const TABLE_NAME = 'firm_inquiries';
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class EnquiryService {
   // Use the anon-only public client — the enquiry form is for unknown visitors
   // and must never inherit the admin client's persisted session JWT.

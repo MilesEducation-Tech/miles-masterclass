@@ -33,7 +33,10 @@ export class Footer {
 
   // Computed properties for user state
   readonly isLoggedIn = computed(() => !!this.userData());
-  readonly hasTrailAccess = computed(() => this.userData()?.is_beta_access ?? false);
+  // ponytail: was `user.is_beta_access`. CAIRA has no beta/trial flag on the
+  // user — access is `User.enrolled` tag membership, surfaced per-course as
+  // `course_is_locked`. Held false until an entitlement check replaces it.
+  readonly hasTrailAccess = computed(() => false);
 
   // Base path for routes
   readonly basePath = computed(() => {

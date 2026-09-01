@@ -11,16 +11,17 @@ export const serverRoutes: ServerRoute[] = [
   // e.g. the profile form's `@if (isExistingUser())` block). No SEO value here,
   // so render client-side like admin/payment/cpe-tracker.
   { path: 'auth/**', renderMode: RenderMode.Client },
+  // Exam answers live in memory by design, so these never server-render.
   {
-    path: ':country/:profession_type/masterclass/:courseId/:courseTitle/final-assessment/:sessionId/exam',
+    path: ':country/:profession_type/masterclass/:courseId/:courseTitle/final-assessment/exam',
     renderMode: RenderMode.Client,
   },
   {
-    path: ':country/:profession_type/podcast/:courseId/:courseTitle/final-assessment/:session_id/exam',
+    path: ':country/:profession_type/podcast/:courseId/:courseTitle/final-assessment/exam',
     renderMode: RenderMode.Client,
   },
   {
-    path: ':country/:profession_type/micro-learning/:courseId/:courseTitle/final-assessment/:session_id/exam',
+    path: ':country/:profession_type/micro-learning/:courseId/:courseTitle/final-assessment/exam',
     renderMode: RenderMode.Client,
   },
   {

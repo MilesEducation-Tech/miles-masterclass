@@ -6,7 +6,7 @@
   } @else if (instructorError()) {
     <app-error-state
       title="Couldn't load instructor"
-      message="We hit a snag fetching this profile. Try again in a moment."
+      [message]="errorMessage()"
       (retry)="reload()"
     />
   } @else if (instructor(); as i) {

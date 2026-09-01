@@ -1,4 +1,4 @@
-import { DOCUMENT, Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { DOCUMENT, inject, PLATFORM_ID, Service } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 export interface ScrollToOptions {
@@ -11,7 +11,7 @@ export interface ScrollToOptions {
 /**
  * Smooth-scroll helper. SSR-safe — every method is a no-op on the server.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ScrollService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT);

@@ -1,4 +1,4 @@
-import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { computed, inject, PLATFORM_ID, Service, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { Supabase } from '../supabase/supabase';
@@ -10,9 +10,7 @@ import {
   AdminUserProfile,
 } from '../../models/admin/admin-auth.model';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class AdminAuth {
   private readonly supabase = inject(Supabase);
   private readonly logger = inject(Logger);

@@ -9,6 +9,7 @@ import { DurationPipe } from '../../core/pipes/duration/duration-pipe';
 import { Utils } from '../../core/services/utils/utils';
 import { Router } from '@angular/router';
 import { Dialog } from '../../core/services/dialog/dialog';
+import { CairaUuid } from '../../core/models/caira/envelope.model';
 
 @Component({
   selector: 'app-course-about',
@@ -57,7 +58,7 @@ export class CourseAbout {
     };
   });
 
-  onInstructorClick(i: { id: number; first_name: string; last_name: string }) {
+  onInstructorClick(i: { id: CairaUuid | null; first_name: string; last_name: string }) {
     const slug = this.utils.slugify(`${i?.first_name} ${i?.last_name}`);
     const basePath = `/${this.utils.getRouteParams().country}/${this.utils.getRouteParams().profession}`;
     this.dialog.closeAll();

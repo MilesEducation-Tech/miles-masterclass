@@ -127,9 +127,9 @@ export class Invoice {
     // }
     const user = this.auth.currentUser();
     return {
-      name: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : '',
+      name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
       email: user?.email || '',
-      mobile: user?.mobile || '',
+      mobile: user?.phone || '',
     };
   });
 

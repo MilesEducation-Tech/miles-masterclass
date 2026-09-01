@@ -1,16 +1,5 @@
 @if (!current()) {
   <app-chapter-skeleton />
-} @else if (previewMode() === 'quiz' && current()?.quiz_details?.questions; as questions) {
-  <div class="relative pt-20 mx-10">
-    <app-chapter-quiz
-      [questions]="questions"
-      [chapterId]="current()!.id"
-      [current]="current()!"
-      [isLastChapter]="isLastChapter()"
-      (navigateNext)="handleQuizNext()"
-      (togglePreviewMode)="previewMode.set($event === 'video' ? 'audio' : $event)"
-    />
-  </div>
 } @else {
   <div
     class="flex w-full md:h-dvh h-auto flex-col relative bg-cover md:bg-top-right bg-center overflow-hidden z-0"
@@ -36,42 +25,6 @@
           <p class="text-sm uppercase text-gray-300">{{ trackLabel() }}</p>
           <p class="text-3xl font-bold text-white">{{ current()!.chapter_name }}</p>
           <p class="md:text-sm text-xs text-gray-400">{{ current()!.description }}</p>
-
-          <div class="flex gap-4 flex-col">
-            <!-- Transcript Button -->
-            @if (current()?.transcript) {
-              <div
-                class="bg-[#161E25] md:py-3 py-1.5 px-4 rounded-lg flex items-center md:w-2/3 w-full cursor-pointer gap-2"
-              >
-                <ng-icon name="faClipboard" size="16" class="text-white" />
-                <span>Transcript</span>
-              </div>
-            }
-
-            <!-- Track Quiz Button (CPE mode) -->
-            @if (current()?.quiz_details?.overall_chapter_questions && cpeMode()) {
-              <button
-                type="button"
-                class="bg-[#161E25] md:py-3 py-1.5 px-4 rounded-lg flex flex-col md:w-2/3 w-full text-left"
-                [class]="isQuizEnabled() ? 'cursor-pointer' : 'cursor-not-allowed'"
-                [disabled]="!isQuizEnabled()"
-                (click)="handleTrackQuiz()"
-              >
-                <div class="flex items-center justify-between">
-                  <span class="flex items-center gap-2">
-                    <ng-icon name="faClipboard" size="16" />
-                    <span>Track Quiz</span>
-                  </span>
-                </div>
-                <div class="ml-6 text-xs text-gray-500">
-                  {{ current()!.quiz_details.overall_chapter_questions }}
-                  {{
-                    current()!.quiz_details.overall_chapter_questions > 1 ? 'questions' : 'question'
-                  }}
-                </div>
-              </button>
-            }
-          </div>
         </div>
 
         <!-- Center Column: Disc Animation -->
@@ -94,12 +47,8 @@
               <button
                 type="button"
                 class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
-                [class]="
-                  (chapterWiseDetails()?.status && cpeMode()) || !cpeMode()
-                    ? 'cursor-pointer'
-                    : 'cursor-not-allowed'
-                "
-                [disabled]="!((chapterWiseDetails()?.status && cpeMode()) || !cpeMode())"
+                [class]="canAdvance() ? 'cursor-pointer' : 'cursor-not-allowed'"
+                [disabled]="!canAdvance()"
                 (click)="navigate.emit(nextChapter.id)"
               >
                 <div class="w-[90px] m-2 overflow-hidden flex items-center">
@@ -137,12 +86,8 @@
                 <button
                   type="button"
                   class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
-                  [class]="
-                    chapterWiseDetails()?.status && cpeMode()
-                      ? 'cursor-pointer'
-                      : 'cursor-not-allowed'
-                  "
-                  [disabled]="!(chapterWiseDetails()?.status && cpeMode())"
+                  [class]="canStartExam() ? 'cursor-pointer' : 'cursor-not-allowed'"
+                  [disabled]="!canStartExam()"
                   (click)="startFinalAssessment.emit()"
                 >
                   <div class="flex flex-col gap-1 m-2">
@@ -200,12 +145,8 @@
           <button
             type="button"
             class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
-            [class]="
-              (chapterWiseDetails()?.status && cpeMode()) || !cpeMode()
-                ? 'cursor-pointer'
-                : 'cursor-not-allowed'
-            "
-            [disabled]="!((chapterWiseDetails()?.status && cpeMode()) || !cpeMode())"
+            [class]="canAdvance() ? 'cursor-pointer' : 'cursor-not-allowed'"
+            [disabled]="!canAdvance()"
             (click)="navigate.emit(nextChapter.id)"
           >
             <div class="w-[90px] m-2 overflow-hidden flex items-center">
@@ -242,10 +183,8 @@
             <button
               type="button"
               class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
-              [class]="
-                chapterWiseDetails()?.status && cpeMode() ? 'cursor-pointer' : 'cursor-not-allowed'
-              "
-              [disabled]="!(chapterWiseDetails()?.status && cpeMode())"
+              [class]="canStartExam() ? 'cursor-pointer' : 'cursor-not-allowed'"
+              [disabled]="!canStartExam()"
               (click)="startFinalAssessment.emit()"
             >
               <div class="flex flex-col gap-1 m-2">

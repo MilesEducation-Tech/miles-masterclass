@@ -1,4 +1,5 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, input } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { VideoPoster } from '../../../../../../shared/components/video-poster/video-poster';
 import { Button } from '../../../../../../shared/components/ui/button/button';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -22,6 +23,7 @@ import { Utils } from '../../../../../../shared/core/services/utils/utils';
 import { CategoriesList } from '../../../../../../shared/components/categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../../../../../shared/core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { CairaCredlyBadge } from '../../../../../../shared/components/cards/caira-credly-badge/caira-credly-badge';
+import { CourseDetail } from '../../../../shared/services/course-detail/course-detail';
 
 @Component({
   selector: 'app-masterclass-course-hero',
@@ -54,20 +56,10 @@ import { CairaCredlyBadge } from '../../../../../../shared/components/cards/cair
 })
 export class MasterclassCourseHero {
   readonly auth = inject(Auth);
-  // ponytail: MasterclassFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  readonly masterclass: any = {
-    courseDetails: signal<any[]>([]),
-    currentProgress: signal<any[]>([]),
-    launchCourse: signal<any>(null),
-    openCertificateDownloadDialog: signal<any>(null),
-    openShareDialog: signal<any>(null),
-    startFinalAssessment: (..._args: any[]): any => null,
-    submitFeedback: signal<any>(null),
-    toggleCpeMode: (..._args: any[]): any => null,
-  };
+  /** Route-scoped — the same instance `MasterclassCourse` keys on the route id. */
+  readonly masterclass = inject(CourseDetail);
   readonly utils = inject(Utils);
+  private readonly destroyRef = inject(DestroyRef);
   cn = cn;
 
   courseId = input<string>();
@@ -92,26 +84,31 @@ export class MasterclassCourseHero {
     this.utils.openVideoDialog(link, courseDetails.title);
   }
 
+  /**
+   * #15 lives on the service: it owns the writable `courseDetails`, and the
+   * bookmark POST busts CAIRA's per-user cache for #4, so the patch has to land
+   * on the same instance the rest of the page reads.
+   */
   toggleBookmark() {
-    const id = this.courseId();
-    if (!id) return;
-
-    this.utils.toggleBookmarkCourse(+id).subscribe((response) => {
-      if (response.status) {
-        this.masterclass.courseDetails.update((course: any) =>
-          course ? { ...course, added_bookmark: response.is_bookmarked } : course,
-        );
-      }
-    });
+    this.masterclass.toggleBookmark();
   }
 
-  addToCart(courseId: number, isAddedToCart: boolean) {
-    this.utils.addCourseToCart(courseId, isAddedToCart).subscribe((response) => {
-      if (response.status) {
-        this.masterclass.courseDetails.update((course: any) =>
-          course ? { ...course, is_added_to_cart: response.in_cart } : course,
-        );
-      }
-    });
+  /**
+   * ponytail: `addCourseToCart` has no CAIRA endpoint — it opens the cart
+   * drawer and completes empty, so the `update` never runs. The button is
+   * behind `@if (can_purchase_individually || is_subscription_excluded)`, both
+   * pinned `false` by the mapper, so it does not render at all today.
+   */
+  addToCart(courseId: string, isAddedToCart: boolean) {
+    this.utils
+      .addCourseToCart(courseId, isAddedToCart)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => {
+        if (response.status) {
+          this.masterclass.courseDetails.update((course) =>
+            course ? { ...course, is_added_to_cart: response.in_cart } : course,
+          );
+        }
+      });
   }
 }

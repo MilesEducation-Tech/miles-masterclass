@@ -1,10 +1,8 @@
-import { Injectable, signal, PLATFORM_ID, inject } from '@angular/core';
+import { inject, PLATFORM_ID, Service, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Toast, ToastOptions, ToastTimer, ToastType } from '../../models/notification.model';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class NotificationService {
   private readonly platformId = inject(PLATFORM_ID);
   readonly toasts = signal<Toast[]>([]);

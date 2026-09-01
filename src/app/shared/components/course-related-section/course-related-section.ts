@@ -1,19 +1,21 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { Carousel } from '../carousel/carousel';
 import { Horizontal } from '../cards/horizontal/horizontal';
 import { Square } from '../cards/square/square';
-import { Logger } from '../../core/services/logger/logger';
 import { swiperConfigEven, swiperConfigPodcast } from '../../core/config/swiper.config';
-
-interface InstructorCarousel {
-  instructorId: number;
-  fullName: string;
-  cards: any[];
-}
+import { CairaUuid } from '../../core/models/caira/envelope.model';
+import { CourseCard } from '../../core/models/caira/masterclass.model';
+import { InstructorCarousel } from '../../core/models/caira/course-detail.model';
 
 /**
- * Course detail page extension: one "More by &lt;Instructor&gt;" carousel per
- * instructor (lead + co-instructors). Lazy — only fetches when inputs land.
+ * Course detail page extension: a "Related Courses" rail plus one
+ * "More by &lt;Instructor&gt;" carousel per instructor.
+ *
+ * Both lists arrive as inputs rather than being fetched here. CAIRA serves them
+ * inside `Masterclass_Course_Detail` (#4) — `related_courses` and
+ * `instructor_related_courses` — so the course page already holds them, and a
+ * shared component reaching back into a route-scoped feature service to
+ * re-derive what its parent has would invert the dependency for no gain.
  *
  * Card variant differs by host page:
  *   • masterclass → app-horizontal (16:9 promo card)
@@ -26,18 +28,13 @@ interface InstructorCarousel {
   styleUrl: './course-related-section.css',
 })
 export class CourseRelatedSection {
-  readonly courseId = input.required<number>();
-  readonly courseType = input.required<any>();
+  readonly courseId = input.required<CairaUuid>();
+  readonly courseType = input.required<'masterclass' | 'podcast'>();
   /** Lead instructor + co-instructors from the current course. */
-  readonly instructors = input<any | null>(null);
+  readonly instructors = input<unknown | null>(null);
 
-  private readonly logger = inject(Logger);
-
-  // ponytail: both carousels used to be filled by `relatedContent` and
-  // `instructorCourses` GETs. Feed these two signals from the new backend and
-  // the template, carousel config and card variants all work unchanged.
-  protected readonly relatedCards = signal<any[]>([]);
-  protected readonly instructorCarousels = signal<InstructorCarousel[]>([]);
+  readonly relatedCards = input<CourseCard[]>([]);
+  readonly instructorCarousels = input<InstructorCarousel[]>([]);
 
   protected readonly swiperConfig = computed(() =>
     this.courseType() === 'podcast' ? swiperConfigPodcast : swiperConfigEven,
@@ -49,40 +46,4 @@ export class CourseRelatedSection {
   protected readonly hasAnyContent = computed(
     () => this.relatedCards().length > 0 || this.instructorCarousels().length > 0,
   );
-
-  constructor() {
-    this.logger.warn('CourseRelatedSection: no backend configured — carousels stay empty');
-  }
-
-  /**
-   * Group instructor courses into one carousel per instructor. Kept because it
-   * is presentation logic, not transport: hand it the new backend's response
-   * and `instructorCarousels` renders as before.
-   */
-  protected buildInstructorCarousels(
-    details: any,
-    coursesByInstructorId: Map<number, any[]>,
-  ): void {
-    const nameById = this.buildNameMap(details);
-    const out: InstructorCarousel[] = [];
-    for (const [iid, courses] of coursesByInstructorId) {
-      // An instructor with no courses of the current type is dropped so the
-      // page doesn't render an empty carousel.
-      const cards = courses.filter((c) => c.id !== this.courseId());
-      if (!cards.length) continue;
-      out.push({ instructorId: iid, fullName: nameById.get(iid) ?? 'Instructor', cards });
-    }
-    this.instructorCarousels.set(out);
-  }
-
-  private buildNameMap(details: any): Map<number, string> {
-    const map = new Map<number, string>();
-    map.set(details.id, `${details.first_name} ${details.last_name}`.trim());
-    for (const co of details.other_instructors ?? []) {
-      if (co?.id) {
-        map.set(co.id, `${co.first_name} ${co.last_name}`.trim());
-      }
-    }
-    return map;
-  }
 }

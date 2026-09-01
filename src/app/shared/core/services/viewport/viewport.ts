@@ -1,5 +1,5 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { computed, DestroyRef, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
+import { computed, DestroyRef, inject, PLATFORM_ID, Service, signal } from '@angular/core';
 
 /** Coarse device class derived from viewport width. */
 export type ScreenSize = 'mobile' | 'tablet' | 'desktop';
@@ -44,7 +44,7 @@ const PORTRAIT_QUERY = '(orientation: portrait)';
  *     screens. Real values are set synchronously on first browser construction.
  *   - `providedIn: 'root'` so every consumer shares one set of listeners.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class Viewport {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT);

@@ -25,14 +25,13 @@ export class Auth {
   private readonly authService = inject(AuthService);
   private readonly dialog = inject(Dialog);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  // ponytail: AuthFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  readonly authFacade: any = {
-    auth_type: signal<any>(null),
-  };
-
-  auth_type = this.authFacade.auth_type;
+  /**
+   * Which auth surface is showing, so the shell can swap "Back to Home" for
+   * "Logout" on the profile step. Nothing sets it yet — the login page owns its
+   * own state and the profile page has no reason to announce itself — so it
+   * stays a plain signal rather than a service.
+   */
+  readonly auth_type = signal<'login' | 'profile' | null>(null);
 
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
 
@@ -44,8 +43,12 @@ export class Auth {
   });
 
   protected readonly showLogout = computed(() => {
+    // Was `!user.is_existing_user`. A learner parked on the profile page with an
+    // incomplete profile has nowhere to go "back" to, so the button logs out
+    // instead. `isProfileComplete` derives from v2/status, not from the login
+    // response's `onboarding` flag — #33 hardcodes that to true.
     const user = this.authService.currentUser();
-    return this.auth_type() === 'profile' && !!user && !user.is_existing_user;
+    return this.auth_type() === 'profile' && !!user && !this.authService.isProfileComplete();
   });
 
   protected readonly buttonLabel = computed(() => (this.showLogout() ? 'Logout' : 'Back to Home'));
@@ -102,13 +105,26 @@ export const authRoutes: Route[] = [
   {
     path: '',
     component: Auth,
-    // ponytail: route-scoped facade providers removed with the Django strip.
-    // Re-add `providers: [YourService]` here when the new backend lands.
     children: [
       { path: '', redirectTo: 'login', pathMatch: 'full' },
       {
         path: 'login',
         canActivate: [guestGuard],
+        loadComponent: () => import('./shared/pages/login/login').then((m) => m.Login),
+      },
+      {
+        /**
+         * Hidden twin of `login`, unlinked from anywhere in the UI and
+         * `Disallow`ed in robots.txt. Identical screen; the only difference is
+         * `devOtp`, which forces `communication_method: 5` so a phone sign-in
+         * can be smoke-tested in production without a real SMS/WhatsApp. It
+         * grants nothing on its own — the SSO still has to allow the dev
+         * channel, and #35 verifies the OTP exactly as it does for the public
+         * route.
+         */
+        path: 'qa-login',
+        canActivate: [guestGuard],
+        data: { devOtp: true },
         loadComponent: () => import('./shared/pages/login/login').then((m) => m.Login),
       },
       {

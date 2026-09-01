@@ -10,9 +10,9 @@
     "prebuild": "pnpm run generate:version",
     "prebuild:dev": "pnpm run generate:version",
     "prebuild:prod": "pnpm run generate:version",
-    "start": "rm -rf .angular && ng serve --port 4100 --configuration local",
-    "start:dev": "rm -rf .angular && ng serve --port 4100 --configuration development",
-    "start:prod": "rm -rf .angular && ng serve --port 4100 --configuration production",
+    "start": "rm -rf .angular && ng serve --port 4101 --configuration local",
+    "start:dev": "rm -rf .angular && ng serve --port 4101 --configuration development",
+    "start:prod": "rm -rf .angular && ng serve --port 4101 --configuration production",
     "build": "ng build --configuration local",
     "build:dev": "ng build --configuration development",
     "build:prod": "ng build --configuration production",
@@ -28,7 +28,9 @@
     "format": "prettier --check \"src/**/*.{ts,html,css,scss,json,md}\"",
     "format:fix": "prettier --write \"src/**/*.{ts,html,css,scss,json,md}\"",
     "storybook": "ng run miles-masterclass-v3:storybook",
-    "build-storybook": "ng run miles-masterclass-v3:build-storybook"
+    "build-storybook": "ng run miles-masterclass-v3:build-storybook",
+    "check:structure": "node scripts/check-structure.mjs",
+    "verify": "pnpm lint && pnpm check:structure && pnpm build:prod"
   },
   "prettier": {
     "printWidth": 100,
@@ -60,6 +62,7 @@
     "@angular/platform-server": "^22.0.7",
     "@angular/router": "^22.0.7",
     "@angular/ssr": "^22.0.7",
+    "@code_with_sachin/ngx-style-qr": "^0.1.0",
     "@supabase/supabase-js": "^2.98.0",
     "@types/video.js": "^7.3.58",
     "@videojs/http-streaming": "^3.17.2",
