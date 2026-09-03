@@ -1,8 +1,0 @@
-.coupon-badge-mask {
-  -webkit-mask-image: radial-gradient(circle at -5px 16px, transparent 10px, black 10.5px);
-  mask-image: radial-gradient(circle at -5px 16px, transparent 10px, black 10.5px);
-  -webkit-mask-size: 100% 32px;
-  mask-size: 100% 32px;
-  -webkit-mask-repeat: repeat-y;
-  mask-repeat: repeat-y;
-}

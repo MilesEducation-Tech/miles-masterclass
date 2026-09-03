@@ -7,12 +7,6 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["ng", "serve", "--configuration", "local"],
       "port": 4200
-    },
-    {
-      "name": "storybook",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["ng", "run", "miles-masterclass-v3:storybook"],
-      "port": 6006
     }
   ]
 }

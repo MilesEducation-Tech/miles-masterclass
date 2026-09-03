@@ -1,5 +1,0 @@
-/* The gallery's top/bottom fade masks are `from-(--background)`, so they only
-   blend on a surface that actually sets it. Same as `.plan-page`. */
-.faculty-page {
-  background: var(--background);
-}

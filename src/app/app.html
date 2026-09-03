@@ -1,15 +1,2 @@
-@if (loading.isLoading()) {
-  <div class="fixed top-0 left-0 right-0 z-9999">
-    <app-progress
-      [value]="100"
-      variant="default"
-      size="xs"
-      [striped]="true"
-      [indeterminate]="true"
-      [animated]="true"
-    />
-  </div>
-}
 <router-outlet />
 <app-notification />
-<app-consent-banner />
