@@ -1,4 +1,3 @@
-import { apiDataToDialogShape, dialogShapeToSelection, isEmptySelection } from './filter-selection';
 import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import {
   afterNextRender,
@@ -29,6 +28,49 @@ import { filterIcon } from '../../core/constant/icon';
 import { Dialog } from '../../core/services/dialog/dialog';
 import { FilterDialog } from '../dialog/filter-dialog/filter-dialog';
 import { Hover } from '../cards/hover/hover';
+import {
+  apiDataToDialogShape,
+  ApiCourseType,
+  CourseFilterSelection,
+  dialogShapeToSelection,
+  isEmptySelection,
+  SectionApiKey,
+} from '../../core/models/library-filters.model';
+import { SectionFiltersFacade } from '../../../features/shared/services/section-filters-facade/section-filters-facade';
+
+/**
+ * Swiper's own pagination stylesheet, injected into `<swiper-container>`'s
+ * shadow root.
+ *
+ * `swiper/element` ships only the core stylesheet: a module passed as JS (see
+ * `modules` below) never gets its CSS, so the bullets render as real-but-
+ * unstyled 0x0 nodes and the rail silently has no dots. The element bundle
+ * would carry them, but it also drags in every other module.
+ *
+ * Verbatim from `swiper/modules/pagination-element.min.css` (swiper 12.2.0),
+ * minus the progressbar / fraction / vertical / rtl variants this app has no
+ * use for. Re-copy that file on a swiper major.
+ */
+const PAGINATION_STYLES = `
+  .swiper-pagination{position:absolute;text-align:center;transform:translateZ(0);transition:opacity .3s;z-index:10}
+  .swiper-pagination.swiper-pagination-hidden{opacity:0}
+  .swiper-pagination-disabled>.swiper-pagination,.swiper-pagination.swiper-pagination-disabled{display:none!important}
+  .swiper-pagination-bullets-dynamic{font-size:0;overflow:hidden}
+  .swiper-pagination-bullets-dynamic .swiper-pagination-bullet{position:relative;transform:scale(.33)}
+  .swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active,.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-main{transform:scale(1)}
+  .swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-prev{transform:scale(.66)}
+  .swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-prev-prev{transform:scale(.33)}
+  .swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-next{transform:scale(.66)}
+  .swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-next-next{transform:scale(.33)}
+  .swiper-pagination-bullet{background:var(--swiper-pagination-bullet-inactive-color,#000);border-radius:var(--swiper-pagination-bullet-border-radius,50%);display:inline-block;height:var(--swiper-pagination-bullet-height,var(--swiper-pagination-bullet-size,8px));opacity:var(--swiper-pagination-bullet-inactive-opacity,.2);width:var(--swiper-pagination-bullet-width,var(--swiper-pagination-bullet-size,8px))}
+  button.swiper-pagination-bullet{appearance:none;border:none;box-shadow:none;margin:0;padding:0}
+  .swiper-pagination-clickable .swiper-pagination-bullet{cursor:pointer}
+  .swiper-pagination-bullet:only-child{display:none!important}
+  .swiper-pagination-bullet-active{background:var(--swiper-pagination-color,var(--swiper-theme-color));opacity:var(--swiper-pagination-bullet-opacity,1)}
+  .swiper-horizontal>.swiper-pagination-bullets .swiper-pagination-bullet,.swiper-pagination-horizontal.swiper-pagination-bullets .swiper-pagination-bullet{margin:0 var(--swiper-pagination-bullet-horizontal-gap,4px)}
+  .swiper-horizontal>.swiper-pagination-bullets.swiper-pagination-bullets-dynamic,.swiper-pagination-horizontal.swiper-pagination-bullets.swiper-pagination-bullets-dynamic{left:50%;transform:translateX(-50%);white-space:nowrap}
+  .swiper-horizontal>.swiper-pagination-bullets.swiper-pagination-bullets-dynamic .swiper-pagination-bullet,.swiper-pagination-horizontal.swiper-pagination-bullets.swiper-pagination-bullets-dynamic .swiper-pagination-bullet{transition:transform .2s,left .2s}
+`;
 
 /**
  * Carousel filter configuration. When `courseType` + `section` are both set
@@ -38,8 +80,8 @@ import { Hover } from '../cards/hover/hover';
  */
 export interface CarouselFilterConfig {
   filterEnabled: boolean;
-  courseType?: any;
-  section?: any;
+  courseType?: ApiCourseType;
+  section?: SectionApiKey;
   trackId?: number;
 }
 
@@ -61,10 +103,7 @@ export class Carousel {
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(Dialog);
   private readonly injector = inject(Injector);
-  // ponytail: SectionFiltersFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly sectionFilters: any = {};
+  private readonly sectionFilters = inject(SectionFiltersFacade);
 
   private readonly swiperContainerRef = viewChild<ElementRef<HTMLElement>>('swiperContainer');
   private swiperEl: ElementRef<HTMLElement> | null = null;
@@ -73,7 +112,18 @@ export class Carousel {
   /** Set when growth is driven by a loadMore tail-append, so scroll is preserved. */
   private appendingMore = false;
 
-  heading = input.required<{ text: string; subText?: string }>();
+  /**
+   * Section title rendered above the rail. Optional: a page that already owns
+   * its own heading (AI Labs) renders the carousel bare rather than stacking a
+   * second <h2> on top of the one it already wrote.
+   */
+  heading = input<{ text: string; subText?: string }>();
+  /**
+   * Presentation. `peek` centres the active slide and shrinks/fades its
+   * neighbours — pair it with `centeredSlides` + `freeMode: { enabled: false }`
+   * in `swiperConfig`, or nothing snaps to centre.
+   */
+  readonly variant = input<'default' | 'peek'>('default');
   cards = input.required<any[]>();
   swiperConfig = input<SwiperOptions>();
   filterConfig = input<CarouselFilterConfig>({ filterEnabled: false });
@@ -87,7 +137,7 @@ export class Carousel {
    * pre-check options when re-opening the dialog and (b) drive the filter
    * badge count alongside `appliedFilters` (client-mode badge).
    */
-  private readonly apiSelection = signal<any | null>(null);
+  private readonly apiSelection = signal<CourseFilterSelection | null>(null);
 
   shouldHoverAnimate = input<boolean>(false);
 
@@ -98,7 +148,7 @@ export class Carousel {
    * `FeatureResource.setFilters($event)` (or `setTrackFilters(trackId, $event)`
    * for the track section).
    */
-  readonly filtersChanged = output<any>();
+  readonly filtersChanged = output<CourseFilterSelection>();
 
   constructor() {
     this.destroyRef.onDestroy(() => this.cleanup());
@@ -222,16 +272,28 @@ export class Carousel {
       return;
     }
 
+    // Defaults first, caller last: `swiperConfig` has to be able to turn
+    // freeMode off, because freeMode never snaps and so can't hold a centred
+    // active slide (`centeredSlides` + `loop`). Every existing caller passes a
+    // preset from swiper.config.ts, none of which sets these keys, so the
+    // resolved params are unchanged for them.
     const swiperParams: SwiperOptions = {
-      ...this.swiperConfig(),
-      modules: [Mousewheel, Pagination, FreeMode],
       direction: 'horizontal',
       mousewheel: {
         forceToAxis: true,
       },
-      pagination: { clickable: true, dynamicBullets: true },
+      // Off by default: without the injected stylesheet above, dots never
+      // actually rendered for any existing caller — turning them on for all of
+      // them now would be a change none of those pages asked for. Opt in through
+      // `swiperConfig`.
+      pagination: false,
       freeMode: { enabled: true, sticky: false, minimumVelocity: 1 },
+      ...this.swiperConfig(),
+      modules: [Mousewheel, Pagination, FreeMode],
     };
+    if (swiperParams.pagination) {
+      swiperParams.injectStyles = [PAGINATION_STYLES];
+    }
     Object.assign(this.swiperEl.nativeElement, swiperParams);
     (this.swiperEl.nativeElement as any).initialize();
 
@@ -335,7 +397,7 @@ export class Carousel {
     this.sectionFilters
       .fetch(cfg.courseType!, cfg.section!, cfg.trackId)
       .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe((data: any) => {
+      .subscribe((data) => {
         if (!data) {
           // Fall back silently — no toast, no empty dialog.
           this.extractClientFilters();

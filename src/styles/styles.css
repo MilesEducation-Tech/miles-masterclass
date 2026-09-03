@@ -20,6 +20,13 @@
   --muted-foreground: rgb(163, 163, 163);
   --accent: rgb(42, 133, 255);
   --mm-warn: #f6bc53;
+  /* Status green. Lived only in `.admin-theme` until the AI Lab course page
+     needed it on the public site (step ticks, CPE-recording pill, completed
+     progress). `bg-success`/`text-success` were already being used by
+     `masterclass-course-hero.html` against a token that never existed. */
+  --mm-success: #27ae60;
+  --mm-success-fg: #6ec993;
+  --mm-success-bg: rgba(39, 174, 96, 0.15);
   --accent-foreground: rgb(191, 219, 254);
   --accent-rgb: 42 133 255;
   --destructive: rgb(239, 68, 68);
@@ -155,6 +162,9 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-premium: var(--mm-warn);
+  --color-success: var(--mm-success);
+  --color-success-foreground: var(--mm-success-fg);
+  --color-success-bg: var(--mm-success-bg);
   --color-accent-foreground: var(--accent-foreground);
   --color-miles: var(--mm-yellow);
   --color-destructive: var(--destructive);
@@ -204,7 +214,14 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   overscroll-behavior-x: contain;
-  scroll-behavior: smooth;
+  /* NO `scroll-behavior: smooth` here. It applies to scrolls that don't ask for
+     a behavior — which is exactly Angular's `ViewportScroller.scrollToPosition`
+     behind `withInMemoryScrolling({ scrollPositionRestoration: 'top' })`. The
+     reset then animates instead of jumping, and the route change tears the old
+     view down mid-animation, so you land wherever it got to (the footer).
+     Every intentional smooth scroll in the app passes `behavior: 'smooth'`
+     explicitly (`ScrollService`, `scrollToLab`, the AI Labs section jumps), so
+     they are unaffected. */
 }
 
 input[type='number'] {

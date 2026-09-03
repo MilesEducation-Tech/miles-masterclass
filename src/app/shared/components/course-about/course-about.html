@@ -65,7 +65,7 @@
       <!-- Instructor & Expiration Column -->
       <div class="xl:col-span-2 flex flex-col gap-6">
         <!-- Instructor Card -->
-        @if (card().instructor_details.other_instructors.length > 0) {
+        @if (card().instructor_details?.other_instructors?.length) {
           @let instructorList =
             [card().instructor_details, ...card().instructor_details.other_instructors];
           <div
@@ -239,7 +239,7 @@
           <div
             class="relative z-10 flex flex-col gap-3 xl:flex-1 xl:min-h-0 xl:overflow-y-auto xl:pr-1"
           >
-            @if (card().learning_pathway_info.length) {
+            @if (card().learning_pathway_info?.length) {
               @for (pathway of card().learning_pathway_info; track pathway.pathway_id) {
                 <div class="flex flex-col gap-0.5 shrink-0">
                   <p class="md:text-xl text-base font-semibold text-white">
@@ -261,178 +261,182 @@
     </section>
   }
 
-  <!-- CERTIFYING ORGANIZATION SECTION -->
-  <section class="flex w-full gap-8 max-md:flex-col">
-    <div class="md:w-1/4 w-full">
-      <h2 class="text-white md:text-3xl text-xl font-semibold">Certifying Organizations</h2>
-    </div>
+  <!-- Certifying organizations only mean something when the course carries CPE
+       credit; a 0-credit course has no NASBA claim to make. -->
+  @if (cpeCredits() > 0) {
+    <!-- CERTIFYING ORGANIZATION SECTION -->
+    <section class="flex w-full gap-8 max-md:flex-col">
+      <div class="md:w-1/4 w-full">
+        <h2 class="text-white md:text-3xl text-xl font-semibold">Certifying Organizations</h2>
+      </div>
 
-    <div class="md:w-3/4 w-full flex flex-col gap-12">
-      <!-- NASBA Section -->
-      <div class="flex flex-col gap-8">
-        <h3 class="text-white md:text-lg text-base font-semibold">
-          National Association of State Boards of Accountancy (NASBA)
-        </h3>
+      <div class="md:w-3/4 w-full flex flex-col gap-12">
+        <!-- NASBA Section -->
+        <div class="flex flex-col gap-8">
+          <h3 class="text-white md:text-lg text-base font-semibold">
+            National Association of State Boards of Accountancy (NASBA)
+          </h3>
 
-        <div class="w-24 md:w-28 relative h-32 md:h-36">
-          <img
-            ngSrc="https://asset.milesmasterclass.com/media/web-app/home/nasba.webp"
-            alt="NASBA Logo"
-            class="w-full h-auto"
-            fill
-          />
+          <div class="w-24 md:w-28 relative h-32 md:h-36">
+            <img
+              ngSrc="https://asset.milesmasterclass.com/media/web-app/home/nasba.webp"
+              alt="NASBA Logo"
+              class="w-full h-auto"
+              fill
+            />
+          </div>
+
+          <!-- CPE Details -->
+          <div class="flex flex-col gap-6">
+            <ul class="flex flex-col gap-3 text-gray-400">
+              <li class="md:text-base text-sm">
+                Continuing Professional Education Credit (CPE):
+                <span class="text-white font-medium">{{
+                  card().fields_of_study | totalCpeCredits: card().class_credits
+                }}</span>
+              </li>
+              <li class="md:text-base text-sm">
+                Fields of Study:
+                <app-categories-list
+                  class="text-white font-medium inline-block w-full max-w-full align-middle"
+                  [items]="card().fields_of_study ?? []"
+                  [separator]="'| '"
+                  [showCredits]="true"
+                />
+              </li>
+              <li class="md:text-base text-sm">
+                Sponsor Identification number:
+                <span class="text-white font-medium">149174</span>
+              </li>
+              <li class="md:text-base text-sm">
+                Instructional Delivery Method:
+                <span class="text-white font-medium ml-2">{{ card().int_delivery_method }}</span>
+              </li>
+              <li class="md:text-base text-sm">
+                Program Level:
+                <span class="text-white font-medium ml-2">{{ card().program_level }}</span>
+              </li>
+              <li class="md:text-base text-sm">
+                Prerequisite Education:
+                <span class="text-white font-medium ml-2">{{ card().prerequisite_education }}</span>
+              </li>
+              @if (card().advance_preparation) {
+                <li class="md:text-base text-sm">
+                  Advanced Preparation:
+                  <span class="text-white font-medium ml-2">{{ card().advance_preparation }}</span>
+                </li>
+              }
+            </ul>
+
+            <!-- Dates -->
+            <ul class="flex flex-col gap-2 text-gray-400">
+              @if (card().course_created_date) {
+                <li class="md:text-base text-sm">
+                  Created on:
+                  <span class="text-white">{{
+                    card().course_created_date | date: 'dd MMM yyyy'
+                  }}</span>
+                </li>
+              }
+              @if (card().course_reviewed_date) {
+                <li class="md:text-base text-sm">
+                  Reviewed on:
+                  <span class="text-white">{{
+                    card().course_reviewed_date | date: 'dd MMM yyyy'
+                  }}</span>
+                </li>
+              }
+              @if (card().course_updated_date) {
+                <li class="md:text-base text-sm">
+                  Updated on:
+                  <span class="text-white">{{
+                    card().course_updated_date | date: 'dd MMM yyyy'
+                  }}</span>
+                </li>
+              }
+              @if (card().total_duration) {
+                <li class="md:text-base text-sm">
+                  Video Duration:
+                  <span class="text-white">{{ card().total_duration | duration: 'medium' }}</span>
+                </li>
+              }
+            </ul>
+
+            <!-- CPE Credits Requirements -->
+            <div class="flex flex-col gap-3">
+              <h4 class="text-white md:text-lg text-base font-medium">
+                To earn CPE credits, the learner is expected to:
+              </h4>
+              @if (type() === 'webinar') {
+                <ul class="flex flex-col gap-2 text-gray-400 list-disc pl-5">
+                  <li class="md:text-base text-sm">
+                    Answer {{ card().no_question_answered }} poll questions during the webinar
+                  </li>
+                  <li class="md:text-base text-sm">
+                    Attend at least {{ webinarAttendanceMinutes() | duration: 'medium' }} of the
+                    {{ card().webinar_duration | duration: 'medium' }} webinar
+                  </li>
+                </ul>
+              } @else {
+                <ul class="flex flex-col gap-2 text-gray-400 list-disc pl-5">
+                  <li class="md:text-base text-sm">Complete all videos and chapter quizzes</li>
+                  <li class="md:text-base text-sm">
+                    Complete the final exam within one year from completing the course
+                  </li>
+                  <li class="md:text-base text-sm">Score 70% or higher on final exam</li>
+                </ul>
+              }
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="text-gray-400 md:text-base text-sm leading-relaxed">
+              <p>
+                If you undertake this course for CPE credits, you can leave final comments in the
+                Feedback.
+              </p>
+              <p class="mt-4">
+                Miles Masterclass Inc. is registered with the National Association of State Boards
+                of Accountancy (NASBA) as a sponsor of continuing professional education on the
+                National Registry of CPE Sponsors. State boards of accountancy have final authority
+                on the acceptance of individual courses for CPE credit. Complaints regarding
+                registered sponsors may be submitted to the National Registry of CPE Sponsors
+                through its web site:
+                <a
+                  href="https://nasbaregistry.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-blue-400 hover:text-blue-300 underline transition-colors"
+                >
+                  www.nasbaregistry.org
+                </a>
+              </p>
+              <p class="mt-4">
+                For course refund policy, issue resolution, and additional info please refer to the
+                FAQs on the Overview tab. For more information regarding administrative policies
+                such as complaint and refund, please contact our offices at
+                <a
+                  href="mailto:support@milesmasterclass.com"
+                  class="text-blue-400 hover:text-blue-300 underline transition-colors"
+                >
+                  support&#64;milesmasterclass.com
+                </a>
+              </p>
+            </div>
+          </div>
         </div>
 
-        <!-- CPE Details -->
+        <!-- Miles Masterclass Section -->
         <div class="flex flex-col gap-6">
-          <ul class="flex flex-col gap-3 text-gray-400">
-            <li class="md:text-base text-sm">
-              Continuing Professional Education Credit (CPE):
-              <span class="text-white font-medium">{{
-                card().fields_of_study | totalCpeCredits: card().class_credits
-              }}</span>
-            </li>
-            <li class="md:text-base text-sm">
-              Fields of Study:
-              <app-categories-list
-                class="text-white font-medium inline-block w-full max-w-full align-middle"
-                [items]="card().fields_of_study ?? []"
-                [separator]="'| '"
-                [showCredits]="true"
-              />
-            </li>
-            <li class="md:text-base text-sm">
-              Sponsor Identification number:
-              <span class="text-white font-medium">149174</span>
-            </li>
-            <li class="md:text-base text-sm">
-              Instructional Delivery Method:
-              <span class="text-white font-medium ml-2">{{ card().int_delivery_method }}</span>
-            </li>
-            <li class="md:text-base text-sm">
-              Program Level:
-              <span class="text-white font-medium ml-2">{{ card().program_level }}</span>
-            </li>
-            <li class="md:text-base text-sm">
-              Prerequisite Education:
-              <span class="text-white font-medium ml-2">{{ card().prerequisite_education }}</span>
-            </li>
-            @if (card().advance_preparation) {
-              <li class="md:text-base text-sm">
-                Advanced Preparation:
-                <span class="text-white font-medium ml-2">{{ card().advance_preparation }}</span>
-              </li>
-            }
-          </ul>
-
-          <!-- Dates -->
-          <ul class="flex flex-col gap-2 text-gray-400">
-            @if (card().course_created_date) {
-              <li class="md:text-base text-sm">
-                Created on:
-                <span class="text-white">{{
-                  card().course_created_date | date: 'dd MMM yyyy'
-                }}</span>
-              </li>
-            }
-            @if (card().course_reviewed_date) {
-              <li class="md:text-base text-sm">
-                Reviewed on:
-                <span class="text-white">{{
-                  card().course_reviewed_date | date: 'dd MMM yyyy'
-                }}</span>
-              </li>
-            }
-            @if (card().course_updated_date) {
-              <li class="md:text-base text-sm">
-                Updated on:
-                <span class="text-white">{{
-                  card().course_updated_date | date: 'dd MMM yyyy'
-                }}</span>
-              </li>
-            }
-            @if (card().total_duration) {
-              <li class="md:text-base text-sm">
-                Video Duration:
-                <span class="text-white">{{ card().total_duration | duration: 'medium' }}</span>
-              </li>
-            }
-          </ul>
-
-          <!-- CPE Credits Requirements -->
-          <div class="flex flex-col gap-3">
-            <h4 class="text-white md:text-lg text-base font-medium">
-              To earn CPE credits, the learner is expected to:
-            </h4>
-            @if (type() === 'webinar') {
-              <ul class="flex flex-col gap-2 text-gray-400 list-disc pl-5">
-                <li class="md:text-base text-sm">
-                  Answer {{ card().no_question_answered }} poll questions during the webinar
-                </li>
-                <li class="md:text-base text-sm">
-                  Attend at least {{ webinarAttendanceMinutes() | duration: 'medium' }} of the
-                  {{ card().webinar_duration | duration: 'medium' }} webinar
-                </li>
-              </ul>
-            } @else {
-              <ul class="flex flex-col gap-2 text-gray-400 list-disc pl-5">
-                <li class="md:text-base text-sm">Complete all videos and chapter quizzes</li>
-                <li class="md:text-base text-sm">
-                  Complete the final exam within one year from completing the course
-                </li>
-                <li class="md:text-base text-sm">Score 70% or higher on final exam</li>
-              </ul>
-            }
+          <h3 class="text-white md:text-lg text-base font-semibold">Miles Masterclass Inc.</h3>
+          <div class="w-1/4">
+            <ng-icon [svg]="icons().logo" class="w-full! h-full!" />
           </div>
-
-          <!-- Disclaimer -->
-          <div class="text-gray-400 md:text-base text-sm leading-relaxed">
-            <p>
-              If you undertake this course for CPE credits, you can leave final comments in the
-              Feedback.
-            </p>
-            <p class="mt-4">
-              Miles Masterclass Inc. is registered with the National Association of State Boards of
-              Accountancy (NASBA) as a sponsor of continuing professional education on the National
-              Registry of CPE Sponsors. State boards of accountancy have final authority on the
-              acceptance of individual courses for CPE credit. Complaints regarding registered
-              sponsors may be submitted to the National Registry of CPE Sponsors through its web
-              site:
-              <a
-                href="https://nasbaregistry.org/"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="text-blue-400 hover:text-blue-300 underline transition-colors"
-              >
-                www.nasbaregistry.org
-              </a>
-            </p>
-            <p class="mt-4">
-              For course refund policy, issue resolution, and additional info please refer to the
-              FAQs on the Overview tab. For more information regarding administrative policies such
-              as complaint and refund, please contact our offices at
-              <a
-                href="mailto:support@milesmasterclass.com"
-                class="text-blue-400 hover:text-blue-300 underline transition-colors"
-              >
-                support&#64;milesmasterclass.com
-              </a>
-            </p>
-          </div>
+          <p class="text-gray-400 md:text-base text-sm">
+            To earn the Miles Learning Certificate, the learner is expected to complete all videos
+            and chapter quizzes
+          </p>
         </div>
       </div>
-
-      <!-- Miles Masterclass Section -->
-      <div class="flex flex-col gap-6">
-        <h3 class="text-white md:text-lg text-base font-semibold">Miles Masterclass Inc.</h3>
-        <div class="w-1/4">
-          <ng-icon [svg]="icons().logo" class="w-full! h-full!" />
-        </div>
-        <p class="text-gray-400 md:text-base text-sm">
-          To earn the Miles Learning Certificate, the learner is expected to complete all videos and
-          chapter quizzes
-        </p>
-      </div>
-    </div>
-  </section>
+    </section>
+  }
 </div>

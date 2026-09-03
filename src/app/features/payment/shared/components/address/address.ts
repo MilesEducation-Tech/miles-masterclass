@@ -1,6 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matEditOutline, matDeleteOutline } from '@ng-icons/material-icons/outline';
+import { UserAddress } from '../../../../../shared/core/models/payment.model';
 
 @Component({
   selector: 'app-address',
@@ -21,14 +22,14 @@ import { matEditOutline, matDeleteOutline } from '@ng-icons/material-icons/outli
   },
 })
 export class Address {
-  readonly address = input.required<any>();
+  readonly address = input.required<UserAddress>();
   readonly userName = input<string>('');
   readonly selected = input<boolean>(false);
   readonly actionsDisabled = input<boolean>(false);
 
-  readonly selectedChange = output<any>();
-  readonly edit = output<any>();
-  readonly delete = output<any>();
+  readonly selectedChange = output<UserAddress>();
+  readonly edit = output<UserAddress>();
+  readonly delete = output<UserAddress>();
 
   readonly formattedAddress = computed(() => {
     const a = this.address();

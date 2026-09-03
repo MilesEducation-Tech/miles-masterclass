@@ -75,20 +75,27 @@
               >
                 {{ subscribeLabel() }}
               </button>
-              @if (canGetSponsorship()) {
-                <button
-                  type="button"
-                  class="w-full py-3.5 rounded-xl font-semibold text-sm transition-colors cursor-pointer"
-                  [class]="
-                    canGetSponsorship()
-                      ? 'bg-(--accent) text-white hover:bg-(--accent)/90'
-                      : 'bg-(--accent)/40 text-white/70 cursor-not-allowed'
-                  "
-                  [disabled]="!canGetSponsorship()"
-                  (click)="onFirmSponsorship()"
-                >
-                  Get Firm Sponsorship
-                </button>
+              @if (canGetAlternativeFunding()) {
+                <!-- The two alternative funding routes sit side by side as
+                     equal-weight secondary options under Subscribe. They stack
+                     below sm: two 3.5-unit-tall buttons don't fit one phone row
+                     without the labels wrapping. -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    class="flex-1 py-3.5 rounded-xl bg-(--accent) text-white font-semibold text-sm transition-colors hover:bg-(--accent)/90 cursor-pointer"
+                    (click)="onFirmSponsorship()"
+                  >
+                    Get Firm Sponsorship
+                  </button>
+                  <button
+                    type="button"
+                    class="flex-1 py-3.5 rounded-xl border border-white/25 bg-transparent text-white font-semibold text-sm transition-colors hover:bg-white/10 cursor-pointer"
+                    (click)="onApplyPartnerCode()"
+                  >
+                    Apply Partner Code
+                  </button>
+                </div>
               }
             </div>
 

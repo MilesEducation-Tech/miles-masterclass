@@ -1,43 +1,37 @@
-import { hasCourseIds } from '../../../../user-report/shared/utils/course-ids';
-import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideShieldOff, lucideShieldCheck, lucideEye, lucideEyeOff } from '@ng-icons/lucide';
 import { Button } from '../../../../../shared/components/ui/button/button';
 import { Spinner } from '../../../../../shared/components/ui/spinner/spinner';
-import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
-import { PERM } from '../../../../../shared/core/models/admin/admin-rbac.model';
-import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
-import { NotificationService } from '../../../../../shared/core/services/notification/notification';
-import {
-  UserCourseDetailDialog,
-  UserCourseDetailDialogData,
-} from '../../../../user-report/shared/components/user-course-detail-dialog/user-course-detail-dialog';
+import { PartnerPanelUser } from '../../../../partner-platform/shared/models/partner-platform.model';
 
 @Component({
   selector: 'app-users-table',
-  imports: [DatePipe, DecimalPipe, NgIcon, Button, Spinner, HasPermissionDirective],
+  imports: [DecimalPipe, NgIcon, Button, Spinner],
   providers: [provideIcons({ lucideShieldOff, lucideShieldCheck, lucideEye, lucideEyeOff })],
   templateUrl: './users-table.html',
   styleUrl: './users-table.css',
   host: { class: 'block w-full' },
 })
 export class UsersTable {
-  private readonly dialog = inject(Dialog);
-  private readonly notification = inject(NotificationService);
-
-  readonly rows = input.required<any[]>();
+  readonly rows = input.required<PartnerPanelUser[]>();
   readonly isLoading = input<boolean>(false);
   readonly currentPage = input<number>(1);
+  readonly pageSize = input<number>(30);
   readonly totalCount = input<number>(0);
   readonly hasNext = input<boolean>(false);
   readonly hasPrev = input<boolean>(false);
+  /**
+   * Block/unblock visibility. The server honours the Django `user:block`
+   * capability, not a Supabase perm — the page passes `me.can('user:block')`,
+   * so the button never renders for an admin whose click would only 403.
+   */
+  readonly canBlock = input<boolean>(false);
 
-  readonly blockToggle = output<any>();
+  readonly blockToggle = output<PartnerPanelUser>();
   readonly prevPage = output<void>();
   readonly nextPage = output<void>();
-
-  protected readonly PERM = PERM;
 
   protected readonly canPrev = computed(() => this.hasPrev() && !this.isLoading());
   protected readonly canNext = computed(() => this.hasNext() && !this.isLoading());
@@ -46,16 +40,11 @@ export class UsersTable {
     const rowsLen = this.rows().length;
     const total = this.totalCount();
     if (rowsLen === 0) return { from: 0, to: 0, total };
-    // Without a page size from the API, the visible window is just the rows
-    // currently rendered. Page * rows ≈ approximate "to" when the server
-    // returns a uniform page size.
-    const page = this.currentPage();
-    const from = (page - 1) * rowsLen + 1;
-    const to = from + rowsLen - 1;
-    return { from, to, total };
+    const from = (this.currentPage() - 1) * this.pageSize() + 1;
+    return { from, to: from + rowsLen - 1, total };
   });
 
-  protected onToggle(user: any): void {
+  protected onToggle(user: PartnerPanelUser): void {
     this.blockToggle.emit(user);
   }
 
@@ -66,11 +55,11 @@ export class UsersTable {
    */
   private readonly revealedEmails = signal<ReadonlySet<number>>(new Set());
 
-  protected isEmailRevealed(row: any): boolean {
+  protected isEmailRevealed(row: PartnerPanelUser): boolean {
     return this.revealedEmails().has(row.id);
   }
 
-  protected toggleEmailReveal(row: any): void {
+  protected toggleEmailReveal(row: PartnerPanelUser): void {
     this.revealedEmails.update((prev) => {
       const next = new Set(prev);
       if (next.has(row.id)) {
@@ -85,11 +74,11 @@ export class UsersTable {
   /** Row ids whose phone number is currently shown in full. */
   private readonly revealedPhones = signal<ReadonlySet<number>>(new Set());
 
-  protected isPhoneRevealed(row: any): boolean {
+  protected isPhoneRevealed(row: PartnerPanelUser): boolean {
     return this.revealedPhones().has(row.id);
   }
 
-  protected togglePhoneReveal(row: any): void {
+  protected togglePhoneReveal(row: PartnerPanelUser): void {
     this.revealedPhones.update((prev) => {
       const next = new Set(prev);
       if (next.has(row.id)) {
@@ -102,7 +91,7 @@ export class UsersTable {
   }
 
   /** Whether the phone cell holds a maskable value (not empty / "N/A"). */
-  protected hasPhone(row: any): boolean {
+  protected hasPhone(row: PartnerPanelUser): boolean {
     return !!row.phone && row.phone !== 'N/A';
   }
 
@@ -131,31 +120,5 @@ export class UsersTable {
       masked = `${local.slice(0, 2)}•••${local.slice(-2)}`;
     }
     return `${masked}@${domain}`;
-  }
-
-  /**
-   * Open the reusable course-detail drill-down for one metric. The backend
-   * returns each metric's ids already bucketed by course type, so pass them
-   * straight through (nullish guards for any missing bucket).
-   */
-  protected openCourseDetail(row: any, category: any, courseIds: any | undefined): void {
-    const buckets: any = {
-      masterclass_id: courseIds?.masterclass_id ?? [],
-      podcast_id: courseIds?.podcast_id ?? [],
-      nano_learning_id: courseIds?.nano_learning_id ?? [],
-    };
-    if (!hasCourseIds(buckets)) {
-      this.notification.info('No course data', 'There are no courses for this field.');
-      return;
-    }
-    this.dialog.open<UserCourseDetailDialog>(UserCourseDetailDialog, {
-      data: {
-        userName: row.name,
-        category,
-        courseIds: buckets,
-      } satisfies UserCourseDetailDialogData,
-      maxWidth: '560px',
-      ariaLabel: `${category} for ${row.name}`,
-    });
   }
 }

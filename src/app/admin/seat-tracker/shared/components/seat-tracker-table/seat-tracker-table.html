@@ -1,0 +1,184 @@
+<div class="text-white">
+  @if (isLoading() && !rows().length) {
+    <div class="flex items-center justify-center py-12 text-neutral-400">
+      <app-spinner size="lg" color="white" trackColor="neutral-600" />
+    </div>
+  }
+
+  @if (rows().length) {
+    <div class="overflow-x-auto rounded-lg border border-white/10">
+      <table class="w-full text-left text-sm">
+        <thead
+          class="text-[11px] uppercase tracking-wider"
+          style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
+        >
+          <tr>
+            <th class="px-4 py-3 font-semibold">Seat code</th>
+            <th class="px-4 py-3 font-semibold">Partner code</th>
+            @if (showFirm()) {
+              <th class="px-4 py-3 font-semibold">Sub-company</th>
+            }
+            <th class="px-4 py-3 font-semibold text-right">Purchase cost</th>
+            <th class="px-4 py-3 font-semibold">Expiry date</th>
+            <th class="px-4 py-3 font-semibold">Status</th>
+            @if (sendEnabled()) {
+              <th class="px-4 py-3 font-semibold min-w-56">Send to email</th>
+            }
+            <th class="px-4 py-3 font-semibold">Shared on / to</th>
+            <th class="px-4 py-3 font-semibold">Applied on / by</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          @for (row of rows(); track row.id) {
+            <tr
+              class="hover:bg-white/3 transition-colors"
+              [class.opacity-50]="row.status === 'expired'"
+            >
+              <!-- Code -->
+              <td class="px-4 py-3 font-mono text-neutral-100 break-all">{{ row.code }}</td>
+
+              <!-- The plan this seat was minted from -->
+              <td class="px-4 py-3 text-neutral-300 whitespace-nowrap">
+                {{ row.partner_code.code }}
+              </td>
+
+              <!-- Sub-company -->
+              @if (showFirm()) {
+                <td class="px-4 py-3 text-neutral-300 whitespace-nowrap">
+                  {{ row.firm?.name ?? '—' }}
+                </td>
+              }
+
+              <!-- Cost -->
+              <td class="px-4 py-3 text-right tabular-nums text-neutral-300">
+                {{ +row.purchase_cost | currency: 'USD' : 'symbol' : '1.0-2' }}
+              </td>
+
+              <!-- Expiry -->
+              <td class="px-4 py-3 text-neutral-300 whitespace-nowrap">
+                {{ row.expiry_date ? (row.expiry_date | date: 'MMM d, y') : '—' }}
+              </td>
+
+              <!-- Status chip -->
+              <td class="px-4 py-3">
+                <span
+                  class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                  [style.background]="chip(row.status).bg"
+                  [style.color]="chip(row.status).fg"
+                >
+                  {{ chip(row.status).label }}
+                </span>
+              </td>
+
+              <!-- Send to email (network admins only) -->
+              @if (sendEnabled()) {
+                <td class="px-4 py-3">
+                  @if (row.status === 'available') {
+                    <span class="flex items-center gap-2">
+                      <input
+                        type="email"
+                        class="send-input"
+                        placeholder="name@company.com"
+                        [value]="emailDraft(row)"
+                        (input)="onDraftInput(row, $event)"
+                        (keydown.enter)="canSend(row) && onSend(row)"
+                        [attr.aria-label]="'Email to send seat to'"
+                      />
+                      <app-button
+                        variant="primary"
+                        size="sm"
+                        [disabled]="!canSend(row)"
+                        (clicked)="onSend(row)"
+                      >
+                        <span class="inline-flex items-center gap-1.5">
+                          <ng-icon name="lucideSend" class="text-sm" aria-hidden="true" />
+                          Send
+                        </span>
+                      </app-button>
+                    </span>
+                  } @else if (row.status === 'expired') {
+                    <span class="text-xs text-neutral-500">Expired — sending disabled</span>
+                  } @else {
+                    <span class="text-xs text-neutral-500">—</span>
+                  }
+                </td>
+              }
+
+              <!-- Shared on / to -->
+              <td class="px-4 py-3 text-neutral-300">
+                @if (row.shared_on) {
+                  <span class="flex flex-col gap-0.5">
+                    <span class="whitespace-nowrap">{{ row.shared_on | date: 'MMM d, y' }}</span>
+                    <span class="inline-flex items-center gap-1.5 text-xs text-neutral-400">
+                      <span class="break-all">{{ row.sent_to_email }}</span>
+                      @if (sendEnabled() && row.status === 'shared') {
+                        <button
+                          type="button"
+                          class="drill-btn shrink-0"
+                          (click)="resend.emit(row)"
+                          [attr.aria-label]="'Resend seat to ' + row.sent_to_email"
+                          title="Resend email"
+                        >
+                          <ng-icon name="lucideRotateCw" class="text-sm" aria-hidden="true" />
+                        </button>
+                      }
+                    </span>
+                  </span>
+                } @else {
+                  —
+                }
+              </td>
+
+              <!-- Applied on / by -->
+              <td class="px-4 py-3 text-neutral-300">
+                @if (row.status === 'applied' && row.applied_on) {
+                  <span class="flex flex-col gap-0.5">
+                    <span class="whitespace-nowrap">{{ row.applied_on | date: 'MMM d, y' }}</span>
+                    <span class="text-xs text-neutral-400 break-all">
+                      {{ maskEmail(row.applied_by_email) }}
+                    </span>
+                  </span>
+                } @else {
+                  —
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-6 flex items-center justify-between text-sm text-neutral-400">
+      <span>
+        Showing
+        <span class="font-semibold text-white">
+          {{ pageWindow().from }}-{{ pageWindow().to }}
+        </span>
+        of {{ pageWindow().total }}
+      </span>
+      <div class="flex items-center gap-3">
+        <app-button
+          variant="outline"
+          size="sm"
+          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
+          [disabled]="!canPrev()"
+          (clicked)="prevPage.emit()"
+        >
+          Prev
+        </app-button>
+        <span class="text-white/70 tabular-nums">Page {{ currentPage() }}</span>
+        <app-button
+          variant="outline"
+          size="sm"
+          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
+          [disabled]="!canNext()"
+          (clicked)="nextPage.emit()"
+        >
+          Next
+        </app-button>
+      </div>
+    </div>
+  } @else if (!isLoading()) {
+    <p class="py-12 text-center text-sm text-neutral-500">No seats to show.</p>
+  }
+</div>

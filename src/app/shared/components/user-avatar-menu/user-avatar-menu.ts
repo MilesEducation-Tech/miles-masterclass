@@ -33,7 +33,7 @@ export class UserAvatarMenu {
   readonly displayName = computed(() => {
     const u = this.user();
     if (!u) return '';
-    const full = `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim();
+    const full = `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim();
     return full || u.email || '';
   });
 
@@ -42,8 +42,8 @@ export class UserAvatarMenu {
   readonly initials = computed(() => {
     const u = this.user();
     if (!u) return 'U';
-    const first = (u.firstName ?? '').trim();
-    const last = (u.lastName ?? '').trim();
+    const first = (u.first_name ?? '').trim();
+    const last = (u.last_name ?? '').trim();
     const fromName = `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
     if (fromName) return fromName;
     const email = (u.email ?? '').trim();

@@ -33,14 +33,26 @@
       />
     </div>
 
-    <app-aria-autocomplete
-      id="location"
-      label="Location"
-      [options]="locationOptions()"
-      [serverFiltered]="true"
-      [formField]="profileForm.location"
-      (queryChange)="locationQuery.set($event)"
-    />
+    <!-- Free-text fallback when the location lookup is down: the picker would
+         otherwise be a dead field. Validation moves into the form (country
+         required) since the API is no longer guaranteeing it. -->
+    @if (locationApiFailed()) {
+      <app-aria-input
+        id="location"
+        label="Location"
+        hint="Location lookup is unavailable — type your location ending in the country, e.g. India or Bengaluru, India"
+        [formField]="profileForm.location"
+      />
+    } @else {
+      <app-aria-autocomplete
+        id="location"
+        label="Location"
+        [options]="locationOptions()"
+        [serverFiltered]="true"
+        [formField]="profileForm.location"
+        (queryChange)="locationQuery.set($event)"
+      />
+    }
 
     @if (isExistingUser()) {
       <!-- CPA Details — existing users only -->
@@ -85,6 +97,23 @@
         [formField]="profileForm.company_id"
         (queryChange)="onCompanySearch($event)"
       />
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <app-aria-autocomplete
+          id="sector"
+          label="Sector"
+          placeholder="Select your sector"
+          [options]="sectorOptions()"
+          [formField]="profileForm.sector_id"
+        />
+        <app-aria-autocomplete
+          id="job_role"
+          label="Job Role"
+          placeholder="Select your role"
+          [options]="jobRoleOptions()"
+          [formField]="profileForm.job_role_id"
+        />
+      </div>
     }
 
     @if (showPartnerCodeSection()) {

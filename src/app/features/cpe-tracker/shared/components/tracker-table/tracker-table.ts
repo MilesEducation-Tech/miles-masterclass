@@ -61,13 +61,6 @@ export class TrackerTable {
 
   readonly rows = input.required<TrackerTableRow[]>();
   readonly isLoading = input<boolean>(false);
-  /**
-   * Whether a row title links to its course.
-   *
-   * `false` for CAIRA badge rows: #23 carries no course id, so there is nothing
-   * to navigate to and a link that does nothing is worse than plain text.
-   */
-  readonly titleNavigable = input<boolean>(true);
   readonly currentPage = input<number>(1);
   readonly totalPages = input<number>(1);
   readonly pageWindow = input<{ from: number; to: number; total: number }>({

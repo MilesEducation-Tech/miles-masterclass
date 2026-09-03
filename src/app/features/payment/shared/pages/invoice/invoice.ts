@@ -14,6 +14,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { PaymentStatus } from '../../components/payment-status/payment-status';
+import { PaymentFacade } from '../../service/payment-facade/payment-facade';
 import { CartItem } from '../../components/cart-item/cart-item';
 import { PriceOverview } from '../../components/price-overview/price-overview';
 import { Utils } from '../../../../../shared/core/services/utils/utils';
@@ -41,28 +42,7 @@ import {
   },
 })
 export class Invoice {
-  // ponytail: PaymentFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly facade: any = {
-    cartData: signal<any>(null),
-    error: signal<any>(null),
-    invoiceCurrency: signal<any>(null),
-    invoiceFormattedAddress: signal<any[]>([]),
-    invoiceGrandTotal: signal<any>(null),
-    invoiceItemCount: signal<any>(null),
-    invoiceItems: signal<any[]>([]),
-    invoicePaymentStatus: signal<any[]>([]),
-    invoiceSubTotal: signal<any>(null),
-    invoiceTotalDiscount: signal<any>(null),
-    invoiceTransactionDetails: signal<any[]>([]),
-    invoiceUserData: signal<any>(null),
-    loading: signal<any>(null),
-    loadOrderById: (..._args: any[]): any => null,
-    orderData: signal<any>(null),
-    proceedToPayment: signal<any>(null),
-    selectedAddressId: signal<any>(null),
-  };
+  private readonly facade = inject(PaymentFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly auth = inject(Auth);
@@ -127,9 +107,9 @@ export class Invoice {
     // }
     const user = this.auth.currentUser();
     return {
-      name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
+      name: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : '',
       email: user?.email || '',
-      mobile: user?.phone || '',
+      mobile: user?.mobile || '',
     };
   });
 
@@ -139,7 +119,7 @@ export class Invoice {
     }
     const a = this.facade
       .billingAddress()
-      .find((addr: any) => addr.id === this.facade.selectedAddressId());
+      .find((addr) => addr.id === this.facade.selectedAddressId());
     return [a?.address1, a?.locality, a?.landmark, a?.city, a?.state, a?.country, a?.zipcode]
       .filter(Boolean)
       .join(', ');
@@ -248,7 +228,7 @@ export class Invoice {
         selling_price: this.facade.invoiceGrandTotal(),
         product_discount: this.facade.invoiceTotalDiscount(),
         paid_amount: this.facade.invoiceTransactionDetails()?.paid_amount ?? 0,
-        items: this.cartItems().map((it: any) => {
+        items: this.cartItems().map((it) => {
           const i = it as unknown as { id?: number; item_type?: string; paid_amount?: number };
           return {
             course_id: String(i.id ?? ''),
@@ -261,7 +241,7 @@ export class Invoice {
   }
 
   readonly hasSubscriptionItem = computed(() =>
-    this.cartItems().some((item: any) => item.item_type === 'subscription'),
+    this.cartItems().some((item) => item.item_type === 'subscription'),
   );
 
   proceedToPayment() {

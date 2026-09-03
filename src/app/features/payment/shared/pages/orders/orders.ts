@@ -1,7 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '@angular/aria/menu';
+import { PaymentFacade } from '../../service/payment-facade/payment-facade';
 import { CartItem, CartItemConfig } from '../../components/cart-item/cart-item';
 import { PageLoading } from '../../../../../shared/components/ui/page-loading/page-loading';
 import { ErrorState } from '../../../../../shared/components/ui/error-state/error-state';
@@ -49,20 +50,7 @@ interface OrderActions {
   ],
 })
 export class Orders {
-  // ponytail: PaymentFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly facade: any = {
-    cancelAutoRenewal: (..._args: any[]): any => null,
-    loadOrders: signal<any[]>([]),
-    navigateToStripeCustomerDashboard: (..._args: any[]): any => null,
-    openStripeCustomerPortal: signal<any>(null),
-    ordersCount: signal<any>(null),
-    ordersData: signal<any>(null),
-    ordersError: signal<any>(null),
-    ordersLoading: signal<any>(null),
-    reactivateAutoRenewal: (..._args: any[]): any => null,
-  };
+  private readonly facade = inject(PaymentFacade);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -84,17 +72,17 @@ export class Orders {
     for (const order of this.orders()) {
       map.set(order.id, {
         hasStripeReceipt: order.order_items.some(
-          (item: any) => item.platform?.toLowerCase() === 'stripe',
+          (item) => item.platform?.toLowerCase() === 'stripe',
         ),
         showCancelAutoRenewal: order.order_items.some(
-          (item: any) =>
+          (item) =>
             item.platform?.toLowerCase() === 'stripe' &&
             item.item_type === 'subscription' &&
             item.paid_amount > 0 &&
             (item.subscription_status === 'Active' || item.subscription_status === 'ReSubscribe'),
         ),
         showReactivateAutoRenewal: order.order_items.some(
-          (item: any) =>
+          (item) =>
             item.platform?.toLowerCase() === 'stripe' &&
             item.item_type === 'subscription' &&
             item.paid_amount > 0 &&

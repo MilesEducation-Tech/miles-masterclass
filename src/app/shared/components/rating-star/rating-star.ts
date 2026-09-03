@@ -24,11 +24,6 @@ export class RatingStar {
 
   valueChange = output<number>();
 
-  /** Group label so a screen reader announces the control, not five loose buttons. */
-  readonly ariaLabel = computed(() =>
-    this.isReadonly() ? `Rating: ${this.value()} out of ${this.max()}` : 'Rating',
-  );
-
   stars = computed(() => {
     return Array(this.max())
       .fill(0)

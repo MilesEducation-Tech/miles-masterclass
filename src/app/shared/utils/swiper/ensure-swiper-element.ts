@@ -1,7 +1,11 @@
 // Lazy-registers Swiper's custom elements (`<swiper-container>` / `<swiper-slide>`)
-// so `swiper/element` (~90 kB) stays out of the initial bundle. Carousels only
-// ever render in lazy feature routes, so registration is deferred to the moment
-// a component is about to initialize its <swiper-container init="false">.
+// so `swiper/element` (~90 kB) stays out of the initial bundle. Modules are
+// passed as JS by the consumer (`swiper/modules`), and their stylesheets with
+// them — see `PAGINATION_STYLES` in carousel.ts.
+//
+// Carousels only ever render in lazy feature routes, so registration is deferred
+// to the moment a component is about to initialize its
+// <swiper-container init="false">.
 //
 // Idempotent: the import()/register() runs at most once (promise is cached), and
 // swiper's own register() guards against re-defining the elements.

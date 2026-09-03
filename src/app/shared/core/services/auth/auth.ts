@@ -1,284 +1,440 @@
-import { HttpContext, httpResource } from '@angular/common/http';
-import { isPlatformBrowser } from '@angular/common';
-import { PLATFORM_ID, Service, computed, inject, signal } from '@angular/core';
-import { BehaviorSubject, Observable, catchError, map, of, tap } from 'rxjs';
-import { Storage } from '../storage/storage';
-import { Logger } from '../logger/logger';
-import { ApiClient } from '../api-client/api-client';
-import { CAIRA } from '../../http/caira.endpoints';
-import { SKIP_AUTH_REFRESH, SKIP_ERROR_NOTIFICATION } from '../../models/caira/envelope.model';
 import {
-  CairaUser,
-  StatusResponse,
-  isProfileComplete,
-  toCairaUser,
-} from '../../models/caira/auth.model';
+  DestroyRef,
+  Injectable,
+  PLATFORM_ID,
+  computed,
+  inject,
+  makeStateKey,
+  signal,
+} from '@angular/core';
+import { TransferState } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { isPlatformBrowser, isPlatformServer } from '@angular/common';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
+import { Storage } from '../storage/storage';
+import { ApiClient } from '../api-client/api-client';
 import { environment } from '../../../../../environments/environment';
+import {
+  AUTH_ROUTES,
+  SSO_AUTH_ROUTES,
+  SsoSessionData,
+  User,
+  CurrentPlanData,
+} from '../../models/auth.model';
+import { HttpContext } from '@angular/common/http';
+import { RouteRequest, RouteResponse, SKIP_ERROR_NOTIFICATION } from '../../models/http.model';
+import { Logger } from '../logger/logger';
 
-/**
- * Token lifecycle and the current user.
- *
- * The **access token is the reactive root**. Everything else derives from it:
- * `isAuthenticated` is a computed over it, and the profile is an
- * `httpResource` keyed on it. Signing in or out changes one signal and the rest
- * follows, with no imperative fetch call and no state-syncing effect.
- *
- * Keying on the token rather than on "auth changed" is what makes this safe.
- * An earlier version bumped a counter inside `setAuthenticated`; a resource
- * keyed on that counter would have re-fired on its own result and looped
- * forever. The token does not change when the profile arrives, so it cannot.
- *
- * ponytail: `fetchCurrentPlan` / `currentPlan` / `hasActivePlan` have **no
- * CAIRA counterpart at all** — there is no plan or subscription model in the
- * backend. Access is `User.enrolled` tag membership, surfaced per-course as
- * `course_is_locked`. They stay so `activePlanGuard` and the header keep
- * compiling; swapping them for an entitlement check is its own decision and is
- * tracked in the gap register.
- */
-@Service()
+// Type aliases for cleaner usage
+type MyProfileResponse = RouteResponse<typeof AUTH_ROUTES.myProfile>;
+type CurrentPlanResponse = RouteResponse<typeof AUTH_ROUTES.currentPlan>;
+type RefreshTokenRequest = RouteRequest<typeof SSO_AUTH_ROUTES.refreshToken>;
+type RefreshTokenResponse = RouteResponse<typeof SSO_AUTH_ROUTES.refreshToken>;
+
+/** TransferState key for user data */
+const USER_DATA_KEY = makeStateKey<User | null>(environment.AUTH.transferUserData);
+const AUTH_STATUS_KEY = makeStateKey<boolean>(environment.AUTH.transferAuthStatus);
+
+@Injectable({
+  providedIn: 'root',
+})
 export class Auth {
   private readonly storage = inject(Storage);
   private readonly logger = inject(Logger);
-  private readonly api = inject(ApiClient);
+  private readonly apiClient = inject(ApiClient);
+  private readonly transferState = inject(TransferState);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroyRef = inject(DestroyRef);
 
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-
-  /**
-   * The reactive root. Seeded from the cookie — which `Storage` reads off the
-   * incoming request during SSR, so an authenticated server render starts with
-   * the token already in hand.
-   */
-  private readonly accessToken = signal<string | null>(
-    this.storage.getCookie(environment.AUTH.accessToken) || null,
-  );
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private readonly isServer = isPlatformServer(this.platformId);
 
   /**
-   * Identity from the login response, available before `v2/status` resolves.
-   * The login payload carries a name and avatar but no email, so this is a
-   * stopgap that lets the header render immediately rather than the truth.
+   * How long the token cookies live. Matches the SSO web refresh-token window
+   * (7 days), which is the real upper bound on a session — the access token's
+   * own 15-minute life is enforced by the server, not by this cookie.
    */
-  private readonly seededUser = signal<CairaUser | null>(null);
+  private static readonly REFRESH_TOKEN_DAYS = 7;
+
+  /** Handle for the pending proactive refresh, so it can be replaced/cancelled. */
+  private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Internal signal to track auth state changes
+  private readonly authStateChanged = signal(0);
+
+  // Loading state for profile fetch
+  readonly isLoadingProfile = signal(false);
 
   /**
-   * #42 · `GET v2/status`.
-   *
-   * Runs on the server too. That is deliberate: `httpResource` registers a
-   * `PendingTasks` entry so SSR waits for it, and it participates in the HTTP
-   * transfer cache (`includeRequestsWithAuthHeaders: true` in `app.config.ts`),
-   * so the browser reuses the server's response instead of re-requesting.
-   * That replaces the hand-rolled `TransferState` bridge this service used to
-   * carry — same outcome, none of the code.
+   * Computed signal that checks if user is authenticated
+   * Reads access token from cookies (SSR-safe)
    */
-  private readonly profile = httpResource<StatusResponse | undefined>(
-    () => (this.accessToken() ? this.api.absoluteUrl(CAIRA.status) : undefined),
-    { defaultValue: undefined },
-  );
-
-  readonly isLoadingProfile = this.profile.isLoading;
-
-  /** True the moment a token exists — it does not wait for the profile. */
-  readonly isAuthenticated = computed(() => !!this.accessToken());
-  readonly isLoggedIn = this.isAuthenticated;
-
-  /**
-   * The authoritative profile once `v2/status` lands, the login seed before
-   * that, and the last persisted copy on a cold start.
-   */
-  readonly currentUser = computed<CairaUser | null>(() => {
-    // `error()` first — `value()` throws on an errored resource, and this
-    // computed feeds the header on every page.
-    const data = this.profile.error() ? undefined : this.profile.value()?.data;
-    if (data) return toCairaUser(data);
-    return this.seededUser();
+  readonly isAuthenticated = computed(() => {
+    // Trigger re-computation when auth state changes
+    this.authStateChanged();
+    return this.hasValidToken();
   });
 
   /**
-   * Whether the learner has enough profile to use the app. Drives
-   * `isExistingUserGuard`.
-   *
-   * Derived from `v2/status`, **not** from a login response's `onboarding`
-   * flag: #33 hardcodes that to `true`, so it would let an incomplete profile
-   * straight through.
+   * Signal to store current user data
    */
-  readonly isProfileComplete = computed(() => isProfileComplete(this.currentUser()));
+  readonly currentUser = signal<User | null>(null);
+  readonly currentPlan = signal<CurrentPlanData | null>(null);
 
-  readonly currentPlan = signal<any | null>(null);
+  /**
+   * Computed signal for quick user checks
+   */
+  readonly isLoggedIn = computed(() => this.isAuthenticated());
+
+  /** Whether the user currently holds an active subscription. */
   readonly hasActivePlan = computed(() => this.isPlanActive(this.currentPlan()));
 
+  /**
+   * Internal subject to queue requests while refreshing
+   */
   readonly accessTokenSubject = new BehaviorSubject<string | null>(null);
+
+  /**
+   * Signal to indicate if a refresh token request is in progress
+   */
   readonly isRefreshing = signal(false);
 
   constructor() {
-    // Cold start with a token but no server round-trip yet (offline, or the
-    // profile request still in flight): show the last known user rather than
-    // an empty header.
-    const cached = this.storage.getLocal<CairaUser>(environment.AUTH.userData);
-    if (cached && this.accessToken()) this.seededUser.set(cached);
-  }
-
-  hasValidToken(): boolean {
-    return !!this.accessToken();
-  }
-
-  getAccessToken(): string | null {
-    return this.accessToken();
-  }
-
-  getRefreshToken(): string | null {
-    return this.storage.getCookie(environment.AUTH.refreshToken) || null;
+    // Initialize user data - use TransferState for SSR/client sync
+    this.initializeUserData();
   }
 
   /**
-   * Force a profile re-read. Rarely needed — the resource refetches on its own
-   * whenever the token changes — but a profile *save* changes the data without
-   * changing the token, so that path asks explicitly.
+   * Initialize user data from TransferState or localStorage
+   * On server: Load from localStorage (via Storage service) and store in TransferState
+   * On client: Load from TransferState first, then fallback to localStorage
+   */
+  private initializeUserData(): void {
+    if (this.isServer) {
+      // Server: Read user data and store in TransferState for client
+      const userData = this.loadUserFromStorage();
+      const isAuth = this.hasValidToken();
+
+      // Store in TransferState for client hydration
+      this.transferState.set(USER_DATA_KEY, userData);
+      this.transferState.set(AUTH_STATUS_KEY, isAuth);
+
+      if (userData) {
+        this.currentUser.set(userData);
+      }
+    } else if (this.isBrowser) {
+      // Browser: Check TransferState first
+      const transferredUser = this.transferState.get(USER_DATA_KEY, null);
+      const transferredAuth = this.transferState.get(AUTH_STATUS_KEY, false);
+
+      if (transferredUser || transferredAuth) {
+        // Use transferred state and remove it
+        if (transferredUser) {
+          this.currentUser.set(transferredUser);
+        }
+        this.transferState.remove(USER_DATA_KEY);
+        this.transferState.remove(AUTH_STATUS_KEY);
+      } else {
+        // No transferred state, load from localStorage
+        const userData = this.loadUserFromStorage();
+        if (userData) {
+          this.currentUser.set(userData);
+        }
+      }
+    }
+  }
+
+  /**
+   * Load user data from localStorage
+   */
+  private loadUserFromStorage(): User | null {
+    const userData = this.storage.getLocal<User>(environment.AUTH.userData);
+    if (userData && this.hasValidToken()) {
+      return userData;
+    }
+    return null;
+  }
+
+  /**
+   * Check if a valid access token exists
+   */
+  hasValidToken(): boolean {
+    const token = this.storage.getCookie(environment.AUTH.accessToken);
+    return !!token && token.length > 0;
+  }
+
+  /**
+   * Get the access token
+   */
+  getAccessToken(): string | null {
+    const token = this.storage.getCookie(environment.AUTH.accessToken);
+    return token || null;
+  }
+
+  /**
+   * Get the refresh token
+   */
+  getRefreshToken(): string | null {
+    const token = this.storage.getCookie(environment.AUTH.refreshToken);
+    return token || null;
+  }
+
+  /**
+   * Fetch user profile from API
    */
   fetchMyProfile(): void {
-    if (this.isBrowser && this.accessToken()) this.profile.reload();
+    if (!this.isBrowser || !this.hasValidToken()) {
+      return;
+    }
+
+    this.isLoadingProfile.set(true);
+
+    const context = new HttpContext().set(SKIP_ERROR_NOTIFICATION, true);
+    this.apiClient
+      .get<MyProfileResponse>(AUTH_ROUTES.myProfile.path, { context })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (response.status_code && response.data) {
+            this.setAuthenticated(response.data);
+            // Fetch current plan after profile. `fetchCurrentPlan` now returns
+            // an Observable (so callers can await/refresh); fire-and-forget
+            // here is fine — `takeUntilDestroyed` keeps it bounded.
+            this.fetchCurrentPlan().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+          }
+          this.isLoadingProfile.set(false);
+        },
+        error: (error) => {
+          this.logger.error('Failed to fetch profile', error);
+          this.isLoadingProfile.set(false);
+        },
+      });
   }
 
   /**
-   * ponytail: resolves to the locally-held plan (always `null`). Kept returning
-   * an Observable because callers — payment-success handlers, the engagement
-   * dialog — await it before reading the signal.
+   * Fetches the current plan and propagates it to the `currentPlan` signal.
+   * The signal is **always** reset based on the response — including to
+   * `null` when the API returns no plan — so consumers (e.g. the header
+   * `hasActivePlan` computed) can't end up showing stale post-cancellation
+   * or post-expiry data.
+   *
+   * Returns an Observable so callers (payment-success handlers, the
+   * engagement-dialog re-check before opening, etc.) can await the refresh
+   * before reading the signal. Errors are swallowed (logged) and resolve to
+   * `null` so the caller never has to wire a separate error path.
    */
-  fetchCurrentPlan(): Observable<any | null> {
-    return of(this.currentPlan());
+  fetchCurrentPlan(): Observable<CurrentPlanData | null> {
+    if (!this.hasValidToken()) {
+      this.setCurrentPlan(null);
+      return of(null);
+    }
+
+    const context = new HttpContext().set(SKIP_ERROR_NOTIFICATION, true);
+    return this.apiClient.get<CurrentPlanResponse>(AUTH_ROUTES.currentPlan.path, { context }).pipe(
+      map((response) => response?.data ?? null),
+      tap((plan) => this.setCurrentPlan(plan)),
+      catchError((err) => {
+        this.logger.error('Failed to fetch current plan', err);
+        return of<CurrentPlanData | null>(null);
+      }),
+    );
   }
 
   /**
    * Set the `currentPlan` signal and mirror its active status to a cookie.
    *
    * The cookie is what makes the synchronous `activePlanGuard` survive a hard
-   * refresh, since the signal starts as `null` on every reload.
+   * refresh: on reload the signal starts as `null` (it's only repopulated by
+   * the async `fetchCurrentPlan` that runs after `fetchMyProfile`), so without
+   * a persisted snapshot the guard would wrongly bounce an active subscriber
+   * back to the plan page. Called on every current-plan API resolution, so the
+   * cookie stays in sync with the latest server response.
    */
-  setCurrentPlan(plan: any | null): void {
+  private setCurrentPlan(plan: CurrentPlanData | null): void {
     this.currentPlan.set(plan);
     this.storage.setCookie(environment.AUTH.activePlan, this.isPlanActive(plan) ? 'true' : 'false');
   }
 
-  isPlanActive(plan: any | null): boolean {
+  /**
+   * Whether a plan payload represents an active subscription. Single source of
+   * truth for the "active" check, shared by the cookie mirror and consumers.
+   */
+  isPlanActive(plan: CurrentPlanData | null): boolean {
     return plan?.subscription_status?.toLowerCase() === 'active';
   }
 
+  /**
+   * Read the cached active-plan flag from the cookie. SSR-safe (reads the
+   * incoming request's Cookie header on the server). Used as a fallback by
+   * `activePlanGuard` when the `currentPlan` signal hasn't been hydrated yet
+   * (e.g. immediately after a hard refresh).
+   */
   hasActivePlanFromCookie(): boolean {
     return this.storage.getCookie(environment.AUTH.activePlan) === 'true';
   }
 
   /**
-   * Exchange the stored refresh token for a new access token.
-   *
-   * Resolves to the new token, or `null` after clearing the session. Never
-   * errors — `authInterceptor` treats `null` as "give up".
-   *
-   * Two CAIRA quirks shape this:
-   *
-   * - The refresh token travels in the **JSON body**, not an `Authorization`
-   *   header. This is the only auth call that works that way.
-   * - The response is **fully opaque**: the view forwards the SSO's JSON and
-   *   reads none of it, so the token is looked for in the shapes the sibling
-   *   login endpoints use and a miss counts as a failed refresh.
+   * Attempt to refresh the access token
+   * Returns an Observable of the new access token
    */
   refreshToken(): Observable<string | null> {
     const refreshToken = this.getRefreshToken();
+
     if (!refreshToken) {
       this.clearAuth();
       return of(null);
     }
 
-    const context = new HttpContext()
-      .set(SKIP_AUTH_REFRESH, true)
-      .set(SKIP_ERROR_NOTIFICATION, true);
+    const body: RefreshTokenRequest = {
+      refresh_token: refreshToken,
+    };
 
-    return this.api.post<unknown>(CAIRA.refresh, { refresh_token: refreshToken }, { context }).pipe(
-      map((response) => extractAccessToken(response)),
-      tap((token) => {
-        if (token) {
-          this.writeAccessToken(token);
-          // Releases every request queued in `authInterceptor`.
-          this.accessTokenSubject.next(token);
-        } else {
-          this.logger.warn('Refresh returned no recognisable token; clearing session');
+    const context = new HttpContext().set(SKIP_ERROR_NOTIFICATION, true);
+    return this.apiClient
+      .post<RefreshTokenResponse>(SSO_AUTH_ROUTES.refreshToken.path, body, { context })
+      .pipe(
+        tap((response) => {
+          if (response.status && response.data) {
+            this.handleRefreshSuccess(response.data);
+          } else {
+            this.clearAuth();
+          }
+        }),
+        map((response) => response.data?.token || null),
+        catchError((error) => {
+          this.logger.error('Token refresh failed', error);
           this.clearAuth();
-        }
-      }),
-      catchError((error: unknown) => {
-        // `refresh` collapses every local failure to 400, so a bad token and an
-        // unreachable SSO are indistinguishable. Both mean the session is over.
-        this.logger.error('Token refresh failed', error);
-        this.clearAuth();
-        return of(null);
-      }),
-    );
+          return of(null);
+        }),
+      );
   }
 
   /**
-   * Persist the token pair. Cookies rather than localStorage so the token is
-   * readable during SSR.
+   * Handle successful token refresh.
+   *
+   * Both tokens are re-stored, not just the access token. Miles SSO **rotates
+   * refresh tokens**: the one we just spent dies within seconds, so keeping
+   * the original would make the *next* refresh fail and silently end the
+   * session. This is the single most important line in this file.
    */
-  storeTokens(token: string, refreshToken: string): void {
-    this.writeAccessToken(token);
-    this.storage.setCookie(environment.AUTH.refreshToken, refreshToken, {
-      expires: 7,
+  private handleRefreshSuccess(session: SsoSessionData): void {
+    this.storeTokens(session.token, session.refreshtoken, session.expires_in);
+
+    if (session.user) {
+      this.setAuthenticated(session.user);
+    }
+
+    // Release any requests queued behind this refresh. The next proactive
+    // refresh is already armed by `storeTokens` above.
+    this.accessTokenSubject.next(session.token);
+  }
+
+  /**
+   * Persist the access/refresh token pair after a successful verification.
+   *
+   * Cookies rather than localStorage so `hasValidToken()` can read them during
+   * SSR. Shared by every surface that can log a user in — the login flow
+   * (`AuthFacade.verifyOtp`) and the faculty page's OTP auto-login — so the
+   * expiry/`secure`/`sameSite` options stay identical across both.
+   */
+  storeTokens(token: string, refreshToken: string, expiresIn?: number): void {
+    // The access token cookie deliberately outlives the token itself. It is a
+    // transport for the value, not an expiry mechanism — `hasValidToken()` only
+    // asks "do we have something to send", and the server is what decides
+    // whether it is still good. A cookie that expired first would log the user
+    // out mid-session with a perfectly refreshable session in hand.
+    this.storage.setCookie(environment.AUTH.accessToken, token, {
+      expires: Auth.REFRESH_TOKEN_DAYS,
       path: '/',
       secure: environment.production,
       sameSite: 'Strict',
     });
+
+    this.storage.setCookie(environment.AUTH.refreshToken, refreshToken, {
+      expires: Auth.REFRESH_TOKEN_DAYS,
+      path: '/',
+      secure: environment.production,
+      sameSite: 'Strict',
+    });
+
+    if (expiresIn) {
+      this.scheduleProactiveRefresh(expiresIn);
+    }
   }
 
   /**
-   * Seed the user from a login response. The profile resource overwrites this
-   * as soon as `v2/status` answers.
+   * Refresh shortly *before* the access token expires.
+   *
+   * The token is short on purpose — 15 minutes is the target — so waiting for a
+   * 401 means every user eats a failed request and a retry at least four times
+   * an hour. Refreshing early makes expiry invisible.
+   *
+   * Only one timer is ever outstanding; each success replaces it. Browser only:
+   * there is nothing to keep alive during SSR.
    */
-  setAuthenticated(user: CairaUser): void {
-    this.seededUser.set(user);
-    this.storage.setLocal(environment.AUTH.userData, user);
+  private scheduleProactiveRefresh(expiresIn: number): void {
+    if (!this.isBrowser || !expiresIn) return;
+
+    if (this.refreshTimer !== null) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
+
+    // A minute of headroom, and never less than 30s away — a very short token
+    // must not put us in a refresh loop.
+    const delayMs = Math.max(expiresIn - 60, 30) * 1000;
+
+    this.refreshTimer = setTimeout(() => {
+      this.refreshTimer = null;
+      if (!this.hasValidToken() || this.isRefreshing()) return;
+
+      this.isRefreshing.set(true);
+      // Park the queue before the request goes out. Without this, a call that
+      // 401s mid-refresh sees `isRefreshing` true, waits on the subject, and is
+      // handed the *old* token that is still sitting in it — so it retries with
+      // the credential that just failed.
+      this.accessTokenSubject.next(null);
+      this.refreshToken()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => this.isRefreshing.set(false),
+          error: () => this.isRefreshing.set(false),
+        });
+    }, delayMs);
   }
 
+  /**
+   * Update auth state after login
+   */
+  setAuthenticated(user: User): void {
+    this.currentUser.set(user);
+    this.storage.setLocal(environment.AUTH.userData, user);
+    this.notifyAuthStateChange();
+  }
+
+  /**
+   * Clear auth state on logout
+   */
   clearAuth(): void {
-    this.seededUser.set(null);
+    if (this.refreshTimer !== null) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
+    this.currentUser.set(null);
     this.currentPlan.set(null);
     this.storage.deleteCookie(environment.AUTH.accessToken);
     this.storage.deleteCookie(environment.AUTH.refreshToken);
     this.storage.deleteCookie(environment.AUTH.activePlan);
     this.storage.removeLocal(environment.AUTH.userData);
-    // Last: flipping the token to null re-runs `isAuthenticated` and aborts the
-    // in-flight profile request.
-    this.accessToken.set(null);
+    this.notifyAuthStateChange();
     this.accessTokenSubject.next(null);
   }
 
-  private writeAccessToken(token: string): void {
-    this.storage.setCookie(environment.AUTH.accessToken, token, {
-      expires: 1,
-      path: '/',
-      secure: environment.production,
-      sameSite: 'Strict',
-    });
-    this.accessToken.set(token);
+  /**
+   * Trigger re-evaluation of auth state
+   */
+  notifyAuthStateChange(): void {
+    this.authStateChanged.update((v) => v + 1);
   }
-}
-
-/**
- * Pull an access token out of the refresh response.
- *
- * The endpoint is documented as opaque — it forwards the SSO's body verbatim
- * and the backend reads none of its fields — so there is no single correct
- * path. These are the shapes the sibling login endpoints (#33, #35) return,
- * most specific first. `null` is a valid outcome: the session cannot be renewed.
- */
-function extractAccessToken(response: unknown): string | null {
-  if (typeof response !== 'object' || response === null) return null;
-  const body = response as Record<string, unknown>;
-  const result = (body['result'] ?? {}) as Record<string, unknown>;
-
-  for (const candidate of [
-    result['token'],
-    result['access_token'],
-    body['token'],
-    body['access_token'],
-  ]) {
-    if (typeof candidate === 'string' && candidate.length > 0) return candidate;
-  }
-  return null;
 }

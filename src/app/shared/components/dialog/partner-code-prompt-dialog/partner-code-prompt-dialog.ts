@@ -21,6 +21,16 @@ export interface PartnerCodePromptResult {
   action: PartnerCodePromptAction;
 }
 
+export interface PartnerCodePromptData {
+  /**
+   * Hide the "Continue to subscribe" CTA and show only the code entry. Used
+   * where subscribing is already its own button on the page (the plan page),
+   * so the dialog isn't asking a question the user has answered by choosing
+   * which button to press. Defaults to showing it.
+   */
+  codeOnly?: boolean;
+}
+
 @Component({
   selector: 'app-partner-code-prompt-dialog',
   imports: [Button, AriaInput, Forms, AngularFormField],
@@ -29,6 +39,8 @@ export interface PartnerCodePromptResult {
 })
 export class PartnerCodePromptDialog {
   dialogRef!: DialogRef<PartnerCodePromptDialog, PartnerCodePromptResult>;
+  /** Optional — assigned post-construction by the dialog service. */
+  data?: PartnerCodePromptData;
 
   private readonly partnerCode = inject(PartnerCode);
   private readonly destroyRef = inject(DestroyRef);
@@ -45,6 +57,14 @@ export class PartnerCodePromptDialog {
   readonly canSubmit = computed(
     () => this.model().partner_code.trim().length > 0 && !this.loading(),
   );
+
+  /**
+   * Plain getter, not a computed: `data` is assigned after construction, so a
+   * computed would capture the pre-assignment `undefined`.
+   */
+  protected get showSubscribe(): boolean {
+    return !this.data?.codeOnly;
+  }
 
   close(): void {
     this.dialogRef.close({ action: 'closed' });

@@ -12,7 +12,14 @@ import { Pipe, PipeTransform } from '@angular/core';
  * - 'compact'     → "1:30" (hours:minutes, no seconds)
  */
 export type DurationFormat =
-  'hh:mm:ss' | 'mm:ss' | 'auto' | 'short' | 'medium' | 'long' | 'humanized' | 'compact';
+  | 'hh:mm:ss'
+  | 'mm:ss'
+  | 'auto'
+  | 'short'
+  | 'medium'
+  | 'long'
+  | 'humanized'
+  | 'compact';
 
 @Pipe({
   name: 'duration',

@@ -8,6 +8,11 @@ import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronDown } from '@ng-icons/heroicons/outline';
 import { CheckboxList } from '../../../../../../shared/components/ui/checkbox-list/checkbox-list';
+import {
+  CourseFilterGroup,
+  CourseFilterKey,
+  CourseFilterSelection,
+} from '../../../../../../shared/core/models/library-filters.model';
 
 @Component({
   selector: 'app-course-filters',
@@ -24,21 +29,21 @@ import { CheckboxList } from '../../../../../../shared/components/ui/checkbox-li
   styleUrl: './course-filters.css',
 })
 export class CourseFilters {
-  readonly groups = input.required<readonly any[]>();
-  readonly selection = input.required<any>();
-  readonly selectionChange = output<any>();
+  readonly groups = input.required<readonly CourseFilterGroup[]>();
+  readonly selection = input.required<CourseFilterSelection>();
+  readonly selectionChange = output<CourseFilterSelection>();
   readonly clear = output<void>();
 
   readonly hasActiveFilters = computed(() => {
     const sel = this.selection();
-    return (Object.keys(sel) as any[]).some((k) => sel[k].length > 0);
+    return (Object.keys(sel) as CourseFilterKey[]).some((k) => sel[k].length > 0);
   });
 
-  selectedFor(key: any): readonly (string | number)[] {
+  selectedFor(key: CourseFilterKey): readonly (string | number)[] {
     return this.selection()[key];
   }
 
-  update(key: any, values: readonly (string | number)[]) {
+  update(key: CourseFilterKey, values: readonly (string | number)[]) {
     this.selectionChange.emit({ ...this.selection(), [key]: values });
   }
 

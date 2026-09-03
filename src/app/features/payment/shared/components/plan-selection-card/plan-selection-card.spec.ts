@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { PlanSelectionCard } from './plan-selection-card';
+import { SubscriptionPlan } from '../../../../../shared/core/models/payment.model';
 
-function makePlan(overrides: Partial<any> = {}): any {
+function makePlan(overrides: Partial<SubscriptionPlan> = {}): SubscriptionPlan {
   return {
     plan_duration: 12,
     subscription_type: null,
@@ -19,7 +20,7 @@ function makePlan(overrides: Partial<any> = {}): any {
       emi_available: true,
     },
     ...overrides,
-  } as unknown as any;
+  } as unknown as SubscriptionPlan;
 }
 
 describe('PlanSelectionCard', () => {

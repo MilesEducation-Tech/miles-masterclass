@@ -1,12 +1,13 @@
 <div class="lg:w-9/12 sm:w-10/12 w-full mx-auto flex flex-col space-y-8 overflow-hidden">
   @for (chapter of masterclass.courseChapters(); track chapter.id) {
     <div class="flex sm:space-x-4 max-sm:space-y-4 max-sm:flex-col items-center group">
-      <button
-        type="button"
-        tabindex="-1"
-        aria-hidden="true"
+      <div
         class="sm:w-1/2 w-full aspect-video relative rounded-2xl overflow-hidden group/thumbnail cursor-pointer"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'Chapter ' + ($index + 1) + ': ' + chapter.chapter_name"
         (click)="masterclass.navigateToChapter(chapter.id)"
+        (keydown)="onChapterKeydown($event, chapter.id)"
       >
         @let chapterCompleted = getChapterCompletedStatus(chapter.id);
         @let rawProgress =
@@ -104,13 +105,35 @@
             </div>
           </div>
         }
-      </button>
+
+        <!--
+          Locked state — paid course with no active plan. Same treatment as a
+          locked reel card.
+
+          The CTA is a styled span, not a button: the whole thumbnail is already
+          the control (role="button"), so a nested <button> would both duplicate
+          the action — opening two dialogs — and put a second stop in the tab
+          order for one destination.
+        -->
+        @if (locked()) {
+          <div [class]="lockOverlayClass()">
+            <ng-icon name="matLockRound" size="24" class="text-white" aria-hidden="true" />
+            <p class="text-white text-sm font-semibold">Subscribe to watch this chapter</p>
+            <span
+              class="inline-flex items-center rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-black"
+              >View Plans</span
+            >
+          </div>
+        }
+      </div>
       <div class="sm:w-1/2 w-full flex justify-center flex-col space-y-2">
         <p class="description">Chapter {{ $index + 1 }}</p>
-        <button
-          type="button"
-          class="flex flex-col w-fit relative group/title cursor-pointer text-left"
+        <div
+          class="flex flex-col w-fit relative group/title cursor-pointer"
+          role="button"
+          tabindex="0"
           (click)="masterclass.navigateToChapter(chapter.id)"
+          (keydown)="onChapterKeydown($event, chapter.id)"
         >
           <h2 class="title line-clamp-2 mb-1 w-fit">
             <span
@@ -119,7 +142,7 @@
               {{ chapter.chapter_name }}
             </span>
           </h2>
-        </button>
+        </div>
         <p class="description line-clamp-3">{{ chapter.description }}</p>
         <p class="text-accent">
           {{ chapter.quiz_details.overall_chapter_questions }} Quiz Questions

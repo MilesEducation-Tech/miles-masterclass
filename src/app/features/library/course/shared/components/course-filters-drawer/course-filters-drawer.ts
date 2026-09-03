@@ -2,13 +2,17 @@ import { Component } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroXMark } from '@ng-icons/heroicons/outline';
 import { DialogRef } from '../../../../../../shared/core/services/dialog/dialog';
+import {
+  CourseFilterGroup,
+  CourseFilterSelection,
+} from '../../../../../../shared/core/models/library-filters.model';
 import { CourseFilters } from '../course-filters/course-filters';
 
 export interface CourseFiltersDrawerData {
   /** Reactive accessors so the drawer reflects upstream state without a copy. */
-  groups: () => readonly any[];
-  selection: () => any;
-  onChange: (next: any) => void;
+  groups: () => readonly CourseFilterGroup[];
+  selection: () => CourseFilterSelection;
+  onChange: (next: CourseFilterSelection) => void;
   onClear: () => void;
 }
 
@@ -32,7 +36,7 @@ export class CourseFiltersDrawer {
     this.dialogRef.close();
   }
 
-  onSelectionChange(next: any) {
+  onSelectionChange(next: CourseFilterSelection) {
     this.data.onChange(next);
   }
 

@@ -1,13 +1,13 @@
 import {
   DestroyRef,
-  effect,
-  inject,
+  Injectable,
   Injector,
   PLATFORM_ID,
-  Service,
+  WritableSignal,
+  effect,
+  inject,
   signal,
   untracked,
-  WritableSignal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
@@ -16,6 +16,13 @@ import { EMPTY, Observable, concatMap, filter, firstValueFrom, from, switchMap, 
 import { Auth } from '../auth/auth';
 import { Dialog, DialogRef } from '../dialog/dialog';
 import { Storage } from '../storage/storage';
+import { CurrentPlanData } from '../../models/auth.model';
+import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
+import { offeringTypeFromUrl } from '../../../utils/offering-type';
+import {
+  ProfileCompletionDialog,
+  ProfileCompletionDialogResult,
+} from '../../../components/dialog/profile-completion-dialog/profile-completion-dialog';
 import { SubscriptionDialog } from '../../../components/dialog/subscription-dialog/subscription-dialog';
 import { AiLabDialog } from '../../../components/dialog/ai-lab-dialog/ai-lab-dialog';
 
@@ -35,6 +42,17 @@ const ADMIN_ROUTE = /^\/admin(\/|\?|$)/;
  * slugs like `/masterclass/payment-fraud`.
  */
 const PAYMENT_ROUTE = /\/payment(\/|\?|$)/;
+
+/**
+ * Immersive, auth-gated feature experiences — AI Labs and the MilesVerse
+ * simulations. Both mount under the `/:country/:profession_type` prefix
+ * (`/us/accounting/ai-labs`, `/us/accounting/simulation/...`), so this matches
+ * either as a whole path segment anywhere rather than anchoring at the root.
+ * A learner steps into these deliberately; a profile/subscription/announcement
+ * pop-up over them breaks the flow (and the AI Labs announcement over the AI
+ * Labs page is doubly pointless).
+ */
+const IMMERSIVE_ROUTE = /\/(ai-labs|simulation)(\/|\?|$)/;
 
 const INTERVAL_MS = 20_000;
 const DISMISSAL_KEYS: Record<DialogKind, string> = {
@@ -57,17 +75,14 @@ const DISMISSAL_KEYS: Record<DialogKind, string> = {
  *
  * Browser-only — the stream never starts during SSR.
  */
-@Service()
+@Injectable({
+  providedIn: 'root',
+})
 export class EngagementDialog {
   private readonly auth = inject(Auth);
   private readonly dialog = inject(Dialog);
   private readonly router = inject(Router);
-  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly feature: any = {
-    refreshPersonalized: (..._args: any[]): any => null,
-  };
+  private readonly feature = inject(FeatureFacade);
   private readonly storage = inject(Storage);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
@@ -141,6 +156,16 @@ export class EngagementDialog {
     // Never interrupt the admin panel with learner-facing engagement dialogs.
     if (ADMIN_ROUTE.test(this.router.url)) return null;
 
+    // Nothing interrupts checkout — a dialog over a payment step costs a
+    // conversion, and that applies to the feature announcement as much as to
+    // the two upsells. Not dismissed, just skipped: the next tick after
+    // leaving /payment evaluates normally.
+    if (PAYMENT_ROUTE.test(this.router.url)) return null;
+
+    // Same for the immersive AI Labs / simulation experiences — skipped (not
+    // dismissed) so the next tick after leaving evaluates normally.
+    if (IMMERSIVE_ROUTE.test(this.router.url)) return null;
+
     const user = this.auth.currentUser();
     if (!user) return null;
 
@@ -150,31 +175,20 @@ export class EngagementDialog {
       return 'aiLab';
     }
 
-    // Profile and subscription stay out of checkout. Not dismissed, just
-    // skipped: the next tick after leaving /payment evaluates normally.
-    if (PAYMENT_ROUTE.test(this.router.url)) return null;
-
-    // ponytail: the profile nudge is retired, not merely re-gated (G-10).
-    //
-    // It opened `ProfileCompletionDialog` with `disableClose: true`, whose only
-    // exit was a successful Save — and Save collected `sector_id` / `job_role_id`,
-    // two fields CAIRA has no reference-data endpoint for and which `v2/update`
-    // excludes from its body. The save could never succeed, so the dialog was an
-    // unclosable modal over the whole app.
-    //
-    // Users complete the fields CAIRA *does* store on `/auth/profile`. Restore
-    // this nudge when G-10's endpoints land — and give the dialog a skip button.
+    if ((!user.sector || !user.job_role) && !this.isDismissed('profile') && user.is_existing_user) {
+      return 'profile';
+    }
     if (
       !this.hasActiveSubscription(this.auth.currentPlan()) &&
       !this.isDismissed('subscription') &&
-      this.auth.isProfileComplete()
+      user.is_existing_user
     ) {
       return 'subscription';
     }
     return null;
   }
 
-  private hasActiveSubscription(plan: any | null): boolean {
+  private hasActiveSubscription(plan: CurrentPlanData | null): boolean {
     return !!plan && plan.subscription_status?.toLowerCase() === 'active';
   }
 
@@ -195,6 +209,34 @@ export class EngagementDialog {
         panelClass: 'rounded-[24px]! overflow-hidden!',
       });
       return from(this.afterClosed(ref)).pipe(switchMap(() => EMPTY));
+    }
+
+    if (kind === 'profile') {
+      // Mark dismissed at open-time and persist to sessionStorage. This
+      // survives a page refresh in the same tab, and prevents a stale
+      // `fetchMyProfile` (or a save that doesn't reflect immediately) from
+      // re-triggering the dialog on the next 20s tick.
+      this.markDismissed('profile');
+      const ref = this.dialog.open<ProfileCompletionDialog, ProfileCompletionDialogResult>(
+        ProfileCompletionDialog,
+        {
+          maxWidth: '95vw',
+          ariaLabel: 'Complete your profile',
+          injector: this.injector,
+          // Sector + job_role are not skippable — block Escape and backdrop
+          // clicks so the only way out is a successful Save (the dialog itself
+          // omits the close + skip buttons).
+          disableClose: true,
+        },
+      );
+      return from(this.afterClosed(ref)).pipe(
+        switchMap((result) => {
+          if (result?.saved) {
+            this.feature.refreshPersonalized(offeringTypeFromUrl(this.router.url));
+          }
+          return EMPTY;
+        }),
+      );
     }
 
     // Subscription: re-validate against the SERVER right before opening. The

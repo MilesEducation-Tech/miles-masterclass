@@ -4,8 +4,9 @@ import { Auth } from '../../services/auth/auth';
 
 /**
  * Allows navigation only for authenticated users. Anonymous users are redirected
- * to the root route with `?returnUrl=<requested-path>` so the login flow can
- * send them back where they tried to go.
+ * to the login page with `?redirect=<requested-path>` — the query param the
+ * OTP-verify success handler (auth-facade) reads to send them back where they
+ * tried to go.
  *
  * Returns a `UrlTree` (not `false` + `router.navigate`) so the redirect happens
  * in the same router transition — no flashed-then-cancelled navigation.
@@ -26,5 +27,5 @@ export const authGuard: CanActivateFn = (_route, state) => {
     return true;
   }
 
-  return router.createUrlTree(['/'], { queryParams: { returnUrl: state.url } });
+  return router.createUrlTree(['/auth/login'], { queryParams: { redirect: state.url } });
 };

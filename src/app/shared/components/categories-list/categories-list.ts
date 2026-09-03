@@ -18,6 +18,7 @@ import {
   viewChildren,
   ViewContainerRef,
 } from '@angular/core';
+import { FieldOfStudy } from '../../core/models/course.model';
 
 @Component({
   selector: 'app-categories-list',
@@ -35,7 +36,7 @@ export class CategoriesList {
   private readonly vcr = inject(ViewContainerRef);
   private readonly document = inject(DOCUMENT);
 
-  readonly items = input<any[]>([]);
+  readonly items = input<FieldOfStudy[]>([]);
   readonly separator = input<string>(', ');
   readonly moreLabel = input<string>('more');
   readonly align = input<'start' | 'center' | 'end'>('start');

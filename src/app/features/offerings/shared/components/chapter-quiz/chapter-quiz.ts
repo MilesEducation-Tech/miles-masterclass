@@ -10,8 +10,9 @@ import {
 } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { CourseChapter, QuizQuestion } from '../../../../../shared/core/models/course.model';
+import { ChapterFacade } from '../../services/chapter-facade/chapter-facade';
 import { Button } from '../../../../../shared/components/ui/button/button';
-import { Logger } from '../../../../../shared/core/services/logger/logger';
 
 @Component({
   selector: 'app-chapter-quiz',
@@ -20,8 +21,8 @@ import { Logger } from '../../../../../shared/core/services/logger/logger';
   styleUrl: './chapter-quiz.css',
 })
 export class ChapterQuiz {
-  readonly questions = input.required<any[]>();
-  readonly current = input.required<any>();
+  readonly questions = input.required<QuizQuestion[]>();
+  readonly current = input.required<CourseChapter>();
   readonly chapterId = input.required<number>();
   readonly isLastChapter = input(false);
   readonly navigateNext = output<void>();
@@ -34,7 +35,7 @@ export class ChapterQuiz {
    */
   readonly lastAnswerSubmitted = output<void>();
 
-  private readonly logger = inject(Logger);
+  private readonly facade = inject(ChapterFacade);
 
   readonly currentQuestionIndex = signal(0);
   readonly selectedOption = signal<string | null>(null);
@@ -87,24 +88,28 @@ export class ChapterQuiz {
   submitAnswer() {
     if (!this.selectedOption() || this.isSubmitted()) return;
 
-    // ponytail: #8 `POST quiz/{chapterId}/submit/` goes here — one question per
-    // request, returning that question's feedback immediately, which is exactly
-    // the shape this component already drives.
-    //
-    // It is deliberately NOT bound yet. G-01 leaves
-    // `CAIRAMasterclassQuizQuestionSerializer` uncaptured, and unlike the
-    // feedback questions there is no sibling endpoint that reveals it: #7 nests
-    // options under `options_feedback`, while this component still reads the
-    // Django-era `option_a` / `description_option_a` pair. Guessing the option
-    // shape here would submit wrong answers to a scored, CPE-bearing quiz — a
-    // worse failure than not submitting at all. Capture #7 first.
-    //
-    // When it lands, note that `correct_option_ids` comes from a Python `set`:
-    // compare as sets, never index positionally.
-    this.isLoading.set(false);
-    this.logger.warn('Quiz submit is not bound — see G-01', {
-      chapterId: this.chapterId(),
-      questionId: this.currentQuestion()?.id,
+    this.isLoading.set(true);
+    const question = this.currentQuestion();
+
+    this.facade.submitQuizAnswer(this.selectedOption()!, question.id).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        this.isSubmitted.set(true);
+
+        this.facade.updateUserSelectedOption(this.chapterId(), question.id, this.selectedOption()!);
+
+        if (this.isLastQuestion()) {
+          // Emit before `updateChapterStatus` so a future throw in the
+          // facade method can't suppress the post-quiz action_status flip.
+          this.lastAnswerSubmitted.emit();
+          this.facade.updateChapterStatus(this.chapterId());
+          this.startAutoNavTimer();
+        }
+      },
+      error: () => {
+        this.isLoading.set(false);
+        // Handle error if needed
+      },
     });
   }
 
@@ -128,11 +133,11 @@ export class ChapterQuiz {
     this.isLoading.set(false);
   }
 
-  getOptionText(question: any, option: string): string {
+  getOptionText(question: QuizQuestion, option: string): string {
     return (question as any)[`option_${option}`] || '';
   }
 
-  getDescription(question: any, option: string | null): string {
+  getDescription(question: QuizQuestion, option: string | null): string {
     if (!option) return '';
     return (question as any)[`description_option_${option}`] || '';
   }

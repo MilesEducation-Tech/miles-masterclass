@@ -1,16 +1,22 @@
-import { hasCourseIds } from '../../utils/course-ids';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { DecimalPipe, formatDate } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideBookOpen } from '@ng-icons/lucide';
 import { DialogRef } from '../../../../../shared/core/services/dialog/dialog';
 import { Button } from '../../../../../shared/components/ui/button/button';
 import { Spinner } from '../../../../../shared/components/ui/spinner/spinner';
+import {
+  CourseDetail,
+  CourseDetailCategory,
+  CourseIds,
+  hasCourseIds,
+} from '../../models/user-report.model';
+import { UserReportFacade } from '../../services/user-report-facade';
 
 export interface UserCourseDetailDialogData {
   userName: string;
-  category: any;
-  courseIds: any;
+  category: CourseDetailCategory;
+  courseIds: CourseIds;
 }
 
 /**
@@ -31,17 +37,9 @@ export class UserCourseDetailDialog implements OnInit {
   dialogRef!: DialogRef<UserCourseDetailDialog>;
   data!: UserCourseDetailDialogData;
 
-  // ponytail: UserReportFacade was deleted with the Django strip. This placeholder
+  private readonly facade = inject(UserReportFacade);
 
-  // keeps the template bindings compiling and renders the empty state.
-
-  // Swap in the new backend's service — the template needs no changes.
-
-  private readonly facade: any = {
-    getCourseDetail: (..._args: any[]): any => null,
-  };
-
-  protected readonly courses = signal<any[]>([]);
+  protected readonly courses = signal<CourseDetail[]>([]);
   protected readonly isLoading = signal(true);
   protected readonly errorMessage = signal('');
 

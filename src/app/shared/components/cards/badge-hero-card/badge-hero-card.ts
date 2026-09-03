@@ -1,13 +1,13 @@
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideLinkedin, lucideLock } from '@ng-icons/lucide';
+import { BadgeItem } from '../../../core/models/cpe-tracker.model';
 import { Button } from '../../ui/button/button';
 import {
   badgeHaloHex,
   badgeLevelGradient,
   badgeProgressGradient,
 } from '../../../utils/badge-level';
-import { BadgeHeroCardData } from '../../../../features/cpe-tracker/shared/mappers/badge-to-table';
 
 export type BadgeHeroLayout = 'hero' | 'grid';
 
@@ -29,11 +29,11 @@ export type BadgeState = 'coming_soon' | 'claimable' | 'claimed' | 'unlocked' | 
   host: { class: 'block w-full' },
 })
 export class BadgeHeroCard {
-  readonly badge = input.required<BadgeHeroCardData>();
+  readonly badge = input.required<BadgeItem>();
   readonly layout = input<BadgeHeroLayout>('hero');
 
-  readonly claim = output<BadgeHeroCardData>();
-  readonly share = output<BadgeHeroCardData>();
+  readonly claim = output<BadgeItem>();
+  readonly share = output<BadgeItem>();
 
   protected readonly state = computed<BadgeState>(() => {
     const b = this.badge();

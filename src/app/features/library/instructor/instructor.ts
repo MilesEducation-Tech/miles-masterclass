@@ -15,7 +15,9 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroMagnifyingGlass } from '@ng-icons/heroicons/outline';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { InstructorCard } from '../../../shared/components/cards/instructor-card/instructor-card';
+import { InstructorListItem } from '../../../shared/core/models/library.model';
 import { Utils } from '../../../shared/core/services/utils/utils';
+import { InstructorFacade } from './shared/services/instructor-facade/instructor-facade';
 import { PartnerContentList } from '../../partners/shared/components/partner-content-list/partner-content-list';
 
 @Component({
@@ -26,16 +28,7 @@ import { PartnerContentList } from '../../partners/shared/components/partner-con
   styleUrl: './instructor.css',
 })
 export class Instructor {
-  // ponytail: InstructorFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  readonly facade: any = {
-    instructorItems: signal<any[]>([]),
-    instructorPagination: signal<any>(null),
-    isInstructorLoading: signal<any>(null),
-    loadNextInstructorPage: signal<any>(null),
-    setSearchKey: (..._args: any[]): any => null,
-  };
+  readonly facade = inject(InstructorFacade);
   private readonly utils = inject(Utils);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -81,7 +74,7 @@ export class Instructor {
     this.searchInput.set('');
   }
 
-  onInstructorClick(i: any) {
+  onInstructorClick(i: InstructorListItem) {
     const slug = this.utils.slugify(`${i?.first_name} ${i?.last_name}`);
     const basePath = `/${this.utils.getRouteParams().country}/${this.utils.getRouteParams().profession}`;
     this.router.navigate([`${basePath}/instructor`, i.id, slug]);

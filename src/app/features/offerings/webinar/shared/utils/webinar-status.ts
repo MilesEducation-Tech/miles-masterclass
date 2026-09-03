@@ -1,3 +1,9 @@
+import {
+  UpcomingPremiere,
+  WebinarAttendanceStatus,
+  WebinarDate,
+} from '../../../../../shared/core/models/feature.model';
+
 /** Eastern Time short-name abbreviations — DST-aware. */
 export type EasternAbbrev = 'EST' | 'EDT';
 
@@ -53,6 +59,7 @@ export type WebinarCta =
   | 'join-live'
   | 'submit-feedback'
   | 'download-certificate'
+  | 'series-awarded'
   | 'watch-recording'
   | 'ended';
 
@@ -89,7 +96,7 @@ const DURATION_UNIT_MS = 1_000;
  * case for every row on the webinar listing, since the v2 card payload has no
  * duration field.
  */
-function effectiveEndOf(session: any, durationInUnits = 0): number {
+function effectiveEndOf(session: WebinarDate, durationInUnits = 0): number {
   const start = new Date(session.start_date).getTime();
   const declaredEnd = new Date(session.end_date).getTime();
   const byDuration =
@@ -110,7 +117,7 @@ function effectiveEndOf(session: any, durationInUnits = 0): number {
  * `effectiveEndOf`; pass `durationInUnits` to honour `start + duration`).
  */
 export function liveStateOf(
-  session: any,
+  session: WebinarDate,
   now: Date = new Date(),
   durationInUnits = 0,
 ): WebinarLiveState {
@@ -128,15 +135,18 @@ export function liveStateOf(
  * soonest upcoming; otherwise the most recently ended (so the UI can still
  * label the card as "Ended" rather than showing nothing).
  */
-export function nextSessionOf(webinar: any, now: Date = new Date()): any | null {
+export function nextSessionOf(
+  webinar: UpcomingPremiere,
+  now: Date = new Date(),
+): WebinarDate | null {
   const sessions = webinar.webinar_dates ?? [];
   if (!sessions.length) return null;
-  const live = sessions.find((s: any) => liveStateOf(s, now, webinar.webinar_duration) === 'live');
+  const live = sessions.find((s) => liveStateOf(s, now, webinar.webinar_duration) === 'live');
   if (live) return live;
   const t = now.getTime();
   const upcoming = sessions
-    .filter((s: any) => new Date(s.start_date).getTime() > t && !s.is_webinar_ended)
-    .sort((a: any, b: any) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+    .filter((s) => new Date(s.start_date).getTime() > t && !s.is_webinar_ended)
+    .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
   if (upcoming.length) return upcoming[0];
   const ended = [...sessions].sort(
     (a, b) => new Date(b.end_date).getTime() - new Date(a.end_date).getTime(),
@@ -145,14 +155,14 @@ export function nextSessionOf(webinar: any, now: Date = new Date()): any | null 
 }
 
 /** Convenience wrapper: aggregate state for a webinar based on its sessions. */
-export function webinarTagFor(webinar: any, now: Date = new Date()): WebinarLiveTag {
+export function webinarTagFor(webinar: UpcomingPremiere, now: Date = new Date()): WebinarLiveTag {
   const session = nextSessionOf(webinar, now);
   if (!session) return 'ended';
   return liveStateOf(session, now, webinar.webinar_duration);
 }
 
 /** Milliseconds until the start of a session. Negative means it has started. */
-export function startsInMs(session: any, now: Date = new Date()): number {
+export function startsInMs(session: WebinarDate, now: Date = new Date()): number {
   return new Date(session.start_date).getTime() - now.getTime();
 }
 
@@ -163,7 +173,7 @@ export function startsInMs(session: any, now: Date = new Date()): number {
  * start instant has been reached (use the live/ended tag instead).
  */
 export function formatStartsIn(
-  session: any | null | undefined,
+  session: WebinarDate | null | undefined,
   now: Date = new Date(),
 ): string | null {
   if (!session) return null;
@@ -187,7 +197,7 @@ export function formatStartsIn(
  * accepted both, the CTA only `'Present'`, so a v2 attendee landed in the
  * Attended carousel with an "Ended" button and no route to feedback.
  */
-export function hasAttended(status: any | undefined | null): boolean {
+export function hasAttended(status: WebinarAttendanceStatus | undefined | null): boolean {
   return status === 'Present' || status === 'Attended';
 }
 
@@ -201,8 +211,20 @@ export function hasAttended(status: any | undefined | null): boolean {
  * there), which would paywall an already-attended webinar — safe only because
  * `enroll()` returns early on an existing enrollment, before this is reached.
  */
-export function needsSubscription(webinar: any, hasActivePlan: boolean): boolean {
+export function needsSubscription(webinar: UpcomingPremiere, hasActivePlan: boolean): boolean {
   return !webinar.is_free && !hasActivePlan;
+}
+
+/**
+ * Did the user already earn CPE from another session of the same recurring
+ * series? Read structurally off `eligibility` (v2 enrollment rows carry it via
+ * `WebinarV2Adapted`) rather than importing the v2 types — `v2-to-upcoming.ts`
+ * imports `hasAttended` from here, and a value import back would be a cycle.
+ */
+export function seriesAlreadyAwarded(webinar: UpcomingPremiere): boolean {
+  const eligibility = (webinar as { eligibility?: { series_already_awarded?: boolean } })
+    .eligibility;
+  return eligibility?.series_already_awarded === true;
 }
 
 /**
@@ -216,11 +238,19 @@ export function needsSubscription(webinar: any, hasActivePlan: boolean): boolean
  *   - Booked + ended session + attended (`'Present'` or `'Attended'` — see
  *     `hasAttended`):
  *       - feedback not yet submitted → `submit-feedback`
- *       - feedback submitted         → `download-certificate`
+ *       - feedback submitted + `'Present'` → `download-certificate`, or
+ *         `series-awarded` when CPE for this recurring series was already
+ *         granted on another session (`eligibility.series_already_awarded`)
+ *       - feedback submitted + `'Attended'` → `watch-recording` / `ended`.
+ *         Attendance isn't credited yet, so there's no certificate to offer.
  *   - Booked + ended session + `'Absent'` / `'Pending'` → `watch-recording`
  *     (if a recording exists) or `ended`.
  */
-export function ctaFor(webinar: any, isAuthed: boolean, now: Date = new Date()): WebinarCta {
+export function ctaFor(
+  webinar: UpcomingPremiere,
+  isAuthed: boolean,
+  now: Date = new Date(),
+): WebinarCta {
   // Source of truth for "registered": the presence of a `user_enrollments`
   // record. The `added` boolean on the public filter payload can be stale
   // (or appear without an underlying enrollment row), so the CTA only flips
@@ -242,7 +272,18 @@ export function ctaFor(webinar: any, isAuthed: boolean, now: Date = new Date()):
   // Booked + ended path — feedback / certificate gated on actual attendance.
   const enrollment = webinar.registered_webinar?.user_enrollments;
   if (hasAttended(enrollment?.attendance_status)) {
-    return enrollment?.feedback_submitted ? 'download-certificate' : 'submit-feedback';
+    if (!enrollment?.feedback_submitted) return 'submit-feedback';
+    // The certificate is gated NARROWER than the rail: only a confirmed
+    // `'Present'` earns one. `'Attended'` means the user joined but the backend
+    // hasn't credited the session yet (`is_attendance_synced`), so there is no
+    // certificate to hand out — same rule the badge library
+    // (`buttonsForCourseItem`) and the CPE tracker table already apply.
+    if (enrollment.attendance_status !== 'Present') {
+      return webinar.video_recording ? 'watch-recording' : 'ended';
+    }
+    // Recurring series: CPE was already granted for a sibling session, so there
+    // is no certificate to download — say so instead of offering a dead button.
+    return seriesAlreadyAwarded(webinar) ? 'series-awarded' : 'download-certificate';
   }
   return webinar.video_recording ? 'watch-recording' : 'ended';
 }

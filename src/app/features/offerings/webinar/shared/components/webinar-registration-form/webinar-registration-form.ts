@@ -1,5 +1,5 @@
 import { Component, computed, DestroyRef, inject, input, output, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   form,
   FormField as AngularFormField,
@@ -7,7 +7,18 @@ import {
   required,
   validate,
 } from '@angular/forms/signals';
-import { interval, Subject, take, takeUntil } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  filter,
+  interval,
+  map,
+  of,
+  Subject,
+  switchMap,
+  take,
+  takeUntil,
+} from 'rxjs';
 
 import { AriaAutocomplete } from '../../../../../../shared/components/ui/aria/aria-autocomplete/aria-autocomplete';
 // AriaCombobox replaced with AriaAutocomplete platform-wide for the company
@@ -20,21 +31,35 @@ import { Otp } from '../../../../../../shared/components/ui/otp/otp';
 import { Spinner } from '../../../../../../shared/components/ui/spinner/spinner';
 import { CONTENT_MAP } from '../../../../../../shared/core/config/auth.config';
 import { dialCodeWithLength } from '../../../../../../shared/core/constant/dial-code';
+import { placeSuggestions } from '../../../../../../shared/core/services/location-autocomplete/location-autocomplete';
+import { CountryCodeOption, User } from '../../../../../../shared/core/models/auth.model';
+import { AutoCompleteOption } from '../../../../../../shared/core/models/form.model';
+import { PROFILE_ROUTES } from '../../../../../../shared/core/models/profile.model';
+import { RouteParams, RouteResponse } from '../../../../../../shared/core/models/http.model';
 import { Router } from '@angular/router';
 import { Analytics } from '../../../../../../shared/core/services/analytics/analytics';
+import { ApiClient } from '../../../../../../shared/core/services/api-client/api-client';
 import { Dialog } from '../../../../../../shared/core/services/dialog/dialog';
 import { Logger } from '../../../../../../shared/core/services/logger/logger';
 import { NotificationService } from '../../../../../../shared/core/services/notification/notification';
+import { SalesforceLead } from '../../../../../../shared/core/services/salesforce-lead/salesforce-lead';
 import { Storage } from '../../../../../../shared/core/services/storage/storage';
+import { UTM_COOKIE_KEY } from '../../../../../../shared/core/services/utm/utm';
 import {
   WebinarRegistrationDirectEnrolled,
   WebinarRegistrationRequest,
+  WebinarRegistrationResponse,
   WebinarRegistrationResult,
+  WebinarRegistrationVerifyRequest,
+  WebinarRegistrationVerifyResponse,
   isWebinarRegistrationAccessBlocked,
 } from '../../models/webinar-registration.model';
 
-// ponytail: Django endpoint paths for webinar registration + OTP verification.
-// Repoint at the new backend's routes.
+type CompanyListResponse = RouteResponse<typeof PROFILE_ROUTES.getCompanyList>;
+type CompanyListParams = RouteParams<typeof PROFILE_ROUTES.getCompanyList>;
+
+const REGISTRATION_URL = 'webinar/registrations/';
+const VERIFY_OTP_URL = 'webinar/registrations/verify-otp/';
 const RESEND_TIMER_SECONDS = 30;
 
 /** Public payload emitted on a successful end-to-end registration. */
@@ -86,6 +111,8 @@ interface OtpFormState {
   styleUrl: './webinar-registration-form.css',
 })
 export class WebinarRegistrationForm {
+  private readonly http = inject(ApiClient);
+  private readonly salesforceLead = inject(SalesforceLead);
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly storage = inject(Storage);
@@ -143,8 +170,13 @@ export class WebinarRegistrationForm {
   protected readonly resending = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  /** OTP session returned by the registration endpoint when flow=otp_required. */
-  private readonly otpSessionId = signal(0);
+  /**
+   * Address the registration step sent the code to, echoed back by the server.
+   *
+   * Replaces the old numeric session id: Miles SSO has no OTP session, so this
+   * is what verify must be posted with. Empty = no code sent yet.
+   */
+  private readonly otpIdentifier = signal('');
 
   protected readonly resendSecondsLeft = signal(0);
   protected readonly canResend = computed(() => this.resendSecondsLeft() === 0);
@@ -160,7 +192,7 @@ export class WebinarRegistrationForm {
   // but the dropdown only needs one option per *dial code*. Keep the first
   // occurrence of each code so the phone-length validator still gets sane
   // min/max bounds.
-  protected readonly countryCodes = signal<any[]>(
+  protected readonly countryCodes = signal<CountryCodeOption[]>(
     Array.from(
       dialCodeWithLength
         .reduce((acc, item) => {
@@ -169,21 +201,53 @@ export class WebinarRegistrationForm {
             acc.set(code, { ...item, value: code, label: code });
           }
           return acc;
-        }, new Map<string, any>())
+        }, new Map<string, CountryCodeOption>())
         .values(),
     ),
   );
 
-  // ponytail: `placeSuggestions` came from the deleted LocationAutocomplete
-  // service, which proxied Google Places through the backend. Point this at the
-  // new backend's place search and the autocomplete works unchanged.
+  // Granularity (city vs state vs country) is the backend's call — it owns the
+  // Places request. Whatever it returns ends in the country, so the "country is
+  // mandatory" requirement is satisfied implicitly.
   protected readonly locationQuery = signal('');
-  protected readonly locationOptions = signal<any[]>([]);
+  protected readonly locationOptions = placeSuggestions(
+    this.locationQuery,
+    computed(() => this.model().location),
+  );
 
-  // ponytail: was a debounced company search against PROFILE_ROUTES. Point this
-  // at the new backend's company search — the autocomplete needs no changes.
+  // Company autocomplete — reuses the same endpoint and shape the profile
+  // page uses (`PROFILE_ROUTES.getCompanyList`).
   protected readonly companySearchQuery = signal('');
-  protected readonly companyOptions = signal<any[]>([]);
+  protected readonly companyOptions = toSignal(
+    toObservable(this.companySearchQuery).pipe(
+      // Skip the empty initial emission — prevents a wasted "all companies"
+      // request, and dodges an SSR teardown race where the debounced HTTP
+      // call would fire after the server-side injector is destroyed (NG0205).
+      filter((search) => search.trim().length > 0),
+      debounceTime(300),
+      switchMap((search) => {
+        const params: CompanyListParams = { search };
+        return this.http
+          .get<CompanyListResponse>(PROFILE_ROUTES.getCompanyList.path, { params })
+          .pipe(
+            map((res) =>
+              (res.data ?? []).map(
+                (c) =>
+                  ({
+                    label: c.company_name,
+                    value: c.id,
+                  }) as AutoCompleteOption<number>,
+              ),
+            ),
+            catchError((err) => {
+              this.logger.error('WebinarRegistrationForm: company fetch failed', err);
+              return of<AutoCompleteOption<number>[]>([]);
+            }),
+          );
+      }),
+    ),
+    { initialValue: [] as AutoCompleteOption<number>[] },
+  );
 
   /**
    * Signal-forms schema. Required-field + phone/country-code validators
@@ -253,29 +317,6 @@ export class WebinarRegistrationForm {
   }
 
   /** Submit the registration form. Branches on the API's `flow` field. */
-  /**
-   * ponytail: guest webinar registration has **no CAIRA endpoint**.
-   *
-   * `registerV4/` (G-23) is not it — that registers an already-authenticated
-   * user and takes no body, while this form collects a name, email and phone to
-   * *create* an account. Account creation is G-08: accounts are made in the
-   * Miles One app and `/auth/signup` is an empty stub, so there is nowhere to
-   * post these fields.
-   *
-   * This used to post to an empty-string URL through an `any = {}` stub, so the
-   * form threw a TypeError and hung on its spinner. Failing visibly is the
-   * honest state until a guest-registration route exists.
-   */
-  private reportUnavailable(action: string): void {
-    this.submitting.set(false);
-    this.verifying.set(false);
-    this.resending.set(false);
-    this.logger.warn(`Webinar ${action} is not bound — see G-08`);
-    this.error.set(
-      'Online registration is unavailable right now. Please sign in, or contact support to reserve your seat.',
-    );
-  }
-
   protected submit(): void {
     // Multi-step: the identity sub-step's CTA (and Enter) submits the <form>,
     // so intercept it and advance to the contact step instead of registering.
@@ -287,7 +328,29 @@ export class WebinarRegistrationForm {
     this.error.set(null);
     this.submitting.set(true);
 
-    this.reportUnavailable('registration');
+    this.http
+      .post<WebinarRegistrationResponse>(REGISTRATION_URL, this.buildRegistrationPayload())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.submitting.set(false);
+          if (this.maybeOpenLmsBlockedDialog(response.data)) return;
+          if (!response.status || !response.data) {
+            const msg = response.message || 'Unable to register. Please try again.';
+            this.error.set(msg);
+            this.notification.error('Registration failed', msg);
+            return;
+          }
+          this.handleRegistrationResult(response.data, response.message);
+        },
+        error: (err) => {
+          this.submitting.set(false);
+          if (this.maybeOpenLmsBlockedDialog(err?.error?.data)) return;
+          const msg = err?.error?.message || 'Something went wrong. Please try again.';
+          this.error.set(msg);
+          this.logger.error('WebinarRegistrationForm: register failed', err);
+        },
+      });
   }
 
   /** Submit the OTP form (`OTP` step). */
@@ -296,9 +359,49 @@ export class WebinarRegistrationForm {
     this.error.set(null);
     this.verifying.set(true);
 
-    // The request body stays documented as the shape to rebuild against:
-    // `{ session_id, otp, utm_url }`.
-    this.reportUnavailable('OTP verification');
+    const payload: WebinarRegistrationVerifyRequest = {
+      identifier: this.otpIdentifier(),
+      otp: this.otpModel().otp,
+      utm_url: this.storage.getCookie(UTM_COOKIE_KEY) || undefined,
+    };
+
+    this.http
+      .post<WebinarRegistrationVerifyResponse>(VERIFY_OTP_URL, payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.verifying.set(false);
+          if (!response.status) {
+            const msg = response.message || 'Invalid OTP. Please try again.';
+            this.error.set(msg);
+            return;
+          }
+          const data = response.data;
+          const flow = data?.flow ?? 'direct_enrolled';
+          // A new account created during OTP-verified registration returns a
+          // populated `user` → fire account_create + onboarding.
+          if (data?.flow === 'direct_enrolled') this.maybeTrackNewAccount(data);
+          // OTP verified for the `otp_required` flow = the booking is now
+          // confirmed → count it regardless of the returned flow label.
+          this.trackWebinarRegister();
+          this.notification.success(
+            flow === 'already_enrolled' ? 'Already registered' : 'Registration confirmed',
+            response.message || `You're booked for "${this.webinarTitle() || 'this webinar'}".`,
+          );
+          this.emitResult(flow);
+          // `auto_login` only exists on the `direct_enrolled` variant; for
+          // `already_enrolled` (and any malformed payload) default to "no
+          // auto-login" so the visitor sees the Log-in CTA.
+          const autoLogin = data?.flow === 'direct_enrolled' && data.auto_login === true;
+          if (!autoLogin) this.step.set('DONE');
+        },
+        error: (err) => {
+          this.verifying.set(false);
+          const msg = err?.error?.message || 'Failed to verify OTP. Please try again.';
+          this.error.set(msg);
+          this.logger.error('WebinarRegistrationForm: verify failed', err);
+        },
+      });
   }
 
   /** Re-send the OTP by re-submitting the registration call. */
@@ -307,7 +410,28 @@ export class WebinarRegistrationForm {
     this.resending.set(true);
     this.error.set(null);
 
-    this.reportUnavailable('registration');
+    this.http
+      .post<WebinarRegistrationResponse>(REGISTRATION_URL, this.buildRegistrationPayload())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.resending.set(false);
+          if (this.maybeOpenLmsBlockedDialog(response.data)) return;
+          if (!response.status || !response.data) {
+            this.error.set(response.message || 'Could not resend OTP.');
+            return;
+          }
+          // If the backend short-circuited (e.g. user verified elsewhere
+          // in another tab), honour the new flow instead of staying on OTP.
+          this.handleRegistrationResult(response.data, response.message);
+        },
+        error: (err) => {
+          this.resending.set(false);
+          if (this.maybeOpenLmsBlockedDialog(err?.error?.data)) return;
+          this.error.set(err?.error?.message || 'Could not resend OTP.');
+          this.logger.error('WebinarRegistrationForm: resend failed', err);
+        },
+      });
   }
 
   /** DONE-step CTA — sends the visitor to the login page with a return URL. */
@@ -322,7 +446,7 @@ export class WebinarRegistrationForm {
     this.step.set('REGISTER');
     this.regStep.set(1);
     this.otpModel.set({ otp: '' });
-    this.otpSessionId.set(0);
+    this.otpIdentifier.set('');
     this.error.set(null);
     this.stopResendTimer();
   }
@@ -387,13 +511,10 @@ export class WebinarRegistrationForm {
         this.step.set('DONE');
         return;
       case 'otp_required':
-        this.otpSessionId.set(data.session_id);
-        // Dev-only autofill — backend omits `otp_dev` in prod.
-        if (data.otp_dev) {
-          this.otpModel.set({ otp: String(data.otp_dev) });
-        } else {
-          this.otpModel.set({ otp: '' });
-        }
+        // Fall back to the typed email only if the server omitted it — it
+        // normally echoes the exact value it used.
+        this.otpIdentifier.set(data.identifier ?? this.model().email ?? '');
+        this.otpModel.set({ otp: data.dev_code ?? '' });
         this.step.set('OTP');
         this.startResendTimer();
         this.notification.info(
@@ -449,9 +570,23 @@ export class WebinarRegistrationForm {
   private maybeTrackNewAccount(data: WebinarRegistrationDirectEnrolled): void {
     const raw = data.user;
     if (!raw) return;
-    const user = raw as unknown as any;
+    const user = raw as unknown as User;
     this.analytics.trackAccountCreate(user);
     this.analytics.trackOnboarding(user);
+    // CRM lead — account creation only. `data.user` is populated ONLY when the
+    // backend just created the account, so this method is the single point in
+    // the webinar flow where a user is created; both completion paths
+    // (direct-enrol and OTP-verified) route through it, and a registration by
+    // an existing user never reaches here. Identity comes from the form rather
+    // than `data.user`, which carries no phone/country code.
+    const lead = this.model();
+    this.salesforceLead.create({
+      first_name: lead.first_name,
+      last_name: lead.last_name,
+      email: lead.email,
+      phone: lead.phone,
+      country_code: lead.country_code,
+    });
   }
 
   private buildRegistrationPayload(): WebinarRegistrationRequest {
@@ -467,7 +602,7 @@ export class WebinarRegistrationForm {
       webinar_date_id: this.webinarDateId(),
       company_id: v.company_id > 0 ? v.company_id : null,
       browser_session_id: this.storage.getOrCreateBrowserSessionId(),
-      utm_url: this.storage.getCookie('utm') || undefined,
+      utm_url: this.storage.getCookie(UTM_COOKIE_KEY) || undefined,
     };
   }
 

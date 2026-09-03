@@ -1,4 +1,12 @@
-export const MOCK_INSTRUCTOR: any = {
+import {
+  Content,
+  ContentAbout,
+  CourseCategoryDetails,
+  FieldOfStudy,
+  InstructorDetails,
+} from '../../core/models/course.model';
+
+export const MOCK_INSTRUCTOR: InstructorDetails = {
   id: 1,
   first_name: 'Sarah',
   last_name: 'Johnson',
@@ -10,19 +18,19 @@ export const MOCK_INSTRUCTOR: any = {
   other_instructors: [],
 };
 
-export const MOCK_CATEGORY: any = {
+export const MOCK_CATEGORY: CourseCategoryDetails = {
   id: 1,
   course_name: 'CPA',
   course_category: 'Accounting',
   description: 'Certified Public Accountant preparation courses',
 };
 
-export const MOCK_FIELDS_OF_STUDY: any[] = [
+export const MOCK_FIELDS_OF_STUDY: FieldOfStudy[] = [
   { id: 45, name: 'Information Technology', cpe_credits: 0.5 },
   { id: 39, name: 'Economics', cpe_credits: 0.5 },
 ];
 
-export const MOCK_MASTERCLASS_CARD: any = {
+export const MOCK_MASTERCLASS_CARD: Content = {
   id: 101,
   title: 'Advanced CPA Exam Strategies',
   thumbnail: 'https://placehold.co/400x600/1a1a2e/ffffff?text=CPA+Strategies',
@@ -45,7 +53,7 @@ export const MOCK_MASTERCLASS_CARD: any = {
   allDataFetched: false,
 };
 
-export const MOCK_PODCAST_CARD: any = {
+export const MOCK_PODCAST_CARD: Content = {
   ...MOCK_MASTERCLASS_CARD,
   id: 102,
   title: 'CPA Insights Podcast: Tax Season Tips',
@@ -57,7 +65,7 @@ export const MOCK_PODCAST_CARD: any = {
   class_credits: 1,
 };
 
-export const MOCK_MICROLEARNING_CARD: any = {
+export const MOCK_MICROLEARNING_CARD: Content = {
   ...MOCK_MASTERCLASS_CARD,
   id: 103,
   title: 'Quick Guide: GAAP Fundamentals',
@@ -68,7 +76,7 @@ export const MOCK_MICROLEARNING_CARD: any = {
   class_credits: 0.5,
 };
 
-export const MOCK_CONTENT_ABOUT: any = {
+export const MOCK_CONTENT_ABOUT: ContentAbout = {
   id: 101,
   title: 'Advanced CPA Exam Strategies',
   thumbnail: 'https://placehold.co/400x600/1a1a2e/ffffff?text=CPA+Strategies',
@@ -147,7 +155,7 @@ export const MOCK_CONTENT_ABOUT: any = {
   allowed_email_domains: [],
 };
 
-export const MOCK_CARDS: any[] = [
+export const MOCK_CARDS: Content[] = [
   MOCK_MASTERCLASS_CARD,
   MOCK_PODCAST_CARD,
   MOCK_MICROLEARNING_CARD,

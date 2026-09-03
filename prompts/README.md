@@ -6,12 +6,13 @@ approves, and only then does code get written.
 
 ## The loop
 
-1. **You** send a short prompt — one feature, and the area it touches.
+1. **You** send a short prompt — one feature, plus the skills it needs.
    ```
    Implement the reel bookmark toggle.
+   Use .claude/skills/micro-learning and .claude/skills/core-services.
    ```
-2. **The agent** reads AGENTS.md + [`docs/STRUCTURE.md`](../docs/STRUCTURE.md), inspects the real
-   code, and writes `prompts/<feature-name>.md` from [`_TEMPLATE.md`](_TEMPLATE.md).
+2. **The agent** reads AGENTS.md + the named skills, inspects the real code, and writes
+   `prompts/<feature-name>.md` from [`_TEMPLATE.md`](_TEMPLATE.md).
 3. **You** read the plan — especially **Assumptions** and **How to verify it**.
 4. **You** approve with a plain "yes."
 5. **The agent** implements, runs the checks, and shares the exact test steps.
@@ -21,25 +22,21 @@ You review the prompt, not the keystrokes. You own the decisions; the agent owns
 
 ## Writing the short prompt
 
-One feature per prompt. Let the rules stay in AGENTS.md and the shapes in `docs/STRUCTURE.md`.
+One feature per prompt. Name the skills. Let the rules stay in AGENTS.md.
 
-> The repo-specific skills this file used to name were deleted in `c31f69d`. Their structural
-> content is now in [`docs/STRUCTURE.md`](../docs/STRUCTURE.md); you no longer name skills in the
-> prompt.
-
-|     |                                                                                |
-| --- | ------------------------------------------------------------------------------ |
-| ❌  | "Build the whole payment flow — cart, coupons, checkout, orders and invoices." |
-| ❌  | Re-explaining conventions that already live in AGENTS.md.                      |
-| ❌  | "Make the tracker page better."                                                |
-| ✅  | "Implement the coupon-apply step on the cart page."                            |
-| ✅  | "Add the CPE-credits column to the tracker table."                             |
+|     |                                                                                                                      |
+| --- | -------------------------------------------------------------------------------------------------------------------- |
+| ❌  | "Build the whole payment flow — cart, coupons, checkout, orders and invoices."                                       |
+| ❌  | Re-explaining conventions that already live in AGENTS.md.                                                            |
+| ❌  | "Make the tracker page better."                                                                                      |
+| ✅  | "Implement the coupon-apply step on the cart page. Use `.claude/skills/payment` and `.claude/skills/ui-components`." |
+| ✅  | "Add the CPE-credits column to the tracker table. Use `.claude/skills/cpe-tracker`."                                 |
 
 ## 60-second checklist before you approve
 
 - [ ] Is the feature defined clearly enough to direct, not script?
-- [ ] Do the rules it needs already live in AGENTS.md or `docs/STRUCTURE.md`?
-- [ ] Does the plan follow the endpoint-binding recipe (`docs/STRUCTURE.md` §3)?
+- [ ] Do the rules it needs already live in AGENTS.md?
+- [ ] Are the right skills named in the prompt?
 - [ ] Did the agent save a plan here and actually ask for approval?
 - [ ] Did I read the plan — including Assumptions and the test steps?
 - [ ] Are the server/client boundary and secrets handled (AGENTS.md §7)?

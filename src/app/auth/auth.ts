@@ -1,6 +1,7 @@
 import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
 import { Component, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Route, Router, RouterOutlet } from '@angular/router';
+import { AuthFacade } from './shared/services/auth-facade';
 import { environment } from '../../environments/environment';
 import { NgIcon } from '@ng-icons/core';
 import { svglGoogle, svglAppleDark } from '@ng-icons/svgl';
@@ -25,13 +26,9 @@ export class Auth {
   private readonly authService = inject(AuthService);
   private readonly dialog = inject(Dialog);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  /**
-   * Which auth surface is showing, so the shell can swap "Back to Home" for
-   * "Logout" on the profile step. Nothing sets it yet — the login page owns its
-   * own state and the profile page has no reason to announce itself — so it
-   * stays a plain signal rather than a service.
-   */
-  readonly auth_type = signal<'login' | 'profile' | null>(null);
+  authFacade = inject(AuthFacade);
+
+  auth_type = this.authFacade.auth_type;
 
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
 
@@ -43,12 +40,8 @@ export class Auth {
   });
 
   protected readonly showLogout = computed(() => {
-    // Was `!user.is_existing_user`. A learner parked on the profile page with an
-    // incomplete profile has nowhere to go "back" to, so the button logs out
-    // instead. `isProfileComplete` derives from v2/status, not from the login
-    // response's `onboarding` flag — #33 hardcodes that to true.
     const user = this.authService.currentUser();
-    return this.auth_type() === 'profile' && !!user && !this.authService.isProfileComplete();
+    return this.auth_type() === 'profile' && !!user && !user.is_existing_user;
   });
 
   protected readonly buttonLabel = computed(() => (this.showLogout() ? 'Logout' : 'Back to Home'));
@@ -105,26 +98,12 @@ export const authRoutes: Route[] = [
   {
     path: '',
     component: Auth,
+    providers: [AuthFacade], // Scoped to auth routes - destroyed when leaving
     children: [
       { path: '', redirectTo: 'login', pathMatch: 'full' },
       {
         path: 'login',
         canActivate: [guestGuard],
-        loadComponent: () => import('./shared/pages/login/login').then((m) => m.Login),
-      },
-      {
-        /**
-         * Hidden twin of `login`, unlinked from anywhere in the UI and
-         * `Disallow`ed in robots.txt. Identical screen; the only difference is
-         * `devOtp`, which forces `communication_method: 5` so a phone sign-in
-         * can be smoke-tested in production without a real SMS/WhatsApp. It
-         * grants nothing on its own — the SSO still has to allow the dev
-         * channel, and #35 verifies the OTP exactly as it does for the public
-         * route.
-         */
-        path: 'qa-login',
-        canActivate: [guestGuard],
-        data: { devOtp: true },
         loadComponent: () => import('./shared/pages/login/login').then((m) => m.Login),
       },
       {

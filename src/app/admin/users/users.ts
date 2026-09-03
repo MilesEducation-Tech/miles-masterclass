@@ -9,10 +9,16 @@ import {
   BlockStatusDialogData,
   BlockStatusDialogResult,
 } from '../../shared/components/dialog/block-status-dialog/block-status-dialog';
-import { parseNextPage } from '../../shared/utils/parse-next-page';
+import { DeprecationBanner } from '../shared/components/deprecation-banner/deprecation-banner';
 import { UsersTable } from './shared/components/users-table/users-table';
+import { PartnerAdminMe } from '../partner-platform/shared/services/partner-admin-me';
+import { PartnerUsersFacade } from './shared/services/partner-users-facade/partner-users-facade';
+import {
+  BlockedStatusFilter,
+  PartnerPanelUser,
+} from '../partner-platform/shared/models/partner-platform.model';
 
-const STATUS_TABS: { value: any; label: string }[] = [
+const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'active', label: 'Active' },
   { value: 'blocked', label: 'Blocked' },
@@ -20,43 +26,29 @@ const STATUS_TABS: { value: any; label: string }[] = [
 
 @Component({
   selector: 'app-admin-users',
-  imports: [AriaInput, Button, UsersTable],
+  imports: [AriaInput, Button, UsersTable, DeprecationBanner],
   templateUrl: './users.html',
   styleUrl: './users.css',
   host: { class: 'block w-full' },
 })
 export class Users {
-  // ponytail: PartnerUsersFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  protected readonly facade: any = {
-    blockedStatus: signal<any[]>([]),
-    error: signal<any>(null),
-    exportCsv: signal<any>(null),
-    isLoading: signal<any>(null),
-    pagination: signal<any>(null),
-    setBlockedStatus: (..._args: any[]): any => null,
-    setBlockStatus: (..._args: any[]): any => null,
-    setPage: (..._args: any[]): any => null,
-    setSearch: (..._args: any[]): any => null,
-    users: signal<any[]>([]),
-  };
+  protected readonly facade = inject(PartnerUsersFacade);
+  private readonly me = inject(PartnerAdminMe);
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);
+
+  /** Django capabilities gate these server-side — mirror them in the UI. */
+  protected readonly canBlock = computed(() => this.me.can('user:block'));
+  protected readonly canExport = computed(() => this.me.canReadReports());
 
   protected readonly statusTabs = STATUS_TABS;
   /** Raw search input — debounced before reaching the facade. */
   protected readonly searchInput = signal('');
 
-  // Non-null URL = a page exists in that direction (a prev URL pointing at
-  // page 1 omits the ?page= param, so don't gate on parsing it).
-  protected readonly hasNextPage = computed(() => this.facade.pagination()?.next_page != null);
-  protected readonly hasPrevPage = computed(() => this.facade.pagination()?.previous_page != null);
-
-  protected readonly currentPage = computed(
-    () => this.facade.pagination()?.current_page_number ?? 1,
-  );
-  protected readonly totalCount = computed(() => this.facade.pagination()?.total_count ?? 0);
+  protected readonly hasNextPage = computed(() => this.facade.hasNext());
+  protected readonly hasPrevPage = computed(() => this.facade.hasPrev());
+  protected readonly currentPage = computed(() => this.facade.pagination().current_page_number);
+  protected readonly totalCount = computed(() => this.facade.totalCount());
 
   constructor() {
     // Debounce keystrokes before they reach the facade (same pattern as the
@@ -78,27 +70,24 @@ export class Users {
     void this.facade.exportCsv();
   }
 
-  protected isActiveTab(value: any): boolean {
+  protected isActiveTab(value: BlockedStatusFilter): boolean {
     return this.facade.blockedStatus() === value;
   }
 
-  protected selectStatus(value: any): void {
+  protected selectStatus(value: BlockedStatusFilter): void {
     this.facade.setBlockedStatus(value);
   }
 
+  // Pagination is page NUMBERS now, not URLs — no parsing needed.
   protected goPrev(): void {
-    const prev = parseNextPage(this.facade.pagination()?.previous_page);
-    if (prev !== null) this.facade.setPage(prev);
-    else this.facade.setPage(Math.max(1, this.currentPage() - 1));
+    this.facade.setPage(this.facade.pagination().previous_page ?? this.currentPage() - 1);
   }
 
   protected goNext(): void {
-    const next = parseNextPage(this.facade.pagination()?.next_page);
-    if (next !== null) this.facade.setPage(next);
-    else this.facade.setPage(this.currentPage() + 1);
+    this.facade.setPage(this.facade.pagination().next_page ?? this.currentPage() + 1);
   }
 
-  protected onBlockToggle(user: any): void {
+  protected onBlockToggle(user: PartnerPanelUser): void {
     const action: BlockStatusDialogData['action'] = user.is_blocked ? 'unblock' : 'block';
 
     const ref = this.dialog.open<BlockStatusDialog, BlockStatusDialogResult>(BlockStatusDialog, {
@@ -113,11 +102,7 @@ export class Users {
 
     ref.afterClosed$.pipe(take(1)).subscribe(async (result) => {
       if (!result?.confirmed) return;
-      await this.facade.setBlockStatus({
-        user,
-        isBlocked: action === 'block',
-        reason: result.reason,
-      });
+      await this.facade.setBlockStatus(user, action === 'block', result.reason);
     });
   }
 }

@@ -1,46 +1,64 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { Storage } from '../../services/storage/storage';
 import { LoadingService } from '../../services/loading/loading';
-import { SKIP_AUTH_TOKEN } from '../../models/caira/envelope.model';
-import { shouldAttachToken } from '../../http/caira.endpoints';
+import { LocationService } from '../../services/location/location.service';
+import { IS_EXTERNAL_REQUEST, SKIP_AUTH_TOKEN } from '../../models/http.model';
+import { country } from '../../constant/country';
 import { environment } from '../../../../../environments/environment';
 
-/**
- * Drives the global loading bar and attaches the learner's access token.
- *
- * Two deliberate changes from the interceptor this replaces:
- *
- * 1. **The three `x-*` headers are gone.** It used to send `x-app-type`,
- *    `x-platform` and `x-country-code` on every request. CAIRA reads exactly one
- *    header — `Authorization` — and its `CORS_ALLOW_HEADERS` allowlist does not
- *    include any of the three, so each one would fail the preflight and take the
- *    whole request with it. `x-country-code` also had no meaning left: no CAIRA
- *    endpoint takes a country or profession parameter, which is why the
- *    `/:country/:profession_type` URL prefix is now cosmetic.
- *
- * 2. **The token is attached only to CAIRA requests**, rather than to everything
- *    that did not opt out. Opt-out defaults leak: the old rule would have sent a
- *    CAIRA bearer token to WordPress and S3 the moment someone forgot the
- *    `SKIP_AUTH_TOKEN` flag. Matching on `BASE_API_URL` makes the safe case the
- *    default and needs no per-call-site discipline.
- */
 export const appInterceptor: HttpInterceptorFn = (req, next) => {
+  // Third-party origins get the request untouched: the app headers below would
+  // force a CORS preflight the foreign host has no reason to allow, and a
+  // background call shouldn't drive the global loading spinner either.
+  if (req.context.get(IS_EXTERNAL_REQUEST)) return next(req);
+
   const storage = inject(Storage);
   const loading = inject(LoadingService);
+  const location = inject(LocationService);
+  const router = inject(Router);
 
+  // Start loading indicator
   loading.start();
 
-  let request = req;
-  if (shouldAttachToken(req.url, environment.BASE_API_URL, req.context.get(SKIP_AUTH_TOKEN))) {
+  const skipAuth = req.context.get(SKIP_AUTH_TOKEN);
+
+  // Country-scoped pricing: lowercase ISO2 on every request, defaulting to 'us'.
+  // In PROD, derive it from the user's actual location (device timezone) since
+  // the URL is user-editable and shouldn't drive pricing. In other envs, use the
+  // URL `/:country/...` segment so testers can switch country by editing the URL.
+  let iso2: string;
+  if (environment.production) {
+    iso2 = location.getUserCountry();
+  } else {
+    // iso2 = location.getUserCountry();
+    const seg = router.url.split('/').filter(Boolean)[0]?.toLowerCase();
+    iso2 = seg && country.includes(seg.toUpperCase()) ? seg : 'us';
+  }
+
+  // Build headers with default app info
+  let headers = req.headers
+    .set('x-app-type', environment.appType)
+    .set('x-platform', environment.platform)
+    .set('x-country-code', iso2);
+
+  // Add Authorization header if token exists, unless this request opts out
+  if (!skipAuth) {
     const accessToken = storage.getCookie(environment.AUTH.accessToken);
     if (accessToken) {
-      // `USP/authentication.py` lower-cases the prefix before comparing, so
-      // either casing works; `Bearer` is the spec form.
-      request = req.clone({ setHeaders: { Authorization: `Bearer ${accessToken}` } });
+      headers = headers.set('Authorization', `bearer ${accessToken}`);
     }
   }
 
-  return next(request).pipe(finalize(() => loading.stop()));
+  // Clone request with new headers
+  const clonedReq = req.clone({ headers });
+
+  return next(clonedReq).pipe(
+    finalize(() => {
+      // Stop loading indicator when request completes (success or error)
+      loading.stop();
+    }),
+  );
 };

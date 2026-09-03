@@ -1,408 +1,308 @@
-# Partner Platform — Complete Binding Spec (single source of truth)
+# Partner Platform API
 
-Everything needed to build & bind the partner admin panel: the rules, how it actually works, every API (curl + real response + where to bind it), and a consistent mock dataset. If it isn't here, it isn't required.
+Two audiences under `/api/partners/`:
 
----
+| Base path                   | Who calls it                                         | Scope                                                            |
+| --------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
+| `/api/partners/superadmin/` | Miles-internal ops                                   | Sees/acts on everything — every network, firm, code, admin, user |
+| `/api/partners/panel/`      | Network admins & firm admins (Angular partner panel) | Auto-scoped to their own `network_id`/`firm_id`                  |
 
-## 0. SYSTEM PROMPT — read first
+## Auth
 
-You are wiring the **Partner Platform** admin panel (Angular) to a Django backend. Hard rules — they resolve every past ambiguity:
+Every endpoint uses `SupabaseJWTAuthentication` — send `Authorization: Bearer <supabase_access_token>`. The token identifies a Supabase login; scope/role comes from a `PartnerAdmin` row looked up by `supabase_uid`, **not** from anything in the token itself.
 
-1. **Code ≠ Coupon.** A **partner code** is a _price plan / template_ — creating one mints **nothing** and it **never shows in the coupon tracker**. A **coupon** is a _real seat/voucher_, created only by an **allocation**; the tracker shows coupons only.
-2. **4-step lifecycle:** `1) create code (plan)` → `2) allocate seats → mints coupons` → `3) send coupon to a person` → `4) person redeems`.
-3. **Scope is server-side.** The backend decides what a user sees from their login (`/me`). Never send a network/firm id to _widen_ scope (`firm_id` on the tracker only _filters_, for network admins).
-4. **`coupon.firm` can be `null`** (a coupon minted to a network directly) → render `—`, guard every `firm.name` with `?.`.
-5. **Capabilities gate the UI.** Read `me.capabilities`; hide actions the user can't perform.
-6. **Errors are uniform:** `{ "status": false, "message": "..." }` with 400/401/403 → surface `message`.
-7. **Two pagination shapes:** coupon endpoints return page **numbers**; the users endpoint returns full **URLs**.
+- **Superadmin endpoints**: require `PartnerAdmin.role == "super"` (`IsSuperAdmin`). 401 if the token itself is missing/invalid/expired, 403 if it's valid but not a super admin.
+- **Panel endpoints**: require an active `PartnerAdmin` row, plus (per endpoint) a specific **capability** — a string in `PartnerAdmin.capabilities`. A valid token with no matching `PartnerAdmin` row still gets a real response, not a 401 — see `GET /panel/me/` below.
 
-**Base URL** `{{base}}` = `https://uat-api.milesmasterclass.com/api/reports` (prod: `https://api.milesmasterclass.com/api/reports`).
-**Auth:** every request sends `Authorization: Bearer <supabase_access_token>` (one interceptor).
+Known capability keys: `report:network:read`, `report:firm:read`, `seat:usage:read`, `seat:send`, `user:block`, `code:create:network`, `code:create:firm`.
 
----
+## Pagination
 
-## 1. How it actually works (the workflow)
-
-The whole product is **one flow across three roles**. Read this once and every screen makes sense.
-
-```mermaid
-flowchart TD
-    subgraph SUPER["🏢 SUPER ADMIN (Miles)"]
-        S1["1 Create a NETWORK<br/>(seat budget, e.g. 100)"]
-        S2["2 Create PARTNER CODES<br/>(price plans, scoped to network/firm/global)"]
-        S3["3 Create ADMIN LOGINS<br/>(network admin / firm admin)"]
-    end
-    subgraph NET["🌐 NETWORK ADMIN (partner HQ)"]
-        N1["4 Create SUB-COMPANY<br/>+ allocate seats from a code"]
-        N2["→ COUPONS minted for that firm"]
-        N3["5 SEND coupons to people / L&D SPOCs"]
-    end
-    subgraph FIRM["🏬 FIRM ADMIN (one firm)"]
-        F1["View own dashboard + coupons"]
-        F2["SEND coupons to own users"]
-    end
-    subgraph USER["👤 END USER"]
-        U1["6 Redeem coupon → gets access"]
-    end
-    S1 --> S2 --> S3
-    S3 --> N1 --> N2 --> N3 --> U1
-    S3 --> F1 --> F2 --> U1
-```
-
-**In words:**
-
-1. **Super admin** creates a **network** (a seat budget) → creates **partner codes** (price plans) → creates the **admin logins** (network and/or firm).
-2. **Network admin** logs in, creates **sub-companies (firms)** and **allocates seats** to them from a code → this **mints coupons**.
-3. **Network/firm admin** **sends** each coupon (to a user or an L&D SPOC).
-4. **End user** redeems the coupon → gets platform access.
-
-**Where the confusion always came from:** step 1's "create code" produces a _plan_, not coupons. Coupons only exist after step 2 (allocate). The coupon tracker is a step-2+ screen.
-
-**Standalone firm variant:** a single company (e.g. Deloitte) with no network — super admin creates the firm directly (with allocations) + a firm-admin login. Same steps, minus the network layer.
-
----
-
-## 2. Bootstrap (before any screen)
-
-```bash
-curl "{{base}}/partner-admin/me/" -H "authorization: Bearer $TOKEN"
-```
+Every paginated list uses the same envelope:
 
 ```json
-// network admin
-{ "supabase_uid":"acc1...","email":"hq@acme.com","role":"network",
-  "network":{"id":11,"name":"Acme Alliance","slug":"acme-alliance"},"firm":null,
-  "capabilities":["report:network:read","code:create:firm","coupon:send","user:block"] }
-// firm admin (standalone → network null)
-{ "supabase_uid":"b7c3...","email":"admin@deloitte.com","role":"firm",
-  "network":null,"firm":{"id":18,"name":"Deloitte"},
-  "capabilities":["report:network:read","coupon:send","user:block"] }
-// not a partner admin
-{ "is_partner_admin": false }
+{
+  "total_count": 42,
+  "current_page_number": 1,
+  "next_page": 2,
+  "previous_page": null
+}
 ```
 
-**🔗 Bind:** call once on app load. `role` picks the portal (super/network/firm). Show each action only if its capability is in `capabilities`. Store `network`/`firm` for headers/labels.
+`next_page`/`previous_page` are page numbers, not URLs — `null` when there isn't one.
+
+## Errors
+
+Action endpoints (POST/PATCH) that fail validation return `{"status": false, "message": "..."}` with a 400/403/404/409 as appropriate. List/detail GETs use DRF's default error shape on 401/403.
 
 ---
 
-## 3. Mock dataset (build/test against this)
+# Superadmin API
 
-```jsonc
-// Network
-{ "id":11,"name":"Acme Alliance","slug":"acme-alliance","total_seats":100,"allocated":12,"unallocated":88,"is_active":true }
-// Firms (sub-companies of network 11)
-{ "id":16,"name":"Google","allocated":10,"used":3,"available":7,"is_active":true }
-{ "id":17,"name":"Amazon","allocated":2,"used":0,"available":2,"is_active":true }
-// Standalone firm (no network)
-{ "id":18,"name":"Deloitte","network":null,"email_domain":"deloitte.com","is_active":true }
-// Partner codes (plans)
-{ "id":31,"code":"ACME-STD","discounted_price":"299.00","partner_network":11,"partner_firm":null,"auto_subscribe":false,"is_active":true }
-{ "id":32,"code":"GLOBAL-99","discounted_price":"99.00","partner_network":null,"partner_firm":null,"auto_subscribe":false,"is_active":true }
-{ "id":33,"code":"DELOITTE","discounted_price":"200.00","partner_network":null,"partner_firm":18,"auto_subscribe":false,"is_active":true }
-// Coupons (real seats)
-{ "id":101,"code":"GOOGLE-1A2B3C4D","purchase_cost":"299.00","expiry_date":null,"status":"applied","sent_to_email":"jane@google.com","shared_on":"2026-07-10T10:00:00Z","applied_on":"2026-07-11T08:00:00Z","applied_by":"jane@google.com","firm":{"id":16,"name":"Google"} }
-{ "id":102,"code":"GOOGLE-9F8E7D6C","purchase_cost":"299.00","expiry_date":null,"status":"shared","sent_to_email":"spoc@google.com","shared_on":"2026-07-12T09:00:00Z","applied_on":null,"applied_by":null,"firm":{"id":16,"name":"Google"} }
-{ "id":103,"code":"ACMEALLI-55AA11BB","purchase_cost":"299.00","expiry_date":null,"status":"available","sent_to_email":null,"shared_on":null,"applied_on":null,"applied_by":null,"firm":null }  // network-level, no sub-company
-```
+Base: `/api/partners/superadmin/`
 
-Statuses: `available → shared → applied`; `expired` derived from `expiry_date`.
+## Networks
 
----
+### `GET|POST /networks/`
 
-## 4. SUPER ADMIN portal (`role = super`)
-
-> Portal shown when `me.role === 'super'`. This is steps 1–3 of the workflow.
-
-### 4.1 Networks list
-
-**🔗 Bind:** Networks tab load → render table; "Create" button → 4.2; row click → 4.3.
-
-```bash
-curl "{{base}}/superadmin/networks/" -H "authorization: Bearer $TOKEN"
-```
+**GET** — list every network.
 
 ```json
 {
   "networks": [
     {
-      "id": 11,
-      "name": "Acme Alliance",
-      "slug": "acme-alliance",
+      "id": 4,
+      "name": "Allinial Global",
+      "slug": "allinial-global",
       "total_seats": 100,
-      "allocated": 12,
-      "unallocated": 88,
+      "allocated_seats": 65,
+      "unallocated_seats": 35,
+      "used_seats": 40,
       "is_active": true
     }
   ]
 }
 ```
 
-### 4.2 Create network
+**POST** — create a network.
 
-**🔗 Bind:** create-network modal submit → on success close + refresh list; on 400 show `message`.
+| Field         | Type   | Required | Notes                          |
+| ------------- | ------ | -------- | ------------------------------ |
+| `name`        | string | yes      |                                |
+| `slug`        | string | no       | defaults to a slugified `name` |
+| `total_seats` | int    | no       | seat budget, default 0         |
 
-```bash
-curl -X POST "{{base}}/superadmin/networks/" -H "authorization: Bearer $TOKEN" -H "content-type: application/json" \
-  -d '{"name":"Acme Alliance","slug":"acme-alliance","total_seats":100}'
-```
+Returns the created network object (same shape as above), `201`.
 
-```json
-{
-  "status": true,
-  "network": {
-    "id": 11,
-    "name": "Acme Alliance",
-    "slug": "acme-alliance",
-    "total_seats": 100,
-    "allocated": 0,
-    "unallocated": 100,
-    "is_active": true
-  }
-}
-// 400 → { "status":false,"message":"A network with slug 'acme-alliance' already exists." }
-```
+### `GET|PATCH /networks/<id>/`
 
-### 4.3 Network detail / tracker
-
-**🔗 Bind:** open a network → render `summary` stat cards + `sub_companies` table.
-
-```bash
-curl "{{base}}/superadmin/networks/11/" -H "authorization: Bearer $TOKEN"
-```
+**GET** — network detail + its firms.
 
 ```json
 {
-  "summary": {
-    "network": { "id": 11, "name": "Acme Alliance", "slug": "acme-alliance" },
-    "total_seats": 100,
-    "allocated": 12,
-    "unallocated": 88,
-    "used": 3,
-    "available": 8,
-    "shared": 1,
-    "applied": 3,
-    "expired": 0
-  },
-  "sub_companies": [
-    { "id": 16, "name": "Google", "allocated": 10, "used": 3, "available": 7, "is_active": true }
-  ]
-}
-```
-
-### 4.4 Edit network / stock its pool
-
-**🔗 Bind:** edit-network form → PATCH with `{name,total_seats,is_active}`. Optional "add seats to network" → same PATCH with `allocations` (mints coupons with **no sub-company**).
-
-```bash
-curl -X PATCH "{{base}}/superadmin/networks/11/" -H "authorization: Bearer $TOKEN" -H "content-type: application/json" \
-  -d '{"total_seats":120,"allocations":[{"partner_code_id":31,"count":5}]}'
-```
-
-```json
-{
-  "status": true,
-  "network": {
-    "id": 11,
-    "name": "Acme Alliance",
-    "slug": "acme-alliance",
-    "total_seats": 120,
-    "allocated": 17,
-    "unallocated": 103,
-    "is_active": true
-  },
-  "coupons_minted": 5
-}
-```
-
-### 4.5 Partner codes — list / create
-
-**🔗 Bind:** Codes tab → list table (scope column = network/firm/global). "Create" → POST with a **scope picker**: network → `partner_network_id`; firm → `partner_firm_id`; global → neither (never both).
-
-```bash
-curl "{{base}}/superadmin/partner-codes/" -H "authorization: Bearer $TOKEN"
-curl -X POST "{{base}}/superadmin/partner-codes/" -H "authorization: Bearer $TOKEN" -H "content-type: application/json" \
-  -d '{"code":"ACME-STD","discounted_price":299,"partner_network_id":11}'
-```
-
-```json
-{
-  "partner_codes": [
-    {
-      "id": 31,
-      "code": "ACME-STD",
-      "discounted_price": "299.00",
-      "partner_network": 11,
-      "partner_firm": null,
-      "auto_subscribe": false,
-      "is_active": true
-    }
-  ]
-}
-// create 201 → { "status":true,"partner_code":{"id":31,"code":"ACME-STD"} }
-// 400 → "a partner code is scoped to a network OR a firm, not both."
-```
-
-### 4.6 Firms — list / create
-
-**🔗 Bind:** Firms tab → list (filter `?network_id=` or `?standalone=1`). "Create firm" → POST; omit `network_id` for standalone; `allocations` must use **network/global** codes.
-
-```bash
-curl "{{base}}/superadmin/firms/?network_id=11" -H "authorization: Bearer $TOKEN"
-curl -X POST "{{base}}/superadmin/firms/" -H "authorization: Bearer $TOKEN" -H "content-type: application/json" \
-  -d '{"name":"Deloitte","email_domain":"deloitte.com","allocations":[{"partner_code_id":32,"count":10}]}'
-```
-
-```json
-{
+  "network": { "id": 4, "name": "Allinial Global", "...": "..." },
   "firms": [
-    { "id": 16, "name": "Google", "network": 11, "email_domain": "google.com", "is_active": true }
+    {
+      "id": 12,
+      "name": "Acme LLP",
+      "network": { "id": 4, "name": "Allinial Global" },
+      "is_standalone": false,
+      "email_domain": "acme.com",
+      "is_active": true,
+      "allocated_seats": 8,
+      "used_seats": 5
+    }
   ]
 }
-// create 201 → { "status":true,"firm":{"id":18,"name":"Deloitte","network":null},"coupons_minted":10 }
 ```
 
-### 4.7 Create partner-admin login
+**PATCH** — update fields and/or mint seats straight into the network's pool.
 
-**🔗 Bind:** after creating the Supabase user (need its `sub`) → POST. Network admin: `role:"network"`+`network_id`+`code:create:firm`. Firm admin: `role:"firm"`+`firm_id`, omit `code:create:firm`.
+| Field         | Type   | Required | Notes                                                                                                            |
+| ------------- | ------ | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `name`        | string | no       |                                                                                                                  |
+| `total_seats` | int    | no       | can't drop below seats already allocated                                                                         |
+| `is_active`   | bool   | no       |                                                                                                                  |
+| `allocations` | array  | no       | `[{"partner_code": <id>, "count": <int>, "expiry_date"?: "YYYY-MM-DD"}]` — mints seats to the pool (`firm=null`) |
 
-```bash
-curl -X POST "{{base}}/superadmin/partner-admins/" -H "authorization: Bearer $TOKEN" -H "content-type: application/json" \
-  -d '{"supabase_uid":"acc1...","email":"hq@acme.com","role":"network","network_id":11,"capabilities":["report:network:read","code:create:firm","coupon:send","user:block"]}'
+Returns the updated network object; adds `"seats_minted": N` if `allocations` was sent.
+
+## Firms
+
+### `GET|POST /firms/`
+
+**GET** — `?network_id=<id>` to filter to one network's firms, `?standalone=1` for firms with no network. No params = all firms.
+
+```json
+{ "firms": [/* same shape as the network-detail firms array */] }
 ```
+
+**POST** — create a firm, optionally with its admin login and initial seats, atomically.
+
+| Field          | Type   | Required | Notes                                                                                                   |
+| -------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------- |
+| `name`         | string | yes      |                                                                                                         |
+| `network`      | int    | no       | omit for a standalone firm                                                                              |
+| `email_domain` | string | no       | gates who can redeem this firm's seats                                                                  |
+| `admin`        | object | no       | `{"supabase_uid": "...", "email"?: "...", "capabilities"?: [...]}` — creates a firm-role `PartnerAdmin` |
+| `allocations`  | array  | no       | same shape as network PATCH — mints seats straight into this firm                                       |
 
 ```json
 {
-  "status": true,
-  "partner_admin": {
-    "id": 3,
-    "supabase_uid": "acc1...",
-    "role": "network",
-    "network": 11,
-    "firm": null
+  "id": 12,
+  "name": "Acme LLP",
+  "network": { "id": 4, "name": "Allinial Global" },
+  "is_standalone": false,
+  "email_domain": "acme.com",
+  "is_active": true,
+  "allocated_seats": 3,
+  "used_seats": 0,
+  "seats_minted": 3,
+  "admin": {
+    "id": 9,
+    "email": "admin@acme.com",
+    "supabase_uid": "...",
+    "role": "firm",
+    "network": null,
+    "firm": { "id": 12, "name": "Acme LLP" },
+    "capabilities": [],
+    "is_active": true
   }
 }
 ```
 
-### 4.8 Coupon tracker (any network/firm)
+`admin` key is only present if an `admin` object was sent. `201`.
 
-**🔗 Bind:** viewing a network's/firm's coupons → exactly one of `network_id`/`firm_id` (+ status/page). Render rows; `firm` may be `null` → `—`.
+### `POST /firms/<id>/allocate/`
 
-```bash
-curl "{{base}}/superadmin/coupons/?network_id=11&page=1&page_size=20" -H "authorization: Bearer $TOKEN"
-```
+Top up an existing firm's seats.
 
-```json
-{
-  "coupons": [/* rows, see mock #101–103 */],
-  "pagination_data": {
-    "total_count": 12,
-    "current_page_number": 1,
-    "next_page": null,
-    "previous_page": null
-  }
-}
-// neither param → 400 "network_id or firm_id is required."
-```
-
----
-
-## 5. NETWORK ADMIN portal (`role = network`)
-
-> Portal shown when `me.role === 'network'`. This is steps 4–5. Uses the admin's own network (from `me`) — no ids passed to widen scope.
-
-### 5.1 Dashboard
-
-**🔗 Bind:** portal home → stat cards from the response.
-
-```bash
-curl "{{base}}/partner-admin/dashboard/" -H "authorization: Bearer $TOKEN"
-```
+| Field          | Type | Required |
+| -------------- | ---- | -------- |
+| `partner_code` | int  | yes      |
+| `count`        | int  | yes      |
+| `expiry_date`  | date | no       |
 
 ```json
-{
-  "network": { "id": 11, "name": "Acme Alliance", "slug": "acme-alliance" },
-  "total_seats": 100,
-  "allocated": 12,
-  "unallocated": 88,
-  "used": 3,
-  "available": 8,
-  "shared": 1,
-  "applied": 3,
-  "expired": 0
-}
+{ "seats_minted": 5 }
 ```
 
-### 5.2 Partner-code dropdown (feeds 5.4)
+`201`.
 
-**🔗 Bind:** load when opening the Create-Sub-company modal → populate the plan dropdown.
+## Seats
 
-```bash
-curl "{{base}}/partner-admin/partner-codes/" -H "authorization: Bearer $TOKEN"
+### `POST /seats/<id>/assign-firm/`
+
+Move an already-minted, unassigned network-pool seat (`firm=null`) onto a firm under the same network.
+
+| Field  | Type | Required |
+| ------ | ---- | -------- |
+| `firm` | int  | yes      |
+
+```json
+{ "id": 88, "code": "ALLINIAL-A1B2C3D4", "firm_id": 12 }
 ```
+
+## Partner codes
+
+### `GET|POST /partner-codes/`
+
+**GET** — every pricing plan.
 
 ```json
 {
   "partner_codes": [
     {
-      "id": 31,
-      "code": "ACME-STD",
+      "id": 3,
+      "code": "ALLINIAL-299",
+      "description": null,
       "discounted_price": "299.00",
-      "partner_network": 11,
-      "partner_firm": null,
+      "stripe_price_id": null,
       "auto_subscribe": false,
+      "network": { "id": 4, "name": "Allinial Global" },
+      "firm": null,
+      "valid_to": null,
       "is_active": true
     }
   ]
 }
 ```
 
-### 5.3 Sub-companies list
+**POST** — create a plan.
 
-**🔗 Bind:** firms section → table (allocated/used/available). Row → filter the tracker (5.5) by `firm_id`.
+| Field              | Type     | Required | Notes                                                                                                                                    |
+| ------------------ | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `code`             | string   | yes      | unique                                                                                                                                   |
+| `description`      | string   | no       |                                                                                                                                          |
+| `discounted_price` | decimal  | yes      |                                                                                                                                          |
+| `stripe_price_id`  | string   | no       |                                                                                                                                          |
+| `auto_subscribe`   | bool     | no       | `true` = grants a free Active subscription immediately on redeem; `false` = discount only, settled later via offline-payment or checkout |
+| `network`          | int      | no       | scope — network XOR firm XOR neither (global)                                                                                            |
+| `firm`             | int      | no       |                                                                                                                                          |
+| `valid_to`         | datetime | no       | expiry for direct (non-seat) redemption                                                                                                  |
 
-```bash
-curl "{{base}}/partner-admin/sub-companies/" -H "authorization: Bearer $TOKEN"
-```
+Returns the created plan, `201`.
+
+## Partner admins
+
+### `GET|POST /partner-admins/`
+
+**GET**
 
 ```json
 {
-  "sub_companies": [
-    { "id": 16, "name": "Google", "allocated": 10, "used": 3, "available": 7, "is_active": true }
+  "partner_admins": [
+    {
+      "id": 9,
+      "email": "admin@acme.com",
+      "supabase_uid": "...",
+      "role": "firm",
+      "network": null,
+      "firm": { "id": 12, "name": "Acme LLP" },
+      "capabilities": ["seat:send"],
+      "is_active": true
+    }
   ]
 }
 ```
 
-### 5.4 Create sub-company (+ mint coupons) — the key action
+**POST**
 
-**🔗 Bind:** "Create Sub-company" button (show only if `code:create:firm`). Modal: name, email_domain, and **per-code seat count** (from 5.2). On success → refresh 5.3 + 5.5.
+| Field          | Type            | Required                   | Notes                          |
+| -------------- | --------------- | -------------------------- | ------------------------------ |
+| `supabase_uid` | string          | yes                        |                                |
+| `email`        | string          | no                         | display only                   |
+| `role`         | string          | yes                        | `super` \| `network` \| `firm` |
+| `network`      | int             | required if `role=network` |                                |
+| `firm`         | int             | required if `role=firm`    |                                |
+| `capabilities` | array of string | no                         | must be known capability keys  |
 
-```bash
-curl -X POST "{{base}}/partner-admin/sub-companies/" -H "authorization: Bearer $TOKEN" -H "content-type: application/json" \
-  -d '{"name":"Google","email_domain":"google.com","allocations":[{"partner_code_id":31,"count":10}]}'
-```
+Returns the created admin, `201`.
 
-```json
-{
-  "status": true,
-  "firm": { "id": 16, "name": "Google" },
-  "coupons_minted": 10,
-  "network": { "id": 11, "unallocated_seats": 90 }
-}
-```
+## Users (onboarding)
 
-### 5.5 Coupon tracker
+### `GET|POST|PATCH /users/`
 
-**🔗 Bind:** main table. `?firm_id=` when a firm is selected; `?status=` for filter tabs; `?page=/?page_size=` for paging (page **numbers**). Sub-company column: `firm?.name ?? '—'`.
+One resource, dispatched by method.
 
-```bash
-curl "{{base}}/partner-admin/coupons/?page=1&page_size=20" -H "authorization: Bearer $TOKEN"
-```
+**GET** — `?domain=acme.com,other.com&search=jane&page=1&page_size=30`
 
 ```json
 {
-  "coupons": [/* rows incl. one with "firm":null → "—" */],
+  "status_code": 200,
+  "message": "Users returned successfully!",
+  "data": [
+    {
+      "id": 501,
+      "email": "jane@acme.com",
+      "email_domain": "acme.com",
+      "first_name": "Jane",
+      "last_name": "Doe",
+      "mobile": "+15551234567",
+      "country_code": "+1",
+      "location": "New York",
+      "qualification_status": "completed",
+      "license_status": "licensed",
+      "is_currently_working": true,
+      "terms_accepted": true,
+      "sms_consent": true,
+      "created_at": "2026-08-01T10:00:00Z",
+      "last_login": "2026-08-20T09:00:00Z",
+      "creation_platform": "PartnerOnboarding",
+      "account_type": "SGA",
+      "profession": "CPA",
+      "professional_courses": ["Auditing"],
+      "state_board": ["New York"],
+      "country_selected": "United States",
+      "company": "Acme LLP",
+      "sector": "Finance",
+      "job_role": "Analyst",
+      "partner_code": "ALLINIAL-299",
+      "is_subscribed": true
+    }
+  ],
   "pagination_data": {
-    "total_count": 12,
+    "total_count": 42,
     "current_page_number": 1,
     "next_page": 2,
     "previous_page": null
@@ -410,107 +310,384 @@ curl "{{base}}/partner-admin/coupons/?page=1&page_size=20" -H "authorization: Be
 }
 ```
 
-### 5.6 Send a coupon
+**POST** — onboard a new user and (optionally) apply a partner code.
 
-**🔗 Bind:** per-row email box + Send (needs `coupon:send`) → on success set row to `shared` + show `sent_to_email`.
+| Field                                                           | Type         | Required | Notes                                                                        |
+| --------------------------------------------------------------- | ------------ | -------- | ---------------------------------------------------------------------------- |
+| `email`                                                         | string       | yes      |                                                                              |
+| `first_name`, `last_name`, `mobile`, `country_code`, `location` | string       | no       |                                                                              |
+| `profession`                                                    | int          | no       | FK id                                                                        |
+| `professional_courses`, `state_board`                           | array of int | no       | FK ids                                                                       |
+| `qualification_status`, `license_status`                        | string       | no       | choice fields                                                                |
+| `is_currently_working`                                          | bool         | no       |                                                                              |
+| `terms_accepted`                                                | bool         | no       | default `true`                                                               |
+| `sms_consent`                                                   | bool         | no       |                                                                              |
+| `country_selected`                                              | int          | no       | FK id                                                                        |
+| `company_id`, `sector_id`, `job_role_id`, `experience_id`       | int          | no       | plain ints, not FKs — validated against reference tables                     |
+| `partner_code`                                                  | string       | no       | a `PartnerSeat` code or a legacy flat `PartnerCode` — resolved automatically |
 
-```bash
-curl -X POST "{{base}}/partner-admin/coupons/102/send/" -H "authorization: Bearer $TOKEN" -H "content-type: application/json" -d '{"email":"someone@google.com"}'
+```json
+{ "status": true, "message": "User created." }
 ```
+
+`201` on success. `409` if email/mobile already exists. `400` for an invalid/ineligible partner code.
+
+**PATCH** — update an existing user, identified by `user_id` in the body.
+
+| Field                          | Type | Required | Notes                                                                               |
+| ------------------------------ | ---- | -------- | ----------------------------------------------------------------------------------- |
+| `user_id`                      | int  | yes      |                                                                                     |
+| _(everything from POST above)_ |      | no       | partial — only sent keys are written; at least one field besides `user_id` required |
+
+```json
+{ "status": true, "message": "User updated." }
+```
+
+`200` on success.
+
+## Offline payment
+
+### `POST /users/<user_id>/offline-payment/`
+
+Settle a partner-onboarded user's subscription outside any payment gateway (bank transfer, cash). `multipart/form-data`. Exactly one of `invoice`/`comment` — never both, never neither.
+
+| Field     | Type   | Required           | Notes                                                                        |
+| --------- | ------ | ------------------ | ---------------------------------------------------------------------------- |
+| `invoice` | file   | XOR with `comment` | `.pdf`/`.png`/`.jpg`/`.jpeg`, max 10MB                                       |
+| `comment` | string | XOR with `invoice` | admin justification when there's nothing to share, e.g. "free access for QA" |
+
+Behavior depends on whether the user already has an active subscription (their partner code had `auto_subscribe=true`, granted at onboarding):
+
+- **Already subscribed**: `invoice` attaches to their existing transaction; `comment` is just recorded, nothing else changes.
+- **Not yet subscribed** (discount-only code): this invoice/comment **is** the payment — a real subscription is granted now, priced from their partner code.
 
 ```json
 {
   "status": true,
-  "coupon": { "id": 102, "status": "shared", "sent_to_email": "someone@google.com" }
+  "message": "Invoice updated.",
+  "data": {
+    "user_id": 501,
+    "order_id": 812,
+    "transaction_id": 900,
+    "payment_id": "TXN-...",
+    "payment_mode": "Offline",
+    "amount_paid": 299.0,
+    "subscription_status": "Active",
+    "receipt_url": "https://.../invoices/501/....pdf",
+    "payment_note": null
+  }
 }
 ```
 
-### 5.7 Users (list / export / block)
+`200` on success. `400` no proof / both given / no invoice+no partner code to price against / invalid file type or size. `404` no user, or (already-subscribed case) no existing transaction found. `502` invoice upload failed. `500` grant failed.
 
-**🔗 Bind:** Users tab. List paging uses **full URLs**. Block toggle → POST. Sends `email_domain` (comma-joined) **only when** the signed-in admin has rows in `admin_user_email_domains` (from `get_my_admin_profile`); otherwise omitted and the backend scopes by token.
+---
 
-```bash
-curl "{{base}}/partner-admin/users/?page=1&search=&blocked_status=all" -H "authorization: Bearer $TOKEN"
-curl "{{base}}/partner-admin/users/export-csv/?blocked_status=all" -H "authorization: Bearer $TOKEN" -o users.csv
-curl -X POST "{{base}}/partner-admin/users/57/block-status/" -H "authorization: Bearer $TOKEN" -H "content-type: application/json" -d '{"is_blocked":true,"reason":"left the firm"}'
-```
+# Panel API
+
+Base: `/api/partners/panel/`. Every endpoint below is auto-scoped to the calling admin's own network or firm — no `network_id`/`firm_id` params, unlike superadmin.
+
+## `GET /me/`
+
+Identity + capability introspection. No permission gate beyond a valid token — a login with no matching `PartnerAdmin` row still returns `200`, not `403`/`401`, so the frontend can show "not provisioned" instead of erroring.
 
 ```json
-// list
+{ "is_partner_admin": false }
+```
+
+or
+
+```json
+{
+  "id": 9,
+  "email": "admin@acme.com",
+  "supabase_uid": "...",
+  "role": "firm",
+  "network": null,
+  "firm": { "id": 12, "name": "Acme LLP" },
+  "capabilities": ["seat:send"],
+  "is_active": true,
+  "is_partner_admin": true
+}
+```
+
+## `GET /dashboard/`
+
+_Requires:_ `report:network:read` (network admin) or `report:firm:read` (firm admin).
+
+Seat stat cards. `total_seats`/`unallocated_seats` only appear for a network admin — a firm has no seat budget of its own.
+
+```json
+{
+  "total_seats": 100,
+  "unallocated_seats": 35,
+  "allocated_seats": 65,
+  "used_seats": 40,
+  "available_seats": 15,
+  "shared_seats": 10,
+  "expired_seats": 0
+}
+```
+
+## `GET /firms/`
+
+_Requires:_ `report:network:read`/`report:firm:read`.
+
+A network admin's own member firms; always empty for a firm admin (no sibling firms to see).
+
+```json
+{ "firms": [/* same shape as superadmin's firm list */] }
+```
+
+## `GET /partner-codes/`
+
+_Requires:_ `report:network:read`/`report:firm:read`.
+
+Plans this admin can mint seats from: their own network/firm's codes, plus any global (no network/firm) code.
+
+```json
+{ "partner_codes": [/* same shape as superadmin's */] }
+```
+
+## `GET /seats/`
+
+_Requires:_ `seat:usage:read`.
+
+`?firm_id=<id>` (network admins only, to drill into one firm) `&status=available|shared|applied|expired|all&search=<code or email>&page=&page_size=` (default 20).
+
+```json
+{
+  "seats": [
+    {
+      "id": 88,
+      "code": "ALLINIAL-A1B2C3D4",
+      "partner_code": { "id": 3, "code": "ALLINIAL-299" },
+      "firm": { "id": 12, "name": "Acme LLP" },
+      "status": "shared",
+      "purchase_cost": "299.00",
+      "expiry_date": null,
+      "sent_to_email": "spoc@acme.com",
+      "shared_on": "2026-08-20T10:00:00Z",
+      "applied_by_email": null,
+      "applied_on": null
+    }
+  ],
+  "pagination_data": {
+    "total_count": 8,
+    "current_page_number": 1,
+    "next_page": null,
+    "previous_page": null
+  }
+}
+```
+
+`status` is derived (`effective_status()`) — `applied` always wins even past expiry; otherwise an expired row shows `expired` regardless of its stored status.
+
+## `POST /seats/<id>/send/`
+
+_Requires:_ `seat:send`. Share a seat's code with any email (a firm-scoped or network-pool seat).
+
+| Field   | Type   | Required |
+| ------- | ------ | -------- |
+| `email` | string | yes      |
+
+Returns the updated seat (same shape as the list above, `status` now `"shared"`).
+
+## `GET /users/`
+
+_Requires:_ `report:network:read`/`report:firm:read`.
+
+`?search=<name/email/phone>&blocked_status=all|blocked|active&page=&page_size=` (default 30). Scoped to users who redeemed a seat under this admin's network/firm.
+
+```json
 {
   "data": [
     {
-      "id": 57,
+      "id": 501,
       "name": "Jane Doe",
-      "email": "jane@google.com",
+      "email": "jane@acme.com",
+      "phone": "+15551234567",
       "is_blocked": false,
       "courses_completed_cpe": 3,
-      "cpe_credits_earned": 12,
-      "...": "more counts + *_ids arrays"
+      "cpe_credits_earned": 12.0,
+      "courses_in_progress_cpe": 1,
+      "cpe_credits_in_progress": 4.0,
+      "courses_completed_preview": 2,
+      "courses_in_progress_preview": 0
     }
   ],
   "pagination_data": {
     "total_count": 42,
     "current_page_number": 1,
-    "next_page": "https://.../users/?page=2",
+    "next_page": 2,
     "previous_page": null
   }
 }
-// block → { "status":true,"is_blocked":true,"user_id":57 }
+```
+
+## `GET /users/export-csv/`
+
+_Requires:_ `report:network:read`/`report:firm:read`. Same `search`/`blocked_status` filters as the list, no pagination — CSV download (`Partner Users Report.csv`).
+
+Columns: Name, Email, Phone, Professional Qualification, State Board, Date of Signup, Date of Login, Blocked, No of courses completed in CPE mode, No of CPE credits earned, No of courses in progress in CPE mode, No of CPE credits in progress, No of CAIRA credits earned, No of CAIRA credits in progress, No of courses completed in preview mode, No of courses in progress in preview mode.
+
+## `POST /users/<id>/block-status/`
+
+_Requires:_ `user:block`. Target user must be in this admin's scope (`403` if not).
+
+| Field        | Type   | Required |
+| ------------ | ------ | -------- |
+| `is_blocked` | bool   | yes      |
+| `reason`     | string | no       |
+
+```json
+{ "status": true, "is_blocked": true, "user_id": 501 }
 ```
 
 ---
 
-## 6. FIRM ADMIN portal (`role = firm`)
+# Reports API
 
-> Portal shown when `me.role === 'firm'`. Same `/partner-admin/*` calls as §5 — backend auto-scopes to the firm. Bind the same components with these differences:
+Same 5 endpoints exist under **both** `/api/partners/panel/report/` (auto-scoped, needs `report:network:read`/`report:firm:read`) and `/api/partners/superadmin/report/` (needs `IsSuperAdmin`, must pass exactly one of `network_id`/`firm_id` on every call). Shapes below are identical either way — superadmin just adds the scope param.
 
-- **5.1 Dashboard** → returns a **firm** block (no total_seats/unallocated): `{ "firm":{"id":18,"name":"Deloitte","network":null,"email_domain":"deloitte.com"},"allocated":10,"used":0,"available":10,"shared":0,"applied":0,"expired":0 }`. Render firm cards; label with firm name (`me.network` may be null).
-- **5.5 Coupon tracker** → returns **only this firm's** coupons; any `firm_id` you send is ignored. Same render.
-- **5.6 Send** + **5.7 Users/Export/Block** → identical.
-- **Hide 5.3/5.4 (sub-companies)** → firm admins can't create firms (403; no `code:create:firm`).
-- **5.2 partner-codes** → returns the firm's own + its network's codes (for display; firm admins don't create sub-companies).
+Every endpoint requires `?subject=courses` or `?subject=webinars`.
 
----
+## `GET .../summary/`
 
-## 7. Screen → API map
+`?subject=&date_from=&date_to=` (superadmin also needs `&network_id=` or `&firm_id=`)
 
-| Screen / action             | API                                                                             | Fires on         | Portal       |
-| --------------------------- | ------------------------------------------------------------------------------- | ---------------- | ------------ |
-| App load                    | `GET /partner-admin/me/`                                                        | boot             | all          |
-| Networks list / create      | `GET`·`POST /superadmin/networks/`                                              | tab · submit     | super        |
-| Network detail              | `GET /superadmin/networks/<id>/`                                                | open             | super        |
-| Edit / stock network        | `PATCH /superadmin/networks/<id>/`                                              | submit           | super        |
-| Codes list / create         | `GET`·`POST /superadmin/partner-codes/`                                         | tab · submit     | super        |
-| Firms list / create         | `GET`·`POST /superadmin/firms/`                                                 | tab · submit     | super        |
-| Create admin login          | `POST /superadmin/partner-admins/`                                              | submit           | super        |
-| Coupon tracker (any)        | `GET /superadmin/coupons/?network_id=\|firm_id=`                                | open             | super        |
-| Dashboard                   | `GET /partner-admin/dashboard/`                                                 | home             | network·firm |
-| Sub-companies               | `GET /partner-admin/sub-companies/`                                             | load             | network      |
-| Code dropdown               | `GET /partner-admin/partner-codes/`                                             | open modal       | network·firm |
-| Create sub-company          | `POST /partner-admin/sub-companies/`                                            | submit           | network      |
-| Coupon tracker              | `GET /partner-admin/coupons/`                                                   | load·filter·page | network·firm |
-| Per-firm coupons            | `GET /partner-admin/firms/<id>/coupons/`                                        | drill-in         | network·firm |
-| Send coupon                 | `POST /partner-admin/coupons/<id>/send/`                                        | click Send       | network·firm |
-| Users list / export / block | `GET /partner-admin/users/` · `.../export-csv/` · `POST .../<id>/block-status/` | tab · click      | network·firm |
+**`subject=courses`**
 
----
+```json
+{
+  "users_onboarded": 42,
+  "active_in_last_15_days": 18,
+  "total_courses_completed": 61,
+  "avg_courses_completed_per_user": 1.45,
+  "total_cpe_credits_awarded": 312.5,
+  "avg_cpe_credits_per_user": 7.44,
+  "avg_feedback_per_course": 4.2,
+  "total_certificates_awarded": 55,
+  "total_partner_codes": 3
+}
+```
 
-## 8. Definition of done
+**`subject=webinars`**
 
-- `/me` drives portal + capability gating (no hard-coded roles).
-- Coupon tracker shows rows with a sub-company **and** rows with `—` (firm null); search never throws.
-- Create-sub-company: pick code(s) from `/partner-admin/partner-codes/`, enter seat count, submit → coupons appear.
-- Coupon paging = page numbers; users paging = URLs.
-- `email_domain` sent on users list/export only when the admin has a domain mapping.
-- Errors surface the backend `message`.
-- Build + lint pass.
+```json
+{
+  "users_onboarded": 42,
+  "active_in_last_15_days": 18,
+  "webinars_registered_for": 6,
+  "total_registrations": 97,
+  "avg_registrations_per_webinar": 16.2,
+  "total_attendance": 71,
+  "avg_attendance_per_webinar": 11.8,
+  "total_cpe_credits_awarded": 210.0,
+  "avg_cpe_credits_per_user": 5.0,
+  "avg_feedback_per_webinar": 4.4,
+  "total_certificates_awarded": 40,
+  "total_partner_codes": 3
+}
+```
 
-## 9. Known backend gaps (don't wait on these)
+## `GET .../users/`
 
-| Gap                                        | Effect                                                                               |
-| ------------------------------------------ | ------------------------------------------------------------------------------------ |
-| Voucher email on send                      | status → `shared`, no email dispatched yet                                           |
-| Allocate seats to an **existing** firm     | no endpoint — a firm made without allocations can't get coupons from the panel later |
-| Network-level pool (`PATCH … allocations`) | works only once that backend change is deployed                                      |
-| Apply-from-panel (redeem)                  | not built — redemption is in the end-user app                                        |
+`?subject=&date_from=&date_to=&page=&page_size=` (default 30, max 200). One row per user, rolls up exactly to the summary above.
+
+**`subject=courses`**
+
+```json
+{
+  "users": [
+    {
+      "user_id": 501,
+      "uuid": "miles-abc123",
+      "name": "Jane Doe",
+      "email": "jane@acme.com",
+      "active_in_last_15_days": true,
+      "total_courses_completed": 3,
+      "total_cpe_credits_awarded": 12.0,
+      "avg_feedback_per_course": 4.5,
+      "total_certificates_awarded": 3
+    }
+  ],
+  "pagination_data": {
+    "total_count": 42,
+    "current_page_number": 1,
+    "next_page": 2,
+    "previous_page": null
+  }
+}
+```
+
+**`subject=webinars`** — same identity fields, plus `total_webinars_registered`, `total_webinars_attended`, `total_cpe_credits_awarded`, `avg_feedback_per_webinar`, `total_certificates_awarded`.
+
+## `GET .../user-items/`
+
+`?subject=&user_id=&date_from=&date_to=`. The drill-down — one row per course/webinar for a single user. `403` if that user isn't in the caller's (or the given `network_id`/`firm_id`'s) scope.
+
+**`subject=courses`**
+
+```json
+{
+  "items": [
+    {
+      "name": "Jane Doe",
+      "uuid": "miles-abc123",
+      "email": "jane@acme.com",
+      "user_id": 501,
+      "course_type": "masterclass",
+      "course_id": 88,
+      "course_name": "Advanced Auditing",
+      "cpe_mode": true,
+      "is_completed": true,
+      "progress_percent": 100.0,
+      "cpe_credits": 4.0,
+      "feedback_rating": 4.5,
+      "has_certificate": true
+    }
+  ]
+}
+```
+
+`progress_percent` is chapters-watched ÷ total-chapters × 100, independent of `is_completed` — for a CPE-mode course, completion is assessment-driven, so a user can be at 100% progress without being marked complete yet, or vice versa.
+
+**`subject=webinars`**
+
+```json
+{
+  "items": [
+    {
+      "name": "Jane Doe",
+      "uuid": "miles-abc123",
+      "email": "jane@acme.com",
+      "user_id": 501,
+      "webinar_id": 40,
+      "webinar_name": "Ethics in Practice",
+      "is_attended": true,
+      "cpe_credits": 2.0,
+      "feedback_rating": 4.0,
+      "has_certificate": true
+    }
+  ]
+}
+```
+
+## `GET .../filters/`
+
+No params — static reference data for a filter bar.
+
+```json
+{
+  "delivery_types": ["masterclass", "nano_learning", "webinar"],
+  "fields_of_study": ["Accounting", "Ethics", "Others"]
+}
+```
+
+## `GET .../export-csv/`
+
+`?subject=&view=user-summary|user-items&date_from=&date_to=&user_id=` (`user_id` required when `view=user-items`). CSV download, same filters/scope as above.
+
+- `view=user-summary` columns — **courses**: `user_id, uuid, name, email, active_in_last_15_days, total_courses_completed, total_cpe_credits_awarded, avg_feedback_per_course, total_certificates_awarded`. **webinars**: same identity fields + `total_webinars_registered, total_webinars_attended, total_cpe_credits_awarded, avg_feedback_per_webinar, total_certificates_awarded`.
+- `view=user-items` columns — **courses**: `name, uuid, email, course_name, is_completed, progress_percent, cpe_credits, feedback_rating, has_certificate`. **webinars**: `name, uuid, email, webinar_name, is_attended, cpe_credits, feedback_rating, has_certificate`.

@@ -29,6 +29,7 @@ const appEngine = new AngularNodeAppEngine({
   allowedHosts: [
     'localhost',
     '127.0.0.1',
+    '14.98.4.214',
     '*.vercel.app',
     'milesmasterclass.com',
     '*.milesmasterclass.com',

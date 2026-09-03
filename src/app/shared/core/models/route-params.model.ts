@@ -1,4 +1,5 @@
 import { PROFESSIONS } from '../constant/profession';
+import { locationJson } from '../constant/location';
 
 export type ProfessionType = (typeof PROFESSIONS)[number];
 

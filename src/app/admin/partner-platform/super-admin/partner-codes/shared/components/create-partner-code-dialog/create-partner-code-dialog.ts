@@ -6,12 +6,24 @@ import { Forms } from '../../../../../../../shared/components/ui/forms/forms';
 import { AriaInput } from '../../../../../../../shared/components/ui/aria/aria-input/aria-input';
 import { AriaSelect } from '../../../../../../../shared/components/ui/aria/aria-select/aria-select';
 import { AriaSelectOption } from '../../../../../../../shared/core/models/aria.model';
+import {
+  CreatePartnerCodeRequest,
+  Firm,
+  Network,
+  PartnerFirmRef,
+  PartnerNetworkRef,
+} from '../../../../../shared/models/partner-platform.model';
 
 export interface CreatePartnerCodeDialogData {
   /** Active networks the code can be scoped to. */
-  networks: any[];
+  networks: Network[];
   /** Active firms the code can be scoped to (member or standalone). */
-  firms: any[];
+  firms: Firm[];
+  /**
+   * Pin the scope to the caller's own network/firm (the panel-side CTA) — the
+   * scope select then holds exactly that one option, pre-selected.
+   */
+  pinned?: { network?: PartnerNetworkRef | null; firm?: PartnerFirmRef | null };
 }
 
 /**
@@ -40,7 +52,7 @@ interface PartnerCodeFormModel {
   templateUrl: './create-partner-code-dialog.html',
 })
 export class CreatePartnerCodeDialog implements OnInit {
-  dialogRef!: DialogRef<CreatePartnerCodeDialog, any | undefined>;
+  dialogRef!: DialogRef<CreatePartnerCodeDialog, CreatePartnerCodeRequest | undefined>;
   data!: CreatePartnerCodeDialogData;
 
   protected readonly scopeOptions = signal<AriaSelectOption<ScopeValue>[]>([]);
@@ -64,6 +76,17 @@ export class CreatePartnerCodeDialog implements OnInit {
   });
 
   ngOnInit(): void {
+    const pinned = this.data?.pinned;
+    const pin = pinned?.network
+      ? { value: `network:${pinned.network.id}`, label: `Network — ${pinned.network.name}` }
+      : pinned?.firm
+        ? { value: `firm:${pinned.firm.id}`, label: `Firm — ${pinned.firm.name}` }
+        : null;
+    if (pin) {
+      this.scopeOptions.set([pin]);
+      this.model.update((m) => ({ ...m, scope: pin.value }));
+      return;
+    }
     this.scopeOptions.set([
       { value: '', label: 'Global (all networks)' },
       ...(this.data?.networks ?? []).map((n) => ({
@@ -85,12 +108,12 @@ export class CreatePartnerCodeDialog implements OnInit {
     if (this.form().invalid()) return;
     const v = this.model();
     const [kind, id] = v.scope.split(':');
-    const payload: any = {
+    const payload: CreatePartnerCodeRequest = {
       code: v.code.trim(),
       discounted_price: Number(v.discounted_price),
       // Network OR firm, never both; neither = global.
-      ...(kind === 'network' ? { partner_network_id: Number(id) } : {}),
-      ...(kind === 'firm' ? { partner_firm_id: Number(id) } : {}),
+      ...(kind === 'network' ? { network: Number(id) } : {}),
+      ...(kind === 'firm' ? { firm: Number(id) } : {}),
       auto_subscribe: v.auto_subscribe,
       ...(v.description.trim() ? { description: v.description.trim() } : {}),
     };

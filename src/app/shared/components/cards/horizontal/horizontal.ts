@@ -15,12 +15,15 @@ import { NgIcon } from '@ng-icons/core';
 import { faSolidInfo, faSolidPlay, faSolidRobot } from '@ng-icons/font-awesome/solid';
 import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
 import { Utils } from '../../../core/services/utils/utils';
+import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
 import { Auth } from '../../../core/services/auth/auth';
-import { CourseCard } from '../../../core/models/caira/masterclass.model';
+import { Content } from '../../../core/models/course.model';
+import { UpcomingPremiere } from '../../../core/models/feature.model';
+import { Logger } from '../../../core/services/logger/logger';
 import { CategoriesList } from '../../categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../../core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
-import { CairaUuid } from '../../../core/models/caira/envelope.model';
+import { WebinarFacade } from '../../../../features/offerings/webinar/shared/services/webinar-facade/webinar-facade';
 import {
   ctaFor,
   webinarTagFor,
@@ -42,6 +45,8 @@ import {
 })
 export class Horizontal {
   private readonly utils = inject(Utils);
+  private readonly feature = inject(FeatureFacade);
+  private readonly logger = inject(Logger);
   private readonly auth = inject(Auth);
   /**
    * `WebinarFacade` lives at the webinar route level — it isn't globally
@@ -49,10 +54,7 @@ export class Horizontal {
    * webinar feature (masterclass / podcast / micro-learning) get `null` here
    * and fall back to the legacy Trailer button.
    */
-  // ponytail: WebinarFacade went with the Django strip. The webinar CTAs below
-  // already handle a null facade (cards outside the webinar feature always got
-  // null), so they degrade to the same no-op path.
-  private readonly webinarFacade: any = null;
+  private readonly webinarFacade = inject(WebinarFacade, { optional: true });
   /**
    * Captured at the card's mount site so we can hand the route-scoped injector
    * to `Utils.openCourseInfoDialog`. The webinar details dialog needs it to
@@ -61,7 +63,7 @@ export class Horizontal {
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly destroyRef = inject(DestroyRef);
 
-  card = model.required<CourseCard>();
+  card = model.required<Content>();
   type = input<'masterclass' | 'podcast' | 'micro-learning' | 'webinar'>('masterclass');
   /**
    * Mark the first card(s) of an above-the-fold rail as the LCP candidate.
@@ -88,18 +90,17 @@ export class Horizontal {
     matBookmarkRound,
     matBookmarkBorderRound,
   });
+  loading = signal(false);
 
   /**
    * Original `UpcomingPremiere` stashed on the adapted `Content` via the
    * `upcomingToContent` mapper. Non-null only when the card represents a
    * webinar AND the facade is available — both gate the CTA bar.
    */
-  protected readonly webinar = computed<any | null>(() => {
+  protected readonly webinar = computed<UpcomingPremiere | null>(() => {
     if (this.type() !== 'webinar' || !this.webinarFacade) return null;
-    // Not on `CourseCard` and deliberately not added to it — the adapter stashes
-    // the raw payload on the object it builds, so the cast stays local. Same
-    // structural read as `Utils.openCourseInfoDialog`.
-    return (this.card() as { _webinar?: unknown })._webinar ?? null;
+    const w = (this.card()._webinar as UpcomingPremiere | undefined) ?? null;
+    return w;
   });
 
   /** Same CTA decision tree used by `WebinarHero` and `PremiereListItem`. */
@@ -131,7 +132,7 @@ export class Horizontal {
       case 'Present':
         return { label: 'Present', classes: 'bg-green-500 text-white' };
       case 'Attended':
-        return { label: 'Attended', classes: 'bg-emerald-500 text-white' };
+        return { label: 'Attended', classes: 'bg-amber-500 text-white' };
       case 'Pending':
         return webinarTagFor(w) === 'ended'
           ? { label: 'Pending', classes: 'bg-amber-500 text-white' }
@@ -141,12 +142,36 @@ export class Horizontal {
     }
   });
 
-  navigateToCourse(id: CairaUuid, title: string) {
+  navigateToCourse(id: number, title: string) {
     this.utils.navigateToCourse(this.type(), id, title);
   }
 
   openCourseInfo() {
-    this.utils.openCourseInfo(this.card(), this.envInjector);
+    if (!this.card().allDataFetched) {
+      this.loading.set(true);
+      this.feature
+        .getAbout(this.card().id, this.type() === 'micro-learning' ? 'micro_learning' : this.type())
+        .subscribe({
+          next: (res: any) => {
+            const updatedCard = {
+              ...this.card(),
+              ...res.data,
+              allDataFetched: true,
+              learning_objective_list: res.data.learning_objectives.split('\r\n'),
+            };
+            this.card.set(updatedCard);
+            this.utils.openCourseInfoDialog(this.card(), this.envInjector);
+            this.loading.set(false);
+          },
+          error: (err: any) => {
+            this.logger.error('Failed to load course info', err);
+            this.loading.set(false);
+          },
+        });
+    } else {
+      this.loading.set(false);
+      this.utils.openCourseInfoDialog(this.card(), this.envInjector);
+    }
   }
 
   openVideoDialog() {
@@ -189,7 +214,7 @@ export class Horizontal {
     if (!w) return;
     const url =
       w.registered_webinar?.user_enrollments?.join_url ??
-      w.webinar_dates?.find((s: any) => s.join_url)?.join_url ??
+      w.webinar_dates?.find((s) => s.join_url)?.join_url ??
       null;
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
   }

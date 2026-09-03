@@ -8,6 +8,8 @@ import { CategoriesList } from '../../categories-list/categories-list';
 import { CourseAbout } from '../../course-about/course-about';
 import { DialogRef } from '../../../core/services/dialog/dialog';
 import { MilesSlug } from '../../miles-slug/miles-slug';
+import { ContentAbout } from '../../../core/models/course.model';
+import { UpcomingPremiere } from '../../../core/models/feature.model';
 import { Auth } from '../../../core/services/auth/auth';
 import { Utils } from '../../../core/services/utils/utils';
 import {
@@ -17,17 +19,18 @@ import {
   WebinarCta,
 } from '../../../../features/offerings/webinar/shared/utils/webinar-status';
 import { upcomingToContentAbout } from '../../../../features/offerings/webinar/shared/utils/upcoming-to-content';
+import { WebinarFacade } from '../../../../features/offerings/webinar/shared/services/webinar-facade/webinar-facade';
 import { DatePipe } from '@angular/common';
 import { LocalTimeZonePipe } from '../../../core/pipes/local-time-zone/local-time-zone.pipe';
 
 export interface WebinarDetailsDialogData {
-  webinar: any;
+  webinar: UpcomingPremiere;
   /**
    * Legacy callback kept for callers that need to react to a successful book.
    * If unset, the dialog enrolls (or opens the registration flow for guests)
    * via the injected `WebinarFacade` directly.
    */
-  onBook?: (webinar: any) => void;
+  onBook?: (webinar: UpcomingPremiere) => void;
 }
 
 /** Dialog close reasons. */
@@ -53,9 +56,7 @@ export class WebinarDetailsDialog implements OnInit {
    * throwing. The full CTA set is still visible so the user knows what
    * actions exist; they just need to enter the webinar surface to act.
    */
-  // ponytail: WebinarFacade went with the Django strip. This dialog was already
-  // written to tolerate a null facade — CTAs stay visible but no-op.
-  private readonly facade: any = null;
+  private readonly facade = inject(WebinarFacade, { optional: true });
 
   /**
    * Reactive view of the webinar — re-derives from the facade's lists by id so
@@ -64,7 +65,7 @@ export class WebinarDetailsDialog implements OnInit {
    * "Book Now" mutates the facade but the dialog keeps reading the stale
    * reference and never flips to "Booked".
    */
-  protected readonly webinar = computed<any>(() => {
+  protected readonly webinar = computed<UpcomingPremiere>(() => {
     const initial = this.data.webinar;
     if (!this.facade) return initial;
     // `findById` covers every rail. Do NOT inline a per-rail lookup here: this
@@ -73,7 +74,9 @@ export class WebinarDetailsDialog implements OnInit {
     // the `loadAbout` content until it's reopened.
     return this.facade.findById(initial.id) ?? initial;
   });
-  protected readonly contentAbout = computed<any>(() => upcomingToContentAbout(this.webinar()));
+  protected readonly contentAbout = computed<ContentAbout>(() =>
+    upcomingToContentAbout(this.webinar()),
+  );
 
   /**
    * Pull the long-form content (`v2/webinar/:id/about/`) as soon as the dialog

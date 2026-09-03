@@ -1,0 +1,676 @@
+/* =====================================================================
+   MilesVerse scenario briefing — Masterclass design language.
+   Styles, part 1 of 2 (case-file dossier + viewer); the rubric, session brief,
+   difficulty selector and live-call overlay continue in briefing-session.css —
+   split only to stay under the per-file component-style budget.
+
+   Not the simulation-labs dossier: the canvas is Masterclass near-black
+   (--background), surfaces are the slate --card, and the palette is
+   restrained to the brand blue (--accent), premium gold (--mm-warn) and
+   neutrals. Case-file records render as dark Masterclass cards (not white
+   paper), and difficulty is a single-accent intensity, not a three-hue meter.
+   ===================================================================== */
+:host {
+  display: block;
+  background: var(--background);
+}
+
+/* ── Cinematic hero ──────────────────────────────────────────────────── */
+.mv-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 340px;
+  border-bottom: 1px solid var(--border);
+  background:
+    radial-gradient(70% 130% at 86% -20%, rgb(var(--accent-rgb) / 0.16), transparent 58%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--muted) 70%, var(--background)),
+      var(--background) 78%
+    );
+}
+@media (min-width: 640px) {
+  .mv-hero {
+    min-height: 400px;
+  }
+}
+/* Near-black scrims — feather the art into the Masterclass canvas. */
+.mv-hero-scrim-x {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    var(--background) 4%,
+    color-mix(in srgb, var(--background) 62%, transparent) 42%,
+    transparent 74%
+  );
+}
+.mv-hero-scrim-y {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 66%;
+  background: linear-gradient(to top, var(--background), transparent);
+}
+.mv-hero-title {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: clamp(2rem, 4.6vw, 3.35rem);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  color: #fff;
+  text-shadow: 0 2px 18px rgb(0 0 0 / 0.6);
+}
+.mv-hero-tagline {
+  margin-top: 0.65rem;
+  max-width: 42rem;
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: rgb(255 255 255 / 0.78);
+  text-shadow: 0 1px 10px rgb(0 0 0 / 0.65);
+}
+.mv-subject-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--mm-warn, #f6bc53);
+  background: rgb(0 0 0 / 0.4);
+  border: 1px solid color-mix(in srgb, var(--mm-warn, #f6bc53) 45%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+/* ── Section headings ────────────────────────────────────────────────── */
+.mv-sec {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.mv-sec-n {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Objective card ──────────────────────────────────────────────────── */
+.mv-objective {
+  position: relative;
+  overflow: hidden;
+  margin-top: 1rem;
+  padding: 1.4rem 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 6%, var(--card)),
+    var(--card)
+  );
+}
+/* objective as discrete goals — one row each, numbered, scannable */
+.mv-goals {
+  display: flex;
+  flex-direction: column;
+}
+.mv-goal {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 0.65rem 0;
+}
+.mv-goal:first-child {
+  padding-top: 0;
+}
+.mv-goal:last-child {
+  padding-bottom: 0;
+}
+.mv-goal + .mv-goal {
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+.mv-goal-n {
+  display: grid;
+  place-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.mv-goal-text {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--foreground) 90%, transparent);
+}
+/* ── Case file: record cards (each opens the viewer) ─────────────────── */
+.mv-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  cursor: pointer;
+  transition:
+    transform 200ms ease,
+    border-color 200ms ease,
+    background 200ms ease;
+}
+.mv-rail-item:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+.mv-rail-open {
+  font-size: 1rem;
+  color: var(--muted-foreground);
+  transition:
+    color 200ms ease,
+    transform 200ms ease;
+}
+.mv-rail-item:hover .mv-rail-open {
+  color: var(--accent);
+  transform: translateX(2px);
+}
+.mv-rail-icon {
+  display: grid;
+  place-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 10px;
+  font-size: 1rem;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.mv-eyes {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  font-weight: 700;
+  color: var(--mm-warn, #f6bc53);
+}
+
+/* Per-type accent — blue / gold / neutral only (Masterclass palette). */
+.mv-a-email,
+.mv-a-chat {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.mv-a-spreadsheet {
+  color: var(--mm-warn, #f6bc53);
+  background: color-mix(in srgb, var(--mm-warn, #f6bc53) 15%, transparent);
+}
+.mv-a-document {
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--muted-foreground) 14%, transparent);
+}
+/* pane-head icon carries only the colour (no chip background) */
+ng-icon.mv-a-email,
+ng-icon.mv-a-chat {
+  color: var(--accent);
+  background: transparent;
+}
+ng-icon.mv-a-spreadsheet {
+  color: var(--mm-warn, #f6bc53);
+  background: transparent;
+}
+ng-icon.mv-a-document {
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.mv-eyes {
+  padding: 0.24rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--mm-warn, #f6bc53) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mm-warn, #f6bc53) 40%, transparent);
+}
+
+/* record body surface */
+.mv-paper {
+  background: color-mix(in srgb, var(--background) 45%, var(--card));
+}
+.mv-paper-divide > .mv-mail + .mv-mail {
+  border-top: 1px solid var(--border);
+}
+
+/* email */
+.mv-mail {
+  display: flex;
+  gap: 0.8rem;
+  padding: 1rem 1.25rem;
+}
+.mv-mail-avatar {
+  display: grid;
+  place-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.mv-mail-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.mv-mail-from {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.mv-mail-time {
+  font-size: 0.72rem;
+  color: var(--muted-foreground);
+}
+.mv-mail-to {
+  font-size: 0.72rem;
+  color: var(--muted-foreground);
+}
+.mv-mail-subject {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.mv-mail-body {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--foreground) 82%, transparent);
+  white-space: pre-wrap;
+}
+
+/* chat */
+.mv-chat {
+  padding: 1rem 1.25rem;
+}
+.mv-chat-channel {
+  margin-bottom: 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.mv-chatmsg {
+  display: flex;
+  gap: 0.65rem;
+}
+.mv-chatmsg + .mv-chatmsg {
+  margin-top: 0.95rem;
+}
+.mv-chat-avatar {
+  display: grid;
+  place-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  border-radius: 8px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  background: var(--muted);
+}
+.mv-chat-meta {
+  font-size: 0.72rem;
+}
+.mv-chat-author {
+  font-weight: 600;
+  color: var(--foreground);
+}
+.mv-chat-time {
+  color: var(--muted-foreground);
+}
+.mv-chat-text {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--foreground) 82%, transparent);
+}
+.mv-chat-react {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  font-size: 0.72rem;
+  color: var(--muted-foreground);
+}
+
+/* document */
+.mv-docv {
+  padding: 1.25rem 1.5rem;
+}
+.mv-doc-kind {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.mv-doc-heading {
+  margin-top: 0.4rem;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.mv-doc-meta {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: var(--muted-foreground);
+}
+.mv-doc-body {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.mv-doc-para {
+  font-size: 0.86rem;
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--foreground) 82%, transparent);
+}
+.mv-doc-bullet {
+  display: flex;
+  gap: 0.6rem;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--foreground) 82%, transparent);
+}
+.mv-dot {
+  margin-top: 0.55rem;
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+/* spreadsheet — never rendered inside a pane. The launcher (dark, matching
+   the other artifact types) opens the modal; the table itself renders only
+   there, on a light paper surface where tabular data actually reads. */
+.mv-sheet-launch {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 1rem 1.15rem;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.mv-sheet-launch:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.mv-sheet-launch-icon {
+  display: grid;
+  place-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 10px;
+  font-size: 1.15rem;
+  color: var(--mm-warn, #f6bc53);
+  background: color-mix(in srgb, var(--mm-warn, #f6bc53) 14%, transparent);
+}
+.mv-sheet-launch-name {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mv-sheet-launch-meta {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.74rem;
+  color: var(--muted-foreground);
+}
+.mv-sheet-launch-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+.mv-sheet-note {
+  padding: 0 1.15rem 0.9rem;
+  font-size: 0.74rem;
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+
+.mv-sheet-scroll {
+  overflow-x: auto;
+  border: 1px solid #d7dce2;
+  border-radius: 10px;
+  background: #fff;
+}
+.mv-sheet {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.mv-sheet th {
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid #d7dce2;
+  background: #e4e8ed;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #55606e;
+  white-space: nowrap;
+}
+.mv-sheet td {
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid #e7eaee;
+  color: #1f2530;
+  vertical-align: top;
+  font-variant-numeric: tabular-nums;
+}
+.mv-sheet tbody tr:nth-child(even) {
+  background: #f5f7f9;
+}
+.mv-sheet tbody tr:hover {
+  background: #eaf1fb;
+}
+.mv-sheet tbody tr:last-child td {
+  border-bottom: none;
+}
+.mv-sheet-caption {
+  margin-top: 0.7rem;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: #55606e;
+}
+
+/* ── Case-file viewer — above everything, including the call overlay ── */
+.mv-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  animation: mv-call-in 200ms ease;
+}
+.mv-viewer-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.7);
+  backdrop-filter: blur(6px);
+  cursor: default;
+}
+.mv-viewer-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1150px, 96vw);
+  height: min(760px, 88vh);
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.85);
+}
+.mv-viewer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 55%, var(--card));
+}
+.mv-viewer-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+.mv-viewer-kind {
+  font-weight: 500;
+  color: var(--muted-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mv-viewer-close {
+  display: grid;
+  place-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--muted-foreground) 18%, transparent);
+  transition: background 150ms ease;
+}
+.mv-viewer-close:hover {
+  background: color-mix(in srgb, var(--muted-foreground) 30%, transparent);
+}
+.mv-viewer-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+/* sidebar: every record in the case file, switch without closing */
+.mv-viewer-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 250px;
+  flex-shrink: 0;
+  padding: 0.85rem;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  background: color-mix(in srgb, var(--background) 35%, var(--card));
+}
+.mv-viewer-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  text-align: left;
+  color: color-mix(in srgb, var(--foreground) 85%, transparent);
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+.mv-viewer-nav-item:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--foreground);
+}
+.mv-viewer-nav-item-active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--foreground);
+}
+.mv-viewer-nav-title {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mv-viewer-nav-kind {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.68rem;
+  color: var(--muted-foreground);
+}
+.mv-viewer-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 1.1rem 1.25rem 1.4rem;
+}
+.mv-viewer-main .mv-paper {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.mv-viewer-sheet {
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  background: #eef1f5;
+}
+.mv-viewer-note {
+  margin-top: 0.8rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+/* small screens: the file list becomes a horizontal strip above the record */
+@media (max-width: 720px) {
+  .mv-viewer {
+    padding: 0.75rem;
+  }
+  .mv-viewer-body {
+    flex-direction: column;
+  }
+  .mv-viewer-nav {
+    flex-direction: row;
+    width: 100%;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .mv-viewer-nav-item {
+    flex-shrink: 0;
+  }
+}

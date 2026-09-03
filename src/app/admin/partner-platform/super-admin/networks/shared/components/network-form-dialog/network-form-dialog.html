@@ -67,7 +67,7 @@
                     [attr.aria-label]="'Select partner code ' + code.code"
                   />
                   <span class="font-mono text-sm text-neutral-100">{{ code.code }}</span>
-                  @if (code.partner_network === null) {
+                  @if (!code.network) {
                     <span class="text-[10px] uppercase tracking-wide text-neutral-500">global</span>
                   }
                   <span class="text-xs text-neutral-400 ml-auto tabular-nums">

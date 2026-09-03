@@ -12,33 +12,49 @@ export const environment = {
    */
   SITE_URL: 'https://www.milesmasterclass.com',
 
+  BASE_API_URL: 'https://api.milesmasterclass.com/api/',
+
+  // MilesVerse API origin. Empty = MilesVerse pages show not-connected.
+  MILESVERSE_API_URL: 'https://api.milesverse.ai',
+
+  MILESVERSE_SSO: {
+    token: '',
+    orgId: 'daad80f2-95ee-47db-b65c-6e029b4f710d',
+    applicationId: 'f701288a-f040-471f-bd83-8d33e8f15f3c',
+  },
+
   /**
-   * CAIRA API origin, with a trailing slash. `ApiClient` prepends it to every
-   * relative path; absolute `http(s)://` URLs (WordPress, S3) bypass it.
+   * Miles360 Salesforce lead endpoint (AWS API Gateway). Fired fire-and-forget
+   * when a new account is created — see `SalesforceLead`. `courseId` and
+   * `vertical` are fixed per environment; the rest of the payload comes from
+   * the form.
    *
-   * Note there is **no `/api/` prefix** — CAIRA registers its routes at the
-   * Django URLconf root, unlike the old `api.milesmasterclass.com/api/`. The
-   * trailing slash here is what supplies the separator, since every path in
-   * `core/http/caira.endpoints.ts` is relative and unprefixed.
+   * The `/mmc` route needs no API key and no auth header, so nothing secret
+   * ships in the bundle. An empty `url` disables the integration — `create()`
+   * no-ops rather than posting.
    */
-  BASE_API_URL: 'https://api.milescaira.com/',
+  SALESFORCE_LEAD: {
+    url: 'https://hn19ywvvng.execute-api.ap-south-1.amazonaws.com/Miles360/create-net-enquiry/mmc',
+    courseId: 1,
+    vertical: 'US Accounting',
+  },
+
+  /**
+   * Miles360 activity mirror — every GA4 event is also posted here so Salesforce
+   * sees the same behavioural signal (see `MilesActivity`). Like the keys above,
+   * this one ships in the client bundle; prefer a server-side proxy for a
+   * hardened deploy.
+   */
+  MILES_ACTIVITY: {
+    url: 'https://hn19ywvvng.execute-api.ap-south-1.amazonaws.com/Miles360/masterclass-activity',
+    apiKey: 'AWqdnzaOrP86BUGsbjQFl6piZFOaBOQzaqaJ8b6b',
+  },
 
   S3_BUCKET_URL: 'https://d1pp0977rsxmiq.cloudfront.net/',
   GCS_URL: 'https://asset.milesmasterclass.com/media/web-app/',
 
   appType: 'WA',
   platform: 'masterclass',
-
-  /**
-   * Force phone OTPs onto the dev channel (`OtpChannel.DEV`, 5) — the SSO
-   * returns the code instead of sending it, so sign-in works without a live
-   * SMS/WhatsApp gateway.
-   *
-   * OFF in production: the public login page keeps the real SMS/WhatsApp
-   * choice. The hidden `auth/qa-login` route forces the dev channel regardless
-   * of this flag, which is how production is smoke-tested.
-   */
-  OTP_DEV_CHANNEL: false,
 
   LOGGER: {
     LogLevel: LogLevel.DEBUG,
@@ -85,12 +101,44 @@ export const environment = {
     // is disabled (button shows a config error) until this is set.
     supabaseAnonKey:
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ob2hreHBjb2V5ZXJ6c3liaXBvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMzYxMDYsImV4cCI6MjEwMDgxMjEwNn0.Dk5XMoNG3oBVXhlUbh_zqzbJX3uMbf8h2kjNwjGXJ2c',
-    tenantId: 'ebe14113-0d9f-4dff-9d17-ff83f82303aa',
-    clientId: '4f5a099c-5c29-4fa2-ab37-58634b32bfd4',
+
+    tenantId: 'f133522a-779a-4a85-bebb-e72cd0daaa1d',
+    clientId: 'b717025f-1163-4efb-a3f2-a6336d4fee07',
+    /**
+     * Home realm hint for lab accounts (`domain_hint`, forwarded verbatim to
+     * Entra by Supabase). Entra accepts either a verified domain or the tenant
+     * id; this is the tenant id of the directory that owns the app registration
+     * behind Supabase's Azure provider — mileslabs.ai. Pointing it at any other
+     * tenant sends users to the wrong home realm, where they can only sign in
+     * as a guest of that app rather than as the account the labs backend
+     * provisioned.
+     */
+    domainHint: 'f133522a-779a-4a85-bebb-e72cd0daaa1d',
     copilotUrl: 'https://copilotstudio.microsoft.com/',
     redirectPath: '/auth/ai-labs-callback',
     /** localStorage key — kept distinct from the admin client's session. */
     storageKey: 'AI_LABS_SUPABASE_SESSION',
+    /**
+     * Tracks whose `course_type=ai_lab` courses are the catalogue on /ai-labs
+     * (`v2/tracks/:id/courses/`). Track ids differ per environment, so they
+     * live here rather than in the section list. Add `tax` / `cfoTeams` as
+     * those tracks are published.
+     */
+    catalogueTracks: {
+      audit: 7,
+      tax: 6,
+      cfo: 8,
+    },
+
+    /**
+     * Gates the evaluation/assessment layer on /ai-labs: the workflow-submission
+     * panel in the agent dialog, the per-card score badge, and the hero "your
+     * progress" strip. Off until the grading backend is ready — flip to true to
+     * make the (currently mocked) flow visible for evaluation.
+     */
+    assessmentEnabled: false,
+    AI_LABS_CHANNEL: 'AI_LAB_AUTH',
+    AI_LABS_CALLBACK_DONE: 'CALLBACK_DONE',
   },
 
   // WordPress blog (headless via WP REST API).
@@ -141,4 +189,6 @@ export const environment = {
       },
     },
   },
+
+  PAYMENT_TEST_SSN: '207646057',
 };

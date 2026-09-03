@@ -1,14 +1,14 @@
 // custom-dialog.service.ts
 import {
-  ApplicationRef,
+  Injectable,
   ComponentRef,
-  createComponent,
   EnvironmentInjector,
+  createComponent,
+  ApplicationRef,
   inject,
-  Injector,
-  PLATFORM_ID,
-  Service,
   Type,
+  PLATFORM_ID,
+  Injector,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Subject } from 'rxjs';
@@ -93,7 +93,9 @@ export class DialogRef<T = unknown, R = unknown> {
   }
 }
 
-@Service()
+@Injectable({
+  providedIn: 'root',
+})
 export class Dialog {
   private readonly appRef = inject(ApplicationRef);
   private readonly injector = inject(EnvironmentInjector);

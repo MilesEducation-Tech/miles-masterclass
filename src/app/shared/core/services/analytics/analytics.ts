@@ -1,11 +1,13 @@
-import { afterNextRender, effect, inject, Injector, PLATFORM_ID, Service } from '@angular/core';
+import { Injectable, Injector, PLATFORM_ID, afterNextRender, effect, inject } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { environment } from '../../../../../environments/environment';
 import { Auth } from '../auth/auth';
 import { Consent } from '../consent/consent';
 import { Logger } from '../logger/logger';
 import { ConsentState } from '../../models/consent.model';
+import { User, CurrentPlanData } from '../../models/auth.model';
 import { AnalyticsEvent } from '../../constant/analytics-events';
+import { MilesActivity } from '../miles-activity/miles-activity';
 
 type GtagConsentValue = 'granted' | 'denied';
 
@@ -46,13 +48,14 @@ declare global {
  * Depends on {@link Consent} (reads its signals via `effect`); Consent does NOT depend on
  * Analytics, so there is no DI cycle.
  */
-@Service()
+@Injectable({ providedIn: 'root' })
 export class Analytics {
   private readonly doc = inject(DOCUMENT);
   private readonly injector = inject(Injector);
   private readonly auth = inject(Auth);
   private readonly consent = inject(Consent);
   private readonly logger = inject(Logger);
+  private readonly milesActivity = inject(MilesActivity);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly cfg = environment.ANALYTICS;
 
@@ -133,6 +136,12 @@ export class Analytics {
   /** Fire a virtual pageview (call after SEO/title resolves). */
   trackPageView(url: string, title?: string): void {
     this.rememberLocale(url);
+    // Miles360 mirror — first-party CRM, so it sits ABOVE the consent guard and
+    // carries its own (see MilesActivity).
+    this.milesActivity.send('virtual_page_view', {
+      page_path: url,
+      page_title: title ?? this.doc.title,
+    });
     if (!this.active || !this.consent.hasDecision() || this.isAdmin(url)) return;
     window.dataLayer?.push({
       event: 'virtual_page_view',
@@ -144,6 +153,10 @@ export class Analytics {
 
   /** Fire a custom event to GA4 (via dataLayer) and Netcore. */
   trackEvent(name: AnalyticsEvent, params: Record<string, unknown> = {}): void {
+    // Miles360 mirror — first-party CRM, so it sits ABOVE the consent guard and
+    // carries its own (see MilesActivity). Covers trackClick and trackPurchase
+    // too, since both delegate here.
+    this.milesActivity.send(name, params);
     if (!this.active || !this.consent.hasDecision() || this.isAdmin(this.doc.location.pathname)) {
       return;
     }
@@ -201,7 +214,7 @@ export class Analytics {
    * `plan` is usually absent at OTP-verify, so subscription_status resolves to
    * "inactive", matching CPE.
    */
-  trackAccountCreate(user: any, plan: any | null = null): void {
+  trackAccountCreate(user: User, plan: CurrentPlanData | null = null): void {
     this.emitLifecycle('account_create', {
       ...this.lifecycleProperties(user, plan),
       app_downloaded: 'false',
@@ -210,7 +223,7 @@ export class Analytics {
   }
 
   /** `onboarding` — fire when a brand-new user first completes the profile form. */
-  trackOnboarding(user: any, plan: any | null = null): void {
+  trackOnboarding(user: User, plan: CurrentPlanData | null = null): void {
     this.emitLifecycle('onboarding', {
       ...this.lifecycleProperties(user, plan),
       onboarding: 'true',
@@ -218,7 +231,7 @@ export class Analytics {
   }
 
   /** `profile_update` — fire on every later profile update by an existing user. */
-  trackProfileUpdate(user: any, plan: any | null = null): void {
+  trackProfileUpdate(user: User, plan: CurrentPlanData | null = null): void {
     this.emitLifecycle('profile_update', this.lifecycleProperties(user, plan));
   }
 
@@ -243,7 +256,7 @@ export class Analytics {
    * CPE-Masterclass. Intentionally separate from v3's own {@link userProperties}
    * — these are the CPE keys, not v3's.
    */
-  private lifecycleProperties(user: any, plan: any | null): Record<string, string> {
+  private lifecycleProperties(user: User, plan: CurrentPlanData | null): Record<string, string> {
     const name = `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim();
     return {
       // Cross-system id, falling back to the numeric `id` (mirrors
@@ -264,6 +277,9 @@ export class Analytics {
    * same `active + consent decision + non-admin` rule as {@link trackEvent}.
    */
   private emitLifecycle(name: AnalyticsEvent, props: Record<string, string>): void {
+    // Miles360 mirror — first-party CRM, so it sits ABOVE the consent guard and
+    // carries its own (see MilesActivity).
+    this.milesActivity.send(name, props);
     if (!this.active || !this.consent.hasDecision() || this.isAdmin(this.doc.location.pathname)) {
       return;
     }
@@ -379,7 +395,7 @@ export class Analytics {
    * by Consent Mode (analytics tier); Netcore calls no-op until its SDK is
    * loaded under marketing consent.
    */
-  private identify(user: any, plan: any | null): void {
+  private identify(user: User, plan: CurrentPlanData | null): void {
     const key = this.primaryKey(user);
     const props = this.userProperties(user, plan);
     // Skip redundant re-identify — currentUser and currentPlan can both emit for
@@ -407,7 +423,7 @@ export class Analytics {
    * exposing the raw address. Gated on marketing consent; no-op without an
    * email, marketing consent, or `crypto.subtle` (insecure/SSR context).
    */
-  private async setHashedUserData(user: any): Promise<void> {
+  private async setHashedUserData(user: User): Promise<void> {
     const email = user.email?.trim().toLowerCase();
     if (!email || !this.consent.state().marketing || !globalThis.crypto?.subtle) return;
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(email));
@@ -431,7 +447,7 @@ export class Analytics {
    * identify effect, so both platforms always hold the latest values. NO raw PII
    * (no email / phone / name) — ids + categories only.
    */
-  private userProperties(user: any, plan: any | null): Record<string, string> {
+  private userProperties(user: User, plan: CurrentPlanData | null): Record<string, string> {
     const { country, profession } = this.localeFromPath();
     return {
       profile_completed: String(user.is_profile_completed === true),
@@ -484,7 +500,7 @@ export class Analytics {
   }
 
   /** Netcore primary key — the cross-system `miles_user_id`, falling back to `id`. */
-  private primaryKey(user: any): string {
+  private primaryKey(user: User): string {
     return user.miles_user_id || String(user.id);
   }
 

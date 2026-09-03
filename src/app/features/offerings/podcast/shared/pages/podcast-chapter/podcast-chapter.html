@@ -1,8 +1,3 @@
-<!--
-  Every chapter runs in CPE mode — see `CPE_MODE_DEFAULT` in `ChapterProgress`.
-  Both players derive their next-chapter and final-assessment gates from
-  `cpeMode` + `completed`; the seek lock follows the server's `is_video_seekable`.
--->
 @if (podcastFormat() === 'Audio') {
   <!-- Audio: full-screen immersive layout with back button overlay -->
   <div class="relative w-full min-h-svh">
@@ -13,15 +8,14 @@
       [current]="navigation().current"
       [previous]="navigation().prev"
       [next]="navigation().next"
+      [cpeMode]="cpeMode()"
       [chapterIndex]="chapterIndex()"
-      [cpeMode]="chapter.cpeMode()"
-      [seekUnlocked]="chapter.isVideoSeekable()"
-      [completed]="chapter.isVideoCompleted()"
-      [userAssessmentDetails]="chapter.courseDetails()?.user_assessment_details"
+      [chapterWiseDetails]="chapterWiseDetails()"
+      [userAssessmentDetails]="chapterFacade.courseDetails()?.user_assessment_details"
       (navigate)="handleNavigation($event)"
-      (paused)="handleExit()"
-      (ended)="handleMediaEnded()"
-      (audioExit)="handleExit($event)"
+      (paused)="handleMediaEvent('exit')"
+      (ended)="handleMediaCompleted()"
+      (audioExit)="handleMediaEvent('exit', $event)"
       (timeUpdate)="updateTime($event)"
       (startFinalAssessment)="startFinalAssessment()"
       (viewFinalAssessmentReport)="handleViewReport()"
@@ -37,17 +31,15 @@
       [current]="navigation().current"
       [previous]="navigation().prev"
       [next]="navigation().next"
-      [activeIndex]="navigation().currentIndex"
-      [cpeMode]="chapter.cpeMode()"
-      [seekUnlocked]="chapter.isVideoSeekable()"
-      [completed]="chapter.isVideoCompleted()"
-      [courseId]="chapter.courseDetails()?.id ?? null"
+      [cpeMode]="cpeMode()"
+      [courseId]="chapterFacade.courseDetails()?.id ?? null"
       [courseType]="'podcast'"
-      [userAssessmentDetails]="chapter.courseDetails()?.user_assessment_details"
+      [chapterWiseDetails]="chapterWiseDetails()"
+      [userAssessmentDetails]="chapterFacade.courseDetails()?.user_assessment_details"
       (navigate)="handleNavigation($event)"
-      (paused)="handleExit()"
-      (ended)="handleMediaEnded()"
-      (videoExit)="handleExit($event)"
+      (paused)="handleMediaEvent('exit')"
+      (ended)="handleMediaCompleted()"
+      (videoExit)="handleMediaEvent('exit', $event)"
       (timeUpdate)="updateTime($event)"
       (startFinalAssessment)="startFinalAssessment()"
       (viewFinalAssessmentReport)="handleViewReport()"

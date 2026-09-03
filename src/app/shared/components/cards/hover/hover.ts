@@ -2,15 +2,16 @@ import { Component, DestroyRef, inject, input, model, signal } from '@angular/co
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Utils } from '../../../core/services/utils/utils';
 import { RecordDisk } from '../../record-disk/record-disk';
+import { Content } from '../../../core/models/course.model';
 import { Button } from '../../ui/button/button';
 import { NgIconComponent } from '@ng-icons/core';
 import { faSolidPlay, faSolidInfo, faSolidRobot } from '@ng-icons/font-awesome/solid';
 import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
-import { CourseCard } from '../../../core/models/caira/masterclass.model';
+import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
+import { Logger } from '../../../core/services/logger/logger';
 import { CategoriesList } from '../../categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../../core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
-import { CairaUuid } from '../../../core/models/caira/envelope.model';
 
 @Component({
   selector: 'app-hover',
@@ -30,12 +31,15 @@ import { CairaUuid } from '../../../core/models/caira/envelope.model';
 })
 export class Hover {
   private readonly utils = inject(Utils);
+  private readonly feature = inject(FeatureFacade);
+  private readonly logger = inject(Logger);
   private readonly destroyRef = inject(DestroyRef);
 
-  card = model.required<CourseCard>();
+  card = model.required<Content>();
   type = input<'masterclass' | 'podcast' | 'micro-learning'>('masterclass');
 
   isHovering = signal(false);
+  loading = signal(false);
 
   icons = signal({
     faSolidPlay,
@@ -45,12 +49,34 @@ export class Hover {
     matBookmarkBorderRound,
   });
 
-  navigateToCourse(id: CairaUuid, title: string) {
+  navigateToCourse(id: number, title: string) {
     this.utils.navigateToCourse(this.type(), id, title);
   }
 
   openCourseInfo() {
-    this.utils.openCourseInfo(this.card());
+    if (!this.card().allDataFetched) {
+      this.loading.set(true);
+      this.feature.getAbout(this.card().id, this.type()).subscribe({
+        next: (res: any) => {
+          const updatedCard = {
+            ...this.card(),
+            ...res.data,
+            allDataFetched: true,
+            learning_objective_list: res.data.learning_objectives.split('\r\n'),
+          };
+          this.card.set(updatedCard);
+          this.utils.openCourseInfoDialog(this.card());
+          this.loading.set(false);
+        },
+        error: (err: any) => {
+          this.logger.error('Failed to load course info', err);
+          this.loading.set(false);
+        },
+      });
+    } else {
+      this.loading.set(false);
+      this.utils.openCourseInfoDialog(this.card());
+    }
   }
 
   openVideoDialog() {

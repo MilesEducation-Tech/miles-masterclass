@@ -8,7 +8,6 @@ import {
   inject,
   PLATFORM_ID,
   viewChild,
-  signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
@@ -17,9 +16,16 @@ import {
   BadgeCard,
   BadgeCardActionEvent,
 } from '../../../shared/components/cards/badge-card/badge-card';
-import { BadgeCardData } from '../../../shared/components/cards/badge-card/badge-card.model';
 import { SelectMenu } from '../../../shared/components/ui/select-menu/select-menu';
 import { TabStrip } from '../../../shared/components/ui/tab-strip/tab-strip';
+import {
+  badgeClaimCourse,
+  BadgeCardData,
+  BadgeCourseItem,
+  BadgeStatusFilter,
+  toBadgeCardData,
+  UserBadgeRef,
+} from '../../../shared/core/models/badge.model';
 import { Auth } from '../../../shared/core/services/auth/auth';
 import { NotificationService } from '../../../shared/core/services/notification/notification';
 import { Utils } from '../../../shared/core/services/utils/utils';
@@ -29,6 +35,7 @@ import {
   CertificateDownloadDialog,
 } from '../../../shared/components/dialog/certificate-download-dialog/certificate-download-dialog';
 import { BadgeLibraryHero } from './shared/components/badge-library-hero/badge-library-hero';
+import { BadgeFacade } from './shared/services/badge-facade/badge-facade';
 
 /**
  * Maps the badge API's `course_type` token to the URL segment under
@@ -56,21 +63,7 @@ const COURSE_TYPE_ROUTE: Record<string, string> = {
   styleUrl: './badge.css',
 })
 export class Badge {
-  // ponytail: BadgeFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  readonly facade: any = {
-    badgeCategories: signal<any[]>([]),
-    badgeCategory: signal<any>(null),
-    badgeItems: signal<any[]>([]),
-    badgePagination: signal<any>(null),
-    badgeStatus: signal<any[]>([]),
-    badgeStatusOptions: null as any,
-    isBadgeLoading: signal<any>(null),
-    loadNextBadgePage: signal<any>(null),
-    selectBadgeCategory: (..._args: any[]): any => null,
-    setBadgeStatus: (..._args: any[]): any => null,
-  };
+  readonly facade = inject(BadgeFacade);
   private readonly auth = inject(Auth);
   private readonly utils = inject(Utils);
   private readonly dialog = inject(Dialog);
@@ -82,10 +75,10 @@ export class Badge {
   readonly statusOptions = this.facade.badgeStatusOptions;
 
   /** Normalized view-models the card consumes. Switching tabs flips `courseType`. */
-  // ponytail: `toBadgeCardData` mapped the Django badge payload onto the card
-  // view-model. It encoded that backend's field names, so it went with it.
-  // Map the new backend's badge payload to BadgeCard's inputs here.
-  readonly cards = computed<BadgeCardData[]>(() => []);
+  readonly cards = computed<BadgeCardData[]>(() => {
+    const courseType = this.facade.badgeCategory() ?? '';
+    return this.facade.badgeItems().map((item) => toBadgeCardData(item, courseType));
+  });
 
   readonly sentinel = viewChild<ElementRef<HTMLDivElement>>('sentinel');
   readonly listSection = viewChild<ElementRef<HTMLDivElement>>('listSection');
@@ -113,8 +106,8 @@ export class Badge {
   }
 
   onStatusChange(value: string) {
-    if (this.statusOptions.some((o: any) => o.value === value)) {
-      this.facade.setBadgeStatus(value as any);
+    if (this.statusOptions.some((o) => o.value === value)) {
+      this.facade.setBadgeStatus(value as BadgeStatusFilter);
     }
   }
 
@@ -144,7 +137,7 @@ export class Badge {
 
   // ----- Action handlers -----------------------------------------------------
 
-  private navigateToCourse(card: any) {
+  private navigateToCourse(card: BadgeCardData) {
     // Caira tag: Earn Badge funnels into the Masterclass listing — that's
     // where the CAIRA level-1 path lives. No course-id required since this
     // routes to the listing, not a specific course detail page.
@@ -160,7 +153,7 @@ export class Badge {
     this.utils.navigateToCourse(routeType, card.courseId, card.title);
   }
 
-  private navigateToFeedback(card: any) {
+  private navigateToFeedback(card: BadgeCardData) {
     if (!card.courseId) {
       this.notify.error('Unavailable', 'Course details not available for feedback.');
       return;
@@ -169,7 +162,7 @@ export class Badge {
     this.utils.navigateToCourseFeedback(routeType, card.courseId, card.title);
   }
 
-  private claimBadge(card: any) {
+  private claimBadge(card: BadgeCardData) {
     // Non-caira tabs short-circuit when the first `user_badges` entry already
     // carries a Credly `accept_url` — open it directly so we don't re-call
     // the claim API for an already-claimed badge. Caira level items have no
@@ -191,12 +184,12 @@ export class Badge {
       return;
     }
     this.facade
-      .claimBadge(card.badgeId, card.raw)
+      .claimBadge(card.badgeId, badgeClaimCourse(card.raw))
       .pipe(
         catchError(() => of(null)),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((res: any) => {
+      .subscribe((res) => {
         const url = this.utils.claimAcceptUrl(res);
         if (url && this.isBrowser) {
           window.open(url, '_blank', 'noopener');
@@ -206,7 +199,7 @@ export class Badge {
       });
   }
 
-  private downloadCertificate(card: any) {
+  private downloadCertificate(card: BadgeCardData) {
     if (!card.courseId) {
       this.notify.error('Unavailable', 'Course details not available for certificate.');
       return;
@@ -243,8 +236,8 @@ export class Badge {
    * items (CAIRA / invite-only) don't carry `user_badges` so they hit the
    * null branch and `triggerCredlyHandoff` no-ops.
    */
-  private extractUserBadge(card: any): any | null {
-    const raw = card.raw as Record<string, any>;
-    return raw?.['user_badges']?.[0] ?? null;
+  private extractUserBadge(card: BadgeCardData): UserBadgeRef | null {
+    const raw = card.raw as Partial<BadgeCourseItem>;
+    return raw.user_badges?.[0] ?? null;
   }
 }

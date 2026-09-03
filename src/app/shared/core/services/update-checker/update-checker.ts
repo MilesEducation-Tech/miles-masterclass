@@ -1,5 +1,5 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { inject, PLATFORM_ID, Service } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { APP_VERSION } from '../../version/app-version';
 import { Dialog } from '../dialog/dialog';
@@ -16,7 +16,7 @@ import { Dialog } from '../dialog/dialog';
  * Checks run on app open, on every navigation, when the tab is re-focused,
  * and on a long safety interval — all browser-only and throttled.
  */
-@Service()
+@Injectable({ providedIn: 'root' })
 export class UpdateChecker {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);

@@ -1,16 +1,17 @@
 import { isPlatformServer } from '@angular/common';
 import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import {
+  Injectable,
+  PLATFORM_ID,
+  TransferState,
   inject,
   makeStateKey,
-  PLATFORM_ID,
-  Service,
-  TransferState,
   type StateKey,
 } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
+import { SKIP_AUTH_TOKEN, SKIP_ERROR_NOTIFICATION } from '../../../shared/core/models/http.model';
 import { BlogListQuery, BlogPostsResult, WpCategory, WpPost } from '../models/blog.model';
 
 /**
@@ -24,7 +25,7 @@ import { BlogListQuery, BlogPostsResult, WpCategory, WpPost } from '../models/bl
  * - Every request opts out of the Miles auth token and the global error toast
  *   via the shared `HttpContext` flags.
  */
-@Service()
+@Injectable({ providedIn: 'root' })
 export class BlogApi {
   private readonly http = inject(HttpClient);
   private readonly transferState = inject(TransferState);
@@ -106,14 +107,9 @@ export class BlogApi {
       .pipe(tap((categories) => this.writeTransfer(key, categories)));
   }
 
-  /**
-   * ponytail: used to carry SKIP_AUTH_TOKEN / SKIP_ERROR_NOTIFICATION so the
-   * Django interceptors left these public WordPress calls alone. Those
-   * interceptors are gone, so an empty context is now equivalent. Re-add skip
-   * tokens here if the new backend's interceptors need opting out of.
-   */
+  /** Skip the Miles auth token + global error toast on these public calls. */
   private blogContext(): HttpContext {
-    return new HttpContext();
+    return new HttpContext().set(SKIP_AUTH_TOKEN, true).set(SKIP_ERROR_NOTIFICATION, true);
   }
 
   /** Browser reads a server-seeded value exactly once, then drops the key. */

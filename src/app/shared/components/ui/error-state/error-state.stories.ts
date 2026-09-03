@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
+import { argsToTemplate } from '@storybook/angular';
 import { ErrorState } from './error-state';
 
 const meta: Meta<ErrorState> = {

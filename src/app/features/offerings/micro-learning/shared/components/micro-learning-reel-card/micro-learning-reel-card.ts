@@ -1,4 +1,3 @@
-import { ActionStatus, deriveActionStatus, isReelCompleted } from '../../utils/reel-status';
 import {
   Component,
   computed,
@@ -18,6 +17,7 @@ import {
   matFavoriteRound,
   matInfoRound,
   matLinkRound,
+  matLockRound,
   matMenuBookRound,
   matMoreVertRound,
   matPlayArrowRound,
@@ -34,14 +34,25 @@ import {
   VideoJs,
   VideoSource,
 } from '../../../../../../shared/components/video-js/video-js';
+import {
+  ActionStatus,
+  deriveActionStatus,
+  isReelCompleted,
+  MicroLearningOptionId,
+  MicroLearningReel,
+  ReelActivityPayload,
+} from '../../../../../../shared/core/models/micro-learning-course.model';
 import { TotalCpeCreditsPipe } from '../../../../../../shared/core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { Auth } from '../../../../../../shared/core/services/auth/auth';
+import { Utils } from '../../../../../../shared/core/services/utils/utils';
 
-export interface ReelActivityPayload {
-  chapterId: number;
-  currentTime: number;
-  duration: number;
-}
+/**
+ * Free preview window for a reel the user has no plan for, in seconds. The
+ * first minute plays; past that the card locks. Positional, not a budget —
+ * "the first minute is free" — so seeking back and rewatching it is fine and
+ * seeking past it locks immediately.
+ */
+const PREVIEW_LIMIT_SECONDS = 60;
 
 @Component({
   selector: 'app-micro-learning-reel-card',
@@ -65,11 +76,12 @@ export interface ReelActivityPayload {
       matInfoRound,
       matLinkRound,
       matMenuBookRound,
+      matLockRound,
     }),
   ],
 })
 export class MicroLearningReelCard {
-  readonly episode = input.required<any>();
+  readonly episode = input.required<MicroLearningReel>();
   readonly muted = input<boolean>(false);
   /** True only for the reel currently in view; drives play/pause + tracking. */
   readonly active = input<boolean>(false);
@@ -85,7 +97,7 @@ export class MicroLearningReelCard {
   readonly muteToggled = output<void>();
   readonly shared = output<void>();
   /** Fires when the user picks an item from the inline `[ngMenu]`. */
-  readonly optionSelected = output<any>();
+  readonly optionSelected = output<MicroLearningOptionId>();
   /** Emits the clicked reel's id so the facade acts on this card, not the stale active reel. */
   readonly actionInvoked = output<number>();
   readonly bookmarkToggled = output<void>();
@@ -104,6 +116,7 @@ export class MicroLearningReelCard {
   private readonly videoPlayer = viewChild(VideoJs);
   private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(Auth);
+  private readonly utils = inject(Utils);
 
   private lastTime = 0;
   private lastDuration = 0;
@@ -134,12 +147,34 @@ export class MicroLearningReelCard {
   });
 
   /**
+   * Paid content the user has no plan for — neither free nor individually
+   * purchased. Same predicate the facade gates every CPE action with, so the
+   * card and the CTA can never disagree about what's reachable.
+   */
+  private readonly gated = computed(() => !this.utils.canAccessCpeMode(this.episode()));
+
+  /** Set once a gated reel's playhead passes the free-preview window. */
+  private readonly previewEnded = signal(false);
+
+  /**
+   * Locked cards render the poster instead of the player, so there's nothing
+   * left to autoplay, scrub or track progress with. A gated reel isn't locked
+   * up front — it plays its free preview first and locks when that runs out.
+   */
+  readonly locked = computed(() => this.gated() && this.previewEnded());
+
+  /** Locked-overlay CTA — login for guests, the subscription upsell otherwise. */
+  protected unlock(): void {
+    this.utils.requireCpeModeAccess(this.episode());
+  }
+
+  /**
    * Bridge for the `[ngMenu]` `(itemSelected)` event. The menu's generic `V`
    * tends to widen to `string` since each `<button ngMenuItem>` carries its
    * own literal — narrowing here keeps the parent contract honest.
    */
   protected onMenuItemSelected(value: string): void {
-    this.optionSelected.emit(value as any);
+    this.optionSelected.emit(value as MicroLearningOptionId);
   }
 
   readonly ctaLabel = computed(() => {
@@ -286,6 +321,8 @@ export class MicroLearningReelCard {
       untracked(() => {
         this.isPlaying.set(false);
         this.hasStarted.set((this.episode().last_activity ?? 0) > 0);
+        // Each reel gets its own preview.
+        this.previewEnded.set(false);
       });
     });
 
@@ -355,12 +392,26 @@ export class MicroLearningReelCard {
    * error — if playback is blocked, the user can always tap the CTA.
    */
   private safePlay(player: VideoJs): void {
+    // Belt and braces: a locked card renders the poster, not the player, but
+    // `locked` can flip mid-session (plan expires) while a player is still
+    // mounted. Every play path — scroll activation, rewatch, CTA — lands here.
+    if (this.locked()) return;
     player.play();
   }
 
   onTimeUpdate(event: { currentTime: number; duration: number }): void {
     this.lastTime = event.currentTime;
     this.lastDuration = event.duration;
+
+    // Free preview is up — pause and lock. Setting `previewEnded` swaps the
+    // template to the poster, which tears the player down; pausing first stops
+    // playback cleanly rather than relying on that teardown. Also catches a
+    // seek past the window, since the playhead lands beyond the limit.
+    if (this.gated() && event.currentTime >= PREVIEW_LIMIT_SECONDS) {
+      this.videoPlayer()?.pause();
+      this.previewEnded.set(true);
+      return;
+    }
 
     // video-js only fires `timeupdate` while the media is actually playing, so
     // only the active reel can trigger this. Don't gate on `active()` — the

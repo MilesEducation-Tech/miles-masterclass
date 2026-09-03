@@ -14,15 +14,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Dialog } from '../../../../../../shared/core/services/dialog/dialog';
 import { AppDownloadPrompt } from '../../../../../../shared/core/services/app-download-prompt/app-download-prompt';
 import { NotificationService } from '../../../../../../shared/core/services/notification/notification';
+import { MicroLearningCourseFacade } from '../../../../shared/services/micro-learning-course-facade/micro-learning-course-facade';
+import { FeatureFacade } from '../../../../../shared/services/feature-facade/feature-facade';
 import {
   HtmlContentDialog,
   HtmlContentDialogData,
 } from '../../../../../../shared/components/dialog/html-content-dialog/html-content-dialog';
 import { MicroLearningTopBar } from '../../components/micro-learning-top-bar/micro-learning-top-bar';
-import {
-  MicroLearningReelCard,
-  ReelActivityPayload,
-} from '../../components/micro-learning-reel-card/micro-learning-reel-card';
+import { MicroLearningReelCard } from '../../components/micro-learning-reel-card/micro-learning-reel-card';
 import { MicroLearningReelNav } from '../../components/micro-learning-reel-nav/micro-learning-reel-nav';
 import {
   MicroLearningFilterSheet,
@@ -30,6 +29,12 @@ import {
   MicroLearningFilterSheetResult,
 } from '../../components/micro-learning-filter-sheet/micro-learning-filter-sheet';
 import { MicroLearningAboutPanel } from '../../components/micro-learning-about-panel/micro-learning-about-panel';
+import {
+  MicroLearningFilterOption,
+  MicroLearningOptionId,
+  MicroLearningReel,
+} from '../../../../../../shared/core/models/micro-learning-course.model';
+import { ContentAbout } from '../../../../../../shared/core/models/course.model';
 import { setupCourseSeo } from '../../../../../../shared/utils/seo/course-seo-setup';
 
 @Component({
@@ -39,36 +44,8 @@ import { setupCourseSeo } from '../../../../../../shared/utils/seo/course-seo-se
   styleUrl: './micro-learning-course.css',
 })
 export class MicroLearningCourse {
-  // ponytail: MicroLearningCourseFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  readonly facade: any = {
-    activeIndex: null as any,
-    activeReel: signal<any>(null),
-    addToCart: signal<any>(null),
-    clear: signal<any>(null),
-    courseDetails: signal<any[]>([]),
-    ctaLoading: signal<any>(null),
-    detailsList: signal<any[]>([]),
-    error: signal<any>(null),
-    handleActionStatus: (..._args: any[]): any => null,
-    handleVideoEnded: signal<any>(null),
-    initForCourse: (..._args: any[]): any => null,
-    loading: signal<any>(null),
-    loadNextPage: signal<any>(null),
-    navigateToReel: (..._args: any[]): any => null,
-    onScrollSelect: (..._args: any[]): any => null,
-    openShareDialog: signal<any>(null),
-    pauseRequest: signal<any>(null),
-    rewatchRequest: signal<any>(null),
-    scrollToIdRequest: signal<any>(null),
-    toggleBookmark: signal<any>(null),
-    trackActivity: (..._args: any[]): any => null,
-  };
-  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly feature: any = {};
+  readonly facade = inject(MicroLearningCourseFacade);
+  private readonly feature = inject(FeatureFacade);
   private readonly dialog = inject(Dialog);
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -81,7 +58,7 @@ export class MicroLearningCourse {
   // block rejections if the browser refuses to autoplay an unmuted video;
   // the user can always tap the CTA to start playback.
   readonly muted = signal<boolean>(false);
-  readonly filters = signal<any[]>([]);
+  readonly filters = signal<MicroLearningFilterOption[]>([]);
 
   readonly activeIndex = this.facade.activeIndex;
 
@@ -118,7 +95,7 @@ export class MicroLearningCourse {
    * `:courseId`), so size is naturally capped at the number of reels in the
    * current course tree — no LRU eviction needed.
    */
-  private readonly aboutCache = new Map<number, any>();
+  private readonly aboutCache = new Map<number, ContentAbout>();
   private readonly transcriptCache = new Map<number, string>();
   private readonly glossaryCache = new Map<number, string>();
 
@@ -140,7 +117,7 @@ export class MicroLearningCourse {
       if (id) {
         // Route component is reused across `:courseId` changes (withComponentInputBinding),
         // so reset throttle + completion-dedup state for the new course.
-        untracked(() => this.resetActivityTracking());
+        untracked(() => this.facade.resetActivityTracking());
         this.facade.initForCourse(Number(id));
       }
     });
@@ -150,7 +127,7 @@ export class MicroLearningCourse {
       const req = this.facade.scrollToIdRequest();
       if (!req) return;
       untracked(() => {
-        const index = this.facade.detailsList().findIndex((r: any) => r.id === req.id);
+        const index = this.facade.detailsList().findIndex((r) => r.id === req.id);
         if (index >= 0) this.scrollReelTo(index);
       });
     });
@@ -163,26 +140,16 @@ export class MicroLearningCourse {
       const req = this.facade.rewatchRequest();
       if (!req) return;
       untracked(() => {
-        const reel = this.facade.detailsList().find((r: any) => r.id === req.id);
+        const reel = this.facade.detailsList().find((r) => r.id === req.id);
         if (!reel) return;
-        this.completedChapterIds.delete(reel.chapter_id);
-        if (this.trackedReelChapterId === reel.chapter_id) {
-          this.trackedReelChapterId = null;
-          this.lastTrackedPercentage = 0;
-        }
+        this.facade.resetChapterActivity(reel.chapter_id);
       });
     });
 
     this.destroyRef.onDestroy(() => this.facade.clear());
   }
 
-  private resetActivityTracking(): void {
-    this.lastTrackedPercentage = 0;
-    this.trackedReelChapterId = null;
-    this.completedChapterIds.clear();
-  }
-
-  goToEpisode(episode: any): void {
+  goToEpisode(episode: MicroLearningReel): void {
     this.facade.navigateToReel(episode.id);
   }
 
@@ -196,84 +163,6 @@ export class MicroLearningCourse {
     if (!this.canGoPrev()) return;
     const prev = this.facade.detailsList()[this.activeIndex() - 1];
     if (prev) this.facade.navigateToReel(prev.id);
-  }
-
-  /** Throttle key — tracks the last % milestone reported to the API, per reel. */
-  private lastTrackedPercentage = 0;
-  private trackedReelChapterId: number | null = null;
-  /**
-   * Chapter IDs we've already sent a `completed` event for in this session.
-   * Decoupled from `isReelComplete` (derived from last_activity) so the
-   * `completed` event fires exactly once per reel even after the heartbeat
-   * that crossed 95% updated local progress.
-   */
-  private readonly completedChapterIds = new Set<number>();
-
-  /**
-   * Mirrors masterclass-chapter.updateTime:
-   *  • fires a `heartbeat` every 5% of progress
-   *  • fires a `completed` once crossing 95% (only once per reel)
-   *  • CPE-mode gate: if the reel is already at ≥95% (by progress or
-   *    server-reported last_activity) AND the user has seeked back below
-   *    last_activity, skip the API — don't regress completed progress.
-   */
-  handleTimeUpdate(event: ReelActivityPayload): void {
-    if (event.duration <= 0) return;
-
-    // Reset the throttle when the active reel changes.
-    if (this.trackedReelChapterId !== event.chapterId) {
-      this.trackedReelChapterId = event.chapterId;
-      this.lastTrackedPercentage = 0;
-    }
-
-    const reel = this.facade.detailsList().find((r: any) => r.chapter_id === event.chapterId);
-    if (!reel) return;
-
-    const inCpeMode = !!reel.cpe_mode_details?.cpe_mode;
-    const totalDuration = reel.total_duration ?? event.duration;
-    const lastActivity = reel.last_activity ?? 0;
-    const currentPercent = (event.currentTime / event.duration) * 100;
-    const lastActivityPercent = totalDuration > 0 ? (lastActivity / totalDuration) * 100 : 0;
-    const alreadyEmittedCompleted = this.completedChapterIds.has(event.chapterId);
-
-    // CPE-mode API gate per product spec:
-    //  (a) Server already considers the reel completed (last_activity >= 95%)
-    //      → suppress ALL activity events (no more heartbeats, no duplicate
-    //      `completed`). The reel is done; server state is authoritative.
-    //  (b) Progress crossed 95% this session AND the user has seeked back
-    //      below last_activity → suppress (don't regress completed progress).
-    if (inCpeMode) {
-      if (lastActivityPercent >= 95) return;
-      if (currentPercent >= 95 && event.currentTime < lastActivity) return;
-    }
-
-    if (currentPercent >= 95 && !alreadyEmittedCompleted) {
-      this.completedChapterIds.add(event.chapterId);
-      this.lastTrackedPercentage = 100;
-      this.facade.trackActivity(event.chapterId, event.duration, 'completed').subscribe();
-      // Trigger the post-video flow now (open quiz / start exam). We can't
-      // wait for video.js's `ended` event: crossing 95% sets last_activity
-      // to total_duration, which flips `isCompleted` → `loop = true` via
-      // the videoConfig effect *before* the player reaches 100%, so `ended`
-      // never fires. 95% is the reliable signal. `completedChapterIds`
-      // already dedups, so this only runs once per reel per session.
-      if (reel.id === this.facade.activeReel()?.id) {
-        this.facade.handleVideoEnded();
-      }
-      return;
-    }
-
-    // Once a reel has emitted completion, stop sending heartbeats.
-    if (alreadyEmittedCompleted) return;
-
-    if (Math.abs(currentPercent - this.lastTrackedPercentage) >= 5) {
-      this.lastTrackedPercentage = currentPercent;
-      this.facade.trackActivity(event.chapterId, event.currentTime, 'heartbeat').subscribe();
-    }
-  }
-
-  handleExited(event: ReelActivityPayload): void {
-    this.facade.trackActivity(event.chapterId, event.currentTime, 'exit').subscribe();
   }
 
   onReelScroll(): void {
@@ -330,17 +219,17 @@ export class MicroLearningCourse {
   }
 
   /**
-   * Dispatch table for the inline reel menu. The `Record<any, …>`
+   * Dispatch table for the inline reel menu. The `Record<MicroLearningOptionId, …>`
    * type is itself the exhaustiveness guard: adding a new variant to the union
    * fails to compile here until a handler is registered.
    */
-  private readonly optionHandlers: Record<any, () => void> = {
+  private readonly optionHandlers: Record<MicroLearningOptionId, () => void> = {
     about: () => this.openAbout(),
     transcript: () => this.openTranscript(),
     glossary: () => this.openGlossary(),
   };
 
-  onOptionSelected(id: any): void {
+  onOptionSelected(id: MicroLearningOptionId): void {
     this.optionHandlers[id]();
   }
 
@@ -363,7 +252,7 @@ export class MicroLearningCourse {
         { skipErrorNotification: true },
       )
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response: any) => {
+      .subscribe((response) => {
         const html = response?.data?.chapter?.transcript_text;
         if (!html) {
           this.notification.info('Transcript', 'No transcript is available for this reel.');
@@ -390,7 +279,7 @@ export class MicroLearningCourse {
     this.facade
       .fetchCourseContent({ id: reel.id, course_type: 'micro_learning' })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response: any) => {
+      .subscribe((response) => {
         const html = response?.data?.glossary_transcript_text;
         if (!html) {
           this.notification.info('Glossary', 'No glossary is available for this reel.');
@@ -417,19 +306,22 @@ export class MicroLearningCourse {
       return;
     }
     this.feature
-      .getAbout(reel.id, 'micro_learning')
+      .getAbout<ContentAbout>(reel.id, 'micro_learning')
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res: any) => {
+      .subscribe((res) => {
         const data = res?.data;
         if (!data) {
           this.notification.info('About', 'No details are available for this reel.');
           return;
         }
-        const enriched: any = {
+        const enriched: ContentAbout = {
           ...data,
+          // The about serializer omits usable fields_of_study for nano-learning
+          // (see `dropIdOnlyFieldsOfStudy`); the reel payload carries the real one.
+          fields_of_study: data.fields_of_study ?? reel.fields_of_study,
           learning_objective_list: (data.learning_objectives ?? '')
             .split(/\r?\n/)
-            .map((line: any) => line.trim())
+            .map((line) => line.trim())
             .filter(Boolean),
         };
         this.aboutCache.set(reel.id, enriched);
@@ -437,7 +329,7 @@ export class MicroLearningCourse {
       });
   }
 
-  private showAboutPanel(data: any): void {
+  private showAboutPanel(data: ContentAbout): void {
     this.dialog.open(MicroLearningAboutPanel, {
       data,
       position: 'right',

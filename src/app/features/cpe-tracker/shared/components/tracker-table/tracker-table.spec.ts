@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TrackerTable } from './tracker-table';
 import { TrackerTableRow } from '../../mappers/report-to-table';
+import { ReportRow } from '../../../../../shared/core/models/cpe-tracker.model';
 
 const sampleRow: TrackerTableRow = {
   key: 'masterclass-1',
@@ -13,7 +14,7 @@ const sampleRow: TrackerTableRow = {
   registeredAt: null,
   cairaLevel: 1,
   actionKind: 'feedback',
-  raw: {} as any,
+  raw: {} as ReportRow,
 };
 
 describe('TrackerTable', () => {

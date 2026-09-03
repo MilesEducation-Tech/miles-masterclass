@@ -2,6 +2,7 @@ import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DialogRef } from '../../../core/services/dialog/dialog';
 import { VideoPoster } from '../../video-poster/video-poster';
+import { ContentAbout } from '../../../core/models/course.model';
 import { Button } from '../../ui/button/button';
 import { MilesSlug } from '../../miles-slug/miles-slug';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -33,7 +34,7 @@ export class CourseInfo implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   dialogRef!: DialogRef<CourseInfo>;
-  data!: any;
+  data!: ContentAbout;
 
   /**
    * Local signal that mirrors `data.added_bookmark`. We can't react to a plain

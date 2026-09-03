@@ -370,7 +370,7 @@ export class VideoJs {
         loop: config.loop,
         fluid: config.fluid,
         responsive: config.responsive,
-        muted: config.muted || false,
+        muted: config.muted,
         poster: config.poster,
         techOrder: config.techOrder,
         sources: this.sourcesArray(),

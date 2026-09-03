@@ -1,6 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { Route } from '@angular/router';
 import { environment } from '../../../../environments/environment';
+import { FeatureFacade } from '../../shared/services/feature-facade/feature-facade';
 import { Horizontal } from '../../../shared/components/cards/horizontal/horizontal';
 import { Vertical } from '../../../shared/components/cards/vertical/vertical';
 import { Carousel } from '../../../shared/components/carousel/carousel';
@@ -12,15 +13,14 @@ import {
 import { Slider } from '../../../shared/components/slider/slider';
 import { SliderSkeleton } from '../../../shared/components/skeleton/slider-skeleton/slider-skeleton';
 import { authGuard } from '../../../shared/core/guards/auth/auth-guard';
+import { ChapterFacade } from '../shared/services/chapter-facade/chapter-facade';
+import { FinalAssessmentFacade } from '../shared/services/final-assessment-facade/final-assessment-facade';
 import { canDeactivateExamGuard } from '../../../shared/core/guards/can-deactivate-exam-guard';
+import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
 import { ComingSoon } from '../../../shared/components/cards/coming-soon/coming-soon';
 import { Faq } from '../../../pages/faq/faq';
 import { PartnerContentList } from '../../partners/shared/components/partner-content-list/partner-content-list';
 import { SectionNav, SectionNavItem } from '../../../shared/components/section-nav/section-nav';
-import { FeatureFacade } from '../../shared/services/feature-facade/feature-facade';
-import { CourseDetail } from '../shared/services/course-detail/course-detail';
-import { Feedback } from '../shared/services/feedback/feedback';
-import { ChapterProgress } from '../shared/services/chapter-progress/chapter-progress';
 
 @Component({
   selector: 'app-masterclass',
@@ -40,7 +40,7 @@ import { ChapterProgress } from '../shared/services/chapter-progress/chapter-pro
 })
 export class Masterclass {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
-  readonly feature = inject(FeatureFacade);
+  readonly feature: FeatureFacade = inject(FeatureFacade);
 
   // Swiper configurations for templates
   readonly swiperConfigEven = swiperConfigEven;
@@ -69,23 +69,20 @@ export class Masterclass {
   readonly completed = this.feature.getResource('completed', 'masterclass', { requiresAuth: true });
   readonly comingSoon = this.feature.getResource('comingSoon', 'masterclass');
 
-  /**
-   * Both headings fall back to their generic form: CAIRA returns no rail
-   * metadata, and both rails are unsourced anyway, so neither section renders.
-   * Kept so the bindings stay live if the endpoints ever land.
-   */
   readonly complimentaryHeading = computed(() => {
-    const details = this.complimentary.metadata()?.['details'] as
-      { company_name?: string } | undefined;
-    return details?.company_name
-      ? `Complimentary Courses for ${details.company_name} Employees`
+    const meta = this.complimentary.metadata();
+    const details = meta?.['details'] as { company_name?: string } | undefined;
+    const companyName = details?.company_name;
+    return companyName
+      ? `Complimentary Courses for ${companyName} Employees`
       : 'Complimentary Courses';
   });
 
   readonly becauseYouWatchedHeading = computed(() => {
-    const watched = this.becauseYouWatched.metadata()?.['watched_course'] as
-      { title?: string } | undefined;
-    return watched?.title ? `Because You Watched ${watched.title}` : 'Because You Watched';
+    const meta = this.becauseYouWatched.metadata();
+    const watchedCourse = meta?.['watched_course'] as { title?: string } | undefined;
+    const courseTitle = watchedCourse?.title;
+    return courseTitle ? `Because You Watched ${courseTitle}` : 'Because You Watched';
   });
 
   /**
@@ -138,10 +135,6 @@ export const masterclassRoutes: Route[] = [
   { path: '', component: Masterclass },
   {
     path: ':courseId/:courseTitle',
-    // One `CourseDetail` per course route, shared by the page, hero, chapter
-    // list, resources and related rails. Route-scoped rather than a singleton
-    // so leaving the course disposes it and aborts anything still in flight.
-    providers: [CourseDetail],
     children: [
       {
         path: '',
@@ -153,10 +146,7 @@ export const masterclassRoutes: Route[] = [
       {
         path: 'chapter/:chapterId/:chapterTitle',
         canActivate: [authGuard],
-        // Route-scoped: the chapter player's #6 / #18 writes. `CourseDetail`
-        // is provided one level up and supplies the chapter list, so this only
-        // owns progress.
-        providers: [ChapterProgress],
+        providers: [ChapterFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
           import('./shared/pages/masterclass-chapter/masterclass-chapter').then(
@@ -164,10 +154,9 @@ export const masterclassRoutes: Route[] = [
           ),
       },
       {
-        path: 'final-assessment/exam',
+        path: 'final-assessment/:sessionId/exam',
         canActivate: [authGuard],
-        // ponytail: route-scoped facade providers removed with the Django strip.
-        // Re-add `providers: [YourService]` here when the new backend lands.
+        providers: [FinalAssessmentFacade],
         canDeactivate: [canDeactivateExamGuard],
         data: { layout: 'plain' },
         loadComponent: () =>
@@ -176,10 +165,9 @@ export const masterclassRoutes: Route[] = [
           ),
       },
       {
-        path: 'final-assessment/report',
+        path: 'final-assessment/:sessionId/report',
         canActivate: [authGuard],
-        // ponytail: route-scoped facade providers removed with the Django strip.
-        // Re-add `providers: [YourService]` here when the new backend lands.
+        providers: [FinalAssessmentFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
           import('../shared/pages/final-assessment-report/final-assessment-report').then(
@@ -189,9 +177,7 @@ export const masterclassRoutes: Route[] = [
       {
         path: 'feedback',
         canActivate: [authGuard],
-        // #12 / #13, scoped to this route. `CourseDetail` is provided one level
-        // up, so `Feedback` reaches the same instance and re-reads nothing.
-        providers: [Feedback],
+        providers: [FeedbackFacade],
         loadComponent: () =>
           import('../shared/pages/course-feedback/course-feedback').then((m) => m.CourseFeedback),
       },

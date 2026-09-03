@@ -1,57 +1,32 @@
 <div class="flex flex-col gap-6">
   <div class="flex flex-wrap items-center gap-3">
-    <!-- CAIRA / NON-CAIRA. A segmented control rather than a select: two
-         mutually exclusive options that change what every other filter means. -->
-    <div
-      class="inline-flex rounded-lg border border-white/10 bg-neutral-900 p-1"
-      role="group"
-      aria-label="Filter by credential programme"
-    >
-      @for (option of categories; track option) {
-        <button
-          type="button"
-          class="cursor-pointer rounded-md px-4 py-2 text-sm font-medium transition-colors"
-          [class.bg-white]="category() === option"
-          [class.text-neutral-900]="category() === option"
-          [class.text-gray-300]="category() !== option"
-          [attr.aria-pressed]="category() === option"
-          (click)="categoryChange.emit(option)"
-        >
-          {{ option }}
-        </button>
-      }
+    <div class="relative">
+      <select
+        class="w-48 cursor-pointer appearance-none rounded-lg border border-white/10 bg-neutral-900 py-2.5 pr-10 pl-4 text-sm text-white"
+        aria-label="Filter by field of study"
+        [value]="studyFilter()"
+        (change)="onStudyFilter($event)"
+      >
+        @for (opt of studyFilterOptions; track opt) {
+          <option [value]="opt">{{ opt }}</option>
+        }
+      </select>
+      <ng-icon
+        name="lucideChevronDown"
+        class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-gray-400"
+        aria-hidden="true"
+      />
     </div>
-
-    @if (category() === 'CAIRA') {
-      <div class="relative">
-        <select
-          class="w-40 cursor-pointer appearance-none rounded-lg border border-white/10 bg-neutral-900 py-2.5 pr-10 pl-4 text-sm text-white"
-          aria-label="Filter by CAIRA level"
-          [value]="level()"
-          (change)="onLevel($event)"
-        >
-          @for (option of levels; track option) {
-            <option [value]="option">Level {{ option.slice(1) }}</option>
-          }
-        </select>
-        <ng-icon
-          name="lucideChevronDown"
-          class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-gray-400"
-          aria-hidden="true"
-        />
-      </div>
-    }
 
     <div class="relative">
       <select
-        class="w-48 cursor-pointer appearance-none rounded-lg border border-white/10 bg-neutral-900 py-2.5 pr-10 pl-4 text-sm text-white disabled:opacity-50"
-        aria-label="Filter by content type"
-        [value]="contentType()"
-        [disabled]="contentTypeOptions().length === 0"
-        (change)="onContentType($event)"
+        class="w-40 cursor-pointer appearance-none rounded-lg border border-white/10 bg-neutral-900 py-2.5 pr-10 pl-4 text-sm text-white"
+        aria-label="Select year"
+        [value]="selectedYear()"
+        (change)="onYear($event)"
       >
-        @for (option of contentTypeOptions(); track option) {
-          <option [value]="option">{{ option }}</option>
+        @for (year of yearOptions(); track year) {
+          <option [value]="year">{{ year }}</option>
         }
       </select>
       <ng-icon
@@ -79,7 +54,7 @@
           <span class="text-lg font-semibold text-amber-400">CPE Credits</span>
         </div>
 
-        <p class="max-w-[240px] text-xs text-gray-300">
+        <p class="max-w-[240px] text-right text-xs text-gray-300">
           Total credits that you have earned so far.
         </p>
       </div>
@@ -93,6 +68,17 @@
           View Compliance
         </app-button>
       </div>
+    </div>
+
+    <div class="flex flex-wrap items-end gap-3">
+      <app-button [variant]="'default'" (clicked)="downloadNasba.emit()">
+        <ng-icon name="lucideDownload" class="mr-2" aria-hidden="true" />
+        Download NASBA Template
+      </app-button>
+      <app-button [variant]="'default'" (clicked)="downloadAll.emit()">
+        <ng-icon name="lucideDownload" class="mr-2" aria-hidden="true" />
+        Download All CPE Certificates
+      </app-button>
     </div>
   </div>
 </div>

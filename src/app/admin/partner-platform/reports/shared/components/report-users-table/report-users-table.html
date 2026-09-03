@@ -1,0 +1,133 @@
+<div class="text-white">
+  @if (isLoading() && !rows().length) {
+    <div class="flex items-center justify-center py-12 text-neutral-400">
+      <app-spinner size="lg" color="white" trackColor="neutral-600" />
+    </div>
+  }
+
+  @if (rows().length) {
+    <div class="overflow-x-auto rounded-lg border border-white/10">
+      <table class="w-full text-left text-sm">
+        <thead
+          class="text-[11px] uppercase tracking-wider"
+          style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
+        >
+          <tr>
+            <th class="px-4 py-3 font-semibold">User</th>
+            <th class="px-4 py-3 font-semibold">Active (15d)</th>
+            @if (isCourses()) {
+              <th class="px-4 py-3 font-semibold text-right">Courses completed</th>
+            } @else {
+              <th class="px-4 py-3 font-semibold text-right">Registered</th>
+              <th class="px-4 py-3 font-semibold text-right">Attended</th>
+            }
+            <th class="px-4 py-3 font-semibold text-right">CPE credits</th>
+            <th class="px-4 py-3 font-semibold text-right">Avg feedback</th>
+            <th class="px-4 py-3 font-semibold text-right">Certificates</th>
+            <th class="px-4 py-3 font-semibold text-right">Details</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          @for (row of rows(); track row.user_id) {
+            <tr class="hover:bg-white/3 transition-colors">
+              <!-- Identity -->
+              <td class="px-4 py-3">
+                <span class="flex flex-col gap-0.5">
+                  <span class="font-medium text-neutral-100">{{ row.name }}</span>
+                  <span class="text-xs text-neutral-400 break-all">{{ row.email }}</span>
+                </span>
+              </td>
+
+              <!-- Activity -->
+              <td class="px-4 py-3">
+                <span
+                  class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                  [style.background]="
+                    row.active_in_last_15_days ? 'var(--mm-success-bg)' : 'var(--mm-surface-2)'
+                  "
+                  [style.color]="
+                    row.active_in_last_15_days ? 'var(--mm-success-fg)' : 'var(--mm-fg-3)'
+                  "
+                >
+                  {{ row.active_in_last_15_days ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+
+              @if (isCourses()) {
+                <td class="px-4 py-3 text-right tabular-nums text-neutral-300">
+                  {{ row.total_courses_completed ?? 0 }}
+                </td>
+              } @else {
+                <td class="px-4 py-3 text-right tabular-nums text-neutral-300">
+                  {{ row.total_webinars_registered ?? 0 }}
+                </td>
+                <td class="px-4 py-3 text-right tabular-nums text-neutral-300">
+                  {{ row.total_webinars_attended ?? 0 }}
+                </td>
+              }
+
+              <td class="px-4 py-3 text-right tabular-nums" style="color: var(--mm-success-fg)">
+                {{ row.total_cpe_credits_awarded | number: '1.0-2' }}
+              </td>
+
+              <td class="px-4 py-3 text-right tabular-nums text-neutral-300">
+                {{ dec(isCourses() ? row.avg_feedback_per_course : row.avg_feedback_per_webinar) }}
+              </td>
+
+              <td class="px-4 py-3 text-right tabular-nums text-neutral-300">
+                {{ row.total_certificates_awarded }}
+              </td>
+
+              <td class="px-4 py-3 text-right">
+                <button
+                  type="button"
+                  class="drill-btn"
+                  (click)="viewItems.emit(row)"
+                  [attr.aria-label]="
+                    'View ' + (isCourses() ? 'courses' : 'webinars') + ' for ' + row.name
+                  "
+                  title="View details"
+                >
+                  <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-6 flex items-center justify-between text-sm text-neutral-400">
+      <span>
+        Showing
+        <span class="font-semibold text-white">
+          {{ pageWindow().from }}-{{ pageWindow().to }}
+        </span>
+        of {{ pageWindow().total }}
+      </span>
+      <div class="flex items-center gap-3">
+        <app-button
+          variant="outline"
+          size="sm"
+          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
+          [disabled]="!canPrev()"
+          (clicked)="prevPage.emit()"
+        >
+          Prev
+        </app-button>
+        <span class="text-white/70 tabular-nums">Page {{ currentPage() }}</span>
+        <app-button
+          variant="outline"
+          size="sm"
+          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
+          [disabled]="!canNext()"
+          (clicked)="nextPage.emit()"
+        >
+          Next
+        </app-button>
+      </div>
+    </div>
+  } @else if (!isLoading()) {
+    <p class="py-12 text-center text-sm text-neutral-500">No users to show for these filters.</p>
+  }
+</div>

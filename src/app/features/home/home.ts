@@ -1,8 +1,9 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { Carousel } from '../../shared/components/carousel/carousel';
 import { Horizontal } from '../../shared/components/cards/horizontal/horizontal';
 import { Vertical } from '../../shared/components/cards/vertical/vertical';
+import { FeatureFacade } from '../shared/services/feature-facade/feature-facade';
 import { ComingSoon } from '../../shared/components/cards/coming-soon/coming-soon';
 import {
   swiperConfigComingSoon,
@@ -41,22 +42,7 @@ import { Utils } from '../../shared/core/services/utils/utils';
 })
 export class Home {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
-  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  readonly feature: any = {
-    getResource: (..._args: any[]): any => ({
-      items: signal<any[]>([]),
-      isLoading: signal(false),
-      hasMore: signal(false),
-      error: signal(null),
-      loadNextPage: () => undefined,
-      loadNextTrackPage: () => undefined,
-      setFilters: () => undefined,
-      setTrackFilters: () => undefined,
-      webp: signal(null),
-    }),
-  };
+  readonly feature: FeatureFacade = inject(FeatureFacade);
   readonly router = inject(Router);
   private readonly utils = inject(Utils);
 

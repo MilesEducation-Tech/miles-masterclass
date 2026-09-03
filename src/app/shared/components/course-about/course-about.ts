@@ -3,13 +3,13 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
 import { faSolidArrowUpRightFromSquare } from '@ng-icons/font-awesome/solid';
 import { logo } from '../../core/constant/icon';
+import { ContentAbout, ContentDetails } from '../../core/models/course.model';
 import { CategoriesList } from '../categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { DurationPipe } from '../../core/pipes/duration/duration-pipe';
 import { Utils } from '../../core/services/utils/utils';
 import { Router } from '@angular/router';
 import { Dialog } from '../../core/services/dialog/dialog';
-import { CairaUuid } from '../../core/models/caira/envelope.model';
 
 @Component({
   selector: 'app-course-about',
@@ -18,7 +18,7 @@ import { CairaUuid } from '../../core/models/caira/envelope.model';
   styleUrl: './course-about.css',
 })
 export class CourseAbout {
-  card = input.required<any | any>();
+  card = input.required<ContentAbout | ContentDetails>();
   type = input<'masterclass' | 'podcast' | 'micro-learning' | 'webinar'>('masterclass');
 
   private readonly utils = inject(Utils);
@@ -47,6 +47,17 @@ export class CourseAbout {
     return Math.round((threshold / 100) * duration);
   });
 
+  /**
+   * CPE credits the course actually carries, by the same rule the NASBA block
+   * displays: the sum over `fields_of_study`, falling back to `class_credits`
+   * when the API sends no fields. Fractional credit counts — 0.5 is a real
+   * half-credit course, not "no credit".
+   */
+  private readonly cpePipe = new TotalCpeCreditsPipe();
+  readonly cpeCredits = computed(() =>
+    this.cpePipe.transform(this.card().fields_of_study, this.card().class_credits),
+  );
+
   readonly courseDurationParts = computed(() => {
     // The wire field can land as a fractional number (e.g. 549.52). Floor up
     // front so the modulo split doesn't surface IEEE-754 noise like
@@ -58,7 +69,7 @@ export class CourseAbout {
     };
   });
 
-  onInstructorClick(i: { id: CairaUuid | null; first_name: string; last_name: string }) {
+  onInstructorClick(i: { id: number; first_name: string; last_name: string }) {
     const slug = this.utils.slugify(`${i?.first_name} ${i?.last_name}`);
     const basePath = `/${this.utils.getRouteParams().country}/${this.utils.getRouteParams().profession}`;
     this.dialog.closeAll();

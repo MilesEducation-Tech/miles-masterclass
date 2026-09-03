@@ -3,10 +3,12 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router, provideRouter } from '@angular/router';
 import { Utils } from '../../shared/core/services/utils/utils';
+import { ReportRow } from '../../shared/core/models/cpe-tracker.model';
 import { TrackerTableRow } from './shared/mappers/report-to-table';
 import { CpeTracker } from './cpe-tracker';
+import { CpeTrackerFacade } from './shared/services/cpe-tracker-facade/cpe-tracker-facade';
 
-function makeRow(rawOverrides: Partial<any>): TrackerTableRow {
+function makeRow(rawOverrides: Partial<ReportRow>): TrackerTableRow {
   const raw = {
     id: 99,
     master_class: 100,
@@ -19,7 +21,7 @@ function makeRow(rawOverrides: Partial<any>): TrackerTableRow {
     field_of_study: [],
     all_classes_completed: true,
     ...rawOverrides,
-  } as any;
+  } as ReportRow;
   return {
     key: 'k',
     id: 100,
@@ -43,6 +45,7 @@ describe('CpeTracker', () => {
     await TestBed.configureTestingModule({
       imports: [CpeTracker],
       providers: [
+        CpeTrackerFacade,
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),

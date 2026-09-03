@@ -1,5 +1,5 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import {
   FormField as AngularFormField,
   disabled,
@@ -11,6 +11,12 @@ import { DialogRef } from '../../../../../../../shared/core/services/dialog/dial
 import { Button } from '../../../../../../../shared/components/ui/button/button';
 import { Forms } from '../../../../../../../shared/components/ui/forms/forms';
 import { AriaInput } from '../../../../../../../shared/components/ui/aria/aria-input/aria-input';
+import {
+  Network,
+  PartnerCode,
+  SeatAllocation,
+} from '../../../../../shared/models/partner-platform.model';
+import { PartnerSuperAdminFacade } from '../../../../../shared/services/partner-superadmin-facade';
 
 /** Result emitted on submit — the parent maps it to create vs update. */
 export interface NetworkFormResult {
@@ -22,12 +28,12 @@ export interface NetworkFormResult {
    * Edit mode only — stock the network's own pool (§4.4). Mints coupons with no
    * sub-company. Empty when the operator didn't pick any code.
    */
-  allocations: any[];
+  allocations: SeatAllocation[];
 }
 
 export interface NetworkFormDialogData {
   /** Present = edit mode (slug locked, is_active editable); absent = create. */
-  network?: any;
+  network?: Network;
 }
 
 /** Numeric input surfaces as a string from the native input — model it as such. */
@@ -53,13 +59,7 @@ export class NetworkFormDialog implements OnInit {
   dialogRef!: DialogRef<NetworkFormDialog, NetworkFormResult | undefined>;
   data!: NetworkFormDialogData;
 
-  // ponytail: PartnerSuperAdminFacade was deleted with the Django strip. This placeholder
-
-  // keeps the template bindings compiling and renders the empty state.
-
-  // Swap in the new backend's service — the template needs no changes.
-
-  private readonly facade: any = {};
+  private readonly facade = inject(PartnerSuperAdminFacade);
 
   private readonly editing = signal(false);
   protected readonly isEdit = computed(() => this.editing());
@@ -71,16 +71,11 @@ export class NetworkFormDialog implements OnInit {
    * Codes usable for a network allocation: this network's own codes plus global
    * ones. A code scoped to a *firm* can't stock a network pool.
    */
-  protected readonly eligibleCodes = computed<any[]>(() => {
+  protected readonly eligibleCodes = computed<PartnerCode[]>(() => {
     const networkId = this.data?.network?.id;
     return this.facade
       .partnerCodes()
-      .filter(
-        (c: any) =>
-          c.is_active &&
-          c.partner_firm == null &&
-          (c.partner_network == null || c.partner_network === networkId),
-      );
+      .filter((c) => c.is_active && !c.firm && (!c.network || c.network.id === networkId));
   });
 
   /** Seats to mint per selected code, keyed by code id. */
@@ -166,8 +161,8 @@ export class NetworkFormDialog implements OnInit {
       slug: v.slug.trim(),
       total_seats: Number(v.total_seats),
       is_active: v.is_active,
-      allocations: Object.entries(this.seatCounts()).map(([partner_code_id, count]) => ({
-        partner_code_id: Number(partner_code_id),
+      allocations: Object.entries(this.seatCounts()).map(([partnerCode, count]) => ({
+        partner_code: Number(partnerCode),
         count,
       })),
     });

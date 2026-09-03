@@ -1,7 +1,8 @@
 import { argsToTemplate, type Meta, type StoryObj } from '@storybook/angular';
+import { BadgeItem } from '../../../core/models/cpe-tracker.model';
 import { BadgeHeroCard } from './badge-hero-card';
 
-const baseBadge: any = {
+const baseBadge: BadgeItem = {
   id: 1,
   name: 'CAIRA — Level 1',
   sub_text: 'Foundations of AI in Accounting',

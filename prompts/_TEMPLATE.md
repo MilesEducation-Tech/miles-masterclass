@@ -62,5 +62,5 @@ pnpm build:prod
 ## How to verify it
 
 1. `pnpm start`
-2. Open `http://localhost:4101/<exact route>`
+2. Open `http://localhost:4100/<exact route>`
 3. <Exact steps and expected result. Never "it should work.">

@@ -5,10 +5,12 @@ import {
   Router,
   RouterOutlet,
 } from '@angular/router';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import { NgIconComponent } from '@ng-icons/core';
+import { PaymentFacade } from './shared/service/payment-facade/payment-facade';
+import { CartSteps } from '../../shared/core/models/payment.model';
 import { CART_STEP_DATA, PATH_TYPE_TO_STEP_ID } from '../../shared/core/constant/payment';
 
 /** Walk to the deepest activated route — `pathType` lives on the leaf. */
@@ -25,16 +27,7 @@ function deepestChild(snapshot: ActivatedRouteSnapshot): ActivatedRouteSnapshot 
 export class Payment {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  // ponytail: PaymentFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  protected readonly facade: any = {
-    cartData: signal<any>(null),
-    error: signal<any>(null),
-    loading: signal<any>(null),
-    loadMyBucket: (..._args: any[]): any => null,
-    trackCartView: (..._args: any[]): any => null,
-  };
+  protected readonly facade = inject(PaymentFacade);
 
   // No constructor-time fetch — the `cartResolver` on this route guarantees
   // the cart bucket is loaded before any child activates. Keeps the shell
@@ -62,11 +55,11 @@ export class Payment {
     }
   });
 
-  protected readonly cartSteps = computed<any[]>(() => {
+  protected readonly cartSteps = computed<CartSteps[]>(() => {
     const activeStepId = PATH_TYPE_TO_STEP_ID[this.pathType()] ?? 1;
     return CART_STEP_DATA.map((step) => ({
       ...step,
-      active: (step as any).id <= activeStepId,
+      active: step.id <= activeStepId,
     }));
   });
 

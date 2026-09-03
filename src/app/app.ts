@@ -11,6 +11,7 @@ import { Progress } from './shared/components/ui/progress/progress';
 import { SeoManager } from './shared/core/services/seo/seo-manager';
 import { Analytics } from './shared/core/services/analytics/analytics';
 import { EngagementDialog } from './shared/core/services/engagement-dialog/engagement-dialog';
+import { Utm } from './shared/core/services/utm/utm';
 import {
   isDynamicSlug,
   routeUrlToCanonicalUrl,
@@ -32,12 +33,7 @@ export class App {
   private readonly seoManager = inject(SeoManager);
   private readonly engagement = inject(EngagementDialog);
   private readonly analytics = inject(Analytics);
-  // ponytail: Utm was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly utm: any = {
-    capture: signal<any>(null),
-  };
+  private readonly utm = inject(Utm);
   private readonly doc = inject(DOCUMENT);
 
   private readonly pendingTasks = inject(PendingTasks);

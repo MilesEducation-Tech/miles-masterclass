@@ -1,4 +1,5 @@
 <section class="admin-theme flex flex-col gap-8 p-6 text-white min-h-full">
+  <app-deprecation-banner to="/admin/partner-v2/panel/overview" />
   @if (!me.isPartnerAdmin() && !me.isLoading()) {
     <div class="rounded-xl border border-white/10 bg-card p-8 text-center max-w-lg mx-auto mt-10">
       <h1 class="text-xl font-bold mb-2">Not a partner admin</h1>

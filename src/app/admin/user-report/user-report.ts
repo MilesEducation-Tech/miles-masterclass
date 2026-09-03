@@ -1,4 +1,3 @@
-import { hasCourseIds, mergeCourseIds } from './shared/utils/course-ids';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
@@ -10,6 +9,14 @@ import { Button } from '../../shared/components/ui/button/button';
 import { Spinner } from '../../shared/components/ui/spinner/spinner';
 import { Dialog } from '../../shared/core/services/dialog/dialog';
 import { NotificationService } from '../../shared/core/services/notification/notification';
+import {
+  CourseDetailCategory,
+  CourseIds,
+  UserReportRow,
+  hasCourseIds,
+  mergeCourseIds,
+} from './shared/models/user-report.model';
+import { UserReportFacade } from './shared/services/user-report-facade';
 import {
   UserCourseDetailDialog,
   UserCourseDetailDialogData,
@@ -24,23 +31,7 @@ import {
   host: { class: 'block w-full' },
 })
 export class UserReport {
-  // ponytail: UserReportFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  protected readonly facade: any = {
-    currentPage: signal<any>(null),
-    error: signal<any>(null),
-    exportCsv: signal<any>(null),
-    hasNext: signal<any>(null),
-    hasPrev: signal<any>(null),
-    isExporting: signal<any>(null),
-    isLoading: signal<any>(null),
-    pageSize: null as any,
-    rows: signal<any[]>([]),
-    setPage: (..._args: any[]): any => null,
-    setSearch: (..._args: any[]): any => null,
-    totalCount: signal<any>(null),
-  };
+  protected readonly facade = inject(UserReportFacade);
   private readonly dialog = inject(Dialog);
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -80,7 +71,11 @@ export class UserReport {
   }
 
   /** Open the drill-down for one metric bucket. No-op with a toast when empty. */
-  protected openCourseDetail(row: any, category: any, courseIds: any): void {
+  protected openCourseDetail(
+    row: UserReportRow,
+    category: CourseDetailCategory,
+    courseIds: CourseIds,
+  ): void {
     if (!hasCourseIds(courseIds)) {
       this.notification.info('No course data', 'There are no courses for this field.');
       return;
@@ -98,7 +93,7 @@ export class UserReport {
   }
 
   /** Combine every bucket on the row and open the dialog. */
-  protected openAllCourses(row: any): void {
+  protected openAllCourses(row: UserReportRow): void {
     const merged = mergeCourseIds([
       row.courses_completed_cpe_ids,
       row.courses_in_progress_cpe_ids,

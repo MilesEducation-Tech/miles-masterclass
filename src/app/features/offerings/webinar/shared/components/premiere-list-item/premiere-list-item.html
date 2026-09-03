@@ -30,8 +30,8 @@
     <h3 class="text-base sm:text-lg font-semibold leading-snug truncate">
       {{ webinar().webinar_title }}
     </h3>
-    <!-- v2 list payloads carry no instructor, so hide the byline rather than
-         rendering a bare "By ". Populated once the row is hydrated. -->
+    <!-- Hide the byline rather than rendering a bare "By " when a row genuinely
+         has no instructor on it. -->
     @if (instructorNames().length) {
       <p class="text-xs text-muted-foreground tracking-wide truncate">
         By {{ instructorNames().join(', ') }}
@@ -75,6 +75,13 @@
           <app-button variant="default" size="sm" (clicked)="downloadCertificate()"
             >Download Certificate</app-button
           >
+        }
+        @case ('series-awarded') {
+          <span
+            class="inline-flex items-center rounded-md bg-muted px-3 py-1.5 text-xs text-muted-foreground"
+          >
+            Recurring webinar — CPE already awarded for this series
+          </span>
         }
         @case ('watch-recording') {
           <app-button variant="default" size="sm" (clicked)="watchRecording()"

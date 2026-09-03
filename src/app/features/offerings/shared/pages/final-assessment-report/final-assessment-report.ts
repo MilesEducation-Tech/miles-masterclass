@@ -1,5 +1,5 @@
-import { Component, DestroyRef, computed, effect, inject, input, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { FinalAssessmentFacade } from '../../services/final-assessment-facade/final-assessment-facade';
 import { Button } from '../../../../../shared/components/ui/button/button';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
@@ -10,20 +10,12 @@ import {
   heroArrowDownTray,
 } from '@ng-icons/heroicons/outline';
 import { ActivatedRoute, Router } from '@angular/router';
+import { SubmitFinalAssessmentResponse } from '../../../../../shared/core/models/assessment.model';
+import { ContentDetails } from '../../../../../shared/core/models/course.model';
 import { Utils } from '../../../../../shared/core/services/utils/utils';
 import { Logger } from '../../../../../shared/core/services/logger/logger';
 import { DatePipe } from '@angular/common';
 import { PageLoading } from '../../../../../shared/components/ui/page-loading/page-loading';
-import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.model';
-import {
-  AssessmentReport,
-  AssessmentReportQuestion,
-  AssessmentResultResponse,
-  toAssessmentReport,
-} from '../../../../../shared/core/models/caira/assessment.model';
-import { ApiClient } from '../../../../../shared/core/services/api-client/api-client';
-import { CAIRA } from '../../../../../shared/core/http/caira.endpoints';
-import { cairaError } from '../../../../../shared/core/http/caira-error';
 
 @Component({
   selector: 'app-final-assessment-report',
@@ -41,73 +33,105 @@ import { cairaError } from '../../../../../shared/core/http/caira-error';
   ],
 })
 export class FinalAssessmentReport {
-  /**
-   * The course is the whole key. CAIRA has no assessment session — an attempt
-   * is `(user, course, attempt_number)` — so the report is course-scoped and
-   * the route no longer carries a `:sessionId`.
-   */
+  // Route params inputs (from withComponentInputBinding)
   courseId = input<string>();
+  sessionId = input<string>();
 
+  private readonly facade = inject(FinalAssessmentFacade);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly utils = inject(Utils);
   private readonly logger = inject(Logger);
-  private readonly api = inject(ApiClient);
-  private readonly destroyRef = inject(DestroyRef);
 
   // State
-  reportData = signal<AssessmentReport | null>(null);
-  courseDetails = signal<any | null>(null);
+  reportData = signal<SubmitFinalAssessmentResponse['data'] | null>(null);
+  courseDetails = signal<ContentDetails | null>(null);
   showWrongOnly = signal(false);
-  expandedItems = signal<Set<CairaUuid>>(new Set());
+  expandedItems = signal<Set<number>>(new Set());
   isLoading = signal(true);
 
   // Computed
-  filteredQuestions = computed<AssessmentReportQuestion[]>(() => {
-    const questions = this.reportData()?.questions ?? [];
-    return this.showWrongOnly() ? questions.filter((q) => !q.isCorrect) : questions;
+  filteredQuestions = computed(() => {
+    const data = this.reportData();
+    if (!data) return [];
+
+    // The report questions are in `question_answers` array
+    let questions = data.question_answers;
+
+    if (this.showWrongOnly()) {
+      questions = questions.filter((q) => !q.is_correct);
+    }
+
+    return questions;
   });
 
-  scorePercentage = computed(() => this.reportData()?.scorePercent ?? 0);
-  passedCount = computed(() => this.reportData()?.correctCount ?? 0);
-  totalCount = computed(() => this.reportData()?.totalCount ?? 0);
+  scorePercentage = computed(() => {
+    const data = this.reportData();
+    if (!data) return 0;
+    return Math.round(data.result_details.my_percentage);
+  });
+
+  passedCount = computed(() => {
+    const data = this.reportData();
+    if (!data) return 0;
+    // Assuming total_correct vs total_questions
+    return data.total_correct;
+  });
+
+  totalCount = computed(() => {
+    const data = this.reportData();
+    return data ? data.total_questions : 0;
+  });
 
   constructor() {
     effect(() => {
+      const sessionId = this.sessionId();
       const courseId = this.courseId();
-      if (courseId) this.loadReport(courseId);
+
+      if (sessionId) {
+        this.loadReport(Number(sessionId));
+      }
+
+      if (courseId) {
+        this.facade.courseId.set(courseId); // Ensure facade has courseId if needed for other calls
+        this.loadCourseDetails();
+      }
     });
   }
 
-  /**
-   * #11 · `GET .../assessment/result/` — the latest active attempt.
-   *
-   * Course-scoped: CAIRA identifies an attempt by `(user, course,
-   * attempt_number)`, so there is no id to pass. A learner with no attempt gets
-   * a `null` report and the template's empty state, which is not an error.
-   */
-  loadReport(courseId: CairaUuid) {
+  loadReport(sessionId: number) {
     this.isLoading.set(true);
-    this.api
-      .get<AssessmentResultResponse>(CAIRA.assessmentResult(courseId))
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          this.reportData.set(toAssessmentReport(response));
-          this.isLoading.set(false);
-        },
-        error: (error: unknown) => {
-          this.isLoading.set(false);
-          this.logger.error('Assessment report failed', cairaError(error));
-        },
-      });
+    this.facade.getAssessmentReport(sessionId).subscribe({
+      next: (data) => {
+        this.reportData.set(data);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        this.logger.error('Error loading report', err);
+        this.isLoading.set(false);
+      },
+    });
+  }
+
+  loadCourseDetails() {
+    const courseId = this.courseId();
+    if (!courseId) return;
+
+    this.facade.getCourseDetails(Number(courseId)).subscribe({
+      next: (data) => {
+        this.courseDetails.set(data);
+      },
+      error: (err) => {
+        this.logger.error('Error loading course details', err);
+      },
+    });
   }
 
   toggleWrongOnly() {
     this.showWrongOnly.update((v) => !v);
   }
 
-  toggleExpand(id: CairaUuid) {
+  toggleExpand(id: number) {
     this.expandedItems.update((set) => {
       const newSet = new Set(set);
       if (newSet.has(id)) {
@@ -119,13 +143,13 @@ export class FinalAssessmentReport {
     });
   }
 
-  isExpanded(id: CairaUuid) {
+  isExpanded(id: number) {
     return this.expandedItems().has(id);
   }
 
   backToCourse() {
     // Navigate back to course root
-    this.router.navigate(['../..'], { relativeTo: this.route });
+    this.router.navigate(['../../..'], { relativeTo: this.route });
   }
 
   downloadCertificate() {
@@ -135,11 +159,25 @@ export class FinalAssessmentReport {
     this.utils.openCertificateDownloadDialog(courseDetails);
   }
 
+  getOptionText(questionObj: any, optionKey: string): string {
+    if (!questionObj || !optionKey) return '';
+    const key = `option_${optionKey.toLowerCase()}`;
+    return questionObj[key] || optionKey;
+  }
+
+  getExplanation(item: any): string {
+    if (!item || !item.question_object) return '';
+    const correctOption = item.question_object.correct_option;
+    if (!correctOption) return '';
+    const key = `description_option_${correctOption.toLowerCase()}`;
+    return item.question_object[key] || '';
+  }
+
   submitFeedback() {
     const courseDetails = this.courseDetails();
     if (!courseDetails) return;
 
-    this.router.navigate(['../..', 'feedback'], {
+    this.router.navigate(['../../..', 'feedback'], {
       relativeTo: this.route,
       queryParams: { redirect: this.router.url },
     });

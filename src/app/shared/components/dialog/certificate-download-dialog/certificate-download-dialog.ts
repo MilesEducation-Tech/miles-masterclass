@@ -1,13 +1,19 @@
 import { Component, DestroyRef, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, catchError, of } from 'rxjs';
+import { Observable, catchError, map, of } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroAcademicCap, heroCheckBadge, heroXMark } from '@ng-icons/heroicons/outline';
 import { Button } from '../../ui/button/button';
 import { DialogRef } from '../../../core/services/dialog/dialog';
+import { ApiClient } from '../../../core/services/api-client/api-client';
 import { Logger } from '../../../core/services/logger/logger';
 import { NotificationService } from '../../../core/services/notification/notification';
+import {
+  DownloadCertificateItem,
+  MASTERCLASS_ROUTES,
+} from '../../../core/models/masterclass.model';
+import { CommonResponse, RouteRequest } from '../../../core/models/http.model';
 import { phosphorDownloadSimpleFill, phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
 import { BlobDownloadItem, buildPdfFileName, downloadFiles } from '../../../utils/blob-download';
 import { Analytics } from '../../../core/services/analytics/analytics';
@@ -56,19 +62,12 @@ export interface CertificateDialogData {
   certificateType?: 'nasba' | 'miles' | 'both';
 }
 
-/** What the old bulk endpoint took. Kept as the shape to rebuild against. */
-interface DownloadCertificateRequest {
-  // `CertificateDialogData.courseId` is still the Django-era `number`; CAIRA ids
-  // are uuids. Widened here rather than in the dialog's own contract, which is
-  // part of the id-widening sweep, not this fix.
-  course_id: string | number;
-  course_type: string;
-  certificate_type?: 'nasba' | 'miles';
-}
+type DownloadCertificateRequest = RouteRequest<typeof MASTERCLASS_ROUTES.downloadCertificate>;
+type DownloadCertificateResponse = CommonResponse<DownloadCertificateItem[]>;
 
 /** Sentinel returned by the catchError branch so subscribe() can distinguish API failure from empty data. */
 const FETCH_ERRORED = Symbol('fetch_errored');
-type FetchResult = any[] | typeof FETCH_ERRORED;
+type FetchResult = DownloadCertificateItem[] | typeof FETCH_ERRORED;
 
 /**
  * Which certificate variant a download click is for. The dialog can render
@@ -97,13 +96,7 @@ export class CertificateDownloadDialog implements OnInit {
   dialogRef!: DialogRef<CertificateDownloadDialog>;
   data!: CertificateDialogData;
 
-  // ponytail: ApiClient was deleted with the Django strip. This placeholder
-
-  // keeps the template bindings compiling and renders the empty state.
-
-  // Swap in the new backend's service — the template needs no changes.
-
-  private readonly api: any = {};
+  private readonly api = inject(ApiClient);
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -256,18 +249,28 @@ export class CertificateDownloadDialog implements OnInit {
       ...(requestType ? { certificate_type: requestType } : {}),
     };
 
-    // ponytail: CAIRA has no bulk certificate endpoint. The old one posted
-    // `{course_id, course_type, certificate_type}` and returned a row per field
-    // of study; today a certificate URL arrives on #4 (`certificate_url`) and on
-    // the tracker's badge rows, one at a time. Until a list endpoint exists this
-    // reports the failure instead of posting to an empty URL — the previous
-    // `api: any = {}` threw a TypeError before `catchError` could see it.
-    this.logger.warn('Certificate list endpoint is not bound', body);
-    this.notification.error('Download unavailable', 'Certificates cannot be listed yet.');
-    return of(FETCH_ERRORED).pipe(takeUntilDestroyed(this.destroyRef));
+    return this.api
+      .post<DownloadCertificateResponse>(MASTERCLASS_ROUTES.downloadCertificate.path, body)
+      .pipe(
+        // Filter out rows missing the URL for the requested variant — defensive
+        // against partial backend responses (e.g. a row with miles only when
+        // nasba was asked for).
+        map<DownloadCertificateResponse, FetchResult>((res) =>
+          (res?.data ?? []).filter((c) => !!pickUrl(c, variant)),
+        ),
+        catchError<FetchResult, Observable<FetchResult>>((err) => {
+          this.logger.error('CertificateDownloadDialog.fetch failed', err);
+          this.notification.error('Download failed', 'Could not load the certificate.');
+          return of(FETCH_ERRORED);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      );
   }
 
-  private async runDownload(certs: any[], variant: CertificateVariant): Promise<void> {
+  private async runDownload(
+    certs: DownloadCertificateItem[],
+    variant: CertificateVariant,
+  ): Promise<void> {
     const items: BlobDownloadItem[] = certs.map((cert) => ({
       url: pickUrl(cert, variant)!,
       suggestedName: buildPdfFileName(
@@ -309,6 +312,6 @@ export class CertificateDownloadDialog implements OnInit {
 }
 
 /** Pull the right URL field off a row based on which variant was clicked. */
-function pickUrl(cert: any, variant: CertificateVariant): string | undefined {
+function pickUrl(cert: DownloadCertificateItem, variant: CertificateVariant): string | undefined {
   return variant === 'miles' ? cert.miles_certificate_url : cert.nasba_certificate_url;
 }

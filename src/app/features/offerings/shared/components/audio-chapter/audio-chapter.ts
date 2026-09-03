@@ -1,13 +1,20 @@
 import {
+  CourseChapter,
+  ChapterWiseDetails,
+  UserAssessmentDetails,
+} from '../../../../../shared/core/models/course.model';
+import {
   Component,
   computed,
   input,
   output,
   effect,
+  signal,
   viewChild,
   inject,
   DestroyRef,
   model,
+  untracked,
 } from '@angular/core';
 import { AudioJs } from '../../../../../shared/components/audio-js/audio-js';
 import {
@@ -17,40 +24,34 @@ import {
 } from '../../../../../shared/core/models/video-player.model';
 import { ChapterSkeleton } from '../../../../../shared/components/skeleton/chapter-skeleton/chapter-skeleton';
 
+import { ChapterQuiz } from '../chapter-quiz/chapter-quiz';
 import { RecordDisk } from '../../../../../shared/components/record-disk/record-disk';
 import { Analytics } from '../../../../../shared/core/services/analytics/analytics';
-import { CairaUuid } from '../../../../../shared/core/models/caira/envelope.model';
-import {
-  ChapterView,
-  CourseDetailCard,
-} from '../../../../../shared/core/models/caira/course-detail.model';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { faClipboard } from '@ng-icons/font-awesome/regular';
 
 @Component({
   selector: 'app-audio-chapter',
-  imports: [AudioJs, ChapterSkeleton, RecordDisk],
+  imports: [AudioJs, ChapterSkeleton, ChapterQuiz, NgIcon, RecordDisk],
   templateUrl: './audio-chapter.html',
   styleUrl: './audio-chapter.css',
+  providers: [provideIcons({ faClipboard })],
   host: {
     class: 'block w-full h-full',
   },
 })
 export class AudioChapter {
   // --- Inputs ---
-  readonly current = model<ChapterView | null>(null);
-  readonly previous = input<ChapterView | null>(null);
-  readonly next = input<ChapterView | null>(null);
+  readonly current = model<CourseChapter | null>(null);
+  readonly previous = input<CourseChapter | null>(null);
+  readonly next = input<CourseChapter | null>(null);
   readonly cpeMode = input(false);
-  /** The server's `is_video_seekable` for this chapter. Default locked. */
-  readonly seekUnlocked = input(false);
   readonly chapterIndex = input(0);
-  /** The server's completion verdict for this chapter. Default not-complete. */
-  readonly completed = input(false);
-  readonly userAssessmentDetails = input<CourseDetailCard['user_assessment_details'] | undefined>(
-    undefined,
-  );
+  readonly chapterWiseDetails = input<ChapterWiseDetails | undefined>(undefined);
+  readonly userAssessmentDetails = input<UserAssessmentDetails | undefined>(undefined);
 
   // --- Outputs ---
-  readonly navigate = output<CairaUuid>();
+  readonly navigate = output<number>();
   readonly startFinalAssessment = output<void>();
   readonly viewFinalAssessmentReport = output<void>();
   readonly paused = output<void>();
@@ -63,11 +64,13 @@ export class AudioChapter {
   private readonly destroyRef = inject(DestroyRef);
   private readonly analytics = inject(Analytics);
 
+  readonly currentProgress = signal(0);
   private lastTime = 0;
   private lastDuration = 0;
+  private lastChapterId = 0;
 
   // Analytics: per-chapter media-milestone dedup (reset on chapter change).
-  private mediaTrackedChapter: CairaUuid | null = null;
+  private mediaTrackedChapter: number | null = null;
   private mediaStartFired = false;
   private readonly firedMediaMilestones = new Set<number>();
   private static readonly MEDIA_MILESTONES = [25, 50, 75, 90] as const;
@@ -78,19 +81,18 @@ export class AudioChapter {
     return `Track ${String(idx + 1).padStart(2, '0')}`;
   });
 
-  /** Free seeking — the server's verdict, same rule as `VideoChapter`. */
-  readonly progressUnlocked = computed(() => !this.cpeMode() || this.seekUnlocked());
-
-  /** Same two gates as `VideoChapter`. */
-  readonly canAdvance = computed(() => !this.cpeMode() || this.completed());
-  readonly canStartExam = computed(() => this.cpeMode() && this.completed());
+  readonly progressUnlocked = computed(() => {
+    const currentChapter = this.current();
+    if (!this.cpeMode()) return true;
+    const isCompleted = currentChapter?.play_history?.is_completed;
+    const isStatusCompleted = this.chapterWiseDetails()?.status;
+    return isCompleted || isStatusCompleted;
+  });
 
   readonly audioSource = computed<VideoSource[]>(
     () => {
       const chapter = this.current();
-      // CAIRA serves one media URL per chapter whatever the format — the
-      // Django-era `audio_url`/`video_url` pair has no counterpart.
-      const url = chapter?.hls_video_url;
+      const url = chapter?.audio_url || chapter?.video_url;
       if (!url) return [];
 
       let type = 'audio/mpeg';
@@ -118,12 +120,51 @@ export class AudioChapter {
     controls: true,
   }));
 
+  readonly previewMode = signal<'audio' | 'quiz'>('audio');
+  readonly audioEnded = signal(false);
+
+  readonly isQuizEnabled = computed(
+    () =>
+      this.current()?.play_history?.is_completed ||
+      this.chapterWiseDetails()?.status ||
+      this.audioEnded(),
+  );
+
+  readonly isLastChapter = computed(() => !this.next());
+
   constructor() {
-    // Same reason as `VideoChapter`: no stale `audioExit` after the chapter goes.
     effect(() => {
-      if (!this.current()) {
+      const chapter = this.current();
+      if (chapter) {
+        if (chapter.id !== this.lastChapterId) {
+          this.lastChapterId = chapter.id;
+          this.audioEnded.set(false);
+
+          if (
+            this.cpeMode() &&
+            chapter.play_history?.is_completed &&
+            chapter.quiz_details?.questions?.length &&
+            !chapter.quiz_details.questions.every((q) => q.user_selected_option)
+          ) {
+            this.previewMode.set('quiz');
+          } else {
+            this.previewMode.set('audio');
+          }
+        }
+
+        if (chapter.play_history && chapter.video_duration) {
+          const progress = ((chapter.play_history.time_status ?? 0) / chapter.video_duration) * 100;
+          if (progress > untracked(() => this.currentProgress())) {
+            this.currentProgress.set(progress);
+          }
+        }
+      } else {
+        this.currentProgress.set(0);
         this.lastTime = 0;
         this.lastDuration = 0;
+        this.lastChapterId = 0;
+        this.previewMode.set('audio');
+        this.audioEnded.set(false);
       }
     });
 
@@ -143,7 +184,9 @@ export class AudioChapter {
     this.lastTime = event.currentTime;
     this.lastDuration = event.duration;
     if (event.duration > 0) {
-      this.trackMediaProgress((event.currentTime / event.duration) * 100);
+      const progress = (event.currentTime / event.duration) * 100;
+      this.currentProgress.set(progress);
+      this.trackMediaProgress(progress);
     }
     this.timeUpdate.emit(event);
   }
@@ -189,8 +232,8 @@ export class AudioChapter {
     }
   }
 
-  /** ponytail: the quiz hand-off is gone — see the note in `VideoChapter`. */
   handleAudioEnded() {
+    this.audioEnded.set(true);
     this.ended.emit();
     this.syncMediaTracking();
     if (!this.firedMediaMilestones.has(100)) {
@@ -198,9 +241,33 @@ export class AudioChapter {
       this.analytics.trackEvent('video_complete', this.mediaEventParams());
     }
 
-    if (!this.cpeMode()) {
+    const chapter = this.current();
+    if (
+      this.cpeMode() &&
+      chapter?.quiz_details?.questions?.length &&
+      !chapter.quiz_details.questions.every((q) => q.user_selected_option)
+    ) {
+      this.previewMode.set('quiz');
+    } else if (!this.cpeMode()) {
       this.audioPlayer()?.seek(0);
       this.audioPlayer()?.pause();
+      this.audioEnded.set(false);
     }
+  }
+
+  handleQuizNext() {
+    const currentChapter = this.current();
+    if (currentChapter) {
+      const nextChapter = this.next();
+      if (nextChapter) {
+        this.navigate.emit(nextChapter.id);
+      } else {
+        this.startFinalAssessment.emit();
+      }
+    }
+  }
+
+  handleTrackQuiz() {
+    this.previewMode.set('quiz');
   }
 }

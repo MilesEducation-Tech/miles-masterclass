@@ -1,5 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { Vertical } from '../../../../../../shared/components/cards/vertical/vertical';
+import { MicroLearningReel } from '../../../../../../shared/core/models/micro-learning-course.model';
 
 @Component({
   selector: 'app-micro-learning-episode-grid',
@@ -8,8 +9,8 @@ import { Vertical } from '../../../../../../shared/components/cards/vertical/ver
   styleUrl: './micro-learning-episode-grid.css',
 })
 export class MicroLearningEpisodeGrid {
-  readonly episodes = input.required<any[]>();
+  readonly episodes = input.required<MicroLearningReel[]>();
   readonly activeId = input<number | null>(null);
 
-  readonly episodeSelected = output<any>();
+  readonly episodeSelected = output<MicroLearningReel>();
 }

@@ -116,6 +116,11 @@
               >Download Certificate</app-button
             >
           }
+          @case ('series-awarded') {
+            <span class="rounded-md bg-white/15 px-3 py-2 text-xs text-white">
+              Recurring webinar — CPE already awarded for this series
+            </span>
+          }
           @case ('watch-recording') {
             <app-button
               variant="default"
@@ -155,6 +160,7 @@
         variant="ghost"
         class="flex items-center justify-center size-10 aspect-square bg-secondary rounded-full outline outline-white/40 cursor-pointer p-0"
         role="button"
+        [disabled]="loading()"
         (click)="openCourseInfo()"
       >
         <ng-icon [svg]="icons().faSolidInfo" class="size-8" />

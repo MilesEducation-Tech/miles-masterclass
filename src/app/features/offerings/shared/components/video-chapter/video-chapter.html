@@ -5,30 +5,41 @@
     <!-- Video Player Section -->
     <div class="max-lg:w-full lg:w-3/4 h-full rounded-lg overflow-hidden flex flex-col gap-4">
       <!-- md:h-3/4 h-96 -->
-      <div
-        id="video"
-        class="flex w-full aspect-video rounded-lg overflow-hidden justify-center bg-[#161E25]"
-      >
-        <app-video-js
-          [class.invisible]="!videoSource().length"
-          [config]="videoConfig()"
-          [videoSource]="videoSource()"
-          [mode]="playerMode()"
-          (timeUpdate)="handleTimeUpdate($any($event))"
-          (metadataLoaded)="handleMetadataLoaded()"
-          (ended)="handleVideoEnded()"
-          (paused)="paused.emit()"
+      @if (previewMode() === 'quiz' && current()?.quiz_details?.questions; as questions) {
+        <app-chapter-quiz
+          [questions]="questions"
+          [chapterId]="current()!.id"
+          [current]="current()!"
+          [isLastChapter]="isLastChapter()"
+          (navigateNext)="handleQuizNext()"
+          (togglePreviewMode)="previewMode.set($event)"
         />
-      </div>
+      } @else {
+        <div
+          id="video"
+          class="flex w-full aspect-video rounded-lg overflow-hidden justify-center bg-[#161E25]"
+        >
+          <app-video-js
+            [class.invisible]="!videoSource().length"
+            [config]="videoConfig()"
+            [videoSource]="videoSource()"
+            [mode]="playerMode()"
+            (timeUpdate)="handleTimeUpdate($any($event))"
+            (metadataLoaded)="handleMetadataLoaded()"
+            (ended)="handleVideoEnded()"
+            (paused)="paused.emit()"
+          />
+        </div>
 
-      <div class="flex w-full rounded-lg px-2 py-1 flex-col gap-1">
-        <div id="chapterName" class="lg:text-xl text-lg text-white">
-          {{ activeIndex() + 1 }}. {{ current()?.chapter_name }}
+        <div class="flex w-full rounded-lg px-2 py-1 flex-col gap-1">
+          <div id="chapterName" class="lg:text-xl text-lg text-white">
+            {{ activeIndex() + 1 }}. {{ current()?.chapter_name }}
+          </div>
+          <div id="chapterDescription" class="description">
+            {{ current()?.description }}
+          </div>
         </div>
-        <div id="chapterDescription" class="description">
-          {{ current()?.description }}
-        </div>
-      </div>
+      }
     </div>
 
     <!-- Sidebar Section -->
@@ -74,10 +85,24 @@
             role="button"
             tabindex="0"
             [attr.aria-label]="'Go to next chapter: ' + nextChapter.chapter_name"
-            [class]="canAdvance() ? 'cursor-pointer ' : 'cursor-not-allowed '"
-            (click)="canAdvance() && navigate.emit(nextChapter.id)"
-            (keydown.enter)="canAdvance() && navigate.emit(nextChapter.id)"
-            (keydown.space)="canAdvance() && navigate.emit(nextChapter.id); $event.preventDefault()"
+            [class]="
+              (chapterWiseDetails()?.status && cpeMode()) || !cpeMode()
+                ? 'cursor-pointer '
+                : 'cursor-not-allowed '
+            "
+            (click)="
+              ((chapterWiseDetails()?.status && cpeMode()) || !cpeMode()) &&
+                navigate.emit(nextChapter.id)
+            "
+            (keydown.enter)="
+              ((chapterWiseDetails()?.status && cpeMode()) || !cpeMode()) &&
+                navigate.emit(nextChapter.id)
+            "
+            (keydown.space)="
+              ((chapterWiseDetails()?.status && cpeMode()) || !cpeMode()) &&
+                navigate.emit(nextChapter.id);
+              $event.preventDefault()
+            "
           >
             <div class="w-[90px] m-2 overflow-hidden flex items-center">
               <div class="w-full h-14 bg-[#4a5560] rounded-md overflow-hidden">
@@ -132,11 +157,18 @@
               role="button"
               tabindex="0"
               aria-label="Retake final assessment exam"
-              [class]="canStartExam() ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'"
-              (click)="canStartExam() && startFinalAssessment.emit()"
-              (keydown.enter)="canStartExam() && startFinalAssessment.emit()"
+              [class]="
+                chapterWiseDetails()?.status && cpeMode()
+                  ? 'cursor-pointer'
+                  : 'cursor-not-allowed opacity-50'
+              "
+              (click)="chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit()"
+              (keydown.enter)="
+                chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit()
+              "
               (keydown.space)="
-                canStartExam() && startFinalAssessment.emit(); $event.preventDefault()
+                chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit();
+                $event.preventDefault()
               "
             >
               <div
@@ -157,11 +189,18 @@
               role="button"
               tabindex="0"
               aria-label="Start final assessment exam"
-              [class]="canStartExam() ? 'cursor-pointer ' : 'cursor-not-allowed '"
-              (click)="canStartExam() && startFinalAssessment.emit()"
-              (keydown.enter)="canStartExam() && startFinalAssessment.emit()"
+              [class]="
+                chapterWiseDetails()?.status && cpeMode()
+                  ? 'cursor-pointer '
+                  : 'cursor-not-allowed '
+              "
+              (click)="chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit()"
+              (keydown.enter)="
+                chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit()
+              "
               (keydown.space)="
-                canStartExam() && startFinalAssessment.emit(); $event.preventDefault()
+                chapterWiseDetails()?.status && cpeMode() && startFinalAssessment.emit();
+                $event.preventDefault()
               "
             >
               <div
@@ -197,17 +236,38 @@
         </div>
 
         <!-- Transcript Button -->
-        @if (current()?.transcript_text) {
+        <!-- @if (current()?.transcript) { -->
+        <div
+          class="bg-[#161E25] p-2 rounded-lg flex items-center w-full cursor-pointer"
+          role="button"
+          tabindex="0"
+          aria-label="Open transcript"
+          (click)="openTranscript()"
+          (keydown.enter)="openTranscript()"
+          (keydown.space)="openTranscript(); $event.preventDefault()"
+        >
+          Transcript
+        </div>
+        <!-- } -->
+
+        <!-- Track Quiz Button -->
+        @if (current()?.quiz_details?.overall_chapter_questions && cpeMode()) {
           <div
-            class="bg-[#161E25] p-2 rounded-lg flex items-center w-full cursor-pointer"
+            class="bg-[#161E25] p-2 rounded-lg flex flex-col w-full"
             role="button"
             tabindex="0"
-            aria-label="Open transcript"
-            (click)="openTranscript()"
-            (keydown.enter)="openTranscript()"
-            (keydown.space)="openTranscript(); $event.preventDefault()"
+            aria-label="Track quiz"
+            [class]="isQuizEnabled() ? 'cursor-pointer ' : 'cursor-not-allowed '"
+            (click)="isQuizEnabled() && handleTrackQuiz()"
+            (keydown.enter)="isQuizEnabled() && handleTrackQuiz()"
+            (keydown.space)="isQuizEnabled() && handleTrackQuiz(); $event.preventDefault()"
           >
-            Transcript
+            <div class="flex items-center justify-start space-x-2">
+              <ng-icon name="faClipboard" size="16"></ng-icon> <span>Track Quiz</span>
+            </div>
+            <div class="ml-6 text-xs text-gray-500">
+              {{ current()?.quiz_details?.overall_chapter_questions }} questions
+            </div>
           </div>
         }
       </div>

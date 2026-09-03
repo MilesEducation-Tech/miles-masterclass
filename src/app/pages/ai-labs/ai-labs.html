@@ -1,157 +1,993 @@
-<!-- ============================ HERO ============================ -->
-<section class="relative overflow-hidden px-4 py-16 sm:px-6 lg:min-h-[634px] lg:py-24">
-  <div class="ai-hero-backdrop" aria-hidden="true">
-    <span class="ai-hero-stars"></span>
-    <span class="ai-hero-grid"></span>
-    <span class="ai-hero-horizon"></span>
+<!-- ============================================================================
+     AI Labs — landing page.
+
+     Dark design-system page (no local colour) restructured into a full marketing
+     landing: hero → powered-by strip → how-it-works → value grid → product
+     showcase → agent catalogue → stats → testimonials → FAQ → CTA band.
+
+     Animation is additive and browser-only: `ngxInView` (motion.dev) reveals,
+     `ngxHoverSpring`/`ngxPress` micro-interactions, and `ngxMarquee`,
+     `ngxCountUp`, `ngxScrub` (GSAP) for the showpieces. Every
+     directive early-returns on the server and honours prefers-reduced-motion, so
+     the server HTML (headings, catalogue, copy) is complete and indexable on its
+     own. The access gate stays wholly inside `activate()`; every CTA calls it.
+     ============================================================================ -->
+
+<!-- ===================== ASSET PRELOADER (0 → 100%) =====================
+     Loads the hero frame sequence up front and shows the progress, then fades to
+     reveal the page. Rendered identically on SSR and client (visible, 0%), so
+     there's no hydration mismatch; JS drives the percentage and lifts it at 100%
+     (or after a safety timeout). aria-hidden — it's chrome, not content. -->
+<div class="ai-preloader" [class.ai-preloader--hidden]="assetsReady()">
+  <!-- Coarse live region: announces the loading state once, and again when done —
+       not every percent (the numeric counter itself is aria-hidden decoration). -->
+  <span class="sr-only" role="status" aria-live="polite">
+    {{ assetsReady() ? 'Miles AI Labs loaded' : 'Loading Miles AI Labs, please wait' }}
+  </span>
+  <div class="ai-preloader-inner" aria-hidden="true">
+    <span class="ai-preloader-brand">Miles AI Labs</span>
+    <div class="ai-preloader-pct">{{ assetProgress() }}<span>%</span></div>
+    <div class="ai-preloader-bar"><span [style.width.%]="assetProgress()"></span></div>
+    <span class="ai-preloader-note">Preparing your lab…</span>
   </div>
+</div>
 
+<!-- ===================== HERO (over the scroll-reveal video) =====================
+     The hero sits over the scroll video: the pinned webp frame sequence
+     (initRevealCanvas draws the poster + buildReveal scrubs it) is the backdrop,
+     and the hero content is the overlay. -->
+
+<section id="top" class="relative">
   <div
-    class="relative mx-auto flex max-w-6xl flex-col items-center gap-10 lg:flex-row lg:justify-center lg:gap-[49px]"
+    class="ai-reveal-stage"
+    ngxScrub
+    start="top top"
+    end="+=220%"
+    [pin]="true"
+    [scrub]="0.6"
+    (timelineReady)="buildReveal($event)"
   >
-    <!-- Left: headline + eyebrow -->
-    <div class="w-full text-left lg:max-w-[510px] lg:text-right">
-      <h1 class="font-serif text-3xl leading-tight sm:text-4xl lg:text-5xl lg:leading-[3.5rem]">
-        <span class="block font-normal text-foreground">Build Accounting</span>
-        <span class="ai-metal-text block font-bold">Workflows &amp; AI Agents</span>
-      </h1>
+    <canvas #revealCanvas class="ai-reveal-canvas"></canvas>
+    <div class="ai-reveal-overlay" aria-hidden="true"></div>
 
-      <p class="mt-5 text-sm text-muted-foreground">
-        A live environment where you build agents that run without you. Microsoft 365 Copilot,
-        Copilot Studio and Power Automate, on lab data.
-      </p>
-
-      <ul
-        class="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm tracking-[0.128em] text-foreground uppercase lg:justify-end"
+    <!-- Hero content overlay. `pointer-events` restored (the circuit canvas that
+         needed it is gone) so the CTAs are clickable. -->
+    <div class="ai-reveal-hero">
+      <div
+        class="relative mx-auto flex w-full max-w-7xl flex-col items-center justify-end text-center"
       >
-        @for (item of eyebrow; track item; let last = $last) {
-          <li class="flex items-center gap-3">
-            <span>{{ item }}</span>
-            @if (!last) {
-              <span class="size-[3px] rounded-full bg-accent" aria-hidden="true"></span>
+        <span
+          class="inline-flex items-center gap-2 rounded-full border border-border bg-card/40 px-3 py-1 text-[0.65rem] font-medium tracking-[0.12em] text-muted-foreground uppercase sm:px-3.5 sm:py-1.5 sm:text-xs"
+        >
+          <ng-icon name="lucideSparkles" class="text-accent" />
+          Miles AI Labs · Beta
+        </span>
+
+        <!-- Play-once fade-up (ngxInView, once=true): it reveals on first paint
+         and never reverses. The previous ngxSplitReveal word-reveal hid the
+         heading on scroll-up — its non-scrubbed path hardcodes
+         `toggleActions: play none none reverse`, so leaving the pinned hero
+         backwards reversed the reveal to autoAlpha:0. -->
+        <h1
+          ngxInView
+          preset="fade-up"
+          class="mt-3 font-serif text-2xl leading-tight font-semibold text-foreground sm:mt-6 sm:text-5xl lg:text-6xl lg:leading-[1.1]"
+        >
+          The world's first AI Labs for accountants.
+          <br />
+          <span class="text-base sm:text-2xl">Powered by Microsoft.</span>
+        </h1>
+
+        <p
+          class="mt-3 max-w-4xl text-sm text-muted-foreground sm:mt-6 sm:text-base"
+          ngxInView
+          preset="fade-up"
+          [delay]="0.1"
+        >
+          Our master classes teach the thinking. The Labs are where you build it.
+        </p>
+
+        <!-- CTA cluster = the auth-card state machine, centred. Logic is UNCHANGED
+         from the original; every path still runs through activate(). -->
+        <div class="mt-4 w-full max-w-md sm:mt-10">
+          @let awaitingAccount = accountRequested() && !hasLabAccount();
+          @let showResend = hasLabAccount() && !auth.isSignedIn();
+
+          <div class="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <app-button
+              variant="ghost"
+              class="h-11 flex-1 gap-2 rounded-xl bg-accent text-sm sm:h-14 sm:text-base"
+              ngxPress
+              [disabled]="submitting()"
+              (clicked)="activate()"
+            >
+              @if (!auth.isSignedIn()) {
+                <ng-icon [svg]="copilotIcon" class="text-xl" />
+              }
+              <span>{{ ctaLabel() }}</span>
+            </app-button>
+
+            <!-- Provisioning takes ~a minute, so while we wait the secondary slot
+             is a manual profile refresh; it becomes the resend once the account
+             exists. -->
+            @if (awaitingAccount) {
+              <app-button
+                variant="outline"
+                class="h-14 w-full shrink-0 rounded-xl text-sm sm:w-[9.5rem]"
+                [disabled]="milesAuth.isLoadingProfile()"
+                (clicked)="refreshStatus()"
+              >
+                {{ milesAuth.isLoadingProfile() ? 'Checking…' : 'Refresh' }}
+              </app-button>
+            } @else if (showResend) {
+              <app-button
+                variant="outline"
+                class="h-14 w-full shrink-0 rounded-xl text-sm sm:w-[9.5rem]"
+                [disabled]="submitting()"
+                (clicked)="confirmResend()"
+              >
+                {{ submitting() ? 'Sending…' : 'Resend Credential' }}
+              </app-button>
             }
-          </li>
-        }
-      </ul>
-    </div>
+          </div>
 
-    <!-- Divider: vertical beside the columns, horizontal once stacked -->
-    <div class="ai-divider-h w-full lg:hidden" aria-hidden="true"></div>
-    <div class="ai-divider-v hidden h-[364px] shrink-0 lg:block" aria-hidden="true"></div>
+          @if (awaitingAccount) {
+            <p class="mt-2 text-center text-xs text-muted-foreground" role="status">
+              Check your email — we've sent your Miles AI Lab email and password. It can take up to
+              a minute to arrive.
+            </p>
+            @if (stillPending()) {
+              <p class="mt-1 text-center text-xs text-muted-foreground" role="status">
+                Your account isn't ready yet. Give it a moment and hit refresh.
+              </p>
+            }
+          } @else if (showResend) {
+            <p class="mt-2 text-center text-xs text-muted-foreground">
+              Resending emails you a brand-new password — your current one stops working.
+            </p>
+          }
 
-    <!-- Right: auth card -->
-    <div class="w-full max-w-[420px] lg:max-w-[386px]">
-      <!-- Never disabled while signing in: the popup can be abandoned without
-           this window ever being told (COOP), so the click that supersedes a
-           dead wait has to stay available. -->
-      <app-button
-        variant="primary"
-        class="h-14 w-full gap-2 rounded-xl bg-accent text-base hover:bg-accent/90"
-        (clicked)="activate()"
-      >
-        @if (auth.isSignedIn()) {
-          <span>Launch AI Lab</span>
-        } @else {
-          <ng-icon [svg]="copilotIcon" class="text-xl" />
-          <span>{{ auth.signingIn() ? 'Waiting for sign-in…' : 'Login to Miles AI Lab' }}</span>
-        }
-      </app-button>
+          @if (auth.error(); as err) {
+            <p class="mt-3 text-center text-xs text-destructive" role="alert">{{ err }}</p>
+          } @else if (auth.hint(); as hint) {
+            <p class="mt-3 text-center text-xs text-muted-foreground" role="status">{{ hint }}</p>
+          }
 
-      @if (auth.error(); as err) {
-        <p class="mt-3 text-center text-xs text-destructive" role="alert">{{ err }}</p>
-      } @else if (auth.hint(); as hint) {
-        <!-- Abandoning the popup isn't a failure, so it doesn't read as one. -->
-        <p class="mt-3 text-center text-xs text-muted-foreground" role="status">{{ hint }}</p>
-      }
-
-      <!-- Gated on the session, NOT on `identity`: not every Entra account
-           exposes an email claim, and someone signed in without one still has
-           to be able to get back out. -->
-      @if (auth.isSignedIn()) {
-        @if (auth.identity(); as email) {
-          <p class="mt-3 truncate text-center text-xs text-muted-foreground" [title]="email">
-            Signed in as {{ email }}
-          </p>
-        }
-        <div class="mt-2 flex items-center justify-center gap-2">
-          <!-- <app-button variant="outline" size="sm" class="text-xs" (clicked)="switchAccount()">
-            Switch account
-          </app-button> -->
-          <app-button variant="outline" size="sm" class="text-xs" (clicked)="signOut()">
-            Log out
-          </app-button>
+          @if (auth.isSignedIn()) {
+            @if (auth.identity(); as email) {
+              <p class="mt-3 truncate text-center text-xs text-muted-foreground" [title]="email">
+                Signed in as {{ email }}
+              </p>
+            }
+            <div class="mt-2 flex items-center justify-center gap-2">
+              <app-button variant="outline" size="sm" class="text-xs" (clicked)="signOut()">
+                Log out
+              </app-button>
+            </div>
+          }
         </div>
-      }
+
+        <ul
+          class="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[0.65rem] tracking-[0.14em] text-muted-foreground uppercase sm:mt-6 sm:text-xs"
+        >
+          @for (item of eyebrow; track item; let last = $last) {
+            <li class="flex items-center gap-3">
+              <span>{{ item }}</span>
+              @if (!last) {
+                <span class="size-[3px] rounded-full bg-accent" aria-hidden="true"></span>
+              }
+            </li>
+          }
+        </ul>
+        <!-- Marketing counts until the learner submits; then their own progress
+         (submitted · overall score · passed), animated up on change. -->
+        <div class="mt-4 w-full max-w-3xl sm:mt-14" ngxInView preset="fade-up" [delay]="0.1">
+          <p
+            class="mb-1 text-center text-[0.62rem] font-medium tracking-[0.16em] text-muted-foreground uppercase sm:mb-4 sm:text-[0.7rem]"
+          >
+            {{ hasSubmissions() ? 'Your progress' : "What's inside" }}
+          </p>
+          <dl
+            class="grid gap-2 sm:gap-6"
+            [class.grid-cols-2]="heroStats().length <= 2"
+            [class.grid-cols-3]="heroStats().length > 2"
+          >
+            @for (stat of heroStats(); track stat.label) {
+              <div class="text-center">
+                <dt class="text-base font-bold text-foreground sm:text-4xl">
+                  @if (stat.logo) {
+                    <ng-icon [svg]="stat.logo" class="text-3xl sm:text-5xl" aria-hidden="true" />
+                  } @else {
+                    <span [ngxCountUp]="stat.value ?? 0" [suffix]="stat.suffix ?? ''"
+                      >{{ stat.value }}{{ stat.suffix }}</span
+                    >
+                  }
+                </dt>
+                <dd
+                  class="mt-0.5 text-[0.6rem] leading-tight text-muted-foreground sm:mt-1 sm:text-sm"
+                >
+                  {{ stat.label }}
+                </dd>
+              </div>
+            }
+          </dl>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ====================== AGENT CATALOGUE ====================== -->
-<div class="mx-auto max-w-6xl space-y-16 px-4 pb-16 sm:px-6 lg:space-y-[100px] lg:pb-24">
-  @for (section of sections; track section.heading) {
-    <section>
-      <h2 class="ai-metal-text text-xl font-bold sm:text-2xl lg:text-[28px]">
-        {{ section.heading }}
+<!-- ===================== BODY (vertical rhythm column) =====================
+     Deferred: everything below the hero renders (and hydrates) when it scrolls
+     into view, with its code prefetched on idle. The hero above stays eager for
+     first paint. Trade-off: these sections aren't in the SSR HTML — acceptable
+     for below-the-fold, and event replay covers early interactions. -->
+@defer (on viewport; prefetch on idle) {
+  <div class="flex flex-col gap-20 pb-24 sm:gap-28">
+    <!-- ===================== POWERED-BY / MARQUEE ===================== -->
+    <!-- ponytail: text chips stand in for real logo SVGs — swap when brand
+       artwork lands (Microsoft marks carry usage rules). -->
+    <section
+      class="w-11/12 max-w-6xl mx-auto text-center"
+      aria-label="Built on the Microsoft stack"
+    >
+      <h2
+        class="ai-metal-text text-2xl font-bold sm:text-3xl lg:text-4xl"
+        ngxInView
+        preset="fade-up"
+      >
+        Built on the Microsoft stack your firm is already paying for
       </h2>
+      <p
+        class="mx-auto mt-3 max-w-2xl text-muted-foreground"
+        ngxInView
+        preset="fade-up"
+        [delay]="0.1"
+      >
+        Many firms hold Microsoft 365 Copilot licenses that remain underutilized. The Labs are where
+        your team learns to apply them.
+      </p>
 
-      <div class="mt-8 grid grid-cols-1 gap-[19px] md:grid-cols-2 lg:grid-cols-3">
-        @for (agent of section.agents; track agent.name) {
-          <article class="overflow-hidden rounded-2xl border border-border bg-muted">
-            @if (agent.thumbnail) {
-              <img
-                [src]="agent.thumbnail"
-                [alt]="agent.thumbnailAlt ?? agent.name + ' Agent'"
-                class="aspect-video w-full object-cover object-top"
-                loading="lazy"
-                decoding="async"
-              />
-            } @else {
-              <!-- Placeholder until catalogue artwork exists. -->
+      <!-- Row 1 — the Microsoft 365 tools. -->
+      <div class="ai-marquee-mask mt-8 overflow-hidden">
+        <div ngxMarquee [speed]="55" class="flex items-center gap-4 whitespace-nowrap">
+          @for (tool of tools; track tool) {
+            <span
+              class="mx-2 inline-flex items-center rounded-xl border border-border bg-card/40 px-5 py-2.5 text-[0.9rem] font-semibold text-muted-foreground"
+              >{{ tool }}</span
+            >
+          }
+          <!-- ngxMarquee clones the track to fill the row; extra copies keep a
+             short list looping smoothly before the clone kicks in. -->
+          @for (tool of tools; track $index) {
+            <span
+              class="mx-2 inline-flex items-center rounded-xl border border-border bg-card/40 px-5 py-2.5 text-[0.9rem] font-semibold text-muted-foreground"
+              >{{ tool }}</span
+            >
+          }
+        </div>
+      </div>
+
+      <!-- Row 2 — credentialing partners, scrolling the other way. -->
+      <!-- <div class="ai-marquee-mask mt-4 overflow-hidden">
+        <div
+          ngxMarquee
+          [speed]="40"
+          [direction]="-1"
+          class="flex items-center gap-4 whitespace-nowrap"
+        >
+          @for (cred of credentials; track cred) {
+            <span
+              class="mx-2 inline-flex items-center rounded-xl border border-border bg-card/40 px-5 py-2.5 text-[0.9rem] font-semibold text-muted-foreground"
+              >{{ cred }}</span
+            >
+          }
+          @for (cred of credentials; track $index) {
+            <span
+              class="mx-2 inline-flex items-center rounded-xl border border-border bg-card/40 px-5 py-2.5 text-[0.9rem] font-semibold text-muted-foreground"
+              >{{ cred }}</span
+            >
+          }
+          @for (cred of credentials; track 'c' + $index) {
+            <span
+              class="mx-2 inline-flex items-center rounded-xl border border-border bg-card/40 px-5 py-2.5 text-[0.9rem] font-semibold text-muted-foreground"
+              >{{ cred }}</span
+            >
+          }
+        </div>
+      </div> -->
+    </section>
+
+    <!-- ========================= HOW IT WORKS ========================= -->
+    <section id="how-it-works" class="w-11/12 max-w-6xl mx-auto scroll-mt-24">
+      <div class="max-w-2xl">
+        <span
+          class="inline-flex items-center gap-2 rounded-full border border-border bg-card/40 px-3.5 py-1.5 text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase"
+          ><ng-icon name="lucideSparkles" class="text-accent" /> How it works</span
+        >
+        <h2
+          class="ai-metal-text mt-4 text-2xl font-bold sm:text-3xl lg:text-4xl"
+          ngxInView
+          preset="fade-up"
+        >
+          From sign-in to a running agent in three steps
+        </h2>
+        <p class="mt-3 text-muted-foreground" ngxInView preset="fade-up" [delay]="0.1">
+          Nothing to procure, nothing to install. Your workspace opens preloaded with lab data, so
+          you can break things without breaking an engagement.
+        </p>
+      </div>
+
+      <ol class="ai-steps mt-10 grid gap-10 md:grid-cols-3">
+        @for (step of steps; track step.title) {
+          <li class="ai-step relative">
+            <div
+              class="relative h-full flex flex-col items-center rounded-2xl p-6 shadow-[inset_0_1px_0_rgb(255_255_255/0.05)] transition-[box-shadow,border-color] duration-300 hover:border-accent/45 hover:shadow-[0_16px_48px_rgb(var(--accent-rgb)/0.16)]"
+              ngxHoverSpring
+              [lift]="-4"
+            >
               <div
-                class="aspect-video w-full bg-linear-to-br from-secondary to-muted"
-                aria-hidden="true"
-              ></div>
-            }
-
-            <div class="px-5 pt-5 pb-6">
-              <!-- Two-tone title: the distinctive name reads bright, the shared
-                   "Agent" suffix recedes. -->
-              <h3 class="text-base">
-                <span class="font-semibold text-foreground">{{ agent.name }}</span>
-                <span class="font-normal text-muted-foreground"> Agent</span>
-              </h3>
-              <p class="mt-3 text-sm text-muted-foreground">{{ agent.description }}</p>
-
-              <app-button
-                size="sm"
-                class="mt-3"
-                [ariaLabel]="
-                  auth.isSignedIn()
-                    ? 'Launch ' + agent.name + ' Agent'
-                    : 'Sign in to launch ' + agent.name + ' Agent'
-                "
-                (clicked)="activate()"
+                class="inline-flex mx-auto size-11 items-center justify-center rounded-lg border border-accent/35 bg-linear-[140deg] from-accent/30 to-accent/5 text-[1.4rem] text-accent shadow-[inset_0_1px_0_rgb(255_255_255/0.08),inset_0_0_14px_rgb(var(--accent-rgb)/0.18),0_6px_16px_rgb(var(--accent-rgb)/0.12)]"
               >
-                <span>Launch</span>
-                <ng-icon [svg]="sparkleIcon" class="text-base" />
-              </app-button>
+                <ng-icon [name]="step.icon" />
+              </div>
+              <!-- <span
+                class="absolute top-5 right-6 text-[2rem] leading-none font-bold text-accent/25 [text-shadow:0_0_18px_rgb(var(--accent-rgb)/0.25)]"
+                >{{ i + 1 }}</span
+              > -->
+              <h3 class="mt-4 text-base font-semibold text-foreground text-center">
+                {{ step.title }}
+              </h3>
+              <!-- <p class="mt-2 text-sm text-muted-foreground">{{ step.description }}</p> -->
             </div>
-          </article>
+          </li>
+        }
+      </ol>
+    </section>
+
+    <!-- ========================= VALUE GRID ========================= -->
+    <!-- <section id="features" class="w-11/12 max-w-6xl mx-auto scroll-mt-24 sr-only">
+    <div class="max-w-2xl">
+      <span class="inline-flex items-center gap-2 rounded-full border border-border bg-card/40 px-3.5 py-1.5 text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase"
+        ><ng-icon name="lucideAward" class="text-accent" /> Why Miles AI Labs</span
+      >
+      <h2
+        class="ai-metal-text mt-4 text-2xl font-bold sm:text-3xl lg:text-4xl"
+        ngxInView
+        preset="fade-up"
+      >
+        A real workspace, not a walkthrough
+      </h2>
+      <p class="mt-3 text-muted-foreground" ngxInView preset="fade-up" [delay]="0.1">
+        Everything you need to build and ship agents — licensed, safe, and credentialed.
+      </p>
+    </div>
+
+    <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      @for (feature of features; track feature.title; let i = $index) {
+        <article class="ai-feature-card" ngxInView preset="fade-up" [delay]="(i % 3) * 0.1">
+          <div class="ai-feature-inner" ngxHoverSpring [lift]="-4">
+            <div class="inline-flex size-11 items-center justify-center rounded-lg border border-accent/35 bg-linear-[140deg] from-accent/30 to-accent/5 text-[1.4rem] text-accent shadow-[inset_0_1px_0_rgb(255_255_255/0.08),inset_0_0_14px_rgb(var(--accent-rgb)/0.18),0_6px_16px_rgb(var(--accent-rgb)/0.12)]">
+              <ng-icon [name]="feature.icon" />
+            </div>
+            <h3 class="mt-4 text-base font-semibold text-foreground">{{ feature.title }}</h3>
+            <p class="mt-2 text-sm text-muted-foreground">{{ feature.description }}</p>
+          </div>
+        </article>
+      }
+    </div>
+  </section> -->
+
+    <!-- ======================= PRODUCT SHOWCASE ======================= -->
+    <!-- Stylised CSS mock of the agent workspace. The `.js-mock-*` layers are
+       driven by the pinned GSAP timeline in buildShowcase(); nothing here is a
+       real screenshot — drop one into `.ai-mock-canvas` when artwork exists.
+       ponytail: illustrative mock, replace with a product capture pre-launch. -->
+    <section id="showcase" class="w-11/12 max-w-6xl mx-auto scroll-mt-24">
+      <div class="mx-auto max-w-2xl text-center">
+        <span
+          class="inline-flex items-center gap-2 rounded-full border border-border bg-card/40 px-3.5 py-1.5 text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase"
+          ><ng-icon name="lucideLayers" class="text-accent" /> The workspace</span
+        >
+        <h2 class="mt-4 text-2xl font-bold sm:text-3xl lg:text-4xl" ngxInView preset="fade-up">
+          Build it visually. Run it for real.
+        </h2>
+        <p class="mt-3 text-muted-foreground" ngxInView preset="fade-up" [delay]="0.1">
+          Chain a trigger, Copilot reasoning steps, and actions on a single canvas, then watch the
+          whole thing execute. Scroll to run the flow.
+        </p>
+      </div>
+
+      <!-- Mobile drops the pin: a 100vh stage that eats 140% of scroll is the
+           whole screen on a phone. `[scrub]="false"` leaves ScrollTrigger on its
+           default toggleActions, so the run plays ONCE on enter and stays
+           completed. Two branches rather than bound inputs — ngxScrub reads its
+           inputs once in afterNextRender, so only recreating the element rebuilds
+           the trigger when the viewport crosses 768. -->
+      <ng-template #workspaceMock>
+        <!-- Run panel. Inside the browser-window mock on desktop, where it is the
+             right-hand column; on a phone it sits below the window as its own
+             card — a 300px-wide "window" with a log panel crammed into it reads
+             as neither. Either way it stays inside the ngxScrub host, so the
+             timeline's .js-* selectors still resolve. -->
+        <ng-template #runPanel>
+          <aside class="ai-wf-run">
+            <div class="ai-wf-run-head">
+              <span class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Run
+              </span>
+              <span class="ai-wf-status" aria-hidden="true">
+                <span class="js-status-idle ai-wf-pill ai-wf-pill--idle">
+                  <span class="ai-wf-pill-dot"></span> Ready
+                </span>
+                <span class="js-status-run ai-wf-pill ai-wf-pill--run">
+                  <span class="ai-wf-pill-dot"></span> Running
+                </span>
+                <span class="js-status-done ai-wf-pill ai-wf-pill--done">
+                  <ng-icon name="lucideCheck" /> Completed
+                </span>
+              </span>
+            </div>
+
+            <div class="ai-wf-progress" aria-hidden="true">
+              <span class="js-progress-fill ai-wf-progress-fill"></span>
+            </div>
+
+            <ul class="ai-wf-log">
+              <li class="js-log ai-wf-log-row">Contract received</li>
+              <li class="js-log ai-wf-log-row">12 clauses read</li>
+              <li class="js-log ai-wf-log-row">34-row schedule built</li>
+              <li class="js-log ai-wf-log-row">Tied to the ledger</li>
+              <li class="js-log ai-wf-log-row ai-wf-log-row--warn">2 variances flagged</li>
+            </ul>
+
+            <div class="js-success ai-wf-success">
+              <div class="ai-wf-success-head">
+                <ng-icon name="lucideCircleCheck" /> Report ready
+              </div>
+              <p class="ai-wf-success-sub">34 contracts · 2 variances · 0 errors</p>
+              <span class="ai-panel-cta mt-3 block">Open in ledger</span>
+            </div>
+          </aside>
+        </ng-template>
+
+        <div class="ai-mock">
+          <div class="js-mock-glow ai-mock-glow" aria-hidden="true"></div>
+          <div class="js-success-glow ai-mock-success-glow" aria-hidden="true"></div>
+
+          <div class="ai-mock-window">
+            <!-- Browser chrome -->
+            <div class="ai-mock-bar">
+              <span class="ai-mock-dot"></span>
+              <span class="ai-mock-dot"></span>
+              <span class="ai-mock-dot"></span>
+              <span class="ai-mock-url">copilot.studio · Revenue Recognition Agent</span>
+            </div>
+
+            <!-- App toolbar -->
+            <div class="ai-wf-toolbar">
+              <div class="ai-wf-title">
+                <ng-icon name="lucideZap" class="text-accent" />
+                <span>Revenue Recognition Agent</span>
+              </div>
+              <span class="ai-wf-run-btn"><ng-icon name="lucidePlay" /> Run</span>
+            </div>
+
+            <div class="ai-mock-body">
+              <!-- Workflow flow -->
+              <ol class="ai-wf-flow">
+                <span class="ai-wf-spine" aria-hidden="true"></span>
+                <span class="js-spine-fill ai-wf-spine-fill" aria-hidden="true"></span>
+
+                <li class="js-node ai-wf-node">
+                  <span class="ai-wf-badge"><ng-icon name="lucideUpload" /></span>
+                  <span class="ai-wf-text">
+                    <span class="ai-wf-node-title">Contract uploaded</span>
+                    <span class="ai-wf-kind">Trigger</span>
+                  </span>
+                  <ng-icon
+                    name="lucideCircleCheck"
+                    class="js-check ai-wf-check"
+                    aria-hidden="true"
+                  />
+                </li>
+
+                <li class="js-node ai-wf-node ai-wf-node--ai">
+                  <span class="ai-wf-badge ai-wf-badge--ai"><ng-icon [svg]="copilotIcon" /></span>
+                  <span class="ai-wf-text">
+                    <span class="ai-wf-node-title">Read contract terms</span>
+                    <span class="ai-wf-kind ai-wf-kind--ai">Copilot</span>
+                  </span>
+                  <ng-icon
+                    name="lucideCircleCheck"
+                    class="js-check ai-wf-check"
+                    aria-hidden="true"
+                  />
+                </li>
+
+                <li class="js-node ai-wf-node ai-wf-node--ai">
+                  <span class="ai-wf-badge ai-wf-badge--ai"
+                    ><ng-icon name="lucideWandSparkles"
+                  /></span>
+                  <span class="ai-wf-text">
+                    <span class="ai-wf-node-title">Build ASC 606 schedule</span>
+                    <span class="ai-wf-kind ai-wf-kind--ai">Copilot</span>
+                  </span>
+                  <ng-icon
+                    name="lucideCircleCheck"
+                    class="js-check ai-wf-check"
+                    aria-hidden="true"
+                  />
+                </li>
+
+                <li class="js-node ai-wf-node">
+                  <span class="ai-wf-badge"><ng-icon name="lucideDatabase" /></span>
+                  <span class="ai-wf-text">
+                    <span class="ai-wf-node-title">Tie to general ledger</span>
+                    <span class="ai-wf-kind">Action</span>
+                  </span>
+                  <ng-icon
+                    name="lucideCircleCheck"
+                    class="js-check ai-wf-check"
+                    aria-hidden="true"
+                  />
+                </li>
+
+                <li class="js-node ai-wf-node">
+                  <span class="ai-wf-badge"><ng-icon name="lucideTriangleAlert" /></span>
+                  <span class="ai-wf-text">
+                    <span class="ai-wf-node-title">Flag variances</span>
+                    <span class="ai-wf-kind">Action</span>
+                  </span>
+                  <ng-icon
+                    name="lucideCircleCheck"
+                    class="js-check ai-wf-check"
+                    aria-hidden="true"
+                  />
+                </li>
+
+                <li class="js-node ai-wf-node ai-wf-node--out">
+                  <span class="ai-wf-badge ai-wf-badge--out"
+                    ><ng-icon name="lucideCircleCheck"
+                  /></span>
+                  <span class="ai-wf-text">
+                    <span class="ai-wf-node-title">Review-ready report</span>
+                    <span class="ai-wf-kind ai-wf-kind--out">Output</span>
+                  </span>
+                  <ng-icon
+                    name="lucideCircleCheck"
+                    class="js-check ai-wf-check"
+                    aria-hidden="true"
+                  />
+                </li>
+              </ol>
+
+              <!-- Run panel -->
+              @if (!isMobile()) {
+                <ng-container *ngTemplateOutlet="runPanel" />
+              }
+            </div>
+          </div>
+
+          @if (isMobile()) {
+            <ng-container *ngTemplateOutlet="runPanel" />
+          }
+        </div>
+      </ng-template>
+
+      @if (isMobile()) {
+        <div
+          class="ai-scrub-stage mt-8"
+          ngxScrub
+          start="top 80%"
+          end="+=1"
+          [pin]="false"
+          [scrub]="false"
+          (timelineReady)="buildShowcase($event)"
+        >
+          <ng-container *ngTemplateOutlet="workspaceMock" />
+        </div>
+      } @else {
+        <!-- Pinned scrub: as the reader scrolls through, buildShowcase() drives the
+           flow from idle → running → completed. Reduced motion jumps to the final
+           (completed/success) state, which is also the natural/SSR render. -->
+        <div
+          class="ai-scrub-stage mt-10"
+          ngxScrub
+          start="top 18%"
+          end="+=140%"
+          [pin]="true"
+          [scrub]="0.7"
+          (timelineReady)="buildShowcase($event)"
+        >
+          <ng-container *ngTemplateOutlet="workspaceMock" />
+        </div>
+      }
+    </section>
+
+    <!-- ======================= AGENT CATALOGUE (scroll fan carousel) =======================
+       supah's arc carousel (codepen xxJMbbg): each card is positioned by two CSS
+       vars — --active (its normalised distance from the current index → drives the
+       translate/rotate around a bottom-left pivot) and --zIndex (stack + opacity).
+       Driven by GSAP scroll instead of drag/wheel: buildCardFan() recomputes those
+       vars from the pinned ngxScrub progress; the CSS transition does the fan.
+       Cards flattened across the three tracks; each card labels its own track.
+       Whole-card click opens the course page (viewAgent). SSR renders the
+       cards (indexable) with an inline fan fallback; the scroll math is browser-only. -->
+    <section id="catalogue" class="relative">
+      <ng-template #catalogueHead>
+        <span
+          class="inline-flex items-center gap-2 rounded-full border border-border bg-card/40 px-3.5 py-1.5 text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase"
+          ><ng-icon name="lucideSparkles" class="text-accent" /> The catalogue</span
+        >
+        <h2 class="ai-metal-text mt-4 text-2xl font-bold sm:text-3xl lg:text-4xl">
+          Ten agents across audit, tax, and CFO teams
+        </h2>
+        <p class="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
+          Every one is a working build, not a demo. Start from ours, then rebuild it around how your
+          engagements actually run.
+        </p>
+      </ng-template>
+
+      <!-- The fan itself, shared by both drivers below: same DOM, same CSS-var
+           geometry (--active / --zi), so the phone gets the desktop arc rather
+           than a different component. buildCardFan() writes the vars from scroll
+           on desktop; stepFan() writes the same vars from a swipe on mobile. -->
+      <ng-template #fanDeck>
+        <div class="ai-fan" #cardFan [style.--items]="fanCards().length || 1">
+          @for (entry of fanCards(); track entry.section + entry.card.name; let i = $index) {
+            <article
+              class="ai-fan-item"
+              [style.--zi]="fanCards().length - i"
+              [style.--active]="i / (fanCards().length || 1)"
+              [attr.aria-label]="entry.card.name"
+              (click)="viewAgent(entry.card)"
+              (keydown.enter)="viewAgent(entry.card)"
+              tabindex="0"
+            >
+              <div class="ai-fan-box">
+                @if (entry.card.thumbnail) {
+                  <img
+                    class="ai-fan-img"
+                    [src]="entry.card.thumbnail"
+                    [alt]="entry.card.thumbnailAlt ?? entry.card.name"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                } @else {
+                  <div
+                    class="ai-fan-img bg-linear-to-br from-secondary to-muted"
+                    aria-hidden="true"
+                  ></div>
+                }
+                <span class="ai-fan-num">{{ i + 1 < 10 ? '0' + (i + 1) : i + 1 }}</span>
+              </div>
+            </article>
+          } @empty {
+            <p class="ai-fan-empty text-sm text-muted-foreground">
+              This catalogue isn't available right now. Please try again shortly.
+            </p>
+          }
+        </div>
+
+        <!-- Active-card caption: title + description of the centred card, driven
+             by activeFanIndex. SSR shows the first card. -->
+        @if (fanCards()[activeFanIndex()]; as active) {
+          <div class="ai-fan-caption" aria-live="polite">
+            <span class="ai-fan-caption-tag">{{ active.section }}</span>
+            <p class="ai-fan-caption-title">{{ active.card.name }}{{ active.card.nameSuffix }}</p>
+            <p class="ai-fan-caption-desc">{{ active.card.description }}</p>
+          </div>
+        }
+      </ng-template>
+
+      <div class="ai-fan-head">
+        <ng-container *ngTemplateOutlet="catalogueHead" />
+      </div>
+
+      <!-- Mobile drives the same fan by swipe instead of scroll: the pin costs
+           320% of scroll (the whole screen, three times over, on a phone) and a
+           scroll-bound deck can only be read in one direction. stepFan() moves
+           the active index the short way round, so it loops. -->
+      @if (isMobile()) {
+        <div
+          class="ai-fan-stage ai-fan-stage--swipe"
+          role="group"
+          aria-roledescription="carousel"
+          aria-label="Agent catalogue"
+          tabindex="0"
+          (pointerdown)="onFanPointerDown($event)"
+          (pointerup)="onFanPointerUp($event)"
+          (pointercancel)="onFanPointerUp($event)"
+          (keydown.arrowLeft)="stepFan(-1)"
+          (keydown.arrowRight)="stepFan(1)"
+        >
+          <ng-container *ngTemplateOutlet="fanDeck" />
+
+          <p class="ai-fan-hint text-xs tracking-[0.14em] text-muted-foreground uppercase">
+            Swipe to browse
+          </p>
+        </div>
+      } @else {
+        <div
+          class="ai-fan-stage"
+          ngxScrub
+          start="top top"
+          end="+=320%"
+          [pin]="true"
+          [scrub]="0.5"
+          (timelineReady)="buildCardFan($event)"
+        >
+          <ng-container *ngTemplateOutlet="fanDeck" />
+
+          <p class="ai-fan-hint text-xs tracking-[0.14em] text-muted-foreground uppercase">
+            Scroll to browse · tap a card for details
+          </p>
+        </div>
+      }
+    </section>
+
+    <!-- ======================= AGENT CATALOGUE (grid) =======================
+       The full browsable catalogue, grouped by track, with the rich cards. The
+       fan above is a five-card showcase of the same data; this is the complete
+       list. -->
+    <section id="catalogue-grid" class="w-11/12 max-w-6xl mx-auto scroll-mt-24">
+      <div class="mt-10 space-y-16 lg:space-y-20">
+        @for (section of resolvedSections(); track section.heading) {
+          <div>
+            <h3 class="text-lg font-semibold text-foreground sm:text-xl" ngxInView preset="fade-up">
+              {{ section.heading }}
+            </h3>
+
+            <!-- The card body, rendered by the rail below. No scroll reveal on
+                 the slides: motion on a slide fights Swiper's own transforms. -->
+            <ng-template #trackCard let-agent>
+              <!-- Swiss-Chalet card structure (image-dominant · badges · big CTA),
+                   in Miles tokens. `report` drives the score badge + CTA label. -->
+              @let report = agent.chapterId !== undefined ? reports()[agent.chapterId] : null;
+              <!-- Hover is CSS-only (no ngxHoverSpring): a JS spring on this same
+                   element fights the group-hover transform AND breaks the
+                   backdrop-blur while it animates. One driver, one transform. -->
+              <div
+                class="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border shadow-[inset_0_1px_0_rgb(255_255_255/0.07)] ring-1 ring-white/10 ring-inset backdrop-blur-xl transition-[box-shadow,border-color] duration-300 ease-out group-hover:border-accent/45 group-hover:shadow-[0_18px_50px_rgb(var(--accent-rgb)/0.18)] group-hover:ring-accent/30"
+                ngxHoverSpring
+                [lift]="-4"
+                [style.background-color]="agent.thumbnail"
+              >
+                <!-- Ambient background: the agent's own thumbnail, blurred and
+                     dimmed, filling the whole card behind the content. `-z-10`
+                     keeps it below the content (the card's backdrop-blur already
+                     makes a stacking context, so it stays inside the card).
+                     `scale-125` hides the transparent fringe blur leaves at the
+                     edges. -->
+                @if (agent.thumbnail) {
+                  <div
+                    class="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+                    aria-hidden="true"
+                  >
+                    <img
+                      [src]="agent.thumbnail"
+                      alt=""
+                      class="h-full w-full scale-125 object-cover opacity-40 blur-2xl"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <!-- <div class="absolute inset-0 bg-background/75"></div> -->
+                  </div>
+                }
+
+                <div class="relative overflow-hidden">
+                  @if (agent.thumbnail) {
+                    <img
+                      [src]="agent.thumbnail"
+                      [alt]="agent.thumbnailAlt ?? agent.name"
+                      class="aspect-video w-full object-cover object-top transition-transform duration-500"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  } @else {
+                    <div
+                      class="aspect-video w-full bg-linear-to-br from-secondary to-muted"
+                      aria-hidden="true"
+                    ></div>
+                  }
+                  <!-- Fade the image into the card body for the overlaid look. -->
+                  <!-- <div
+                    class="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-muted to-transparent"
+                    aria-hidden="true"
+                  ></div> -->
+                  @if (report) {
+                    <span
+                      class="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full border border-accent/40 bg-background/70 px-2.5 py-1 text-xs font-semibold text-accent backdrop-blur-sm"
+                    >
+                      <ng-icon name="lucideCircleCheck" class="text-sm" />
+                      {{ report.scorePercent }}%
+                    </span>
+                  }
+                </div>
+
+                <div class="flex flex-1 flex-col px-5 pt-4 pb-5">
+                  <h4 class="text-base">
+                    <span class="font-semibold text-foreground">{{ agent.name }}</span>
+                    @if (agent.nameSuffix) {
+                      <span class="font-normal text-white/70">{{ agent.nameSuffix }}</span>
+                    }
+                  </h4>
+
+                  <p class="mt-2 line-clamp-2 text-sm text-white/70">
+                    {{ agent.description }}
+                  </p>
+
+                  <!-- Pill badges — duration, quiz size, and the submitted score. -->
+                  <div class="mt-4 flex flex-wrap gap-2">
+                    @if (agent.durationSeconds) {
+                      <span
+                        class="inline-flex items-center rounded-full border border-border bg-white/5 px-3 py-1 text-xs text-white/70 backdrop-blur-sm"
+                      >
+                        {{ agent.durationSeconds | duration: 'compact' }}
+                      </span>
+                    }
+                    @if (agent.questionCount) {
+                      <span
+                        class="inline-flex items-center rounded-full border border-border bg-white/5 px-3 py-1 text-xs text-white/70 backdrop-blur-sm"
+                      >
+                        {{ agent.questionCount }} quiz
+                        {{ agent.questionCount === 1 ? 'question' : 'questions' }}
+                      </span>
+                    }
+                    @if (report) {
+                      <span
+                        class="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-medium text-accent"
+                      >
+                        <ng-icon name="lucideCircleCheck" class="text-sm" /> Submitted
+                      </span>
+                    }
+                  </div>
+
+                  <div class="mt-auto pt-5">
+                    <app-button
+                      class="h-11 w-full gap-2"
+                      ngxPress
+                      [ariaLabel]="'View course: ' + agent.name"
+                      (clicked)="viewAgent(agent)"
+                    >
+                      <span>View Course</span>
+                      <ng-icon [svg]="sparkleIcon" class="text-base" />
+                    </app-button>
+                  </div>
+                </div>
+              </div>
+            </ng-template>
+
+            <!-- One rail per track, every viewport. The wrapper owns Swiper
+                 (registration, teardown, skeletons); every course the track
+                 API returns is a slide. -->
+            <app-carousel
+              class="mt-6"
+              [cards]="section.cards"
+              [swiperConfig]="trackConfig"
+              [isLoading]="section.loading"
+              skeletonClass="h-[340px] w-full"
+            >
+              <ng-template let-agent>
+                <article class="group h-full">
+                  <ng-container *ngTemplateOutlet="trackCard; context: { $implicit: agent }" />
+                </article>
+              </ng-template>
+            </app-carousel>
+
+            @if (!section.loading && !section.cards.length) {
+              <p class="text-sm text-muted-foreground">
+                This catalogue isn't available right now. Please try again shortly.
+              </p>
+            }
+          </div>
         }
       </div>
     </section>
-  }
-</div>
 
-<!-- =================== DECORATIVE BOTTOM BAND =================== -->
-<!-- Purely decorative; carries no information and is hidden on small screens. -->
-<div
-  class="ai-band relative hidden aspect-1280/520 w-full overflow-hidden sm:block"
-  aria-hidden="true"
->
-  <img
-    [ngSrc]="S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/ai-band.webp'"
-    alt="Miles AI Labs Ai Band"
-    fill
-  />
-</div>
+    <!-- ========================= TESTIMONIALS ========================= -->
+    <!-- ponytail: placeholder quotes — replace with real, attributable ones. -->
+    <section id="stories" class="w-11/12 max-w-6xl mx-auto scroll-mt-24">
+      <div class="max-w-2xl">
+        <h2
+          class="ai-metal-text mt-4 text-2xl font-bold sm:text-3xl lg:text-4xl"
+          ngxInView
+          preset="fade-up"
+        >
+          Built by accountants, not engineers
+        </h2>
+        <p class="mt-3 text-muted-foreground" ngxInView preset="fade-up" [delay]="0.1">
+          Ten agents, three tracks, and not a line of code between them.
+        </p>
+      </div>
+
+      <!-- Same peek rail as the catalogue: one centred quote, neighbours shrunk
+           and faded, looping — desktop and mobile alike. -->
+      <app-carousel class="mt-10" [cards]="testimonialSlides" [swiperConfig]="peekWideConfig">
+        <ng-template let-t>
+          <figure class="h-full">
+            <div
+              class="relative h-full rounded-2xl border border-border bg-linear-[158deg] from-card/50 to-muted p-4 shadow-[inset_0_1px_0_rgb(255_255_255/0.05)] ring-1 ring-accent/12 ring-inset transition-[box-shadow,border-color] duration-300 hover:border-accent/45 hover:shadow-[0_16px_48px_rgb(var(--accent-rgb)/0.16)] hover:ring-accent/30"
+            >
+              <ng-icon name="lucideQuote" class="text-2xl text-accent/70" aria-hidden="true" />
+              <blockquote class="mt-3 text-sm text-foreground line-clamp-2">
+                {{ t.quote }}
+              </blockquote>
+              <figcaption class="mt-4 text-xs text-muted-foreground">
+                @if (t.name) {
+                  <span class="font-semibold text-foreground line-clamp-2">{{ t.name }}</span> ·
+                }
+                {{ t.role }}
+              </figcaption>
+            </div>
+          </figure>
+        </ng-template>
+      </app-carousel>
+    </section>
+
+    <!-- ============================= FAQ ============================= -->
+    <!-- ponytail: native <details> over the aria-accordion — accessible, zero-JS,
+       SSR-safe, and no per-item template-ref wiring for a data-driven list. -->
+    <!-- <section id="faq" class="w-11/12 max-w-3xl mx-auto scroll-mt-24">
+    <div class="text-center">
+      <span class="inline-flex items-center gap-2 rounded-full border border-border bg-card/40 px-3.5 py-1.5 text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase"><ng-icon name="lucideSparkles" class="text-accent" /> FAQ</span>
+      <h2
+        class="ai-metal-text mt-4 text-2xl font-bold sm:text-3xl lg:text-4xl"
+        ngxInView
+        preset="fade-up"
+      >
+        Questions, answered
+      </h2>
+    </div>
+
+    <div class="mt-8 divide-y divide-border/50" ngxInView preset="fade-up" [delay]="0.1">
+      @for (faq of faqs; track faq.question) {
+        <details class="ai-faq group">
+          <summary class="ai-faq-summary">
+            <span class="text-sm font-medium text-foreground">{{ faq.question }}</span>
+            <ng-icon
+              name="lucideArrowRight"
+              class="ai-faq-chevron text-muted-foreground"
+              aria-hidden="true"
+            />
+          </summary>
+          <p class="pb-4 text-sm text-muted-foreground">{{ faq.answer }}</p>
+        </details>
+      }
+    </div>
+  </section> -->
+
+    <!-- ============================ CTA BAND ============================ -->
+    <section class="w-11/12 max-w-6xl mx-auto scroll-mt-24">
+      <div class="ai-cta-band" ngxInView preset="fade-up">
+        <div class="ai-band-glow" aria-hidden="true"></div>
+        <div class="relative flex flex-col items-center gap-6 px-6 py-16 text-center sm:px-10">
+          <!-- Plain text so SplitText can reveal it per word. -->
+          <h2
+            ngxInView
+            preset="fade-up"
+            class="max-w-2xl text-2xl font-bold text-foreground sm:text-3xl lg:text-4xl"
+          >
+            Your first agent is twenty minutes away
+          </h2>
+          <p class="max-w-xl text-muted-foreground" ngxInView preset="fade-up" [delay]="0.1">
+            Included with your Miles Masterclass plan. Lab data, no setup, no extra cost.
+          </p>
+          <app-button
+            variant="ghost"
+            class="h-14 gap-2 rounded-xl bg-accent px-8 text-base"
+            ngxPress
+            [disabled]="submitting()"
+            (clicked)="activate()"
+          >
+            <span>{{ ctaLabel() }}</span>
+            <ng-icon name="lucideArrowRight" class="text-lg" />
+          </app-button>
+        </div>
+      </div>
+    </section>
+  </div>
+} @placeholder {
+  <div class="min-h-[60vh]" aria-hidden="true"></div>
+}

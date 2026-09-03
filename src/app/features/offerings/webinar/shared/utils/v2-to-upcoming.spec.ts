@@ -195,6 +195,29 @@ describe('v2CardToUpcoming', () => {
     expect(w.instructor_details).toBeTruthy();
     expect(() => upcomingToContent(w)).not.toThrow();
   });
+
+  // Regression: the list payloads DO send the instructor, but the card type
+  // didn't declare it, so every "Premiering This Month" row lost its byline.
+  it('carries the instructor the list payload sends', () => {
+    const w = v2CardToUpcoming(
+      card({
+        instructor_details: {
+          id: 4282,
+          first_name: 'Uttam',
+          last_name: 'Pai, CPA',
+          designation: 'VP - Founder’s Office, Miles Education',
+          profile_image: 'uttam.webp',
+          linkedin_link: 'https://www.linkedin.com/in/uttampaiumesh/',
+          other_instructors: [
+            { id: 4274, first_name: 'Varun', last_name: 'Jain, CPA', profile_image: 'varun.webp' },
+          ],
+        },
+      }),
+    );
+    expect(w.instructor_details.first_name).toBe('Uttam');
+    expect(w.instructor_details.linkedin).toBe('https://www.linkedin.com/in/uttampaiumesh/');
+    expect(w.instructor_details.other_instructors[0].first_name).toBe('Varun');
+  });
 });
 
 /**
@@ -234,6 +257,18 @@ describe('v2EnrollmentToUpcoming', () => {
     ).toBe('download-certificate');
   });
 
+  // Recurring series: CPE was granted on a sibling session, so there is no
+  // certificate to hand out — the card explains that instead.
+  it('swaps the certificate for the series-awarded notice when CPE was already granted', () => {
+    const after = new Date('2026-11-11T00:00:00Z');
+    const row = enrollment({ feedback_submitted: true });
+    const w = v2EnrollmentToUpcoming({
+      ...row,
+      eligibility: { ...row.eligibility, cpe_awarded: false, series_already_awarded: true },
+    });
+    expect(ctaFor(w, true, after)).toBe('series-awarded');
+  });
+
   // v2 reports attendance as 'Attended'; 'Present' is the v1 spelling. Gating
   // on 'Present' alone stranded every v2 attendee on an "Ended" button.
   it('treats Attended the same as Present', () => {
@@ -244,6 +279,22 @@ describe('v2EnrollmentToUpcoming', () => {
     expect(
       ctaFor(v2EnrollmentToUpcoming(enrollment({ attendance_status: 'Absent' })), true, after),
     ).toBe('ended');
+  });
+
+  // ...but the CERTIFICATE is narrower than the rail: only a credited
+  // 'Present' earns one. An 'Attended' row that has already submitted feedback
+  // must NOT surface a Download Certificate button on the "Webinars Attended"
+  // carousel — it falls through to the recording instead.
+  it('withholds the certificate from Attended, grants it to Present', () => {
+    const after = new Date('2026-11-11T00:00:00Z');
+    const cta = (attendance_status: 'Present' | 'Attended') =>
+      ctaFor(
+        v2EnrollmentToUpcoming(enrollment({ attendance_status, feedback_submitted: true })),
+        true,
+        after,
+      );
+    expect(cta('Attended')).not.toBe('download-certificate');
+    expect(cta('Present')).toBe('download-certificate');
   });
 
   // The certificate dialog claims the Credly badge off `user_badge`; it used to
@@ -499,6 +550,8 @@ describe('v2DetailsToUpcoming + applyV2About', () => {
 
   // Feedback state lives on `user_feedback_details` here, but `ctaFor` reads the
   // enrollment flag — without the mirror the CTA never reaches the certificate.
+  // `'Present'` (not `'Attended'`) because the certificate gate requires a
+  // credited attendance — see "withholds the certificate from Attended".
   it('mirrors submitted feedback onto the enrollment so the CTA advances', () => {
     const after = new Date('2026-11-11T00:00:00Z');
     const w = v2DetailsToUpcoming(
@@ -507,7 +560,7 @@ describe('v2DetailsToUpcoming + applyV2About', () => {
           is_registered: true,
           enrollment_id: 600,
           webinar_date_id: 411,
-          attendance_status: 'Attended',
+          attendance_status: 'Present',
         },
         user_feedback_details: { user_feedback_submitted: true, user_rating: 4 },
       }),

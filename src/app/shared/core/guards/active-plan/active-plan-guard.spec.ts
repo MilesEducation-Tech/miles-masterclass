@@ -10,9 +10,10 @@ import {
 import { activePlanGuard } from './active-plan-guard';
 import { Auth } from '../../services/auth/auth';
 import { NotificationService } from '../../services/notification/notification';
+import { CurrentPlanData } from '../../models/auth.model';
 
 describe('activePlanGuard', () => {
-  let currentPlan: any | null;
+  let currentPlan: CurrentPlanData | null;
   let cookieActive: boolean;
   let notificationInfo: ReturnType<typeof vi.fn>;
   let createUrlTree: ReturnType<typeof vi.fn>;
@@ -24,8 +25,8 @@ describe('activePlanGuard', () => {
   const route = {} as ActivatedRouteSnapshot;
   const state = { url: '/cpe-tracker' } as RouterStateSnapshot;
 
-  const planWithStatus = (status: string): any =>
-    ({ subscription_status: status }) as unknown as any;
+  const planWithStatus = (status: string): CurrentPlanData =>
+    ({ subscription_status: status }) as unknown as CurrentPlanData;
 
   beforeEach(() => {
     currentPlan = null;
@@ -35,7 +36,8 @@ describe('activePlanGuard', () => {
 
     const authMock = {
       currentPlan: () => currentPlan,
-      isPlanActive: (plan: any | null) => plan?.subscription_status?.toLowerCase() === 'active',
+      isPlanActive: (plan: CurrentPlanData | null) =>
+        plan?.subscription_status?.toLowerCase() === 'active',
       hasActivePlanFromCookie: () => cookieActive,
     };
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormField as AngularFormField, form, required, validate } from '@angular/forms/signals';
 import { DialogRef } from '../../../../../../../shared/core/services/dialog/dialog';
 import { Button } from '../../../../../../../shared/components/ui/button/button';
@@ -6,10 +6,16 @@ import { Forms } from '../../../../../../../shared/components/ui/forms/forms';
 import { AriaInput } from '../../../../../../../shared/components/ui/aria/aria-input/aria-input';
 import { AriaSelect } from '../../../../../../../shared/components/ui/aria/aria-select/aria-select';
 import { AriaSelectOption } from '../../../../../../../shared/core/models/aria.model';
+import { PartnerSuperAdminFacade } from '../../../../../shared/services/partner-superadmin-facade';
+import {
+  CreateFirmRequest,
+  Network,
+  Firm,
+} from '../../../../../shared/models/partner-platform.model';
 
 export interface NetworkFirmsDialogData {
   /** Present = member firms under a network; absent = standalone companies (no network). */
-  network?: any;
+  network?: Network;
 }
 
 /** Numeric `count` surfaces as a string from the native input — model it as such. */
@@ -38,32 +44,14 @@ export class NetworkFirmsDialog implements OnInit {
   dialogRef!: DialogRef<NetworkFirmsDialog, number | undefined>;
   data!: NetworkFirmsDialogData;
 
-  // ponytail: PartnerSuperAdminFacade was deleted with the Django strip. This placeholder
-
-  // keeps the template bindings compiling and renders the empty state.
-
-  // Swap in the new backend's service — the template needs no changes.
-
-  protected readonly facade: any = {
-    createFirm: (..._args: any[]): any => null,
-
-    firmsForNetwork: (..._args: any[]): any => null,
-
-    firmsLoading: signal<any>(null),
-
-    reloadFirms: signal<any[]>([]),
-
-    reloadPartnerCodes: signal<any[]>([]),
-
-    standaloneFirms: signal<any[]>([]),
-  };
+  protected readonly facade = inject(PartnerSuperAdminFacade);
 
   /** null = standalone mode (no network). */
   private readonly networkId = signal<number | null>(null);
   protected readonly networkName = signal<string>('');
   protected readonly isStandalone = computed(() => this.networkId() == null);
 
-  protected readonly firms = computed<any[]>(() => {
+  protected readonly firms = computed<Firm[]>(() => {
     const id = this.networkId();
     return id == null ? this.facade.standaloneFirms() : this.facade.firmsForNetwork(id);
   });
@@ -79,15 +67,10 @@ export class NetworkFirmsDialog implements OnInit {
     // exist yet) — only this network's codes or globals qualify.
     const codes = this.facade
       .partnerCodes()
-      .filter(
-        (c: any) =>
-          c.is_active &&
-          c.partner_firm == null &&
-          (id == null ? c.partner_network == null : c.partner_network === id),
-      );
+      .filter((c) => c.is_active && !c.firm && (id == null ? !c.network : c.network?.id === id));
     return [
       { value: null, label: 'None — create without minting' },
-      ...codes.map((c: any) => ({ value: c.id, label: `${c.code} — $${c.discounted_price}` })),
+      ...codes.map((c) => ({ value: c.id, label: `${c.code} — $${c.discounted_price}` })),
     ];
   });
 
@@ -100,12 +83,12 @@ export class NetworkFirmsDialog implements OnInit {
     validate(s.count, ({ value }) => {
       const hasCode = this.model().partner_code_id != null;
       if (!value().trim()) {
-        return hasCode ? { kind: 'required', message: 'Enter how many coupons to mint' } : null;
+        return hasCode ? { kind: 'required', message: 'Enter how many seats to mint' } : null;
       }
       const n = Number(value());
       return Number.isInteger(n) && n >= 1
         ? null
-        : { kind: 'min', message: 'Mint at least 1 coupon' };
+        : { kind: 'min', message: 'Mint at least 1 seat' };
     });
   });
 
@@ -124,13 +107,13 @@ export class NetworkFirmsDialog implements OnInit {
     if (this.form().invalid()) return;
     const v = this.model();
     const id = this.networkId();
-    const body: any = {
-      // Standalone firm: omit network_id entirely (member firm draws from its network).
-      ...(id != null ? { network_id: id } : {}),
+    const body: CreateFirmRequest = {
+      // Standalone firm: omit `network` entirely (a member firm draws from its network).
+      ...(id != null ? { network: id } : {}),
       name: v.name.trim(),
       email_domain: v.email_domain.trim(),
       ...(v.partner_code_id != null && v.count.trim()
-        ? { allocations: [{ partner_code_id: v.partner_code_id, count: Number(v.count) }] }
+        ? { allocations: [{ partner_code: v.partner_code_id, count: Number(v.count) }] }
         : {}),
     };
     const created = await this.facade.createFirm(body);

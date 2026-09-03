@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { argsToTemplate } from '@storybook/angular';
 import { TrackerToolbar } from './tracker-toolbar';
+import { CreditsSummary } from '../../../../../shared/core/models/cpe-tracker.model';
+
+const credits: CreditsSummary = { total: 95, earned: 95, required: 120, pending: 25 };
 
 const meta: Meta<TrackerToolbar> = {
   title: 'CPE Tracker/Toolbar',
@@ -17,32 +20,18 @@ type Story = StoryObj<TrackerToolbar>;
 
 export const Default: Story = {
   args: {
-    category: 'CAIRA',
-    level: 'L1',
-    contentType: 'Masterclass',
-    contentTypeOptions: ['Masterclass', 'Webinar', 'Podcast'],
-    credits: { earned: 95 },
+    selectedYear: 2026,
+    yearOptions: [2026, 2025, 2024, 2023, 2022],
+    credits,
+    studyFilter: 'All',
   },
 };
 
-/** NON-CAIRA hides the level selector — those badges carry no level. */
-export const NonCaira: Story = {
-  args: {
-    category: 'NON-CAIRA',
-    level: 'L1',
-    contentType: 'Webinar',
-    contentTypeOptions: ['Webinar', 'Podcast'],
-    credits: { earned: 12 },
-  },
-};
-
-/** No badges under the current filter — the content-type select is disabled. */
 export const NoCredits: Story = {
   args: {
-    category: 'CAIRA',
-    level: 'L3',
-    contentType: 'Masterclass',
-    contentTypeOptions: [],
+    selectedYear: 2026,
+    yearOptions: [2026, 2025, 2024],
     credits: null,
+    studyFilter: 'All',
   },
 };

@@ -2,11 +2,16 @@ import { Route } from '@angular/router';
 import { DynamicLayout } from '../pages/dynamic-layout/dynamic-layout';
 import { inject } from '@angular/core';
 import { Auth } from '../shared/core/services/auth/auth';
+import { authGuard } from '../shared/core/guards/auth/auth-guard';
 import { guestGuard } from '../shared/core/guards/guest/guest-guard';
 import { uaeCairaMatchGuard } from '../shared/core/guards/uae-caira-match.guard';
+import { WebinarFacade } from './offerings/webinar/shared/services/webinar-facade/webinar-facade';
+import { UaeCairaFacade } from '../pages/uae-caira/shared/services/uae-caira-facade/uae-caira-facade';
+import { Tracks } from './shared/services/tracks/tracks';
 import { Faq } from '../pages/faq/faq';
 import { TermsOfService } from '../pages/terms-of-service/terms-of-service';
 import { PrivacyPolicy } from '../pages/privacy-policy/privacy-policy';
+import { MasterclassFacade } from './offerings/shared/services/masterclass-facade/masterclass-facade';
 import { Compliance } from '../pages/compliance/compliance';
 
 export const featuresRoutes: Route[] = [
@@ -18,8 +23,7 @@ export const featuresRoutes: Route[] = [
     // bookmark/profile changes via `applyBookmarkChange`/`refreshPersonalized`
     // to the very resources the offering pages render. Re-providing it here
     // would fork a route-scoped copy that those broadcasts never reach.
-    // ponytail: route-scoped facade providers removed with the Django strip.
-    // Re-add `providers: [YourService]` here when the new backend lands.
+    providers: [Tracks],
     children: [
       {
         path: '',
@@ -38,7 +42,7 @@ export const featuresRoutes: Route[] = [
       {
         path: 'home',
         canMatch: [uaeCairaMatchGuard],
-        // ponytail: route-scoped facade providers removed with the Django strip.
+        providers: [WebinarFacade, UaeCairaFacade],
         loadComponent: () => import('../pages/uae-caira/uae-caira').then((m) => m.UaeCaira),
       },
       {
@@ -132,8 +136,35 @@ export const featuresRoutes: Route[] = [
         loadComponent: () => import('../pages/faculty/faculty').then((m) => m.Faculty),
       },
       {
+        // loadChildren (not loadComponent) so the route's gsap/motion providers
+        // live behind the lazy boundary — see ai-labs.routes.ts for why.
         path: 'ai-labs',
-        loadComponent: () => import('../pages/ai-labs/ai-labs').then((m) => m.AiLabs),
+        loadChildren: () => import('../pages/ai-labs/ai-labs.routes').then((m) => m.AI_LABS_ROUTES),
+      },
+      // Simulations require a logged-in user: anonymous visitors are sent to
+      // /auth/login?redirect=<url> and land back here after OTP verify.
+      {
+        path: 'simulation',
+        canActivate: [authGuard],
+        loadComponent: () => import('../pages/milesverse/milesverse').then((m) => m.Milesverse),
+      },
+      {
+        path: 'simulation/subjects/:slug',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('../pages/milesverse/subject/subject').then((m) => m.MilesverseSubject),
+      },
+      {
+        path: 'simulation/briefing/:id',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('../pages/milesverse/briefing/briefing').then((m) => m.MilesverseBriefing),
+      },
+      {
+        path: 'simulation/report',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('../pages/milesverse/report/report').then((m) => m.MilesverseReport),
       },
       {
         path: '',
@@ -141,8 +172,7 @@ export const featuresRoutes: Route[] = [
       },
       {
         path: '',
-        // ponytail: route-scoped facade providers removed with the Django strip.
-        // Re-add `providers: [YourService]` here when the new backend lands.
+        providers: [MasterclassFacade],
         loadChildren: () => import('./offerings/offerings').then((m) => m.offeringsRoutes),
       },
     ],

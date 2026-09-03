@@ -5,7 +5,7 @@
     <div
       class="relative w-[calc(100%-48px)] aspect-9/16 rounded-2xl overflow-hidden bg-black border border-border/40"
     >
-      @if (preloaded() && videoSources().length) {
+      @if (!locked() && preloaded() && videoSources().length) {
         <app-video-js
           [videoSource]="videoSources()"
           [config]="videoConfig()"
@@ -36,6 +36,24 @@
         masterclass hero uses ([masterclass-course-hero.html](features/offerings/masterclass/shared/components/masterclass-course-hero/masterclass-course-hero.html)). Sits top-left of the video card so it
         doesn't fight the title overlay at the bottom.
       -->
+      <!--
+        Locked state — the free preview on a paid reel has run out. The player
+        isn't rendered at all above (poster only), so there's nothing to scrub
+        or autoplay; this is the visible half of that lock.
+      -->
+      @if (locked()) {
+        <div
+          class="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-black/75 px-6 pb-24 text-center backdrop-blur-[2px]"
+        >
+          <ng-icon name="matLockRound" size="32" class="text-white" aria-hidden="true" />
+          <p class="text-white text-sm font-semibold">Your free preview has ended</p>
+          <p class="text-white/70 text-xs">
+            Subscribe to keep watching and unlock CPE credit, quizzes and your certificate.
+          </p>
+          <app-button variant="default" size="sm" (clicked)="unlock()">View Plans</app-button>
+        </div>
+      }
+
       @if (cpeModeTag(); as tag) {
         <span
           class="absolute top-3 left-3 z-20 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide pointer-events-none"
@@ -46,7 +64,7 @@
       }
 
       <div
-        class="reel-title-overlay absolute inset-x-0 bottom-0 pb-10 p-4 pt-10 bg-linear-to-t from-black/90 via-black/60 to-transparent pointer-events-none"
+        class="reel-title-overlay absolute inset-x-0 bottom-0 z-40 pb-10 p-4 pt-10 bg-linear-to-t from-black/90 via-black/60 to-transparent pointer-events-none"
       >
         <h2 class="text-white font-semibold text-base leading-tight line-clamp-2">
           {{ data.title }}
@@ -143,7 +161,7 @@
       #optionsMenu="ngMenu"
       (itemSelected)="onMenuItemSelected($event)"
       [class.hidden]="!optionsMenu.visible()"
-      class="absolute bottom-12 right-0 z-30 w-56 bg-secondary/95 backdrop-blur-md text-foreground rounded-xl py-2 shadow-xl border border-border/40"
+      class="absolute bottom-12 right-0 z-50 w-56 bg-secondary/95 backdrop-blur-md text-foreground rounded-xl py-2 shadow-xl border border-border/40"
     >
       <ng-template ngMenuContent>
         <button

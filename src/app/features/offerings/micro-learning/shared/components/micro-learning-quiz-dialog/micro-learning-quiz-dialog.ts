@@ -1,11 +1,16 @@
-import { ActionStatus } from '../../utils/reel-status';
-import { Component, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { DialogRef } from '../../../../../../shared/core/services/dialog/dialog';
 import { ChapterQuiz } from '../../../../shared/components/chapter-quiz/chapter-quiz';
+import {
+  ActionStatus,
+  MicroLearningReel,
+} from '../../../../../../shared/core/models/micro-learning-course.model';
+import { CourseChapter } from '../../../../../../shared/core/models/course.model';
 import { Button } from '../../../../../../shared/components/ui/button/button';
+import { MicroLearningCourseFacade } from '../../../../shared/services/micro-learning-course-facade/micro-learning-course-facade';
 
 export interface MicroLearningQuizDialogData {
-  reel: any;
+  reel: MicroLearningReel;
 }
 
 /**
@@ -46,24 +51,14 @@ export class MicroLearningQuizDialog {
   dialogRef!: DialogRef<MicroLearningQuizDialog>;
   data!: MicroLearningQuizDialogData;
 
-  // ponytail: MicroLearningCourseFacade was deleted with the Django strip. This placeholder
+  private readonly facade = inject(MicroLearningCourseFacade);
 
-  // keeps the template bindings compiling and renders the empty state.
-
-  // Swap in the new backend's service — the template needs no changes.
-
-  private readonly facade: any = {
-    markActiveReelActionStatus: (..._args: any[]): any => null,
-
-    startFinalAssessment: signal<any>(null),
-  };
-
-  get reelRef(): any {
+  get reelRef(): MicroLearningReel {
     return this.data.reel;
   }
 
   /** Adapt reel → minimal `CourseChapter` shape for `ChapterQuiz`. */
-  get chapterLike(): any {
+  get chapterLike(): CourseChapter {
     const r = this.reelRef;
     return {
       id: r.chapter_id,
@@ -72,7 +67,7 @@ export class MicroLearningQuizDialog {
       description: r.course_short_overview,
       video_url: r.video_url,
       quiz_details: r.quiz_details,
-    } as unknown as any;
+    } as unknown as CourseChapter;
   }
 
   /**

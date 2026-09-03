@@ -1,34 +1,35 @@
 <section class="min-h-screen bg-background text-white pt-32">
   <app-badge-swiper
-    [badges]="heroBadges()"
-    (claim)="onClaimBadge($event)"
-    (share)="onShareBadge($event)"
+    [badges]="facade.badges()"
+    (claim)="facade.claimBadge($event)"
+    (share)="facade.shareBadge($event)"
+    (openInfo)="facade.openBadgeInfo()"
   />
 
   <div class="mx-auto container sm:px-6 py-10">
     <app-tracker-toolbar
-      [category]="category()"
-      [level]="level()"
-      [contentType]="contentType()"
-      [contentTypeOptions]="contentTypeOptions()"
-      [credits]="credits()"
-      (categoryChange)="onCategory($event)"
-      (levelChange)="onLevel($event)"
-      (contentTypeChange)="onContentType($event)"
-      (openCompliance)="openCompliance()"
+      [selectedYear]="facade.selectedYear()"
+      [yearOptions]="facade.yearOptions()"
+      [credits]="facade.credits()"
+      [studyFilter]="facade.studyFilter()"
+      (yearChange)="facade.setYear($event)"
+      (studyFilterChange)="facade.setStudyFilter($event)"
+      (openCompliance)="facade.openCompliance()"
+      (downloadNasba)="facade.downloadNasba()"
+      (downloadAll)="facade.downloadAllCertificates()"
     />
 
     <div class="mt-8">
       <app-tracker-table
-        [rows]="pagedRows()"
-        [titleNavigable]="false"
-        [isLoading]="cpe.isLoadingBadges()"
-        [currentPage]="currentPage()"
-        [totalPages]="totalPages()"
-        [pageWindow]="pageWindow()"
+        [rows]="facade.pagedTableRows()"
+        [isLoading]="facade.isLoadingReport()"
+        [currentPage]="facade.currentPage()"
+        [totalPages]="facade.totalPages()"
+        [pageWindow]="facade.pageWindow()"
         (rowAction)="onRowAction($event)"
-        (prevPage)="prevPage()"
-        (nextPage)="nextPage()"
+        (titleClick)="onTitleClick($event)"
+        (prevPage)="facade.prevPage()"
+        (nextPage)="facade.nextPage()"
       />
     </div>
   </div>

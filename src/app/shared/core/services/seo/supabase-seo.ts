@@ -1,4 +1,4 @@
-import { inject, Service } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { DEFAULT_SEO_PAGES } from '../../models/seo.constants';
 import { createDefaultSeoPage, SeoPage } from '../../models/seo.models';
 import { generateUUID } from '../../../utils/uuid';
@@ -12,7 +12,7 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 // execute when fetched and rendered inline from the public bucket.
 const ALLOWED_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif']);
 
-@Service()
+@Injectable({ providedIn: 'root' })
 export class SupabaseSeo {
   private readonly supabase = inject(Supabase);
   private readonly logger = inject(Logger);

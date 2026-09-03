@@ -1,17 +1,18 @@
 <footer class="flex flex-col gap-8 footer container mx-auto py-10 md:pb-32 pb-44">
-  <div class="footer-top grid md:grid-cols-2 grid-cols-1 gap-4" [class]="gridColumnsClass()">
+  <div class="footer-top grid md:grid-cols-2 grid-cols-2 gap-4" [class]="gridColumnsClass()">
     @for (section of footerSections(); track $index) {
       <div
         class="w-auto md:mx-auto flex flex-col gap-4"
         [class.md:w-3/4]="section.type === 'download-app'"
         [class.w-full]="section.type === 'download-app'"
         [class.md:col-span-2]="section.colSpan === 2"
+        /* [class.max-md:col-span-2]="section.type === 'download-app'" */
       >
         <p class="md:text-2xl text-xl font-bold">{{ section.title }}</p>
         @switch (section.type) {
           @case ('download-app') {
             <div class="w-full flex gap-4 max-md:flex-col">
-              <ul class="flex flex-col gap-2 w-1/2">
+              <ul class="flex flex-col gap-2 md:w-1/2">
                 @for (link of section.links; track $index) {
                   <li class="md:text-base text-sm text-gray-300 w-full">
                     <div class="flex gap-0.5 justify-start w-full">

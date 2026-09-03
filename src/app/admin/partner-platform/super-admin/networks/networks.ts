@@ -1,10 +1,13 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { Observable, take } from 'rxjs';
 import { Button } from '../../../../shared/components/ui/button/button';
 import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
+import { DeprecationBanner } from '../../../shared/components/deprecation-banner/deprecation-banner';
 import { Dialog } from '../../../../shared/core/services/dialog/dialog';
+import { PartnerSuperAdminFacade } from '../../shared/services/partner-superadmin-facade';
+import { Network } from '../../shared/models/partner-platform.model';
 import {
   NetworkFormDialog,
   NetworkFormDialogData,
@@ -21,21 +24,12 @@ import {
  */
 @Component({
   selector: 'app-partner-networks',
-  imports: [Button, Spinner],
+  imports: [Button, Spinner, DeprecationBanner],
   templateUrl: './networks.html',
   host: { class: 'block w-full' },
 })
 export class Networks {
-  // ponytail: PartnerSuperAdminFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  protected readonly facade: any = {
-    createNetwork: (..._args: any[]): any => null,
-    networks: signal<any[]>([]),
-    networksError: signal<any>(null),
-    networksLoading: signal<any>(null),
-    updateNetwork: (..._args: any[]): any => null,
-  };
+  protected readonly facade = inject(PartnerSuperAdminFacade);
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
@@ -44,12 +38,12 @@ export class Networks {
     this.openDialog();
   }
 
-  protected openEdit(network: any): void {
+  protected openEdit(network: Network): void {
     this.openDialog(network);
   }
 
   /** Row action: manage / create member firms directly under this network. */
-  protected openFirms(network: any): void {
+  protected openFirms(network: Network): void {
     const ref = this.dialog.open<NetworkFirmsDialog, number | undefined>(NetworkFirmsDialog, {
       data: { network } satisfies NetworkFirmsDialogData,
       maxWidth: '600px',
@@ -59,7 +53,7 @@ export class Networks {
   }
 
   /** Row action: open the super-admin coupon tracker for this network. */
-  protected openTracker(network: any): void {
+  protected openTracker(network: Network): void {
     void this.router.navigate(['/admin/partner/networks', network.id, 'tracker']);
   }
 
@@ -83,7 +77,7 @@ export class Networks {
     });
   }
 
-  private openDialog(network?: any): void {
+  private openDialog(network?: Network): void {
     const ref = this.dialog.open<NetworkFormDialog, NetworkFormResult | undefined>(
       NetworkFormDialog,
       {

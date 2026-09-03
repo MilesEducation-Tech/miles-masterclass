@@ -47,6 +47,7 @@ export const COURSE_BRAND_NAMES = {
   masterclass: SEO_BRAND_DEFAULTS.publisher,
   podcast: 'Miles Podcast',
   microLearning: 'Miles Micro-Learning',
+  aiLab: 'Miles AI Labs',
 } as const;
 
 /**
@@ -58,6 +59,7 @@ export const COURSE_DESCRIPTION_VERBS = {
   masterclass: 'Watch',
   podcast: 'Listen to',
   microLearning: 'Watch',
+  aiLab: 'Watch',
 } as const;
 
 /**
@@ -70,6 +72,7 @@ export const DYNAMIC_SLUG_PREFIXES: readonly string[] = [
   'masterclass/',
   'podcast/',
   'micro-learning/',
+  'ai-labs/',
   'admin',
 ] as const;
 

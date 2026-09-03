@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { computed, inject, PLATFORM_ID, resource, Service } from '@angular/core';
+import { computed, inject, Injectable, PLATFORM_ID, resource } from '@angular/core';
 import { Supabase } from '../../../../shared/core/services/supabase/supabase';
 import { Logger } from '../../../../shared/core/services/logger/logger';
 import { NotificationService } from '../../../../shared/core/services/notification/notification';
@@ -49,7 +49,7 @@ export interface PermissionInput {
  * ponytail: refetches the whole catalog after each write — the catalog is tiny
  * and rarely edited, so optimistic patching isn't worth the bookkeeping.
  */
-@Service()
+@Injectable({ providedIn: 'root' })
 export class RbacFacade {
   private readonly supabase = inject(Supabase);
   private readonly logger = inject(Logger);

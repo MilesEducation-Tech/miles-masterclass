@@ -34,8 +34,8 @@
                 (bookmarkToggled)="facade.toggleBookmark()"
                 (cartToggled)="facade.addToCart()"
                 (actionInvoked)="facade.handleActionStatus($event)"
-                (timeUpdate)="handleTimeUpdate($event)"
-                (exited)="handleExited($event)"
+                (timeUpdate)="facade.handleTimeUpdate($event)"
+                (exited)="facade.handleExited($event)"
               />
             </div>
           } @empty {

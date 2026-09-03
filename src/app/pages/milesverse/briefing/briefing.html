@@ -1,0 +1,890 @@
+@if (loading()) {
+  <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <div class="h-6 w-40 animate-pulse rounded bg-muted"></div>
+    <div class="mt-6 h-72 animate-pulse rounded-2xl bg-muted"></div>
+  </div>
+} @else if (error(); as message) {
+  <div class="mx-auto flex max-w-md flex-col items-center px-5 py-24 text-center">
+    <span class="flex size-14 items-center justify-center rounded-full bg-accent/10 text-accent">
+      <ng-icon name="lucideSearchX" class="text-2xl" aria-hidden="true" />
+    </span>
+    <h1 class="mt-5 font-serif text-2xl font-bold text-foreground">Couldn't open this scenario</h1>
+    <p class="mt-2 text-sm text-muted-foreground">{{ message }}</p>
+    <div class="mt-6 flex items-center gap-3">
+      <app-button
+        variant="primary"
+        size="sm"
+        class="bg-accent hover:bg-accent/90"
+        (clicked)="load()"
+      >
+        Try again
+      </app-button>
+      <a [routerLink]="backPath()">
+        <app-button variant="outline" size="sm">All scenarios</app-button>
+      </a>
+    </div>
+  </div>
+} @else if (detail(); as sim) {
+  <!-- ===================== CINEMATIC HERO ===================== -->
+  <header class="mv-hero" [style.--hue]="hue()">
+    @if (!heroBroken()) {
+      <img
+        [src]="image()"
+        [alt]="title()"
+        class="absolute inset-0 h-full w-full object-cover object-top"
+        loading="eager"
+        decoding="async"
+        (error)="heroBroken.set(true)"
+      />
+    }
+    <span class="mv-hero-scrim-x" aria-hidden="true"></span>
+    <span class="mv-hero-scrim-y" aria-hidden="true"></span>
+    <div class="absolute inset-x-0 bottom-0">
+      <div class="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
+        <a
+          [routerLink]="backPath()"
+          class="inline-flex items-center gap-[0.4rem] text-[0.85rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ng-icon name="lucideArrowLeft" class="text-base" aria-hidden="true" />
+          All scenarios
+        </a>
+        <p class="mt-4 text-caption font-bold tracking-[0.2em] text-accent uppercase">
+          Scenario briefing
+        </p>
+        <div class="mt-2 flex flex-wrap items-center gap-3">
+          <h1 class="mv-hero-title">{{ title() }}</h1>
+          @if (subjectName(); as subj) {
+            <span class="mv-subject-badge">
+              <ng-icon name="lucideGraduationCap" class="text-sm" aria-hidden="true" />
+              {{ subj }}
+            </span>
+          }
+        </div>
+        @if (tagline(); as text) {
+          <p class="mv-hero-tagline">{{ text }}</p>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== DOSSIER GRID ===================== -->
+  <section class="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_340px]">
+    <!-- ------------------------- main column ------------------------- -->
+    <div class="min-w-0">
+      <!-- 01 situation -->
+      <div>
+        <p class="mv-sec"><span class="mv-sec-n">01</span> The situation</p>
+        <p class="mt-4 text-[17px] leading-[1.75] text-foreground/85">
+          @if (situation(); as text) {
+            {{ text }}
+          } @else {
+            You'll meet {{ personaName() }} live — {{ personaRole() }}. Read the room, respond to
+            what they actually say, and steer the conversation to a resolution.
+          }
+        </p>
+      </div>
+
+      <!-- 02 objective -->
+      @if (objective(); as text) {
+        <div class="mt-10">
+          <p class="mv-sec"><span class="mv-sec-n">02</span> Your objective</p>
+          <div class="mv-objective">
+            <span class="absolute inset-y-0 left-0 w-[3px] bg-accent" aria-hidden="true"></span>
+            @if (objectiveGoals().length) {
+              <!-- semicolon-authored objectives become a scannable goal list -->
+              <ol class="mv-goals">
+                @for (goal of objectiveGoals(); track $index) {
+                  <li class="mv-goal">
+                    <span class="mv-goal-n" aria-hidden="true">{{ $index + 1 }}</span>
+                    <span class="mv-goal-text">{{ goal }}</span>
+                  </li>
+                }
+              </ol>
+            } @else {
+              <p class="flex items-start gap-3 leading-relaxed text-foreground/90">
+                <ng-icon name="lucideTarget" class="mt-1 shrink-0 text-accent" aria-hidden="true" />
+                <span>{{ text }}</span>
+              </p>
+            }
+            @if (concepts().length) {
+              <div
+                class="mt-[1.1rem] flex flex-wrap items-center gap-2 border-t border-border pt-[1.1rem]"
+              >
+                <span
+                  class="mr-1 text-[0.64rem] font-bold tracking-[0.14em] text-muted-foreground uppercase"
+                  >Concepts in play</span
+                >
+                @for (c of concepts(); track c) {
+                  <span
+                    class="rounded-[8px] border border-accent/30 bg-accent/[0.14] px-[0.7rem] py-[0.26rem] text-[0.75rem] font-medium text-foreground"
+                    >{{ c }}</span
+                  >
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- 03 case file -->
+      @if (artifacts().length) {
+        <div class="mt-10">
+          <p class="mv-sec"><span class="mv-sec-n">03</span> Case file</p>
+          <p class="mt-1 mb-4 text-sm text-muted-foreground">
+            The records behind this situation. Review them before you walk in.
+            {{ personaName() }} knows what's in the shared ones.
+          </p>
+
+          <!-- record cards open the viewer -->
+          <div class="grid gap-3 sm:grid-cols-2">
+            @for (a of artifacts(); track $index) {
+              <button type="button" class="mv-rail-item" (click)="openViewer($index)">
+                <span class="mv-rail-icon" [class]="artifactClass(a)">
+                  <ng-icon [name]="artifactIcon(a)" aria-hidden="true" />
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-[0.85rem] font-semibold text-foreground">{{
+                    artifactTitle(a)
+                  }}</span>
+                  <span
+                    class="mt-[0.1rem] flex items-center gap-[0.4rem] text-[0.7rem] font-medium text-muted-foreground"
+                  >
+                    {{ artifactKind(a) }}
+                    @if (isConfidential(a)) {
+                      <span
+                        class="inline-flex items-center gap-[0.22rem] font-bold text-accent-premium"
+                        ><ng-icon name="lucideLock" aria-hidden="true" /> Confidential</span
+                      >
+                    }
+                  </span>
+                </span>
+                <ng-icon name="lucideArrowRight" class="mv-rail-open shrink-0" aria-hidden="true" />
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- 04 marking scheme -->
+      @if (markingCount()) {
+        <div class="mt-10">
+          <p class="mv-sec"><span class="mv-sec-n">04</span> Marking scheme</p>
+          <button type="button" class="mv-marking-toggle" (click)="showMarking.set(!showMarking())">
+            <span>
+              <span class="block text-[0.95rem] font-semibold text-foreground">
+                {{ markingCount() }} criteria. Every verdict traced to your own words.
+              </span>
+              <span class="mt-[0.2rem] block text-[0.82rem] text-muted-foreground">
+                Observable behaviours per competency — the examiner quotes the exact line that
+                earned each one.
+              </span>
+            </span>
+            <ng-icon
+              name="lucideChevronDown"
+              class="mv-chev shrink-0"
+              [class.mv-chev-open]="showMarking()"
+              aria-hidden="true"
+            />
+          </button>
+          @if (showMarking()) {
+            <div
+              class="mt-3 grid gap-6 rounded-[14px] border border-border bg-card p-6 sm:grid-cols-2"
+            >
+              @for (g of markingGroups(); track g.label) {
+                <div>
+                  <p
+                    class="flex items-center gap-2 text-[0.66rem] font-bold tracking-[0.12em] text-accent uppercase"
+                  >
+                    <ng-icon name="lucideTarget" class="text-accent" aria-hidden="true" />
+                    {{ g.label }}
+                  </p>
+                  <ul class="mt-2.5 space-y-2">
+                    @for (m of g.items; track m.id) {
+                      <li
+                        class="flex gap-[0.55rem] text-[0.82rem] leading-[1.5] text-foreground/85"
+                      >
+                        <ng-icon
+                          name="lucideCheck"
+                          class="mt-0.5 shrink-0 text-accent"
+                          aria-hidden="true"
+                        />
+                        <span>{{ m.text }}</span>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- 05 how it opens -->
+      @if (openingLine(); as line) {
+        <div class="mt-10">
+          <p class="mv-sec"><span class="mv-sec-n">05</span> How it opens</p>
+          <blockquote class="mv-opening">
+            <ng-icon
+              name="lucideQuote"
+              class="absolute top-[1.3rem] left-[1.25rem] text-[1.4rem] text-accent/75"
+              aria-hidden="true"
+            />
+            <p class="font-serif text-[1.2rem] leading-[1.5] text-foreground">{{ line }}</p>
+            <footer class="mt-[0.7rem] text-[0.78rem] text-muted-foreground">
+              — {{ personaName() }}, opening the conversation
+            </footer>
+          </blockquote>
+        </div>
+      }
+    </div>
+
+    <!-- ------------------------- session brief ------------------------- -->
+    <aside class="lg:sticky lg:top-24 h-fit">
+      <div class="mv-brief">
+        <div
+          class="border-b border-border px-5 py-4 text-[0.66rem] font-bold tracking-[0.16em] text-muted-foreground uppercase"
+        >
+          Session brief
+        </div>
+
+        <!-- persona -->
+        <div class="flex items-center gap-[0.8rem] px-5 py-[1.1rem]">
+          <span class="mv-persona-photo" aria-hidden="true">
+            @if (!portraitBroken()) {
+              <img
+                [src]="personaPortrait()"
+                alt=""
+                loading="lazy"
+                decoding="async"
+                (error)="portraitBroken.set(true)"
+              />
+            } @else {
+              <ng-icon name="lucideUser" />
+            }
+          </span>
+          <div class="min-w-0">
+            <p class="truncate text-sm font-semibold text-foreground">{{ personaName() }}</p>
+            <p class="text-caption leading-snug text-muted-foreground">{{ personaRole() }}</p>
+          </div>
+        </div>
+
+        <!-- difficulty -->
+        <div class="mv-brief-block">
+          <p class="mv-brief-label">Difficulty</p>
+          <div class="space-y-2" role="radiogroup" aria-label="Conversation difficulty">
+            @for (mode of modes; track mode.key) {
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="selectedMode() === mode.key"
+                class="mv-mode"
+                [class.mv-mode-active]="selectedMode() === mode.key"
+                (click)="selectedMode.set(mode.key)"
+              >
+                <span class="mv-meter" aria-hidden="true">
+                  <span class="mv-bar" [class.mv-bar-on]="mode.level >= 1"></span>
+                  <span class="mv-bar mv-bar-2" [class.mv-bar-on]="mode.level >= 2"></span>
+                  <span class="mv-bar mv-bar-3" [class.mv-bar-on]="mode.level >= 3"></span>
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="mv-mode-label">{{ mode.label }}</span>
+                  <span class="mv-mode-desc">{{ mode.blurb }}</span>
+                </span>
+                <span
+                  class="mv-radio"
+                  [class.mv-radio-on]="selectedMode() === mode.key"
+                  aria-hidden="true"
+                ></span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- scored on -->
+        <div class="mv-brief-block">
+          <p class="mv-brief-label">You'll be scored on</p>
+          <ul class="space-y-2">
+            @for (c of scoredOn(); track c.label) {
+              <li class="flex items-center gap-2.5 text-sm text-foreground/85">
+                <ng-icon [name]="c.icon" class="shrink-0 text-accent" aria-hidden="true" />
+                <span class="min-w-0 flex-1 truncate">{{ c.label }}</span>
+                @if (c.count) {
+                  <span class="shrink-0 text-[10px] font-semibold text-muted-foreground"
+                    >{{ c.count }} criteria</span
+                  >
+                }
+              </li>
+            }
+          </ul>
+        </div>
+
+        <!-- facts + CTA -->
+        <div class="mv-brief-block">
+          <div
+            class="mb-4 flex items-center justify-center gap-2.5 text-[11px] font-medium text-muted-foreground"
+          >
+            <span class="flex items-center gap-1 whitespace-nowrap">
+              <ng-icon name="lucideTimer" aria-hidden="true" /> 5:00 session
+            </span>
+            <span aria-hidden="true">·</span>
+            <span class="flex items-center gap-1 whitespace-nowrap">
+              <ng-icon name="lucideMic" aria-hidden="true" /> Spoken, end anytime
+            </span>
+          </div>
+          @if (launchError(); as message) {
+            <p class="mb-3 text-sm text-destructive" role="alert">{{ message }}</p>
+          }
+          <app-button
+            variant="primary"
+            class="h-12 w-full gap-2 rounded-xl bg-accent text-base hover:bg-accent/90"
+            [disabled]="starting()"
+            (clicked)="start()"
+          >
+            <ng-icon name="lucideSparkles" class="text-lg" aria-hidden="true" />
+            <span>{{ starting() ? 'Starting…' : 'Start simulation' }}</span>
+            @if (!starting()) {
+              <ng-icon name="lucideArrowRight" class="text-base" aria-hidden="true" />
+            }
+          </app-button>
+          <p class="mt-3 text-center text-caption text-muted-foreground">
+            5-minute session · you'll get a scored debrief right after
+          </p>
+        </div>
+      </div>
+    </aside>
+  </section>
+}
+
+<!-- ===================== LIVE SESSION (full-screen Anam call) ===================== -->
+@if (sessionOpen()) {
+  <div class="mv-call" role="dialog" aria-modal="true" aria-label="Live simulation session">
+    <!-- row layout: the video shrinks when a side panel opens -->
+    <div class="mv-call-stage">
+      <div class="mv-call-main">
+        <video id="mv-anam-video" class="mv-call-video" autoplay playsinline></video>
+
+        <!-- connecting / error scrim -->
+        @if (sessionPhase() !== 'live') {
+          <div class="mv-call-scrim">
+            <span class="mv-persona-mark mv-call-persona-mark" aria-hidden="true">{{
+              personaInitial()
+            }}</span>
+            @if (sessionPhase() === 'connecting') {
+              <span class="mv-call-spinner" aria-hidden="true"></span>
+            }
+            <p class="mv-call-msg">{{ sessionMessage() }}</p>
+            @if (sessionPhase() === 'error') {
+              <div class="mt-4 flex items-center gap-2">
+                <app-button variant="outline" size="sm" (clicked)="closeSession()"
+                  >Close</app-button
+                >
+                <app-button
+                  variant="primary"
+                  size="sm"
+                  class="gap-1.5 bg-accent hover:bg-accent/90"
+                  (clicked)="retryFromError()"
+                >
+                  <ng-icon name="lucideRotateCcw" class="text-sm" aria-hidden="true" /> Try again
+                </app-button>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- top bar -->
+        <div class="mv-call-top">
+          <div class="mv-call-topleft">
+            @if (sessionPhase() === 'live') {
+              <div class="mv-call-timer" role="timer" aria-label="Elapsed time">
+                <span class="mv-call-timer-ring" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 22 22">
+                    <circle
+                      cx="11"
+                      cy="11"
+                      r="9"
+                      fill="none"
+                      stroke="rgba(255,255,255,0.18)"
+                      stroke-width="2"
+                    />
+                    <circle
+                      cx="11"
+                      cy="11"
+                      r="9"
+                      fill="none"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      [attr.stroke]="timerColor()"
+                      [attr.stroke-dasharray]="timerRingCircumference"
+                      [attr.stroke-dashoffset]="timerRingOffset()"
+                      transform="rotate(-90 11 11)"
+                      style="
+                        transition:
+                          stroke-dashoffset 1s linear,
+                          stroke 300ms ease;
+                      "
+                    />
+                  </svg>
+                  <span class="mv-live-dot" aria-hidden="true"></span>
+                </span>
+                <span class="mv-call-timer-value" [style.color]="timerColor()">{{
+                  elapsedLabel()
+                }}</span>
+                <span class="mv-call-timer-total">/ 5:00</span>
+              </div>
+            }
+            <span class="mv-call-id">
+              <span class="truncate font-semibold text-white">{{ personaName() }}</span>
+              <span class="hidden text-white/60 sm:inline">· {{ personaRole() }}</span>
+            </span>
+          </div>
+
+          @if (sessionPhase() === 'live') {
+            <div class="mv-call-topright">
+              <button
+                type="button"
+                class="mv-call-panel-btn"
+                [class.mv-call-panel-btn-active]="briefOpen()"
+                [attr.aria-pressed]="briefOpen()"
+                (click)="toggleBrief()"
+              >
+                <ng-icon name="lucideFileText" class="text-base" aria-hidden="true" />
+                <span>Brief</span>
+              </button>
+              <button
+                type="button"
+                class="mv-call-panel-btn"
+                [class.mv-call-panel-btn-active]="caseFileOpen()"
+                [attr.aria-pressed]="caseFileOpen()"
+                (click)="toggleCaseFile()"
+              >
+                <ng-icon name="lucideFolderOpen" class="text-base" aria-hidden="true" />
+                <span>Case File</span>
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- controls -->
+        @if (sessionPhase() === 'live') {
+          <div class="mv-call-controls">
+            <button
+              type="button"
+              class="mv-call-btn"
+              [class.mv-call-btn-off]="micMuted()"
+              [attr.aria-pressed]="micMuted()"
+              [attr.aria-label]="micMuted() ? 'Unmute microphone' : 'Mute microphone'"
+              (click)="toggleMic()"
+            >
+              <ng-icon
+                [name]="micMuted() ? 'lucideMicOff' : 'lucideMic'"
+                class="text-xl"
+                aria-hidden="true"
+              />
+            </button>
+            <button
+              type="button"
+              class="mv-call-btn mv-call-btn-end"
+              aria-label="End session and see report"
+              (click)="endSession()"
+            >
+              <ng-icon name="lucidePhoneOff" class="text-xl" aria-hidden="true" />
+            </button>
+          </div>
+        }
+
+        <!-- session hitting its hard time cap: warn, then force-end -->
+        @if (durationWarningOpen() && !idlePromptOpen()) {
+          <div
+            class="mv-idle-overlay"
+            role="alertdialog"
+            aria-modal="true"
+            aria-label="Session wrapping up"
+          >
+            <div class="mv-idle-card">
+              <p class="mv-idle-title">Wrapping up</p>
+              <p class="mv-idle-text">
+                This session will end automatically in about a minute. Wrap up your final thoughts.
+              </p>
+              <div class="mv-idle-actions">
+                <app-button
+                  variant="primary"
+                  size="sm"
+                  class="bg-accent hover:bg-accent/90"
+                  (clicked)="acknowledgeDurationWarning()"
+                >
+                  Got it
+                </app-button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- idle "Still there?" prompt -->
+        @if (idlePromptOpen()) {
+          <div
+            class="mv-idle-overlay"
+            role="alertdialog"
+            aria-modal="true"
+            aria-label="Still there?"
+          >
+            <div class="mv-idle-card">
+              <p class="mv-idle-title">Still there?</p>
+              <p class="mv-idle-text">
+                We haven't heard from you in a bit. Stay on the call, or end it now to see your
+                report.
+              </p>
+              <div class="mv-idle-actions">
+                <app-button variant="outline" size="sm" (clicked)="endFromIdlePrompt()"
+                  >End session</app-button
+                >
+                <app-button
+                  variant="primary"
+                  size="sm"
+                  class="bg-accent hover:bg-accent/90"
+                  (clicked)="continueSession()"
+                >
+                  I'm still here
+                </app-button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- in-call Brief panel -->
+      <aside
+        class="mv-call-panel mv-call-panel-brief"
+        [class.mv-call-panel-open]="briefOpen()"
+        [attr.aria-hidden]="!briefOpen()"
+        aria-label="Scenario brief"
+      >
+        <div class="mv-call-panel-inner">
+          <div class="mv-call-panel-head">
+            <span class="mv-call-panel-title">Brief</span>
+            <button
+              type="button"
+              class="mv-call-panel-close"
+              aria-label="Close brief"
+              (click)="toggleBrief()"
+            >
+              <ng-icon name="lucideX" class="text-base" aria-hidden="true" />
+            </button>
+          </div>
+          <div class="mv-call-panel-body">
+            <div class="mv-call-brief-persona">
+              <span class="mv-persona-mark" aria-hidden="true"><ng-icon name="lucideUser" /></span>
+              <span class="min-w-0">
+                <span class="mv-call-brief-persona-name block truncate">{{ personaName() }}</span>
+                <span class="mv-call-brief-persona-role block">{{ personaRole() }}</span>
+              </span>
+            </div>
+
+            @if (situation(); as text) {
+              <div class="mv-call-brief-sec">
+                <span class="mv-call-brief-label">The situation</span>
+                <p class="mv-call-brief-text">{{ text }}</p>
+              </div>
+            }
+            @if (objective(); as text) {
+              <div class="mv-call-brief-sec">
+                <span class="mv-call-brief-label">Your objective</span>
+                @if (objectiveGoals().length) {
+                  <ol class="mv-goals">
+                    @for (goal of objectiveGoals(); track $index) {
+                      <li class="mv-goal">
+                        <span class="mv-goal-n" aria-hidden="true">{{ $index + 1 }}</span>
+                        <span class="mv-call-brief-text">{{ goal }}</span>
+                      </li>
+                    }
+                  </ol>
+                } @else {
+                  <p class="mv-call-brief-text">{{ text }}</p>
+                }
+              </div>
+            }
+            @if (concepts().length) {
+              <div class="mv-call-brief-sec">
+                <span class="mv-call-brief-label">Concepts in play</span>
+                <div class="mv-call-brief-chips">
+                  @for (c of concepts(); track c) {
+                    <span class="mv-call-brief-chip">{{ c }}</span>
+                  }
+                </div>
+              </div>
+            }
+            @if (openingLine(); as line) {
+              <div class="mv-call-brief-sec">
+                <span class="mv-call-brief-label">How it opened</span>
+                <p class="mv-call-brief-quote">"{{ line }}"</p>
+              </div>
+            }
+          </div>
+        </div>
+      </aside>
+
+      <!-- in-call Case File panel -->
+      <aside
+        class="mv-call-panel mv-call-panel-casefile"
+        [class.mv-call-panel-open]="caseFileOpen()"
+        [attr.aria-hidden]="!caseFileOpen()"
+        aria-label="Case file"
+      >
+        <div class="mv-call-panel-inner">
+          <div class="mv-call-panel-head">
+            <span class="mv-call-panel-title">Case file</span>
+            <button
+              type="button"
+              class="mv-call-panel-close"
+              aria-label="Close case file"
+              (click)="toggleCaseFile()"
+            >
+              <ng-icon name="lucideX" class="text-base" aria-hidden="true" />
+            </button>
+          </div>
+          <div class="mv-call-panel-body">
+            @if (artifacts().length) {
+              @for (a of artifacts(); track $index) {
+                <button
+                  type="button"
+                  class="mv-call-casefile-artifact"
+                  [class.mv-call-casefile-artifact-open]="caseFileArtifact() === $index"
+                  [attr.aria-expanded]="caseFileArtifact() === $index"
+                  (click)="toggleCaseFileArtifact($index)"
+                >
+                  <ng-icon [name]="artifactIcon(a)" [class]="artifactClass(a)" aria-hidden="true" />
+                  <span class="min-w-0 flex-1 text-left">
+                    <span class="block truncate">{{ artifactTitle(a) }}</span>
+                    <span class="mv-call-casefile-artifact-kind">
+                      {{ artifactKind(a) }}
+                      @if (isConfidential(a)) {
+                        · <span class="text-white/70">Confidential</span>
+                      }
+                    </span>
+                  </span>
+                  <ng-icon
+                    name="lucideChevronDown"
+                    class="mv-call-casefile-chev shrink-0"
+                    [class.mv-call-casefile-chev-open]="caseFileArtifact() === $index"
+                    aria-hidden="true"
+                  />
+                </button>
+                @if (caseFileArtifact() === $index) {
+                  <div class="mv-call-casefile-paper mv-paper">
+                    <ng-container
+                      [ngTemplateOutlet]="artifactBody"
+                      [ngTemplateOutletContext]="{ $implicit: a }"
+                    ></ng-container>
+                  </div>
+                  @if (artifactNote(a); as note) {
+                    <p class="mv-call-casefile-note">{{ note }}</p>
+                  }
+                }
+              }
+            } @else {
+              <p class="mv-call-casefile-empty">No case-file records for this scenario.</p>
+            }
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+}
+
+<!-- Shared case-file artifact renderer — used by the briefing pane and the in-call brief drawer. -->
+<ng-template #artifactBody let-a>
+  @switch (artifactType(a)) {
+    @case ('email') {
+      <div class="mv-paper-divide">
+        @for (m of emails(a); track $index) {
+          <div class="mv-mail">
+            <span class="mv-mail-avatar" aria-hidden="true">{{ initials(str(m, 'from')) }}</span>
+            <div class="min-w-0 flex-1">
+              <div class="mv-mail-row">
+                <p class="mv-mail-from">{{ str(m, 'from') }}</p>
+                <p class="mv-mail-time">{{ str(m, 'time') }}</p>
+              </div>
+              <p class="mv-mail-to">
+                to {{ str(m, 'to') }}
+                @if (str(m, 'cc')) {
+                  <span> · cc {{ str(m, 'cc') }}</span>
+                }
+              </p>
+              @if (str(m, 'subject')) {
+                <p class="mv-mail-subject">{{ str(m, 'subject') }}</p>
+              }
+              <p class="mv-mail-body">{{ str(m, 'body') }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    }
+    @case ('chat') {
+      <div class="mv-chat">
+        <p class="mv-chat-channel">{{ chatChannel(a) }}</p>
+        @for (m of chatMessages(a); track $index) {
+          <div class="mv-chatmsg">
+            <span class="mv-chat-avatar" aria-hidden="true">{{ initials(str(m, 'author')) }}</span>
+            <div class="min-w-0">
+              <p class="mv-chat-meta">
+                <span class="mv-chat-author">{{ str(m, 'author') }}</span>
+                <span class="mv-chat-time">{{ str(m, 'time') }}</span>
+              </p>
+              <p class="mv-chat-text">{{ str(m, 'text') }}</p>
+              @if (str(m, 'reactions')) {
+                <p class="mv-chat-react">{{ str(m, 'reactions') }}</p>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+    @case ('spreadsheet') {
+      <!-- spreadsheets open in the viewer, not inline -->
+      <button type="button" class="mv-sheet-launch" (click)="openViewerFor(a)">
+        <span class="mv-sheet-launch-icon" aria-hidden="true">
+          <ng-icon name="lucideFileSpreadsheet" />
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="mv-sheet-launch-name">{{ sheetName(a) }}</span>
+          <span class="mv-sheet-launch-meta">
+            {{ sheetColumns(a).length }} columns · {{ sheetRows(a).length }} rows
+          </span>
+        </span>
+        <span class="mv-sheet-launch-cta">
+          Open full view <ng-icon name="lucideArrowRight" aria-hidden="true" />
+        </span>
+      </button>
+      @if (sheetCaption(a); as cap) {
+        <p class="mv-sheet-note">{{ cap }}</p>
+      }
+    }
+    @default {
+      <div class="mv-docv">
+        <p class="mv-doc-kind">{{ docKind(a) }}</p>
+        @if (docHeading(a); as h) {
+          <h4 class="mv-doc-heading">{{ h }}</h4>
+        }
+        @if (docMeta(a); as m) {
+          <p class="mv-doc-meta">{{ m }}</p>
+        }
+        <div class="mv-doc-body">
+          @for (line of docLines(a); track $index) {
+            @if (line.bullet) {
+              <p class="mv-doc-bullet">
+                <span class="mv-dot" aria-hidden="true"></span><span>{{ line.text }}</span>
+              </p>
+            } @else {
+              <p class="mv-doc-para">{{ line.text }}</p>
+            }
+          }
+        </div>
+      </div>
+    }
+  }
+</ng-template>
+
+<!-- case-file viewer modal: sidebar lists all records, switch without closing -->
+@if (viewerArtifact(); as current) {
+  <div class="mv-viewer" role="dialog" aria-modal="true" [attr.aria-label]="artifactTitle(current)">
+    <button
+      type="button"
+      class="mv-viewer-scrim"
+      aria-label="Close case file"
+      (click)="closeViewer()"
+    ></button>
+    <div class="mv-viewer-card">
+      <div class="mv-viewer-head">
+        <p class="mv-viewer-title">
+          <ng-icon
+            [name]="artifactIcon(current)"
+            [class]="artifactClass(current)"
+            aria-hidden="true"
+          />
+          {{ artifactTitle(current) }}
+          <span class="mv-viewer-kind">· {{ artifactKind(current) }}</span>
+        </p>
+        <div class="flex items-center gap-3">
+          @if (isConfidential(current)) {
+            <span class="mv-eyes"
+              ><ng-icon name="lucideLock" aria-hidden="true" /> Your eyes only</span
+            >
+          }
+          <button
+            type="button"
+            class="mv-viewer-close"
+            aria-label="Close case file"
+            (click)="closeViewer()"
+          >
+            <ng-icon name="lucideX" class="text-base" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      <div class="mv-viewer-body">
+        <!-- all records; click to switch -->
+        <aside class="mv-viewer-nav" aria-label="Case-file records">
+          @for (a of artifacts(); track $index) {
+            <button
+              type="button"
+              class="mv-viewer-nav-item"
+              [class.mv-viewer-nav-item-active]="viewerIndex() === $index"
+              [attr.aria-current]="viewerIndex() === $index"
+              (click)="openViewer($index)"
+            >
+              <ng-icon [name]="artifactIcon(a)" [class]="artifactClass(a)" aria-hidden="true" />
+              <span class="min-w-0">
+                <span class="mv-viewer-nav-title">{{ artifactTitle(a) }}</span>
+                <span class="mv-viewer-nav-kind">
+                  {{ artifactKind(a) }}
+                  @if (isConfidential(a)) {
+                    · Confidential
+                  }
+                </span>
+              </span>
+            </button>
+          }
+        </aside>
+
+        <div class="mv-viewer-main">
+          @if (artifactType(current) === 'spreadsheet') {
+            <!-- the sheet's table renders only here -->
+            <div class="mv-viewer-sheet">
+              <div class="mv-sheet-scroll">
+                <table class="mv-sheet">
+                  <thead>
+                    <tr>
+                      @for (col of sheetColumns(current); track $index) {
+                        <th>{{ col }}</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of sheetRows(current); track $index) {
+                      <tr>
+                        @for (cell of row; track $index) {
+                          <td>{{ cell }}</td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              @if (sheetCaption(current); as cap) {
+                <p class="mv-sheet-caption">{{ cap }}</p>
+              }
+            </div>
+          } @else {
+            <div class="mv-paper">
+              <ng-container
+                [ngTemplateOutlet]="artifactBody"
+                [ngTemplateOutletContext]="{ $implicit: current }"
+              ></ng-container>
+            </div>
+          }
+          @if (artifactNote(current); as note) {
+            <p class="mv-viewer-note">{{ note }}</p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}

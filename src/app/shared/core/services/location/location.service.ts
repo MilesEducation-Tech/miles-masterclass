@@ -1,4 +1,4 @@
-import { inject, PLATFORM_ID, REQUEST, Service } from '@angular/core';
+import { Injectable, PLATFORM_ID, REQUEST, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { timezone } from '../../constant/timezone';
 import { country } from '../../constant/country';
@@ -9,7 +9,9 @@ import { Storage } from '../storage/storage';
 // render (e.g. a refresh) uses it instead of the server's own timezone.
 const COUNTRY_COOKIE = 'country';
 
-@Service()
+@Injectable({
+  providedIn: 'root',
+})
 export class LocationService {
   private logger = inject(Logger);
   private readonly storage = inject(Storage);

@@ -1,11 +1,11 @@
 <div
   class="min-h-screen bg-[#0B0D10] text-white p-6 md:p-12 pt-28! font-sans flex flex-col items-center"
 >
-  @if (!feedback.submitted()) {
+  @if (!submissionSuccess()) {
     <!-- Main Header -->
     <header class="mb-10 text-center space-y-2">
       <h1 class="text-4xl font-bold tracking-tight text-white mb-2">Course Evaluation Feedback</h1>
-      @if (feedback.course(); as course) {
+      @if (courseDetails(); as course) {
         <p class="text-gray-300 text-lg">
           {{ course.title }}
           @if (course.instructor_details; as instructor) {
@@ -17,7 +17,9 @@
       <!-- User Info -->
       @if (currentUser(); as user) {
         <div class="flex flex-col items-center text-blue-500 mt-4 space-y-1">
-          <span class="text-base font-medium">Name- {{ user.firstName }} {{ user.lastName }}</span>
+          <span class="text-base font-medium"
+            >Name- {{ user.first_name }} {{ user.last_name }}</span
+          >
           <span class="text-base font-medium">Registered E-mail ID- {{ user.email }}</span>
         </div>
       }
@@ -78,34 +80,20 @@
         </div>
 
         <div class="space-y-6">
-          @if (feedback.isLoading()) {
-            <p class="text-gray-400 text-sm px-4 py-3">Loading the feedback form…</p>
-          } @else if (feedback.loadError()) {
-            <!-- Recipe step 9: a surfaced failure needs a branch, or a 403 is a
-                 blank form the learner cannot act on. -->
-            <p class="text-gray-300 text-sm px-4 py-3">
-              We couldn't load the feedback questions. Please refresh, or try again later.
-            </p>
-          } @else if (!feedback.questions().length) {
-            <p class="text-gray-400 text-sm px-4 py-3">
-              There are no feedback questions for this course.
-            </p>
-          }
-
-          @for (question of feedback.questions(); track question.id) {
+          @for (category of categories(); track category.id) {
             <div
               class="md:grid md:grid-cols-2 gap-4 items-center px-4 py-3 border-b border-[#3E4552]/50 last:border-0 hover:bg-[#1C2530]/50 transition-colors"
             >
               <p class="text-gray-200 text-sm mb-2 md:mb-0 pr-4">
-                {{ question.question }}
+                {{ category.feedback_category }}
               </p>
 
               <!-- Stars aligned with header -->
               <div class="flex justify-center md:justify-end">
                 <app-rating-star
-                  [value]="getRating(question.id)"
-                  (valueChange)="setRating(question.id, $event)"
-                  [isReadonly]="feedback.isReadOnly()"
+                  [value]="getRating(category.id)"
+                  (valueChange)="setRating(category.id, $event)"
+                  [isReadonly]="isReadOnly()"
                   size="1.5rem"
                   containerClass="grid grid-cols-5 w-full"
                   starClass="flex justify-center items-center"
@@ -124,18 +112,17 @@
           type="textarea"
           placeholder="Type here"
           [rows]="4"
-          [value]="feedback.comments()"
-          (valueChange)="feedback.setComments($any($event) ?? '')"
-          [disabled]="feedback.isReadOnly()"
+          [(value)]="otherComments"
+          [disabled]="isReadOnly()"
           class="w-full"
         ></app-aria-input>
       </div>
 
       <!-- Footer Action -->
-      @if (!feedback.isReadOnly()) {
+      @if (!isReadOnly()) {
         <div class="flex justify-center pt-4">
-          <app-button variant="default" type="submit" [disabled]="!feedback.canSubmit()">
-            @if (feedback.isSubmitting()) {
+          <app-button variant="default" type="submit" [disabled]="!isValid || isSubmitting()">
+            @if (isSubmitting()) {
               Submitting...
             } @else {
               Submit
@@ -167,13 +154,22 @@
       <h2 class="text-3xl font-bold text-white">Thank You!</h2>
       <p class="text-gray-400 text-lg">Your feedback has been submitted successfully.</p>
 
-      @if (feedback.certificateUrl(); as certificate) {
+      @if (certificateUrls(); as urls) {
         <div class="flex flex-col gap-4 mt-8 w-full">
-          <a [href]="certificate" target="_blank" rel="noopener noreferrer" class="w-full">
-            <app-button variant="outline" class="w-full text-white border-white hover:bg-white/10"
-              >Download Certificate</app-button
-            >
-          </a>
+          <!-- @if (urls.miles) {
+            <a [href]="urls.miles" target="_blank" rel="noopener noreferrer" class="w-full">
+              <app-button class="w-full bg-white text-black hover:bg-gray-200"
+                >Download Miles Certificate</app-button
+              >
+            </a>
+          } -->
+          @if (urls.nasba) {
+            <a [href]="urls.nasba" target="_blank" rel="noopener noreferrer" class="w-full">
+              <app-button variant="outline" class="w-full text-white border-white hover:bg-white/10"
+                >Download NASBA Certificate</app-button
+              >
+            </a>
+          }
         </div>
       }
 

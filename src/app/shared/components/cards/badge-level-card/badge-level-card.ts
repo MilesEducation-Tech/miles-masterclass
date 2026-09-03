@@ -1,5 +1,6 @@
 import { NgClass, NgOptimizedImage } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
+import { BadgeLevelItem } from '../../../core/models/badge.model';
 
 @Component({
   selector: 'app-badge-level-card',
@@ -8,8 +9,8 @@ import { Component, computed, input, output } from '@angular/core';
   styleUrl: './badge-level-card.css',
 })
 export class BadgeLevelCard {
-  readonly badge = input.required<any>();
-  readonly cardClicked = output<any>();
+  readonly badge = input.required<BadgeLevelItem>();
+  readonly cardClicked = output<BadgeLevelItem>();
 
   readonly statusLabel = computed(() => {
     const s = this.badge().status;

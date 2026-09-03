@@ -3,10 +3,10 @@ import {
   computed,
   effect,
   inject,
+  Injectable,
   linkedSignal,
   PLATFORM_ID,
   resource,
-  Service,
   signal,
   untracked,
 } from '@angular/core';
@@ -45,7 +45,7 @@ function csvCell(value: unknown): string {
  * gates SELECT by leads:read, UPDATE by leads:write. Mirrors the page-by-page
  * pattern of PartnerUsersFacade but talks to Supabase like AdminUsersFacade.
  */
-@Service()
+@Injectable({ providedIn: 'root' })
 export class LeadsFacade {
   private readonly supabase = inject(Supabase);
   private readonly logger = inject(Logger);

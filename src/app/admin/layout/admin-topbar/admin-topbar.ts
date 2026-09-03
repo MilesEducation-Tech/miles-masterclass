@@ -41,6 +41,23 @@ const SEGMENT_LABELS: Record<string, string> = {
   'roles-permissions': 'Roles & permissions',
   forbidden: 'Forbidden',
   login: 'Login',
+  partner: 'Partner Platform',
+  'partner-v2': 'Partner Platform v2',
+  superadmin: 'Super Admin',
+  panel: 'Panel',
+  'partner-code-tracker': 'Partner Code Tracker',
+  'user-onboarding': 'User Onboarding',
+  'admin-users': 'Admin Users',
+  networks: 'Networks',
+  firms: 'Firms',
+  codes: 'Partner Codes',
+  'partner-codes': 'Partner Codes',
+  'partner-admins': 'Partner Admins',
+  tracker: 'Seat Tracker',
+  users: 'Users',
+  onboarding: 'User Onboarding',
+  overview: 'Overview',
+  new: 'New',
 };
 
 @Component({

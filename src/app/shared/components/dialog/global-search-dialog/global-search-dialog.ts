@@ -16,15 +16,21 @@ import { lucideSearch, lucideX } from '@ng-icons/lucide';
 import { debounceTime, distinctUntilChanged, switchMap, startWith, tap } from 'rxjs/operators';
 import { DialogRef } from '../../../core/services/dialog/dialog';
 import { Utils } from '../../../core/services/utils/utils';
+import { GlobalSearch } from '../../../core/services/global-search/global-search';
 import { Analytics } from '../../../core/services/analytics/analytics';
+import {
+  SEARCH_TYPE_TO_URL_SEGMENT,
+  SearchCourseType,
+  SearchSuggestion,
+} from '../../../core/models/search.model';
 
 interface SuggestionGroup {
-  type: any;
+  type: SearchCourseType;
   label: string;
-  items: any[];
+  items: SearchSuggestion[];
 }
 
-const TYPE_LABELS: Record<any, string> = {
+const TYPE_LABELS: Record<SearchCourseType, string> = {
   masterclass: 'Master Classes',
   podcast: 'Podcasts',
   micro_learning: 'Micro-Learning',
@@ -32,19 +38,13 @@ const TYPE_LABELS: Record<any, string> = {
   webinar: 'Webinars',
 };
 
-const TYPE_ORDER: any[] = ['masterclass', 'podcast', 'micro_learning', 'nano_learning', 'webinar'];
-
-/**
- * Maps a search result's type onto the URL segment its detail page lives at.
- * The search UI's own routing vocabulary, not a wire shape.
- */
-const SEARCH_TYPE_TO_URL_SEGMENT: Record<string, string> = {
-  masterclass: 'masterclass',
-  podcast: 'podcast',
-  micro_learning: 'micro-learning',
-  nano_learning: 'micro-learning',
-  webinar: 'webinar',
-};
+const TYPE_ORDER: SearchCourseType[] = [
+  'masterclass',
+  'podcast',
+  'micro_learning',
+  'nano_learning',
+  'webinar',
+];
 
 @Component({
   selector: 'app-global-search-dialog',
@@ -58,12 +58,7 @@ export class GlobalSearchDialog implements AfterViewInit {
 
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
-  // ponytail: GlobalSearch was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly globalSearch: any = {
-    search: (..._args: any[]): any => null,
-  };
+  private readonly globalSearch = inject(GlobalSearch);
   private readonly analytics = inject(Analytics);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -86,12 +81,12 @@ export class GlobalSearchDialog implements AfterViewInit {
       }),
       takeUntilDestroyed(this.destroyRef),
     ),
-    { initialValue: [] as any[] },
+    { initialValue: [] as SearchSuggestion[] },
   );
 
   protected readonly groups = computed<SuggestionGroup[]>(() => {
-    const grouped = new Map<string, any[]>();
-    for (const item of this.results() as any[]) {
+    const grouped = new Map<SearchCourseType, SearchSuggestion[]>();
+    for (const item of this.results()) {
       const list = grouped.get(item.type) ?? [];
       list.push(item);
       grouped.set(item.type, list);
@@ -137,11 +132,11 @@ export class GlobalSearchDialog implements AfterViewInit {
     }
   }
 
-  protected isFocused(item: any): boolean {
+  protected isFocused(item: SearchSuggestion): boolean {
     return this.flatResults()[this.focusedIndex()]?.id === item.id;
   }
 
-  protected selectResult(item: any): void {
+  protected selectResult(item: SearchSuggestion): void {
     const segment = SEARCH_TYPE_TO_URL_SEGMENT[item.type] ?? 'masterclass';
     const titleSlug = this.utils.slugify(item.title);
     this.analytics.trackEvent('search', {

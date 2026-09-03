@@ -50,11 +50,22 @@
         }
       } @else {
         <div class="relative inset-0 w-full h-full">
-          <!-- `ngSrc` throws NG02952 on an empty or null value and takes the
-               whole render with it, so the artwork is resolved and guarded
-               rather than bound straight off the card. -->
-          @if (artworkFor(item); as artwork) {
-            <img [ngSrc]="artwork" [priority]="true" fill class="object-cover" [alt]="item.title" />
+          @if (!isMobile()) {
+            <img
+              [ngSrc]="item.thumbnail"
+              [priority]="true"
+              fill
+              class="object-cover"
+              [alt]="item.title"
+            />
+          } @else {
+            <img
+              [ngSrc]="item.horizontal_thumbnail"
+              [priority]="true"
+              fill
+              class="object-cover"
+              [alt]="item.title"
+            />
           }
         </div>
       }

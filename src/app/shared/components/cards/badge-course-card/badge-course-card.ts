@@ -1,5 +1,6 @@
 import { NgClass, NgOptimizedImage } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
+import { badgeInstructorName, BadgeCourseItem } from '../../../core/models/badge.model';
 
 @Component({
   selector: 'app-badge-course-card',
@@ -8,8 +9,8 @@ import { Component, computed, input, output } from '@angular/core';
   styleUrl: './badge-course-card.css',
 })
 export class BadgeCourseCard {
-  readonly badge = input.required<any>();
-  readonly cardClicked = output<any>();
+  readonly badge = input.required<BadgeCourseItem>();
+  readonly cardClicked = output<BadgeCourseItem>();
 
   /**
    * Normalized view of whichever course payload is non-null on the badge item.
@@ -28,7 +29,7 @@ export class BadgeCourseCard {
       return {
         title: w.webinar_title,
         horizontal_thumbnail: w.horizontal_thumbnail,
-        instructorName: instructorName(w.instructor_details),
+        instructorName: badgeInstructorName(w.instructor_details),
         credits: w.webinar_credits ?? null,
       };
     }
@@ -38,7 +39,7 @@ export class BadgeCourseCard {
     return {
       title: c.title,
       horizontal_thumbnail: c.horizontal_thumbnail,
-      instructorName: instructorName(c.instructor_details),
+      instructorName: badgeInstructorName(c.instructor_details),
       credits: c.class_credits ?? null,
     };
   });
@@ -65,18 +66,4 @@ export class BadgeCourseCard {
   handleClick() {
     this.cardClicked.emit(this.badge());
   }
-}
-
-/**
- * Join a lead instructor and any co-instructors into one display string.
- * Presentation logic — lifted out of the deleted `badge.model.ts`.
- */
-function instructorName(details: any): string | null {
-  if (!details) return null;
-  return (
-    [details, ...(details.other_instructors ?? [])]
-      .map((i: any) => `${i.first_name ?? ''} ${i.last_name ?? ''}`.trim())
-      .filter(Boolean)
-      .join(', ') || null
-  );
 }

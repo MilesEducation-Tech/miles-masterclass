@@ -2,7 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { svglFacebook, svglInstagram, svglLinkedin, svglYoutube } from '@ng-icons/svgl';
-import { InstructorProfile } from '../../../core/models/caira/course-detail.model';
+import { InstructorListItem } from '../../../core/models/library.model';
 
 @Component({
   selector: 'app-instructor-card',
@@ -12,8 +12,8 @@ import { InstructorProfile } from '../../../core/models/caira/course-detail.mode
   viewProviders: [provideIcons({ svglLinkedin, svglFacebook, svglInstagram, svglYoutube })],
 })
 export class InstructorCard {
-  instructor = input.required<InstructorProfile>();
-  readonly cardClicked = output<InstructorProfile>();
+  instructor = input.required<InstructorListItem>();
+  readonly cardClicked = output<InstructorListItem>();
 
   /**
    * Available social handles for the floating top-right chip strip on the

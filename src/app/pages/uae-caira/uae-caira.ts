@@ -1,5 +1,5 @@
 import { DatePipe, DOCUMENT } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 
 import { environment } from '../../../environments/environment';
 import { Faq } from '../../pages/faq/faq';
@@ -20,6 +20,7 @@ import {
   PartnerContentItem,
   PartnerContentList,
 } from '../../features/partners/shared/components/partner-content-list/partner-content-list';
+import { WebinarFacade } from '../../features/offerings/webinar/shared/services/webinar-facade/webinar-facade';
 import { nextSessionOf } from '../../features/offerings/webinar/shared/utils/webinar-status';
 import {
   iconCairaBadge,
@@ -58,13 +59,7 @@ import {
   styleUrl: './uae-caira.css',
 })
 export class UaeCaira {
-  // ponytail: WebinarFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly facade: any = {
-    liveOrNextUp: null as any,
-    loadHomePage: signal<any>(null),
-  };
+  private readonly facade = inject(WebinarFacade);
   private readonly document = inject(DOCUMENT);
   private readonly S3 = environment.S3_BUCKET_URL;
 

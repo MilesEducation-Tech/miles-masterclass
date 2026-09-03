@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
+import { argsToTemplate } from '@storybook/angular';
 import { Spinner } from './spinner';
 
 const meta: Meta<Spinner> = {

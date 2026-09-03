@@ -1,3 +1,5 @@
+import { LmsUserType } from '../../../../../shared/core/models/auth.model';
+
 /**
  * Pre-login webinar registration API contracts.
  *
@@ -8,7 +10,8 @@
  *      - `already_enrolled` → already-enrolled short-circuit, no further action.
  *      - `otp_required`     → backend emailed an OTP; hit `/verify-otp/` next.
  *   3. On OTP path, `POST /webinar/registrations/verify-otp/` with the
- *      `session_id` + 6-digit code finalises the enrollment.
+ *      `identifier` the code was sent to + the 6-digit code finalises the
+ *      enrollment.
  *
  * Out-of-band: if the email is LMS-routed (CAIRA / enrolled / alumni), the
  * registration call returns `status: false` with `data.is_lms_access_blocked`
@@ -39,9 +42,17 @@ export type WebinarRegistrationFlow = 'otp_required' | 'direct_enrolled' | 'alre
 export interface WebinarRegistrationOtpRequired {
   flow: 'otp_required';
   already_enrolled: false;
-  session_id: number;
-  /** Dev-only — present on non-prod for QA autofill. Omitted in prod. */
-  otp_dev?: number;
+  /**
+   * The address the code was sent to, echoed back by the server.
+   *
+   * Replaces `session_id`: Miles SSO has no server-side OTP session, so the
+   * identifier is what ties send to verify.
+   */
+  identifier: string;
+  /** How the code was actually delivered. Email-only on this form today. */
+  channel?: 'email' | 'sms' | 'whatsapp';
+  /** A server-side stopgap being withdrawn upstream. Never branch on it. */
+  dev_code?: string;
 }
 
 /** `data` payload returned when the registration short-circuits to enrolled. */
@@ -75,7 +86,7 @@ export type WebinarRegistrationResult =
  */
 export interface WebinarRegistrationAccessBlocked {
   is_lms_access_blocked: boolean;
-  lms_user_type: any | null;
+  lms_user_type: LmsUserType | null;
 }
 
 export interface WebinarRegistrationResponse {
@@ -98,7 +109,8 @@ export function isWebinarRegistrationAccessBlocked(
 
 /** Request body for `POST /webinar/registrations/verify-otp/`. */
 export interface WebinarRegistrationVerifyRequest {
-  session_id: number;
+  /** Echoed back from the register step — see `WebinarRegistrationOtpRequired`. */
+  identifier: string;
   otp: string;
   /** Raw campaign token captured from the `?dXRt=` landing link (see `Utm`). */
   utm_url?: string;

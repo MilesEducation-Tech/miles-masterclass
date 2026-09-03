@@ -1,4 +1,4 @@
-import { inject, PLATFORM_ID, REQUEST, Service } from '@angular/core';
+import { Injectable, PLATFORM_ID, REQUEST, inject } from '@angular/core';
 import { isPlatformBrowser, isPlatformServer } from '@angular/common';
 import { CookieService } from 'ngx-cookie-service';
 import { CookieOptions } from '../../models/storage.model';
@@ -10,7 +10,9 @@ import { generateUUID } from '../../../utils/uuid';
  * SSR-safe implementation using ngx-cookie-service for cookies.
  * On the server, cookies are read from the incoming HTTP request headers.
  */
-@Service()
+@Injectable({
+  providedIn: 'root',
+})
 export class Storage {
   private readonly cookieService = inject(CookieService);
   private readonly platformId = inject(PLATFORM_ID);

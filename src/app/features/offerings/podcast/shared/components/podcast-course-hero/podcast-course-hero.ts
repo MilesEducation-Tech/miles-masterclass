@@ -1,6 +1,7 @@
 import { Component, computed, DestroyRef, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Auth } from '../../../../../../shared/core/services/auth/auth';
+import { MasterclassFacade } from '../../../../shared/services/masterclass-facade/masterclass-facade';
 import { Utils } from '../../../../../../shared/core/services/utils/utils';
 import { cn } from '../../../../../../shared/utils/cn';
 import { Button } from '../../../../../../shared/components/ui/button/button';
@@ -22,7 +23,6 @@ import { RecordDisk } from '../../../../../../shared/components/record-disk/reco
 import { CategoriesList } from '../../../../../../shared/components/categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../../../../../shared/core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { CairaCredlyBadge } from '../../../../../../shared/components/cards/caira-credly-badge/caira-credly-badge';
-import { CourseDetail } from '../../../../shared/services/course-detail/course-detail';
 
 @Component({
   selector: 'app-podcast-course-hero',
@@ -56,8 +56,7 @@ import { CourseDetail } from '../../../../shared/services/course-detail/course-d
 })
 export class PodcastCourseHero {
   readonly auth = inject(Auth);
-  /** Route-scoped — the same instance `PodcastCourse` keys on the route id. */
-  readonly masterclass = inject(CourseDetail);
+  readonly masterclass = inject(MasterclassFacade);
   private readonly utils = inject(Utils);
   private readonly destroyRef = inject(DestroyRef);
   cn = cn;
@@ -85,12 +84,24 @@ export class PodcastCourseHero {
   }
 
   /**
-   * #15 lives on the service — see `MasterclassCourseHero.toggleBookmark`.
-   * CAIRA has one bookmark endpoint and it takes a masterclass course id, so
-   * there is no podcast variant to pass through any more.
+   * Toggle the podcast bookmark via the shared util. Patches the local
+   * `courseDetails` signal on success so the icon flips immediately — the
+   * server is the source of truth via `response.is_bookmarked`. Login gate
+   * and toast are handled centrally by `Utils.toggleBookmarkCourse`.
    */
   toggleBookmark() {
-    this.masterclass.toggleBookmark();
+    const id = this.courseId();
+    if (!id) return;
+    this.utils
+      .toggleBookmarkCourse(+id, { course_type: 'podcast' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => {
+        if (response.status) {
+          this.masterclass.courseDetails.update((course) =>
+            course ? { ...course, added_bookmark: response.is_bookmarked } : course,
+          );
+        }
+      });
   }
 
   /**
@@ -99,7 +110,7 @@ export class PodcastCourseHero {
    * toasts; we just patch the local `courseDetails` signal so the icon flips
    * without re-fetching the whole course payload.
    */
-  addToCart(courseId: string, isAddedToCart: boolean) {
+  addToCart(courseId: number, isAddedToCart: boolean) {
     this.utils
       .addCourseToCart(courseId, isAddedToCart)
       .pipe(takeUntilDestroyed(this.destroyRef))

@@ -1,0 +1,686 @@
+/* =====================================================================
+   MilesVerse scenario briefing — styles, part 2 of 2.
+
+   Continuation of briefing.css (rubric, session brief, difficulty selector,
+   and the full-screen live-call overlay). Split from briefing.css ONLY to keep
+   each file under Angular's per-file `anyComponentStyle` budget (16 kB) — both
+   are `styleUrls` of the same MilesverseBriefing component, so scopes are
+   shared and the @keyframes defined here (`mv-call-in`) are global within the
+   component's injected styles — `.mv-viewer` in briefing.css relies on that.
+   ===================================================================== */
+
+/* ── Marking scheme ──────────────────────────────────────────────────── */
+.mv-marking-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  text-align: left;
+  margin-top: 1rem;
+  padding: 1.1rem 1.35rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  transition: border-color 150ms ease;
+}
+.mv-marking-toggle:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+.mv-chev {
+  color: var(--muted-foreground);
+  transition: transform 250ms ease;
+}
+.mv-chev-open {
+  transform: rotate(180deg);
+}
+/* ── How it opens ────────────────────────────────────────────────────── */
+.mv-opening {
+  position: relative;
+  margin-top: 1rem;
+  padding: 1.5rem 1.6rem 1.5rem 3.3rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 7%, var(--card)),
+    var(--card)
+  );
+}
+/* ── Session brief ───────────────────────────────────────────────────── */
+.mv-brief {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 20px 46px -30px rgb(0 0 0 / 0.8);
+}
+.mv-brief-block {
+  padding: 1.1rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+.mv-brief-label {
+  margin-bottom: 0.7rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.mv-persona-mark {
+  display: grid;
+  place-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  font-size: 1.1rem;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+/* real portrait in the session brief; falls back to the icon mark on error */
+.mv-persona-photo {
+  display: grid;
+  place-content: center;
+  width: 3rem;
+  height: 3rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  font-size: 1.1rem;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  box-shadow: 0 6px 16px -8px rgb(0 0 0 / 0.6);
+}
+.mv-persona-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* difficulty selector — every option reads as a live, clickable card */
+.mv-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+  cursor: pointer;
+  transition:
+    border-color 200ms ease,
+    background 200ms ease,
+    transform 150ms ease;
+}
+.mv-mode:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--muted) 60%, transparent);
+}
+.mv-mode:active {
+  transform: scale(0.985);
+}
+.mv-mode-active {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.mv-meter {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.mv-bar {
+  width: 4px;
+  height: 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground) 45%, transparent);
+  transition: background 250ms ease;
+}
+.mv-bar-2 {
+  height: 13px;
+}
+.mv-bar-3 {
+  height: 17px;
+}
+.mv-mode .mv-bar-on {
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.mv-mode-active .mv-bar-on {
+  background: var(--accent);
+}
+.mv-mode-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.mv-mode-desc {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+.mv-radio {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--muted-foreground) 55%, transparent);
+  transition:
+    border-color 200ms ease,
+    background 200ms ease;
+}
+.mv-radio-on {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--card);
+}
+
+/* ===================== live session (full-screen Anam call) ===================== */
+/* Sits above the fixed site header (z-1000): the session takes over the screen. */
+.mv-call {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #05070c;
+  animation: mv-call-in 260ms ease;
+}
+@keyframes mv-call-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* Row layout: the video pane and the (normally zero-width) panels are flex
+   siblings, so opening a panel shrinks the video instead of floating over it. */
+.mv-call-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  background: #05070c;
+}
+.mv-call-main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+.mv-call-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #05070c;
+}
+.mv-call-scrim {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.35rem;
+  text-align: center;
+  padding: 2rem;
+  background: radial-gradient(
+    60% 60% at 50% 42%,
+    color-mix(in srgb, var(--accent) 14%, transparent),
+    #05070c 78%
+  );
+}
+.mv-call-persona-mark {
+  width: 4.5rem;
+  height: 4.5rem;
+  font-size: 1.9rem;
+  margin-bottom: 0.5rem;
+}
+.mv-call-spinner {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-top-color: var(--accent);
+  animation: mv-call-spin 800ms linear infinite;
+}
+@keyframes mv-call-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.mv-call-msg {
+  font-size: 0.95rem;
+  color: color-mix(in srgb, white 82%, transparent);
+}
+.mv-call-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0.55), transparent);
+}
+.mv-call-id {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 0.9rem;
+}
+.mv-live-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--destructive);
+  box-shadow: 0 0 0 0 rgb(239 68 68 / 0.6);
+  animation: mv-live-pulse 1.6s ease-out infinite;
+}
+@keyframes mv-live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(239 68 68 / 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgb(239 68 68 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(239 68 68 / 0);
+  }
+}
+/* elapsed timer — a live instrument at the top-left: pulsing dot inside a
+   progress ring that fills toward the 5:00 session target, time in large
+   tabular digits that shift white → gold → red as the clock runs down, and
+   the "/ 5:00" target revealed on hover. */
+.mv-call-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-shrink: 0;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, black 55%, transparent);
+  border: 1px solid color-mix(in srgb, white 18%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 26px -12px rgb(0 0 0 / 0.7);
+  transition:
+    background 200ms ease,
+    border-color 200ms ease;
+}
+.mv-call-timer:hover {
+  background: color-mix(in srgb, black 72%, transparent);
+  border-color: color-mix(in srgb, white 30%, transparent);
+}
+.mv-call-timer-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.mv-call-timer-ring .mv-live-dot {
+  position: absolute;
+}
+.mv-call-timer-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: color 300ms ease;
+}
+.mv-call-timer-total {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: color-mix(in srgb, white 55%, transparent);
+  transition:
+    max-width 250ms ease,
+    opacity 250ms ease;
+}
+.mv-call-timer:hover .mv-call-timer-total {
+  max-width: 3.5rem;
+  opacity: 1;
+}
+.mv-call-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.6), transparent);
+}
+.mv-call-btn {
+  display: grid;
+  place-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 999px;
+  color: white;
+  background: color-mix(in srgb, white 16%, transparent);
+  border: 1px solid color-mix(in srgb, white 22%, transparent);
+  transition:
+    background 180ms ease,
+    transform 120ms ease;
+}
+.mv-call-btn:hover {
+  background: color-mix(in srgb, white 26%, transparent);
+}
+.mv-call-btn:active {
+  transform: scale(0.94);
+}
+.mv-call-btn-off {
+  background: color-mix(in srgb, var(--mm-warn, #f6bc53) 85%, transparent);
+  color: #1a1205;
+  border-color: transparent;
+}
+.mv-call-btn-end {
+  background: var(--destructive);
+  border-color: transparent;
+}
+.mv-call-btn-end:hover {
+  background: color-mix(in srgb, var(--destructive) 82%, white);
+}
+/* top-left cluster: persona identity */
+.mv-call-topleft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+/* top-right cluster: Brief + Case File toggles */
+.mv-call-topright {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.mv-call-panel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+  background: color-mix(in srgb, black 45%, transparent);
+  border: 1px solid color-mix(in srgb, white 22%, transparent);
+  backdrop-filter: blur(8px);
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 120ms ease;
+}
+.mv-call-panel-btn:hover {
+  background: color-mix(in srgb, black 62%, transparent);
+}
+.mv-call-panel-btn:active {
+  transform: scale(0.96);
+}
+.mv-call-panel-btn-active {
+  background: var(--accent);
+  border-color: transparent;
+}
+.mv-call-panel-btn-active:hover {
+  background: var(--accent);
+}
+
+/* --- in-call panels: Brief and Case File, on demand --- */
+/* A flex sibling of .mv-call-main, not an overlay: the outer element is the
+   width-animated "peephole" (0 → the panel's width, clipped by overflow),
+   pushing .mv-call-main's flex:1 to shrink the video in step. The inner
+   element holds a stable width the whole time so its content never reflows
+   mid-transition — it's just progressively revealed as the peephole widens. */
+.mv-call-panel {
+  flex-shrink: 0;
+  height: 100%;
+  width: 0;
+  overflow: hidden;
+  transition: width 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: width;
+}
+.mv-call-panel-open.mv-call-panel-brief {
+  width: min(500px, 94vw);
+}
+.mv-call-panel-open.mv-call-panel-casefile {
+  width: min(760px, 96vw);
+}
+.mv-call-panel-inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in srgb, #05070c 82%, transparent);
+  backdrop-filter: blur(18px);
+  border-left: 1px solid color-mix(in srgb, white 12%, transparent);
+  box-shadow: -30px 0 80px -30px rgb(0 0 0 / 0.8);
+}
+/* Brief is text-only — a comfortably wide reading column is enough. */
+.mv-call-panel-brief .mv-call-panel-inner {
+  width: min(500px, 94vw);
+}
+/* Case file has to hold documents and spreadsheets — give it real room. */
+.mv-call-panel-casefile .mv-call-panel-inner {
+  width: min(760px, 96vw);
+}
+.mv-call-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid color-mix(in srgb, white 10%, transparent);
+}
+.mv-call-panel-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, white 60%, transparent);
+}
+.mv-call-panel-close {
+  display: grid;
+  place-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  color: white;
+  background: color-mix(in srgb, white 12%, transparent);
+  transition: background 160ms ease;
+}
+.mv-call-panel-close:hover {
+  background: color-mix(in srgb, white 22%, transparent);
+}
+.mv-call-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.25rem 1.25rem 2rem;
+  color: color-mix(in srgb, white 88%, transparent);
+}
+.mv-call-brief-persona {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid color-mix(in srgb, white 8%, transparent);
+}
+.mv-call-brief-persona-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+}
+.mv-call-brief-persona-role {
+  font-size: 0.78rem;
+  color: color-mix(in srgb, white 55%, transparent);
+}
+.mv-call-brief-sec {
+  margin-top: 1.4rem;
+}
+.mv-call-brief-sec:first-of-type {
+  margin-top: 0;
+}
+.mv-call-brief-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.mv-call-brief-text {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, white 82%, transparent);
+}
+.mv-call-brief-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.mv-call-brief-chip {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: color-mix(in srgb, white 82%, transparent);
+  background: color-mix(in srgb, white 8%, transparent);
+  border: 1px solid color-mix(in srgb, white 12%, transparent);
+}
+.mv-call-casefile-artifact {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.7rem 0;
+  border-top: 1px solid color-mix(in srgb, white 7%, transparent);
+  font-size: 0.9rem;
+  color: color-mix(in srgb, white 88%, transparent);
+  background: transparent;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+.mv-call-casefile-artifact:first-of-type {
+  border-top: none;
+}
+.mv-call-casefile-artifact:hover {
+  color: white;
+}
+.mv-call-casefile-artifact-open {
+  color: white;
+}
+.mv-call-casefile-artifact-kind {
+  display: block;
+  font-size: 0.74rem;
+  color: color-mix(in srgb, white 50%, transparent);
+}
+.mv-call-casefile-chev {
+  font-size: 1rem;
+  color: color-mix(in srgb, white 45%, transparent);
+  transition: transform 220ms ease;
+}
+.mv-call-casefile-chev-open {
+  transform: rotate(180deg);
+  color: white;
+}
+/* the opened artifact: the shared paper viewer, fit to the wider case-file panel */
+.mv-call-casefile-paper {
+  margin: 0.35rem 0 0.75rem;
+  max-height: 62vh;
+  overflow: auto;
+  border-radius: 12px;
+}
+.mv-call-casefile-note {
+  margin: -0.25rem 0 0.75rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, white 55%, transparent);
+}
+.mv-call-casefile-empty {
+  padding: 2rem 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, white 55%, transparent);
+}
+.mv-call-brief-quote {
+  font-style: italic;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, white 80%, transparent);
+  padding-left: 0.85rem;
+  border-left: 2px solid var(--accent);
+}
+
+/* --- "Still there?" idle prompt --- */
+.mv-idle-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-content: center;
+  padding: 2rem;
+  background: rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(4px);
+  animation: mv-call-in 200ms ease;
+}
+.mv-idle-card {
+  width: min(380px, 90vw);
+  padding: 1.6rem 1.7rem;
+  border-radius: 18px;
+  text-align: center;
+  background: color-mix(in srgb, #0b0f18 92%, transparent);
+  border: 1px solid color-mix(in srgb, white 14%, transparent);
+  box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.7);
+}
+.mv-idle-title {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: white;
+}
+.mv-idle-text {
+  margin-top: 0.55rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, white 70%, transparent);
+}
+.mv-idle-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1.4rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mv-call,
+  .mv-call-spinner,
+  .mv-live-dot,
+  .mv-idle-overlay {
+    animation: none;
+  }
+  .mv-call-panel {
+    transition: none;
+  }
+}

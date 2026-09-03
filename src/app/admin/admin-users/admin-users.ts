@@ -13,21 +13,26 @@ import {
   AdminPermissionRow,
   AdminUserListRow,
 } from './shared/services/admin-users-facade';
+import { PartnerSuperAdminFacade } from '../partner-platform/shared/services/partner-superadmin-facade';
 import {
   AdminProvisioning,
   INITIAL_ADMIN_PASSWORD,
 } from '../partner-platform/shared/services/admin-provisioning';
+import {
+  PartnerCapability,
+  PartnerRole,
+} from '../partner-platform/shared/models/partner-platform.model';
 
 /** Django PartnerAdmin mapping derived from a Supabase partner role slug. */
 interface PartnerMapping {
-  role: any;
-  capabilities: string[];
+  role: PartnerRole;
+  capabilities: PartnerCapability[];
   /** 'either' = bind to a network or a firm; 'firm' = firms only. */
   scope: 'either' | 'firm';
 }
 
 /** Firm-scoped Django login (role=firm): own-firm tracker + Users; no code:create:firm. */
-const FIRM_CAPABILITIES = ['report:firm:read', 'user:block'];
+const FIRM_CAPABILITIES: PartnerCapability[] = ['report:firm:read', 'user:block'];
 
 const PARTNER_ROLE_MAP: Record<string, PartnerMapping> = {
   // Network admin is the role picked after creating a network OR a firm, so its
@@ -35,7 +40,7 @@ const PARTNER_ROLE_MAP: Record<string, PartnerMapping> = {
   // role=firm with FIRM_CAPABILITIES (a standalone company's admin).
   partner_network_admin: {
     role: 'network',
-    capabilities: ['report:network:read', 'code:create:firm', 'coupon:send', 'user:block'],
+    capabilities: ['report:network:read', 'code:create:firm', 'seat:send', 'user:block'],
     scope: 'either',
   },
   partner_subcompany_admin: {
@@ -56,14 +61,7 @@ export class AdminUsers {
   protected readonly facade = inject(AdminUsersFacade);
   private readonly notification = inject(NotificationService);
   private readonly auth = inject(AdminAuth);
-  // ponytail: PartnerSuperAdminFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly partnerFacade: any = {
-    createPartnerAdmin: (..._args: any[]): any => null,
-    firms: signal<any[]>([]),
-    networks: signal<any[]>([]),
-  };
+  private readonly partnerFacade = inject(PartnerSuperAdminFacade);
   private readonly provisioning = inject(AdminProvisioning);
   private readonly route = inject(ActivatedRoute);
 
@@ -92,7 +90,7 @@ export class AdminUsers {
   protected readonly prefilledNetworkName = computed(() => {
     const id = this.prefilledNetworkId();
     if (id == null) return null;
-    return this.partnerFacade.networks().find((net: any) => net.id === id)?.name ?? `#${id}`;
+    return this.partnerFacade.networks().find((net) => net.id === id)?.name ?? `#${id}`;
   });
 
   /** Firm id carried in from the standalone-firm-creation deep-link, if any. */
@@ -100,7 +98,7 @@ export class AdminUsers {
   protected readonly prefilledFirmName = computed(() => {
     const id = this.prefilledFirmId();
     if (id == null) return null;
-    return this.partnerFacade.firms().find((f: any) => f.id === id)?.name ?? `#${id}`;
+    return this.partnerFacade.firms().find((f) => f.id === id)?.name ?? `#${id}`;
   });
 
   /** The signed-in admin can't disable their own account (would lock themselves out). */
@@ -173,16 +171,13 @@ export class AdminUsers {
   protected readonly isPartnerRole = computed(() => this.partnerMapping() !== null);
 
   /** Firms a firm-admin login can be bound to (member + standalone), labelled with their network. */
-  protected readonly firmOptions = computed<AriaSelectOption<number>[]>(() => {
-    const networks = new Map(this.partnerFacade.networks().map((n: any) => [n.id, n.name]));
-    return this.partnerFacade.firms().map((f: any) => ({
+  protected readonly firmOptions = computed<AriaSelectOption<number>[]>(() =>
+    this.partnerFacade.firms().map((f) => ({
       value: f.id,
-      label:
-        f.network == null
-          ? `${f.name} (standalone)`
-          : `${f.name} — ${networks.get(f.network) ?? `network #${f.network}`}`,
-    }));
-  });
+      // The firm embeds its network, so no id → name lookup is needed.
+      label: f.is_standalone ? `${f.name} (standalone)` : `${f.name} — ${f.network?.name ?? '—'}`,
+    })),
+  );
 
   /**
    * Networks + standalone firms in one list for the network-admin role
@@ -192,10 +187,10 @@ export class AdminUsers {
   protected readonly scopeOptions = computed<AriaSelectOption<string>[]>(() => [
     ...this.partnerFacade
       .activeNetworks()
-      .map((n: any) => ({ value: `network:${n.id}`, label: `${n.name} (network)` })),
+      .map((n) => ({ value: `network:${n.id}`, label: `${n.name} (network)` })),
     ...this.partnerFacade
       .standaloneFirms()
-      .map((f: any) => ({ value: `firm:${f.id}`, label: `${f.name} (standalone firm)` })),
+      .map((f) => ({ value: `firm:${f.id}`, label: `${f.name} (standalone firm)` })),
   ]);
 
   /** Permissions grouped by category for the checklist. */
@@ -303,8 +298,8 @@ export class AdminUsers {
           supabase_uid: uid,
           email: this.email().trim().toLowerCase(),
           role: firm_id != null ? 'firm' : mapping.role,
-          network_id,
-          firm_id,
+          ...(network_id != null ? { network: network_id } : {}),
+          ...(firm_id != null ? { firm: firm_id } : {}),
           capabilities: mapping.capabilities,
         });
       }

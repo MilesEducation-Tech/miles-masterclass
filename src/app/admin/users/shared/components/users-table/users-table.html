@@ -16,10 +16,10 @@
             <th class="px-4 py-3 font-semibold">Name</th>
             <th class="px-4 py-3 font-semibold">Email</th>
             <th class="px-4 py-3 font-semibold">Phone</th>
-            <th class="px-4 py-3 font-semibold">Signup</th>
-            <th class="px-4 py-3 font-semibold">Last login</th>
-            <th class="px-4 py-3 font-semibold tabular-nums text-right">Course Completed</th>
-            <th class="px-4 py-3 font-semibold tabular-nums text-right">Course in progress</th>
+            <th class="px-4 py-3 font-semibold tabular-nums text-right">CPE completed</th>
+            <th class="px-4 py-3 font-semibold tabular-nums text-right">CPE in progress</th>
+            <th class="px-4 py-3 font-semibold tabular-nums text-right">CPE credits</th>
+            <th class="px-4 py-3 font-semibold tabular-nums text-right">Preview completed</th>
             <th class="px-4 py-3 font-semibold">Status</th>
             <th class="px-4 py-3 font-semibold text-right">Action</th>
           </tr>
@@ -76,65 +76,22 @@
                   {{ row.phone }}
                 }
               </td>
-              <td class="px-4 py-3 text-neutral-300 whitespace-nowrap">
-                @if (row.date_of_signup && row.date_of_signup !== 'N/A') {
-                  {{ row.date_of_signup | date: 'MMM d, y' }}
-                } @else {
-                  —
-                }
+              <!--
+                Signup / last-login dates and the per-row course drill-down are
+                gone: `panel/users/` sends neither the dates nor the course-id
+                buckets the dialog needed. That detail is still in the CSV export.
+              -->
+              <td class="px-4 py-3 text-right tabular-nums font-medium text-neutral-100">
+                {{ row.courses_completed_cpe | number: '1.0-2' }}
               </td>
-              <td class="px-4 py-3 text-neutral-300 whitespace-nowrap">
-                @if (row.date_of_login && row.date_of_login !== 'N/A') {
-                  {{ row.date_of_login | date: 'MMM d, y' }}
-                } @else {
-                  —
-                }
+              <td class="px-4 py-3 text-right tabular-nums font-medium text-neutral-100">
+                {{ row.courses_in_progress_cpe | number: '1.0-2' }}
               </td>
-              <td class="px-4 py-3 text-right">
-                <span class="inline-flex items-center justify-end gap-1.5">
-                  <span class="tabular-nums font-medium text-neutral-100">
-                    {{ row.courses_completed_cpe | number: '1.0-2' }}
-                  </span>
-                  @if (row.courses_completed_cpe > 0) {
-                    <button
-                      type="button"
-                      class="drill-btn"
-                      (click)="
-                        openCourseDetail(
-                          row,
-                          'CPE Courses Completed',
-                          row.courses_completed_cpe_ids
-                        )
-                      "
-                      aria-label="View completed CPE courses"
-                    >
-                      <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
-                    </button>
-                  }
-                </span>
+              <td class="px-4 py-3 text-right tabular-nums" style="color: var(--mm-success-fg)">
+                {{ row.cpe_credits_earned | number: '1.0-2' }}
               </td>
-              <td class="px-4 py-3 text-right">
-                <span class="inline-flex items-center justify-end gap-1.5">
-                  <span class="tabular-nums font-medium text-neutral-100">
-                    {{ row.courses_in_progress_cpe | number: '1.0-2' }}
-                  </span>
-                  @if (row.courses_in_progress_cpe > 0) {
-                    <button
-                      type="button"
-                      class="drill-btn"
-                      (click)="
-                        openCourseDetail(
-                          row,
-                          'CPE Courses In Progress',
-                          row.courses_in_progress_cpe_ids
-                        )
-                      "
-                      aria-label="View CPE courses in progress"
-                    >
-                      <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
-                    </button>
-                  }
-                </span>
+              <td class="px-4 py-3 text-right tabular-nums text-neutral-300">
+                {{ row.courses_completed_preview | number: '1.0-2' }}
               </td>
               <td class="px-4 py-3">
                 @if (row.is_blocked) {
@@ -156,7 +113,7 @@
                 }
               </td>
               <td class="px-4 py-3 text-right">
-                <ng-container *hasPermission="PERM.REPORTS_USERS_BLOCK">
+                @if (canBlock()) {
                   @if (row.is_blocked) {
                     <app-button
                       variant="outline"
@@ -171,7 +128,7 @@
                       Block
                     </app-button>
                   }
-                </ng-container>
+                }
               </td>
             </tr>
           }

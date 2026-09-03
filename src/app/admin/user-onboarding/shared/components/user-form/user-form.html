@@ -1,0 +1,196 @@
+<section class="admin-theme flex flex-col gap-6 p-6 text-white min-h-full">
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-2xl font-bold leading-tight">{{ title }}</h1>
+      <p class="text-sm text-white/70">
+        {{ isEdit ? "Update this user's profile." : 'Onboard a new learner user.' }}
+      </p>
+    </div>
+    <app-button variant="outline" size="sm" class="text-white" (clicked)="cancel()">
+      Back to list
+    </app-button>
+  </header>
+
+  @if (missingUser()) {
+    <div
+      class="px-3 py-2 text-sm rounded-md"
+      style="background: var(--mm-warn-bg); color: var(--mm-warn-fg)"
+      role="alert"
+    >
+      This user's details weren't loaded. Open the user from the list to edit their existing data,
+      or the fields below start blank.
+    </div>
+  }
+
+  <app-forms type="signal" class="flex flex-col gap-8 max-w-4xl" (submitted)="submit()">
+    <!-- Personal -->
+    <fieldset class="flex flex-col gap-5">
+      <legend
+        class="text-sm font-semibold uppercase tracking-wider mb-1"
+        style="color: var(--mm-fg-3)"
+      >
+        Personal
+      </legend>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <app-aria-input id="uf-email" type="email" label="Email" [formField]="form.email" />
+        <app-aria-autocomplete
+          id="uf-location"
+          label="Location"
+          placeholder="Search a location"
+          [options]="locationOptions()"
+          [serverFiltered]="true"
+          (queryChange)="locationQuery.set($event)"
+          [formField]="form.location"
+        />
+        <app-aria-input
+          id="uf-first"
+          type="text"
+          label="First name"
+          [formField]="form.first_name"
+        />
+        <app-aria-input id="uf-last" type="text" label="Last name" [formField]="form.last_name" />
+        <app-aria-autocomplete
+          id="uf-country-code"
+          label="Country code"
+          placeholder="Select country code"
+          [options]="countryCodeOptions"
+          [formField]="form.country_code"
+        />
+        <app-aria-input
+          id="uf-mobile"
+          type="tel"
+          label="Mobile"
+          [numericOnly]="true"
+          [formField]="form.mobile"
+        />
+      </div>
+    </fieldset>
+
+    <!-- Profile -->
+    <fieldset class="flex flex-col gap-5">
+      <legend
+        class="text-sm font-semibold uppercase tracking-wider mb-1"
+        style="color: var(--mm-fg-3)"
+      >
+        Profile
+      </legend>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <app-aria-autocomplete
+          id="uf-partner-code"
+          label="Partner code"
+          placeholder="Search partner codes"
+          emptyMessage="No partner codes found"
+          [options]="facade.partnerCodeOptions()"
+          [formField]="form.partner_code"
+        />
+        <app-aria-select
+          id="uf-profession"
+          label="Profession"
+          placeholder="Select a profession"
+          [options]="facade.professionOptions()"
+          [formField]="form.profession"
+        />
+        <app-aria-select
+          id="uf-qualification"
+          label="Qualification status"
+          placeholder="Select status"
+          [options]="qualificationOptions"
+          [formField]="form.qualification_status"
+        />
+        <app-aria-select
+          id="uf-license"
+          label="License status"
+          placeholder="Select status"
+          [options]="licenseOptions"
+          [formField]="form.license_status"
+        />
+        <app-aria-multiselect
+          id="uf-courses"
+          label="Professional courses"
+          [options]="facade.courseOptions()"
+          [maxChips]="4"
+          [formField]="form.professional_courses"
+        />
+        <app-aria-multiselect
+          id="uf-state-boards"
+          label="State boards"
+          [options]="facade.stateBoardOptions()"
+          [maxChips]="4"
+          [formField]="form.state_board"
+        />
+      </div>
+    </fieldset>
+
+    <!-- Corporate (optional) -->
+    <fieldset class="flex flex-col gap-5">
+      <legend
+        class="text-sm font-semibold uppercase tracking-wider mb-1"
+        style="color: var(--mm-fg-3)"
+      >
+        Corporate <span class="normal-case font-normal">(optional)</span>
+      </legend>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <app-aria-autocomplete
+          id="uf-company"
+          label="Company"
+          placeholder="Search companies"
+          [options]="facade.companyOptions()"
+          [serverFiltered]="true"
+          (queryChange)="onCompanyQuery($event)"
+          [formField]="form.company_id"
+        />
+        <app-aria-select
+          id="uf-sector"
+          label="Sector"
+          placeholder="Select a sector"
+          [options]="facade.sectorOptions()"
+          [formField]="form.sector_id"
+        />
+        <app-aria-select
+          id="uf-job-role"
+          label="Job role"
+          placeholder="Select a job role"
+          [options]="roleOptions()"
+          [formField]="form.job_role_id"
+        />
+      </div>
+    </fieldset>
+
+    <!-- Consent -->
+    <fieldset class="flex flex-col gap-3">
+      <legend
+        class="text-sm font-semibold uppercase tracking-wider mb-1"
+        style="color: var(--mm-fg-3)"
+      >
+        Status &amp; consent
+      </legend>
+      <app-aria-input
+        id="uf-working"
+        type="checkbox"
+        label="Currently working"
+        [formField]="form.is_currently_working"
+      />
+      <app-aria-input
+        id="uf-terms"
+        type="checkbox"
+        label="Terms accepted"
+        [formField]="form.terms_accepted"
+      />
+      <app-aria-input
+        id="uf-sms"
+        type="checkbox"
+        label="SMS consent"
+        [formField]="form.sms_consent"
+      />
+    </fieldset>
+
+    <div class="flex items-center justify-end gap-3 border-t border-white/10 pt-5">
+      <app-button variant="outline" size="default" class="text-white" (clicked)="cancel()">
+        Cancel
+      </app-button>
+      <app-button variant="primary" size="default" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : isEdit ? 'Save changes' : 'Create user' }}
+      </app-button>
+    </div>
+  </app-forms>
+</section>

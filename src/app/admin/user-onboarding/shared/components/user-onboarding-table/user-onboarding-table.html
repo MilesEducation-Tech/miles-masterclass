@@ -1,0 +1,125 @@
+<div class="text-white">
+  @if (isLoading() && !rows().length) {
+    <div class="flex items-center justify-center py-12 text-neutral-400">
+      <app-spinner size="lg" color="white" trackColor="neutral-600" />
+    </div>
+  }
+
+  @if (rows().length) {
+    <div class="overflow-x-auto rounded-lg border border-white/10">
+      <table class="w-full text-left text-sm">
+        <thead
+          class="text-[11px] uppercase tracking-wider"
+          style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
+        >
+          <tr class="whitespace-nowrap">
+            <th class="px-4 py-3 font-semibold">Name</th>
+            <th class="px-4 py-3 font-semibold">Email</th>
+            <th class="px-4 py-3 font-semibold">Mobile</th>
+            <th class="px-4 py-3 font-semibold">Location</th>
+            <th class="px-4 py-3 font-semibold">Partner code</th>
+            <th class="px-4 py-3 font-semibold">Subscribed</th>
+            <th class="px-4 py-3 font-semibold">Created</th>
+            <th class="px-4 py-3 font-semibold text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          @for (row of rows(); track row.id) {
+            <tr class="hover:bg-white/3 transition-colors">
+              <td class="px-4 py-3 text-neutral-100 whitespace-nowrap">{{ fullName(row) }}</td>
+              <td class="px-4 py-3 text-neutral-300 break-all">{{ row.email }}</td>
+              <td class="px-4 py-3 text-neutral-300 whitespace-nowrap">
+                {{ row.country_code || '' }} {{ row.mobile || '—' }}
+              </td>
+              <td class="px-4 py-3 text-neutral-300">{{ row.location || '—' }}</td>
+              <td class="px-4 py-3 text-neutral-300 font-mono text-xs">
+                @if (row.partner_code) {
+                  {{ row.partner_code }}
+                } @else {
+                  <app-button
+                    variant="outline"
+                    size="sm"
+                    class="text-white"
+                    [ariaLabel]="'Apply a partner code to ' + row.email"
+                    (clicked)="applyPartnerCode.emit(row)"
+                  >
+                    Apply code
+                  </app-button>
+                }
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                  [style.background]="
+                    row.is_subscribed ? 'var(--mm-success-bg)' : 'var(--mm-surface-2)'
+                  "
+                  [style.color]="row.is_subscribed ? 'var(--mm-success-fg)' : 'var(--mm-fg-3)'"
+                >
+                  {{ row.is_subscribed ? 'Active' : 'None' }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-neutral-300 whitespace-nowrap">
+                {{ row.created_at | date: 'MMM d, y' }}
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-end gap-2 whitespace-nowrap">
+                  <app-button
+                    variant="outline"
+                    size="sm"
+                    class="text-white"
+                    [ariaLabel]="'Edit ' + row.email"
+                    (clicked)="edit.emit(row)"
+                  >
+                    Edit
+                  </app-button>
+                  <!-- Payment is already recorded once the subscription is active. -->
+                  @if (!row.is_subscribed) {
+                    <app-button
+                      variant="outline"
+                      size="sm"
+                      class="text-white"
+                      [ariaLabel]="'Record offline payment for ' + row.email"
+                      (clicked)="recordPayment.emit(row)"
+                    >
+                      Record payment
+                    </app-button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-6 flex items-center justify-between text-sm text-neutral-400">
+      <span>
+        Showing <span class="font-semibold text-white">{{ rows().length }}</span> of
+        {{ totalCount() }} users
+      </span>
+      <div class="flex items-center gap-3">
+        <app-button
+          variant="outline"
+          size="sm"
+          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
+          [disabled]="!canPrev()"
+          (clicked)="prevPage.emit()"
+        >
+          Prev
+        </app-button>
+        <span class="text-white/70 tabular-nums">Page {{ currentPage() }}</span>
+        <app-button
+          variant="outline"
+          size="sm"
+          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
+          [disabled]="!canNext()"
+          (clicked)="nextPage.emit()"
+        >
+          Next
+        </app-button>
+      </div>
+    </div>
+  } @else if (!isLoading()) {
+    <p class="py-12 text-center text-sm text-neutral-500">No users to show.</p>
+  }
+</div>

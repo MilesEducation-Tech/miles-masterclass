@@ -1,8 +1,9 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { DialogRef } from '../../../core/services/dialog/dialog';
 import { Utils } from '../../../core/services/utils/utils';
+import { PaymentFacade } from '../../../../features/payment/shared/service/payment-facade/payment-facade';
 import { CartItem } from '../../../../features/payment/shared/components/cart-item/cart-item';
 import { Button } from '../../ui/button/button';
 
@@ -15,19 +16,7 @@ import { Button } from '../../ui/button/button';
 export class CartDrawerDialog {
   dialogRef!: DialogRef<CartDrawerDialog>;
 
-  // ponytail: PaymentFacade was deleted with the Django strip. This placeholder
-
-  // keeps the template bindings compiling and renders the empty state.
-
-  // Swap in the new backend's service — the template needs no changes.
-
-  private readonly facade: any = {
-    cartData: signal<any>(null),
-
-    loading: signal<any>(null),
-
-    removeCartItem: (..._args: any[]): any => null,
-  };
+  private readonly facade = inject(PaymentFacade);
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
 
@@ -39,9 +28,7 @@ export class CartDrawerDialog {
 
   // Monthly (EMI): show the monthly payable alongside the annual total when any
   // item was added with pay_method 'monthly'. Derived as total ÷ 12.
-  readonly hasMonthly = computed(() =>
-    this.cartItems().some((i: any) => i.pay_method === 'monthly'),
-  );
+  readonly hasMonthly = computed(() => this.cartItems().some((i) => i.pay_method === 'monthly'));
   readonly monthlyAmount = computed(() => this.totalAmount() / 12);
 
   close(): void {

@@ -1,26 +1,14 @@
-import { Component, computed, effect, inject, input } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, DestroyRef } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { VideoChapter } from '../../../../shared/components/video-chapter/video-chapter';
 import { AudioChapter } from '../../../../shared/components/audio-chapter/audio-chapter';
 import { Backward } from '../../../../../../shared/components/backward/backward';
+import { ChapterFacade } from '../../../../shared/services/chapter-facade/chapter-facade';
 import { Utils } from '../../../../../../shared/core/services/utils/utils';
 import { Auth } from '../../../../../../shared/core/services/auth/auth';
 import { Logger } from '../../../../../../shared/core/services/logger/logger';
-import { CairaUuid } from '../../../../../../shared/core/models/caira/envelope.model';
-import { ChapterProgress } from '../../../../shared/services/chapter-progress/chapter-progress';
-import { CourseDetail } from '../../../../shared/services/course-detail/course-detail';
+import { exitChapterToCourse } from '../../../../../../shared/utils/exit-chapter';
 
-/** See `masterclass-chapter.ts` — same cadence, same reason. */
-const SAVE_INTERVAL_PERCENT = 5;
-
-/**
- * The podcast chapter player.
- *
- * Structurally the masterclass player with an audio layout: CAIRA serves both
- * from `Masterclass_Course_Detail`, so `CourseDetail` and `ChapterProgress` are
- * the same services, provided on the same route positions. The only difference
- * is which of the two players renders, decided by `podcast_format`.
- */
 @Component({
   selector: 'app-podcast-chapter',
   imports: [VideoChapter, AudioChapter, Backward],
@@ -28,109 +16,198 @@ const SAVE_INTERVAL_PERCENT = 5;
   styleUrl: './podcast-chapter.css',
 })
 export class PodcastChapter {
-  readonly courseId = input<string>();
-  readonly courseTitle = input<string>();
-  readonly chapterId = input<string>();
+  courseId = input<string>();
+  courseTitle = input<string>();
+  chapterId = input<string>();
 
-  protected readonly chapter = inject(ChapterProgress);
-  private readonly courseDetail = inject(CourseDetail);
+  readonly chapterFacade = inject(ChapterFacade);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(Auth);
   private readonly utils = inject(Utils);
   private readonly logger = inject(Logger);
 
-  protected readonly navigation = this.chapter.navigation;
-  protected readonly courseNavigation = computed(() => '../../..');
+  readonly isVideoCompleted = signal(false);
+  private currentTime = 0;
 
-  /**
-   * ponytail: **CAIRA has no format discriminator.** The Django API returned
-   * `podcast_format: 'Audio' | 'Video'`; `Masterclass_Course_Detail` serves
-   * every course type from one shape and reports only `hls_video_url`, so there
-   * is nothing to branch on. Held `null`, which renders the video layout — the
-   * one that works for an HLS source either way.
-   *
-   * Podcast has no CAIRA counterpart as a CPE type at all (G-19); this is the
-   * chapter-level face of that gap. A `course_format` field on #4 would fix it.
-   */
-  protected readonly podcastFormat = computed<'Audio' | 'Video' | null>(() => null);
+  private lastFetchedChapterId: number | null = null;
 
-  protected readonly chapterIndex = computed(() => this.navigation().currentIndex);
+  readonly podcastFormat = computed(() => {
+    return this.chapterFacade.courseDetails()?.podcast_format ?? null;
+  });
 
-  private lastPosition = 0;
-  private lastSavedPercent = 0;
+  readonly chapterIndex = computed(() => {
+    const chapters = this.chapterFacade.courseChapters();
+    const currentId = this.chapterFacade.selectedChapterId();
+    if (!currentId) return 0;
+    const idx = chapters.findIndex((c) => c.id === currentId);
+    return idx >= 0 ? idx : 0;
+  });
 
   constructor() {
     effect(() => {
-      if (!this.chapter.chapterId()) return;
-      this.lastSavedPercent = 0;
-      this.lastPosition = 0;
-      this.chapter.start();
+      const id = this.courseId();
+      const courseType = 'podcast';
+
+      if (id) {
+        this.chapterFacade.loadCourse({
+          id: Number(id),
+          course_type: courseType,
+        });
+      }
     });
 
     effect(() => {
-      if (this.auth.isLoggedIn()) return;
-      const tree = this.router.parseUrl(this.router.url);
-      const segments = tree.root.children['primary']?.segments;
-      if (segments && segments.length >= 3) {
-        segments.splice(segments.length - 3, 3);
-        this.router.navigateByUrl(tree);
+      const chapterId = this.chapterId();
+      if (chapterId) {
+        this.chapterFacade.selectedChapterId.set(Number(chapterId));
       }
     });
+
+    // Initialize completion status
+    effect(() => {
+      const current = this.chapterFacade.chapterNavigation().current;
+      if (current) {
+        this.isVideoCompleted.set(current.play_history?.is_completed ?? false);
+
+        if (current.id !== this.lastFetchedChapterId) {
+          this.chapterFacade.fetchQuizReport(current.id);
+          this.lastFetchedChapterId = current.id;
+        }
+      }
+    });
+
+    // Handle logout redirection
+    effect(() => {
+      if (!this.auth.isLoggedIn()) {
+        exitChapterToCourse(this.router);
+      }
+    });
+
+    // Access control check
+    effect(() => {
+      const details = this.chapterFacade.courseDetails();
+      if (details && !this.chapterFacade.loading()) {
+        if (!details.cpe_mode_details) {
+          this.logger.warn('Access Denied: CPE Mode details missing');
+        }
+        // Deep link / hard refresh bypasses `navigateToChapter` — see the
+        // masterclass chapter page for the full note.
+        if (!this.utils.requireCpeModeAccess(details)) {
+          exitChapterToCourse(this.router);
+        }
+      }
+    });
+
+    // Cleanup on destroy
+    this.destroyRef.onDestroy(() => {
+      this.chapterFacade.clear();
+    });
   }
 
-  protected handleNavigation(chapterId: CairaUuid): void {
-    const chapter = this.chapter.chapters().find((c) => c.id === chapterId);
-    if (!chapter) {
-      this.logger.warn('handleNavigation: unknown chapter', { chapterId });
+  readonly navigation = this.chapterFacade.chapterNavigation;
+
+  readonly cpeMode = computed(() => {
+    return this.chapterFacade.courseDetails()?.cpe_mode_details?.cpe_mode ?? false;
+  });
+
+  readonly chapterWiseDetails = computed(() => {
+    const currentChapterId = this.navigation().current?.id;
+    if (!currentChapterId) return undefined;
+
+    return this.chapterFacade
+      .courseDetails()
+      ?.chapter_wise_details?.find((detail) => detail.chapter_id === currentChapterId);
+  });
+
+  readonly courseNavigation = signal('../../..');
+
+  handleNavigation(chapterId: number) {
+    const { prev } = this.navigation();
+
+    const isNavigatingToPrevious = prev?.id === chapterId;
+
+    if (!isNavigatingToPrevious && this.cpeMode() && !this.isVideoCompleted()) {
       return;
     }
-    if (chapter.is_locked) return;
 
-    // CPE mode holds the next chapter until this one is complete; going back is
-    // always allowed. Same rule as the masterclass twin.
-    const isGoingBack = this.chapter.navigation().prev?.id === chapterId;
-    if (!isGoingBack && this.chapter.cpeMode() && !this.chapter.isVideoCompleted()) return;
+    const chapters = this.chapterFacade.courseChapters();
+    const chapter = chapters.find((c) => c.id === chapterId);
 
-    this.chapter.saveProgress(this.lastPosition, { final: true });
+    let slug = '';
+    if (chapter) {
+      slug = this.utils.slugify(chapter.chapter_name);
+    }
 
-    this.router.navigate(['../../', chapterId, this.utils.slugify(chapter.chapter_name)], {
-      relativeTo: this.route,
-    });
+    this.router.navigate(['../../', chapterId, slug], { relativeTo: this.route });
   }
 
-  protected startFinalAssessment(): void {
-    const courseId = this.courseId();
-    const courseTitle = this.courseTitle();
-    if (!courseId || !courseTitle) return;
-    this.courseDetail.startFinalAssessment(courseId, courseTitle, 'podcast');
+  startFinalAssessment() {
+    this.utils.startFinalAssessment(
+      this.courseId()!,
+      this.courseTitle()!,
+      'podcast',
+      this.chapterFacade.courseDetails()?.exam_rules!,
+    );
   }
 
-  /** Course-keyed, same as the masterclass twin. */
-  protected handleViewReport(): void {
-    this.router.navigate(['../../../', 'final-assessment', 'report'], {
-      relativeTo: this.route,
-    });
+  handleViewReport() {
+    const details = this.chapterFacade.courseDetails();
+    const sessionId = details?.user_assessment_details?.session_id;
+
+    if (sessionId) {
+      const commands = ['../../../', 'final-assessment', sessionId, 'report'];
+      this.router.navigate(commands, {
+        relativeTo: this.route,
+      });
+    } else {
+      this.logger.warn('Cannot navigate to report: Session ID is missing', details);
+    }
   }
 
-  protected updateTime(data: { currentTime: number; duration: number }): void {
-    this.lastPosition = data.currentTime;
-    if (data.duration <= 0) return;
+  // Track last known time and percentage for periodic updates
+  private lastTrackedPercentage = 0;
 
-    const percent = (data.currentTime / data.duration) * 100;
-    if (Math.abs(percent - this.lastSavedPercent) < SAVE_INTERVAL_PERCENT) return;
+  handleMediaEvent(
+    event: 'heartbeat' | 'completed' | 'exit',
+    data?: { currentTime: number; duration: number },
+  ) {
+    const current = this.chapterFacade.chapterNavigation().current;
+    if (!current) return;
 
-    this.lastSavedPercent = percent;
-    this.chapter.saveProgress(data.currentTime);
+    if (this.isVideoCompleted() && event !== 'completed') {
+      return;
+    }
+
+    const time = data?.currentTime ?? this.currentTime;
+    const timeStatus = Number(time);
+
+    this.chapterFacade.trackActivity(current.id, timeStatus, event).subscribe();
   }
 
-  protected handleExit(data?: { currentTime: number; duration: number }): void {
-    const position = data?.currentTime ?? this.lastPosition;
-    this.lastPosition = position;
-    this.chapter.saveProgress(position, { final: true });
+  handleMediaCompleted() {
+    this.isVideoCompleted.set(true);
+    this.handleMediaEvent('completed', { currentTime: this.currentTime, duration: 0 });
   }
 
-  protected handleMediaEnded(): void {
-    this.chapter.saveProgress(this.lastPosition, { final: true });
+  updateTime(data: { currentTime: number; duration: number }) {
+    this.currentTime = data.currentTime;
+
+    if (data.duration > 0) {
+      const percentage = (data.currentTime / data.duration) * 100;
+
+      if (percentage > 95 && !this.isVideoCompleted()) {
+        this.handleMediaCompleted();
+      }
+
+      if (Math.abs(percentage - this.lastTrackedPercentage) >= 5) {
+        this.lastTrackedPercentage = percentage;
+        this.handleMediaEvent('heartbeat', {
+          currentTime: data.currentTime,
+          duration: data.duration,
+        });
+      }
+    }
   }
 }

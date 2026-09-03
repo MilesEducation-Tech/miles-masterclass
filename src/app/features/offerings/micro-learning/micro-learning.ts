@@ -1,23 +1,25 @@
-import {
-  Component,
-  DestroyRef,
-  ElementRef,
-  PLATFORM_ID,
-  inject,
-  viewChild,
-  signal,
-} from '@angular/core';
+import { Component, DestroyRef, ElementRef, PLATFORM_ID, inject, viewChild } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Route } from '@angular/router';
 import { Observable, Subject, of } from 'rxjs';
-import { exhaustMap } from 'rxjs/operators';
+import { catchError, exhaustMap, map } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { authGuard } from '../../../shared/core/guards/auth/auth-guard';
+import { FinalAssessmentFacade } from '../shared/services/final-assessment-facade/final-assessment-facade';
 import { canDeactivateExamGuard } from '../../../shared/core/guards/can-deactivate-exam-guard';
-import { CourseDetail } from '../shared/services/course-detail/course-detail';
-import { Feedback } from '../shared/services/feedback/feedback';
+import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
+import { MicroLearningCourseFacade } from '../shared/services/micro-learning-course-facade/micro-learning-course-facade';
+import { ChapterFacade } from '../shared/services/chapter-facade/chapter-facade';
 import { environment } from '../../../../environments/environment';
+import { FeatureFacade } from '../../shared/services/feature-facade/feature-facade';
+import { ApiClient } from '../../../shared/core/services/api-client/api-client';
 import { Logger } from '../../../shared/core/services/logger/logger';
+import {
+  NANO_LEARNING_HANDOFF_KEY,
+  NANO_LEARNING_ROUTES,
+  NanoLearningListResponse,
+  NanoLearningPage,
+} from '../../../shared/core/models/micro-learning-course.model';
 import {
   swiperConfigComingSoon,
   swiperConfigEven,
@@ -39,28 +41,10 @@ import { PartnerContentList } from '../../partners/shared/components/partner-con
 })
 export class MicroLearning {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
-  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  readonly feature: any = {
-    getResource: (..._args: any[]): any => ({
-      items: signal<any[]>([]),
-      isLoading: signal(false),
-      hasMore: signal(false),
-      error: signal(null),
-      loadNextPage: () => undefined,
-      loadNextTrackPage: () => undefined,
-      setFilters: () => undefined,
-      setTrackFilters: () => undefined,
-      webp: signal(null),
-    }),
-  };
+  readonly feature: FeatureFacade = inject(FeatureFacade);
   private readonly utils = inject(Utils);
   private readonly platformId = inject(PLATFORM_ID);
-  // ponytail: ApiClient was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly http: any = {};
+  private readonly http = inject(ApiClient);
   private readonly logger = inject(Logger);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -108,9 +92,9 @@ export class MicroLearning {
           return;
         }
         // Hand the fetched first page to the course page via router state so it
-        // can hydrate from it instead of refetching the reel detail.
+        // hydrates from it and skips the redundant `v2/nano-learning/:id` call.
         this.utils.navigateToCourse('micro-learning', first.id, first.title, {
-          nanoLearningHandoff: page,
+          [NANO_LEARNING_HANDOFF_KEY]: page,
         });
       });
   }
@@ -119,14 +103,22 @@ export class MicroLearning {
     this.startWatchingTrigger.next();
   }
 
-  /**
-   * ponytail: fetched the first cursor page of the reel feed to pick which reel
-   * the hero CTA opens. Return the new backend's first page here — the
-   * exhaustMap guard and the handoff navigation above still apply.
-   */
-  private fetchFirstPage(): Observable<any> {
-    this.logger.warn('MicroLearning.fetchFirstPage: no backend configured');
-    return of<any>({ reels: [], nextCursor: null });
+  /** Fetch the first page of the reel feed to pick the reel to open. Empty page on error. */
+  private fetchFirstPage(): Observable<NanoLearningPage> {
+    return this.http
+      .get<NanoLearningListResponse>(NANO_LEARNING_ROUTES.getCourseList.path, {
+        params: { cursor: '' },
+      })
+      .pipe(
+        map((res) => ({
+          reels: res?.data ?? [],
+          nextCursor: res?.pagination_data?.next_cursor ?? null,
+        })),
+        catchError((err) => {
+          this.logger.error('MicroLearning.fetchFirstPage failed', err);
+          return of<NanoLearningPage>({ reels: [], nextCursor: null });
+        }),
+      );
   }
 
   onBrowseLibrary(): void {
@@ -139,28 +131,22 @@ export const microLearningRoutes: Route[] = [
   { path: '', component: MicroLearning },
   {
     path: ':courseId/:courseTitle',
-    // `CourseDetail` + `Feedback` are provided here for the same reason as the
-    // masterclass tree: the shared feedback page injects them. Micro-learning is
-    // not a CPE course type yet (G-18), so #4 will not serve a nano_learning id
-    // — the page surfaces that as a load error rather than crashing, and starts
-    // working unchanged the day G-18 closes.
-    providers: [CourseDetail, Feedback],
     children: [
       {
         path: '',
         data: { layout: 'plain' },
         // ChapterFacade is route-scoped so the `ChapterQuiz` component
         // (opened via `MicroLearningQuizDialog`) can resolve it via `inject()`.
-        // ponytail: route-scoped facade providers removed with the Django strip.
+        providers: [MicroLearningCourseFacade, ChapterFacade],
         loadComponent: () =>
           import('./shared/pages/micro-learning-course/micro-learning-course').then(
             (m) => m.MicroLearningCourse,
           ),
       },
       {
-        path: 'final-assessment/exam',
+        path: 'final-assessment/:sessionId/exam',
         canActivate: [authGuard],
-        // ponytail: route-scoped facade providers removed with the Django strip.
+        providers: [FinalAssessmentFacade],
         canDeactivate: [canDeactivateExamGuard],
         data: { layout: 'plain' },
         loadComponent: () =>
@@ -169,9 +155,9 @@ export const microLearningRoutes: Route[] = [
           ),
       },
       {
-        path: 'final-assessment/report',
+        path: 'final-assessment/:sessionId/report',
         canActivate: [authGuard],
-        // ponytail: route-scoped facade providers removed with the Django strip.
+        providers: [FinalAssessmentFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
           import('../shared/pages/final-assessment-report/final-assessment-report').then(
@@ -181,6 +167,7 @@ export const microLearningRoutes: Route[] = [
       {
         path: 'feedback',
         canActivate: [authGuard],
+        providers: [FeedbackFacade],
         loadComponent: () =>
           import('../shared/pages/course-feedback/course-feedback').then((m) => m.CourseFeedback),
       },

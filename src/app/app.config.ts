@@ -20,8 +20,9 @@ import {
 import { provideIconsProvider } from './configuration/ng-icon';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { appInterceptor } from './shared/core/interceptors/app/app-interceptor';
-import { errorInterceptor } from './shared/core/interceptors/error/error-interceptor';
 import { authInterceptor } from './shared/core/interceptors/auth/auth-interceptor';
+import { adminTokenInterceptor } from './shared/core/interceptors/admin-token/admin-token-interceptor';
+import { partnerMockInterceptor } from './admin/partner-platform/shared/services/partner-mock-interceptor';
 import { Network } from './shared/core/services/network/network';
 import { UpdateChecker } from './shared/core/services/update-checker/update-checker';
 import { Analytics } from './shared/core/services/analytics/analytics';
@@ -29,20 +30,16 @@ import { Analytics } from './shared/core/services/analytics/analytics';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    /**
-     * CAIRA interceptor chain. Order is load-bearing: requests run top-down,
-     * responses and errors unwind bottom-up.
-     *
-     * - `appInterceptor` outermost, so its `finalize` sees the loading bar
-     *   through to the end of any retry.
-     * - `errorInterceptor` **above** `authInterceptor`, so a request that a
-     *   token refresh rescues never reaches the toast. Reversing these two
-     *   would show an error for every request that then quietly succeeded.
-     *
-     * There is no admin-token interceptor: the admin panel authenticates
-     * against Supabase and never calls this API.
-     */
-    provideHttpClient(withInterceptors([appInterceptor, errorInterceptor, authInterceptor])),
+    provideHttpClient(
+      // partnerMockInterceptor is last so it short-circuits only fully-prepared
+      // requests; it no-ops unless localStorage.partnerMock is set on a dev build.
+      withInterceptors([
+        appInterceptor,
+        adminTokenInterceptor,
+        authInterceptor,
+        partnerMockInterceptor,
+      ]),
+    ),
     provideClientHydration(
       withEventReplay(),
       withHttpTransferCacheOptions({

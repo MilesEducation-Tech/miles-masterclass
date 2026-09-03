@@ -1,7 +1,8 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCheck } from '@ng-icons/lucide';
 import { DialogRef } from '../../../core/services/dialog/dialog';
+import { PaymentFacade } from '../../../../features/payment/shared/service/payment-facade/payment-facade';
 import { PlanSelectionCard } from '../../../../features/payment/shared/components/plan-selection-card/plan-selection-card';
 import { PageLoading } from '../../ui/page-loading/page-loading';
 import { ErrorState } from '../../ui/error-state/error-state';
@@ -20,41 +21,17 @@ export class SubscriptionDialog {
   // as `void` to avoid pretending the return value carries meaning.
   dialogRef!: DialogRef<SubscriptionDialog, void>;
 
-  // ponytail: PaymentFacade was deleted with the Django strip. This placeholder
-
-  // keeps the template bindings compiling and renders the empty state.
-
-  // Swap in the new backend's service — the template needs no changes.
-
-  private readonly facade: any = {
-    addToCart: (..._args: any[]): any => null,
-
-    loadMyBucket: (..._args: any[]): any => null,
-
-    loadSubscriptionPlans: (..._args: any[]): any => null,
-
-    openCartDrawer: signal<any>(null),
-
-    openFirmSponsorshipDialog: (..._args: any[]): any => null,
-
-    promptPartnerCodeOrSubscribe: (..._args: any[]): any => null,
-
-    recommendedPlans: signal<any[]>([]),
-
-    recommendedPlansError: signal<any>(null),
-
-    recommendedPlansLoading: signal<any>(null),
-  };
+  private readonly facade = inject(PaymentFacade);
 
   // Dialog only ever shows the recommended plan (server-filtered via
   // `is_recommended=true`). Reads the recommended-only slice so it never
   // overwrites the plan page's full list (which includes the Enterprise plan).
   // Starter / unlimited-trial plans are excluded defensively.
   readonly plans = computed(() =>
-    this.facade.recommendedPlans().filter((p: any) => !p.is_unlimited_trial_enabled),
+    this.facade.recommendedPlans().filter((p) => !p.is_unlimited_trial_enabled),
   );
   readonly recommendedPlan = computed(
-    () => this.plans().find((p: any) => p.is_recommended) ?? this.plans()[0] ?? null,
+    () => this.plans().find((p) => p.is_recommended) ?? this.plans()[0] ?? null,
   );
   readonly loading = computed(() => this.facade.recommendedPlansLoading());
   readonly error = computed(() => this.facade.recommendedPlansError());
@@ -92,7 +69,7 @@ export class SubscriptionDialog {
   });
 
   readonly hasConditions = computed(() =>
-    (this.recommendedPlan()?.features ?? []).some((f: any) => f.planfeature?.has_conditions),
+    (this.recommendedPlan()?.features ?? []).some((f) => f.planfeature?.has_conditions),
   );
 
   constructor() {

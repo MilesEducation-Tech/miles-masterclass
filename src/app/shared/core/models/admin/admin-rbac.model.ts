@@ -15,7 +15,7 @@ export const PERM = {
   REPORTS_USER_REPORT_READ: 'reports:user_report:read',
 
   // Partner Platform (B2B licensing) — COARSE page-level gates only. Django's
-  // PartnerAdmin.capabilities enforces the fine-grained actions (coupon:send,
+  // PartnerAdmin.capabilities enforces the fine-grained actions (seat:send,
   // code:create:firm, …) and is surfaced to the UI via /partner-admin/me/.
   PARTNER_PLATFORM_READ: 'partner:platform:read', // partner dashboard — Miles ops only
   PARTNER_TRACKER_READ: 'partner:tracker:read', // network admin (tracker + vendor users, NO dashboard)
@@ -25,6 +25,10 @@ export const PERM = {
   ADMIN_USERS_MANAGE: 'admin:users:manage',
   ADMIN_ROLES_MANAGE: 'admin:roles:manage',
   ADMIN_PERMISSIONS_MANAGE: 'admin:permissions:manage',
+
+  // User Onboarding — create/edit learner users + record offline payments via the
+  // Django internal APIs. One gate for the whole /admin/user-onboarding section.
+  USERS_CREATE: 'users:create',
 } as const;
 
 export type AdminPermission = (typeof PERM)[keyof typeof PERM];

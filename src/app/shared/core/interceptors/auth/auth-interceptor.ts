@@ -1,96 +1,122 @@
-import { HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
+import {
+  HttpErrorResponse,
+  HttpEvent,
+  HttpHandlerFn,
+  HttpInterceptorFn,
+  HttpRequest,
+} from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Observable, catchError, filter, switchMap, take, throwError } from 'rxjs';
 import { Auth } from '../../services/auth/auth';
-import { SKIP_AUTH_REFRESH } from '../../models/caira/envelope.model';
-import { isPublicCairaRoute } from '../../http/caira.endpoints';
-import { cairaError, isRefreshable } from '../../http/caira-error';
+import { NotificationService } from '../../services/notification/notification';
+import {
+  IS_ADMIN_REQUEST,
+  IS_EXTERNAL_REQUEST,
+  SKIP_ERROR_NOTIFICATION,
+} from '../../models/http.model';
+import { catchError, filter, Observable, switchMap, take, throwError } from 'rxjs';
 
 /**
- * Refreshes an expired access token once and replays the requests that were
- * waiting on it.
+ * 401s the API raises about the *account* rather than the access token, mapped
+ * to the toast title they deserve. Refreshing these is pointless — there is no
+ * stale token to renew, so `handle401Error` just clears the session and throws
+ * `Refresh token failed`, swallowing the server's message before the user or
+ * the calling facade ever sees it.
  *
- * The hard part on CAIRA is recognising the failure at all. `USP/authentication.py`
- * never overrides DRF's `authenticate_header()`, so `AuthenticationFailed` is
- * downgraded from 401 to **403** on the wire. The interceptor this replaces
- * keyed on `error.status === 401` and would therefore never have refreshed —
- * it would have shown a toast and left the user logged out-but-not-really.
- * `cairaError()` maps both statuses onto `kind: 'auth'`.
- *
- * `isRefreshable` narrows further to *expired* tokens. A malformed header or an
- * unknown user is not fixed by a new token, and retrying those doubles the load
- * for the same rejection.
- *
- * Must sit **inside** `errorInterceptor` in the chain, so a request that a
- * refresh rescues never reaches the toast.
+ * Token problems keep the default refresh path: the API spells those
+ * `authentication_failed`, and the gateway can 401 with no `error_code` at all.
  */
-export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const auth = inject(Auth);
+const ACCOUNT_401_TITLES: Record<string, string> = {
+  account_blocked: 'Account Blocked',
+};
+
+/**
+ * Auth Interceptor - handles token refresh and global error notifications
+ * for the public-site Auth flow. Admin-panel requests (flagged via the
+ * IS_ADMIN_REQUEST HttpContext token) bypass this interceptor — they are
+ * handled by `adminTokenInterceptor` and use the Supabase JWT instead.
+ */
+export const authInterceptor: HttpInterceptorFn = (
+  req: HttpRequest<unknown>,
+  next: HttpHandlerFn,
+): Observable<HttpEvent<unknown>> => {
+  // Admin-panel calls are handled by `adminTokenInterceptor`; third-party calls
+  // must never trigger a Miles token refresh (a 401 from a foreign host says
+  // nothing about our session) nor a global error toast.
+  if (req.context.get(IS_ADMIN_REQUEST) || req.context.get(IS_EXTERNAL_REQUEST)) {
+    return next(req);
+  }
+
+  const authService = inject(Auth);
+  const notification = inject(NotificationService);
 
   return next(req).pipe(
-    catchError((error: unknown) => {
-      if (!shouldAttemptRefresh(req, error)) {
-        return throwError(() => error);
+    catchError((error) => {
+      // Handle 401 — token refresh logic
+      const isUnauthorized = error instanceof HttpErrorResponse && error.status === 401;
+      // The refresh call itself must never trigger a refresh, or a dead refresh
+      // token becomes an infinite loop. Matches the SSO refresh route.
+      const isRefreshRequest =
+        req.url.includes('sso/token/refresh') || req.url.includes('refresh_token');
+      const accountErrorTitle = isUnauthorized
+        ? ACCOUNT_401_TITLES[error.error?.error_code]
+        : undefined;
+      if (isUnauthorized && !isRefreshRequest && !accountErrorTitle) {
+        return handle401Error(req, next, authService);
       }
-      return refreshAndRetry(req, next, auth);
+
+      // Global error notification (skip for token-expiry 401s and opted-out
+      // requests). Account 401s carry a message written for the user — the OTP
+      // flow's blocked-account rejection is the case this exists for.
+      const skipNotification = req.context.get(SKIP_ERROR_NOTIFICATION);
+      if (!skipNotification && (!isUnauthorized || accountErrorTitle)) {
+        const message = error?.error?.message || error?.message || 'Something went wrong';
+        notification.error(accountErrorTitle ?? 'Error', message);
+      }
+
+      return throwError(() => error);
     }),
   );
 };
 
-function shouldAttemptRefresh(req: HttpRequest<unknown>, error: unknown): boolean {
-  // The refresh call itself. An explicit context flag rather than a URL match:
-  // the old guard was `req.url.includes('refresh_token')`, and CAIRA's path is
-  // `refresh`, so it silently stopped matching and the loop guard was dead.
-  if (req.context.get(SKIP_AUTH_REFRESH)) return false;
-
-  // Pre-token routes — `web/login-*`, `web/verify-otp`, `qr/*`. Their 401s mean
-  // "wrong password" or "wrong PIN", not "expired token".
-  if (isPublicCairaRoute(req.url)) return false;
-
-  // Nothing to refresh against if the request went out unauthenticated.
-  if (!req.headers.has('Authorization')) return false;
-
-  return isRefreshable(cairaError(error));
-}
-
-function refreshAndRetry(
+// Helper function to handle 401 errors
+const handle401Error = (
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
-  auth: Auth,
-): Observable<HttpEvent<unknown>> {
-  // Already refreshing: queue on the subject instead of firing a second refresh.
-  // Without this, N concurrent 403s produce N refreshes, and every one after the
-  // first presents an already-rotated token.
-  if (auth.isRefreshing()) {
-    return auth.accessTokenSubject.pipe(
-      filter((token): token is string => token !== null),
+  authService: Auth,
+): Observable<HttpEvent<unknown>> => {
+  if (!authService.isRefreshing()) {
+    authService.isRefreshing.set(true);
+    authService.accessTokenSubject.next(null);
+
+    return authService.refreshToken().pipe(
+      switchMap((token: string | null) => {
+        authService.isRefreshing.set(false);
+
+        if (token) {
+          // Clone request with new token
+          return next(addTokenHeader(req, token));
+        } else {
+          // Refresh failed (token is null), error already logged/handled in service
+          return throwError(() => new Error('Refresh token failed'));
+        }
+      }),
+    );
+  } else {
+    // Wait for the re-fresh to complete
+    return authService.accessTokenSubject.pipe(
+      filter((token) => token !== null),
       take(1),
-      switchMap((token) => next(withToken(req, token))),
+      switchMap((token) => {
+        return next(addTokenHeader(req, token!));
+      }),
     );
   }
+};
 
-  auth.isRefreshing.set(true);
-  auth.accessTokenSubject.next(null);
-
-  return auth.refreshToken().pipe(
-    switchMap((token) => {
-      auth.isRefreshing.set(false);
-      if (!token) {
-        // `Auth.refreshToken` has already cleared the session. Surface the
-        // original failure rather than a synthetic one so the caller's
-        // `cairaError()` still reports `kind: 'auth'`.
-        return throwError(() => new Error('Token refresh failed'));
-      }
-      return next(withToken(req, token));
-    }),
-    catchError((refreshError: unknown) => {
-      auth.isRefreshing.set(false);
-      auth.clearAuth();
-      return throwError(() => refreshError);
-    }),
-  );
-}
-
-function withToken(req: HttpRequest<unknown>, token: string): HttpRequest<unknown> {
-  return req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
-}
+const addTokenHeader = (request: HttpRequest<unknown>, token: string): HttpRequest<unknown> => {
+  return request.clone({
+    setHeaders: {
+      Authorization: `bearer ${token}`,
+    },
+  });
+};

@@ -1,4 +1,4 @@
-import { inject, PLATFORM_ID, Service } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AppDownloadDialog } from '../../../components/dialog/app-download-dialog/app-download-dialog';
 import { Dialog } from '../dialog/dialog';
@@ -18,7 +18,7 @@ interface RelatedApp {
  * already installed, OS-level Universal/App Links open it before the web
  * page is ever seen, so this only targets browser visitors.
  */
-@Service()
+@Injectable({ providedIn: 'root' })
 export class AppDownloadPrompt {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly viewport = inject(Viewport);

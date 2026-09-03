@@ -5,7 +5,8 @@ import { adminGuestGuard } from './shared/guards/admin-guest.guard';
 import { permissionGuard } from './shared/guards/permission.guard';
 import { PERM } from '../shared/core/models/admin/admin-rbac.model';
 import { AdminAuth } from '../shared/core/services/admin-auth/admin-auth';
-import { adminLandingPath } from './shared/utils/admin-landing';
+import { adminLandingPath, partnerV2LandingPath } from './shared/utils/admin-landing';
+import { UserOnboardingFacade } from './user-onboarding/shared/services/user-onboarding-facade';
 
 export const adminRoutes: Routes = [
   {
@@ -91,7 +92,7 @@ export const adminRoutes: Routes = [
         // admins get Vendor Users only. platform:read (Miles ops) keeps access.
         path: 'partner-code-tracker',
         canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_READ, PERM.PARTNER_TRACKER_READ)],
-        loadComponent: () => import('./coupon-tracker/coupon-tracker').then((m) => m.CouponTracker),
+        loadComponent: () => import('./seat-tracker/seat-tracker').then((m) => m.SeatTracker),
       },
       {
         path: 'reports/user-report',
@@ -121,6 +122,11 @@ export const adminRoutes: Routes = [
           ),
       },
       {
+        path: 'partner/reports',
+        canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
+        loadComponent: () => import('./partner-platform/reports/reports').then((m) => m.Reports),
+      },
+      {
         path: 'partner/dashboard',
         canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_READ)],
         loadComponent: () =>
@@ -128,10 +134,156 @@ export const adminRoutes: Routes = [
             (m) => m.PartnerDashboard,
           ),
       },
+      // ---- Partner Platform v2 — full partners/* API coverage. V1 above stays
+      // live but deprecated (sidebar badge + page banners) until v2 settles.
+      {
+        path: 'partner-v2',
+        pathMatch: 'full',
+        redirectTo: () => partnerV2LandingPath(inject(AdminAuth)),
+      },
+      // The v2 URL space mirrors the API doc's two bases: `superadmin/*` is the
+      // Miles-internal console, `panel/*` is the network/firm-admin surface.
+      {
+        path: 'partner-v2/superadmin/networks',
+        canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
+        loadComponent: () =>
+          import('./partner-platform-v2/networks/networks-v2').then((m) => m.NetworksV2),
+      },
+      {
+        // READ can look at the hub; the write actions inside are MANAGE-gated.
+        path: 'partner-v2/superadmin/networks/:id',
+        canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE, PERM.PARTNER_PLATFORM_READ)],
+        loadComponent: () =>
+          import('./partner-platform-v2/network-detail/network-detail-v2').then(
+            (m) => m.NetworkDetailV2,
+          ),
+      },
+      {
+        path: 'partner-v2/superadmin/firms',
+        canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
+        loadComponent: () => import('./partner-platform-v2/firms/firms-v2').then((m) => m.FirmsV2),
+      },
+      {
+        path: 'partner-v2/superadmin/codes',
+        canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
+        loadComponent: () => import('./partner-platform-v2/codes/codes-v2').then((m) => m.CodesV2),
+      },
+      {
+        path: 'partner-v2/superadmin/partner-admins',
+        canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
+        loadComponent: () =>
+          import('./partner-platform-v2/partner-admins/partner-admins-v2').then(
+            (m) => m.PartnerAdminsV2,
+          ),
+      },
+      {
+        path: 'partner-v2/superadmin/reports',
+        canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
+        loadComponent: () =>
+          import('./partner-platform-v2/reports/reports-v2').then((m) => m.ReportsV2),
+      },
+      {
+        // Same componentless-parent pattern as v1 user-onboarding: list + form
+        // share ONE route-scoped facade instance (reference data fetched once).
+        path: 'partner-v2/superadmin/onboarding',
+        canMatch: [permissionGuard(PERM.USERS_CREATE)],
+        providers: [UserOnboardingFacade],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () =>
+              import('./partner-platform-v2/onboarding/onboarding-v2').then((m) => m.OnboardingV2),
+          },
+          {
+            path: 'new',
+            loadComponent: () =>
+              import('./user-onboarding/shared/components/user-form/user-form').then(
+                (m) => m.UserForm,
+              ),
+          },
+          {
+            path: ':id/edit',
+            loadComponent: () =>
+              import('./user-onboarding/shared/components/user-form/user-form').then(
+                (m) => m.UserForm,
+              ),
+          },
+        ],
+      },
+      {
+        path: 'partner-v2/panel/overview',
+        canMatch: [
+          permissionGuard(
+            PERM.PARTNER_PLATFORM_READ,
+            PERM.PARTNER_TRACKER_READ,
+            PERM.PARTNER_USERS_READ,
+          ),
+        ],
+        loadComponent: () =>
+          import('./partner-platform-v2/overview/partner-overview-v2').then(
+            (m) => m.PartnerOverviewV2,
+          ),
+      },
+      {
+        path: 'partner-v2/panel/tracker',
+        canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_READ, PERM.PARTNER_TRACKER_READ)],
+        loadComponent: () =>
+          import('./partner-platform-v2/tracker/tracker-v2').then((m) => m.TrackerV2),
+      },
+      {
+        path: 'partner-v2/panel/users',
+        canMatch: [
+          permissionGuard(
+            PERM.REPORTS_USERS_READ,
+            PERM.PARTNER_TRACKER_READ,
+            PERM.PARTNER_USERS_READ,
+          ),
+        ],
+        loadComponent: () => import('./partner-platform-v2/users/users-v2').then((m) => m.UsersV2),
+      },
+      {
+        // Same adaptive page as the superadmin route — for panel admins the
+        // facade reads panel/report/* auto-scoped, with no scope picker.
+        path: 'partner-v2/panel/reports',
+        canMatch: [permissionGuard(PERM.PARTNER_TRACKER_READ, PERM.PARTNER_USERS_READ)],
+        loadComponent: () =>
+          import('./partner-platform-v2/reports/reports-v2').then((m) => m.ReportsV2),
+      },
       {
         path: 'admin-users',
         canMatch: [permissionGuard(PERM.ADMIN_USERS_MANAGE)],
         loadComponent: () => import('./admin-users/admin-users').then((m) => m.AdminUsers),
+      },
+      {
+        // Create/edit learner users + record offline payments via the Django
+        // internal APIs. Componentless parent so list + create/edit share ONE
+        // route-scoped facade instance (reference data fetched once).
+        path: 'user-onboarding',
+        canMatch: [permissionGuard(PERM.USERS_CREATE)],
+        providers: [UserOnboardingFacade],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () =>
+              import('./user-onboarding/user-onboarding').then((m) => m.UserOnboarding),
+          },
+          {
+            path: 'new',
+            loadComponent: () =>
+              import('./user-onboarding/shared/components/user-form/user-form').then(
+                (m) => m.UserForm,
+              ),
+          },
+          {
+            path: ':id/edit',
+            loadComponent: () =>
+              import('./user-onboarding/shared/components/user-form/user-form').then(
+                (m) => m.UserForm,
+              ),
+          },
+        ],
       },
       {
         path: 'roles-permissions',

@@ -19,11 +19,17 @@ import { Consent } from '../../shared/core/services/consent/consent';
 import { Analytics } from '../../shared/core/services/analytics/analytics';
 import { Dialog } from '../../shared/core/services/dialog/dialog';
 import { Utils } from '../../shared/core/services/utils/utils';
+import {
+  FeatureFacade,
+  FeatureResource,
+} from '../../features/shared/services/feature-facade/feature-facade';
+import { PaymentFacade } from '../../features/payment/shared/service/payment-facade/payment-facade';
 import { GlobalSearchDialog } from '../../shared/components/dialog/global-search-dialog/global-search-dialog';
 import {
   CalendlyDialog,
   CalendlyDialogData,
 } from '../../shared/components/dialog/calendly-dialog/calendly-dialog';
+import { Content } from '../../shared/core/models/course.model';
 
 import { SubscribeCard } from './components/subscribe-card/subscribe-card';
 import { ContinueLearningCard } from './components/continue-learning-card/continue-learning-card';
@@ -61,29 +67,8 @@ export class FooterOverlay {
   // fixed bottom UIs don't overlap (no-op unless consent is active in prod).
   protected readonly consent = inject(Consent);
   private readonly analytics = inject(Analytics);
-  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly feature: any = {
-    getResource: (..._args: any[]): any => ({
-      items: signal<any[]>([]),
-      isLoading: signal(false),
-      hasMore: signal(false),
-      error: signal(null),
-      loadNextPage: () => undefined,
-      loadNextTrackPage: () => undefined,
-      setFilters: () => undefined,
-      setTrackFilters: () => undefined,
-      webp: signal(null),
-    }),
-  };
-  // ponytail: PaymentFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly payment: any = {
-    cartData: signal<any>(null),
-    loadMyBucket: signal<any>(null),
-  };
+  private readonly feature = inject(FeatureFacade);
+  private readonly payment = inject(PaymentFacade);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly isBrowser = isPlatformBrowser(this.platformId);
@@ -141,12 +126,12 @@ export class FooterOverlay {
    * triggers a `refresh()` (signal writes) on cache hits — which is illegal
    * inside `computed()` (NG0600).
    */
-  private readonly inProgressResource = signal<any | null>(null);
+  private readonly inProgressResource = signal<FeatureResource | null>(null);
 
-  protected readonly inProgressCourse = computed<any | null>(() => {
+  protected readonly inProgressCourse = computed<Content | null>(() => {
     const resource = this.inProgressResource();
     if (!resource) return null;
-    const list = resource.items() as any[];
+    const list = resource.items() as Content[];
     return list?.[0] ?? null;
   });
 
@@ -248,7 +233,7 @@ export class FooterOverlay {
     });
   }
 
-  protected onResume(course: any): void {
+  protected onResume(course: Content): void {
     this.analytics.trackEvent('continue_learning_click', {
       course_id: course.id,
       course_type: course.course_type,

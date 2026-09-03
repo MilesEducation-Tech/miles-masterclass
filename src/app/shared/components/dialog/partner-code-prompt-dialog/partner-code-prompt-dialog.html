@@ -15,22 +15,28 @@
       partner code for exclusive access.
     </p>
 
-    <p class="text-base sm:text-lg font-semibold text-white text-center mt-8">
-      Choose an option to continue:
-    </p>
+    @if (showSubscribe) {
+      <p class="text-base sm:text-lg font-semibold text-white text-center mt-8">
+        Choose an option to continue:
+      </p>
 
-    <div class="flex justify-center mt-6">
-      <app-button
-        variant="default"
-        size="lg"
-        class="w-full sm:w-auto"
-        (clicked)="continueToSubscribe()"
-      >
-        Continue to subscribe
-      </app-button>
-    </div>
+      <div class="flex justify-center mt-6">
+        <app-button
+          variant="default"
+          size="lg"
+          class="w-full sm:w-auto"
+          (clicked)="continueToSubscribe()"
+        >
+          Continue to subscribe
+        </app-button>
+      </div>
 
-    <p class="text-center text-white mt-6 mb-4">OR</p>
+      <p class="text-center text-white mt-6 mb-4">OR</p>
+    } @else {
+      <p class="text-base sm:text-lg font-semibold text-white text-center mt-8 mb-4">
+        Enter your partner code
+      </p>
+    }
 
     <app-forms type="signal" (submitted)="applyCode()">
       <div class="flex items-stretch gap-0 rounded-lg overflow-hidden max-w-md mx-auto relative">

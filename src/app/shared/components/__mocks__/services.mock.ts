@@ -1,25 +1,27 @@
-/**
- * No-op service doubles for Storybook. Each method returns `undefined`
- * explicitly rather than having an empty body, so `no-empty-function` can stay
- * on for real code.
- */
+import { of } from 'rxjs';
 
 export class MockUtils {
-  navigateTo = (): void => undefined;
-  openDialog = (): void => undefined;
-  openVideoDialog = (): void => undefined;
+  navigateTo() {}
+  openDialog() {}
+  openVideoDialog() {}
   slugify(text: string) {
     return text.toLowerCase().replace(/\s+/g, '-');
   }
 }
 
+export class MockFeatureFacade {
+  getAbout(id: number) {
+    return of(null);
+  }
+}
+
 export class MockLogger {
-  error = (..._args: any[]): void => undefined;
-  warn = (..._args: any[]): void => undefined;
-  info = (..._args: any[]): void => undefined;
+  error(...args: any[]) {}
+  warn(...args: any[]) {}
+  info(...args: any[]) {}
 }
 
 export class MockRouter {
-  navigate = (): void => undefined;
-  navigateByUrl = (): void => undefined;
+  navigate() {}
+  navigateByUrl() {}
 }

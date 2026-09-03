@@ -8,15 +8,20 @@ import {
   PLATFORM_ID,
   untracked,
   viewChild,
-  signal,
 } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroFunnel } from '@ng-icons/heroicons/outline';
 import { Vertical } from '../../../shared/components/cards/vertical/vertical';
 import { TabStrip } from '../../../shared/components/ui/tab-strip/tab-strip';
+import {
+  COURSE_TYPE_TABS,
+  CourseFilterGroup,
+  CourseFilterSelection,
+} from '../../../shared/core/models/library-filters.model';
 import { Dialog } from '../../../shared/core/services/dialog/dialog';
 import { CourseFilters } from './shared/components/course-filters/course-filters';
 import { CourseFiltersDrawer } from './shared/components/course-filters-drawer/course-filters-drawer';
+import { CourseFacade } from './shared/services/course-facade/course-facade';
 
 @Component({
   selector: 'app-course',
@@ -29,85 +34,59 @@ import { CourseFiltersDrawer } from './shared/components/course-filters-drawer/c
   },
 })
 export class Course {
-  // ponytail: CourseFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  readonly facade: any = {
-    clearCourseFilters: signal<any[]>([]),
-    courseFilters: signal<any[]>([]),
-    courseItems: signal<any[]>([]),
-    coursePagination: signal<any>(null),
-    courseType: signal<any>(null),
-    isCourseLoading: signal<any>(null),
-    isLibraryFiltersLoading: signal<any>(null),
-    libraryFilters: signal<any[]>([]),
-    loadNextCoursePage: signal<any>(null),
-    selectCourseType: (..._args: any[]): any => null,
-    setCourseFilters: (..._args: any[]): any => null,
-  };
+  readonly facade = inject(CourseFacade);
   private readonly dialog = inject(Dialog);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  /**
-   * The library's own tab set — UI config, not a backend payload. `apiType` is
-   * the value handed to whatever service loads the listing; `routeType` is the
-   * URL segment.
-   */
-  readonly tabs = [
-    { apiType: 'masterclass', routeType: 'masterclass', label: 'Master Class' },
-    { apiType: 'podcast', routeType: 'podcast', label: 'Podcast' },
-    { apiType: 'micro_learning', routeType: 'micro-learning', label: 'Micro Learning' },
-  ] as const;
-  readonly tabLabels = computed(() => this.tabs.map((t: any) => t.label));
+  readonly tabs = COURSE_TYPE_TABS;
+  readonly tabLabels = computed(() => this.tabs.map((t) => t.label));
   readonly currentLabel = computed(
-    () => this.tabs.find((t: any) => t.apiType === this.facade.courseType())?.label ?? '',
+    () => this.tabs.find((t) => t.apiType === this.facade.courseType())?.label ?? '',
   );
 
   /** Route slug ('micro-learning', etc.) passed to `app-vertical`. */
   readonly routeType = computed(
-    () =>
-      this.tabs.find((t: any) => t.apiType === this.facade.courseType())?.routeType ??
-      'masterclass',
+    () => this.tabs.find((t) => t.apiType === this.facade.courseType())?.routeType ?? 'masterclass',
   );
 
-  readonly groups = computed<readonly any[]>(() => {
+  readonly groups = computed<readonly CourseFilterGroup[]>(() => {
     const f = this.facade.libraryFilters();
     if (!f) return [];
     return [
       {
         key: 'instructor_ids',
         label: 'Instructor',
-        options: f.instructors.map(({ id, name }: any) => ({ value: id, label: name })),
+        options: f.instructors.map(({ id, name }) => ({ value: id, label: name })),
       },
       {
         key: 'category_ids',
         label: 'Category',
-        options: f.categories.map(({ id, name }: any) => ({ value: id, label: name })),
+        options: f.categories.map(({ id, name }) => ({ value: id, label: name })),
       },
       {
         key: 'field_of_study_ids',
         label: 'Field of Study',
-        options: f.fields_of_study.map(({ id, name }: any) => ({ value: id, label: name })),
+        options: f.fields_of_study.map(({ id, name }) => ({ value: id, label: name })),
       },
       {
         key: 'additional_category_ids',
         label: 'Additional Category',
-        options: f.additional_categories.map(({ id, name }: any) => ({ value: id, label: name })),
+        options: f.additional_categories.map(({ id, name }) => ({ value: id, label: name })),
       },
       {
         key: 'caira_levels',
         label: 'CAIRA Level',
-        options: f.caira_levels.map(({ id, name }: any) => ({ value: id, label: name })),
+        options: f.caira_levels.map(({ id, name }) => ({ value: id, label: name })),
       },
       {
         key: 'cpe_range',
         label: 'CPE Credits',
-        options: f.cpe_credits.map(({ key, label }: any) => ({ value: key, label })),
+        options: f.cpe_credits.map(({ key, label }) => ({ value: key, label })),
       },
       {
         key: 'track_ids',
         label: 'Track',
-        options: (f.tracks ?? []).map(({ id, name }: any) => ({ value: id, label: name })),
+        options: (f.tracks ?? []).map(({ id, name }) => ({ value: id, label: name })),
       },
       {
         key: 'ai_library',
@@ -121,10 +100,7 @@ export class Course {
   });
 
   readonly activeFilterCount = computed(() =>
-    Object.values(this.facade.courseFilters() ?? {}).reduce(
-      (n: number, arr: any) => n + (arr?.length ?? 0),
-      0,
-    ),
+    Object.values(this.facade.courseFilters()).reduce((n, arr) => n + arr.length, 0),
   );
 
   readonly sentinel = viewChild<ElementRef<HTMLDivElement>>('sentinel');
@@ -167,7 +143,7 @@ export class Course {
   }
 
   onTabChange(label: string) {
-    const tab = this.tabs.find((t: any) => t.label === label);
+    const tab = this.tabs.find((t) => t.label === label);
     if (tab) this.facade.selectCourseType(tab.apiType);
   }
 
@@ -179,7 +155,7 @@ export class Course {
       data: {
         groups: () => this.groups(),
         selection: () => this.facade.courseFilters(),
-        onChange: (next: any) => this.facade.setCourseFilters(next),
+        onChange: (next: CourseFilterSelection) => this.facade.setCourseFilters(next),
         onClear: () => this.facade.clearCourseFilters(),
       },
     });

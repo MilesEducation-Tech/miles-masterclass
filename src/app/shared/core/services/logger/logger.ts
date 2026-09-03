@@ -1,8 +1,10 @@
-import { Service } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { LogLevel } from '../../models/log.model';
 import { environment } from '../../../../../environments/environment';
 
-@Service()
+@Injectable({
+  providedIn: 'root',
+})
 export class Logger {
   private level: LogLevel = environment.LOGGER.LogLevel;
 

@@ -4,29 +4,35 @@ import {
   effect,
   EnvironmentInjector,
   inject,
+  Injectable,
   Injector,
-  Service,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { HttpContext } from '@angular/common/http';
 import { Router, NavigationEnd, Event as RouterEvent } from '@angular/router';
-import { EMPTY, Observable, of } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
-import { ApiClient } from '../api-client/api-client';
-import { CAIRA } from '../../http/caira.endpoints';
-import { CairaUuid, SKIP_ERROR_NOTIFICATION } from '../../models/caira/envelope.model';
-import {
-  BookmarkToggleResponse,
-  CourseDetailResponse,
-  toCourseDetailCard,
-} from '../../models/caira/course-detail.model';
+import { EMPTY, Observable } from 'rxjs';
+import { filter, tap } from 'rxjs/operators';
 import { DynamicRouteParams, ProfessionType, CountryCode } from '../../models/route-params.model';
 import { PROFESSIONS } from '../../constant/profession';
 import { Dialog } from '../dialog/dialog';
 import { UtilsDialog, DialogButton } from '../../../components/dialog/utils-dialog/utils-dialog';
 import { ShareDialog, ShareDialogData } from '../../../components/dialog/share-dialog/share-dialog';
+import { ApiClient } from '../api-client/api-client';
 import { Analytics } from '../analytics/analytics';
+import { MASTERCLASS_ROUTES } from '../../models/masterclass.model';
+import {
+  RouteParams,
+  RouteResponse,
+  RouteRequest,
+  SKIP_ERROR_NOTIFICATION,
+} from '../../models/http.model';
+import {
+  Content,
+  ContentDetails,
+  FinalAssessmentExamResponse,
+  QuizQuestion,
+} from '../../models/course.model';
 import { Storage } from '../storage/storage';
 import {
   CertificateDialogData,
@@ -35,9 +41,19 @@ import {
 import { VideoDialog, VideoDialogData } from '../../../components/dialog/video-dialog/video-dialog';
 import { NotificationService } from '../notification/notification';
 import { Viewport, ScreenInfo } from '../viewport/viewport';
+// CartDrawerDialog is loaded lazily in openCartDrawer() — this service is
+// eagerly instantiated (injected by the header/footer chrome), so a static
+// import would pull the dialog and its `@angular/forms` dependency into the
+// initial bundle.
+import { PaymentFacade } from '../../../../features/payment/shared/service/payment-facade/payment-facade';
+import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
 import { Auth } from '../auth/auth';
 import { Logger } from '../logger/logger';
+import { canAccessCpeMode, CpeModeGateContent } from '../../../utils/cpe-mode-access';
+import { SubscriptionDialog } from '../../../components/dialog/subscription-dialog/subscription-dialog';
 import { UtilsDialogData } from '../../../components/dialog/utils-dialog/utils-dialog';
+
+type StartFinalAssessmentParams = RouteParams<typeof MASTERCLASS_ROUTES.startFinalAssessment>;
 
 /**
  * Permissive view of a server-side `user_badge` object. The wire shape varies
@@ -53,10 +69,37 @@ export interface RawCredlyBadge {
 export type ApiCourseType = 'masterclass' | 'podcast' | 'micro_learning';
 export type CourseIdKey = 'masterclass_id' | 'podcast_id' | 'nano_learning_id';
 
+/**
+ * Normalises every spelling of a course type the app can hand around into the
+ * backend token. Route literals use `masterclass`/`podcast`/`micro_learning`,
+ * payloads use the display label (`Video`, `Podcast`), and the CPE tracker uses
+ * `nano_learning`. Returns `null` for anything unrecognised so callers can bail
+ * instead of firing a request with no course-id key.
+ *
+ * Per-caller translation kept missing a case — the exam-retake path mapped only
+ * `Video` and sent `Podcast` straight through.
+ */
+export function toApiCourseType(courseType: string): ApiCourseType | null {
+  switch (courseType?.trim().toLowerCase()) {
+    case 'video':
+    case 'masterclass':
+      return 'masterclass';
+    case 'audio':
+    case 'podcast':
+      return 'podcast';
+    // An AI Lab course is a nano-learning row, so it shares the id key.
+    case 'ai_lab':
+    case 'nano_learning':
+    case 'micro_learning':
+    case 'micro-learning':
+      return 'micro_learning';
+    default:
+      return null;
+  }
+}
+
 /** Shape accepted by `openCourseInfoDialog`. */
-// ponytail: was `Content | ContentDetails` from the deleted course model. Retype
-// against the new backend's course payload.
-export type CourseInfoInput = any;
+export type CourseInfoInput = Content | ContentDetails;
 
 /**
  * Utility service for common platform-wide operations.
@@ -66,19 +109,23 @@ export type CourseInfoInput = any;
  *   const country = utils.country();      // e.g., 'in', 'us'
  *   const profession = utils.profession(); // e.g., 'accounting', 'finance'
  */
-@Service()
+@Injectable({
+  providedIn: 'root',
+})
 export class Utils {
   private readonly router = inject(Router);
   private readonly dialog = inject(Dialog);
+  private readonly http = inject(ApiClient);
   private readonly storage = inject(Storage);
   private readonly injector = inject(Injector);
   private readonly notification = inject(NotificationService);
+  private readonly payment = inject(PaymentFacade);
+  private readonly featureFacade = inject(FeatureFacade);
   private readonly auth = inject(Auth);
   private readonly analytics = inject(Analytics);
   private readonly logger = inject(Logger);
   private readonly destroyRef = inject(DestroyRef);
   private readonly viewport = inject(Viewport);
-  private readonly api = inject(ApiClient);
 
   private readonly _country = signal<CountryCode>('us');
   private readonly _profession = signal<ProfessionType>('accounting');
@@ -210,7 +257,21 @@ export class Utils {
     if (url.includes('/podcast/')) return 'podcast';
     if (url.includes('/micro-learning/')) return 'micro-learning';
     if (url.includes('/webinar/')) return 'webinar';
+    // AI Lab courses are nano-learning rows that report `course_type: 'ai_lab'`.
+    // The route lives under the AI Labs landing page, not under /offerings.
+    if (url.includes('/ai-labs/')) return 'ai_lab';
     return 'masterclass';
+  }
+
+  /**
+   * Segment for `v2/:course_type/details/`. Everything matches
+   * `getCourseType()` except AI Lab, whose details are served by the
+   * micro-learning serializer (`v2/ai_lab/details/` is a 404) — the payload
+   * still comes back with `course_type: 'ai_lab'`.
+   */
+  getCourseDetailsSegment(): string {
+    const type = this.getCourseType();
+    return type === 'ai_lab' ? 'micro-learning' : type;
   }
 
   /**
@@ -220,7 +281,7 @@ export class Utils {
    */
   getApiCourseType(): ApiCourseType {
     const type = this.getCourseType();
-    if (type === 'micro-learning') return 'micro_learning';
+    if (type === 'micro-learning' || type === 'ai_lab') return 'micro_learning';
     return type as 'masterclass' | 'podcast';
   }
 
@@ -240,10 +301,28 @@ export class Utils {
     courseType: string,
     examRules: string,
   ) {
+    const apiType = toApiCourseType(courseType);
+    if (!apiType) {
+      // No id key means the request can only 400. Fail before opening the rules
+      // dialog rather than after the user has agreed to them.
+      this.logger.error('Cannot start final assessment: unknown course type', { courseType });
+      this.notification.error('Error', 'Unable to start the assessment. Please try again later.');
+      return;
+    }
     // The API type (`micro_learning`) differs from the URL segment
     // (`micro-learning`) that `offerings.ts` registers the feature at.
-    // Masterclass and podcast share the same token for both.
-    const urlSegment = courseType === 'micro_learning' ? 'micro-learning' : courseType;
+    // Masterclass and podcast share the same token for both. AI Lab keeps its
+    // own segment — its exam routes hang off the /ai-labs page, not /offerings.
+    const urlSegment =
+      courseType === 'ai_lab'
+        ? 'ai-labs'
+        : apiType === 'micro_learning'
+          ? 'micro-learning'
+          : apiType;
+    // Titles arrive raw from details payloads (`Fraud Risk & Detection`) as well
+    // as pre-slugged from route params. Slugify both — a raw title can carry a
+    // `/` that would split the URL into an extra segment and miss the route.
+    const titleSlug = this.slugify(courseTitle);
 
     const examRulesArray: string[] = examRules ? examRules.split(/\r?\n/) : [];
     const dialogRef = this.dialog.open<
@@ -267,17 +346,105 @@ export class Utils {
     dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!(result?.result && result?.action === 'confirm')) return;
 
-      // ponytail: the POST that minted a session id is gone, and CAIRA never
-      // had one — an attempt is `(user, course, attempt_number)`. The route is
-      // course-keyed now, so navigation no longer waits on a session; the exam
-      // page reports its own empty state until #9 is bound.
-      this.router.navigate([
-        `${this._country()}/${this._profession()}/${urlSegment}/${courseId}/${courseTitle}/final-assessment/exam`,
-      ]);
+      const cached: QuizQuestion[] =
+        this.storage.getLocal(`final_assessment_questions_${courseId}`) || [];
+      if (cached.length) {
+        const session_id = this.storage.getLocal('session_id');
+        this.router.navigate([
+          `${this._country()}/${this._profession()}/${urlSegment}/${courseId}/${titleSlug}/final-assessment/${session_id}/exam`,
+        ]);
+        return;
+      }
+
+      const params: StartFinalAssessmentParams = {};
+      if (apiType === 'masterclass') params.masterclass_id = +courseId;
+      else if (apiType === 'podcast') params.podcast_id = +courseId;
+      else params.nano_learning_id = +courseId;
+      // Same id key as a reel, so the backend needs to be told it's a lab.
+      if (courseType === 'ai_lab') params.course_type = 'ai_lab';
+
+      const context = new HttpContext().set(SKIP_ERROR_NOTIFICATION, true);
+      this.http
+        .post<FinalAssessmentExamResponse>(
+          MASTERCLASS_ROUTES.startFinalAssessment.path,
+          {},
+          { params, context },
+        )
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (value) => {
+            this.storage.setLocal('session_id', value.session_id.toString());
+            this.storage.setLocal(`final_assessment_questions_${courseId}`, value.questions);
+            this.router.navigate([
+              `${this._country()}/${this._profession()}/${urlSegment}/${courseId}/${titleSlug}/final-assessment/${value.session_id}/exam`,
+            ]);
+          },
+          error: (error) => {
+            this.logger.error('Failed to start final assessment', error);
+            // The rules dialog has already closed — without this the user is
+            // left staring at the page with no feedback at all.
+            this.notification.error('Error', 'Unable to start the assessment. Please try again.');
+          },
+        });
     });
   }
 
-  openCertificateDownloadDialog(content: any) {
+  /**
+   * Whether the user may enter CPE Certification Mode for this content.
+   *
+   * CPE mode is the paid tier — it awards credit and a certificate — so it
+   * needs an active subscription. Preview mode is free and is never gated by
+   * this. Free content and content the user bought individually
+   * (`active_plan`) are exempt.
+   *
+   * Falls back to the cookie snapshot for the same reason `activePlanGuard`
+   * does: on a hard refresh `currentPlan` starts `null` until the async
+   * current-plan fetch lands, and without the fallback an active subscriber
+   * clicking straight through would be wrongly paywalled.
+   *
+   * Reads `hasActivePlan()` (status === 'active'), NOT `!!currentPlan()` —
+   * the truthiness form used by some older gates lets an expired or cancelled
+   * plan through.
+   *
+   * The rule itself lives in `shared/utils/cpe-mode-access` as a pure
+   * function; this wrapper only supplies the plan flag.
+   */
+  canAccessCpeMode(content: CpeModeGateContent): boolean {
+    const hasPlan = this.auth.hasActivePlan() || this.auth.hasActivePlanFromCookie();
+    return canAccessCpeMode(content, hasPlan);
+  }
+
+  /**
+   * Gate for every CPE mode-selection entry point. Returns `true` when the
+   * caller may proceed; otherwise sends the user where they need to go
+   * (login for guests, the subscription upsell for everyone else) and returns
+   * `false` so the caller can bail.
+   *
+   * Same dialog and options `WebinarFacade` and `EngagementDialog` use, so the
+   * paywall a learner meets here is identical to the one everywhere else.
+   * `SubscriptionDialog` is already in the initial bundle (`EngagementDialog`
+   * is injected by `App`), so the static import costs nothing extra.
+   */
+  requireCpeModeAccess(content: CpeModeGateContent): boolean {
+    if (this.canAccessCpeMode(content)) return true;
+
+    // Don't upsell someone who isn't signed in — they may already have a plan
+    // on an account they haven't logged into. Mirrors the login redirect
+    // `launchCourse` / `navigateToChapter` do, so guests keep landing on login
+    // rather than a subscription dialog they can't act on.
+    if (!this.auth.isLoggedIn()) {
+      this.router.navigate(['/auth/login'], { queryParams: { redirect: this.router.url } });
+      return false;
+    }
+
+    this.dialog.open<SubscriptionDialog, void>(SubscriptionDialog, {
+      maxWidth: '95vw',
+      ariaLabel: 'Subscribe to a plan',
+    });
+    return false;
+  }
+
+  openCertificateDownloadDialog(content: ContentDetails) {
     const userPlan = this.auth.currentPlan();
 
     // Course is excluded from subscription — must be purchased individually.
@@ -381,15 +548,15 @@ export class Utils {
    * callers pipe their own error handling / analytics. The server is
    * idempotent, so a repeat claim returns the same badge + `credly_accept_url`.
    */
-  // ponytail: no claim endpoint — resolves to null so callers' `.subscribe(...)`
-  // and `claimAcceptUrl(...)` chains stay intact.
-  claimBadge(badgeId: number): Observable<any> {
-    this.logger.warn('claimBadge: no backend configured', { badgeId });
-    return of(null);
+  claimBadge(badgeId: number): Observable<RouteResponse<typeof MASTERCLASS_ROUTES.claimBadge>> {
+    const path = MASTERCLASS_ROUTES.claimBadge.path.replace(':id', String(badgeId));
+    return this.http.get<RouteResponse<typeof MASTERCLASS_ROUTES.claimBadge>>(path);
   }
 
   /** Credly accept URL from a claim response, or `null` when none was issued. */
-  claimAcceptUrl(res: any | null | undefined): string | null {
+  claimAcceptUrl(
+    res: RouteResponse<typeof MASTERCLASS_ROUTES.claimBadge> | null | undefined,
+  ): string | null {
     return res?.credly_accept_url ?? null;
   }
 
@@ -434,12 +601,7 @@ export class Utils {
     });
   }
 
-  navigateToCourse(
-    type: string,
-    id: CairaUuid | number,
-    title: string,
-    state?: Record<string, unknown>,
-  ) {
+  navigateToCourse(type: string, id: number, title: string, state?: Record<string, unknown>) {
     const titleSlug = this.slugify(title);
     this.router.navigate([`/${this._country()}/${this._profession()}`, type, id, titleSlug], {
       state,
@@ -452,8 +614,9 @@ export class Utils {
    * `course_type` from API responses arrives in snake_case (`micro_learning`);
    * the URL segment is kebab‑case (`micro-learning`), so we normalize here.
    */
-  buildCourseUrl(type: string, id: CairaUuid | number, title: string): string {
-    const urlSegment = type === 'micro_learning' ? 'micro-learning' : type;
+  buildCourseUrl(type: string, id: number, title: string): string {
+    const urlSegment =
+      type === 'micro_learning' ? 'micro-learning' : type === 'ai_lab' ? 'ai-labs' : type;
     const titleSlug = this.slugify(title);
     const path = `/${this._country()}/${this._profession()}/${urlSegment}/${id}/${titleSlug}`;
     if (typeof window === 'undefined') return path;
@@ -469,7 +632,7 @@ export class Utils {
    * back to where they were after submit, even when called from places that
    * forget to thread it through.
    */
-  navigateToCourseFeedback(type: string, id: CairaUuid | number, title: string, redirect?: string) {
+  navigateToCourseFeedback(type: string, id: number, title: string, redirect?: string) {
     const titleSlug = this.slugify(title);
     const redirectTo = redirect ?? this.router.url;
     this.router.navigate(
@@ -514,53 +677,6 @@ export class Utils {
     });
   }
 
-  /**
-   * Open the info dialog with the **full** about section.
-   *
-   * A list card carries only what the rail endpoints return; the dialog renders
-   * `app-course-about`, which wants `course_overview`, `learning_objective_list`
-   * and the instructor list — all of which live on #4. Each card type used to
-   * fetch that through its own `FeatureFacade.getAbout` call; the facade went
-   * with the Django strip, so all three threw on the first click.
-   *
-   * No cache: #4 is already cached server-side per user, and a second click is
-   * cheaper than a stale about panel.
-   */
-  openCourseInfo(card: CourseInfoInput, environmentInjector?: EnvironmentInjector): void {
-    // The webinar branch renders a different dialog from the raw payload the
-    // adapter stashed — there is no #4 for a webinar.
-    if ((card as { _webinar?: unknown })._webinar) {
-      void this.openCourseInfoDialog(card, environmentInjector);
-      return;
-    }
-
-    this.api
-      .get<CourseDetailResponse>(CAIRA.courseDetail(card.id), {
-        // The fallback below is the user-visible handling; a toast on top of it
-        // would report a failure the learner never experiences.
-        context: new HttpContext().set(SKIP_ERROR_NOTIFICATION, true),
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          // #4 signals failure with a string `"error"` status and no
-          // `course_details`. `toCourseDetailCard` dereferences its argument
-          // immediately, and a throw here would escape the `error` handler
-          // below — leaving the learner with no dialog at all.
-          const payload = response?.course_details;
-          void this.openCourseInfoDialog(
-            payload ? toCourseDetailCard(payload) : card,
-            environmentInjector,
-          );
-        },
-        // Fall back to the card itself — a partial about section beats nothing.
-        error: (error: unknown) => {
-          this.logger.warn('Course about fetch failed', error);
-          void this.openCourseInfoDialog(card, environmentInjector);
-        },
-      });
-  }
-
   openVideoDialog(trailerLink: string | null | undefined, title: string) {
     if (!trailerLink) {
       this.notification.info('Trailer Not Found', 'No trailer is available for this course.');
@@ -591,59 +707,74 @@ export class Utils {
     });
   }
 
-  /**
-   * #15 · `POST caira/masterclass/<uuid>/bookmark/`.
-   *
-   * A **pure toggle**: CAIRA never reads the request body, so there is nothing
-   * to send and no way to set a specific state. The response's `bookmarked` is
-   * the new state — callers patch from that, never from a local flip.
-   *
-   * `options.course_type` is accepted and ignored. CAIRA has one bookmark
-   * endpoint and it takes a masterclass course id; podcasts are masterclasses
-   * with an audio player. The parameter stays so the five card and dialog call
-   * sites keep compiling.
-   *
-   * Guarded centrally so every bookmark surface gets the same login prompt.
-   * `EMPTY` (rather than an error) keeps `.subscribe(...)` quiet at call sites;
-   * the toast is the user-facing feedback.
-   */
-  toggleBookmarkCourse(
-    courseId: CairaUuid,
-    options?: { course_type: string },
-  ): Observable<{ status: boolean; is_bookmarked: boolean }> {
+  toggleBookmarkCourse(courseId: number, options?: { course_type: string }) {
+    // Guarded centrally so every bookmark surface (cards, Remind Me, dialog)
+    // gets the same login prompt — callers don't need to repeat the check.
+    // Returning EMPTY (instead of throwing) keeps `.subscribe(...)` quiet at
+    // call sites; the toast is the user-facing feedback.
     if (!this.auth.isLoggedIn()) {
       this.notification.info('Login Required', 'Please log in to bookmark this course.');
       return EMPTY;
     }
-    if (!courseId) return EMPTY;
-    void options;
 
-    return this.api.post<BookmarkToggleResponse>(CAIRA.bookmark(courseId), null).pipe(
-      map((response) => ({
-        status: response?.status === 'success',
-        is_bookmarked: response?.bookmarked === true,
-      })),
-    );
+    const rawCourseType = options?.course_type ?? this.getApiCourseType();
+    // Content tagged as `video` is served from the masterclass bookmark
+    // endpoint — the bookmark API doesn't recognize a `video` course type, so
+    // we collapse it here rather than asking every caller to remember.
+    const courseType = rawCourseType === 'video' ? 'masterclass' : rawCourseType;
+    return this.http
+      .post<RouteResponse<typeof MASTERCLASS_ROUTES.toggleBookmark>>(
+        MASTERCLASS_ROUTES.toggleBookmark.path,
+        { course_id: courseId, course_type: courseType },
+      )
+      .pipe(
+        tap((response) => {
+          if (response.status) {
+            this.notification.success(
+              response.is_bookmarked ? 'Bookmarked' : 'Bookmark Removed',
+              response.message,
+            );
+            // Fan out to every cached feature list so any visible card flips
+            // its bookmark icon in lockstep, and the dedicated bookmark listing
+            // (if loaded) adds/removes the course locally — no extra round-trip.
+            this.featureFacade.applyBookmarkChange(courseId, response.is_bookmarked, courseType);
+            this.analytics.trackEvent(response.is_bookmarked ? 'bookmark_add' : 'bookmark_remove', {
+              course_id: courseId,
+              course_type: courseType,
+            });
+          }
+        }),
+      );
   }
 
-  /**
-   * ponytail: no cart endpoint exists in CAIRA — there is no payment or
-   * subscription model at all. Kept so the cart design stays reachable.
-   */
-  addCourseToCart(courseId: CairaUuid | number, isAddedToCart: boolean): Observable<any> {
+  addCourseToCart(courseId: number, isAddedToCart: boolean) {
     if (isAddedToCart) {
       this.notification.info('Already in Cart', 'This course is already in your cart.');
       this.openCartDrawer();
       return EMPTY;
     }
-    // Still opens the drawer so the cart design remains reachable from every
-    // course surface.
-    this.logger.warn('addCourseToCart: no backend configured', { courseId });
-    this.openCartDrawer();
-    return EMPTY;
+    const courseType = this.getApiCourseType();
+    const body: RouteRequest<typeof MASTERCLASS_ROUTES.addToCart> = {
+      item_id: courseId,
+      item_type: courseType,
+    };
+    return this.http
+      .post<RouteResponse<typeof MASTERCLASS_ROUTES.addToCart>>(
+        MASTERCLASS_ROUTES.addToCart.path,
+        body,
+      )
+      .pipe(
+        tap((response) => {
+          if (response.status) {
+            this.notification.success('Added to Cart', response.message);
+            this.openCartDrawer();
+          }
+        }),
+      );
   }
 
   async openCartDrawer(): Promise<void> {
+    this.payment.loadMyBucket({ force: true });
     const { CartDrawerDialog } =
       await import('../../../components/dialog/cart-drawer-dialog/cart-drawer-dialog');
     this.dialog.open(CartDrawerDialog, {
@@ -657,59 +788,54 @@ export class Utils {
     });
   }
 
-  /**
-   * ponytail: card surfaces have no resource list to open — #4 carries
-   * `ai_kit` and `exercise_file_url`, but only on the course detail payload,
-   * and the catalog endpoints omit both. From a card there is nothing to fetch:
-   * CAIRA has no per-course resources endpoint. `CourseDetail` calls
-   * `openResourceLinks` directly with the data it already holds.
-   */
-  openAdditionalResources(courseId: CairaUuid | number): void {
-    this.logger.warn('openAdditionalResources: no resource source for a card', { courseId });
-    this.openResourceLinks([]);
-  }
+  openAdditionalResources(courseId: number): void {
+    const path = MASTERCLASS_ROUTES.additionalResources.path.replace(
+      ':courseId',
+      courseId.toString(),
+    );
+    this.http
+      .get<RouteResponse<typeof MASTERCLASS_ROUTES.additionalResources>>(path)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          // Map each resource to its openable URL (hosted file first, else the
+          // external link). Resources with neither are dropped — there'd be
+          // nothing to open.
+          const links = (response.data ?? [])
+            .map((r) => ({
+              label: r.title,
+              description: r.description,
+              href: r.resource_file ?? r.resource_link ?? '',
+            }))
+            .filter((link) => !!link.href);
 
-  /**
-   * Render a list of downloadable / external resources as the shared links
-   * dialog, or tell the user there are none.
-   */
-  openResourceLinks(
-    resources: {
-      title?: string | null;
-      description?: string | null;
-      resource_file?: string | null;
-      resource_link?: string | null;
-    }[],
-  ): void {
-    // Map each resource to its openable URL (hosted file first, else the
-    // external link). Resources with neither are dropped — there'd be
-    // nothing to open.
-    const links = resources
-      .map((r) => ({
-        label: r.title,
-        description: r.description,
-        href: r.resource_file ?? r.resource_link ?? '',
-      }))
-      .filter((link) => !!link.href);
-
-    if (links.length) {
-      this.dialog.open(UtilsDialog, {
-        maxWidth: '100%',
-        enterAnimationDuration: '300ms',
-        exitAnimationDuration: '300ms',
-        data: {
-          title: 'Additional Resources',
-          containerClass: 'max-w-lg text-left!',
-          content: [{ type: 'links', items: links }],
-          buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
+          if (links.length) {
+            this.dialog.open(UtilsDialog, {
+              maxWidth: '100%',
+              enterAnimationDuration: '300ms',
+              exitAnimationDuration: '300ms',
+              data: {
+                title: 'Additional Resources',
+                containerClass: 'max-w-lg text-left!',
+                content: [{ type: 'links', items: links }],
+                buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
+              },
+            });
+          } else {
+            this.notification.info(
+              'No Resources',
+              'No additional resources are available for this course.',
+            );
+          }
+        },
+        error: (error) => {
+          this.logger.error('Failed to fetch additional resources', error);
+          this.notification.error(
+            'Error',
+            'Failed to fetch additional resources. Please try again later.',
+          );
         },
       });
-    } else {
-      this.notification.info(
-        'No Resources',
-        'No additional resources are available for this course.',
-      );
-    }
   }
 }
 

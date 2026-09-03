@@ -1,5 +1,4 @@
-import { Component, DestroyRef, computed, inject, input } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, computed, inject, input } from '@angular/core';
 import { VideoPoster } from '../../../../../../shared/components/video-poster/video-poster';
 import { Button } from '../../../../../../shared/components/ui/button/button';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -18,12 +17,12 @@ import { Auth } from '../../../../../../shared/core/services/auth/auth';
 
 import { Progress } from '../../../../../../shared/components/ui/progress/progress';
 import { cn } from '../../../../../../shared/utils/cn';
+import { MasterclassFacade } from '../../../../shared/services/masterclass-facade/masterclass-facade';
 import { RatingStar } from '../../../../../../shared/components/rating-star/rating-star';
 import { Utils } from '../../../../../../shared/core/services/utils/utils';
 import { CategoriesList } from '../../../../../../shared/components/categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '../../../../../../shared/core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { CairaCredlyBadge } from '../../../../../../shared/components/cards/caira-credly-badge/caira-credly-badge';
-import { CourseDetail } from '../../../../shared/services/course-detail/course-detail';
 
 @Component({
   selector: 'app-masterclass-course-hero',
@@ -56,10 +55,8 @@ import { CourseDetail } from '../../../../shared/services/course-detail/course-d
 })
 export class MasterclassCourseHero {
   readonly auth = inject(Auth);
-  /** Route-scoped — the same instance `MasterclassCourse` keys on the route id. */
-  readonly masterclass = inject(CourseDetail);
+  readonly masterclass = inject(MasterclassFacade);
   readonly utils = inject(Utils);
-  private readonly destroyRef = inject(DestroyRef);
   cn = cn;
 
   courseId = input<string>();
@@ -84,31 +81,26 @@ export class MasterclassCourseHero {
     this.utils.openVideoDialog(link, courseDetails.title);
   }
 
-  /**
-   * #15 lives on the service: it owns the writable `courseDetails`, and the
-   * bookmark POST busts CAIRA's per-user cache for #4, so the patch has to land
-   * on the same instance the rest of the page reads.
-   */
   toggleBookmark() {
-    this.masterclass.toggleBookmark();
+    const id = this.courseId();
+    if (!id) return;
+
+    this.utils.toggleBookmarkCourse(+id).subscribe((response) => {
+      if (response.status) {
+        this.masterclass.courseDetails.update((course) =>
+          course ? { ...course, added_bookmark: response.is_bookmarked } : course,
+        );
+      }
+    });
   }
 
-  /**
-   * ponytail: `addCourseToCart` has no CAIRA endpoint — it opens the cart
-   * drawer and completes empty, so the `update` never runs. The button is
-   * behind `@if (can_purchase_individually || is_subscription_excluded)`, both
-   * pinned `false` by the mapper, so it does not render at all today.
-   */
-  addToCart(courseId: string, isAddedToCart: boolean) {
-    this.utils
-      .addCourseToCart(courseId, isAddedToCart)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
-        if (response.status) {
-          this.masterclass.courseDetails.update((course) =>
-            course ? { ...course, is_added_to_cart: response.in_cart } : course,
-          );
-        }
-      });
+  addToCart(courseId: number, isAddedToCart: boolean) {
+    this.utils.addCourseToCart(courseId, isAddedToCart).subscribe((response) => {
+      if (response.status) {
+        this.masterclass.courseDetails.update((course) =>
+          course ? { ...course, is_added_to_cart: response.in_cart } : course,
+        );
+      }
+    });
   }
 }

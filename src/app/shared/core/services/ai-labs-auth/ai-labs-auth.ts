@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { inject, PLATFORM_ID, Service, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import type { AuthChangeEvent, Session, SupabaseClient } from '@supabase/supabase-js';
 import { environment } from '../../../../../environments/environment';
 import { Logger } from '../logger/logger';
@@ -34,8 +34,8 @@ const LAST_EMAIL_KEY = `${environment.AI_LABS.storageKey}_EMAIL`;
  * doesn't depend on that relationship at all — only on the two documents being
  * same-origin, which they are.
  */
-export const AI_LABS_CHANNEL = 'ai-labs-auth';
-export const AI_LABS_CALLBACK_DONE = 'callback-done';
+export const AI_LABS_CHANNEL = environment.AI_LABS.AI_LABS_CHANNEL;
+export const AI_LABS_CALLBACK_DONE = environment.AI_LABS.AI_LABS_CALLBACK_DONE;
 
 /**
  * Entra (Azure AD) sign-in for the AI Labs page, via Supabase Auth.
@@ -60,7 +60,7 @@ export const AI_LABS_CALLBACK_DONE = 'callback-done';
  * Microsoft accounts is asked which one — without it, Entra silently reuses
  * whichever is already signed in, and Copilot would open as the wrong identity.
  */
-@Service()
+@Injectable({ providedIn: 'root' })
 export class AiLabsAuth {
   private readonly logger = inject(Logger);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -80,6 +80,8 @@ export class AiLabsAuth {
   /** Drives the whole page: signed-out shows Login, signed-in shows Launch. */
   readonly isSignedIn = signal(false);
   readonly signingIn = signal(false);
+  /** `restoreSession` is reading storage — `isSignedIn` isn't trustworthy yet. */
+  readonly restoring = signal(false);
   /** Email of the signed-in account, so the page can offer switching away from it. */
   readonly identity = signal<string | null>(null);
   /** Something went wrong and the user should know. Rendered as destructive. */
@@ -128,6 +130,7 @@ export class AiLabsAuth {
    */
   async restoreSession(): Promise<void> {
     if (!this.isBrowser || !this.isConfigured) return;
+    this.restoring.set(true);
     try {
       // Read before building the client. Constructing it is what attempts the
       // recovery refresh, and a refresh that fails purges the stored session
@@ -150,6 +153,8 @@ export class AiLabsAuth {
       }
     } catch (err) {
       this.logger.error('AiLabsAuth: session restore failed', err);
+    } finally {
+      this.restoring.set(false);
     }
   }
 
@@ -237,9 +242,10 @@ export class AiLabsAuth {
             // use, or the user said to change it — otherwise `select_account`
             // makes every repeat sign-in a picker for their single account.
             ...(lastEmail ? { login_hint: lastEmail } : { prompt: 'select_account' }),
-            // Pin the tenant so students can't land on the generic consumer
-            // sign-in screen.
-            domain_hint: environment.AI_LABS.tenantId,
+            // Pin the lab tenant's domain so students can't land on the generic
+            // consumer sign-in screen. Must be the tenant that owns the app
+            // registration Supabase's Azure provider uses — see `domainHint`.
+            domain_hint: environment.AI_LABS.domainHint,
           },
         },
       });
@@ -368,7 +374,16 @@ export class AiLabsAuth {
       };
 
       channel.onmessage = (event) => {
-        if (event.data === AI_LABS_CALLBACK_DONE) void finish();
+        const data = String(event.data);
+        if (!data.startsWith(AI_LABS_CALLBACK_DONE)) return;
+        // `DONE:<reason>` — the provider refused. Set before `finish`, which
+        // lands on a null session and deliberately leaves `error` alone.
+        const reason = data.slice(AI_LABS_CALLBACK_DONE.length + 1);
+        if (reason) {
+          this.error.set(`Sign-in failed: ${reason}`);
+          this.logger.error('AiLabsAuth: provider returned an error', reason);
+        }
+        void finish();
       };
       this.abortWait = () => void finish();
     });

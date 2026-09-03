@@ -155,7 +155,7 @@ A reference of every backend API path the app calls and every Angular router pat
 | POST   | `webinar/registrations/verify-otp/` | `webinar-registration-form.ts`                                                                                                                                                                |
 | POST   | `utm/track_utm/`                    | `utm.ts`                                                                                                                                                                                      |
 | GET    | `v2/library/`                       | `uae-caira-facade.ts`                                                                                                                                                                         |
-| GET    | `reports/partner-admin/users/`      | `partner-users-facade.ts` (admin / Django reports API)                                                                                                                                        |
+| GET    | `partners/panel/users/`             | `partner-users-facade.ts` (admin, Supabase-token scoped)                                                                                                                                      |
 
 ### Blog / WordPress (separate API via `/blog-api` proxy → `wp-json/wp/v2`)
 

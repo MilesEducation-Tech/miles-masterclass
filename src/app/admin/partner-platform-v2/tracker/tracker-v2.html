@@ -1,0 +1,114 @@
+<section class="admin-theme flex flex-col gap-8 p-6 text-white min-h-full">
+  <!-- Header -->
+  <header class="flex flex-col gap-5">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="flex flex-col gap-1">
+        <p class="text-base font-semibold" style="color: var(--mm-fg-3)">Seat Tracker</p>
+        <h1 class="text-3xl font-extrabold leading-tight">
+          {{ title() }}
+        </h1>
+      </div>
+    </div>
+
+    <!-- Firm selector (network admins only; firm admins are pinned server-side) -->
+    @if (facade.firms().length) {
+      <div class="flex items-center gap-2">
+        <label for="firm-select-v2" class="text-sm" style="color: var(--mm-fg-3)">
+          Sub-company
+        </label>
+        <select
+          id="firm-select-v2"
+          class="form-input max-w-xs"
+          [value]="facade.selectedFirmId() ?? ''"
+          (change)="onSelectFirm($event)"
+        >
+          <option value="">All sub-companies</option>
+          @for (firm of facade.firms(); track firm.id) {
+            <option [value]="firm.id">{{ firm.name }}</option>
+          }
+        </select>
+      </div>
+    }
+  </header>
+
+  <!-- Not-a-partner-admin empty state -->
+  @if (!me.isPartnerAdmin() && !me.isLoading()) {
+    <div class="rounded-xl border border-white/10 bg-card p-8 text-center max-w-lg mx-auto">
+      <h2 class="text-lg font-bold mb-2">Not a partner admin</h2>
+      <p class="text-sm" style="color: var(--mm-fg-3)">
+        Your account isn't provisioned as a partner admin yet. Contact a super admin.
+      </p>
+    </div>
+  } @else if (me.isPartnerAdmin() && !canReadSeats()) {
+    <!-- Provisioned, but without the seat:usage:read capability. -->
+    <div class="rounded-xl border border-white/10 bg-card p-8 text-center max-w-lg mx-auto">
+      <h2 class="text-lg font-bold mb-2">Seat usage not enabled</h2>
+      <p class="text-sm" style="color: var(--mm-fg-3)">
+        Your partner-admin account doesn't have the seat-usage capability. Ask a super admin to
+        grant it.
+      </p>
+    </div>
+  } @else {
+    <!-- Seats -->
+    <div class="flex flex-col gap-5">
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <h2 class="text-xl font-bold">Seats</h2>
+        <div class="flex w-full max-w-md items-center md:w-auto">
+          <app-aria-input
+            id="seat-search-v2"
+            type="search"
+            label="Search code or email"
+            class="w-full"
+            [(value)]="searchInput"
+          />
+        </div>
+      </div>
+
+      <div
+        class="inline-flex w-fit items-center gap-1 rounded-md border border-white/10 p-1"
+        style="background: var(--card, #0e2742)"
+        role="tablist"
+        aria-label="Seat status filter"
+      >
+        @for (tab of statusTabs; track tab.value) {
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="isActiveTab(tab.value)"
+            class="rounded px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-white/5"
+            [class.bg-primary]="isActiveTab(tab.value)"
+            (click)="selectStatus(tab.value)"
+          >
+            {{ tab.label }}
+          </button>
+        }
+      </div>
+
+      @if (facade.error()) {
+        <div
+          class="px-3 py-2 text-sm rounded-md"
+          style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
+          role="alert"
+        >
+          {{ facade.error() }}
+        </div>
+      }
+
+      <app-seat-tracker-table
+        [rows]="facade.seats()"
+        [isLoading]="facade.isLoading()"
+        [sendEnabled]="canSend()"
+        [showFirm]="showFirmColumn()"
+        [currentPage]="currentPage()"
+        [pageSize]="facade.pageSize"
+        [totalCount]="totalCount()"
+        [hasNext]="facade.hasNextPage()"
+        [hasPrev]="facade.hasPrevPage()"
+        (share)="onShare($event)"
+        (resend)="onResend($event)"
+        (prevPage)="goPrev()"
+        (nextPage)="goNext()"
+      />
+    </div>
+  }
+</section>

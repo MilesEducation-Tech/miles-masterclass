@@ -1,4 +1,5 @@
-import { Component, computed, signal } from '@angular/core';
+import { FeatureFacade } from './../../shared/services/feature-facade/feature-facade';
+import { Component, computed, inject } from '@angular/core';
 import { Route } from '@angular/router';
 import { Carousel } from '../../../shared/components/carousel/carousel';
 import { environment } from '../../../../environments/environment';
@@ -11,11 +12,11 @@ import { PodcastHero } from './shared/components/podcast-hero/podcast-hero';
 import { ComingSoon } from '../../../shared/components/cards/coming-soon/coming-soon';
 import { authGuard } from '../../../shared/core/guards/auth/auth-guard';
 import { canDeactivateExamGuard } from '../../../shared/core/guards/can-deactivate-exam-guard';
+import { FinalAssessmentFacade } from '../shared/services/final-assessment-facade/final-assessment-facade';
+import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
+import { ChapterFacade } from '../shared/services/chapter-facade/chapter-facade';
 import { Faq } from '../../../pages/faq/faq';
 import { PartnerContentList } from '../../partners/shared/components/partner-content-list/partner-content-list';
-import { CourseDetail } from '../shared/services/course-detail/course-detail';
-import { Feedback } from '../shared/services/feedback/feedback';
-import { ChapterProgress } from '../shared/services/chapter-progress/chapter-progress';
 
 @Component({
   selector: 'app-podcast',
@@ -28,22 +29,7 @@ import { ChapterProgress } from '../shared/services/chapter-progress/chapter-pro
 })
 export class Podcast {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
-  // ponytail: FeatureFacade was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  readonly feature: any = {
-    getResource: (..._args: any[]): any => ({
-      items: signal<any[]>([]),
-      isLoading: signal(false),
-      hasMore: signal(false),
-      error: signal(null),
-      loadNextPage: () => undefined,
-      loadNextTrackPage: () => undefined,
-      setFilters: () => undefined,
-      setTrackFilters: () => undefined,
-      webp: signal(null),
-    }),
-  };
+  readonly feature: FeatureFacade = inject(FeatureFacade);
 
   // Swiper configurations for templates
   readonly swiperConfigPodcast = swiperConfigPodcast;
@@ -92,9 +78,6 @@ export const podcastRoutes: Route[] = [
   { path: '', component: Podcast },
   {
     path: ':courseId/:courseTitle',
-    // Same route-scoped `CourseDetail` the masterclass tree uses — CAIRA serves
-    // podcasts from `Masterclass_Course_Detail` too.
-    providers: [CourseDetail],
     children: [
       {
         path: '',
@@ -104,19 +87,15 @@ export const podcastRoutes: Route[] = [
       {
         path: 'chapter/:chapterId/:chapterTitle',
         canActivate: [authGuard],
-        // Route-scoped: the chapter player's #6 / #18 writes. `CourseDetail`
-        // is provided one level up and supplies the chapter list, so this only
-        // owns progress.
-        providers: [ChapterProgress],
+        providers: [ChapterFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
           import('./shared/pages/podcast-chapter/podcast-chapter').then((m) => m.PodcastChapter),
       },
       {
-        path: 'final-assessment/exam',
+        path: 'final-assessment/:sessionId/exam',
         canActivate: [authGuard],
-        // ponytail: route-scoped facade providers removed with the Django strip.
-        // Re-add `providers: [YourService]` here when the new backend lands.
+        providers: [FinalAssessmentFacade],
         canDeactivate: [canDeactivateExamGuard],
         data: { layout: 'plain' },
         loadComponent: () =>
@@ -125,10 +104,9 @@ export const podcastRoutes: Route[] = [
           ),
       },
       {
-        path: 'final-assessment/report',
+        path: 'final-assessment/:sessionId/report',
         canActivate: [authGuard],
-        // ponytail: route-scoped facade providers removed with the Django strip.
-        // Re-add `providers: [YourService]` here when the new backend lands.
+        providers: [FinalAssessmentFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
           import('../shared/pages/final-assessment-report/final-assessment-report').then(
@@ -138,9 +116,7 @@ export const podcastRoutes: Route[] = [
       {
         path: 'feedback',
         canActivate: [authGuard],
-        // #12 / #13, scoped to this route. `CourseDetail` is provided one level
-        // up, so `Feedback` reaches the same instance and re-reads nothing.
-        providers: [Feedback],
+        providers: [FeedbackFacade],
         loadComponent: () =>
           import('../shared/pages/course-feedback/course-feedback').then((m) => m.CourseFeedback),
       },

@@ -193,6 +193,13 @@
                       >Download Certificate</app-button
                     >
                   }
+                  @case ('series-awarded') {
+                    <span
+                      class="inline-flex items-center rounded-md bg-muted px-4 py-2 text-sm text-muted-foreground"
+                    >
+                      Recurring webinar — CPE already awarded for this series
+                    </span>
+                  }
                   @case ('watch-recording') {
                     <app-button variant="primary" size="default" (clicked)="watchRecording()"
                       >Watch Recording</app-button

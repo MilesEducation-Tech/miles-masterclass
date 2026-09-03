@@ -16,6 +16,7 @@ import {
   lucideClock,
   lucideClipboardCheck,
   lucideTicket,
+  lucideUserPlus,
 } from '@ng-icons/lucide';
 import { AdminAuth } from '../../../shared/core/services/admin-auth/admin-auth';
 import { PERM } from '../../../shared/core/models/admin/admin-rbac.model';
@@ -58,6 +59,7 @@ interface SidebarSection {
       lucideClock,
       lucideClipboardCheck,
       lucideTicket,
+      lucideUserPlus,
     }),
   ],
   templateUrl: './admin-sidebar.html',
@@ -115,6 +117,14 @@ export class AdminSidebar {
           routerLink: '/admin/leads',
           permission: PERM.LEADS_READ,
         },
+        {
+          id: 'user-onboarding',
+          label: 'Create User',
+          iconName: 'lucideUserPlus',
+          routerLink: '/admin/user-onboarding',
+          permission: PERM.USERS_CREATE,
+          badge: { value: 'Deprecated', tone: 'warn' },
+        },
       ],
     },
     {
@@ -137,6 +147,95 @@ export class AdminSidebar {
         },
       ],
     },
+    // Partner Platform v2 mirrors the API doc's two audiences: the Miles-internal
+    // superadmin console and the network/firm-admin panel. Permission gating means
+    // an admin normally sees only their own group.
+    {
+      id: 'partner-v2-superadmin',
+      label: 'Partner v2 — Super Admin',
+      items: [
+        {
+          id: 'partner-v2-networks',
+          label: 'Networks',
+          iconName: 'lucideTrendingUp',
+          routerLink: '/admin/partner-v2/superadmin/networks',
+          permission: PERM.PARTNER_PLATFORM_MANAGE,
+        },
+        {
+          id: 'partner-v2-firms',
+          label: 'Firms',
+          iconName: 'lucideUsers',
+          routerLink: '/admin/partner-v2/superadmin/firms',
+          permission: PERM.PARTNER_PLATFORM_MANAGE,
+        },
+        {
+          id: 'partner-v2-codes',
+          label: 'Partner Codes',
+          iconName: 'lucideTicket',
+          routerLink: '/admin/partner-v2/superadmin/codes',
+          permission: PERM.PARTNER_PLATFORM_MANAGE,
+        },
+        {
+          id: 'partner-v2-admins',
+          label: 'Partner Admins',
+          iconName: 'lucideShield',
+          routerLink: '/admin/partner-v2/superadmin/partner-admins',
+          permission: PERM.PARTNER_PLATFORM_MANAGE,
+        },
+        {
+          id: 'partner-v2-onboarding',
+          label: 'User Onboarding',
+          iconName: 'lucideUserPlus',
+          routerLink: '/admin/partner-v2/superadmin/onboarding',
+          permission: PERM.USERS_CREATE,
+        },
+        {
+          id: 'partner-v2-superadmin-reports',
+          label: 'Reports',
+          iconName: 'lucideChartBar',
+          routerLink: '/admin/partner-v2/superadmin/reports',
+          permission: PERM.PARTNER_PLATFORM_MANAGE,
+        },
+      ],
+    },
+    {
+      id: 'partner-v2-panel',
+      label: 'Partner v2 — Panel',
+      items: [
+        {
+          id: 'partner-v2-overview',
+          label: 'Overview',
+          iconName: 'lucideLayoutDashboard',
+          routerLink: '/admin/partner-v2/panel/overview',
+          permission: [
+            PERM.PARTNER_PLATFORM_READ,
+            PERM.PARTNER_TRACKER_READ,
+            PERM.PARTNER_USERS_READ,
+          ],
+        },
+        {
+          id: 'partner-v2-tracker',
+          label: 'Seat Tracker',
+          iconName: 'lucideClipboardCheck',
+          routerLink: '/admin/partner-v2/panel/tracker',
+          permission: [PERM.PARTNER_PLATFORM_READ, PERM.PARTNER_TRACKER_READ],
+        },
+        {
+          id: 'partner-v2-users',
+          label: 'Users',
+          iconName: 'lucideUserCheck',
+          routerLink: '/admin/partner-v2/panel/users',
+          permission: [PERM.REPORTS_USERS_READ, PERM.PARTNER_TRACKER_READ, PERM.PARTNER_USERS_READ],
+        },
+        {
+          id: 'partner-v2-panel-reports',
+          label: 'Reports',
+          iconName: 'lucideChartBar',
+          routerLink: '/admin/partner-v2/panel/reports',
+          permission: [PERM.PARTNER_TRACKER_READ, PERM.PARTNER_USERS_READ],
+        },
+      ],
+    },
     {
       id: 'partner-platform',
       label: 'Partner Platform',
@@ -147,6 +246,7 @@ export class AdminSidebar {
           iconName: 'lucideLayoutDashboard',
           routerLink: '/admin/partner/dashboard',
           permission: PERM.PARTNER_PLATFORM_READ,
+          badge: { value: 'Deprecated', tone: 'warn' },
         },
         {
           id: 'partner-code-tracker',
@@ -154,6 +254,7 @@ export class AdminSidebar {
           iconName: 'lucideTicket',
           routerLink: '/admin/partner-code-tracker',
           permission: [PERM.PARTNER_PLATFORM_READ, PERM.PARTNER_TRACKER_READ],
+          badge: { value: 'Deprecated', tone: 'warn' },
         },
         {
           id: 'vendor-users',
@@ -161,6 +262,7 @@ export class AdminSidebar {
           iconName: 'lucideUserCheck',
           routerLink: '/admin/domain-users',
           permission: [PERM.REPORTS_USERS_READ, PERM.PARTNER_TRACKER_READ, PERM.PARTNER_USERS_READ],
+          badge: { value: 'Deprecated', tone: 'warn' },
         },
         {
           id: 'partner-networks',
@@ -168,6 +270,15 @@ export class AdminSidebar {
           iconName: 'lucideTrendingUp',
           routerLink: '/admin/partner/networks',
           permission: PERM.PARTNER_PLATFORM_MANAGE,
+          badge: { value: 'Deprecated', tone: 'warn' },
+        },
+        {
+          id: 'partner-reports',
+          label: 'Reports',
+          iconName: 'lucideChartBar',
+          routerLink: '/admin/partner/reports',
+          permission: PERM.PARTNER_PLATFORM_MANAGE,
+          badge: { value: 'Deprecated', tone: 'warn' },
         },
         {
           id: 'partner-codes',
@@ -175,6 +286,7 @@ export class AdminSidebar {
           iconName: 'lucideTicket',
           routerLink: '/admin/partner/partner-codes',
           permission: PERM.PARTNER_PLATFORM_MANAGE,
+          badge: { value: 'Deprecated', tone: 'warn' },
         },
       ],
     },

@@ -2,6 +2,7 @@ import { Component, computed, inject, input, output } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matInfoRound } from '@ng-icons/material-icons/round';
+import { SubscriptionPlan } from '../../../../../shared/core/models/payment.model';
 
 /** Shared EMI disclaimer — kept in sync with the cart-flow copy. */
 const EMI_NOTE =
@@ -32,10 +33,10 @@ interface PriceDisplay {
 export class PlanSelectionCard {
   private readonly currencyPipe = inject(CurrencyPipe);
 
-  readonly plan = input.required<any>();
+  readonly plan = input.required<SubscriptionPlan>();
   readonly selected = input(false);
   readonly billingCycle = input<'yearly' | 'monthly'>('yearly');
-  readonly select = output<any>();
+  readonly select = output<SubscriptionPlan>();
 
   // Subtext (i) tooltip note for this card: monthly → EMI terms, annual →
   // upfront-billing terms, enterprise → firm blurb. Null = no icon shown.

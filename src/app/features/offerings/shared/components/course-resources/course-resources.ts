@@ -1,7 +1,9 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideVideo, lucideFileText, lucideDownload, lucideBot } from '@ng-icons/lucide';
+import { MasterclassFacade } from '../../services/masterclass-facade/masterclass-facade';
 import {
   VideoDialog,
   VideoDialogData,
@@ -11,7 +13,6 @@ import {
   HtmlContentDialog,
   HtmlContentDialogData,
 } from '../../../../../shared/components/dialog/html-content-dialog/html-content-dialog';
-import { CourseDetail } from '../../services/course-detail/course-detail';
 
 @Component({
   selector: 'app-course-resources',
@@ -24,9 +25,11 @@ import { CourseDetail } from '../../services/course-detail/course-detail';
 export class CourseResources {
   readonly courseType = input<string>('masterclass');
 
-  /** Route-scoped — the same instance the course page keys on the route id. */
-  protected readonly masterclassFacade = inject(CourseDetail);
+  protected readonly masterclassFacade = inject(MasterclassFacade);
   private readonly dialog = inject(Dialog);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private glossaryCache: string | null = null;
 
   readonly resources = computed(() => {
     const details = this.masterclassFacade.courseDetails();
@@ -45,19 +48,16 @@ export class CourseResources {
       });
     }
 
-    // Guarded again now that there's a real source: #4 resolves
-    // `glossary_file_url` to `null` for courses that have no glossary, and an
-    // always-rendered button that opens nothing is worse than no button.
-    if (details.glossary_doc) {
-      items.push({
-        label: 'Glossary',
-        type: 'action',
-        icon: 'lucideFileText',
-        url: details.glossary_doc,
-        action: 'glossary',
-        isDownload: false,
-      });
-    }
+    // if (details.glossary_doc) {
+    items.push({
+      label: 'Glossary',
+      type: 'action',
+      icon: 'lucideFileText',
+      url: details.glossary_doc,
+      action: 'glossary',
+      isDownload: false,
+    });
+    // }
 
     if (details.has_exercise_files) {
       items.push({
@@ -90,7 +90,7 @@ export class CourseResources {
     } else if (resource.action === 'glossary') {
       this.openGlossary();
     } else if (resource.action === 'exercise') {
-      this.masterclassFacade.downloadExerciseFiles();
+      this.masterclassFacade.downloadExerciseFiles(this.courseType());
     } else if (resource.action === 'ai-kit') {
       this.masterclassFacade.openAdditionalResources();
     } else if (resource.url) {
@@ -98,22 +98,24 @@ export class CourseResources {
     }
   }
 
-  /**
-   * `glossary_file_url` is polymorphic by design: #4 resolves it as
-   * `Glossary_Text` → `Glossary_File.url` → `Glossary_PDF.url` → `null`, so the
-   * same key carries either the glossary's HTML or a link to it. A URL opens in
-   * a new tab; anything else is rendered in the dialog. There is no second
-   * request — the course payload already carries it.
-   */
   openGlossary() {
-    const glossary = this.masterclassFacade.courseDetails()?.glossary_doc;
-    if (!glossary) return;
-
-    if (/^https?:\/\//i.test(glossary.trim())) {
-      window.open(glossary, '_blank', 'noopener,noreferrer');
+    if (this.glossaryCache) {
+      this.openGlossaryDialog(this.glossaryCache);
       return;
     }
-    this.openGlossaryDialog(glossary);
+
+    const details = this.masterclassFacade.courseDetails();
+    if (!details) return;
+
+    this.masterclassFacade
+      .fetchCourseContent({ id: details.id, course_type: this.courseType() })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => {
+        if (response?.data?.glossary_transcript_text) {
+          this.glossaryCache = response.data.glossary_transcript_text;
+          this.openGlossaryDialog(this.glossaryCache);
+        }
+      });
   }
 
   private openGlossaryDialog(html: string) {

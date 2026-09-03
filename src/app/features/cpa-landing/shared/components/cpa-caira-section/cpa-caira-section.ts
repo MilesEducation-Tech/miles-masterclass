@@ -1,8 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 
 import { Carousel } from '../../../../../shared/components/carousel/carousel';
 import { Horizontal } from '../../../../../shared/components/cards/horizontal/horizontal';
 import { swiperConfigEven } from '../../../../../shared/core/config/swiper.config';
+import { Content } from '../../../../../shared/core/models/course.model';
+import { Tracks } from '../../../../shared/services/tracks/tracks';
 
 /**
  * CAIRA section of the CPA landing page.
@@ -23,17 +27,15 @@ import { swiperConfigEven } from '../../../../../shared/core/config/swiper.confi
   styleUrl: './cpa-caira-section.css',
 })
 export class CpaCairaSection {
-  // ponytail: Tracks was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
+  private readonly tracks = inject(Tracks);
+
   protected readonly swiperConfigEven = swiperConfigEven;
 
-  /**
-   * Flattened first-page content across all active tracks.
-   *
-   * ponytail: was fed by `Tracks.getActiveTracksWithContentPreview()`, which
-   * went with the backend. Point this signal at the new backend's track preview
-   * and the carousel renders unchanged.
-   */
-  protected readonly cards = signal<any[]>([]);
+  /** Flattened first-page content across all active tracks. */
+  protected readonly cards = toSignal(
+    this.tracks
+      .getActiveTracksWithContentPreview('masterclass')
+      .pipe(map((tracks) => tracks.flatMap((track) => track.content))),
+    { initialValue: [] as Content[] },
+  );
 }

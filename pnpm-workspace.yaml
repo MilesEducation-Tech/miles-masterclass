@@ -1,0 +1,8 @@
+allowBuilds:
+  "@parcel/watcher": true
+  core-js: true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+minimumReleaseAgeExclude:
+  - "@milesverse/sdk@0.1.0"

@@ -11,33 +11,52 @@
     (delete)="onDeleteAddress($event)"
   />
 } @empty {
-  <div
-    class="no-file-found flex flex-col items-center justify-center py-8 px-4 text-center bg-[#151F2B] rounded-lg shadow-md"
-  >
-    <svg
-      class="w-12 h-12 text-gray-400"
-      stroke="currentColor"
-      fill="currentColor"
-      stroke-width="0"
-      viewBox="0 0 24 24"
-      height="200px"
-      width="200px"
-      xmlns="http://www.w3.org/2000/svg"
+  <!-- The empty state IS the primary action: with no address saved there is
+       nothing else to do on this page, so the whole card opens the form rather
+       than pointing at a link below it. Still a real <button>, so it's
+       keyboard-reachable and announced as an action.
+
+       Hidden once the form is open — it has done its job, and leaving a
+       "no address saved" placard above the form the user is filling in reads
+       as an error rather than a prompt. -->
+  @if (!showForm()) {
+    <button
+      type="button"
+      class="no-file-found flex w-full flex-col items-center justify-center py-8 px-4 text-center bg-[#151F2B] rounded-lg shadow-md cursor-pointer border border-transparent transition-colors hover:border-[#4285f4] hover:bg-[#1a2634] focus-visible:outline-none focus-visible:border-[#4285f4] focus-visible:ring-2 focus-visible:ring-[#4285f4]/40"
+      (click)="showForm.set(true)"
     >
-      <g id="File_Off">
-        <g>
-          <path
-            d="M4,3.308a.5.5,0,0,0-.7.71l.76.76v14.67a2.5,2.5,0,0,0,2.5,2.5H17.44a2.476,2.476,0,0,0,2.28-1.51l.28.28c.45.45,1.16-.26.7-.71Zm14.92,16.33a1.492,1.492,0,0,1-1.48,1.31H6.56a1.5,1.5,0,0,1-1.5-1.5V5.778Z"
-          ></path>
-          <path
-            d="M13.38,3.088v2.92a2.5,2.5,0,0,0,2.5,2.5h3.07l-.01,6.7a.5.5,0,0,0,1,0V8.538a2.057,2.057,0,0,0-.75-1.47c-1.3-1.26-2.59-2.53-3.89-3.8a3.924,3.924,0,0,0-1.41-1.13,6.523,6.523,0,0,0-1.71-.06H6.81a.5.5,0,0,0,0,1Zm4.83,4.42H15.88a1.5,1.5,0,0,1-1.5-1.5V3.768Z"
-          ></path>
+      <svg
+        class="w-12 h-12 text-gray-400"
+        stroke="currentColor"
+        fill="currentColor"
+        stroke-width="0"
+        viewBox="0 0 24 24"
+        height="200px"
+        width="200px"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <g id="File_Off">
+          <g>
+            <path
+              d="M4,3.308a.5.5,0,0,0-.7.71l.76.76v14.67a2.5,2.5,0,0,0,2.5,2.5H17.44a2.476,2.476,0,0,0,2.28-1.51l.28.28c.45.45,1.16-.26.7-.71Zm14.92,16.33a1.492,1.492,0,0,1-1.48,1.31H6.56a1.5,1.5,0,0,1-1.5-1.5V5.778Z"
+            ></path>
+            <path
+              d="M13.38,3.088v2.92a2.5,2.5,0,0,0,2.5,2.5h3.07l-.01,6.7a.5.5,0,0,0,1,0V8.538a2.057,2.057,0,0,0-.75-1.47c-1.3-1.26-2.59-2.53-3.89-3.8a3.924,3.924,0,0,0-1.41-1.13,6.523,6.523,0,0,0-1.71-.06H6.81a.5.5,0,0,0,0,1Zm4.83,4.42H15.88a1.5,1.5,0,0,1-1.5-1.5V3.768Z"
+            ></path>
+          </g>
         </g>
-      </g>
-    </svg>
-    <h3 class="text-xl font-medium mt-4 text-gray-200">Billing Address not found</h3>
-    <p class="text-gray-400 mt-2">To proceed, please add a new billing address</p>
-  </div>
+      </svg>
+      <!-- Spans, not h3/p: `<button>` takes phrasing content only, and flow
+           elements inside it are invalid HTML. -->
+      <span class="block text-xl font-medium mt-4 text-gray-200">No billing address saved</span>
+      <!-- Required, not suggested: checkout can't proceed without one, so the
+           copy states that plainly instead of hedging with "please". -->
+      <span class="block text-gray-400 mt-2">
+        A billing address is required to complete your purchase.
+      </span>
+      <span class="mt-4 text-sm font-medium text-[#4285f4]">+ Add billing address</span>
+    </button>
+  }
 }
 
 <div class="pt-4 border-t border-gray-800 flex">
@@ -69,16 +88,29 @@
         [formField]="billingForm.phone_no"
       />
 
+      <!-- Standard two-line postal layout. The payload has no `address2`
+           field, so line 2 maps onto `locality` — same meaning (street / area),
+           no backend change. Line 2 and landmark stay optional, which is why
+           only line 1 carries a `required` rule. -->
       <app-aria-input
         id="address1"
-        label="Flat / House no / Floor / Building"
+        label="Address line 1"
+        hint="Flat / house no, floor, building"
         [formField]="billingForm.address1"
       />
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <app-aria-input id="locality" label="Locality" [formField]="billingForm.locality" />
-        <app-aria-input id="landmark" label="Nearby Landmark" [formField]="billingForm.landmark" />
-      </div>
+      <app-aria-input
+        id="locality"
+        label="Address line 2 (optional)"
+        hint="Street, area or locality"
+        [formField]="billingForm.locality"
+      />
+
+      <app-aria-input
+        id="landmark"
+        label="Nearby landmark (optional)"
+        [formField]="billingForm.landmark"
+      />
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <app-aria-autocomplete
@@ -107,7 +139,7 @@
         />
         <app-aria-input
           id="postal_code"
-          label="Pin Code"
+          label="Pin Code/ Zip code"
           type="number"
           [formField]="billingForm.zipcode"
         />

@@ -21,17 +21,19 @@ import { Forms } from '../../shared/components/ui/forms/forms';
 import { Otp } from '../../shared/components/ui/otp/otp';
 import { Spinner } from '../../shared/components/ui/spinner/spinner';
 import { dialCodeWithLength } from '../../shared/core/constant/dial-code';
+import { placeSuggestions } from '../../shared/core/services/location-autocomplete/location-autocomplete';
 import { logo, mcGrawHillLogo } from '../../shared/core/constant/icon';
+import { CountryCodeOption, User, VerifyOTPResponse } from '../../shared/core/models/auth.model';
 import { Analytics } from '../../shared/core/services/analytics/analytics';
+import { ApiClient } from '../../shared/core/services/api-client/api-client';
 import { Auth } from '../../shared/core/services/auth/auth';
 import { Logger } from '../../shared/core/services/logger/logger';
 import { NotificationService } from '../../shared/core/services/notification/notification';
+import { SalesforceLead } from '../../shared/core/services/salesforce-lead/salesforce-lead';
 import { Utils } from '../../shared/core/services/utils/utils';
 
-// ponytail: Django endpoint paths for faculty register + OTP verify.
-// Repoint at the new backend's routes.
-const FACULTY_REGISTER_URL = '';
-const FACULTY_VERIFY_URL = '';
+const FACULTY_REGISTER_URL = 'v2/faculty/register/';
+const FACULTY_VERIFY_URL = 'v2/faculty/verify/';
 const RESEND_TIMER_SECONDS = 30;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -91,14 +93,21 @@ interface FacultyRegisterRequest extends FacultyProfilePayload {
 }
 
 interface FacultyVerifyRequest extends FacultyProfilePayload {
-  session_id: number;
+  /**
+   * The address the code was sent to, echoed back from the register step.
+   *
+   * Replaces `session_id`: Miles SSO has no server-side OTP session, so the
+   * identifier is what ties send to verify. Taken from the response rather than
+   * rebuilt from the form so it is always the value the server actually used.
+   */
+  identifier: string;
   otp: string;
 }
 
 /**
  * Register response, e.g.
  * `{ status: true, message: 'OTP sent successfully',
- *    data: { otp_required: true, session_id: 33184 } }`
+ *    data: { otp_required: true, identifier: 'x@uni.edu', channel: 'email' } }`
  *
  * `data.otp_required` is the backend's own verdict on whether it dispatched a
  * code. It normally agrees with the flag we sent, but it wins when it doesn't —
@@ -110,11 +119,14 @@ interface FacultyRegisterResponse {
   message: string;
   data?: {
     otp_required?: boolean;
-    session_id?: number;
-    /** Present on non-prod only, for QA autofill. */
-    otp_dev?: number;
+    /** Post this back on verify. Replaces the old `session_id`. */
+    identifier?: string;
+    /** How the code was actually delivered. Email-only on this page today. */
+    channel?: 'email' | 'sms' | 'whatsapp';
+    /** A server-side stopgap being withdrawn upstream. Never branch on it. */
+    dev_code?: string;
     /** Returned on the no-OTP update path so we can refresh the cached user. */
-    user?: any;
+    user?: User;
   };
 }
 
@@ -152,10 +164,8 @@ interface FacultyRegisterResponse {
   styleUrl: './faculty.css',
 })
 export class Faculty {
-  // ponytail: ApiClient was deleted with the Django strip. This placeholder
-  // keeps the template bindings compiling and renders the empty state.
-  // Swap in the new backend's service — the template needs no changes.
-  private readonly http: any = {};
+  private readonly http = inject(ApiClient);
+  private readonly salesforceLead = inject(SalesforceLead);
   private readonly auth = inject(Auth);
   private readonly analytics = inject(Analytics);
   private readonly logger = inject(Logger);
@@ -187,10 +197,10 @@ export class Faculty {
    * so the form re-seeds if `currentUser()` lands after first render (SSR
    * hydration, or a profile fetch resolving) instead of staying stuck empty.
    */
-  private mapUserToForm(user: any | null): FacultyFormState {
+  private mapUserToForm(user: User | null): FacultyFormState {
     return {
-      first_name: user?.firstName || '',
-      last_name: user?.lastName || '',
+      first_name: user?.first_name || '',
+      last_name: user?.last_name || '',
       // Seeded from the account email but left editable (see the `disabled`
       // rules below) — swapping it for a different institutional address is
       // exactly what makes the backend answer `otp_required`.
@@ -199,9 +209,9 @@ export class Faculty {
       institution: '',
       role: '',
       location: user?.location || '',
-      country_code: user?.countryCode || '',
+      country_code: user?.country_code || '',
       // The User model calls it `mobile`, the API calls it `phone`.
-      phone: user?.phone || '',
+      phone: user?.mobile || '',
       // Neither consent is ever pre-ticked, even for a user whose profile
       // already carries `terms_accepted` — consent for this offer is given here.
       terms: false,
@@ -215,9 +225,13 @@ export class Faculty {
 
   protected readonly otpModel = signal<{ otp: string }>({ otp: '' });
 
-  /** OTP session returned by the register endpoint when flow=otp_required. */
-  /** Session returned by `register` when it sent a code. `0` = none yet. */
-  private readonly otpSessionId = signal(0);
+  /**
+   * Address the register step sent the code to, echoed back by the server.
+   *
+   * Replaces the old numeric session id: Miles SSO has no OTP session, so this
+   * is what verify must be posted with. Empty = no code sent yet.
+   */
+  private readonly otpIdentifier = signal('');
 
   protected readonly resendSecondsLeft = signal(0);
   protected readonly canResend = computed(() => this.resendSecondsLeft() === 0);
@@ -245,7 +259,7 @@ export class Faculty {
   // but the dropdown only needs one option per *dial code*. Keep the first
   // occurrence of each code so the phone-length validator still gets sane
   // min/max bounds.
-  protected readonly countryCodes = signal<any[]>(
+  protected readonly countryCodes = signal<CountryCodeOption[]>(
     Array.from(
       dialCodeWithLength
         .reduce((acc, item) => {
@@ -254,15 +268,18 @@ export class Faculty {
             acc.set(code, { ...item, value: code, label: code });
           }
           return acc;
-        }, new Map<string, any>())
+        }, new Map<string, CountryCodeOption>())
         .values(),
     ),
   );
 
-  // ponytail: `placeSuggestions` came from the deleted LocationAutocomplete
-  // service. Point this at the new backend's place search.
+  // Same location lookup the profile and webinar forms use — our own
+  // `v2/locations/autocomplete/`, which proxies Google Places server-side.
   protected readonly locationQuery = signal('');
-  protected readonly locationOptions = signal<any[]>([]);
+  protected readonly locationOptions = placeSuggestions(
+    this.locationQuery,
+    computed(() => this.model().location),
+  );
 
   /**
    * Whether this submission has to be verified by email. Sent as `otp_required`
@@ -332,12 +349,12 @@ export class Faculty {
     // native fieldset only reaches native controls and the country-code picker
     // is a custom listbox — and `[formField]`-bound controls reject a template
     // `[disabled]` binding outright (NG8022).
-    disabled(s.first_name, { when: () => this.locked() || !!this.auth.currentUser()?.firstName });
-    disabled(s.last_name, { when: () => this.locked() || !!this.auth.currentUser()?.lastName });
+    disabled(s.first_name, { when: () => this.locked() || !!this.auth.currentUser()?.first_name });
+    disabled(s.last_name, { when: () => this.locked() || !!this.auth.currentUser()?.last_name });
     disabled(s.country_code, {
-      when: () => this.locked() || !!this.auth.currentUser()?.countryCode,
+      when: () => this.locked() || !!this.auth.currentUser()?.country_code,
     });
-    disabled(s.phone, { when: () => this.locked() || !!this.auth.currentUser()?.phone });
+    disabled(s.phone, { when: () => this.locked() || !!this.auth.currentUser()?.mobile });
     disabled(s.location, { when: () => this.locked() || !!this.auth.currentUser()?.location });
     // Institutional fields are never on the User model → only the lock applies.
     disabled(s.email, { when: () => this.locked() });
@@ -365,10 +382,10 @@ export class Faculty {
     const otpRequired = this.otpRequired();
 
     this.http
-      .post(FACULTY_REGISTER_URL, this.buildRegisterPayload(otpRequired))
+      .post<FacultyRegisterResponse>(FACULTY_REGISTER_URL, this.buildRegisterPayload(otpRequired))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response: any) => {
+        next: (response) => {
           this.submitting.set(false);
           if (!response.status) {
             const msg = response.message || 'Unable to submit. Please try again.';
@@ -378,7 +395,7 @@ export class Faculty {
           }
           this.handleRegisterResult(response.data ?? {}, response.message, otpRequired);
         },
-        error: (err: any) => {
+        error: (err) => {
           this.submitting.set(false);
           this.error.set(err?.error?.message || 'Something went wrong. Please try again.');
           this.logger.error('Faculty: register failed', err);
@@ -395,22 +412,22 @@ export class Faculty {
     // `verify` re-sends the whole profile alongside the OTP, not just the session.
     const payload: FacultyVerifyRequest = {
       ...this.buildProfilePayload(),
-      session_id: this.otpSessionId(),
+      identifier: this.otpIdentifier(),
       otp: this.otpModel().otp,
     };
 
     this.http
-      .post(FACULTY_VERIFY_URL, payload)
+      .post<VerifyOTPResponse>(FACULTY_VERIFY_URL, payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response: any) => {
+        next: (response) => {
           this.verifying.set(false);
           if (!response.status || !response.data) {
             this.error.set(response.message || 'Invalid OTP. Please try again.');
             return;
           }
-          const { token, refreshtoken, user } = response.data;
-          this.completeAutoLogin(token, refreshtoken, user);
+          const { token, refreshtoken, expires_in, user } = response.data;
+          this.completeAutoLogin(token, refreshtoken, user, expires_in);
           this.notification.success(
             'Verified',
             response.message || "You're all set — we'll be in touch shortly.",
@@ -420,7 +437,7 @@ export class Faculty {
           // keeps their country/profession context.
           this.router.navigateByUrl(this.utils.localePath());
         },
-        error: (err: any) => {
+        error: (err) => {
           this.verifying.set(false);
           this.error.set(err?.error?.message || 'Failed to verify OTP. Please try again.');
           this.logger.error('Faculty: verify OTP failed', err);
@@ -439,10 +456,10 @@ export class Faculty {
     this.error.set(null);
 
     this.http
-      .post(FACULTY_REGISTER_URL, this.buildRegisterPayload(true))
+      .post<FacultyRegisterResponse>(FACULTY_REGISTER_URL, this.buildRegisterPayload(true))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response: any) => {
+        next: (response) => {
           this.resending.set(false);
           if (!response.status) {
             this.error.set(response.message || 'Could not resend OTP.');
@@ -450,7 +467,7 @@ export class Faculty {
           }
           this.handleRegisterResult(response.data ?? {}, response.message, true);
         },
-        error: (err: any) => {
+        error: (err) => {
           this.resending.set(false);
           this.error.set(err?.error?.message || 'Could not resend OTP.');
           this.logger.error('Faculty: resend OTP failed', err);
@@ -462,7 +479,7 @@ export class Faculty {
   protected backToForm(): void {
     this.step.set('FORM');
     this.otpModel.set({ otp: '' });
-    this.otpSessionId.set(0);
+    this.otpIdentifier.set('');
     this.error.set(null);
     this.stopResendTimer();
   }
@@ -485,9 +502,10 @@ export class Faculty {
     const otpRequired = data.otp_required ?? requestedOtp;
 
     if (otpRequired) {
-      this.otpSessionId.set(data.session_id ?? 0);
-      // Dev-only autofill — the backend omits `otp_dev` in prod.
-      this.otpModel.set({ otp: data.otp_dev ? String(data.otp_dev) : '' });
+      // Fall back to the typed email only if the server somehow omitted it —
+      // it normally echoes the exact value it used.
+      this.otpIdentifier.set(data.identifier ?? this.model().email ?? '');
+      this.otpModel.set({ otp: data.dev_code ?? '' });
       this.step.set('OTP');
       this.startResendTimer();
       this.notification.info(
@@ -513,22 +531,39 @@ export class Faculty {
   }
 
   /**
-   * Post-verification login, mirroring what the login page does after
-   * `web/verify-otp` so both entry points leave identical auth + analytics
-   * state behind.
-   *
-   * ponytail: faculty registration has no CAIRA endpoint (see the gap
-   * register), so this path is currently unreachable.
+   * Post-verification login, mirroring `AuthFacade.verifyOtp` so both entry
+   * points leave identical auth + analytics state behind.
    */
-  private completeAutoLogin(token: string, refreshToken: string, user: any): void {
-    this.auth.storeTokens(token, refreshToken);
+  private completeAutoLogin(
+    token: string,
+    refreshToken: string,
+    user: User,
+    expiresIn?: number,
+  ): void {
+    // `expiresIn` arms the proactive refresh. Miles SSO access tokens are short
+    // (15 min target), so a session stored without it expires mid-use.
+    this.auth.storeTokens(token, refreshToken, expiresIn);
     this.auth.setAuthenticated(user);
     // Identify BEFORE the activation events — the `currentUser` effect also
     // identifies, but asynchronously, i.e. after the synchronous hits below.
     this.analytics.flushIdentity();
     const isNewAccount = (user as { is_existing_user?: boolean })?.is_existing_user === false;
     this.analytics.trackEvent(isNewAccount ? 'sign_up' : 'login', { method: 'email' });
-    if (isNewAccount) this.analytics.trackAccountCreate(user);
+    if (isNewAccount) {
+      this.analytics.trackAccountCreate(user);
+      // CRM lead — account creation only. This is the sole path on which a
+      // faculty submission creates an account; the no-OTP `DONE` branch is an
+      // already-signed-in visitor, so it never mints a lead. Identity comes
+      // from the form, which holds the institutional email the visitor typed.
+      const lead = this.model();
+      this.salesforceLead.create({
+        first_name: lead.first_name,
+        last_name: lead.last_name,
+        email: lead.email,
+        phone: lead.phone,
+        country_code: lead.country_code,
+      });
+    }
     // Refresh `currentPlan` so the header's `hasActivePlan` reflects the
     // just-signed-in user. Fire-and-forget — navigation doesn't wait for it.
     this.auth.fetchCurrentPlan().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();

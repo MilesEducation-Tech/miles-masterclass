@@ -1,3 +1,4 @@
+import { CartSteps } from '../models/payment.model';
 import { UtilsDialogData } from '../../components/dialog/utils-dialog/utils-dialog';
 
 export const SIGNUP_DIALOG_DATA: UtilsDialogData = {
@@ -19,7 +20,7 @@ export const PATH_TYPE_TO_STEP_ID: Record<string, number> = {
   review: 5,
 };
 
-export const CART_STEP_DATA: Omit<any, 'active'>[] = [
+export const CART_STEP_DATA: Omit<CartSteps, 'active'>[] = [
   {
     id: 1,
     name: 'Cart',

@@ -6,10 +6,12 @@ import { EngagementDialog } from './engagement-dialog';
 import { Auth } from '../auth/auth';
 import { Dialog } from '../dialog/dialog';
 import { Storage } from '../storage/storage';
+import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
+import { CurrentPlanData, User } from '../../models/auth.model';
 
 interface AuthStub {
-  currentUser: ReturnType<typeof signal<any | null>>;
-  currentPlan: ReturnType<typeof signal<any | null>>;
+  currentUser: ReturnType<typeof signal<User | null>>;
+  currentPlan: ReturnType<typeof signal<CurrentPlanData | null>>;
   isAuthenticated: ReturnType<typeof signal<boolean>>;
 }
 
@@ -20,27 +22,29 @@ interface StorageStub {
   removeSession: ReturnType<typeof vi.fn>;
 }
 
-const userWithoutSector = (): any =>
+const userWithoutSector = (): User =>
   ({
     id: 1,
     sector: null,
     job_role: null,
     is_existing_user: true,
     email: 'a@b.com',
-  }) as unknown as any;
+  }) as unknown as User;
 
-const userWithFullProfile = (): any =>
+const userWithFullProfile = (): User =>
   ({
     id: 1,
     sector: 'Industry',
     job_role: 'FP&A',
     is_existing_user: true,
     email: 'a@b.com',
-  }) as unknown as any;
+  }) as unknown as User;
 
-const activePlan = (): any => ({ id: 1, subscription_status: 'active' }) as unknown as any;
+const activePlan = (): CurrentPlanData =>
+  ({ id: 1, subscription_status: 'active' }) as unknown as CurrentPlanData;
 
-const inactivePlan = (): any => ({ id: 1, subscription_status: 'Expired' }) as unknown as any;
+const inactivePlan = (): CurrentPlanData =>
+  ({ id: 1, subscription_status: 'Expired' }) as unknown as CurrentPlanData;
 
 describe('EngagementDialog', () => {
   let service: EngagementDialog;
@@ -50,8 +54,8 @@ describe('EngagementDialog', () => {
 
   beforeEach(() => {
     auth = {
-      currentUser: signal<any | null>(null),
-      currentPlan: signal<any | null>(null),
+      currentUser: signal<User | null>(null),
+      currentPlan: signal<CurrentPlanData | null>(null),
       isAuthenticated: signal(false),
     };
 
@@ -78,6 +82,7 @@ describe('EngagementDialog', () => {
         { provide: Auth, useValue: auth },
         { provide: Storage, useValue: storage },
         { provide: Dialog, useValue: { open: vi.fn(), getOpenDialogCount: () => 0 } },
+        { provide: FeatureFacade, useValue: { refreshPersonalized: vi.fn() } },
         { provide: Router, useValue: router },
       ],
     });
@@ -99,6 +104,13 @@ describe('EngagementDialog', () => {
       auth.currentUser.set(userWithFullProfile());
       auth.currentPlan.set(activePlan());
       expect(service.resolveNext()).toBe('aiLab');
+    });
+
+    it('suppresses aiLab on checkout — no dialog interrupts a payment step', () => {
+      router.url = '/in/accounting/payment/cart';
+      auth.currentUser.set(userWithoutSector());
+      auth.currentPlan.set(inactivePlan());
+      expect(service.resolveNext()).toBeNull();
     });
 
     describe('once the AI Labs launch dialog has been shown', () => {
@@ -197,6 +209,29 @@ describe('EngagementDialog', () => {
       auth.currentUser.set(userWithoutSector());
       auth.currentPlan.set(inactivePlan());
       expect(service.resolveNext()).toBeNull();
+    });
+
+    // AI Labs + MilesVerse simulations mount under /:country/:profession_type,
+    // like payment — suppress every dialog (aiLab included) on them.
+    it.each([
+      '/in/accounting/ai-labs',
+      '/in/accounting/ai-labs/audit',
+      '/us/finance/simulation',
+      '/us/finance/simulation/subjects/tax-101',
+      '/us/finance/simulation/briefing/42',
+      '/us/finance/simulation/report',
+    ])('suppresses every engagement dialog on immersive route %s', (url) => {
+      router.url = url;
+      auth.currentUser.set(userWithoutSector());
+      auth.currentPlan.set(inactivePlan());
+      expect(service.resolveNext()).toBeNull();
+    });
+
+    it('does not treat a slug that merely starts with "ai-labs" as the AI Labs route', () => {
+      router.url = '/in/accounting/masterclass/ai-labs-preview';
+      auth.currentUser.set(userWithoutSector());
+      auth.currentPlan.set(inactivePlan());
+      expect(service.resolveNext()).toBe('aiLab');
     });
 
     it('still shows the AI Labs launch dialog during checkout', () => {

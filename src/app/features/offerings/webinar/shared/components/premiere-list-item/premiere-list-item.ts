@@ -1,15 +1,12 @@
-import { Component, DestroyRef, computed, inject, input } from '@angular/core';
-import { Router } from '@angular/router';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, computed, inject, input } from '@angular/core';
 import { DatePipe } from '@angular/common';
 
 import { Button } from '../../../../../../shared/components/ui/button/button';
 import { CategoriesList } from '../../../../../../shared/components/categories-list/categories-list';
+import { UpcomingPremiere } from '../../../../../../shared/core/models/feature.model';
 import { Auth } from '../../../../../../shared/core/services/auth/auth';
-import { Dialog } from '../../../../../../shared/core/services/dialog/dialog';
-import { Logger } from '../../../../../../shared/core/services/logger/logger';
-import { Webinars } from '../../services/webinar/webinar';
 import { Utils } from '../../../../../../shared/core/services/utils/utils';
+import { WebinarFacade } from '../../services/webinar-facade/webinar-facade';
 import { ctaFor, nextSessionOf } from '../../utils/webinar-status';
 import { CairaCredlyBadge } from '../../../../../../shared/components/cards/caira-credly-badge/caira-credly-badge';
 
@@ -25,24 +22,19 @@ const CREDLY_LOGO =
   styleUrl: './premiere-list-item.css',
 })
 export class PremiereListItem {
-  private readonly router = inject(Router);
-  private readonly webinars = inject(Webinars);
-  private readonly dialog = inject(Dialog);
-  private readonly logger = inject(Logger);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly facade = inject(WebinarFacade);
   private readonly auth = inject(Auth);
   private readonly utils = inject(Utils);
 
   protected readonly cairaLogo = CAIRA_LOGO;
   protected readonly credlyLogo = CREDLY_LOGO;
 
-  readonly webinar = input.required<any>();
+  readonly webinar = input.required<UpcomingPremiere>();
 
   /**
    * Row artwork, `null` when the payload carries none. Falls back through the
-   * instructor's images, which are only populated once the row has richer data
-   * than the lean v2 card provides. Guarded with `@if` in the template — an
-   * empty `src` re-requests the page URL and renders a broken-image icon.
+   * instructor's images. Guarded with `@if` in the template — an empty `src`
+   * re-requests the page URL and renders a broken-image icon.
    */
   protected readonly thumbnail = computed<string | null>(() => {
     const w = this.webinar();
@@ -100,40 +92,15 @@ export class PremiereListItem {
    */
   protected readonly cta = computed(() => ctaFor(this.webinar(), this.auth.isLoggedIn()));
 
-  /**
-   * G-23 is closed: `registerV4/` (L3) plus its status poll (L4) are live and
-   * already implemented by `Webinars.register()`. This used to call `enroll` on
-   * a stub that returned `null`, so the Book button threw on every click.
-   *
-   * Guests cannot register directly — they get the dialog, which wraps the same
-   * form the hero uses and carries the whole REGISTER → OTP → DONE machine.
-   */
   protected book(): void {
-    // Guests go to login, not to the registration dialog: that dialog's form
-    // creates an account, and account creation has no CAIRA endpoint (G-08).
-    // `registerV4/` below only registers an already-authenticated user.
+    // Guests can't enroll directly — show the registration dialog so they can
+    // sign up + (optionally) verify OTP first. `registerAndEnroll` then flips
+    // the local state so the card re-renders into the booked variant.
     if (!this.auth.isLoggedIn()) {
-      void this.router.navigate(['/auth/login'], {
-        queryParams: { redirect: this.router.url },
-      });
+      this.facade.openRegistration(this.webinar());
       return;
     }
-
-    this.webinars
-      .register(this.webinar().id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        // `accepted` means the attempt was still pending after the last poll —
-        // the LMS treats that as booked rather than leaving the card spinning.
-        next: (outcome) => {
-          if (outcome === 'failed') {
-            this.logger.warn('Webinar registration failed', this.webinar().id);
-            return;
-          }
-          this.webinars.reload();
-        },
-        error: (error: unknown) => this.logger.error('Webinar registration errored', error),
-      });
+    this.facade.enroll(this.webinar()).subscribe();
   }
 
   protected joinLive(): void {
@@ -160,23 +127,11 @@ export class PremiereListItem {
     this.utils.navigateToCourseFeedback('webinar', w.id, w.webinar_title);
   }
 
-  /**
-   * `Utils` owns the gating dialogs and the download dialog itself. CAIRA has no
-   * bulk certificate endpoint, so the dialog reports that rather than posting to
-   * a dead URL — but the entry point is real, not a stub that throws.
-   */
   protected downloadCertificate(): void {
-    this.utils.openCertificateDownloadDialog(this.webinar());
+    this.facade.openCertificateDownloadDialog(this.webinar());
   }
 
-  protected async openDetails(): Promise<void> {
-    const { WebinarDetailsDialog } =
-      await import('../../../../../../shared/components/dialog/webinar-details-dialog/webinar-details-dialog');
-    this.dialog.open(WebinarDetailsDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      data: { webinar: this.webinar() },
-    });
+  protected openDetails(): void {
+    this.facade.openDetails(this.webinar());
   }
 }
