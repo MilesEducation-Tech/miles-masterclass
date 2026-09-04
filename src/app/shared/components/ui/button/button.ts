@@ -1,12 +1,19 @@
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matCloseRound } from '@ng-icons/material-icons/round';
+import { NgpButton } from 'ng-primitives/button';
 import { ButtonSize, ButtonVariant } from '../../../core/models/button.model';
 import { cn } from '../../../utils/cn';
 
+/**
+ * Button built on the `NgpButton` primitive, which supplies the hover / press /
+ * focus-visible state as `data-*` attributes on the host `<button>`. Those
+ * states are styled through Tailwind's `data-*` variants rather than by
+ * toggling classes here.
+ */
 @Component({
   selector: 'app-button',
-  imports: [NgIcon],
+  imports: [NgIcon, NgpButton],
   templateUrl: './button.html',
   styleUrl: './button.css',
   providers: [provideIcons({ matCloseRound })],
@@ -37,18 +44,18 @@ export class Button {
   // Computed classes
   buttonClasses = computed(() => {
     const baseClasses =
-      'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2  disabled:opacity-50 cursor-pointer';
+      'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-offset-2 data-disabled:opacity-50 cursor-pointer';
 
     const variantClasses: Record<ButtonVariant, string> = {
-      default: 'bg-white text-black hover:bg-white/90',
-      primary: 'bg-primary text-white hover:bg-primary/90',
-      destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+      default: 'bg-white text-black data-hover:bg-white/90',
+      primary: 'bg-primary text-white data-hover:bg-primary/90',
+      destructive: 'bg-destructive text-destructive-foreground data-hover:bg-destructive/90',
       outline: 'border border-border bg-transparent',
-      secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+      secondary: 'bg-secondary text-secondary-foreground data-hover:bg-secondary/80',
       ghost: '',
-      link: 'text-accent underline-offset-4 hover:underline',
+      link: 'text-accent underline-offset-4 data-hover:underline',
       close:
-        'bg-background/80 backdrop-blur-sm text-foreground ring-0 outline-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:ring-transparent active:ring-0 active:ring-offset-0 active:ring-transparent hover:bg-destructive hover:text-destructive-foreground rounded-full',
+        'bg-background/80 backdrop-blur-sm text-foreground ring-0 outline-0 border-0 data-focus-visible:ring-0 data-focus-visible:ring-offset-0 data-focus-visible:ring-transparent data-press:ring-0 data-hover:bg-destructive data-hover:text-destructive-foreground rounded-full',
     };
 
     const sizeClasses: Record<ButtonSize, string> = {

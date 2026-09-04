@@ -26,7 +26,7 @@ describe('AriaSelect', () => {
   });
 
   it('does not auto-select the first option when opened with no value', async () => {
-    component.toggle();
+    component.onOpenChange(true);
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -34,9 +34,10 @@ describe('AriaSelect', () => {
     expect(component.isOpen()).toBe(true);
   });
 
-  it('keeps the current value when the listbox emits an empty commit', () => {
+  it('keeps the current value when the select emits an empty commit', () => {
     component.value.set('a');
-    component.onListboxValuesChange([]);
+    component.onValueChange(null);
+    component.onOpenChange(false);
 
     expect(component.value()).toBe('a');
     expect(component.isOpen()).toBe(false);

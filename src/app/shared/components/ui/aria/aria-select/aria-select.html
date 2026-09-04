@@ -1,31 +1,48 @@
-<div [class]="wrapperClasses()">
+<div ngpFormField [class]="wrapperClasses()">
   <div class="relative">
-    <button
-      #triggerEl
-      cdkOverlayOrigin
-      #trigger="cdkOverlayOrigin"
-      type="button"
+    <div
+      ngpSelect
       [id]="inputId()"
-      [name]="id()"
       [class]="triggerClasses()"
-      [disabled]="disabled()"
-      aria-haspopup="listbox"
-      [attr.aria-expanded]="isOpen()"
-      [attr.aria-controls]="listboxId()"
+      [ngpSelectValue]="value()"
+      [ngpSelectDisabled]="disabled() || readonly()"
+      (ngpSelectValueChange)="onValueChange($event)"
+      (ngpSelectOpenChange)="onOpenChange($event)"
+      (blur)="handleBlur()"
       [attr.aria-invalid]="invalid()"
       [attr.aria-required]="required() || null"
       [attr.aria-describedby]="describedBy()"
-      (click)="toggle()"
-      (blur)="handleBlur()"
-      (keydown.escape)="close()"
     >
-      <span class="block truncate" [class.text-muted-foreground]="!selectedLabel()">
-        {{ selectedLabel() || placeholder() || ' ' }}
-      </span>
-    </button>
+      @if (selectedLabel()) {
+        <span class="truncate">{{ selectedLabel() }}</span>
+      } @else {
+        <span class="truncate text-muted-foreground">{{ placeholder() }}</span>
+      }
+
+      <div
+        *ngpSelectPortal
+        ngpSelectDropdown
+        style="width: var(--ngp-select-width)"
+        class="absolute z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-lg outline-none"
+      >
+        @for (option of renderOptions(); track option.value) {
+          <div
+            ngpSelectOption
+            [ngpSelectOptionValue]="option.value"
+            [ngpSelectOptionDisabled]="!!option.disabled"
+            class="flex cursor-pointer items-center gap-2 rounded-sm px-3 py-2 text-sm data-hover:bg-accent/10 data-active:bg-accent/10 data-disabled:cursor-not-allowed data-disabled:opacity-50"
+          >
+            {{ option.label }}
+          </div>
+        } @empty {
+          <div class="px-3 py-2 text-sm text-muted-foreground">No options</div>
+        }
+      </div>
+    </div>
 
     @if (label()) {
       <label
+        ngpLabel
         [for]="inputId()"
         class="floating-label"
         [class.floating-label-active]="hasSelection() || isOpen()"
@@ -37,57 +54,17 @@
       </label>
     }
 
-    <div
-      class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none transition-transform"
-      [class.rotate-180]="isOpen()"
-    >
-      <ng-icon [svg]="icons().chevronDown" class="w-4 h-4" />
-    </div>
-
-    <ng-template
-      cdkConnectedOverlay
-      [cdkConnectedOverlayOrigin]="trigger"
-      [cdkConnectedOverlayOpen]="isOpen()"
-      [cdkConnectedOverlayHasBackdrop]="true"
-      cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
-      [cdkConnectedOverlayOffsetY]="6"
-      [cdkConnectedOverlayWidth]="trigger.elementRef.nativeElement.offsetWidth"
-      (attach)="onOverlayAttached()"
-      (backdropClick)="close()"
-      (detach)="close()"
-    >
-      <ul
-        #listboxEl
-        ngListbox
-        [id]="listboxId()"
-        [multi]="false"
-        [value]="listboxValues()"
-        (valueChange)="onListboxValuesChange($event)"
-        [disabled]="disabled()"
-        tabindex="0"
-        wrap
-        orientation="vertical"
-        selectionMode="explicit"
-        (keydown.escape)="close()"
-        class="w-full list-none p-1 max-h-60 overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-ring box-border"
-      >
-        @for (option of renderOptions(); track option.value) {
-          <li
-            ngOption
-            [value]="option.value"
-            [label]="option.label"
-            [disabled]="option.disabled ?? false"
-            class="px-3 py-2 text-sm rounded cursor-pointer select-none transition-colors hover:bg-secondary/40 aria-selected:bg-accent aria-selected:text-accent-foreground aria-disabled:opacity-50 aria-disabled:cursor-not-allowed outline-none focus-visible:bg-secondary/60"
-          >
-            {{ option.label }}
-          </li>
-        }
-      </ul>
-    </ng-template>
+    <ng-icon
+      [svg]="icons().chevronDown"
+      class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+      aria-hidden="true"
+    />
   </div>
 
   @if (hint() && !displayError()) {
-    <p [id]="hintId()" class="text-sm text-muted-foreground mt-1.5">{{ hint() }}</p>
+    <p ngpDescription [id]="hintId()" class="text-sm text-muted-foreground mt-1.5">
+      {{ hint() }}
+    </p>
   }
   @if (touched() && displayError()) {
     <div [id]="errorId()" class="error-messages" role="alert">

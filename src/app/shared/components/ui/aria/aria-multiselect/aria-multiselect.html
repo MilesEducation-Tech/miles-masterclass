@@ -1,56 +1,73 @@
-<div [class]="wrapperClasses()">
+<div ngpFormField [class]="wrapperClasses()">
   <div class="relative">
-    <button
-      #triggerEl
-      cdkOverlayOrigin
-      #trigger="cdkOverlayOrigin"
-      type="button"
+    <div
+      ngpSelect
       [id]="inputId()"
-      [name]="id()"
       [class]="triggerClasses()"
-      [disabled]="disabled()"
-      aria-haspopup="listbox"
-      [attr.aria-expanded]="isOpen()"
-      [attr.aria-controls]="listboxId()"
+      [ngpSelectValue]="selectedValues()"
+      [ngpSelectMultiple]="true"
+      [ngpSelectDisabled]="disabled() || readonly()"
+      (ngpSelectValueChange)="onValueChange($event)"
+      (ngpSelectOpenChange)="onOpenChange($event)"
+      (blur)="handleBlur()"
       [attr.aria-invalid]="invalid()"
       [attr.aria-required]="required() || null"
       [attr.aria-describedby]="describedBy()"
-      (click)="toggle()"
-      (blur)="handleBlur()"
-      (keydown.escape)="close()"
     >
       @if (hasSelection()) {
         @for (v of visibleChips(); track v) {
           <span
-            class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary text-secondary-foreground text-sm font-medium"
+            class="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
           >
             {{ getLabelFor(v) }}
-            <span
-              role="button"
-              tabindex="0"
-              class="rounded-full hover:bg-secondary-foreground/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
-              (click)="removeChip($event, v)"
-              (keydown.enter)="removeChip($event, v)"
+            <button
+              type="button"
+              class="rounded-sm hover:text-destructive"
               [attr.aria-label]="'Remove ' + getLabelFor(v)"
+              (click)="removeChip($event, v)"
             >
-              <ng-icon [svg]="icons().xMark" class="w-3.5 h-3.5" />
-            </span>
+              <ng-icon [svg]="icons().xMark" class="h-3 w-3" />
+            </button>
           </span>
         }
         @if (overflowCount() > 0) {
-          <span
-            class="shrink-0 px-1.5 py-0.5 text-xs font-medium rounded bg-accent/15 text-accent border border-accent/20"
-          >
+          <span class="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
             +{{ overflowCount() }} more
           </span>
         }
       } @else {
-        <span class="truncate text-muted-foreground">{{ placeholder() || ' ' }}</span>
+        <span class="truncate text-muted-foreground">{{ placeholder() }}</span>
       }
-    </button>
+
+      <div
+        *ngpSelectPortal
+        ngpSelectDropdown
+        style="width: var(--ngp-select-width)"
+        class="absolute z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-lg outline-none"
+      >
+        @for (option of renderOptions(); track option.value) {
+          <div
+            ngpSelectOption
+            [ngpSelectOptionValue]="option.value"
+            [ngpSelectOptionDisabled]="!!option.disabled"
+            class="flex cursor-pointer items-center gap-2 rounded-sm px-3 py-2 text-sm data-hover:bg-accent/10 data-active:bg-accent/10 data-disabled:cursor-not-allowed data-disabled:opacity-50"
+          >
+            <span class="flex h-4 w-4 items-center justify-center">
+              @if (isSelected(option.value)) {
+                <ng-icon [svg]="icons().check" class="h-3 w-3 text-accent" />
+              }
+            </span>
+            {{ option.label }}
+          </div>
+        } @empty {
+          <div class="px-3 py-2 text-sm text-muted-foreground">No options</div>
+        }
+      </div>
+    </div>
 
     @if (label()) {
       <label
+        ngpLabel
         [for]="inputId()"
         class="floating-label"
         [class.floating-label-active]="hasSelection() || isOpen()"
@@ -62,67 +79,17 @@
       </label>
     }
 
-    <div
-      class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none transition-transform"
-      [class.rotate-180]="isOpen()"
-    >
-      <ng-icon [svg]="icons().chevronDown" class="w-4 h-4" />
-    </div>
-
-    <ng-template
-      cdkConnectedOverlay
-      [cdkConnectedOverlayOrigin]="trigger"
-      [cdkConnectedOverlayOpen]="isOpen()"
-      [cdkConnectedOverlayHasBackdrop]="true"
-      cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
-      [cdkConnectedOverlayOffsetY]="6"
-      [cdkConnectedOverlayWidth]="trigger.elementRef.nativeElement.offsetWidth"
-      (attach)="onOverlayAttached()"
-      (backdropClick)="close()"
-      (detach)="close()"
-    >
-      <ul
-        #listboxEl
-        ngListbox
-        [id]="listboxId()"
-        [multi]="true"
-        [value]="selectedValues()"
-        (valueChange)="onListboxValuesChange($event)"
-        [disabled]="disabled()"
-        tabindex="0"
-        wrap
-        orientation="vertical"
-        selectionMode="explicit"
-        (keydown.escape)="close()"
-        class="w-full list-none p-1 max-h-60 overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-ring box-border"
-      >
-        @for (option of renderOptions(); track option.value) {
-          <li
-            ngOption
-            [value]="option.value"
-            [label]="option.label"
-            [disabled]="option.disabled ?? false"
-            class="group/opt flex items-center gap-2 px-3 py-2 text-sm rounded cursor-pointer select-none transition-colors hover:bg-secondary/40 aria-disabled:opacity-50 aria-disabled:cursor-not-allowed outline-none focus-visible:bg-secondary/60"
-          >
-            <span
-              class="size-4 shrink-0 inline-flex items-center justify-center rounded border border-border/60 bg-secondary/30 group-aria-selected/opt:bg-accent group-aria-selected/opt:border-accent transition-colors"
-              aria-hidden="true"
-            >
-              <ng-icon
-                [svg]="icons().check"
-                strokeWidth="3"
-                class="size-3 text-accent-foreground opacity-0 group-aria-selected/opt:opacity-100"
-              />
-            </span>
-            <span class="truncate">{{ option.label }}</span>
-          </li>
-        }
-      </ul>
-    </ng-template>
+    <ng-icon
+      [svg]="icons().chevronDown"
+      class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+      aria-hidden="true"
+    />
   </div>
 
   @if (hint() && !displayError()) {
-    <p [id]="hintId()" class="text-sm text-muted-foreground mt-1.5">{{ hint() }}</p>
+    <p ngpDescription [id]="hintId()" class="text-sm text-muted-foreground mt-1.5">
+      {{ hint() }}
+    </p>
   }
   @if (touched() && displayError()) {
     <div [id]="errorId()" class="error-messages" role="alert">

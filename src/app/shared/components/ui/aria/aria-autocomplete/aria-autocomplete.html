@@ -1,112 +1,89 @@
-<div [class]="wrapperClasses()">
-  <div class="relative">
+<div ngpFormField [class]="wrapperClasses()">
+  <div
+    class="relative"
+    ngpCombobox
+    #combo="ngpCombobox"
+    [ngpComboboxValue]="value()"
+    [ngpComboboxDisabled]="disabled() || readonly()"
+    (ngpComboboxValueChange)="onValueChange($event)"
+    (ngpComboboxOpenChange)="onOpenChange($event)"
+  >
     <input
-      #inputEl
-      cdkOverlayOrigin
-      #origin="cdkOverlayOrigin"
+      ngpComboboxInput
       [id]="inputId()"
       [name]="id()"
       type="text"
       autocomplete="off"
-      role="combobox"
-      [attr.aria-controls]="listboxId()"
-      [attr.aria-expanded]="isOpen()"
-      aria-haspopup="listbox"
-      aria-autocomplete="list"
       [value]="query()"
       [placeholder]="placeholder() || ' '"
       [class]="inputClasses()"
-      [disabled]="disabled()"
-      [readonly]="readonly()"
       [required]="required()"
       [attr.aria-invalid]="invalid()"
       [attr.aria-required]="required() || null"
       [attr.aria-describedby]="describedBy()"
-      [attr.aria-activedescendant]="isOpen() ? listbox()?.activeDescendant() : null"
-      (input)="onInput($event)"
-      (focus)="onFocus()"
-      (click)="onInputClick()"
+      (input)="onInput($event); combo.openDropdown()"
+      (focus)="onFocus(); combo.openDropdown()"
       (blur)="handleBlur()"
-      (keydown)="onKeydown($event)"
-      (keydown.escape)="close()"
     />
+
     @if (label()) {
-      <label [for]="inputId()" class="floating-label">
+      <label ngpLabel [for]="inputId()" class="floating-label">
         {{ label() }}
         @if (required()) {
           <sup class="text-destructive ml-1" aria-label="required">*</sup>
         }
       </label>
     }
+
     @if (showClear() && hasValue()) {
       <button
         type="button"
-        class="absolute right-9 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+        class="absolute right-9 top-1/2 -translate-y-1/2 rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         (click)="clear($event)"
         aria-label="Clear selection"
       >
-        <ng-icon [svg]="icons().xMark" class="w-4 h-4" />
+        <ng-icon [svg]="icons().xMark" class="h-4 w-4" />
       </button>
     }
-    <div
-      class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none transition-transform"
-      [class.rotate-180]="isOpen()"
-    >
-      <ng-icon [svg]="icons().chevronDown" class="w-4 h-4" />
-    </div>
 
-    <ng-template
-      [cdkConnectedOverlay]="{ origin, usePopover: 'inline', matchWidth: true }"
-      [cdkConnectedOverlayOrigin]="origin"
-      [cdkConnectedOverlayOpen]="isOpen()"
-      [cdkConnectedOverlayOffsetY]="6"
-      [cdkConnectedOverlayWidth]="origin.elementRef.nativeElement.offsetWidth"
-      (attach)="onOverlayAttached()"
-      (detach)="close()"
+    <button
+      ngpComboboxButton
+      type="button"
+      class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-transform"
+      [class.rotate-180]="isOpen()"
+      aria-label="Toggle options"
     >
-      <ul
-        #listboxEl
-        ngListbox
-        [id]="listboxId()"
-        [multi]="false"
-        [value]="listboxValues()"
-        (valueChange)="onListboxValuesChange($event)"
-        [disabled]="disabled()"
-        tabindex="-1"
-        wrap
-        orientation="vertical"
-        selectionMode="explicit"
-        focusMode="activedescendant"
-        (mousedown)="$event.preventDefault()"
-        (keydown.escape)="close()"
-        class="w-full list-none p-1 max-h-60 overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-ring box-border"
-      >
-        @for (option of filteredOptions(); track option.value) {
-          <li
-            ngOption
-            [value]="option.value"
-            [label]="option.label"
-            [disabled]="option.disabled ?? false"
-            class="px-3 py-2 text-sm rounded cursor-pointer select-none transition-colors hover:bg-secondary/40 aria-selected:bg-accent aria-selected:text-accent-foreground aria-disabled:opacity-50 aria-disabled:cursor-not-allowed outline-none focus-visible:bg-secondary/60 data-[active=true]:bg-secondary/60"
-          >
-            {{ option.label }}
-          </li>
-        } @empty {
-          <li class="px-3 py-2 text-sm text-muted-foreground" aria-disabled="true">
-            {{ emptyMessage() }}
-          </li>
-        }
-      </ul>
-    </ng-template>
+      <ng-icon [svg]="icons().chevronDown" class="h-4 w-4" />
+    </button>
+
+    <div
+      *ngpComboboxPortal
+      ngpComboboxDropdown
+      style="width: var(--ngp-combobox-width)"
+      class="absolute z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+    >
+      @for (option of filteredOptions(); track option.value) {
+        <div
+          ngpComboboxOption
+          [ngpComboboxOptionValue]="option.value"
+          [ngpComboboxOptionDisabled]="!!option.disabled"
+          class="flex cursor-pointer items-center gap-2 rounded-sm px-3 py-2 text-sm data-hover:bg-accent/10 data-active:bg-accent/10 data-disabled:cursor-not-allowed data-disabled:opacity-50"
+        >
+          {{ option.label }}
+        </div>
+      } @empty {
+        <div class="px-3 py-2 text-sm text-muted-foreground">{{ emptyMessage() }}</div>
+      }
+    </div>
   </div>
 
   @if (hint() && !displayError()) {
-    <p [id]="hintId()" class="text-sm text-muted-foreground mt-1.5">{{ hint() }}</p>
+    <p ngpDescription [id]="hintId()" class="mt-1.5 text-sm text-muted-foreground">{{ hint() }}</p>
   }
   @if (touched() && displayError()) {
     <div [id]="errorId()" class="error-messages" role="alert">
       @for (error of errors(); track error) {
-        <p class="text-sm text-destructive mt-1.5">{{ error.message }}</p>
+        <p class="mt-1.5 text-sm text-destructive">{{ error.message }}</p>
       }
     </div>
   }

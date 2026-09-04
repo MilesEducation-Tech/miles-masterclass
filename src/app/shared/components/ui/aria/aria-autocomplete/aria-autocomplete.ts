@@ -1,33 +1,52 @@
-import { Listbox, Option } from '@angular/aria/listbox';
-import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
 import {
   Component,
   computed,
   DestroyRef,
   effect,
-  ElementRef,
   inject,
   input,
   model,
   output,
   signal,
   untracked,
-  viewChild,
 } from '@angular/core';
 import type { FormValueControl } from '@angular/forms/signals';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronDown, heroXMark } from '@ng-icons/heroicons/outline';
+import {
+  NgpCombobox,
+  NgpComboboxButton,
+  NgpComboboxDropdown,
+  NgpComboboxInput,
+  NgpComboboxOption,
+  NgpComboboxPortal,
+} from 'ng-primitives/combobox';
+import { NgpDescription, NgpFormField, NgpLabel } from 'ng-primitives/form-field';
 import { AriaSelectOption, dedupeAriaOptions } from '../../../../core/models/aria.model';
 import { cn } from '../../../../utils/cn';
 
 /**
- * ARIA-style autocomplete: text input + listbox popover via `CdkConnectedOverlay`.
- * Internal client-side substring filter against `options`. For server-side
- * filtering use `<app-aria-combobox>` (consumer provides filtered options).
+ * Autocomplete built on the `NgpCombobox` primitive: a text input plus a
+ * floating listbox. The primitive owns the combobox ARIA wiring, active-option
+ * tracking, keyboard navigation and dropdown placement. Filtering stays here so
+ * `serverFiltered` can hand off to a server that matches on more than the
+ * literal text (Google Places answers "bangalore" with "Bengaluru", which a
+ * substring filter would then hide).
  */
 @Component({
   selector: 'app-aria-autocomplete',
-  imports: [Listbox, Option, CdkConnectedOverlay, CdkOverlayOrigin, NgIcon],
+  imports: [
+    NgpCombobox,
+    NgpComboboxInput,
+    NgpComboboxButton,
+    NgpComboboxDropdown,
+    NgpComboboxOption,
+    NgpComboboxPortal,
+    NgpFormField,
+    NgpLabel,
+    NgpDescription,
+    NgIcon,
+  ],
   templateUrl: './aria-autocomplete.html',
   styleUrl: './aria-autocomplete.css',
   providers: [provideIcons({ heroChevronDown, heroXMark })],
@@ -43,9 +62,7 @@ export class AriaAutocomplete<V = unknown> implements FormValueControl<V | null>
   readonly searchMinLength = input(0);
   /**
    * Skip the built-in substring filter — `options` are already filtered by the
-   * server. Needed when the server matches on more than the literal text
-   * (Google Places answers "bangalore" with "Bengaluru", which a substring
-   * filter would then hide).
+   * server.
    */
   readonly serverFiltered = input(false);
   readonly showClear = input(true);
@@ -69,14 +86,9 @@ export class AriaAutocomplete<V = unknown> implements FormValueControl<V | null>
   readonly query = signal('');
   readonly isOpen = signal(false);
 
-  private readonly inputEl = viewChild<ElementRef<HTMLInputElement>>('inputEl');
-  private readonly listboxEl = viewChild<ElementRef<HTMLUListElement>>('listboxEl');
-  protected readonly listbox = viewChild(Listbox);
-
   private readonly inputFocused = signal(false);
 
   readonly inputId = computed(() => `${this.id()}-input`);
-  readonly listboxId = computed(() => `${this.id()}-listbox`);
   readonly hintId = computed(() => `${this.id()}-hint`);
   readonly errorId = computed(() => `${this.id()}-error`);
 
@@ -104,11 +116,6 @@ export class AriaAutocomplete<V = unknown> implements FormValueControl<V | null>
     return opts.filter((o) => o.label.toLowerCase().includes(q));
   });
 
-  readonly listboxValues = computed<unknown[]>(() => {
-    const v = this.value();
-    return v == null ? [] : [v];
-  });
-
   readonly hasValue = computed(() => this.value() != null);
 
   readonly wrapperClasses = computed(() => cn('space-y-2', this.userClass()));
@@ -133,8 +140,8 @@ export class AriaAutocomplete<V = unknown> implements FormValueControl<V | null>
     });
     destroyRef.onDestroy(() => stop.destroy());
 
-    // Mirror selected option's label into the input when the value changes
-    // programmatically (e.g., seeded via [formField]).
+    // Mirror the selected option's label into the input when the value changes
+    // programmatically (e.g. seeded via [formField]).
     effect(() => {
       const v = this.value();
       const opts = this.options();
@@ -155,16 +162,14 @@ export class AriaAutocomplete<V = unknown> implements FormValueControl<V | null>
     this.isOpen.set(true);
   }
 
-  /** Reopen the list when the already-focused input is clicked again. */
-  onInputClick() {
-    if (this.disabled() || this.readonly()) return;
-    this.isOpen.set(true);
-  }
-
   onInput(event: Event) {
     const v = (event.target as HTMLInputElement).value;
     this.query.set(v);
-    this.isOpen.set(true);
+  }
+
+  onOpenChange(open: boolean) {
+    this.isOpen.set(open);
+    if (!open) this.touched.set(true);
   }
 
   close() {
@@ -173,50 +178,23 @@ export class AriaAutocomplete<V = unknown> implements FormValueControl<V | null>
     this.touched.set(true);
   }
 
-  onOverlayAttached() {
-    // Keep focus on the input — user is still typing/navigating.
-  }
-
-  /** Forward list navigation from the input to the listbox (combobox pattern). */
-  onKeydown(event: KeyboardEvent) {
-    if (this.disabled() || this.readonly()) return;
-    const isArrow = event.key === 'ArrowDown' || event.key === 'ArrowUp';
-    if (!isArrow && !(event.key === 'Enter' && this.isOpen())) return;
-    event.preventDefault();
-    if (!this.isOpen()) {
-      this.isOpen.set(true);
-      return;
-    }
-    this.listboxEl()?.nativeElement.dispatchEvent(
-      new KeyboardEvent('keydown', { key: event.key, bubbles: false }),
-    );
-  }
-
-  onListboxValuesChange(values: unknown[]) {
-    const next = (values[0] ?? null) as V | null;
-    // Empty emissions are not user commits: the listbox prunes values missing
-    // from the rendered (filtered) options and explicit mode re-toggles emit
-    // []. Keep the current value and stay open.
+  onValueChange(next: unknown) {
+    // The primitive prunes values missing from the rendered (filtered) options,
+    // which surfaces as a null emission that is not a user commit.
     if (next == null) return;
-    this.value.set(next);
+    this.value.set(next as V);
     const selected = this.options().find((o) => o.value === next);
     if (selected) this.query.set(selected.label);
-    this.close();
-    queueMicrotask(() => this.inputEl()?.nativeElement.focus());
   }
 
   handleBlur() {
-    // Option clicks preventDefault on mousedown, so the input only blurs on a
-    // genuine focus-out — safe to close immediately.
     this.inputFocused.set(false);
     this.touched.set(true);
-    this.close();
   }
 
   clear(event: Event) {
     event.stopPropagation();
     this.value.set(null);
     this.query.set('');
-    queueMicrotask(() => this.inputEl()?.nativeElement.focus());
   }
 }
