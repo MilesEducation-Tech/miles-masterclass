@@ -1,0 +1,118 @@
+/* Structural + 3D styles live here rather than in the template: view
+   encapsulation attributes mean page-level CSS cannot reach these elements,
+   and GSAP writes its transforms onto `.card` directly. */
+
+.stack {
+  --card-h: 240px;
+  --card-gap: 40px;
+}
+
+@media (min-width: 1024px) {
+  .stack {
+    --card-h: 300px;
+    --card-gap: 50px;
+  }
+}
+
+/* Bullet-separated meta row: "3 Levels • NASBA-Approved CPE • …" */
+.stack__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.stack__meta li + li::before {
+  content: '•';
+  margin-right: 0.75rem;
+  color: #6b6b6b;
+}
+
+/* Height is explicit, not derived from flow. `pinSpacing: false` pulls each
+   wrapper out of flow as it pins, so a flow-sized column would shrink
+   mid-animation and jump the scroll position. This value matches the natural
+   stacked height exactly, so the mobile, reduced-motion and SSR renders are
+   layout-identical to the animated one — no CLS either way. */
+.cards {
+  /* Trailing scroll room so the finished stack holds on screen before it
+     releases, instead of unpinning the instant the last card lands. Without it
+     the last card's trigger has a zero-length range: it pins at exactly the
+     scroll position where the container's release point is reached. The pen got
+     this room from a 100vh `.wrapper` plus `.spacer` divs. Only at `md+`, where
+     pinning is active — below that it would just be dead space. */
+  --stack-hold: 0px;
+
+  height: calc(
+    var(--count, 3) * var(--card-h) + (var(--count, 3) - 1) * var(--card-gap) + var(--stack-hold)
+  );
+}
+
+@media (min-width: 768px) {
+  .cards {
+    --stack-hold: 50vh;
+  }
+}
+
+.card-wrapper {
+  width: 80%;
+  height: var(--card-h);
+  margin-bottom: var(--card-gap);
+}
+
+.card-wrapper:last-child {
+  margin-bottom: 0;
+}
+
+/* No CSS `perspective` here on purpose — it would create a containing block for
+   `position: fixed` descendants, which is what ScrollTrigger pins with. The
+   component passes `transformPerspective: 500` to GSAP instead. */
+.card {
+  position: relative;
+  /* Must match the tween's `transformOrigin`. The static `rotate` below would
+     otherwise spin about the default `center center`, and the moment GSAP first
+     renders and switches the origin to `top center` the card jumps sideways by
+     half-height x sin(tilt) — ~9px at 3.58deg, and the opposite way for a
+     negative tilt. Same origin on both sides means no discontinuity. */
+  transform-origin: top center;
+  height: 100%;
+  overflow: hidden;
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  color: #fff;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 45%);
+  will-change: transform;
+}
+
+.card--bronze {
+  background: linear-gradient(112deg, #241a13 0%, #6a4f38 52%, #a8875e 100%);
+}
+
+.card--silver {
+  background: linear-gradient(112deg, #343437 0%, #6d6f74 52%, #a8abb0 100%);
+}
+
+.card--gold {
+  background: linear-gradient(112deg, #6a5a20 0%, #9d8833 52%, #c9b25a 100%);
+}
+
+/* Oversized level numeral bleeding off the bottom-left corner. */
+.card__ghost {
+  position: absolute;
+  bottom: -0.28em;
+  left: 0.5rem;
+  font-size: clamp(7rem, 14vw, 11rem);
+  font-weight: 700;
+  line-height: 1;
+  color: rgb(255 255 255 / 7%);
+  pointer-events: none;
+  user-select: none;
+}
+
+.card__medal {
+  position: absolute;
+  right: 1rem;
+  bottom: 0.75rem;
+  width: clamp(96px, 34%, 150px);
+  height: auto;
+  filter: drop-shadow(0 8px 16px rgb(0 0 0 / 45%));
+}

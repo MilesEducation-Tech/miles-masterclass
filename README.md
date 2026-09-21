@@ -1,7 +1,5 @@
 # Miles Masterclass V3.
 
-> **Status (2026-09-03):** this repo has been stripped to the admin panel only (`src/app/admin/` plus the `src/app/shared/` files it depends on). The learner site, auth, payment, blog, partner pages, SEO, analytics and Storybook were removed and will be rebuilt against a new backend. Sections below describing the public site, its routes and structure are historical until rewritten.
-
 Miles Masterclass V3 is a cutting-edge educational platform built with **Angular (v21)**, designed to deliver high-performance, SEO-optimized content through **Server-Side Rendering (SSR)** and **Hydration**.
 
 The application offers a tailored learning experience, dynamically routing users to content specific to their **Country** and **Profession** (e.g., `/in/accounting`, `/us/cpa`).

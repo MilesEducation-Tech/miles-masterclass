@@ -1,0 +1,88 @@
+<div class="w-full md:aspect-video aspect-9/16 overflow-hidden relative">
+  <!--
+    The page's single, SEO-canonical <h1>. The visible hero headline is split
+    across stylized <p> lines and duplicated for desktop/mobile breakpoints, so
+    a lone screen-reader-only <h1> carries the real page topic for crawlers
+    (audit: "value proposition rendered as <h4>; H1 was the FAQ heading").
+  -->
+  <h1 class="sr-only">
+    Earn CPE credits as you Master AI in Accounting — AI-Powered CPE Training for Accounting
+    Professionals
+  </h1>
+  <div
+    class="absolute pointer-events-none inset-0 w-full h-full bg-linear-to-b from-[#0e0e0e] to-transparent from-5% to-30% z-20"
+  ></div>
+  <div
+    class="absolute pointer-events-none inset-0 w-full h-full bg-linear-to-t from-[#0e0e0e] to-transparent md:from-10% md:to-40% from-20% to-50% z-20"
+  ></div>
+  <div
+    class="z-10 rounded-full outline-10 outline-white w-4/5 aspect-square absolute left-0 translate-x-[-55%] -top-1/2 translate-y-[15%] bg-linear-to-b from-[#016FD9] to-[#013B73] p-3 max-md:hidden"
+  >
+    <div class="w-full h-full p-3 bg-linear-to-b from-[#013DAF] to-[#001949] rounded-full">
+      <div
+        class="w-full h-full p-3 bg-linear-to-b from-[#011A81] to-[#00051B] rounded-full flex flex-col justify-center items-start pl-[60%] gap-4"
+      >
+        <app-miles-slug slug="miles masterclass" />
+        <div class="space-y-4">
+          <p class="text-[1vw] leading-none font-normal">Earn CPE credits as you Master</p>
+          <p class="text-[3vw] leading-none font-bold">AI in Accounting</p>
+          <p class="text-[1vw] leading-none font-normal text-neutral-400">
+            Real-world AI applications. Immersive Master Classes by experts.
+          </p>
+          <app-button
+            class="bg-white text-black font-semibold rounded-md"
+            variant="ghost"
+            (clicked)="openAppOrStore()"
+          >
+            Download App
+          </app-button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    class="md:hidden absolute bottom-0 left-0 w-full flex justify-end flex-col items-center z-50 px-6"
+  >
+    <app-miles-slug slug="miles masterclass" />
+    <div class="space-y-4 flex justify-center flex-col items-center mb-8">
+      <p class="text-sm text-center leading-none font-normal">Earn CPE credits as you Master</p>
+      <p class="text-2xl text-center leading-none font-bold">AI in Accounting</p>
+      <p class="text-sm text-center leading-none font-normal text-neutral-400">
+        Real-world AI applications. Immersive Master Classes by experts.
+      </p>
+      <app-button
+        variant="ghost"
+        class="bg-white text-black font-semibold rounded-md"
+        (clicked)="openAppOrStore()"
+      >
+        Download App
+      </app-button>
+    </div>
+  </div>
+  <div class="flex w-full h-full relative">
+    <!-- Desktop Video (hidden on mobile) -->
+    <div class="absolute right-0 top-0 justify-end flex h-full z-0 max-md:hidden">
+      <app-video-poster
+        class="aspect-4/3 h-full"
+        [videoSrc]="desktopVideoSrc"
+        [posterSrc]="desktopPosterSrc"
+        [posterDelay]="3000"
+        videoClass="object-cover"
+        [showControls]="true"
+      />
+    </div>
+
+    <!-- Mobile Video (hidden on desktop) -->
+    <div class="absolute right-0 top-0 justify-end flex w-auto h-full z-0 md:hidden">
+      <app-video-poster
+        class="w-full h-full"
+        [videoSrc]="mobileVideoSrc"
+        [posterSrc]="mobilePosterSrc"
+        [posterDelay]="3000"
+        videoClass="object-cover"
+        [showControls]="true"
+        [controlsPosition]="'top-left'"
+      />
+    </div>
+  </div>
+</div>

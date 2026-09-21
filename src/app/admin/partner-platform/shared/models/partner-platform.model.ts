@@ -61,6 +61,26 @@ export function partnerLoadError(err: unknown, fallback: string): string | null 
 }
 
 /**
+ * `partnerErrorMessage` for a `responseType: 'blob'` request (the CSV exports):
+ * a 4xx there arrives with the JSON body wrapped in a Blob, so the sync helper
+ * can't see it. Reads the blob, then falls through to the normal parsing.
+ */
+export async function partnerBlobErrorMessage(
+  err: unknown,
+  fallback = 'Please try again.',
+): Promise<string> {
+  const body = (err as { error?: unknown } | null | undefined)?.error;
+  if (typeof Blob !== 'undefined' && body instanceof Blob) {
+    try {
+      return partnerErrorMessage({ error: JSON.parse(await body.text()) }, fallback);
+    } catch {
+      return fallback;
+    }
+  }
+  return partnerErrorMessage(err, fallback);
+}
+
+/**
  * The one pagination envelope. Every paginated Partner Platform list uses it,
  * and `next_page`/`previous_page` are page NUMBERS, not URLs — no
  * `parseNextPage()` needed.
@@ -98,6 +118,35 @@ export type PartnerCapability = (typeof PARTNER_CAPABILITIES)[number];
 
 /** Django PartnerAdmin role. */
 export type PartnerRole = 'super' | 'network' | 'firm';
+
+/** Operator-facing names for the capability picker. */
+export const CAPABILITY_LABELS: Record<PartnerCapability, string> = {
+  'report:network:read': 'Read network reports & dashboard',
+  'report:firm:read': 'Read firm reports & dashboard',
+  'seat:usage:read': 'View the Seat Tracker',
+  'seat:send': 'Send seat codes by email',
+  'user:block': 'Block / unblock users',
+  'code:create:network': 'Create network partner codes',
+  'code:create:firm': 'Create firm partner codes',
+};
+
+/**
+ * What a freshly provisioned admin gets before the operator edits the picker.
+ * `seat:usage:read` is in both — without it the Seat Tracker renders
+ * "not enabled" forever, which is exactly what the old hard-coded lists did.
+ * Django supers hold no capabilities: `IsSuperAdmin` is the gate.
+ */
+export const CAPABILITY_DEFAULTS: Record<PartnerRole, readonly PartnerCapability[]> = {
+  super: [],
+  network: [
+    'report:network:read',
+    'seat:usage:read',
+    'seat:send',
+    'user:block',
+    'code:create:firm',
+  ],
+  firm: ['report:firm:read', 'seat:usage:read', 'seat:send', 'user:block'],
+};
 
 /** How a network is embedded in another payload. */
 export interface PartnerNetworkRef {
@@ -183,7 +232,8 @@ export interface Firm {
   name: string;
   network: PartnerNetworkRef | null;
   is_standalone: boolean;
-  email_domain: string;
+  /** Every domain that gates redemption for this firm. Empty = any email. */
+  email_domains: string[];
   is_active: boolean;
   allocated_seats: number;
   used_seats: number;
@@ -204,11 +254,18 @@ export interface CreateFirmRequest {
   name: string;
   /** Omit for a standalone firm. */
   network?: number;
-  /** Gates who can redeem this firm's seats. */
-  email_domain?: string;
+  /** Gates who can redeem this firm's seats. The API also accepts a bare string. */
+  email_domains?: string[];
   admin?: CreateFirmAdmin;
   allocations?: SeatAllocation[];
 }
+
+/** `PATCH /superadmin/firms/<id>/` — super-admin only. */
+export type UpdateFirmRequest = Partial<{
+  name: string;
+  email_domains: string[];
+  is_active: boolean;
+}>;
 
 /** `POST /superadmin/firms/` — the firm, plus what the optional extras produced. */
 export interface CreateFirmResponse extends Firm {
@@ -283,7 +340,7 @@ export interface PartnerAdmin {
   role: PartnerRole;
   network: PartnerNetworkRef | null;
   firm: PartnerFirmRef | null;
-  capabilities: string[];
+  capabilities: PartnerCapability[];
   is_active: boolean;
 }
 

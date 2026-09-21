@@ -1,0 +1,24 @@
+<div
+  class="flex w-full max-md:overflow-auto min-h-svh flex-col md:px-11 md:pt-8 p-5 space-y-4 md:overflow-hidden"
+>
+  <app-backward label="Back to Course" fallback="/" [routePath]="courseNavigation()" />
+  <app-video-chapter
+    [current]="navigation().current"
+    [previous]="navigation().prev"
+    [next]="navigation().next"
+    [activeIndex]="navigation().currentIndex"
+    [cpeMode]="cpeMode()"
+    [courseId]="chapterFacade.courseDetails()?.id ?? null"
+    [courseType]="'masterclass'"
+    [chapterWiseDetails]="chapterWiseDetails()"
+    [userAssessmentDetails]="chapterFacade.courseDetails()?.user_assessment_details"
+    (navigate)="handleNavigation($event)"
+    (paused)="handleVideoEvent('exit')"
+    (ended)="handleVideoCompleted()"
+    (firstChapterEnded)="handleFirstChapterEnded()"
+    (videoExit)="handleVideoEvent('exit', $event)"
+    (timeUpdate)="updateTime($event)"
+    (startFinalAssessment)="startFinalAssessment()"
+    (viewFinalAssessmentReport)="handleViewReport()"
+  />
+</div>

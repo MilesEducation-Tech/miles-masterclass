@@ -1,0 +1,132 @@
+@if (!isHidden()) {
+  <section
+    class="rounded-3xl border border-border/50 bg-muted/50 p-5 md:p-8"
+    aria-labelledby="caira-level-heading"
+  >
+    @if (activeLevel(); as level) {
+      <div class="flex flex-col gap-8 lg:flex-row lg:items-center">
+        <!-- Level identity -->
+        <div class="flex min-w-0 flex-1 items-center gap-4 md:gap-6">
+          <div class="flex shrink-0 flex-col gap-2">
+            <button
+              type="button"
+              class="grid size-8 place-items-center rounded-full text-muted-foreground transition-colors outline-none hover:text-white focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:hover:text-muted-foreground"
+              [disabled]="!canStepDown()"
+              aria-label="Previous CAIRA level"
+              (click)="step(-1)"
+            >
+              <ng-icon name="lucideChevronUp" size="20" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="grid size-8 place-items-center rounded-full text-white transition-colors outline-none hover:text-white focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30"
+              [disabled]="!canStepUp()"
+              aria-label="Next CAIRA level"
+              (click)="step(1)"
+            >
+              <ng-icon name="lucideChevronDown" size="20" aria-hidden="true" />
+            </button>
+          </div>
+
+          <!-- Badge carousel. Decorative: the selected level is named in the
+               column beside it, so the whole rail is hidden from assistive tech. -->
+          <div class="relative h-52 w-32 shrink-0 md:h-60 md:w-40" aria-hidden="true">
+            <div
+              class="pointer-events-none absolute inset-0 m-auto size-28 rounded-full blur-2xl transition-colors duration-500 md:size-36"
+              [style.background]="haloHex()"
+              [style.opacity]="0.18"
+            ></div>
+
+            @for (slide of slides(); track slide.item.id) {
+              <div
+                class="absolute inset-0 grid place-items-center will-change-transform motion-safe:transition-all motion-safe:duration-500 motion-safe:ease-out"
+                [style.transform]="slide.transform"
+                [style.opacity]="slide.opacity"
+                [style.zIndex]="slide.zIndex"
+              >
+                @if (slide.imageUrl; as src) {
+                  <img
+                    [ngSrc]="src"
+                    alt=""
+                    width="160"
+                    height="160"
+                    class="size-28 object-contain md:size-36"
+                  />
+                }
+              </div>
+            }
+          </div>
+
+          <div class="min-w-0">
+            <img [ngSrc]="cairaLogo" alt="CAIRA" width="72" height="18" class="h-4 w-auto" />
+            <h2 id="caira-level-heading" class="mt-2 text-3xl font-bold text-white">
+              Level {{ level.badge.level_rank }}
+            </h2>
+            @if (level.badge.sub_text; as subText) {
+              <p class="mt-1 text-sm font-bold tracking-wide text-accent-premium uppercase">
+                {{ subText }}
+              </p>
+            }
+            @if (description(); as text) {
+              <p class="mt-2 max-w-lg text-sm text-muted-foreground">{{ text }}</p>
+            }
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="w-full lg:max-w-md">
+          <div class="flex items-baseline justify-between gap-4">
+            <p class="text-sm font-semibold text-white">
+              Level {{ level.badge.level_rank }} Progress
+            </p>
+            <p class="text-sm font-bold tracking-wide text-accent uppercase">
+              {{ earned() }} CPE Credits
+            </p>
+          </div>
+
+          <app-progress
+            class="mt-2 block"
+            variant="info"
+            size="sm"
+            label="none"
+            [value]="percentage()"
+            [ariaLabel]="'Level ' + level.badge.level_rank + ' progress'"
+          />
+
+          <p class="mt-2 text-sm text-muted-foreground">{{ progressHint() }}</p>
+
+          <div class="mt-5 flex items-center gap-3">
+            <app-button variant="outline" [routerLink]="cpeTrackerLink()" class="text-white">
+              CPE Tracker
+            </app-button>
+            <app-button
+              variant="outline"
+              size="icon"
+              class="text-white"
+              ariaLabel="About this CAIRA badge"
+              (clicked)="openInfo()"
+            >
+              <ng-icon name="lucideInfo" size="18" aria-hidden="true" />
+            </app-button>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="flex animate-pulse flex-col gap-8 lg:flex-row lg:items-center">
+        <div class="flex flex-1 items-center gap-6">
+          <div class="size-32 shrink-0 rounded-full bg-secondary"></div>
+          <div class="flex-1 space-y-3">
+            <div class="h-4 w-24 rounded bg-secondary"></div>
+            <div class="h-8 w-40 rounded bg-secondary"></div>
+            <div class="h-3 w-64 rounded bg-secondary"></div>
+          </div>
+        </div>
+        <div class="w-full space-y-3 lg:max-w-md">
+          <div class="h-4 w-full rounded bg-secondary"></div>
+          <div class="h-2 w-full rounded bg-secondary"></div>
+          <div class="h-10 w-40 rounded bg-secondary"></div>
+        </div>
+      </div>
+    }
+  </section>
+}

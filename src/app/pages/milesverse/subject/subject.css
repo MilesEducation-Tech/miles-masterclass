@@ -1,0 +1,241 @@
+/* Subject page — reuses the landing card + hero styles (milesverse.css); this
+   file adds the back link, the difficulty meter used in tier headings, the
+   tier-tinted section rule, and the scenario-card media treatment. */
+
+.mv-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  transition: color 150ms ease;
+}
+.mv-back:hover {
+  color: var(--foreground);
+}
+
+/* difficulty meter — three ascending bars, lit to the tier's level */
+.mv-meter {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.mv-bar {
+  width: 4px;
+  height: 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground) 45%, transparent);
+  transition: background 250ms ease;
+}
+.mv-bar-2 {
+  height: 13px;
+}
+.mv-bar-3 {
+  height: 17px;
+}
+.mv-bar-on {
+  background: var(--accent);
+}
+
+/* tier heading rule — fades out from the tier's accent colour */
+.mvs-rule {
+  flex: 1;
+  height: 1px;
+  min-width: 2rem;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--tier, var(--border)) 45%, transparent),
+    transparent
+  );
+}
+
+/* ── Difficulty ladder (hero right rail) — jump nav through the tiers ── */
+.mvs-ladder {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--muted) 72%, transparent);
+  backdrop-filter: blur(8px);
+  padding: 1.1rem 0.9rem 0.9rem;
+  box-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.7);
+}
+.mvs-ladder-title {
+  padding: 0 0.6rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.mvs-ladder-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.7rem 0.6rem;
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.mvs-ladder-row:first-of-type {
+  margin-top: 0.7rem;
+}
+.mvs-ladder-row:hover {
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+.mvs-ladder-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.mvs-ladder-go {
+  font-size: 1rem;
+  color: var(--muted-foreground);
+  transition:
+    color 150ms ease,
+    transform 150ms ease;
+}
+.mvs-ladder-row:hover .mvs-ladder-go {
+  color: var(--foreground);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mvs-ladder-row:hover .mvs-ladder-go {
+    transform: translateY(2px);
+  }
+}
+
+/* ── Horizontal tier rows — one snap-scrolling strip per difficulty ──── */
+.mvs-row {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  /* top padding keeps the hover lift inside the scroll container */
+  padding: 0.35rem 0.15rem 0.85rem;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted-foreground) 35%, transparent) transparent;
+}
+.mvs-row::-webkit-scrollbar {
+  height: 6px;
+}
+.mvs-row::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground) 35%, transparent);
+}
+.mvs-row::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mvs-row-card {
+  flex: 0 0 auto;
+  width: min(320px, 84vw);
+  scroll-snap-align: start;
+  /* mv-card's height:100% resolves to content height inside a flex row and
+     defeats the default stretch — auto lets every card fill the row. */
+  height: auto;
+}
+/* Reserve two lines for title and tagline so card internals line up even
+   when the copy is shorter. */
+.mvs-row-card .mv-card-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.6em; /* 2 lines × 1.3 line-height */
+}
+.mvs-row-card .mv-card-desc {
+  min-height: 3em; /* 2 lines × 1.5 line-height */
+}
+
+/* row nav arrows — desktop only; touch scrolls natively */
+.mvs-row-nav {
+  display: none;
+  gap: 0.4rem;
+  margin-left: 0.25rem;
+}
+@media (min-width: 768px) {
+  .mvs-row-nav {
+    display: inline-flex;
+  }
+}
+.mvs-row-nav button {
+  display: grid;
+  place-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 999px;
+  font-size: 1rem;
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
+}
+.mvs-row-nav button:hover {
+  color: var(--foreground);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+/* ── Scenario card media ─────────────────────────────────────────────── */
+.mvs-media {
+  aspect-ratio: 16 / 9;
+}
+
+/* hue-tinted monogram tile — the last-resort art fallback */
+.mvs-monogram {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  background:
+    radial-gradient(120% 100% at 75% 0%, hsl(var(--hue, 210) 55% 30% / 0.55), transparent 60%),
+    linear-gradient(160deg, hsl(var(--hue, 210) 40% 17%), var(--background));
+}
+.mvs-monogram span {
+  font-family: var(--font-serif, serif);
+  font-size: 3rem;
+  font-weight: 700;
+  color: hsl(var(--hue, 210) 70% 82% / 0.32);
+}
+
+/* bottom scrim keeps the role chip legible over photos and tiles alike */
+.mvs-media-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 45%, rgb(6 10 18 / 0.72));
+}
+.mvs-role-chip {
+  position: absolute;
+  left: 0.8rem;
+  bottom: 0.7rem;
+  max-width: calc(100% - 1.6rem);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  color: #fff;
+  background: rgb(10 18 32 / 0.55);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  backdrop-filter: blur(6px);
+}
+
+/* card footer meta — session length, opposite the CTA */
+.mvs-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}

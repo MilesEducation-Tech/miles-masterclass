@@ -86,13 +86,13 @@ Defined in [`PERM`](../src/app/shared/core/models/admin/admin-rbac.model.ts). **
 | `partner:tracker:read`    | Network admin — seat tracker + vendor users, **no** dashboard |
 | `partner:users:read`      | Sub-company admin — vendor users **only**                     |
 
-**Live roles** (after the prune in `20260714010000_prune_roles_delete_admin_user.sql`): `super_admin`, `partner_network_admin`, `partner_subcompany_admin`.
+**Live roles** (after `20260908000000_multi_role_admins.sql` — one per sidenav section, an admin may hold several): `super_admin`, `seo_manager`, `leads_manager`, `reports_viewer`, `partner_platform_admin` (Miles ops — the v2 super-admin console; also registered as a Django `super`), `partner_network_admin`, `partner_subcompany_admin`, `admin_manager`. The four Django-mapped ones are mutually exclusive. See `ADMIN_PANEL.md` §1.4.
 
 Partner roles hold **no** `dashboard:view`, `reports:*`, `seo:*` or `leads:*` — that isolation is the entire safety mechanism for external partner logins. Do not casually grant a partner role anything outside `partner:*`.
 
 ### 2.2 Layer 2 — Django capabilities (action-level)
 
-Fetched once by [`PartnerAdminMe`](../src/app/admin/partner-platform/shared/services/partner-admin-me.ts) from `GET partners/panel/me/`, backed by a `resource()` keyed on the Supabase access token. **Fails closed**: both an `{ is_partner_admin: false }` body and any thrown error resolve to "not a partner admin".
+Fetched once by [`PartnerAdminMe`](../src/app/admin/partner-platform/shared/services/partner-admin-me.ts) from `GET partners/panel/me/`, backed by a `resource()` keyed on the signed-in admin's user id (not the rotating access token, which used to refetch it every hour from whatever page you were on). **Fails closed**: both an `{ is_partner_admin: false }` body and any thrown error resolve to "not a partner admin".
 
 Surface: `me.role()` (`super | network | firm`), `me.isNetworkAdmin()`, `me.isFirmAdmin()`, `me.network()`, `me.firm()`, `me.can(capability)`.
 
@@ -313,11 +313,11 @@ Read-only apart from sending — there is no create action here any more.
 
 Not a Partner Platform screen, but the front of the same funnel and worth knowing:
 
-The partner marketing pages ([features/partners](../src/app/features/partners)) — `corporate`, `allinial-global`, `mgi-world`, `ctcpa`, `illinois`, `hawaii`, `dscpa`, `bkn` and others — post their enquiry form through [`EnquiryService`](../src/app/shared/core/services/enquiry/enquiry.ts) into the Supabase table `firm_inquiries`, using the **anon-only** `SupabasePublic` client (never the admin client's session) and with no `.select()` so anon can't read leads back.
+The partner marketing pages ([features/partners](../src/app/features/partners)) — `corporate`, `allinial-global`, `mgi-world`, `ctcpa`, `illinois`, `hawaii`, `dscpa`, `bkn` and others — post their enquiry form through [`EnquiryService`](../src/app/shared/core/services/enquiry/enquiry.ts) to `POST partners/leads/` ([`LEADS_API.md`](LEADS_API.md)) — an unauthenticated endpoint, so the call carries `SKIP_AUTH_TOKEN` and no `Authorization` header of any kind.
 
 Those rows surface in **`/admin/leads`**, gated on `LEADS_READ`.
 
-> These enquiries stay in Supabase only. [`SalesforceLead`](../src/app/shared/core/services/salesforce-lead/salesforce-lead.ts) fires on **user-account creation**, and an enquiry creates no account — so a firm enquiry does not reach Salesforce today.
+> These enquiries stay in the Miles backend only. [`SalesforceLead`](../src/app/shared/core/services/salesforce-lead/salesforce-lead.ts) fires on **user-account creation**, and an enquiry creates no account — so a firm enquiry does not reach Salesforce today.
 
 ---
 
@@ -431,7 +431,7 @@ From [PARTNER_PLATFORM_API.md](PARTNER_PLATFORM_API.md) §9:
 Fix these at the source when you touch them:
 
 1. **`X-Admin-Request: 1` is not sent.** It is commented out in [admin-token-interceptor.ts](../src/app/shared/core/interceptors/admin-token/admin-token-interceptor.ts), despite being documented in `partner-platform.model.ts`, `ADMIN_PANEL.md` §12.3 and the `partner-platform` skill. Only `Authorization: Bearer …` goes out.
-2. **The `partner_platform_admin` role no longer exists** — pruned in `20260714010000`. The "Miles ops" persona described in the skill and `ADMIN_PANEL.md` is gone; only `super_admin` reaches the dashboard and network tracker.
+2. ~~**The `partner_platform_admin` role no longer exists**~~ — re-seeded by `20260908000000_multi_role_admins.sql` as the Miles-ops role for the v2 super-admin console (`partner:platform:manage` + `read` + `users:create`).
 3. **Stale UI copy** in Admin Users still says _"Generate & run the SQL … then Register partner admin"_ — that flow was replaced by the one-click `provision_admin_user` RPC.
 4. ~~**`PartnerUser.*_ids` bucket shape**~~ — moot. `partners/panel/users/` sends no course-id buckets at all, so the per-row drill-down is gone and `partner-user.model.ts` is deleted.
 5. **Two stale code comments about the sub-company / standalone-firm roles.** The code is right; the comments are not:
@@ -442,15 +442,27 @@ Fix these at the source when you touch them:
 
 ### 6.3 Declared but never wired
 
-| #   | What                                                                                                                                                                                                                        | Where                                               |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| 7   | **`/admin/reports/courses` has no route** — it is in the sidebar _and_ in `LANDING_ROUTES`, so an admin whose only perm is `reports:courses:read` bounces to the landing redirect                                           | [admin.routes.ts](../src/app/admin/admin.routes.ts) |
-| 8   | **Four of seven Django capabilities are never checked** — `code:create:network`, `seat:usage:read`, and (outside Reports) `report:network:read` / `report:firm:read`. Only `code:create:firm` and `seat:send` gate anything | across the module                                   |
-| 9   | **`user:block` is granted but not used as a gate** — the Block button reads the _Supabase_ `PERM.REPORTS_USERS_BLOCK` instead                                                                                               | `users-table.html`                                  |
-| 10  | **`excludeRolesGuard` and `SidebarItem.excludeRoles`** both exist and are applied to nothing                                                                                                                                | `permission.guard.ts`, `admin-sidebar.ts`           |
-| 11  | **Networks and Partner Codes consult no capability at all** — pure `PARTNER_PLATFORM_MANAGE` + `isSuperAdmin()`                                                                                                             | §3.1, §3.2                                          |
-| 12  | **`users:create` is deliberately assigned to no role**, so only `super_admin` reaches User Onboarding until someone grants it                                                                                               | `20260813000000_user_onboarding_permission.sql`     |
-| 13  | ~~**Two different types both named `PartnerCode`**~~ — closed. Both now read `partners/superadmin/partner-codes/`                                                                                                           | both models                                         |
+| #   | What                                                                                                                                                                             | Where                                               |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 7   | ~~**`/admin/reports/courses` has no route**~~ — closed: the item, landing entry and `reports:courses:read` are gone                                                              | [admin.routes.ts](../src/app/admin/admin.routes.ts) |
+| 8   | ~~**`seat:usage:read` was never granted**~~ — closed: capability picker with `CAPABILITY_DEFAULTS`; `code:create:network` still has no panel endpoint to honour it (backend ask) | across the module                                   |
+| 9   | **`user:block` is granted but not used as a gate** — the Block button reads the _Supabase_ `PERM.REPORTS_USERS_BLOCK` instead                                                    | `users-table.html`                                  |
+| 10  | ~~**`excludeRolesGuard` and `SidebarItem.excludeRoles`**~~ — deleted                                                                                                             | `permission.guard.ts`, `admin-sidebar.ts`           |
+| 11  | **Networks and Partner Codes consult no capability at all** — pure `PARTNER_PLATFORM_MANAGE` (`canLoad()` now checks that PERM, not the `super_admin` slug)                      | §3.1, §3.2                                          |
+| 12  | **`users:create` is deliberately assigned to no role**, so only `super_admin` reaches User Onboarding until someone grants it                                                    | `20260813000000_user_onboarding_permission.sql`     |
+| 13  | ~~**Two different types both named `PartnerCode`**~~ — closed. Both now read `partners/superadmin/partner-codes/`                                                                | both models                                         |
+
+### 6.3a Backend asks (frontend cannot close these)
+
+| #   | Endpoint                                                                                     | Why                                                                                                   |
+| --- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 1   | `PATCH /superadmin/partner-admins/<id>/` `{ capabilities?, is_active?, email? }`             | Partner Admins is read-only; no way to grant `seat:usage:read` to an existing admin or deactivate one |
+| 2   | `DELETE /superadmin/partner-admins/<id>/`                                                    | same                                                                                                  |
+| 3   | `GET /superadmin/seats/?network_id&firm_id&unassigned=1&status&search&page&page_size`        | the assign-seat dialog needs a picker instead of a typed numeric id; supers have no seat view at all  |
+| 4   | `POST /panel/partner-codes/` (superadmin body minus scope; gate `code:create:network\|firm`) | those two capabilities exist but nothing honours them — the overview CTA was removed until this lands |
+| 5   | `GET /superadmin/countries/` (or make `/api/country/` AllowAny)                              | `country_selected` is a FK id on onboard/update but the only country list needs a learner JWT         |
+| 6   | `GET /superadmin/users/` — add `*_id` fields alongside the display names                     | the edit form maps names → ids by label (fragile); `experience_id` can't be prefilled at all          |
+| 7   | `PATCH /superadmin/partner-codes/<id>/`, `PATCH /superadmin/firms/<id>/` (`is_active`, …)    | codes and firms are create-only; `is_active` is displayed but never settable                          |
 
 ### 6.4 Security notes
 
@@ -476,6 +488,10 @@ Deliberate, marked `ponytail:` in code:
 ## 7. Planned: B2B Reports module
 
 > **Status: not built.** This section is the implementation plan. Everything in §1–§6 describes shipped code; nothing here exists yet.
+
+### 7.0 Preview report + PDF (shipped 2026-09-09)
+
+"Preview report" next to Export CSV (both bases) opens `shared/components/dialog/partner-report-preview-dialog` — the client-facing "Partner Learning Report" (executive summary, Courses-by-user, Webinars-by-user, webinar callout) for the page's current scope + dates. Data comes from `PartnerReportFacade.loadPreviewBundle()`: both subjects' `summary/` plus every `users/` page (page_size 200) in one `Promise.all`, built from its own param sets so the page's `subject` signal is untouched. "Download PDF" lazy-loads the existing `HtmlToPdf` service (jspdf + html2canvas-pro stay in the `html-to-pdf` chunk) and captures the `.report` root as one long page; the root pins the learner-facing Masterclass palette (root tokens — dark ground, brand blue, Inter Tight) on itself because the capture canvas is transparent and the clone is re-parented under `<body>`. Tables never scroll (html2canvas clips `overflow:auto`) — columns wrap instead.
 
 ### 7.1 What it is
 

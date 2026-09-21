@@ -1,53 +1,51 @@
 import { isPlatformBrowser } from '@angular/common';
+import { HttpResponse } from '@angular/common/http';
 import {
   computed,
-  effect,
   inject,
   Injectable,
   linkedSignal,
   PLATFORM_ID,
   resource,
   signal,
-  untracked,
 } from '@angular/core';
-import { Supabase } from '../../../../shared/core/services/supabase/supabase';
+import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
+import { ApiClient } from '../../../../shared/core/services/api-client/api-client';
 import { Logger } from '../../../../shared/core/services/logger/logger';
 import { NotificationService } from '../../../../shared/core/services/notification/notification';
+import { fileNameFromContentDisposition, saveBlob } from '../../../../shared/utils/blob-download';
+import { drfErrorMessage } from '../../../../shared/utils/drf-error-message';
 import { withPreviousValue } from '../../../../shared/utils/with-previous-value';
-import { FirmInquiry, LeadStatus, LeadStatusFilter } from '../models/firm-inquiry.model';
+import {
+  adminContext,
+  EMPTY_PAGINATION,
+  partnerBlobErrorMessage,
+  PartnerPagination,
+} from '../../../partner-platform/shared/models/partner-platform.model';
+import {
+  FirmInquiry,
+  LeadPatch,
+  LeadsResponse,
+  LeadStatusFilter,
+} from '../models/firm-inquiry.model';
 
-const TABLE = 'firm_inquiries';
-const PAGE_SIZE = 10;
-// ponytail: client-side CSV, capped — move to a server export endpoint if lead
-// volume ever outgrows this.
-const EXPORT_LIMIT = 5000;
-
-const EXPORT_COLUMNS: { key: keyof FirmInquiry; label: string }[] = [
-  { key: 'full_name', label: 'Name' },
-  { key: 'email', label: 'Email' },
-  { key: 'firm_name', label: 'Firm' },
-  { key: 'job_role', label: 'Job role' },
-  { key: 'help_type', label: 'Help type' },
-  { key: 'enquiry_type', label: 'Enquiry type' },
-  { key: 'status', label: 'Status' },
-  { key: 'notes', label: 'Notes' },
-  { key: 'created_at', label: 'Created' },
-];
-
-function csvCell(value: unknown): string {
-  const s = Array.isArray(value) ? value.join('; ') : value == null ? '' : String(value);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
+const LEADS = 'partners/superadmin/leads/';
+const LEADS_EXPORT = `${LEADS}export-csv/`;
+const leadUrl = (id: number) => `${LEADS}${id}/`;
+/** API default. The page-size param on this backend is `page_count`, not `page_size` (see cpe-tracker.ts). */
+const PAGE_SIZE = 30;
 
 /**
- * Reads (and lightly mutates) the `firm_inquiries` lead table straight from
- * Supabase — these are Supabase tables, not the Django REST API. RLS already
- * gates SELECT by leads:read, UPDATE by leads:write. Mirrors the page-by-page
- * pattern of PartnerUsersFacade but talks to Supabase like AdminUsersFacade.
+ * `/admin/leads` — Django `partners/superadmin/leads/` (docs/LEADS_API.md) with
+ * the Supabase admin token via `adminContext()`. The API answers 403 to any
+ * token that is not a super-admin, regardless of the Supabase `leads:*`
+ * permissions gating the route; the page banner renders the server's reason.
  */
-@Injectable({ providedIn: 'root' })
+// Route-scoped (see admin.routes.ts): the injector dies on navigation, which
+// aborts in-flight resource() loads and stops this page's calls firing elsewhere.
+@Injectable()
 export class LeadsFacade {
-  private readonly supabase = inject(Supabase);
+  private readonly api = inject(ApiClient);
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -56,7 +54,22 @@ export class LeadsFacade {
 
   readonly searchTerm = signal('');
   readonly statusFilter = signal<LeadStatusFilter>('all');
-  readonly pageNumber = signal(1);
+  /** Back to page 1 whenever a filter changes; still writable for `setPage()`. */
+  readonly pageNumber = linkedSignal({
+    source: () => `${this.searchTerm()}|${this.statusFilter()}`,
+    computation: () => 1,
+  });
+  readonly pageSize = PAGE_SIZE;
+  readonly isExporting = signal(false);
+
+  /** Only what the endpoint accepts: no `status` for 'all', no `search` when blank. */
+  private filterParams(): Record<string, string> {
+    const params: Record<string, string> = {};
+    const search = this.searchTerm();
+    if (search) params['search'] = search;
+    if (this.statusFilter() !== 'all') params['status'] = this.statusFilter();
+    return params;
+  }
 
   // ---- Listing resource ----------------------------------------------------
 
@@ -69,59 +82,42 @@ export class LeadsFacade {
         status: this.statusFilter(),
       };
     },
-    loader: async ({ params, abortSignal }) => {
-      const client = await this.supabase.getClient();
-      const from = (params.page - 1) * PAGE_SIZE;
-
-      let q = client
-        .from(TABLE)
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, from + PAGE_SIZE - 1)
-        .abortSignal(abortSignal);
-
-      if (params.status !== 'all') q = q.eq('status', params.status);
-      if (params.search) {
-        const t = params.search;
-        q = q.or(`full_name.ilike.%${t}%,email.ilike.%${t}%,firm_name.ilike.%${t}%`);
-      }
-
-      const { data, count, error } = await q;
-      if (error) throw error;
-      return { rows: (data ?? []) as FirmInquiry[], total: count ?? 0 };
-    },
+    loader: ({ params, abortSignal }) =>
+      firstValueFrom(
+        this.api
+          .get<LeadsResponse>(LEADS, {
+            params: { ...this.filterParams(), page: params.page, page_count: PAGE_SIZE },
+            context: adminContext(),
+          })
+          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
+        { defaultValue: { data: [], pagination_data: EMPTY_PAGINATION } as LeadsResponse },
+      ),
   });
 
   private readonly leadsResource = withPreviousValue(this.rawResource);
 
-  /** Local mirror so optimistic status patches survive stale-while-revalidate. */
+  /** Local mirror so PATCH results survive stale-while-revalidate. */
   readonly rows = linkedSignal({
     source: this.leadsResource.snapshot,
     computation: (snap, previous): FirmInquiry[] => {
       if (snap.status !== 'resolved') return previous?.value ?? [];
-      return snap.value?.rows ?? [];
+      return snap.value?.data ?? [];
     },
   });
 
-  readonly totalCount = computed(() => this.leadsResource.value()?.total ?? 0);
+  readonly pagination = computed<PartnerPagination>(
+    () => this.leadsResource.value()?.pagination_data ?? EMPTY_PAGINATION,
+  );
+  readonly totalCount = computed(() => this.pagination().total_count);
   readonly currentPage = computed(() => this.pageNumber());
-  readonly pageSize = PAGE_SIZE;
+  readonly hasPrev = computed(() => this.pagination().previous_page != null);
+  readonly hasNext = computed(() => this.pagination().next_page != null);
   readonly isLoading = computed(() => this.leadsResource.isLoading());
-  readonly error = computed(() => this.leadsResource.error());
-  readonly hasPrev = computed(() => this.pageNumber() > 1);
-  readonly hasNext = computed(() => this.pageNumber() * PAGE_SIZE < this.totalCount());
-
-  constructor() {
-    // Reset to page 1 whenever the filters change — a result on page 3 with a
-    // new filter would otherwise load stale rows.
-    effect(() => {
-      this.searchTerm();
-      this.statusFilter();
-      untracked(() => {
-        if (this.pageNumber() !== 1) this.pageNumber.set(1);
-      });
-    });
-  }
+  /** DRF `detail` on 401/403, else generic — the banner renders it verbatim. */
+  readonly error = computed(() => {
+    const err = this.leadsResource.error();
+    return err ? drfErrorMessage(err, 'Failed to load leads.') : null;
+  });
 
   // ---- Filter setters ------------------------------------------------------
 
@@ -138,80 +134,61 @@ export class LeadsFacade {
     this.pageNumber.set(page);
   }
 
-  // ---- Status mutation (leads:write) ---------------------------------------
+  reload(): void {
+    this.rawResource.reload();
+  }
 
-  async updateStatus(id: string, status: LeadStatus): Promise<void> {
+  // ---- Mutation (leads:write) ----------------------------------------------
+
+  /**
+   * `PATCH /<id>/` with status and/or notes. The API returns the updated lead,
+   * which replaces the row in place — no refetch.
+   */
+  async updateLead(id: number, patch: LeadPatch): Promise<boolean> {
     try {
-      const client = await this.supabase.getClient();
-      const { error } = await client
-        .from(TABLE)
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', id);
-      if (error) throw error;
-
-      this.rows.update((rows) => rows.map((r) => (r.id === id ? { ...r, status } : r)));
-      this.notification.success('Status updated', `Lead marked as ${status}.`);
-    } catch (err) {
-      this.logger.error('[LeadsFacade] updateStatus failed', err);
-      this.notification.error(
-        'Update failed',
-        err instanceof Error ? err.message : 'Please try again.',
+      const lead = await firstValueFrom(
+        this.api.patch<FirmInquiry>(leadUrl(id), patch, { context: adminContext() }),
       );
+      this.rows.update((rows) => rows.map((r) => (r.id === id ? lead : r)));
+      this.notification.success(
+        'Lead updated',
+        patch.status ? `Lead marked as ${lead.status}.` : 'Notes saved.',
+      );
+      return true;
+    } catch (err) {
+      this.logger.error('[LeadsFacade] updateLead failed', err);
+      this.notification.error('Update failed', drfErrorMessage(err));
+      return false;
     }
   }
 
   // ---- CSV export (leads:export) -------------------------------------------
 
+  /** Server-rendered CSV with the current filters, no pagination. */
   async exportCsv(): Promise<void> {
-    if (!this.isBrowser) return;
+    if (!this.isBrowser || this.isExporting()) return;
+    this.isExporting.set(true);
     try {
-      const client = await this.supabase.getClient();
-      let q = client
-        .from(TABLE)
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(EXPORT_LIMIT);
-
-      if (this.statusFilter() !== 'all') q = q.eq('status', this.statusFilter());
-      if (this.searchTerm()) {
-        const t = this.searchTerm();
-        q = q.or(`full_name.ilike.%${t}%,email.ilike.%${t}%,firm_name.ilike.%${t}%`);
-      }
-
-      const { data, error } = await q;
-      if (error) throw error;
-
-      const rows = (data ?? []) as FirmInquiry[];
-      if (!rows.length) {
-        this.notification.info('Nothing to export', 'No leads match the current filter.');
-        return;
-      }
-
-      const header = EXPORT_COLUMNS.map((c) => c.label).join(',');
-      const body = rows
-        .map((row) => EXPORT_COLUMNS.map((c) => csvCell(row[c.key])).join(','))
-        .join('\n');
-      this.download(`${header}\n${body}`, `leads-${new Date().toISOString().slice(0, 10)}.csv`);
+      const res = await firstValueFrom(
+        this.api.get<HttpResponse<Blob>>(LEADS_EXPORT, {
+          params: this.filterParams(),
+          responseType: 'blob',
+          observe: 'response',
+          context: adminContext(),
+        }),
+      );
+      const blob = res.body;
+      if (!blob) throw new Error('Empty CSV response.');
+      saveBlob(
+        blob,
+        fileNameFromContentDisposition(res.headers.get('content-disposition'), 'Leads.csv'),
+      );
+      this.notification.success('Export ready', 'Your leads CSV has been downloaded.');
     } catch (err) {
       this.logger.error('[LeadsFacade] exportCsv failed', err);
-      this.notification.error(
-        'Export failed',
-        err instanceof Error ? err.message : 'Please try again.',
-      );
+      this.notification.error('Export failed', await partnerBlobErrorMessage(err));
+    } finally {
+      this.isExporting.set(false);
     }
-  }
-
-  private download(content: string, filename: string): void {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  reload(): void {
-    this.rawResource.reload();
   }
 }

@@ -1,0 +1,305 @@
+:host {
+  display: block;
+}
+
+/*
+ * The printable document, in the learner-facing Masterclass theme (the `:root`
+ * tokens in styles.css — dark ground, brand blue, Inter Tight), NOT the admin
+ * navy. Everything — palette, font, background — is pinned on `.report` itself:
+ * HtmlToPdf clones this node under <body> at 1280px, so nothing inherited from
+ * :host or the dialog survives the capture, and the canvas is transparent
+ * unless we paint it. Fallbacks mirror styles.css so the clone never goes
+ * unstyled. No color-mix()/oklch — html2canvas-pro can't parse them.
+ */
+.report {
+  --bg: var(--background, rgb(14, 14, 14));
+  --surface: var(--secondary, rgb(38, 38, 38));
+  --border: var(--border, rgb(64, 64, 64));
+  --border-strong: rgb(96, 96, 96);
+  --text: var(--foreground, rgb(229, 229, 229));
+  --text-muted: var(--muted-foreground, rgb(163, 163, 163));
+  --text-faint: rgb(120, 120, 120);
+  --accent: var(--accent, rgb(42, 133, 255));
+  --accent-strong: var(--accent-foreground, rgb(191, 219, 254));
+  --accent-soft-bg: rgba(42, 133, 255, 0.14);
+  --accent-soft-border: rgba(42, 133, 255, 0.4);
+  --success: rgb(74, 222, 128);
+  --success-bg: rgba(74, 222, 128, 0.14);
+  --warning: var(--mm-warn, #f6bc53);
+  --warning-bg: rgba(246, 188, 83, 0.14);
+  --pill-bg: var(--secondary, rgb(38, 38, 38));
+  --pill-text: var(--muted-foreground, rgb(163, 163, 163));
+  --track: rgb(48, 48, 48);
+  --font-body: var(--font-numeric, 'Inter Tight'), Inter, system-ui, sans-serif;
+  --font-figures: var(--font-numeric, 'Inter Tight'), Inter, system-ui, sans-serif;
+
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  box-sizing: border-box;
+}
+.report *,
+.report *::before,
+.report *::after {
+  box-sizing: border-box;
+}
+.report .page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 48px 40px 72px;
+}
+.report .eyebrow {
+  font-family: var(--font-figures);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ---- header ---- */
+.report header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--text);
+}
+.report header h1 {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 10px 0 6px;
+  text-wrap: balance;
+}
+.report .subtitle {
+  color: var(--text-muted);
+  font-size: 14.5px;
+  margin: 0 0 14px;
+}
+.report .badge {
+  display: inline-block;
+  font-family: var(--font-figures);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--accent-strong);
+  background: var(--accent-soft-bg);
+  border: 1px solid var(--accent-soft-border);
+  padding: 5px 10px;
+  border-radius: 3px;
+}
+.report .header-meta {
+  text-align: right;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.report .header-meta .val {
+  display: block;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 2px;
+}
+.report .header-meta .block {
+  margin-bottom: 14px;
+}
+.report .header-meta .block:last-child {
+  margin-bottom: 0;
+}
+
+/* ---- sections ---- */
+.report section {
+  margin-top: 44px;
+}
+.report section > .eyebrow {
+  margin-bottom: 8px;
+  display: block;
+}
+.report section h2 {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  text-wrap: balance;
+}
+.report section > p.lede {
+  color: var(--text-muted);
+  max-width: 66ch;
+  margin: 0 0 22px;
+}
+
+/* ---- stat tiles ---- */
+.report .stats {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+.report .stat {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 16px 14px;
+  background: var(--surface);
+}
+.report .stat.highlight {
+  background: var(--accent-soft-bg);
+  border-color: var(--accent-soft-border);
+}
+.report .stat .num {
+  font-family: var(--font-figures);
+  font-variant-numeric: tabular-nums;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text);
+}
+.report .stat .label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---- tables ----
+ * Never scroll: html2canvas renders an overflow:auto box clipped, so a wide
+ * table would be cut off in the PDF. Columns wrap instead and the table always
+ * fits its container (the dialog's ~960px, the capture's 1280px). */
+.report .table-wrap {
+  overflow: visible;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.report table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+.report thead th {
+  text-align: left;
+  font-family: var(--font-figures);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--pill-bg);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: normal;
+  vertical-align: bottom;
+}
+.report tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.report tbody tr:last-child td {
+  border-bottom: none;
+}
+/* literal rgba because html2canvas lacks color-mix() */
+.report tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+.report td.name {
+  font-weight: 600;
+}
+.report td.email {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.report td.num {
+  font-family: var(--font-figures);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.report th.num {
+  text-align: right;
+}
+.report td.empty {
+  text-align: center;
+  color: var(--text-faint);
+  white-space: normal;
+}
+
+.report .pill {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--pill-bg);
+  color: var(--pill-text);
+}
+.report .pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.report .pill.yes {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.report .pill.not-started {
+  background: var(--pill-bg);
+  color: var(--text-faint);
+}
+
+/* ---- webinar callout ---- */
+.report .callout {
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  padding: 18px 20px;
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  align-items: baseline;
+}
+.report .callout .metric {
+  font-weight: 700;
+  color: var(--text);
+}
+.report .callout .metric .mono-num {
+  font-family: var(--font-figures);
+}
+.report .callout p {
+  margin: 10px 0 0;
+  width: 100%;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.report footer {
+  margin-top: 56px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+@media (max-width: 760px) {
+  .report .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .report header {
+    flex-direction: column;
+  }
+  .report .header-meta {
+    text-align: left;
+  }
+}

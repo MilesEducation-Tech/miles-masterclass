@@ -1,0 +1,262 @@
+<div class="w-full sm:aspect-15/7 aspect-9/20 relative overflow-hidden">
+  @let courseDetails = masterclass.courseDetails()!;
+  <div
+    class="w-full h-full relative flex sm:justify-between justify-center items-end sm:px-20 px-4"
+  >
+    <div
+      class="absolute right-0 top-0 sm:h-full max-sm:h-full sm:aspect-video max-sm:aspect-9/16 overflow-hidden z-0 blur-sm"
+    >
+      <img [priority]="true" [ngSrc]="courseDetails.thumbnail" [alt]="courseDetails.title" fill />
+    </div>
+    <div
+      class="w-full sm:w-1/2 h-full sm:bg-linear-to-r max-sm:bg-linear-to-t from-background to-transparent pointer-events-none sm:via-85% sm:via-background/40 sm:from-40% max-sm:from-20% max-sm:to-50% z-1 flex flex-col space-y-6 items-end justify-end sm:pb-10"
+    >
+      <div class="flex flex-col sm:space-y-6 space-y-3 justify-start pointer-events-auto w-full">
+        <div class="w-11/12 sm:w-2/3 flex flex-col sm:space-y-3 space-y-1.5">
+          <app-categories-list
+            class="subtitle sm:text-xl text-lg! w-full"
+            [items]="courseDetails.fields_of_study ?? []"
+          />
+
+          <div class="h-1 w-10 bg-white rounded-full"></div>
+          <h1 class="title sm:text-5xl text-3xl!">{{ courseDetails.title }}</h1>
+          <h2 class="subtitle sm:text-xl text-lg!">By {{ instructorNames().join(', ') }}</h2>
+          <div class="flex items-center space-x-2">
+            <h3 class="subtitle bg-transparent border border-input rounded-lg px-2 py-1 text-sm!">
+              {{ courseDetails.fields_of_study | totalCpeCredits: courseDetails.class_credits }} CPE
+            </h3>
+            <app-caira-credly-badge
+              variant="inline"
+              [includedForCaira]="courseDetails.included_for_caira"
+              [hasIndividualBadge]="courseDetails.has_individual_badge"
+              [cairaLevel]="courseDetails.caira_level"
+            />
+          </div>
+          @if (!!!!courseDetails.cpe_mode_details) {
+            <div class="flex items-center space-x-4">
+              <app-button
+                variant="ghost"
+                [class]="
+                  cn(
+                    'rounded-full overflow-hidden',
+                    !!courseDetails.cpe_mode_details.cpe_mode
+                      ? 'bg-yellow-600/20 text-yellow-600 border border-yellow-600'
+                      : 'bg-accent/20 text-accent border border-accent'
+                  )
+                "
+                >{{
+                  !!courseDetails.cpe_mode_details.cpe_mode ? 'CPE Mode' : 'Preview Mode'
+                }}</app-button
+              >
+              @if (masterclass.courseDetails()?.user_assessment_details?.status !== 'Exam_Passed') {
+                <app-button
+                  variant="secondary"
+                  class="rounded-full overflow-hidden"
+                  (clicked)="masterclass.toggleCpeMode(!courseDetails.cpe_mode_details.cpe_mode)"
+                  ><ng-icon name="matRestartAltRound" aria-hidden="true" size="24"
+                /></app-button>
+              }
+            </div>
+          }
+          <p class="description">{{ courseDetails.course_short_overview }}</p>
+          @if (courseDetails.is_free) {
+            <div class="flex items-center space-x-2">
+              <p class="line-through text-destructive">
+                {{ courseDetails.price_detail.currency_symbol
+                }}{{ courseDetails.price_detail.price }}
+              </p>
+              <p class="font-semibold text-accent">Free</p>
+            </div>
+          } @else if (
+            courseDetails.can_purchase_individually || courseDetails.is_subscription_excluded
+          ) {
+            <div class="flex items-center gap-2">
+              @if (courseDetails.active_plan) {
+                <div
+                  class="bg-success/20 text-success border-success border px-2 py-0.5 rounded-md text-sm font-semibold"
+                >
+                  Purchased
+                </div>
+              }
+              @if (
+                courseDetails.price_detail.price &&
+                courseDetails.price_detail.selling_price &&
+                courseDetails.price_detail.price !== courseDetails.price_detail.selling_price
+              ) {
+                <!-- Discounted price: show original with strikethrough and selling price -->
+                <p class="line-through text-destructive">
+                  {{ courseDetails.price_detail.currency_symbol
+                  }}{{ courseDetails.price_detail.price }}
+                </p>
+                <p class="font-semibold">
+                  {{ courseDetails.price_detail.currency_symbol
+                  }}{{ courseDetails.price_detail.selling_price }}
+                </p>
+              } @else if (courseDetails.price_detail.selling_price) {
+                <!-- Only selling price or same as original -->
+                <p class="font-semibold">
+                  {{ courseDetails.price_detail.currency_symbol
+                  }}{{ courseDetails.price_detail.selling_price }}
+                </p>
+              } @else if (courseDetails.price_detail.price) {
+                <!-- Only original price -->
+                <p class="font-semibold">
+                  {{ courseDetails.price_detail.currency_symbol
+                  }}{{ courseDetails.price_detail.price }}
+                </p>
+              } @else {
+                <!-- Free course -->
+                <div class="flex items-center space-x-2">
+                  <p class="line-through text-destructive">
+                    {{ courseDetails.price_detail.currency_symbol
+                    }}{{ courseDetails.price_detail.price }}
+                  </p>
+                  <p class="font-semibold text-accent">Free</p>
+                </div>
+              }
+            </div>
+          }
+        </div>
+        @if (masterclass.currentProgress() > 0 && masterclass.currentProgress() < 100) {
+          <div class="flex sm:w-1/2 w-11/12 flex-col space-y-1">
+            <app-progress
+              [value]="masterclass.currentProgress()"
+              variant="success"
+              size="sm"
+              label="none"
+              ariaLabel="Course completion progress"
+            />
+            <div class="flex w-full justify-end">
+              <p class="text-sm text-muted-foreground">
+                {{ masterclass.currentProgress() }} % Completed
+              </p>
+            </div>
+          </div>
+        }
+        <div class="flex items-center">
+          @if (!!masterclass.courseDetails()?.user_feedback_details?.user_feedback_submitted) {
+            <app-rating-star
+              [value]="masterclass.courseDetails()?.user_feedback_details?.user_rating!"
+              [isReadonly]="true"
+              size="1.5rem"
+              containerClass="grid grid-cols-5 w-1/2"
+              starClass="flex justify-center items-center"
+            ></app-rating-star>
+          } @else if (
+            !masterclass.courseDetails()?.user_feedback_details?.user_feedback_submitted &&
+            masterclass.courseDetails()?.user_assessment_details?.status === 'Exam_Passed'
+          ) {
+            <app-button
+              variant="ghost"
+              class="text-black rounded-lg bg-amber-400"
+              (clicked)="masterclass.submitFeedback()"
+              >Submit Feedback
+            </app-button>
+          } @else if (
+            masterclass.courseDetails()?.cpe_mode_details?.cpe_mode &&
+            masterclass.courseDetails()?.all_classes_completed
+          ) {
+            <app-button
+              variant="default"
+              class="rounded-lg"
+              (clicked)="masterclass.startFinalAssessment(courseId()!, courseTitle()!, 'podcast')"
+              >{{
+                masterclass.courseDetails()?.user_assessment_details?.status === 'Retake'
+                  ? 'Retake'
+                  : 'Take'
+              }}
+              Final Assessment
+            </app-button>
+          } @else {
+            <app-button variant="default" class="rounded-lg" (clicked)="masterclass.launchCourse()"
+              >Watch Now
+            </app-button>
+          }
+        </div>
+        <div class="flex space-x-4">
+          @if (courseDetails.course_created_date && courseDetails.course_updated_date) {
+            Created At {{ courseDetails.course_created_date | date }}&nbsp; | &nbsp;Updated At
+            {{ courseDetails.course_updated_date | date }}
+          } @else if (courseDetails.course_created_date) {
+            Created At {{ courseDetails.course_created_date | date }}
+          } @else if (courseDetails.course_updated_date) {
+            Updated At
+            {{ courseDetails.course_updated_date | date }}
+          }
+        </div>
+        <div class="flex sm:space-x-4 space-x-2">
+          <app-button
+            variant="ghost"
+            class="text-white flex p-1 aspect-square flex-col justify-center items-center bg-card rounded-2xl"
+            (clicked)="openVideoDialog('trailer')"
+            ><ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />
+            <!-- <span>Trailer</span> -->
+          </app-button>
+          <app-button
+            variant="ghost"
+            class="text-white flex p-1 aspect-square flex-col justify-center items-center bg-card rounded-2xl"
+            (clicked)="openVideoDialog('sample')"
+            ><ng-icon name="phosphorCards" size="24" aria-hidden="true" />
+            <!-- <span>Sample</span> -->
+          </app-button>
+          <app-button
+            variant="ghost"
+            class="text-white flex p-1 aspect-square flex-col justify-center items-center bg-card rounded-2xl"
+            [attr.aria-label]="courseDetails.added_bookmark ? 'Remove bookmark' : 'Add bookmark'"
+            (clicked)="toggleBookmark()"
+            ><ng-icon
+              [name]="courseDetails.added_bookmark ? 'matBookmarkRound' : 'matBookmarkBorderRound'"
+              size="24"
+              aria-hidden="true"
+            />
+            <!-- <span>Bookmark</span> -->
+          </app-button>
+          @if (
+            !courseDetails.active_plan &&
+            (courseDetails.is_subscription_excluded || courseDetails.can_purchase_individually)
+          ) {
+            <app-button
+              variant="ghost"
+              class="text-white flex p-1 aspect-square flex-col justify-center items-center bg-card rounded-2xl"
+              [attr.aria-label]="courseDetails.is_added_to_cart ? 'Open cart' : 'Add to cart'"
+              (clicked)="addToCart(courseDetails.id, courseDetails.is_added_to_cart)"
+              ><ng-icon
+                [name]="
+                  courseDetails.is_added_to_cart
+                    ? 'matShoppingCartRound'
+                    : 'matAddShoppingCartRound'
+                "
+                size="24"
+                aria-hidden="true"
+              />
+              <!-- <span>Add To Cart</span> -->
+            </app-button>
+          }
+          <app-button
+            variant="ghost"
+            class="text-white flex p-1 aspect-square flex-col justify-center items-center bg-card rounded-2xl"
+            (clicked)="masterclass.openShareDialog()"
+            ><ng-icon name="phosphorShareFatFill" size="24" aria-hidden="true" />
+            <!-- <span>Share</span> -->
+          </app-button>
+          <app-button
+            variant="ghost"
+            [disabled]="!!!courseDetails.user_feedback_details.user_feedback_submitted"
+            class="text-white flex p-1 aspect-square flex-col justify-center items-center bg-card rounded-2xl"
+            (clicked)="masterclass.openCertificateDownloadDialog()"
+            ><ng-icon name="phosphorDownloadSimpleFill" size="24" aria-hidden="true" />
+            <!-- <span>Download</span> -->
+          </app-button>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-end justify-end relative mb- w-2xs max-sm:hidden sm:pb-10">
+      <app-record-disk
+        class="w-full h-auto aspect-square block cursor-pointer"
+        [coverImage]="courseDetails.square_thumbnail!"
+        [diskImage]="courseDetails.square_thumbnail!"
+        [config]="{ animate: true, direction: 'left', slideOutPercent: 45, spinDuration: '3.5s' }"
+      />
+    </div>
+  </div>
+</div>

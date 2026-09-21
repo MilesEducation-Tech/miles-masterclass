@@ -1,0 +1,56 @@
+:host {
+  display: inline-flex;
+}
+
+.phone-frame {
+  box-shadow:
+    0 50px 90px -30px rgb(0 0 0 / 0.7),
+    0 0 0 1.5px rgb(255 255 255 / 0.08),
+    inset 0 0 0 2px rgb(255 255 255 / 0.05),
+    0 0 60px rgb(var(--accent-rgb) / 0.18);
+}
+
+.phone-side-btn {
+  position: absolute;
+  right: -2px;
+  width: 3px;
+  background: #0b0807;
+  border-radius: 2px;
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes swipe-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.06);
+  }
+}
+
+.float-up {
+  animation: float-up 28s linear infinite;
+  will-change: transform;
+}
+
+.swipe-pulse {
+  animation: swipe-pulse 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float-up,
+  .swipe-pulse {
+    animation: none;
+  }
+}

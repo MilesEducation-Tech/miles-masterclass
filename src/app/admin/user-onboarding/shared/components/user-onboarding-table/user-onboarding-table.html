@@ -67,23 +67,35 @@
                     variant="outline"
                     size="sm"
                     class="text-white"
+                    [ariaLabel]="'View details for ' + row.email"
+                    (clicked)="view.emit(row)"
+                  >
+                    View
+                  </app-button>
+                  <app-button
+                    variant="outline"
+                    size="sm"
+                    class="text-white"
                     [ariaLabel]="'Edit ' + row.email"
                     (clicked)="edit.emit(row)"
                   >
                     Edit
                   </app-button>
-                  <!-- Payment is already recorded once the subscription is active. -->
-                  @if (!row.is_subscribed) {
-                    <app-button
-                      variant="outline"
-                      size="sm"
-                      class="text-white"
-                      [ariaLabel]="'Record offline payment for ' + row.email"
-                      (clicked)="recordPayment.emit(row)"
-                    >
-                      Record payment
-                    </app-button>
-                  }
+                  <!-- Subscribed: attach an invoice / note to the existing transaction.
+                       Not yet: this proof IS the payment and grants the subscription. -->
+                  <app-button
+                    variant="outline"
+                    size="sm"
+                    class="text-white"
+                    [ariaLabel]="
+                      (row.is_subscribed
+                        ? 'Attach invoice or note for '
+                        : 'Record offline payment for ') + row.email
+                    "
+                    (clicked)="recordPayment.emit(row)"
+                  >
+                    {{ row.is_subscribed ? 'Attach invoice / note' : 'Record payment' }}
+                  </app-button>
                 </div>
               </td>
             </tr>

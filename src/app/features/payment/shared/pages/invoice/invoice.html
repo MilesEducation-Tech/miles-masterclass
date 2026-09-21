@@ -1,0 +1,197 @@
+<div
+  [class]="isInvoice() ? 'md:w-9/12 w-11/12 mx-auto mt-32' : 'box w-10/12 mx-auto max-sm:w-full'"
+  class="rounded-2xl overflow-hidden"
+>
+  <div
+    #invoiceContent
+    class="bg-linear-to-br from-[#507192] via-[#34495F] to-[#18222C] flex flex-col items-center text-white px-6 h-full mx-auto space-y-6 pt-10 pb-20"
+  >
+    @if (showSkeleton()) {
+      <!-- Mirrors the loaded layout below so nothing shifts when the order arrives -->
+      <div class="flex w-full flex-col items-center space-y-3" aria-hidden="true">
+        <div class="animate-pulse bg-white/10 size-36 rounded-full"></div>
+        <div class="animate-pulse bg-white/10 rounded h-14 w-2/5"></div>
+        <div class="animate-pulse bg-white/10 rounded h-5 w-3/5"></div>
+      </div>
+
+      <div class="flex w-full flex-col space-y-4 rounded-2xl bg-white/5 p-6" aria-hidden="true">
+        <div class="animate-pulse bg-white/10 rounded h-8 w-48"></div>
+        @for (row of skeletonRows; track $index) {
+          <div class="flex w-full justify-between">
+            <div class="animate-pulse bg-white/10 rounded h-4 w-36"></div>
+            <div class="animate-pulse bg-white/10 rounded h-4 w-28"></div>
+          </div>
+        }
+      </div>
+
+      <div class="w-full space-y-4" aria-hidden="true">
+        <div class="animate-pulse bg-white/10 rounded h-8 w-56"></div>
+        <hr class="border-white/10" />
+        @for (item of skeletonRows; track $index) {
+          <div class="flex w-full justify-between">
+            <div class="flex sm:space-x-4 space-x-2">
+              <div
+                class="animate-pulse bg-white/10 aspect-video sm:w-[200px] w-[150px] rounded-xl"
+              ></div>
+              <div class="flex flex-col space-y-2">
+                <div class="animate-pulse bg-white/10 rounded h-3 w-32"></div>
+                <div class="animate-pulse bg-white/10 rounded h-4 w-56"></div>
+                <div class="animate-pulse bg-white/10 rounded h-3 w-24"></div>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1.5">
+              <div class="animate-pulse bg-white/10 rounded h-4 w-24"></div>
+              <div class="animate-pulse bg-white/10 rounded h-3 w-16"></div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="flex w-full justify-end" aria-hidden="true">
+        <div class="w-full max-w-xs space-y-4 rounded-2xl bg-white/5 p-6">
+          <div class="flex justify-between">
+            <div class="animate-pulse bg-white/10 rounded h-4 w-24"></div>
+            <div class="animate-pulse bg-white/10 rounded h-4 w-16"></div>
+          </div>
+          <div class="flex justify-between">
+            <div class="animate-pulse bg-white/10 rounded h-3 w-28"></div>
+            <div class="animate-pulse bg-white/10 rounded h-3 w-14"></div>
+          </div>
+          <div class="flex justify-between">
+            <div class="animate-pulse bg-white/10 rounded h-5 w-24"></div>
+            <div class="animate-pulse bg-white/10 rounded h-5 w-20"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex w-full flex-col space-y-4" aria-hidden="true">
+        <div class="animate-pulse bg-white/10 rounded h-8 w-52"></div>
+        <div class="flex w-full sm:space-x-6 space-y-4 max-sm:flex-col">
+          <div class="basis-1/2 space-y-2">
+            <div class="animate-pulse bg-white/10 rounded h-4 w-32"></div>
+            <div class="animate-pulse bg-white/10 rounded h-3 w-56"></div>
+            <div class="animate-pulse bg-white/10 rounded h-3 w-40"></div>
+          </div>
+          <div class="basis-1/2 space-y-2">
+            <div class="animate-pulse bg-white/10 rounded h-4 w-32"></div>
+            <div class="animate-pulse bg-white/10 rounded h-3 w-48"></div>
+            <div class="animate-pulse bg-white/10 rounded h-3 w-64"></div>
+          </div>
+        </div>
+      </div>
+
+      <span class="sr-only" role="status">Loading your invoice…</span>
+    } @else if (isInvoice()) {
+      <app-payment-status [status]="paymentStatus()" />
+      <div
+        class="flex w-full flex-col space-y-4 bg-linear-to-tl from-[#18222C] via-[#06345B] to-[#6297E3] rounded-2xl p-6"
+      >
+        <div class="flex w-full justify-between no-print">
+          <p class="text-2xl text-white font-semibold">Order Details</p>
+          <app-button variant="default" class="gap-2" (clicked)="downloadInvoice()">
+            <ng-icon name="heroArrowDownTray" size="18" aria-hidden="true" />
+            Download Invoice
+          </app-button>
+        </div>
+        <div class="flex w-full justify-between">
+          <p>Order Number</p>
+          <p>#{{ orderId() }}</p>
+        </div>
+        <div class="flex w-full justify-between">
+          <p>Transaction Number</p>
+          <p>{{ orderData()?.transcation_details?.payment_id }}</p>
+        </div>
+        <div class="flex w-full justify-between">
+          <p>Transaction Date</p>
+          <p>{{ orderData()?.created_at | date: 'medium' }}</p>
+        </div>
+        <div class="flex w-full justify-between">
+          <p>Payment Mode</p>
+          <p>{{ orderData()?.transcation_details?.payment_mode }}</p>
+        </div>
+      </div>
+    }
+    @if (!showSkeleton()) {
+      <div class="w-full space-y-4">
+        <p class="text-2xl text-white font-semibold">
+          @if (isInvoice()) {
+            Courses Purchased
+          } @else {
+            {{ itemCount() > 1 ? `${itemCount()} Items` : `${itemCount()} Item` }} Added
+          }
+        </p>
+        <hr />
+        @for (item of cartItems(); track item.id) {
+          <div class="flex flex-col space-y-6">
+            <app-cart-item
+              [item]="item"
+              [currencyCode]="currencyCode()"
+              [config]="{ showDelete: false }"
+            />
+          </div>
+        }
+      </div>
+      <div class="flex w-full justify-end">
+        <app-price-overview />
+      </div>
+      <div class="flex w-full flex-col space-y-4">
+        <p class="text-2xl text-white font-semibold">Customer Details</p>
+        <div class="flex w-full sm:space-x-6 space-y-4 max-sm:flex-col">
+          <div class="basis-1/2 space-y-1.5 flex flex-col">
+            <p class="text-gray-300 font-semibold">Contact details</p>
+            <p class="font-normal">Email Id: {{ userData().email }}</p>
+            <p class="font-normal">Phone No: {{ userData().mobile }}</p>
+          </div>
+          @if (formattedAddress()) {
+            <div class="basis-1/2 space-y-1.5 flex flex-col">
+              <p class="text-gray-300 font-semibold">Billing address</p>
+              <p class="font-normal">{{ userData().name }}</p>
+              <p class="font-normal">{{ formattedAddress() }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+    @if (!isInvoice()) {
+      <div class="flex w-full flex-col space-y-4">
+        <p class="text-2xl text-white font-semibold">Terms & Conditions</p>
+        <div class="flex space-x-1 items-center justify-start m-0">
+          <input
+            type="checkbox"
+            name="terms"
+            id="terms"
+            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+            [checked]="termsAccepted()"
+            (change)="termsAccepted.set($any($event.target).checked)"
+          />
+          <label for="terms"
+            >By proceeding with the payment, you agree to our
+            <a
+              [routerLink]="termsRoute()"
+              class="text-accent underline"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Terms &amp; Conditions</a
+            >
+            and
+            <a
+              [routerLink]="faqRoute()"
+              class="text-accent underline"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Payments, Refunds &amp; Cancellation Policy</a
+            >.</label
+          >
+        </div>
+      </div>
+      <div class="flex justify-between w-full items-center mt-auto">
+        <app-button variant="ghost" [routerLink]="cartRoute()">
+          <ng-icon name="heroChevronLeft" size="18" /> Back to Cart
+        </app-button>
+        <app-button variant="default" [disabled]="!termsAccepted()" (clicked)="proceedToPayment()">
+          Proceed to Payment
+        </app-button>
+      </div>
+    } @else {}
+  </div>
+</div>

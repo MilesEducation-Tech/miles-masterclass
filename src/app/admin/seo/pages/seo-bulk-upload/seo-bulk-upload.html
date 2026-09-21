@@ -15,14 +15,14 @@
         flagged rows inline, then confirm. Existing slugs are overwritten.
       </p>
     </div>
-    <button
-      type="button"
-      class="flex items-center gap-2 px-5 py-2.5 bg-slate-800/80 border border-slate-700/60 rounded-xl text-slate-200 text-sm font-semibold hover:bg-slate-700/80 transition-all whitespace-nowrap"
-      (click)="downloadTemplate()"
+    <app-button
+      variant="outline"
+      class="gap-2 rounded-xl bg-slate-800/80 border-slate-700/60 text-slate-200 font-semibold hover:bg-slate-700/80"
+      (clicked)="downloadTemplate()"
     >
       <ng-icon name="heroDocumentArrowDown" class="text-lg"></ng-icon>
       Download template
-    </button>
+    </app-button>
   </div>
 
   <!-- Upload control -->
@@ -150,98 +150,100 @@
                   }
                 </td>
                 <td class="px-3 py-2">
-                  <input
+                  <app-aria-input
+                    [id]="'bulk-slug-' + $index"
                     type="text"
-                    class="w-full px-2 py-1.5 bg-slate-900/50 border border-slate-700/60 rounded-lg text-slate-100 text-xs font-mono focus:outline-none focus:border-indigo-500"
+                    label="Page slug"
+                    class="font-mono"
                     [value]="row.page.page_slug"
-                    (input)="updateText($index, 'page_slug', $any($event.target).value)"
-                    aria-label="Page slug"
+                    (valueChange)="updateText($index, 'page_slug', str($event))"
                   />
                 </td>
                 <td class="px-3 py-2">
-                  <input
+                  <app-aria-input
+                    [id]="'bulk-name-' + $index"
                     type="text"
-                    class="w-full px-2 py-1.5 bg-slate-900/50 border border-slate-700/60 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-indigo-500"
+                    label="Page name"
                     [value]="row.page.page_name"
-                    (input)="updateText($index, 'page_name', $any($event.target).value)"
-                    aria-label="Page name"
+                    (valueChange)="updateText($index, 'page_name', str($event))"
                   />
                 </td>
                 <td class="px-3 py-2">
-                  <select
-                    class="px-2 py-1.5 bg-slate-900/50 border border-slate-700/60 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer"
+                  <app-aria-select
+                    [id]="'bulk-type-' + $index"
+                    label="Page type"
+                    class="w-32"
+                    [options]="pageTypeOptions"
                     [value]="row.page.page_type"
-                    (change)="updateType($index, $any($event.target).value)"
-                    aria-label="Page type"
-                  >
-                    <option value="static">static</option>
-                    <option value="dynamic">dynamic</option>
-                  </select>
+                    (valueChange)="updateType($index, str($event))"
+                  />
                 </td>
                 <td class="px-3 py-2 text-center">
-                  <button
-                    type="button"
-                    class="px-2 py-1 rounded-lg text-[0.65rem] font-bold border transition-all"
+                  <app-button
+                    variant="outline"
+                    size="sm"
                     [class]="
                       row.page.is_active
-                        ? 'text-emerald-400 border-emerald-400/30 bg-emerald-500/10'
-                        : 'text-slate-400 border-slate-700/50 bg-slate-900/50'
+                        ? 'h-auto px-2 py-1 rounded-lg text-[0.65rem] font-bold text-emerald-400 border-emerald-400/30 bg-emerald-500/10'
+                        : 'h-auto px-2 py-1 rounded-lg text-[0.65rem] font-bold text-slate-400 border-slate-700/50 bg-slate-900/50'
                     "
-                    (click)="toggleActive($index)"
                     [attr.aria-pressed]="row.page.is_active"
+                    (clicked)="toggleActive($index)"
                   >
                     {{ row.page.is_active ? 'On' : 'Off' }}
-                  </button>
+                  </app-button>
                 </td>
                 <td class="px-3 py-2">
-                  <input
+                  <app-aria-input
+                    [id]="'bulk-title-' + $index"
                     type="text"
-                    class="w-full px-2 py-1.5 bg-slate-900/50 border border-slate-700/60 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-indigo-500"
+                    label="Title"
                     [value]="row.page.title"
-                    (input)="updateText($index, 'title', $any($event.target).value)"
-                    aria-label="Title"
+                    (valueChange)="updateText($index, 'title', str($event))"
                   />
                 </td>
                 <td class="px-3 py-2">
-                  <textarea
-                    rows="2"
-                    class="w-full px-2 py-1.5 bg-slate-900/50 border border-slate-700/60 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-indigo-500 resize-y"
+                  <app-aria-input
+                    [id]="'bulk-description-' + $index"
+                    type="textarea"
+                    label="Description"
+                    [rows]="2"
                     [value]="row.page.description"
-                    (input)="updateText($index, 'description', $any($event.target).value)"
-                    aria-label="Description"
-                  ></textarea>
-                </td>
-                <td class="px-3 py-2">
-                  <input
-                    type="text"
-                    class="w-full px-2 py-1.5 bg-slate-900/50 border border-slate-700/60 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-indigo-500"
-                    [value]="row.page.keywords.join(' | ')"
-                    (input)="updateKeywords($index, $any($event.target).value)"
-                    aria-label="Keywords"
+                    (valueChange)="updateText($index, 'description', str($event))"
                   />
                 </td>
                 <td class="px-3 py-2">
-                  <textarea
-                    rows="2"
-                    class="w-full px-2 py-1.5 bg-slate-900/50 border rounded-lg text-slate-100 text-xs font-mono focus:outline-none focus:border-indigo-500 resize-y"
-                    [class]="
-                      row.error === 'Invalid JSON-LD' ? 'border-red-500/50' : 'border-slate-700/60'
-                    "
-                    [value]="row.jsonLdText"
-                    (input)="updateJsonLd($index, $any($event.target).value)"
+                  <app-aria-input
+                    [id]="'bulk-keywords-' + $index"
+                    type="text"
+                    label="Keywords"
+                    [value]="row.page.keywords.join(' | ')"
+                    (valueChange)="updateKeywords($index, str($event))"
+                  />
+                </td>
+                <td class="px-3 py-2">
+                  <app-aria-input
+                    [id]="'bulk-jsonld-' + $index"
+                    type="textarea"
+                    label="JSON-LD"
+                    class="font-mono"
+                    [rows]="2"
                     placeholder="{}"
-                    aria-label="JSON-LD"
-                  ></textarea>
+                    [invalid]="row.error === 'Invalid JSON-LD'"
+                    [value]="row.jsonLdText"
+                    (valueChange)="updateJsonLd($index, str($event))"
+                  />
                 </td>
                 <td class="px-3 py-2 text-center">
-                  <button
-                    type="button"
-                    class="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-all"
-                    (click)="removeRow($index)"
-                    [attr.aria-label]="'Remove row ' + ($index + 1)"
+                  <app-button
+                    variant="ghost"
+                    size="icon"
+                    class="text-red-400 hover:bg-red-500/20 rounded-lg"
+                    [ariaLabel]="'Remove row ' + ($index + 1)"
+                    (clicked)="removeRow($index)"
                   >
                     <ng-icon name="heroTrash" class="text-base"></ng-icon>
-                  </button>
+                  </app-button>
                 </td>
               </tr>
             }
@@ -258,11 +260,11 @@
       >
         Cancel
       </a>
-      <button
-        type="button"
-        class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+      <app-button
+        variant="primary"
+        class="gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 font-semibold shadow-lg"
         [disabled]="!canImport()"
-        (click)="confirmImport()"
+        (clicked)="confirmImport()"
       >
         @if (importing()) {
           <div
@@ -272,7 +274,7 @@
         } @else {
           Confirm Import ({{ summary().valid }})
         }
-      </button>
+      </app-button>
     </div>
   }
 </section>

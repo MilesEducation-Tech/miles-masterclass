@@ -9,7 +9,6 @@ export const PERM = {
   LEADS_WRITE: 'leads:write',
   LEADS_EXPORT: 'leads:export',
 
-  REPORTS_COURSES_READ: 'reports:courses:read',
   REPORTS_USERS_READ: 'reports:users:read',
   REPORTS_USERS_BLOCK: 'reports:users:block',
   REPORTS_USER_REPORT_READ: 'reports:user_report:read',
@@ -26,9 +25,44 @@ export const PERM = {
   ADMIN_ROLES_MANAGE: 'admin:roles:manage',
   ADMIN_PERMISSIONS_MANAGE: 'admin:permissions:manage',
 
+  // Audit log — read-only by construction. The table has no insert/update/delete
+  // policy at all, so this gates viewing and nothing else. Seeded by
+  // 20260918000000_admin_audit_log.sql.
+  AUDIT_READ: 'audit:read',
+
   // User Onboarding — create/edit learner users + record offline payments via the
   // Django internal APIs. One gate for the whole /admin/user-onboarding section.
   USERS_CREATE: 'users:create',
 } as const;
 
 export type AdminPermission = (typeof PERM)[keyof typeof PERM];
+
+/**
+ * Django keeps ONE PartnerAdmin row (one role + scope) per Supabase login, so
+ * these Supabase roles are mutually exclusive. Every other role combines freely.
+ * Mirrored server-side by `assert_admin_role_set()`.
+ */
+export const EXCLUSIVE_ADMIN_ROLE_SLUGS: ReadonlySet<string> = new Set([
+  'super_admin',
+  'partner_platform_admin',
+  'partner_network_admin',
+  'partner_subcompany_admin',
+]);
+
+/** Checkbox semantics for a role set, with radio behaviour inside the exclusive group. */
+export function toggleRoleSlug(
+  current: ReadonlySet<string>,
+  slug: string,
+  checked: boolean,
+): Set<string> {
+  const next = new Set(current);
+  if (!checked) {
+    next.delete(slug);
+    return next;
+  }
+  if (EXCLUSIVE_ADMIN_ROLE_SLUGS.has(slug)) {
+    for (const s of next) if (EXCLUSIVE_ADMIN_ROLE_SLUGS.has(s)) next.delete(s);
+  }
+  next.add(slug);
+  return next;
+}

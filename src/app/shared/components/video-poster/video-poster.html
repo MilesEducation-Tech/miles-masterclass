@@ -1,0 +1,60 @@
+<div class="relative w-full h-full">
+  <video
+    #videoEl
+    [class]="'w-full h-full object-cover ' + videoClass()"
+    [src]="videoSrc()"
+    [poster]="posterSrc()"
+    [loop]="loop()"
+    [muted]="isMuted()"
+    [attr.preload]="preload()"
+    playsInline
+    aria-label="Background video"
+    (contextmenu)="$event.preventDefault()"
+  ></video>
+
+  <!-- Video Controls -->
+  @if (showControls()) {
+    <div
+      [class]="
+        'absolute flex items-center gap-1 z-9999 ' +
+        (controlsPosition() === 'bottom-right'
+          ? 'bottom-2/5 right-4'
+          : controlsPosition() === 'bottom-left'
+            ? 'bottom-2/5 left-4'
+            : controlsPosition() === 'top-right'
+              ? 'top-2/5 right-4'
+              : 'top-2/5 left-4')
+      "
+    >
+      <!-- Play/Pause Button -->
+      <button
+        type="button"
+        class="group relative flex items-center justify-center w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 cursor-pointer transition-all duration-300 hover:bg-black/70 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30"
+        [attr.aria-label]="isPlaying() ? 'Pause video' : 'Play video'"
+        (click)="togglePlay()"
+      >
+        <ng-icon
+          [name]="isPlaying() ? 'matPauseRound' : 'matPlayArrowRound'"
+          size="20"
+          class="text-white"
+          aria-hidden="true"
+        />
+      </button>
+
+      <!-- Mute/Unmute Button -->
+      <button
+        type="button"
+        class="group relative flex items-center justify-center w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 cursor-pointer transition-all duration-300 hover:bg-black/70 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30"
+        [attr.aria-label]="isMuted() ? 'Unmute video' : 'Mute video'"
+        (click)="toggleMute()"
+      >
+        <ng-icon
+          [name]="isMuted() ? 'matVolumeOffRound' : 'matVolumeUpRound'"
+          size="20"
+          class="text-white"
+          aria-hidden="true"
+        />
+      </button>
+    </div>
+  }
+</div>

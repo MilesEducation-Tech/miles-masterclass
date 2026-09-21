@@ -9,6 +9,13 @@ export interface DialCodeWithLength {
   Notes?: string | number | null | undefined;
 }
 
+/**
+ * A dial-code row adapted for a select/autocomplete control.
+ * Lived in `auth.model.ts` until the auth layer was removed; it is really a
+ * property of this table, so it lives with it now.
+ */
+export type CountryCodeOption = DialCodeWithLength & { value: string; label: string };
+
 export const dialCodeWithLength = [
   {
     country: 'India',

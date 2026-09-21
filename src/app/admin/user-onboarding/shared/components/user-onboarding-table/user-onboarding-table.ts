@@ -19,6 +19,7 @@ export class UserOnboardingTable {
   readonly hasNext = input<boolean>(false);
   readonly hasPrev = input<boolean>(false);
 
+  readonly view = output<InternalUser>();
   readonly edit = output<InternalUser>();
   readonly recordPayment = output<InternalUser>();
   readonly applyPartnerCode = output<InternalUser>();

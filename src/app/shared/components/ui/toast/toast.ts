@@ -1,46 +1,33 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
+import { Toast } from '../../../core/models/notification.model';
+import { cn } from '../../../../shared/utils/cn';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { heroXMark } from '@ng-icons/heroicons/outline';
-import { injectToastContext, NgpToast, NgpToastManager } from 'ng-primitives/toast';
-import { ToastType } from '../../../core/models/notification.model';
-import { cn } from '../../../../shared/utils/cn';
 
-/** Content handed to each toast instance by `NotificationService`. */
-export interface ToastContext {
-  type: ToastType;
-  title: string;
-  message: string;
-  closable: boolean;
-}
-
-/**
- * Toast built on the `NgpToast` primitive. The primitive owns the stacking,
- * enter/leave animation, hover-pause, swipe-to-dismiss and auto-dismiss timer;
- * `NgpToastManager` creates the placement containers. Content arrives through
- * the toast context rather than an input, because the manager instantiates this
- * component itself.
- */
 @Component({
   selector: 'app-toast',
   imports: [NgIconComponent],
-  hostDirectives: [NgpToast],
   templateUrl: './toast.html',
   styleUrl: './toast.css',
   providers: [provideIcons({ heroXMark })],
-  host: {
-    'animate.enter': 'toast-enter-top',
-    'animate.leave': 'toast-leave-top',
-    class: 'block w-full max-w-sm',
-  },
 })
 export class ToastComponent {
-  private readonly toastManager = inject(NgpToastManager);
-  private readonly toastRef = inject(NgpToast);
+  readonly toast = input.required<Toast>();
+  readonly style = input<Record<string, any>>();
+  readonly dismiss = output<string>();
+  readonly pause = output<string>();
+  readonly resume = output<string>();
 
-  protected readonly context = injectToastContext<ToastContext>();
+  onMouseEnter() {
+    this.pause.emit(this.toast().id);
+  }
+
+  onMouseLeave() {
+    this.resume.emit(this.toast().id);
+  }
 
   protected readonly containerClasses = computed(() => {
-    const type = this.context.type;
+    const type = this.toast().type;
     return cn(
       'relative w-full py-2 px-4 rounded-xl border shadow-sm transition-all duration-300 ease-out flex items-start group',
       'backdrop-blur-sm',
@@ -53,7 +40,7 @@ export class ToastComponent {
   });
 
   protected readonly titleClasses = computed(() => {
-    const type = this.context.type;
+    const type = this.toast().type;
     return cn('font-bold mb-1', {
       'text-green-800': type === 'success',
       'text-red-800': type === 'error',
@@ -63,6 +50,6 @@ export class ToastComponent {
 
   onDismiss(event: Event) {
     event.stopPropagation();
-    this.toastManager.dismiss(this.toastRef);
+    this.dismiss.emit(this.toast().id);
   }
 }

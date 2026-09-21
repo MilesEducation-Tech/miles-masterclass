@@ -32,6 +32,7 @@
           <th class="px-4 py-3 font-semibold text-right">Discounted price</th>
           <th class="px-4 py-3 font-semibold">Assigned to</th>
           <th class="px-4 py-3 font-semibold">Auto-subscribe</th>
+          <th class="px-4 py-3 font-semibold">Stripe price</th>
           <th class="px-4 py-3 font-semibold">Valid to</th>
           <th class="px-4 py-3 font-semibold">Status</th>
         </tr>
@@ -50,6 +51,9 @@
             <td class="px-4 py-4" style="color: var(--mm-fg-3)">
               {{ code.auto_subscribe ? 'Yes' : 'No' }}
             </td>
+            <td class="px-4 py-4 font-mono text-xs" style="color: var(--mm-fg-3)">
+              {{ code.stripe_price_id || '—' }}
+            </td>
             <td class="px-4 py-4" style="color: var(--mm-fg-3)">
               {{ code.valid_to ? (code.valid_to | date: 'mediumDate') : '—' }}
             </td>
@@ -66,7 +70,7 @@
         } @empty {
           @if (!facade.partnerCodesLoading()) {
             <tr>
-              <td colspan="7" class="px-4 py-8 text-center" style="color: var(--mm-fg-3)">
+              <td colspan="8" class="px-4 py-8 text-center" style="color: var(--mm-fg-3)">
                 No partner codes yet. Create one to start minting seats.
               </td>
             </tr>

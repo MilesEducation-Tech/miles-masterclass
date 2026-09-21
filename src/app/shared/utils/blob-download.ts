@@ -19,12 +19,54 @@ export interface BlobDownloadItem {
 /** Default network timeout for asset fetches — long enough for slow CDNs, short enough to fail visibly. */
 const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
 
+/** Parallel fetches per download set — enough to saturate a CDN, few enough not to trip it. */
+const DEFAULT_CONCURRENCY = 4;
+
 /** Delay before revoking object URLs — gives the browser one task tick to start the download. */
 const REVOKE_DELAY_MS = 1_000;
 
+/** Name of the manifest written into a zip when some items could not be fetched. */
+export const FAILED_MANIFEST_NAME = 'FAILED.txt';
+
+export interface DownloadProgress {
+  phase: 'fetching' | 'zipping' | 'saving';
+  /** Items fetched so far (success + failure). */
+  done: number;
+  total: number;
+  failed: number;
+  /** Zip-build percentage, `zipping` phase only. */
+  percent?: number;
+}
+
+export interface DownloadFailure {
+  item: BlobDownloadItem;
+  reason: string;
+}
+
+export interface DownloadResult {
+  saved: number;
+  failed: DownloadFailure[];
+}
+
+export interface DownloadOptions {
+  timeoutMs?: number;
+  /** Always produce a zip, even for one item (entry names carrying folders need this). */
+  forceZip?: boolean;
+  /** Cancels in-flight fetches and skips the save; rejects with an `AbortError`. */
+  signal?: AbortSignal;
+  concurrency?: number;
+  onProgress?: (progress: DownloadProgress) => void;
+  /**
+   * Keep going when an item fails: the zip still ships with every fetched file
+   * plus a `FAILED.txt` listing the misses. Rejects only if nothing was fetched.
+   * Off by default — a single-file download has nothing partial to deliver.
+   */
+  tolerateFailures?: boolean;
+}
+
 /**
  * Download one or more files. Single item downloads directly; multiple items
- * are bundled into a `${baseName}.zip` via JSZip (lazy-loaded). Returns once
+ * are bundled into a `${baseName}.zip` via JSZip (lazy-loaded). Resolves once
  * the save anchor has been clicked (the actual write is browser-managed).
  *
  * No-ops on the server (SSR) — caller can invoke without an `isPlatformBrowser`
@@ -34,33 +76,94 @@ const REVOKE_DELAY_MS = 1_000;
 export async function downloadFiles(
   items: BlobDownloadItem[],
   baseName: string,
-  options: { timeoutMs?: number } = {},
-): Promise<void> {
-  if (typeof document === 'undefined' || items.length === 0) return;
+  options: DownloadOptions = {},
+): Promise<DownloadResult> {
+  if (typeof document === 'undefined' || items.length === 0) return { saved: 0, failed: [] };
+  const { signal, onProgress } = options;
   const timeoutMs = options.timeoutMs ?? DEFAULT_FETCH_TIMEOUT_MS;
+  const concurrency = Math.max(1, options.concurrency ?? DEFAULT_CONCURRENCY);
 
-  if (items.length === 1) {
+  const failed: DownloadFailure[] = [];
+  const blobs: (Blob | null)[] = new Array(items.length).fill(null);
+  let done = 0;
+  const report = (phase: DownloadProgress['phase'], percent?: number) =>
+    onProgress?.({ phase, done, total: items.length, failed: failed.length, percent });
+
+  // Bounded worker pool: `concurrency` fetches in flight, each worker pulling
+  // the next index. Order of `blobs` follows `items`, whatever finishes first.
+  report('fetching');
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      throwIfAborted(signal);
+      const i = next++;
+      try {
+        blobs[i] = await fetchAsBlob(items[i].url, timeoutMs, signal);
+      } catch (err) {
+        if (isAbortError(err)) throw err;
+        if (!options.tolerateFailures) throw err;
+        failed.push({ item: items[i], reason: err instanceof Error ? err.message : String(err) });
+      }
+      done++;
+      report('fetching');
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  throwIfAborted(signal);
+
+  const fetched = blobs.filter((b): b is Blob => b != null);
+  if (!fetched.length) {
+    throw new Error(`None of the ${items.length} files could be fetched.`);
+  }
+
+  if (items.length === 1 && !options.forceZip) {
+    report('saving');
     const item = items[0];
-    const blob = await fetchAsBlob(item.url, timeoutMs);
-    saveBlob(blob, item.suggestedName ?? fileNameFromUrl(item.url) ?? `${baseName}.pdf`);
-    return;
+    saveBlob(fetched[0], item.suggestedName ?? fileNameFromUrl(item.url) ?? `${baseName}.pdf`);
+    return { saved: 1, failed };
   }
 
   // Lazy-load JSZip so the chunk only ships when a user actually triggers a
   // multi-file download.
   const { default: JSZip } = await import('jszip');
   const zip = new JSZip();
-  const blobs = await Promise.all(items.map((item) => fetchAsBlob(item.url, timeoutMs)));
   const used = new Set<string>();
   blobs.forEach((blob, i) => {
+    if (!blob) return;
     const item = items[i];
     const base = item.suggestedName ?? fileNameFromUrl(item.url) ?? `${baseName}-${i + 1}.pdf`;
     const name = uniqueZipName(base, used);
     used.add(name);
     zip.file(name, blob);
   });
-  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  if (failed.length) {
+    zip.file(
+      FAILED_MANIFEST_NAME,
+      [
+        `${failed.length} of ${items.length} files could not be fetched:`,
+        '',
+        ...failed.map(
+          (f) => `${f.item.suggestedName ?? f.item.url}\n    ${f.item.url}\n    ${f.reason}`,
+        ),
+      ].join('\n'),
+    );
+  }
+  report('zipping', 0);
+  const zipBlob = await zip.generateAsync({ type: 'blob' }, (meta) =>
+    report('zipping', meta.percent),
+  );
+  throwIfAborted(signal);
+  report('saving');
   saveBlob(zipBlob, `${baseName}.zip`);
+  return { saved: fetched.length, failed };
+}
+
+export function isAbortError(err: unknown): boolean {
+  return err instanceof DOMException ? err.name === 'AbortError' : false;
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) throw new DOMException('Download cancelled.', 'AbortError');
 }
 
 /**
@@ -70,17 +173,31 @@ export async function downloadFiles(
 export async function fetchAsBlob(
   url: string,
   timeoutMs: number = DEFAULT_FETCH_TIMEOUT_MS,
+  signal?: AbortSignal,
 ): Promise<Blob> {
+  throwIfAborted(signal);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  // Timeout aborts with a plain reason so it reads as a failure, not a cancel;
+  // the caller's signal aborts with its own AbortError so it reads as a cancel.
+  const timer = setTimeout(
+    () => controller.abort(new Error(`Timed out after ${timeoutMs}ms`)),
+    timeoutMs,
+  );
+  const onAbort = () => controller.abort(signal!.reason);
+  signal?.addEventListener('abort', onAbort, { once: true });
   try {
     const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) {
       throw new Error(`Fetch failed for ${url}: ${res.status}`);
     }
     return await res.blob();
+  } catch (err) {
+    // fetch() rejects with the abort reason — rethrow a timeout as an ordinary Error.
+    if (signal?.aborted) throw new DOMException('Download cancelled.', 'AbortError');
+    throw err;
   } finally {
     clearTimeout(timer);
+    signal?.removeEventListener('abort', onAbort);
   }
 }
 

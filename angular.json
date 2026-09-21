@@ -28,7 +28,9 @@
               {
                 "glob": "**/*",
                 "input": "public"
-              }
+              },
+              "src/.well-known/assetlinks.json",
+              "src/.well-known/apple-app-site-association"
             ],
             "styles": [
               "src/styles/styles.css",
@@ -126,6 +128,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "miles-masterclass-v3:build:production"
@@ -146,6 +151,26 @@
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
+          }
+        },
+        "storybook": {
+          "builder": "@storybook/angular:start-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "browserTarget": "miles-masterclass-v3:build",
+            "compodoc": false,
+            "port": 6006,
+            "styles": ["src/styles/styles.css", "src/styles/animation.css", "src/styles/dialog.css"]
+          }
+        },
+        "build-storybook": {
+          "builder": "@storybook/angular:build-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "browserTarget": "miles-masterclass-v3:build",
+            "compodoc": false,
+            "outputDir": "storybook-static",
+            "styles": ["src/styles/styles.css", "src/styles/animation.css", "src/styles/dialog.css"]
           }
         }
       }

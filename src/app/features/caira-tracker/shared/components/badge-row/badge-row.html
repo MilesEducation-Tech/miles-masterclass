@@ -1,0 +1,49 @@
+@if (!isHidden()) {
+  <section class="mt-10">
+    @if (showHeading()) {
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-lg font-bold text-white md:text-xl">{{ heading() }}</h2>
+        <a
+          class="text-sm font-semibold text-accent transition-opacity hover:opacity-80"
+          [routerLink]="viewAllCommands()"
+          [queryParams]="viewAllParams()"
+        >
+          View All
+        </a>
+      </div>
+    }
+
+    @if (isLoading() && !items().length) {
+      <div class="no-scrollbar -mx-1 flex gap-4 overflow-x-auto px-1 py-2">
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div
+            class="shrink-0 animate-pulse rounded-2xl bg-muted"
+            [class]="isWebinar() ? 'h-32 w-[22rem]' : 'h-56 w-64'"
+          ></div>
+        }
+      </div>
+    } @else {
+      <div
+        class="no-scrollbar -mx-1 mt-3 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 py-2"
+      >
+        @if (isWebinar()) {
+          @for (card of webinarItems(); track card.id) {
+            <app-webinar-badge-card
+              class="w-[22rem] shrink-0 snap-start"
+              [badge]="card"
+              (activate)="onWebinar($event)"
+            />
+          }
+        } @else {
+          @for (card of courseItems(); track card.id) {
+            <app-course-badge-card
+              class="w-64 shrink-0 snap-start"
+              [badge]="card"
+              (activate)="onCourse($event)"
+            />
+          }
+        }
+      </div>
+    }
+  </section>
+}

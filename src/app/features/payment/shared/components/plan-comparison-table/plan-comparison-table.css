@@ -1,0 +1,8 @@
+:host {
+  display: block;
+}
+
+/* Row dividers — subtle hairlines between feature rows for readability */
+.comparison > div {
+  align-self: center;
+}

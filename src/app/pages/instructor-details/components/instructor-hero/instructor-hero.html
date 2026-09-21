@@ -1,0 +1,53 @@
+@let i = instructor();
+<section class="relative w-full overflow-hidden rounded-xl bg-card">
+  @if (i.horizontal_thumbnail) {
+    <img
+      [ngSrc]="i.horizontal_thumbnail"
+      [alt]="fullName()"
+      class="absolute inset-0 w-full h-full object-cover object-top opacity-70"
+      fill
+      priority
+      draggable="false"
+    />
+    <div
+      class="absolute inset-0 bg-linear-to-t from-background via-background/50 to-transparent"
+    ></div>
+  }
+
+  <div
+    class="relative flex flex-col md:flex-row items-center md:items-end gap-6 p-6 md:p-10 min-h-[30rem]"
+  >
+    @if (i.profile_image) {
+      <img
+        [ngSrc]="i.profile_image"
+        [alt]="fullName()"
+        class="w-32 h-32 md:w-44 md:h-44 rounded-full object-cover object-top ring-4 ring-background shadow-xl shrink-0"
+        width="176"
+        height="176"
+      />
+    }
+
+    <div class="flex-1 text-center md:text-left space-y-3">
+      <h1 class="text-3xl md:text-4xl font-bold text-foreground">{{ fullName() }}</h1>
+      <p class="text-base md:text-lg text-muted-foreground">{{ i.designation }}</p>
+
+      @if (socials().length) {
+        <ul class="flex justify-center md:justify-start gap-3 pt-2">
+          @for (s of socials(); track s.label) {
+            <li>
+              <a
+                [href]="s.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                [attr.aria-label]="s.label"
+                class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-secondary/60 hover:bg-white hover:text-white text-foreground transition-colors"
+              >
+                <ng-icon [name]="s.icon" size="20" aria-hidden="true" />
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+</section>

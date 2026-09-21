@@ -1,0 +1,83 @@
+<div class="flex w-full mx-auto min-h-dvh md:h-full overflow-hidden gap-4 max-lg:flex-col">
+  <!-- Video Player Section -->
+  <div class="max-lg:w-full lg:w-3/4 h-full rounded-lg overflow-hidden flex flex-col gap-4">
+    <div
+      id="video"
+      class="flex w-full md:h-3/4 h-96 rounded-lg overflow-hidden justify-center bg-[#161E25]"
+    ></div>
+    <div class="flex w-full md:h-1/4 rounded-lg px-2 py-1 flex-col gap-1">
+      <div id="chapterName" class="lg:text-xl text-lg text-white">1. Chapter Title Here</div>
+      <div id="chapterDescription" class="text-sm lg:text-base lg:leading-tight text-[#B1B1B1]">
+        Chapter description goes here...
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Section -->
+  <div class="max-lg:w-full lg:w-1/4 h-full rounded-lg flex flex-col gap-8 px-2">
+    <!-- Navigation Cards -->
+    <div class="flex flex-col gap-2">
+      <!-- Previous Chapter -->
+      <div id="previousChapter" class="bg-[#18232f] w-full flex gap-1 rounded-lg cursor-pointer">
+        <div class="w-[90px] m-2 overflow-hidden flex items-center">
+          <div class="w-full h-14 bg-[#38424C] rounded-md"></div>
+        </div>
+        <div class="flex flex-col gap-1 m-2">
+          <div class="text-sm text-blue-600 font-semibold">Previous Chapter</div>
+          <div class="text-base text-white line-clamp-2 font-semibold">
+            0. Previous Chapter Name
+          </div>
+        </div>
+      </div>
+
+      <!-- Next Chapter -->
+      <div
+        id="nextChapter"
+        class="bg-[#38424C] w-full flex gap-1 rounded-lg relative cursor-pointer"
+      >
+        <div class="w-[90px] m-2 overflow-hidden flex items-center">
+          <div class="w-full h-14 bg-[#4a5560] rounded-md"></div>
+        </div>
+        <div class="flex flex-col gap-1 m-2">
+          <div class="text-base text-blue-600 font-semibold">Up Next</div>
+          <div class="text-base text-white line-clamp-2 leading-tight font-semibold">
+            2. Next Chapter Name
+          </div>
+          <div class="text-xs text-gray-500 line-clamp-1 font-semibold">5 Quiz Questions</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chapter Info & Actions -->
+    <div class="flex flex-col gap-2">
+      <div class="flex justify-between items-start w-full max-md:flex-col max-md:gap-2">
+        <div class="text-base text-white line-clamp-2 font-semibold w-2/3 max-md:w-full">
+          1. Current Chapter Name
+        </div>
+        <div
+          class="text-base leading-tight text-white line-clamp-1 font-semibold flex items-center justify-end gap-1 w-1/3 max-md:w-full max-md:justify-start mt-1"
+        >
+          <span
+            class="size-4 border-2 border-red-600 rounded-full bg-transparent flex justify-center items-center"
+          >
+            <div class="size-2 animate-pulse bg-red-600 rounded-full"></div>
+          </span>
+          <span class="text-xs text-gray-500">Watching Now</span>
+        </div>
+      </div>
+
+      <!-- Transcript Button -->
+      <div class="bg-[#161E25] p-2 rounded-lg flex items-center w-full cursor-pointer">
+        Transcript
+      </div>
+
+      <!-- Track Quiz Button -->
+      <div class="bg-[#161E25] p-2 rounded-lg flex flex-col w-full cursor-pointer">
+        <div class="flex items-center justify-between">
+          <span>Track Quiz</span>
+        </div>
+        <div class="ml-6 text-xs text-gray-500">5 questions</div>
+      </div>
+    </div>
+  </div>
+</div>

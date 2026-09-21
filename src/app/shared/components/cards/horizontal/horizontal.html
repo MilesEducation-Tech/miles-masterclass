@@ -1,0 +1,176 @@
+<div class="flex flex-col space-y-2 group/card">
+  <div
+    class="w-full aspect-video overflow-hidden rounded-lg flex flex-col relative"
+    role="button"
+    tabindex="0"
+    [attr.aria-label]="card().title"
+    (click)="navigateToCourse(card().id, card().title)"
+    (keydown.enter)="navigateToCourse(card().id, card().title)"
+    (keydown.space)="navigateToCourse(card().id, card().title); $event.preventDefault()"
+  >
+    <div class="relative inset-0 w-full h-full z-0">
+      @if (thumbnail(); as src) {
+        <img
+          [ngSrc]="src"
+          [alt]="card().title"
+          class="object-cover w-full h-full group-hover/card:scale-105 transition-transform duration-300 relative z-0"
+          fill
+          [priority]="priority()"
+          draggable="false"
+        />
+      }
+    </div>
+    <div
+      class="absolute inset-0 w-full h-full bg-linear-to-t from-black to-50% to-transparent z-10 group-hover/card:opacity-100 transition-opacity duration-300 opacity-0"
+    ></div>
+    @if (attendanceTag(); as tag) {
+      <span
+        class="absolute top-3 left-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide z-20"
+        [class]="tag.classes"
+      >
+        {{ tag.label }}
+      </span>
+    }
+    @if (type() !== 'webinar') {
+      <button
+        type="button"
+        class="absolute top-3 right-3 z-30 size-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center pointer-events-auto cursor-pointer transition-colors"
+        [attr.aria-label]="card().added_bookmark ? 'Remove bookmark' : 'Add bookmark'"
+        (click)="toggleBookmark($event)"
+      >
+        <ng-icon
+          [svg]="card().added_bookmark ? icons().matBookmarkRound : icons().matBookmarkBorderRound"
+          class="size-5"
+        />
+      </button>
+    }
+  </div>
+  <div
+    class="flex flex-col space-y-1"
+    role="button"
+    tabindex="0"
+    [attr.aria-label]="card().title + ' details'"
+    (click)="navigateToCourse(card().id, card().title)"
+    (keydown.enter)="navigateToCourse(card().id, card().title)"
+    (keydown.space)="navigateToCourse(card().id, card().title); $event.preventDefault()"
+  >
+    <h3 class="text-white text-sm font-medium line-clamp-2">
+      {{ card().course_short_overview }}
+    </h3>
+    <div class="flex items-center justify-between gap-2 min-w-0 min-h-10">
+      <app-categories-list
+        class="text-muted-foreground text-sm min-w-0 flex-1 truncate"
+        [items]="card().fields_of_study ?? []"
+      />
+      <app-caira-credly-badge
+        class="shrink-0"
+        [includedForCaira]="card().included_for_caira"
+        [hasIndividualBadge]="card().has_individual_badge"
+        [cairaLevel]="card().caira_level"
+        variant="inline"
+      />
+    </div>
+  </div>
+  <div class="flex items-center justify-between">
+    <div class="flex items-center space-x-2">
+      <!--
+        Webinar variant: swap the Trailer button for the same CTA switch the
+        hero uses. `webinarCta()` resolves only when `type === 'webinar'` AND
+        the webinar facade is in scope; otherwise the legacy Trailer button
+        renders (masterclass / podcast / micro-learning paths).
+      -->
+      @if (webinarCta(); as wcta) {
+        @switch (wcta) {
+          @case ('book') {
+            <app-button
+              variant="default"
+              class="bg-white text-black hover:bg-white hover:text-black rounded-md"
+              (clicked)="bookWebinar()"
+              >Book Now</app-button
+            >
+          }
+          @case ('joined') {
+            <app-button variant="secondary" class="rounded-md" [disabled]="true">Booked</app-button>
+          }
+          @case ('join-live') {
+            <app-button
+              variant="default"
+              class="bg-white text-black hover:bg-white hover:text-black rounded-md"
+              (clicked)="joinLive()"
+              >Join Now</app-button
+            >
+          }
+          @case ('submit-feedback') {
+            <app-button
+              variant="default"
+              class="bg-amber-400 text-black hover:bg-amber-400 hover:text-black rounded-md"
+              (clicked)="submitFeedback()"
+              >Submit Feedback</app-button
+            >
+          }
+          @case ('download-certificate') {
+            <app-button
+              variant="default"
+              class="bg-white text-black hover:bg-white hover:text-black rounded-md"
+              (clicked)="downloadCertificate()"
+              >Download Certificate</app-button
+            >
+          }
+          @case ('series-awarded') {
+            <span class="rounded-md bg-white/15 px-3 py-2 text-xs text-white">
+              Recurring webinar — CPE already awarded for this series
+            </span>
+          }
+          @case ('watch-recording') {
+            <app-button
+              variant="default"
+              class="bg-white text-black hover:bg-white hover:text-black rounded-md"
+              (clicked)="watchRecording()"
+              >Watch Recording</app-button
+            >
+          }
+          @case ('ended') {
+            <app-button variant="secondary" class="rounded-md" [disabled]="true">Ended</app-button>
+          }
+        }
+      } @else {
+        <app-button
+          variant="default"
+          class="bg-white text-black hover:bg-white hover:text-black rounded-md gap-2"
+          (clicked)="openVideoDialog()"
+        >
+          <ng-icon [svg]="icons().faSolidPlay" class="size-4" />
+          Trailer
+        </app-button>
+      }
+      @if (card().has_additional_resources) {
+        <div
+          class="flex rounded-full justify-center items-center bg-linear-to-r from-white to-transparent to-70% p-px overflow-hidden max-md:hidden"
+          role="button"
+          (click)="openAdditionalResources()"
+          tabindex="0"
+        >
+          <app-button variant="ghost" class="bg-background rounded-full! gap-2">
+            <ng-icon [svg]="icons().faSolidRobot" class="size-4" />
+            AI Kit
+          </app-button>
+        </div>
+      }
+      <app-button
+        variant="ghost"
+        class="flex items-center justify-center size-10 aspect-square bg-secondary rounded-full outline outline-white/40 cursor-pointer p-0"
+        role="button"
+        [disabled]="loading()"
+        (click)="openCourseInfo()"
+      >
+        <ng-icon [svg]="icons().faSolidInfo" class="size-8" />
+      </app-button>
+    </div>
+    <app-button
+      variant="outline"
+      class="text-accent hover:bg-transparent border-accent rounded-md cursor-default"
+    >
+      {{ card().fields_of_study | totalCpeCredits: card().class_credits }} CPE
+    </app-button>
+  </div>
+</div>

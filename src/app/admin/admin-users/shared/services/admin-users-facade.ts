@@ -18,13 +18,20 @@ export interface AdminPermissionRow {
   label: string;
 }
 
+export interface AdminUserRoleRef {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 export interface AdminUserListRow {
   user_id: string;
   email: string;
   full_name: string | null;
   is_active: boolean;
   last_login_at: string | null;
-  role_name: string | null;
+  /** Every role held (admin_user_roles), sorted by name. */
+  roles: AdminUserRoleRef[];
   /** Partner email domains mapped to this admin (admin_user_email_domains). */
   domains: string[];
 }
@@ -52,7 +59,7 @@ export class AdminUsersFacade {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly dataResource = resource<AdminUsersData, unknown>({
-    params: () => (this.isBrowser ? {} : undefined),
+    params: () => (this.isBrowser ? true : undefined),
     loader: async () => {
       const client = await this.supabase.getClient();
 
@@ -67,7 +74,7 @@ export class AdminUsersFacade {
         client
           .from('admin_users')
           .select(
-            'user_id, email, full_name, is_active, last_login_at, admin_user_roles(admin_roles(name)), admin_user_email_domains(domain)',
+            'user_id, email, full_name, is_active, last_login_at, admin_user_roles(admin_roles(id, slug, name)), admin_user_email_domains(domain)',
           )
           .order('email'),
       ]);
@@ -85,8 +92,8 @@ export class AdminUsersFacade {
       }
 
       const adminRows: AdminUserListRow[] = (
-        (admins.data ?? []) as unknown as (Omit<AdminUserListRow, 'role_name' | 'domains'> & {
-          admin_user_roles: { admin_roles: { name: string } | null } | null;
+        (admins.data ?? []) as unknown as (Omit<AdminUserListRow, 'roles' | 'domains'> & {
+          admin_user_roles: { admin_roles: AdminUserRoleRef | null }[] | null;
           admin_user_email_domains: { domain: string }[] | null;
         })[]
       ).map((r) => ({
@@ -95,7 +102,9 @@ export class AdminUsersFacade {
         full_name: r.full_name,
         is_active: r.is_active,
         last_login_at: r.last_login_at,
-        role_name: r.admin_user_roles?.admin_roles?.name ?? null,
+        roles: (r.admin_user_roles ?? [])
+          .flatMap((ur) => (ur.admin_roles ? [ur.admin_roles] : []))
+          .sort((a, b) => a.name.localeCompare(b.name)),
         domains: (r.admin_user_email_domains ?? []).map((d) => d.domain).sort(),
       }));
 
@@ -189,6 +198,33 @@ export class AdminUsersFacade {
       return true;
     } catch (err) {
       this.logger.error('[AdminUsersFacade] setDomains failed', err);
+      this.notification.error(
+        'Update failed',
+        err instanceof Error ? err.message : 'Please try again.',
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Replace an admin's role set via the `set_admin_user_roles` RPC, which
+   * enforces the partner-role exclusivity, the super_admin grant guard and the
+   * "never strand the app without a super admin" rule server-side.
+   */
+  async setRoles(userId: string, slugs: string[]): Promise<boolean> {
+    try {
+      const client = await this.supabase.getClient();
+      const { error } = await client.rpc('set_admin_user_roles', {
+        p_user_id: userId,
+        p_role_slugs: slugs,
+      });
+      if (error) throw error;
+
+      this.dataResource.reload();
+      this.notification.success('Roles updated', 'They apply on their next sign-in or refresh.');
+      return true;
+    } catch (err) {
+      this.logger.error('[AdminUsersFacade] setRoles failed', err);
       this.notification.error(
         'Update failed',
         err instanceof Error ? err.message : 'Please try again.',

@@ -1,4 +1,3 @@
-import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import {
   FormField as AngularFormField,
@@ -11,6 +10,7 @@ import { DialogRef } from '../../../../../../../shared/core/services/dialog/dial
 import { Button } from '../../../../../../../shared/components/ui/button/button';
 import { Forms } from '../../../../../../../shared/components/ui/forms/forms';
 import { AriaInput } from '../../../../../../../shared/components/ui/aria/aria-input/aria-input';
+import { AllocationPicker } from '../../../../../shared/components/allocation-picker/allocation-picker';
 import {
   Network,
   PartnerCode,
@@ -52,7 +52,7 @@ interface NetworkFormModel {
  */
 @Component({
   selector: 'app-network-form-dialog',
-  imports: [AngularFormField, Forms, AriaInput, Button, CurrencyPipe],
+  imports: [AngularFormField, Forms, AriaInput, Button, AllocationPicker],
   templateUrl: './network-form-dialog.html',
 })
 export class NetworkFormDialog implements OnInit {
@@ -78,38 +78,8 @@ export class NetworkFormDialog implements OnInit {
       .filter((c) => c.is_active && !c.firm && (!c.network || c.network.id === networkId));
   });
 
-  /** Seats to mint per selected code, keyed by code id. */
-  private readonly seatCounts = signal<Readonly<Record<number, number>>>({});
-  protected readonly selectedCount = computed(() => Object.keys(this.seatCounts()).length);
-  protected readonly totalSeats = computed(() =>
-    Object.values(this.seatCounts()).reduce((sum, n) => sum + n, 0),
-  );
-
-  protected isSelected(id: number): boolean {
-    return id in this.seatCounts();
-  }
-
-  protected seatCount(id: number): number {
-    return this.seatCounts()[id] ?? 1;
-  }
-
-  protected toggleCode(id: number, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.seatCounts.update((counts) => {
-      const next = { ...counts };
-      if (checked) next[id] = next[id] ?? 1;
-      else delete next[id];
-      return next;
-    });
-  }
-
-  protected onSeatCountInput(id: number, event: Event): void {
-    const raw = parseInt((event.target as HTMLInputElement).value, 10);
-    this.seatCounts.update((counts) => ({
-      ...counts,
-      [id]: Number.isFinite(raw) && raw > 0 ? raw : 1,
-    }));
-  }
+  /** Seats to mint into the pool — code, count and optional expiry per row. */
+  protected readonly allocations = signal<SeatAllocation[]>([]);
 
   private readonly model = signal<NetworkFormModel>({
     name: '',
@@ -120,7 +90,7 @@ export class NetworkFormDialog implements OnInit {
 
   protected readonly form = form<NetworkFormModel>(this.model, (s) => {
     required(s.name, { message: 'Network name is required' });
-    required(s.slug, { message: 'Slug is required' });
+    // Slug is optional — the backend slugifies `name` when it's blank.
     validate(s.slug, ({ value }) =>
       !value() || /^[a-z0-9-]+$/.test(value())
         ? null
@@ -161,10 +131,7 @@ export class NetworkFormDialog implements OnInit {
       slug: v.slug.trim(),
       total_seats: Number(v.total_seats),
       is_active: v.is_active,
-      allocations: Object.entries(this.seatCounts()).map(([partnerCode, count]) => ({
-        partner_code: Number(partnerCode),
-        count,
-      })),
+      allocations: this.allocations(),
     });
   }
 }

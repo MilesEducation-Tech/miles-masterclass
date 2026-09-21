@@ -64,12 +64,11 @@
 
   <!-- Account card -->
   <div class="m-4 relative">
-    <button
-      type="button"
-      class="flex items-center gap-[10px] p-3 rounded-[10px] w-full text-left transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-      style="background: var(--mm-surface-2)"
+    <app-button
+      variant="ghost"
+      class="h-auto w-full justify-start gap-[10px] p-3 rounded-[10px] text-left bg-(--mm-surface-2) hover:opacity-90"
       [attr.aria-expanded]="userMenuOpen()"
-      (click)="toggleUserMenu()"
+      (clicked)="toggleUserMenu()"
     >
       <span
         class="w-9 h-9 rounded-full inline-flex items-center justify-center font-bold text-[13px] text-white shrink-0"
@@ -94,7 +93,7 @@
           aria-hidden="true"
         />
       }
-    </button>
+    </app-button>
 
     @if (userMenuOpen()) {
       <button
@@ -113,28 +112,34 @@
           @if (displayEmail()) {
             <div class="text-xs truncate" style="color: var(--mm-fg-3)">{{ displayEmail() }}</div>
           }
+          @if (roleNames()) {
+            <div class="text-xs truncate mt-0.5" style="color: var(--mm-fg-3)">
+              {{ roleNames() }}
+            </div>
+          }
         </div>
         <div class="my-1 h-px bg-border"></div>
-        <button
-          type="button"
-          class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left hover:bg-accent hover:text-accent-foreground transition-colors"
+        <app-button
+          variant="ghost"
+          size="sm"
+          class="w-full justify-start gap-2 px-2 hover:bg-accent hover:text-accent-foreground"
           role="menuitem"
-          (click)="closeUserMenu()"
+          (clicked)="closeUserMenu()"
         >
           <ng-icon name="lucideSettings" class="text-base" aria-hidden="true" />
           Settings
-        </button>
+        </app-button>
         <div class="my-1 h-px bg-border"></div>
-        <button
-          type="button"
-          class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left transition-colors hover:bg-(--mm-danger-bg)"
-          style="color: var(--mm-danger-fg)"
+        <app-button
+          variant="ghost"
+          size="sm"
+          class="w-full justify-start gap-2 px-2 text-(--mm-danger-fg) hover:bg-(--mm-danger-bg)"
           role="menuitem"
-          (click)="logout()"
+          (clicked)="logout()"
         >
           <ng-icon name="lucideClock" class="text-base" aria-hidden="true" />
           Log out
-        </button>
+        </app-button>
       </div>
     }
   </div>

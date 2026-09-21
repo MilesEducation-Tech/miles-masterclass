@@ -1,0 +1,17 @@
+<div class="w-full flex absolute bottom-0 left-0 h-3/4 z-0">
+  <div class="relative w-full h-full">
+    <div class="relative w-full h-full">
+      <!-- @defer { -->
+      <canvas #wavesCanvas class="absolute top-0 left-0"></canvas>
+      <!-- } -->
+    </div>
+    <div class="flex md:w-1/5 w-2/5 h-2/3 bg-transparent z-0 absolute bottom-14 right-0">
+      <img
+        fill
+        [ngSrc]="S3_BUCKET_URL + 'static-assests/web-app/podcast/microphone.webp'"
+        alt=""
+        class="w-full h-full"
+      />
+    </div>
+  </div>
+</div>

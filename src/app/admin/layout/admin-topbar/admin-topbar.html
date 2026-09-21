@@ -3,15 +3,15 @@
   style="background: rgba(14, 39, 66, 0.6)"
   role="banner"
 >
-  <button
-    type="button"
-    class="flex h-9 w-9 items-center justify-center rounded-md border border-border transition-colors hover:bg-(--mm-surface-2) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    style="background: var(--mm-surface-2)"
-    (click)="toggleSidebar.emit()"
-    aria-label="Toggle sidebar"
+  <app-button
+    variant="outline"
+    size="icon"
+    class="h-9 w-9 bg-(--mm-surface-2) hover:bg-(--mm-surface-2)"
+    ariaLabel="Toggle sidebar"
+    (clicked)="toggleSidebar.emit()"
   >
     <ng-icon name="lucidePanelLeft" class="text-base text-foreground" aria-hidden="true" />
-  </button>
+  </app-button>
 
   <div class="min-w-0 flex-1">
     <nav

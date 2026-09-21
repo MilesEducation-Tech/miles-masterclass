@@ -1,0 +1,36 @@
+/*
+ * Everything Tailwind can express lives in the template. What is left is the
+ * one thing it cannot: reacting to `[data-webgl]` on the *host*, which is set
+ * imperatively once the ring is ready to draw.
+ */
+
+:host([data-webgl='on']) canvas {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: pan-y;
+  opacity: 1;
+}
+
+:host([data-webgl='on']) canvas:active {
+  cursor: grabbing;
+}
+
+/* The shader takes over the dot field once WebGL is up — it draws the same grid
+   with the same top/bottom fade, plus the pool of light under the cursor, which
+   a CSS gradient cannot do. The static layer is the stand-in until then. */
+:host([data-webgl='on']) .dots {
+  display: none;
+}
+
+/* Clipped, not removed. `display: none` would strip the course links from the
+   accessibility tree and from crawled markup, which is the only reason the row
+   exists behind the canvas at all. */
+:host([data-webgl='on']) .fallback {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

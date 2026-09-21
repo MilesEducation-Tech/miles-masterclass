@@ -1,5 +1,10 @@
-<div [class]="containerClasses()">
-  @if (context.closable) {
+<div
+  [class]="containerClasses()"
+  [style]="style()"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()"
+>
+  @if (toast().closable) {
     <button
       type="button"
       (click)="onDismiss($event)"
@@ -11,7 +16,7 @@
   }
 
   <div class="flex-1">
-    <h3 [class]="titleClasses()">{{ context.title }}</h3>
-    <p class="text-sm leading-relaxed opacity-90">{{ context.message }}</p>
+    <h3 [class]="titleClasses()">{{ toast().title }}</h3>
+    <p class="text-sm leading-relaxed opacity-90">{{ toast().message }}</p>
   </div>
 </div>

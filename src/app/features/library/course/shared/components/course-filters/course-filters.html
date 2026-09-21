@@ -1,0 +1,50 @@
+<div class="flex items-center justify-between mb-3">
+  <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Filters</h2>
+  @if (hasActiveFilters()) {
+    <button
+      type="button"
+      class="text-xs font-medium text-accent hover:underline"
+      (click)="onClear()"
+    >
+      Clear all
+    </button>
+  }
+</div>
+
+<div ngAccordionGroup multiExpandable wrap class="flex flex-col divide-y divide-border/40">
+  @for (group of groups(); track group.key) {
+    <section class="py-2">
+      <button
+        ngAccordionTrigger
+        [panel]="panel"
+        class="w-full flex items-center justify-between gap-2 py-2 px-1 text-left text-sm font-medium text-foreground rounded-md outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        <span class="flex items-center gap-2">
+          {{ group.label }}
+          @if (selectedFor(group.key).length) {
+            <span
+              class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-accent text-white text-[10px] font-semibold"
+            >
+              {{ selectedFor(group.key).length }}
+            </span>
+          }
+        </span>
+        <ng-icon
+          name="heroChevronDown"
+          size="16"
+          class="text-muted-foreground transition-transform aria-expanded:rotate-180"
+        />
+      </button>
+
+      <div ngAccordionPanel #panel="ngAccordionPanel" class="mt-1">
+        <ng-template ngAccordionContent>
+          <app-checkbox-list
+            [options]="group.options"
+            [selected]="selectedFor(group.key)"
+            (selectionChange)="update(group.key, $event)"
+          />
+        </ng-template>
+      </div>
+    </section>
+  }
+</div>

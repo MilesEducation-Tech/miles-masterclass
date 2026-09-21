@@ -4,7 +4,11 @@ import '@angular/compiler';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { RecordPaymentDialog, RecordPaymentDialogResult } from './record-payment-dialog';
+import {
+  MAX_INVOICE_BYTES,
+  RecordPaymentDialog,
+  RecordPaymentDialogResult,
+} from './record-payment-dialog';
 
 /**
  * Pins the either-or rule: an offline payment needs an invoice file **or** a
@@ -22,10 +26,10 @@ function makeDialog() {
     canSubmit(): boolean;
     submit(): void;
     dialogRef: { close: ReturnType<typeof vi.fn> };
-    data: { userEmail: string };
+    data: { userEmail: string; isSubscribed: boolean };
   };
   dialog.dialogRef = { close: vi.fn() };
-  dialog.data = { userEmail: 'someone@example.com' };
+  dialog.data = { userEmail: 'someone@example.com', isSubscribed: false };
   return dialog;
 }
 
@@ -73,15 +77,27 @@ describe('RecordPaymentDialog — invoice or comment', () => {
     });
   });
 
-  it('accepts both together', () => {
+  it('rejects both together — the API wants exactly one proof', () => {
     const d = makeDialog();
     d.file.set(invoice());
     d.comment.set('Partial payment.');
-    expect(d.canSubmit()).toBe(true);
+    expect(d.canSubmit()).toBe(false);
 
     d.submit();
-    const result = closedWith(d);
-    expect(result?.file?.name).toBe('invoice.pdf');
-    expect(result?.comment).toBe('Partial payment.');
+    expect(d.dialogRef.close).not.toHaveBeenCalled();
+  });
+
+  it('rejects a file type the backend would 400', () => {
+    const d = makeDialog();
+    d.file.set(new File(['x'], 'invoice.exe', { type: 'application/octet-stream' }));
+    expect(d.canSubmit()).toBe(false);
+  });
+
+  it('rejects an invoice over 10 MB', () => {
+    const d = makeDialog();
+    d.file.set(
+      new File([new Uint8Array(MAX_INVOICE_BYTES + 1)], 'big.pdf', { type: 'application/pdf' }),
+    );
+    expect(d.canSubmit()).toBe(false);
   });
 });

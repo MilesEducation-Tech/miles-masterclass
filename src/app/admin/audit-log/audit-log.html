@@ -1,0 +1,216 @@
+<section class="admin-theme flex flex-col gap-6 p-6 text-white min-h-full">
+  <!-- Header -->
+  <div>
+    <h1 class="text-2xl font-semibold">Audit log</h1>
+    <p class="mt-1 text-sm text-neutral-400">
+      Every recorded action in the admin panel.
+      <span class="text-neutral-300">Verified</span> rows are written by the database on the change
+      itself and cannot be bypassed. <span class="text-neutral-300">Reported</span> rows come from
+      the browser: the person is confirmed by the server, the action is not.
+    </p>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-col gap-3">
+    <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div class="flex w-full max-w-md items-center">
+        <app-aria-input
+          id="audit-search"
+          type="search"
+          label="Search person, action or record"
+          class="w-full"
+          [(value)]="searchInput"
+        />
+      </div>
+
+      <div class="flex items-end gap-3">
+        <app-aria-input id="audit-from" type="date" label="From" [(value)]="fromDate" />
+        <app-aria-input id="audit-to" type="date" label="To" [(value)]="toDate" />
+        <app-button
+          variant="outline"
+          size="sm"
+          class="h-9 rounded-md border-white/15 bg-transparent text-xs text-white hover:bg-white/5"
+          [disabled]="isLoading()"
+          (clicked)="reload()"
+        >
+          Refresh
+        </app-button>
+      </div>
+    </div>
+
+    <app-tab-strip
+      [options]="tabLabels"
+      [selected]="activeTabLabel()"
+      (selectionChange)="onTabChange($event)"
+      aria-label="Audit category filter"
+    />
+  </div>
+
+  <!-- Error -->
+  @if (error()) {
+    <div
+      class="px-3 py-2 text-sm rounded-md"
+      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
+      role="alert"
+    >
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Table -->
+  <div class="text-white">
+    @if (isLoading() && !rows().length) {
+      <div class="flex items-center justify-center py-12 text-neutral-400">
+        <app-spinner size="lg" color="white" trackColor="neutral-600" />
+      </div>
+    }
+
+    @if (rows().length) {
+      <div class="overflow-x-auto rounded-lg border border-white/10">
+        <table class="w-full text-left text-sm">
+          <thead
+            class="text-[11px] uppercase tracking-wider"
+            style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
+          >
+            <tr class="whitespace-nowrap">
+              <th class="w-8 px-2 py-3"><span class="sr-only">Expand detail</span></th>
+              <th class="px-4 py-3 font-semibold">When</th>
+              <th class="px-4 py-3 font-semibold">Person</th>
+              <th class="px-4 py-3 font-semibold">Action</th>
+              <th class="px-4 py-3 font-semibold">Record</th>
+              <th class="px-4 py-3 font-semibold">Trust</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            @for (row of rows(); track row.id) {
+              <tr class="hover:bg-white/3 transition-colors align-top">
+                <td class="px-2 py-3 align-middle">
+                  <app-button
+                    variant="ghost"
+                    size="icon"
+                    class="h-6 w-6 text-neutral-400 hover:bg-white/10 hover:text-white"
+                    [attr.aria-expanded]="isExpanded(row.id)"
+                    [ariaLabel]="
+                      (isExpanded(row.id) ? 'Hide' : 'Show') + ' detail for entry ' + row.id
+                    "
+                    (clicked)="toggleExpand(row.id)"
+                  >
+                    <ng-icon
+                      [name]="isExpanded(row.id) ? 'lucideChevronDown' : 'lucideChevronRight'"
+                      class="text-base"
+                      aria-hidden="true"
+                    />
+                  </app-button>
+                </td>
+
+                <td class="px-4 py-3 text-neutral-300 whitespace-nowrap">
+                  {{ row.occurred_at | date: 'MMM d, y HH:mm' }}
+                </td>
+
+                <td class="px-4 py-3 text-neutral-100">
+                  {{ row.actor_email || 'System' }}
+                  @if (row.actor_roles?.length) {
+                    <span class="block text-[11px] text-neutral-500">
+                      {{ row.actor_roles!.join(', ') }}
+                    </span>
+                  }
+                </td>
+
+                <td class="px-4 py-3 text-neutral-300">
+                  <span class="font-medium text-neutral-100">{{ row.action }}</span>
+                  <span class="block text-[11px] text-neutral-500">{{ row.category }}</span>
+                </td>
+
+                <td class="px-4 py-3 text-neutral-300 break-all">
+                  {{ row.entity_type || '—' }}
+                  @if (row.entity_id) {
+                    <span class="block text-[11px] text-neutral-500">{{ row.entity_id }}</span>
+                  }
+                </td>
+
+                <td class="px-4 py-3">
+                  <span
+                    class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                    [style.background]="
+                      row.source === 'trigger' ? 'var(--mm-success-bg)' : 'var(--mm-surface-2)'
+                    "
+                    [style.color]="
+                      row.source === 'trigger' ? 'var(--mm-success-fg)' : 'var(--mm-fg-3)'
+                    "
+                  >
+                    {{ trustLabel(row) }}
+                  </span>
+                </td>
+              </tr>
+
+              @if (isExpanded(row.id)) {
+                <tr style="background: var(--mm-surface-2)">
+                  <td></td>
+                  <td colspan="5" class="px-4 py-3">
+                    @if (changeLines(row).length) {
+                      <div
+                        class="text-[11px] uppercase tracking-wider mb-2"
+                        style="color: var(--mm-fg-3)"
+                      >
+                        Detail
+                      </div>
+                      <dl class="grid gap-1 text-sm">
+                        @for (line of changeLines(row); track line.key) {
+                          <div class="grid grid-cols-[10rem_1fr] gap-2">
+                            <dt class="text-neutral-400">{{ line.key }}</dt>
+                            <dd class="text-neutral-200 break-all">
+                              @if (line.before !== null) {
+                                <span class="text-neutral-500 line-through">{{ line.before }}</span>
+                                <span class="mx-2 text-neutral-500">to</span>
+                              }
+                              <span>{{ line.after }}</span>
+                            </dd>
+                          </div>
+                        }
+                      </dl>
+                    } @else {
+                      <p class="text-sm text-neutral-500">No detail recorded for this entry.</p>
+                    }
+
+                    @if (contextLine(row)) {
+                      <p class="mt-3 text-[11px] text-neutral-500 break-all">
+                        {{ contextLine(row) }}
+                      </p>
+                    }
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Keyset pagination: this table is never pruned, so no offsets. -->
+      <div class="mt-6 flex items-center justify-between text-sm text-neutral-400">
+        <span>Showing {{ rows().length }} entries, newest first</span>
+        <div class="flex items-center gap-3">
+          <app-button
+            variant="outline"
+            size="sm"
+            class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
+            [disabled]="!hasNewer() || isLoading()"
+            (clicked)="goNewer()"
+          >
+            Newer
+          </app-button>
+          <app-button
+            variant="outline"
+            size="sm"
+            class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
+            [disabled]="!hasOlder() || isLoading()"
+            (clicked)="goOlder()"
+          >
+            Older
+          </app-button>
+        </div>
+      </div>
+    } @else if (!isLoading()) {
+      <p class="py-12 text-center text-sm text-neutral-500">No activity matches these filters.</p>
+    }
+  </div>
+</section>

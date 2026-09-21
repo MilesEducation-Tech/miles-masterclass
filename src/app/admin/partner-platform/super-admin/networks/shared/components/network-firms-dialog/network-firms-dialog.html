@@ -30,7 +30,9 @@
           @for (firm of firms(); track firm.id) {
             <tr>
               <td class="px-3 py-2 font-semibold">{{ firm.name }}</td>
-              <td class="px-3 py-2" style="color: var(--mm-fg-3)">{{ firm.email_domain }}</td>
+              <td class="px-3 py-2" style="color: var(--mm-fg-3)">
+                {{ firm.email_domains.join(', ') }}
+              </td>
               <td class="px-3 py-2">
                 <span
                   class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"

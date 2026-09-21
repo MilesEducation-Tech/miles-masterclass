@@ -45,11 +45,12 @@ interface UserFormModel {
   company_id: number | null;
   sector_id: number | null;
   job_role_id: number | null;
+  experience_id: number | null;
 }
 
-// TODO(open dep): confirm the exact enum values onboard-user accepts. The web
-// profile uses yes/no/na; the onboard payload examples show "completed"/"na" and
-// "licensed" — a different vocabulary. These are the onboard-side guesses.
+// Backend choice fields (User.QUALIFICATION_CHOICES / LICENSE_CHOICES): the
+// values below are the ones the onboard endpoint accepts — `not_licensed` is not
+// one of them and 400s.
 const QUALIFICATION_OPTIONS: AriaSelectOption<string>[] = [
   { value: 'completed', label: 'Completed' },
   { value: 'pursuing', label: 'Pursuing' },
@@ -57,9 +58,23 @@ const QUALIFICATION_OPTIONS: AriaSelectOption<string>[] = [
 ];
 const LICENSE_OPTIONS: AriaSelectOption<string>[] = [
   { value: 'licensed', label: 'Licensed' },
-  { value: 'not_licensed', label: 'Not licensed' },
+  { value: 'awaiting', label: 'Awaiting license' },
   { value: 'na', label: 'Not applicable' },
 ];
+/** Mirrors the backend's fixed `EXPERIENCE_MAP` — there is no table to fetch. */
+const EXPERIENCE_OPTIONS: AriaSelectOption<number>[] = [
+  { value: 1, label: '0 – 2 years' },
+  { value: 2, label: '2 – 5 years' },
+  { value: 3, label: '5 – 10 years' },
+  { value: 4, label: 'Above 10 years' },
+];
+
+/** Case-insensitive label → option value; the list API returns names, not ids. */
+function byLabel<T>(options: readonly AriaSelectOption<T>[], label: string | null): T | null {
+  if (!label) return null;
+  const needle = label.trim().toLowerCase();
+  return options.find((o) => o.label.trim().toLowerCase() === needle)?.value ?? null;
+}
 
 /**
  * Full-page create / edit form for onboarding a learner user. One component for
@@ -100,6 +115,7 @@ export class UserForm {
 
   protected readonly qualificationOptions = QUALIFICATION_OPTIONS;
   protected readonly licenseOptions = LICENSE_OPTIONS;
+  protected readonly experienceOptions = EXPERIENCE_OPTIONS;
   /** Country-code picker fed by the same dial-code constant the profile page uses. */
   protected readonly countryCodeOptions: AriaSelectOption<string>[] = dialCodeWithLength.map(
     (c) => ({
@@ -122,11 +138,13 @@ export class UserForm {
     qualification_status: '',
     license_status: null,
     is_currently_working: false,
-    terms_accepted: false,
+    // The API defaults terms_accepted to true on create; an unticked box is a deliberate "no".
+    terms_accepted: true,
     sms_consent: false,
     company_id: null,
     sector_id: null,
     job_role_id: null,
+    experience_id: null,
   });
 
   protected readonly form = form<UserFormModel>(this.model, (s) => {
@@ -152,8 +170,49 @@ export class UserForm {
     computed(() => this.model().location),
   );
 
+  /** The list row being edited — names only, resolved to ids once the reference lists load. */
+  private readonly prefillRow = signal<InternalUser | null>(null);
+
   constructor() {
     this.prefillFromRow();
+
+    // The list returns names, the form needs ids: resolve each FK by label as
+    // soon as its option list arrives, and only fill fields still blank so an
+    // operator's edit is never overwritten by a late-arriving list.
+    effect(() => {
+      const row = this.prefillRow();
+      if (!row) return;
+      const professions = this.facade.professionOptions();
+      const courses = this.facade.courseOptions();
+      const boards = this.facade.stateBoardOptions();
+      const sectors = this.facade.sectorOptions();
+      const companies = this.facade.companyOptions();
+      untracked(() => {
+        this.model.update((m) => ({
+          ...m,
+          profession: m.profession ?? byLabel(professions, row.profession),
+          professional_courses: m.professional_courses.length
+            ? m.professional_courses
+            : row.professional_courses.flatMap((name) => {
+                const id = byLabel(courses, name);
+                return id == null ? [] : [id];
+              }),
+          state_board: m.state_board.length
+            ? m.state_board
+            : row.state_board.flatMap((name) => {
+                const id = byLabel(boards, name);
+                return id == null ? [] : [id];
+              }),
+          sector_id: m.sector_id ?? byLabel(sectors, row.sector),
+          company_id: m.company_id ?? byLabel(companies, row.company),
+        }));
+        const m = this.model();
+        if (m.job_role_id == null && m.sector_id != null) {
+          const roleId = byLabel(this.facade.rolesFor(m.sector_id), row.job_role);
+          if (roleId != null) this.model.update((x) => ({ ...x, job_role_id: roleId }));
+        }
+      });
+    });
 
     toObservable(this.companyQueryInput)
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
@@ -202,18 +261,25 @@ export class UserForm {
       mobile: row.mobile ?? '',
       location: row.location ?? '',
       partner_code: row.partner_code ?? null,
-      profession: row.profession ?? null,
-      professional_courses: row.professional_courses ?? [],
-      state_board: row.state_board ?? [],
+      // FKs arrive as names — the constructor effect resolves them to ids.
+      profession: null,
+      professional_courses: [],
+      state_board: [],
       qualification_status: row.qualification_status ?? '',
       license_status: row.license_status ?? '',
       is_currently_working: row.is_currently_working ?? false,
       terms_accepted: row.terms_accepted ?? false,
       sms_consent: row.sms_consent ?? false,
-      company_id: row.company ?? null,
-      sector_id: row.sector ?? null,
-      job_role_id: row.job_role ?? null,
+      company_id: null,
+      sector_id: null,
+      job_role_id: null,
+      // Not in the list response — backend ask.
+      experience_id: null,
     });
+    // The company typeahead is server-filtered: seed the query so the row's
+    // company is in the option list the effect resolves against.
+    if (row.company) this.facade.setCompanyQuery(row.company);
+    this.prefillRow.set(row);
   }
 
   protected onCompanyQuery(query: string): void {
@@ -244,6 +310,7 @@ export class UserForm {
       company_id: m.company_id,
       sector_id: m.sector_id,
       job_role_id: m.job_role_id,
+      experience_id: m.experience_id,
     };
     // Send only what was filled — blanks are omitted rather than sent as ''/null.
     for (const [key, value] of Object.entries(optional)) {

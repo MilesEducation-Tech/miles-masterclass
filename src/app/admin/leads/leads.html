@@ -19,33 +19,19 @@
     </div>
 
     <div class="flex items-center gap-3">
-      <div
-        class="inline-flex items-center gap-1 rounded-md p-1 border border-white/10"
-        style="background: var(--mm-surface-2)"
-        role="tablist"
+      <app-tab-strip
+        [options]="tabLabels"
+        [selected]="activeTabLabel()"
+        (selectionChange)="onTabChange($event)"
         aria-label="Lead status filter"
-      >
-        @for (tab of statusTabs; track tab.value) {
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="isActiveTab(tab.value)"
-            class="px-3 py-1.5 text-xs font-medium rounded transition-colors"
-            [ngClass]="
-              isActiveTab(tab.value) ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white'
-            "
-            (click)="selectStatus(tab.value)"
-          >
-            {{ tab.label }}
-          </button>
-        }
-      </div>
+      />
 
       <ng-container *hasPermission="PERM.LEADS_EXPORT">
         <app-button
           variant="outline"
           size="sm"
           class="h-9 rounded-md border-white/15 bg-transparent text-xs text-white hover:bg-white/5"
+          [disabled]="facade.isExporting()"
           (clicked)="onExport()"
         >
           Export CSV
@@ -61,7 +47,7 @@
       style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
       role="alert"
     >
-      Failed to load leads. Try refreshing the page or check your connection.
+      {{ facade.error() }}
     </div>
   }
 
@@ -75,6 +61,7 @@
     [hasNext]="facade.hasNext()"
     [hasPrev]="facade.hasPrev()"
     (statusChange)="onStatusChange($event)"
+    (notesChange)="onNotesChange($event)"
     (prevPage)="goPrev()"
     (nextPage)="goNext()"
   />

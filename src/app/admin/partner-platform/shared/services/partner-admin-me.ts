@@ -26,17 +26,21 @@ const PARTNER_ME_ENDPOINT = 'partners/panel/me/';
  * (or a fetch failure) resolves to "not a partner admin" so callers can render
  * an empty state and hide every write action (fail-closed).
  */
-@Injectable({ providedIn: 'root' })
+// Route-scoped (see admin.routes.ts): the injector dies on navigation, which
+// aborts in-flight resource() loads and stops this page's calls firing elsewhere.
+@Injectable()
 export class PartnerAdminMe {
   private readonly api = inject(ApiClient);
   private readonly auth = inject(AdminAuth);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly meResource = resource({
-    // Refetch when the session changes; skip on the server and when signed out.
+    // Keyed on WHO is signed in (a primitive, so a profile refresh that rebuilds
+    // the same user is a no-op). Keying on the access token refetched /me/ on
+    // every hourly rotation, from whatever page the admin happened to be on.
     params: () => {
       if (!this.isBrowser || !this.auth.isAuthenticated()) return undefined;
-      return { token: this.auth.getAccessToken() };
+      return this.auth.adminUser()?.user_id;
     },
     loader: ({ abortSignal }) =>
       firstValueFrom(

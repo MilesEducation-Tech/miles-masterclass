@@ -1,5 +1,12 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  EnvironmentInjector,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -33,6 +40,9 @@ import {
 export class UserReport {
   protected readonly facade = inject(UserReportFacade);
   private readonly dialog = inject(Dialog);
+  // Dialogs are built by the root Dialog service; hand it this page's injector
+  // so the route-scoped facade resolves instead of a NullInjectorError.
+  private readonly envInjector = inject(EnvironmentInjector);
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -87,6 +97,7 @@ export class UserReport {
         category,
         courseIds,
       } satisfies UserCourseDetailDialogData,
+      environmentInjector: this.envInjector,
       maxWidth: '560px',
       ariaLabel: `${category} for ${row.name}`,
     });

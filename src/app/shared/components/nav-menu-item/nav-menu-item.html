@@ -1,0 +1,71 @@
+@if (item().type === 'link') {
+  <a
+    ngMenuItem
+    [value]="item().label"
+    [routerLink]="utils.localePath(item().route)"
+    [queryParams]="item().queryParams"
+    [attr.aria-current]="isActiveRoute(item().route) ? 'page' : null"
+    (click)="onLink()"
+    class="flex flex-col py-2.5 px-3.5 rounded-lg text-sm text-foreground/90 no-underline hover:text-accent transition-all duration-200 cursor-pointer outline-none focus:bg-accent/12 focus:text-accent"
+  >
+    <span>{{ item().label }}</span>
+    @if (item().subLabel) {
+      <span class="text-xs text-muted-foreground">{{ item().subLabel }}</span>
+    }
+  </a>
+}
+
+@if (item().type === 'button') {
+  <button
+    ngMenuItem
+    [value]="item().label"
+    type="button"
+    (click)="onAction()"
+    class="w-full text-left flex flex-col py-2.5 px-3.5 rounded-lg text-sm text-foreground/90 bg-transparent border-0 hover:text-accent transition-all duration-200 cursor-pointer outline-none focus:bg-accent/12 focus:text-accent"
+  >
+    <span>{{ item().label }}</span>
+  </button>
+}
+
+@if (item().type === 'menu' && item().children?.length) {
+  <!--
+    A11y note: this trigger uses [ngMenuTrigger] (not [ngMenuItem][submenu])
+    so clicks reliably open the submenu. Tradeoff: it isn't part of the
+    parent menu's roving tabindex, so arrow-key navigation in the parent
+    menu skips this row. Submenu items themselves remain keyboard-navigable.
+  -->
+  <div class="relative">
+    <button
+      #triggerBtn
+      type="button"
+      ngMenuTrigger
+      [menu]="subPanel"
+      [class]="
+        cn(
+          'w-full text-left flex items-center justify-between gap-2 py-2.5 px-3.5 rounded-lg text-sm text-foreground/90 bg-transparent border-0  hover:text-accent  transition-all duration-200 cursor-pointer outline-none focus:outline-none focus:ring-2 focus:ring-ring/40',
+          hasActiveChild(item()) && 'text-accent'
+        )
+      "
+    >
+      <span>{{ item().label }}</span>
+      <ng-icon name="lucideChevronRight" size="16" aria-hidden="true" />
+    </button>
+
+    <div
+      ngMenu
+      #subPanel="ngMenu"
+      [hidden]="!subPanel.visible()"
+      [class]="
+        cn(
+          'mt-1 ml-3 bg-muted rounded-lg p-2 z-1010 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)]',
+          'lg:mt-0 lg:ml-0 lg:absolute lg:top-0 lg:min-w-[220px] lg:max-w-[300px] lg:bg-popover/95 lg:backdrop-blur-xl lg:rounded-xl lg:p-2 lg:shadow-[0_10px_40px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1)]',
+          flipped() ? 'lg:right-full lg:mr-1' : 'lg:left-full lg:ml-1'
+        )
+      "
+    >
+      @for (child of item().children; track child.label) {
+        <app-nav-menu-item [item]="child" (navigated)="bubble()" />
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,26 @@
+<div class="relative w-full sm:aspect-video max-sm:aspect-9/16 overflow-hidden">
+  <div class="absolute z-0 w-full h-full left-0 top-0">
+    <img
+      [ngSrc]="S3_BUCKET_URL + 'static-assests/web-app/payment/plab-bg.webp'"
+      class="h-full w-full absolute top-0 left-0 -z-10 object-cover object-center"
+      alt="termsAndConditionBG"
+      fill
+    />
+  </div>
+  <div
+    class="md:w-1/2 w-[90%] absolute h-auto bottom-10 left-[5%] z-50 flex gap-4 flex-col justify-end"
+  >
+    <p class="2xl:text-8xl xl:text-6xl text-5xl flex flex-col font-bold gap-2">
+      <span class="text-accent">PODCAST</span>
+      <span>PLAY</span>
+      <span>LISTEN</span>
+      <span>EARN CREDITS</span>
+    </p>
+    <p class="text-sm text-gray-300">
+      Audio Podcasts with Experts shaping accounting, AI, and finance.
+    </p>
+  </div>
+  <div class="relative w-full h-full z-40 max-md:hidden">
+    <app-wave-canvas />
+  </div>
+</div>

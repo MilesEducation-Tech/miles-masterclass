@@ -44,6 +44,24 @@
       />
 
       <app-aria-input
+        id="pc-stripe-price"
+        type="text"
+        label="Stripe price ID (optional)"
+        placeholder="price_1N…"
+        [formField]="form.stripe_price_id"
+      />
+
+      <app-aria-input
+        id="pc-valid-to"
+        type="datetime-local"
+        label="Valid to (optional)"
+        [formField]="form.valid_to"
+      />
+      <p class="-mt-3 text-xs" style="color: var(--mm-fg-3)">
+        Expiry for direct (non-seat) redemption. Seats minted from this plan are unaffected.
+      </p>
+
+      <app-aria-input
         id="pc-auto-subscribe"
         type="checkbox"
         label="Auto-subscribe on redemption"

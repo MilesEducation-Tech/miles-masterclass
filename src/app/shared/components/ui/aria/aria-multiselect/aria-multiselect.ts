@@ -1,34 +1,19 @@
-import { Component, computed, input, model, signal } from '@angular/core';
+import { Listbox, Option } from '@angular/aria/listbox';
+import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
+import { Component, computed, ElementRef, input, model, signal, viewChild } from '@angular/core';
 import type { FormValueControl } from '@angular/forms/signals';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroCheck, heroChevronDown, heroXMark } from '@ng-icons/heroicons/outline';
-import { NgpDescription, NgpFormField, NgpLabel } from 'ng-primitives/form-field';
-import {
-  NgpSelect,
-  NgpSelectDropdown,
-  NgpSelectOption,
-  NgpSelectPortal,
-} from 'ng-primitives/select';
 import { AriaSelectOption, dedupeAriaOptions } from '../../../../core/models/aria.model';
 import { cn } from '../../../../utils/cn';
 
 /**
- * Multi-select dropdown built on the `NgpSelect` primitive in multiple mode.
- * Selected values render as removable chips. The primitive owns the ARIA
- * wiring, keyboard navigation and floating dropdown.
+ * ARIA multi-select dropdown built on `@angular/aria/listbox` with `multi="true"`
+ * rendered in a `CdkConnectedOverlay`. Selected values render as chips.
  */
 @Component({
   selector: 'app-aria-multiselect',
-  imports: [
-    NgpSelect,
-    NgpSelectDropdown,
-    NgpSelectOption,
-    NgpSelectPortal,
-    NgpFormField,
-    NgpLabel,
-    NgpDescription,
-    NgIcon,
-  ],
+  imports: [Listbox, Option, CdkConnectedOverlay, CdkOverlayOrigin, NgIcon],
   templateUrl: './aria-multiselect.html',
   styleUrl: './aria-multiselect.css',
   providers: [provideIcons({ heroChevronDown, heroXMark, heroCheck })],
@@ -63,7 +48,11 @@ export class AriaMultiselect<V = unknown> implements FormValueControl<V[]> {
 
   readonly isOpen = signal(false);
 
+  private readonly triggerEl = viewChild<ElementRef<HTMLButtonElement>>('triggerEl');
+  private readonly listboxEl = viewChild<ElementRef<HTMLUListElement>>('listboxEl');
+
   readonly inputId = computed(() => `${this.id()}-input`);
+  readonly listboxId = computed(() => `${this.id()}-listbox`);
   readonly hintId = computed(() => `${this.id()}-hint`);
   readonly errorId = computed(() => `${this.id()}-error`);
 
@@ -110,23 +99,30 @@ export class AriaMultiselect<V = unknown> implements FormValueControl<V[]> {
     return this.options().find((o) => o.value === v)?.label ?? String(v);
   }
 
-  isSelected(v: unknown): boolean {
-    return this.selectedValues().includes(v as V);
+  toggle() {
+    if (this.disabled() || this.readonly()) return;
+    this.isOpen.update((v) => !v);
   }
 
-  onValueChange(next: unknown) {
-    // The primitive prunes values missing from the rendered options (e.g. a
-    // seeded selection before async options load) — those can't have been
-    // user-toggled, so carry them over instead of losing them.
-    const selected = (next ?? []) as V[];
+  close() {
+    if (!this.isOpen()) return;
+    this.isOpen.set(false);
+    this.touched.set(true);
+    queueMicrotask(() => this.triggerEl()?.nativeElement.focus());
+  }
+
+  onOverlayAttached() {
+    queueMicrotask(() => this.listboxEl()?.nativeElement.focus());
+  }
+
+  onListboxValuesChange(values: unknown[]) {
+    // The listbox prunes values missing from the rendered options (e.g. seeded
+    // selection before async options load) — those can't have been user-toggled,
+    // so carry them over instead of losing them.
+    const next = values as V[];
     const rendered = new Set(this.options().map((o) => o.value));
-    const kept = this.selectedValues().filter((v) => !rendered.has(v) && !selected.includes(v));
-    this.value.set([...selected, ...kept]);
-  }
-
-  onOpenChange(open: boolean) {
-    this.isOpen.set(open);
-    if (!open) this.touched.set(true);
+    const kept = this.value().filter((v) => !rendered.has(v) && !next.includes(v));
+    this.value.set([...next, ...kept]);
   }
 
   removeChip(event: Event, v: V) {

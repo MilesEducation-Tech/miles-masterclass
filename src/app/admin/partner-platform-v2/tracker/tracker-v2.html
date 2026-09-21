@@ -13,20 +13,14 @@
     <!-- Firm selector (network admins only; firm admins are pinned server-side) -->
     @if (facade.firms().length) {
       <div class="flex items-center gap-2">
-        <label for="firm-select-v2" class="text-sm" style="color: var(--mm-fg-3)">
-          Sub-company
-        </label>
-        <select
+        <app-aria-select
           id="firm-select-v2"
-          class="form-input max-w-xs"
-          [value]="facade.selectedFirmId() ?? ''"
-          (change)="onSelectFirm($event)"
-        >
-          <option value="">All sub-companies</option>
-          @for (firm of facade.firms(); track firm.id) {
-            <option [value]="firm.id">{{ firm.name }}</option>
-          }
-        </select>
+          label="Sub-company"
+          class="w-64"
+          [options]="firmOptions()"
+          [value]="facade.selectedFirmId()"
+          (valueChange)="facade.selectFirm($any($event))"
+        />
       </div>
     }
   </header>
@@ -64,25 +58,12 @@
         </div>
       </div>
 
-      <div
-        class="inline-flex w-fit items-center gap-1 rounded-md border border-white/10 p-1"
-        style="background: var(--card, #0e2742)"
-        role="tablist"
+      <app-tab-strip
+        [options]="tabLabels"
+        [selected]="activeTabLabel()"
+        (selectionChange)="onTabChange($event)"
         aria-label="Seat status filter"
-      >
-        @for (tab of statusTabs; track tab.value) {
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="isActiveTab(tab.value)"
-            class="rounded px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-white/5"
-            [class.bg-primary]="isActiveTab(tab.value)"
-            (click)="selectStatus(tab.value)"
-          >
-            {{ tab.label }}
-          </button>
-        }
-      </div>
+      />
 
       @if (facade.error()) {
         <div

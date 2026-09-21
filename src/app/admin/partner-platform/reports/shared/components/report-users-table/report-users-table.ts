@@ -1,7 +1,7 @@
 import { DecimalPipe, formatNumber } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideEye } from '@ng-icons/lucide';
+import { lucideDownload, lucideEye } from '@ng-icons/lucide';
 import { Button } from '../../../../../../shared/components/ui/button/button';
 import { Spinner } from '../../../../../../shared/components/ui/spinner/spinner';
 import { ReportSubject, ReportUserRow } from '../../models/partner-report.model';
@@ -14,7 +14,7 @@ import { ReportSubject, ReportUserRow } from '../../models/partner-report.model'
 @Component({
   selector: 'app-report-users-table',
   imports: [DecimalPipe, NgIcon, Button, Spinner],
-  providers: [provideIcons({ lucideEye })],
+  providers: [provideIcons({ lucideDownload, lucideEye })],
   templateUrl: './report-users-table.html',
   styleUrl: './report-users-table.css',
   host: { class: 'block w-full' },
@@ -23,6 +23,8 @@ export class ReportUsersTable {
   readonly rows = input.required<ReportUserRow[]>();
   readonly subject = input.required<ReportSubject>();
   readonly isLoading = input<boolean>(false);
+  /** Disables every row's certificate button while one zip is being built. */
+  readonly isDownloading = input<boolean>(false);
   readonly currentPage = input<number>(1);
   readonly pageSize = input<number>(30);
   readonly totalCount = input<number>(0);
@@ -30,6 +32,8 @@ export class ReportUsersTable {
   readonly hasPrev = input<boolean>(false);
 
   readonly viewItems = output<ReportUserRow>();
+  /** Zip of this user's certificates for the subject (fetched on click), a folder per course. */
+  readonly downloadCertificates = output<ReportUserRow>();
   readonly prevPage = output<void>();
   readonly nextPage = output<void>();
 

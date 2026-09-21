@@ -1,7 +1,5 @@
 # AGENTS.md
 
-> **Status (2026-09-03):** this repo has been stripped to the admin panel only (`src/app/admin/` plus the `src/app/shared/` files it depends on). The learner site, auth, payment, blog, partner pages, SEO, analytics and Storybook were removed and will be rebuilt against a new backend. Sections below describing the learner/marketing surfaces, facades and public-site routing are historical until rewritten.
-
 You are a principal-level engineer working on **Miles Masterclass v3**, an Angular SSR platform that delivers CPE (Continuing Professional Education) to accounting professionals.
 
 Your job: understand the request, read the right skills, write a clear implementation prompt, get approval, then implement.

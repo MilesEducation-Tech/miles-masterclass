@@ -28,22 +28,23 @@
           @for (row of rows(); track row.id) {
             <tr class="hover:bg-white/3 transition-colors align-top">
               <td class="px-2 py-3 align-middle">
-                @if (row.notes) {
-                  <button
-                    type="button"
-                    class="inline-flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:bg-white/10 hover:text-white transition-colors"
+                @if (row.notes || canWrite()) {
+                  <app-button
+                    variant="ghost"
+                    size="icon"
+                    class="h-6 w-6 text-neutral-400 hover:bg-white/10 hover:text-white"
                     [attr.aria-expanded]="isExpanded(row.id)"
-                    [attr.aria-label]="
+                    [ariaLabel]="
                       (isExpanded(row.id) ? 'Hide' : 'Show') + ' notes for ' + row.full_name
                     "
-                    (click)="toggleExpand(row.id)"
+                    (clicked)="toggleExpand(row.id)"
                   >
                     <ng-icon
                       [name]="isExpanded(row.id) ? 'lucideChevronDown' : 'lucideChevronRight'"
                       class="text-base"
                       aria-hidden="true"
                     />
-                  </button>
+                  </app-button>
                 }
               </td>
               <td class="px-4 py-3 text-neutral-100">{{ row.full_name }}</td>
@@ -54,17 +55,13 @@
               <td class="px-4 py-3 text-neutral-300">{{ row.enquiry_type }}</td>
               <td class="px-4 py-3">
                 @if (canWrite()) {
-                  <select
-                    class="rounded-md border border-white/15 bg-transparent px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/30"
-                    style="background: var(--mm-surface-2)"
+                  <app-aria-select
+                    [id]="'lead-status-' + row.id"
+                    class="w-36"
+                    [options]="statusOptions"
                     [value]="row.status"
-                    [attr.aria-label]="'Status for ' + row.full_name"
-                    (change)="onStatusChange(row.id, $event)"
-                  >
-                    @for (s of statuses; track s) {
-                      <option [value]="s">{{ s }}</option>
-                    }
-                  </select>
+                    (valueChange)="onStatusChange(row.id, $any($event))"
+                  />
                 } @else {
                   <span
                     class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium capitalize"
@@ -83,13 +80,34 @@
               <tr style="background: var(--mm-surface-2)">
                 <td></td>
                 <td colspan="8" class="px-4 py-3">
-                  <div
-                    class="text-[11px] uppercase tracking-wider mb-1"
-                    style="color: var(--mm-fg-3)"
-                  >
-                    Notes
-                  </div>
-                  <p class="text-sm text-neutral-200 whitespace-pre-wrap">{{ row.notes }}</p>
+                  @if (canWrite()) {
+                    <app-aria-input
+                      #notes
+                      [id]="'lead-notes-' + row.id"
+                      type="textarea"
+                      label="Notes"
+                      placeholder="Internal notes — never shown to the lead"
+                      [rows]="3"
+                      [value]="row.notes"
+                    />
+                    <app-button
+                      variant="outline"
+                      size="sm"
+                      class="mt-2 h-9 rounded-md border-white/15 bg-transparent w-32 text-xs text-white hover:bg-white/5"
+                      [disabled]="notes.value() === row.notes"
+                      (clicked)="onNotesSave(row.id, notes.value())"
+                    >
+                      Save notes
+                    </app-button>
+                  } @else {
+                    <div
+                      class="text-[11px] uppercase tracking-wider mb-1"
+                      style="color: var(--mm-fg-3)"
+                    >
+                      Notes
+                    </div>
+                    <p class="text-sm text-neutral-200 whitespace-pre-wrap">{{ row.notes }}</p>
+                  }
                 </td>
               </tr>
             }

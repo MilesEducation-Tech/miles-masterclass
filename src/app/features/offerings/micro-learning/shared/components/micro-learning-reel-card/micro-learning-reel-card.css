@@ -1,0 +1,213 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0.5rem;
+  gap: 0.5rem;
+}
+
+.reel-title-overlay {
+  transition: opacity 200ms ease;
+}
+
+/* Default: title is visible. Hide it only when the video is actively playing
+   AND the user isn't hovering the card. Hovering or pausing brings it back.
+   Safari < 17 and older Firefox lack `:has()` — the title stays visible there,
+   which is an acceptable fallback. */
+@supports selector(:has(*)) {
+  :host:not(:hover):has(app-video-js .video-js.vjs-playing) .reel-title-overlay {
+    opacity: 0;
+  }
+}
+
+/* ───── Video.js theming (ported from legacy project) ───── */
+
+:host ::ng-deep video {
+  object-fit: contain;
+  overflow-clip-margin: content-box;
+  overflow: clip;
+}
+
+:host ::ng-deep video::-webkit-media-controls-timeline,
+:host ::ng-deep video::-webkit-media-controls-current-time-display,
+:host ::ng-deep video::-webkit-media-controls-time-remaining-display {
+  display: none !important;
+}
+
+:host ::ng-deep video::-webkit-media-controls {
+  display: none !important;
+}
+
+:host ::ng-deep .video-js {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  visibility: visible !important;
+  position: relative !important;
+  background-color: #000 !important;
+  overflow: hidden !important;
+}
+
+:host ::ng-deep .video-js .vjs-playback-rates,
+:host ::ng-deep .video-js .vjs-settings-menu-button,
+:host ::ng-deep .video-js .vjs-settings-menu {
+  display: none !important;
+}
+
+:host ::ng-deep .video-js .vjs-tech {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  visibility: visible !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
+:host ::ng-deep .video-js.vjs-has-started .vjs-big-play-button {
+  display: none !important;
+}
+
+/* Compact, transparent control bar so it reads as a floating overlay */
+:host ::ng-deep .video-js .vjs-control-bar {
+  position: absolute !important;
+  bottom: 4px !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  z-index: 2 !important;
+  background: transparent !important;
+  height: auto !important;
+}
+
+:host ::ng-deep .video-js .vjs-control-bar .vjs-progress-control,
+:host ::ng-deep .video-js .vjs-control-bar .vjs-current-time-display,
+:host ::ng-deep .video-js .vjs-control-bar .vjs-remaining-time-display {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  margin: auto 0;
+}
+
+:host ::ng-deep .video-js .vjs-control-bar .vjs-progress-control {
+  position: relative !important;
+  flex: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  min-width: 4em !important;
+  touch-action: none !important;
+}
+
+/* Floating time badges, flanking the progress bar */
+:host ::ng-deep .video-js .vjs-control-bar .vjs-current-time-display {
+  position: absolute !important;
+  bottom: 30px !important;
+  left: 10px !important;
+  background: rgba(0, 0, 0, 0.7) !important;
+  color: white !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  z-index: 3 !important;
+}
+
+:host ::ng-deep .video-js .vjs-control-bar .vjs-remaining-time-display {
+  position: absolute !important;
+  bottom: 30px !important;
+  right: 10px !important;
+  background: rgba(0, 0, 0, 0.7) !important;
+  color: white !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  z-index: 3 !important;
+}
+
+/* CPE mode — progress bar visually disabled when scrubbing is locked */
+:host
+  ::ng-deep
+  .video-js
+  .vjs-progress-control[style*='pointer-events: none']
+  .vjs-progress-holder {
+  opacity: 0.7 !important;
+  filter: grayscale(20%) !important;
+}
+
+:host
+  ::ng-deep
+  .video-js
+  .vjs-progress-control[style*='pointer-events: none']
+  .vjs-progress-holder:hover
+  .vjs-mouse-display,
+:host
+  ::ng-deep
+  .video-js
+  .vjs-progress-control[style*='pointer-events: none']
+  .vjs-progress-holder:hover
+  .vjs-play-progress::before {
+  display: none !important;
+}
+
+:host ::ng-deep .video-js .vjs-progress-control[style*='pointer-events: none'] .vjs-play-progress,
+:host ::ng-deep .video-js .vjs-progress-control[style*='pointer-events: none'] .vjs-load-progress {
+  opacity: 0.8 !important;
+}
+
+:host ::ng-deep .video-js .vjs-progress-control[style*='pointer-events: none']::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+  z-index: 10 !important;
+  cursor: default !important;
+}
+
+/* Progress bar theme (white fill, translucent track) */
+:host ::ng-deep .video-js .vjs-progress-control {
+  display: flex !important;
+  visibility: visible !important;
+}
+
+:host ::ng-deep .video-js .vjs-progress-control .vjs-progress-holder {
+  display: block !important;
+  visibility: visible !important;
+  position: relative !important;
+  height: 0.3em !important;
+  background-color: hsla(0, 0%, 100%, 0.2) !important;
+  border-radius: 0.15em !important;
+}
+
+:host ::ng-deep .video-js .vjs-progress-control .vjs-progress-holder .vjs-play-progress {
+  background-color: #fff !important;
+  border-radius: 0.15em !important;
+  height: 100% !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+}
+
+:host ::ng-deep .video-js .vjs-progress-control .vjs-progress-holder .vjs-load-progress {
+  background: hsla(0, 0%, 100%, 0.4) !important;
+  border-radius: 0.15em !important;
+  height: 100% !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+}
+
+/* Hard-guard against browser extensions injecting speed / rate controls.
+   Exclude anything from video.js itself (`vjs-*`) — the prior `:not(.vjs-playback-rates)`
+   used the wrong class name (singular `.vjs-playback-rate` is what video.js renders),
+   which silently hid the native playback-rate menu button. */
+:host ::ng-deep [class*='speed']:not([class*='vjs-']),
+:host ::ng-deep [class*='rate']:not([class*='vjs-']),
+:host ::ng-deep [class*='playback']:not([class*='vjs-']),
+:host ::ng-deep .video-speed-controller,
+:host ::ng-deep .video-speed-menu,
+:host ::ng-deep .playback-speed-menu,
+:host ::ng-deep .speed-controller {
+  display: none !important;
+}

@@ -3,9 +3,10 @@
     <div class="flex flex-col gap-2">
       <h1 class="text-2xl font-bold leading-tight">Admin Users</h1>
       <p class="text-sm text-white/70">
-        Configure a new admin's role, domains, and permission overrides, then create them. The login
-        is provisioned automatically with a shared initial password (shown when you create them);
-        the new admin should change it after signing in.
+        Pick one or more roles (one per sidenav section — permissions add up), domains, and any
+        permission overrides, then create the admin. The login is provisioned automatically with a
+        shared initial password (shown when you create them); the new admin should change it after
+        signing in.
       </p>
     </div>
     @if (!showForm()) {
@@ -37,7 +38,7 @@
           <tr>
             <th class="px-4 py-2 font-medium">Email</th>
             <th class="px-4 py-2 font-medium">Name</th>
-            <th class="px-4 py-2 font-medium">Role</th>
+            <th class="px-4 py-2 font-medium">Roles</th>
             <th class="px-4 py-2 font-medium">Email domains</th>
             <th class="px-4 py-2 font-medium">Status</th>
             <th class="px-4 py-2 font-medium">Last login</th>
@@ -49,7 +50,19 @@
             <tr class="border-t border-white/5">
               <td class="px-4 py-2">{{ admin.email }}</td>
               <td class="px-4 py-2 text-white/80">{{ admin.full_name || '—' }}</td>
-              <td class="px-4 py-2 text-white/80">{{ admin.role_name || '—' }}</td>
+              <td class="px-4 py-2">
+                <div class="flex flex-wrap gap-1">
+                  @for (role of admin.roles; track role.id) {
+                    <span
+                      class="rounded px-2 py-0.5 text-xs"
+                      style="background: var(--mm-surface-3); color: var(--mm-fg-2)"
+                      >{{ role.name }}</span
+                    >
+                  } @empty {
+                    <span class="text-white/50">—</span>
+                  }
+                </div>
+              </td>
               <td class="px-4 py-2 text-white/80">{{ admin.domains.join(', ') || '—' }}</td>
               <td class="px-4 py-2">
                 <span
@@ -71,9 +84,26 @@
                     variant="outline"
                     size="sm"
                     class="text-white"
+                    (clicked)="editRoles(admin)"
+                  >
+                    Roles
+                  </app-button>
+                  <app-button
+                    variant="outline"
+                    size="sm"
+                    class="text-white"
                     (clicked)="editDomains(admin)"
                   >
                     Domains
+                  </app-button>
+                  <app-button
+                    variant="outline"
+                    size="sm"
+                    class="text-white"
+                    (clicked)="openRegister(admin)"
+                    title="Create the Django partner-admin row for an existing login"
+                  >
+                    Register partner admin
                   </app-button>
                   @if (admin.user_id === currentUserId()) {
                     <span class="text-xs text-white/40">You</span>
@@ -116,14 +146,20 @@
     </div>
   </div>
 
-  <!-- Configure new admin -->
+  <!-- Configure new admin / register an existing login -->
   @if (showForm()) {
     <div
       class="rounded-md border border-white/10 p-4 flex flex-col gap-5"
       style="background: var(--mm-surface-2)"
     >
       <div class="flex items-center justify-between">
-        <h2 class="text-sm font-semibold">Configure new admin</h2>
+        <h2 class="text-sm font-semibold">
+          @if (registerFor(); as existing) {
+            Register partner admin — {{ existing.email }}
+          } @else {
+            Configure new admin
+          }
+        </h2>
         <app-button variant="outline" size="sm" class="text-white" (clicked)="closeForm()">
           Cancel
         </app-button>
@@ -149,45 +185,61 @@
         </div>
       }
 
-      <div class="grid gap-4 md:grid-cols-3">
+      @if (!registerFor()) {
+        <div class="grid gap-4 md:grid-cols-2">
+          <app-aria-input
+            id="new-admin-email"
+            type="email"
+            label="Email"
+            [required]="true"
+            [(value)]="email"
+          />
+          <app-aria-input id="new-admin-name" type="text" label="Full name" [(value)]="fullName" />
+        </div>
+
+        <fieldset class="flex flex-col gap-2">
+          <legend class="text-sm font-medium text-white/80">
+            Roles
+            <span class="text-white/50 font-normal"
+              >— tick every section this admin should see; partner roles are exclusive.</span
+            >
+          </legend>
+          <div class="grid gap-2 sm:grid-cols-2">
+            @for (role of facade.roles(); track role.id) {
+              <app-aria-input
+                [id]="'new-admin-role-' + role.slug"
+                type="checkbox"
+                [label]="role.name"
+                [description]="role.description ?? ''"
+                [disabled]="isRoleLocked(role.slug)"
+                [value]="isRoleChecked(role.slug)"
+                (valueChange)="toggleRole(role.slug, $any($event) === true)"
+              />
+            }
+          </div>
+        </fieldset>
+
         <app-aria-input
-          id="new-admin-email"
-          type="email"
-          label="Email"
-          [required]="true"
-          [(value)]="email"
+          id="new-admin-domains"
+          type="text"
+          label="Email domains"
+          placeholder="acme.com, partner.org"
+          [(value)]="domains"
         />
-        <app-aria-input id="new-admin-name" type="text" label="Full name" [(value)]="fullName" />
-        <app-aria-select
-          id="new-admin-role"
-          label="Role"
-          placeholder="Select a role"
-          [required]="true"
-          [options]="roleOptions()"
-          [(value)]="roleId"
+        <p class="-mt-3 text-xs text-white/50">
+          Domains this admin manages on the partner-user screens. Separate multiple with commas.
+        </p>
+
+        <app-aria-input
+          id="new-admin-report-type"
+          type="text"
+          label="Report type (optional)"
+          [(value)]="reportType"
         />
-      </div>
-
-      <app-aria-input
-        id="new-admin-domains"
-        type="text"
-        label="Email domains"
-        placeholder="acme.com, partner.org"
-        [(value)]="domains"
-      />
-      <p class="-mt-3 text-xs text-white/50">
-        Domains this admin manages on the partner-user screens. Separate multiple with commas.
-      </p>
-
-      <app-aria-input
-        id="new-admin-report-type"
-        type="text"
-        label="Report type (optional)"
-        [(value)]="reportType"
-      />
-      <p class="-mt-3 text-xs text-white/50">
-        Forwarded as the <code>report_type</code> filter on the vendor users screen.
-      </p>
+        <p class="-mt-3 text-xs text-white/50">
+          Forwarded as the <code>report_type</code> filter on the vendor users screen.
+        </p>
+      }
 
       @if (isPartnerRole()) {
         <div
@@ -197,11 +249,21 @@
           <div class="flex flex-col gap-1">
             <h3 class="text-sm font-semibold">Partner Platform provisioning</h3>
             <p class="text-xs text-white/60">
-              This role maps to a Django <b>{{ partnerMapping()?.role }}</b> partner admin. Generate
-              & run the SQL to create the Supabase login, click <b>Refresh list</b>, then
-              <b>Register partner admin</b>.
+              Registers a Django <b>{{ effectiveRole() }}</b> partner admin for this login — the row
+              that scopes every <code>partners/*</code> API call.
             </p>
           </div>
+
+          @if (isSuperSelected()) {
+            <app-aria-input
+              id="new-admin-register-super"
+              type="checkbox"
+              label="Register as a Django super admin"
+              description="Needed to use the Partner v2 super-admin console. Untick for a super admin who won't touch partners."
+              [value]="registerPartnerSuper()"
+              (valueChange)="registerPartnerSuper.set($any($event) === true)"
+            />
+          }
 
           @if (partnerMapping()?.scope === 'either') {
             <app-aria-select
@@ -225,33 +287,32 @@
             />
           }
 
-          <div class="flex flex-col gap-1.5">
-            <p class="text-xs uppercase tracking-wide text-white/50">Django capabilities</p>
-            @if (partnerMapping()?.capabilities?.length) {
-              <div class="flex flex-wrap gap-2">
-                @for (cap of partnerMapping()?.capabilities; track cap) {
-                  <span
-                    class="rounded px-2 py-0.5 text-xs font-mono"
-                    style="background: var(--mm-surface-3); color: var(--mm-fg-2)"
-                    >{{ cap }}</span
-                  >
-                }
-              </div>
-            } @else {
+          @if (effectiveRole() !== 'super') {
+            <div class="flex flex-col gap-1.5">
+              <p class="text-xs uppercase tracking-wide text-white/50">Django capabilities</p>
               <p class="text-xs text-white/50">
-                Super admin — full access (no per-capability grants).
+                Pre-set for a {{ effectiveRole() }} admin; each one gates an action in the panel.
               </p>
-            }
-          </div>
+              <app-checkbox-list
+                [options]="capabilityOptions"
+                [selected]="selectedCapabilities()"
+                (selectionChange)="onCapabilitiesChange($event)"
+              />
+            </div>
+          } @else {
+            <p class="text-xs text-white/50">
+              Super admin — full access (no per-capability grants).
+            </p>
+          }
         </div>
       }
 
-      @if (roleId()) {
+      @if (!registerFor() && roleSlugs().size > 0) {
         <div class="flex flex-col gap-3">
           <p class="text-sm font-medium text-white/80">
             Permissions
             <span class="text-white/50 font-normal"
-              >— pre-set from the role; tick to grant, untick to deny.</span
+              >— pre-set from the roles; tick to grant, untick to deny.</span
             >
           </p>
           @for (group of permissionGroups(); track group.category) {
@@ -261,18 +322,14 @@
               </legend>
               <div class="grid gap-2 sm:grid-cols-2">
                 @for (perm of group.perms; track perm.key) {
-                  <label class="flex items-start gap-2 cursor-pointer text-sm">
-                    <input
-                      type="checkbox"
-                      class="mt-0.5 h-4 w-4"
-                      [checked]="isChecked(perm.key)"
-                      (change)="toggle(perm.key, $any($event.target).checked)"
-                    />
-                    <span>
-                      {{ perm.label }}
-                      <span class="block text-xs text-white/40">{{ perm.key }}</span>
-                    </span>
-                  </label>
+                  <app-aria-input
+                    [id]="'new-admin-perm-' + perm.id"
+                    type="checkbox"
+                    [label]="perm.label"
+                    [description]="perm.key"
+                    [value]="isChecked(perm.key)"
+                    (valueChange)="toggle(perm.key, $any($event) === true)"
+                  />
                 }
               </div>
             </fieldset>
@@ -286,7 +343,11 @@
           [disabled]="!canSubmit() || isSubmitting()"
           (clicked)="provision()"
         >
-          {{ isSubmitting() ? 'Creating…' : 'Create admin' }}
+          @if (registerFor()) {
+            {{ isSubmitting() ? 'Registering…' : 'Register partner admin' }}
+          } @else {
+            {{ isSubmitting() ? 'Creating…' : 'Create admin' }}
+          }
         </app-button>
       </div>
     </div>

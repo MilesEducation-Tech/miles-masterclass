@@ -1,0 +1,29 @@
+<div class="flex flex-col items-end gap-3">
+  @if (showCart()) {
+    <button
+      type="button"
+      class="relative inline-flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-card text-white shadow-[0_8px_24px_rgb(var(--accent-rgb)/0.4)] transition-transform duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.08] focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-[3px]"
+      aria-label="Open cart"
+      (click)="onCart()"
+    >
+      <ng-icon name="matShoppingCartRound" class="text-xl" />
+      @if (cartCount() > 0) {
+        <span
+          class="absolute -top-1 -right-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 text-center text-[10px] leading-[18px] font-bold text-destructive-foreground"
+          aria-label="Cart items"
+        >
+          {{ cartCount() > 99 ? '99+' : cartCount() }}
+        </span>
+      }
+    </button>
+  }
+
+  <button
+    type="button"
+    class="relative inline-flex h-12 w-12 cursor-pointer items-center justify-center bg-card rounded-full text-white shadow-[0_8px_24px_rgb(var(--accent-rgb)/0.4)] transition-transform duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.08] focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-[3px]"
+    aria-label="Open search"
+    (click)="onSearch()"
+  >
+    <ng-icon name="lucideSearch" class="text-xl" />
+  </button>
+</div>

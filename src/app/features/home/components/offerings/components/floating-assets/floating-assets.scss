@@ -1,0 +1,168 @@
+:host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: block;
+  overflow: visible;
+}
+
+.floating-asset {
+  opacity: 0;
+  animation-fill-mode: both;
+  will-change: transform, opacity;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Entrance + continuous float chained via the `animation` shorthand. */
+.floatInit {
+  animation:
+    floatInit 1.6s ease-out forwards,
+    continuousFloat 6s ease-in-out 1.6s infinite;
+}
+
+.floatInitBounce {
+  animation:
+    floatInitBounce 1.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
+    gentleFloat 7s ease-in-out 1.8s infinite;
+}
+
+.floatInitSlide {
+  animation:
+    floatInitSlide 1.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+    slowFloat 8s ease-in-out 1.6s infinite;
+}
+
+.slideLeft {
+  animation:
+    slideLeftIn 1.6s ease-out forwards,
+    gentleFloat 7s ease-in-out 1.6s infinite;
+}
+
+.slideRight {
+  animation:
+    slideRightIn 1.6s ease-out forwards,
+    slowFloat 8s ease-in-out 1.6s infinite;
+}
+
+@keyframes floatInit {
+  0% {
+    opacity: 0;
+    transform: translateY(-70px) scale(0.8) rotate(-10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes floatInitBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(180deg);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2) rotate(10deg);
+  }
+  75% {
+    opacity: 1;
+    transform: scale(0.9) rotate(-5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes floatInitSlide {
+  0% {
+    opacity: 0;
+    transform: translateX(-100px) translateY(-30px) scale(0.9);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(10px) translateY(-5px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) scale(1);
+  }
+}
+
+@keyframes slideLeftIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-100px) translateY(-30px) scale(0.9);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(10px) translateY(-5px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) scale(1);
+  }
+}
+
+@keyframes slideRightIn {
+  0% {
+    opacity: 0;
+    transform: translateX(100px) translateY(-30px) scale(0.9);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(-10px) translateY(-5px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) scale(1);
+  }
+}
+
+@keyframes continuousFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-8px) rotate(0.6deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(-0.3deg);
+  }
+  75% {
+    transform: translateY(-10px) rotate(0.4deg);
+  }
+}
+
+@keyframes gentleFloat {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.01);
+  }
+}
+
+@keyframes slowFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-4px) rotate(0.5deg);
+  }
+  66% {
+    transform: translateY(-9px) rotate(-0.6deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-asset {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

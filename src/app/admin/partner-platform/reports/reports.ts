@@ -18,6 +18,7 @@ import { PartnerReportFacade } from './shared/services/partner-report-facade';
 const SUBJECT_TABS: { value: ReportSubject; label: string }[] = [
   { value: 'courses', label: 'Courses' },
   { value: 'webinars', label: 'Webinars' },
+  { value: 'group_live', label: 'Group Live' },
 ];
 
 /** Two decimals, no trailing noise — the API sends raw floats. */

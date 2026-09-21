@@ -111,7 +111,7 @@ export class NetworkFirmsDialog implements OnInit {
       // Standalone firm: omit `network` entirely (a member firm draws from its network).
       ...(id != null ? { network: id } : {}),
       name: v.name.trim(),
-      email_domain: v.email_domain.trim(),
+      email_domains: [v.email_domain.trim()],
       ...(v.partner_code_id != null && v.count.trim()
         ? { allocations: [{ partner_code: v.partner_code_id, count: Number(v.count) }] }
         : {}),

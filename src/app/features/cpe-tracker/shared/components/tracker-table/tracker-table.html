@@ -1,0 +1,119 @@
+<div class="text-white">
+  @if (isLoading() && !rows().length) {
+    <div class="flex items-center justify-center py-10 text-neutral-400">
+      <app-spinner size="lg" color="white" trackColor="neutral-600" />
+    </div>
+  }
+
+  @if (viewRows().length) {
+    <div
+      class="hidden grid-cols-[minmax(0,1fr)_minmax(0,2.4fr)_minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,0.7fr)_minmax(0,1.1fr)] gap-4 border-b border-white/5 px-6 py-3 text-sm text-neutral-400 md:grid"
+    >
+      <span class="flex items-center gap-2">
+        <ng-icon name="lucideCalendar" class="text-base" aria-hidden="true" /> Date
+      </span>
+      <span class="flex items-center gap-2">
+        <ng-icon name="lucideAlignLeft" class="text-base" aria-hidden="true" /> Title
+      </span>
+      <span class="flex items-center gap-2">
+        <ng-icon name="lucideSparkles" class="text-base" aria-hidden="true" /> Field of Study
+      </span>
+      <span class="flex items-center gap-2">
+        <ng-icon name="lucideMonitor" class="text-base" aria-hidden="true" /> Delivery Method
+      </span>
+      <span class="flex items-center gap-2">
+        <ng-icon name="lucideCoins" class="text-base" aria-hidden="true" /> Credit
+      </span>
+      <span class="flex items-center gap-2">
+        <ng-icon name="lucideLink" class="text-base" aria-hidden="true" /> Action
+      </span>
+    </div>
+
+    <ul class="flex flex-col gap-2 pt-2">
+      @for (view of viewRows(); track view.raw.id) {
+        <li
+          class="grid grid-cols-1 items-center gap-3 rounded-lg border-b-2 border-white/5 sm:px-4 sm:py-3 md:grid-cols-[minmax(0,1fr)_minmax(0,2.4fr)_minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,0.7fr)_minmax(0,1.1fr)]"
+        >
+          <div class="flex items-center gap-3">
+            <span
+              class="h-10 w-1 shrink-0 rounded-full"
+              [style.backgroundColor]="view.accent"
+              aria-hidden="true"
+            ></span>
+            <span class="text-sm whitespace-nowrap text-neutral-200">
+              {{ view.raw.allocated_on | date: 'MMM d, y' }}
+            </span>
+          </div>
+
+          <app-button
+            variant="ghost"
+            size="sm"
+            [ariaLabel]="'Open ' + view.raw.course.title"
+            class="h-auto max-w-full min-w-0 justify-start truncate px-0 py-0 text-left text-sm text-neutral-100 underline-offset-4 hover:text-white hover:underline"
+            (clicked)="titleClick.emit(view.raw)"
+          >
+            {{ view.raw.course.title }}
+          </app-button>
+
+          <app-categories-list
+            class="min-w-0 overflow-hidden text-sm text-neutral-400"
+            [items]="view.raw.course.fields_of_study"
+          />
+
+          <span class="text-sm font-medium" [style.color]="view.deliveryColor">
+            {{ view.deliveryMethod }}
+          </span>
+
+          <span class="text-sm tabular-nums text-neutral-200">
+            {{ view.raw.credits | number: '1.0-2' }}
+          </span>
+
+          <div class="flex flex-wrap gap-2 md:justify-end">
+            @for (action of view.actions; track action) {
+              <app-button
+                size="sm"
+                [class]="actionClass(action)"
+                (clicked)="onAction(view.raw, action)"
+              >
+                @if (actionUi[action].icon) {
+                  <ng-icon name="lucideDownload" aria-hidden="true" />
+                }
+                {{ actionUi[action].label }}
+              </app-button>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+
+    <div class="mt-6 flex items-center justify-between text-sm text-neutral-400">
+      <span>
+        Showing
+        <span class="font-semibold text-white">{{ pageWindow().from }}-{{ pageWindow().to }}</span>
+        of {{ pageWindow().total }}
+      </span>
+      <div class="flex items-center gap-4">
+        <app-button
+          variant="outline"
+          size="sm"
+          class="h-9 w-32 rounded-md border-white/15 bg-transparent text-xs text-white hover:bg-white/5"
+          [disabled]="!canPrev()"
+          (clicked)="prevPage.emit()"
+        >
+          Prev
+        </app-button>
+        <app-button
+          variant="outline"
+          size="sm"
+          class="h-9 w-32 rounded-md border-white/15 bg-transparent text-xs text-white hover:bg-white/5"
+          [disabled]="!canNext()"
+          (clicked)="nextPage.emit()"
+        >
+          Next
+        </app-button>
+      </div>
+    </div>
+  } @else if (!isLoading()) {
+    <p class="py-12 text-center text-sm text-neutral-500">No courses to show.</p>
+  }
+</div>

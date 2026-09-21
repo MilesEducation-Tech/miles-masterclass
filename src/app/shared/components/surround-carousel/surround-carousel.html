@@ -1,0 +1,118 @@
+@if (canRender()) {
+  <!-- `relative` is what the md+ overlays position against. Below md the header
+       and controls stay in normal flow: a 16:9 stage on a phone is ~200px tall
+       and an overlay would bury the cards. -->
+  <div class="relative">
+    <header
+      class="mx-auto flex w-11/12 max-w-3xl flex-col items-center text-center md:absolute md:inset-x-0 md:top-0 md:z-10 md:w-full md:px-6 md:pt-10 lg:pt-14"
+    >
+      <p class="text-muted-foreground text-xs font-semibold tracking-[0.2em] uppercase">
+        One subscription
+      </p>
+      <h2 class="mt-3 text-3xl font-bold leading-none md:text-[42px]">Every AI Lab, hands-on.</h2>
+      <p class="text-muted-foreground mt-4 max-w-2xl text-sm md:text-base">
+        Work alongside real accounting agents — every lab included in your plan.
+      </p>
+    </header>
+
+    <!-- 16:9 on desktop, capped against the viewport so an ultrawide monitor
+         doesn't hand us a 1400px-tall section. Taller ratios below that, where
+         the ring needs vertical room more than it needs width. -->
+    <div
+      class="stage bg-background relative mt-10 aspect-4/3 max-h-[88vh] w-full overflow-hidden md:mt-0 lg:aspect-16/9"
+    >
+      <!-- Static dot field: the stand-in until the shader takes over, on its own
+           layer so the top/bottom fade masks only the dots and not the cards. -->
+      <div
+        class="dots pointer-events-none absolute inset-0 mask-t-from-72% mask-b-from-72% [background-image:radial-gradient(rgb(255_255_255/0.07)_1px,transparent_1px)] [background-size:26px_26px]"
+        aria-hidden="true"
+      ></div>
+
+      <!-- Never `display:none`. A canvas with no layout box reports zero size to
+           `clientWidth`/`clientHeight` and reads as not-intersecting to
+           IntersectionObserver, so the renderer would size itself to nothing and
+           the frame loop would refuse to start. It fades in instead. -->
+      <canvas
+        #stage
+        class="pointer-events-none absolute inset-0 h-full w-full opacity-0 transition-opacity duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]"
+        aria-hidden="true"
+      ></canvas>
+
+      <!-- Always in the DOM and always in the accessibility tree: this is the
+           SSR output, the crawlable markup, and the mobile / reduced-motion /
+           no-WebGL presentation. Clipped when WebGL runs, never `display:none`.
+           The md+ padding keeps the row clear of the overlaid header and
+           controls. -->
+      <ul
+        #list
+        id="surround-cards"
+        class="fallback absolute inset-0 flex snap-x snap-mandatory items-center gap-4 overflow-x-auto px-[4.1666%] py-5 [scrollbar-width:none] md:pt-44 md:pb-32 [&::-webkit-scrollbar]:hidden"
+      >
+        @for (card of cards(); track card.id) {
+          <li class="shrink-0 basis-[min(78%,22rem)] snap-center md:basis-[min(42%,26rem)]">
+            <a
+              [routerLink]="card.link"
+              class="border-border bg-secondary block overflow-hidden rounded-xl border transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+            >
+              <span class="border-border flex items-center gap-2.5 border-b px-3.5 py-2.5">
+                <span class="bg-accent size-2 shrink-0 rounded-full" aria-hidden="true"></span>
+                <span class="text-foreground/75 truncate text-[13px]">{{ card.title }}</span>
+              </span>
+              <span class="bg-background relative block aspect-video">
+                @if (card.image) {
+                  <img
+                    [src]="card.image"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    width="768"
+                    height="432"
+                    class="h-full w-full object-cover"
+                  />
+                }
+                <span
+                  class="text-foreground/90 absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3.5 pt-8 pb-3 text-[13px] font-semibold"
+                >
+                  {{ card.caption }}
+                </span>
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <div
+      class="mt-8 flex items-center justify-center gap-5 md:absolute md:inset-x-0 md:bottom-0 md:z-10 md:mt-0 md:pb-10 lg:pb-14"
+    >
+      <button
+        type="button"
+        aria-label="Spin labs left"
+        aria-controls="surround-cards"
+        class="border-border text-foreground/85 inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border bg-white/5 backdrop-blur-sm transition-colors hover:bg-white/12 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+        (click)="previous()"
+      >
+        <ng-icon name="lucideArrowLeft" class="size-5" aria-hidden="true" />
+      </button>
+
+      <!-- Position around the loop, not progress toward an end: it wraps, and
+           there is no card it is ever "on". -->
+      <div class="h-0.5 w-[min(12rem,40vw)] overflow-hidden rounded-full bg-white/12">
+        <span
+          class="bg-accent block h-full w-full origin-left"
+          [style.transform]="'scaleX(' + progress() + ')'"
+        ></span>
+      </div>
+
+      <button
+        type="button"
+        aria-label="Spin labs right"
+        aria-controls="surround-cards"
+        class="border-border text-foreground/85 inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border bg-white/5 backdrop-blur-sm transition-colors hover:bg-white/12 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+        (click)="next()"
+      >
+        <ng-icon name="lucideArrowRight" class="size-5" aria-hidden="true" />
+      </button>
+    </div>
+  </div>
+}

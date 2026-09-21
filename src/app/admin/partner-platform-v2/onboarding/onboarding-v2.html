@@ -39,7 +39,7 @@
       style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
       role="alert"
     >
-      Failed to load users. Try refreshing the page or check your connection.
+      {{ facade.error() }}
     </div>
   }
 
@@ -50,6 +50,7 @@
     [totalCount]="totalCount()"
     [hasNext]="hasNextPage()"
     [hasPrev]="hasPrevPage()"
+    (view)="onView($event)"
     (edit)="onEdit($event)"
     (recordPayment)="onRecordPayment($event)"
     (applyPartnerCode)="onApplyPartnerCode($event)"

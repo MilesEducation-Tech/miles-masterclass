@@ -1,0 +1,63 @@
+<div #listSection class="grid md:grid-cols-[16rem_1fr] gap-6 scroll-mt-24">
+  <!-- Sidebar (desktop only) -->
+  <aside
+    class="hidden md:block sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto pr-2"
+  >
+    @if (groups().length) {
+      <app-course-filters
+        [groups]="groups()"
+        [selection]="facade.courseFilters()"
+        (selectionChange)="facade.setCourseFilters($event)"
+        (clear)="facade.clearCourseFilters()"
+      />
+    } @else if (facade.isLibraryFiltersLoading()) {
+      <div class="text-sm text-muted-foreground">Loading filters…</div>
+    }
+  </aside>
+
+  <!-- Main column -->
+  <div class="flex flex-col gap-6 min-w-0">
+    <div
+      class="sticky top-24 z-10 -mx-4 px-4 py-2 bg-background/95 backdrop-blur-sm flex items-center justify-between gap-4 flex-wrap"
+    >
+      <app-tab-strip
+        [options]="tabLabels()"
+        [selected]="currentLabel()"
+        (selectionChange)="onTabChange($event)"
+      />
+      <button
+        type="button"
+        class="md:hidden inline-flex items-center gap-2 h-10 px-4 rounded-full bg-secondary/60 border border-border/40 text-sm font-medium hover:bg-secondary/80 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        (click)="openMobileFilters()"
+      >
+        <ng-icon name="heroFunnel" size="16" />
+        Filter
+        @if (activeFilterCount()) {
+          <span
+            class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-accent text-white text-[10px] font-semibold"
+          >
+            {{ activeFilterCount() }}
+          </span>
+        }
+      </button>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 z-0">
+      @for (c of facade.courseItems(); track c.id) {
+        <app-vertical [card]="c" [type]="routeType()" />
+      } @empty {
+        <!-- @if (!facade.isCourseLoading()) { -->
+        <p class="col-span-full text-center text-muted-foreground py-8">No courses found.</p>
+        <!-- } -->
+      }
+    </div>
+
+    @if (facade.isCourseLoading()) {
+      <div class="text-center py-6 text-muted-foreground">Loading…</div>
+    }
+
+    @if (facade.coursePagination()?.next_page) {
+      <div #sentinel class="h-1 w-full"></div>
+    }
+  </div>
+</div>

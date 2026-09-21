@@ -1,6 +1,5 @@
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
@@ -29,10 +28,16 @@ import {
 import { Dialog } from '../../../../shared/core/services/dialog/dialog';
 import { Logger } from '../../../../shared/core/services/logger/logger';
 import { SupabaseSeo } from '../../../../shared/core/services/seo/supabase-seo';
+import { AriaInput } from '../../../../shared/components/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '../../../../shared/components/ui/aria/aria-select/aria-select';
+import { Button } from '../../../../shared/components/ui/button/button';
+import { AriaSelectOption } from '../../../../shared/core/models/aria.model';
+import { PERM } from '../../../../shared/core/models/admin/admin-rbac.model';
+import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 
 @Component({
   selector: 'app-seo-dashboard',
-  imports: [FormsModule, NgIconComponent, RouterLink],
+  imports: [NgIconComponent, RouterLink, HasPermissionDirective, AriaInput, AriaSelect, Button],
   providers: [
     provideIcons({
       heroMagnifyingGlass,
@@ -52,6 +57,7 @@ import { SupabaseSeo } from '../../../../shared/core/services/seo/supabase-seo';
   templateUrl: './seo-dashboard.html',
 })
 export class SeoDashboard implements OnInit {
+  protected readonly PERM = PERM;
   private readonly supabaseSeo = inject(SupabaseSeo);
   private readonly router = inject(Router);
   private readonly logger = inject(Logger);
@@ -64,6 +70,15 @@ export class SeoDashboard implements OnInit {
   readonly loadError = signal<string | null>(null);
   readonly searchQuery = signal('');
   readonly filterType = signal<'all' | 'static' | 'dynamic'>('all');
+  protected readonly filterOptions: AriaSelectOption<'all' | 'static' | 'dynamic'>[] = [
+    { value: 'all', label: 'All Types' },
+    { value: 'static', label: 'Static Pages' },
+    { value: 'dynamic', label: 'Dynamic Pages' },
+  ];
+  protected readonly pageTypeOptions: AriaSelectOption<'static' | 'dynamic'>[] = [
+    { value: 'static', label: 'Static Route' },
+    { value: 'dynamic', label: 'Dynamic Route (e.g. contains :id)' },
+  ];
 
   readonly filteredPages = computed(() => {
     const query = this.searchQuery().toLowerCase();
@@ -253,13 +268,11 @@ export class SeoDashboard implements OnInit {
     return 'Poor';
   }
 
-  onSearchInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.searchQuery.set(target.value);
+  onSearchInput(value: unknown): void {
+    this.searchQuery.set(typeof value === 'string' ? value : '');
   }
 
-  onFilterChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    this.filterType.set(target.value as 'all' | 'static' | 'dynamic');
+  onFilterChange(value: 'all' | 'static' | 'dynamic' | null): void {
+    this.filterType.set(value ?? 'all');
   }
 }

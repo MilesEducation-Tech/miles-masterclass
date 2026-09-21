@@ -1,0 +1,260 @@
+/* MilesVerse report — card surface + meter, on Masterclass tokens. */
+
+/* empty-state panel — an accent glow bleeding down from the top edge */
+.mv-empty {
+  background:
+    radial-gradient(80% 55% at 50% 0%, rgb(var(--accent-rgb) / 0.14), transparent 70%), var(--card);
+  box-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.7);
+}
+
+.mv-card {
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.mv-meter {
+  position: relative;
+  height: 6px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground) 22%, transparent);
+}
+.mv-meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  border-radius: 999px;
+  transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Loading skeleton — the report taking shape while the evaluator runs ── */
+.mv-skel {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--muted-foreground) 14%, transparent);
+}
+.mv-skel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.07), transparent);
+  animation: mv-shimmer 1.6s ease-in-out infinite;
+}
+@keyframes mv-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+.mv-skel-circle {
+  width: 176px;
+  height: 176px;
+  border-radius: 999px;
+}
+.mv-skel-radar {
+  width: 240px;
+  height: 240px;
+  border-radius: 24px;
+  /* pentagon silhouette, echoing the radar chart it stands in for */
+  clip-path: polygon(50% 0%, 100% 38%, 81% 100%, 19% 100%, 0% 38%);
+}
+
+/* ── Reveal choreography ─────────────────────────────────────────────── */
+/* Each top-level block rises in sequence as the report appears. */
+@keyframes mv-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+section > * {
+  animation: mv-rise 550ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+section > *:nth-child(2) {
+  animation-delay: 80ms;
+}
+section > *:nth-child(3) {
+  animation-delay: 160ms;
+}
+section > *:nth-child(4) {
+  animation-delay: 240ms;
+}
+section > *:nth-child(5) {
+  animation-delay: 320ms;
+}
+section > *:nth-child(6) {
+  animation-delay: 400ms;
+}
+section > *:nth-child(7) {
+  animation-delay: 470ms;
+}
+section > *:nth-child(8) {
+  animation-delay: 540ms;
+}
+section > *:nth-child(9) {
+  animation-delay: 600ms;
+}
+
+/* Competency cards stagger individually within their block. The rubric is
+   authored per simulation, so the ladder runs past the usual five and anything
+   beyond the eighth card lands together on the last step. */
+.mv-comp-grid > * {
+  animation: mv-rise 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 780ms;
+}
+.mv-comp-grid > *:nth-child(1) {
+  animation-delay: 220ms;
+}
+.mv-comp-grid > *:nth-child(2) {
+  animation-delay: 300ms;
+}
+.mv-comp-grid > *:nth-child(3) {
+  animation-delay: 380ms;
+}
+.mv-comp-grid > *:nth-child(4) {
+  animation-delay: 460ms;
+}
+.mv-comp-grid > *:nth-child(5) {
+  animation-delay: 540ms;
+}
+.mv-comp-grid > *:nth-child(6) {
+  animation-delay: 620ms;
+}
+.mv-comp-grid > *:nth-child(7) {
+  animation-delay: 700ms;
+}
+
+/* Score meters sweep in from zero once their card has landed. */
+@keyframes mv-fill {
+  from {
+    width: 0;
+  }
+}
+.mv-meter-fill {
+  animation: mv-fill 900ms cubic-bezier(0.22, 1, 0.36, 1) 350ms both;
+}
+
+/* The radar shape grows out from the centre. Colors come from the design
+   tokens here (CSS wins over the SVG presentation attributes). */
+.mv-radar-shape {
+  transform-box: fill-box;
+  transform-origin: center;
+  stroke: var(--accent);
+  fill: rgb(var(--accent-rgb) / 0.2);
+  animation: mv-radar-in 800ms cubic-bezier(0.22, 1, 0.36, 1) 250ms both;
+}
+@keyframes mv-radar-in {
+  from {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+}
+.mv-radar-dot {
+  fill: var(--accent);
+  animation: mv-fade 450ms ease 850ms both;
+}
+.mv-radar-label {
+  fill: var(--muted-foreground);
+}
+@keyframes mv-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ── Transcript bubbles ──────────────────────────────────────────────── */
+.mv-turn {
+  max-width: 80%;
+  padding: 0.6rem 0.95rem;
+  border-radius: 14px;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+.mv-turn-label {
+  display: block;
+  margin-bottom: 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+/* You: soft accent tint, accent name */
+.mv-turn-user {
+  background: rgb(var(--accent-rgb) / 0.13);
+  border: 1px solid rgb(var(--accent-rgb) / 0.32);
+  border-bottom-right-radius: 4px;
+  color: var(--foreground);
+}
+.mv-turn-user .mv-turn-label {
+  color: var(--accent);
+}
+/* Persona: gently elevated surface, muted name */
+.mv-turn-persona {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--card));
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+  color: color-mix(in srgb, var(--foreground) 88%, transparent);
+}
+.mv-turn-persona .mv-turn-label {
+  color: var(--muted-foreground);
+}
+
+/* A backend-supplied competency icon, sized to sit where the ng-icon would.
+   Whatever the asset's own aspect ratio, it stays inside the same square. */
+.mv-comp-icon {
+  width: 1.05em;
+  height: 1.05em;
+  object-fit: contain;
+}
+
+/* ── Competency cards: interactive, they link to their evidence ──────── */
+.mv-comp-card {
+  width: 100%;
+  cursor: pointer;
+  transition:
+    transform 250ms ease,
+    border-color 250ms ease,
+    box-shadow 250ms ease;
+}
+.mv-comp-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow: 0 16px 34px -20px rgb(0 0 0 / 0.75);
+}
+.mv-comp-card .mv-see {
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+}
+.mv-comp-card:hover .mv-see,
+.mv-comp-card:focus-visible .mv-see {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  section > *,
+  .mv-comp-grid > *,
+  .mv-meter-fill,
+  .mv-radar-shape,
+  .mv-radar-dot,
+  .mv-skel::after {
+    animation: none;
+  }
+  .mv-meter-fill,
+  .mv-comp-card,
+  .mv-comp-card .mv-see {
+    transition: none;
+  }
+  .mv-comp-card .mv-see {
+    opacity: 1;
+  }
+}

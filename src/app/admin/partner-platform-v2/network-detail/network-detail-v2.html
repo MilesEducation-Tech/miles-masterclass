@@ -10,12 +10,17 @@
         View reports
       </app-button>
       <ng-container *hasPermission="PERM.PARTNER_PLATFORM_MANAGE">
+        <app-button variant="outline" size="sm" class="text-white" (clicked)="openCreateFirm()">
+          Create firm
+        </app-button>
         <app-button variant="outline" size="sm" class="text-white" (clicked)="openAssignSeat()">
           Assign pool seat
         </app-button>
-        <app-button variant="primary" size="sm" (clicked)="openEdit()">
-          Edit / mint seats
-        </app-button>
+        @if (canEdit()) {
+          <app-button variant="primary" size="sm" (clicked)="openEdit()">
+            Edit / mint seats
+          </app-button>
+        }
       </ng-container>
     </div>
   </header>
@@ -54,7 +59,7 @@
           >
             <tr>
               <th class="px-4 py-3 font-semibold">Firm</th>
-              <th class="px-4 py-3 font-semibold">Email domain</th>
+              <th class="px-4 py-3 font-semibold">Email domains</th>
               <th class="px-4 py-3 font-semibold text-right">Allocated</th>
               <th class="px-4 py-3 font-semibold text-right">Used</th>
               <th class="px-4 py-3 font-semibold">Status</th>
@@ -65,7 +70,9 @@
             @for (firm of firms(); track firm.id) {
               <tr class="hover:bg-white/3 transition-colors">
                 <td class="px-4 py-3 font-medium text-neutral-100">{{ firm.name }}</td>
-                <td class="px-4 py-3 text-neutral-300">{{ firm.email_domain || '—' }}</td>
+                <td class="px-4 py-3 text-neutral-300">
+                  {{ firm.email_domains.join(', ') || '—' }}
+                </td>
                 <td class="px-4 py-3 text-right tabular-nums text-neutral-300">
                   {{ firm.allocated_seats }}
                 </td>
@@ -84,16 +91,31 @@
                   </span>
                 </td>
                 <td class="px-4 py-3 text-right">
-                  <ng-container *hasPermission="PERM.PARTNER_PLATFORM_MANAGE">
+                  <div class="inline-flex items-center gap-2">
                     <app-button
                       variant="outline"
                       size="sm"
                       class="border-white/15 text-white hover:bg-white/5"
-                      (clicked)="openAllocate(firm)"
+                      (clicked)="openFirmReports(firm)"
                     >
-                      Add seats
+                      Reports
                     </app-button>
-                  </ng-container>
+                    <ng-container *hasPermission="PERM.PARTNER_PLATFORM_MANAGE">
+                      <app-button
+                        variant="outline"
+                        size="sm"
+                        class="border-white/15 text-white hover:bg-white/5"
+                        (clicked)="openAllocate(firm)"
+                      >
+                        Add seats
+                      </app-button>
+                      @if (canEdit()) {
+                        <app-button variant="primary" size="sm" (clicked)="openEditFirm(firm)">
+                          Edit
+                        </app-button>
+                      }
+                    </ng-container>
+                  </div>
                 </td>
               </tr>
             }

@@ -1,6 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { computed, inject, Injectable, PLATFORM_ID, resource } from '@angular/core';
 import { firstValueFrom, fromEvent, Observable, takeUntil } from 'rxjs';
+import { PERM } from '../../../../shared/core/models/admin/admin-rbac.model';
 import { AdminAuth } from '../../../../shared/core/services/admin-auth/admin-auth';
 import { ApiClient } from '../../../../shared/core/services/api-client/api-client';
 import { Logger } from '../../../../shared/core/services/logger/logger';
@@ -27,6 +28,7 @@ import {
   PartnerCodesResponse,
   partnerErrorMessage,
   partnerLoadError,
+  UpdateFirmRequest,
   UpdateNetworkRequest,
 } from '../models/partner-platform.model';
 
@@ -47,7 +49,9 @@ const assignSeatUrl = (seatId: number) => `partners/superadmin/seats/${seatId}/a
  * path and a rejected one carries `{status:false, message}` for
  * `partnerErrorMessage()` to surface.
  */
-@Injectable({ providedIn: 'root' })
+// Route-scoped (see admin.routes.ts): the injector dies on navigation, which
+// aborts in-flight resource() loads and stops this page's calls firing elsewhere.
+@Injectable()
 export class PartnerSuperAdminFacade {
   private readonly api = inject(ApiClient);
   private readonly auth = inject(AdminAuth);
@@ -55,15 +59,20 @@ export class PartnerSuperAdminFacade {
   private readonly logger = inject(Logger);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  /** Never fetch on the server, or for an admin the backend would 403 anyway. */
+  /**
+   * Never fetch on the server, or for an admin the backend would 403 anyway.
+   * Gate on the same PERM the superadmin routes use — a role-slug check here
+   * left any non-`super_admin` role holding `partner:platform:manage` staring
+   * at silently empty pages.
+   */
   private canLoad(): boolean {
-    return this.isBrowser && this.auth.isSuperAdmin();
+    return this.isBrowser && this.auth.hasPermission(PERM.PARTNER_PLATFORM_MANAGE);
   }
 
   // ---- Networks ------------------------------------------------------------
 
   private readonly networksResource = resource({
-    params: () => (this.canLoad() ? {} : undefined),
+    params: () => (this.canLoad() ? true : undefined),
     loader: ({ abortSignal }) =>
       firstValueFrom(
         this.api
@@ -128,7 +137,7 @@ export class PartnerSuperAdminFacade {
   // ---- Partner codes -------------------------------------------------------
 
   private readonly partnerCodesResource = resource({
-    params: () => (this.canLoad() ? {} : undefined),
+    params: () => (this.canLoad() ? true : undefined),
     loader: ({ abortSignal }) =>
       firstValueFrom(
         this.api
@@ -168,7 +177,7 @@ export class PartnerSuperAdminFacade {
   // ---- Firms ---------------------------------------------------------------
 
   private readonly firmsResource = resource({
-    params: () => (this.canLoad() ? {} : undefined),
+    params: () => (this.canLoad() ? true : undefined),
     loader: ({ abortSignal }) =>
       firstValueFrom(
         this.api
@@ -251,6 +260,26 @@ export class PartnerSuperAdminFacade {
     }
   }
 
+  /**
+   * Edit a firm — name, email domains, active flag. Super-admin only (the
+   * button is gated on `AdminAuth.isSuperAdmin()`); `email_domains` replaces
+   * the whole list, so send every domain the firm should keep.
+   */
+  async updateFirm(firmId: number, patch: UpdateFirmRequest): Promise<Firm | null> {
+    try {
+      const firm = await firstValueFrom(
+        this.api.patch<Firm>(`${SUPERADMIN_FIRMS}${firmId}/`, patch, { context: adminContext() }),
+      );
+      this.firmsResource.reload();
+      this.notification.success('Firm updated', `${firm.name} saved.`);
+      return firm;
+    } catch (err) {
+      this.logger.error('[PartnerSuperAdminFacade] updateFirm failed', err);
+      this.notification.error('Could not update firm', partnerErrorMessage(err));
+      return null;
+    }
+  }
+
   /** Top up an existing firm's seats. */
   async allocateSeats(firmId: number, body: AllocateSeatsRequest): Promise<number | null> {
     try {
@@ -277,7 +306,7 @@ export class PartnerSuperAdminFacade {
   // ---- Partner admins ------------------------------------------------------
 
   private readonly partnerAdminsResource = resource({
-    params: () => (this.canLoad() ? {} : undefined),
+    params: () => (this.canLoad() ? true : undefined),
     loader: ({ abortSignal }) =>
       firstValueFrom(
         this.api

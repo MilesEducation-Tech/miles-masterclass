@@ -6,17 +6,39 @@
       <h1 class="text-3xl font-extrabold leading-tight">{{ title() }}</h1>
     </div>
     @if (canViewReports()) {
-      <app-button
-        variant="outline"
-        size="sm"
-        class="text-white"
-        [disabled]="facade.isExporting() || facade.needsScope()"
-        (clicked)="exportSummary()"
-      >
-        {{ facade.isExporting() ? 'Exporting…' : 'Export CSV' }}
-      </app-button>
+      <div class="flex items-center gap-2">
+        <app-button
+          variant="outline"
+          size="sm"
+          class="text-white"
+          [disabled]="facade.isExporting() || facade.needsScope()"
+          (clicked)="exportSummary()"
+        >
+          {{ facade.isExporting() ? 'Exporting…' : 'Export CSV' }}
+        </app-button>
+        <app-button
+          variant="outline"
+          size="sm"
+          class="text-white"
+          [disabled]="facade.isDownloading() || facade.needsScope()"
+          (clicked)="downloadAllCertificates()"
+        >
+          {{ facade.isDownloading() ? 'Downloading…' : 'Download certificates' }}
+        </app-button>
+        <app-button
+          variant="primary"
+          size="sm"
+          [disabled]="facade.needsScope()"
+          (clicked)="openPreview()"
+        >
+          Preview report
+        </app-button>
+      </div>
     }
   </header>
+
+  <!-- Running certificate job (page-level, per-user column, or the dialog) -->
+  <app-certificate-download-progress />
 
   @if (!canViewReports() && !me.isLoading()) {
     <!-- Reachable with the Supabase perm alone; the Django row/capability is separate. -->
@@ -30,52 +52,25 @@
   } @else {
     <!-- Filters -->
     <div class="flex flex-col gap-4">
-      <div
-        class="inline-flex w-fit items-center gap-1 rounded-md border border-white/10 p-1"
-        style="background: var(--card, #0e2742)"
-        role="tablist"
+      <app-tab-strip
+        [options]="tabLabels"
+        [selected]="activeTabLabel()"
+        (selectionChange)="onTabChange($event)"
         aria-label="Report subject"
-      >
-        @for (tab of subjectTabs; track tab.value) {
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="isActiveTab(tab.value)"
-            class="rounded px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-white/5"
-            [class.bg-primary]="isActiveTab(tab.value)"
-            (click)="selectSubject(tab.value)"
-          >
-            {{ tab.label }}
-          </button>
-        }
-      </div>
+      />
 
       <div class="flex flex-wrap items-end gap-4">
         <!-- Scope picker — supers only; panel admins are scoped server-side -->
         @if (facade.isSuper()) {
-          <div class="flex flex-col gap-1.5">
-            <label for="report-scope-v2" class="text-sm" style="color: var(--mm-fg-3)">
-              Scope
-            </label>
-            <select
-              id="report-scope-v2"
-              class="form-input max-w-xs"
-              [value]="scopeValue()"
-              (change)="onScopeChange($event)"
-            >
-              <option value="">Select a network or firm…</option>
-              <optgroup label="Networks">
-                @for (network of networks(); track network.id) {
-                  <option [value]="'n:' + network.id">{{ network.name }}</option>
-                }
-              </optgroup>
-              <optgroup label="Firms">
-                @for (firm of firms(); track firm.id) {
-                  <option [value]="'f:' + firm.id">{{ firm.name }}</option>
-                }
-              </optgroup>
-            </select>
-          </div>
+          <app-aria-select
+            id="report-scope-v2"
+            label="Scope"
+            placeholder="Select a network or firm…"
+            class="w-64"
+            [options]="scopeOptions()"
+            [value]="scopeValue() || null"
+            (valueChange)="onScopeChange($any($event))"
+          />
         }
 
         <app-aria-input
@@ -91,6 +86,14 @@
           label="To"
           class="w-44"
           [(value)]="facade.dateTo"
+        />
+        <app-aria-select
+          id="report-v2-page-size"
+          label="Rows per page"
+          class="w-36"
+          [options]="pageSizeOptions"
+          [value]="facade.pageSize()"
+          (valueChange)="onPageSizeChange($any($event))"
         />
       </div>
     </div>
@@ -141,12 +144,14 @@
           [rows]="facade.users()"
           [subject]="facade.subject()"
           [isLoading]="facade.usersLoading()"
+          [isDownloading]="facade.isDownloading()"
           [currentPage]="facade.pageNumber()"
-          [pageSize]="facade.pageSize"
+          [pageSize]="facade.pageSize()"
           [totalCount]="facade.totalCount()"
           [hasNext]="facade.hasNextPage()"
           [hasPrev]="facade.hasPrevPage()"
           (viewItems)="openItems($event)"
+          (downloadCertificates)="downloadCertificates($event)"
           (prevPage)="goPrev()"
           (nextPage)="goNext()"
         />

@@ -426,7 +426,7 @@ Routes, SSR render modes and SEO all change, so the SSR run is mandatory at ever
 ## How to verify it
 
 1. `pnpm start` (port **4100**).
-2. `http://localhost:4100/us/cpa` → redirects to `/us/cpa/home` while logged out.
+2. `http://localhost:4101/us/cpa` → redirects to `/us/cpa/home` while logged out.
 3. Log in with a UAT phone number. In UAT the OTP is returned in the `login-with-phone-otp` response body (`communication_method: 5`); read it from the network tab.
 4. DevTools → Network: confirm every XHR goes to the CAIRA host, carries `Authorization: bearer …`, and that **no request is blocked by CORS preflight**.
 5. `/us/cpa/masterclass` → cards render from `Masterclass_Course_Section/`; a logged-out reload still renders them server-side.

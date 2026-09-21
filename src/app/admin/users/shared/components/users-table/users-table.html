@@ -31,46 +31,48 @@
               <td class="px-4 py-3 text-neutral-300 break-all">
                 <span class="inline-flex items-center gap-1.5">
                   <span>{{ isEmailRevealed(row) ? row.email : maskEmail(row.email) }}</span>
-                  <button
-                    type="button"
-                    class="drill-btn shrink-0"
-                    (click)="toggleEmailReveal(row)"
-                    [attr.aria-label]="
+                  <app-button
+                    variant="ghost"
+                    size="icon"
+                    class="h-6 w-6 shrink-0 text-white/70 hover:bg-white/10 hover:text-white"
+                    [ariaLabel]="
                       isEmailRevealed(row)
                         ? 'Hide email for ' + row.name
                         : 'Reveal email for ' + row.name
                     "
                     [attr.aria-pressed]="isEmailRevealed(row)"
+                    (clicked)="toggleEmailReveal(row)"
                   >
                     <ng-icon
                       [name]="isEmailRevealed(row) ? 'lucideEyeOff' : 'lucideEye'"
                       class="text-sm"
                       aria-hidden="true"
                     />
-                  </button>
+                  </app-button>
                 </span>
               </td>
               <td class="px-4 py-3 text-neutral-300 tabular-nums">
                 @if (hasPhone(row)) {
                   <span class="inline-flex items-center gap-1.5">
                     <span>{{ isPhoneRevealed(row) ? row.phone : maskPhone(row.phone) }}</span>
-                    <button
-                      type="button"
-                      class="drill-btn shrink-0"
-                      (click)="togglePhoneReveal(row)"
-                      [attr.aria-label]="
+                    <app-button
+                      variant="ghost"
+                      size="icon"
+                      class="h-6 w-6 shrink-0 text-white/70 hover:bg-white/10 hover:text-white"
+                      [ariaLabel]="
                         isPhoneRevealed(row)
                           ? 'Hide phone for ' + row.name
                           : 'Reveal phone for ' + row.name
                       "
                       [attr.aria-pressed]="isPhoneRevealed(row)"
+                      (clicked)="togglePhoneReveal(row)"
                     >
                       <ng-icon
                         [name]="isPhoneRevealed(row) ? 'lucideEyeOff' : 'lucideEye'"
                         class="text-sm"
                         aria-hidden="true"
                       />
-                    </button>
+                    </app-button>
                   </span>
                 } @else {
                   {{ row.phone }}

@@ -1,0 +1,8 @@
+<img [ngSrc]="thumbnail()" [alt]="title()" fill [priority]="index() < 4" />
+<app-caira-credly-badge
+  class="absolute bottom-0 left-1/2 -translate-x-1/2 z-20"
+  [includedForCaira]="includedForCaira()"
+  [hasIndividualBadge]="hasIndividualBadge()"
+  [cairaLevel]="cairaLevel()"
+  variant="inline"
+/>

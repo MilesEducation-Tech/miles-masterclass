@@ -35,6 +35,7 @@
                 <span class="flex flex-col gap-0.5">
                   <span class="font-medium text-neutral-100">{{ row.name }}</span>
                   <span class="text-xs text-neutral-400 break-all">{{ row.email }}</span>
+                  <span class="text-[11px] font-mono text-neutral-500">{{ row.uuid }}</span>
                 </span>
               </td>
 
@@ -74,22 +75,37 @@
                 {{ dec(isCourses() ? row.avg_feedback_per_course : row.avg_feedback_per_webinar) }}
               </td>
 
+              <!-- Certificates: count + zip of every PDF, one folder per course -->
               <td class="px-4 py-3 text-right tabular-nums text-neutral-300">
-                {{ row.total_certificates_awarded }}
+                <span class="inline-flex items-center justify-end gap-2">
+                  {{ row.total_certificates_awarded }}
+                  @if (row.total_certificates_awarded > 0) {
+                    <app-button
+                      variant="outline"
+                      size="icon"
+                      class="h-7 w-7 text-white/80 hover:bg-white/10 hover:text-white"
+                      [disabled]="isDownloading()"
+                      [ariaLabel]="'Download all certificates for ' + row.name"
+                      (clicked)="downloadCertificates.emit(row)"
+                    >
+                      <ng-icon name="lucideDownload" class="text-sm" aria-hidden="true" />
+                    </app-button>
+                  }
+                </span>
               </td>
 
               <td class="px-4 py-3 text-right">
-                <button
-                  type="button"
-                  class="drill-btn"
-                  (click)="viewItems.emit(row)"
-                  [attr.aria-label]="
+                <app-button
+                  variant="outline"
+                  size="icon"
+                  class="h-7 w-7 text-white/80 hover:bg-white/10 hover:text-white"
+                  [ariaLabel]="
                     'View ' + (isCourses() ? 'courses' : 'webinars') + ' for ' + row.name
                   "
-                  title="View details"
+                  (clicked)="viewItems.emit(row)"
                 >
                   <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
-                </button>
+                </app-button>
               </td>
             </tr>
           }

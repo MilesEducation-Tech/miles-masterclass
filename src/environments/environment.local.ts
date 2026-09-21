@@ -8,9 +8,19 @@ export const environment = {
    * `ng serve` port so canonical/og:url + sitemap links resolve locally. See
    * app.ts + src/seo.ts.
    */
-  SITE_URL: 'http://localhost:4100',
+  SITE_URL: 'http://localhost:4101',
 
   BASE_API_URL: 'https://uat-api.milesmasterclass.com/api/',
+
+  /**
+   * Dev-only key for the Miles SSO support OTP-reveal endpoint, used by the
+   * hidden QA login route (`DEV_LOGIN_PATH`).
+   *
+   * Never copy this into `environment.ts`: the endpoint returns the login OTP
+   * for ANY identifier, so a production bundle carrying it would hand every
+   * visitor a way into any account. Non-prod builds only.
+   */
+  SSO_SUPPORT_API_KEY: 'gP9GY-LsLPuvtEZLd_XyGKJTFxb4zNBKH_x4uxiONpM',
 
   // MilesVerse API origin. Empty = MilesVerse pages show not-connected.
   MILESVERSE_API_URL: 'https://uat.milesverse.ai',
@@ -71,6 +81,44 @@ export const environment = {
     transferAuthStatus: 'auth_status',
   },
 
+  /**
+   * B2B single sign-on — the learner's own employer authenticates them.
+   *
+   * A separate Supabase project from SUPABASE and AI_LABS: the B2B companies,
+   * their verified domains, their SAML connections and their licences all live
+   * on the Miles SSO project, and this is the only client that talks to it.
+   * Its own `storageKey` for the same reason — three clients sharing one would
+   * overwrite each other's sessions.
+   *
+   * Everything here is public by design: the URL, and an anon key that is
+   * RLS-scoped. Nothing secret belongs in the browser bundle.
+   *
+   * This is the one auth call the browser makes directly instead of through the
+   * Masterclass backend, because a SAML redirect has to happen in the browser.
+   * `redirectPath` resolves against SITE_URL so the allowlisted value is fixed
+   * per environment and SSR can produce it too — it must match, character for
+   * character, what SSO has registered for this application.
+   */
+  B2B_SSO: {
+    /**
+     * The Supabase project, NOT the Miles SSO API.
+     *
+     * supabase-js talks to GoTrue here (`/auth/v1/...`), so this has to be the
+     * host that serves those paths. `auth.mileseducation.com` and
+     * `auth-uat.mileseducation.com` are the NestJS API and answer 404 to every
+     * one of them — pointing this there breaks sign-in entirely.
+     *
+     * It does not vary by environment: there is one Supabase project behind
+     * both UAT and production. Which SSO *API* is called is the backend's
+     * business (MILES_SSO_V2_BASE_URL, a Django setting), never the browser's.
+     */
+    supabaseUrl: 'https://sso.mileseducation.com',
+    supabaseAnonKey: 'sb_publishable_cMf4e8dd6DaCgsPLJ6Px5w_3e14QeA_',
+    redirectPath: '/auth/sso-callback',
+    /** localStorage key — kept distinct from the other two Supabase clients. */
+    storageKey: 'B2B_SSO_SUPABASE_SESSION',
+  },
+
   SUPABASE: {
     SupabaseUser: 'LOCAL_SUPABASE_USER',
     url: 'https://lodzktvnxuprpogelodm.supabase.co',
@@ -115,17 +163,10 @@ export const environment = {
     redirectPath: '/auth/ai-labs-callback',
     /** localStorage key — kept distinct from the admin client's session. */
     storageKey: 'AI_LABS_SUPABASE_SESSION',
-
-    /**
-     * Tracks whose `course_type=ai_lab` courses are the catalogue on /ai-labs
-     * (`v2/tracks/:id/courses/`). Track ids differ per environment, so they
-     * live here rather than in the section list. Add `tax` / `cfoTeams` as
-     * those tracks are published.
-     */
-    catalogueTracks: {
-      audit: 7,
-      tax: 6,
-      cfo: 8,
+    /** See the note in environment.development.ts — UAT has no 440/442 yet. */
+    catalogueCourses: {
+      audit: 440,
+      cfoTeams: 442,
     },
 
     /** Gates the /ai-labs evaluation/assessment layer — see environment.ts. On

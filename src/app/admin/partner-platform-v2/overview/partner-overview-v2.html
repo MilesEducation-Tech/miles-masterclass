@@ -15,11 +15,6 @@
           {{ title() }}
         </h1>
       </div>
-      @if (canCreateCode()) {
-        <app-button variant="primary" size="sm" (clicked)="openCreateCode()">
-          Create partner code
-        </app-button>
-      }
     </header>
 
     @if (!me.canReadReports() && !me.isLoading()) {
@@ -73,9 +68,12 @@
             >
               <tr>
                 <th class="px-4 py-3 font-semibold">Code</th>
+                <th class="px-4 py-3 font-semibold">Description</th>
                 <th class="px-4 py-3 font-semibold text-right">Discounted price</th>
                 <th class="px-4 py-3 font-semibold">Scope</th>
                 <th class="px-4 py-3 font-semibold">Auto-subscribe</th>
+                <th class="px-4 py-3 font-semibold">Stripe price</th>
+                <th class="px-4 py-3 font-semibold">Valid to</th>
                 <th class="px-4 py-3 font-semibold">Status</th>
               </tr>
             </thead>
@@ -85,12 +83,21 @@
                   <td class="px-4 py-4 font-mono font-semibold whitespace-nowrap">
                     {{ code.code }}
                   </td>
+                  <td class="px-4 py-4" style="color: var(--mm-fg-3)">
+                    {{ code.description || '—' }}
+                  </td>
                   <td class="px-4 py-4 text-right tabular-nums">
                     {{ +code.discounted_price | currency: 'USD' : 'symbol' : '1.2-2' }}
                   </td>
                   <td class="px-4 py-4" style="color: var(--mm-fg-2)">{{ scopeLabel(code) }}</td>
                   <td class="px-4 py-4" style="color: var(--mm-fg-3)">
                     {{ code.auto_subscribe ? 'Yes' : 'No' }}
+                  </td>
+                  <td class="px-4 py-4 font-mono text-xs" style="color: var(--mm-fg-3)">
+                    {{ code.stripe_price_id || '—' }}
+                  </td>
+                  <td class="px-4 py-4" style="color: var(--mm-fg-3)">
+                    {{ code.valid_to ? (code.valid_to | date: 'mediumDate') : '—' }}
                   </td>
                   <td class="px-4 py-4">
                     <span
@@ -109,7 +116,7 @@
               } @empty {
                 @if (!facade.panelCodesLoading()) {
                   <tr>
-                    <td colspan="5" class="px-4 py-8 text-center" style="color: var(--mm-fg-3)">
+                    <td colspan="8" class="px-4 py-8 text-center" style="color: var(--mm-fg-3)">
                       No plans available to your scope yet.
                     </td>
                   </tr>
@@ -123,6 +130,79 @@
           <div class="flex justify-center py-4"><app-spinner size="sm" /></div>
         }
       </div>
+
+      <!-- My firms — GET /panel/firms/ (always empty for a firm admin, so hidden) -->
+      @if (me.isNetworkAdmin()) {
+        <div class="flex flex-col gap-5">
+          <h2 class="text-xl font-bold">My firms</h2>
+
+          <div class="overflow-x-auto rounded-md border border-white/10">
+            <table class="w-full text-left text-sm">
+              <thead
+                class="text-[11px] uppercase tracking-wider"
+                style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
+              >
+                <tr>
+                  <th class="px-4 py-3 font-semibold">Firm</th>
+                  <th class="px-4 py-3 font-semibold">Email domains</th>
+                  <th class="px-4 py-3 font-semibold text-right">Allocated</th>
+                  <th class="px-4 py-3 font-semibold text-right">Used</th>
+                  <th class="px-4 py-3 font-semibold">Status</th>
+                  <th class="px-4 py-3 font-semibold text-right">Seats</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-white/10">
+                @for (firm of facade.firms(); track firm.id) {
+                  <tr class="hover:bg-white/3 transition-colors">
+                    <td class="px-4 py-4 font-semibold">{{ firm.name }}</td>
+                    <td class="px-4 py-4 font-mono text-xs" style="color: var(--mm-fg-3)">
+                      {{ firm.email_domains.join(', ') || '—' }}
+                    </td>
+                    <td class="px-4 py-4 text-right tabular-nums">{{ firm.allocated_seats }}</td>
+                    <td class="px-4 py-4 text-right tabular-nums">{{ firm.used_seats }}</td>
+                    <td class="px-4 py-4">
+                      <span
+                        class="inline-flex items-center rounded px-2 py-1 text-xs font-medium"
+                        [style.background]="
+                          firm.is_active ? 'var(--mm-success-bg)' : 'var(--mm-danger-bg)'
+                        "
+                        [style.color]="
+                          firm.is_active ? 'var(--mm-success-fg)' : 'var(--mm-danger-fg)'
+                        "
+                      >
+                        {{ firm.is_active ? 'Active' : 'Inactive' }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-4 text-right">
+                      <app-button
+                        variant="outline"
+                        size="sm"
+                        class="text-white"
+                        [ariaLabel]="'View seats for ' + firm.name"
+                        (clicked)="openSeats(firm)"
+                      >
+                        Seats
+                      </app-button>
+                    </td>
+                  </tr>
+                } @empty {
+                  @if (!facade.firmsLoading()) {
+                    <tr>
+                      <td colspan="6" class="px-4 py-8 text-center" style="color: var(--mm-fg-3)">
+                        No member firms yet.
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (facade.firmsLoading()) {
+            <div class="flex justify-center py-4"><app-spinner size="sm" /></div>
+          }
+        </div>
+      }
     }
   }
 </section>

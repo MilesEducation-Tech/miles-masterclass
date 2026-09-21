@@ -39,6 +39,9 @@ interface PartnerCodeFormModel {
   scope: ScopeValue;
   auto_subscribe: boolean;
   description: string;
+  stripe_price_id: string;
+  /** `datetime-local` value; converted to ISO on submit. */
+  valid_to: string;
 }
 
 /**
@@ -63,6 +66,8 @@ export class CreatePartnerCodeDialog implements OnInit {
     scope: '',
     auto_subscribe: false,
     description: '',
+    stripe_price_id: '',
+    valid_to: '',
   });
 
   protected readonly form = form<PartnerCodeFormModel>(this.model, (s) => {
@@ -116,6 +121,9 @@ export class CreatePartnerCodeDialog implements OnInit {
       ...(kind === 'firm' ? { firm: Number(id) } : {}),
       auto_subscribe: v.auto_subscribe,
       ...(v.description.trim() ? { description: v.description.trim() } : {}),
+      ...(v.stripe_price_id.trim() ? { stripe_price_id: v.stripe_price_id.trim() } : {}),
+      // Expiry for DIRECT (non-seat) redemption — seats minted from the plan are unaffected.
+      ...(v.valid_to ? { valid_to: new Date(v.valid_to).toISOString() } : {}),
     };
     this.dialogRef.close(payload);
   }

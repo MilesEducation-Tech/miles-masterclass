@@ -691,3 +691,59 @@ No params — static reference data for a filter bar.
 
 - `view=user-summary` columns — **courses**: `user_id, uuid, name, email, active_in_last_15_days, total_courses_completed, total_cpe_credits_awarded, avg_feedback_per_course, total_certificates_awarded`. **webinars**: same identity fields + `total_webinars_registered, total_webinars_attended, total_cpe_credits_awarded, avg_feedback_per_webinar, total_certificates_awarded`.
 - `view=user-items` columns — **courses**: `name, uuid, email, course_name, is_completed, progress_percent, cpe_credits, feedback_rating, has_certificate`. **webinars**: `name, uuid, email, webinar_name, is_attended, cpe_credits, feedback_rating, has_certificate`.
+
+## `GET .../certificates/`
+
+Same two bases as the rest of the Reports API. No `subject` param — webinars come back as `course_type: "webinar"`. Superadmin must anchor on one of `user_id` / `network_id` / `firm_id` (`400` otherwise; `network_id` and `firm_id` are mutually exclusive, `user_id` needs neither). Panel is scoped by the token; `user_id` outside the admin's scope → `403`. `course_id` narrows any call to one course.
+
+The shape follows how narrow the query is:
+
+**`user_id` [+ `course_id`] — flat** (`{"certificates": []}` when none, never a 404)
+
+```json
+{
+  "certificates": [
+    {
+      "user_id": 4821,
+      "uuid": "a1b2c3d4-...",
+      "name": "Jane Doe",
+      "email": "jane@acmellp.com",
+      "course_type": "masterclass",
+      "course_id": 312,
+      "course_name": "US CPA - Financial Accounting",
+      "cpe_credits": 2.0,
+      "issued_on": "2026-08-14T10:32:05Z",
+      "certificate_url": "https://<cloudfront-domain>/media/certificate/nasba_4821_312.pdf"
+    }
+  ]
+}
+```
+
+**`firm_id` / firm-role admin — grouped by user**
+
+```json
+{
+  "users": [
+    {
+      "user_id": 4821,
+      "uuid": "a1b2c3d4-...",
+      "name": "Jane Doe",
+      "email": "jane@acmellp.com",
+      "certificates": [{ "course_type": "masterclass", "course_id": 312, "...": "..." }]
+    }
+  ]
+}
+```
+
+**`network_id` / network-role admin — grouped by firm, then user**
+
+```json
+{
+  "firms": [{ "firm_id": 17, "firm_name": "Acme LLP", "users": [/* as above */] }],
+  "unassigned_users": [/* users who redeemed a network-pool seat with no firm */]
+}
+```
+
+Firms with zero certified users still appear with `"users": []`.
+
+**Caveat:** `certificate_url` resolves to the NASBA PDF only (`UserCertificate.nasba_url`) — a user holding just a Miles certificate on a course gets `certificate_url: null`. The frontend skips null URLs; confirm whether it should fall back to `miles_url`.

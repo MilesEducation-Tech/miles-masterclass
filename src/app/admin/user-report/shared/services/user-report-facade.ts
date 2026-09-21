@@ -58,7 +58,9 @@ interface CourseDetailResponse {
  * CPE-Masterclass `user-reports` feature — adds server CSV export and a
  * per-bucket course-detail drill-down on top of the listing.
  */
-@Injectable({ providedIn: 'root' })
+// Route-scoped (see admin.routes.ts): the injector dies on navigation, which
+// aborts in-flight resource() loads and stops this page's calls firing elsewhere.
+@Injectable()
 export class UserReportFacade {
   private readonly api = inject(ApiClient);
   private readonly logger = inject(Logger);

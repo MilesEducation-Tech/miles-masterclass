@@ -9,6 +9,9 @@ import {
 import { PartnerAdminMe } from '../../partner-platform/shared/services/partner-admin-me';
 import { PartnerNetworkFacade } from '../../partner-platform/shared/services/partner-network-facade';
 import { SeatTrackerTable } from '../../seat-tracker/shared/components/seat-tracker-table/seat-tracker-table';
+import { TabStrip } from '../../../shared/components/ui/tab-strip/tab-strip';
+import { AriaSelect } from '../../../shared/components/ui/aria/aria-select/aria-select';
+import { AriaSelectOption } from '../../../shared/core/models/aria.model';
 
 const STATUS_TABS: { value: SeatStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -26,7 +29,7 @@ const STATUS_TABS: { value: SeatStatusFilter; label: string }[] = [
  */
 @Component({
   selector: 'app-tracker-v2',
-  imports: [AriaInput, SeatTrackerTable],
+  imports: [AriaInput, SeatTrackerTable, TabStrip, AriaSelect],
   templateUrl: './tracker-v2.html',
   host: { class: 'block w-full' },
 })
@@ -61,6 +64,16 @@ export class TrackerV2 {
       .subscribe((value) => this.facade.setSearch(value));
   }
 
+  /** app-tab-strip speaks labels; map them back to the filter values. */
+  protected readonly tabLabels = STATUS_TABS.map((t) => t.label);
+  protected readonly activeTabLabel = computed(
+    () => STATUS_TABS.find((t) => this.isActiveTab(t.value))?.label ?? null,
+  );
+  protected onTabChange(label: string): void {
+    const tab = STATUS_TABS.find((t) => t.label === label);
+    if (tab) this.selectStatus(tab.value);
+  }
+
   protected isActiveTab(value: SeatStatusFilter): boolean {
     return this.facade.statusFilter() === value;
   }
@@ -69,15 +82,11 @@ export class TrackerV2 {
     this.facade.setStatusFilter(value);
   }
 
-  protected onSelectFirm(event: Event): void {
-    const raw = (event.target as HTMLSelectElement).value;
-    if (raw === '') {
-      this.facade.selectFirm(null);
-      return;
-    }
-    const id = Number(raw);
-    if (!Number.isNaN(id)) this.facade.selectFirm(id);
-  }
+  /** `null` = every sub-company; the facade already drops a stale selection. */
+  protected readonly firmOptions = computed<AriaSelectOption<number | null>[]>(() => [
+    { value: null, label: 'All sub-companies' },
+    ...this.facade.firms().map((f) => ({ value: f.id as number | null, label: f.name })),
+  ]);
 
   protected goPrev(): void {
     this.facade.setPage(this.currentPage() - 1);

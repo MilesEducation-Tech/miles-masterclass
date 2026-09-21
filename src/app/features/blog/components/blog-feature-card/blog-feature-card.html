@@ -1,0 +1,49 @@
+<a
+  [routerLink]="['/blog', post().slug]"
+  class="group relative block h-full w-full overflow-hidden rounded-xl border border-border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+>
+  @if (post().featuredImage) {
+    <img
+      [src]="post().featuredImage"
+      [alt]="post().featuredImageAlt"
+      loading="lazy"
+      decoding="async"
+      class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+    />
+  }
+  <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+
+  <div class="relative flex h-full flex-col justify-end gap-2 p-4 md:p-5">
+    <div class="flex items-center gap-2">
+      @if (post().authorAvatar) {
+        <img
+          [src]="post().authorAvatar"
+          [alt]="post().author"
+          class="h-6 w-6 rounded-full object-cover"
+        />
+      } @else {
+        <span
+          class="flex h-6 w-6 items-center justify-center rounded-full bg-accent/30 text-[10px] font-semibold text-white"
+        >
+          {{ post().author.charAt(0) }}
+        </span>
+      }
+      <span class="text-xs font-medium text-white/90">{{ post().author }}</span>
+    </div>
+
+    <h3
+      class="font-semibold leading-snug text-white"
+      [class]="
+        size() === 'lg' ? 'text-xl line-clamp-3 md:text-2xl' : 'text-sm line-clamp-2 md:text-base'
+      "
+    >
+      {{ post().title }}
+    </h3>
+
+    <div class="flex items-center gap-2 text-[11px] text-white/70">
+      <span>{{ post().displayDate }}</span>
+      <span aria-hidden="true">|</span>
+      <span>{{ post().readingMinutes }} mins Read</span>
+    </div>
+  </div>
+</a>

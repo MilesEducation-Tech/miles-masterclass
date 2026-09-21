@@ -50,7 +50,9 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
  * send `firm_id` for them — a caller-supplied scope must not be able to widen
  * what they see.
  */
-@Injectable({ providedIn: 'root' })
+// Route-scoped (see admin.routes.ts): the injector dies on navigation, which
+// aborts in-flight resource() loads and stops this page's calls firing elsewhere.
+@Injectable()
 export class PartnerNetworkFacade {
   private readonly api = inject(ApiClient);
   private readonly notification = inject(NotificationService);
@@ -67,7 +69,7 @@ export class PartnerNetworkFacade {
     // The endpoint requires report:network:read / report:firm:read — don't
     // fire a doomed 403 for an admin without either.
     params: () =>
-      this.isBrowser && !this.me.isLoading() && this.me.canReadReports() ? {} : undefined,
+      this.isBrowser && !this.me.isLoading() && this.me.canReadReports() ? true : undefined,
     loader: ({ abortSignal }) =>
       firstValueFrom(
         this.api
@@ -88,7 +90,7 @@ export class PartnerNetworkFacade {
   private readonly firmsResource = resource({
     // Always empty for a firm admin (no sibling firms to see).
     params: () =>
-      this.isBrowser && !this.me.isLoading() && this.me.isNetworkAdmin() ? {} : undefined,
+      this.isBrowser && !this.me.isLoading() && this.me.isNetworkAdmin() ? true : undefined,
     loader: ({ abortSignal }) =>
       firstValueFrom(
         this.api
@@ -106,7 +108,7 @@ export class PartnerNetworkFacade {
   private readonly panelCodesResource = resource({
     // Same report:*:read gate the endpoint enforces server-side.
     params: () =>
-      this.isBrowser && !this.me.isLoading() && this.me.canReadReports() ? {} : undefined,
+      this.isBrowser && !this.me.isLoading() && this.me.canReadReports() ? true : undefined,
     loader: ({ abortSignal }) =>
       firstValueFrom(
         this.api

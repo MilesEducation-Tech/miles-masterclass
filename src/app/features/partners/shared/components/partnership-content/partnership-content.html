@@ -1,0 +1,72 @@
+<section class="w-full md:space-y-20 space-y-10">
+  @for (section of contentList(); track section.type) {
+    <section class="w-full md:space-y-20 space-y-10">
+      @if (section.type === 'TRACKS') {
+        @for (item of trackItems(); track item.id) {
+          @if (item.content.length) {
+            @defer (on viewport; prefetch on idle) {
+              <app-carousel
+                [cards]="item.content"
+                [heading]="{ text: item.title, subText: item.description }"
+                [swiperConfig]="$even ? swiperConfigOdd : swiperConfigEven"
+                (loadMore)="loadMoreTrack(item.id)"
+              >
+                <ng-template let-card>
+                  @if ($even) {
+                    <app-vertical [card]="card" type="masterclass" />
+                  } @else if ($odd) {
+                    <app-horizontal [card]="card" type="masterclass" />
+                  }
+                </ng-template>
+              </app-carousel>
+            } @placeholder {
+              <div></div>
+              <!-- <div class="flex items-center justify-center min-w-28 aspect-video">
+                <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+              </div> -->
+            }
+          }
+        }
+      } @else {
+        @defer (on viewport; prefetch on idle) {
+          <app-carousel
+            [cards]="section.items"
+            [heading]="{ text: section.heading, subText: section.subheading }"
+            [swiperConfig]="section.swiperConfig"
+            (loadMore)="loadMore($index)"
+            [shouldHoverAnimate]="section.type === 'PODCAST' ? true : false"
+          >
+            <ng-template let-card let-index="$index">
+              @switch (section.type) {
+                @case ('MASTERCLASS') {
+                  <app-horizontal [card]="card" type="masterclass" />
+                }
+                @case ('PODCAST') {
+                  <app-square
+                    [thumbnail]="card.square_thumbnail || card.thumbnail"
+                    [title]="card.title"
+                    [index]="index"
+                    [includedForCaira]="card.included_for_caira"
+                    [hasIndividualBadge]="card.has_individual_badge"
+                    [cairaLevel]="card.caira_level"
+                  />
+                }
+                @case ('MICRO-LEARNING') {
+                  <app-vertical [card]="card" type="micro-learning" />
+                }
+                @default {
+                  <app-vertical [card]="card" />
+                }
+              }
+            </ng-template>
+          </app-carousel>
+        } @placeholder {
+          <div></div>
+          <!-- <div class="flex items-center justify-center min-w-28 aspect-9/16">
+            <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+          </div> -->
+        }
+      }
+    </section>
+  }
+</section>

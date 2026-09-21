@@ -1,54 +1,45 @@
-import { CurrencyPipe } from '@angular/common';
-import { Component, DestroyRef, computed, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { take } from 'rxjs';
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { Component, computed, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { Button } from '../../../shared/components/ui/button/button';
 import { Spinner } from '../../../shared/components/ui/spinner/spinner';
-import { Dialog } from '../../../shared/core/services/dialog/dialog';
 import { StatCard } from '../../partner-platform/shared/components/stat-card/stat-card';
-import {
-  CreatePartnerCodeRequest,
-  PartnerCode,
-} from '../../partner-platform/shared/models/partner-platform.model';
+import { Firm, PartnerCode } from '../../partner-platform/shared/models/partner-platform.model';
 import { PartnerAdminMe } from '../../partner-platform/shared/services/partner-admin-me';
 import { PartnerNetworkFacade } from '../../partner-platform/shared/services/partner-network-facade';
-import { PartnerSuperAdminFacade } from '../../partner-platform/shared/services/partner-superadmin-facade';
-import {
-  CreatePartnerCodeDialog,
-  CreatePartnerCodeDialogData,
-} from '../../partner-platform/super-admin/partner-codes/shared/components/create-partner-code-dialog/create-partner-code-dialog';
 
 /**
  * Partner Platform v2 — Overview (`/admin/partner-v2/overview`), the panel
- * landing for network + firm admins: seat stat cards (`GET /panel/dashboard/`)
- * and the partner codes this admin can mint from (`GET /panel/partner-codes/`).
+ * landing for network + firm admins: seat stat cards (`GET /panel/dashboard/`),
+ * the partner codes this admin can mint from (`GET /panel/partner-codes/`) and,
+ * for a network admin, the member firms (`GET /panel/firms/`).
  *
- * The create-code CTA follows `code:create:network` / `code:create:firm`.
- * ponytail: it posts to the superadmin partner-codes endpoint — the panel API
- * has no code-creation endpoint yet, so a Django network/firm role gets the
- * server's 403 message verbatim. Real fix: a backend `POST /panel/partner-codes/`.
+ * No create-code CTA: the panel API has no code-creation endpoint, so the old
+ * button posted to the superadmin endpoint and 403'd for every panel admin.
+ * Re-add it against `PartnerNetworkFacade` once `POST /panel/partner-codes/`
+ * exists (gate on `code:create:network` / `code:create:firm`).
  */
 @Component({
   selector: 'app-partner-overview-v2',
-  imports: [Button, Spinner, StatCard, CurrencyPipe],
+  imports: [Button, Spinner, StatCard, CurrencyPipe, DatePipe],
   templateUrl: './partner-overview-v2.html',
   host: { class: 'block w-full' },
 })
 export class PartnerOverviewV2 {
   protected readonly facade = inject(PartnerNetworkFacade);
   protected readonly me = inject(PartnerAdminMe);
-  private readonly superFacade = inject(PartnerSuperAdminFacade);
-  private readonly dialog = inject(Dialog);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
 
   /** Header title: the network name for a network admin, the firm name for a firm admin. */
   protected readonly title = computed(
     () => this.me.network()?.name ?? this.me.firm()?.name ?? 'Partner network',
   );
 
-  protected readonly canCreateCode = computed(
-    () => this.me.can('code:create:network') || this.me.can('code:create:firm'),
-  );
+  /** Drill into one member firm's seats — the tracker shares this route-scoped facade. */
+  protected openSeats(firm: Firm): void {
+    this.facade.selectFirm(firm.id);
+    void this.router.navigate(['/admin/partner-v2/panel/tracker']);
+  }
 
   protected readonly cards = computed(() => {
     const d = this.facade.dashboard();
@@ -76,24 +67,5 @@ export class PartnerOverviewV2 {
     if (code.network) return `Network — ${code.network.name}`;
     if (code.firm) return `Firm — ${code.firm.name}`;
     return 'Global';
-  }
-
-  /** Create a code pinned to this admin's own scope. */
-  protected openCreateCode(): void {
-    const ref = this.dialog.open<CreatePartnerCodeDialog, CreatePartnerCodeRequest | undefined>(
-      CreatePartnerCodeDialog,
-      {
-        data: {
-          networks: [],
-          firms: [],
-          pinned: { network: this.me.network(), firm: this.me.firm() },
-        } satisfies CreatePartnerCodeDialogData,
-        maxWidth: '520px',
-        ariaLabel: 'Create partner code',
-      },
-    );
-    ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
-      if (result) void this.superFacade.createPartnerCode(result);
-    });
   }
 }

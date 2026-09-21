@@ -119,20 +119,20 @@
                       {{ row.courses_completed_cpe }}
                     </span>
                     @if (row.courses_completed_cpe > 0) {
-                      <button
-                        type="button"
-                        class="drill-btn"
-                        (click)="
+                      <app-button
+                        variant="outline"
+                        size="icon"
+                        class="h-6 w-6 text-white/80 hover:bg-white/10 hover:text-white"
+                        ariaLabel="View completed CPE courses"
+                        (clicked)="
                           openCourseDetail(
                             row,
                             'CPE Courses Completed',
                             row.courses_completed_cpe_ids
                           )
                         "
-                        aria-label="View completed CPE courses"
-                      >
-                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
-                      </button>
+                        ><ng-icon name="lucideEye" class="text-sm" aria-hidden="true"
+                      /></app-button>
                     }
                   </span>
                 </td>
@@ -144,16 +144,16 @@
                       {{ row.cpe_credits_earned | number: '1.0-2' }}
                     </span>
                     @if (row.cpe_credits_earned > 0) {
-                      <button
-                        type="button"
-                        class="drill-btn"
-                        (click)="
+                      <app-button
+                        variant="outline"
+                        size="icon"
+                        class="h-6 w-6 text-white/80 hover:bg-white/10 hover:text-white"
+                        ariaLabel="View CPE credits earned"
+                        (clicked)="
                           openCourseDetail(row, 'CPE Credits Earned', row.cpe_credits_earned_ids)
                         "
-                        aria-label="View CPE credits earned"
-                      >
-                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
-                      </button>
+                        ><ng-icon name="lucideEye" class="text-sm" aria-hidden="true"
+                      /></app-button>
                     }
                   </span>
                 </td>
@@ -165,20 +165,20 @@
                       {{ row.courses_in_progress_cpe }}
                     </span>
                     @if (row.courses_in_progress_cpe > 0) {
-                      <button
-                        type="button"
-                        class="drill-btn"
-                        (click)="
+                      <app-button
+                        variant="outline"
+                        size="icon"
+                        class="h-6 w-6 text-white/80 hover:bg-white/10 hover:text-white"
+                        ariaLabel="View in-progress CPE courses"
+                        (clicked)="
                           openCourseDetail(
                             row,
                             'CPE Courses In Progress',
                             row.courses_in_progress_cpe_ids
                           )
                         "
-                        aria-label="View in-progress CPE courses"
-                      >
-                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
-                      </button>
+                        ><ng-icon name="lucideEye" class="text-sm" aria-hidden="true"
+                      /></app-button>
                     }
                   </span>
                 </td>
@@ -190,20 +190,20 @@
                       {{ row.cpe_credits_in_progress | number: '1.0-2' }}
                     </span>
                     @if (row.cpe_credits_in_progress > 0) {
-                      <button
-                        type="button"
-                        class="drill-btn"
-                        (click)="
+                      <app-button
+                        variant="outline"
+                        size="icon"
+                        class="h-6 w-6 text-white/80 hover:bg-white/10 hover:text-white"
+                        ariaLabel="View in-progress CPE credits"
+                        (clicked)="
                           openCourseDetail(
                             row,
                             'CPE Credits In Progress',
                             row.cpe_credits_in_progress_ids
                           )
                         "
-                        aria-label="View in-progress CPE credits"
-                      >
-                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
-                      </button>
+                        ><ng-icon name="lucideEye" class="text-sm" aria-hidden="true"
+                      /></app-button>
                     }
                   </span>
                 </td>
@@ -215,20 +215,20 @@
                       {{ row.caira_credits_earned | number: '1.0-2' }}
                     </span>
                     @if (row.caira_credits_earned > 0) {
-                      <button
-                        type="button"
-                        class="drill-btn"
-                        (click)="
+                      <app-button
+                        variant="outline"
+                        size="icon"
+                        class="h-6 w-6 text-white/80 hover:bg-white/10 hover:text-white"
+                        ariaLabel="View CAiRA credits earned"
+                        (clicked)="
                           openCourseDetail(
                             row,
                             'CAiRA Credits Earned',
                             row.caira_credits_earned_ids
                           )
                         "
-                        aria-label="View CAiRA credits earned"
-                      >
-                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
-                      </button>
+                        ><ng-icon name="lucideEye" class="text-sm" aria-hidden="true"
+                      /></app-button>
                     }
                   </span>
                 </td>
@@ -240,20 +240,20 @@
                       {{ row.caira_credits_in_progress | number: '1.0-2' }}
                     </span>
                     @if (row.caira_credits_in_progress > 0) {
-                      <button
-                        type="button"
-                        class="drill-btn"
-                        (click)="
+                      <app-button
+                        variant="outline"
+                        size="icon"
+                        class="h-6 w-6 text-white/80 hover:bg-white/10 hover:text-white"
+                        ariaLabel="View in-progress CAiRA credits"
+                        (clicked)="
                           openCourseDetail(
                             row,
                             'CAiRA Credits In Progress',
                             row.caira_credits_in_progress_ids
                           )
                         "
-                        aria-label="View in-progress CAiRA credits"
-                      >
-                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
-                      </button>
+                        ><ng-icon name="lucideEye" class="text-sm" aria-hidden="true"
+                      /></app-button>
                     }
                   </span>
                 </td>
@@ -265,20 +265,20 @@
                       {{ row.courses_completed_preview }}
                     </span>
                     @if (row.courses_completed_preview > 0) {
-                      <button
-                        type="button"
-                        class="drill-btn"
-                        (click)="
+                      <app-button
+                        variant="outline"
+                        size="icon"
+                        class="h-6 w-6 text-white/80 hover:bg-white/10 hover:text-white"
+                        ariaLabel="View completed preview courses"
+                        (clicked)="
                           openCourseDetail(
                             row,
                             'Preview Courses Completed',
                             row.courses_completed_preview_ids
                           )
                         "
-                        aria-label="View completed preview courses"
-                      >
-                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
-                      </button>
+                        ><ng-icon name="lucideEye" class="text-sm" aria-hidden="true"
+                      /></app-button>
                     }
                   </span>
                 </td>
@@ -290,34 +290,34 @@
                       {{ row.courses_in_progress_preview }}
                     </span>
                     @if (row.courses_in_progress_preview > 0) {
-                      <button
-                        type="button"
-                        class="drill-btn"
-                        (click)="
+                      <app-button
+                        variant="outline"
+                        size="icon"
+                        class="h-6 w-6 text-white/80 hover:bg-white/10 hover:text-white"
+                        ariaLabel="View in-progress preview courses"
+                        (clicked)="
                           openCourseDetail(
                             row,
                             'Preview Courses In Progress',
                             row.courses_in_progress_preview_ids
                           )
                         "
-                        aria-label="View in-progress preview courses"
-                      >
-                        <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
-                      </button>
+                        ><ng-icon name="lucideEye" class="text-sm" aria-hidden="true"
+                      /></app-button>
                     }
                   </span>
                 </td>
 
                 <!-- All courses -->
                 <td class="px-4 py-3 text-right">
-                  <button
-                    type="button"
-                    class="drill-btn drill-btn-primary"
-                    (click)="openAllCourses(row)"
-                    aria-label="View all courses for this user"
-                  >
-                    <ng-icon name="lucideEye" class="text-sm" aria-hidden="true" />
-                  </button>
+                  <app-button
+                    variant="primary"
+                    size="icon"
+                    class="h-6 w-6"
+                    ariaLabel="View all courses for this user"
+                    (clicked)="openAllCourses(row)"
+                    ><ng-icon name="lucideEye" class="text-sm" aria-hidden="true"
+                  /></app-button>
                 </td>
               </tr>
             }

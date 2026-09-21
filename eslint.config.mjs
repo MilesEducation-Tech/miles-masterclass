@@ -3,8 +3,19 @@ import eslint from "@eslint/js";
 import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 import angular from "angular-eslint";
+import storybook from "eslint-plugin-storybook";
 
 export default [
+  {
+    // Vendored / generated data files — not source code. The location*.ts
+    // bundles are ~1.4M lines of country/state JSON-as-TS literals; linting
+    // them produces hundreds of `no-useless-escape` errors on regex-shaped
+    // value strings and offers no review value.
+    ignores: [
+      "src/app/shared/core/constant/location.ts",
+      "src/app/shared/core/constant/location-min.ts",
+    ],
+  },
   ...defineConfig([
     {
       files: ["**/*.ts"],
@@ -52,4 +63,5 @@ export default [
       rules: {},
     },
   ]),
+  ...storybook.configs["flat/recommended"],
 ];

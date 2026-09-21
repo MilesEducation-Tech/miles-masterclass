@@ -1,0 +1,25 @@
+<div class="flex w-full animate-fade-in py-10">
+  <div class="grid md:grid-cols-2 grid-cols-1 gap-8 md:gap-12 w-full max-w-5xl mx-auto px-4">
+    @for (card of cards(); track card.heading) {
+      <div class="flex flex-col items-start space-y-4 group">
+        <div
+          class="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center transition-transform group-hover:scale-110 duration-300"
+        >
+          @if (card.iconSvg) {
+            <ng-icon [svg]="card.iconSvg" class="w-full! h-full!" />
+          } @else if (card.iconSrc) {
+            <img
+              [src]="card.iconSrc"
+              [alt]="card.iconAlt ?? ''"
+              class="w-full h-full object-contain"
+            />
+          }
+        </div>
+        <h3 class="text-xl md:text-2xl font-bold">{{ card.heading }}</h3>
+        <p class="text-gray-400 text-sm md:text-base leading-relaxed max-w-sm">
+          {{ card.paragraph }}
+        </p>
+      </div>
+    }
+  </div>
+</div>

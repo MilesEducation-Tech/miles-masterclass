@@ -1,35 +1,20 @@
-import { Component, computed, input, model, signal } from '@angular/core';
+import { Listbox, Option } from '@angular/aria/listbox';
+import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
+import { Component, computed, ElementRef, input, model, signal, viewChild } from '@angular/core';
 import type { FormValueControl } from '@angular/forms/signals';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronDown } from '@ng-icons/heroicons/outline';
-import { NgpDescription, NgpFormField, NgpLabel } from 'ng-primitives/form-field';
-import {
-  NgpSelect,
-  NgpSelectDropdown,
-  NgpSelectOption,
-  NgpSelectPortal,
-} from 'ng-primitives/select';
 import { AriaSelectOption, dedupeAriaOptions } from '../../../../core/models/aria.model';
 import { cn } from '../../../../utils/cn';
 
 /**
- * Single-select dropdown built on the `NgpSelect` primitive. The primitive owns
- * the trigger/listbox ARIA wiring, keyboard navigation, typeahead and the
- * floating dropdown, so this component only supplies the project's
- * floating-label styling and the signal-forms `FormValueControl` contract.
+ * ARIA single-select dropdown built on `@angular/aria/listbox` rendered in a
+ * `CdkConnectedOverlay`. A button serves as the trigger and displays the
+ * selected option's label.
  */
 @Component({
   selector: 'app-aria-select',
-  imports: [
-    NgpSelect,
-    NgpSelectDropdown,
-    NgpSelectOption,
-    NgpSelectPortal,
-    NgpFormField,
-    NgpLabel,
-    NgpDescription,
-    NgIcon,
-  ],
+  imports: [Listbox, Option, CdkConnectedOverlay, CdkOverlayOrigin, NgIcon],
   templateUrl: './aria-select.html',
   styleUrl: './aria-select.css',
   providers: [provideIcons({ heroChevronDown })],
@@ -58,7 +43,11 @@ export class AriaSelect<V = unknown> implements FormValueControl<V | null> {
 
   readonly isOpen = signal(false);
 
+  private readonly triggerEl = viewChild<ElementRef<HTMLButtonElement>>('triggerEl');
+  private readonly listboxEl = viewChild<ElementRef<HTMLUListElement>>('listboxEl');
+
   readonly inputId = computed(() => `${this.id()}-input`);
+  readonly listboxId = computed(() => `${this.id()}-listbox`);
   readonly hintId = computed(() => `${this.id()}-hint`);
   readonly errorId = computed(() => `${this.id()}-error`);
 
@@ -68,6 +57,11 @@ export class AriaSelect<V = unknown> implements FormValueControl<V | null> {
     const v = this.value();
     if (v == null) return '';
     return this.options().find((o) => o.value === v)?.label ?? '';
+  });
+
+  readonly listboxValues = computed<unknown[]>(() => {
+    const v = this.value();
+    return v == null ? [] : [v];
   });
 
   readonly displayError = computed(() => this.invalid() && this.errors().length > 0);
@@ -85,27 +79,39 @@ export class AriaSelect<V = unknown> implements FormValueControl<V | null> {
 
   readonly triggerClasses = computed(() =>
     cn(
-      'peer floating-input h-14 pr-10 text-left flex items-center',
+      'peer floating-input h-14 pr-10 text-left',
       this.hasSelection() || this.isOpen() ? 'pt-6 pb-2' : '',
       this.displayError() && 'border-destructive focus:ring-destructive',
       this.disabled() && 'cursor-not-allowed opacity-50',
     ),
   );
 
-  onValueChange(next: unknown) {
-    // The primitive prunes values missing from the rendered options (e.g. before
-    // async options load), which surfaces as a null emission that is not a user
-    // commit — keep the current value in that case.
-    if (next == null) return;
-    if (next !== this.value()) {
-      this.value.set(next as V);
-    }
+  toggle() {
+    if (this.disabled() || this.readonly()) return;
+    this.isOpen.update((v) => !v);
   }
 
-  onOpenChange(open: boolean) {
-    this.isOpen.set(open);
-    // Closing the dropdown is the point the field has been interacted with.
-    if (!open) this.touched.set(true);
+  close() {
+    if (!this.isOpen()) return;
+    this.isOpen.set(false);
+    this.touched.set(true);
+    queueMicrotask(() => this.triggerEl()?.nativeElement.focus());
+  }
+
+  onOverlayAttached() {
+    queueMicrotask(() => this.listboxEl()?.nativeElement.focus());
+  }
+
+  onListboxValuesChange(values: unknown[]) {
+    const next = (values[0] ?? null) as V | null;
+    // Empty emissions are not user commits: the listbox prunes values missing
+    // from the rendered options (e.g. before async options load) and explicit
+    // mode re-toggles emit []. Keep the current value and stay open.
+    if (next == null) return;
+    if (next !== this.value()) {
+      this.value.set(next);
+    }
+    this.close();
   }
 
   handleBlur() {

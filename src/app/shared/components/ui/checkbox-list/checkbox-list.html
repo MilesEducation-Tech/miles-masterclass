@@ -1,0 +1,37 @@
+<ul
+  ngListbox
+  [value]="mutableSelected()"
+  (valueChange)="onValuesChange($event)"
+  [multi]="true"
+  orientation="vertical"
+  selectionMode="explicit"
+  wrap
+  class="flex flex-col gap-1 outline-none max-h-72 overflow-y-auto pr-1"
+>
+  @for (opt of options(); track opt.value) {
+    <li
+      ngOption
+      [value]="opt.value"
+      [label]="opt.label"
+      class="group/opt flex items-center gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer select-none text-foreground hover:bg-secondary/40 outline-none focus-visible:bg-secondary/60"
+    >
+      <span
+        class="size-4 shrink-0 inline-flex items-center justify-center rounded border border-border/60 bg-secondary/30 group-aria-selected/opt:bg-accent group-aria-selected/opt:border-accent transition-colors"
+        aria-hidden="true"
+      >
+        <svg
+          viewBox="0 0 16 16"
+          class="size-3 text-white opacity-0 group-aria-selected/opt:opacity-100"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M3.5 8.5l3 3 6-6" />
+        </svg>
+      </span>
+      <span class="truncate">{{ opt.label }}</span>
+    </li>
+  }
+</ul>

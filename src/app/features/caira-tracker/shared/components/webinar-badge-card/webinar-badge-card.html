@@ -1,0 +1,43 @@
+<button
+  type="button"
+  [class]="cardClass()"
+  [disabled]="!isActionable()"
+  (click)="activate.emit(badge())"
+>
+  @if (iconUrl(); as src) {
+    <img
+      [ngSrc]="src"
+      alt=""
+      width="72"
+      height="72"
+      class="size-18 shrink-0 rounded-full object-cover"
+    />
+  } @else {
+    <span class="size-18 shrink-0 rounded-full bg-secondary" aria-hidden="true"></span>
+  }
+
+  <span class="min-w-0 flex-1">
+    <span class="line-clamp-1 text-base font-semibold text-white">{{ badge().name }}</span>
+
+    @if (badge().session; as session) {
+      <span class="mt-1 line-clamp-1 text-sm text-muted-foreground">
+        Webinar: {{ session.title }}
+      </span>
+      <span class="mt-3 flex flex-wrap items-center gap-2">
+        <span
+          class="rounded-md bg-secondary/70 px-2.5 py-1 text-xs whitespace-nowrap text-muted-foreground"
+        >
+          {{ session.start_time | date: 'MMM d, y' : tz() }} •
+          {{ session.start_time | date: 'h:mm a' : tz() }} {{ tz() }}
+        </span>
+        <span
+          class="rounded-md bg-accent/15 px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-accent"
+        >
+          {{ session.credits }} Credits
+        </span>
+      </span>
+    } @else {
+      <span class="mt-3 block text-xs text-muted-foreground">{{ ui().label }}</span>
+    }
+  </span>
+</button>

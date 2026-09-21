@@ -24,6 +24,14 @@ export const IS_ADMIN_REQUEST = new HttpContextToken<boolean>(() => false);
 export const SKIP_AUTH_TOKEN = new HttpContextToken<boolean>(() => false);
 
 /**
+ * When set to `true` on a request's HttpContext, an admin request is NOT
+ * recorded in the admin audit log. Only for calls that would be pure noise —
+ * polling, or a request the audit logger itself makes. Never set it on a
+ * mutation: the point of the log is that writes cannot opt out quietly.
+ */
+export const SKIP_AUDIT_LOG = new HttpContextToken<boolean>(() => false);
+
+/**
  * When set to `true` on a request's HttpContext, the request is treated as a
  * call to a FOREIGN origin (a third-party API, not the Miles backend). Every
  * app interceptor steps aside: no `x-app-type` / `x-platform` / `x-country-code`

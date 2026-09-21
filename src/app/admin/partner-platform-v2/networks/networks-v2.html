@@ -71,14 +71,16 @@
                 <app-button variant="primary" size="sm" (clicked)="openDetail(network)">
                   Open
                 </app-button>
-                <app-button
-                  variant="outline"
-                  size="sm"
-                  class="text-white"
-                  (clicked)="openEdit(network)"
-                >
-                  Edit
-                </app-button>
+                @if (canEdit()) {
+                  <app-button
+                    variant="outline"
+                    size="sm"
+                    class="text-white"
+                    (clicked)="openEdit(network)"
+                  >
+                    Edit
+                  </app-button>
+                }
               </span>
             </td>
           </tr>

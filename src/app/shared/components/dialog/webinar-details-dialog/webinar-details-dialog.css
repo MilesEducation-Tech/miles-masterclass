@@ -1,0 +1,41 @@
+@reference '../../../../../styles/styles.css';
+
+:host {
+  display: block;
+}
+
+.content {
+  @apply sm:w-3/4 w-10/12 mx-auto absolute bottom-0 sm:left-12 left-6 z-2
+    text-white text-sm font-normal
+    opacity-0 hidden;
+  text-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+  font-family: Helvetica, sans-serif;
+}
+
+.content--visible {
+  @apply flex flex-col sm:w-3/4 w-10/12 mx-auto absolute bottom-0 sm:left-12 left-6 z-2 sm:gap-2 gap-1;
+  animation: slideIn 0.75s ease-in-out 0.3s forwards;
+}
+
+.title {
+  @apply md:text-2xl text-xl tracking-tight uppercase font-bold;
+}
+
+.subtitle {
+  @apply md:text-xl text-lg tracking-widest font-semibold text-accent;
+}
+
+.description {
+  @apply md:text-base text-sm text-neutral-400;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -7,19 +7,14 @@
       </p>
     </div>
     <div class="flex items-center gap-3">
-      <label for="firm-scope" class="text-sm" style="color: var(--mm-fg-3)">Show</label>
-      <select
+      <app-aria-select
         id="firm-scope"
-        class="form-input max-w-xs"
+        label="Show"
+        class="w-56"
+        [options]="scopeOptions()"
         [value]="scope()"
-        (change)="onScopeChange($event)"
-      >
-        <option value="all">All firms</option>
-        <option value="standalone">Standalone only</option>
-        @for (network of facade.networks(); track network.id) {
-          <option [value]="'network:' + network.id">{{ network.name }}</option>
-        }
-      </select>
+        (valueChange)="onScopeChange($any($event))"
+      />
       <app-button variant="primary" (clicked)="openCreate()">Create firm</app-button>
     </div>
   </header>
@@ -43,7 +38,7 @@
         <tr>
           <th class="px-4 py-3 font-semibold">Firm</th>
           <th class="px-4 py-3 font-semibold">Network</th>
-          <th class="px-4 py-3 font-semibold">Email domain</th>
+          <th class="px-4 py-3 font-semibold">Email domains</th>
           <th class="px-4 py-3 font-semibold text-right">Allocated</th>
           <th class="px-4 py-3 font-semibold text-right">Used</th>
           <th class="px-4 py-3 font-semibold">Status</th>
@@ -55,20 +50,21 @@
           <tr class="hover:bg-white/3 transition-colors">
             <td class="px-4 py-4 font-semibold whitespace-nowrap">{{ firm.name }}</td>
             <td class="px-4 py-4" style="color: var(--mm-fg-3)">
-              @if (firm.network) {
-                <button
-                  type="button"
-                  class="underline decoration-white/30 underline-offset-2 hover:text-white"
-                  (click)="openNetwork(firm)"
+              @if (!firm.is_standalone && firm.network) {
+                <app-button
+                  variant="link"
+                  size="link"
+                  class="text-inherit underline decoration-white/30 hover:text-white"
+                  (clicked)="openNetwork(firm)"
                 >
                   {{ firm.network.name }}
-                </button>
+                </app-button>
               } @else {
                 Standalone
               }
             </td>
             <td class="px-4 py-4" style="color: var(--mm-fg-3)">
-              {{ firm.email_domain || '—' }}
+              {{ firm.email_domains.join(', ') || '—' }}
             </td>
             <td class="px-4 py-4 text-right tabular-nums" style="color: var(--mm-fg-2)">
               {{ firm.allocated_seats }}
@@ -86,14 +82,29 @@
               </span>
             </td>
             <td class="px-4 py-4 text-right">
-              <app-button
-                variant="outline"
-                size="sm"
-                class="text-white"
-                (clicked)="openAllocate(firm)"
-              >
-                Add seats
-              </app-button>
+              <div class="inline-flex items-center gap-2">
+                <app-button
+                  variant="outline"
+                  size="sm"
+                  class="text-white"
+                  (clicked)="openReports(firm)"
+                >
+                  Reports
+                </app-button>
+                <app-button
+                  variant="outline"
+                  size="sm"
+                  class="text-white"
+                  (clicked)="openAllocate(firm)"
+                >
+                  Add seats
+                </app-button>
+                @if (canEdit()) {
+                  <app-button variant="primary" size="sm" (clicked)="openEdit(firm)">
+                    Edit
+                  </app-button>
+                }
+              </div>
             </td>
           </tr>
         } @empty {

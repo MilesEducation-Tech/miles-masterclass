@@ -2,12 +2,6 @@ import { Component, computed, input, model, signal } from '@angular/core';
 import type { FormValueControl } from '@angular/forms/signals';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroCheck, heroEye, heroEyeSlash } from '@ng-icons/heroicons/outline';
-import { NgpCheckbox } from 'ng-primitives/checkbox';
-import { NgpDescription, NgpFormField, NgpLabel } from 'ng-primitives/form-field';
-import { NgpInput } from 'ng-primitives/input';
-import { NgpPassword, NgpPasswordInput, NgpPasswordToggle } from 'ng-primitives/password';
-import { NgpRadioGroup, NgpRadioItem } from 'ng-primitives/radio';
-import { NgpTextarea } from 'ng-primitives/textarea';
 import { AriaInputSize, AriaInputType } from '../../../../core/models/aria.model';
 import { cn } from '../../../../utils/cn';
 
@@ -19,30 +13,14 @@ interface AriaInputOption {
 }
 
 /**
- * Input built on the ng-primitives form-field family. `ngpFormField` wires the
- * label / description / control association, and the per-type primitives
- * (`ngpInput`, `ngpTextarea`, `ngpCheckbox`, `ngpRadioGroup`, `ngpPassword`)
- * own the ARIA roles, keyboard behaviour and state `data-*` attributes.
- * Supports text, email, password, number, tel, url, search, date, time,
- * datetime-local, textarea, checkbox, radio. For combobox-style selection use
- * `app-aria-select` / `app-aria-multiselect`.
+ * Drop-in primitive input wrapping a native `<input>` / `<textarea>` with the
+ * project's floating-label styling. Supports text, email, password, number,
+ * tel, url, search, date, time, datetime-local, textarea, checkbox, radio.
+ * For combobox-style selection use `app-aria-select` / `app-aria-multiselect`.
  */
 @Component({
   selector: 'app-aria-input',
-  imports: [
-    NgIcon,
-    NgpFormField,
-    NgpLabel,
-    NgpDescription,
-    NgpInput,
-    NgpTextarea,
-    NgpCheckbox,
-    NgpRadioGroup,
-    NgpRadioItem,
-    NgpPassword,
-    NgpPasswordInput,
-    NgpPasswordToggle,
-  ],
+  imports: [NgIcon],
   templateUrl: './aria-input.html',
   styleUrl: './aria-input.css',
   providers: [provideIcons({ heroCheck, heroEye, heroEyeSlash })],
@@ -88,7 +66,13 @@ export class AriaInput implements FormValueControl<any> {
 
   readonly icons = signal({ check: heroCheck, eye: heroEye, eyeSlash: heroEyeSlash });
 
-  /** True for every type rendered by the plain-input branch (i.e. not password). */
+  readonly passwordVisible = signal(false);
+
+  readonly actualType = computed(() => {
+    if (this.type() === 'password' && this.passwordVisible()) return 'text';
+    return this.type();
+  });
+
   readonly inputId = computed(() => `${this.id()}-input`);
   readonly hintId = computed(() => `${this.id()}-hint`);
   readonly errorId = computed(() => `${this.id()}-error`);
@@ -134,7 +118,7 @@ export class AriaInput implements FormValueControl<any> {
   readonly checkboxLabelClasses = computed(() =>
     cn(
       'text-sm font-normal leading-none cursor-pointer',
-      'data-disabled:cursor-not-allowed data-disabled:opacity-70',
+      'peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
       this.userClass(),
     ),
   );
@@ -142,9 +126,8 @@ export class AriaInput implements FormValueControl<any> {
   readonly checkboxClasses = computed(() =>
     cn(
       'peer h-5 w-5 shrink-0 rounded border border-input bg-background ring-offset-background',
-      'inline-flex items-center justify-center',
-      'focus-visible:outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-offset-2',
-      'data-disabled:cursor-not-allowed data-disabled:opacity-50 cursor-pointer transition-colors',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      'disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer transition-colors appearance-none',
       this.isChecked() && 'bg-primary border-accent',
       this.displayError() && 'border-accent',
     ),
@@ -169,5 +152,9 @@ export class AriaInput implements FormValueControl<any> {
 
   handleBlur() {
     this.touched.set(true);
+  }
+
+  togglePassword(): void {
+    this.passwordVisible.update((v) => !v);
   }
 }

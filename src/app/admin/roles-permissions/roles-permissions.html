@@ -68,18 +68,14 @@
                 </legend>
                 <div class="grid gap-2 sm:grid-cols-2">
                   @for (perm of group.perms; track perm.id) {
-                    <label class="flex items-start gap-2 cursor-pointer text-sm">
-                      <input
-                        type="checkbox"
-                        class="mt-0.5 h-4 w-4"
-                        [checked]="isPermChecked(perm.id)"
-                        (change)="toggleRolePerm(perm.id, $any($event.target).checked)"
-                      />
-                      <span>
-                        {{ perm.label }}
-                        <span class="block text-xs text-white/40">{{ perm.key }}</span>
-                      </span>
-                    </label>
+                    <app-aria-input
+                      [id]="'role-perm-' + perm.id"
+                      type="checkbox"
+                      [label]="perm.label"
+                      [description]="perm.key"
+                      [value]="isPermChecked(perm.id)"
+                      (valueChange)="toggleRolePerm(perm.id, $any($event) === true)"
+                    />
                   }
                 </div>
               </fieldset>

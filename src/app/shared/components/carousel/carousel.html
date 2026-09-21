@@ -1,0 +1,85 @@
+@if (heading(); as sectionHeading) {
+  <div class="flex justify-between items-center">
+    <app-heading [heading]="sectionHeading" />
+    @if (filterConfig()['filterEnabled']) {
+      <button
+        type="button"
+        class="relative bg-transparent border-0 p-0 cursor-pointer outline-none focus:outline-none focus:ring-2 focus:ring-blue-500/40 rounded"
+        aria-label="Open filters"
+        (click)="openFilterDialog()"
+      >
+        <ng-icon [svg]="icons().filterIcon" class="size-6! text-white" />
+        @if (hasAppliedFilters()) {
+          <span
+            class="size-4 rounded-full bg-primary text-white text-xs text-center flex justify-center items-center bottom-0 -right-2 absolute"
+          >
+            {{ getAppliedFilterCount() }}
+          </span>
+        }
+      </button>
+    }
+  </div>
+}
+<div
+  class="w-full mb-10 group relative inline overflow-y-visible"
+  [class.peek]="variant() === 'peek'"
+>
+  @defer (on idle) {
+    <swiper-container
+      #swiperContainer
+      init="false"
+      [slides-per-view]="swiperConfig()?.slidesPerView"
+      [slides-per-group]="swiperConfig()?.slidesPerGroup"
+      [space-between]="swiperConfig()?.spaceBetween"
+      [breakpoints]="swiperConfig()?.breakpoints"
+      [direction]="swiperConfig()?.direction ?? 'horizontal'"
+      [loop]="swiperConfig()?.loop ?? false"
+      [speed]="swiperConfig()?.speed ?? 1000"
+    >
+      @for (card of filteredCards(); track card.id ?? $index) {
+        <swiper-slide>
+          <div class="relative w-full h-full group/card">
+            <ng-container
+              *ngTemplateOutlet="cardTemplate(); context: { $implicit: card, $index }"
+            ></ng-container>
+            @if (shouldHoverAnimate()) {
+              <div
+                class="absolute top-1/2 left-1/2 opacity-0 pointer-events-none scale-50 w-[110%] min-h-full h-auto -translate-x-1/2 -translate-y-1/2 origin-center group-hover/card:opacity-100 group-hover/card:pointer-events-auto group-hover/card:scale-105 transition-all duration-300 ease-out z-10 group-hover/card:z-100"
+              >
+                <app-hover [card]="card" [type]="'podcast'"></app-hover>
+              </div>
+            }
+          </div>
+        </swiper-slide>
+      }
+      @if (isLoading()) {
+        @for (i of [1, 2, 3, 4]; track i) {
+          <swiper-slide>
+            <div
+              class="w-64 bg-muted rounded-lg shrink-0 animate-pulse"
+              [class]="skeletonClass()"
+            ></div>
+          </swiper-slide>
+        }
+      }
+    </swiper-container>
+  } @placeholder {
+    <div class="flex gap-4 animate-pulse">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div
+          class="w-64 bg-muted rounded-lg shrink-0 animate-pulse"
+          [class]="skeletonClass()"
+        ></div>
+      }
+    </div>
+  } @loading (minimum 200ms) {
+    <div class="flex gap-4 animate-pulse">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div
+          class="w-64 bg-muted rounded-lg shrink-0 animate-pulse"
+          [class]="skeletonClass()"
+        ></div>
+      }
+    </div>
+  }
+</div>

@@ -1,5 +1,4 @@
-import { NgClass } from '@angular/common';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { AriaInput } from '../../shared/components/ui/aria/aria-input/aria-input';
@@ -9,6 +8,7 @@ import { PERM } from '../../shared/core/models/admin/admin-rbac.model';
 import { LeadsTable } from './shared/components/leads-table/leads-table';
 import { LeadsFacade } from './shared/services/leads-facade';
 import { LeadStatus, LeadStatusFilter } from './shared/models/firm-inquiry.model';
+import { TabStrip } from '../../shared/components/ui/tab-strip/tab-strip';
 
 const STATUS_TABS: { value: LeadStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -20,7 +20,7 @@ const STATUS_TABS: { value: LeadStatusFilter; label: string }[] = [
 
 @Component({
   selector: 'app-admin-leads',
-  imports: [AriaInput, Button, LeadsTable, HasPermissionDirective, NgClass],
+  imports: [AriaInput, Button, LeadsTable, HasPermissionDirective, TabStrip],
   templateUrl: './leads.html',
   styleUrl: './leads.css',
   host: { class: 'block w-full' },
@@ -30,7 +30,6 @@ export class Leads {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly PERM = PERM;
-  protected readonly statusTabs = STATUS_TABS;
   /** Raw search input — debounced before reaching the facade. */
   protected readonly searchInput = signal('');
 
@@ -38,6 +37,16 @@ export class Leads {
     toObservable(this.searchInput)
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => this.facade.setSearch(value));
+  }
+
+  /** app-tab-strip speaks labels; map them back to the filter values. */
+  protected readonly tabLabels = STATUS_TABS.map((t) => t.label);
+  protected readonly activeTabLabel = computed(
+    () => STATUS_TABS.find((t) => this.isActiveTab(t.value))?.label ?? null,
+  );
+  protected onTabChange(label: string): void {
+    const tab = STATUS_TABS.find((t) => t.label === label);
+    if (tab) this.selectStatus(tab.value);
   }
 
   protected isActiveTab(value: LeadStatusFilter): boolean {
@@ -56,8 +65,12 @@ export class Leads {
     this.facade.setPage(this.facade.currentPage() + 1);
   }
 
-  protected onStatusChange(event: { id: string; status: LeadStatus }): void {
-    void this.facade.updateStatus(event.id, event.status);
+  protected onStatusChange(event: { id: number; status: LeadStatus }): void {
+    void this.facade.updateLead(event.id, { status: event.status });
+  }
+
+  protected onNotesChange(event: { id: number; notes: string }): void {
+    void this.facade.updateLead(event.id, { notes: event.notes });
   }
 
   protected onExport(): void {

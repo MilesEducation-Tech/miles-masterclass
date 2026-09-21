@@ -7,6 +7,9 @@ import { Spinner } from '../../../../../shared/components/ui/spinner/spinner';
 import { AdminAuth } from '../../../../../shared/core/services/admin-auth/admin-auth';
 import { PERM } from '../../../../../shared/core/models/admin/admin-rbac.model';
 import { FirmInquiry, LEAD_STATUSES, LeadStatus } from '../../models/firm-inquiry.model';
+import { AriaInput } from '../../../../../shared/components/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '../../../../../shared/components/ui/aria/aria-select/aria-select';
+import { AriaSelectOption } from '../../../../../shared/core/models/aria.model';
 
 /** bg/fg CSS-var pair per status for the badge. */
 const STATUS_STYLE: Record<LeadStatus, { bg: string; fg: string }> = {
@@ -18,7 +21,7 @@ const STATUS_STYLE: Record<LeadStatus, { bg: string; fg: string }> = {
 
 @Component({
   selector: 'app-leads-table',
-  imports: [DatePipe, Button, Spinner, NgIcon],
+  imports: [DatePipe, Button, Spinner, NgIcon, AriaInput, AriaSelect],
   providers: [provideIcons({ lucideChevronDown, lucideChevronRight })],
   templateUrl: './leads-table.html',
   styleUrl: './leads-table.css',
@@ -28,23 +31,27 @@ export class LeadsTable {
   readonly rows = input.required<FirmInquiry[]>();
   readonly isLoading = input<boolean>(false);
   readonly currentPage = input<number>(1);
-  readonly pageSize = input<number>(25);
+  readonly pageSize = input<number>(30);
   readonly totalCount = input<number>(0);
   readonly hasNext = input<boolean>(false);
   readonly hasPrev = input<boolean>(false);
 
-  readonly statusChange = output<{ id: string; status: LeadStatus }>();
+  readonly statusChange = output<{ id: number; status: LeadStatus }>();
+  readonly notesChange = output<{ id: number; notes: string }>();
   readonly prevPage = output<void>();
   readonly nextPage = output<void>();
 
   private readonly auth = inject(AdminAuth);
 
-  protected readonly statuses = LEAD_STATUSES;
+  protected readonly statusOptions: AriaSelectOption<LeadStatus>[] = LEAD_STATUSES.map((s) => ({
+    value: s,
+    label: s,
+  }));
   protected readonly statusStyle = STATUS_STYLE;
   protected readonly canWrite = computed(() => this.auth.hasPermission(PERM.LEADS_WRITE));
 
   /** Ids of rows whose notes detail panel is open. */
-  private readonly expandedIds = signal<ReadonlySet<string>>(new Set());
+  private readonly expandedIds = signal<ReadonlySet<number>>(new Set());
 
   protected readonly canPrev = computed(() => this.hasPrev() && !this.isLoading());
   protected readonly canNext = computed(() => this.hasNext() && !this.isLoading());
@@ -58,14 +65,14 @@ export class LeadsTable {
   });
 
   protected helpType(row: FirmInquiry): string {
-    return (row.help_type ?? []).join(', ');
+    return row.help_type.join(', ');
   }
 
-  protected isExpanded(id: string): boolean {
+  protected isExpanded(id: number): boolean {
     return this.expandedIds().has(id);
   }
 
-  protected toggleExpand(id: string): void {
+  protected toggleExpand(id: number): void {
     this.expandedIds.update((set) => {
       const next = new Set(set);
       if (next.has(id)) next.delete(id);
@@ -74,7 +81,12 @@ export class LeadsTable {
     });
   }
 
-  protected onStatusChange(id: string, event: Event): void {
-    this.statusChange.emit({ id, status: (event.target as HTMLSelectElement).value as LeadStatus });
+  protected onStatusChange(id: number, status: LeadStatus | null): void {
+    if (status) this.statusChange.emit({ id, status });
+  }
+
+  /** `app-aria-input` emits `unknown` — coerce before it reaches the PATCH body. */
+  protected onNotesSave(id: number, value: unknown): void {
+    this.notesChange.emit({ id, notes: String(value ?? '') });
   }
 }

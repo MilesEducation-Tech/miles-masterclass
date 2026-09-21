@@ -1,0 +1,360 @@
+<div [class]="wrapperClasses()">
+  @switch (type()) {
+    @case ('textarea') {
+      <div class="relative">
+        <textarea
+          [id]="inputId()"
+          [name]="id()"
+          [placeholder]="placeholder() || ' '"
+          [rows]="rows()"
+          [class]="textareaClasses()"
+          [value]="value()"
+          [disabled]="disabled()"
+          [required]="required()"
+          [attr.aria-invalid]="invalid()"
+          (input)="handleInput($any($event).target.value)"
+          (blur)="handleBlur()"
+        ></textarea>
+        @if (label()) {
+          <label [for]="inputId()" [class]="labelClasses()">
+            {{ label() }}
+            @if (required()) {
+              <sup class="text-destructive ml-1" aria-label="required">*</sup>
+            }
+          </label>
+        }
+      </div>
+    }
+    @case ('select') {
+      <div class="relative">
+        <button
+          #singleTrigger="cdkOverlayOrigin"
+          #singleTriggerEl
+          cdkOverlayOrigin
+          type="button"
+          [id]="inputId()"
+          [name]="id()"
+          [class]="selectClasses() + ' pr-10 text-left'"
+          [class.pt-6]="isSingleSelectActive()"
+          [class.pb-2]="isSingleSelectActive()"
+          [disabled]="disabled()"
+          aria-haspopup="listbox"
+          [attr.aria-expanded]="isSelectOpen()"
+          [attr.aria-controls]="inputId() + '-listbox'"
+          [attr.aria-invalid]="invalid()"
+          [attr.aria-required]="required()"
+          (click)="toggleSelectOpen()"
+          (blur)="handleBlur()"
+          (keydown.escape)="closeSelectOpen()"
+        >
+          <span class="block truncate" [class.text-muted-foreground]="!selectedSingleLabel()">
+            {{ selectedSingleLabel() || placeholder() || ' ' }}
+          </span>
+        </button>
+        <div
+          class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground transition-transform"
+          [class.rotate-180]="isSelectOpen()"
+        >
+          <ng-icon [svg]="icons().chevronDown" class="w-4 h-4" />
+        </div>
+        @if (label()) {
+          <label
+            [for]="inputId()"
+            [class]="labelClasses()"
+            [class.floating-label-active]="isSingleSelectActive()"
+          >
+            {{ label() }}
+            @if (required()) {
+              <sup class="text-destructive ml-1" aria-label="required">*</sup>
+            }
+          </label>
+        }
+        <ng-template
+          cdkConnectedOverlay
+          [cdkConnectedOverlayOrigin]="singleTrigger"
+          [cdkConnectedOverlayOpen]="isSelectOpen()"
+          [cdkConnectedOverlayHasBackdrop]="true"
+          cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+          [cdkConnectedOverlayOffsetY]="6"
+          [cdkConnectedOverlayWidth]="singleTrigger.elementRef.nativeElement.offsetWidth"
+          (attach)="onOverlayAttached()"
+          (backdropClick)="closeSelectOpen()"
+          (detach)="closeSelectOpen()"
+        >
+          <ul
+            #listboxEl
+            ngListbox
+            [id]="inputId() + '-listbox'"
+            [multi]="false"
+            [value]="singleSelectValues()"
+            (valueChange)="onSingleValuesChange($event)"
+            [disabled]="disabled()"
+            tabindex="0"
+            wrap
+            orientation="vertical"
+            selectionMode="follow"
+            (keydown.escape)="closeSelectOpen()"
+            class="list-none p-1 max-h-60 overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            @for (option of options(); track option.value) {
+              <li
+                ngOption
+                [value]="option.value"
+                [label]="option.label"
+                [disabled]="option.disabled ?? false"
+                class="px-3 py-2 text-sm rounded cursor-pointer select-none transition-colors hover:bg-secondary/40 aria-selected:bg-accent aria-selected:text-accent-foreground aria-disabled:opacity-50 aria-disabled:cursor-not-allowed outline-none focus-visible:bg-secondary/60"
+              >
+                {{ option.label }}
+              </li>
+            }
+          </ul>
+        </ng-template>
+      </div>
+    }
+    @case ('multi-select') {
+      <div class="relative">
+        <button
+          #multiTrigger="cdkOverlayOrigin"
+          #multiTriggerEl
+          cdkOverlayOrigin
+          type="button"
+          [id]="inputId()"
+          [name]="id()"
+          [class]="selectClasses() + ' pr-10 text-left'"
+          [class.pt-6]="isMultiSelectActive()"
+          [class.pb-2]="isMultiSelectActive()"
+          [disabled]="disabled()"
+          aria-haspopup="listbox"
+          [attr.aria-expanded]="isSelectOpen()"
+          [attr.aria-controls]="inputId() + '-listbox'"
+          [attr.aria-invalid]="invalid()"
+          [attr.aria-required]="required()"
+          (click)="toggleSelectOpen()"
+          (blur)="handleBlur()"
+          (keydown.escape)="closeSelectOpen()"
+          [attr.aria-label]="label() && selectedLabels() ? label() + ': ' + selectedLabels() : null"
+        >
+          <span class="flex items-center gap-2 min-w-0">
+            @if (selectedPrimaryLabel()) {
+              <span class="truncate min-w-0">{{ selectedPrimaryLabel() }}</span>
+              @if (selectedOverflowCount() > 0) {
+                <span
+                  class="shrink-0 px-1.5 py-0.5 text-xs font-medium rounded bg-accent/15 text-accent border border-accent/20"
+                >
+                  +{{ selectedOverflowCount() }} more
+                </span>
+              }
+            } @else {
+              <span class="truncate text-muted-foreground">{{ placeholder() || ' ' }}</span>
+            }
+          </span>
+        </button>
+        <div
+          class="absolute p-0 m-0 flex items-center right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground transition-transform"
+          [class.rotate-180]="isSelectOpen()"
+        >
+          <ng-icon [svg]="icons().chevronDown" class="w-4 h-4" />
+        </div>
+        @if (label()) {
+          <label
+            [for]="inputId()"
+            [class]="labelClasses()"
+            [class.floating-label-active]="isMultiSelectActive()"
+          >
+            {{ label() }}
+            @if (required()) {
+              <sup class="text-destructive ml-1" aria-label="required">*</sup>
+            }
+          </label>
+        }
+        <ng-template
+          cdkConnectedOverlay
+          [cdkConnectedOverlayOrigin]="multiTrigger"
+          [cdkConnectedOverlayOpen]="isSelectOpen()"
+          [cdkConnectedOverlayHasBackdrop]="true"
+          cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+          [cdkConnectedOverlayOffsetY]="6"
+          [cdkConnectedOverlayWidth]="multiTrigger.elementRef.nativeElement.offsetWidth"
+          (attach)="onOverlayAttached()"
+          (backdropClick)="closeSelectOpen()"
+          (detach)="closeSelectOpen()"
+        >
+          <ul
+            #listboxEl
+            ngListbox
+            [id]="inputId() + '-listbox'"
+            [multi]="true"
+            [value]="selectedValues()"
+            (valueChange)="handleMultiValuesChange($event)"
+            [disabled]="disabled()"
+            tabindex="0"
+            wrap
+            orientation="vertical"
+            selectionMode="explicit"
+            (keydown.escape)="closeSelectOpen()"
+            class="list-none p-1 max-h-60 overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            @for (option of options(); track option.value) {
+              <li
+                ngOption
+                [value]="option.value"
+                [label]="option.label"
+                [disabled]="option.disabled ?? false"
+                class="group/opt flex items-center gap-2 px-3 py-2 text-sm rounded cursor-pointer select-none transition-colors hover:bg-secondary/40 aria-disabled:opacity-50 aria-disabled:cursor-not-allowed outline-none focus-visible:bg-secondary/60"
+              >
+                <span
+                  class="size-4 shrink-0 inline-flex items-center justify-center rounded border border-border/60 bg-secondary/30 group-aria-selected/opt:bg-accent group-aria-selected/opt:border-accent transition-colors"
+                  aria-hidden="true"
+                >
+                  <ng-icon
+                    [svg]="icons().check"
+                    strokeWidth="3"
+                    class="size-3 text-accent-foreground opacity-0 group-aria-selected/opt:opacity-100"
+                  />
+                </span>
+                <span class="truncate">{{ option.label }}</span>
+              </li>
+            }
+          </ul>
+        </ng-template>
+      </div>
+    }
+    @case ('checkbox') {
+      <div class="flex items-center gap-3">
+        <div class="relative flex items-center">
+          <input
+            [id]="inputId()"
+            type="checkbox"
+            [class]="checkboxClasses()"
+            [checked]="isChecked()"
+            [disabled]="disabled()"
+            [required]="required()"
+            [attr.aria-invalid]="invalid()"
+            (change)="handleInput($any($event).target.checked)"
+            (blur)="handleBlur()"
+          />
+          @if (isChecked()) {
+            <ng-icon
+              [svg]="icons().check"
+              strokeWidth="4"
+              class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-accent-foreground pointer-events-none"
+            />
+          }
+        </div>
+        @if (label()) {
+          <label [for]="inputId()" [class]="checkboxLabelClasses()">
+            {{ label() }}
+            @if (required()) {
+              <sup class="text-destructive ml-1" aria-label="required">*</sup>
+            }
+            @if (description()) {
+              <p class="text-sm text-muted-foreground font-normal mt-1">
+                {{ description() }}
+              </p>
+            }
+          </label>
+        }
+      </div>
+    }
+    @case ('radio') {
+      <div class="space-y-2" role="radiogroup" [attr.aria-labelledby]="inputId() + '-group-label'">
+        @if (label()) {
+          <span [id]="inputId() + '-group-label'" [class]="labelClasses()">
+            {{ label() }}
+            @if (required()) {
+              <sup class="text-destructive ml-1" aria-label="required">*</sup>
+            }
+          </span>
+        }
+        <div class="flex items-center gap-6 pt-1">
+          @for (option of options(); track option.value) {
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                [name]="id()"
+                [value]="option.value"
+                [checked]="value() === option.value"
+                [disabled]="disabled() || option.disabled"
+                (change)="handleInput(option.value)"
+                class="h-4 w-4 border-primary text-accent focus:ring-primary"
+              />
+              <span class="text-sm">{{ option.label }}</span>
+            </label>
+          }
+        </div>
+      </div>
+    }
+    @default {
+      <div class="relative">
+        @if (prefixIcon()) {
+          <div
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+          >
+            <ng-content select="[prefix]" />
+          </div>
+        }
+        <input
+          [id]="inputId()"
+          [name]="id()"
+          [type]="actualType()"
+          [placeholder]="placeholder() || ' '"
+          [class]="inputClasses()"
+          [value]="value()"
+          autocomplete="off"
+          [readonly]="readonly()"
+          [disabled]="disabled()"
+          [required]="required()"
+          [min]="min()"
+          [max]="max()"
+          [step]="step()"
+          [attr.aria-invalid]="invalid()"
+          (input)="handleInput($any($event).target.value)"
+          (blur)="handleBlur()"
+        />
+        @if (label()) {
+          <label [for]="inputId()" [class]="labelClasses()">
+            {{ label() }}
+            @if (required()) {
+              <sup class="text-destructive ml-1" aria-label="required">*</sup>
+            }
+          </label>
+        }
+        @if (suffixIcon()) {
+          <div
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+          >
+            <ng-content select="[suffix]" />
+          </div>
+        }
+        @if (type() === 'password' && showPasswordToggle()) {
+          <button
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+            (click)="togglePassword()"
+            [attr.aria-label]="passwordVisible() ? 'Hide password' : 'Show password'"
+          >
+            @if (passwordVisible()) {
+              <ng-icon [svg]="icons().eyeSlash" class="w-4 h-4" />
+            } @else {
+              <ng-icon [svg]="icons().eye" class="w-4 h-4" />
+            }
+          </button>
+        }
+      </div>
+    }
+  }
+  @if (hint() && !displayError()) {
+    <p class="text-sm text-muted-foreground mt-1.5">
+      {{ hint() }}
+    </p>
+  }
+  @if (touched()) {
+    @for (error of errors(); track error) {
+      <div class="error-messages" role="alert">
+        <p class="text-sm text-destructive mt-1.5">
+          {{ error.message }}
+        </p>
+      </div>
+    }
+  }
+</div>

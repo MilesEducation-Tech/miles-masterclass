@@ -1,0 +1,38 @@
+-- =============================================================================
+-- Drop firm_inquiries — lead capture now lives in Django
+-- =============================================================================
+-- Lead capture moved to the Django API on 2026-09-17: the enquiry form posts to
+-- `POST partners/leads/` and /admin/leads reads `partners/superadmin/leads/`
+-- (docs/LEADS_API.md). `SupabasePublic` was deleted with that change, so nothing
+-- in the app has read or written this table since.
+--
+-- Until this runs, 20260522000000 leaves an open write path: policy
+-- `firm_inquiries_public_insert` is `with check (true)` for `anon`, so anyone
+-- holding the public anon key can insert arbitrary rows into a table no one
+-- reads. Dropping the table closes that and removes its policies and grants
+-- with it.
+--
+-- ⚠ IRREVERSIBLE — this destroys 33 production leads (2025-11-25 .. 2026-09-16).
+-- They were exported first, at the repo owner's instruction:
+--
+--     file        firm_inquiries_export_2026-09-17.csv   (7,751 bytes, 33 rows)
+--     columns     id, full_name, email, firm_name, job_role, help_type,
+--                 enquiry_type, keep_updated, status, notes, created_at, updated_at
+--     verified    md5 over (id|full_name|email|firm_name|enquiry_type|keep_updated)
+--                 ordered by created_at == 30c5bacd1e30ec35b4d97bb0c004c715,
+--                 matching the source table at export time
+--
+-- The CSV is held outside this repo on purpose: the rows are lead PII and do not
+-- belong in git. Confirm you still have it before running this against an
+-- environment whose rows you care about.
+--
+-- The `leads:read` / `leads:write` / `leads:export` permissions seeded in
+-- 20260428000000_admin_rbac.sql are NOT removed — they still gate the
+-- /admin/leads route and its UI, which now read from Django.
+-- =============================================================================
+
+-- No CASCADE, deliberately. Verified at authoring time that nothing depends on
+-- this table: no foreign keys reference it, no views, no triggers, no functions
+-- mention it. If a dependency appears later, this should fail loudly rather than
+-- quietly destroy whatever was built on top of it.
+drop table if exists public.firm_inquiries;

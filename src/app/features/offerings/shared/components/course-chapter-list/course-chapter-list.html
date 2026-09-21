@@ -1,0 +1,153 @@
+<div class="lg:w-9/12 sm:w-10/12 w-full mx-auto flex flex-col space-y-8 overflow-hidden">
+  @for (chapter of masterclass.courseChapters(); track chapter.id) {
+    <div class="flex sm:space-x-4 max-sm:space-y-4 max-sm:flex-col items-center group">
+      <div
+        class="sm:w-1/2 w-full aspect-video relative rounded-2xl overflow-hidden group/thumbnail cursor-pointer"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'Chapter ' + ($index + 1) + ': ' + chapter.chapter_name"
+        (click)="masterclass.navigateToChapter(chapter.id)"
+        (keydown)="onChapterKeydown($event, chapter.id)"
+      >
+        @let chapterCompleted = getChapterCompletedStatus(chapter.id);
+        @let rawProgress =
+          chapter.play_history
+            ? ((chapter.play_history.time_status || 0) / chapter.video_duration) * 100
+            : 0;
+        @let chapterProgress = rawProgress > 100 ? 100 : rawProgress;
+        @if (courseType() === 'masterclass') {
+          @if (chapterProgress > 0 && chapterProgress < 100 && !chapterCompleted) {
+            <div class="absolute bottom-0 left-0 w-full z-10">
+              <app-progress
+                [value]="chapterProgress"
+                variant="info"
+                size="xs"
+                label="none"
+                ariaLabel="Course completion progress"
+              />
+            </div>
+          }
+          <img [ngSrc]="chapter.chapter_thumbnail" [alt]="chapter.chapter_name" fill class="z-0" />
+
+          @if (chapterCompleted) {
+            <div
+              class="absolute top-2 left-2 px-3 py-1 rounded-full z-10 bg-green-600/90 flex items-center justify-center space-x-1.5"
+            >
+              <ng-icon name="matDownloadDoneRound" size="18" aria-hidden="true" />
+              <p class="text-sm">Completed</p>
+            </div>
+          }
+          @if (chapterProgress > 0 && chapterProgress < 100 && !chapterCompleted) {
+            <div
+              class="absolute top-2 left-2 px-3 py-1 rounded-full z-10 bg-blue-600/90 flex items-center justify-center space-x-1.5"
+            >
+              <ng-icon name="matTimelapseRound" size="18" aria-hidden="true" />
+              <p class="text-sm">In Progress</p>
+            </div>
+          }
+          <div
+            class="absolute bottom-2 right-2 px-3 py-1 rounded-full z-10 bg-background/90 flex items-center justify-center space-x-1.5"
+          >
+            <ng-icon name="matAccessTimeRound" size="18" aria-hidden="true" />
+            <p class="text-sm">{{ chapter.video_duration | duration: 'hh:mm:ss' }}</p>
+          </div>
+          <div
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center bg-background/60 w-1/12 aspect-square rounded-full transition-all group-hover:opacity-100 opacity-0 duration-500"
+          >
+            <ng-icon name="matPlayArrowRound" size="32" aria-hidden="true" />
+          </div>
+        } @else {
+          <div class="h-full aspect-square relative z-10">
+            <app-record-disk
+              class="w-full h-auto aspect-square block cursor-pointer absolute inset-0 z-0"
+              [coverImage]="chapter.chapter_thumbnail"
+              [diskImage]="chapter.chapter_thumbnail"
+              [config]="{
+                animate: chapterProgress > 0 || !!chapterCompleted,
+                slideOut: true,
+                direction: 'right',
+                slideOutPercent: 45,
+                spinDuration: '3.5s',
+              }"
+            />
+
+            @if (chapterProgress > 0 && chapterProgress < 100 && !chapterCompleted) {
+              <div
+                class="absolute bottom-0 left-0 w-full z-20 rounded-b-sm overflow-hidden pointer-events-none"
+              >
+                <app-progress
+                  [value]="chapterProgress"
+                  variant="info"
+                  size="xs"
+                  label="none"
+                  ariaLabel="Course completion progress"
+                />
+              </div>
+            }
+            @if (chapterCompleted) {
+              <div
+                class="absolute top-2 left-2 px-2 py-0.5 rounded-full z-20 bg-green-600/90 flex items-center justify-center space-x-1 pointer-events-none"
+              >
+                <ng-icon name="matDownloadDoneRound" size="14" aria-hidden="true" />
+                <p class="text-xs">Completed</p>
+              </div>
+            }
+            <div
+              class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full z-20 bg-background/90 flex items-center justify-center space-x-1 pointer-events-none"
+            >
+              <ng-icon name="matAccessTimeRound" size="14" aria-hidden="true" />
+              <p class="text-xs">{{ chapter.video_duration | duration: 'hh:mm:ss' }}</p>
+            </div>
+            <div
+              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center bg-background/60 w-[20%] aspect-square rounded-full transition-all group-hover:opacity-100 opacity-0 duration-500 z-20 pointer-events-none"
+            >
+              <ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />
+            </div>
+          </div>
+        }
+
+        <!--
+          Locked state — paid course with no active plan. Same treatment as a
+          locked reel card.
+
+          The CTA is a styled span, not a button: the whole thumbnail is already
+          the control (role="button"), so a nested <button> would both duplicate
+          the action — opening two dialogs — and put a second stop in the tab
+          order for one destination.
+        -->
+        @if (locked()) {
+          <div [class]="lockOverlayClass()">
+            <ng-icon name="matLockRound" size="24" class="text-white" aria-hidden="true" />
+            <p class="text-white text-sm font-semibold">Subscribe to watch this chapter</p>
+            <span
+              class="inline-flex items-center rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-black"
+              >View Plans</span
+            >
+          </div>
+        }
+      </div>
+      <div class="sm:w-1/2 w-full flex justify-center flex-col space-y-2">
+        <p class="description">Chapter {{ $index + 1 }}</p>
+        <div
+          class="flex flex-col w-fit relative group/title cursor-pointer"
+          role="button"
+          tabindex="0"
+          (click)="masterclass.navigateToChapter(chapter.id)"
+          (keydown)="onChapterKeydown($event, chapter.id)"
+        >
+          <h2 class="title line-clamp-2 mb-1 w-fit">
+            <span
+              class="bg-bottom-left bg-linear-to-r from-accent to-accent bg-size-[0%_3px] bg-no-repeat group-hover/title:bg-size-[100%_3px] transition-all duration-500 ease-out box-decoration-clone"
+            >
+              {{ chapter.chapter_name }}
+            </span>
+          </h2>
+        </div>
+        <p class="description line-clamp-3">{{ chapter.description }}</p>
+        <p class="text-accent">
+          {{ chapter.quiz_details.overall_chapter_questions }} Quiz Questions
+        </p>
+      </div>
+    </div>
+  }
+</div>

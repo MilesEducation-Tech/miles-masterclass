@@ -1,25 +1,35 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, EnvironmentInjector, computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AriaInput } from '../../../shared/components/ui/aria/aria-input/aria-input';
 import { Button } from '../../../shared/components/ui/button/button';
 import { Dialog } from '../../../shared/core/services/dialog/dialog';
 import { StatCard } from '../../partner-platform/shared/components/stat-card/stat-card';
 import { PartnerAdminMe } from '../../partner-platform/shared/services/partner-admin-me';
+import { PartnerNetworkFacade } from '../../partner-platform/shared/services/partner-network-facade';
 import { PartnerSuperAdminFacade } from '../../partner-platform/shared/services/partner-superadmin-facade';
+import {
+  PartnerReportPreviewDialog,
+  PartnerReportPreviewDialogData,
+} from '../../../shared/components/dialog/partner-report-preview-dialog/partner-report-preview-dialog';
 import {
   ReportItemsDialog,
   ReportItemsDialogData,
 } from '../../partner-platform/reports/shared/components/report-items-dialog/report-items-dialog';
+import { CertificateDownloadProgress } from '../../partner-platform/reports/shared/components/certificate-download-progress/certificate-download-progress';
 import { ReportUsersTable } from '../../partner-platform/reports/shared/components/report-users-table/report-users-table';
 import {
   ReportSubject,
   ReportUserRow,
 } from '../../partner-platform/reports/shared/models/partner-report.model';
 import { PartnerReportFacade } from '../../partner-platform/reports/shared/services/partner-report-facade';
+import { TabStrip } from '../../../shared/components/ui/tab-strip/tab-strip';
+import { AriaSelect } from '../../../shared/components/ui/aria/aria-select/aria-select';
+import { AriaSelectOption } from '../../../shared/core/models/aria.model';
 
 const SUBJECT_TABS: { value: ReportSubject; label: string }[] = [
   { value: 'courses', label: 'Courses' },
   { value: 'webinars', label: 'Webinars' },
+  { value: 'group_live', label: 'Group Live' },
 ];
 
 /** Two decimals, no trailing noise — the API sends raw floats. */
@@ -36,7 +46,15 @@ const round2 = (value: number | undefined): number => Math.round((value ?? 0) * 
  */
 @Component({
   selector: 'app-reports-v2',
-  imports: [AriaInput, Button, StatCard, ReportUsersTable],
+  imports: [
+    AriaInput,
+    Button,
+    StatCard,
+    ReportUsersTable,
+    TabStrip,
+    AriaSelect,
+    CertificateDownloadProgress,
+  ],
   templateUrl: './reports-v2.html',
   host: { class: 'block w-full' },
 })
@@ -44,7 +62,11 @@ export class ReportsV2 {
   protected readonly facade = inject(PartnerReportFacade);
   protected readonly me = inject(PartnerAdminMe);
   private readonly superFacade = inject(PartnerSuperAdminFacade);
+  private readonly networkFacade = inject(PartnerNetworkFacade);
   private readonly dialog = inject(Dialog);
+  // Dialogs are built by the root Dialog service; hand it this page's injector
+  // so the route-scoped facade resolves instead of a NullInjectorError.
+  private readonly envInjector = inject(EnvironmentInjector);
   private readonly route = inject(ActivatedRoute);
 
   protected readonly subjectTabs = SUBJECT_TABS;
@@ -81,6 +103,40 @@ export class ReportsV2 {
 
   protected readonly networks = computed(() => this.superFacade.networks());
   protected readonly firms = computed(() => this.superFacade.firms());
+
+  /**
+   * Email domains for the report subtitle ("@acme.com roster"). Supers read
+   * them off the loaded firms; a network admin off the panel firms list; a firm
+   * admin has no domain source (`PartnerFirmRef` is id + name) — clause omitted.
+   */
+  protected readonly previewDomains = computed<string[]>(() => {
+    let firms: { email_domains: string[] }[] = [];
+    if (this.facade.isSuper()) {
+      const networkId = this.facade.scopeNetworkId();
+      const firmId = this.facade.scopeFirmId();
+      firms =
+        networkId != null
+          ? this.superFacade.firmsForNetwork(networkId)
+          : this.superFacade.firms().filter((f) => f.id === firmId);
+    } else if (this.me.isNetworkAdmin()) {
+      firms = this.networkFacade.firms();
+    }
+    return [...new Set(firms.flatMap((f) => f.email_domains).filter(Boolean))].sort();
+  });
+
+  /** The printable "Partner Learning Report" for the current scope + dates. */
+  protected openPreview(): void {
+    this.dialog.open<PartnerReportPreviewDialog>(PartnerReportPreviewDialog, {
+      data: {
+        partnerName: this.title(),
+        domains: this.previewDomains(),
+      } satisfies PartnerReportPreviewDialogData,
+      environmentInjector: this.envInjector,
+      width: '1040px',
+      maxWidth: '95vw',
+      ariaLabel: 'Partner learning report',
+    });
+  }
 
   /** `n:<id>` / `f:<id>` so one select can pick either scope — the API takes exactly one. */
   protected readonly scopeValue = computed(() => {
@@ -163,6 +219,16 @@ export class ReportsV2 {
     ];
   });
 
+  /** app-tab-strip speaks labels; map them back to the filter values. */
+  protected readonly tabLabels = SUBJECT_TABS.map((t) => t.label);
+  protected readonly activeTabLabel = computed(
+    () => SUBJECT_TABS.find((t) => this.isActiveTab(t.value))?.label ?? null,
+  );
+  protected onTabChange(label: string): void {
+    const tab = SUBJECT_TABS.find((t) => t.label === label);
+    if (tab) this.selectSubject(tab.value);
+  }
+
   protected isActiveTab(value: ReportSubject): boolean {
     return this.facade.subject() === value;
   }
@@ -171,8 +237,26 @@ export class ReportsV2 {
     this.facade.setSubject(value);
   }
 
-  protected onScopeChange(event: Event): void {
-    const raw = (event.target as HTMLSelectElement).value;
+  /** `page_size` accepts up to 200 — a few sensible steps. */
+  protected readonly pageSizes = [30, 50, 100, 200];
+
+  protected readonly pageSizeOptions: AriaSelectOption<number>[] = this.pageSizes.map((n) => ({
+    value: n,
+    label: String(n),
+  }));
+
+  protected onPageSizeChange(size: number | null): void {
+    if (size) this.facade.setPageSize(size);
+  }
+
+  /** One flat list: `n:<id>` networks first, then `f:<id>` firms. */
+  protected readonly scopeOptions = computed<AriaSelectOption<string>[]>(() => [
+    ...this.networks().map((n) => ({ value: `n:${n.id}`, label: `Network — ${n.name}` })),
+    ...this.firms().map((f) => ({ value: `f:${f.id}`, label: `Firm — ${f.name}` })),
+  ]);
+
+  protected onScopeChange(raw: string | null): void {
+    raw ??= '';
     if (raw.startsWith('n:')) {
       this.facade.selectNetwork(Number(raw.slice(2)));
       return;
@@ -196,6 +280,15 @@ export class ReportsV2 {
     void this.facade.exportCsv('user-summary');
   }
 
+  protected downloadCertificates(row: ReportUserRow): void {
+    void this.facade.downloadUserCertificates(row.user_id, row.name);
+  }
+
+  /** Every certificate in scope, both subjects, zipped firm → course → user. */
+  protected downloadAllCertificates(): void {
+    void this.facade.downloadAllCertificates(this.title());
+  }
+
   protected openItems(row: ReportUserRow): void {
     this.dialog.open<ReportItemsDialog>(ReportItemsDialog, {
       data: {
@@ -203,6 +296,7 @@ export class ReportsV2 {
         userName: row.name,
         subject: this.facade.subject(),
       } satisfies ReportItemsDialogData,
+      environmentInjector: this.envInjector,
       maxWidth: '720px',
       ariaLabel: `Report details for ${row.name}`,
     });

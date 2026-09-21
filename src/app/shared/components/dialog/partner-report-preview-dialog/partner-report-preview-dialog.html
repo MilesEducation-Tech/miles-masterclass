@@ -1,0 +1,229 @@
+<div
+  class="flex flex-col w-full"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="report-preview-title"
+>
+  <!-- Toolbar — excluded from the PDF capture via `no-print` -->
+  <div
+    class="no-print flex items-center justify-between gap-3 px-5 py-3 border-b border-border bg-background text-foreground sticky top-0 z-10"
+  >
+    <h2 id="report-preview-title" class="text-base font-semibold">
+      Partner learning report — {{ data.partnerName }}
+    </h2>
+    <div class="flex items-center gap-2">
+      <app-button
+        variant="primary"
+        size="sm"
+        [disabled]="exporting() || loading() || !bundle()"
+        (clicked)="downloadPdf()"
+      >
+        {{ exporting() ? 'Preparing PDF…' : 'Download PDF' }}
+      </app-button>
+      <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div
+      class="flex items-center justify-center gap-3 py-16 text-sm bg-background text-muted-foreground"
+    >
+      <app-spinner size="sm" /> Compiling the report…
+    </div>
+  } @else if (error()) {
+    <div
+      class="m-5 px-3 py-2 text-sm rounded-md"
+      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
+      role="alert"
+    >
+      {{ error() }}
+    </div>
+  } @else if (needsScope()) {
+    <div class="rounded-xl border border-border bg-background p-8 text-center text-foreground">
+      <h3 class="text-lg font-bold mb-2">Pick a network or firm</h3>
+      <p class="text-sm text-muted-foreground">Reports are scoped to one partner at a time.</p>
+    </div>
+  } @else if (bundle(); as b) {
+    <!-- The document. Paints its own palette/background: HtmlToPdf clones this
+         element out of the dialog and captures it on a transparent canvas. -->
+    <div #reportRoot class="report">
+      <div class="page">
+        <header>
+          <div>
+            <span class="eyebrow">Miles Education · Partner Learning Report</span>
+            <h1>{{ data.partnerName }}</h1>
+            <p class="subtitle">CPE course &amp; webinar engagement{{ domainClause() }}</p>
+            <span class="badge">CONFIDENTIAL — INTERNAL &amp; CLIENT USE ONLY</span>
+          </div>
+          <div class="header-meta">
+            <div class="block">
+              Reporting period<span class="val">{{ period() }}</span>
+            </div>
+            <div class="block">
+              Roster size<span class="val"
+                >{{ dash(b.courses.summary.users_onboarded) }} users</span
+              >
+            </div>
+          </div>
+        </header>
+
+        <section>
+          <span class="eyebrow">Executive Summary</span>
+          <h2>Where the roster stands today</h2>
+          <p class="lede">{{ lede() }}</p>
+          <div class="stats">
+            <div class="stat">
+              <div class="num">{{ dash(b.courses.summary.users_onboarded) }}</div>
+              <div class="label">Users onboarded</div>
+            </div>
+            <div class="stat highlight">
+              <div class="num">{{ dash(b.courses.summary.active_in_last_15_days) }}</div>
+              <div class="label">Active in last 15 days</div>
+            </div>
+            <div class="stat">
+              <div class="num">{{ dash(b.courses.summary.total_courses_completed) }}</div>
+              <div class="label">Courses completed</div>
+            </div>
+            <div class="stat">
+              <div class="num">{{ dash(b.courses.summary.total_cpe_credits_awarded) }}</div>
+              <div class="label">CPE credits awarded</div>
+            </div>
+            <div class="stat">
+              <div class="num">{{ dash(b.courses.summary.total_certificates_awarded) }}</div>
+              <div class="label">Certificates earned</div>
+            </div>
+            <div class="stat">
+              <div class="num">{{ dash(b.courses.summary.avg_feedback_per_course) }}</div>
+              <div class="label">Avg. course feedback</div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <span class="eyebrow">Courses — By User</span>
+          <h2>Individual course engagement</h2>
+          <p class="lede">
+            One row per user. Total CPE credits and certificates only count fully completed courses
+            — a user mid-course shows 0 here even if they've made progress.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Active (15d)</th>
+                  <th class="num">Courses completed</th>
+                  <th class="num">CPE credits</th>
+                  <th class="num">Avg. feedback</th>
+                  <th class="num">Certificates</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of b.courses.users; track row.user_id) {
+                  <tr>
+                    <td class="name">{{ row.name || 'N/A' }}</td>
+                    <td class="email">{{ row.email }}</td>
+                    <td>
+                      <span
+                        class="pill"
+                        [class.yes]="row.active_in_last_15_days"
+                        [class.not-started]="!row.active_in_last_15_days"
+                      >
+                        {{ row.active_in_last_15_days ? 'Yes' : 'No' }}
+                      </span>
+                    </td>
+                    <td class="num">{{ dash(row.total_courses_completed) }}</td>
+                    <td class="num">{{ dash(row.total_cpe_credits_awarded) }}</td>
+                    <td class="num">{{ dash(row.avg_feedback_per_course) }}</td>
+                    <td class="num">{{ dash(row.total_certificates_awarded) }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="7" class="empty">No users in the reporting period.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section>
+          <span class="eyebrow">Webinars — By User</span>
+          <h2>Live session registrations and attendance</h2>
+          <p class="lede">
+            One row per user. Attendance, credits and certificates count only webinars the user
+            actually attended.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Active (15d)</th>
+                  <th class="num">Registered</th>
+                  <th class="num">Attended</th>
+                  <th class="num">CPE credits</th>
+                  <th class="num">Avg. feedback</th>
+                  <th class="num">Certificates</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of b.webinars.users; track row.user_id) {
+                  <tr>
+                    <td class="name">{{ row.name || 'N/A' }}</td>
+                    <td class="email">{{ row.email }}</td>
+                    <td>
+                      <span
+                        class="pill"
+                        [class.yes]="row.active_in_last_15_days"
+                        [class.not-started]="!row.active_in_last_15_days"
+                      >
+                        {{ row.active_in_last_15_days ? 'Yes' : 'No' }}
+                      </span>
+                    </td>
+                    <td class="num">{{ dash(row.total_webinars_registered) }}</td>
+                    <td class="num">{{ dash(row.total_webinars_attended) }}</td>
+                    <td class="num">{{ dash(row.total_cpe_credits_awarded) }}</td>
+                    <td class="num">{{ dash(row.avg_feedback_per_webinar) }}</td>
+                    <td class="num">{{ dash(row.total_certificates_awarded) }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="8" class="empty">No users in the reporting period.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="callout">
+            <span class="metric"
+              ><span class="mono-num">{{ dash(b.webinars.summary.total_registrations) }}</span>
+              registrations</span
+            >
+            <span class="metric"
+              ><span class="mono-num">{{ dash(b.webinars.summary.total_attendance) }}</span>
+              attendances</span
+            >
+            <span class="metric"
+              ><span class="mono-num">{{
+                dash(b.webinars.summary.total_cpe_credits_awarded)
+              }}</span>
+              CPE credits from webinars</span
+            >
+            <p>
+              Attendance rate and per-webinar CPE credit are reported the same way the course
+              section above does, once the roster attends live sessions.
+            </p>
+          </div>
+        </section>
+
+        <footer>
+          <span>Generated from Miles Education data, {{ generatedOn() }}.</span>
+          <span>Miles Education — Partner Success</span>
+        </footer>
+      </div>
+    </div>
+  }
+</div>

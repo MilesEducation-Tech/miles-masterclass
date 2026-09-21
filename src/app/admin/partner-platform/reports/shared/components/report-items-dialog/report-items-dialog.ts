@@ -1,12 +1,14 @@
 import { DecimalPipe, formatNumber } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideBookOpen } from '@ng-icons/lucide';
+import { lucideBookOpen, lucideDownload } from '@ng-icons/lucide';
 import { Button } from '../../../../../../shared/components/ui/button/button';
 import { Spinner } from '../../../../../../shared/components/ui/spinner/spinner';
 import { DialogRef } from '../../../../../../shared/core/services/dialog/dialog';
-import { ReportItemRow, ReportSubject } from '../../models/partner-report.model';
+import { ReportCertificate, ReportItemRow, ReportSubject } from '../../models/partner-report.model';
 import { PartnerReportFacade } from '../../services/partner-report-facade';
+import { TabStrip } from '../../../../../../shared/components/ui/tab-strip/tab-strip';
+import { CertificateDownloadProgress } from '../certificate-download-progress/certificate-download-progress';
 
 export interface ReportItemsDialogData {
   userId: number;
@@ -23,8 +25,8 @@ export interface ReportItemsDialogData {
  */
 @Component({
   selector: 'app-report-items-dialog',
-  imports: [DecimalPipe, NgIcon, Button, Spinner],
-  providers: [provideIcons({ lucideBookOpen })],
+  imports: [DecimalPipe, NgIcon, Button, Spinner, TabStrip, CertificateDownloadProgress],
+  providers: [provideIcons({ lucideBookOpen, lucideDownload })],
   templateUrl: './report-items-dialog.html',
 })
 export class ReportItemsDialog implements OnInit {
@@ -71,12 +73,31 @@ export class ReportItemsDialog implements OnInit {
   }
 
   private async load(): Promise<void> {
+    // Independent requests, independent failure states: a certificate hiccup
+    // must not blank the course list, and vice versa.
+    await Promise.all([this.loadItems(), this.loadCertificates()]);
+  }
+
+  private async loadItems(): Promise<void> {
     try {
       this.items.set(await this.facade.userItems(this.data.userId));
     } catch {
       this.errorMessage.set('Failed to load the details for this user.');
     } finally {
       this.isLoading.set(false);
+    }
+  }
+
+  /** Certificates come from their own endpoint; one fetch serves every per-item button and the footer zip. */
+  protected async loadCertificates(): Promise<void> {
+    this.certificatesLoading.set(true);
+    this.certificatesError.set('');
+    try {
+      this.certificates.set(await this.facade.userCertificates(this.data.userId));
+    } catch {
+      this.certificatesError.set('Certificates could not be loaded.');
+    } finally {
+      this.certificatesLoading.set(false);
     }
   }
 
@@ -88,6 +109,20 @@ export class ReportItemsDialog implements OnInit {
   /** Absent for webinars, and 0% is a real value — so null and 0 must read differently. */
   protected progress(value: number | null | undefined): string {
     return value == null ? '—' : `${formatNumber(value, 'en-US', '1.0-1')}%`;
+  }
+
+  /** app-tab-strip speaks labels — "All" plus one per delivery type present. */
+  protected readonly tabLabels = computed(() => [
+    'All',
+    ...this.typeOptions().map((t) => this.badgeLabel(t)),
+  ]);
+  protected readonly activeTabLabel = computed(() =>
+    this.selectedType() === 'all' ? 'All' : this.badgeLabel(this.selectedType()),
+  );
+  protected onTabChange(label: string): void {
+    if (label === 'All') return this.selectedType.set('all');
+    const type = this.typeOptions().find((t) => this.badgeLabel(t) === label);
+    if (type) this.selectedType.set(type);
   }
 
   protected badgeLabel(courseType: string | undefined): string {
@@ -103,6 +138,29 @@ export class ReportItemsDialog implements OnInit {
 
   protected exportItems(): void {
     void this.facade.exportCsv('user-items', this.data.userId);
+  }
+
+  // ---- Certificates ----------------------------------------------------------
+
+  /** This user's downloadable certificates for the subject — the footer zips all of them. */
+  protected readonly certificates = signal<ReportCertificate[]>([]);
+  protected readonly certificatesLoading = signal(true);
+  protected readonly certificatesError = signal('');
+
+  /** Matched on the course id (webinar id under the webinars subject). */
+  protected certificateFor(item: ReportItemRow): ReportCertificate | undefined {
+    const id = this.isCourses() ? item.course_id : item.webinar_id;
+    return this.certificates().find((c) => c.course_id === id);
+  }
+
+  /** One PDF, saved directly (never zipped). */
+  protected downloadCertificate(item: ReportItemRow): void {
+    const cert = this.certificateFor(item);
+    if (cert) void this.facade.downloadCertificate(this.data.userName, cert);
+  }
+
+  protected downloadAllCertificates(): void {
+    void this.facade.downloadCertificates(this.data.userName, this.certificates());
   }
 
   close(): void {

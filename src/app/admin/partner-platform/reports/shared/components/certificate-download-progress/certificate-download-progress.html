@@ -1,0 +1,31 @@
+@if (job(); as job) {
+  <div
+    class="flex flex-col gap-2 rounded-lg border border-white/10 px-4 py-3"
+    style="background: var(--mm-surface-2)"
+    role="status"
+    aria-live="polite"
+  >
+    <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+      <div class="min-w-0 flex flex-col gap-0.5">
+        <span class="font-medium text-white truncate">Downloading {{ job.label }}</span>
+        <span class="text-xs" style="color: var(--mm-fg-3)">{{ status() }}</span>
+      </div>
+      <app-button
+        variant="outline"
+        size="sm"
+        class="text-white"
+        [disabled]="job.phase === 'saving'"
+        (clicked)="facade.cancelDownload()"
+      >
+        Cancel
+      </app-button>
+    </div>
+    <app-progress
+      size="sm"
+      variant="info"
+      [value]="percent()"
+      [indeterminate]="indeterminate()"
+      ariaLabel="Certificate download progress"
+    />
+  </div>
+}

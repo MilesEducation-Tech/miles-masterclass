@@ -1,9 +1,8 @@
-<div ngpFormField [class]="wrapperClasses()">
+<div [class]="wrapperClasses()">
   @switch (type()) {
     @case ('textarea') {
       <div class="relative">
         <textarea
-          ngpTextarea
           [id]="inputId()"
           [name]="id()"
           [placeholder]="placeholder() || ' '"
@@ -20,7 +19,7 @@
           (blur)="handleBlur()"
         ></textarea>
         @if (label()) {
-          <label ngpLabel [for]="inputId()" class="floating-label">
+          <label [for]="inputId()" class="floating-label">
             {{ label() }}
             @if (required()) {
               <sup class="text-destructive ml-1" aria-label="required">*</sup>
@@ -31,29 +30,31 @@
     }
     @case ('checkbox') {
       <div class="flex items-start gap-3">
-        <span
-          ngpCheckbox
-          [id]="inputId()"
-          [class]="checkboxClasses()"
-          [ngpCheckboxChecked]="isChecked()"
-          [ngpCheckboxDisabled]="disabled()"
-          [ngpCheckboxRequired]="required()"
-          (ngpCheckboxCheckedChange)="handleInput($event)"
-          [attr.aria-invalid]="invalid()"
-          [attr.aria-describedby]="describedBy()"
-          (blur)="handleBlur()"
-        >
+        <div class="relative flex items-center">
+          <input
+            [id]="inputId()"
+            type="checkbox"
+            [class]="checkboxClasses()"
+            [checked]="isChecked()"
+            [disabled]="disabled()"
+            [required]="required()"
+            [attr.aria-invalid]="invalid()"
+            [attr.aria-required]="required() || null"
+            [attr.aria-describedby]="describedBy()"
+            (change)="handleInput($any($event).target.checked)"
+            (blur)="handleBlur()"
+          />
           @if (isChecked()) {
             <ng-icon
               [svg]="icons().check"
               strokeWidth="6"
               color="white"
-              class="w-3 h-3 text-accent font-bold pointer-events-none"
+              class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-accent font-bold pointer-events-none"
             />
           }
-        </span>
+        </div>
         @if (label()) {
-          <label ngpLabel [for]="inputId()" [class]="checkboxLabelClasses()">
+          <label [for]="inputId()" [class]="checkboxLabelClasses()">
             {{ label() }}
             <!-- Optional rich label content, e.g. inline policy links. Anchors are
                  interactive content, so clicking them does not toggle the checkbox. -->
@@ -71,7 +72,14 @@
       </div>
     }
     @case ('radio') {
-      <div class="space-y-2">
+      <div
+        class="space-y-2"
+        role="radiogroup"
+        [attr.aria-labelledby]="label() ? groupLabelId() : null"
+        [attr.aria-required]="required() || null"
+        [attr.aria-invalid]="invalid()"
+        [attr.aria-describedby]="describedBy()"
+      >
         @if (label()) {
           <span [id]="groupLabelId()" class="block text-sm font-medium leading-none">
             {{ label() }}
@@ -80,81 +88,23 @@
             }
           </span>
         }
-        <div
-          ngpRadioGroup
-          class="flex items-center gap-6 pt-1"
-          [ngpRadioGroupValue]="value()"
-          [ngpRadioGroupDisabled]="disabled()"
-          (ngpRadioGroupValueChange)="handleInput($event)"
-          [attr.aria-labelledby]="label() ? groupLabelId() : null"
-          [attr.aria-required]="required() || null"
-          [attr.aria-invalid]="invalid()"
-          [attr.aria-describedby]="describedBy()"
-        >
+        <div class="flex items-center gap-6 pt-1">
           @for (option of options(); track option.value) {
-            <button
-              type="button"
-              ngpRadioItem
-              [ngpRadioItemValue]="option.value"
-              [ngpRadioItemDisabled]="!!option.disabled"
-              (blur)="handleBlur()"
-              class="flex items-center gap-2 cursor-pointer data-disabled:cursor-not-allowed data-disabled:opacity-50"
-            >
-              <span
-                class="h-4 w-4 rounded-full border border-primary inline-flex items-center justify-center data-checked:border-accent"
-                [attr.data-checked]="value() === option.value ? '' : null"
-              >
-                @if (value() === option.value) {
-                  <span class="h-2 w-2 rounded-full bg-accent"></span>
-                }
-              </span>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                [name]="id()"
+                [value]="option.value"
+                [checked]="value() === option.value"
+                [disabled]="disabled() || option.disabled"
+                (change)="handleInput(option.value)"
+                (blur)="handleBlur()"
+                class="h-4 w-4 border-primary text-accent focus:ring-primary"
+              />
               <span class="text-sm">{{ option.label }}</span>
-            </button>
+            </label>
           }
         </div>
-      </div>
-    }
-    @case ('password') {
-      <div class="relative" ngpPassword #password="ngpPassword">
-        <input
-          ngpPasswordInput
-          type="password"
-          [id]="inputId()"
-          [name]="id()"
-          [placeholder]="placeholder() || ' '"
-          [class]="inputClasses()"
-          [value]="value()"
-          [attr.autocomplete]="autocomplete()"
-          [readonly]="readonly()"
-          [disabled]="disabled()"
-          [required]="required()"
-          [attr.aria-invalid]="invalid()"
-          [attr.aria-required]="required() || null"
-          [attr.aria-describedby]="describedBy()"
-          (input)="handleInput($any($event).target.value)"
-          (blur)="handleBlur()"
-        />
-        @if (label()) {
-          <label ngpLabel [for]="inputId()" class="floating-label">
-            {{ label() }}
-            @if (required()) {
-              <sup class="text-destructive ml-1" aria-label="required">*</sup>
-            }
-          </label>
-        }
-        @if (showPasswordToggle()) {
-          <button
-            type="button"
-            ngpPasswordToggle
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground data-hover:text-foreground transition-colors focus-visible:outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring rounded-sm"
-          >
-            @if (password.isVisible()) {
-              <ng-icon [svg]="icons().eyeSlash" class="w-4 h-4" />
-            } @else {
-              <ng-icon [svg]="icons().eye" class="w-4 h-4" />
-            }
-          </button>
-        }
       </div>
     }
     @default {
@@ -167,10 +117,9 @@
           </div>
         }
         <input
-          ngpInput
           [id]="inputId()"
           [name]="id()"
-          [type]="type()"
+          [type]="actualType()"
           [placeholder]="placeholder() || ' '"
           [class]="inputClasses()"
           [value]="value()"
@@ -192,7 +141,7 @@
           (blur)="handleBlur()"
         />
         @if (label()) {
-          <label ngpLabel [for]="inputId()" class="floating-label">
+          <label [for]="inputId()" class="floating-label">
             {{ label() }}
             @if (required()) {
               <sup class="text-destructive ml-1" aria-label="required">*</sup>
@@ -206,11 +155,25 @@
             <ng-content select="[suffix]" />
           </div>
         }
+        @if (type() === 'password' && showPasswordToggle()) {
+          <button
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+            (click)="togglePassword()"
+            [attr.aria-label]="passwordVisible() ? 'Hide password' : 'Show password'"
+          >
+            @if (passwordVisible()) {
+              <ng-icon [svg]="icons().eyeSlash" class="w-4 h-4" />
+            } @else {
+              <ng-icon [svg]="icons().eye" class="w-4 h-4" />
+            }
+          </button>
+        }
       </div>
     }
   }
   @if (hint() && !displayError()) {
-    <p ngpDescription [id]="hintId()" class="text-sm text-muted-foreground mt-1.5">
+    <p [id]="hintId()" class="text-sm text-muted-foreground mt-1.5">
       {{ hint() }}
     </p>
   }

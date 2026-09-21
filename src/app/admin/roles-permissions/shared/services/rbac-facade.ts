@@ -49,7 +49,9 @@ export interface PermissionInput {
  * ponytail: refetches the whole catalog after each write — the catalog is tiny
  * and rarely edited, so optimistic patching isn't worth the bookkeeping.
  */
-@Injectable({ providedIn: 'root' })
+// Route-scoped (see admin.routes.ts): the injector dies on navigation, which
+// aborts in-flight resource() loads and stops this page's calls firing elsewhere.
+@Injectable()
 export class RbacFacade {
   private readonly supabase = inject(Supabase);
   private readonly logger = inject(Logger);
@@ -57,7 +59,7 @@ export class RbacFacade {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly dataResource = resource<RbacData, unknown>({
-    params: () => (this.isBrowser ? {} : undefined),
+    params: () => (this.isBrowser ? true : undefined),
     loader: async () => {
       const client = await this.supabase.getClient();
       const [roles, perms, rolePerms] = await Promise.all([

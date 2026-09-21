@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject } from '@angular/core';
+import { Component, DestroyRef, EnvironmentInjector, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { take } from 'rxjs';
@@ -7,6 +7,7 @@ import { Spinner } from '../../../shared/components/ui/spinner/spinner';
 import { Dialog } from '../../../shared/core/services/dialog/dialog';
 import { Network } from '../../partner-platform/shared/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '../../partner-platform/shared/services/partner-superadmin-facade';
+import { AdminAuth } from '../../../shared/core/services/admin-auth/admin-auth';
 import {
   NetworkFormDialog,
   NetworkFormDialogData,
@@ -26,8 +27,14 @@ import {
 export class NetworksV2 {
   protected readonly facade = inject(PartnerSuperAdminFacade);
   private readonly dialog = inject(Dialog);
+  // Dialogs are built by the root Dialog service; hand it this page's injector
+  // so the route-scoped facade resolves instead of a NullInjectorError.
+  private readonly envInjector = inject(EnvironmentInjector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+
+  /** Editing a network is super-admin only. */
+  protected readonly canEdit = inject(AdminAuth).isSuperAdmin;
 
   protected openCreate(): void {
     this.openDialog();
@@ -46,6 +53,7 @@ export class NetworksV2 {
       NetworkFormDialog,
       {
         data: { network } satisfies NetworkFormDialogData,
+        environmentInjector: this.envInjector,
         maxWidth: '520px',
         ariaLabel: network ? 'Edit network' : 'Create network',
       },
@@ -68,7 +76,8 @@ export class NetworksV2 {
         // Create, then land on the hub — firms, seats and admins are set up there.
         const created = await this.facade.createNetwork({
           name: result.name,
-          slug: result.slug,
+          // Blank = let the backend slugify the name.
+          ...(result.slug ? { slug: result.slug } : {}),
           total_seats: result.total_seats,
         });
         if (created) this.openDetail(created);

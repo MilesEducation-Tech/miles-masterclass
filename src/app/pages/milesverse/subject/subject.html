@@ -1,0 +1,307 @@
+@if (loading()) {
+  <div class="mx-auto w-11/12 pt-24 pb-12" aria-hidden="true">
+    <div class="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:gap-12">
+      <div>
+        <div class="h-4 w-28 animate-pulse rounded bg-muted"></div>
+        <div class="mt-8 h-10 w-72 animate-pulse rounded bg-muted"></div>
+        <div class="mt-4 h-4 w-full max-w-xl animate-pulse rounded bg-muted"></div>
+      </div>
+      <div class="h-48 animate-pulse rounded-2xl border border-border bg-muted"></div>
+    </div>
+    <div class="mt-14 h-6 w-44 animate-pulse rounded bg-muted"></div>
+    <div class="mt-5 flex gap-5 overflow-hidden">
+      @for (n of [0, 1, 2, 3, 4]; track n) {
+        <div
+          class="h-72 w-80 shrink-0 animate-pulse rounded-xl border border-border bg-muted"
+        ></div>
+      }
+    </div>
+    <div class="mt-14 h-6 w-44 animate-pulse rounded bg-muted"></div>
+    <div class="mt-5 flex gap-5 overflow-hidden">
+      @for (n of [0, 1, 2, 3, 4]; track n) {
+        <div
+          class="h-72 w-80 shrink-0 animate-pulse rounded-xl border border-border bg-muted"
+        ></div>
+      }
+    </div>
+  </div>
+} @else if (error(); as message) {
+  <div class="mx-auto flex max-w-md flex-col items-center px-5 py-24 text-center">
+    <span class="flex size-14 items-center justify-center rounded-full bg-accent/10 text-accent">
+      <ng-icon name="lucideSearchX" class="text-2xl" aria-hidden="true" />
+    </span>
+    <h1 class="mt-5 font-serif text-2xl font-bold text-foreground">Couldn't open this subject</h1>
+    <p class="mt-2 text-sm text-muted-foreground">{{ message }}</p>
+    <div class="mt-6 flex items-center gap-3">
+      <app-button
+        variant="primary"
+        size="sm"
+        class="bg-accent hover:bg-accent/90"
+        (clicked)="load()"
+      >
+        Try again
+      </app-button>
+      <a [routerLink]="backPath()">
+        <app-button variant="outline" size="sm">All subjects</app-button>
+      </a>
+    </div>
+  </div>
+} @else if (subject(); as subj) {
+  <!-- ===================== SUBJECT HERO ===================== -->
+  <section class="relative overflow-hidden pt-24 pb-10">
+    <div class="mv-hero-backdrop" aria-hidden="true">
+      <span class="mv-hero-stars"></span>
+      <span class="mv-hero-grid"></span>
+      <span class="mv-hero-horizon"></span>
+    </div>
+    <div
+      class="relative mx-auto grid w-11/12 items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:gap-12"
+    >
+      <div>
+        <a [routerLink]="backPath()" class="mv-back">
+          <ng-icon name="lucideArrowLeft" class="text-base" aria-hidden="true" />
+          All subjects
+        </a>
+        <p
+          class="mt-5 flex items-center gap-2 text-caption font-bold tracking-[0.2em] text-accent uppercase"
+        >
+          <ng-icon name="lucideGraduationCap" class="text-sm" aria-hidden="true" />
+          Subject
+        </p>
+        <h1 class="mv-metal-text mt-2 font-serif text-4xl font-bold sm:text-5xl">
+          {{ subj.title }}
+        </h1>
+        <p class="mt-3 text-sm font-medium text-muted-foreground">
+          {{ group()!.total }} {{ group()!.total === 1 ? 'scenario' : 'scenarios' }}
+          <span class="mx-1.5 inline-block size-[3px] rounded-full bg-accent align-middle"></span>
+          grouped by difficulty
+          <span class="mx-1.5 inline-block size-[3px] rounded-full bg-accent align-middle"></span>
+          5-min live sessions
+        </p>
+        @if (subj.description) {
+          <p class="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
+            {{ subj.description }}
+          </p>
+        }
+      </div>
+
+      <!-- difficulty ladder — the path through this subject, doubles as jump nav -->
+      <nav class="mvs-ladder" aria-label="Jump to a difficulty tier">
+        <p class="mvs-ladder-title">Your path through {{ subj.title }}</p>
+        @for (tier of tiers(); track tier.key) {
+          <button type="button" class="mvs-ladder-row group" (click)="jumpTo('tier-' + tier.key)">
+            <span class="mv-meter" aria-hidden="true">
+              <span class="mv-bar mv-bar-on" [style.background]="tierColor(tier.key)"></span>
+              <span
+                class="mv-bar mv-bar-2"
+                [class.mv-bar-on]="tier.level >= 2"
+                [style.background]="tier.level >= 2 ? tierColor(tier.key) : null"
+              ></span>
+              <span
+                class="mv-bar mv-bar-3"
+                [class.mv-bar-on]="tier.level >= 3"
+                [style.background]="tier.level >= 3 ? tierColor(tier.key) : null"
+              ></span>
+            </span>
+            <span class="mvs-ladder-label">{{ tier.label }}</span>
+            <span
+              class="rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+              [style.color]="tierColor(tier.key)"
+              [style.borderColor]="tierColor(tier.key) + '55'"
+              [style.background]="tierColor(tier.key) + '14'"
+            >
+              {{ tier.sims.length }}
+            </span>
+            <ng-icon name="lucideArrowDown" class="mvs-ladder-go" aria-hidden="true" />
+          </button>
+        }
+        @if (untiered().length) {
+          <button type="button" class="mvs-ladder-row group" (click)="jumpTo('tier-more')">
+            <span class="mv-meter" aria-hidden="true">
+              <span class="mv-bar"></span>
+              <span class="mv-bar mv-bar-2"></span>
+              <span class="mv-bar mv-bar-3"></span>
+            </span>
+            <span class="mvs-ladder-label">More scenarios</span>
+            <span
+              class="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-semibold text-foreground/85"
+            >
+              {{ untiered().length }}
+            </span>
+            <ng-icon name="lucideArrowDown" class="mvs-ladder-go" aria-hidden="true" />
+          </button>
+        }
+      </nav>
+    </div>
+  </section>
+
+  <div class="mx-auto w-11/12" aria-hidden="true">
+    <div class="mv-divider-h"></div>
+  </div>
+
+  <!-- ===================== TIERS ===================== -->
+  <div class="mx-auto w-11/12 pb-16 lg:pb-20">
+    @for (tier of tiers(); track tier.key) {
+      <section [id]="'tier-' + tier.key" class="mt-14 scroll-mt-24 first:mt-2">
+        <div class="flex items-center gap-3" [style.--tier]="tierColor(tier.key)">
+          <span class="mv-meter" aria-hidden="true">
+            <span class="mv-bar mv-bar-on" [style.background]="tierColor(tier.key)"></span>
+            <span
+              class="mv-bar mv-bar-2"
+              [class.mv-bar-on]="tier.level >= 2"
+              [style.background]="tier.level >= 2 ? tierColor(tier.key) : null"
+            ></span>
+            <span
+              class="mv-bar mv-bar-3"
+              [class.mv-bar-on]="tier.level >= 3"
+              [style.background]="tier.level >= 3 ? tierColor(tier.key) : null"
+            ></span>
+          </span>
+          <h2 class="font-serif text-2xl font-bold text-foreground">{{ tier.label }}</h2>
+          <span
+            class="rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+            [style.color]="tierColor(tier.key)"
+            [style.borderColor]="tierColor(tier.key) + '55'"
+            [style.background]="tierColor(tier.key) + '14'"
+          >
+            {{ tier.sims.length }}
+          </span>
+          <span class="mvs-rule" aria-hidden="true"></span>
+          <span class="mvs-row-nav">
+            <button type="button" aria-label="Scroll left" (click)="scrollRow(tierRow, -1)">
+              <ng-icon name="lucideChevronLeft" aria-hidden="true" />
+            </button>
+            <button type="button" aria-label="Scroll right" (click)="scrollRow(tierRow, 1)">
+              <ng-icon name="lucideChevronRight" aria-hidden="true" />
+            </button>
+          </span>
+        </div>
+        <p class="mt-2 max-w-2xl text-sm text-muted-foreground">{{ tier.blurb }}</p>
+
+        <div #tierRow class="mvs-row mt-5">
+          @for (sim of tier.sims; track sim.id) {
+            <a
+              [routerLink]="briefingPath(sim.id)"
+              class="mv-card mvs-row-card group"
+              [style.--hue]="hue(sim)"
+            >
+              <div class="mv-card-media mvs-media">
+                @if (art(sim); as src) {
+                  <img
+                    [src]="src"
+                    [alt]="sim.title"
+                    class="mv-card-img"
+                    loading="lazy"
+                    decoding="async"
+                    (error)="onArtError(sim.id)"
+                  />
+                } @else {
+                  <div class="mvs-monogram" aria-hidden="true">
+                    <span>{{ initial(sim) }}</span>
+                  </div>
+                }
+                <span class="mvs-media-scrim" aria-hidden="true"></span>
+                @if (sim.role) {
+                  <span class="mvs-role-chip">{{ sim.role }}</span>
+                }
+              </div>
+              <div class="mv-card-body">
+                <h3 class="mv-card-title">{{ sim.title }}</h3>
+                @if (sim.tagline) {
+                  <p class="mv-card-desc">{{ sim.tagline }}</p>
+                }
+                <div class="mv-card-foot justify-between gap-3">
+                  <span class="mvs-meta">
+                    <ng-icon name="lucideAudioLines" aria-hidden="true" />
+                    5-min live
+                  </span>
+                  <span class="mv-card-cta">
+                    View briefing
+                    <ng-icon
+                      name="lucideArrowUpRight"
+                      class="text-sm transition-transform duration-200 motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </div>
+              </div>
+            </a>
+          }
+        </div>
+      </section>
+    }
+
+    @if (untiered().length) {
+      <section id="tier-more" class="mt-14 scroll-mt-24">
+        <div class="flex items-center gap-3">
+          <h2 class="font-serif text-2xl font-bold text-foreground">More scenarios</h2>
+          <span
+            class="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-semibold text-foreground/85"
+          >
+            {{ untiered().length }}
+          </span>
+          <span class="mvs-rule" aria-hidden="true"></span>
+          <span class="mvs-row-nav">
+            <button type="button" aria-label="Scroll left" (click)="scrollRow(moreRow, -1)">
+              <ng-icon name="lucideChevronLeft" aria-hidden="true" />
+            </button>
+            <button type="button" aria-label="Scroll right" (click)="scrollRow(moreRow, 1)">
+              <ng-icon name="lucideChevronRight" aria-hidden="true" />
+            </button>
+          </span>
+        </div>
+
+        <div #moreRow class="mvs-row mt-5">
+          @for (sim of untiered(); track sim.id) {
+            <a
+              [routerLink]="briefingPath(sim.id)"
+              class="mv-card mvs-row-card group"
+              [style.--hue]="hue(sim)"
+            >
+              <div class="mv-card-media mvs-media">
+                @if (art(sim); as src) {
+                  <img
+                    [src]="src"
+                    [alt]="sim.title"
+                    class="mv-card-img"
+                    loading="lazy"
+                    decoding="async"
+                    (error)="onArtError(sim.id)"
+                  />
+                } @else {
+                  <div class="mvs-monogram" aria-hidden="true">
+                    <span>{{ initial(sim) }}</span>
+                  </div>
+                }
+                <span class="mvs-media-scrim" aria-hidden="true"></span>
+                @if (sim.role) {
+                  <span class="mvs-role-chip">{{ sim.role }}</span>
+                }
+              </div>
+              <div class="mv-card-body">
+                <h3 class="mv-card-title">{{ sim.title }}</h3>
+                @if (sim.tagline) {
+                  <p class="mv-card-desc">{{ sim.tagline }}</p>
+                }
+                <div class="mv-card-foot justify-between gap-3">
+                  <span class="mvs-meta">
+                    <ng-icon name="lucideAudioLines" aria-hidden="true" />
+                    5-min live
+                  </span>
+                  <span class="mv-card-cta">
+                    View briefing
+                    <ng-icon
+                      name="lucideArrowUpRight"
+                      class="text-sm transition-transform duration-200 motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </div>
+              </div>
+            </a>
+          }
+        </div>
+      </section>
+    }
+  </div>
+}

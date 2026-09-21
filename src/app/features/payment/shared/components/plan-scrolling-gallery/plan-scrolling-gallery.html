@@ -1,0 +1,25 @@
+<div
+  class="gallery relative h-full min-h-[480px] w-full overflow-hidden rounded-2xl"
+  aria-hidden="true"
+>
+  <div class="grid h-full grid-cols-2 lg:grid-cols-3 gap-3">
+    @for (col of columns(); track $index; let i = $index) {
+      <div class="overflow-hidden" [class.hidden]="i === 2" [class.lg:block]="i === 2">
+        <div class="float-up flex flex-col gap-3" [style.animation-delay]="col.delay">
+          @for (src of col.images; track $index) {
+            <div class="relative aspect-9/16 shrink-0 overflow-hidden rounded-xl">
+              <img [src]="src" alt="" loading="lazy" class="h-full w-full object-cover" />
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <div
+    class="pointer-events-none absolute inset-x-0 top-0 h-24 bg-linear-to-b from-(--background) to-transparent"
+  ></div>
+  <div
+    class="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-(--background) to-transparent"
+  ></div>
+</div>

@@ -13,6 +13,10 @@ import { Logger } from '../../../../shared/core/services/logger/logger';
 import { NotificationService } from '../../../../shared/core/services/notification/notification';
 import { SupabaseSeo } from '../../../../shared/core/services/seo/supabase-seo';
 import { saveBlob } from '../../../../shared/utils/blob-download';
+import { AriaInput } from '../../../../shared/components/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '../../../../shared/components/ui/aria/aria-select/aria-select';
+import { Button } from '../../../../shared/components/ui/button/button';
+import { AriaSelectOption } from '../../../../shared/core/models/aria.model';
 import {
   parseSeoCsv,
   SEO_CSV_TEMPLATE,
@@ -25,7 +29,7 @@ type EditableTextField = 'page_slug' | 'page_name' | 'title' | 'description' | '
 
 @Component({
   selector: 'app-seo-bulk-upload',
-  imports: [RouterLink, NgIconComponent],
+  imports: [RouterLink, NgIconComponent, AriaInput, AriaSelect, Button],
   providers: [
     provideIcons({
       heroArrowLeft,
@@ -44,6 +48,14 @@ export class SeoBulkUpload implements OnInit {
   private readonly notification = inject(NotificationService);
 
   readonly rows = signal<SeoRow[]>([]);
+  protected readonly pageTypeOptions: AriaSelectOption<'static' | 'dynamic'>[] = [
+    { value: 'static', label: 'static' },
+    { value: 'dynamic', label: 'dynamic' },
+  ];
+  /** AriaInput emits `unknown`; the grid only ever holds strings. */
+  protected str(value: unknown): string {
+    return typeof value === 'string' ? value : '';
+  }
   readonly importing = signal(false);
   readonly importError = signal<string | null>(null);
   readonly fileName = signal<string | null>(null);

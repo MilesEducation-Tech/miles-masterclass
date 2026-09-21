@@ -2,10 +2,11 @@ import { isPlatformBrowser } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  EnvironmentInjector,
+  PLATFORM_ID,
   computed,
   inject,
   linkedSignal,
-  PLATFORM_ID,
   resource,
   signal,
 } from '@angular/core';
@@ -27,7 +28,13 @@ import {
   AllocateSeatsDialog,
   AllocateSeatsDialogData,
 } from '../../partner-platform/super-admin/network-tracker/shared/components/allocate-seats-dialog/allocate-seats-dialog';
-import { CreateFirmDialog } from './shared/components/create-firm-dialog/create-firm-dialog';
+import {
+  FirmFormDialog,
+  FirmFormDialogData,
+} from './shared/components/firm-form-dialog/firm-form-dialog';
+import { AriaSelect } from '../../../shared/components/ui/aria/aria-select/aria-select';
+import { AriaSelectOption } from '../../../shared/core/models/aria.model';
+import { AdminAuth } from '../../../shared/core/services/admin-auth/admin-auth';
 
 /** Scope filter encoded as one select value: all | standalone | network:<id>. */
 type FirmScopeFilter = string;
@@ -40,16 +47,22 @@ type FirmScopeFilter = string;
  */
 @Component({
   selector: 'app-firms-v2',
-  imports: [Button, Spinner],
+  imports: [Button, Spinner, AriaSelect],
   templateUrl: './firms-v2.html',
   host: { class: 'block w-full' },
 })
 export class FirmsV2 {
   protected readonly facade = inject(PartnerSuperAdminFacade);
   private readonly dialog = inject(Dialog);
+  // Dialogs are built by the root Dialog service; hand it this page's injector
+  // so the route-scoped facade resolves instead of a NullInjectorError.
+  private readonly envInjector = inject(EnvironmentInjector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  /** Editing a firm is super-admin only — everyone else gets the read/seat actions. */
+  protected readonly canEdit = inject(AdminAuth).isSuperAdmin;
 
   protected readonly scope = signal<FirmScopeFilter>('all');
 
@@ -85,8 +98,14 @@ export class FirmsV2 {
     partnerLoadError(this.firmsResource.error(), 'Failed to load firms.'),
   );
 
-  protected onScopeChange(event: Event): void {
-    this.scope.set((event.target as HTMLSelectElement).value || 'all');
+  protected readonly scopeOptions = computed<AriaSelectOption<FirmScopeFilter>[]>(() => [
+    { value: 'all', label: 'All firms' },
+    { value: 'standalone', label: 'Standalone only' },
+    ...this.facade.networks().map((n) => ({ value: `network:${n.id}`, label: n.name })),
+  ]);
+
+  protected onScopeChange(value: FirmScopeFilter | null): void {
+    this.scope.set(value || 'all');
   }
 
   protected openNetwork(firm: Firm): void {
@@ -96,9 +115,17 @@ export class FirmsV2 {
   }
 
   /** Top up one firm's seats — `POST /superadmin/firms/<id>/allocate/`. */
+  /** Open the v2 superadmin Reports page already scoped to this firm. */
+  protected openReports(firm: Firm): void {
+    void this.router.navigate(['/admin/partner-v2/superadmin/reports'], {
+      queryParams: { firm: firm.id },
+    });
+  }
+
   protected openAllocate(firm: Firm): void {
     const ref = this.dialog.open<AllocateSeatsDialog, number | undefined>(AllocateSeatsDialog, {
       data: { firm } satisfies AllocateSeatsDialogData,
+      environmentInjector: this.envInjector,
       maxWidth: '520px',
       ariaLabel: `Add seats to ${firm.name}`,
     });
@@ -107,12 +134,26 @@ export class FirmsV2 {
     });
   }
 
+  /** Edit name, email domains and status — `PATCH /superadmin/firms/<id>/`. */
+  protected openEdit(firm: Firm): void {
+    const ref = this.dialog.open<FirmFormDialog, Firm | undefined>(FirmFormDialog, {
+      data: { firm } satisfies FirmFormDialogData,
+      environmentInjector: this.envInjector,
+      maxWidth: '560px',
+      ariaLabel: `Edit ${firm.name}`,
+    });
+    ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((updated) => {
+      if (updated) this.rawFirmsResource.reload();
+    });
+  }
+
   /** Create a firm (member or standalone), optionally with seats + admin, atomically. */
   protected openCreate(): void {
-    const ref = this.dialog.open<CreateFirmDialog, CreateFirmResponse | undefined>(
-      CreateFirmDialog,
-      { maxWidth: '560px', ariaLabel: 'Create firm' },
-    );
+    const ref = this.dialog.open<FirmFormDialog, CreateFirmResponse | undefined>(FirmFormDialog, {
+      environmentInjector: this.envInjector,
+      maxWidth: '560px',
+      ariaLabel: 'Create firm',
+    });
     ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((created) => {
       if (!created) return;
       this.rawFirmsResource.reload();

@@ -1,0 +1,32 @@
+.plan-card {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+}
+
+.plan-card--recommended {
+  background-color: hsl(var(--card));
+  border: 2px solid hsl(var(--accent));
+  box-shadow: 0 0 24px hsl(var(--accent) / 0.15);
+}
+
+.plan-card--enterprise {
+  background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--muted) / 0.5) 100%);
+  border: 1px solid hsl(var(--border));
+}
+
+/* FREE Ribbon */
+.ribbon {
+  position: absolute;
+  top: 12px;
+  left: -30px;
+  width: 110px;
+  padding: 4px 0;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #111;
+  background-color: #facc15;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}

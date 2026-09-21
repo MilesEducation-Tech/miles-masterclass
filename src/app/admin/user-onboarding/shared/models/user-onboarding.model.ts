@@ -1,10 +1,12 @@
 import { PartnerPagination } from '../../../partner-platform/shared/models/partner-platform.model';
 
 /**
- * A row from `GET partners/superadmin/users/`. Note the list shape differs from the write
- * payload: `country_selected` comes back as a display NAME (e.g. "USA") here but
- * is sent as a numeric id on onboard/update, and the corporate FKs surface as
- * `company`/`sector`/`job_role` (not `*_id`). Prefill maps best-effort.
+ * A row from `GET partners/superadmin/users/`. The list shape differs from the
+ * write payload: every FK comes back as a display NAME (`profession: "CPA"`,
+ * `state_board: ["New York"]`, `company: "Acme LLP"`, `country_selected: "USA"`)
+ * while onboard/update take numeric ids (`profession`, `company_id`, …). The
+ * edit form maps names → ids by label against the reference lists; backend ask:
+ * return the ids alongside the names so that mapping isn't fragile.
  */
 export interface InternalUser {
   id: number;
@@ -24,13 +26,13 @@ export interface InternalUser {
   last_login: string | null;
   creation_platform: string | null;
   account_type: string | null;
-  profession: number | null;
-  professional_courses: number[];
-  state_board: number[];
-  country_selected: string | number | null;
-  company: number | null;
-  sector: number | null;
-  job_role: number | null;
+  profession: string | null;
+  professional_courses: string[];
+  state_board: string[];
+  country_selected: string | null;
+  company: string | null;
+  sector: string | null;
+  job_role: string | null;
   partner_code: string | null;
   is_subscribed: boolean;
 }
@@ -63,10 +65,10 @@ export interface OnboardUserPayload {
   company_id?: number | null;
   sector_id?: number | null;
   job_role_id?: number | null;
-  // Part of the onboard contract but with NO frontend GET source (the profile
-  // page doesn't fetch a numeric-country list or an experience list). Left
-  // optional/omitted until a real endpoint exists — see facade note.
+  // No admin-callable country list exists (`GET /api/country/` needs a learner
+  // JWT) — omitted until a superadmin endpoint lands. See backend asks.
   country_selected?: number | null;
+  /** Fixed backend map (no table): 1 = 0-2 yrs, 2 = 2-5, 3 = 5-10, 4 = 10+. */
   experience_id?: number | null;
 }
 
@@ -81,18 +83,25 @@ export interface MutateUserResponse {
   message: string;
 }
 
-/** `POST partners/superadmin/users/<id>/offline-payment/` response. */
+/**
+ * `POST partners/superadmin/users/<id>/offline-payment/` success `data`.
+ * `receipt_url` is null when a comment (not an invoice) was the proof;
+ * `payment_note` echoes that comment back.
+ */
+export interface OfflinePaymentResult {
+  user_id: number;
+  order_id: number;
+  transaction_id: number;
+  payment_id: string;
+  payment_mode: string;
+  amount_paid: number;
+  subscription_status: string;
+  receipt_url: string | null;
+  payment_note: string | null;
+}
+
 export interface OfflinePaymentResponse {
   status: boolean;
-  data?: {
-    user_id: number;
-    order_id: number;
-    transaction_id: number;
-    payment_id: string;
-    payment_mode: string;
-    amount_paid: number;
-    subscription_status: string;
-    receipt_url: string;
-  };
+  data?: OfflinePaymentResult;
   message: string;
 }

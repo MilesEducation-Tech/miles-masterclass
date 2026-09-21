@@ -101,14 +101,29 @@ Permission strings live in [`PERM`](../src/app/shared/core/models/admin/admin-rb
 | Dashboard                            | `dashboard:view`                                                                                                                                                                 |
 | SEO                                  | `seo:read`, `seo:write`, `seo:delete`                                                                                                                                            |
 | Leads                                | `leads:read`, `leads:write`, `leads:export`                                                                                                                                      |
-| Reports                              | `reports:courses:read`, `reports:users:read`, `reports:users:block`, `reports:user_report:read`                                                                                  |
+| Reports                              | `reports:users:read`, `reports:users:block`, `reports:user_report:read`                                                                                                          |
 | Partner Platform (coarse page gates) | `partner:platform:read` (Miles ops dashboard), `partner:tracker:read` (network admin), `partner:users:read` (sub-company admin), `partner:platform:manage` (super-admin console) |
 | Administration                       | `admin:users:manage`, `admin:roles:manage`, `admin:permissions:manage`                                                                                                           |
 | User onboarding                      | `users:create`                                                                                                                                                                   |
 
+**Roles** — one per sidenav section; an admin may hold **several**, and their permissions are the union (per-user denies in `admin_user_permissions` still win). Catalog after `20260908000000_multi_role_admins.sql`:
+
+| Slug                       | Section                    | Permissions                                                                              |
+| -------------------------- | -------------------------- | ---------------------------------------------------------------------------------------- |
+| `super_admin` (system)     | everything                 | SQL short-circuit — every key, un-deniable                                               |
+| `seo_manager`              | Content → SEO              | `dashboard:view`, `seo:*`                                                                |
+| `leads_manager`            | People → Leads             | `dashboard:view`, `leads:*`                                                              |
+| `reports_viewer`           | Reports → User report      | `dashboard:view`, `reports:user_report:read`                                             |
+| `partner_platform_admin`   | Partner v2 — Super Admin   | `dashboard:view`, `partner:platform:manage`, `partner:platform:read`, `users:create`     |
+| `partner_network_admin`    | Partner v2 — Panel         | `partner:tracker:read`                                                                   |
+| `partner_subcompany_admin` | Partner v2 — Panel (Users) | `partner:users:read`                                                                     |
+| `admin_manager`            | Administration             | `dashboard:view`, `admin:users:manage`, `admin:roles:manage`, `admin:permissions:manage` |
+
+The four Django-mapped slugs (`super_admin`, `partner_platform_admin`, `partner_network_admin`, `partner_subcompany_admin`) are **mutually exclusive** — Django keeps one `PartnerAdmin` row per login — enforced by `toggleRoleSlug()` in the UI and `assert_admin_role_set()` in both RPCs. `AdminAuth` exposes `roles()` / `roleSlugs()`; `isSuperAdmin()` is `roleSlugs().includes('super_admin')`. The profile RPC returns `roles[]` (and `role` = the first, for the mid-deploy window); the JWT hook emits `app_metadata.admin_roles[]` next to `admin_role`.
+
 Enforcement layers, from outside in:
 
-1. **`permissionGuard(...perms)`** on `canMatch` — **OR** semantics. That's how one route serves several roles (`domain-users` serves Miles reports staff, network admins and sub-company admins).
+1. **`permissionGuard(...perms)`** on `canMatch` — **OR** semantics. That's how one route serves several roles (`partner-v2/panel/users` serves Miles reports staff, network admins and sub-company admins).
 2. **`hasPermission` directive** — UI only. Hiding a button is not authorisation. Admin permission blocks intentionally have **no `else` branch**: an unpermitted user sees nothing, not an empty state implying data exists.
 3. **Server** — Supabase RLS for Supabase-backed pages, Django checks (+ `PartnerAdmin.capabilities`) for API-backed pages.
 
@@ -137,16 +152,19 @@ Enforcement layers, from outside in:
 
 [`AdminSidebar`](../src/app/admin/layout/admin-sidebar/admin-sidebar.ts) declares sections statically and filters them per user:
 
-| Section          | Items                                                                      |
-| ---------------- | -------------------------------------------------------------------------- |
-| Overview         | Dashboard                                                                  |
-| Content          | SEO pages                                                                  |
-| People           | Leads · Create User                                                        |
-| Reports          | Courses · User report                                                      |
-| Partner Platform | Dashboard · Partner Code Tracker · Vendor Users · Networks · Partner Codes |
-| Administration   | Admin Users · Roles & permissions                                          |
+| Section                  | Items                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| Overview                 | Dashboard                                                                     |
+| Content                  | SEO pages                                                                     |
+| People                   | Leads                                                                         |
+| Reports                  | User report                                                                   |
+| Partner v2 — Super Admin | Networks · Firms · Partner Codes · Partner Admins · User Onboarding · Reports |
+| Partner v2 — Panel       | Overview · Seat Tracker · Users · Reports                                     |
+| Administration           | Admin Users · Roles & permissions                                             |
 
-An item shows if the admin has **any** of its listed permissions and its role slug isn't in `excludeRoles`. A section with zero visible items is dropped entirely. The footer user menu shows name/email/role slug and handles sign-out (`AdminAuth.signOut()` → `/admin/login`); Escape closes it.
+An item shows if the admin has **any** of its listed permissions. A section with zero visible items is dropped entirely. The footer user menu shows name / email / every role name and handles sign-out (`AdminAuth.signOut()` → `/admin/login`); Escape closes it.
+
+Every `partner-v2/*` route sits under one componentless parent that **provides** the partner facades (`PartnerAdminMe`, `PartnerSuperAdminFacade`, `PartnerNetworkFacade`, `PartnerReportFacade`, `PartnerUsersFacade`); `leads`, `reports/user-report`, `admin-users` and `roles-permissions` provide their own. None of the admin facades is `providedIn: 'root'` any more: the route injector is destroyed on navigation, which aborts in-flight `resource()` loads and stops one page's calls firing while you're on another. Dialogs that inject a route-scoped facade are opened with `environmentInjector: inject(EnvironmentInjector)`.
 
 The topbar derives the page title and breadcrumbs from the current URL — no per-page wiring.
 
@@ -210,8 +228,10 @@ Ownership rules (static vs leaf-owned tags), the `SeoManager` lifecycle and the 
 
 ## 5. Leads — `/admin/leads`
 
-**Permissions:** `leads:read` · `leads:write` · `leads:export` (three distinct permissions, all enforced by RLS on the table).
-**Data:** Supabase table `firm_inquiries` via [`LeadsFacade`](../src/app/admin/leads/shared/services/leads-facade.ts).
+**Permissions:** `leads:read` · `leads:write` · `leads:export` (three distinct permissions gating the route and the UI).
+**Data:** Django `partners/superadmin/leads/` ([`LEADS_API.md`](LEADS_API.md)) via [`LeadsFacade`](../src/app/admin/leads/shared/services/leads-facade.ts), with the Supabase admin token attached by `adminContext()`.
+
+> The API authorises **super-admins only**, independently of the Supabase `leads:*` permissions that gate the route. A `leads_manager` who is not a super-admin reaches the page and sees the server's 403 in the error banner — a backend gap, not a UI one.
 
 ### Row shape (`FirmInquiry`)
 
@@ -220,10 +240,34 @@ Ownership rules (static vs leaf-owned tags), the `SeoManager` lifecycle and the 
 
 ### Flow
 
-1. **List** — 10 rows/page, `select(..., { count: 'exact' })` with `.range()` for the slice; search + status filter; `hasPrev`/`hasNext` computed from `totalCount`.
-2. **Update status** — inline select on the row → `update({ status })` on `firm_inquiries` (`leads:write`). Failure toasts and leaves the row untouched.
-3. **Export CSV** (`leads:export`) — re-queries up to `EXPORT_LIMIT = 5000` rows with the current filters, serialises a fixed column set (Name, Email, Firm, Job role, Help type, Enquiry type, Status, Notes, Created), quotes cells containing `"`/`,`/newline, and triggers a browser download of a Blob.
-   - Marked `ponytail:` in the code — deliberately client-side; move to a server export endpoint if lead volume ever outgrows the cap.
+1. **List** — 30 rows/page (`?page&page_count`), `?status=` omitted for `all` and `?search=` omitted when blank; `hasPrev`/`hasNext` read `pagination_data.previous_page`/`next_page`. Filter changes reset to page 1 via `linkedSignal`.
+2. **Update status / notes** — inline select and the expandable notes editor both call `PATCH /<id>/` with `{ status }` or `{ notes }` (`leads:write`). The API returns the updated lead, which replaces the row in place — no refetch. Failure toasts the DRF message and leaves the row untouched.
+3. **Export CSV** (`leads:export`) — `GET /export-csv/` with the current filters, server-rendered, no pagination; saved via the shared `saveBlob` + `fileNameFromContentDisposition` helpers.
+
+---
+
+## 5b. Audit log — `/admin/audit-log`
+
+**Permission:** `audit:read` (read-only — the table has no write policy at all).
+**Data:** Supabase `admin_audit_log`, read directly; RLS gates it.
+
+Records every admin action in two tiers, labelled per row by `source`:
+
+| `source`  | Covers                                             | Trust                                                                                            |
+| --------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `trigger` | The 8 Supabase tables (`admin_*`, `seo_pages`)     | Written by Postgres on the committed write. Unbypassable, and catches dashboard edits too.       |
+| `client`  | Django API calls, page views, auth events, exports | Actor and timestamp stamped server-side from `auth.uid()`; the action itself is client-asserted. |
+
+Capture points: `audit_row_change()` triggers (tier 1); `adminTokenInterceptor`,
+`AdminLayout` navigation and `AdminAuth` sign-in/out (tier 2, via the
+`log_admin_activity` RPC — the app has no INSERT grant).
+
+Retention is **indefinite by decision**; there is no purge job. Growth is bounded
+in practice by ~15 active admins. If it ever matters, partition by month on
+`occurred_at` rather than adding deletes — the immutability is the point.
+
+Known gaps: a write rejected by RLS leaves no trigger row (triggers only see
+commits); the Django half is best-effort until the backend logs server-side.
 
 ---
 
@@ -384,8 +428,10 @@ On success the toast hands the operator the initial password (`INITIAL_ADMIN_PAS
 
 ### Flow A — list
 
-Admins with role, active flag, email domains, created/last-login dates. `currentUserId` is used to stop an admin disabling or deleting themselves.
+Admins with their role chips, active flag, email domains, created/last-login dates. `currentUserId` is used to stop an admin disabling or deleting themselves.
 
+- **Roles** → `EditAdminRolesDialog` (partner roles radio-exclusive, `super_admin` locked unless the caller is one and never removable from yourself) → the `set_admin_user_roles` RPC, which also refuses to strand the app without an active super admin.
+- **Register partner admin** → the same form in register-only mode: no Supabase provisioning, just `POST /superadmin/partner-admins/` for an existing login that already holds a partner role (how today's super admin gets its Django `super` row).
 - **Toggle active** → `update({ is_active })` on `admin_users`.
 - **Edit domains** → native `prompt()`, parsed on commas/whitespace, deduped and lowercased, then replaced in `admin_user_email_domains`. Marked `ponytail:` — build a dialog if it ever grows a second field.
 - **Delete** → confirm, then the `delete_admin_user` RPC (removes the auth user and its RBAC rows server-side).
@@ -395,19 +441,20 @@ Admins with role, active flag, email domains, created/last-login dates. `current
 Deep-linkable with `?provision=1` (used by hand-offs from the partner flows).
 
 1. **Email + full name** (email validated client-side), optional **email domains**, optional **report type** (stored on `admin_users.report_type`, scopes Vendor Users).
-2. **Role** — from `admin_roles`. Selecting a role seeds the permission checklist from that role's defaults via `linkedSignal`; the super-admin can then tick/untick freely. On submit the difference is split into `grants` (ticked beyond the role's defaults) and `denies` (role defaults turned off).
-3. **Partner scope** — only for roles in `PARTNER_ROLE_MAP`:
+2. **Roles** — a checkbox per `admin_roles` row (`toggleRoleSlug()` keeps the partner roles radio-exclusive; `super_admin` is disabled unless the caller is one). The permission checklist is seeded from the **union** of the selected roles' defaults via `linkedSignal`; the super-admin can then tick/untick freely. On submit the difference is split into `grants` (ticked beyond the defaults) and `denies` (defaults turned off).
+3. **Partner scope + capabilities** — only when one of the roles is in `PARTNER_ROLE_MAP` (`admin-users/shared/utils/role-selection.ts`):
 
-   | Supabase role slug         | Django role | Scope selector                                                   | Capabilities                                                           |
-   | -------------------------- | ----------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------- |
-   | `partner_network_admin`    | `network`   | networks **and** standalone firms (`network:<id>` / `firm:<id>`) | `report:network:read`, `code:create:firm`, `coupon:send`, `user:block` |
-   | `partner_subcompany_admin` | `firm`      | member + standalone firms                                        | `report:firm:read`, `user:block`                                       |
+   | Supabase role slug                                         | Django role | Scope selector                                                   |
+   | ---------------------------------------------------------- | ----------- | ---------------------------------------------------------------- |
+   | `super_admin` (opt-in checkbox) / `partner_platform_admin` | `super`     | none                                                             |
+   | `partner_network_admin`                                    | `network`   | networks **and** standalone firms (`network:<id>` / `firm:<id>`) |
+   | `partner_subcompany_admin`                                 | `firm`      | member + standalone firms                                        |
 
-   Binding a network-admin role to a _firm_ downgrades the Django side to `role: 'firm'` while keeping the same capability set — that's a standalone company's admin. Exactly one of `network_id`/`firm_id` is ever sent.
+   Binding a network-admin role to a _firm_ downgrades the Django side to `role: 'firm'`. Capabilities are a **picker** (`app-checkbox-list`) seeded from `CAPABILITY_DEFAULTS[effectiveRole]` — both `network` and `firm` defaults include `seat:usage:read`, without which the Seat Tracker is permanently "not enabled". Exactly one of `network_id`/`firm_id` is ever sent.
 
-4. **Submit** → `provision_admin_user` RPC (creates the Supabase login + `admin_*` rows and returns the uid; itself permission-gated — `admin:users:manage` may provision any role, a `partner_network_admin` may provision only `partner_subcompany_admin`) → for partner roles, `POST /superadmin/partner-admins/` with the uid, role, scope and capabilities → success toast including the initial password.
+4. **Submit** → `provision_admin_user(p_role_slugs[], …)` RPC (creates the Supabase login + `admin_*` rows and returns the uid; permission-gated — `admin:users:manage` may provision any set, a `partner_network_admin` may provision exactly `['partner_subcompany_admin']`) → for partner roles, `POST /superadmin/partner-admins/` with the uid, role, scope and picked capabilities → success toast including the initial password.
 
-`canSubmit` requires a valid email, a role, and — for partner roles — the scope that role demands.
+`canSubmit` requires a valid email, at least one role, and — for partner roles — the scope that role demands.
 
 ---
 
@@ -424,7 +471,7 @@ Create/edit a role: `name`, `slug` (validated, kebab/snake), `description`, and 
 
 Create/edit/delete a permission: `key` (validated, the string that ends up in `PERM`), `category` (drives the grouping everywhere else), `label`, `description`.
 
-> Changing a role here changes what **every** holder of that role can reach, immediately for new sessions. Never widen a role as a side effect of unrelated work — and adding a permission row here still requires a matching `PERM` constant and a guard in code before it does anything.
+> Changing a role here changes what **every** holder of that role can reach, immediately for new sessions. Never widen a role as a side effect of unrelated work — and adding a permission row here still requires a matching `PERM` constant and a guard in code before it does anything. Assigning roles to people lives on **Admin Users**, not here.
 
 ---
 
@@ -442,7 +489,6 @@ Create/edit/delete a permission: `key` (validated, the string that ends up in `P
 
 ### 12.2 Known gaps
 
-- **Reports → Courses**: the sidebar links `/admin/reports/courses` (`reports:courses:read`) but no such route exists — it falls through to the landing redirect. Build the page or drop the item.
 - **User Onboarding open deps** — see [§6](#open-backend-dependencies).
 - **Leads export** is capped at 5 000 client-side rows.
 - **Edit user** can't prefill on a cold deep link (no get-by-id endpoint).
@@ -453,7 +499,7 @@ Create/edit/delete a permission: `key` (validated, the string that ends up in `P
 pnpm start
 ```
 
-At `http://localhost:4100/admin`:
+At `http://localhost:4101/admin`:
 
 1. Signed out → `/admin` redirects to login; `/admin/dashboard` is unreachable.
 2. Sign in as a **limited-permission** admin — `adminLandingPath` lands them somewhere they can actually see.

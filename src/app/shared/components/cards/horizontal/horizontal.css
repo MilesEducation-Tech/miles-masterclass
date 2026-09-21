@@ -1,0 +1,19 @@
+.clip {
+  --card-width: 200px;
+  --card-height: 300px;
+  --corner-offset: 20px;
+  clip-path: shape(
+    from var(--corner-offset) var(--tab-height),
+    hline to calc(var(--tab-width) - var(--corner-offset)),
+    arc to var(--tab-width) calc(var(--tab-height) / 2) of var(--corner-offset),
+    arc to calc(var(--tab-width) + var(--corner-offset)) 0 of var(--corner-offset) cw,
+    hline to calc(100% - var(--corner-offset)),
+    arc to 100% var(--corner-offset) of var(--corner-offset) cw,
+    vline to calc(100% - var(--corner-offset)),
+    arc to calc(100% - var(--corner-offset)) 100% of var(--corner-offset) cw,
+    hline to var(--corner-offset),
+    arc to 0 calc(100% - var(--corner-offset)) of var(--corner-offset) cw,
+    vline to calc(var(--tab-height) + var(--corner-offset)),
+    arc to var(--corner-offset) var(--tab-height) of var(--corner-offset) cw
+  );
+}

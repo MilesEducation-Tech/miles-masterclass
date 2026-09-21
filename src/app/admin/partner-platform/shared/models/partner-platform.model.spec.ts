@@ -1,5 +1,15 @@
+// `@angular/common/http` pulls in partially-compiled injectables (BrowserXhr)
+// that need the JIT compiler present when this runs under plain vitest.
+import '@angular/compiler';
+
+import { describe, expect, it } from 'vitest';
+
 import { HttpErrorResponse } from '@angular/common/http';
-import { partnerErrorMessage, partnerLoadError } from './partner-platform.model';
+import {
+  partnerBlobErrorMessage,
+  partnerErrorMessage,
+  partnerLoadError,
+} from './partner-platform.model';
 
 /**
  * The one thing worth pinning: every Partner Platform failure is
@@ -43,5 +53,29 @@ describe('partnerLoadError', () => {
   it('returns the backend message when the load failed', () => {
     const err = new HttpErrorResponse({ status: 403, error: { status: false, message: 'Nope.' } });
     expect(partnerLoadError(err, 'Failed to load coupons.')).toBe('Nope.');
+  });
+});
+
+/**
+ * The CSV exports request `responseType: 'blob'`, so a 4xx arrives with the
+ * JSON body wrapped in a Blob — invisible to the sync helper. The async one
+ * must read it, or every export failure degrades to "Please try again.".
+ */
+describe('partnerBlobErrorMessage', () => {
+  it('reads the backend message out of a Blob body', async () => {
+    const err = new HttpErrorResponse({
+      status: 403,
+      error: new Blob([JSON.stringify({ status: false, message: 'Nope.' })], {
+        type: 'application/json',
+      }),
+    });
+    await expect(partnerBlobErrorMessage(err)).resolves.toBe('Nope.');
+  });
+
+  it('falls back on a non-JSON blob and defers to the sync helper otherwise', async () => {
+    const junk = new HttpErrorResponse({ status: 500, error: new Blob(['<html>']) });
+    await expect(partnerBlobErrorMessage(junk)).resolves.toBe('Please try again.');
+    const plain = new HttpErrorResponse({ status: 400, error: { status: false, message: 'Bad.' } });
+    await expect(partnerBlobErrorMessage(plain)).resolves.toBe('Bad.');
   });
 });

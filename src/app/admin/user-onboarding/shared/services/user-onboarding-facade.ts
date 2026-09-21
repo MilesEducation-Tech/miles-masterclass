@@ -18,6 +18,8 @@ import {
   adminContext,
   PartnerCode,
   PartnerCodesResponse,
+  partnerErrorMessage,
+  partnerLoadError,
 } from '../../../partner-platform/shared/models/partner-platform.model';
 import {
   CompanyList,
@@ -34,6 +36,7 @@ import {
   InternalUser,
   MutateUserResponse,
   OfflinePaymentResponse,
+  OfflinePaymentResult,
   OnboardUserPayload,
   UpdateUserPayload,
   UsersListResponse,
@@ -132,7 +135,10 @@ export class UserOnboardingFacade {
 
   readonly pagination = computed(() => this.usersResource.value()?.pagination_data);
   readonly isLoading = computed(() => this.usersResource.isLoading());
-  readonly error = computed(() => this.usersResource.error());
+  /** Backend `message` when the load failed, else null — the banner renders it verbatim. */
+  readonly error = computed(() =>
+    partnerLoadError(this.usersResource.error(), 'Failed to load users.'),
+  );
 
   constructor() {
     // A search on page 3 with a different filter set would otherwise load stale rows.
@@ -295,10 +301,8 @@ export class UserOnboardingFacade {
       return true;
     } catch (err) {
       this.logger.error('[UserOnboardingFacade] createUser failed', err);
-      this.notification.error(
-        'Create failed',
-        err instanceof Error ? err.message : 'Please try again.',
-      );
+      // 409 "email exists" / 400 "invalid partner code" live on err.error, not err.message.
+      this.notification.error('Create failed', partnerErrorMessage(err));
       return false;
     }
   }
@@ -320,10 +324,7 @@ export class UserOnboardingFacade {
       return true;
     } catch (err) {
       this.logger.error('[UserOnboardingFacade] updateUser failed', err);
-      this.notification.error(
-        'Update failed',
-        err instanceof Error ? err.message : 'Please try again.',
-      );
+      this.notification.error('Update failed', partnerErrorMessage(err));
       return false;
     }
   }
@@ -336,18 +337,22 @@ export class UserOnboardingFacade {
    * API rejects both together as well as neither. The dialog enforces this, and
    * the guards below repeat it so no caller can bypass them.
    */
-  async recordOfflinePayment(userId: number, invoice: File | null, comment = ''): Promise<boolean> {
+  async recordOfflinePayment(
+    userId: number,
+    invoice: File | null,
+    comment = '',
+  ): Promise<OfflinePaymentResult | null> {
     const trimmed = comment.trim();
     if (!invoice && !trimmed) {
       this.notification.error('Payment failed', 'Attach an invoice or add a comment.');
-      return false;
+      return null;
     }
     if (invoice && trimmed) {
       this.notification.error(
         'Payment failed',
         'Send an invoice or a comment, not both — the invoice is the proof when there is one.',
       );
-      return false;
+      return null;
     }
 
     const formData = new FormData();
@@ -359,26 +364,25 @@ export class UserOnboardingFacade {
       const res = await firstValueFrom(
         this.api.post<OfflinePaymentResponse>(offlinePaymentUrl(userId), formData, this.opts()),
       );
-      if (!res?.status) {
+      if (!res?.status || !res.data) {
         this.notification.error(
           'Payment failed',
           res?.message ?? 'The backend rejected the payment record.',
         );
-        return false;
+        return null;
       }
+      // "Invoice updated." / "Note recorded." / "Free access recorded." — the
+      // backend says which branch ran (already subscribed vs. grant).
       this.notification.success(
-        'Payment recorded',
-        `Subscription ${res.data?.subscription_status ?? 'updated'}.`,
+        res.message || 'Payment recorded',
+        `Subscription ${res.data.subscription_status}.`,
       );
       this.reload();
-      return true;
+      return res.data;
     } catch (err) {
       this.logger.error('[UserOnboardingFacade] recordOfflinePayment failed', err);
-      this.notification.error(
-        'Payment failed',
-        err instanceof Error ? err.message : 'Please try again.',
-      );
-      return false;
+      this.notification.error('Payment failed', partnerErrorMessage(err));
+      return null;
     }
   }
 }

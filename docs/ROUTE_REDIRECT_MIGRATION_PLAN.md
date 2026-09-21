@@ -95,19 +95,24 @@ Everything below is either this rule, or a more-specific rule that must be evalu
 
 ### 4.2 Renamed / reshaped — explicit rules required (evaluate BEFORE 4.1)
 
-| Old path                                                   | New path                                               | Note                                           |
-| ---------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------- |
-| `/accounting/plan`                                         | `/{c}/accounting/payment/plan`                         | old already redirected `plan` → `payment/plan` |
-| `/accounting/order`                                        | `/{c}/accounting/payment/order-history`                | feature moved under payment                    |
-| `/accounting/premiere`                                     | `/{c}/accounting/webinar`                              | **renamed** premiere → webinar                 |
-| `/accounting/premiere/:id/:name`                           | `/{c}/accounting/webinar/:id/:name`                    |                                                |
-| `/accounting/terms-of-services`                            | `/{c}/accounting/terms-of-service`                     | **plural → singular**                          |
-| `/accounting/terms-of-services-mobile`                     | `/{c}/accounting/mobile/terms-of-service`              | mobile webview variant                         |
-| `/accounting/credly`                                       | `/{c}/accounting/how-to-claim-credly-badge`            |                                                |
-| `/accounting/credly/how-to-claim`                          | `/{c}/accounting/how-to-claim-credly-badge`            |                                                |
-| `/accounting/masterclass/:instructorId/expert/:expertName` | `/{c}/accounting/instructor/:instructorId/:expertName` | instructor page moved to top level             |
-| `/accounting/podcast/:instructorId/expert/:expertName`     | `/{c}/accounting/instructor/:instructorId/:expertName` |                                                |
-| `/accounting/library/masters-of-ai`                        | `/{c}/accounting/library/instructor-library`           | closest equivalent — **confirm with product**  |
+| Old path                                                   | New path                                                   | Note                                           |
+| ---------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------- |
+| `/accounting/plan`                                         | `/{c}/accounting/payment/plan`                             | old already redirected `plan` → `payment/plan` |
+| `/accounting/order`                                        | `/{c}/accounting/payment/order-history`                    | feature moved under payment                    |
+| `/accounting/premiere`                                     | `/{c}/accounting/webinar`                                  | **renamed** premiere → webinar                 |
+| `/accounting/premiere/:id/:name`                           | `/{c}/accounting/webinar/:id/:name`                        |                                                |
+| `/accounting/terms-of-services`                            | `/{c}/accounting/terms-of-service`                         | **plural → singular**                          |
+| `/accounting/terms-of-services-mobile`                     | `/{c}/accounting/mobile/terms-of-service`                  | mobile webview variant                         |
+| `/accounting/credly`                                       | `/{c}/accounting/how-to-claim-credly-badge`                |                                                |
+| `/accounting/credly/how-to-claim`                          | `/{c}/accounting/how-to-claim-credly-badge`                |                                                |
+| `/accounting/masterclass/:instructorId/expert/:expertName` | `/{c}/accounting/instructor/:instructorId/:expertName`     | instructor page moved to top level             |
+| `/accounting/podcast/:instructorId/expert/:expertName`     | `/{c}/accounting/instructor/:instructorId/:expertName`     |                                                |
+| `/accounting/library/masters-of-ai`                        | `/{c}/accounting/library/instructor-library`               | closest equivalent — **confirm with product**  |
+| `/accounting/micro-learning/:type/:id/:title`              | `/{c}/accounting/micro-learning/:id/:title`                | **listing-filter segment dropped** (see below) |
+| `/accounting/micro-learning/:type/:id`                     | `/{c}/accounting/micro-learning/:id/micro-learning-course` | no title slug → placeholder                    |
+| `/accounting/micro-learning/:type`                         | `/{c}/accounting/micro-learning`                           | bare filter → listing                          |
+
+> **micro-learning `:type`.** The old route was `/micro-learning/:type/:id/:title`, where `:type` is one of six listing filters — `explore`, `track`, `bookmark`, `completed`, `inprogress`, `course` — declared in the old route's `routeType` data. v3 dropped the segment (filters are in-page state), so its course route is just `:courseId/:courseTitle`. The generic 4.1 prefix rule does **not** cover this: it emits `/micro-learning/course/29/slug`, which v3 parses as `courseId=course` / `courseTitle=29` plus an unmatched child → `page-not-found`. The two-segment variant is worse — it 200s on the wrong course (`courseId=course`) rather than 404ing. Rules are anchored on the six literal filter words, so a course id in the first position (`/micro-learning/29/feedback/7`) still falls through to the 4.3 feedback rule.
 
 ### 4.3 Course-scoped deep links — reconstructed with a placeholder title (use 302)
 
@@ -130,14 +135,15 @@ All are 302 (auth-gated / transient). The `/report` variant is the only one stil
 
 Verified absent from the v3 route tree:
 
-| Old path                                                                               | Suggested interim target                 | Decision                               |
-| -------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------- |
-| `/accounting/guides`, `/accounting/guides/:slug`, `/accounting/guides/:slug/:question` | `/{c}/accounting/home` or `/blog`        | Port guides? Fold into blog? 410 Gone? |
-| `/accounting/help-desk`                                                                | `/{c}/accounting/connect-us`             | Port help-desk?                        |
-| `/accounting/credits`                                                                  | `/{c}/accounting/home`                   | Port credits page?                     |
-| `/accounting/library/ai-library`                                                       | `/{c}/accounting/library/course-library` | Bring AI library back?                 |
-| `/accounting/learning-pathway/:pathwaySlug/:topicId/:topicSlug`                        | `/{c}/accounting/masterclass`            | Port learning pathways?                |
-| `/accounting/sitemap`                                                                  | n/a (internal/auth tool)                 | Drop / 404                             |
+| Old path                                                                               | Suggested interim target                 | Decision                                                                                                                                                                       |
+| -------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/accounting/guides`, `/accounting/guides/:slug`, `/accounting/guides/:slug/:question` | `/{c}/accounting/home` or `/blog`        | Port guides? Fold into blog? 410 Gone?                                                                                                                                         |
+| `/accounting/help-desk`                                                                | `/{c}/accounting/connect-us`             | Port help-desk?                                                                                                                                                                |
+| `/accounting/credits`                                                                  | `/{c}/accounting/home`                   | Port credits page?                                                                                                                                                             |
+| `/accounting/library/ai-library`                                                       | `/{c}/accounting/library/course-library` | Bring AI library back?                                                                                                                                                         |
+| `/accounting/learning-pathway/:pathwaySlug/:topicId/:topicSlug`                        | `/{c}/accounting/masterclass`            | Port learning pathways?                                                                                                                                                        |
+| `/accounting/sitemap`                                                                  | `/{c}/accounting/home`                   | Old staff-only sitemap **generator**; v3 serves `/sitemap.xml` from the server. Was 404ing — now 302 to home.                                                                  |
+| `/accounting/become-an-instructor`                                                     | `/{c}/accounting/home`                   | Old invite for industry pros to teach a Masterclass. v3's `/faculty` is a **different** programme (AI-in-Accounting for educators), so it is not the successor. Port the page? |
 
 ### 4.5 Partners
 

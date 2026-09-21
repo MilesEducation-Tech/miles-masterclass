@@ -3,6 +3,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
+import { Button } from '../../../shared/components/ui/button/button';
 import {
   lucidePanelLeft,
   lucideBell,
@@ -21,10 +22,9 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/dashboard': 'Admin dashboard',
   '/admin/seo': 'SEO pages',
   '/admin/leads': 'Leads',
-  '/admin/reports/courses': 'Courses report',
   '/admin/reports/user-report': 'User report',
-  '/admin/domain-users': 'Domain users',
   '/admin/roles-permissions': 'Roles & permissions',
+  '/admin/audit-log': 'Audit log',
   '/admin/forbidden': 'Access denied',
 };
 
@@ -35,18 +35,14 @@ const SEGMENT_LABELS: Record<string, string> = {
   edit: 'Edit',
   leads: 'Leads',
   reports: 'Reports',
-  courses: 'Courses',
   'user-report': 'User report',
-  'domain-users': 'Domain users',
   'roles-permissions': 'Roles & permissions',
+  'audit-log': 'Audit log',
   forbidden: 'Forbidden',
   login: 'Login',
-  partner: 'Partner Platform',
   'partner-v2': 'Partner Platform v2',
   superadmin: 'Super Admin',
   panel: 'Panel',
-  'partner-code-tracker': 'Partner Code Tracker',
-  'user-onboarding': 'User Onboarding',
   'admin-users': 'Admin Users',
   networks: 'Networks',
   firms: 'Firms',
@@ -62,7 +58,7 @@ const SEGMENT_LABELS: Record<string, string> = {
 
 @Component({
   selector: 'app-admin-topbar',
-  imports: [NgIcon],
+  imports: [NgIcon, Button],
   providers: [
     provideIcons({ lucidePanelLeft, lucideBell, lucideDownload, lucidePlus, lucideSearch }),
   ],

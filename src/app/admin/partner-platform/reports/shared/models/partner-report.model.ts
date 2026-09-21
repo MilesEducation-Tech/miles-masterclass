@@ -14,7 +14,7 @@
  */
 import { PartnerPagination } from '../../../shared/models/partner-platform.model';
 
-export type ReportSubject = 'courses' | 'webinars';
+export type ReportSubject = 'courses' | 'webinars' | 'group_live';
 
 export type ReportExportView = 'user-summary' | 'user-items';
 
@@ -26,6 +26,7 @@ export const reportUrl = (base: ReportBase, path: string): string =>
 /** `GET .../filters/` — static reference data for a filter bar. */
 export interface ReportFilters {
   delivery_types: string[];
+  /** Reference data only — no report endpoint accepts a fields-of-study filter, so it isn't rendered. */
   fields_of_study: string[];
 }
 
@@ -54,6 +55,55 @@ export interface ReportSummary {
   total_attendance?: number;
   avg_attendance_per_webinar?: number;
   avg_feedback_per_webinar?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Certificates — `GET .../certificates/` (docs/PARTNER_PLATFORM_API.md § Course Certificates)
+// ---------------------------------------------------------------------------
+
+/**
+ * One awarded certificate. No `subject` param on this endpoint — webinars come
+ * back as `course_type: "webinar"`, so callers filter by subject client-side.
+ */
+export interface ReportCertificate {
+  course_type: string;
+  course_id: number;
+  course_name: string;
+  cpe_credits: number;
+  issued_on: string;
+  /** Resolves to the NASBA PDF only — null when the user holds just a Miles certificate. */
+  certificate_url: string | null;
+  // Flat (`user_id`) shape only; the grouped shapes carry these on the parent.
+  user_id?: number;
+  uuid?: string;
+  name?: string;
+  email?: string;
+}
+
+export interface ReportCertificateUser {
+  user_id: number;
+  uuid: string;
+  name: string;
+  email: string;
+  certificates: ReportCertificate[];
+}
+
+export interface ReportCertificateFirm {
+  firm_id: number;
+  firm_name: string;
+  users: ReportCertificateUser[];
+}
+
+/**
+ * Shape follows how narrow the query is: `user_id` → `certificates`; a firm →
+ * `users`; a network → `firms` + `unassigned_users` (network-pool seats with
+ * no firm). Exactly one of the three layouts is present per response.
+ */
+export interface ReportCertificatesResponse {
+  certificates?: ReportCertificate[];
+  users?: ReportCertificateUser[];
+  firms?: ReportCertificateFirm[];
+  unassigned_users?: ReportCertificateUser[];
 }
 
 // ---------------------------------------------------------------------------
@@ -115,6 +165,25 @@ export interface ReportItemRow {
   webinar_id?: number;
   webinar_name?: string;
   is_attended?: boolean;
+}
+
+/** One subject's slice of the printable preview: its summary + every user row. */
+export interface ReportPreviewSubject {
+  summary: ReportSummary;
+  users: ReportUserRow[];
+}
+
+/**
+ * Everything the "Partner Learning Report" preview renders, fetched in one go
+ * for BOTH subjects (the page itself only ever holds one at a time).
+ */
+export interface ReportPreviewBundle {
+  /** ISO timestamp — the footer's "generated" date. */
+  generatedAt: string;
+  dateFrom: string;
+  dateTo: string;
+  courses: ReportPreviewSubject;
+  webinars: ReportPreviewSubject;
 }
 
 export interface ReportItemsResponse {

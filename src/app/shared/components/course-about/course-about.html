@@ -1,0 +1,442 @@
+<div class="flex flex-col md:gap-20 gap-10 py-10">
+  @if (type() === 'webinar') {
+    @let instructorList =
+      [card().instructor_details, ...card().instructor_details.other_instructors];
+    <div class="flex flex-col space-y-4">
+      @for (ins of instructorList; track ins.id) {
+        <div
+          class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-md bg-white/5 hover:bg-white/10 cursor-pointer transition-colors shrink-0"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="ins.first_name + ' ' + ins.last_name"
+          (click)="onInstructorClick(ins)"
+          (keydown.enter)="onInstructorClick(ins)"
+          (keydown.space)="onInstructorClick(ins); $event.preventDefault()"
+        >
+          <div class="flex flex-col min-w-0 flex-1">
+            <p class="text-base md:text-lg font-semibold text-white truncate">
+              {{ ins.first_name }} {{ ins.last_name }}
+            </p>
+            @if (ins.designation) {
+              <p class="text-xs md:text-sm font-normal text-white/70 truncate">
+                {{ ins.designation }}
+              </p>
+            }
+          </div>
+          <ng-icon [svg]="icons().faSolidArrowUpRightFromSquare" class="text-white shrink-0" />
+        </div>
+      }
+    </div>
+  }
+  <!-- COURSE DESCRIPTION SECTION -->
+  <section class="flex w-full gap-8 max-md:flex-col">
+    <div class="md:w-1/4 w-full">
+      <h2 class="text-white md:text-3xl text-xl font-semibold">Course Description</h2>
+      <p class="md:text-sm text-xs text-gray-400 mt-2">
+        A quick snapshot of what this Masterclass covers!
+      </p>
+    </div>
+    <div class="md:w-3/4 w-full text-gray-300 md:text-base text-sm font-medium leading-relaxed">
+      {{ card().course_overview }}
+    </div>
+  </section>
+
+  <!-- LEARNING OBJECTIVES SECTION -->
+  <section class="flex w-full gap-8 max-md:flex-col">
+    <div class="md:w-1/4 w-full">
+      <h2 class="text-white md:text-3xl text-xl font-semibold">Learning Objectives</h2>
+      <p class="md:text-sm text-xs text-gray-400 mt-2">
+        Discover the key takeaways and skills you'll build throughout this Masterclass!
+      </p>
+    </div>
+    <div class="md:w-3/4 w-full">
+      <ul class="flex flex-col gap-2">
+        @for (item of card().learning_objective_list; track $index) {
+          <li class="text-white md:text-base text-sm font-medium bg-slate-800 rounded-lg p-3">
+            {{ item }}
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+  @if (type() !== 'webinar') {
+    <!-- ABOUT SECTION - Stats Grid -->
+    <section class="grid xl:grid-cols-5 md:grid-cols-2 grid-cols-1 gap-6 min-h-96">
+      <!-- Instructor & Expiration Column -->
+      <div class="xl:col-span-2 flex flex-col gap-6">
+        <!-- Instructor Card -->
+        @if (card().instructor_details?.other_instructors?.length) {
+          @let instructorList =
+            [card().instructor_details, ...card().instructor_details.other_instructors];
+          <div
+            class="aspect-video rounded-lg overflow-y-auto border-accent/60 p-3 flex flex-col gap-2 border"
+          >
+            @for (ins of instructorList; track ins.id) {
+              <div
+                class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-md bg-white/5 hover:bg-white/10 cursor-pointer transition-colors shrink-0"
+                role="button"
+                tabindex="0"
+                [attr.aria-label]="ins.first_name + ' ' + ins.last_name"
+                (click)="onInstructorClick(ins)"
+                (keydown.enter)="onInstructorClick(ins)"
+                (keydown.space)="onInstructorClick(ins); $event.preventDefault()"
+              >
+                <div class="flex flex-col min-w-0 flex-1">
+                  <p class="text-base md:text-lg font-semibold text-white truncate">
+                    {{ ins.first_name }} {{ ins.last_name }}
+                  </p>
+                  @if (ins.designation) {
+                    <p class="text-xs md:text-sm font-normal text-white/70 truncate">
+                      {{ ins.designation }}
+                    </p>
+                  }
+                </div>
+                <ng-icon
+                  [svg]="icons().faSolidArrowUpRightFromSquare"
+                  class="text-white shrink-0"
+                />
+              </div>
+            }
+          </div>
+        } @else {
+          <div
+            class="relative aspect-video rounded-lg overflow-hidden cursor-pointer group"
+            role="button"
+            (click)="
+              onInstructorClick({
+                id: card().instructor_details.id,
+                first_name: card().instructor_details.first_name,
+                last_name: card().instructor_details.last_name,
+              })
+            "
+            tabindex="0"
+            (keydown.enter)="
+              onInstructorClick({
+                id: card().instructor_details.id,
+                first_name: card().instructor_details.first_name,
+                last_name: card().instructor_details.last_name,
+              })
+            "
+            (keydown.space)="
+              onInstructorClick({
+                id: card().instructor_details.id,
+                first_name: card().instructor_details.first_name,
+                last_name: card().instructor_details.last_name,
+              });
+              $event.preventDefault()
+            "
+          >
+            <img
+              [ngSrc]="
+                card().instructor_details.horizontal_thumbnail || card().horizontal_thumbnail
+              "
+              [alt]="
+                card().instructor_details.first_name + ' ' + card().instructor_details.last_name
+              "
+              fill
+              class="object-cover"
+            />
+            <div class="absolute inset-0 bg-linear-to-t from-black/80 to-transparent z-10"></div>
+            <div class="absolute right-4 bottom-4 z-20">
+              <ng-icon [svg]="icons().faSolidArrowUpRightFromSquare" class="text-white" />
+            </div>
+            <div class="absolute bottom-0 left-0 z-20 p-4 w-full">
+              <p class="md:text-2xl text-lg font-bold text-white">
+                {{ card().instructor_details.first_name }}
+                {{ card().instructor_details.last_name }}
+              </p>
+            </div>
+          </div>
+        }
+
+        <!-- Expiration Date Card -->
+        <div class="flex flex-col gap-4 flex-1">
+          <h3 class="text-base font-semibold text-white">Expiration Date</h3>
+          <div
+            class="bg-slate-800 rounded-lg p-4 flex-1 flex items-center text-white md:text-base text-sm"
+          >
+            1 year from the start of the course/upon subscription expiry
+          </div>
+        </div>
+      </div>
+
+      <!-- Duration & Chapters Column -->
+      <div class="xl:col-span-1 flex flex-col gap-6">
+        <!-- Course Duration Card — driven by `course_duration` (minutes), split into hours/mins. -->
+        <div class="flex flex-col gap-4">
+          <h3 class="text-base font-semibold text-white">Course Duration</h3>
+          <div class="flex gap-4">
+            <div
+              class="flex-1 bg-slate-800 rounded-lg p-4 flex flex-col items-center justify-center"
+            >
+              <span class="md:text-2xl text-lg font-bold text-white">
+                {{ courseDurationParts().hours }}
+              </span>
+              <span class="md:text-sm text-xs text-gray-400">Hours</span>
+            </div>
+            <div
+              class="flex-1 bg-slate-800 rounded-lg p-4 flex flex-col items-center justify-center"
+            >
+              <span class="md:text-2xl text-lg font-bold text-white">
+                {{ courseDurationParts().minutes }}
+              </span>
+              <span class="md:text-sm text-xs text-gray-400">Mins</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapters Card -->
+        <div
+          class="flex-1 bg-radial-[at_75%_25%] from-primary to-slate-800 to-55% rounded-lg p-4 flex flex-col justify-between"
+        >
+          <p class="text-4xl font-bold text-white">
+            {{ card().no_of_chapters || 0 }}
+          </p>
+          <div class="flex flex-col gap-2">
+            <p class="md:text-xl text-base font-semibold text-white">
+              {{ card().no_of_chapters > 1 ? 'Chapters' : 'Chapter' }}
+            </p>
+            <p class="md:text-sm text-xs text-white/80">
+              Organized into clear, concise chapters for easy learning!
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Topics & Learning Pathway Column -->
+      <div class="xl:col-span-2 flex flex-col gap-6">
+        <!-- Topics Card -->
+        <div
+          class="xl:flex-1 xl:min-h-0 xl:basis-1/2 bg-linear-to-br from-slate-800 to-slate-800 rounded-lg p-4 flex flex-col gap-4"
+        >
+          <div class="shrink-0">
+            <h3 class="md:text-xl text-base font-semibold text-white">Topics Covered</h3>
+            <p class="md:text-sm text-xs text-white/80">
+              Key concepts and skills you'll master throughout this Masterclass
+            </p>
+          </div>
+          <div class="xl:flex-1 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
+            <div class="flex flex-wrap gap-2 content-start">
+              @for (item of card().topics; track $index) {
+                <span
+                  class="px-3 py-1.5 rounded-full bg-white/20 text-white md:text-sm text-xs backdrop-blur-sm"
+                >
+                  {{ item }}
+                </span>
+              } @empty {
+                <span class="px-3 py-1.5 rounded-full bg-white/20 text-white md:text-sm text-xs">
+                  No Topics
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Learning Pathway Card -->
+        <div
+          class="xl:flex-1 xl:min-h-0 xl:basis-1/2 bg-radial-[at_100%_25%] from-primary to-slate-800 to-65% rounded-lg p-4 relative overflow-hidden flex flex-col"
+        >
+          <div
+            class="relative z-10 flex flex-col gap-3 xl:flex-1 xl:min-h-0 xl:overflow-y-auto xl:pr-1"
+          >
+            @if (card().learning_pathway_info?.length) {
+              @for (pathway of card().learning_pathway_info; track pathway.pathway_id) {
+                <div class="flex flex-col gap-0.5 shrink-0">
+                  <p class="md:text-xl text-base font-semibold text-white">
+                    {{ pathway.pathway_name }}
+                  </p>
+                  <p class="md:text-sm text-xs text-white/80">
+                    {{ pathway.topic_name }}
+                  </p>
+                </div>
+              }
+            } @else {
+              <p class="md:text-xl text-base font-semibold text-gray-400">
+                No Learning Pathway Available
+              </p>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- Certifying organizations only mean something when the course carries CPE
+       credit; a 0-credit course has no NASBA claim to make. -->
+  @if (cpeCredits() > 0) {
+    <!-- CERTIFYING ORGANIZATION SECTION -->
+    <section class="flex w-full gap-8 max-md:flex-col">
+      <div class="md:w-1/4 w-full">
+        <h2 class="text-white md:text-3xl text-xl font-semibold">Certifying Organizations</h2>
+      </div>
+
+      <div class="md:w-3/4 w-full flex flex-col gap-12">
+        <!-- NASBA Section -->
+        <div class="flex flex-col gap-8">
+          <h3 class="text-white md:text-lg text-base font-semibold">
+            National Association of State Boards of Accountancy (NASBA)
+          </h3>
+
+          <div class="w-24 md:w-28 relative h-32 md:h-36">
+            <img
+              ngSrc="https://asset.milesmasterclass.com/media/web-app/home/nasba.webp"
+              alt="NASBA Logo"
+              class="w-full h-auto"
+              fill
+            />
+          </div>
+
+          <!-- CPE Details -->
+          <div class="flex flex-col gap-6">
+            <ul class="flex flex-col gap-3 text-gray-400">
+              <li class="md:text-base text-sm">
+                Continuing Professional Education Credit (CPE):
+                <span class="text-white font-medium">{{
+                  card().fields_of_study | totalCpeCredits: card().class_credits
+                }}</span>
+              </li>
+              <li class="md:text-base text-sm">
+                Fields of Study:
+                <app-categories-list
+                  class="text-white font-medium inline-block w-full max-w-full align-middle"
+                  [items]="card().fields_of_study ?? []"
+                  [separator]="'| '"
+                  [showCredits]="true"
+                />
+              </li>
+              <li class="md:text-base text-sm">
+                Sponsor Identification number:
+                <span class="text-white font-medium">149174</span>
+              </li>
+              <li class="md:text-base text-sm">
+                Instructional Delivery Method:
+                <span class="text-white font-medium ml-2">{{ card().int_delivery_method }}</span>
+              </li>
+              <li class="md:text-base text-sm">
+                Program Level:
+                <span class="text-white font-medium ml-2">{{ card().program_level }}</span>
+              </li>
+              <li class="md:text-base text-sm">
+                Prerequisite Education:
+                <span class="text-white font-medium ml-2">{{ card().prerequisite_education }}</span>
+              </li>
+              @if (card().advance_preparation) {
+                <li class="md:text-base text-sm">
+                  Advanced Preparation:
+                  <span class="text-white font-medium ml-2">{{ card().advance_preparation }}</span>
+                </li>
+              }
+            </ul>
+
+            <!-- Dates -->
+            <ul class="flex flex-col gap-2 text-gray-400">
+              @if (card().course_created_date) {
+                <li class="md:text-base text-sm">
+                  Created on:
+                  <span class="text-white">{{
+                    card().course_created_date | date: 'dd MMM yyyy'
+                  }}</span>
+                </li>
+              }
+              @if (card().course_reviewed_date) {
+                <li class="md:text-base text-sm">
+                  Reviewed on:
+                  <span class="text-white">{{
+                    card().course_reviewed_date | date: 'dd MMM yyyy'
+                  }}</span>
+                </li>
+              }
+              @if (card().course_updated_date) {
+                <li class="md:text-base text-sm">
+                  Updated on:
+                  <span class="text-white">{{
+                    card().course_updated_date | date: 'dd MMM yyyy'
+                  }}</span>
+                </li>
+              }
+              @if (card().total_duration) {
+                <li class="md:text-base text-sm">
+                  Video Duration:
+                  <span class="text-white">{{ card().total_duration | duration: 'medium' }}</span>
+                </li>
+              }
+            </ul>
+
+            <!-- CPE Credits Requirements -->
+            <div class="flex flex-col gap-3">
+              <h4 class="text-white md:text-lg text-base font-medium">
+                To earn CPE credits, the learner is expected to:
+              </h4>
+              @if (type() === 'webinar') {
+                <ul class="flex flex-col gap-2 text-gray-400 list-disc pl-5">
+                  <li class="md:text-base text-sm">
+                    Answer {{ card().no_question_answered }} poll questions during the webinar
+                  </li>
+                  <li class="md:text-base text-sm">
+                    Attend at least {{ webinarAttendanceMinutes() | duration: 'medium' }} of the
+                    {{ card().webinar_duration | duration: 'medium' }} webinar
+                  </li>
+                </ul>
+              } @else {
+                <ul class="flex flex-col gap-2 text-gray-400 list-disc pl-5">
+                  <li class="md:text-base text-sm">Complete all videos and chapter quizzes</li>
+                  <li class="md:text-base text-sm">
+                    Complete the final exam within one year from completing the course
+                  </li>
+                  <li class="md:text-base text-sm">Score 70% or higher on final exam</li>
+                </ul>
+              }
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="text-gray-400 md:text-base text-sm leading-relaxed">
+              <p>
+                If you undertake this course for CPE credits, you can leave final comments in the
+                Feedback.
+              </p>
+              <p class="mt-4">
+                Miles Masterclass Inc. is registered with the National Association of State Boards
+                of Accountancy (NASBA) as a sponsor of continuing professional education on the
+                National Registry of CPE Sponsors. State boards of accountancy have final authority
+                on the acceptance of individual courses for CPE credit. Complaints regarding
+                registered sponsors may be submitted to the National Registry of CPE Sponsors
+                through its web site:
+                <a
+                  href="https://nasbaregistry.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-blue-400 hover:text-blue-300 underline transition-colors"
+                >
+                  www.nasbaregistry.org
+                </a>
+              </p>
+              <p class="mt-4">
+                For course refund policy, issue resolution, and additional info please refer to the
+                FAQs on the Overview tab. For more information regarding administrative policies
+                such as complaint and refund, please contact our offices at
+                <a
+                  href="mailto:support@milesmasterclass.com"
+                  class="text-blue-400 hover:text-blue-300 underline transition-colors"
+                >
+                  support&#64;milesmasterclass.com
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Miles Masterclass Section -->
+        <div class="flex flex-col gap-6">
+          <h3 class="text-white md:text-lg text-base font-semibold">Miles Masterclass Inc.</h3>
+          <div class="w-1/4">
+            <ng-icon [svg]="icons().logo" class="w-full! h-full!" />
+          </div>
+          <p class="text-gray-400 md:text-base text-sm">
+            To earn the Miles Learning Certificate, the learner is expected to complete all videos
+            and chapter quizzes
+          </p>
+        </div>
+      </div>
+    </section>
+  }
+</div>

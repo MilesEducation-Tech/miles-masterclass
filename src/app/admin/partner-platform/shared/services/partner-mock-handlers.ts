@@ -9,6 +9,9 @@ import {
 import { Observable, of, throwError } from 'rxjs';
 import { InternalUser } from '../../../user-onboarding/shared/models/user-onboarding.model';
 import {
+  ReportCertificate,
+  ReportCertificatesResponse,
+  ReportCertificateUser,
   ReportFilters,
   ReportItemsResponse,
   ReportSummary,
@@ -60,7 +63,7 @@ const FIRMS: Firm[] = [
     name: 'Google',
     network: NETWORK_REF,
     is_standalone: false,
-    email_domain: 'google.com',
+    email_domains: ['google.com'],
     is_active: true,
     allocated_seats: 10,
     used_seats: 3,
@@ -70,7 +73,7 @@ const FIRMS: Firm[] = [
     name: 'Amazon',
     network: NETWORK_REF,
     is_standalone: false,
-    email_domain: 'amazon.com',
+    email_domains: ['amazon.com'],
     is_active: true,
     allocated_seats: 2,
     used_seats: 0,
@@ -80,7 +83,7 @@ const FIRMS: Firm[] = [
     name: 'Deloitte',
     network: null,
     is_standalone: true,
-    email_domain: 'deloitte.com',
+    email_domains: ['deloitte.com'],
     is_active: true,
     allocated_seats: 5,
     used_seats: 1,
@@ -180,6 +183,8 @@ const ME: Record<MockRole, PartnerAdminMeResponse> = {
     role: 'super',
     network: null,
     firm: null,
+    // A real Django super holds no capabilities (IsSuperAdmin is the gate);
+    // the fixture keeps some so the panel pages have something to render.
     capabilities: [
       'report:network:read',
       'code:create:network',
@@ -305,13 +310,13 @@ const INTERNAL_USERS: InternalUser[] = [
     last_login: '2026-08-20T09:00:00Z',
     creation_platform: 'PartnerOnboarding',
     account_type: 'SGA',
-    profession: 1,
-    professional_courses: [1],
-    state_board: [2],
+    profession: 'CPA',
+    professional_courses: ['Auditing'],
+    state_board: ['New York'],
     country_selected: 'United States',
-    company: 16,
-    sector: 1,
-    job_role: 1,
+    company: 'Google',
+    sector: 'Finance',
+    job_role: 'Analyst',
     partner_code: 'ACME-STD',
     is_subscribed: true,
   },
@@ -373,13 +378,103 @@ function reportSummary(subject: string): ReportSummary {
       };
 }
 
-function reportUsers(subject: string): ReportUsersResponse {
+/** A one-page "Certificate" PDF as a data: URL — `fetch()` accepts it, so zips build offline. */
+const MOCK_PDF =
+  'data:application/pdf;base64,' +
+  btoa(
+    '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n' +
+      '3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 144]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n' +
+      '4 0 obj<</Length 60>>stream\nBT /F1 18 Tf 40 70 Td (Mock certificate) Tj ET\nendstream\nendobj\n' +
+      '5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\ntrailer<</Root 1 0 R>>',
+  );
+
+const CERT_AUDITING: ReportCertificate = {
+  course_type: 'masterclass',
+  course_id: 88,
+  course_name: 'Advanced Auditing',
+  cpe_credits: 4,
+  issued_on: '2026-08-14T10:32:05Z',
+  certificate_url: MOCK_PDF,
+};
+const CERT_ETHICS: ReportCertificate = {
+  course_type: 'webinar',
+  course_id: 40,
+  course_name: 'Ethics in Practice',
+  cpe_credits: 2,
+  issued_on: '2026-08-20T09:00:00Z',
+  certificate_url: MOCK_PDF,
+};
+
+/** Jane holds both; Ravi's reels course has a Miles-only certificate → null URL (the API caveat). */
+const CERT_USERS: ReportCertificateUser[] = [
+  {
+    user_id: 501,
+    uuid: 'miles-jane01',
+    name: 'Jane Doe',
+    email: 'jane@google.com',
+    certificates: [CERT_AUDITING, CERT_ETHICS],
+  },
+  {
+    user_id: 502,
+    uuid: 'miles-ravi02',
+    name: 'Ravi Kumar',
+    email: 'ravi@google.com',
+    certificates: [
+      {
+        course_type: 'nano_learning',
+        course_id: 12,
+        course_name: 'Revenue Recognition Reels',
+        cpe_credits: 1,
+        issued_on: '2026-07-01T12:00:00Z',
+        certificate_url: null,
+      },
+    ],
+  },
+];
+
+/** `certificates/` — flat for a user, grouped by user for a firm, firm → user for a network. */
+function reportCertificates(
+  base: string,
+  role: MockRole,
+  q: URLSearchParams,
+): ReportCertificatesResponse {
+  const courseId = q.get('course_id');
+  const byCourse = (c: ReportCertificate) => !courseId || c.course_id === Number(courseId);
+  const users = CERT_USERS.map((u) => ({ ...u, certificates: u.certificates.filter(byCourse) }));
+  const userId = q.get('user_id');
+  if (userId) {
+    const u = users.find((x) => x.user_id === Number(userId));
+    return {
+      certificates: (u?.certificates ?? []).map((c) => ({
+        ...c,
+        user_id: u!.user_id,
+        uuid: u!.uuid,
+        name: u!.name,
+        email: u!.email,
+      })),
+    };
+  }
+  const networkWide = base === 'superadmin' ? q.has('network_id') : role === 'network';
+  if (networkWide) {
+    return {
+      firms: [
+        { firm_id: 16, firm_name: 'Google', users },
+        { firm_id: 17, firm_name: 'Amazon', users: [] },
+      ],
+      unassigned_users: [],
+    };
+  }
+  return { users };
+}
+
+function reportUsers(subject: string, params: URLSearchParams): ReportUsersResponse {
   const identities = [
     { user_id: 501, uuid: 'miles-jane01', name: 'Jane Doe', email: 'jane@google.com' },
     { user_id: 502, uuid: 'miles-ravi02', name: 'Ravi Kumar', email: 'ravi@google.com' },
-  ];
+  ].filter((u) => inDateRange(u.user_id, params));
+  const page = paginate(identities, params, 30);
   return {
-    users: identities.map((u, i) =>
+    users: page.rows.map((u, i) =>
       subject === 'webinars'
         ? {
             ...u,
@@ -399,12 +494,7 @@ function reportUsers(subject: string): ReportUsersResponse {
             total_certificates_awarded: 2 - i,
           },
     ),
-    pagination_data: {
-      total_count: 2,
-      current_page_number: 1,
-      next_page: null,
-      previous_page: null,
-    },
+    pagination_data: page.pagination_data,
   };
 }
 
@@ -477,6 +567,32 @@ const NEW_ADMIN: PartnerAdmin = {
 
 // ---- Wiring ----------------------------------------------------------------
 
+/** Page-number pagination the way every list endpoint does it. */
+function paginate<T>(rows: T[], params: URLSearchParams, defaultSize: number) {
+  const page = Math.max(1, Number(params.get('page') ?? 1));
+  const size = Math.max(1, Number(params.get('page_size') ?? defaultSize));
+  const pages = Math.max(1, Math.ceil(rows.length / size));
+  return {
+    rows: rows.slice((page - 1) * size, page * size),
+    pagination_data: {
+      total_count: rows.length,
+      current_page_number: page,
+      next_page: page < pages ? page + 1 : null,
+      previous_page: page > 1 ? page - 1 : null,
+    },
+  };
+}
+
+/** Last activity per report identity — what `date_from`/`date_to` filter on. */
+const LAST_ACTIVE: Record<number, string> = { 501: '2026-08-20', 502: '2026-07-01' };
+
+function inDateRange(userId: number, params: URLSearchParams): boolean {
+  const day = LAST_ACTIVE[userId] ?? '';
+  const from = params.get('date_from');
+  const to = params.get('date_to');
+  return (!from || day >= from) && (!to || day <= to);
+}
+
 /** Seats filtered the way the server would, then wrapped in page-number pagination. */
 function seatPage(params: URLSearchParams) {
   const status = params.get('status');
@@ -493,15 +609,8 @@ function seatPage(params: URLSearchParams) {
         .includes(search),
     );
   }
-  return {
-    seats: rows,
-    pagination_data: {
-      total_count: rows.length,
-      current_page_number: Number(params.get('page') ?? 1),
-      next_page: null,
-      previous_page: null,
-    },
-  };
+  const page = paginate(rows, params, 20);
+  return { seats: page.rows, pagination_data: page.pagination_data };
 }
 
 /**
@@ -541,20 +650,30 @@ export function handleMock(
 
   // Reports — same five leaves under both bases; only the scope rule differs.
   const report =
-    /^(superadmin|panel)\/report\/(summary|users|user-items|filters|export-csv)\/$/.exec(path);
+    /^(superadmin|panel)\/report\/(summary|users|user-items|certificates|filters|export-csv)\/$/.exec(
+      path,
+    );
   if (req.method === 'GET' && report) {
     const [, base, leaf] = report;
-    // `filters/` takes no params; everything else on the superadmin base
-    // requires exactly one of network_id/firm_id.
-    if (base === 'superadmin' && leaf !== 'filters') {
+    // `filters/` takes no params; `certificates/` may anchor on user_id instead;
+    // everything else on the superadmin base requires exactly one of network_id/firm_id.
+    if (
+      base === 'superadmin' &&
+      leaf !== 'filters' &&
+      !(leaf === 'certificates' && query.has('user_id'))
+    ) {
       const scoped = [query.get('network_id'), query.get('firm_id')].filter(Boolean).length;
       if (scoped !== 1) return fail(400, 'Pass exactly one of network_id or firm_id.');
     }
     const subject = query.get('subject') ?? 'courses';
     if (leaf === 'summary') return ok(reportSummary(subject));
-    if (leaf === 'users') return ok(reportUsers(subject));
-    if (leaf === 'user-items') return ok(reportItems(subject, Number(query.get('user_id'))));
+    if (leaf === 'users') return ok(reportUsers(subject, query));
+    if (leaf === 'user-items') {
+      const userId = Number(query.get('user_id'));
+      return ok(inDateRange(userId, query) ? reportItems(subject, userId) : { items: [] });
+    }
     if (leaf === 'filters') return ok(REPORT_FILTERS);
+    if (leaf === 'certificates') return ok(reportCertificates(base, role, query));
     return csv(`Partner Report ${subject} ${query.get('view') ?? 'user-summary'}.csv`, [
       ['name', 'email', 'total_cpe_credits_awarded'],
       ['Jane Doe', 'jane@google.com', '8'],
@@ -576,7 +695,20 @@ export function handleMock(
       if (role === 'firm') query.set('firm_id', '18');
       return ok(seatPage(query));
     }
-    if (path === 'panel/users/') return ok(PANEL_USERS);
+    if (path === 'panel/users/') {
+      const search = query.get('search')?.trim().toLowerCase();
+      const blocked = query.get('blocked_status');
+      let rows = PANEL_USERS.data;
+      if (blocked === 'blocked') rows = rows.filter((u) => u.is_blocked);
+      if (blocked === 'active') rows = rows.filter((u) => !u.is_blocked);
+      if (search) {
+        rows = rows.filter((u) =>
+          `${u.name} ${u.email} ${u.phone ?? ''}`.toLowerCase().includes(search),
+        );
+      }
+      const page = paginate(rows, query, 30);
+      return ok({ data: page.rows, pagination_data: page.pagination_data });
+    }
     if (path === 'panel/users/export-csv/') {
       return csv('Partner Users Report.csv', [
         ['Name', 'Email', 'Phone', 'Blocked'],
@@ -599,16 +731,12 @@ export function handleMock(
           `${u.first_name} ${u.last_name} ${u.email}`.toLowerCase().includes(search),
         );
       }
+      const page = paginate(rows, query, 30);
       return ok({
         status_code: 200,
         message: 'Users returned successfully!',
-        data: rows,
-        pagination_data: {
-          total_count: rows.length,
-          current_page_number: Number(query.get('page') ?? 1),
-          next_page: null,
-          previous_page: null,
-        },
+        data: page.rows,
+        pagination_data: page.pagination_data,
       });
     }
 
@@ -666,7 +794,7 @@ export function handleMock(
       const body = (req.body ?? {}) as {
         name?: string;
         network?: number;
-        email_domain?: string;
+        email_domains?: string[];
         admin?: { supabase_uid: string; email?: string };
         allocations?: { count: number }[];
       };
@@ -676,7 +804,7 @@ export function handleMock(
         name: body.name ?? 'New firm',
         network: body.network != null ? NETWORK_REF : null,
         is_standalone: body.network == null,
-        email_domain: body.email_domain ?? '',
+        email_domains: body.email_domains ?? [],
         is_active: true,
         allocated_seats: minted,
         used_seats: 0,
@@ -703,28 +831,58 @@ export function handleMock(
     }
 
     if (path === 'superadmin/partner-codes/') {
-      const body = (req.body ?? {}) as { code?: string; discounted_price?: number };
+      const body = (req.body ?? {}) as {
+        code?: string;
+        discounted_price?: number;
+        description?: string;
+        stripe_price_id?: string;
+        auto_subscribe?: boolean;
+        network?: number;
+        firm?: number;
+        valid_to?: string;
+      };
       return created({
-        ...PARTNER_CODES[0],
         id: 34,
         code: body.code ?? 'NEW-CODE',
+        description: body.description ?? null,
         discounted_price: String(body.discounted_price ?? 0),
-      });
+        stripe_price_id: body.stripe_price_id ?? null,
+        auto_subscribe: body.auto_subscribe ?? false,
+        network: body.network != null ? NETWORK_REF : null,
+        firm: body.firm != null ? (FIRMS.find((f) => f.id === body.firm) ?? GOOGLE) : null,
+        valid_to: body.valid_to ?? null,
+        is_active: true,
+      } satisfies PartnerCode);
     }
 
     if (path === 'superadmin/partner-admins/') {
-      const body = (req.body ?? {}) as { supabase_uid?: string; email?: string };
+      const body = (req.body ?? {}) as {
+        supabase_uid?: string;
+        email?: string;
+        role?: PartnerAdmin['role'];
+        network?: number;
+        firm?: number;
+        capabilities?: PartnerAdmin['capabilities'];
+      };
       return created({
         ...NEW_ADMIN,
         supabase_uid: body.supabase_uid ?? NEW_ADMIN.supabase_uid,
         email: body.email ?? NEW_ADMIN.email,
-      });
+        role: body.role ?? NEW_ADMIN.role,
+        network: body.network != null ? NETWORK_REF : null,
+        firm: body.firm != null ? (FIRMS.find((f) => f.id === body.firm) ?? GOOGLE) : null,
+        capabilities: body.capabilities ?? [],
+      } satisfies PartnerAdmin);
     }
 
     if (path === 'superadmin/users/') {
-      const email = ((req.body as { email?: string } | null)?.email ?? '').toLowerCase();
+      const body = (req.body ?? {}) as { email?: string; partner_code?: string };
+      const email = (body.email ?? '').toLowerCase();
       if (INTERNAL_USERS.some((u) => u.email === email)) {
         return fail(409, 'A user with that email already exists.');
+      }
+      if (body.partner_code && !PARTNER_CODES.some((c) => c.code === body.partner_code)) {
+        return fail(400, 'Invalid partner code.');
       }
       return created({ status: true, message: 'User created.' });
     }
@@ -737,9 +895,17 @@ export function handleMock(
       if (!invoice && !comment) return fail(400, 'Attach an invoice or add a comment.');
       if (invoice && comment) return fail(400, 'Send an invoice or a comment, not both.');
       const userId = Number(offlinePayment[1]);
+      // Already subscribed → the proof attaches to the existing transaction;
+      // otherwise the proof IS the payment and a subscription is granted now.
+      const subscribed = INTERNAL_USERS.find((u) => u.id === userId)?.is_subscribed ?? false;
+      const message = invoice
+        ? 'Invoice updated.'
+        : subscribed
+          ? 'Note recorded.'
+          : 'Free access recorded.';
       return ok({
         status: true,
-        message: 'Invoice updated.',
+        message,
         data: {
           user_id: userId,
           order_id: 812,
@@ -748,16 +914,20 @@ export function handleMock(
           payment_mode: 'Offline',
           amount_paid: 99,
           subscription_status: 'Active',
-          receipt_url: invoice ? 'https://example.com/invoices/mock.pdf' : '',
+          receipt_url: invoice ? 'https://example.com/invoices/mock.pdf' : null,
+          payment_note: typeof comment === 'string' ? comment : null,
         },
       });
     }
   }
 
   if (req.method === 'PATCH' && path === 'superadmin/users/') {
-    const userId = (req.body as { user_id?: number } | null)?.user_id;
-    if (!userId || !INTERNAL_USERS.some((u) => u.id === userId)) {
+    const body = (req.body ?? {}) as { user_id?: number; partner_code?: string };
+    if (!body.user_id || !INTERNAL_USERS.some((u) => u.id === body.user_id)) {
       return fail(404, 'User not found.');
+    }
+    if (body.partner_code && !PARTNER_CODES.some((c) => c.code === body.partner_code)) {
+      return fail(400, 'Invalid partner code.');
     }
     return ok({ status: true, message: 'User updated.' });
   }

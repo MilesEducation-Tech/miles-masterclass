@@ -212,6 +212,24 @@ export interface CoInstructorDetails {
 
 export type UserFeedbackDetails = Record<string, any>;
 
+/**
+ * CTA states a webinar surface can show. Lived in the webinar feature's
+ * `webinar-status.ts` until that logic was removed; the templates still switch
+ * on these literals, so the union lives with the model it describes.
+ */
+export type WebinarCta =
+  | 'book'
+  | 'joined'
+  | 'join-live'
+  | 'submit-feedback'
+  | 'download-certificate'
+  | 'watch-recording'
+  | 'series-awarded'
+  | 'ended';
+
+/** Lifecycle chip rendered over webinar artwork. */
+export type WebinarTag = 'upcoming' | 'live' | 'ended';
+
 export interface UpcomingPremiere {
   id: number;
   /** CPE fields of study; source for the `2 Credits` badge on cards. */

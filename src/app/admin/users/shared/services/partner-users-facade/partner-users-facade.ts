@@ -26,11 +26,14 @@ import {
   BlockStatusRequest,
   BlockStatusResponse,
   EMPTY_PAGINATION,
+  partnerBlobErrorMessage,
   partnerErrorMessage,
+  partnerLoadError,
   PartnerPagination,
   PartnerPanelUser,
   PartnerPanelUsersResponse,
 } from '../../../../partner-platform/shared/models/partner-platform.model';
+import { PartnerAdminMe } from '../../../../partner-platform/shared/services/partner-admin-me';
 
 const PANEL_USERS = 'partners/panel/users/';
 const PANEL_USERS_EXPORT = `${PANEL_USERS}export-csv/`;
@@ -48,9 +51,12 @@ const PAGE_SIZE = 30;
  * `email_domain` query param the client supplied, which meant the endpoint
  * answered to anyone who guessed a domain. Nothing here may send a scope again.
  */
-@Injectable({ providedIn: 'root' })
+// Route-scoped (see admin.routes.ts): the injector dies on navigation, which
+// aborts in-flight resource() loads and stops this page's calls firing elsewhere.
+@Injectable()
 export class PartnerUsersFacade {
   private readonly api = inject(ApiClient);
+  private readonly me = inject(PartnerAdminMe);
   private readonly notification = inject(NotificationService);
   private readonly logger = inject(Logger);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -74,7 +80,9 @@ export class PartnerUsersFacade {
 
   private readonly rawUsersResource = resource({
     params: () => {
-      if (!this.isBrowser) return undefined;
+      // The endpoint needs report:network:read / report:firm:read — don't fire
+      // a guaranteed 403 for an admin without either (or one not provisioned).
+      if (!this.isBrowser || this.me.isLoading() || !this.me.canReadReports()) return undefined;
       return {
         page: this.pageNumber(),
         search: this.searchTerm().trim(),
@@ -113,7 +121,10 @@ export class PartnerUsersFacade {
     () => this.listResource.value()?.pagination_data ?? EMPTY_PAGINATION,
   );
   readonly isLoading = computed(() => this.listResource.isLoading());
-  readonly error = computed(() => this.listResource.error());
+  /** Backend `message` when the load failed, else null — the banner renders it verbatim. */
+  readonly error = computed(() =>
+    partnerLoadError(this.listResource.error(), 'Failed to load users.'),
+  );
   readonly totalCount = computed(() => this.pagination().total_count);
   readonly hasPrev = computed(() => this.pagination().previous_page != null);
   readonly hasNext = computed(() => this.pagination().next_page != null);
@@ -214,7 +225,7 @@ export class PartnerUsersFacade {
       this.notification.success('Export ready', 'Your vendor users CSV has been downloaded.');
     } catch (err) {
       this.logger.error('[PartnerUsersFacade] exportCsv failed', err);
-      this.notification.error('Export failed', partnerErrorMessage(err));
+      this.notification.error('Export failed', await partnerBlobErrorMessage(err));
     } finally {
       this.isExporting.set(false);
     }

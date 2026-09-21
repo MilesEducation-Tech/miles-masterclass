@@ -1,0 +1,29 @@
+<article
+  class="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-muted/60 p-4"
+  [class]="ui().ring"
+>
+  <div class="flex items-start justify-between gap-3">
+    @if (iconUrl(); as src) {
+      <img [ngSrc]="src" alt="" width="44" height="44" class="size-11 rounded-full object-cover" />
+    } @else {
+      <span class="size-11 rounded-full bg-secondary" aria-hidden="true"></span>
+    }
+    <span class="text-xs font-bold tracking-wide text-accent uppercase">Badge</span>
+  </div>
+
+  <!-- Fixed two-line box: a one-line title reserves the same space as a two-line
+       one, so cards can't disagree on height. -->
+  <h3 class="mt-4 line-clamp-2 min-h-12 text-base font-semibold text-white">{{ title() }}</h3>
+  <p class="mt-1 line-clamp-1 text-sm text-muted-foreground">Course: {{ badge().course.title }}</p>
+
+  <div class="mt-auto pt-4">
+    <app-button
+      [class]="buttonClass()"
+      [variant]="ui().variant"
+      [disabled]="ui().disabled"
+      (clicked)="activate.emit(badge())"
+    >
+      {{ ui().label }}
+    </app-button>
+  </div>
+</article>

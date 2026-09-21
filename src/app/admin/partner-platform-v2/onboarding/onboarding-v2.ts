@@ -1,3 +1,4 @@
+import { formatDate } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -16,6 +17,10 @@ import {
   ApplyPartnerCodeDialogData,
   ApplyPartnerCodeDialogResult,
 } from '../../../shared/components/dialog/apply-partner-code-dialog/apply-partner-code-dialog';
+import {
+  UtilsDialog,
+  UtilsDialogData,
+} from '../../../shared/components/dialog/utils-dialog/utils-dialog';
 import { Dialog } from '../../../shared/core/services/dialog/dialog';
 import {
   RecordPaymentDialog,
@@ -23,7 +28,10 @@ import {
   RecordPaymentDialogResult,
 } from '../../user-onboarding/shared/components/record-payment-dialog/record-payment-dialog';
 import { UserOnboardingTable } from '../../user-onboarding/shared/components/user-onboarding-table/user-onboarding-table';
-import { InternalUser } from '../../user-onboarding/shared/models/user-onboarding.model';
+import {
+  InternalUser,
+  OfflinePaymentResult,
+} from '../../user-onboarding/shared/models/user-onboarding.model';
 import { UserOnboardingFacade } from '../../user-onboarding/shared/services/user-onboarding-facade';
 
 /**
@@ -69,6 +77,52 @@ export class OnboardingV2 {
     void this.router.navigate(['/admin/partner-v2/superadmin/onboarding/new']);
   }
 
+  /** Every field the list returns that the row can't fit — read-only, so UtilsDialog. */
+  protected onView(user: InternalUser): void {
+    const yesNo = (v: boolean | null | undefined) => (v == null ? '—' : v ? 'Yes' : 'No');
+    const date = (v: string | null) => (v ? formatDate(v, 'MMM d, y, h:mm a', 'en-US') : '—');
+    const text = (v: string | null | undefined) => (v && v.trim() ? v : '—');
+    this.dialog.open<UtilsDialog>(UtilsDialog, {
+      data: {
+        title: `${user.first_name} ${user.last_name}`.trim() || user.email,
+        containerClass: 'max-w-lg text-left!',
+        content: [
+          {
+            type: 'table',
+            headers: ['Field', 'Value'],
+            rows: [
+              ['Email', user.email],
+              ['Email domain', text(user.email_domain)],
+              ['Mobile', `${user.country_code ?? ''} ${user.mobile ?? ''}`.trim() || '—'],
+              ['Location', text(user.location)],
+              ['Profession', text(user.profession)],
+              ['Professional courses', user.professional_courses.join(', ') || '—'],
+              ['State boards', user.state_board.join(', ') || '—'],
+              ['Qualification', text(user.qualification_status)],
+              ['License', text(user.license_status)],
+              ['Currently working', yesNo(user.is_currently_working)],
+              ['Company', text(user.company)],
+              ['Sector', text(user.sector)],
+              ['Job role', text(user.job_role)],
+              ['Country', text(user.country_selected)],
+              ['Partner code', text(user.partner_code)],
+              ['Subscribed', yesNo(user.is_subscribed)],
+              ['Terms accepted', yesNo(user.terms_accepted)],
+              ['SMS consent', yesNo(user.sms_consent)],
+              ['Account type', text(user.account_type)],
+              ['Created via', text(user.creation_platform)],
+              ['Created', date(user.created_at)],
+              ['Last login', date(user.last_login)],
+            ],
+          },
+        ],
+        buttons: [{ label: 'Close', action: 'close' }],
+      } satisfies UtilsDialogData,
+      maxWidth: '560px',
+      ariaLabel: `Details for ${user.email}`,
+    });
+  }
+
   protected onEdit(user: InternalUser): void {
     // Pass the loaded row so the form can prefill without a get-by-id endpoint.
     void this.router.navigate(['/admin/partner-v2/superadmin/onboarding', user.id, 'edit'], {
@@ -80,7 +134,10 @@ export class OnboardingV2 {
     const ref = this.dialog.open<RecordPaymentDialog, RecordPaymentDialogResult>(
       RecordPaymentDialog,
       {
-        data: { userEmail: user.email } satisfies RecordPaymentDialogData,
+        data: {
+          userEmail: user.email,
+          isSubscribed: user.is_subscribed,
+        } satisfies RecordPaymentDialogData,
         maxWidth: '480px',
         ariaLabel: 'Record offline payment',
       },
@@ -90,8 +147,44 @@ export class OnboardingV2 {
       .pipe(take(1), takeUntilDestroyed(this.destroyRef))
       .subscribe(async (result) => {
         if (!result) return;
-        await this.facade.recordOfflinePayment(user.id, result.file, result.comment);
+        const paid = await this.facade.recordOfflinePayment(user.id, result.file, result.comment);
+        if (paid) this.showPaymentResult(user, paid);
       });
+  }
+
+  /** The receipt link and ids the toast can't hold — read-only, so UtilsDialog. */
+  private showPaymentResult(user: InternalUser, paid: OfflinePaymentResult): void {
+    this.dialog.open<UtilsDialog>(UtilsDialog, {
+      data: {
+        title: `Payment recorded — ${user.email}`,
+        containerClass: 'max-w-lg text-left!',
+        content: [
+          {
+            type: 'table',
+            headers: ['Field', 'Value'],
+            rows: [
+              ['Subscription', paid.subscription_status],
+              ['Amount paid', String(paid.amount_paid)],
+              ['Payment ID', paid.payment_id],
+              ['Order / transaction', `${paid.order_id} / ${paid.transaction_id}`],
+              ['Mode', paid.payment_mode],
+              ['Note', paid.payment_note ?? '—'],
+            ],
+          },
+          ...(paid.receipt_url
+            ? [
+                {
+                  type: 'links' as const,
+                  items: [{ label: 'Open receipt', href: paid.receipt_url }],
+                },
+              ]
+            : []),
+        ],
+        buttons: [{ label: 'Close', action: 'close' }],
+      } satisfies UtilsDialogData,
+      maxWidth: '560px',
+      ariaLabel: 'Payment recorded',
+    });
   }
 
   protected onApplyPartnerCode(user: InternalUser): void {

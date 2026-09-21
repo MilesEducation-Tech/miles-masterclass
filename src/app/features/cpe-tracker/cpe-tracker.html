@@ -1,0 +1,81 @@
+<section class="min-h-screen bg-background pt-32 text-white">
+  <div class="mx-auto container py-10 sm:px-6">
+    <nav class="text-sm text-muted-foreground" aria-label="Breadcrumb">
+      <a [routerLink]="trackerHome()" class="transition-colors hover:text-white">CAIRA Progress</a>
+      <span class="mx-2" aria-hidden="true">&rsaquo;</span>
+      <span class="font-medium text-white" aria-current="page">CPE Tracker</span>
+    </nav>
+
+    <header class="mt-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <a
+          [routerLink]="trackerHome()"
+          aria-label="Back to CAIRA Progress"
+          class="grid size-10 place-items-center rounded-full bg-secondary text-white transition-colors outline-none hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <ng-icon name="lucideArrowLeft" size="18" aria-hidden="true" />
+        </a>
+        <h1 class="text-2xl font-bold md:text-3xl">Your CPE Portfolio</h1>
+      </div>
+
+      <div class="flex flex-wrap items-end gap-3">
+        <app-aria-select
+          id="cpe-course-type"
+          class="w-44"
+          label="Course Type"
+          [options]="courseTypeOptions"
+          [value]="courseType()"
+          (valueChange)="onCourseType($event)"
+        />
+        <app-aria-select
+          id="cpe-year"
+          class="w-36"
+          label="Year"
+          [options]="yearOptions"
+          [value]="year()"
+          (valueChange)="onYear($event)"
+        />
+      </div>
+    </header>
+
+    <app-portfolio-summary
+      class="mt-6 block"
+      [creditsEarned]="creditsEarned()"
+      [ledger]="ledger()"
+      [isLoading]="isSummaryLoading()"
+      (viewCompliance)="openCompliance()"
+      (downloadNasba)="downloadNasba()"
+      (downloadAll)="downloadAll()"
+    />
+
+    <app-badge-filter-chips
+      class="mt-6 block"
+      ariaLabel="Credit ledger"
+      [options]="ledgerOptions"
+      [value]="ledger()"
+      (valueChange)="onLedger($event)"
+    />
+
+    @if (hasListError() && !rows().length) {
+      <app-error-state
+        class="mt-10 block"
+        message="We couldn't load your CPE credits."
+        (retry)="retry()"
+      />
+    } @else {
+      <div class="mt-8">
+        <app-tracker-table
+          [rows]="rows()"
+          [isLoading]="isListLoading()"
+          [currentPage]="currentPage()"
+          [totalPages]="totalPages()"
+          [pageWindow]="pageWindow()"
+          (rowAction)="onRowAction($event)"
+          (titleClick)="onTitleClick($event)"
+          (prevPage)="setPage(-1)"
+          (nextPage)="setPage(1)"
+        />
+      </div>
+    }
+  </div>
+</section>

@@ -1,0 +1,68 @@
+<div class="relative inline-block">
+  <button
+    type="button"
+    ngMenuTrigger
+    [menu]="userMenu"
+    aria-label="Open user menu"
+    class="flex items-center gap-1.5 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-ring/40 transition-all p-1"
+  >
+    <span class="sr-only">Open user menu</span>
+    <span
+      class="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-primary-foreground text-sm font-semibold select-none"
+      aria-hidden="true"
+      >{{ initials() }}</span
+    >
+    <ng-icon name="lucideChevronDown" class="text-foreground" size="16" aria-hidden="true" />
+  </button>
+
+  <div
+    ngMenu
+    #userMenu="ngMenu"
+    [hidden]="!userMenu.visible()"
+    class="absolute top-[calc(100%+8px)] right-0 min-w-[260px] max-w-[300px] bg-popover/95 backdrop-blur-xl rounded-xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1)] z-1000 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)]"
+  >
+    <div class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-muted mb-2">
+      <span
+        class="w-10 h-10 shrink-0 rounded-full bg-accent flex items-center justify-center text-primary-foreground text-sm font-semibold select-none"
+        aria-hidden="true"
+        >{{ initials() }}</span
+      >
+      <div class="flex flex-col min-w-0">
+        <div class="text-sm font-semibold text-foreground truncate">{{ displayName() }}</div>
+        <div class="text-xs text-muted-foreground truncate">{{ displayEmail() }}</div>
+      </div>
+    </div>
+
+    <a
+      ngMenuItem
+      [value]="'profile'"
+      [routerLink]="'/auth/profile'"
+      [queryParams]="{ redirect: currentUrl() }"
+      (click)="userMenu.close()"
+      class="flex items-center gap-2 py-2.5 px-3.5 rounded-lg text-sm text-foreground/90 no-underline hover:text-accent transition-all cursor-pointer outline-none focus:bg-accent/12 focus:text-accent"
+    >
+      <ng-icon name="lucideUser" size="16" aria-hidden="true" /> Profile
+    </a>
+    <a
+      ngMenuItem
+      [value]="'orders'"
+      [routerLink]="utils.localePath('payment/order-history')"
+      (click)="userMenu.close()"
+      class="flex items-center gap-2 py-2.5 px-3.5 rounded-lg text-sm text-foreground/90 no-underline hover:text-accent transition-all cursor-pointer outline-none focus:bg-accent/12 focus:text-accent"
+    >
+      <ng-icon name="lucideShoppingBag" size="16" aria-hidden="true" /> Order History
+    </a>
+
+    <div class="border-t border-border my-1.5" role="separator" aria-hidden="true"></div>
+
+    <button
+      ngMenuItem
+      [value]="'logout'"
+      type="button"
+      (click)="onLogout(); userMenu.close()"
+      class="w-full text-left flex items-center gap-2 py-2.5 px-3.5 rounded-lg text-sm text-destructive/90 bg-transparent border-0 hover:text-destructive hover:bg-destructive/10 transition-all cursor-pointer outline-none focus:bg-destructive/10 focus:text-destructive"
+    >
+      <ng-icon name="lucideLogOut" size="16" aria-hidden="true" /> Sign out
+    </button>
+  </div>
+</div>

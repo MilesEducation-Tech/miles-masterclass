@@ -7,7 +7,6 @@ import {
   lucideSearch,
   lucideUsers,
   lucideChartBar,
-  lucideBookOpen,
   lucideUserCheck,
   lucideChevronRight,
   lucideSettings,
@@ -21,6 +20,7 @@ import {
 import { AdminAuth } from '../../../shared/core/services/admin-auth/admin-auth';
 import { PERM } from '../../../shared/core/models/admin/admin-rbac.model';
 import { logo, logoIcon } from '../../../shared/core/constant/icon';
+import { Button } from '../../../shared/components/ui/button/button';
 
 interface SidebarItem {
   id: string;
@@ -29,8 +29,6 @@ interface SidebarItem {
   routerLink?: string;
   /** Single key, or a list — the item shows if the admin has ANY of them. */
   permission?: string | string[];
-  /** Role slugs that must never see this item, even if `permission` matches. */
-  excludeRoles?: string[];
   badge?: { value: string; tone?: 'default' | 'warn' };
 }
 
@@ -42,7 +40,7 @@ interface SidebarSection {
 
 @Component({
   selector: 'app-admin-sidebar',
-  imports: [NgIcon, RouterLink, RouterLinkActive],
+  imports: [NgIcon, RouterLink, RouterLinkActive, Button],
   providers: [
     provideIcons({
       lucideLayoutDashboard,
@@ -50,7 +48,6 @@ interface SidebarSection {
       lucideSearch,
       lucideUsers,
       lucideChartBar,
-      lucideBookOpen,
       lucideUserCheck,
       lucideChevronRight,
       lucideSettings,
@@ -117,27 +114,12 @@ export class AdminSidebar {
           routerLink: '/admin/leads',
           permission: PERM.LEADS_READ,
         },
-        {
-          id: 'user-onboarding',
-          label: 'Create User',
-          iconName: 'lucideUserPlus',
-          routerLink: '/admin/user-onboarding',
-          permission: PERM.USERS_CREATE,
-          badge: { value: 'Deprecated', tone: 'warn' },
-        },
       ],
     },
     {
       id: 'reports',
       label: 'Reports',
       items: [
-        {
-          id: 'reports-courses',
-          label: 'Courses',
-          iconName: 'lucideBookOpen',
-          routerLink: '/admin/reports/courses',
-          permission: PERM.REPORTS_COURSES_READ,
-        },
         {
           id: 'reports-user-report',
           label: 'User report',
@@ -237,60 +219,6 @@ export class AdminSidebar {
       ],
     },
     {
-      id: 'partner-platform',
-      label: 'Partner Platform',
-      items: [
-        {
-          id: 'partner-dashboard',
-          label: 'Dashboard',
-          iconName: 'lucideLayoutDashboard',
-          routerLink: '/admin/partner/dashboard',
-          permission: PERM.PARTNER_PLATFORM_READ,
-          badge: { value: 'Deprecated', tone: 'warn' },
-        },
-        {
-          id: 'partner-code-tracker',
-          label: 'Partner Code Tracker',
-          iconName: 'lucideTicket',
-          routerLink: '/admin/partner-code-tracker',
-          permission: [PERM.PARTNER_PLATFORM_READ, PERM.PARTNER_TRACKER_READ],
-          badge: { value: 'Deprecated', tone: 'warn' },
-        },
-        {
-          id: 'vendor-users',
-          label: 'Vendor Users',
-          iconName: 'lucideUserCheck',
-          routerLink: '/admin/domain-users',
-          permission: [PERM.REPORTS_USERS_READ, PERM.PARTNER_TRACKER_READ, PERM.PARTNER_USERS_READ],
-          badge: { value: 'Deprecated', tone: 'warn' },
-        },
-        {
-          id: 'partner-networks',
-          label: 'Networks',
-          iconName: 'lucideTrendingUp',
-          routerLink: '/admin/partner/networks',
-          permission: PERM.PARTNER_PLATFORM_MANAGE,
-          badge: { value: 'Deprecated', tone: 'warn' },
-        },
-        {
-          id: 'partner-reports',
-          label: 'Reports',
-          iconName: 'lucideChartBar',
-          routerLink: '/admin/partner/reports',
-          permission: PERM.PARTNER_PLATFORM_MANAGE,
-          badge: { value: 'Deprecated', tone: 'warn' },
-        },
-        {
-          id: 'partner-codes',
-          label: 'Partner Codes',
-          iconName: 'lucideTicket',
-          routerLink: '/admin/partner/partner-codes',
-          permission: PERM.PARTNER_PLATFORM_MANAGE,
-          badge: { value: 'Deprecated', tone: 'warn' },
-        },
-      ],
-    },
-    {
       id: 'administration',
       label: 'Administration',
       items: [
@@ -308,6 +236,13 @@ export class AdminSidebar {
           routerLink: '/admin/roles-permissions',
           permission: [PERM.ADMIN_ROLES_MANAGE, PERM.ADMIN_PERMISSIONS_MANAGE],
         },
+        {
+          id: 'audit-log',
+          label: 'Audit log',
+          iconName: 'lucideClock',
+          routerLink: '/admin/audit-log',
+          permission: PERM.AUDIT_READ,
+        },
       ],
     },
   ];
@@ -315,13 +250,10 @@ export class AdminSidebar {
   readonly visibleSections = computed<SidebarSection[]>(() => {
     // Re-evaluate when permissions change
     this.auth.permissions();
-    this.auth.roleSlug();
 
     return this.sections
       .map((section) => {
         const visibleItems = section.items.filter((item) => {
-          const slug = this.auth.roleSlug();
-          if (slug && item.excludeRoles?.includes(slug)) return false;
           if (!item.permission) return true;
           return Array.isArray(item.permission)
             ? this.auth.hasAny(...item.permission)
@@ -345,11 +277,13 @@ export class AdminSidebar {
 
   readonly displayEmail = computed(() => this.auth.adminUser()?.email ?? '');
 
-  readonly roleLabel = computed(() => {
-    const slug = this.auth.roleSlug();
-    if (!slug) return 'Admin';
-    return slug.replace(/_/g, ' ').toUpperCase();
-  });
+  /** "SEO Manager · Leads Manager" — every role held, for the account card. */
+  readonly roleNames = computed(() =>
+    this.auth
+      .roles()
+      .map((r) => r.name)
+      .join(' · '),
+  );
 
   toggleUserMenu(): void {
     this.userMenuOpen.update((v) => !v);

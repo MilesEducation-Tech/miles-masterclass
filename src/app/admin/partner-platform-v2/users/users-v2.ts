@@ -16,6 +16,7 @@ import {
 import { PartnerAdminMe } from '../../partner-platform/shared/services/partner-admin-me';
 import { PartnerUsersFacade } from '../../users/shared/services/partner-users-facade/partner-users-facade';
 import { UsersTable } from '../../users/shared/components/users-table/users-table';
+import { TabStrip } from '../../../shared/components/ui/tab-strip/tab-strip';
 
 const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -31,13 +32,13 @@ const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
  */
 @Component({
   selector: 'app-users-v2',
-  imports: [AriaInput, Button, UsersTable],
+  imports: [AriaInput, Button, UsersTable, TabStrip],
   templateUrl: './users-v2.html',
   host: { class: 'block w-full' },
 })
 export class UsersV2 {
   protected readonly facade = inject(PartnerUsersFacade);
-  private readonly me = inject(PartnerAdminMe);
+  protected readonly me = inject(PartnerAdminMe);
   private readonly dialog = inject(Dialog);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -62,6 +63,16 @@ export class UsersV2 {
 
   protected exportCsv(): void {
     void this.facade.exportCsv();
+  }
+
+  /** app-tab-strip speaks labels; map them back to the filter values. */
+  protected readonly tabLabels = STATUS_TABS.map((t) => t.label);
+  protected readonly activeTabLabel = computed(
+    () => STATUS_TABS.find((t) => this.isActiveTab(t.value))?.label ?? null,
+  );
+  protected onTabChange(label: string): void {
+    const tab = STATUS_TABS.find((t) => t.label === label);
+    if (tab) this.selectStatus(tab.value);
   }
 
   protected isActiveTab(value: BlockedStatusFilter): boolean {

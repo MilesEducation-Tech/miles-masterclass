@@ -2,9 +2,11 @@ import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { Supabase } from '../supabase/supabase';
+import { AuditLog } from '../audit-log/audit-log';
 import { Logger } from '../logger/logger';
 import {
   AdminProfileResponse,
+  AdminRoleRecord,
   AdminRoleSlug,
   AdminSignInResult,
   AdminUserProfile,
@@ -16,12 +18,14 @@ import {
 export class AdminAuth {
   private readonly supabase = inject(Supabase);
   private readonly logger = inject(Logger);
+  private readonly audit = inject(AuditLog);
   private readonly platformId = inject(PLATFORM_ID);
 
   // ---- writable state ----
   readonly session = signal<Session | null>(null);
   readonly adminUser = signal<AdminUserProfile | null>(null);
-  readonly roleSlug = signal<AdminRoleSlug | null>(null);
+  /** Every role held (super_admin first, then by slug). Permissions are the union. */
+  readonly roles = signal<readonly AdminRoleRecord[]>([]);
   readonly permissions = signal<ReadonlySet<string>>(new Set<string>());
   readonly emailDomains = signal<readonly string[]>([]);
   readonly isLoading = signal(false);
@@ -29,7 +33,8 @@ export class AdminAuth {
 
   // ---- derived ----
   readonly isAuthenticated = computed(() => !!this.session() && !!this.adminUser());
-  readonly isSuperAdmin = computed(() => this.roleSlug() === 'super_admin');
+  readonly roleSlugs = computed<readonly AdminRoleSlug[]>(() => this.roles().map((r) => r.slug));
+  readonly isSuperAdmin = computed(() => this.roleSlugs().includes('super_admin'));
 
   private initPromise: Promise<void> | null = null;
 
@@ -102,12 +107,12 @@ export class AdminAuth {
     if (!this.session()) return;
     const user = this.adminUser();
     if (!user) {
-      await this.signOut();
+      await this.signOut('rejected_not_admin');
       this.error.set('This account is not configured for admin access.');
       return;
     }
     if (!user.is_active) {
-      await this.signOut();
+      await this.signOut('rejected_inactive');
       this.error.set('Your admin account is disabled. Contact a super admin.');
     }
   }
@@ -139,14 +144,14 @@ export class AdminAuth {
 
       // Authenticated but not configured as an admin
       if (!this.adminUser()) {
-        await this.signOut();
+        await this.signOut('rejected_not_admin');
         const message = 'This account is not configured for admin access.';
         this.error.set(message);
         return { ok: false, error: message };
       }
 
       if (!this.adminUser()?.is_active) {
-        await this.signOut();
+        await this.signOut('rejected_inactive');
         const message = 'Your admin account is disabled. Contact a super admin.';
         this.error.set(message);
         return { ok: false, error: message };
@@ -159,6 +164,8 @@ export class AdminAuth {
         this.logger.warn('[AdminAuth] touch_admin_login failed (non-blocking):', rpcErr);
       }
 
+      void this.audit.record('auth', 'sign_in', { context: { method: 'password' } });
+
       return { ok: true };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Sign-in failed.';
@@ -170,8 +177,19 @@ export class AdminAuth {
     }
   }
 
-  async signOut(): Promise<void> {
+  /**
+   * `reason` separates a deliberate log-out from the forced ones this service
+   * performs when a Supabase session turns out not to belong to an active
+   * admin — without it the audit log would show those as ordinary sign-outs.
+   */
+  async signOut(reason = 'user_initiated'): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
+
+    // AWAITED, unlike every other audit call. log_admin_activity() derives the
+    // actor from auth.uid(), so a row that lands after the session is destroyed
+    // has no actor and is dropped — sign-out would be the one event missing
+    // from the log. The promise never rejects, so this cannot block sign-out.
+    await this.audit.record('auth', 'sign_out', { context: { reason } });
 
     try {
       const client = await this.supabase.getClient();
@@ -219,7 +237,8 @@ export class AdminAuth {
 
       const profile = data as AdminProfileResponse | null;
       this.adminUser.set(profile?.user ?? null);
-      this.roleSlug.set((profile?.role?.slug as AdminRoleSlug | undefined) ?? null);
+      // Older RPC builds return only `role`; tolerate both shapes mid-deploy.
+      this.roles.set(profile?.roles ?? (profile?.role ? [profile.role] : []));
       this.permissions.set(new Set(profile?.permissions ?? []));
       this.emailDomains.set(profile?.email_domains ?? []);
       return true;
@@ -282,6 +301,7 @@ export class AdminAuth {
   async updatePassword(newPassword: string): Promise<AdminSignInResult> {
     return this.runAuthAction(async (client) => {
       const { error } = await client.auth.updateUser({ password: newPassword });
+      if (!error) void this.audit.record('auth', 'password_change');
       return error?.message ?? null;
     });
   }
@@ -326,7 +346,7 @@ export class AdminAuth {
 
   private clearProfile(): void {
     this.adminUser.set(null);
-    this.roleSlug.set(null);
+    this.roles.set([]);
     this.permissions.set(new Set<string>());
     this.emailDomains.set([]);
   }

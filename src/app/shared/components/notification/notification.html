@@ -1,0 +1,19 @@
+@for (pos of positions; track pos) {
+  <div
+    [class]="getContainerClasses(pos)"
+    (mouseenter)="onMouseEnter(pos)"
+    (mouseleave)="onMouseLeave(pos)"
+  >
+    @for (toast of positionToasts[pos](); track toast.id; let idx = $index) {
+      <app-toast
+        animate.enter="toast-enter-top"
+        animate.leave="toast-leave-top"
+        [toast]="toast"
+        (dismiss)="remove($event)"
+        (pause)="pauseTimer($event)"
+        (resume)="resumeTimer($event)"
+        class="block w-full"
+      />
+    }
+  </div>
+}

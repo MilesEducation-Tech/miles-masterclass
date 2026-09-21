@@ -1,0 +1,72 @@
+<section class="min-h-screen bg-background pt-32 text-white">
+  <div class="mx-auto container py-10 sm:px-6">
+    <nav class="text-sm text-muted-foreground" aria-label="Breadcrumb">
+      <a [routerLink]="trackerHome()" class="transition-colors hover:text-white">CAIRA Progress</a>
+      <span class="mx-2" aria-hidden="true">&rsaquo;</span>
+      <span class="font-medium text-white" aria-current="page">Webinar Badges</span>
+    </nav>
+
+    <header class="mt-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <a
+          [routerLink]="trackerHome()"
+          aria-label="Back to CAIRA Progress"
+          class="grid size-10 place-items-center rounded-full bg-secondary text-white transition-colors outline-none hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <ng-icon name="lucideArrowLeft" size="18" aria-hidden="true" />
+        </a>
+        <h1 class="text-2xl font-bold md:text-3xl">Webinar Badges</h1>
+      </div>
+      <p class="rounded-full bg-accent/15 px-4 py-1.5 text-sm font-semibold text-accent">
+        {{ earnedCount() }} Badges Earned
+      </p>
+    </header>
+
+    <app-badge-filter-chips
+      class="mt-6 block"
+      ariaLabel="Filter webinar badges"
+      [options]="filters"
+      [value]="filter()"
+      (valueChange)="onFilter($event)"
+    />
+
+    @if (hasError() && !items().length) {
+      <app-error-state
+        class="mt-10 block"
+        message="We couldn't load your webinar badges."
+        (retry)="retry()"
+      />
+    } @else if (isFirstPage()) {
+      <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+          <div class="h-32 animate-pulse rounded-2xl bg-muted"></div>
+        }
+      </div>
+    } @else {
+      <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        @for (card of visible(); track card.id) {
+          <app-webinar-badge-card [badge]="card" (activate)="onActivate($event)" />
+        } @empty {
+          <p class="col-span-full py-8 text-center text-muted-foreground">
+            No webinar badges match this filter.
+          </p>
+        }
+      </div>
+
+      <div class="mt-6 flex flex-wrap items-center justify-between gap-4">
+        <p class="text-sm text-muted-foreground">
+          Showing {{ visible().length }} of {{ totalCount() }} webinar badges
+        </p>
+        @if (isLoading()) {
+          <p class="text-sm text-muted-foreground" role="status">Loading…</p>
+        } @else if (hasError()) {
+          <app-button variant="outline" size="sm" class="text-white" (clicked)="retry()">
+            Retry
+          </app-button>
+        }
+      </div>
+    }
+
+    <div #sentinel class="h-px w-full" aria-hidden="true"></div>
+  </div>
+</section>

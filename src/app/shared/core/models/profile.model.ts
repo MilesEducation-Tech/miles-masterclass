@@ -1,7 +1,53 @@
 // user/companies/?
 
-import { User } from './auth.model';
 import { CommonResponse, RouteConfig } from './http.model';
+
+/**
+ * The signed-in user's profile.
+ *
+ * Lived in `auth.model.ts` until the auth layer was removed. Nothing fetches
+ * it any more — it stays because the profile form and the routes below are
+ * typed against it.
+ */
+export interface User {
+  id: number;
+  company: { id: number; company_name: string }[] | null;
+  sector: { id: number; name: string } | null;
+  job_role: { id: number; name: string } | null;
+  state_board_name: string[] | null;
+  professional_courses: number[] | null;
+  onboarding_message: OnboardingMessage | null;
+  has_platform_free_access: boolean;
+  email: string;
+  first_name: string;
+  last_name: string;
+  miles_user_id: string;
+  country_code: string;
+  location: string | null;
+  mobile: string | null;
+  is_existing_user: boolean;
+  is_currently_working: boolean;
+  terms_accepted: boolean;
+  qualification_status: QualificationStatus | null;
+  license_status: string | null;
+  experience_id: number | null;
+  is_beta_access: boolean;
+  /** True once the user has filled the mandatory fields in their profile.
+   * Required to submit course feedback / download CPE certificates. Field is
+   * optional in the type because legacy responses may omit it — treat
+   * anything other than literal `true` as not-completed. */
+  is_profile_completed?: boolean;
+  /** True once the Microsoft AI Lab account has been provisioned for this user.
+   * Optional for the same reason as `is_profile_completed`. */
+  is_ai_lab_user?: boolean;
+}
+
+export type QualificationStatus = 'na' | 'yes' | 'no';
+
+export interface OnboardingMessage {
+  heading_text: string;
+  subtext: string;
+}
 
 export interface CompanyList {
   id: number;

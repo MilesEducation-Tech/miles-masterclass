@@ -1,0 +1,78 @@
+<div class="container">
+  <div class="laptop relative">
+    @for (asset of offeringDataPrev()?.floatingAssets; track $index) {
+      <div
+        class="absolute w-auto h-auto floatingAsset"
+        [style.left.%]="asset.position.x"
+        [style.top.%]="asset.position.y"
+        [style.z-index]="asset.position.z"
+        [style.width.%]="asset.position.width || '100%'"
+        [style.height.%]="asset.position.height || '100%'"
+        [style.animation-delay]="$index * 400 + 'ms !important'"
+      >
+        @if (asset.mediaType === 'image') {
+          <img
+            [ngSrc]="asset.media"
+            alt="Floating Asset"
+            class="w-full h-full animate-float"
+            draggable="false"
+            width="200"
+            height="200"
+          />
+        } @else if (asset.mediaType === 'video') {
+          <video
+            [src]="asset.media"
+            controls="false"
+            autoplay
+            muted
+            loop
+            class="w-full h-full animate-float"
+          ></video>
+        } @else if (asset.mediaType === 'component') {
+          <ng-container
+            [ngComponentOutlet]="getComponentType(asset.media)"
+            class="w-full h-full animate-float"
+          ></ng-container>
+        }
+      </div>
+    }
+    <div class="laptop-block"></div>
+    <div class="laptop-top">
+      <div></div>
+      <div class="overflow-hidden">
+        <main class="relative w-full h-full bg-black/20 my-auto border border-white/40 rounded-md">
+          @if (offeringDataPrev()?.mediaType === 'image' && offeringDataPrev()?.media) {
+            <img
+              [ngSrc]="offeringDataPrev()!.media"
+              class="w-full h-full rounded-sm"
+              draggable="false"
+              fill
+              alt="Laptop Screen Content"
+            />
+          } @else if (offeringDataPrev()?.mediaType === 'video') {
+            <video
+              playsInline="true"
+              [src]="offeringDataPrev()?.media"
+              controls="false"
+              autoplay
+              muted
+              loop
+              class="w-full h-full object-cover rounded-md"
+            ></video>
+          }
+        </main>
+      </div>
+    </div>
+    <div class="laptop-bottom">
+      <div>
+        <div>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+        <div></div>
+      </div>
+      <div></div>
+    </div>
+  </div>
+</div>

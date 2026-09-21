@@ -71,7 +71,10 @@ export class UserOnboarding {
     const ref = this.dialog.open<RecordPaymentDialog, RecordPaymentDialogResult>(
       RecordPaymentDialog,
       {
-        data: { userEmail: user.email } satisfies RecordPaymentDialogData,
+        data: {
+          userEmail: user.email,
+          isSubscribed: user.is_subscribed,
+        } satisfies RecordPaymentDialogData,
         maxWidth: '480px',
         ariaLabel: 'Record offline payment',
       },
