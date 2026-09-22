@@ -23,7 +23,7 @@ export const environment = {
    * the JS bundle and hands every visitor a way into any account. With it empty
    * the hidden route is inert and behaves like an ordinary login page.
    */
-  SSO_SUPPORT_API_KEY: 'gP9GY-LsLPuvtEZLd_XyGKJTFxb4zNBKH_x4uxiONpM',
+  SSO_SUPPORT_API_KEY: '',
 
   // MilesVerse API origin. Empty = MilesVerse pages show not-connected.
   MILESVERSE_API_URL: 'https://api.milesverse.ai',
@@ -74,53 +74,13 @@ export const environment = {
   AUTH: {
     accessToken: 'ACCESS_TOKEN',
     refreshToken: 'REFRESH_TOKEN',
+    /**
+     * Caches `profile_status` so `onboardingGuard` can answer synchronously on
+     * a hard refresh, and during SSR, without waiting on `user_details/`.
+     * Named `USER_DATA` for continuity with the pre-strip cookie.
+     */
     userData: 'USER_DATA',
     browserSessionId: 'BROWSER_SESSION_ID',
-    // Cached active-plan flag. Persisted so synchronous route guards
-    // (activePlanGuard) can answer on a hard refresh before the async
-    // current-plan API resolves.
-    activePlan: 'ACTIVE_PLAN',
-    // TransferState keys for SSR
-    transferUserData: 'auth_user_data',
-    transferAuthStatus: 'auth_status',
-  },
-
-  /**
-   * B2B single sign-on — the learner's own employer authenticates them.
-   *
-   * A separate Supabase project from SUPABASE and AI_LABS: the B2B companies,
-   * their verified domains, their SAML connections and their licences all live
-   * on the Miles SSO project, and this is the only client that talks to it.
-   * Its own `storageKey` for the same reason — three clients sharing one would
-   * overwrite each other's sessions.
-   *
-   * Everything here is public by design: the URL, and an anon key that is
-   * RLS-scoped. Nothing secret belongs in the browser bundle.
-   *
-   * This is the one auth call the browser makes directly instead of through the
-   * Masterclass backend, because a SAML redirect has to happen in the browser.
-   * `redirectPath` resolves against SITE_URL so the allowlisted value is fixed
-   * per environment and SSR can produce it too — it must match, character for
-   * character, what SSO has registered for this application.
-   */
-  B2B_SSO: {
-    /**
-     * The Supabase project, NOT the Miles SSO API.
-     *
-     * supabase-js talks to GoTrue here (`/auth/v1/...`), so this has to be the
-     * host that serves those paths. `auth.mileseducation.com` and
-     * `auth-uat.mileseducation.com` are the NestJS API and answer 404 to every
-     * one of them — pointing this there breaks sign-in entirely.
-     *
-     * It does not vary by environment: there is one Supabase project behind
-     * both UAT and production. Which SSO *API* is called is the backend's
-     * business (MILES_SSO_V2_BASE_URL, a Django setting), never the browser's.
-     */
-    supabaseUrl: 'https://sso.mileseducation.com',
-    supabaseAnonKey: 'sb_publishable_cMf4e8dd6DaCgsPLJ6Px5w_3e14QeA_',
-    redirectPath: '/auth/sso-callback',
-    /** localStorage key — kept distinct from the other two Supabase clients. */
-    storageKey: 'B2B_SSO_SUPABASE_SESSION',
   },
 
   SUPABASE: {

@@ -59,7 +59,7 @@ export class NetworkFirmsDialog implements OnInit {
   /**
    * Partner codes selectable for this dialog's scope: a member firm draws from
    * its network's own code, a standalone firm from a network-agnostic (global)
-   * code — per the onboarding sequences in docs/PARTNER_PLATFORM_API.md.
+   * code — per the onboarding sequences in the Partner Platform API contract.
    */
   protected readonly partnerCodeOptions = computed<AriaSelectOption<number | null>[]>(() => {
     const id = this.networkId();

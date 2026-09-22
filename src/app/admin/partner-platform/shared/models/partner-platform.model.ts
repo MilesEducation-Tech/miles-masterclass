@@ -1,6 +1,6 @@
 /**
  * Models for the Partner Platform admin feature — the Django API documented in
- * `docs/PARTNER_PLATFORM_API.md`.
+ * the Partner Platform API contract.
  *
  * Two bases, one auth mode:
  *   - `partners/superadmin/…` — Miles ops, sees everything, must scope each

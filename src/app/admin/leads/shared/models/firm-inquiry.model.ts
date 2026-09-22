@@ -3,7 +3,7 @@ import { PartnerPagination } from '../../../partner-platform/shared/models/partn
 export type LeadStatus = 'new' | 'contacted' | 'converted' | 'closed';
 export type LeadStatusFilter = 'all' | LeadStatus;
 
-/** One row of `partners/superadmin/leads/` (docs/LEADS_API.md). */
+/** One row of `partners/superadmin/leads/`. */
 export interface FirmInquiry {
   id: number;
   full_name: string;

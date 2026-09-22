@@ -36,7 +36,7 @@ const leadUrl = (id: number) => `${LEADS}${id}/`;
 const PAGE_SIZE = 30;
 
 /**
- * `/admin/leads` — Django `partners/superadmin/leads/` (docs/LEADS_API.md) with
+ * `/admin/leads` — Django `partners/superadmin/leads/` with
  * the Supabase admin token via `adminContext()`. The API answers 403 to any
  * token that is not a super-admin, regardless of the Supabase `leads:*`
  * permissions gating the route; the page banner renders the server's reason.

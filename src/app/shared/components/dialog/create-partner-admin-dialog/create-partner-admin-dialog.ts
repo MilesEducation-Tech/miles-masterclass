@@ -37,7 +37,7 @@ const SOURCE_OPTIONS: AriaSelectOption<AdminSource>[] = [
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /**
- * Create a partner admin in two steps, exactly as `docs/PARTNER_PLATFORM_API.md`
+ * Create a partner admin in two steps, exactly as the Partner Platform API contract
  * describes: (1) provision the Supabase login with the partner role that opens
  * the Partner v2 panel (`provision_admin_user` RPC), then (2) register the
  * Django `PartnerAdmin` with that `supabase_uid`, role, scope and capabilities

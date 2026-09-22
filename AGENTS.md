@@ -14,7 +14,10 @@ Run this loop for every feature. Do not skip steps 5–7.
 2. Read the skills named in the prompt, plus any clearly needed supporting skill (see §10).
 3. Inspect the real code the change touches. Trace the flow end to end before proposing anything.
 4. Ask **one** focused question only if there is real ambiguity. Otherwise state an assumption and continue.
-5. Write a detailed implementation prompt to `prompts/<feature-name>.md` using `prompts/_TEMPLATE.md`.
+5. Write a detailed implementation prompt to `prompts/<feature-name>.md`: goal, what it read, locked
+   decisions, target architecture, endpoint map, phases, files touched, security requirements,
+   acceptance criteria, checks to run, how to verify, risks. (The old `_TEMPLATE.md` went with the
+   docs purge; that list is the template.)
 6. Ask: _"I prepared the implementation prompt at `prompts/<name>.md`. Good to execute?"_
 7. Implement only after approval.
 8. Run the checks in §9.
@@ -105,17 +108,18 @@ Full detail — versions, scripts, build configs, environments — lives in the 
 
 Domain types live in `src/app/shared/core/models/`. The ones that carry rules:
 
-| Model                                                                                                  | Required before anything downstream works                                                                                                                                                             |
-| ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `masterclass.model.ts` — `ContentDetails`, `CourseChapter`, `QuizDetails`                              | A chapter needs `chapterId` + a playable source. Course pages key off `courseId` + a `courseTitle` slug.                                                                                              |
-| `micro-learning-course.model.ts` — `MicroLearningReel`                                                 | A reel has **both** `id` and `chapter_id`. Activity tracking (`myclassactivity`) uses **`chapter_id`**. Completion is derived: 95% watched → `isReelCompleted()`. Never add a second completion flag. |
-| `nano-learning.model.ts`                                                                               | API path segment is `nano_learning` (snake_case); frontend URL segment is `micro-learning` (kebab-case). Never conflate the two.                                                                      |
-| `course.model.ts` — `InstructorDetails`, `FieldOfStudy`, `PriceDetails`, `PlayHistory`, `QuizQuestion` | Credits render from `FieldOfStudy`; never sum credits by hand — use `TotalCpeCreditsPipe`.                                                                                                            |
-| `auth.model.ts` — `User`, `CurrentPlanData`                                                            | A user is authenticated only with a valid access token; plan status comes from `CurrentPlanData`, mirrored to a cookie so synchronous guards can answer on hard refresh.                              |
-| `assessment.model.ts`                                                                                  | An exam session needs a session id. Masterclass uses `:sessionId`, podcast/micro-learning use `:session_id` — both are live, do not "normalise" without fixing every consumer.                        |
-| `seo.models.ts` / `seo.constants.ts`                                                                   | A Supabase `seo_pages` slug excludes the locale prefix. `DYNAMIC_SLUG_PREFIXES` decides who owns a route's SEO.                                                                                       |
-| `admin/admin-rbac.model.ts` — `PERM`                                                                   | Every admin route is gated by a `PERM` constant. Never hardcode a permission string.                                                                                                                  |
-| `http.model.ts` — `CommonResponse<T>`                                                                  | Django responses are wrapped. Unwrap in the facade, not the component.                                                                                                                                |
+| Model                                                                                                  | Required before anything downstream works                                                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `masterclass.model.ts` — `ContentDetails`, `CourseChapter`, `QuizDetails`                              | A chapter needs `chapterId` + a playable source. Course pages key off `courseId` + a `courseTitle` slug.                                                                                                                         |
+| `micro-learning-course.model.ts` — `MicroLearningReel`                                                 | A reel has **both** `id` and `chapter_id`. Activity tracking (`myclassactivity`) uses **`chapter_id`**. Completion is derived: 95% watched → `isReelCompleted()`. Never add a second completion flag.                            |
+| `nano-learning.model.ts`                                                                               | API path segment is `nano_learning` (snake_case); frontend URL segment is `micro-learning` (kebab-case). Never conflate the two.                                                                                                 |
+| `course.model.ts` — `InstructorDetails`, `FieldOfStudy`, `PriceDetails`, `PlayHistory`, `QuizQuestion` | Credits render from `FieldOfStudy`; never sum credits by hand — use `TotalCpeCreditsPipe`.                                                                                                                                       |
+| `auth.model.ts` — `AUTH_ROUTES`, `SessionResponse`, `AuthFailure`                                      | Sign-in is OTP-only against MilesCAIRA Accounts v1. A bad token answers **403, not 401**; refresh **before** expiry, never as a retry; refresh tokens **rotate** and two refreshes must never overlap. See `docs/AUTH_API.md`.   |
+| `account.model.ts` — `UserDetails`, `AnswerMap`, `Question`                                            | `profile/` is questionnaire answers **only** (changed 2026-09-09); the user row is `user_details/`. `profile_status` is the onboarding milestone and is **not** the token claim `miles.onboarding_required` — opposite polarity. |
+| `assessment.model.ts`                                                                                  | An exam session needs a session id. Masterclass uses `:sessionId`, podcast/micro-learning use `:session_id` — both are live, do not "normalise" without fixing every consumer.                                                   |
+| `seo.models.ts` / `seo.constants.ts`                                                                   | A Supabase `seo_pages` slug excludes the locale prefix. `DYNAMIC_SLUG_PREFIXES` decides who owns a route's SEO.                                                                                                                  |
+| `admin/admin-rbac.model.ts` — `PERM`                                                                   | Every admin route is gated by a `PERM` constant. Never hardcode a permission string.                                                                                                                                             |
+| `http.model.ts` — `CommonResponse<T>`                                                                  | Django responses are wrapped. Unwrap in the facade, not the component.                                                                                                                                                           |
 
 ---
 
@@ -123,10 +127,10 @@ Domain types live in `src/app/shared/core/models/`. The ones that carry rules:
 
 Two backends. Do not cross the wires.
 
-**Django REST** — base `environment.BASE_API_URL`, called through `ApiClient`, auth via `authInterceptor`.
+**Django REST** — base `environment.BASE_API_URL`, called through `ApiClient`, bearer attached by `appInterceptor`.
 
 - `GET` for reads: course lists, course detail, chapters, CPE tracker report, orders, plans, profile.
-- `POST` for actions: login/signup/refresh, quiz + final-assessment submission, `myclassactivity` progress, cart operations, checkout, feedback, enquiry.
+- `POST` for actions: the five `api/v1/account/auth-*` sign-in routes, quiz + final-assessment submission, `myclassactivity` progress, cart operations, checkout, feedback, enquiry.
 - `PUT`/`PATCH` for profile and address updates. `DELETE` for cart items and bookmarks.
 - Content-type routes use the API token `nano_learning`, not the URL token `micro-learning`.
 
@@ -136,9 +140,13 @@ Two backends. Do not cross the wires.
 - Admin auth session — the `Supabase` client, persisted.
 - Lead / enquiry capture — the `SupabasePublic` client, anonymous, never persisted.
 
-**Partner Platform** — Django `/partner-admin/...`, tagged with the `IS_ADMIN_REQUEST` context token so `adminTokenInterceptor` attaches the admin token instead of the learner token. See `docs/PARTNER_PLATFORM_API.md`.
+**Partner Platform** — Django `/partner-admin/...`, tagged with the `IS_ADMIN_REQUEST` context token so `adminTokenInterceptor` attaches the admin token instead of the learner token.
 
-Never invent a path. If a route isn't in the code or in `docs/api-and-routes.md`, ask.
+Never invent a path. For auth and account routes the contract is `docs/AUTH_API.md`, backed by the generated `Postman Collection/`. If a route is in neither the code nor those, ask.
+
+**Services: `@Service()`, not `@Injectable`.** Angular 22 ships `@Service()` and `ng generate service` emits it by default (`--injectable` is the opt-out). Use `@Service({ autoProvided: false })` for anything that must be listed in a route's `providers` — that is what makes a route-scoped facade's lifetime explicit. Scaffold with `ng generate`; do not hand-write the file.
+
+**Reads vs commands.** Reads are `httpResource` fields on a `@Service()` (they fetch on sign-in and idle on sign-out by themselves — gate the request function on the **boolean** `isAuthenticated()`, never on the token string, or every rotation re-fires every read). Mutations go through `ApiClient.call()` against a `RouteConfig` registry, per Angular's own guidance that `httpResource` is not for POST/PUT.
 
 ---
 
@@ -218,20 +226,20 @@ Tool and module knowledge lives in `.claude/skills/`, not here. Name the ones yo
 
 **Learner features**
 
-| Skill              | Owns                                                               |
-| ------------------ | ------------------------------------------------------------------ |
-| `masterclass`      | Multi-chapter video courses, chapter player, course detail.        |
-| `micro-learning`   | Reel-based CPE (`nano_learning`), reel navigation, reel progress.  |
-| `podcast`          | Audio courses — structurally a masterclass with an audio player.   |
-| `webinar`          | Live/recorded webinars, registration, `premiere` legacy redirects. |
-| `assessments`      | Chapter quizzes, final assessment exam + report, course feedback.  |
-| `auth-module`      | Login, signup, forgot-password, profile, token lifecycle.          |
-| `payment`          | Plans, cart, billing, checkout, orders, invoices, coupons.         |
-| `cpe-tracker`      | Credit tracking, certificates, Credly badges, compliance.          |
-| `library`          | Course / instructor / badge library, filters.                      |
-| `home-and-landing` | Home, CPA landing, UAE CAIRA, FAQ and legal pages.                 |
-| `partners`         | CPA-society and firm landing pages, CAIRA marketing.               |
-| `blog`             | Headless WordPress blog via the WP REST API.                       |
+| Skill              | Owns                                                                   |
+| ------------------ | ---------------------------------------------------------------------- |
+| `masterclass`      | Multi-chapter video courses, chapter player, course detail.            |
+| `micro-learning`   | Reel-based CPE (`nano_learning`), reel navigation, reel progress.      |
+| `podcast`          | Audio courses — structurally a masterclass with an audio player.       |
+| `webinar`          | Live/recorded webinars, registration, `premiere` legacy redirects.     |
+| `assessments`      | Chapter quizzes, final assessment exam + report, course feedback.      |
+| `auth-module`      | OTP login, onboarding/profile questionnaire, session + token rotation. |
+| `payment`          | Plans, cart, billing, checkout, orders, invoices, coupons.             |
+| `cpe-tracker`      | Credit tracking, certificates, Credly badges, compliance.              |
+| `library`          | Course / instructor / badge library, filters.                          |
+| `home-and-landing` | Home, CPA landing, UAE CAIRA, FAQ and legal pages.                     |
+| `partners`         | CPA-society and firm landing pages, CAIRA marketing.                   |
+| `blog`             | Headless WordPress blog via the WP REST API.                           |
 
 **Admin**
 

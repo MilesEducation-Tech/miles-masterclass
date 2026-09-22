@@ -1,54 +1,62 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, from, switchMap } from 'rxjs';
 import { LoadingService } from '../../services/loading/loading';
-import { LocationService } from '../../services/location/location.service';
-import { IS_EXTERNAL_REQUEST } from '../../models/http.model';
-import { country } from '../../constant/country';
-import { environment } from '../../../../../environments/environment';
+import { AuthSession } from '../../services/auth-session/auth-session';
+import { IS_ADMIN_REQUEST, IS_EXTERNAL_REQUEST, SKIP_AUTH_TOKEN } from '../../models/http.model';
+import { AUTH_ROUTE_PATHS } from '../../models/auth.model';
+
+/**
+ * The five sign-in routes must never be preceded by a refresh: refreshing
+ * before the call that MINTS the session is nonsense, and refreshing before the
+ * refresh is recursion. Derived from `AUTH_ROUTES` so a renamed path cannot
+ * drift out of this exclusion.
+ */
+function isAuthRoute(url: string): boolean {
+  return AUTH_ROUTE_PATHS.some((path) => url.includes(path));
+}
 
 export const appInterceptor: HttpInterceptorFn = (req, next) => {
-  // Third-party origins get the request untouched: the app headers below would
-  // force a CORS preflight the foreign host has no reason to allow, and a
-  // background call shouldn't drive the global loading spinner either.
+  // Third-party origins get the request untouched: a bearer for this platform
+  // must never leak off-platform, and a background call shouldn't drive the
+  // global loading spinner either.
   if (req.context.get(IS_EXTERNAL_REQUEST)) return next(req);
 
   const loading = inject(LoadingService);
-  const location = inject(LocationService);
-  const router = inject(Router);
+  const auth = inject(AuthSession);
 
-  // Start loading indicator
   loading.start();
 
-  // Country-scoped pricing: lowercase ISO2 on every request, defaulting to 'us'.
-  // In PROD, derive it from the user's actual location (device timezone) since
-  // the URL is user-editable and shouldn't drive pricing. In other envs, use the
-  // URL `/:country/...` segment so testers can switch country by editing the URL.
-  let iso2: string;
-  if (environment.production) {
-    iso2 = location.getUserCountry();
-  } else {
-    // iso2 = location.getUserCountry();
-    const seg = router.url.split('/').filter(Boolean)[0]?.toLowerCase();
-    iso2 = seg && country.includes(seg.toUpperCase()) ? seg : 'us';
-  }
+  // `x-app-type`, `x-platform` and `x-country-code` used to be set here. They
+  // are gone deliberately: MilesCAIRA's `Access-Control-Allow-Headers` does not
+  // list any of the three (verified against UAT on 2026-09-22), so every
+  // preflighted request carrying them would fail CORS. The API reads none of
+  // them either — there is no country or profession dimension behind it.
 
-  // Build headers with default app info
-  const headers = req.headers
-    .set('x-app-type', environment.appType)
-    .set('x-platform', environment.platform)
-    .set('x-country-code', iso2);
+  // The admin panel authenticates against a different identity provider
+  // entirely; `adminTokenInterceptor` owns those requests.
+  const skipToken =
+    req.context.get(SKIP_AUTH_TOKEN) || req.context.get(IS_ADMIN_REQUEST) || isAuthRoute(req.url);
 
-  // ponytail: this attached `Authorization: bearer <accessToken>` from the
-  // session cookie unless the request set `SKIP_AUTH_TOKEN`. The whole user
-  // auth layer is gone, so nothing bearer-authenticates any more — the admin
-  // panel keeps its own token via `adminTokenInterceptor`. Re-wire here.
+  const send = skipToken
+    ? next(req)
+    : // Rule 2: rotate BEFORE the request, never as a retry after a 401/403.
+      // The access token is short by design and cannot be revoked once issued,
+      // and retrying would re-send a POST that has already taken effect.
+      // `ensureFreshToken` is a no-op unless the token is inside its skew, and
+      // it serialises concurrent callers onto one in-flight refresh (rule 3).
+      from(auth.ensureFreshToken()).pipe(
+        switchMap(() => {
+          const token = auth.accessToken();
+          return next(
+            token
+              ? req.clone({ headers: req.headers.set('Authorization', `Bearer ${token}`) })
+              : req,
+          );
+        }),
+      );
 
-  // Clone request with new headers
-  const clonedReq = req.clone({ headers });
-
-  return next(clonedReq).pipe(
+  return send.pipe(
     finalize(() => {
       // Stop loading indicator when request completes (success or error)
       loading.stop();

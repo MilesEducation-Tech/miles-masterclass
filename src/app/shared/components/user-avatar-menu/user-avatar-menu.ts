@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Component, computed, inject, PLATFORM_ID, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, inject, PLATFORM_ID, ViewEncapsulation } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, Event as RouterEvent } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
@@ -9,7 +9,8 @@ import { NgpMenu, NgpMenuItem, NgpMenuTrigger } from 'ng-primitives/menu';
 import { cn } from '../../utils/cn';
 import { Utils } from '../../core/services/utils/utils';
 import { Analytics } from '../../core/services/analytics/analytics';
-import { User } from '../../core/models/profile.model';
+import { AccountApi } from '../../core/services/account-api/account-api';
+import { AuthSession } from '../../core/services/auth-session/auth-session';
 
 @Component({
   selector: 'app-user-avatar-menu',
@@ -24,11 +25,17 @@ export class UserAvatarMenu {
   private readonly platformId = inject(PLATFORM_ID);
   protected readonly utils = inject(Utils);
   private readonly analytics = inject(Analytics);
+  private readonly account = inject(AccountApi);
+  private readonly auth = inject(AuthSession);
 
   readonly cn = cn;
 
-  // ponytail: inert — was `auth.currentUser()`.
-  readonly user = signal<User | null>(null);
+  /**
+   * The caller's own record. `hasValue()` rather than a bare `value()` read:
+   * reading an `httpResource` in its error state throws at runtime, and this
+   * renders on every page including ones a signed-out visitor sees.
+   */
+  readonly user = computed(() => (this.account.user.hasValue() ? this.account.user.value() : null));
 
   readonly displayName = computed(() => {
     const u = this.user();
@@ -59,12 +66,17 @@ export class UserAvatarMenu {
   );
 
   /**
-   * Sign out from the avatar dropdown. There is no session to clear any more,
-   * but the hard navigation stays: it bypasses `canDeactivate` guards on the
-   * current route and flushes route-scoped state.
+   * Sign out from the avatar dropdown.
+   *
+   * `AuthSession.logout()` ends the session at the SSO and clears the cookies
+   * only if that succeeded — a failed logout deliberately keeps the session, so
+   * a UI that merely looked signed out could not hide one still live upstream.
+   * The hard navigation stays regardless: it bypasses `canDeactivate` guards on
+   * the current route and flushes route-scoped state.
    */
-  onLogout(): void {
+  async onLogout(): Promise<void> {
     this.analytics.trackEvent('logout');
+    await this.auth.logout();
     if (isPlatformBrowser(this.platformId)) {
       window.location.assign('/');
     } else {

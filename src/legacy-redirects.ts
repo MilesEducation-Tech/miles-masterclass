@@ -12,7 +12,8 @@ import { timezone } from './app/shared/core/constant/timezone';
  * deep link such as `/accounting/masterclass` is parsed by the v3 router as
  * `country=accounting / profession_type=masterclass`, fails
  * `validateProfessionCountryGuard`, and dumps the user at `/us/accounting` —
- * silently losing the deep link. See ROUTE_REDIRECT_MIGRATION_PLAN.md.
+ * silently losing the deep link. The rule table below is the spec; the
+ * migration plan that produced it lives in git history only.
  *
  * This must be registered BEFORE the static + Angular catch-all handlers in
  * `server.ts` (it already is, right after `registerSeoRoutes`). It only ever
@@ -200,6 +201,13 @@ const RULES: readonly Rule[] = [
   // ---- admin section renames (internal; 307) -----------------------------
   [/^\/admin\/dashboard\/reports\/?$/, () => '/admin/reports/users', false],
   [/^\/admin\/dashboard\/seo-manager\/?$/, () => '/admin/seo', false],
+
+  // ---- retired auth routes (301) -----------------------------------------
+  // Sign-in is OTP-only against the MilesCAIRA Accounts API, so there is no
+  // password to forget; and `auth-identify/` answers identically for a known
+  // and an unknown identifier, which makes login and signup the same screen.
+  // Permanent, because neither route is coming back.
+  [/^\/auth\/(signup|forget-password)\/?$/, () => '/auth/login', true],
 ];
 
 /** True for any path we might rewrite — everything else is left untouched. */
@@ -208,7 +216,8 @@ function isLegacyPath(path: string): boolean {
     /^\/(accounting|partnerships)(\/|$)/.test(path) ||
     // v3-prefixed but stale `premiere` name: /<cc>/accounting/premiere/...
     /^\/[a-z]{2}\/accounting\/premiere(\/|$)/.test(path) ||
-    /^\/admin\/dashboard\/(reports|seo-manager)\/?$/.test(path)
+    /^\/admin\/dashboard\/(reports|seo-manager)\/?$/.test(path) ||
+    /^\/auth\/(signup|forget-password)\/?$/.test(path)
   );
 }
 

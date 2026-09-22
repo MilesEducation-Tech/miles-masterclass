@@ -3,7 +3,7 @@ import { from, switchMap } from 'rxjs';
 import { mockRole } from './partner-mock-role';
 
 /**
- * Serves a mock dataset for `docs/PARTNER_PLATFORM_API.md` so the whole
+ * Serves a mock dataset for the Partner Platform API contract so the whole
  * three-portal flow is clickable without a provisioned backend account. Off
  * unless the page is on localhost AND `localStorage.partnerMock` is `super`,
  * `network`, or `firm` (the role `/panel/me/` reports back — switch portals

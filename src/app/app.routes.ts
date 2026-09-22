@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { validateProfessionCountryGuard } from './shared/core/guards/validate-profession-country.guard';
 import { rootRedirectGuard } from './shared/core/guards/root-redirect.guard';
+import { onboardingGuard } from './shared/core/guards/auth/onboarding.guard';
 import { PageNotFound } from './pages/page-not-found/page-not-found';
 import { BlogLayout } from './pages/blog-layout/blog-layout';
 import { Compliance } from './pages/compliance/compliance';
@@ -50,7 +51,13 @@ export const routes: Routes = [
     ],
   },
   {
+    // `onboardingGuard` is the backstop for a first-time learner who navigates
+    // away mid-onboarding: the login flow already sends `new_user` to
+    // `/auth/profile` after verify, and this stops a deep link from walking
+    // past it. It is inert for signed-out visitors, so the public pages are
+    // unaffected.
     path: ':country/:profession_type',
+    canMatch: [onboardingGuard],
     canActivate: [validateProfessionCountryGuard],
     loadChildren: () => import('./features/features').then((m) => m.featuresRoutes),
   },

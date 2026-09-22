@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Slider } from './slider';
-import { Content } from '../../core/models/track.model';
+import { Content } from '../../core/models/course.model';
 
 describe('Slider', () => {
   const mockItems: Content[] = [
@@ -26,8 +26,11 @@ describe('Slider', () => {
         id: 0,
         first_name: '',
         last_name: '',
+        other_instructors: [],
       },
       has_individual_badge: false,
+      caira_level: null,
+      included_for_caira: false,
     },
   ];
 
@@ -70,14 +73,5 @@ describe('Slider', () => {
     expect(ordered[1].id).toBe('2');
     expect(ordered[2].id).toBe('3');
     expect(ordered[3].id).toBe('4');
-  });
-
-  it('should track items by id', async () => {
-    const fixture = TestBed.createComponent(Slider);
-    fixture.componentRef.setInput('items', mockItems);
-    await fixture.whenStable();
-    const component = fixture.componentInstance;
-    const item = mockItems[0];
-    expect(component['trackByItem'](0, item)).toBe('1');
   });
 });

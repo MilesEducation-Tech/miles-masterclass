@@ -1,5 +1,5 @@
 /**
- * Reports API models — `docs/PARTNER_PLATFORM_API.md` § Reports API.
+ * Reports API models — the Partner Platform API contract § Reports API.
  *
  * The same five endpoints exist under BOTH bases: `partners/superadmin/report/…`
  * (super admins, must pass exactly one of `network_id`/`firm_id`) and
@@ -58,7 +58,7 @@ export interface ReportSummary {
 }
 
 // ---------------------------------------------------------------------------
-// Certificates — `GET .../certificates/` (docs/PARTNER_PLATFORM_API.md § Course Certificates)
+// Certificates — `GET .../certificates/` (Partner Platform API contract § Course Certificates)
 // ---------------------------------------------------------------------------
 
 /**

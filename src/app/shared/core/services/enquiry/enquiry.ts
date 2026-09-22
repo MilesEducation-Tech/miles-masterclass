@@ -16,7 +16,7 @@ export interface EnquiryPayload {
   keep_updated: boolean;
 }
 
-/** `POST partners/leads/` 201 body (docs/LEADS_API.md). */
+/** `POST partners/leads/` 201 body. */
 export interface EnquiryResponse {
   success: boolean;
   message: string;

@@ -178,9 +178,10 @@
       type="submit"
       variant="default"
       [disabled]="
-        authFacade.loginStep() === 'OTP'
+        authFacade.isTerminal() ||
+        (authFacade.loginStep() === 'OTP'
           ? authFacade.otpForm().invalid() || authFacade.isLoading() || authFacade.isLockedOut()
-          : authFacade.loginForm().invalid() || authFacade.isLoading() || !authFacade.canSendOtp()
+          : authFacade.loginForm().invalid() || authFacade.isLoading() || !authFacade.canSendOtp())
       "
     >
       @if (authFacade.isLoading()) {
@@ -237,19 +238,9 @@
                 </app-button>
               </div>
             }
-            @case ('sms') {
-              <!-- A number with no WhatsApp account fails at delivery, long after
-                   the send returned 200. Switching channel is the only retry that
-                   addresses that; resending on WhatsApp again cannot. -->
-              <app-button
-                variant="link"
-                size="link"
-                [disabled]="authFacade.isLoading()"
-                (clicked)="authFacade.resendOverSms()"
-              >
-                Send by SMS instead
-              </app-button>
-            }
+            <!-- There is no 'sms' case: `auth-otp-send/` does not declare a
+                 `channel` field, so asking for a specific channel is a 400. A
+                 plain resend is the whole of what the API offers. -->
             @case ('email') {
               <app-button
                 variant="link"

@@ -1,159 +1,129 @@
 <div class="flex flex-col space-y-6 max-w-2xl mx-auto md:p-6">
   <div class="flex flex-col space-y-3">
-    <p class="text-2xl font-bold text-white">Your Profile</p>
-    <p class="text-gray-400">Manage your personal information</p>
+    <p class="text-2xl font-bold text-white">
+      {{ isOnboarding() ? 'Tell us about yourself' : 'Your Profile' }}
+    </p>
+    <p class="text-gray-400">
+      {{
+        isOnboarding()
+          ? 'A few questions so we can tailor what you see.'
+          : 'Manage your personal information'
+      }}
+    </p>
   </div>
 
-  <app-forms type="signal" class="space-y-4 flex flex-col" (submitted)="save()">
-    <!-- ID (Readonly) -->
+  @if (isLoading()) {
+    <div class="flex justify-center py-12"><app-spinner /></div>
+  } @else if (loadError()) {
+    <p class="text-sm text-destructive" role="alert">
+      We couldn't load your profile. Please refresh and try again.
+    </p>
+  } @else {
+    <form class="space-y-6 flex flex-col" (ngSubmit)="save()">
+      <!-- Identity — the `user_details/` row. Email and phone are the sign-in
+           identifiers and are set at the SSO, so they are shown, not edited. -->
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <app-aria-input id="first_name" label="First Name" [(value)]="firstName" />
+          <app-aria-input id="last_name" label="Last Name" [(value)]="lastName" />
+        </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <app-aria-input id="first_name" label="First Name" [formField]="profileForm.first_name" />
-      <app-aria-input id="last_name" label="Last Name" [formField]="profileForm.last_name" />
-    </div>
-
-    <app-aria-input id="email" label="Email" type="email" [formField]="profileForm.email" />
-
-    <div class="flex space-x-2">
-      <div class="w-[140px]">
-        <app-aria-autocomplete
-          id="country_code"
-          label="Code"
-          placeholder="Search..."
-          [options]="countryCodes"
-          [formField]="profileForm.country_code"
-        />
-      </div>
-      <app-aria-input
-        class="w-full"
-        id="mobile"
-        label="Mobile"
-        type="tel"
-        [formField]="profileForm.mobile"
-      />
-    </div>
-
-    <!-- Free-text fallback when the location lookup is down: the picker would
-         otherwise be a dead field. Validation moves into the form (country
-         required) since the API is no longer guaranteeing it. -->
-    @if (locationApiFailed()) {
-      <app-aria-input
-        id="location"
-        label="Location"
-        hint="Location lookup is unavailable — type your location ending in the country, e.g. India or Bengaluru, India"
-        [formField]="profileForm.location"
-      />
-    } @else {
-      <app-aria-autocomplete
-        id="location"
-        label="Location"
-        [options]="locationOptions()"
-        [serverFiltered]="true"
-        [formField]="profileForm.location"
-        (queryChange)="locationQuery.set($event)"
-      />
-    }
-
-    @if (isExistingUser()) {
-      <!-- CPA Details — existing users only -->
-      <div class="space-y-2">
-        <label
-          for="license_status"
-          class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
-          Are you a Licensed US CPA?
-        </label>
         <app-aria-input
-          id="license_status"
-          type="radio"
-          [options]="cpaStatusOptions"
-          [formField]="profileForm.license_status"
+          id="email"
+          label="Email"
+          type="email"
+          [value]="email()"
+          [readonly]="true"
+          hint="Used to sign in. Contact support to change it."
         />
+
+        @if (phone()) {
+          <app-aria-input id="phone" label="Mobile" [value]="phone()" [readonly]="true" />
+        }
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <app-aria-input id="city" label="City" [(value)]="city" />
+          <app-aria-input id="location" label="Location" [(value)]="location" />
+        </div>
       </div>
 
-      @if (profile().license_status === 'yes') {
-        <app-aria-multiselect
-          id="state_boards"
-          label="Select the State Boards you are licensed with"
-          placeholder="Search State Boards..."
-          [options]="stateBoardOptions()"
-          [formField]="profileForm.state_board"
-        />
-      } @else if (profile().license_status === 'no') {
-        <app-aria-multiselect
-          id="professional_certification"
-          label="Professional Certification"
-          placeholder="Select Professional Certification"
-          [options]="professionalCourseOptions()"
-          [formField]="profileForm.professional_courses"
-        />
+      <!-- The questionnaire. Everything below is server-driven: the backend
+           decides which questions exist, their order and their options, and
+           this template only renders them. `section` is a grouping label and
+           does not affect order. -->
+      @for (section of sections(); track section.title) {
+        <div class="space-y-4">
+          @if (section.title) {
+            <p class="text-sm font-semibold text-white/80">{{ section.title }}</p>
+          }
+
+          @for (question of section.questions; track question.code) {
+            @let control = controlOf(question);
+            @let answer = answerOf(question);
+
+            @switch (control) {
+              @case ('multi') {
+                <app-aria-multiselect
+                  [id]="question.code"
+                  [label]="question.label"
+                  [options]="optionsOf(question)"
+                  [value]="asStringArray(answer)"
+                  (valueChange)="setAnswer(question, $event)"
+                />
+              }
+              @case ('single') {
+                <app-aria-autocomplete
+                  [id]="question.code"
+                  [label]="question.label"
+                  placeholder="Select..."
+                  [options]="optionsOf(question)"
+                  [value]="answer"
+                  (valueChange)="setAnswer(question, $event)"
+                />
+              }
+              @case ('boolean') {
+                <app-aria-input
+                  [id]="question.code"
+                  type="checkbox"
+                  [label]="question.label"
+                  [value]="answer"
+                  (valueChange)="setAnswer(question, $event)"
+                />
+              }
+              @case ('number') {
+                <app-aria-input
+                  [id]="question.code"
+                  type="number"
+                  [label]="question.label"
+                  [value]="answer"
+                  (valueChange)="setAnswer(question, $event)"
+                />
+              }
+              @default {
+                <app-aria-input
+                  [id]="question.code"
+                  [label]="question.label"
+                  [value]="answer"
+                  (valueChange)="setAnswer(question, $event)"
+                />
+              }
+            }
+
+            <!-- A 400 from `PATCH profile/` is keyed by question code, one
+                 message per bad answer — so it renders against its own field. -->
+            @if (fieldErrors()[question.code]; as message) {
+              <p class="text-sm text-destructive" role="alert">{{ message }}</p>
+            }
+          }
+        </div>
       }
 
-      <app-aria-autocomplete
-        id="company_name"
-        label="Company Name"
-        placeholder="Where do you work? (Optional)"
-        [options]="companyOptions()"
-        [formField]="profileForm.company_id"
-        (queryChange)="onCompanySearch($event)"
-      />
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <app-aria-autocomplete
-          id="sector"
-          label="Sector"
-          placeholder="Select your sector"
-          [options]="sectorOptions()"
-          [formField]="profileForm.sector_id"
-        />
-        <app-aria-autocomplete
-          id="job_role"
-          label="Job Role"
-          placeholder="Select your role"
-          [options]="jobRoleOptions()"
-          [formField]="profileForm.job_role_id"
-        />
-      </div>
-    }
-
-    @if (showPartnerCodeSection()) {
-      <div class="space-y-1">
-        <div class="flex space-x-2 items-start">
-          <app-aria-input
-            class="flex-1"
-            id="partner_code"
-            label="Partner Code (optional)"
-            placeholder="Enter partner code"
-            [formField]="partnerCodeForm.partner_code"
-          />
-          <app-button
-            class="shrink-0"
-            variant="default"
-            [disabled]="!canApplyPartnerCode()"
-            (clicked)="applyPartnerCode()"
-          >
-            Apply
-          </app-button>
-        </div>
-        <p class="text-xs text-gray-400">
-          Have a partner code? Enter it to unlock partner benefits.
-        </p>
-      </div>
-    }
-
-    @if (!isExistingUser()) {
-      <div class="flex items-center space-x-2">
-        <app-aria-input
-          id="terms_accepted"
-          type="checkbox"
-          label="I accept the terms and conditions"
-          [formField]="profileForm.terms_accepted"
-        />
-      </div>
-    }
-
-    <app-button class="w-full" type="submit" variant="default" [disabled]="profileForm().invalid()">
-      Save Changes
-    </app-button>
-  </app-forms>
+      <app-button class="w-full" type="submit" variant="default" [disabled]="isSaving()">
+        @if (isSaving()) {
+          <app-spinner />
+        }
+        {{ isOnboarding() ? 'Continue' : 'Save Changes' }}
+      </app-button>
+    </form>
+  }
 </div>
