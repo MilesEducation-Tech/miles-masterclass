@@ -1,4 +1,4 @@
-import { FAQContent } from './faq.model';
+import { FAQContent } from '@core/models/faq.model';
 
 /**
  * Shape for a legal document rendered by <app-legal-doc>. Used by Terms of

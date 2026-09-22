@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
-import { LegalDocComponent } from '../shared/components/legal-doc/legal-doc';
-import { resolveTermsOfService } from '@core/constants/terms-of-service';
+import { LegalDocComponent } from '../../components/legal-doc/legal-doc';
+import { resolveTermsOfService } from '../../constants/terms-of-service';
 import { Utils } from '@shared/services/utils';
 
 @Component({

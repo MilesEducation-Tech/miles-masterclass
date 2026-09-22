@@ -1,6 +1,6 @@
 import { LegalDoc } from '../models/legal-doc.model';
-import { richContent } from '../models/faq.model';
-import { CountryCode, ProfessionType } from '../models/route-params.model';
+import { richContent } from '@core/models/faq.model';
+import { CountryCode, ProfessionType } from '@core/models/route-params.model';
 import { LocaleKey, resolveByLocale } from '@core/utils/locale-resolver';
 
 /**

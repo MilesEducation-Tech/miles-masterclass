@@ -15,10 +15,10 @@ import {
 import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FaqContent } from '../../../faq/shared/components/faq-content/faq-content';
+import { FaqContent } from '@shared/components/faq-content/faq-content';
 import { LegalSection } from '../legal-section/legal-section';
 import { SectionNavItem } from '@shared/components/section-nav/section-nav';
-import { LegalDoc as LegalDocModel } from '@core/models/legal-doc.model';
+import { LegalDoc as LegalDocModel } from '../../models/legal-doc.model';
 
 /**
  * Shared shell for legal pages (Terms of Service, Privacy Policy). Renders

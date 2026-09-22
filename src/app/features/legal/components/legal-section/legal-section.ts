@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
-import { LegalSection as LegalSectionModel } from '@core/models/legal-doc.model';
-import { FaqContent } from '../../../faq/shared/components/faq-content/faq-content';
+import { LegalSection as LegalSectionModel } from '../../models/legal-doc.model';
+import { FaqContent } from '@shared/components/faq-content/faq-content';
 
 /**
  * Renders one section of a LegalDoc: heading + FAQContent body + recursive
