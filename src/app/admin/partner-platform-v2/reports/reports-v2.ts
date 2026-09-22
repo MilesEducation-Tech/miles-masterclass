@@ -1,7 +1,7 @@
 import { Component, EnvironmentInjector, computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '@shared/components/ui/button/button';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/ui/button/button';
 import { Dialog } from '@core/services/dialog/dialog';
 import { StatCard } from '@admin/partner-platform/shared/components/stat-card/stat-card';
 import { PartnerAdminMe } from '@admin/partner-platform/shared/services/partner-admin-me';
@@ -10,7 +10,7 @@ import { PartnerSuperAdminFacade } from '@admin/partner-platform/shared/services
 import {
   PartnerReportPreviewDialog,
   PartnerReportPreviewDialogData,
-} from '@shared/components/dialog/partner-report-preview-dialog/partner-report-preview-dialog';
+} from '@admin/partner-platform/reports/dialogs/partner-report-preview-dialog/partner-report-preview-dialog';
 import {
   ReportItemsDialog,
   ReportItemsDialogData,
@@ -22,8 +22,8 @@ import {
   ReportUserRow,
 } from '@admin/partner-platform/reports/shared/models/partner-report.model';
 import { PartnerReportFacade } from '@admin/partner-platform/reports/shared/services/partner-report-facade';
-import { TabStrip } from '@shared/components/ui/tab-strip/tab-strip';
-import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { TabStrip } from '@shared/ui/tab-strip/tab-strip';
+import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
 import { AriaSelectOption } from '@core/models/aria.model';
 
 const SUBJECT_TABS: { value: ReportSubject; label: string }[] = [

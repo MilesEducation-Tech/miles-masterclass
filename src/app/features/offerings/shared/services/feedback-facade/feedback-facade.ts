@@ -9,7 +9,7 @@ import {
 } from '@features/offerings/models/feedback-model';
 import { ContentDetails } from '@core/models/course.model';
 import { RouteParams, RouteRequest, RouteResponse } from '@core/models/http.model';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { Analytics } from '@core/services/analytics/analytics';
 
 // Type aliases for cleaner usage

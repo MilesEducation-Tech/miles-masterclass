@@ -15,8 +15,8 @@ import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import { BadgeV2Response, CairaLadderItem } from '@core/models/caira-badge.model';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Dialog } from '@core/services/dialog/dialog';
-import { Button } from '@shared/components/ui/button/button';
-import { Progress } from '@shared/components/ui/progress/progress';
+import { Button } from '@shared/ui/button/button';
+import { Progress } from '@shared/ui/progress/progress';
 import { badgeHaloHex } from '@shared/utils/badge-level';
 import { localeLink } from '../../utils/tracker-links';
 import { levelProgressHint, seedLevelRank } from '../../utils/level-progress';
@@ -139,7 +139,7 @@ export class CairaLevelHero {
     const level = this.activeLevel();
     if (!level) return;
     const { CairaBadgeInfoDialog } =
-      await import('@shared/components/dialog/caira-badge-info-dialog/caira-badge-info-dialog');
+      await import('@features/caira-tracker/dialogs/caira-badge-info-dialog/caira-badge-info-dialog');
     this.dialog.open(CairaBadgeInfoDialog, {
       data: { level },
       ariaLabel: 'CAIRA badge details',

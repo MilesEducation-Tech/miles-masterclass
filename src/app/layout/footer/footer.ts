@@ -5,13 +5,13 @@ import { NgIcon } from '@ng-icons/core';
 import { svglLinkedin, svglYoutube } from '@ng-icons/svgl';
 import { appStoreIcon, googlePlayIcon, instagramIcon } from '@core/constants/icon';
 import { FooterLink, FooterSection } from '@core/models/footer.model';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { Consent } from '@core/services/consent/consent';
 import { Dialog } from '@core/services/dialog/dialog';
 import {
   CalendlyDialog,
   CalendlyDialogData,
-} from '@shared/components/dialog/calendly-dialog/calendly-dialog';
+} from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { User } from '@core/models/profile.model';
 
 @Component({

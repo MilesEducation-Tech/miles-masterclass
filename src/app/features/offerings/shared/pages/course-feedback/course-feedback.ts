@@ -3,14 +3,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FeedbackFacade } from '../../services/feedback-facade/feedback-facade';
 import { RatingStar } from '@shared/components/rating-star/rating-star';
-import { Button } from '@shared/components/ui/button/button';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/ui/button/button';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { FeedbackCategory } from '@features/offerings/models/feedback-model';
 import { ContentDetails } from '@core/models/course.model';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { Dialog } from '@core/services/dialog/dialog';
 import { User } from '@core/models/profile.model';
-import { UtilsDialog, UtilsDialogData } from '@shared/components/dialog/utils-dialog/utils-dialog';
+import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
 
 const PROFILE_INCOMPLETE_DIALOG_DATA: UtilsDialogData = {
   containerClass: 'py-12 px-6',

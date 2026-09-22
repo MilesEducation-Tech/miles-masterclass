@@ -25,10 +25,10 @@ import {
 } from '@features/cpe-tracker/models/cpe-credit.model';
 import { CreditsSummary } from '@core/models/cpe-tracker.model';
 import { ApiClient } from '@core/services/api-client/api-client';
-import { Utils } from '@core/services/utils/utils';
-import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { Utils } from '@shared/services/utils';
+import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
 import { AriaSelectOption } from '@core/models/aria.model';
-import { ErrorState } from '@shared/components/ui/error-state/error-state';
+import { ErrorState } from '@shared/ui/error-state/error-state';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 import { localeLink } from '@features/caira-tracker/shared/utils/tracker-links';
 import { BadgeFilterChips } from '@features/caira-tracker/shared/components/badge-filter-chips/badge-filter-chips';

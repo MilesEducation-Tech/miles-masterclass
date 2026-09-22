@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { RouterModule } from '@angular/router';
 import { Footer } from './footer';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 
 class MockUtils {
   getRouteParams() {

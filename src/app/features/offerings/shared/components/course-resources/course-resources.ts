@@ -4,12 +4,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideVideo, lucideFileText, lucideDownload, lucideBot } from '@ng-icons/lucide';
 import { MasterclassFacade } from '../../services/masterclass-facade/masterclass-facade';
-import { VideoDialog, VideoDialogData } from '@shared/components/dialog/video-dialog/video-dialog';
+import { VideoDialog, VideoDialogData } from '@shared/dialogs/video-dialog/video-dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import {
   HtmlContentDialog,
   HtmlContentDialogData,
-} from '@shared/components/dialog/html-content-dialog/html-content-dialog';
+} from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 
 @Component({
   selector: 'app-course-resources',

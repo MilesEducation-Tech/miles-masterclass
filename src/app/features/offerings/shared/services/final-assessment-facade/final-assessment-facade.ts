@@ -4,7 +4,7 @@ import { QuizQuestion, ContentDetails } from '@core/models/course.model';
 import { Observable, of } from 'rxjs';
 import { map, tap, switchMap } from 'rxjs/operators';
 import { ApiClient } from '@core/services/api-client/api-client';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { Analytics } from '@core/services/analytics/analytics';
 import { ASSESSMENT_ROUTES } from '@features/offerings/models/assessment.model';
 import { RouteParams, RouteRequest, RouteResponse } from '@core/models/http.model';

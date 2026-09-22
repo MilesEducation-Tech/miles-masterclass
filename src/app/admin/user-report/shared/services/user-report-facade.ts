@@ -17,7 +17,7 @@ import { SKIP_AUTH_TOKEN } from '@core/models/http.model';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
-import { parseNextPage } from '@shared/utils/parse-next-page';
+import { parseNextPage } from '@core/utils/parse-next-page';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
   CourseDetail,

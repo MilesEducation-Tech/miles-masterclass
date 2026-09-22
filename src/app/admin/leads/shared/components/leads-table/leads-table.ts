@@ -2,13 +2,13 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideChevronRight } from '@ng-icons/lucide';
-import { Button } from '@shared/components/ui/button/button';
-import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { Button } from '@shared/ui/button/button';
+import { Spinner } from '@shared/ui/spinner/spinner';
 import { AdminAuth } from '@admin/core/services/admin-auth';
-import { PERM } from '@core/models/admin/admin-rbac.model';
+import { PERM } from '@admin/core/admin-rbac.model';
 import { FirmInquiry, LEAD_STATUSES, LeadStatus } from '../../models/firm-inquiry.model';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
 import { AriaSelectOption } from '@core/models/aria.model';
 
 /** bg/fg CSS-var pair per status for the badge. */

@@ -3,23 +3,20 @@ import { Component, DestroyRef, computed, inject, linkedSignal, signal } from '@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { take } from 'rxjs';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
-import { Button } from '@shared/components/ui/button/button';
-import {
-  CheckboxList,
-  CheckboxListOption,
-} from '@shared/components/ui/checkbox-list/checkbox-list';
-import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+import { Button } from '@shared/ui/button/button';
+import { CheckboxList, CheckboxListOption } from '@shared/ui/checkbox-list/checkbox-list';
+import { Spinner } from '@shared/ui/spinner/spinner';
 import {
   EditAdminRolesDialog,
   EditAdminRolesDialogData,
-} from '@shared/components/dialog/edit-admin-roles-dialog/edit-admin-roles-dialog';
+} from '@admin/admin-users/dialogs/edit-admin-roles-dialog/edit-admin-roles-dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import { AdminAuth } from '@admin/core/services/admin-auth';
 import { AriaSelectOption } from '@core/models/aria.model';
-import { toggleRoleSlug } from '@core/models/admin/admin-rbac.model';
+import { toggleRoleSlug } from '@admin/core/admin-rbac.model';
 import {
   AdminUsersFacade,
   AdminPermissionRow,

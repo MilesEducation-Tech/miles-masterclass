@@ -4,7 +4,7 @@ import {
   PartnerContentList,
 } from '../../components/partner-content-list/partner-content-list';
 import { logo } from '@core/constants/icon';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { environment } from '@env/environment';
 import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
 import {
@@ -32,7 +32,7 @@ import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
 import {
   CalendlyDialog,
   CalendlyDialogData,
-} from '@shared/components/dialog/calendly-dialog/calendly-dialog';
+} from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import { ScrollService } from '@core/services/scroll/scroll';
 

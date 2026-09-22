@@ -6,7 +6,7 @@ import { filter, map, take } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
 import { NotificationService } from '@core/services/notification/notification';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 
 /**
  * Cart-state guard for `/payment/billing` and `/payment/review`. Reads the

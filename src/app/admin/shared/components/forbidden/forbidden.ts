@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideShieldAlert } from '@ng-icons/lucide';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { AdminAuth } from '@admin/core/services/admin-auth';
 import { adminLandingPath } from '../../utils/admin-landing';
 

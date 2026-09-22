@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import {
   PartnerContentItem,
   PartnerContentList,

@@ -12,7 +12,7 @@ import {
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroFunnel } from '@ng-icons/heroicons/outline';
 import { Vertical } from '@shared/components/cards/vertical/vertical';
-import { TabStrip } from '@shared/components/ui/tab-strip/tab-strip';
+import { TabStrip } from '@shared/ui/tab-strip/tab-strip';
 import {
   COURSE_TYPE_TABS,
   CourseFilterGroup,

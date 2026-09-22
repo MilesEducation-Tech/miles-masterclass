@@ -19,7 +19,7 @@ import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import {
   HtmlContentDialog,
   HtmlContentDialogData,
-} from '@shared/components/dialog/html-content-dialog/html-content-dialog';
+} from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 import { MicroLearningTopBar } from '../../components/micro-learning-top-bar/micro-learning-top-bar';
 import { MicroLearningReelCard } from '../../components/micro-learning-reel-card/micro-learning-reel-card';
 import { MicroLearningReelNav } from '../../components/micro-learning-reel-nav/micro-learning-reel-nav';

@@ -1,16 +1,16 @@
 import { Component, DestroyRef, inject, input, model, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { RecordDisk } from '../../record-disk/record-disk';
 import { Content } from '@core/models/course.model';
-import { Button } from '../../ui/button/button';
+import { Button } from '../../../ui/button/button';
 import { NgIconComponent } from '@ng-icons/core';
 import { faSolidPlay, faSolidInfo, faSolidRobot } from '@ng-icons/font-awesome/solid';
 import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Logger } from '@core/services/logger/logger';
 import { CategoriesList } from '../../categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '@core/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
 
 @Component({

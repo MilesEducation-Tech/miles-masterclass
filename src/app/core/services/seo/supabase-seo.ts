@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { DEFAULT_SEO_PAGES } from '../../models/seo.constants';
 import { createDefaultSeoPage, SeoPage } from '../../models/seo.models';
-import { generateUUID } from '@shared/utils/uuid';
+import { generateUUID } from '@core/utils/uuid';
 import { Logger } from '../logger/logger';
 import { Supabase } from '../supabase/supabase';
 

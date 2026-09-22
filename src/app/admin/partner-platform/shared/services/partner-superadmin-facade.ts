@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { computed, inject, Injectable, PLATFORM_ID, resource } from '@angular/core';
 import { firstValueFrom, fromEvent, Observable, takeUntil } from 'rxjs';
-import { PERM } from '@core/models/admin/admin-rbac.model';
+import { PERM } from '@admin/core/admin-rbac.model';
 import { AdminAuth } from '@admin/core/services/admin-auth';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';

@@ -4,7 +4,7 @@ import { VideoChapter } from '../../../../shared/components/video-chapter/video-
 import { AudioChapter } from '../../../../shared/components/audio-chapter/audio-chapter';
 import { Backward } from '@shared/components/backward/backward';
 import { ChapterFacade } from '../../../../shared/services/chapter-facade/chapter-facade';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { Logger } from '@core/services/logger/logger';
 import { exitChapterToCourse } from '@shared/utils/exit-chapter';
 

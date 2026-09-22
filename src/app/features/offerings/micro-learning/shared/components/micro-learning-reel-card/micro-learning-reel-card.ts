@@ -27,7 +27,7 @@ import {
   matVolumeUpRound,
 } from '@ng-icons/material-icons/round';
 import { NgpMenu, NgpMenuItem, NgpMenuTrigger } from 'ng-primitives/menu';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import {
   PlayerMode,
   VideoConfig,
@@ -42,8 +42,8 @@ import {
   MicroLearningReel,
   ReelActivityPayload,
 } from '@features/offerings/models/micro-learning-course.model';
-import { TotalCpeCreditsPipe } from '@core/pipes/total-cpe-credits/total-cpe-credits.pipe';
-import { Utils } from '@core/services/utils/utils';
+import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { Utils } from '@shared/services/utils';
 
 /**
  * Free preview window for a reel the user has no plan for, in seconds. The

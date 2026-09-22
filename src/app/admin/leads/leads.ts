@@ -1,14 +1,14 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '@shared/components/ui/button/button';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/ui/button/button';
 import { HasPermissionDirective } from '@admin/shared/directives/has-permission.directive';
-import { PERM } from '@core/models/admin/admin-rbac.model';
+import { PERM } from '@admin/core/admin-rbac.model';
 import { LeadsTable } from './shared/components/leads-table/leads-table';
 import { LeadsFacade } from './shared/services/leads-facade';
 import { LeadStatus, LeadStatusFilter } from './shared/models/firm-inquiry.model';
-import { TabStrip } from '@shared/components/ui/tab-strip/tab-strip';
+import { TabStrip } from '@shared/ui/tab-strip/tab-strip';
 
 const STATUS_TABS: { value: LeadStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },

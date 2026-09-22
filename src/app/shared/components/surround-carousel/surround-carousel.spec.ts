@@ -6,7 +6,7 @@ import { SurroundCarousel } from './surround-carousel';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Content } from '@core/models/course.model';
 import { ContentResponse } from '@core/models/track.model';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 
 /**
  * These cover what decides whether a visitor sees anything and what they see:

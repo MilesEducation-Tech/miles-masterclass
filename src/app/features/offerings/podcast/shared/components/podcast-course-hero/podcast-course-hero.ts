@@ -1,10 +1,10 @@
 import { Component, computed, DestroyRef, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MasterclassFacade } from '../../../../shared/services/masterclass-facade/masterclass-facade';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { cn } from '@shared/utils/cn';
-import { Button } from '@shared/components/ui/button/button';
-import { Progress } from '@shared/components/ui/progress/progress';
+import { Button } from '@shared/ui/button/button';
+import { Progress } from '@shared/ui/progress/progress';
 import { RatingStar } from '@shared/components/rating-star/rating-star';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
@@ -20,7 +20,7 @@ import { phosphorShareFatFill, phosphorDownloadSimpleFill } from '@ng-icons/phos
 import { phosphorCards } from '@ng-icons/phosphor-icons/regular';
 import { RecordDisk } from '@shared/components/record-disk/record-disk';
 import { CategoriesList } from '@shared/components/categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '@core/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
 
 @Component({

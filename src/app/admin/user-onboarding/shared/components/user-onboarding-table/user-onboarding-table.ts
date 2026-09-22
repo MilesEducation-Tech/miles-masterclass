@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { Button } from '@shared/components/ui/button/button';
-import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { Button } from '@shared/ui/button/button';
+import { Spinner } from '@shared/ui/spinner/spinner';
 import { InternalUser } from '../../models/user-onboarding.model';
 
 @Component({

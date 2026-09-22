@@ -7,7 +7,7 @@ import {
   MOCK_MICROLEARNING_CARD,
 } from '@testing/mocks/content.mock';
 import { MockUtils, MockFeatureFacade } from '@testing/mocks/services.mock';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 
 const meta: Meta<Vertical> = {

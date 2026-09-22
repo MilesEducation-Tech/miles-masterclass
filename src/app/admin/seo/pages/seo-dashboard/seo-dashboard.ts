@@ -16,16 +16,16 @@ import {
   heroTrash,
   heroXMark,
 } from '@ng-icons/heroicons/outline';
-import { UtilsDialog, UtilsDialogData } from '@shared/components/dialog/utils-dialog/utils-dialog';
+import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { computeSeoScore, createDefaultSeoPage, SeoPage } from '@core/models/seo.models';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { SupabaseSeo } from '@core/services/seo/supabase-seo';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
-import { Button } from '@shared/components/ui/button/button';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+import { Button } from '@shared/ui/button/button';
 import { AriaSelectOption } from '@core/models/aria.model';
-import { PERM } from '@core/models/admin/admin-rbac.model';
+import { PERM } from '@admin/core/admin-rbac.model';
 import { HasPermissionDirective } from '@admin/shared/directives/has-permission.directive';
 
 @Component({

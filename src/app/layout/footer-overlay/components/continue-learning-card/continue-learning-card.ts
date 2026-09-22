@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faSolidPlay } from '@ng-icons/font-awesome/solid';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { Content } from '@core/models/course.model';
 
 @Component({

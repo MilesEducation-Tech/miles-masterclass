@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import {
   PartnerContentItem,
   PartnerContentList,

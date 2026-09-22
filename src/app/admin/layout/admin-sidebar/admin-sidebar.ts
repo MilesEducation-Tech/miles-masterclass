@@ -18,9 +18,9 @@ import {
   lucideUserPlus,
 } from '@ng-icons/lucide';
 import { AdminAuth } from '@admin/core/services/admin-auth';
-import { PERM } from '@core/models/admin/admin-rbac.model';
+import { PERM } from '@admin/core/admin-rbac.model';
 import { logo, logoIcon } from '@core/constants/icon';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 
 interface SidebarItem {
   id: string;

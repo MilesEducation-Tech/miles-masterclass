@@ -2,8 +2,8 @@ import { Component, DestroyRef, EnvironmentInjector, inject } from '@angular/cor
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { take } from 'rxjs';
-import { Button } from '@shared/components/ui/button/button';
-import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { Button } from '@shared/ui/button/button';
+import { Spinner } from '@shared/ui/spinner/spinner';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Network } from '@admin/partner-platform/shared/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/partner-platform/shared/services/partner-superadmin-facade';

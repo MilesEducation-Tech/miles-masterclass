@@ -5,10 +5,10 @@ import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
 import { LoadingService } from '@core/services/loading/loading';
 import { ConsentBanner } from '@shared/components/consent-banner/consent-banner';
-import { Progress } from '@shared/components/ui/progress/progress';
+import { Progress } from '@shared/ui/progress/progress';
 import { SeoManager } from '@core/services/seo/seo-manager';
 import { Analytics } from '@core/services/analytics/analytics';
-import { EngagementDialog } from '@core/services/engagement-dialog/engagement-dialog';
+import { EngagementDialog } from '@shared/services/engagement-dialog';
 import { Utm } from '@core/services/utm/utm';
 import {
   isDynamicSlug,

@@ -13,9 +13,9 @@ import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { SupabaseSeo } from '@core/services/seo/supabase-seo';
 import { saveBlob } from '@shared/utils/blob-download';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
-import { Button } from '@shared/components/ui/button/button';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+import { Button } from '@shared/ui/button/button';
 import { AriaSelectOption } from '@core/models/aria.model';
 import { parseSeoCsv, SEO_CSV_TEMPLATE, SeoRow, validateSeoRow } from '@admin/seo/utils/seo-csv';
 

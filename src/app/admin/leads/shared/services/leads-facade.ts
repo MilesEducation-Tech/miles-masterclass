@@ -14,7 +14,7 @@ import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { fileNameFromContentDisposition, saveBlob } from '@shared/utils/blob-download';
-import { drfErrorMessage } from '@shared/utils/drf-error-message';
+import { drfErrorMessage } from '@core/utils/drf-error-message';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
   adminContext,

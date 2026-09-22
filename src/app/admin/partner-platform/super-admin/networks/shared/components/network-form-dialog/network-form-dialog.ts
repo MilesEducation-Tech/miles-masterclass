@@ -7,9 +7,9 @@ import {
   validate,
 } from '@angular/forms/signals';
 import { DialogRef } from '@core/services/dialog/dialog';
-import { Button } from '@shared/components/ui/button/button';
-import { Forms } from '@shared/components/ui/forms/forms';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/ui/button/button';
+import { Forms } from '@shared/ui/forms/forms';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { AllocationPicker } from '../../../../../shared/components/allocation-picker/allocation-picker';
 import {
   Network,

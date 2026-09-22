@@ -1,10 +1,10 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormField as AngularFormField, form, required, validate } from '@angular/forms/signals';
 import { DialogRef } from '@core/services/dialog/dialog';
-import { Button } from '@shared/components/ui/button/button';
-import { Forms } from '@shared/components/ui/forms/forms';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { Button } from '@shared/ui/button/button';
+import { Forms } from '@shared/ui/forms/forms';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
 import { AriaSelectOption } from '@core/models/aria.model';
 import {
   CreatePartnerCodeRequest,

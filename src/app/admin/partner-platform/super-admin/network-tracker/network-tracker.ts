@@ -11,9 +11,9 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, fromEvent, take, takeUntil } from 'rxjs';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { Dialog } from '@core/services/dialog/dialog';
-import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { Spinner } from '@shared/ui/spinner/spinner';
 import { DeprecationBanner } from '@admin/shared/components/deprecation-banner/deprecation-banner';
 import { StatCard } from '../../shared/components/stat-card/stat-card';
 import {

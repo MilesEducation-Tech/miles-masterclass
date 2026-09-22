@@ -17,14 +17,14 @@ import { auditTime, filter, map } from 'rxjs/operators';
 import { Consent } from '@core/services/consent/consent';
 import { Analytics } from '@core/services/analytics/analytics';
 import { Dialog } from '@core/services/dialog/dialog';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { FeatureFacade, FeatureResource } from '@core/services/feature-facade/feature-facade';
 import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
-import { GlobalSearchDialog } from '@shared/components/dialog/global-search-dialog/global-search-dialog';
+import { GlobalSearchDialog } from '@layout/dialogs/global-search-dialog/global-search-dialog';
 import {
   CalendlyDialog,
   CalendlyDialogData,
-} from '@shared/components/dialog/calendly-dialog/calendly-dialog';
+} from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { Content } from '@core/models/course.model';
 
 import { SubscribeCard } from './components/subscribe-card/subscribe-card';

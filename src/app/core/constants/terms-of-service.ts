@@ -1,7 +1,7 @@
 import { LegalDoc } from '../models/legal-doc.model';
 import { richContent } from '../models/faq.model';
 import { CountryCode, ProfessionType } from '../models/route-params.model';
-import { LocaleKey, resolveByLocale } from '@shared/utils/locale-resolver';
+import { LocaleKey, resolveByLocale } from '@core/utils/locale-resolver';
 
 /**
  * Terms of Service content. Ported from v1's TERMS_AND_CONDITIONS array

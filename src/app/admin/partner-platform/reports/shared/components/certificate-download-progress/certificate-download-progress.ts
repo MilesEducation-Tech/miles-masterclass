@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
-import { Button } from '@shared/components/ui/button/button';
-import { Progress } from '@shared/components/ui/progress/progress';
+import { Button } from '@shared/ui/button/button';
+import { Progress } from '@shared/ui/progress/progress';
 import { PartnerReportFacade } from '../../services/partner-report-facade';
 
 /**

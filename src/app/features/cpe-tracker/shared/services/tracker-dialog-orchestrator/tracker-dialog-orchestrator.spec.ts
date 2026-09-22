@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { of } from 'rxjs';
 import { Dialog } from '@core/services/dialog/dialog';
-import { CertificateDownloadDialog } from '@shared/components/dialog/certificate-download-dialog/certificate-download-dialog';
+import { CertificateDownloadDialog } from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
 import { CertificateTarget } from '@features/cpe-tracker/models/cpe-credit.model';
 import { TrackerDialogOrchestrator } from './tracker-dialog-orchestrator';
 

@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matInfoRound } from '@ng-icons/material-icons/round';
 import { DialogRef } from '@core/services/dialog/dialog';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { CourseAbout } from '@shared/components/course-about/course-about';
 import { ContentAbout } from '@core/models/course.model';
 

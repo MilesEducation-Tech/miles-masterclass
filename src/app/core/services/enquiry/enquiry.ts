@@ -2,7 +2,7 @@ import { HttpContext } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { catchError, finalize, Observable, throwError } from 'rxjs';
 import { SKIP_AUTH_TOKEN, SKIP_ERROR_NOTIFICATION } from '../../models/http.model';
-import { drfErrorMessage } from '@shared/utils/drf-error-message';
+import { drfErrorMessage } from '@core/utils/drf-error-message';
 import { ApiClient } from '../api-client/api-client';
 import { Logger } from '../logger/logger';
 

@@ -1,11 +1,11 @@
 import { Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Backward } from '@shared/components/backward/backward';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { FinalAssessmentFacade } from '../../services/final-assessment-facade/final-assessment-facade';
 import { ContentDetails, QuizQuestion } from '@core/models/course.model';
 import { Dialog } from '@core/services/dialog/dialog';
-import { UtilsDialog, DialogButton } from '@shared/components/dialog/utils-dialog/utils-dialog';
+import { UtilsDialog, DialogButton } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { CanDeactivateComponent } from '@core/guards/can-deactivate-exam-guard';
@@ -13,11 +13,11 @@ import {
   AssessmentResultDialog,
   AssessmentResultAction,
   AssessmentResultData,
-} from '@shared/components/dialog/assessment-result-dialog/assessment-result-dialog';
-import { Utils } from '@core/services/utils/utils';
+} from '@features/offerings/dialogs/assessment-result-dialog/assessment-result-dialog';
+import { Utils } from '@shared/services/utils';
 import { Logger } from '@core/services/logger/logger';
 import { ActivatedRoute, Router } from '@angular/router';
-import { PageLoading } from '@shared/components/ui/page-loading/page-loading';
+import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   heroCheckCircle,

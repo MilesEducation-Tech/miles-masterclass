@@ -3,7 +3,7 @@ import { Routes } from '@angular/router';
 import { adminAuthGuard } from '@admin/shared/guards/admin-auth.guard';
 import { adminGuestGuard } from '@admin/shared/guards/admin-guest.guard';
 import { permissionGuard } from '@admin/shared/guards/permission.guard';
-import { PERM } from '@core/models/admin/admin-rbac.model';
+import { PERM } from '@admin/core/admin-rbac.model';
 import { AdminAuth } from '@admin/core/services/admin-auth';
 import { adminLandingPath, partnerV2LandingPath } from '@admin/shared/utils/admin-landing';
 import { UserOnboardingFacade } from '@admin/user-onboarding/shared/services/user-onboarding-facade';

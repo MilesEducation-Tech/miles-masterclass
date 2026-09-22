@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideDownload } from '@ng-icons/lucide';
 import { CpeLedger } from '@features/cpe-tracker/models/cpe-credit.model';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 
 /**
  * The blurb under the credits count. Two strings rather than one, because the

@@ -12,11 +12,11 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, fromEvent, take, takeUntil } from 'rxjs';
-import { Button } from '@shared/components/ui/button/button';
-import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { Button } from '@shared/ui/button/button';
+import { Spinner } from '@shared/ui/spinner/spinner';
 import { Dialog } from '@core/services/dialog/dialog';
 import { HasPermissionDirective } from '@admin/shared/directives/has-permission.directive';
-import { PERM } from '@core/models/admin/admin-rbac.model';
+import { PERM } from '@admin/core/admin-rbac.model';
 import { StatCard } from '@admin/partner-platform/shared/components/stat-card/stat-card';
 import {
   Firm,

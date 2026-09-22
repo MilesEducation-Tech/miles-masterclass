@@ -14,9 +14,9 @@ import {
 import { Router } from '@angular/router';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 
-import { Button } from '../ui/button/button';
+import { Button } from '../../ui/button/button';
 import { ApiClient } from '@core/services/api-client/api-client';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { Viewport } from '@core/services/viewport/viewport';
 import { BadgeV2Response, CairaLadderItem } from '@core/models/caira-badge.model';
 

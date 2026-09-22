@@ -1,6 +1,6 @@
 import { Component, inject, output, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 
 @Component({
   selector: 'app-promo-offer',

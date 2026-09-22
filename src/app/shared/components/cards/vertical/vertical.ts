@@ -10,11 +10,11 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Button } from '../../ui/button/button';
+import { Button } from '../../../ui/button/button';
 import { faSolidInfo, faSolidPlay, faSolidRobot } from '@ng-icons/font-awesome/solid';
 import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
 import { NgIcon } from '@ng-icons/core';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Content } from '@core/models/course.model';
 import { CategoriesList } from '../../categories-list/categories-list';

@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { LegalDocComponent } from '../shared/components/legal-doc/legal-doc';
 import { resolveTermsOfService } from '@core/constants/terms-of-service';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 
 @Component({
   selector: 'app-terms-of-service',
