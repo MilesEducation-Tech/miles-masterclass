@@ -6,7 +6,7 @@ import type { FloatingAsset } from '../../offerings.config';
   selector: 'app-floating-assets',
   imports: [NgComponentOutlet, NgOptimizedImage],
   templateUrl: './floating-assets.html',
-  styleUrl: './floating-assets.scss',
+  styleUrl: './floating-assets.css',
 })
 export class FloatingAssets {
   readonly assets = input<FloatingAsset[]>([]);

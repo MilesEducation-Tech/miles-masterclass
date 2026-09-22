@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { SelectCpeMode } from './select-cpe-mode';
-import { MockDialogRef } from '../../__mocks__/dialog.mock';
+import { MockDialogRef } from '../../../../testing/mocks/dialog.mock';
 
 const meta: Meta<SelectCpeMode> = {
   title: 'Dialog/SelectCpeMode',

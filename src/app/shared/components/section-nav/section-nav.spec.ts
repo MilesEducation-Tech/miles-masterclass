@@ -1,19 +1,39 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { SectionNav, SectionNavItem } from './section-nav';
+import { SectionNavService } from '../../core/services/section-nav/section-nav';
 
+/**
+ * Two things about this host are load-bearing.
+ *
+ * 1. The inputs are signals. Change detection here is zoneless, so reassigning
+ *    a plain field and calling `detectChanges()` never marks the view dirty and
+ *    the binding silently keeps its old value — which is why the mode-switch
+ *    and input-change tests used to assert against stale DOM.
+ * 2. `shareWithHeader` is exposed so the render tests can opt out of the
+ *    docking behaviour. `SectionNavService.checkNavPosition()` reads
+ *    `getBoundingClientRect()`, which is all-zeros in jsdom, so `rect.top (0)
+ *    <= TRIGGER_OFFSET (80)` is always true and the service parks the nav in
+ *    the header — hiding the inline nav entirely. The docking rule gets its own
+ *    test below instead of silently breaking every rendering test.
+ */
 @Component({
-  template: `<app-section-nav [items]="items" [mode]="mode" />`,
+  template: `<app-section-nav
+    [items]="items()"
+    [mode]="mode()"
+    [shareWithHeader]="shareWithHeader()"
+  />`,
   imports: [SectionNav],
 })
 class TestHostComponent {
-  items: SectionNavItem[] = [
+  readonly items = signal<SectionNavItem[]>([
     { id: 'section1', label: 'Section 1', visible: true, icon: 'lucideHome' },
     { id: 'section2', label: 'Section 2', visible: false },
     { id: 'section3', label: 'Section 3', visible: true },
     { id: 'section4', label: 'Section 4', visible: true, icon: 'lucideStar' },
-  ];
-  mode: 'inline' | 'header' | 'sidenav' = 'inline';
+  ]);
+  readonly mode = signal<'inline' | 'header' | 'sidenav'>('inline');
+  readonly shareWithHeader = signal(true);
 }
 
 describe('SectionNav', () => {
@@ -35,6 +55,11 @@ describe('SectionNav', () => {
   });
 
   describe('inline mode', () => {
+    beforeEach(() => {
+      component.shareWithHeader.set(false);
+      fixture.detectChanges();
+    });
+
     it('should only render visible items', () => {
       const buttons = fixture.nativeElement.querySelectorAll('button');
       expect(buttons.length).toBe(3);
@@ -55,11 +80,11 @@ describe('SectionNav', () => {
     });
 
     it('should update visible items when input changes', () => {
-      component.items = [
+      component.items.set([
         { id: 'section1', label: 'Section 1', visible: true },
         { id: 'section2', label: 'Section 2', visible: true },
         { id: 'section3', label: 'Section 3', visible: true },
-      ];
+      ]);
       fixture.detectChanges();
 
       const buttons = fixture.nativeElement.querySelectorAll('button');
@@ -67,9 +92,25 @@ describe('SectionNav', () => {
     });
   });
 
+  describe('header docking', () => {
+    it('hides the inline nav while the service says it is docked in the header', () => {
+      // Default `shareWithHeader` is true, and in jsdom the service always
+      // reports `showInHeader`, so the inline nav yields to the header copy.
+      expect(TestBed.inject(SectionNavService).showInHeader()).toBe(true);
+      expect(fixture.nativeElement.querySelector('.inline-nav')).toBeNull();
+    });
+
+    it('keeps the inline nav when the component opts out of sharing', () => {
+      component.shareWithHeader.set(false);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.inline-nav')).toBeTruthy();
+    });
+  });
+
   describe('sidenav mode', () => {
     beforeEach(() => {
-      component.mode = 'sidenav';
+      component.mode.set('sidenav');
       fixture.detectChanges();
     });
 

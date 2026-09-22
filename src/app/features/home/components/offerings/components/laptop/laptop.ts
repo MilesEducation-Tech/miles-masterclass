@@ -17,7 +17,7 @@ import { OfferingData } from '../../offerings';
   selector: 'app-laptop',
   imports: [NgComponentOutlet, NgOptimizedImage],
   templateUrl: './laptop.html',
-  styleUrl: './laptop.scss',
+  styleUrl: './laptop.css',
 })
 export class Laptop implements OnChanges {
   private platformId = inject(PLATFORM_ID);

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { Bkn } from './bkn';
 
@@ -9,6 +10,7 @@ describe('Bkn', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Bkn],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Bkn);

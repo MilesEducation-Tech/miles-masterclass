@@ -4,7 +4,7 @@ import '@angular/compiler';
 
 import { Injector, runInInjectionContext } from '@angular/core';
 import { of, throwError } from 'rxjs';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { environment } from '../../../../../environments/environment';
 import { ApiClient } from '../api-client/api-client';
@@ -23,10 +23,23 @@ import { SalesforceLead } from './salesforce-lead';
  *   2. a form with no phone doesn't post empty strings;
  *   3. a failing endpoint never propagates out of `create()`.
  *
- * The `environment.production` guard isn't covered here: the spec resolves the
- * production environment file, so the false branch is unreachable without
- * mocking the module — more machinery than the one-line guard is worth.
+ * `create()` no-ops unless `environment.production` is true, and the unit-test
+ * builder resolves `environment.development.ts` (production `false`, the UAT
+ * API URL — confirmed by probe), so every assertion below used to pass
+ * vacuously against a method that had already returned. `vi.mock` is rejected
+ * for relative imports by the Angular unit-test system, so the flag is flipped
+ * on the shared object and restored afterwards.
  */
+
+let wasProduction: boolean;
+beforeAll(() => {
+  wasProduction = environment.production;
+  environment.production = true;
+});
+afterAll(() => {
+  environment.production = wasProduction;
+});
+
 function makeService(post = vi.fn().mockReturnValue(of({ statusCode: 201 }))) {
   const injector = Injector.create({
     providers: [

@@ -14,5 +14,10 @@
       }
     }
   },
-  "include": ["src/**/*.d.ts", "src/**/*.spec.ts", "src/app/shared/core/constant/icon.ts"]
+  "include": [
+    "src/**/*.d.ts",
+    "src/**/*.spec.ts",
+    "src/test-setup.ts",
+    "src/app/shared/core/constant/icon.ts"
+  ]
 }

@@ -41,10 +41,17 @@ describe('isAllowedRoute', () => {
 
   it('matches descendants of an allowlisted route', () => {
     expect(isAllowedRoute('/in/accounting/library/course-library/filter/foo', allow)).toBe(true);
+    // Course detail is a descendant of `masterclass`, so the overlay DOES show
+    // there. This used to be asserted as `false` in the test below, which
+    // contradicted the descendant rule this same test relies on. Prefix
+    // matching is the intended design: `CONTINUE_CARD_ROUTES` exists precisely
+    // because the Continue Learning card — and only that card — has to be
+    // narrowed to exact matches so it stays off course detail and chapter
+    // deeplinks. The overlay itself is not narrowed.
+    expect(isAllowedRoute('/in/accounting/masterclass/42/some-course', allow)).toBe(true);
   });
 
   it('rejects routes outside the allowlist', () => {
-    expect(isAllowedRoute('/in/accounting/masterclass/42/some-course', allow)).toBe(false);
     expect(isAllowedRoute('/in/accounting/payment/cart', allow)).toBe(false);
     expect(isAllowedRoute('/in/accounting/faq', allow)).toBe(false);
   });

@@ -142,7 +142,7 @@ Two backends. Do not cross the wires.
 
 **Partner Platform** — Django `/partner-admin/...`, tagged with the `IS_ADMIN_REQUEST` context token so `adminTokenInterceptor` attaches the admin token instead of the learner token.
 
-Never invent a path. For auth and account routes the contract is `docs/AUTH_API.md`, backed by the generated `Postman Collection/`. If a route is in neither the code nor those, ask.
+Never invent a path. For auth and account routes the contract is `docs/AUTH_API.md`, backed by the generated `postman/`. If a route is in neither the code nor those, ask.
 
 **Services: `@Service()`, not `@Injectable`.** Angular 22 ships `@Service()` and `ng generate service` emits it by default (`--injectable` is the opt-out). Use `@Service({ autoProvided: false })` for anything that must be listed in a route's `providers` — that is what makes a route-scoped facade's lifetime explicit. Scaffold with `ng generate`; do not hand-write the file.
 

@@ -12,6 +12,7 @@ describe('AriaMultiselect', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(AriaMultiselect);
+    fixture.componentRef.setInput('id', 'fields-of-study');
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

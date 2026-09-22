@@ -12,6 +12,9 @@ describe('Autocomplete', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(Autocomplete);
+    // `id` is `input.required` — it is what ties the label, the listbox and the
+    // aria-activedescendant together, so there is no sensible default.
+    fixture.componentRef.setInput('id', 'country');
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

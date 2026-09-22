@@ -1,4 +1,4 @@
-import { Toast } from '../../core/models/notification.model';
+import { Toast } from '../../shared/core/models/notification.model';
 
 export const MOCK_SUCCESS_TOAST: Toast = {
   id: 'toast-1',

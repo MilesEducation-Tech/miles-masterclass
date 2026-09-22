@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { PaymentStatus } from './payment-status';
 
@@ -9,9 +10,11 @@ describe('PaymentStatus', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PaymentStatus],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PaymentStatus);
+    fixture.componentRef.setInput('status', 'success');
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

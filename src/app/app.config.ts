@@ -21,7 +21,7 @@ import { provideIconsProvider } from './configuration/ng-icon';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { appInterceptor } from './shared/core/interceptors/app/app-interceptor';
 import { adminTokenInterceptor } from './shared/core/interceptors/admin-token/admin-token-interceptor';
-import { partnerMockInterceptor } from './admin/partner-platform/shared/services/partner-mock-interceptor';
+import { devInterceptors } from './shared/core/interceptors/dev/dev-interceptors';
 import { Network } from './shared/core/services/network/network';
 import { UpdateChecker } from './shared/core/services/update-checker/update-checker';
 import { Analytics } from './shared/core/services/analytics/analytics';
@@ -30,9 +30,11 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(
-      // partnerMockInterceptor is last so it short-circuits only fully-prepared
-      // requests; it no-ops unless localStorage.partnerMock is set on a dev build.
-      withInterceptors([appInterceptor, adminTokenInterceptor, partnerMockInterceptor]),
+      // devInterceptors is spread last so the partner mock it carries on
+      // local/development builds still short-circuits only fully-prepared
+      // requests; it no-ops unless localStorage.partnerMock is set. In
+      // production the array is empty, so nothing mock-related is reachable.
+      withInterceptors([appInterceptor, adminTokenInterceptor, ...devInterceptors]),
     ),
     provideClientHydration(
       withEventReplay(),

@@ -12,6 +12,10 @@ describe('Heading', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(Heading);
+    fixture.componentRef.setInput('heading', {
+      text: 'Featured masterclasses',
+      subText: 'Hand-picked by our faculty',
+    });
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

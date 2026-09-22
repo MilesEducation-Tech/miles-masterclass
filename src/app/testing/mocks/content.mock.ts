@@ -1,10 +1,11 @@
 import {
   Content,
   ContentAbout,
+  ContentDetails,
   CourseCategoryDetails,
   FieldOfStudy,
   InstructorDetails,
-} from '../../core/models/course.model';
+} from '../../shared/core/models/course.model';
 
 export const MOCK_INSTRUCTOR: InstructorDetails = {
   id: 1,
@@ -174,3 +175,80 @@ export const MOCK_CARDS: Content[] = [
     horizontal_thumbnail: 'https://placehold.co/600x300/4a1942/ffffff?text=FSA',
   },
 ];
+
+/**
+ * A fully-loaded course, as `MasterclassFacade.courseDetails()` holds it once
+ * the details endpoint has answered. The course-hero templates open with
+ * `@let courseDetails = masterclass.courseDetails()!` and dereference it
+ * without a guard, so a hero can only be rendered against a loaded course —
+ * seeding the facade with this is what a spec does instead of faking one.
+ */
+export const MOCK_CONTENT_DETAILS: ContentDetails = {
+  ...MOCK_MASTERCLASS_CARD,
+  added_bookmark: false,
+  user_feedback_details: { user_feedback_submitted: false, user_rating: 0 },
+  total_duration: 9000,
+  cpe_mode_details: null,
+  user_assessment_details: { exam_passes_date: '', session_id: 0, status: 'not_started' },
+  credit_details: null,
+  is_added_to_cart: false,
+  price_detail: {
+    price: 199,
+    currency_code: 'USD',
+    discount: 50,
+    currency_symbol: '$',
+    selling_price: 149,
+    pay_method: 'card',
+  },
+  active_plan: null,
+  last_activity: null,
+  total_duration_watched: null,
+  no_of_chapters: 12,
+  learning_pathway_info: [],
+  is_certificate_eligible: false,
+  has_additional_resource: true,
+  has_exercise_files: false,
+  can_purchase_individually: true,
+  user_badge: null,
+  enable_coming_soon: false,
+  course_overview: '<p>Advanced strategies for passing the CPA exam.</p>',
+  learning_objectives: 'Understand core CPA exam topics.',
+  learning_objective_list: ['Understand key CPA exam sections'],
+  exam_rules: 'You must score 75% or above to pass the assessment.',
+  total_assessment_questions: 50,
+  course_created_date: '2025-01-15',
+  course_reviewed_date: '2025-06-01',
+  course_updated_date: '2025-12-01',
+  topics: ['Auditing', 'Financial Reporting'],
+  int_delivery_method: 'QAS Self-Study',
+  program_level: 'Advanced',
+  course_expiry: '2027-12-31',
+  course_duration: 150,
+  certification_organisation: 'NASBA',
+  prerequisite_education: 'Basic accounting knowledge',
+  advance_preparation: 'None',
+  pass_percentage: 75,
+  glossary_doc: '',
+  trailer_thumbnail: null,
+  sample_link: '',
+  sample_thumbnail: null,
+  navigation_link: '/masterclass/advanced-cpa-exam-strategies',
+  is_free: false,
+  free_access_start_date: '',
+  free_access_end_date: null,
+  is_subscription_excluded: false,
+  is_individually_purchasable: true,
+  mobile_horizontal_thumbnail: null,
+  horizontal_trailer_thumbnail: null,
+  vertical_trailer_thumbnail: null,
+  start_date: '2025-01-15',
+  lms_link: '',
+  is_test_course: false,
+  included_for_caira: false,
+  caira_priority: 0,
+  course_category: 1,
+  host_instructor: 1,
+  allowed_email_domains: [],
+  all_classes_completed: false,
+  chapter_wise_details: [],
+};

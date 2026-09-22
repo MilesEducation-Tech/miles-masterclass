@@ -37,7 +37,20 @@ describe('AriaAutocomplete', () => {
 
     expect(component.value()).toBeNull();
     expect(component.query()).toBe('+9');
+  });
+
+  // `isOpen` used to be asserted above, from when this component opened its own
+  // dropdown on focus. After the ng-primitives migration the primitive owns the
+  // dropdown and `isOpen` is only a mirror fed by `onOpenChange` (it drives the
+  // chevron rotation), so focus alone no longer sets it. The mirror itself is
+  // worth pinning, since the chevron is the only thing that reads it.
+  it('mirrors the primitive dropdown state and marks itself touched on close', () => {
+    component['onOpenChange'](true);
     expect(component.isOpen()).toBe(true);
+
+    component['onOpenChange'](false);
+    expect(component.isOpen()).toBe(false);
+    expect(component.touched()).toBe(true);
   });
 
   it('does not mirror the selected label into the input while it has focus', async () => {

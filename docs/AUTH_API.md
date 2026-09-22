@@ -3,7 +3,7 @@
 How this app signs a learner in, and the rules the backend imposes on it.
 
 **Contract source:** the request descriptions inside
-`Postman Collection/Merged_Masterclass_Backend_All_APIs.postman_collection.json`, which quote
+`postman/Merged_Masterclass_Backend_All_APIs.postman_collection.json`, which quote
 `ACCOUNTS_API_CONTRACT_V1.md` verbatim. That collection is generated
 (`Miscellaneous/Scripts/generate_postman_collection.py`) and marked do-not-hand-edit — treat it as
 the source of truth and this file as the frontend's reading of it.

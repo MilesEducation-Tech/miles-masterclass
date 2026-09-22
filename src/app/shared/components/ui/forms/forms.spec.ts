@@ -12,6 +12,7 @@ describe('Forms', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(Forms);
+    fixture.componentRef.setInput('type', 'signal');
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

@@ -57,9 +57,10 @@ describe('BadgeInfoDialog', () => {
 
   it('closes with action=close when the close button is clicked', () => {
     const { fixture, close } = setupFixture([makeBadge()]);
-    const closeBtn: HTMLButtonElement = fixture.nativeElement.querySelector(
-      '[aria-label="Close badge dialog"]',
-    );
+    // The dialog now renders the shared `<app-button variant="close">`, whose
+    // accessible name is hard-coded to 'Close' — the old
+    // `aria-label="Close badge dialog"` no longer exists anywhere.
+    const closeBtn: HTMLButtonElement = fixture.nativeElement.querySelector('[aria-label="Close"]');
     closeBtn.click();
     expect(close).toHaveBeenCalledWith({ action: 'close', result: false });
   });

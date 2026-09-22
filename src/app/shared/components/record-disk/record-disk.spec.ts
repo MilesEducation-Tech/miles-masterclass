@@ -12,6 +12,10 @@ describe('RecordDisk', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecordDisk);
+    fixture.componentRef.setInput(
+      'coverImage',
+      'https://placehold.co/400x400/2d1b69/ffffff?text=Podcast',
+    );
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

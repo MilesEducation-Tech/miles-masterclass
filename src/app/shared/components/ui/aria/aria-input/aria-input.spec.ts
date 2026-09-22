@@ -12,6 +12,7 @@ describe('AriaInput', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(AriaInput);
+    fixture.componentRef.setInput('id', 'email');
     component = fixture.componentInstance;
     await fixture.whenStable();
   });
