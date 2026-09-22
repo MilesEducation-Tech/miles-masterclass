@@ -6,7 +6,7 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
-import { APP_VERSION } from './app/shared/core/version/app-version';
+import { APP_VERSION } from './app/core/version/app-version';
 import { registerSeoRoutes } from './seo';
 import { registerServiceWorkerRoute } from './service-worker';
 import { registerLegacyRedirects } from './legacy-redirects';

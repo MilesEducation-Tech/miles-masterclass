@@ -2,7 +2,7 @@ import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
 import { faSolidArrowUpRightFromSquare } from '@ng-icons/font-awesome/solid';
-import { logo } from '@core/constant/icon';
+import { logo } from '@core/constants/icon';
 import { ContentAbout, ContentDetails } from '@core/models/course.model';
 import { CategoriesList } from '../categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '@core/pipes/total-cpe-credits/total-cpe-credits.pipe';

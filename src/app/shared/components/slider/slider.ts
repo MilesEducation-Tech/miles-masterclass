@@ -17,7 +17,7 @@ import { matInfoOutline } from '@ng-icons/material-icons/outline';
 import { CourseInfo } from '../dialog/course-info/course-info';
 import { Utils } from '@core/services/utils/utils';
 import { Router } from '@angular/router';
-import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Viewport } from '@core/services/viewport/viewport';
 

@@ -3,7 +3,7 @@ import { environment } from '@env/environment';
 import { Carousel } from '@shared/components/carousel/carousel';
 import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
 import { Vertical } from '@shared/components/cards/vertical/vertical';
-import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { ComingSoon } from '@shared/components/cards/coming-soon/coming-soon';
 import {
   swiperConfigComingSoon,

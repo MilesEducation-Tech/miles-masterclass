@@ -21,7 +21,7 @@ import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
 import { Button } from '@shared/components/ui/button/button';
 import { Forms } from '@shared/components/ui/forms/forms';
 import { AriaSelectOption } from '@core/models/aria.model';
-import { dialCodeWithLength } from '@core/constant/dial-code';
+import { dialCodeWithLength } from '@core/constants/dial-code';
 import { placeSuggestions } from '@core/services/location-autocomplete/location-autocomplete';
 import { InternalUser, OnboardUserPayload } from '../../models/user-onboarding.model';
 import { UserOnboardingFacade } from '../../services/user-onboarding-facade';

@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideLayoutDashboard, lucideSparkles } from '@ng-icons/lucide';
-import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { AdminAuth } from '@admin/core/services/admin-auth';
 
 @Component({
   selector: 'app-admin-dashboard',

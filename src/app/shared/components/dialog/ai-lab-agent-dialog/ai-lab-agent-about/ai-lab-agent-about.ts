@@ -1,7 +1,7 @@
 import { Component, computed, input, signal } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
 import { heroChevronRight } from '@ng-icons/heroicons/outline';
-import { logo } from '@core/constant/icon';
+import { logo } from '@core/constants/icon';
 import { ContentAbout, ContentDetails } from '@core/models/course.model';
 import { AiLabAssessmentReport } from './ai-lab-agent-about.model';
 

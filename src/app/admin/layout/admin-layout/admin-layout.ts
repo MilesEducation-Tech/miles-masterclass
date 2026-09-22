@@ -6,7 +6,7 @@ import { distinctUntilChanged, filter, map, startWith } from 'rxjs';
 import { AdminSidebar } from '../admin-sidebar/admin-sidebar';
 import { AdminTopbar } from '../admin-topbar/admin-topbar';
 import { Viewport } from '@core/services/viewport/viewport';
-import { AuditLog } from '@core/services/audit-log/audit-log';
+import { AuditLog } from '@admin/core/services/audit-log';
 
 const SIDEBAR_COLLAPSED_KEY = 'mc_admin_sidebar_collapsed';
 

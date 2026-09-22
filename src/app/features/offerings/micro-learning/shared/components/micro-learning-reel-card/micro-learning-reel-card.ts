@@ -41,7 +41,7 @@ import {
   MicroLearningOptionId,
   MicroLearningReel,
   ReelActivityPayload,
-} from '@core/models/micro-learning-course.model';
+} from '@features/offerings/models/micro-learning-course.model';
 import { TotalCpeCreditsPipe } from '@core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { Utils } from '@core/services/utils/utils';
 

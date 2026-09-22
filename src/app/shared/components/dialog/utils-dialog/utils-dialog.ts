@@ -4,7 +4,7 @@ import { environment } from '@env/environment';
 import { DialogRef } from '@core/services/dialog/dialog';
 import { Button } from '../../ui/button/button';
 import { ButtonVariant } from '@core/models/button.model';
-import { appStoreIcon, googlePlayIcon } from '@core/constant/icon';
+import { appStoreIcon, googlePlayIcon } from '@core/constants/icon';
 
 export interface DialogButton {
   label: string;

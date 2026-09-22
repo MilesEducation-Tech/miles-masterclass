@@ -16,7 +16,7 @@
  */
 import type { Express, Request, Response } from 'express';
 import { environment } from './environments/environment';
-import { CANONICAL_COUNTRY, CANONICAL_PROFESSION } from './app/shared/core/models/seo.constants';
+import { CANONICAL_COUNTRY, CANONICAL_PROFESSION } from './app/core/models/seo.constants';
 
 /**
  * Canonical production origin for every absolute URL the sitemap emits.
@@ -105,7 +105,7 @@ const CATALOG: { type: string; segment: string }[] = [
 
 /**
  * Slug used in course URLs. Kept byte-for-byte in sync with `Utils.slugify`
- * (src/app/shared/core/services/utils/utils.ts) so generated links match what
+ * (src/app/core/services/utils/utils.ts) so generated links match what
  * the Angular router produces — if one changes, change both.
  */
 function slugify(text: string): string {

@@ -17,7 +17,7 @@ import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
 import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
 import { Button } from '@shared/components/ui/button/button';
 import { AriaSelectOption } from '@core/models/aria.model';
-import { parseSeoCsv, SEO_CSV_TEMPLATE, SeoRow, validateSeoRow } from '@shared/utils/seo/seo-csv';
+import { parseSeoCsv, SEO_CSV_TEMPLATE, SeoRow, validateSeoRow } from '@admin/seo/utils/seo-csv';
 
 /** Editable text fields exposed as plain inputs in the preview grid. */
 type EditableTextField = 'page_slug' | 'page_name' | 'title' | 'description' | 'canonical_url';

@@ -15,7 +15,7 @@ import { NgIcon } from '@ng-icons/core';
 import { faSolidInfo, faSolidPlay, faSolidRobot } from '@ng-icons/font-awesome/solid';
 import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
 import { Utils } from '@core/services/utils/utils';
-import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Content } from '@core/models/course.model';
 import { UpcomingPremiere, WebinarCta } from '@core/models/feature.model';
 import { Logger } from '@core/services/logger/logger';

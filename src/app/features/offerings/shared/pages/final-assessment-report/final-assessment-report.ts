@@ -10,7 +10,7 @@ import {
   heroArrowDownTray,
 } from '@ng-icons/heroicons/outline';
 import { ActivatedRoute, Router } from '@angular/router';
-import { SubmitFinalAssessmentResponse } from '@core/models/assessment.model';
+import { SubmitFinalAssessmentResponse } from '@features/offerings/models/assessment.model';
 import { ContentDetails } from '@core/models/course.model';
 import { Utils } from '@core/services/utils/utils';
 import { Logger } from '@core/services/logger/logger';

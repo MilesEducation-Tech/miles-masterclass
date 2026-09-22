@@ -13,7 +13,7 @@ import { Button } from '@shared/components/ui/button/button';
 import { Forms } from '@shared/components/ui/forms/forms';
 import { Otp } from '@shared/components/ui/otp/otp';
 import { Spinner } from '@shared/components/ui/spinner/spinner';
-import { CountryCodeOption, dialCodeWithLength } from '@core/constant/dial-code';
+import { CountryCodeOption, dialCodeWithLength } from '@core/constants/dial-code';
 import { AutoCompleteOption } from '@core/models/form.model';
 
 interface FormState {

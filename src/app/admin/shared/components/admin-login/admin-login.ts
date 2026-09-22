@@ -7,8 +7,8 @@ import { faSolidAngleLeft } from '@ng-icons/font-awesome/solid';
 import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/components/ui/button/button';
 import { Spinner } from '@shared/components/ui/spinner/spinner';
-import { AdminAuth } from '@core/services/admin-auth/admin-auth';
-import { logo } from '@core/constant/icon';
+import { AdminAuth } from '@admin/core/services/admin-auth';
+import { logo } from '@core/constants/icon';
 import { environment } from '@env/environment';
 import { adminLandingPath } from '../../utils/admin-landing';
 

@@ -49,7 +49,7 @@ import {
   ReelActivityPayload,
   MicroLearningFieldOfStudy,
   NanoLearningPage,
-} from '@core/models/micro-learning-course.model';
+} from '@features/offerings/models/micro-learning-course.model';
 
 type ActivityEvent = 'heartbeat' | 'completed' | 'exit';
 type SetCpeModeRequest = RouteRequest<typeof MASTERCLASS_ROUTES.setCpeMode>;

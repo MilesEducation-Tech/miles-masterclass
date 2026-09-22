@@ -43,7 +43,7 @@ import {
   FirmFormDialog,
   FirmFormDialogData,
 } from '../firms/shared/components/firm-form-dialog/firm-form-dialog';
-import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { AdminAuth } from '@admin/core/services/admin-auth';
 
 /**
  * Partner Platform v2 — Network detail hub (`/admin/partner-v2/networks/:id`).

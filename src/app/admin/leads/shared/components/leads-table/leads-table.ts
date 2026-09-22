@@ -4,7 +4,7 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideChevronRight } from '@ng-icons/lucide';
 import { Button } from '@shared/components/ui/button/button';
 import { Spinner } from '@shared/components/ui/spinner/spinner';
-import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { AdminAuth } from '@admin/core/services/admin-auth';
 import { PERM } from '@core/models/admin/admin-rbac.model';
 import { FirmInquiry, LEAD_STATUSES, LeadStatus } from '../../models/firm-inquiry.model';
 import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';

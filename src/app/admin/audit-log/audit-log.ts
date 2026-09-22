@@ -23,7 +23,7 @@ import {
   AUDIT_CATEGORY_LABELS,
   AuditCategory,
   AuditLogRow,
-} from '@core/models/admin/audit-log.model';
+} from '@admin/core/models/audit-log.model';
 
 const TABLE = 'admin_audit_log';
 const PAGE_SIZE = 50;

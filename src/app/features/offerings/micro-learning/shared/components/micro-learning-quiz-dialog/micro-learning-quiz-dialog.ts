@@ -1,7 +1,10 @@
 import { Component, inject } from '@angular/core';
 import { DialogRef } from '@core/services/dialog/dialog';
 import { ChapterQuiz } from '../../../../shared/components/chapter-quiz/chapter-quiz';
-import { ActionStatus, MicroLearningReel } from '@core/models/micro-learning-course.model';
+import {
+  ActionStatus,
+  MicroLearningReel,
+} from '@features/offerings/models/micro-learning-course.model';
 import { CourseChapter } from '@core/models/course.model';
 import { Button } from '@shared/components/ui/button/button';
 import { MicroLearningCourseFacade } from '../../../../shared/services/micro-learning-course-facade/micro-learning-course-facade';

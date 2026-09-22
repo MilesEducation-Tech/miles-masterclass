@@ -1,4 +1,7 @@
-import { CpeCreditWire, CPE_TYPE_TO_TRANSACTION } from '@core/models/cpe-credit.model';
+import {
+  CpeCreditWire,
+  CPE_TYPE_TO_TRANSACTION,
+} from '@features/cpe-tracker/models/cpe-credit.model';
 import { TRANSACTION_TO_URL } from './course.util';
 import { toSlug } from './slug.util';
 

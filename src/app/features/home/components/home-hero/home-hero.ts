@@ -1,6 +1,6 @@
 import { Component, inject, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { logoIcon } from '@core/constant/icon';
+import { logoIcon } from '@core/constants/icon';
 import { Button } from '@shared/components/ui/button/button';
 import { environment } from '@env/environment';
 import { VideoPoster } from '@shared/components/video-poster/video-poster';

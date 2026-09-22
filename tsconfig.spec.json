@@ -18,6 +18,6 @@
     "src/**/*.d.ts",
     "src/**/*.spec.ts",
     "src/test-setup.ts",
-    "src/app/shared/core/constant/icon.ts"
+    "src/app/core/constants/icon.ts"
   ]
 }

@@ -10,7 +10,7 @@ import {
 import { environment } from '@env/environment';
 import { Dialog } from '@core/services/dialog/dialog';
 import { ScrollService } from '@core/services/scroll/scroll';
-import { logo } from '@core/constant/icon';
+import { logo } from '@core/constants/icon';
 import {
   PartnershipContentInput,
   PartnershipContent,

@@ -83,7 +83,7 @@ import {
 import { AiLabSubmission } from './ai-lab-submission';
 import { HttpContext } from '@angular/common/http';
 import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
-import { iconCopilot, iconSparkle } from '@core/constant/icon';
+import { iconCopilot, iconSparkle } from '@core/constants/icon';
 import { environment } from '@env/environment';
 
 /**

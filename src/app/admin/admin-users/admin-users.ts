@@ -17,7 +17,7 @@ import {
 } from '@shared/components/dialog/edit-admin-roles-dialog/edit-admin-roles-dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import { NotificationService } from '@core/services/notification/notification';
-import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { AdminAuth } from '@admin/core/services/admin-auth';
 import { AriaSelectOption } from '@core/models/aria.model';
 import { toggleRoleSlug } from '@core/models/admin/admin-rbac.model';
 import {

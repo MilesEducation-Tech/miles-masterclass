@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { PaymentFacade } from '../../service/payment-facade/payment-facade';
 import { NotificationService } from '@core/services/notification/notification';
-import { locationJsonMin } from '@core/constant/location-min';
+import { locationJsonMin } from '@features/payment/constants/location-min';
 import {
   disabled,
   form,
