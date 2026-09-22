@@ -13,7 +13,7 @@ video::-webkit-media-controls {
 .laptop {
   width: 790px;
   aspect-ratio: 5/3;
-  // height: 410px;
+  /* height: 410px; */
   perspective: 2400px;
   perspective-origin: 50% 100%;
 }
@@ -21,7 +21,7 @@ video::-webkit-media-controls {
   .laptop {
     width: 380px;
     aspect-ratio: 5/3;
-    // height: 220px;
+    /* height: 220px; */
   }
 }
 .laptop-block {
@@ -186,21 +186,21 @@ video::-webkit-media-controls {
   transform: translate3d(0, 0, 0) rotateX(-90deg);
 }
 
-// Floating asset base styles - hidden by default
+/* Floating asset base styles - hidden by default */
 .floatingAsset {
   opacity: 0;
   visibility: hidden;
-  // transform: translateY(-70px) scale(0.8) rotate(-10deg);
+  /* transform: translateY(-70px) scale(0.8) rotate(-10deg); */
   transition: all 0.3s ease;
 
-  // Add subtle hover effect (only when visible)
-  // &:hover {
-  //   transform: translateY(-5px) scale(1.05);
-  //   z-index: 999 !important;
-  // }
+  /* Add subtle hover effect (only when visible) */
+  /* &:hover { */
+  /* transform: translateY(-5px) scale(1.05); */
+  /* z-index: 999 !important; */
+  /* } */
 }
 
-// Enhanced animated state - default animation
+/* Enhanced animated state - default animation */
 .floatInit {
   opacity: 1;
   visibility: visible;
@@ -224,21 +224,21 @@ video::-webkit-media-controls {
     opacity: 0;
     transform: translateY(-70px) scale(0.8) rotate(-10deg);
   }
-  // 30% {
-  //   opacity: 0.7;
-  //   transform: translateY(-10px) scale(1.1) rotate(2deg);
-  // }
-  // 60% {
-  //   opacity: 1;
-  //   transform: translateY(5px) scale(0.95) rotate(-1deg);
-  // }
+  /* 30% { */
+  /* opacity: 0.7; */
+  /* transform: translateY(-10px) scale(1.1) rotate(2deg); */
+  /* } */
+  /* 60% { */
+  /* opacity: 1; */
+  /* transform: translateY(5px) scale(0.95) rotate(-1deg); */
+  /* } */
   100% {
     opacity: 1;
     transform: translateY(0) scale(1) rotate(0deg);
   }
 }
 
-// Continuous floating animation for after entrance
+/* Continuous floating animation for after entrance */
 @keyframes continuousFloat {
   0%,
   100% {
@@ -255,7 +255,7 @@ video::-webkit-media-controls {
   }
 }
 
-// Slide-in variant
+/* Slide-in variant */
 @keyframes floatInitSlide {
   0% {
     opacity: 0;
@@ -271,7 +271,7 @@ video::-webkit-media-controls {
   }
 }
 
-// Bounce variant
+/* Bounce variant */
 @keyframes floatInitBounce {
   0% {
     opacity: 0;
@@ -291,7 +291,7 @@ video::-webkit-media-controls {
   }
 }
 
-// Gentle floating for variant 2
+/* Gentle floating for variant 2 */
 @keyframes gentleFloat {
   0%,
   100% {
@@ -302,7 +302,7 @@ video::-webkit-media-controls {
   }
 }
 
-// Slow floating for variant 3
+/* Slow floating for variant 3 */
 @keyframes slowFloat {
   0%,
   100% {

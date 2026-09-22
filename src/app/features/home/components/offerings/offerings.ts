@@ -15,7 +15,7 @@ export type { OfferingData, FloatingAsset, OfferingMockType } from './offerings.
   selector: 'app-offerings',
   imports: [Laptop, NgIcon, MicroLearningHeroPhoneMockup, FloatingAssets],
   templateUrl: './offerings.html',
-  styleUrl: './offerings.scss',
+  styleUrl: './offerings.css',
 })
 export class Offering {
   private readonly platformId = inject(PLATFORM_ID);

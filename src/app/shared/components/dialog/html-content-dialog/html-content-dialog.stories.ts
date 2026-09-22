@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { HtmlContentDialog } from './html-content-dialog';
-import { MockDialogRef } from '../../__mocks__/dialog.mock';
+import { MockDialogRef } from '../../../../testing/mocks/dialog.mock';
 
 const meta: Meta<HtmlContentDialog> = {
   title: 'Dialog/HtmlContent',

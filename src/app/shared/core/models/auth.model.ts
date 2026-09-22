@@ -6,7 +6,7 @@ import { RouteConfig } from './http.model';
  * MilesCAIRA Accounts v1 — sign-in.
  *
  * Contract source: the request descriptions in
- * `Postman Collection/Merged_Masterclass_Backend_All_APIs.postman_collection.json`,
+ * `postman/Merged_Masterclass_Backend_All_APIs.postman_collection.json`,
  * which quote `ACCOUNTS_API_CONTRACT_V1.md` verbatim.
  *
  * `CommonResponse<T>` does NOT apply here — these routes return bare bodies.

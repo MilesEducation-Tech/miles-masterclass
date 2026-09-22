@@ -1,10 +1,14 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
   });
 
@@ -14,10 +18,22 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  // The replaced test asserted an `<h1>Hello, miles-masterclass-v3</h1>` — the
+  // `ng new` scaffold heading, which this shell has never rendered. The root
+  // component is a chrome-only shell: a loading bar, the outlet every page
+  // renders into, and the consent banner.
+  it('renders the routed outlet and the consent banner', async () => {
     const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
     await fixture.whenStable();
+
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, miles-masterclass-v3');
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
+    expect(compiled.querySelector('app-consent-banner')).toBeTruthy();
+  });
+
+  it('carries the product name as its title', () => {
+    const fixture = TestBed.createComponent(App);
+    expect(fixture.componentInstance['title']()).toBe('Miles Masterclass');
   });
 });
