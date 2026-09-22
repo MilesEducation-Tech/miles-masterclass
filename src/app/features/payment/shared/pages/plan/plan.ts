@@ -7,20 +7,20 @@ import { PlanComparisonTable } from '../../components/plan-comparison-table/plan
 import { PlanSelectionCard } from '../../components/plan-selection-card/plan-selection-card';
 import { PromoOffer } from '../../components/promo-offer/promo-offer';
 import { PromoCoupons } from '../../components/promo-coupons/promo-coupons';
-import { PageLoading } from '../../../../../shared/components/ui/page-loading/page-loading';
-import { ErrorState } from '../../../../../shared/components/ui/error-state/error-state';
-import { SubscriptionPlan } from '../../../../../shared/core/models/payment.model';
-import { NotificationService } from '../../../../../shared/core/services/notification/notification';
-import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
-import { Utils } from '../../../../../shared/core/services/utils/utils';
-import { UtilsDialog } from '../../../../../shared/components/dialog/utils-dialog/utils-dialog';
+import { PageLoading } from '@shared/components/ui/page-loading/page-loading';
+import { ErrorState } from '@shared/components/ui/error-state/error-state';
+import { SubscriptionPlan } from '@core/models/payment.model';
+import { NotificationService } from '@core/services/notification/notification';
+import { Dialog } from '@core/services/dialog/dialog';
+import { Utils } from '@core/services/utils/utils';
+import { UtilsDialog } from '@shared/components/dialog/utils-dialog/utils-dialog';
 // Type-only (matches the facade's convention): the runtime class comes from the
 // `import()` inside `onApplyPartnerCode`, so the dialog stays out of this chunk.
 import type {
   PartnerCodePromptDialog,
   PartnerCodePromptResult,
-} from '../../../../../shared/components/dialog/partner-code-prompt-dialog/partner-code-prompt-dialog';
-import { SIGNUP_DIALOG_DATA } from '../../../../../shared/core/constant/payment';
+} from '@shared/components/dialog/partner-code-prompt-dialog/partner-code-prompt-dialog';
+import { SIGNUP_DIALOG_DATA } from '@core/constant/payment';
 
 interface BillingCard {
   plan: SubscriptionPlan;
@@ -253,7 +253,7 @@ export class Plan {
     }
 
     const { PartnerCodePromptDialog } =
-      await import('../../../../../shared/components/dialog/partner-code-prompt-dialog/partner-code-prompt-dialog');
+      await import('@shared/components/dialog/partner-code-prompt-dialog/partner-code-prompt-dialog');
     const ref = this.dialog.open<PartnerCodePromptDialog, PartnerCodePromptResult>(
       PartnerCodePromptDialog,
       // No `injector` needed — the dialog only injects root services.

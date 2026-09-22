@@ -2,10 +2,10 @@ import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { Observable, take } from 'rxjs';
-import { Button } from '../../../../shared/components/ui/button/button';
-import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
-import { DeprecationBanner } from '../../../shared/components/deprecation-banner/deprecation-banner';
-import { Dialog } from '../../../../shared/core/services/dialog/dialog';
+import { Button } from '@shared/components/ui/button/button';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { DeprecationBanner } from '@admin/shared/components/deprecation-banner/deprecation-banner';
+import { Dialog } from '@core/services/dialog/dialog';
 import { PartnerSuperAdminFacade } from '../../shared/services/partner-superadmin-facade';
 import { Network } from '../../shared/models/partner-platform.model';
 import {

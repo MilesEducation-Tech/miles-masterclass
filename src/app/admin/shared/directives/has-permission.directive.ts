@@ -1,5 +1,5 @@
 import { Directive, TemplateRef, ViewContainerRef, effect, inject, input } from '@angular/core';
-import { AdminAuth } from '../../../shared/core/services/admin-auth/admin-auth';
+import { AdminAuth } from '@core/services/admin-auth/admin-auth';
 
 @Directive({
   // eslint-disable-next-line @angular-eslint/directive-selector

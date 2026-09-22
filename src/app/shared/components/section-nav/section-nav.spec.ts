@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, signal } from '@angular/core';
 import { SectionNav, SectionNavItem } from './section-nav';
-import { SectionNavService } from '../../core/services/section-nav/section-nav';
+import { SectionNavService } from '@core/services/section-nav/section-nav';
 
 /**
  * Two things about this host are load-bearing.

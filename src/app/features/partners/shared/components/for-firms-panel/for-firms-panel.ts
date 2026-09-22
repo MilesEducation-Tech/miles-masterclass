@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
 import { iconBentoAi } from '../../models/partner-icons';
-import { environment } from '../../../../../../environments/environment';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-for-firms-panel',

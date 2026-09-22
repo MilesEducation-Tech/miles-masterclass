@@ -7,7 +7,7 @@ import {
   HttpResponse,
 } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
-import { InternalUser } from '../../admin/user-onboarding/shared/models/user-onboarding.model';
+import { InternalUser } from '@admin/user-onboarding/shared/models/user-onboarding.model';
 import {
   ReportCertificate,
   ReportCertificatesResponse,
@@ -16,7 +16,7 @@ import {
   ReportItemsResponse,
   ReportSummary,
   ReportUsersResponse,
-} from '../../admin/partner-platform/reports/shared/models/partner-report.model';
+} from '@admin/partner-platform/reports/shared/models/partner-report.model';
 import {
   DashboardStats,
   Firm,
@@ -26,7 +26,7 @@ import {
   PartnerCode,
   PartnerPanelUsersResponse,
   Seat,
-} from '../../admin/partner-platform/shared/models/partner-platform.model';
+} from '@admin/partner-platform/shared/models/partner-platform.model';
 
 /**
  * Fixtures and handlers for `partnerMockInterceptor`. Split into its own module

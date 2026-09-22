@@ -5,10 +5,10 @@ import {
   MOCK_MASTERCLASS_CARD,
   MOCK_PODCAST_CARD,
   MOCK_MICROLEARNING_CARD,
-} from '../../../../testing/mocks/content.mock';
-import { MockUtils, MockFeatureFacade } from '../../../../testing/mocks/services.mock';
-import { Utils } from '../../../core/services/utils/utils';
-import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
+} from '@testing/mocks/content.mock';
+import { MockUtils, MockFeatureFacade } from '@testing/mocks/services.mock';
+import { Utils } from '@core/services/utils/utils';
+import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
 
 const meta: Meta<Vertical> = {
   title: 'Cards/Vertical',

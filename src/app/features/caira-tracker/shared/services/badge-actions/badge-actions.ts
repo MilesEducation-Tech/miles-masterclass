@@ -1,14 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import {
-  CourseBadgeItem,
-  WebinarBadgeItem,
-} from '../../../../../shared/core/models/caira-badge.model';
-import { Analytics } from '../../../../../shared/core/services/analytics/analytics';
-import { Logger } from '../../../../../shared/core/services/logger/logger';
-import { NotificationService } from '../../../../../shared/core/services/notification/notification';
-import { Utils } from '../../../../../shared/core/services/utils/utils';
+import { CourseBadgeItem, WebinarBadgeItem } from '@core/models/caira-badge.model';
+import { Analytics } from '@core/services/analytics/analytics';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
+import { Utils } from '@core/services/utils/utils';
 import { BadgeActionSource, badgeActionTarget } from '../../utils/badge-action';
 
 /**

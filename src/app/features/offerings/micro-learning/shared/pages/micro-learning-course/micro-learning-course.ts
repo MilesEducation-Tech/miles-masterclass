@@ -11,15 +11,15 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Dialog } from '../../../../../../shared/core/services/dialog/dialog';
-import { AppDownloadPrompt } from '../../../../../../shared/core/services/app-download-prompt/app-download-prompt';
-import { NotificationService } from '../../../../../../shared/core/services/notification/notification';
+import { Dialog } from '@core/services/dialog/dialog';
+import { AppDownloadPrompt } from '@core/services/app-download-prompt/app-download-prompt';
+import { NotificationService } from '@core/services/notification/notification';
 import { MicroLearningCourseFacade } from '../../../../shared/services/micro-learning-course-facade/micro-learning-course-facade';
-import { FeatureFacade } from '../../../../../shared/services/feature-facade/feature-facade';
+import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
 import {
   HtmlContentDialog,
   HtmlContentDialogData,
-} from '../../../../../../shared/components/dialog/html-content-dialog/html-content-dialog';
+} from '@shared/components/dialog/html-content-dialog/html-content-dialog';
 import { MicroLearningTopBar } from '../../components/micro-learning-top-bar/micro-learning-top-bar';
 import { MicroLearningReelCard } from '../../components/micro-learning-reel-card/micro-learning-reel-card';
 import { MicroLearningReelNav } from '../../components/micro-learning-reel-nav/micro-learning-reel-nav';
@@ -33,9 +33,9 @@ import {
   MicroLearningFilterOption,
   MicroLearningOptionId,
   MicroLearningReel,
-} from '../../../../../../shared/core/models/micro-learning-course.model';
-import { ContentAbout } from '../../../../../../shared/core/models/course.model';
-import { setupCourseSeo } from '../../../../../../shared/utils/seo/course-seo-setup';
+} from '@core/models/micro-learning-course.model';
+import { ContentAbout } from '@core/models/course.model';
+import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
 
 @Component({
   selector: 'app-micro-learning-course',

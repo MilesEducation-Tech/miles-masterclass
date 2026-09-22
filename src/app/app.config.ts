@@ -19,12 +19,12 @@ import {
 } from '@angular/platform-browser';
 import { provideIconsProvider } from './configuration/ng-icon';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { appInterceptor } from './shared/core/interceptors/app/app-interceptor';
-import { adminTokenInterceptor } from './shared/core/interceptors/admin-token/admin-token-interceptor';
-import { devInterceptors } from './shared/core/interceptors/dev/dev-interceptors';
-import { Network } from './shared/core/services/network/network';
-import { UpdateChecker } from './shared/core/services/update-checker/update-checker';
-import { Analytics } from './shared/core/services/analytics/analytics';
+import { appInterceptor } from '@core/interceptors/app/app-interceptor';
+import { adminTokenInterceptor } from '@core/interceptors/admin-token/admin-token-interceptor';
+import { devInterceptors } from '@core/interceptors/dev/dev-interceptors';
+import { Network } from '@core/services/network/network';
+import { UpdateChecker } from '@core/services/update-checker/update-checker';
+import { Analytics } from '@core/services/analytics/analytics';
 
 export const appConfig: ApplicationConfig = {
   providers: [

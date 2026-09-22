@@ -12,13 +12,13 @@ import {
   untracked,
 } from '@angular/core';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { FeatureApiResponse } from '../../../../shared/core/models/feature.model';
-import { SKIP_AUTH_TOKEN } from '../../../../shared/core/models/http.model';
-import { ApiClient } from '../../../../shared/core/services/api-client/api-client';
-import { Logger } from '../../../../shared/core/services/logger/logger';
-import { NotificationService } from '../../../../shared/core/services/notification/notification';
-import { parseNextPage } from '../../../../shared/utils/parse-next-page';
-import { withPreviousValue } from '../../../../shared/utils/with-previous-value';
+import { FeatureApiResponse } from '@core/models/feature.model';
+import { SKIP_AUTH_TOKEN } from '@core/models/http.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
+import { parseNextPage } from '@shared/utils/parse-next-page';
+import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
   CourseDetail,
   CourseIds,

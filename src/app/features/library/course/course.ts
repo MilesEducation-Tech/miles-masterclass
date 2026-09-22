@@ -11,14 +11,14 @@ import {
 } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroFunnel } from '@ng-icons/heroicons/outline';
-import { Vertical } from '../../../shared/components/cards/vertical/vertical';
-import { TabStrip } from '../../../shared/components/ui/tab-strip/tab-strip';
+import { Vertical } from '@shared/components/cards/vertical/vertical';
+import { TabStrip } from '@shared/components/ui/tab-strip/tab-strip';
 import {
   COURSE_TYPE_TABS,
   CourseFilterGroup,
   CourseFilterSelection,
-} from '../../../shared/core/models/library-filters.model';
-import { Dialog } from '../../../shared/core/services/dialog/dialog';
+} from '@core/models/library-filters.model';
+import { Dialog } from '@core/services/dialog/dialog';
 import { CourseFilters } from './shared/components/course-filters/course-filters';
 import { CourseFiltersDrawer } from './shared/components/course-filters-drawer/course-filters-drawer';
 import { CourseFacade } from './shared/services/course-facade/course-facade';

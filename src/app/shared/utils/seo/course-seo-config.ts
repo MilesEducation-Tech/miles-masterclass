@@ -1,6 +1,6 @@
-import { Content, ContentDetails } from '../../core/models/course.model';
-import { COURSE_BRAND_NAMES } from '../../core/models/seo.constants';
-import { SeoConfig } from '../../core/models/seo.models';
+import { Content, ContentDetails } from '@core/models/course.model';
+import { COURSE_BRAND_NAMES } from '@core/models/seo.constants';
+import { SeoConfig } from '@core/models/seo.models';
 
 export type CourseSeoKind = 'masterclass' | 'podcast' | 'microLearning' | 'aiLab';
 

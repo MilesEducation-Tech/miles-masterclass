@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { toggleRoleSlug } from '../../../../shared/core/models/admin/admin-rbac.model';
+import { toggleRoleSlug } from '@core/models/admin/admin-rbac.model';
 import { PARTNER_ROLE_MAP, PARTNER_ROLE_SLUGS, partnerRoleOf } from './role-selection';
 
 /**

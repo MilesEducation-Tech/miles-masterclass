@@ -1,8 +1,8 @@
 import { isPlatformBrowser } from '@angular/common';
 import { computed, inject, Injectable, PLATFORM_ID, resource } from '@angular/core';
-import { Supabase } from '../../../../shared/core/services/supabase/supabase';
-import { Logger } from '../../../../shared/core/services/logger/logger';
-import { NotificationService } from '../../../../shared/core/services/notification/notification';
+import { Supabase } from '@core/services/supabase/supabase';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
 
 export interface AdminRoleRow {
   id: string;

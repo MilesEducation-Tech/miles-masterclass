@@ -1,27 +1,27 @@
 import { Component, inject, computed } from '@angular/core';
-import { environment } from '../../../environments/environment';
-import { Carousel } from '../../shared/components/carousel/carousel';
-import { Horizontal } from '../../shared/components/cards/horizontal/horizontal';
-import { Vertical } from '../../shared/components/cards/vertical/vertical';
-import { FeatureFacade } from '../shared/services/feature-facade/feature-facade';
-import { ComingSoon } from '../../shared/components/cards/coming-soon/coming-soon';
+import { environment } from '@env/environment';
+import { Carousel } from '@shared/components/carousel/carousel';
+import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
+import { Vertical } from '@shared/components/cards/vertical/vertical';
+import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { ComingSoon } from '@shared/components/cards/coming-soon/coming-soon';
 import {
   swiperConfigComingSoon,
   swiperConfigEven,
   swiperConfigOdd,
-} from '../../shared/core/config/swiper.config';
+} from '@core/config/swiper.config';
 import { AppDownload } from './components/app-download/app-download';
 import { HomeHero } from './components/home-hero/home-hero';
 import { Offering } from './components/offerings/offerings';
-import { SectionNav, SectionNavItem } from '../../shared/components/section-nav/section-nav';
-import { PartnerContentList } from '../partners/shared/components/partner-content-list/partner-content-list';
+import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
+import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
 import { Faq } from '../../pages/faq/faq';
-import { PlanBenefits, PlanPointer } from '../../shared/components/plan-benefits/plan-benefits';
-import { Button } from '../../shared/components/ui/button/button';
+import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan-benefits';
+import { Button } from '@shared/components/ui/button/button';
 import { Router } from '@angular/router';
-import { Utils } from '../../shared/core/services/utils/utils';
-import { CairaLevelStack } from '../../shared/components/caira-level-stack/caira-level-stack';
-import { SurroundCarousel } from '../../shared/components/surround-carousel/surround-carousel';
+import { Utils } from '@core/services/utils/utils';
+import { CairaLevelStack } from '@shared/components/caira-level-stack/caira-level-stack';
+import { SurroundCarousel } from '@shared/components/surround-carousel/surround-carousel';
 
 @Component({
   selector: 'app-home',

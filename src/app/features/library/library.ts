@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { Route, RouterOutlet } from '@angular/router';
-import { Backward } from '../../shared/components/backward/backward';
+import { Backward } from '@shared/components/backward/backward';
 
 @Component({
   selector: 'app-library',

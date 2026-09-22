@@ -15,8 +15,8 @@ import {
   BadgeV2Response,
   CourseBadgeItem,
   WebinarBadgeItem,
-} from '../../../../../shared/core/models/caira-badge.model';
-import { ApiClient } from '../../../../../shared/core/services/api-client/api-client';
+} from '@core/models/caira-badge.model';
+import { ApiClient } from '@core/services/api-client/api-client';
 import { BadgeActions } from '../../services/badge-actions/badge-actions';
 import { trackerLinks } from '../../utils/tracker-links';
 import { CourseBadgeCard } from '../course-badge-card/course-badge-card';

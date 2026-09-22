@@ -1,8 +1,8 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { DialogRef } from '@core/services/dialog/dialog';
 import { VideoPoster } from '../../video-poster/video-poster';
-import { ContentAbout } from '../../../core/models/course.model';
+import { ContentAbout } from '@core/models/course.model';
 import { Button } from '../../ui/button/button';
 import { MilesSlug } from '../../miles-slug/miles-slug';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -13,7 +13,7 @@ import {
 } from '@ng-icons/material-icons/round';
 import { phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
 import { CourseAbout } from '../../course-about/course-about';
-import { Utils } from '../../../core/services/utils/utils';
+import { Utils } from '@core/services/utils/utils';
 
 @Component({
   selector: 'app-course-info',

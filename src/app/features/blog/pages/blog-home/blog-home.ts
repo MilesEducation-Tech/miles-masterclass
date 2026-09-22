@@ -8,7 +8,7 @@ import { BlogBanner } from '../../components/blog-banner/blog-banner';
 import { BlogCard } from '../../components/blog-card/blog-card';
 import { BlogCompactItem } from '../../components/blog-compact-item/blog-compact-item';
 import { BlogFeatureCard } from '../../components/blog-feature-card/blog-feature-card';
-import { SeoManager } from '../../../../shared/core/services/seo/seo-manager';
+import { SeoManager } from '@core/services/seo/seo-manager';
 import { Faq } from '../../../../pages/faq/faq';
 
 /**

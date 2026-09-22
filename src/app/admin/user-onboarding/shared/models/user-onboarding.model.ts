@@ -1,4 +1,4 @@
-import { PartnerPagination } from '../../../partner-platform/shared/models/partner-platform.model';
+import { PartnerPagination } from '@admin/partner-platform/shared/models/partner-platform.model';
 
 /**
  * A row from `GET partners/superadmin/users/`. The list shape differs from the

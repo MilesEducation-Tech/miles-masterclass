@@ -5,32 +5,32 @@ import { Observable, Subject, of } from 'rxjs';
 import { catchError, exhaustMap, map } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FinalAssessmentFacade } from '../shared/services/final-assessment-facade/final-assessment-facade';
-import { canDeactivateExamGuard } from '../../../shared/core/guards/can-deactivate-exam-guard';
+import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
 import { MicroLearningCourseFacade } from '../shared/services/micro-learning-course-facade/micro-learning-course-facade';
 import { ChapterFacade } from '../shared/services/chapter-facade/chapter-facade';
-import { environment } from '../../../../environments/environment';
-import { FeatureFacade } from '../../shared/services/feature-facade/feature-facade';
-import { ApiClient } from '../../../shared/core/services/api-client/api-client';
-import { Logger } from '../../../shared/core/services/logger/logger';
+import { environment } from '@env/environment';
+import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Logger } from '@core/services/logger/logger';
 import {
   NANO_LEARNING_HANDOFF_KEY,
   NANO_LEARNING_ROUTES,
   NanoLearningListResponse,
   NanoLearningPage,
-} from '../../../shared/core/models/micro-learning-course.model';
+} from '@core/models/micro-learning-course.model';
 import {
   swiperConfigComingSoon,
   swiperConfigEven,
   swiperConfigOdd,
-} from '../../../shared/core/config/swiper.config';
-import { Carousel } from '../../../shared/components/carousel/carousel';
-import { Vertical } from '../../../shared/components/cards/vertical/vertical';
-import { ComingSoon } from '../../../shared/components/cards/coming-soon/coming-soon';
-import { Utils } from '../../../shared/core/services/utils/utils';
+} from '@core/config/swiper.config';
+import { Carousel } from '@shared/components/carousel/carousel';
+import { Vertical } from '@shared/components/cards/vertical/vertical';
+import { ComingSoon } from '@shared/components/cards/coming-soon/coming-soon';
+import { Utils } from '@core/services/utils/utils';
 import { MicroLearningHero } from './shared/components/micro-learning-hero/micro-learning-hero';
 import { Faq } from '../../../pages/faq/faq';
-import { PartnerContentList } from '../../partners/shared/components/partner-content-list/partner-content-list';
+import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
 
 @Component({
   selector: 'app-micro-learning',

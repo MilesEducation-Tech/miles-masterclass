@@ -1,12 +1,12 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { CurrencyPipe, NgOptimizedImage } from '@angular/common';
-import { CartItemData, OrderItem } from '../../../../../shared/core/models/payment.model';
-import { environment } from '../../../../../../environments/environment';
+import { CartItemData, OrderItem } from '@core/models/payment.model';
+import { environment } from '@env/environment';
 import { NgIcon } from '@ng-icons/core';
 import { matDeleteOutline, matEditOutline } from '@ng-icons/material-icons/outline';
-import { Button } from '../../../../../shared/components/ui/button/button';
+import { Button } from '@shared/components/ui/button/button';
 import { RouterLink } from '@angular/router';
-import { Utils } from '../../../../../shared/core/services/utils/utils';
+import { Utils } from '@core/services/utils/utils';
 
 export type CartDisplayItem = CartItemData | OrderItem;
 

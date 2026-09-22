@@ -18,7 +18,7 @@
  * to call seats "coupons" — it no longer does, and neither does this file.
  */
 import { HttpContext } from '@angular/common/http';
-import { IS_ADMIN_REQUEST } from '../../../../shared/core/models/http.model';
+import { IS_ADMIN_REQUEST } from '@core/models/http.model';
 
 /** Attach the Supabase admin token to a Partner Platform request. */
 export function adminContext(): HttpContext {

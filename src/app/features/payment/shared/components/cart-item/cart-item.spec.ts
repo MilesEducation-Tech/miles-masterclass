@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { CartItem } from './cart-item';
-import { CartItemData } from '../../../../../shared/core/models/payment.model';
+import { CartItemData } from '@core/models/payment.model';
 
 const ITEM: CartItemData = {
   id: 1,

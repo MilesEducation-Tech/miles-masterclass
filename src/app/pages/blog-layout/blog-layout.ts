@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
-import { Header } from '../../layout/header/header';
+import { Header } from '@layout/header/header';
 import { RouterOutlet } from '@angular/router';
-import { Footer } from '../../layout/footer/footer';
+import { Footer } from '@layout/footer/footer';
 
 @Component({
   selector: 'app-blog-layout',

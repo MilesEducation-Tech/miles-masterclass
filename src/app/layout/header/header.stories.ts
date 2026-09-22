@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { RouterModule } from '@angular/router';
 import { Header } from './header';
-import { Logger } from '../../shared/core/services/logger/logger';
+import { Logger } from '@core/services/logger/logger';
 
 const noop = (): void => undefined;
 

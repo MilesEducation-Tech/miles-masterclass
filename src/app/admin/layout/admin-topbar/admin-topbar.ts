@@ -3,7 +3,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { Button } from '../../../shared/components/ui/button/button';
+import { Button } from '@shared/components/ui/button/button';
 import {
   lucidePanelLeft,
   lucideBell,

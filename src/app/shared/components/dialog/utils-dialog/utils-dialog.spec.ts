@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { UtilsDialog } from './utils-dialog';
-import { MockDialogRef } from '../../../../testing/mocks/dialog.mock';
+import { MockDialogRef } from '@testing/mocks/dialog.mock';
 
 describe('UtilsDialog', () => {
   let component: UtilsDialog;

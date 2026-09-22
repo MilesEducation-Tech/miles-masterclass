@@ -16,12 +16,12 @@ import {
   BadgeApiResponse,
   BadgeItem,
   BadgeStatusFilter,
-} from '../../../../../../shared/core/models/badge.model';
-import { ApiClient } from '../../../../../../shared/core/services/api-client/api-client';
-import { Analytics } from '../../../../../../shared/core/services/analytics/analytics';
-import { Utils } from '../../../../../../shared/core/services/utils/utils';
-import { parseNextPage } from '../../../../../../shared/utils/parse-next-page';
-import { withPreviousValue } from '../../../../../../shared/utils/with-previous-value';
+} from '@core/models/badge.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Analytics } from '@core/services/analytics/analytics';
+import { Utils } from '@core/services/utils/utils';
+import { parseNextPage } from '@shared/utils/parse-next-page';
+import { withPreviousValue } from '@shared/utils/with-previous-value';
 
 /**
  * Owns badge-library state for `/library/badge-library`. Lazy by

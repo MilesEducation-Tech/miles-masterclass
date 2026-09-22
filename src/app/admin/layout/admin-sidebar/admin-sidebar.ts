@@ -17,10 +17,10 @@ import {
   lucideTicket,
   lucideUserPlus,
 } from '@ng-icons/lucide';
-import { AdminAuth } from '../../../shared/core/services/admin-auth/admin-auth';
-import { PERM } from '../../../shared/core/models/admin/admin-rbac.model';
-import { logo, logoIcon } from '../../../shared/core/constant/icon';
-import { Button } from '../../../shared/components/ui/button/button';
+import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { PERM } from '@core/models/admin/admin-rbac.model';
+import { logo, logoIcon } from '@core/constant/icon';
+import { Button } from '@shared/components/ui/button/button';
 
 interface SidebarItem {
   id: string;

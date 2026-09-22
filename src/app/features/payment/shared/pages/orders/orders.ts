@@ -4,9 +4,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { NgpMenu, NgpMenuItem, NgpMenuTrigger } from 'ng-primitives/menu';
 import { PaymentFacade } from '../../service/payment-facade/payment-facade';
 import { CartItem, CartItemConfig } from '../../components/cart-item/cart-item';
-import { PageLoading } from '../../../../../shared/components/ui/page-loading/page-loading';
-import { ErrorState } from '../../../../../shared/components/ui/error-state/error-state';
-import { Button } from '../../../../../shared/components/ui/button/button';
+import { PageLoading } from '@shared/components/ui/page-loading/page-loading';
+import { ErrorState } from '@shared/components/ui/error-state/error-state';
+import { Button } from '@shared/components/ui/button/button';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   matFileDownloadOutline,

@@ -1,13 +1,13 @@
 import { HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, of, shareReplay } from 'rxjs';
-import { ApiClient } from '../../../../shared/core/services/api-client/api-client';
-import { SKIP_ERROR_NOTIFICATION } from '../../../../shared/core/models/http.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
 import {
   ApiCourseType,
   LibraryFiltersData,
   SectionApiKey,
-} from '../../../../shared/core/models/library-filters.model';
+} from '@core/models/library-filters.model';
 
 /**
  * `GET /v2/filters/` envelope. Differs from `FeatureApiResponse` in that it

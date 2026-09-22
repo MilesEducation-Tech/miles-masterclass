@@ -2,7 +2,7 @@ import { Component, computed, inject, input, output } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matInfoRound } from '@ng-icons/material-icons/round';
-import { SubscriptionPlan } from '../../../../../shared/core/models/payment.model';
+import { SubscriptionPlan } from '@core/models/payment.model';
 
 /** Shared EMI disclaimer — kept in sync with the cart-flow copy. */
 const EMI_NOTE =

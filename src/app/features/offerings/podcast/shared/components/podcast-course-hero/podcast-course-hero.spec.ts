@@ -4,7 +4,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { MasterclassFacade } from '../../../../shared/services/masterclass-facade/masterclass-facade';
 
-import { MOCK_CONTENT_DETAILS } from '../../../../../../testing/mocks/content.mock';
+import { MOCK_CONTENT_DETAILS } from '@testing/mocks/content.mock';
 
 import { PodcastCourseHero } from './podcast-course-hero';
 

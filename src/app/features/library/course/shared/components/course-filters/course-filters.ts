@@ -7,12 +7,12 @@ import {
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronDown } from '@ng-icons/heroicons/outline';
-import { CheckboxList } from '../../../../../../shared/components/ui/checkbox-list/checkbox-list';
+import { CheckboxList } from '@shared/components/ui/checkbox-list/checkbox-list';
 import {
   CourseFilterGroup,
   CourseFilterKey,
   CourseFilterSelection,
-} from '../../../../../../shared/core/models/library-filters.model';
+} from '@core/models/library-filters.model';
 
 @Component({
   selector: 'app-course-filters',

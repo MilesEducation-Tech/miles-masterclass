@@ -8,7 +8,7 @@ import {
   NgpSelectOption,
   NgpSelectPortal,
 } from 'ng-primitives/select';
-import { AriaSelectOption, dedupeAriaOptions } from '../../../../core/models/aria.model';
+import { AriaSelectOption, dedupeAriaOptions } from '@core/models/aria.model';
 import { cn } from '../../../../utils/cn';
 
 /**

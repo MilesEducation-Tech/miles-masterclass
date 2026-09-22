@@ -1,5 +1,5 @@
 import { Component, computed, OnInit, signal } from '@angular/core';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { DialogRef } from '@core/services/dialog/dialog';
 import { Button } from '../../ui/button/button';
 
 @Component({

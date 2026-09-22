@@ -1,7 +1,7 @@
 import { HttpContext } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { environment } from '../../../../../environments/environment';
+import { environment } from '@env/environment';
 import {
   IS_EXTERNAL_REQUEST,
   SKIP_AUTH_TOKEN,

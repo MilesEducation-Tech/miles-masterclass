@@ -7,10 +7,10 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideLogOut, lucideShoppingBag, lucideUser } from '@ng-icons/lucide';
 import { NgpMenu, NgpMenuItem, NgpMenuTrigger } from 'ng-primitives/menu';
 import { cn } from '../../utils/cn';
-import { Utils } from '../../core/services/utils/utils';
-import { Analytics } from '../../core/services/analytics/analytics';
-import { AccountApi } from '../../core/services/account-api/account-api';
-import { AuthSession } from '../../core/services/auth-session/auth-session';
+import { Utils } from '@core/services/utils/utils';
+import { Analytics } from '@core/services/analytics/analytics';
+import { AccountApi } from '@core/services/account-api/account-api';
+import { AuthSession } from '@core/services/auth-session/auth-session';
 
 @Component({
   selector: 'app-user-avatar-menu',

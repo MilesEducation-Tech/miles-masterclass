@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { UtilsDialog } from './utils-dialog';
-import { MockDialogRef } from '../../../../testing/mocks/dialog.mock';
+import { MockDialogRef } from '@testing/mocks/dialog.mock';
 
 const meta: Meta<UtilsDialog> = {
   title: 'Dialog/Utils',

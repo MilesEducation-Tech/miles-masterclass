@@ -2,14 +2,14 @@ import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
 import { faSolidArrowUpRightFromSquare } from '@ng-icons/font-awesome/solid';
-import { logo } from '../../core/constant/icon';
-import { ContentAbout, ContentDetails } from '../../core/models/course.model';
+import { logo } from '@core/constant/icon';
+import { ContentAbout, ContentDetails } from '@core/models/course.model';
 import { CategoriesList } from '../categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '../../core/pipes/total-cpe-credits/total-cpe-credits.pipe';
-import { DurationPipe } from '../../core/pipes/duration/duration-pipe';
-import { Utils } from '../../core/services/utils/utils';
+import { TotalCpeCreditsPipe } from '@core/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { DurationPipe } from '@core/pipes/duration/duration-pipe';
+import { Utils } from '@core/services/utils/utils';
 import { Router } from '@angular/router';
-import { Dialog } from '../../core/services/dialog/dialog';
+import { Dialog } from '@core/services/dialog/dialog';
 
 @Component({
   selector: 'app-course-about',

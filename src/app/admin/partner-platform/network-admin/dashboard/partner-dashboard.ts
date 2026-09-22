@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
-import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
-import { DeprecationBanner } from '../../../shared/components/deprecation-banner/deprecation-banner';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { DeprecationBanner } from '@admin/shared/components/deprecation-banner/deprecation-banner';
 import { StatCard } from '../../shared/components/stat-card/stat-card';
 import { PartnerAdminMe } from '../../shared/services/partner-admin-me';
 import { PartnerNetworkFacade } from '../../shared/services/partner-network-facade';

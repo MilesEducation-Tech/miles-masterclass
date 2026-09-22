@@ -2,9 +2,9 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { DecimalPipe, formatDate } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideBookOpen } from '@ng-icons/lucide';
-import { DialogRef } from '../../../../../shared/core/services/dialog/dialog';
-import { Button } from '../../../../../shared/components/ui/button/button';
-import { Spinner } from '../../../../../shared/components/ui/spinner/spinner';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { Button } from '@shared/components/ui/button/button';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
 import {
   CourseDetail,
   CourseDetailCategory,

@@ -1,4 +1,4 @@
-import { SEO_BRAND_DEFAULTS } from '../../core/models/seo.constants';
+import { SEO_BRAND_DEFAULTS } from '@core/models/seo.constants';
 
 /**
  * Site-wide JSON-LD structured data (schema.org) emitted on every static page

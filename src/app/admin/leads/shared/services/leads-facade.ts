@@ -10,18 +10,18 @@ import {
   signal,
 } from '@angular/core';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { ApiClient } from '../../../../shared/core/services/api-client/api-client';
-import { Logger } from '../../../../shared/core/services/logger/logger';
-import { NotificationService } from '../../../../shared/core/services/notification/notification';
-import { fileNameFromContentDisposition, saveBlob } from '../../../../shared/utils/blob-download';
-import { drfErrorMessage } from '../../../../shared/utils/drf-error-message';
-import { withPreviousValue } from '../../../../shared/utils/with-previous-value';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
+import { fileNameFromContentDisposition, saveBlob } from '@shared/utils/blob-download';
+import { drfErrorMessage } from '@shared/utils/drf-error-message';
+import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
   adminContext,
   EMPTY_PAGINATION,
   partnerBlobErrorMessage,
   PartnerPagination,
-} from '../../../partner-platform/shared/models/partner-platform.model';
+} from '@admin/partner-platform/shared/models/partner-platform.model';
 import {
   FirmInquiry,
   LeadPatch,

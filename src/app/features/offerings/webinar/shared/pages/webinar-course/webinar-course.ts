@@ -1,9 +1,9 @@
 import { Component, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { CourseAbout } from '../../../../../../shared/components/course-about/course-about';
-import { ContentAbout } from '../../../../../../shared/core/models/course.model';
-import { UpcomingPremiere } from '../../../../../../shared/core/models/feature.model';
+import { CourseAbout } from '@shared/components/course-about/course-about';
+import { ContentAbout } from '@core/models/course.model';
+import { UpcomingPremiere } from '@core/models/feature.model';
 import { WebinarHero } from '../../components/webinar-hero/webinar-hero';
 
 /**

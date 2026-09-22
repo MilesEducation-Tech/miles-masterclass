@@ -3,12 +3,12 @@ import { CurrencyPipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroXMark, heroPlus, heroMinus } from '@ng-icons/heroicons/outline';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { DialogRef } from '@core/services/dialog/dialog';
 import { Button } from '../../ui/button/button';
 import { PageLoading } from '../../ui/page-loading/page-loading';
-import { Logger } from '../../../core/services/logger/logger';
-import { PaymentFacade } from '../../../../features/payment/shared/service/payment-facade/payment-facade';
-import { CouponList, CartDetails } from '../../../core/models/payment.model';
+import { Logger } from '@core/services/logger/logger';
+import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
+import { CouponList, CartDetails } from '@core/models/payment.model';
 
 export interface CouponDialogData {
   cartData: CartDetails;

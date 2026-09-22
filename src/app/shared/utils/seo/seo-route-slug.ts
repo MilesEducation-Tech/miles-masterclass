@@ -1,4 +1,4 @@
-import { CANONICAL_LOCALE_PREFIX, DYNAMIC_SLUG_PREFIXES } from '../../core/models/seo.constants';
+import { CANONICAL_LOCALE_PREFIX, DYNAMIC_SLUG_PREFIXES } from '@core/models/seo.constants';
 
 /**
  * Top-level URL areas that live OUTSIDE the `/<country>/<profession>` locale

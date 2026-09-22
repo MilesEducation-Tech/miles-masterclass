@@ -8,7 +8,7 @@ import {
   RouteRequest,
   RouteResponse,
 } from '../../models/http.model';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '@env/environment';
 
 /**
  * Resolves a path against `BASE_API_URL`, leaving absolute URLs alone.

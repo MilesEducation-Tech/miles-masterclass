@@ -1,5 +1,5 @@
 import { Component, output } from '@angular/core';
-import { Button } from '../../../../../../shared/components/ui/button/button';
+import { Button } from '@shared/components/ui/button/button';
 import { MicroLearningHeroPhoneMockup } from '../micro-learning-hero-phone-mockup/micro-learning-hero-phone-mockup';
 import { HERO_FALLBACK_FEED, HeroReelItem } from './hero-reel-item.model';
 

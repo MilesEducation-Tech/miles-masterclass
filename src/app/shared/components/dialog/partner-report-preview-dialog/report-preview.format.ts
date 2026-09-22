@@ -1,5 +1,5 @@
 import { formatDate, formatNumber } from '@angular/common';
-import { ReportSummary } from '../../../../admin/partner-platform/reports/shared/models/partner-report.model';
+import { ReportSummary } from '@admin/partner-platform/reports/shared/models/partner-report.model';
 
 const LOCALE = 'en-US';
 const day = (value: string | Date) => formatDate(value, 'MMM d, y', LOCALE);

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { DialogRef } from '@core/services/dialog/dialog';
 import { VideoJs, VideoSource, VideoConfig } from '../../video-js/video-js';
 import { Button } from '../../ui/button/button';
 

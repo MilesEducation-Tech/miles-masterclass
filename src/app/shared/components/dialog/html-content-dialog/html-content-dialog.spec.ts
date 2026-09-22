@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { HtmlContentDialog } from './html-content-dialog';
-import { MockDialogRef } from '../../../../testing/mocks/dialog.mock';
+import { MockDialogRef } from '@testing/mocks/dialog.mock';
 
 describe('HtmlContentDialog', () => {
   let component: HtmlContentDialog;

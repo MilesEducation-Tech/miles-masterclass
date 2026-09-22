@@ -1,16 +1,16 @@
 import { Component, inject, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { logoIcon } from '../../../../shared/core/constant/icon';
-import { Button } from '../../../../shared/components/ui/button/button';
-import { environment } from '../../../../../environments/environment';
-import { VideoPoster } from '../../../../shared/components/video-poster/video-poster';
-import { MilesSlug } from '../../../../shared/components/miles-slug/miles-slug';
+import { logoIcon } from '@core/constant/icon';
+import { Button } from '@shared/components/ui/button/button';
+import { environment } from '@env/environment';
+import { VideoPoster } from '@shared/components/video-poster/video-poster';
+import { MilesSlug } from '@shared/components/miles-slug/miles-slug';
 import {
   AppDownloadDialog,
   MASTERCLASS_APP_STORE_URL,
   MASTERCLASS_PLAY_STORE_URL,
-} from '../../../../shared/components/dialog/app-download-dialog/app-download-dialog';
-import { Dialog } from '../../../../shared/core/services/dialog/dialog';
+} from '@shared/components/dialog/app-download-dialog/app-download-dialog';
+import { Dialog } from '@core/services/dialog/dialog';
 
 @Component({
   selector: 'app-home-hero',

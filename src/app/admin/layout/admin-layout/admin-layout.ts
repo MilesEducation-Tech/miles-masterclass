@@ -5,8 +5,8 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs';
 import { AdminSidebar } from '../admin-sidebar/admin-sidebar';
 import { AdminTopbar } from '../admin-topbar/admin-topbar';
-import { Viewport } from '../../../shared/core/services/viewport/viewport';
-import { AuditLog } from '../../../shared/core/services/audit-log/audit-log';
+import { Viewport } from '@core/services/viewport/viewport';
+import { AuditLog } from '@core/services/audit-log/audit-log';
 
 const SIDEBAR_COLLAPSED_KEY = 'mc_admin_sidebar_collapsed';
 

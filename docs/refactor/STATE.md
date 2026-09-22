@@ -7,43 +7,52 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- Phase: **1 — Hygiene ✅ COMPLETE.** Report: [phase-01](reports/phase-01.md).
-  `verifier` **8/8 green** (lint 5s · unit tests 15s · build local 23s · build prod 22s ·
-  storybook 19s · format 13s · bundle report · ssr smoke 4s, all four routes).
+- Phase: **2 — Path aliases ✅ COMPLETE.** Report: [phase-02](reports/phase-02.md).
+  `verifier` **8/8 green** (lint 6s · unit tests 18s · build local 26s · build prod 30s ·
+  storybook 24s · format 15s · bundle report · ssr smoke 3s, all four routes).
   `reviewer` **PASS — no spec violations.**
-- What landed: **15 moves, all git renames** (history preserved), 26 files edited, 3 created.
-  `Postman Collection/` → `postman/` · `shared/components/__mocks__/` → `testing/mocks/`
-  (28 import lines in 22 files) · `partner-mock-*` → `testing/partner-mock/` · 4 `.scss` → `.css`.
-- **The production mock leak is fixed and proven.** Before this phase the fixture string
-  `ACMEALLI-55AA11BB` was in the browser bundle (15.7 KB chunk) **and** the server bundle — fake
-  partner data and fake admin emails served to real users. Now the bundle report's
-  `--must-not-contain "ACMEALLI-55AA11BB" --must-not-contain "partnerMock"` returns **OK for both**.
-  The server bundle greps clean by hand (the gate only scans `dist/.../browser`), and a `local`
-  build still carries the fixtures so the dev flow is unbroken.
-  Lazy **274 → 271 chunks**, −21 KB raw; initial **501.9 → 501.5 KB raw**, −0.1% gzip.
-- Also complete, earlier this session: **`prompts/spec-repair.md`** — `ng test` went **79 failed → 0**
-  (152/152 files, 427 passed, 1 skipped of 428). That was Phase 1's blocker. Eight findings from it
-  are recorded under "Findings from spec repair" below; two matter for later phases —
-  `environment.production` is **false** under `ng test`, and zoneless CD means a test host with
-  plain fields asserts stale DOM.
-- ⚠️ **Two stacked, uncommitted changes in the tree.** Phase 1 was started before spec-repair was
-  committed, at the user's instruction. ~78 spec-repair files sit under the Phase 1 diff, and
-  `testing/mocks/content.mock.ts` carries edits from both. Reviewing them separately means
-  filtering by path. Both are independently verified green.
-- ⚠️ **A baseline-recording verify run at 10:47 UTC was not made by this session** (the cached
-  verify summary records it, with unit tests still failing at that point). It rewrote the two JSON
-  files under `docs/refactor/baseline/`; the only differences are the `at` timestamp and a stripped
-  trailing newline, so every recorded number is intact. Those files are user-owned and Claude is
-  blocked from touching them — `git checkout docs/refactor/baseline/` reverts it.
-  `public/version.json` + `shared/core/version/app-version.ts` are build-generated churn
-  (open question 6).
-- Branch: **`refactor/structure-1`**, clean before this session. Baselines present.
-- Next command: commit Phase 1 (message in [phase-01](reports/phase-01.md) §5 — and commit
-  spec-repair separately first if you want clean history), then **`/refactor-phase 2`** (path
-  aliases). Phase 2 is purely additive: no `baseUrl` exists to remove. PLAN.md §3 notes doing it
-  before Phase 3 is essential — there are no barrels and no aliases today, so every import is a
-  relative chain up to 6 levels deep, and aliasing first collapses the Phase 3–6 diff enormously.
-  No unticked decision below gates Phase 2; the remaining ones gate phases 5, 6, 10, 11 and 13.
+- What landed: **2 config files + 380 `.ts` files edited, 0 files moved/created/deleted.**
+  **1,464 relative import specifiers converted to aliases**, in four verified batches —
+  A `@env`/`@testing`/`@layout` (82), B `@admin`/`@features` + intra-area cross-unit (212),
+  C `@shared` (450), D `@core` (717), plus 3 pilots. Re-running all four batches in `--dry` mode
+  afterwards reports **0 remaining**, so the conversion is complete, not partial.
+  Final usage: `@core/` 719 · `@shared/` 450 · `@admin/` 137 · `@features/` 75 · `@env/` 50 ·
+  `@testing/` 28 · `@layout/` 5.
+- **`@core/*` points at today's `./src/app/shared/core/*`** (PLAN.md §3 listed `./src/app/core/*`,
+  which does not exist until Phase 3). **Phase 3's core move is therefore a one-line tsconfig flip
+  instead of 719 import rewrites** — but it must be flipped in **BOTH** `tsconfig.json` **and**
+  `.storybook/tsconfig.json`.
+- **Invariant for every later phase: core is reached only via `@core/*`, never `@shared/core/*`.**
+  The two aliases overlap today and `@shared/core/…` would break silently in Phase 3. The codemod
+  enforced longest-alias-wins; `grep -rn "'@shared/core" src` returns **0**.
+- ⚠️ **Storybook does not inherit root `paths`** — caught in step 1 by a deliberate pilot import in a
+  `.stories.ts`, before the codemod ran. `@storybook/angular` is webpack5 and resolves through
+  `tsconfig-paths-webpack-plugin@4.2.0`, which rewrites only `baseUrl` across `extends` (never
+  `paths`) and anchors to the directory of the config it loads, so the root's `./src/...` targets
+  resolve to `.storybook/src/...` and miss. Fix: the same block re-declared in
+  `.storybook/tsconfig.json` with `../src/...` targets. `verify.mjs --quick` typechecks only
+  `tsconfig.app.json`, so this would otherwise have surfaced only at the end-of-phase gate.
+- **No dependency added.** PLAN.md §3's "add `eslint-import-resolver-typescript`" is **not** needed
+  here: `eslint-plugin-import` is absent, no type-aware config is on, no `parserOptions.project` is
+  set, and no rule resolves specifiers. It belongs to **Phase 7**, which adds the rules that need it.
+- **Bundle parity proven**, which is the real gate for this phase: initial **12 files, 501.5 KB raw /
+  101.5 KB gzip** (−0.1% gzip vs baseline = compression noise), lazy **271 chunks** unchanged.
+  The Phase 1 mock-leak needles were re-run explicitly because all 50 `environment` imports now go
+  through `@env/*` — `ACMEALLI-55AA11BB` and `partnerMock` are still **absent** from the production
+  browser bundle, so `fileReplacements` still fire through the alias.
+- **38 crossing imports deliberately left relative** — targets in `pages/` (32), `auth/` (5),
+  `configuration/` (1) and `src/app/*.ts`. §3 defines no alias for these; Phases 3–6 dissolve those
+  folders and rewrite the imports then.
+- ⚠️ **Build-generated churn is in the diff again** (Phase 1's open question 6, still open):
+  `public/version.json` + `src/app/shared/core/version/app-version.ts` are rewritten by every `pre*`
+  script and will dirty every remaining phase. To get a clean Phase 2 commit:
+  `git checkout -- public/version.json src/app/shared/core/version/app-version.ts`
+  (Claude is blocked from that form by the harness guard.)
+- Branch: **`refactor/structure-2`**, clean before this session. Baselines present.
+- Next command: commit Phase 2 (message in [phase-02](reports/phase-02.md) §5), then
+  **`/refactor-phase 3`** (core). Phase 3's move list is PLAN.md §3; the reference-update checklist
+  it must not miss is in "Findings from Phase 2" below. No unticked decision gates Phase 3 —
+  the remaining ones gate phases 5, 6, 10, 11 and 13.
 
 ## Part A tracker
 
@@ -51,7 +60,7 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 | ----- | --------------- | ------ | ------------------------------- | --------- |
 | 0     | Audit & plan    | ✅     | [phase-00](reports/phase-00.md) |           |
 | 1     | Hygiene         | ✅     | [phase-01](reports/phase-01.md) |           |
-| 2     | Path aliases    | ⬜     |                                 |           |
+| 2     | Path aliases    | ✅     | [phase-02](reports/phase-02.md) |           |
 | 3     | Core            | ⬜     |                                 |           |
 | 4     | Shared & layout | ⬜     |                                 |           |
 | 5     | Features        | ⬜     |                                 |           |
@@ -128,6 +137,21 @@ Decisions the user already settled in-session on 2026-09-22 (recorded, no action
 - [x] Dead code: **list only, do not delete.** Consequence: `constant/location.ts` (25 MB,
       969,250 lines, zero importers) gets `git mv`'d in Phase 3 and stays in the ESLint ignore list.
 - [x] `Utils` service: **move to `shared/services/utils.ts`** in Phase 4, not into `core/`.
+
+## Findings from Phase 2 (logged, not fixed — PROMPT.md §7)
+
+1. **Six component `.css` files use `@reference '../../../../styles/styles.css'`.** TS path aliases do
+   not cover CSS — Tailwind resolves these on disk — so they break when those components move in
+   **Phase 4**. PLAN.md does not cover them.
+2. **Phase 3's reference-update checklist**, beyond the move itself. None are alias problems; all are
+   hardcoded `src/app/shared/core/...` paths in the same blast radius:
+   - `tsconfig.json` **and** `.storybook/tsconfig.json` — the `@core/*` target
+   - `tsconfig.spec.json` — explicit `include` of `"src/app/shared/core/constant/icon.ts"`
+   - `eslint.config.mjs` — `ignores` entries for `constant/location.ts` and `location-min.ts`
+   - `angular.json` — the `fileReplacements` pair for
+     `src/app/shared/core/interceptors/dev/dev-interceptors.ts`
+   - `scripts/generate-version.mjs:42` — **writes** `src/app/shared/core/version/app-version.ts`
+     (harness-owned; the user edits this one)
 
 ## Findings from spec repair (logged, not fixed — PROMPT.md §7)
 
@@ -235,6 +259,24 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-09-22 **Phase 2 ✅ complete — aliases added and 1,464 imports converted; 8/8 green.**
+  `tsconfig.json` gets the 7 aliases (no `baseUrl`, `./` targets, `moduleResolution` untouched);
+  380 `.ts` files get alias specifiers. **Zero moves, zero logic change**, and the bundle report
+  proves it — initial 501.5 KB raw / 101.5 KB gzip (−0.1% = compression noise), 271 lazy chunks,
+  both unchanged. Four batches, each gated on `--quick` **plus** a `tsconfig.spec.json` typecheck the
+  harness does not run; a `--dry` re-run of all four afterwards reports 0 remaining. **The find that
+  justified the pilot step: Storybook does not inherit root `paths`** — `tsconfig-paths-webpack-plugin`
+  rewrites only `baseUrl` across `extends` and anchors to the config it loads, so `./src/...` becomes
+  `.storybook/src/...` and misses; `.storybook/tsconfig.json` now re-declares the block with
+  `../src/...`. Because `--quick` typechecks only `tsconfig.app.json`, that failure would otherwise
+  have surfaced only after 1,464 lines were already rewritten. Two deviations from PLAN.md §3, both
+  user-approved beforehand: the codemod is in scope at all (the literal spec bullet is config-only,
+  but the collapse of the Phase 3–6 diff is the whole reason this phase runs first), and `@core/*`
+  points at today's `shared/core` rather than the not-yet-existing `src/app/core`. PLAN.md's
+  "add `eslint-import-resolver-typescript`" was checked and **rejected for this phase** — nothing in
+  the flat config resolves a specifier, so it belongs to Phase 7. 38 imports into
+  `pages/`/`auth/`/`configuration/`/app-root stay relative by design. `fileReplacements` re-proven
+  through `@env/*` with the Phase 1 needles.
 - 2026-09-22 **Phase 1 steps 1–4 executed; closing gates in flight.** All four `--quick` checks green
   along the way. 15 `git mv`s, all recorded as **renames**. Headline: the Partner Platform mock no
   longer reaches production — `--must-not-contain "ACMEALLI-55AA11BB"` and `"partnerMock"` both pass

@@ -14,14 +14,14 @@ import { EMPTY, Observable, filter, firstValueFrom, from, map, switchMap } from 
 import { Dialog, DialogRef } from '../dialog/dialog';
 import { Storage } from '../storage/storage';
 import { CurrentPlanData } from '../../models/payment.model';
-import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
-import { offeringTypeFromUrl } from '../../../utils/offering-type';
+import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { offeringTypeFromUrl } from '@shared/utils/offering-type';
 import {
   ProfileCompletionDialog,
   ProfileCompletionDialogResult,
-} from '../../../components/dialog/profile-completion-dialog/profile-completion-dialog';
-import { SubscriptionDialog } from '../../../components/dialog/subscription-dialog/subscription-dialog';
-import { AiLabDialog } from '../../../components/dialog/ai-lab-dialog/ai-lab-dialog';
+} from '@shared/components/dialog/profile-completion-dialog/profile-completion-dialog';
+import { SubscriptionDialog } from '@shared/components/dialog/subscription-dialog/subscription-dialog';
+import { AiLabDialog } from '@shared/components/dialog/ai-lab-dialog/ai-lab-dialog';
 
 type DialogKind = 'aiLab' | 'profile' | 'subscription';
 

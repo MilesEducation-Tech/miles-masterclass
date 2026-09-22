@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '@env/environment';
 import { SectionFiltersFacade } from './section-filters-facade';
 
 const URL = `${environment.BASE_API_URL}v2/filters/`;

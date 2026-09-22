@@ -1,5 +1,5 @@
-import { createDefaultSeoPage, SeoPage } from '../../core/models/seo.models';
-import { SeoPageType } from '../../core/models/seo.constants';
+import { createDefaultSeoPage, SeoPage } from '@core/models/seo.models';
+import { SeoPageType } from '@core/models/seo.constants';
 
 /**
  * One parsed CSV row for the bulk-upload preview. `jsonLdText` is kept as raw

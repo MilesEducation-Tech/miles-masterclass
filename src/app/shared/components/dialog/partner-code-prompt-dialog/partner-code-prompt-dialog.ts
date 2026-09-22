@@ -1,8 +1,8 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField as AngularFormField, disabled, form, required } from '@angular/forms/signals';
-import { DialogRef } from '../../../core/services/dialog/dialog';
-import { PartnerCode } from '../../../core/services/partner-code/partner-code';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { PartnerCode } from '@core/services/partner-code/partner-code';
 import { Button } from '../../ui/button/button';
 import { AriaInput } from '../../ui/aria/aria-input/aria-input';
 import { Forms } from '../../ui/forms/forms';

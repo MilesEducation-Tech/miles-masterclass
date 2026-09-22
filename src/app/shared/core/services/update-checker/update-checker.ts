@@ -81,7 +81,7 @@ export class UpdateChecker {
   /** Lazily loaded so the dialog stays out of the initial bundle. */
   private async openDialog(): Promise<void> {
     const { VersionUpdateDialog } =
-      await import('../../../components/dialog/version-update-dialog/version-update-dialog');
+      await import('@shared/components/dialog/version-update-dialog/version-update-dialog');
     this.dialog.open(VersionUpdateDialog, {
       disableClose: true,
       hasBackdrop: true,

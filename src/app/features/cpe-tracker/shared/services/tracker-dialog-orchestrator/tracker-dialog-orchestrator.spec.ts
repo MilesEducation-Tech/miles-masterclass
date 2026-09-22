@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { of } from 'rxjs';
-import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
-import { CertificateDownloadDialog } from '../../../../../shared/components/dialog/certificate-download-dialog/certificate-download-dialog';
-import { CertificateTarget } from '../../../../../shared/core/models/cpe-credit.model';
+import { Dialog } from '@core/services/dialog/dialog';
+import { CertificateDownloadDialog } from '@shared/components/dialog/certificate-download-dialog/certificate-download-dialog';
+import { CertificateTarget } from '@core/models/cpe-credit.model';
 import { TrackerDialogOrchestrator } from './tracker-dialog-orchestrator';
 
 describe('TrackerDialogOrchestrator', () => {

@@ -1,6 +1,6 @@
 import { ButtonVariant } from './button.model';
 import { TransactionType } from './cpe-tracker.model';
-import { parseNextPage } from '../../utils/parse-next-page';
+import { parseNextPage } from '@shared/utils/parse-next-page';
 
 /**
  * Wire types for the v2 badge endpoints (`Badge_API_v2.md`):

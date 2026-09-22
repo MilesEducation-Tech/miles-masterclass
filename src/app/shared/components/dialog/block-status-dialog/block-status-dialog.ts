@@ -1,7 +1,7 @@
 import { Component, computed, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroShieldExclamation, heroShieldCheck } from '@ng-icons/heroicons/outline';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { DialogRef } from '@core/services/dialog/dialog';
 import { Button } from '../../ui/button/button';
 import { AriaInput } from '../../ui/aria/aria-input/aria-input';
 

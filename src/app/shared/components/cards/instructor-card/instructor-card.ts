@@ -2,7 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { svglFacebook, svglInstagram, svglLinkedin, svglYoutube } from '@ng-icons/svgl';
-import { InstructorListItem } from '../../../core/models/library.model';
+import { InstructorListItem } from '@core/models/library.model';
 
 @Component({
   selector: 'app-instructor-card',

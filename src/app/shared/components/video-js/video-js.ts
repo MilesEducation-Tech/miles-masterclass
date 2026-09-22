@@ -19,19 +19,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import type Player from 'video.js/dist/types/player';
 
-import {
-  PlayerMode,
-  VideoConfig,
-  VideoSource,
-  VideoState,
-} from '../../core/models/video-player.model';
+import { PlayerMode, VideoConfig, VideoSource, VideoState } from '@core/models/video-player.model';
 import {
   CPE_CONTROL_BAR,
   DEFAULT_CONTROL_BAR,
   DEFAULT_HLS_CONFIG,
   DEFAULT_VIDEO_CONFIG,
   DEFAULT_YOUTUBE_CONFIG,
-} from '../../core/constant/video-player';
+} from '@core/constant/video-player';
 
 // Re-export types for consumers
 export type {
@@ -43,10 +38,10 @@ export type {
   VideoErrorEvent,
   VideoMetadataEvent,
   VideoTimeUpdateEvent,
-} from '../../core/models/video-player.model';
+} from '@core/models/video-player.model';
 
 // Re-export enum values (not types)
-export { VideoState, PlayerMode } from '../../core/models/video-player.model';
+export { VideoState, PlayerMode } from '@core/models/video-player.model';
 
 @Component({
   selector: 'app-video-js',

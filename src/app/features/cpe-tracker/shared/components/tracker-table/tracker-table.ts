@@ -16,12 +16,12 @@ import {
   CpeRowAction,
   cpeRowActions,
   DELIVERY_METHOD,
-} from '../../../../../shared/core/models/cpe-credit.model';
-import { FieldOfStudy } from '../../../../../shared/core/models/course.model';
-import { Button } from '../../../../../shared/components/ui/button/button';
-import { CategoriesList } from '../../../../../shared/components/categories-list/categories-list';
-import { Spinner } from '../../../../../shared/components/ui/spinner/spinner';
-import { cn } from '../../../../../shared/utils/cn';
+} from '@core/models/cpe-credit.model';
+import { FieldOfStudy } from '@core/models/course.model';
+import { Button } from '@shared/components/ui/button/button';
+import { CategoriesList } from '@shared/components/categories-list/categories-list';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { cn } from '@shared/utils/cn';
 import { DELIVERY_COLORS, FIELD_COLORS } from '../../constants/cpe-tracker.constants';
 
 const ACTION_BUTTON_CLASS = 'min-w-[120px] gap-2 text-xs font-medium h-9 rounded-md px-4';

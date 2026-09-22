@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
-import { validateProfessionCountryGuard } from './shared/core/guards/validate-profession-country.guard';
-import { rootRedirectGuard } from './shared/core/guards/root-redirect.guard';
-import { onboardingGuard } from './shared/core/guards/auth/onboarding.guard';
+import { validateProfessionCountryGuard } from '@core/guards/validate-profession-country.guard';
+import { rootRedirectGuard } from '@core/guards/root-redirect.guard';
+import { onboardingGuard } from '@core/guards/auth/onboarding.guard';
 import { PageNotFound } from './pages/page-not-found/page-not-found';
 import { BlogLayout } from './pages/blog-layout/blog-layout';
 import { Compliance } from './pages/compliance/compliance';
@@ -11,7 +11,7 @@ export const routes: Routes = [
 
   {
     path: 'admin',
-    loadChildren: () => import('./admin/admin.routes').then((m) => m.adminRoutes),
+    loadChildren: () => import('@admin/admin.routes').then((m) => m.adminRoutes),
   },
   {
     path: 'page-not-found',
@@ -35,18 +35,18 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./features/blog/pages/blog-home/blog-home').then((m) => m.BlogHome),
+          import('@features/blog/pages/blog-home/blog-home').then((m) => m.BlogHome),
       },
       {
         // Browse / search — declared before `:slug` so "all" isn't read as a slug.
         path: 'all',
         loadComponent: () =>
-          import('./features/blog/pages/blog-all/blog-all').then((m) => m.BlogAll),
+          import('@features/blog/pages/blog-all/blog-all').then((m) => m.BlogAll),
       },
       {
         path: ':slug',
         loadComponent: () =>
-          import('./features/blog/pages/blog-post/blog-post').then((m) => m.BlogPost),
+          import('@features/blog/pages/blog-post/blog-post').then((m) => m.BlogPost),
       },
     ],
   },
@@ -59,7 +59,7 @@ export const routes: Routes = [
     path: ':country/:profession_type',
     canMatch: [onboardingGuard],
     canActivate: [validateProfessionCountryGuard],
-    loadChildren: () => import('./features/features').then((m) => m.featuresRoutes),
+    loadChildren: () => import('@features/features').then((m) => m.featuresRoutes),
   },
   {
     path: '',

@@ -13,31 +13,31 @@ import { Location } from '@angular/common';
 import { HttpContext } from '@angular/common/http';
 import { Router, UrlSegment } from '@angular/router';
 import { Observable, catchError, finalize, of, tap } from 'rxjs';
-import { ApiClient } from '../../../../../shared/core/services/api-client/api-client';
-import { Logger } from '../../../../../shared/core/services/logger/logger';
-import { NotificationService } from '../../../../../shared/core/services/notification/notification';
-import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
-import { Utils } from '../../../../../shared/core/services/utils/utils';
-import { Analytics } from '../../../../../shared/core/services/analytics/analytics';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
+import { Dialog } from '@core/services/dialog/dialog';
+import { Utils } from '@core/services/utils/utils';
+import { Analytics } from '@core/services/analytics/analytics';
 import {
   CommonResponse,
   RouteParams,
   RouteRequest,
   RouteResponse,
   SKIP_ERROR_NOTIFICATION,
-} from '../../../../../shared/core/models/http.model';
+} from '@core/models/http.model';
 import {
   ChapterQuizResponse,
   CourseContentResponse,
   MASTERCLASS_ROUTES,
-} from '../../../../../shared/core/models/masterclass.model';
-import { ContentDetails } from '../../../../../shared/core/models/course.model';
-import { UtilsDialog } from '../../../../../shared/components/dialog/utils-dialog/utils-dialog';
+} from '@core/models/masterclass.model';
+import { ContentDetails } from '@core/models/course.model';
+import { UtilsDialog } from '@shared/components/dialog/utils-dialog/utils-dialog';
 import {
   MicroLearningQuizDialog,
   MicroLearningQuizDialogData,
 } from '../../../micro-learning/shared/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog';
-import { PaymentFacade } from '../../../../payment/shared/service/payment-facade/payment-facade';
+import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
 import {
   ActionStatus,
   deriveActionStatus,
@@ -49,7 +49,7 @@ import {
   ReelActivityPayload,
   MicroLearningFieldOfStudy,
   NanoLearningPage,
-} from '../../../../../shared/core/models/micro-learning-course.model';
+} from '@core/models/micro-learning-course.model';
 
 type ActivityEvent = 'heartbeat' | 'completed' | 'exit';
 type SetCpeModeRequest = RouteRequest<typeof MASTERCLASS_ROUTES.setCpeMode>;

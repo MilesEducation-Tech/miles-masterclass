@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { environment } from '../../../../../environments/environment';
+import { environment } from '@env/environment';
 import { AUTH_ROUTES } from '../../models/auth.model';
 import { Storage } from '../storage/storage';
 import { AuthSession } from './auth-session';

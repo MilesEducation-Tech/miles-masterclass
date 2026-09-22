@@ -2,14 +2,14 @@ import { NgOptimizedImage } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Route, Router, RouterOutlet } from '@angular/router';
 import { AuthFacade } from './shared/services/auth-facade';
-import { environment } from '../../environments/environment';
+import { environment } from '@env/environment';
 import { NgIcon } from '@ng-icons/core';
 import { svglGoogle, svglAppleDark } from '@ng-icons/svgl';
 import { faSolidAngleLeft } from '@ng-icons/font-awesome/solid';
-import { logo } from '../shared/core/constant/icon';
-import { canDeactivateExamGuard } from '../shared/core/guards/can-deactivate-exam-guard';
-import { authGuard } from '../shared/core/guards/auth/auth.guard';
-import { guestGuard } from '../shared/core/guards/auth/guest.guard';
+import { logo } from '@core/constant/icon';
+import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
+import { authGuard } from '@core/guards/auth/auth.guard';
+import { guestGuard } from '@core/guards/auth/guest.guard';
 
 /**
  * ponytail: design-only shell. The session service, the logout confirmation

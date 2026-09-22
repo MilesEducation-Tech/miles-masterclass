@@ -1,20 +1,12 @@
 import { inject, Injectable } from '@angular/core';
-import { ApiClient } from '../../../../../shared/core/services/api-client/api-client';
+import { ApiClient } from '@core/services/api-client/api-client';
 import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import {
-  FEEDBACK_ROUTES,
-  FeedbackCategory,
-  UserFeedbackData,
-} from '../../../../../shared/core/models/feedback-model';
-import { ContentDetails } from '../../../../../shared/core/models/course.model';
-import {
-  RouteParams,
-  RouteRequest,
-  RouteResponse,
-} from '../../../../../shared/core/models/http.model';
-import { Utils } from '../../../../../shared/core/services/utils/utils';
-import { Analytics } from '../../../../../shared/core/services/analytics/analytics';
+import { FEEDBACK_ROUTES, FeedbackCategory, UserFeedbackData } from '@core/models/feedback-model';
+import { ContentDetails } from '@core/models/course.model';
+import { RouteParams, RouteRequest, RouteResponse } from '@core/models/http.model';
+import { Utils } from '@core/services/utils/utils';
+import { Analytics } from '@core/services/analytics/analytics';
 
 // Type aliases for cleaner usage
 type FeedbackListResponse = RouteResponse<typeof FEEDBACK_ROUTES.getFeedbackCategory>;

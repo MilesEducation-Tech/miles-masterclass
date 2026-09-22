@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { CourseAbout } from './course-about';
-import { MOCK_CONTENT_ABOUT } from '../../../testing/mocks/content.mock';
+import { MOCK_CONTENT_ABOUT } from '@testing/mocks/content.mock';
 
 const meta: Meta<CourseAbout> = {
   title: 'Components/CourseAbout',

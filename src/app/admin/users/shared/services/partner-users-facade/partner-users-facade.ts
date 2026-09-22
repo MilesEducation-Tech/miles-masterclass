@@ -12,14 +12,11 @@ import {
   untracked,
 } from '@angular/core';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { ApiClient } from '../../../../../shared/core/services/api-client/api-client';
-import { Logger } from '../../../../../shared/core/services/logger/logger';
-import { NotificationService } from '../../../../../shared/core/services/notification/notification';
-import {
-  fileNameFromContentDisposition,
-  saveBlob,
-} from '../../../../../shared/utils/blob-download';
-import { withPreviousValue } from '../../../../../shared/utils/with-previous-value';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
+import { fileNameFromContentDisposition, saveBlob } from '@shared/utils/blob-download';
+import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
   adminContext,
   BlockedStatusFilter,
@@ -32,8 +29,8 @@ import {
   PartnerPagination,
   PartnerPanelUser,
   PartnerPanelUsersResponse,
-} from '../../../../partner-platform/shared/models/partner-platform.model';
-import { PartnerAdminMe } from '../../../../partner-platform/shared/services/partner-admin-me';
+} from '@admin/partner-platform/shared/models/partner-platform.model';
+import { PartnerAdminMe } from '@admin/partner-platform/shared/services/partner-admin-me';
 
 const PANEL_USERS = 'partners/panel/users/';
 const PANEL_USERS_EXPORT = `${PANEL_USERS}export-csv/`;

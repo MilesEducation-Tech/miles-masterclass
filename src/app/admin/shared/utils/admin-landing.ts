@@ -1,5 +1,5 @@
-import { AdminAuth } from '../../../shared/core/services/admin-auth/admin-auth';
-import { PERM } from '../../../shared/core/models/admin/admin-rbac.model';
+import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { PERM } from '@core/models/admin/admin-rbac.model';
 
 const LANDING_ROUTES: { perm: string; path: string }[] = [
   { perm: PERM.DASHBOARD_VIEW, path: '/admin/dashboard' },

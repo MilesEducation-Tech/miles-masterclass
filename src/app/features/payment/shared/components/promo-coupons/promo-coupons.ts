@@ -3,9 +3,9 @@ import { CurrencyPipe } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucideCheck } from '@ng-icons/lucide';
 import { PaymentFacade } from '../../service/payment-facade/payment-facade';
-import { Logger } from '../../../../../shared/core/services/logger/logger';
-import { NotificationService } from '../../../../../shared/core/services/notification/notification';
-import { CouponList } from '../../../../../shared/core/models/payment.model';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
+import { CouponList } from '@core/models/payment.model';
 
 /**
  * Post-login coupon strip shown beside the plan CTAs. Lists active, currently

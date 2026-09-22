@@ -8,7 +8,21 @@
     // rootDir is inherited as `./src` from tsconfig.app.json; widen it to the
     // project root so `.storybook/preview.ts` (outside src) is included without
     // a TS6059 "not under rootDir" error (surfaced by the TS 6 / Storybook 10.5 bump).
-    "rootDir": ".."
+    "rootDir": "..",
+    // Re-declared, not inherited. @storybook/angular resolves modules with
+    // tsconfig-paths-webpack-plugin, which anchors `paths` to the directory of the
+    // config it loads (this one) and — unlike `baseUrl` — never rewrites them across
+    // `extends`. The root tsconfig's `./src/...` targets would resolve to
+    // `.storybook/src/...` and miss. Keep in sync with tsconfig.json.
+    "paths": {
+      "@core/*": ["../src/app/shared/core/*"],
+      "@shared/*": ["../src/app/shared/*"],
+      "@layout/*": ["../src/app/layout/*"],
+      "@features/*": ["../src/app/features/*"],
+      "@admin/*": ["../src/app/admin/*"],
+      "@testing/*": ["../src/app/testing/*"],
+      "@env/*": ["../src/environments/*"]
+    }
   },
   "exclude": ["../src/test.ts", "../src/**/*.spec.ts"],
   "include": ["../src/**/*.stories.*", "./preview.ts"],

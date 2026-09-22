@@ -1,23 +1,20 @@
 import { Component, inject } from '@angular/core';
 import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
-import { environment } from '../../../../../../environments/environment';
+import { environment } from '@env/environment';
 import {
   PartnerContentItem,
   PartnerContentList,
 } from '../../components/partner-content-list/partner-content-list';
-import {
-  PlanBenefits,
-  PlanPointer,
-} from '../../../../../shared/components/plan-benefits/plan-benefits';
+import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan-benefits';
 import {
   PartnershipContent,
   PartnershipContentInput,
 } from '../../components/partnership-content/partnership-content';
-import { EnquiryForm } from '../../../../../shared/components/enquiry-form/enquiry-form';
-import { Button } from '../../../../../shared/components/ui/button/button';
-import { ScrollService } from '../../../../../shared/core/services/scroll/scroll';
-import { Offering } from '../../../../home/components/offerings/offerings';
-import { PARTNER_OFFERINGS } from '../../../../home/components/offerings/offerings.config';
+import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
+import { Button } from '@shared/components/ui/button/button';
+import { ScrollService } from '@core/services/scroll/scroll';
+import { Offering } from '@features/home/components/offerings/offerings';
+import { PARTNER_OFFERINGS } from '@features/home/components/offerings/offerings.config';
 
 @Component({
   selector: 'app-dscpa',

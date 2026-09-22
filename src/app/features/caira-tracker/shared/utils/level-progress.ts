@@ -1,4 +1,4 @@
-import { CairaLadderItem } from '../../../../shared/core/models/caira-badge.model';
+import { CairaLadderItem } from '@core/models/caira-badge.model';
 
 /**
  * Which level the hero's chevrons park on, given a freshly-emitted ladder and

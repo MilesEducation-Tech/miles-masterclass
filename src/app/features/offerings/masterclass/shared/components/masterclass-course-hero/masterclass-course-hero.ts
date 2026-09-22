@@ -1,6 +1,6 @@
 import { Component, computed, inject, input } from '@angular/core';
-import { VideoPoster } from '../../../../../../shared/components/video-poster/video-poster';
-import { Button } from '../../../../../../shared/components/ui/button/button';
+import { VideoPoster } from '@shared/components/video-poster/video-poster';
+import { Button } from '@shared/components/ui/button/button';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   matAddShoppingCartRound,
@@ -14,14 +14,14 @@ import { phosphorDownloadSimpleFill, phosphorShareFatFill } from '@ng-icons/phos
 import { phosphorCards } from '@ng-icons/phosphor-icons/regular';
 import { DatePipe } from '@angular/common';
 
-import { Progress } from '../../../../../../shared/components/ui/progress/progress';
-import { cn } from '../../../../../../shared/utils/cn';
+import { Progress } from '@shared/components/ui/progress/progress';
+import { cn } from '@shared/utils/cn';
 import { MasterclassFacade } from '../../../../shared/services/masterclass-facade/masterclass-facade';
-import { RatingStar } from '../../../../../../shared/components/rating-star/rating-star';
-import { Utils } from '../../../../../../shared/core/services/utils/utils';
-import { CategoriesList } from '../../../../../../shared/components/categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '../../../../../../shared/core/pipes/total-cpe-credits/total-cpe-credits.pipe';
-import { CairaCredlyBadge } from '../../../../../../shared/components/cards/caira-credly-badge/caira-credly-badge';
+import { RatingStar } from '@shared/components/rating-star/rating-star';
+import { Utils } from '@core/services/utils/utils';
+import { CategoriesList } from '@shared/components/categories-list/categories-list';
+import { TotalCpeCreditsPipe } from '@core/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
 
 @Component({
   selector: 'app-masterclass-course-hero',

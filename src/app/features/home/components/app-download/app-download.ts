@@ -1,8 +1,8 @@
 import { NgOptimizedImage } from '@angular/common';
 import { Component } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
-import { appStoreIcon, googlePlayIcon } from '../../../../shared/core/constant/icon';
-import { FooterLink } from '../../../../shared/core/models/footer.model';
+import { appStoreIcon, googlePlayIcon } from '@core/constant/icon';
+import { FooterLink } from '@core/models/footer.model';
 
 @Component({
   selector: 'app-app-download',

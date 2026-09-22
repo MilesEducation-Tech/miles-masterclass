@@ -30,7 +30,7 @@ import {
   lucideStar,
   lucideUsersRound,
 } from '@ng-icons/lucide';
-import { SectionNavService, SectionNavItem } from '../../core/services/section-nav/section-nav';
+import { SectionNavService, SectionNavItem } from '@core/services/section-nav/section-nav';
 
 // Re-export for external use
 export type { SectionNavItem };

@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { environment } from '../../../environments/environment';
+import { environment } from '@env/environment';
 
 /** A security / compliance document available for preview + download. */
 interface ComplianceDocument {

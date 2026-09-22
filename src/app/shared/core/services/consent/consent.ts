@@ -1,6 +1,6 @@
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '@env/environment';
 import { Storage } from '../storage/storage';
 import {
   ConsentRecord,

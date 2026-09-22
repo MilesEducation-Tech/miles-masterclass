@@ -5,8 +5,8 @@ import { faSolidBell, faSolidPlay } from '@ng-icons/font-awesome/solid';
 import { matBookmarkRound } from '@ng-icons/material-icons/round';
 import { Button } from '../../ui/button/button';
 import { CategoriesList } from '../../categories-list/categories-list';
-import { Content } from '../../../core/models/course.model';
-import { Utils } from '../../../core/services/utils/utils';
+import { Content } from '@core/models/course.model';
+import { Utils } from '@core/services/utils/utils';
 
 @Component({
   selector: 'app-coming-soon',

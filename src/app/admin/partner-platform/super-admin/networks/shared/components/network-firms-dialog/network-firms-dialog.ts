@@ -1,11 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormField as AngularFormField, form, required, validate } from '@angular/forms/signals';
-import { DialogRef } from '../../../../../../../shared/core/services/dialog/dialog';
-import { Button } from '../../../../../../../shared/components/ui/button/button';
-import { Forms } from '../../../../../../../shared/components/ui/forms/forms';
-import { AriaInput } from '../../../../../../../shared/components/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '../../../../../../../shared/components/ui/aria/aria-select/aria-select';
-import { AriaSelectOption } from '../../../../../../../shared/core/models/aria.model';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { Button } from '@shared/components/ui/button/button';
+import { Forms } from '@shared/components/ui/forms/forms';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { AriaSelectOption } from '@core/models/aria.model';
 import { PartnerSuperAdminFacade } from '../../../../../shared/services/partner-superadmin-facade';
 import {
   CreateFirmRequest,

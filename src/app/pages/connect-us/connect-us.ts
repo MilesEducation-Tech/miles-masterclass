@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { EnquiryForm } from '../../shared/components/enquiry-form/enquiry-form';
+import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
 import { Faq } from '../faq/faq';
 
 @Component({

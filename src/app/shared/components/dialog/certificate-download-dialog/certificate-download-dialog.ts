@@ -5,19 +5,16 @@ import { Observable, catchError, map, of } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroAcademicCap, heroCheckBadge, heroXMark } from '@ng-icons/heroicons/outline';
 import { Button } from '../../ui/button/button';
-import { DialogRef } from '../../../core/services/dialog/dialog';
-import { ApiClient } from '../../../core/services/api-client/api-client';
-import { Logger } from '../../../core/services/logger/logger';
-import { NotificationService } from '../../../core/services/notification/notification';
-import {
-  DownloadCertificateItem,
-  MASTERCLASS_ROUTES,
-} from '../../../core/models/masterclass.model';
-import { CommonResponse, RouteRequest } from '../../../core/models/http.model';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
+import { DownloadCertificateItem, MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
+import { CommonResponse, RouteRequest } from '@core/models/http.model';
 import { phosphorDownloadSimpleFill, phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
 import { BlobDownloadItem, buildPdfFileName, downloadFiles } from '../../../utils/blob-download';
-import { Analytics } from '../../../core/services/analytics/analytics';
-import { Utils } from '../../../core/services/utils/utils';
+import { Analytics } from '@core/services/analytics/analytics';
+import { Utils } from '@core/services/utils/utils';
 
 /**
  * Rich badge payload sourced from `user_badge` on the course / webinar /

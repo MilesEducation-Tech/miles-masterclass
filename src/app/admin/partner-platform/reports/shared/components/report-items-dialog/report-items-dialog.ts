@@ -2,12 +2,12 @@ import { DecimalPipe, formatNumber } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideBookOpen, lucideDownload } from '@ng-icons/lucide';
-import { Button } from '../../../../../../shared/components/ui/button/button';
-import { Spinner } from '../../../../../../shared/components/ui/spinner/spinner';
-import { DialogRef } from '../../../../../../shared/core/services/dialog/dialog';
+import { Button } from '@shared/components/ui/button/button';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { DialogRef } from '@core/services/dialog/dialog';
 import { ReportCertificate, ReportItemRow, ReportSubject } from '../../models/partner-report.model';
 import { PartnerReportFacade } from '../../services/partner-report-facade';
-import { TabStrip } from '../../../../../../shared/components/ui/tab-strip/tab-strip';
+import { TabStrip } from '@shared/components/ui/tab-strip/tab-strip';
 import { CertificateDownloadProgress } from '../certificate-download-progress/certificate-download-progress';
 
 export interface ReportItemsDialogData {

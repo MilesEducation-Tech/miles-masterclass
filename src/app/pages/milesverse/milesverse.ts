@@ -12,9 +12,9 @@ import {
   lucideWifiOff,
 } from '@ng-icons/lucide';
 import type { Simulation, SubjectGroup } from '@milesverse/sdk';
-import { Button } from '../../shared/components/ui/button/button';
-import { MilesVerse } from '../../shared/core/services/milesverse/milesverse';
-import { Utils } from '../../shared/core/services/utils/utils';
+import { Button } from '@shared/components/ui/button/button';
+import { MilesVerse } from '@core/services/milesverse/milesverse';
+import { Utils } from '@core/services/utils/utils';
 import { MILESVERSE_STEPS, seedHue } from './milesverse.model';
 
 /**

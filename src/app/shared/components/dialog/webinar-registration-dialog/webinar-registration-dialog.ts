@@ -1,12 +1,12 @@
 import { Component, computed } from '@angular/core';
 
 import { Button } from '../../ui/button/button';
-import { DialogRef } from '../../../core/services/dialog/dialog';
-import { UpcomingPremiere } from '../../../core/models/feature.model';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { UpcomingPremiere } from '@core/models/feature.model';
 import {
   WebinarRegistrationForm,
   WebinarRegistrationFormValue,
-} from '../../../../features/offerings/webinar/shared/components/webinar-registration-form/webinar-registration-form';
+} from '@features/offerings/webinar/shared/components/webinar-registration-form/webinar-registration-form';
 
 export interface WebinarRegistrationDialogData {
   webinar: UpcomingPremiere;

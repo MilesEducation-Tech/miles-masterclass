@@ -9,15 +9,15 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
-import { AriaInput } from '../../shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '../../shared/components/ui/button/button';
-import { DeprecationBanner } from '../shared/components/deprecation-banner/deprecation-banner';
-import { Dialog } from '../../shared/core/services/dialog/dialog';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/components/ui/button/button';
+import { DeprecationBanner } from '@admin/shared/components/deprecation-banner/deprecation-banner';
+import { Dialog } from '@core/services/dialog/dialog';
 import {
   ApplyPartnerCodeDialog,
   ApplyPartnerCodeDialogData,
   ApplyPartnerCodeDialogResult,
-} from '../../shared/components/dialog/apply-partner-code-dialog/apply-partner-code-dialog';
+} from '@shared/components/dialog/apply-partner-code-dialog/apply-partner-code-dialog';
 import {
   RecordPaymentDialog,
   RecordPaymentDialogData,

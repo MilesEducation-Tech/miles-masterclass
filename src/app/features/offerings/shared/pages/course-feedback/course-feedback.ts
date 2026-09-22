@@ -2,18 +2,15 @@ import { Component, DestroyRef, effect, inject, input, signal } from '@angular/c
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FeedbackFacade } from '../../services/feedback-facade/feedback-facade';
-import { RatingStar } from '../../../../../shared/components/rating-star/rating-star';
-import { Button } from '../../../../../shared/components/ui/button/button';
-import { AriaInput } from '../../../../../shared/components/ui/aria/aria-input/aria-input';
-import { FeedbackCategory } from '../../../../../shared/core/models/feedback-model';
-import { ContentDetails } from '../../../../../shared/core/models/course.model';
-import { Utils } from '../../../../../shared/core/services/utils/utils';
-import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
-import { User } from '../../../../../shared/core/models/profile.model';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-} from '../../../../../shared/components/dialog/utils-dialog/utils-dialog';
+import { RatingStar } from '@shared/components/rating-star/rating-star';
+import { Button } from '@shared/components/ui/button/button';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { FeedbackCategory } from '@core/models/feedback-model';
+import { ContentDetails } from '@core/models/course.model';
+import { Utils } from '@core/services/utils/utils';
+import { Dialog } from '@core/services/dialog/dialog';
+import { User } from '@core/models/profile.model';
+import { UtilsDialog, UtilsDialogData } from '@shared/components/dialog/utils-dialog/utils-dialog';
 
 const PROFILE_INCOMPLETE_DIALOG_DATA: UtilsDialogData = {
   containerClass: 'py-12 px-6',

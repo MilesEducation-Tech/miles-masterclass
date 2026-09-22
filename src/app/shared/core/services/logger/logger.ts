@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { LogLevel } from '../../models/log.model';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '@env/environment';
 
 @Injectable({
   providedIn: 'root',

@@ -1,4 +1,4 @@
-import { CairaLadderItem } from '../../../../shared/core/models/caira-badge.model';
+import { CairaLadderItem } from '@core/models/caira-badge.model';
 
 /** How far a neighbouring badge sits from the centre, as a % of the rail height. */
 const STEP_PERCENT = 38;

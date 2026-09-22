@@ -1,6 +1,6 @@
 import { afterNextRender, Component, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { environment } from '../../../../../../../environments/environment';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-badge-spot-animation',

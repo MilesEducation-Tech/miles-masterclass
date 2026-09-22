@@ -1,5 +1,5 @@
 import { argsToTemplate, type Meta, type StoryObj } from '@storybook/angular';
-import { BadgeItem } from '../../../core/models/cpe-tracker.model';
+import { BadgeItem } from '@core/models/cpe-tracker.model';
 import { BadgeHeroCard } from './badge-hero-card';
 
 const baseBadge: BadgeItem = {

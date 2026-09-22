@@ -2,11 +2,11 @@ import { Component, computed, effect, inject, input, signal, DestroyRef } from '
 import { Router, ActivatedRoute } from '@angular/router';
 import { VideoChapter } from '../../../../shared/components/video-chapter/video-chapter';
 import { AudioChapter } from '../../../../shared/components/audio-chapter/audio-chapter';
-import { Backward } from '../../../../../../shared/components/backward/backward';
+import { Backward } from '@shared/components/backward/backward';
 import { ChapterFacade } from '../../../../shared/services/chapter-facade/chapter-facade';
-import { Utils } from '../../../../../../shared/core/services/utils/utils';
-import { Logger } from '../../../../../../shared/core/services/logger/logger';
-import { exitChapterToCourse } from '../../../../../../shared/utils/exit-chapter';
+import { Utils } from '@core/services/utils/utils';
+import { Logger } from '@core/services/logger/logger';
+import { exitChapterToCourse } from '@shared/utils/exit-chapter';
 
 @Component({
   selector: 'app-podcast-chapter',

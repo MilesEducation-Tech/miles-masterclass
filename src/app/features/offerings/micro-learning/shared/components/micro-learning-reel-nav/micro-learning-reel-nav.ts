@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matKeyboardArrowDownRound, matKeyboardArrowUpRound } from '@ng-icons/material-icons/round';
-import { Button } from '../../../../../../shared/components/ui/button/button';
+import { Button } from '@shared/components/ui/button/button';
 
 @Component({
   selector: 'app-micro-learning-reel-nav',

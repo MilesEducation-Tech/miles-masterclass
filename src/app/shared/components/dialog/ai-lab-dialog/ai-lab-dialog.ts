@@ -1,11 +1,11 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
-import { DialogRef } from '../../../core/services/dialog/dialog';
-import { Utils } from '../../../core/services/utils/utils';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { Utils } from '@core/services/utils/utils';
 import { Button } from '../../ui/button/button';
-import { logo } from '../../../core/constant/icon';
-import { environment } from '../../../../../environments/environment';
+import { logo } from '@core/constant/icon';
+import { environment } from '@env/environment';
 
 /**
  * Feature-launch dialog for Miles AI Labs. Surfaced by `EngagementDialog` at

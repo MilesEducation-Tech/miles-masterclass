@@ -1,5 +1,5 @@
 import { Component, ElementRef, afterNextRender, signal, viewChild } from '@angular/core';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { DialogRef } from '@core/services/dialog/dialog';
 import { AriaInput } from '../../ui/aria/aria-input/aria-input';
 import { Button } from '../../ui/button/button';
 import { AI_LAB_AGREEMENT } from './ai-lab-terms-dialog.model';

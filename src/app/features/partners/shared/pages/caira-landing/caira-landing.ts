@@ -19,7 +19,7 @@ import {
   iconCairaLearn,
   iconCairaSignUp,
 } from '../../models/caira-step-icons';
-import { environment } from '../../../../../../environments/environment';
+import { environment } from '@env/environment';
 import { Faq } from '../../../../../pages/faq/faq';
 
 @Component({

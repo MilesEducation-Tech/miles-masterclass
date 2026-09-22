@@ -1,10 +1,10 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { DialogRef } from '@core/services/dialog/dialog';
 import { Button } from '../../ui/button/button';
 import { NgIcon } from '@ng-icons/core';
 import { heroLink, heroCheck } from '@ng-icons/heroicons/outline';
-import { Logger } from '../../../core/services/logger/logger';
+import { Logger } from '@core/services/logger/logger';
 
 export interface ShareDialogData {
   url?: string;

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, Signal, signal } from '@angular/core';
-import { AriaSelectOption } from '../../../core/models/aria.model';
+import { AriaSelectOption } from '@core/models/aria.model';
 import { AriaAutocomplete } from '../../ui/aria/aria-autocomplete/aria-autocomplete';
 import { Button } from '../../ui/button/button';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { DialogRef } from '@core/services/dialog/dialog';
 
 export interface ApplyPartnerCodeDialogData {
   userEmail: string;

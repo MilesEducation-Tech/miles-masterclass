@@ -11,21 +11,21 @@ import {
   signal,
 } from '@angular/core';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { Backward } from '../../shared/components/backward/backward';
-import { Horizontal } from '../../shared/components/cards/horizontal/horizontal';
-import { Hover } from '../../shared/components/cards/hover/hover';
-import { Vertical } from '../../shared/components/cards/vertical/vertical';
-import { ErrorState } from '../../shared/components/ui/error-state/error-state';
-import { PageLoading } from '../../shared/components/ui/page-loading/page-loading';
-import { TabStrip } from '../../shared/components/ui/tab-strip/tab-strip';
-import { VideoJs, VideoSource } from '../../shared/components/video-js/video-js';
-import { Content } from '../../shared/core/models/course.model';
-import { FeatureApiResponse } from '../../shared/core/models/feature.model';
-import { InstructorListItem } from '../../shared/core/models/library.model';
-import { ApiClient } from '../../shared/core/services/api-client/api-client';
-import { Analytics } from '../../shared/core/services/analytics/analytics';
+import { Backward } from '@shared/components/backward/backward';
+import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
+import { Hover } from '@shared/components/cards/hover/hover';
+import { Vertical } from '@shared/components/cards/vertical/vertical';
+import { ErrorState } from '@shared/components/ui/error-state/error-state';
+import { PageLoading } from '@shared/components/ui/page-loading/page-loading';
+import { TabStrip } from '@shared/components/ui/tab-strip/tab-strip';
+import { VideoJs, VideoSource } from '@shared/components/video-js/video-js';
+import { Content } from '@core/models/course.model';
+import { FeatureApiResponse } from '@core/models/feature.model';
+import { InstructorListItem } from '@core/models/library.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Analytics } from '@core/services/analytics/analytics';
 import { InstructorHero } from './components/instructor-hero/instructor-hero';
-import { Square } from '../../shared/components/cards/square/square';
+import { Square } from '@shared/components/cards/square/square';
 
 type ResponseBucket = 'masterclass' | 'nano';
 type TabId = 'masterclass' | 'podcast' | 'micro-learning';

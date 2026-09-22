@@ -7,19 +7,19 @@ import {
   matArrowBackIosRound,
   matPlayArrowRound,
 } from '@ng-icons/material-icons/round';
-import { Content } from '../../core/models/course.model';
+import { Content } from '@core/models/course.model';
 import { VideoPoster } from '../video-poster/video-poster';
 import { MilesSlug } from '../miles-slug/miles-slug';
 import { Button } from '../ui/button/button';
 import { CairaCredlyBadge } from '../cards/caira-credly-badge/caira-credly-badge';
-import { TotalCpeCreditsPipe } from '../../core/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { TotalCpeCreditsPipe } from '@core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { matInfoOutline } from '@ng-icons/material-icons/outline';
 import { CourseInfo } from '../dialog/course-info/course-info';
-import { Utils } from '../../core/services/utils/utils';
+import { Utils } from '@core/services/utils/utils';
 import { Router } from '@angular/router';
-import { FeatureFacade } from '../../../features/shared/services/feature-facade/feature-facade';
-import { Dialog } from '../../core/services/dialog/dialog';
-import { Viewport } from '../../core/services/viewport/viewport';
+import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { Dialog } from '@core/services/dialog/dialog';
+import { Viewport } from '@core/services/viewport/viewport';
 
 /**
  * A responsive image slider component with animated transitions.

@@ -1,12 +1,12 @@
 import { Route } from '@angular/router';
 import { DynamicLayout } from '../pages/dynamic-layout/dynamic-layout';
-import { uaeCairaMatchGuard } from '../shared/core/guards/uae-caira-match.guard';
+import { uaeCairaMatchGuard } from '@core/guards/uae-caira-match.guard';
 import { UaeCairaFacade } from '../pages/uae-caira/shared/services/uae-caira-facade/uae-caira-facade';
-import { Tracks } from './shared/services/tracks/tracks';
+import { Tracks } from '@features/shared/services/tracks/tracks';
 import { Faq } from '../pages/faq/faq';
 import { TermsOfService } from '../pages/terms-of-service/terms-of-service';
 import { PrivacyPolicy } from '../pages/privacy-policy/privacy-policy';
-import { MasterclassFacade } from './offerings/shared/services/masterclass-facade/masterclass-facade';
+import { MasterclassFacade } from '@features/offerings/shared/services/masterclass-facade/masterclass-facade';
 import { Compliance } from '../pages/compliance/compliance';
 
 export const featuresRoutes: Route[] = [
@@ -40,21 +40,21 @@ export const featuresRoutes: Route[] = [
       },
       {
         path: 'home',
-        loadComponent: () => import('./home/home').then((m) => m.Home),
+        loadComponent: () => import('@features/home/home').then((m) => m.Home),
       },
       {
         path: 'library',
-        loadChildren: () => import('./library/library').then((m) => m.LibraryRoutes),
+        loadChildren: () => import('@features/library/library').then((m) => m.LibraryRoutes),
       },
       {
         path: 'cpe-tracker',
         loadChildren: () =>
-          import('./cpe-tracker/cpe-tracker.routes').then((m) => m.CpeTrackerRoutes),
+          import('@features/cpe-tracker/cpe-tracker.routes').then((m) => m.CpeTrackerRoutes),
       },
       {
         path: 'caira-tracker',
         loadChildren: () =>
-          import('./caira-tracker/caira-tracker.routes').then((m) => m.CairaTrackerRoutes),
+          import('@features/caira-tracker/caira-tracker.routes').then((m) => m.CairaTrackerRoutes),
       },
       { path: 'faq', component: Faq },
       { path: 'terms-of-service', component: TermsOfService },
@@ -80,7 +80,8 @@ export const featuresRoutes: Route[] = [
 
       {
         path: 'payment',
-        loadChildren: () => import('./payment/payment.routes').then((m) => m.PAYMENT_ROUTES),
+        loadChildren: () =>
+          import('@features/payment/payment.routes').then((m) => m.PAYMENT_ROUTES),
       },
       {
         path: 'instructor/:instructorId/:instructorName',
@@ -161,12 +162,13 @@ export const featuresRoutes: Route[] = [
       },
       {
         path: '',
-        loadChildren: () => import('./partners/partner.routes').then((m) => m.PARTNER_ROUTES),
+        loadChildren: () =>
+          import('@features/partners/partner.routes').then((m) => m.PARTNER_ROUTES),
       },
       {
         path: '',
         providers: [MasterclassFacade],
-        loadChildren: () => import('./offerings/offerings').then((m) => m.offeringsRoutes),
+        loadChildren: () => import('@features/offerings/offerings').then((m) => m.offeringsRoutes),
       },
     ],
   },

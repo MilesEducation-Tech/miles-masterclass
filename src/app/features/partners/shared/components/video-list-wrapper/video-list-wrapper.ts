@@ -1,6 +1,6 @@
 import { Component, computed, input, linkedSignal, signal } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { VideoPoster } from '../../../../../shared/components/video-poster/video-poster';
+import { VideoPoster } from '@shared/components/video-poster/video-poster';
 
 export type VideoListSide = 'left' | 'right' | 'top' | 'bottom';
 

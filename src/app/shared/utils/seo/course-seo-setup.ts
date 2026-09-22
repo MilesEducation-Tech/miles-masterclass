@@ -7,9 +7,9 @@ import {
   COURSE_BRAND_NAMES,
   COURSE_DESCRIPTION_VERBS,
   SEO_BRAND_DEFAULTS,
-} from '../../core/models/seo.constants';
-import { SeoConfig } from '../../core/models/seo.models';
-import { SeoManager } from '../../core/services/seo/seo-manager';
+} from '@core/models/seo.constants';
+import { SeoConfig } from '@core/models/seo.models';
+import { SeoManager } from '@core/services/seo/seo-manager';
 import { courseToSeoConfig, type CourseSeoKind, type CourseSeoSource } from './course-seo-config';
 import { routeUrlToSeoSlug } from './seo-route-slug';
 

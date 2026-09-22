@@ -7,10 +7,10 @@ import {
   required,
   validate,
 } from '@angular/forms/signals';
-import { SelectOption } from '../../core/models/form.model';
-import { EnquiryService } from '../../core/services/enquiry/enquiry';
-import { Utils } from '../../core/services/utils/utils';
-import { NotificationService } from '../../core/services/notification/notification';
+import { SelectOption } from '@core/models/form.model';
+import { EnquiryService } from '@core/services/enquiry/enquiry';
+import { Utils } from '@core/services/utils/utils';
+import { NotificationService } from '@core/services/notification/notification';
 import { Button } from '../ui/button/button';
 import { AriaInput } from '../ui/aria/aria-input/aria-input';
 import { AriaMultiselect } from '../ui/aria/aria-multiselect/aria-multiselect';

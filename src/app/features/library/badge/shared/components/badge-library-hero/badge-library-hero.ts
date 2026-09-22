@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { environment } from '../../../../../../../environments/environment';
+import { environment } from '@env/environment';
 import { BadgeSpotAnimation } from '../badge-spot-animation/badge-spot-animation';
 
 @Component({

@@ -13,7 +13,7 @@ import {
 import { isPlatformBrowser, isPlatformServer } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, catchError, switchMap, tap } from 'rxjs';
-import { RouteResponse } from '../../../../../shared/core/models/http.model';
+import { RouteResponse } from '@core/models/http.model';
 import {
   CartDetails,
   PAYMENT_ROUTES,
@@ -24,28 +24,28 @@ import {
   OrderByIdResponseData,
   PlanPriceDetail,
   SubscriptionPlan,
-} from '../../../../../shared/core/models/payment.model';
-import { PROFILE_ROUTES, ProfileFormState } from '../../../../../shared/core/models/profile.model';
-import { User } from '../../../../../shared/core/models/profile.model';
-import { NotificationService } from '../../../../../shared/core/services/notification/notification';
-import { ApiClient } from '../../../../../shared/core/services/api-client/api-client';
-import { Logger } from '../../../../../shared/core/services/logger/logger';
-import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
+} from '@core/models/payment.model';
+import { PROFILE_ROUTES, ProfileFormState } from '@core/models/profile.model';
+import { User } from '@core/models/profile.model';
+import { NotificationService } from '@core/services/notification/notification';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Logger } from '@core/services/logger/logger';
+import { Dialog } from '@core/services/dialog/dialog';
 // Dialog components are loaded lazily (dynamic import in the open* methods below)
 // so they — and their `@angular/forms` dependency — stay out of the initial
 // bundle. This facade is eagerly instantiated via the root `Utils` service, so a
 // static import would drag every dialog into the initial chunk. Types are
 // import-only (erased at build time); the runtime class comes from `import()`.
-import type { CouponDialog } from '../../../../../shared/components/dialog/coupon-dialog/coupon-dialog';
+import type { CouponDialog } from '@shared/components/dialog/coupon-dialog/coupon-dialog';
 import type {
   FirmSponsorshipDialog,
   FirmSponsorshipResult,
-} from '../../../../../shared/components/dialog/firm-sponsorship-dialog/firm-sponsorship-dialog';
+} from '@shared/components/dialog/firm-sponsorship-dialog/firm-sponsorship-dialog';
 import type {
   PartnerCodePromptDialog,
   PartnerCodePromptResult,
-} from '../../../../../shared/components/dialog/partner-code-prompt-dialog/partner-code-prompt-dialog';
-import { Analytics } from '../../../../../shared/core/services/analytics/analytics';
+} from '@shared/components/dialog/partner-code-prompt-dialog/partner-code-prompt-dialog';
+import { Analytics } from '@core/services/analytics/analytics';
 
 type MyBucketResponse = RouteResponse<typeof PAYMENT_ROUTES.myBucket>;
 type ListAddressResponse = RouteResponse<typeof PAYMENT_ROUTES.listAddress>;
@@ -406,8 +406,7 @@ export class PaymentFacade {
     const cartData = this.cartData();
     if (!cartData) return;
 
-    const { CouponDialog } =
-      await import('../../../../../shared/components/dialog/coupon-dialog/coupon-dialog');
+    const { CouponDialog } = await import('@shared/components/dialog/coupon-dialog/coupon-dialog');
     const dialogRef = this.dialog.open<CouponDialog, CartDetails>(CouponDialog, {
       width: '460px',
       maxWidth: '95vw',
@@ -428,7 +427,7 @@ export class PaymentFacade {
     paymentType: 'monthly' | 'yearly' = 'yearly',
   ): Promise<void> {
     const { FirmSponsorshipDialog } =
-      await import('../../../../../shared/components/dialog/firm-sponsorship-dialog/firm-sponsorship-dialog');
+      await import('@shared/components/dialog/firm-sponsorship-dialog/firm-sponsorship-dialog');
     const dialogRef = this.dialog.open<FirmSponsorshipDialog, FirmSponsorshipResult>(
       FirmSponsorshipDialog,
       {
@@ -623,7 +622,7 @@ export class PaymentFacade {
 
   async openCartDrawer(): Promise<void> {
     const { CartDrawerDialog } =
-      await import('../../../../../shared/components/dialog/cart-drawer-dialog/cart-drawer-dialog');
+      await import('@shared/components/dialog/cart-drawer-dialog/cart-drawer-dialog');
     this.dialog.open(CartDrawerDialog, {
       width: '500px',
       maxWidth: '90vw',
@@ -682,7 +681,7 @@ export class PaymentFacade {
     }
 
     const { PartnerCodePromptDialog } =
-      await import('../../../../../shared/components/dialog/partner-code-prompt-dialog/partner-code-prompt-dialog');
+      await import('@shared/components/dialog/partner-code-prompt-dialog/partner-code-prompt-dialog');
     const ref = this.dialog.open<PartnerCodePromptDialog, PartnerCodePromptResult>(
       PartnerCodePromptDialog,
       {

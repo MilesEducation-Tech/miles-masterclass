@@ -1,9 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import {
-  paymentFailed,
-  paymentPending,
-  paymentSuccess,
-} from '../../../../../shared/core/constant/icon';
+import { paymentFailed, paymentPending, paymentSuccess } from '@core/constant/icon';
 import { NgIconComponent } from '@ng-icons/core';
 
 @Component({

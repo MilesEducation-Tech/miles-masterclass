@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 
 import { ChapterQuiz } from './chapter-quiz';
 import { ChapterFacade } from '../../services/chapter-facade/chapter-facade';
-import { CourseChapter, QuizQuestion } from '../../../../../shared/core/models/course.model';
+import { CourseChapter, QuizQuestion } from '@core/models/course.model';
 
 const QUESTIONS: QuizQuestion[] = [
   {

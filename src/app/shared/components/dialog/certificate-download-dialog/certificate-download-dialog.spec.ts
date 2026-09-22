@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { CertificateDownloadDialog } from './certificate-download-dialog';
-import { MockDialogRef } from '../../../../testing/mocks/dialog.mock';
+import { MockDialogRef } from '@testing/mocks/dialog.mock';
 
 describe('CertificateDownloadDialog', () => {
   let component: CertificateDownloadDialog;

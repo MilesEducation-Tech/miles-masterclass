@@ -1,9 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCheck } from '@ng-icons/lucide';
-import { DialogRef } from '../../../core/services/dialog/dialog';
-import { PaymentFacade } from '../../../../features/payment/shared/service/payment-facade/payment-facade';
-import { PlanSelectionCard } from '../../../../features/payment/shared/components/plan-selection-card/plan-selection-card';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
+import { PlanSelectionCard } from '@features/payment/shared/components/plan-selection-card/plan-selection-card';
 import { PageLoading } from '../../ui/page-loading/page-loading';
 import { ErrorState } from '../../ui/error-state/error-state';
 import { Button } from '../../ui/button/button';

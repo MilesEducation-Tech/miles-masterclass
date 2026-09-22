@@ -2,7 +2,7 @@ import {
   CourseChapter,
   ChapterWiseDetails,
   UserAssessmentDetails,
-} from '../../../../../shared/core/models/course.model';
+} from '@core/models/course.model';
 import {
   Component,
   computed,
@@ -16,17 +16,13 @@ import {
   model,
   untracked,
 } from '@angular/core';
-import { AudioJs } from '../../../../../shared/components/audio-js/audio-js';
-import {
-  PlayerMode,
-  VideoConfig,
-  VideoSource,
-} from '../../../../../shared/core/models/video-player.model';
-import { ChapterSkeleton } from '../../../../../shared/components/skeleton/chapter-skeleton/chapter-skeleton';
+import { AudioJs } from '@shared/components/audio-js/audio-js';
+import { PlayerMode, VideoConfig, VideoSource } from '@core/models/video-player.model';
+import { ChapterSkeleton } from '@shared/components/skeleton/chapter-skeleton/chapter-skeleton';
 
 import { ChapterQuiz } from '../chapter-quiz/chapter-quiz';
-import { RecordDisk } from '../../../../../shared/components/record-disk/record-disk';
-import { Analytics } from '../../../../../shared/core/services/analytics/analytics';
+import { RecordDisk } from '@shared/components/record-disk/record-disk';
+import { Analytics } from '@core/services/analytics/analytics';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faClipboard } from '@ng-icons/font-awesome/regular';
 

@@ -15,7 +15,7 @@ import {
   type SimulationDetail,
   type Subject,
 } from '@milesverse/sdk';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '@env/environment';
 
 /** MilesVerse SDK facade: catalogue, sessions, and SSO auth. Browser-only. */
 @Injectable({ providedIn: 'root' })

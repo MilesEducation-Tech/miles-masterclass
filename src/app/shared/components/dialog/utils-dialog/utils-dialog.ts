@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
-import { environment } from '../../../../../environments/environment';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { environment } from '@env/environment';
+import { DialogRef } from '@core/services/dialog/dialog';
 import { Button } from '../../ui/button/button';
-import { ButtonVariant } from '../../../core/models/button.model';
-import { appStoreIcon, googlePlayIcon } from '../../../core/constant/icon';
+import { ButtonVariant } from '@core/models/button.model';
+import { appStoreIcon, googlePlayIcon } from '@core/constant/icon';
 
 export interface DialogButton {
   label: string;

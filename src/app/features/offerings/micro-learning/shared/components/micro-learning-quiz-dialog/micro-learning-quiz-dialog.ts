@@ -1,12 +1,9 @@
 import { Component, inject } from '@angular/core';
-import { DialogRef } from '../../../../../../shared/core/services/dialog/dialog';
+import { DialogRef } from '@core/services/dialog/dialog';
 import { ChapterQuiz } from '../../../../shared/components/chapter-quiz/chapter-quiz';
-import {
-  ActionStatus,
-  MicroLearningReel,
-} from '../../../../../../shared/core/models/micro-learning-course.model';
-import { CourseChapter } from '../../../../../../shared/core/models/course.model';
-import { Button } from '../../../../../../shared/components/ui/button/button';
+import { ActionStatus, MicroLearningReel } from '@core/models/micro-learning-course.model';
+import { CourseChapter } from '@core/models/course.model';
+import { Button } from '@shared/components/ui/button/button';
 import { MicroLearningCourseFacade } from '../../../../shared/services/micro-learning-course-facade/micro-learning-course-facade';
 
 export interface MicroLearningQuizDialogData {

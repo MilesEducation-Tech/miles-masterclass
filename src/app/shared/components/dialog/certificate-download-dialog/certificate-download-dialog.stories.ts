@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { CertificateDownloadDialog } from './certificate-download-dialog';
-import { MockDialogRef } from '../../../../testing/mocks/dialog.mock';
+import { MockDialogRef } from '@testing/mocks/dialog.mock';
 
 const meta: Meta<CertificateDownloadDialog> = {
   title: 'Dialog/CertificateDownload',

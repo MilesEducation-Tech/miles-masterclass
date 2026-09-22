@@ -1,20 +1,12 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { Logger } from '../../../../../shared/core/services/logger/logger';
-import { ApiClient } from '../../../../../shared/core/services/api-client/api-client';
-import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
-import { NotificationService } from '../../../../../shared/core/services/notification/notification';
-import { Analytics } from '../../../../../shared/core/services/analytics/analytics';
-import {
-  RouteParams,
-  RouteResponse,
-  RouteRequest,
-} from '../../../../../shared/core/models/http.model';
-import { MASTERCLASS_ROUTES } from '../../../../../shared/core/models/masterclass.model';
-import {
-  ContentDetails,
-  CourseChapter,
-  normalizeBookmarkField,
-} from '../../../../../shared/core/models/course.model';
+import { Logger } from '@core/services/logger/logger';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Dialog } from '@core/services/dialog/dialog';
+import { NotificationService } from '@core/services/notification/notification';
+import { Analytics } from '@core/services/analytics/analytics';
+import { RouteParams, RouteResponse, RouteRequest } from '@core/models/http.model';
+import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
+import { ContentDetails, CourseChapter, normalizeBookmarkField } from '@core/models/course.model';
 import { catchError, forkJoin, of, tap } from 'rxjs';
 import { Router } from '@angular/router';
 

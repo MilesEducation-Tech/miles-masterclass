@@ -4,18 +4,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpContext } from '@angular/common/http';
 import { Subject, from, of } from 'rxjs';
 import { catchError, debounceTime, exhaustMap, switchMap, tap } from 'rxjs/operators';
-import { ApiClient } from '../../../../../shared/core/services/api-client/api-client';
-import { NotificationService } from '../../../../../shared/core/services/notification/notification';
-import { Logger } from '../../../../../shared/core/services/logger/logger';
-import {
-  CommonResponse,
-  SKIP_ERROR_NOTIFICATION,
-} from '../../../../../shared/core/models/http.model';
-import {
-  BulkCertificateItem,
-  CPE_TRACKER_ROUTES,
-} from '../../../../../shared/core/models/cpe-tracker.model';
-import { CertificateTarget } from '../../../../../shared/core/models/cpe-credit.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { NotificationService } from '@core/services/notification/notification';
+import { Logger } from '@core/services/logger/logger';
+import { CommonResponse, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
+import { BulkCertificateItem, CPE_TRACKER_ROUTES } from '@core/models/cpe-tracker.model';
+import { CertificateTarget } from '@core/models/cpe-credit.model';
 import { CertificateAccessPolicy } from '../certificate-access-policy/certificate-access-policy';
 import { TrackerDialogOrchestrator } from '../tracker-dialog-orchestrator/tracker-dialog-orchestrator';
 import { DOWNLOAD_DEBOUNCE_MS } from '../../constants/cpe-tracker.constants';
@@ -24,7 +18,7 @@ import {
   buildPdfFileName,
   downloadFiles,
   saveBlob,
-} from '../../../../../shared/utils/blob-download';
+} from '@shared/utils/blob-download';
 
 /**
  * Certificate download operations:
