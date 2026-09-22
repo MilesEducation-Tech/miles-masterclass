@@ -1,8 +1,5 @@
 import { Component, inject } from '@angular/core';
-import {
-  PlanPointer,
-  PlanBenefits,
-} from '../../../../../shared/components/plan-benefits/plan-benefits';
+import { PlanPointer, PlanBenefits } from '@shared/components/plan-benefits/plan-benefits';
 import {
   PartnershipContentInput,
   PartnershipContent,
@@ -11,12 +8,12 @@ import {
   PartnerContentItem,
   PartnerContentList,
 } from '../../components/partner-content-list/partner-content-list';
-import { PARTNER_OFFERINGS } from '../../../../home/components/offerings/offerings.config';
-import { environment } from '../../../../../../environments/environment';
-import { ScrollService } from '../../../../../shared/core/services/scroll/scroll';
-import { Offering } from '../../../../home/components/offerings/offerings';
-import { EnquiryForm } from '../../../../../shared/components/enquiry-form/enquiry-form';
-import { Button } from '../../../../../shared/components/ui/button/button';
+import { PARTNER_OFFERINGS } from '@features/home/components/offerings/offerings.config';
+import { environment } from '@env/environment';
+import { ScrollService } from '@core/services/scroll/scroll';
+import { Offering } from '@features/home/components/offerings/offerings';
+import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
+import { Button } from '@shared/components/ui/button/button';
 import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
 
 @Component({

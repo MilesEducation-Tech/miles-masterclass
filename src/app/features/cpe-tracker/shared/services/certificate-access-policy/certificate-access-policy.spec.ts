@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { CertificateAccessPolicy } from './certificate-access-policy';
-import { CurrentPlanData } from '../../../../../shared/core/models/payment.model';
+import { CurrentPlanData } from '@core/models/payment.model';
 
 const activePlan: CurrentPlanData = {
   id: 1,

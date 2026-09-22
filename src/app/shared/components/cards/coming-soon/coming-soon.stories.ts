@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { ComingSoon } from './coming-soon';
-import { MOCK_MASTERCLASS_CARD, MOCK_PODCAST_CARD } from '../../../../testing/mocks/content.mock';
+import { MOCK_MASTERCLASS_CARD, MOCK_PODCAST_CARD } from '@testing/mocks/content.mock';
 
 const meta: Meta<ComingSoon> = {
   title: 'Cards/ComingSoon',

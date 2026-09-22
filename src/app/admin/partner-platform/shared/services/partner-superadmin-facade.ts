@@ -1,11 +1,11 @@
 import { isPlatformBrowser } from '@angular/common';
 import { computed, inject, Injectable, PLATFORM_ID, resource } from '@angular/core';
 import { firstValueFrom, fromEvent, Observable, takeUntil } from 'rxjs';
-import { PERM } from '../../../../shared/core/models/admin/admin-rbac.model';
-import { AdminAuth } from '../../../../shared/core/services/admin-auth/admin-auth';
-import { ApiClient } from '../../../../shared/core/services/api-client/api-client';
-import { Logger } from '../../../../shared/core/services/logger/logger';
-import { NotificationService } from '../../../../shared/core/services/notification/notification';
+import { PERM } from '@core/models/admin/admin-rbac.model';
+import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
 import {
   adminContext,
   AllocateSeatsRequest,

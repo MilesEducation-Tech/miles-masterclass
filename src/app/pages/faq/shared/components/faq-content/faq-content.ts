@@ -1,7 +1,7 @@
 import { Component, HostListener, inject, input } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Router } from '@angular/router';
-import { FAQContent } from '../../../../../shared/core/models/faq.model';
+import { FAQContent } from '@core/models/faq.model';
 
 @Component({
   selector: 'app-faq-content',

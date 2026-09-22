@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { ShareDialog } from './share-dialog';
-import { MockDialogRef } from '../../../../testing/mocks/dialog.mock';
-import { MockLogger } from '../../../../testing/mocks/services.mock';
-import { Logger } from '../../../core/services/logger/logger';
+import { MockDialogRef } from '@testing/mocks/dialog.mock';
+import { MockLogger } from '@testing/mocks/services.mock';
+import { Logger } from '@core/services/logger/logger';
 
 const meta: Meta<ShareDialog> = {
   title: 'Dialog/Share',

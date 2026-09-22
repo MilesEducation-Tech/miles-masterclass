@@ -5,7 +5,7 @@ import {
   CourseCategoryDetails,
   FieldOfStudy,
   InstructorDetails,
-} from '../../shared/core/models/course.model';
+} from '@core/models/course.model';
 
 export const MOCK_INSTRUCTOR: InstructorDetails = {
   id: 1,

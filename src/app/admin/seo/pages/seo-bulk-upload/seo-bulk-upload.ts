@@ -8,21 +8,16 @@ import {
   heroExclamationCircle,
   heroTrash,
 } from '@ng-icons/heroicons/outline';
-import { SeoPageType } from '../../../../shared/core/models/seo.constants';
-import { Logger } from '../../../../shared/core/services/logger/logger';
-import { NotificationService } from '../../../../shared/core/services/notification/notification';
-import { SupabaseSeo } from '../../../../shared/core/services/seo/supabase-seo';
-import { saveBlob } from '../../../../shared/utils/blob-download';
-import { AriaInput } from '../../../../shared/components/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '../../../../shared/components/ui/aria/aria-select/aria-select';
-import { Button } from '../../../../shared/components/ui/button/button';
-import { AriaSelectOption } from '../../../../shared/core/models/aria.model';
-import {
-  parseSeoCsv,
-  SEO_CSV_TEMPLATE,
-  SeoRow,
-  validateSeoRow,
-} from '../../../../shared/utils/seo/seo-csv';
+import { SeoPageType } from '@core/models/seo.constants';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
+import { SupabaseSeo } from '@core/services/seo/supabase-seo';
+import { saveBlob } from '@shared/utils/blob-download';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { Button } from '@shared/components/ui/button/button';
+import { AriaSelectOption } from '@core/models/aria.model';
+import { parseSeoCsv, SEO_CSV_TEMPLATE, SeoRow, validateSeoRow } from '@shared/utils/seo/seo-csv';
 
 /** Editable text fields exposed as plain inputs in the preview grid. */
 type EditableTextField = 'page_slug' | 'page_name' | 'title' | 'description' | 'canonical_url';

@@ -1,7 +1,7 @@
 import { Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
-import { DialogRef } from '../../../core/services/dialog/dialog';
-import { NotificationService } from '../../../core/services/notification/notification';
-import { AriaSelectOption } from '../../../core/models/aria.model';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { NotificationService } from '@core/services/notification/notification';
+import { AriaSelectOption } from '@core/models/aria.model';
 import { AriaInput } from '../../ui/aria/aria-input/aria-input';
 import { AriaSelect } from '../../ui/aria/aria-select/aria-select';
 import { Button } from '../../ui/button/button';
@@ -13,12 +13,12 @@ import {
   PartnerAdmin,
   PartnerCapability,
   PartnerRole,
-} from '../../../../admin/partner-platform/shared/models/partner-platform.model';
+} from '@admin/partner-platform/shared/models/partner-platform.model';
 import {
   AdminProvisioning,
   INITIAL_ADMIN_PASSWORD,
-} from '../../../../admin/partner-platform/shared/services/admin-provisioning';
-import { PartnerSuperAdminFacade } from '../../../../admin/partner-platform/shared/services/partner-superadmin-facade';
+} from '@admin/partner-platform/shared/services/admin-provisioning';
+import { PartnerSuperAdminFacade } from '@admin/partner-platform/shared/services/partner-superadmin-facade';
 
 const ROLE_OPTIONS: AriaSelectOption<PartnerRole>[] = [
   { value: 'network', label: 'Network admin' },

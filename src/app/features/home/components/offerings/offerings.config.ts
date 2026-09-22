@@ -6,11 +6,11 @@ import {
   matScienceOutline,
   matVideoCameraFrontOutline,
 } from '@ng-icons/material-icons/outline';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '@env/environment';
 import {
   HERO_FALLBACK_FEED,
   type HeroReelItem,
-} from '../../../offerings/micro-learning/shared/components/micro-learning-hero/hero-reel-item.model';
+} from '@features/offerings/micro-learning/shared/components/micro-learning-hero/hero-reel-item.model';
 
 export interface FloatingAsset {
   id: number;

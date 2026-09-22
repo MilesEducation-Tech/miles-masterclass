@@ -1,11 +1,11 @@
 import { DatePipe, DOCUMENT } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 
-import { CairaCredlyBadge } from '../../../../../shared/components/cards/caira-credly-badge/caira-credly-badge';
-import { CategoriesList } from '../../../../../shared/components/categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '../../../../../shared/core/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
+import { CategoriesList } from '@shared/components/categories-list/categories-list';
+import { TotalCpeCreditsPipe } from '@core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { LocalTimeZonePipe } from '../../pipes/local-time-zone.pipe';
-import { UpcomingPremiere } from '../../../../../shared/core/models/feature.model';
+import { UpcomingPremiere } from '@core/models/feature.model';
 
 /**
  * Live-webinar details section of the UAE CAIRA page.

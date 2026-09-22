@@ -12,12 +12,9 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
-import {
-  BadgeCard,
-  BadgeCardActionEvent,
-} from '../../../shared/components/cards/badge-card/badge-card';
-import { SelectMenu } from '../../../shared/components/ui/select-menu/select-menu';
-import { TabStrip } from '../../../shared/components/ui/tab-strip/tab-strip';
+import { BadgeCard, BadgeCardActionEvent } from '@shared/components/cards/badge-card/badge-card';
+import { SelectMenu } from '@shared/components/ui/select-menu/select-menu';
+import { TabStrip } from '@shared/components/ui/tab-strip/tab-strip';
 import {
   badgeClaimCourse,
   BadgeCardData,
@@ -25,14 +22,14 @@ import {
   BadgeStatusFilter,
   toBadgeCardData,
   UserBadgeRef,
-} from '../../../shared/core/models/badge.model';
-import { NotificationService } from '../../../shared/core/services/notification/notification';
-import { Utils } from '../../../shared/core/services/utils/utils';
-import { Dialog } from '../../../shared/core/services/dialog/dialog';
+} from '@core/models/badge.model';
+import { NotificationService } from '@core/services/notification/notification';
+import { Utils } from '@core/services/utils/utils';
+import { Dialog } from '@core/services/dialog/dialog';
 import {
   CertificateDialogData,
   CertificateDownloadDialog,
-} from '../../../shared/components/dialog/certificate-download-dialog/certificate-download-dialog';
+} from '@shared/components/dialog/certificate-download-dialog/certificate-download-dialog';
 import { BadgeLibraryHero } from './shared/components/badge-library-hero/badge-library-hero';
 import { BadgeFacade } from './shared/services/badge-facade/badge-facade';
 

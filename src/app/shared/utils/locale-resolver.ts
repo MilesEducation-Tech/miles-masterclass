@@ -1,4 +1,4 @@
-import { CountryCode, ProfessionType } from '../core/models/route-params.model';
+import { CountryCode, ProfessionType } from '@core/models/route-params.model';
 
 /**
  * Composite key for locale-keyed content overrides. Lowercased on lookup so

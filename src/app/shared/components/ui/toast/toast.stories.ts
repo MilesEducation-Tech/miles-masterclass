@@ -1,10 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { ToastComponent } from './toast';
-import {
-  MOCK_SUCCESS_TOAST,
-  MOCK_ERROR_TOAST,
-  MOCK_INFO_TOAST,
-} from '../../../../testing/mocks/toast.mock';
+import { MOCK_SUCCESS_TOAST, MOCK_ERROR_TOAST, MOCK_INFO_TOAST } from '@testing/mocks/toast.mock';
 
 const meta: Meta<ToastComponent> = {
   title: 'UI/Toast',

@@ -1,6 +1,6 @@
 import { NgOptimizedImage } from '@angular/common';
-import { WaveCanvas } from '../../../../../../shared/components/wave-canvas/wave-canvas';
-import { environment } from './../../../../../../../environments/environment';
+import { WaveCanvas } from '@shared/components/wave-canvas/wave-canvas';
+import { environment } from '@env/environment';
 import { Component } from '@angular/core';
 
 @Component({

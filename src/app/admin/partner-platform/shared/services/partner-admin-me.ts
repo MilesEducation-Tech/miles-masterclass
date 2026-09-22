@@ -1,8 +1,8 @@
 import { isPlatformBrowser } from '@angular/common';
 import { computed, inject, Injectable, PLATFORM_ID, resource } from '@angular/core';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { ApiClient } from '../../../../shared/core/services/api-client/api-client';
-import { AdminAuth } from '../../../../shared/core/services/admin-auth/admin-auth';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { AdminAuth } from '@core/services/admin-auth/admin-auth';
 import {
   adminContext,
   PartnerAdminMeResponse,

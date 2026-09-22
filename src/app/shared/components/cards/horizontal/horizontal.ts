@@ -14,13 +14,13 @@ import { Button } from '../../ui/button/button';
 import { NgIcon } from '@ng-icons/core';
 import { faSolidInfo, faSolidPlay, faSolidRobot } from '@ng-icons/font-awesome/solid';
 import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
-import { Utils } from '../../../core/services/utils/utils';
-import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
-import { Content } from '../../../core/models/course.model';
-import { UpcomingPremiere, WebinarCta } from '../../../core/models/feature.model';
-import { Logger } from '../../../core/services/logger/logger';
+import { Utils } from '@core/services/utils/utils';
+import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { Content } from '@core/models/course.model';
+import { UpcomingPremiere, WebinarCta } from '@core/models/feature.model';
+import { Logger } from '@core/services/logger/logger';
 import { CategoriesList } from '../../categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '../../../core/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { TotalCpeCreditsPipe } from '@core/pipes/total-cpe-credits/total-cpe-credits.pipe';
 import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
 
 @Component({

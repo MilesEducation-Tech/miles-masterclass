@@ -2,7 +2,7 @@ import { Component, computed, effect, input, output, signal } from '@angular/cor
 import { NgIcon } from '@ng-icons/core';
 import { matKeyboardArrowDownRound } from '@ng-icons/material-icons/round';
 import { FaqContent } from '../faq-content/faq-content';
-import { FAQ } from '../../../../../shared/core/models/faq.model';
+import { FAQ } from '@core/models/faq.model';
 
 export type AccordionMode = 'single' | 'multi';
 

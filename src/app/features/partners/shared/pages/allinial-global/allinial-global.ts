@@ -1,24 +1,21 @@
 import { Component, inject } from '@angular/core';
-import { Button } from '../../../../../shared/components/ui/button/button';
+import { Button } from '@shared/components/ui/button/button';
 import {
   PartnerContentItem,
   PartnerContentList,
 } from '../../components/partner-content-list/partner-content-list';
-import { Offering } from '../../../../home/components/offerings/offerings';
-import { EnquiryForm } from '../../../../../shared/components/enquiry-form/enquiry-form';
+import { Offering } from '@features/home/components/offerings/offerings';
+import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
 import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
 import {
   PartnershipContent,
   PartnershipContentInput,
 } from '../../components/partnership-content/partnership-content';
-import {
-  PlanBenefits,
-  PlanPointer,
-} from '../../../../../shared/components/plan-benefits/plan-benefits';
-import { environment } from '../../../../../../environments/environment';
-import { ScrollService } from '../../../../../shared/core/services/scroll/scroll';
-import { MGI_PARTNER_OFFERINGS } from '../../../../home/components/offerings/offerings.config';
-import { ALLINIAL_GLOBAL_LOGO } from '../../../../../shared/core/constant/icon';
+import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan-benefits';
+import { environment } from '@env/environment';
+import { ScrollService } from '@core/services/scroll/scroll';
+import { MGI_PARTNER_OFFERINGS } from '@features/home/components/offerings/offerings.config';
+import { ALLINIAL_GLOBAL_LOGO } from '@core/constant/icon';
 
 @Component({
   selector: 'app-allinial-global',

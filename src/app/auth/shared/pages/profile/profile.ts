@@ -2,27 +2,19 @@ import { Component, computed, inject, linkedSignal, signal } from '@angular/core
 import { Router } from '@angular/router';
 import { Observable, map } from 'rxjs';
 
-import { AriaInput } from '../../../../shared/components/ui/aria/aria-input/aria-input';
-import { AriaAutocomplete } from '../../../../shared/components/ui/aria/aria-autocomplete/aria-autocomplete';
-import { AriaMultiselect } from '../../../../shared/components/ui/aria/aria-multiselect/aria-multiselect';
-import { Button } from '../../../../shared/components/ui/button/button';
-import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
-import {
-  AnswerMap,
-  AnswerValue,
-  Question,
-  UserDetailsPatch,
-} from '../../../../shared/core/models/account.model';
-import { AccountApi } from '../../../../shared/core/services/account-api/account-api';
-import { AuthSession } from '../../../../shared/core/services/auth-session/auth-session';
-import { OnboardingApi } from '../../../../shared/core/services/onboarding-api/onboarding-api';
-import { NotificationService } from '../../../../shared/core/services/notification/notification';
-import { Logger } from '../../../../shared/core/services/logger/logger';
-import { Dialog } from '../../../../shared/core/services/dialog/dialog';
-import {
-  DialogButton,
-  UtilsDialog,
-} from '../../../../shared/components/dialog/utils-dialog/utils-dialog';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { AriaAutocomplete } from '@shared/components/ui/aria/aria-autocomplete/aria-autocomplete';
+import { AriaMultiselect } from '@shared/components/ui/aria/aria-multiselect/aria-multiselect';
+import { Button } from '@shared/components/ui/button/button';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { AnswerMap, AnswerValue, Question, UserDetailsPatch } from '@core/models/account.model';
+import { AccountApi } from '@core/services/account-api/account-api';
+import { AuthSession } from '@core/services/auth-session/auth-session';
+import { OnboardingApi } from '@core/services/onboarding-api/onboarding-api';
+import { NotificationService } from '@core/services/notification/notification';
+import { Logger } from '@core/services/logger/logger';
+import { Dialog } from '@core/services/dialog/dialog';
+import { DialogButton, UtilsDialog } from '@shared/components/dialog/utils-dialog/utils-dialog';
 
 /** How a question should be rendered. */
 type Control = 'text' | 'number' | 'boolean' | 'single' | 'multi';

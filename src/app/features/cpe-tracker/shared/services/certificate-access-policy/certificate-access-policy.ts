@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CurrentPlanData } from '../../../../../shared/core/models/payment.model';
+import { CurrentPlanData } from '@core/models/payment.model';
 
 export type AccessDecision = 'allow' | 'upsellTrial' | 'claimPrompt';
 

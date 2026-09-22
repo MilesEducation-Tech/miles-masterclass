@@ -1,11 +1,8 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import {
-  BADGE_ACTION_UI,
-  CourseBadgeItem,
-} from '../../../../../shared/core/models/caira-badge.model';
-import { Button } from '../../../../../shared/components/ui/button/button';
-import { cn } from '../../../../../shared/utils/cn';
+import { BADGE_ACTION_UI, CourseBadgeItem } from '@core/models/caira-badge.model';
+import { Button } from '@shared/components/ui/button/button';
+import { cn } from '@shared/utils/cn';
 
 /**
  * A course badge (masterclass / podcast / nano-learning), used both in the

@@ -1,5 +1,5 @@
 import { computed, inject, Signal } from '@angular/core';
-import { Utils } from '../../../../shared/core/services/utils/utils';
+import { Utils } from '@core/services/utils/utils';
 
 /**
  * Absolute `routerLink` commands for the tracker's pages.

@@ -1,5 +1,5 @@
 import { parseSeoCsv, serializeSeoCsv, validateSeoRow, SEO_CSV_TEMPLATE } from './seo-csv';
-import { createDefaultSeoPage } from '../../core/models/seo.models';
+import { createDefaultSeoPage } from '@core/models/seo.models';
 
 describe('seo-csv', () => {
   describe('validateSeoRow', () => {

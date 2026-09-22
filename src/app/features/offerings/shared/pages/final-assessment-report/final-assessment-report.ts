@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FinalAssessmentFacade } from '../../services/final-assessment-facade/final-assessment-facade';
-import { Button } from '../../../../../shared/components/ui/button/button';
+import { Button } from '@shared/components/ui/button/button';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroChevronRight,
@@ -10,12 +10,12 @@ import {
   heroArrowDownTray,
 } from '@ng-icons/heroicons/outline';
 import { ActivatedRoute, Router } from '@angular/router';
-import { SubmitFinalAssessmentResponse } from '../../../../../shared/core/models/assessment.model';
-import { ContentDetails } from '../../../../../shared/core/models/course.model';
-import { Utils } from '../../../../../shared/core/services/utils/utils';
-import { Logger } from '../../../../../shared/core/services/logger/logger';
+import { SubmitFinalAssessmentResponse } from '@core/models/assessment.model';
+import { ContentDetails } from '@core/models/course.model';
+import { Utils } from '@core/services/utils/utils';
+import { Logger } from '@core/services/logger/logger';
 import { DatePipe } from '@angular/common';
-import { PageLoading } from '../../../../../shared/components/ui/page-loading/page-loading';
+import { PageLoading } from '@shared/components/ui/page-loading/page-loading';
 
 @Component({
   selector: 'app-final-assessment-report',

@@ -9,14 +9,14 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { ReportPreviewBundle } from '../../../../admin/partner-platform/reports/shared/models/partner-report.model';
-import { PartnerReportFacade } from '../../../../admin/partner-platform/reports/shared/services/partner-report-facade';
+import { ReportPreviewBundle } from '@admin/partner-platform/reports/shared/models/partner-report.model';
+import { PartnerReportFacade } from '@admin/partner-platform/reports/shared/services/partner-report-facade';
 import {
   partnerErrorMessage,
   partnerLoadError,
-} from '../../../../admin/partner-platform/shared/models/partner-platform.model';
-import { DialogRef } from '../../../core/services/dialog/dialog';
-import { NotificationService } from '../../../core/services/notification/notification';
+} from '@admin/partner-platform/shared/models/partner-platform.model';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { NotificationService } from '@core/services/notification/notification';
 import { Button } from '../../ui/button/button';
 import { Spinner } from '../../ui/spinner/spinner';
 import { dash, executiveLede, reportingPeriodLabel } from './report-preview.format';
@@ -54,7 +54,7 @@ export class PartnerReportPreviewDialog implements OnInit {
   private readonly notification = inject(NotificationService);
   // Lazy — jspdf + html2canvas-pro load only when someone actually downloads.
   private readonly pdfService = injectAsync(() =>
-    import('../../../core/services/html-to-pdf/html-to-pdf').then((m) => m.HtmlToPdf),
+    import('@core/services/html-to-pdf/html-to-pdf').then((m) => m.HtmlToPdf),
   );
 
   /** The captured element — paints its own white background (see the CSS). */

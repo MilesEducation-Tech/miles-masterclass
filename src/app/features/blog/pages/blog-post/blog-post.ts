@@ -6,7 +6,7 @@ import { BlogApi } from '../../services/blog-api';
 import { SafeHtmlPipe } from '../../pipes/safe-html-pipe';
 import { toBlogPostView } from '../../utils/blog.util';
 import { BlogCard } from '../../components/blog-card/blog-card';
-import { SeoManager } from '../../../../shared/core/services/seo/seo-manager';
+import { SeoManager } from '@core/services/seo/seo-manager';
 import { Faq } from '../../../../pages/faq/faq';
 
 /**

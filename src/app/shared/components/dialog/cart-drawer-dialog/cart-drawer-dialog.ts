@@ -1,10 +1,10 @@
 import { Component, computed, inject } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { DialogRef } from '../../../core/services/dialog/dialog';
-import { Utils } from '../../../core/services/utils/utils';
-import { PaymentFacade } from '../../../../features/payment/shared/service/payment-facade/payment-facade';
-import { CartItem } from '../../../../features/payment/shared/components/cart-item/cart-item';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { Utils } from '@core/services/utils/utils';
+import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
+import { CartItem } from '@features/payment/shared/components/cart-item/cart-item';
 import { Button } from '../../ui/button/button';
 
 @Component({

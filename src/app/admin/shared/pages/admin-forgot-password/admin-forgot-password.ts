@@ -4,12 +4,12 @@ import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroExclamationCircle } from '@ng-icons/heroicons/outline';
 import { faSolidAngleLeft } from '@ng-icons/font-awesome/solid';
-import { AriaInput } from '../../../../shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '../../../../shared/components/ui/button/button';
-import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
-import { AdminAuth } from '../../../../shared/core/services/admin-auth/admin-auth';
-import { logo } from '../../../../shared/core/constant/icon';
-import { environment } from '../../../../../environments/environment';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/components/ui/button/button';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { logo } from '@core/constant/icon';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-admin-forgot-password',

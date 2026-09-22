@@ -2,18 +2,18 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take } from 'rxjs';
-import { Button } from '../../../shared/components/ui/button/button';
-import { Spinner } from '../../../shared/components/ui/spinner/spinner';
-import { Dialog } from '../../../shared/core/services/dialog/dialog';
+import { Button } from '@shared/components/ui/button/button';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { Dialog } from '@core/services/dialog/dialog';
 import {
   CreatePartnerCodeRequest,
   PartnerCode,
-} from '../../partner-platform/shared/models/partner-platform.model';
-import { PartnerSuperAdminFacade } from '../../partner-platform/shared/services/partner-superadmin-facade';
+} from '@admin/partner-platform/shared/models/partner-platform.model';
+import { PartnerSuperAdminFacade } from '@admin/partner-platform/shared/services/partner-superadmin-facade';
 import {
   CreatePartnerCodeDialog,
   CreatePartnerCodeDialogData,
-} from '../../partner-platform/super-admin/partner-codes/shared/components/create-partner-code-dialog/create-partner-code-dialog';
+} from '@admin/partner-platform/super-admin/partner-codes/shared/components/create-partner-code-dialog/create-partner-code-dialog';
 
 /**
  * Partner Platform v2 — Partner Codes (`/admin/partner-v2/codes`). The

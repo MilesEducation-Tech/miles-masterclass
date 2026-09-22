@@ -2,8 +2,8 @@ import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideDownload } from '@ng-icons/lucide';
-import { CpeLedger } from '../../../../../shared/core/models/cpe-credit.model';
-import { Button } from '../../../../../shared/components/ui/button/button';
+import { CpeLedger } from '@core/models/cpe-credit.model';
+import { Button } from '@shared/components/ui/button/button';
 
 /**
  * The blurb under the credits count. Two strings rather than one, because the

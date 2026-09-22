@@ -1,6 +1,6 @@
 import { afterNextRender, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
-import { DialogRef } from '../../../core/services/dialog/dialog';
-import { Logger } from '../../../core/services/logger/logger';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { Logger } from '@core/services/logger/logger';
 import { Button } from '../../ui/button/button';
 
 export interface CalendlyDialogData {

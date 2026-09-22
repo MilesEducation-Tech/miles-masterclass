@@ -13,26 +13,22 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { Carousel } from '../../../../../shared/components/carousel/carousel';
-import { Horizontal } from '../../../../../shared/components/cards/horizontal/horizontal';
-import { Square } from '../../../../../shared/components/cards/square/square';
-import { Vertical } from '../../../../../shared/components/cards/vertical/vertical';
+import { Carousel } from '@shared/components/carousel/carousel';
+import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
+import { Square } from '@shared/components/cards/square/square';
+import { Vertical } from '@shared/components/cards/vertical/vertical';
 import {
   SwiperConfig,
   swiperConfigEven,
   swiperConfigOdd,
   swiperConfigPodcast,
-} from '../../../../../shared/core/config/swiper.config';
-import { Content } from '../../../../../shared/core/models/course.model';
-import { FeatureApiResponse } from '../../../../../shared/core/models/feature.model';
-import { ApiCourseType } from '../../../../../shared/core/models/library-filters.model';
-import {
-  ContentResponse,
-  TRACK_ROUTES,
-  TracksResponse,
-} from '../../../../../shared/core/models/track.model';
-import { ApiClient } from '../../../../../shared/core/services/api-client/api-client';
-import { parseNextPage } from '../../../../../shared/utils/parse-next-page';
+} from '@core/config/swiper.config';
+import { Content } from '@core/models/course.model';
+import { FeatureApiResponse } from '@core/models/feature.model';
+import { ApiCourseType } from '@core/models/library-filters.model';
+import { ContentResponse, TRACK_ROUTES, TracksResponse } from '@core/models/track.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { parseNextPage } from '@shared/utils/parse-next-page';
 
 export type ContentType = 'MASTERCLASS' | 'PODCAST' | 'MICRO-LEARNING' | 'TRACKS';
 

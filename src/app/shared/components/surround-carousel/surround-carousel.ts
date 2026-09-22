@@ -15,12 +15,12 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft, lucideArrowRight } from '@ng-icons/lucide';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 
-import { ApiClient } from '../../core/services/api-client/api-client';
-import { Content } from '../../core/models/course.model';
-import { ContentResponse, TRACK_ROUTES } from '../../core/models/track.model';
-import { Logger } from '../../core/services/logger/logger';
-import { Utils } from '../../core/services/utils/utils';
-import { Viewport } from '../../core/services/viewport/viewport';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Content } from '@core/models/course.model';
+import { ContentResponse, TRACK_ROUTES } from '@core/models/track.model';
+import { Logger } from '@core/services/logger/logger';
+import { Utils } from '@core/services/utils/utils';
+import { Viewport } from '@core/services/viewport/viewport';
 
 // `import type` is erased at compile time, so naming the engine here does NOT
 // create a static edge to it — `three` stays in the dynamic chunk. See the

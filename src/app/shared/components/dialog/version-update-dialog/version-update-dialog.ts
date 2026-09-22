@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { clearCachesAndReload } from '../../../core/version/cache-buster';
+import { clearCachesAndReload } from '@core/version/cache-buster';
 
 /**
  * Non-closeable "a new version is available" dialog. Opened by UpdateChecker

@@ -1,4 +1,4 @@
-import { PartnerPagination } from '../../../partner-platform/shared/models/partner-platform.model';
+import { PartnerPagination } from '@admin/partner-platform/shared/models/partner-platform.model';
 
 export type LeadStatus = 'new' | 'contacted' | 'converted' | 'closed';
 export type LeadStatusFilter = 'all' | LeadStatus;

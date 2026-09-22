@@ -1,25 +1,25 @@
 import { Component, computed, inject } from '@angular/core';
 import { Route } from '@angular/router';
-import { environment } from '../../../../environments/environment';
-import { FeatureFacade } from '../../shared/services/feature-facade/feature-facade';
-import { Horizontal } from '../../../shared/components/cards/horizontal/horizontal';
-import { Vertical } from '../../../shared/components/cards/vertical/vertical';
-import { Carousel } from '../../../shared/components/carousel/carousel';
+import { environment } from '@env/environment';
+import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
+import { Vertical } from '@shared/components/cards/vertical/vertical';
+import { Carousel } from '@shared/components/carousel/carousel';
 import {
   swiperConfigComingSoon,
   swiperConfigEven,
   swiperConfigOdd,
-} from '../../../shared/core/config/swiper.config';
-import { Slider } from '../../../shared/components/slider/slider';
-import { SliderSkeleton } from '../../../shared/components/skeleton/slider-skeleton/slider-skeleton';
+} from '@core/config/swiper.config';
+import { Slider } from '@shared/components/slider/slider';
+import { SliderSkeleton } from '@shared/components/skeleton/slider-skeleton/slider-skeleton';
 import { ChapterFacade } from '../shared/services/chapter-facade/chapter-facade';
 import { FinalAssessmentFacade } from '../shared/services/final-assessment-facade/final-assessment-facade';
-import { canDeactivateExamGuard } from '../../../shared/core/guards/can-deactivate-exam-guard';
+import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
-import { ComingSoon } from '../../../shared/components/cards/coming-soon/coming-soon';
+import { ComingSoon } from '@shared/components/cards/coming-soon/coming-soon';
 import { Faq } from '../../../pages/faq/faq';
-import { PartnerContentList } from '../../partners/shared/components/partner-content-list/partner-content-list';
-import { SectionNav, SectionNavItem } from '../../../shared/components/section-nav/section-nav';
+import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
+import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
 
 @Component({
   selector: 'app-masterclass',

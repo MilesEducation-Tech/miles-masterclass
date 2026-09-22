@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { Backward } from './backward';
 import { Router, ActivatedRoute } from '@angular/router';
-import { MockRouter } from '../../../testing/mocks/services.mock';
+import { MockRouter } from '@testing/mocks/services.mock';
 
 const meta: Meta<Backward> = {
   title: 'Components/Backward',

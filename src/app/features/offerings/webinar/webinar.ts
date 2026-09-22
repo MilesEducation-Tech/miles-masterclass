@@ -1,9 +1,9 @@
 import { Component, signal } from '@angular/core';
 import { Route } from '@angular/router';
 
-import { Horizontal } from '../../../shared/components/cards/horizontal/horizontal';
-import { Carousel } from '../../../shared/components/carousel/carousel';
-import { swiperConfigEven } from '../../../shared/core/config/swiper.config';
+import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
+import { Carousel } from '@shared/components/carousel/carousel';
+import { swiperConfigEven } from '@core/config/swiper.config';
 import { PremiereListItem } from './shared/components/premiere-list-item/premiere-list-item';
 import { WebinarHero } from './shared/components/webinar-hero/webinar-hero';
 import {
@@ -12,8 +12,8 @@ import {
 } from './shared/components/webinar-claim-card/webinar-claim-card';
 import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
 import { Faq } from '../../../pages/faq/faq';
-import { UpcomingPremiere } from '../../../shared/core/models/feature.model';
-import { Content } from '../../../shared/core/models/course.model';
+import { UpcomingPremiere } from '@core/models/feature.model';
+import { Content } from '@core/models/course.model';
 
 /**
  * ponytail: design-only shell. The webinar data layer (WebinarFacade, the

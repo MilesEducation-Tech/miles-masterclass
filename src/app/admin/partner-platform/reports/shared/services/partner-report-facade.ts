@@ -12,9 +12,9 @@ import {
   untracked,
 } from '@angular/core';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { ApiClient } from '../../../../../shared/core/services/api-client/api-client';
-import { Logger } from '../../../../../shared/core/services/logger/logger';
-import { NotificationService } from '../../../../../shared/core/services/notification/notification';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
 import {
   BlobDownloadItem,
   buildPdfFileName,
@@ -25,7 +25,7 @@ import {
   fileNameFromContentDisposition,
   sanitizeFileName,
   saveBlob,
-} from '../../../../../shared/utils/blob-download';
+} from '@shared/utils/blob-download';
 import {
   adminContext,
   EMPTY_PAGINATION,

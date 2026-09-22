@@ -2,11 +2,11 @@ import { Component, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 
-import { Carousel } from '../../../../../shared/components/carousel/carousel';
-import { Horizontal } from '../../../../../shared/components/cards/horizontal/horizontal';
-import { swiperConfigEven } from '../../../../../shared/core/config/swiper.config';
-import { Content } from '../../../../../shared/core/models/course.model';
-import { Tracks } from '../../../../shared/services/tracks/tracks';
+import { Carousel } from '@shared/components/carousel/carousel';
+import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
+import { swiperConfigEven } from '@core/config/swiper.config';
+import { Content } from '@core/models/course.model';
+import { Tracks } from '@features/shared/services/tracks/tracks';
 
 /**
  * CAIRA section of the CPA landing page.

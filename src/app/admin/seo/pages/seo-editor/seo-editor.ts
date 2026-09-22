@@ -3,15 +3,15 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { debounceTime } from 'rxjs/operators';
-import { AdminAuth } from '../../../../shared/core/services/admin-auth/admin-auth';
-import { SupabaseSeo } from '../../../../shared/core/services/seo/supabase-seo';
+import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { SupabaseSeo } from '@core/services/seo/supabase-seo';
 import {
   SeoPage,
   SEO_LIMITS,
   computeSeoScore,
   createDefaultSeoPage,
-} from '../../../../shared/core/models/seo.models';
-import { Logger } from '../../../../shared/core/services/logger/logger';
+} from '@core/models/seo.models';
+import { Logger } from '@core/services/logger/logger';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   heroArrowLeft,

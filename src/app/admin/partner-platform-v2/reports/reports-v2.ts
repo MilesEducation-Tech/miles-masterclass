@@ -1,30 +1,30 @@
 import { Component, EnvironmentInjector, computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { AriaInput } from '../../../shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '../../../shared/components/ui/button/button';
-import { Dialog } from '../../../shared/core/services/dialog/dialog';
-import { StatCard } from '../../partner-platform/shared/components/stat-card/stat-card';
-import { PartnerAdminMe } from '../../partner-platform/shared/services/partner-admin-me';
-import { PartnerNetworkFacade } from '../../partner-platform/shared/services/partner-network-facade';
-import { PartnerSuperAdminFacade } from '../../partner-platform/shared/services/partner-superadmin-facade';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/components/ui/button/button';
+import { Dialog } from '@core/services/dialog/dialog';
+import { StatCard } from '@admin/partner-platform/shared/components/stat-card/stat-card';
+import { PartnerAdminMe } from '@admin/partner-platform/shared/services/partner-admin-me';
+import { PartnerNetworkFacade } from '@admin/partner-platform/shared/services/partner-network-facade';
+import { PartnerSuperAdminFacade } from '@admin/partner-platform/shared/services/partner-superadmin-facade';
 import {
   PartnerReportPreviewDialog,
   PartnerReportPreviewDialogData,
-} from '../../../shared/components/dialog/partner-report-preview-dialog/partner-report-preview-dialog';
+} from '@shared/components/dialog/partner-report-preview-dialog/partner-report-preview-dialog';
 import {
   ReportItemsDialog,
   ReportItemsDialogData,
-} from '../../partner-platform/reports/shared/components/report-items-dialog/report-items-dialog';
-import { CertificateDownloadProgress } from '../../partner-platform/reports/shared/components/certificate-download-progress/certificate-download-progress';
-import { ReportUsersTable } from '../../partner-platform/reports/shared/components/report-users-table/report-users-table';
+} from '@admin/partner-platform/reports/shared/components/report-items-dialog/report-items-dialog';
+import { CertificateDownloadProgress } from '@admin/partner-platform/reports/shared/components/certificate-download-progress/certificate-download-progress';
+import { ReportUsersTable } from '@admin/partner-platform/reports/shared/components/report-users-table/report-users-table';
 import {
   ReportSubject,
   ReportUserRow,
-} from '../../partner-platform/reports/shared/models/partner-report.model';
-import { PartnerReportFacade } from '../../partner-platform/reports/shared/services/partner-report-facade';
-import { TabStrip } from '../../../shared/components/ui/tab-strip/tab-strip';
-import { AriaSelect } from '../../../shared/components/ui/aria/aria-select/aria-select';
-import { AriaSelectOption } from '../../../shared/core/models/aria.model';
+} from '@admin/partner-platform/reports/shared/models/partner-report.model';
+import { PartnerReportFacade } from '@admin/partner-platform/reports/shared/services/partner-report-facade';
+import { TabStrip } from '@shared/components/ui/tab-strip/tab-strip';
+import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { AriaSelectOption } from '@core/models/aria.model';
 
 const SUBJECT_TABS: { value: ReportSubject; label: string }[] = [
   { value: 'courses', label: 'Courses' },

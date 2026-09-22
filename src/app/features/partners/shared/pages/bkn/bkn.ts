@@ -3,9 +3,9 @@ import {
   PartnerContentItem,
   PartnerContentList,
 } from '../../components/partner-content-list/partner-content-list';
-import { logo } from '../../../../../shared/core/constant/icon';
-import { Button } from '../../../../../shared/components/ui/button/button';
-import { environment } from '../../../../../../environments/environment';
+import { logo } from '@core/constant/icon';
+import { Button } from '@shared/components/ui/button/button';
+import { environment } from '@env/environment';
 import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
 import {
   ForPartnershipTabs,
@@ -28,13 +28,13 @@ import {
   PartnershipContent,
   PartnershipContentInput,
 } from '../../components/partnership-content/partnership-content';
-import { EnquiryForm } from '../../../../../shared/components/enquiry-form/enquiry-form';
+import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
 import {
   CalendlyDialog,
   CalendlyDialogData,
-} from '../../../../../shared/components/dialog/calendly-dialog/calendly-dialog';
-import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
-import { ScrollService } from '../../../../../shared/core/services/scroll/scroll';
+} from '@shared/components/dialog/calendly-dialog/calendly-dialog';
+import { Dialog } from '@core/services/dialog/dialog';
+import { ScrollService } from '@core/services/scroll/scroll';
 
 @Component({
   selector: 'app-bkn',

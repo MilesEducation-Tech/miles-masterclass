@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { LegalDocComponent } from '../shared/components/legal-doc/legal-doc';
-import { resolvePrivacyPolicy } from '../../shared/core/constant/privacy-policy';
-import { Utils } from '../../shared/core/services/utils/utils';
+import { resolvePrivacyPolicy } from '@core/constant/privacy-policy';
+import { Utils } from '@core/services/utils/utils';
 
 @Component({
   selector: 'app-privacy-policy',

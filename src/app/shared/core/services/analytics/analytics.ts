@@ -1,6 +1,6 @@
 import { Injectable, Injector, PLATFORM_ID, afterNextRender, effect, inject } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '@env/environment';
 import { Consent } from '../consent/consent';
 import { Logger } from '../logger/logger';
 import { ConsentState } from '../../models/consent.model';

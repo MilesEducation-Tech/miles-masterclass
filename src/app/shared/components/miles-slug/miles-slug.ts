@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
-import { logoIcon } from '../../core/constant/icon';
+import { logoIcon } from '@core/constant/icon';
 
 @Component({
   selector: 'app-miles-slug',

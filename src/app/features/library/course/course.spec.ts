@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideRouter } from '@angular/router';
 
 import { Course } from './course';
-import { LibraryFiltersData } from '../../../shared/core/models/library-filters.model';
+import { LibraryFiltersData } from '@core/models/library-filters.model';
 
 /** Every list the `groups` computed maps over — an empty body would throw. */
 const EMPTY_FILTERS: LibraryFiltersData = {

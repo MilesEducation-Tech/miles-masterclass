@@ -4,9 +4,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
-import { ApiClient } from '../../../../../shared/core/services/api-client/api-client';
-import { Content } from '../../../../../shared/core/models/course.model';
-import { FeatureApiResponse } from '../../../../../shared/core/models/feature.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Content } from '@core/models/course.model';
+import { FeatureApiResponse } from '@core/models/feature.model';
 
 /** One CAIRA level (1 / 2 / 3) with the course-library content tagged to it. */
 export interface CairaLevelGroup {

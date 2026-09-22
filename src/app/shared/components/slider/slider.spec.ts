@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Slider } from './slider';
-import { Content } from '../../core/models/course.model';
+import { Content } from '@core/models/course.model';
 
 /**
  * The fixture previously held ONE item while the assertions below were written

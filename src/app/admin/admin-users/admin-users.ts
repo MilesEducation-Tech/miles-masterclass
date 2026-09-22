@@ -3,41 +3,41 @@ import { Component, DestroyRef, computed, inject, linkedSignal, signal } from '@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { take } from 'rxjs';
-import { AriaInput } from '../../shared/components/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '../../shared/components/ui/aria/aria-select/aria-select';
-import { Button } from '../../shared/components/ui/button/button';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { Button } from '@shared/components/ui/button/button';
 import {
   CheckboxList,
   CheckboxListOption,
-} from '../../shared/components/ui/checkbox-list/checkbox-list';
-import { Spinner } from '../../shared/components/ui/spinner/spinner';
+} from '@shared/components/ui/checkbox-list/checkbox-list';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
 import {
   EditAdminRolesDialog,
   EditAdminRolesDialogData,
-} from '../../shared/components/dialog/edit-admin-roles-dialog/edit-admin-roles-dialog';
-import { Dialog } from '../../shared/core/services/dialog/dialog';
-import { NotificationService } from '../../shared/core/services/notification/notification';
-import { AdminAuth } from '../../shared/core/services/admin-auth/admin-auth';
-import { AriaSelectOption } from '../../shared/core/models/aria.model';
-import { toggleRoleSlug } from '../../shared/core/models/admin/admin-rbac.model';
+} from '@shared/components/dialog/edit-admin-roles-dialog/edit-admin-roles-dialog';
+import { Dialog } from '@core/services/dialog/dialog';
+import { NotificationService } from '@core/services/notification/notification';
+import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { AriaSelectOption } from '@core/models/aria.model';
+import { toggleRoleSlug } from '@core/models/admin/admin-rbac.model';
 import {
   AdminUsersFacade,
   AdminPermissionRow,
   AdminUserListRow,
 } from './shared/services/admin-users-facade';
 import { partnerRoleOf } from './shared/utils/role-selection';
-import { PartnerSuperAdminFacade } from '../partner-platform/shared/services/partner-superadmin-facade';
+import { PartnerSuperAdminFacade } from '@admin/partner-platform/shared/services/partner-superadmin-facade';
 import {
   AdminProvisioning,
   INITIAL_ADMIN_PASSWORD,
-} from '../partner-platform/shared/services/admin-provisioning';
+} from '@admin/partner-platform/shared/services/admin-provisioning';
 import {
   CAPABILITY_DEFAULTS,
   CAPABILITY_LABELS,
   PARTNER_CAPABILITIES,
   PartnerCapability,
   PartnerRole,
-} from '../partner-platform/shared/models/partner-platform.model';
+} from '@admin/partner-platform/shared/models/partner-platform.model';
 
 @Component({
   selector: 'app-admin-admin-users',

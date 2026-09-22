@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { Address } from './address';
-import { UserAddress } from '../../../../../shared/core/models/payment.model';
+import { UserAddress } from '@core/models/payment.model';
 
 const ADDRESS: UserAddress = {
   id: 1,

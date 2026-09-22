@@ -2,11 +2,11 @@ import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { environment } from '../../../environments/environment';
+import { environment } from '@env/environment';
 import {
   VideoListWrapper,
   type VideoListItem,
-} from '../../features/partners/shared/components/video-list-wrapper/video-list-wrapper';
+} from '@features/partners/shared/components/video-list-wrapper/video-list-wrapper';
 
 /**
  * Landing page explaining how to claim, verify and share the Miles Masterclass

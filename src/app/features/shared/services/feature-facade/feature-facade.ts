@@ -5,20 +5,16 @@ import {
   FEATURE_ROUTES,
   FeatureApiResponse,
   PaginationData,
-} from '../../../../shared/core/models/feature.model';
-import {
-  TRACK_ROUTES,
-  TracksResponse,
-  ContentResponse,
-} from '../../../../shared/core/models/track.model';
+} from '@core/models/feature.model';
+import { TRACK_ROUTES, TracksResponse, ContentResponse } from '@core/models/track.model';
 import {
   appendFilterParams,
   CourseFilterSelection,
   EMPTY_COURSE_FILTERS,
   selectionsEqual,
-} from '../../../../shared/core/models/library-filters.model';
-import { ApiClient } from '../../../../shared/core/services/api-client/api-client';
-import { normalizeBookmarkField } from '../../../../shared/core/models/course.model';
+} from '@core/models/library-filters.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { normalizeBookmarkField } from '@core/models/course.model';
 import { switchMap, map, tap, catchError, startWith, groupBy, mergeMap } from 'rxjs/operators';
 import { of, forkJoin, combineLatest, defer, Subject, EMPTY, Observable } from 'rxjs';
 import { isPlatformBrowser } from '@angular/common';

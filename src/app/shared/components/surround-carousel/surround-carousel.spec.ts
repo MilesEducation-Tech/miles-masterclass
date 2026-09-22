@@ -3,10 +3,10 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
 import { SurroundCarousel } from './surround-carousel';
-import { ApiClient } from '../../core/services/api-client/api-client';
-import { Content } from '../../core/models/course.model';
-import { ContentResponse } from '../../core/models/track.model';
-import { Utils } from '../../core/services/utils/utils';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Content } from '@core/models/course.model';
+import { ContentResponse } from '@core/models/track.model';
+import { Utils } from '@core/services/utils/utils';
 
 /**
  * These cover what decides whether a visitor sees anything and what they see:

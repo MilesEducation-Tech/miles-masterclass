@@ -2,16 +2,16 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, finalize, map, of, startWith, switchMap } from 'rxjs';
 import { form, required, FormField as AngularFormField, validate } from '@angular/forms/signals';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { DialogRef } from '@core/services/dialog/dialog';
 import { Button } from '../../ui/button/button';
 import { AriaInput } from '../../ui/aria/aria-input/aria-input';
 import { AriaAutocomplete } from '../../ui/aria/aria-autocomplete/aria-autocomplete';
 import { Forms } from '../../ui/forms/forms';
-import { ApiClient } from '../../../core/services/api-client/api-client';
-import { Logger } from '../../../core/services/logger/logger';
-import { CompanyList, PROFILE_ROUTES } from '../../../core/models/profile.model';
-import { CommonResponse, RouteParams } from '../../../core/models/http.model';
-import { AutoCompleteOption } from '../../../core/models/form.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Logger } from '@core/services/logger/logger';
+import { CompanyList, PROFILE_ROUTES } from '@core/models/profile.model';
+import { CommonResponse, RouteParams } from '@core/models/http.model';
+import { AutoCompleteOption } from '@core/models/form.model';
 
 export interface FirmSponsorshipDialogData {
   planId: number;

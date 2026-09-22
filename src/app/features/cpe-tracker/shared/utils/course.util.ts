@@ -1,4 +1,4 @@
-import { TransactionType } from '../../../../shared/core/models/cpe-tracker.model';
+import { TransactionType } from '@core/models/cpe-tracker.model';
 
 /** URL-facing segment used when navigating to a course. */
 export type CourseUrlSegment = 'masterclass' | 'micro-learning' | 'podcast' | 'webinar';

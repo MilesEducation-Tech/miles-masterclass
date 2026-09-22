@@ -9,7 +9,7 @@ import {
 } from '@ng-icons/heroicons/outline';
 import confetti from 'canvas-confetti';
 import { Button } from '../../ui/button/button';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { DialogRef } from '@core/services/dialog/dialog';
 
 export interface AssessmentResultData {
   isPassed: boolean;

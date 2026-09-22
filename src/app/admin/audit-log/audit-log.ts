@@ -13,17 +13,17 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideChevronRight } from '@ng-icons/lucide';
-import { AriaInput } from '../../shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '../../shared/components/ui/button/button';
-import { Spinner } from '../../shared/components/ui/spinner/spinner';
-import { TabStrip } from '../../shared/components/ui/tab-strip/tab-strip';
-import { Supabase } from '../../shared/core/services/supabase/supabase';
-import { withPreviousValue } from '../../shared/utils/with-previous-value';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/components/ui/button/button';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { TabStrip } from '@shared/components/ui/tab-strip/tab-strip';
+import { Supabase } from '@core/services/supabase/supabase';
+import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
   AUDIT_CATEGORY_LABELS,
   AuditCategory,
   AuditLogRow,
-} from '../../shared/core/models/admin/audit-log.model';
+} from '@core/models/admin/audit-log.model';
 
 const TABLE = 'admin_audit_log';
 const PAGE_SIZE = 50;

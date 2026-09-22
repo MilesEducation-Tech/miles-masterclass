@@ -10,9 +10,9 @@ import {
 } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CourseChapter, QuizQuestion } from '../../../../../shared/core/models/course.model';
+import { CourseChapter, QuizQuestion } from '@core/models/course.model';
 import { ChapterFacade } from '../../services/chapter-facade/chapter-facade';
-import { Button } from '../../../../../shared/components/ui/button/button';
+import { Button } from '@shared/components/ui/button/button';
 
 @Component({
   selector: 'app-chapter-quiz',

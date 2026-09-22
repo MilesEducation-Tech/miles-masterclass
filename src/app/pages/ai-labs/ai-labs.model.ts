@@ -1,5 +1,5 @@
-import { environment } from '../../../environments/environment';
-import { CommonResponse, RouteConfig } from '../../shared/core/models/http.model';
+import { environment } from '@env/environment';
+import { CommonResponse, RouteConfig } from '@core/models/http.model';
 
 /**
  * Body of `POST ai-lab/account/`.

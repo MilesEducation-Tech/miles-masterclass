@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
-import { AriaInput } from '../../../../../shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '../../../../../shared/components/ui/button/button';
-import { DialogRef } from '../../../../../shared/core/services/dialog/dialog';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/components/ui/button/button';
+import { DialogRef } from '@core/services/dialog/dialog';
 
 export interface RecordPaymentDialogData {
   userEmail: string;

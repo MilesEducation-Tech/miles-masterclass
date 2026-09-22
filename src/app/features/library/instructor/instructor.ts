@@ -14,11 +14,11 @@ import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroMagnifyingGlass } from '@ng-icons/heroicons/outline';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { InstructorCard } from '../../../shared/components/cards/instructor-card/instructor-card';
-import { InstructorListItem } from '../../../shared/core/models/library.model';
-import { Utils } from '../../../shared/core/services/utils/utils';
+import { InstructorCard } from '@shared/components/cards/instructor-card/instructor-card';
+import { InstructorListItem } from '@core/models/library.model';
+import { Utils } from '@core/services/utils/utils';
 import { InstructorFacade } from './shared/services/instructor-facade/instructor-facade';
-import { PartnerContentList } from '../../partners/shared/components/partner-content-list/partner-content-list';
+import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
 
 @Component({
   selector: 'app-instructor',

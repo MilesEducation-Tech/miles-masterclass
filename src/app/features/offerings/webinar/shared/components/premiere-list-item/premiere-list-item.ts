@@ -1,14 +1,10 @@
 import { Component, computed, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 
-import { Button } from '../../../../../../shared/components/ui/button/button';
-import { CategoriesList } from '../../../../../../shared/components/categories-list/categories-list';
-import { CairaCredlyBadge } from '../../../../../../shared/components/cards/caira-credly-badge/caira-credly-badge';
-import {
-  UpcomingPremiere,
-  WebinarCta,
-  WebinarDate,
-} from '../../../../../../shared/core/models/feature.model';
+import { Button } from '@shared/components/ui/button/button';
+import { CategoriesList } from '@shared/components/categories-list/categories-list';
+import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
+import { UpcomingPremiere, WebinarCta, WebinarDate } from '@core/models/feature.model';
 
 const CAIRA_LOGO =
   'https://d1pp0977rsxmiq.cloudfront.net/static-assests/web-app/commons/caira-logo-white.webp';

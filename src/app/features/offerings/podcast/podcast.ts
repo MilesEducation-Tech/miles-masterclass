@@ -1,21 +1,18 @@
-import { FeatureFacade } from './../../shared/services/feature-facade/feature-facade';
+import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
 import { Component, computed, inject } from '@angular/core';
 import { Route } from '@angular/router';
-import { Carousel } from '../../../shared/components/carousel/carousel';
-import { environment } from '../../../../environments/environment';
-import {
-  swiperConfigComingSoon,
-  swiperConfigPodcast,
-} from '../../../shared/core/config/swiper.config';
-import { Square } from '../../../shared/components/cards/square/square';
+import { Carousel } from '@shared/components/carousel/carousel';
+import { environment } from '@env/environment';
+import { swiperConfigComingSoon, swiperConfigPodcast } from '@core/config/swiper.config';
+import { Square } from '@shared/components/cards/square/square';
 import { PodcastHero } from './shared/components/podcast-hero/podcast-hero';
-import { ComingSoon } from '../../../shared/components/cards/coming-soon/coming-soon';
-import { canDeactivateExamGuard } from '../../../shared/core/guards/can-deactivate-exam-guard';
+import { ComingSoon } from '@shared/components/cards/coming-soon/coming-soon';
+import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { FinalAssessmentFacade } from '../shared/services/final-assessment-facade/final-assessment-facade';
 import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
 import { ChapterFacade } from '../shared/services/chapter-facade/chapter-facade';
 import { Faq } from '../../../pages/faq/faq';
-import { PartnerContentList } from '../../partners/shared/components/partner-content-list/partner-content-list';
+import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
 
 @Component({
   selector: 'app-podcast',

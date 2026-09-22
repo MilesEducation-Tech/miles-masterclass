@@ -1,15 +1,15 @@
 import { Component, DestroyRef, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Button } from '../../../../shared/components/ui/button/button';
-import { Forms } from '../../../../shared/components/ui/forms/forms';
-import { AriaInput } from '../../../../shared/components/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/components/ui/button/button';
+import { Forms } from '@shared/components/ui/forms/forms';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
 import { AuthFacade } from '../../services/auth-facade';
 import { FormField as AngularFormField } from '@angular/forms/signals';
-import { AriaAutocomplete } from '../../../../shared/components/ui/aria/aria-autocomplete/aria-autocomplete';
-import { Otp } from '../../../../shared/components/ui/otp/otp';
-import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
-import { TabStrip } from '../../../../shared/components/ui/tab-strip/tab-strip';
-import { Utils } from '../../../../shared/core/services/utils/utils';
+import { AriaAutocomplete } from '@shared/components/ui/aria/aria-autocomplete/aria-autocomplete';
+import { Otp } from '@shared/components/ui/otp/otp';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { TabStrip } from '@shared/components/ui/tab-strip/tab-strip';
+import { Utils } from '@core/services/utils/utils';
 
 @Component({
   selector: 'app-login',

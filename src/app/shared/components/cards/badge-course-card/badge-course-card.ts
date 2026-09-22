@@ -1,6 +1,6 @@
 import { NgClass, NgOptimizedImage } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
-import { badgeInstructorName, BadgeCourseItem } from '../../../core/models/badge.model';
+import { badgeInstructorName, BadgeCourseItem } from '@core/models/badge.model';
 
 @Component({
   selector: 'app-badge-course-card',

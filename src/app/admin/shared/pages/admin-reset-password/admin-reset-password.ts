@@ -3,12 +3,12 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroExclamationCircle } from '@ng-icons/heroicons/outline';
-import { AriaInput } from '../../../../shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '../../../../shared/components/ui/button/button';
-import { Spinner } from '../../../../shared/components/ui/spinner/spinner';
-import { AdminAuth } from '../../../../shared/core/services/admin-auth/admin-auth';
-import { logo } from '../../../../shared/core/constant/icon';
-import { environment } from '../../../../../environments/environment';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/components/ui/button/button';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { logo } from '@core/constant/icon';
+import { environment } from '@env/environment';
 import { adminLandingPath } from '../../utils/admin-landing';
 
 const MIN_PASSWORD_LENGTH = 8;

@@ -10,29 +10,26 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
-import { AriaInput } from '../../../shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '../../../shared/components/ui/button/button';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/components/ui/button/button';
 import {
   ApplyPartnerCodeDialog,
   ApplyPartnerCodeDialogData,
   ApplyPartnerCodeDialogResult,
-} from '../../../shared/components/dialog/apply-partner-code-dialog/apply-partner-code-dialog';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-} from '../../../shared/components/dialog/utils-dialog/utils-dialog';
-import { Dialog } from '../../../shared/core/services/dialog/dialog';
+} from '@shared/components/dialog/apply-partner-code-dialog/apply-partner-code-dialog';
+import { UtilsDialog, UtilsDialogData } from '@shared/components/dialog/utils-dialog/utils-dialog';
+import { Dialog } from '@core/services/dialog/dialog';
 import {
   RecordPaymentDialog,
   RecordPaymentDialogData,
   RecordPaymentDialogResult,
-} from '../../user-onboarding/shared/components/record-payment-dialog/record-payment-dialog';
-import { UserOnboardingTable } from '../../user-onboarding/shared/components/user-onboarding-table/user-onboarding-table';
+} from '@admin/user-onboarding/shared/components/record-payment-dialog/record-payment-dialog';
+import { UserOnboardingTable } from '@admin/user-onboarding/shared/components/user-onboarding-table/user-onboarding-table';
 import {
   InternalUser,
   OfflinePaymentResult,
-} from '../../user-onboarding/shared/models/user-onboarding.model';
-import { UserOnboardingFacade } from '../../user-onboarding/shared/services/user-onboarding-facade';
+} from '@admin/user-onboarding/shared/models/user-onboarding.model';
+import { UserOnboardingFacade } from '@admin/user-onboarding/shared/services/user-onboarding-facade';
 
 /**
  * Partner Platform v2 — User Onboarding (`/admin/partner-v2/onboarding`).

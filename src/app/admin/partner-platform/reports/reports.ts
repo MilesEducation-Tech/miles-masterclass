@@ -1,9 +1,9 @@
 import { Component, computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { AriaInput } from '../../../shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '../../../shared/components/ui/button/button';
-import { Dialog } from '../../../shared/core/services/dialog/dialog';
-import { DeprecationBanner } from '../../shared/components/deprecation-banner/deprecation-banner';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/components/ui/button/button';
+import { Dialog } from '@core/services/dialog/dialog';
+import { DeprecationBanner } from '@admin/shared/components/deprecation-banner/deprecation-banner';
 import { StatCard } from '../shared/components/stat-card/stat-card';
 import { PartnerAdminMe } from '../shared/services/partner-admin-me';
 import { PartnerSuperAdminFacade } from '../shared/services/partner-superadmin-facade';

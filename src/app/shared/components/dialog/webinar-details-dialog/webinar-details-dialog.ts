@@ -6,13 +6,13 @@ import { phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
 import { Button } from '../../ui/button/button';
 import { CategoriesList } from '../../categories-list/categories-list';
 import { CourseAbout } from '../../course-about/course-about';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { DialogRef } from '@core/services/dialog/dialog';
 import { MilesSlug } from '../../miles-slug/miles-slug';
-import { ContentAbout } from '../../../core/models/course.model';
-import { UpcomingPremiere, WebinarCta, WebinarTag } from '../../../core/models/feature.model';
-import { Utils } from '../../../core/services/utils/utils';
+import { ContentAbout } from '@core/models/course.model';
+import { UpcomingPremiere, WebinarCta, WebinarTag } from '@core/models/feature.model';
+import { Utils } from '@core/services/utils/utils';
 import { DatePipe } from '@angular/common';
-import { LocalTimeZonePipe } from '../../../core/pipes/local-time-zone/local-time-zone.pipe';
+import { LocalTimeZonePipe } from '@core/pipes/local-time-zone/local-time-zone.pipe';
 
 export interface WebinarDetailsDialogData {
   webinar: UpcomingPremiere;

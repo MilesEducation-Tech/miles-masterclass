@@ -35,22 +35,22 @@ import {
   NgpCollapsibleTrigger,
 } from 'ng-primitives/collapsible';
 import { CdkTrapFocus } from '@angular/cdk/a11y';
-import { crownIcon, logo } from '../../shared/core/constant/icon';
-import { NavActionKind, NavItem } from '../../shared/core/models/nav.model';
-import { Button } from '../../shared/components/ui/button/button';
-import { cn } from '../../shared/utils/cn';
-import { SectionNav } from '../../shared/components/section-nav/section-nav';
-import { UserAvatarMenu } from '../../shared/components/user-avatar-menu/user-avatar-menu';
-import { NavMenuItem } from '../../shared/components/nav-menu-item/nav-menu-item';
+import { crownIcon, logo } from '@core/constant/icon';
+import { NavActionKind, NavItem } from '@core/models/nav.model';
+import { Button } from '@shared/components/ui/button/button';
+import { cn } from '@shared/utils/cn';
+import { SectionNav } from '@shared/components/section-nav/section-nav';
+import { UserAvatarMenu } from '@shared/components/user-avatar-menu/user-avatar-menu';
+import { NavMenuItem } from '@shared/components/nav-menu-item/nav-menu-item';
 import { GUEST_NAV, LOGGED_IN_NAV } from './nav.config';
-import { Utils } from '../../shared/core/services/utils/utils';
-import { Viewport } from '../../shared/core/services/viewport/viewport';
+import { Utils } from '@core/services/utils/utils';
+import { Viewport } from '@core/services/viewport/viewport';
 import {
   CalendlyDialog,
   CalendlyDialogData,
-} from '../../shared/components/dialog/calendly-dialog/calendly-dialog';
-import { Dialog } from '../../shared/core/services/dialog/dialog';
-import { User } from '../../shared/core/models/profile.model';
+} from '@shared/components/dialog/calendly-dialog/calendly-dialog';
+import { Dialog } from '@core/services/dialog/dialog';
+import { User } from '@core/models/profile.model';
 
 const SCROLL_THRESHOLD_PX = 150;
 

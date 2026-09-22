@@ -1,5 +1,5 @@
 import { Component, input, model, output } from '@angular/core';
-import { Backward } from '../../../../../../shared/components/backward/backward';
+import { Backward } from '@shared/components/backward/backward';
 
 @Component({
   selector: 'app-micro-learning-top-bar',

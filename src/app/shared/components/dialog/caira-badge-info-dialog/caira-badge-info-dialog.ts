@@ -11,16 +11,16 @@ import {
 } from '@angular/core';
 import { NgpTabButton, NgpTabList, NgpTabPanel, NgpTabset } from 'ng-primitives/tabs';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { DialogRef } from '@core/services/dialog/dialog';
 import {
   BadgeV2Response,
   CAIRA_STATUS_LABEL,
   CairaBadgeBullet,
   CairaBadgeContent,
   CairaLadderItem,
-} from '../../../core/models/caira-badge.model';
-import { SKIP_ERROR_NOTIFICATION } from '../../../core/models/http.model';
-import { ApiClient } from '../../../core/services/api-client/api-client';
+} from '@core/models/caira-badge.model';
+import { SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
+import { ApiClient } from '@core/services/api-client/api-client';
 import { Button } from '../../ui/button/button';
 import { Spinner } from '../../ui/spinner/spinner';
 

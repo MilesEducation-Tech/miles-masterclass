@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { BadgeRow } from './shared/components/badge-row/badge-row';
 import { CairaLevelHero } from './shared/components/caira-level-hero/caira-level-hero';
-import { BadgeCourseType } from '../../shared/core/models/caira-badge.model';
+import { BadgeCourseType } from '@core/models/caira-badge.model';
 
 interface RowConfig {
   heading: string;

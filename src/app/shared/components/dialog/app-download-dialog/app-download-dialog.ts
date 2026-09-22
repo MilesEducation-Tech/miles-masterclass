@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
-import { appStoreIcon, googlePlayIcon } from '../../../core/constant/icon';
-import { DialogRef } from '../../../core/services/dialog/dialog';
+import { appStoreIcon, googlePlayIcon } from '@core/constant/icon';
+import { DialogRef } from '@core/services/dialog/dialog';
 import { Button } from '../../ui/button/button';
 
 export const MASTERCLASS_APP_STORE_URL =

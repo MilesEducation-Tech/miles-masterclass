@@ -1,14 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FinalAssessmentExam } from './final-assessment-exam';
 import { FinalAssessmentFacade } from '../../services/final-assessment-facade/final-assessment-facade';
-import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
+import { Dialog } from '@core/services/dialog/dialog';
 import { of, Subject } from 'rxjs';
-import { UtilsDialog } from '../../../../../shared/components/dialog/utils-dialog/utils-dialog';
+import { UtilsDialog } from '@shared/components/dialog/utils-dialog/utils-dialog';
 import { signal } from '@angular/core';
-import { Utils } from '../../../../../shared/core/services/utils/utils';
+import { Utils } from '@core/services/utils/utils';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
-import { AssessmentResultDialog } from '../../../../../shared/components/dialog/assessment-result-dialog/assessment-result-dialog';
+import { AssessmentResultDialog } from '@shared/components/dialog/assessment-result-dialog/assessment-result-dialog';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CommonModule } from '@angular/common';
 

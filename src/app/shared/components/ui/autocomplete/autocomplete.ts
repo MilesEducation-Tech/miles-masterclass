@@ -25,7 +25,7 @@ import {
   AutoCompleteCompleteEvent,
   AutoCompleteOption,
   AutoCompleteSelectEvent,
-} from '../../../core/models/form.model';
+} from '@core/models/form.model';
 import { cn } from '../../../utils/cn';
 import { Button } from '../button/button';
 import { faSolidSpinner } from '@ng-icons/font-awesome/solid';

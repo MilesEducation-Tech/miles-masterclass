@@ -6,7 +6,7 @@ import { Injector, runInInjectionContext } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { environment } from '../../../../../environments/environment';
+import { environment } from '@env/environment';
 import { ApiClient } from '../api-client/api-client';
 import { Logger } from '../logger/logger';
 import { SalesforceLead } from './salesforce-lead';

@@ -42,9 +42,9 @@ import {
   lucideX,
 } from '@ng-icons/lucide';
 import type { AssessmentScore, SessionAssessment } from '@milesverse/sdk';
-import { Button } from '../../../shared/components/ui/button/button';
-import { MilesVerse } from '../../../shared/core/services/milesverse/milesverse';
-import { Utils } from '../../../shared/core/services/utils/utils';
+import { Button } from '@shared/components/ui/button/button';
+import { MilesVerse } from '@core/services/milesverse/milesverse';
+import { Utils } from '@core/services/utils/utils';
 import {
   type CompetencyKey,
   type CompetencyScore,

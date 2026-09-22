@@ -1,11 +1,14 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { AriaInput } from '../../shared/components/ui/aria/aria-input/aria-input';
-import { DeprecationBanner } from '../shared/components/deprecation-banner/deprecation-banner';
-import { PartnerNetworkFacade } from '../partner-platform/shared/services/partner-network-facade';
-import { PartnerAdminMe } from '../partner-platform/shared/services/partner-admin-me';
-import { Seat, SeatStatusFilter } from '../partner-platform/shared/models/partner-platform.model';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { DeprecationBanner } from '@admin/shared/components/deprecation-banner/deprecation-banner';
+import { PartnerNetworkFacade } from '@admin/partner-platform/shared/services/partner-network-facade';
+import { PartnerAdminMe } from '@admin/partner-platform/shared/services/partner-admin-me';
+import {
+  Seat,
+  SeatStatusFilter,
+} from '@admin/partner-platform/shared/models/partner-platform.model';
 import { SeatTrackerTable } from './shared/components/seat-tracker-table/seat-tracker-table';
 
 const STATUS_TABS: { value: SeatStatusFilter; label: string }[] = [

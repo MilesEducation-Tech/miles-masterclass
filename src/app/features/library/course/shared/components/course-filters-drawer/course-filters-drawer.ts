@@ -1,11 +1,8 @@
 import { Component } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroXMark } from '@ng-icons/heroicons/outline';
-import { DialogRef } from '../../../../../../shared/core/services/dialog/dialog';
-import {
-  CourseFilterGroup,
-  CourseFilterSelection,
-} from '../../../../../../shared/core/models/library-filters.model';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { CourseFilterGroup, CourseFilterSelection } from '@core/models/library-filters.model';
 import { CourseFilters } from '../course-filters/course-filters';
 
 export interface CourseFiltersDrawerData {

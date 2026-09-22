@@ -16,24 +16,17 @@ import {
   heroTrash,
   heroXMark,
 } from '@ng-icons/heroicons/outline';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-} from '../../../../shared/components/dialog/utils-dialog/utils-dialog';
-import {
-  computeSeoScore,
-  createDefaultSeoPage,
-  SeoPage,
-} from '../../../../shared/core/models/seo.models';
-import { Dialog } from '../../../../shared/core/services/dialog/dialog';
-import { Logger } from '../../../../shared/core/services/logger/logger';
-import { SupabaseSeo } from '../../../../shared/core/services/seo/supabase-seo';
-import { AriaInput } from '../../../../shared/components/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '../../../../shared/components/ui/aria/aria-select/aria-select';
-import { Button } from '../../../../shared/components/ui/button/button';
-import { AriaSelectOption } from '../../../../shared/core/models/aria.model';
-import { PERM } from '../../../../shared/core/models/admin/admin-rbac.model';
-import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
+import { UtilsDialog, UtilsDialogData } from '@shared/components/dialog/utils-dialog/utils-dialog';
+import { computeSeoScore, createDefaultSeoPage, SeoPage } from '@core/models/seo.models';
+import { Dialog } from '@core/services/dialog/dialog';
+import { Logger } from '@core/services/logger/logger';
+import { SupabaseSeo } from '@core/services/seo/supabase-seo';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { Button } from '@shared/components/ui/button/button';
+import { AriaSelectOption } from '@core/models/aria.model';
+import { PERM } from '@core/models/admin/admin-rbac.model';
+import { HasPermissionDirective } from '@admin/shared/directives/has-permission.directive';
 
 @Component({
   selector: 'app-seo-dashboard',

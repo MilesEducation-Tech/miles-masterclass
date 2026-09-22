@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { LegalSection as LegalSectionModel } from '../../../../shared/core/models/legal-doc.model';
+import { LegalSection as LegalSectionModel } from '@core/models/legal-doc.model';
 import { FaqContent } from '../../../faq/shared/components/faq-content/faq-content';
 
 /**

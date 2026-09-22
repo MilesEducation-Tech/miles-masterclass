@@ -4,8 +4,8 @@ import { interval, Subscription } from 'rxjs';
 import { NgIcon } from '@ng-icons/core';
 import { Laptop } from './components/laptop/laptop';
 import { FloatingAssets } from './components/floating-assets/floating-assets';
-import { MicroLearningHeroPhoneMockup } from '../../../offerings/micro-learning/shared/components/micro-learning-hero-phone-mockup/micro-learning-hero-phone-mockup';
-import type { HeroReelItem } from '../../../offerings/micro-learning/shared/components/micro-learning-hero/hero-reel-item.model';
+import { MicroLearningHeroPhoneMockup } from '@features/offerings/micro-learning/shared/components/micro-learning-hero-phone-mockup/micro-learning-hero-phone-mockup';
+import type { HeroReelItem } from '@features/offerings/micro-learning/shared/components/micro-learning-hero/hero-reel-item.model';
 import { DEFAULT_OFFERINGS, type OfferingData } from './offerings.config';
 
 // Re-export so consumers (e.g. Laptop) can keep importing from '../../offerings'.

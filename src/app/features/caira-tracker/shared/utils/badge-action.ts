@@ -1,10 +1,6 @@
-import {
-  BadgeActionState,
-  BadgeCourseType,
-  BadgeUserRef,
-} from '../../../../shared/core/models/caira-badge.model';
-import { TRANSACTION_TO_URL } from '../../../cpe-tracker/shared/utils/course.util';
-import { toSlug } from '../../../cpe-tracker/shared/utils/slug.util';
+import { BadgeActionState, BadgeCourseType, BadgeUserRef } from '@core/models/caira-badge.model';
+import { TRANSACTION_TO_URL } from '@features/cpe-tracker/shared/utils/course.util';
+import { toSlug } from '@features/cpe-tracker/shared/utils/slug.util';
 
 /**
  * What a badge card's CTA should do. Pure — the component performs it, so the

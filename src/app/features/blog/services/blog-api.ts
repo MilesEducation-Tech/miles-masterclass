@@ -10,8 +10,8 @@ import {
 } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { environment } from '../../../../environments/environment';
-import { SKIP_AUTH_TOKEN, SKIP_ERROR_NOTIFICATION } from '../../../shared/core/models/http.model';
+import { environment } from '@env/environment';
+import { SKIP_AUTH_TOKEN, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
 import { BlogListQuery, BlogPostsResult, WpCategory, WpPost } from '../models/blog.model';
 
 /**

@@ -1,6 +1,6 @@
 import { FAQ } from '../models/faq.model';
 import { CountryCode, ProfessionType } from '../models/route-params.model';
-import { LocaleKey, resolveByLocale } from '../../utils/locale-resolver';
+import { LocaleKey, resolveByLocale } from '@shared/utils/locale-resolver';
 
 /**
  * FAQ data. Pages should consume `resolveFaqData(country, profession)` so

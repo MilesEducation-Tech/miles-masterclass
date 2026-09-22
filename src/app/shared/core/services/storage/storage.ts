@@ -2,8 +2,8 @@ import { Injectable, PLATFORM_ID, REQUEST, inject } from '@angular/core';
 import { isPlatformBrowser, isPlatformServer } from '@angular/common';
 import { CookieService } from 'ngx-cookie-service';
 import { CookieOptions } from '../../models/storage.model';
-import { environment } from '../../../../../environments/environment';
-import { generateUUID } from '../../../utils/uuid';
+import { environment } from '@env/environment';
+import { generateUUID } from '@shared/utils/uuid';
 
 /**
  * Unified Storage Service for managing cookies, localStorage, and sessionStorage.

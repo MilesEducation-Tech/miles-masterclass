@@ -1,7 +1,7 @@
 import { NgComponentOutlet } from '@angular/common';
 import { Component, input, model, Type } from '@angular/core';
 import { NgpTabButton, NgpTabList, NgpTabPanel, NgpTabset } from 'ng-primitives/tabs';
-import { cn } from '../../../../../shared/utils/cn';
+import { cn } from '@shared/utils/cn';
 
 export interface PartnershipTab {
   id: string;

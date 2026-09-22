@@ -4,7 +4,7 @@ import '@angular/compiler';
 
 import { describe, expect, it } from 'vitest';
 
-import { ReportSummary } from '../../../../admin/partner-platform/reports/shared/models/partner-report.model';
+import { ReportSummary } from '@admin/partner-platform/reports/shared/models/partner-report.model';
 import { dash, executiveLede, reportingPeriodLabel } from './report-preview.format';
 
 /**

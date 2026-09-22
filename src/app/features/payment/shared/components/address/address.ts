@@ -1,7 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matEditOutline, matDeleteOutline } from '@ng-icons/material-icons/outline';
-import { UserAddress } from '../../../../../shared/core/models/payment.model';
+import { UserAddress } from '@core/models/payment.model';
 
 @Component({
   selector: 'app-address',

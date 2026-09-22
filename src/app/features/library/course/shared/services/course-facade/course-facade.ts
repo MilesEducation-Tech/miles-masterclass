@@ -11,17 +11,17 @@ import {
   untracked,
 } from '@angular/core';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { Content } from '../../../../../../shared/core/models/course.model';
-import { FeatureApiResponse } from '../../../../../../shared/core/models/feature.model';
+import { Content } from '@core/models/course.model';
+import { FeatureApiResponse } from '@core/models/feature.model';
 import {
   ApiCourseType,
   CourseFilterSelection,
   EMPTY_COURSE_FILTERS,
   LibraryFiltersData,
-} from '../../../../../../shared/core/models/library-filters.model';
-import { ApiClient } from '../../../../../../shared/core/services/api-client/api-client';
-import { parseNextPage } from '../../../../../../shared/utils/parse-next-page';
-import { withPreviousValue } from '../../../../../../shared/utils/with-previous-value';
+} from '@core/models/library-filters.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { parseNextPage } from '@shared/utils/parse-next-page';
+import { withPreviousValue } from '@shared/utils/with-previous-value';
 
 /**
  * Owns course-listing state for `/library/course-library`. Lazy by

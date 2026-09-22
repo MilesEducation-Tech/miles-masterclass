@@ -22,16 +22,16 @@ import {
   CpeSummaryWire,
   CpeTrackerResponse,
   toCertificateTarget,
-} from '../../shared/core/models/cpe-credit.model';
-import { CreditsSummary } from '../../shared/core/models/cpe-tracker.model';
-import { ApiClient } from '../../shared/core/services/api-client/api-client';
-import { Utils } from '../../shared/core/services/utils/utils';
-import { AriaSelect } from '../../shared/components/ui/aria/aria-select/aria-select';
-import { AriaSelectOption } from '../../shared/core/models/aria.model';
-import { ErrorState } from '../../shared/components/ui/error-state/error-state';
-import { withPreviousValue } from '../../shared/utils/with-previous-value';
-import { localeLink } from '../caira-tracker/shared/utils/tracker-links';
-import { BadgeFilterChips } from '../caira-tracker/shared/components/badge-filter-chips/badge-filter-chips';
+} from '@core/models/cpe-credit.model';
+import { CreditsSummary } from '@core/models/cpe-tracker.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Utils } from '@core/services/utils/utils';
+import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { AriaSelectOption } from '@core/models/aria.model';
+import { ErrorState } from '@shared/components/ui/error-state/error-state';
+import { withPreviousValue } from '@shared/utils/with-previous-value';
+import { localeLink } from '@features/caira-tracker/shared/utils/tracker-links';
+import { BadgeFilterChips } from '@features/caira-tracker/shared/components/badge-filter-chips/badge-filter-chips';
 import { PortfolioSummary } from './shared/components/portfolio-summary/portfolio-summary';
 import { TrackerTable } from './shared/components/tracker-table/tracker-table';
 import { CertificateDownload } from './shared/services/certificate-download/certificate-download';

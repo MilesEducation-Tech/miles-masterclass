@@ -16,8 +16,8 @@ import { filter, tap } from 'rxjs/operators';
 import { DynamicRouteParams, ProfessionType, CountryCode } from '../../models/route-params.model';
 import { PROFESSIONS } from '../../constant/profession';
 import { Dialog } from '../dialog/dialog';
-import { UtilsDialog, DialogButton } from '../../../components/dialog/utils-dialog/utils-dialog';
-import { ShareDialog, ShareDialogData } from '../../../components/dialog/share-dialog/share-dialog';
+import { UtilsDialog, DialogButton } from '@shared/components/dialog/utils-dialog/utils-dialog';
+import { ShareDialog, ShareDialogData } from '@shared/components/dialog/share-dialog/share-dialog';
 import { ApiClient } from '../api-client/api-client';
 import { Analytics } from '../analytics/analytics';
 import { MASTERCLASS_ROUTES } from '../../models/masterclass.model';
@@ -37,20 +37,20 @@ import { Storage } from '../storage/storage';
 import {
   CertificateDialogData,
   CertificateDownloadDialog,
-} from '../../../components/dialog/certificate-download-dialog/certificate-download-dialog';
-import { VideoDialog, VideoDialogData } from '../../../components/dialog/video-dialog/video-dialog';
+} from '@shared/components/dialog/certificate-download-dialog/certificate-download-dialog';
+import { VideoDialog, VideoDialogData } from '@shared/components/dialog/video-dialog/video-dialog';
 import { NotificationService } from '../notification/notification';
 import { Viewport, ScreenInfo } from '../viewport/viewport';
 // CartDrawerDialog is loaded lazily in openCartDrawer() — this service is
 // eagerly instantiated (injected by the header/footer chrome), so a static
 // import would pull the dialog and its `@angular/forms` dependency into the
 // initial bundle.
-import { PaymentFacade } from '../../../../features/payment/shared/service/payment-facade/payment-facade';
-import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
+import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
+import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
 import { Logger } from '../logger/logger';
-import { canAccessCpeMode, CpeModeGateContent } from '../../../utils/cpe-mode-access';
-import { SubscriptionDialog } from '../../../components/dialog/subscription-dialog/subscription-dialog';
-import { UtilsDialogData } from '../../../components/dialog/utils-dialog/utils-dialog';
+import { canAccessCpeMode, CpeModeGateContent } from '@shared/utils/cpe-mode-access';
+import { SubscriptionDialog } from '@shared/components/dialog/subscription-dialog/subscription-dialog';
+import { UtilsDialogData } from '@shared/components/dialog/utils-dialog/utils-dialog';
 
 type StartFinalAssessmentParams = RouteParams<typeof MASTERCLASS_ROUTES.startFinalAssessment>;
 
@@ -648,7 +648,7 @@ export class Utils {
     const webinar = (card as { _webinar?: unknown })._webinar;
     if (webinar) {
       const { WebinarDetailsDialog } =
-        await import('../../../components/dialog/webinar-details-dialog/webinar-details-dialog');
+        await import('@shared/components/dialog/webinar-details-dialog/webinar-details-dialog');
       this.dialog.open(WebinarDetailsDialog, {
         maxWidth: '100%',
         enterAnimationDuration: '300ms',
@@ -658,7 +658,7 @@ export class Utils {
       });
       return;
     }
-    const { CourseInfo } = await import('../../../components/dialog/course-info/course-info');
+    const { CourseInfo } = await import('@shared/components/dialog/course-info/course-info');
     this.dialog.open(CourseInfo, {
       maxWidth: '100%',
       enterAnimationDuration: '300ms',
@@ -764,7 +764,7 @@ export class Utils {
   async openCartDrawer(): Promise<void> {
     this.payment.loadMyBucket({ force: true });
     const { CartDrawerDialog } =
-      await import('../../../components/dialog/cart-drawer-dialog/cart-drawer-dialog');
+      await import('@shared/components/dialog/cart-drawer-dialog/cart-drawer-dialog');
     this.dialog.open(CartDrawerDialog, {
       width: '500px',
       maxWidth: '90vw',

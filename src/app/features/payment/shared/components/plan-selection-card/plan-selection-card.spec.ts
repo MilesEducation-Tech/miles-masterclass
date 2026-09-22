@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { PlanSelectionCard } from './plan-selection-card';
-import { SubscriptionPlan } from '../../../../../shared/core/models/payment.model';
+import { SubscriptionPlan } from '@core/models/payment.model';
 
 function makePlan(overrides: Partial<SubscriptionPlan> = {}): SubscriptionPlan {
   return {

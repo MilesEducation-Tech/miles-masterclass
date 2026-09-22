@@ -1,8 +1,8 @@
 import { Component, computed, OnInit, signal } from '@angular/core';
-import { DialogRef } from '../../../../../../shared/core/services/dialog/dialog';
-import { Button } from '../../../../../../shared/components/ui/button/button';
-import { cn } from '../../../../../../shared/utils/cn';
-import { MicroLearningFilterOption } from '../../../../../../shared/core/models/micro-learning-course.model';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { Button } from '@shared/components/ui/button/button';
+import { cn } from '@shared/utils/cn';
+import { MicroLearningFilterOption } from '@core/models/micro-learning-course.model';
 
 export interface MicroLearningFilterSheetData {
   title: string;

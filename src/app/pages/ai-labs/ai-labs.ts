@@ -51,23 +51,23 @@ import {
   PressDirective,
 } from '@code_with_sachin/ngx-motion';
 import type { SwiperOptions } from 'swiper/types';
-import { Button } from '../../shared/components/ui/button/button';
-import { Carousel } from '../../shared/components/carousel/carousel';
+import { Button } from '@shared/components/ui/button/button';
+import { Carousel } from '@shared/components/carousel/carousel';
 import {
   AiLabAgentCard,
   AiLabAgentDialog,
   AiLabAgentDialogResult,
-} from '../../shared/components/dialog/ai-lab-agent-dialog/ai-lab-agent-dialog';
-import { AiLabTermsDialog } from '../../shared/components/dialog/ai-lab-terms-dialog/ai-lab-terms-dialog';
-import { UtilsDialog } from '../../shared/components/dialog/utils-dialog/utils-dialog';
-import { DurationPipe } from '../../shared/core/pipes/duration/duration-pipe';
-import { CommonResponse, SKIP_ERROR_NOTIFICATION } from '../../shared/core/models/http.model';
-import { MASTERCLASS_ROUTES } from '../../shared/core/models/masterclass.model';
-import { ApiClient } from '../../shared/core/services/api-client/api-client';
-import { Dialog } from '../../shared/core/services/dialog/dialog';
-import { NotificationService } from '../../shared/core/services/notification/notification';
-import { Storage } from '../../shared/core/services/storage/storage';
-import { Utils } from '../../shared/core/services/utils/utils';
+} from '@shared/components/dialog/ai-lab-agent-dialog/ai-lab-agent-dialog';
+import { AiLabTermsDialog } from '@shared/components/dialog/ai-lab-terms-dialog/ai-lab-terms-dialog';
+import { UtilsDialog } from '@shared/components/dialog/utils-dialog/utils-dialog';
+import { DurationPipe } from '@core/pipes/duration/duration-pipe';
+import { CommonResponse, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
+import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Dialog } from '@core/services/dialog/dialog';
+import { NotificationService } from '@core/services/notification/notification';
+import { Storage } from '@core/services/storage/storage';
+import { Utils } from '@core/services/utils/utils';
 import {
   AI_LAB_FAQS,
   AI_LAB_FEATURES,
@@ -83,8 +83,8 @@ import {
 import { AiLabSubmission } from './ai-lab-submission';
 import { HttpContext } from '@angular/common/http';
 import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
-import { iconCopilot, iconSparkle } from '../../shared/core/constant/icon';
-import { environment } from '../../../environments/environment';
+import { iconCopilot, iconSparkle } from '@core/constant/icon';
+import { environment } from '@env/environment';
 
 /**
  * Remembers that a provisioning request already went out, so a reload during the

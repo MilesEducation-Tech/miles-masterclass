@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CairaLadderItem } from '../../../../shared/core/models/caira-badge.model';
+import { CairaLadderItem } from '@core/models/caira-badge.model';
 import { levelSlides } from './level-carousel';
 
 const level = (rank: number, icon = `icon-${rank}.png`): CairaLadderItem =>

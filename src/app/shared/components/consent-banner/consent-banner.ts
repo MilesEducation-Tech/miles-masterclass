@@ -1,6 +1,6 @@
 import { Component, afterNextRender, effect, inject, signal } from '@angular/core';
-import { Consent } from '../../core/services/consent/consent';
-import { CONSENT_CATEGORIES, ConsentCategory, ConsentState } from '../../core/models/consent.model';
+import { Consent } from '@core/services/consent/consent';
+import { CONSENT_CATEGORIES, ConsentCategory, ConsentState } from '@core/models/consent.model';
 import { cn } from '../../utils/cn';
 
 /**

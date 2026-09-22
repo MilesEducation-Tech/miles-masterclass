@@ -14,15 +14,15 @@ import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideSearch, lucideX } from '@ng-icons/lucide';
 import { debounceTime, distinctUntilChanged, switchMap, startWith, tap } from 'rxjs/operators';
-import { DialogRef } from '../../../core/services/dialog/dialog';
-import { Utils } from '../../../core/services/utils/utils';
-import { GlobalSearch } from '../../../core/services/global-search/global-search';
-import { Analytics } from '../../../core/services/analytics/analytics';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { Utils } from '@core/services/utils/utils';
+import { GlobalSearch } from '@core/services/global-search/global-search';
+import { Analytics } from '@core/services/analytics/analytics';
 import {
   SEARCH_TYPE_TO_URL_SEGMENT,
   SearchCourseType,
   SearchSuggestion,
-} from '../../../core/models/search.model';
+} from '@core/models/search.model';
 
 interface SuggestionGroup {
   type: SearchCourseType;

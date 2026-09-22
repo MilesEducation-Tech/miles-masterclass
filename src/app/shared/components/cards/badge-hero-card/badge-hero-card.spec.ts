@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { BadgeItem } from '../../../core/models/cpe-tracker.model';
+import { BadgeItem } from '@core/models/cpe-tracker.model';
 import { BadgeHeroCard } from './badge-hero-card';
 
 function makeBadge(overrides: Partial<BadgeItem> = {}): BadgeItem {

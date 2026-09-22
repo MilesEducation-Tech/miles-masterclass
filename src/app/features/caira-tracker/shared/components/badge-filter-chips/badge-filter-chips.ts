@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { cn } from '../../../../../shared/utils/cn';
+import { cn } from '@shared/utils/cn';
 
 export interface BadgeChipOption {
   /** `null` is a valid value (the "All" course-type chip), so keys are stringified. */

@@ -3,19 +3,19 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpContext } from '@angular/common/http';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matPlayArrowRound } from '@ng-icons/material-icons/round';
-import { DialogRef } from '../../../core/services/dialog/dialog';
-import { DurationPipe } from '../../../core/pipes/duration/duration-pipe';
-import { ApiClient } from '../../../core/services/api-client/api-client';
-import { ContentDetails } from '../../../core/models/course.model';
-import { CommonResponse, SKIP_ERROR_NOTIFICATION } from '../../../core/models/http.model';
-import { MASTERCLASS_ROUTES } from '../../../core/models/masterclass.model';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { DurationPipe } from '@core/pipes/duration/duration-pipe';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { ContentDetails } from '@core/models/course.model';
+import { CommonResponse, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
+import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
 import { AiLabAgentAbout } from './ai-lab-agent-about/ai-lab-agent-about';
 import { AiLabAssessmentReport } from './ai-lab-agent-about/ai-lab-agent-about.model';
 import { CopilotWorkflow } from '../../../../pages/ai-labs/ai-labs.model';
 import { AiLabSubmission } from '../../../../pages/ai-labs/ai-lab-submission';
 import { MilesSlug } from '../../miles-slug/miles-slug';
 import { Button } from '../../ui/button/button';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '@env/environment';
 
 /**
  * One catalogue tile, flattened from either a masterclass chapter or a static

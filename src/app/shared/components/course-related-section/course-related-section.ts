@@ -4,17 +4,17 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { Carousel } from '../carousel/carousel';
 import { Horizontal } from '../cards/horizontal/horizontal';
 import { Square } from '../cards/square/square';
-import { Content, InstructorDetails } from '../../core/models/course.model';
-import { CommonResponse } from '../../core/models/http.model';
+import { Content, InstructorDetails } from '@core/models/course.model';
+import { CommonResponse } from '@core/models/http.model';
 import {
   InstructorCoursesData,
   InstructorCoursesResponse,
   RelatedContentType,
   RELATED_CONTENT_ROUTES,
-} from '../../core/models/related-content.model';
-import { ApiClient } from '../../core/services/api-client/api-client';
-import { Logger } from '../../core/services/logger/logger';
-import { swiperConfigEven, swiperConfigPodcast } from '../../core/config/swiper.config';
+} from '@core/models/related-content.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Logger } from '@core/services/logger/logger';
+import { swiperConfigEven, swiperConfigPodcast } from '@core/config/swiper.config';
 
 interface InstructorCarousel {
   instructorId: number;

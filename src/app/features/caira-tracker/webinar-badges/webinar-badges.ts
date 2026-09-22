@@ -26,11 +26,11 @@ import {
   matchesBadgeFilter,
   WEBINAR_BADGE_FILTERS,
   WebinarBadgeItem,
-} from '../../../shared/core/models/caira-badge.model';
-import { ApiClient } from '../../../shared/core/services/api-client/api-client';
-import { Button } from '../../../shared/components/ui/button/button';
-import { ErrorState } from '../../../shared/components/ui/error-state/error-state';
-import { withPreviousValue } from '../../../shared/utils/with-previous-value';
+} from '@core/models/caira-badge.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Button } from '@shared/components/ui/button/button';
+import { ErrorState } from '@shared/components/ui/error-state/error-state';
+import { withPreviousValue } from '@shared/utils/with-previous-value';
 import { BadgeFilterChips } from '../shared/components/badge-filter-chips/badge-filter-chips';
 import { WebinarBadgeCard } from '../shared/components/webinar-badge-card/webinar-badge-card';
 import { BadgeActions } from '../shared/services/badge-actions/badge-actions';

@@ -1,5 +1,5 @@
-import { EXCLUSIVE_ADMIN_ROLE_SLUGS } from '../../../../shared/core/models/admin/admin-rbac.model';
-import { PartnerRole } from '../../../partner-platform/shared/models/partner-platform.model';
+import { EXCLUSIVE_ADMIN_ROLE_SLUGS } from '@core/models/admin/admin-rbac.model';
+import { PartnerRole } from '@admin/partner-platform/shared/models/partner-platform.model';
 
 /** How a Supabase partner role maps onto the Django `PartnerAdmin` row. */
 export interface PartnerMapping {

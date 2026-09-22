@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { FaqItem } from './faq-item';
-import { FAQ } from '../../../../../shared/core/models/faq.model';
+import { FAQ } from '@core/models/faq.model';
 
 const FAQ_ITEM: FAQ = {
   id: 1,

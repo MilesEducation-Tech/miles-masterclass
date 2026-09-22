@@ -1,4 +1,4 @@
-import { NavItem } from '../../shared/core/models/nav.model';
+import { NavItem } from '@core/models/nav.model';
 
 const LIBRARY_CHILDREN: readonly NavItem[] = [
   { label: 'Course Library', type: 'link', route: 'library/course-library' },

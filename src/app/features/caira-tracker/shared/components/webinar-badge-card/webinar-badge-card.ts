@@ -1,11 +1,8 @@
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import {
-  BADGE_ACTION_UI,
-  WebinarBadgeItem,
-} from '../../../../../shared/core/models/caira-badge.model';
-import { cn } from '../../../../../shared/utils/cn';
-import { easternAbbrevFor } from '../../../../../shared/utils/eastern-time';
+import { BADGE_ACTION_UI, WebinarBadgeItem } from '@core/models/caira-badge.model';
+import { cn } from '@shared/utils/cn';
+import { easternAbbrevFor } from '@shared/utils/eastern-time';
 
 /**
  * A webinar badge, used both in the tracker's horizontal rail and in the

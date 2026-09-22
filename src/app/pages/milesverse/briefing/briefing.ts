@@ -48,9 +48,9 @@ import {
   type Scenario,
   type SimulationDetail,
 } from '@milesverse/sdk';
-import { Button } from '../../../shared/components/ui/button/button';
-import { MilesVerse } from '../../../shared/core/services/milesverse/milesverse';
-import { Utils } from '../../../shared/core/services/utils/utils';
+import { Button } from '@shared/components/ui/button/button';
+import { MilesVerse } from '@core/services/milesverse/milesverse';
+import { Utils } from '@core/services/utils/utils';
 import { personaAvatarUrl, seedHue } from '../milesverse.model';
 import type { MarkingScheme, TranscriptTurn } from '../shared/report.model';
 import { MilesVerseSessions } from '../shared/sessions.store';

@@ -1,7 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matCloseRound } from '@ng-icons/material-icons/round';
-import { ButtonSize, ButtonVariant } from '../../../core/models/button.model';
+import { ButtonSize, ButtonVariant } from '@core/models/button.model';
 import { cn } from '../../../utils/cn';
 import { NgpButton } from 'ng-primitives/button';
 

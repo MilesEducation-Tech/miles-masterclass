@@ -6,17 +6,17 @@ import {
   required,
   validate,
 } from '@angular/forms/signals';
-import { AriaInput } from '../../../../../../shared/components/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '../../../../../../shared/components/ui/aria/aria-select/aria-select';
-import { Button } from '../../../../../../shared/components/ui/button/button';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { Button } from '@shared/components/ui/button/button';
 import {
   CheckboxList,
   CheckboxListOption,
-} from '../../../../../../shared/components/ui/checkbox-list/checkbox-list';
-import { Forms } from '../../../../../../shared/components/ui/forms/forms';
-import { AriaSelectOption } from '../../../../../../shared/core/models/aria.model';
-import { AllocationPicker } from '../../../../../partner-platform/shared/components/allocation-picker/allocation-picker';
-import { DialogRef } from '../../../../../../shared/core/services/dialog/dialog';
+} from '@shared/components/ui/checkbox-list/checkbox-list';
+import { Forms } from '@shared/components/ui/forms/forms';
+import { AriaSelectOption } from '@core/models/aria.model';
+import { AllocationPicker } from '@admin/partner-platform/shared/components/allocation-picker/allocation-picker';
+import { DialogRef } from '@core/services/dialog/dialog';
 import {
   CAPABILITY_DEFAULTS,
   CAPABILITY_LABELS,
@@ -28,9 +28,9 @@ import {
   PartnerCapability,
   PartnerCode,
   SeatAllocation,
-} from '../../../../../partner-platform/shared/models/partner-platform.model';
-import { AdminProvisioning } from '../../../../../partner-platform/shared/services/admin-provisioning';
-import { PartnerSuperAdminFacade } from '../../../../../partner-platform/shared/services/partner-superadmin-facade';
+} from '@admin/partner-platform/shared/models/partner-platform.model';
+import { AdminProvisioning } from '@admin/partner-platform/shared/services/admin-provisioning';
+import { PartnerSuperAdminFacade } from '@admin/partner-platform/shared/services/partner-superadmin-facade';
 
 /** Mirrors `PARTNER_ROLE_MAP.partner_subcompany_admin` in admin-users/shared/utils/role-selection.ts. */
 const FIRM_ADMIN_ROLE_SLUG = 'partner_subcompany_admin';

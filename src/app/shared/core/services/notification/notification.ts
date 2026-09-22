@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { NgpToastManager, type NgpToastOptions } from 'ng-primitives/toast';
-import { ToastComponent, ToastContext } from '../../../components/ui/toast/toast';
+import { ToastComponent, ToastContext } from '@shared/components/ui/toast/toast';
 import { ToastOptions, ToastPosition, ToastType } from '../../models/notification.model';
 
 /**

@@ -5,11 +5,11 @@ import {
   MOCK_MASTERCLASS_CARD,
   MOCK_PODCAST_CARD,
   MOCK_MICROLEARNING_CARD,
-} from '../../../../testing/mocks/content.mock';
-import { MockUtils, MockFeatureFacade, MockLogger } from '../../../../testing/mocks/services.mock';
-import { Utils } from '../../../core/services/utils/utils';
-import { FeatureFacade } from '../../../../features/shared/services/feature-facade/feature-facade';
-import { Logger } from '../../../core/services/logger/logger';
+} from '@testing/mocks/content.mock';
+import { MockUtils, MockFeatureFacade, MockLogger } from '@testing/mocks/services.mock';
+import { Utils } from '@core/services/utils/utils';
+import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { Logger } from '@core/services/logger/logger';
 
 const meta: Meta<Horizontal> = {
   title: 'Cards/Horizontal',

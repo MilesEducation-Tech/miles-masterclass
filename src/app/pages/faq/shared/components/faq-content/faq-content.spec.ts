@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { FaqContent } from './faq-content';
-import { FAQContent } from '../../../../../shared/core/models/faq.model';
+import { FAQContent } from '@core/models/faq.model';
 
 const CONTENT: FAQContent[] = [
   { type: 'heading', value: 'Claiming your credits', level: 2 },

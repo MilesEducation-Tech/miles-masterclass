@@ -1,20 +1,20 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
+import { Dialog } from '@core/services/dialog/dialog';
 import {
   UtilsDialog,
   UtilsDialogData,
   DialogButton,
-} from '../../../../../shared/components/dialog/utils-dialog/utils-dialog';
+} from '@shared/components/dialog/utils-dialog/utils-dialog';
 import {
   ComplianceDialogData,
   CpeComplianceDialog,
-} from '../../../../../shared/components/dialog/cpe-compliance-dialog/cpe-compliance-dialog';
+} from '@shared/components/dialog/cpe-compliance-dialog/cpe-compliance-dialog';
 import {
   CertificateDialogData,
   CertificateDownloadDialog,
-} from '../../../../../shared/components/dialog/certificate-download-dialog/certificate-download-dialog';
-import { CertificateTarget } from '../../../../../shared/core/models/cpe-credit.model';
+} from '@shared/components/dialog/certificate-download-dialog/certificate-download-dialog';
+import { CertificateTarget } from '@core/models/cpe-credit.model';
 
 export interface DialogResult<T = unknown> {
   action?: DialogButton['action'];

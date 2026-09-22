@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { PlanCard } from './plan-card';
-import { SubscriptionPlan } from '../../../../../shared/core/models/payment.model';
+import { SubscriptionPlan } from '@core/models/payment.model';
 
 const PLAN: SubscriptionPlan = {
   id: 1,

@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
-import { Supabase } from '../../../../shared/core/services/supabase/supabase';
-import { Logger } from '../../../../shared/core/services/logger/logger';
-import { NotificationService } from '../../../../shared/core/services/notification/notification';
+import { Supabase } from '@core/services/supabase/supabase';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
 
 /**
  * Static initial password set for a newly-created admin login by the

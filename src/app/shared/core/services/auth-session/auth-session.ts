@@ -3,7 +3,7 @@ import { PLATFORM_ID, Service, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
-import { environment } from '../../../../../environments/environment';
+import { environment } from '@env/environment';
 import {
   AUTH_ROUTES,
   AuthFailure,

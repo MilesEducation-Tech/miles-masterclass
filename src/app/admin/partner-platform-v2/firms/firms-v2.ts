@@ -13,28 +13,28 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { firstValueFrom, fromEvent, take, takeUntil } from 'rxjs';
-import { Button } from '../../../shared/components/ui/button/button';
-import { Spinner } from '../../../shared/components/ui/spinner/spinner';
-import { Dialog } from '../../../shared/core/services/dialog/dialog';
-import { withPreviousValue } from '../../../shared/utils/with-previous-value';
+import { Button } from '@shared/components/ui/button/button';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { Dialog } from '@core/services/dialog/dialog';
+import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
   CreateFirmResponse,
   Firm,
   FirmsResponse,
   partnerLoadError,
-} from '../../partner-platform/shared/models/partner-platform.model';
-import { PartnerSuperAdminFacade } from '../../partner-platform/shared/services/partner-superadmin-facade';
+} from '@admin/partner-platform/shared/models/partner-platform.model';
+import { PartnerSuperAdminFacade } from '@admin/partner-platform/shared/services/partner-superadmin-facade';
 import {
   AllocateSeatsDialog,
   AllocateSeatsDialogData,
-} from '../../partner-platform/super-admin/network-tracker/shared/components/allocate-seats-dialog/allocate-seats-dialog';
+} from '@admin/partner-platform/super-admin/network-tracker/shared/components/allocate-seats-dialog/allocate-seats-dialog';
 import {
   FirmFormDialog,
   FirmFormDialogData,
 } from './shared/components/firm-form-dialog/firm-form-dialog';
-import { AriaSelect } from '../../../shared/components/ui/aria/aria-select/aria-select';
-import { AriaSelectOption } from '../../../shared/core/models/aria.model';
-import { AdminAuth } from '../../../shared/core/services/admin-auth/admin-auth';
+import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { AriaSelectOption } from '@core/models/aria.model';
+import { AdminAuth } from '@core/services/admin-auth/admin-auth';
 
 /** Scope filter encoded as one select value: all | standalone | network:<id>. */
 type FirmScopeFilter = string;

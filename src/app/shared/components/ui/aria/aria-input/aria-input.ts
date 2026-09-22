@@ -2,7 +2,7 @@ import { Component, computed, input, model, signal } from '@angular/core';
 import type { FormValueControl } from '@angular/forms/signals';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroCheck, heroEye, heroEyeSlash } from '@ng-icons/heroicons/outline';
-import { AriaInputSize, AriaInputType } from '../../../../core/models/aria.model';
+import { AriaInputSize, AriaInputType } from '@core/models/aria.model';
 import { cn } from '../../../../utils/cn';
 
 /** Structural option type — accepts both `SelectOption` and `AutoCompleteOption`. */

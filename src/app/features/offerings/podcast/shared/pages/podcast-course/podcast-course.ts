@@ -1,12 +1,12 @@
 import { Component, DestroyRef, effect, inject, input } from '@angular/core';
-import { CourseAbout } from '../../../../../../shared/components/course-about/course-about';
-import { CourseRelatedSection } from '../../../../../../shared/components/course-related-section/course-related-section';
+import { CourseAbout } from '@shared/components/course-about/course-about';
+import { CourseRelatedSection } from '@shared/components/course-related-section/course-related-section';
 import { CourseChapterList } from '../../../../shared/components/course-chapter-list/course-chapter-list';
 import { CourseResources } from '../../../../shared/components/course-resources/course-resources';
-import { PodcastCourseHeroSkeleton } from '../../../../../../shared/components/skeleton/podcast-course-hero-skeleton/podcast-course-hero-skeleton';
+import { PodcastCourseHeroSkeleton } from '@shared/components/skeleton/podcast-course-hero-skeleton/podcast-course-hero-skeleton';
 import { Faq } from '../../../../../../pages/faq/faq';
-import { AppDownloadPrompt } from '../../../../../../shared/core/services/app-download-prompt/app-download-prompt';
-import { setupCourseSeo } from '../../../../../../shared/utils/seo/course-seo-setup';
+import { AppDownloadPrompt } from '@core/services/app-download-prompt/app-download-prompt';
+import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
 // NOTE: Podcast detail currently shares MasterclassFacade with the masterclass
 // page. That cross-feature reuse is pre-existing — see code-review notes; out
 // of scope for this SEO pass.

@@ -8,11 +8,11 @@ import {
   TracksResponse,
   TrackWithContent,
   TRACK_ROUTES,
-} from '../../../../shared/core/models/track.model';
-import { Logger } from '../../../../shared/core/services/logger/logger';
-import { ApiClient } from '../../../../shared/core/services/api-client/api-client';
-import { Content } from '../../../../shared/core/models/course.model';
-import { SKIP_ERROR_NOTIFICATION } from '../../../../shared/core/models/http.model';
+} from '@core/models/track.model';
+import { Logger } from '@core/services/logger/logger';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Content } from '@core/models/course.model';
+import { SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
 
 @Injectable()
 export class Tracks {

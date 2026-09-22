@@ -1,6 +1,6 @@
 import { Component, computed, signal } from '@angular/core';
-import { DialogRef } from '../../../core/services/dialog/dialog';
-import { BadgeItem } from '../../../core/models/cpe-tracker.model';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { BadgeItem } from '@core/models/cpe-tracker.model';
 import { BadgeHeroCard } from '../../cards/badge-hero-card/badge-hero-card';
 import { Button } from '../../ui/button/button';
 

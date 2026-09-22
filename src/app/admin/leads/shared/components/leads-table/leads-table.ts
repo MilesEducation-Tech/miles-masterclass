@@ -2,14 +2,14 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideChevronRight } from '@ng-icons/lucide';
-import { Button } from '../../../../../shared/components/ui/button/button';
-import { Spinner } from '../../../../../shared/components/ui/spinner/spinner';
-import { AdminAuth } from '../../../../../shared/core/services/admin-auth/admin-auth';
-import { PERM } from '../../../../../shared/core/models/admin/admin-rbac.model';
+import { Button } from '@shared/components/ui/button/button';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { PERM } from '@core/models/admin/admin-rbac.model';
 import { FirmInquiry, LEAD_STATUSES, LeadStatus } from '../../models/firm-inquiry.model';
-import { AriaInput } from '../../../../../shared/components/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '../../../../../shared/components/ui/aria/aria-select/aria-select';
-import { AriaSelectOption } from '../../../../../shared/core/models/aria.model';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { AriaSelectOption } from '@core/models/aria.model';
 
 /** bg/fg CSS-var pair per status for the badge. */
 const STATUS_STYLE: Record<LeadStatus, { bg: string; fg: string }> = {

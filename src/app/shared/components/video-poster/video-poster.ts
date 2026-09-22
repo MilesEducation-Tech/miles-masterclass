@@ -12,7 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Dialog } from '../../core/services/dialog/dialog';
+import { Dialog } from '@core/services/dialog/dialog';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   matPlayArrowRound,

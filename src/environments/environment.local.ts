@@ -1,4 +1,4 @@
-import { LogLevel } from '../app/shared/core/models/log.model';
+import { LogLevel } from '@core/models/log.model';
 
 export const environment = {
   production: false,

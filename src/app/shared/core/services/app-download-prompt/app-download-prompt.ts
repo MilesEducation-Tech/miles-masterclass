@@ -1,6 +1,6 @@
 import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { AppDownloadDialog } from '../../../components/dialog/app-download-dialog/app-download-dialog';
+import { AppDownloadDialog } from '@shared/components/dialog/app-download-dialog/app-download-dialog';
 import { Dialog } from '../dialog/dialog';
 import { Viewport } from '../viewport/viewport';
 

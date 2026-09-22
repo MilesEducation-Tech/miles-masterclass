@@ -18,7 +18,7 @@ import {
   viewChildren,
   ViewContainerRef,
 } from '@angular/core';
-import { FieldOfStudy } from '../../core/models/course.model';
+import { FieldOfStudy } from '@core/models/course.model';
 
 @Component({
   selector: 'app-categories-list',

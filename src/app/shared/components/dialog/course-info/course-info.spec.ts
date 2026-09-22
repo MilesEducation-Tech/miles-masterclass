@@ -4,8 +4,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 
 import { CourseInfo } from './course-info';
-import { MockDialogRef } from '../../../../testing/mocks/dialog.mock';
-import { MOCK_CONTENT_ABOUT } from '../../../../testing/mocks/content.mock';
+import { MockDialogRef } from '@testing/mocks/dialog.mock';
+import { MOCK_CONTENT_ABOUT } from '@testing/mocks/content.mock';
 
 describe('CourseInfo', () => {
   let component: CourseInfo;

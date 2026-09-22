@@ -1,7 +1,7 @@
 import { Component, computed, signal } from '@angular/core';
 import { Button } from '../../ui/button/button';
-import { DialogRef } from '../../../core/services/dialog/dialog';
-import { BadgeItem } from '../../../core/models/cpe-tracker.model';
+import { DialogRef } from '@core/services/dialog/dialog';
+import { BadgeItem } from '@core/models/cpe-tracker.model';
 import { badgeHaloHex } from '../../../utils/badge-level';
 
 export interface BadgeClaimUpsellDialogData {

@@ -1,22 +1,22 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
-import { AriaInput } from '../../shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '../../shared/components/ui/button/button';
-import { Dialog } from '../../shared/core/services/dialog/dialog';
+import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/components/ui/button/button';
+import { Dialog } from '@core/services/dialog/dialog';
 import {
   BlockStatusDialog,
   BlockStatusDialogData,
   BlockStatusDialogResult,
-} from '../../shared/components/dialog/block-status-dialog/block-status-dialog';
-import { DeprecationBanner } from '../shared/components/deprecation-banner/deprecation-banner';
+} from '@shared/components/dialog/block-status-dialog/block-status-dialog';
+import { DeprecationBanner } from '@admin/shared/components/deprecation-banner/deprecation-banner';
 import { UsersTable } from './shared/components/users-table/users-table';
-import { PartnerAdminMe } from '../partner-platform/shared/services/partner-admin-me';
+import { PartnerAdminMe } from '@admin/partner-platform/shared/services/partner-admin-me';
 import { PartnerUsersFacade } from './shared/services/partner-users-facade/partner-users-facade';
 import {
   BlockedStatusFilter,
   PartnerPanelUser,
-} from '../partner-platform/shared/models/partner-platform.model';
+} from '@admin/partner-platform/shared/models/partner-platform.model';
 
 const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },

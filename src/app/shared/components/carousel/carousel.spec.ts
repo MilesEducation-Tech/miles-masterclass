@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { Carousel } from './carousel';
-import { MOCK_CARDS } from '../../../testing/mocks/content.mock';
+import { MOCK_CARDS } from '@testing/mocks/content.mock';
 
 describe('Carousel', () => {
   let component: Carousel;

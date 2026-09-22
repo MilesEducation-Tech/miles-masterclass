@@ -2,9 +2,9 @@ import { DecimalPipe } from '@angular/common';
 import { Component, computed, input, output, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideShieldOff, lucideShieldCheck, lucideEye, lucideEyeOff } from '@ng-icons/lucide';
-import { Button } from '../../../../../shared/components/ui/button/button';
-import { Spinner } from '../../../../../shared/components/ui/spinner/spinner';
-import { PartnerPanelUser } from '../../../../partner-platform/shared/models/partner-platform.model';
+import { Button } from '@shared/components/ui/button/button';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { PartnerPanelUser } from '@admin/partner-platform/shared/models/partner-platform.model';
 
 @Component({
   selector: 'app-users-table',

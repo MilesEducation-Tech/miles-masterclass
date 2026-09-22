@@ -22,7 +22,7 @@ import {
   NgpComboboxOption,
   NgpComboboxPortal,
 } from 'ng-primitives/combobox';
-import { AriaSelectOption, dedupeAriaOptions } from '../../../../core/models/aria.model';
+import { AriaSelectOption, dedupeAriaOptions } from '@core/models/aria.model';
 import { cn } from '../../../../utils/cn';
 
 /**

@@ -2,13 +2,10 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideRotateCw, lucideSend } from '@ng-icons/lucide';
-import { Button } from '../../../../../shared/components/ui/button/button';
-import { Spinner } from '../../../../../shared/components/ui/spinner/spinner';
-import { NotificationService } from '../../../../../shared/core/services/notification/notification';
-import {
-  Seat,
-  SeatStatus,
-} from '../../../../partner-platform/shared/models/partner-platform.model';
+import { Button } from '@shared/components/ui/button/button';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { NotificationService } from '@core/services/notification/notification';
+import { Seat, SeatStatus } from '@admin/partner-platform/shared/models/partner-platform.model';
 
 interface StatusChip {
   label: string;

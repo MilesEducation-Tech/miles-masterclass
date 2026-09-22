@@ -2,17 +2,17 @@ import { Component, DestroyRef, EnvironmentInjector, inject } from '@angular/cor
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { take } from 'rxjs';
-import { Button } from '../../../shared/components/ui/button/button';
-import { Spinner } from '../../../shared/components/ui/spinner/spinner';
-import { Dialog } from '../../../shared/core/services/dialog/dialog';
-import { Network } from '../../partner-platform/shared/models/partner-platform.model';
-import { PartnerSuperAdminFacade } from '../../partner-platform/shared/services/partner-superadmin-facade';
-import { AdminAuth } from '../../../shared/core/services/admin-auth/admin-auth';
+import { Button } from '@shared/components/ui/button/button';
+import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { Dialog } from '@core/services/dialog/dialog';
+import { Network } from '@admin/partner-platform/shared/models/partner-platform.model';
+import { PartnerSuperAdminFacade } from '@admin/partner-platform/shared/services/partner-superadmin-facade';
+import { AdminAuth } from '@core/services/admin-auth/admin-auth';
 import {
   NetworkFormDialog,
   NetworkFormDialogData,
   NetworkFormResult,
-} from '../../partner-platform/super-admin/networks/shared/components/network-form-dialog/network-form-dialog';
+} from '@admin/partner-platform/super-admin/networks/shared/components/network-form-dialog/network-form-dialog';
 
 /**
  * Partner Platform v2 — Networks (`/admin/partner-v2/networks`). Lists partner

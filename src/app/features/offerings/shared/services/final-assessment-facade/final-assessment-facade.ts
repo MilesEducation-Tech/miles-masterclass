@@ -1,17 +1,13 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { Storage } from '../../../../../shared/core/services/storage/storage';
-import { QuizQuestion, ContentDetails } from '../../../../../shared/core/models/course.model';
+import { Storage } from '@core/services/storage/storage';
+import { QuizQuestion, ContentDetails } from '@core/models/course.model';
 import { Observable, of } from 'rxjs';
 import { map, tap, switchMap } from 'rxjs/operators';
-import { ApiClient } from '../../../../../shared/core/services/api-client/api-client';
-import { Utils } from '../../../../../shared/core/services/utils/utils';
-import { Analytics } from '../../../../../shared/core/services/analytics/analytics';
-import { ASSESSMENT_ROUTES } from '../../../../../shared/core/models/assessment.model';
-import {
-  RouteParams,
-  RouteRequest,
-  RouteResponse,
-} from '../../../../../shared/core/models/http.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Utils } from '@core/services/utils/utils';
+import { Analytics } from '@core/services/analytics/analytics';
+import { ASSESSMENT_ROUTES } from '@core/models/assessment.model';
+import { RouteParams, RouteRequest, RouteResponse } from '@core/models/http.model';
 
 type CourseDetailsResponse = RouteResponse<typeof ASSESSMENT_ROUTES.getCourseDetails>;
 type CourseDetailsParams = RouteParams<typeof ASSESSMENT_ROUTES.getCourseDetails>;

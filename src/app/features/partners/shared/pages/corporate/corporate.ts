@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import {
   CalendlyDialog,
   CalendlyDialogData,
-} from '../../../../../shared/components/dialog/calendly-dialog/calendly-dialog';
+} from '@shared/components/dialog/calendly-dialog/calendly-dialog';
 import {
   PartnerLevelCard,
   PartnerLevelPanel,
@@ -27,12 +27,12 @@ import {
   PartnerContentItem,
   PartnerContentList,
 } from '../../components/partner-content-list/partner-content-list';
-import { environment } from '../../../../../../environments/environment';
-import { Dialog } from '../../../../../shared/core/services/dialog/dialog';
-import { ScrollService } from '../../../../../shared/core/services/scroll/scroll';
+import { environment } from '@env/environment';
+import { Dialog } from '@core/services/dialog/dialog';
+import { ScrollService } from '@core/services/scroll/scroll';
 import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
-import { EnquiryForm } from '../../../../../shared/components/enquiry-form/enquiry-form';
-import { Button } from '../../../../../shared/components/ui/button/button';
+import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
+import { Button } from '@shared/components/ui/button/button';
 
 @Component({
   selector: 'app-corporate',

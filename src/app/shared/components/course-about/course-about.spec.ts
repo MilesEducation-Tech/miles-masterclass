@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { CourseAbout } from './course-about';
-import { MOCK_CONTENT_ABOUT } from '../../../testing/mocks/content.mock';
+import { MOCK_CONTENT_ABOUT } from '@testing/mocks/content.mock';
 
 describe('CourseAbout', () => {
   let component: CourseAbout;
