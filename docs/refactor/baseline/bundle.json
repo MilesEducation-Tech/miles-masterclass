@@ -1,0 +1,65 @@
+{
+  "at": "2026-09-22T07:02:19.952Z",
+  "initial": {
+    "files": 12,
+    "rawKB": 501.9,
+    "gzipKB": 101.6
+  },
+  "lazy": {
+    "files": 274,
+    "rawKB": 10275.9,
+    "gzipKB": 3050.2
+  },
+  "largestLazy": [
+    {
+      "file": "chunk-XLYZGBBV.js",
+      "rawKB": 3418.2,
+      "gzipKB": 839.1
+    },
+    {
+      "file": "chunk-GHS2NIBO.js",
+      "rawKB": 708.4,
+      "gzipKB": 208.2
+    },
+    {
+      "file": "chunk-JZ4WH2QW.js",
+      "rawKB": 707.7,
+      "gzipKB": 294.4
+    },
+    {
+      "file": "chunk-ZTIE5H5D.js",
+      "rawKB": 649.2,
+      "gzipKB": 192.1
+    },
+    {
+      "file": "chunk-AO5H2VOA.js",
+      "rawKB": 510.6,
+      "gzipKB": 130.8
+    },
+    {
+      "file": "chunk-WGSRYIHZ.js",
+      "rawKB": 310.8,
+      "gzipKB": 88.6
+    },
+    {
+      "file": "chunk-K4ROXP3R.js",
+      "rawKB": 212.6,
+      "gzipKB": 72
+    },
+    {
+      "file": "chunk-W32FWORS.js",
+      "rawKB": 211.2,
+      "gzipKB": 55.5
+    },
+    {
+      "file": "chunk-WSETM2BR.js",
+      "rawKB": 198.1,
+      "gzipKB": 45.9
+    },
+    {
+      "file": "chunk-UDOSWBJK.js",
+      "rawKB": 155.2,
+      "gzipKB": 51.9
+    }
+  ]
+}

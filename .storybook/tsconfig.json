@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.app.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "bundler",
+    // rootDir is inherited as `./src` from tsconfig.app.json; widen it to the
+    // project root so `.storybook/preview.ts` (outside src) is included without
+    // a TS6059 "not under rootDir" error (surfaced by the TS 6 / Storybook 10.5 bump).
+    "rootDir": ".."
+  },
+  "exclude": ["../src/test.ts", "../src/**/*.spec.ts"],
+  "include": ["../src/**/*.stories.*", "./preview.ts"],
+  "files": ["./typings.d.ts"]
+}

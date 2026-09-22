@@ -50,3 +50,6 @@ Thumbs.db
 storybook-static
 
 _to_delete
+
+# Refactor harness verification logs
+docs/refactor/.cache/

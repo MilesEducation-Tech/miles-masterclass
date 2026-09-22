@@ -1,0 +1,42 @@
+{
+  "/": {
+    "status": 302,
+    "location": "/us/accounting/home",
+    "title": "",
+    "description": "",
+    "canonical": "",
+    "h1": "",
+    "jsonLdBlocks": 0,
+    "textLength": 0
+  },
+  "/us/accounting/partners/cpacanada": {
+    "status": 200,
+    "location": null,
+    "title": "Miles Masterclass - AI-Powered CPE Training for Accounting Professionals",
+    "description": "Finally, CPE that's all about AI in Accounting. Master Classes, Podcasts, Reels &amp; Live Premieres.",
+    "canonical": "https://www.milesmasterclass.com/us/accounting/partners/cpacanada",
+    "h1": "",
+    "jsonLdBlocks": 1,
+    "textLength": 3121
+  },
+  "/us/accounting/masterclass/154/adulting-in-business": {
+    "status": 200,
+    "location": null,
+    "title": "Miles Masterclass",
+    "description": "Watch &quot;Miles Masterclass&quot; on Miles Masterclass — AI-driven CPE for accounting professionals.",
+    "canonical": "",
+    "h1": "",
+    "jsonLdBlocks": 0,
+    "textLength": 23907
+  },
+  "/admin/login": {
+    "status": 200,
+    "location": null,
+    "title": "Miles Masterclass - AI-Powered CPE Training for Accounting Professionals",
+    "description": "Finally, CPE that's all about AI in Accounting.Master Classes, Podcasts, Reels &amp; Live Premieres.",
+    "canonical": "",
+    "h1": "",
+    "jsonLdBlocks": 0,
+    "textLength": 72
+  }
+}

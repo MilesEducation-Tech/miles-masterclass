@@ -1,0 +1,11 @@
+{
+  "port": 4123,
+  "server": "dist/miles-masterclass-v3/server/server.mjs",
+  "textTolerance": 0.15,
+  "routes": [
+    "/",
+    "/us/accounting/partners/cpacanada",
+    "/us/accounting/masterclass/154/adulting-in-business",
+    "/admin/login"
+  ]
+}
