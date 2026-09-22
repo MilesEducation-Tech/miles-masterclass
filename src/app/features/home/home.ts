@@ -10,11 +10,11 @@ import {
   swiperConfigEven,
   swiperConfigOdd,
 } from '@core/config/swiper.config';
-import { AppDownload } from './components/app-download/app-download';
+import { AppDownload } from '@shared/components/app-download/app-download';
 import { HomeHero } from './components/home-hero/home-hero';
 import { Offering } from './components/offerings/offerings';
 import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
-import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
+import { PartnerContentList } from '@shared/components/partner-content-list/partner-content-list';
 import { Faq } from '@shared/components/faq/faq';
 import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan-benefits';
 import { Button } from '@shared/ui/button/button';

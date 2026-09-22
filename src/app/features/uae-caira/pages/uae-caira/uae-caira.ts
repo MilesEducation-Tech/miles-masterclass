@@ -4,29 +4,26 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { UpcomingPremiere } from '@core/models/feature.model';
 import { environment } from '@env/environment';
 import { Faq } from '@shared/components/faq/faq';
-import { CairaLevelsSection } from './shared/components/caira-levels-section/caira-levels-section';
-import { CairaWebinarSection } from './shared/components/caira-webinar-section/caira-webinar-section';
-import { LocalTimeZonePipe } from './shared/pipes/local-time-zone.pipe';
-import { AppDownload } from '@features/home/components/app-download/app-download';
-import { WebinarRegistrationForm } from '@features/offerings/webinar/shared/components/webinar-registration-form/webinar-registration-form';
-import {
-  CairaStep,
-  CairaStepsGrid,
-} from '@features/partners/shared/components/caira-steps-grid/caira-steps-grid';
+import { CairaLevelsSection } from '../../components/caira-levels-section/caira-levels-section';
+import { CairaWebinarSection } from '../../components/caira-webinar-section/caira-webinar-section';
+import { LocalTimeZonePipe } from '@shared/pipes/local-time-zone/local-time-zone.pipe';
+import { AppDownload } from '@shared/components/app-download/app-download';
+import { WebinarRegistrationForm } from '@shared/components/webinar-registration-form/webinar-registration-form';
+import { CairaStep, CairaStepsGrid } from '@shared/components/caira-steps-grid/caira-steps-grid';
 import {
   CairaFeatureGrid,
   CairaFeatureItem,
-} from '@features/partners/shared/components/caira-feature-grid/caira-feature-grid';
+} from '@shared/components/caira-feature-grid/caira-feature-grid';
 import {
   PartnerContentItem,
   PartnerContentList,
-} from '@features/partners/shared/components/partner-content-list/partner-content-list';
+} from '@shared/components/partner-content-list/partner-content-list';
 import {
   iconCairaBadge,
   iconCairaCpe,
   iconCairaLearn,
   iconCairaSignUp,
-} from '@features/partners/shared/models/caira-step-icons';
+} from '@core/constants/caira-step-icons';
 
 /**
  * UAE CAIRA marketing landing page.

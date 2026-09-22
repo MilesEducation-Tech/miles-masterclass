@@ -6,7 +6,7 @@ import { UpcomingPremiere } from '@core/models/feature.model';
 import {
   WebinarRegistrationForm,
   WebinarRegistrationFormValue,
-} from '@features/offerings/webinar/shared/components/webinar-registration-form/webinar-registration-form';
+} from '@shared/components/webinar-registration-form/webinar-registration-form';
 
 export interface WebinarRegistrationDialogData {
   webinar: UpcomingPremiere;

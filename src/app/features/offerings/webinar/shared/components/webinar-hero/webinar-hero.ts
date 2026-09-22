@@ -9,7 +9,7 @@ import { UpcomingPremiere, WebinarCta, WebinarDate, WebinarTag } from '@core/mod
 import {
   WebinarRegistrationForm,
   WebinarRegistrationFormValue,
-} from '../webinar-registration-form/webinar-registration-form';
+} from '@shared/components/webinar-registration-form/webinar-registration-form';
 import { heroVideoCameraSolid } from '@ng-icons/heroicons/solid';
 import { phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
 import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';

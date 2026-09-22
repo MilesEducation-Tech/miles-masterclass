@@ -3,7 +3,7 @@ import { Button } from '@shared/ui/button/button';
 import {
   PartnerContentItem,
   PartnerContentList,
-} from '../../components/partner-content-list/partner-content-list';
+} from '@shared/components/partner-content-list/partner-content-list';
 import { Offering } from '@features/home/components/offerings/offerings';
 import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
 import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';

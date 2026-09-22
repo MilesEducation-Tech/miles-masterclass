@@ -1,7 +1,7 @@
 import { Route } from '@angular/router';
 import { DynamicLayout } from '@layout/dynamic-layout/dynamic-layout';
 import { uaeCairaMatchGuard } from '@core/guards/uae-caira-match.guard';
-import { UaeCairaFacade } from '../pages/uae-caira/shared/services/uae-caira-facade/uae-caira-facade';
+import { UaeCairaFacade } from '@features/uae-caira/services/uae-caira-facade';
 import { Tracks } from '@features/shared/services/tracks/tracks';
 import { Faq } from '@shared/components/faq/faq';
 import { TermsOfService } from '@features/legal/pages/terms-of-service/terms-of-service';
@@ -36,7 +36,8 @@ export const featuresRoutes: Route[] = [
         path: 'home',
         canMatch: [uaeCairaMatchGuard],
         providers: [UaeCairaFacade],
-        loadComponent: () => import('../pages/uae-caira/uae-caira').then((m) => m.UaeCaira),
+        loadComponent: () =>
+          import('@features/uae-caira/pages/uae-caira/uae-caira').then((m) => m.UaeCaira),
       },
       {
         path: 'home',

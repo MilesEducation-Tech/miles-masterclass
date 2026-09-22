@@ -4,7 +4,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
 import { CategoriesList } from '@shared/components/categories-list/categories-list';
 import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits.pipe';
-import { LocalTimeZonePipe } from '../../pipes/local-time-zone.pipe';
+import { LocalTimeZonePipe } from '@shared/pipes/local-time-zone/local-time-zone.pipe';
 import { UpcomingPremiere } from '@core/models/feature.model';
 
 /**

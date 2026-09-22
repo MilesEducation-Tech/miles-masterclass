@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { NgIcon } from '@ng-icons/core';
-import { iconXPartner } from '../../models/partner-icons';
+import { iconXPartner } from '@core/constants/partner-icons';
 
 export interface PartnerLogo {
   src: string;

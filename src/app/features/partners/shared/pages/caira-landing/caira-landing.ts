@@ -3,7 +3,7 @@ import { VideoListWrapper } from '../../components/video-list-wrapper/video-list
 import {
   PartnerContentItem,
   PartnerContentList,
-} from '../../components/partner-content-list/partner-content-list';
+} from '@shared/components/partner-content-list/partner-content-list';
 import {
   PartnershipContent,
   PartnershipContentInput,
@@ -11,14 +11,17 @@ import {
 import {
   CairaFeatureGrid,
   type CairaFeatureItem,
-} from '../../components/caira-feature-grid/caira-feature-grid';
-import { CairaStepsGrid, type CairaStep } from '../../components/caira-steps-grid/caira-steps-grid';
+} from '@shared/components/caira-feature-grid/caira-feature-grid';
+import {
+  CairaStepsGrid,
+  type CairaStep,
+} from '@shared/components/caira-steps-grid/caira-steps-grid';
 import {
   iconCairaBadge,
   iconCairaCpe,
   iconCairaLearn,
   iconCairaSignUp,
-} from '../../models/caira-step-icons';
+} from '@core/constants/caira-step-icons';
 import { environment } from '@env/environment';
 import { Faq } from '@shared/components/faq/faq';
 

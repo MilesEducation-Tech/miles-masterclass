@@ -3,7 +3,7 @@ import { Component, inject } from '@angular/core';
 import { Carousel } from '@shared/components/carousel/carousel';
 import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
 import { swiperConfigEven } from '@core/config/swiper.config';
-import { UaeCairaFacade } from '../../services/uae-caira-facade/uae-caira-facade';
+import { UaeCairaFacade } from '../../services/uae-caira-facade';
 
 /**
  * "CAIRA Levels 1/2/3" section. Renders one `app-carousel` per CAIRA level,

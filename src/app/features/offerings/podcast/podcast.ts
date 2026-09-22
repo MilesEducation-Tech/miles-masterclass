@@ -12,7 +12,7 @@ import { FinalAssessmentFacade } from '../shared/services/final-assessment-facad
 import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
 import { ChapterFacade } from '../shared/services/chapter-facade/chapter-facade';
 import { Faq } from '@shared/components/faq/faq';
-import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
+import { PartnerContentList } from '@shared/components/partner-content-list/partner-content-list';
 
 @Component({
   selector: 'app-podcast',

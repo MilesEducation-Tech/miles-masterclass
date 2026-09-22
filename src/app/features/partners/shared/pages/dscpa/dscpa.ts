@@ -4,7 +4,7 @@ import { environment } from '@env/environment';
 import {
   PartnerContentItem,
   PartnerContentList,
-} from '../../components/partner-content-list/partner-content-list';
+} from '@shared/components/partner-content-list/partner-content-list';
 import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan-benefits';
 import {
   PartnershipContent,

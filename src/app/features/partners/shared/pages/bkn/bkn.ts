@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import {
   PartnerContentItem,
   PartnerContentList,
-} from '../../components/partner-content-list/partner-content-list';
+} from '@shared/components/partner-content-list/partner-content-list';
 import { logo } from '@core/constants/icon';
 import { Button } from '@shared/ui/button/button';
 import { environment } from '@env/environment';
@@ -23,7 +23,7 @@ import {
   iconChart,
   iconLaptop,
   iconLearners,
-} from '../../models/partner-icons';
+} from '@core/constants/partner-icons';
 import {
   PartnershipContent,
   PartnershipContentInput,
