@@ -12,8 +12,8 @@ export default [
     // them produces hundreds of `no-useless-escape` errors on regex-shaped
     // value strings and offers no review value.
     ignores: [
-      "src/app/shared/core/constant/location.ts",
-      "src/app/shared/core/constant/location-min.ts",
+      "src/app/core/constants/location.ts",
+      "src/app/features/payment/constants/location-min.ts",
     ],
   },
   ...defineConfig([

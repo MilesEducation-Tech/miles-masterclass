@@ -7,7 +7,7 @@ import { Spinner } from '@shared/components/ui/spinner/spinner';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Network } from '@admin/partner-platform/shared/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/partner-platform/shared/services/partner-superadmin-facade';
-import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { AdminAuth } from '@admin/core/services/admin-auth';
 import {
   NetworkFormDialog,
   NetworkFormDialogData,

@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
 import { svglLinkedin, svglYoutube } from '@ng-icons/svgl';
-import { appStoreIcon, googlePlayIcon, instagramIcon } from '@core/constant/icon';
+import { appStoreIcon, googlePlayIcon, instagramIcon } from '@core/constants/icon';
 import { FooterLink, FooterSection } from '@core/models/footer.model';
 import { Utils } from '@core/services/utils/utils';
 import { Consent } from '@core/services/consent/consent';

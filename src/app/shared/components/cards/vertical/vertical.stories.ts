@@ -8,7 +8,7 @@ import {
 } from '@testing/mocks/content.mock';
 import { MockUtils, MockFeatureFacade } from '@testing/mocks/services.mock';
 import { Utils } from '@core/services/utils/utils';
-import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 
 const meta: Meta<Vertical> = {
   title: 'Cards/Vertical',

@@ -15,7 +15,7 @@ import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan
 import { environment } from '@env/environment';
 import { ScrollService } from '@core/services/scroll/scroll';
 import { MGI_PARTNER_OFFERINGS } from '@features/home/components/offerings/offerings.config';
-import { ALLINIAL_GLOBAL_LOGO } from '@core/constant/icon';
+import { ALLINIAL_GLOBAL_LOGO } from '@core/constants/icon';
 
 @Component({
   selector: 'app-allinial-global',

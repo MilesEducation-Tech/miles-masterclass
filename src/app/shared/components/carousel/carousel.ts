@@ -24,7 +24,7 @@ import { FreeMode, Mousewheel, Pagination } from 'swiper/modules';
 import { ensureSwiperElement } from '../../utils/swiper/ensure-swiper-element';
 import { NgIcon } from '@ng-icons/core';
 import { Heading } from '../heading/heading';
-import { filterIcon } from '@core/constant/icon';
+import { filterIcon } from '@core/constants/icon';
 import { Dialog } from '@core/services/dialog/dialog';
 import { FilterDialog } from '../dialog/filter-dialog/filter-dialog';
 import { Hover } from '../cards/hover/hover';
@@ -36,7 +36,7 @@ import {
   isEmptySelection,
   SectionApiKey,
 } from '@core/models/library-filters.model';
-import { SectionFiltersFacade } from '@features/shared/services/section-filters-facade/section-filters-facade';
+import { SectionFiltersFacade } from '@core/services/section-filters-facade/section-filters-facade';
 
 /**
  * Swiper's own pagination stylesheet, injected into `<swiper-container>`'s

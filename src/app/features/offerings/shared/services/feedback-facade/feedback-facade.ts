@@ -2,7 +2,11 @@ import { inject, Injectable } from '@angular/core';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { FEEDBACK_ROUTES, FeedbackCategory, UserFeedbackData } from '@core/models/feedback-model';
+import {
+  FEEDBACK_ROUTES,
+  FeedbackCategory,
+  UserFeedbackData,
+} from '@features/offerings/models/feedback-model';
 import { ContentDetails } from '@core/models/course.model';
 import { RouteParams, RouteRequest, RouteResponse } from '@core/models/http.model';
 import { Utils } from '@core/services/utils/utils';

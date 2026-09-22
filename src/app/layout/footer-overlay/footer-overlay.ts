@@ -18,10 +18,7 @@ import { Consent } from '@core/services/consent/consent';
 import { Analytics } from '@core/services/analytics/analytics';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Utils } from '@core/services/utils/utils';
-import {
-  FeatureFacade,
-  FeatureResource,
-} from '@features/shared/services/feature-facade/feature-facade';
+import { FeatureFacade, FeatureResource } from '@core/services/feature-facade/feature-facade';
 import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
 import { GlobalSearchDialog } from '@shared/components/dialog/global-search-dialog/global-search-dialog';
 import {

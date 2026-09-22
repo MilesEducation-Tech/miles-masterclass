@@ -3,7 +3,7 @@ import {
   PartnerContentItem,
   PartnerContentList,
 } from '../../components/partner-content-list/partner-content-list';
-import { logo } from '@core/constant/icon';
+import { logo } from '@core/constants/icon';
 import { Button } from '@shared/components/ui/button/button';
 import { environment } from '@env/environment';
 import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';

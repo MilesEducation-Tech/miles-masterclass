@@ -6,7 +6,7 @@ import { environment } from '@env/environment';
 import { NgIcon } from '@ng-icons/core';
 import { svglGoogle, svglAppleDark } from '@ng-icons/svgl';
 import { faSolidAngleLeft } from '@ng-icons/font-awesome/solid';
-import { logo } from '@core/constant/icon';
+import { logo } from '@core/constants/icon';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { authGuard } from '@core/guards/auth/auth.guard';
 import { guestGuard } from '@core/guards/auth/guest.guard';

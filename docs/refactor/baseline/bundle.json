@@ -1,18 +1,18 @@
 {
-  "at": "2026-09-22T10:47:06.232Z",
+  "at": "2026-09-22T13:14:25.980Z",
   "initial": {
     "files": 12,
-    "rawKB": 501.9,
-    "gzipKB": 101.6
+    "rawKB": 501.5,
+    "gzipKB": 101.5
   },
   "lazy": {
-    "files": 274,
-    "rawKB": 10275.9,
-    "gzipKB": 3050.2
+    "files": 271,
+    "rawKB": 10254.9,
+    "gzipKB": 3042.3
   },
   "largestLazy": [
     {
-      "file": "chunk-XLYZGBBV.js",
+      "file": "chunk-SPORRQN6.js",
       "rawKB": 3418.2,
       "gzipKB": 839.1
     },
@@ -22,12 +22,12 @@
       "gzipKB": 208.2
     },
     {
-      "file": "chunk-JZ4WH2QW.js",
+      "file": "chunk-MONUOYBF.js",
       "rawKB": 707.7,
       "gzipKB": 294.4
     },
     {
-      "file": "chunk-ZTIE5H5D.js",
+      "file": "chunk-3YTHACHP.js",
       "rawKB": 649.2,
       "gzipKB": 192.1
     },
@@ -42,7 +42,7 @@
       "gzipKB": 88.6
     },
     {
-      "file": "chunk-K4ROXP3R.js",
+      "file": "chunk-M2A7EFLC.js",
       "rawKB": 212.6,
       "gzipKB": 72
     },

@@ -35,7 +35,7 @@ import {
   NgpCollapsibleTrigger,
 } from 'ng-primitives/collapsible';
 import { CdkTrapFocus } from '@angular/cdk/a11y';
-import { crownIcon, logo } from '@core/constant/icon';
+import { crownIcon, logo } from '@core/constants/icon';
 import { NavActionKind, NavItem } from '@core/models/nav.model';
 import { Button } from '@shared/components/ui/button/button';
 import { cn } from '@shared/utils/cn';

@@ -11,7 +11,7 @@ import { filter, map, startWith } from 'rxjs';
 import { NgIconComponent } from '@ng-icons/core';
 import { PaymentFacade } from './shared/service/payment-facade/payment-facade';
 import { CartSteps } from '@core/models/payment.model';
-import { CART_STEP_DATA, PATH_TYPE_TO_STEP_ID } from '@core/constant/payment';
+import { CART_STEP_DATA, PATH_TYPE_TO_STEP_ID } from '@features/payment/constants/payment';
 
 /** Walk to the deepest activated route — `pathType` lives on the leaf. */
 function deepestChild(snapshot: ActivatedRouteSnapshot): ActivatedRouteSnapshot {

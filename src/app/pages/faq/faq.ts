@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { AccordionMode, FaqItem } from './shared/components/faq-item/faq-item';
-import { resolveFaqData } from '@core/constant/faq';
+import { resolveFaqData } from '@core/constants/faq';
 import { Utils } from '@core/services/utils/utils';
 
 @Component({

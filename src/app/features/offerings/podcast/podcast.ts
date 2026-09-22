@@ -1,4 +1,4 @@
-import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Component, computed, inject } from '@angular/core';
 import { Route } from '@angular/router';
 import { Carousel } from '@shared/components/carousel/carousel';

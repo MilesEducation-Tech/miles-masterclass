@@ -15,7 +15,7 @@ import { faSolidInfo, faSolidPlay, faSolidRobot } from '@ng-icons/font-awesome/s
 import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
 import { NgIcon } from '@ng-icons/core';
 import { Utils } from '@core/services/utils/utils';
-import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Content } from '@core/models/course.model';
 import { CategoriesList } from '../../categories-list/categories-list';
 import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';

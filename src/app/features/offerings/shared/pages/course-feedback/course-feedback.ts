@@ -5,7 +5,7 @@ import { FeedbackFacade } from '../../services/feedback-facade/feedback-facade';
 import { RatingStar } from '@shared/components/rating-star/rating-star';
 import { Button } from '@shared/components/ui/button/button';
 import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
-import { FeedbackCategory } from '@core/models/feedback-model';
+import { FeedbackCategory } from '@features/offerings/models/feedback-model';
 import { ContentDetails } from '@core/models/course.model';
 import { Utils } from '@core/services/utils/utils';
 import { Dialog } from '@core/services/dialog/dialog';

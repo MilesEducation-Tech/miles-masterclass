@@ -1,6 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { Vertical } from '@shared/components/cards/vertical/vertical';
-import { MicroLearningReel } from '@core/models/micro-learning-course.model';
+import { MicroLearningReel } from '@features/offerings/models/micro-learning-course.model';
 
 @Component({
   selector: 'app-micro-learning-episode-grid',

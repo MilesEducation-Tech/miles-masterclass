@@ -34,7 +34,7 @@ import {
 } from './shared/components/firm-form-dialog/firm-form-dialog';
 import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
 import { AriaSelectOption } from '@core/models/aria.model';
-import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { AdminAuth } from '@admin/core/services/admin-auth';
 
 /** Scope filter encoded as one select value: all | standalone | network:<id>. */
 type FirmScopeFilter = string;

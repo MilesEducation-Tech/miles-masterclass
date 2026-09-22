@@ -1,5 +1,5 @@
 import type { Express, NextFunction, Request, Response } from 'express';
-import { timezone } from './app/shared/core/constant/timezone';
+import { timezone } from './app/core/constants/timezone';
 
 /**
  * Server-side 30x redirects from the legacy `CPE-Masterclass` URL shape to the

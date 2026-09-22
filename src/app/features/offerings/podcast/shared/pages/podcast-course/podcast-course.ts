@@ -5,7 +5,7 @@ import { CourseChapterList } from '../../../../shared/components/course-chapter-
 import { CourseResources } from '../../../../shared/components/course-resources/course-resources';
 import { PodcastCourseHeroSkeleton } from '@shared/components/skeleton/podcast-course-hero-skeleton/podcast-course-hero-skeleton';
 import { Faq } from '../../../../../../pages/faq/faq';
-import { AppDownloadPrompt } from '@core/services/app-download-prompt/app-download-prompt';
+import { AppDownloadPrompt } from '@features/offerings/services/app-download-prompt';
 import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
 // NOTE: Podcast detail currently shares MasterclassFacade with the masterclass
 // page. That cross-feature reuse is pre-existing — see code-review notes; out

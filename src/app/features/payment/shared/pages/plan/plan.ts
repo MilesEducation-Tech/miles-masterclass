@@ -20,7 +20,7 @@ import type {
   PartnerCodePromptDialog,
   PartnerCodePromptResult,
 } from '@shared/components/dialog/partner-code-prompt-dialog/partner-code-prompt-dialog';
-import { SIGNUP_DIALOG_DATA } from '@core/constant/payment';
+import { SIGNUP_DIALOG_DATA } from '@features/payment/constants/payment';
 
 interface BillingCard {
   plan: SubscriptionPlan;

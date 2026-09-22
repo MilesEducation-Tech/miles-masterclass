@@ -26,7 +26,7 @@ import {
   DEFAULT_HLS_CONFIG,
   DEFAULT_VIDEO_CONFIG,
   DEFAULT_YOUTUBE_CONFIG,
-} from '@core/constant/video-player';
+} from '@core/constants/video-player';
 
 // Re-export types for consumers
 export type {

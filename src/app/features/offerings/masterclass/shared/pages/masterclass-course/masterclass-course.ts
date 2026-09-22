@@ -6,7 +6,7 @@ import { CourseResources } from '../../../../shared/components/course-resources/
 import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
 import { MasterclassCourseHeroSkeleton } from '@shared/components/skeleton/masterclass-course-hero-skeleton/masterclass-course-hero-skeleton';
 import { Faq } from '../../../../../../pages/faq/faq';
-import { AppDownloadPrompt } from '@core/services/app-download-prompt/app-download-prompt';
+import { AppDownloadPrompt } from '@features/offerings/services/app-download-prompt';
 import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
 import { MasterclassFacade } from '../../../../shared/services/masterclass-facade/masterclass-facade';
 import { MasterclassCourseHero } from '../../components/masterclass-course-hero/masterclass-course-hero';

@@ -14,7 +14,7 @@ import {
   CertificateDialogData,
   CertificateDownloadDialog,
 } from '@shared/components/dialog/certificate-download-dialog/certificate-download-dialog';
-import { CertificateTarget } from '@core/models/cpe-credit.model';
+import { CertificateTarget } from '@features/cpe-tracker/models/cpe-credit.model';
 
 export interface DialogResult<T = unknown> {
   action?: DialogButton['action'];

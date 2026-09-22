@@ -12,10 +12,10 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Dialog } from '@core/services/dialog/dialog';
-import { AppDownloadPrompt } from '@core/services/app-download-prompt/app-download-prompt';
+import { AppDownloadPrompt } from '@features/offerings/services/app-download-prompt';
 import { NotificationService } from '@core/services/notification/notification';
 import { MicroLearningCourseFacade } from '../../../../shared/services/micro-learning-course-facade/micro-learning-course-facade';
-import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import {
   HtmlContentDialog,
   HtmlContentDialogData,
@@ -33,7 +33,7 @@ import {
   MicroLearningFilterOption,
   MicroLearningOptionId,
   MicroLearningReel,
-} from '@core/models/micro-learning-course.model';
+} from '@features/offerings/models/micro-learning-course.model';
 import { ContentAbout } from '@core/models/course.model';
 import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
 

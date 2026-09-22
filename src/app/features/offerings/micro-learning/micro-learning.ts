@@ -10,7 +10,7 @@ import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-faca
 import { MicroLearningCourseFacade } from '../shared/services/micro-learning-course-facade/micro-learning-course-facade';
 import { ChapterFacade } from '../shared/services/chapter-facade/chapter-facade';
 import { environment } from '@env/environment';
-import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import {
@@ -18,7 +18,7 @@ import {
   NANO_LEARNING_ROUTES,
   NanoLearningListResponse,
   NanoLearningPage,
-} from '@core/models/micro-learning-course.model';
+} from '@features/offerings/models/micro-learning-course.model';
 import {
   swiperConfigComingSoon,
   swiperConfigEven,

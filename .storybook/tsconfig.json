@@ -15,7 +15,7 @@
     // `extends`. The root tsconfig's `./src/...` targets would resolve to
     // `.storybook/src/...` and miss. Keep in sync with tsconfig.json.
     "paths": {
-      "@core/*": ["../src/app/shared/core/*"],
+      "@core/*": ["../src/app/core/*"],
       "@shared/*": ["../src/app/shared/*"],
       "@layout/*": ["../src/app/layout/*"],
       "@features/*": ["../src/app/features/*"],

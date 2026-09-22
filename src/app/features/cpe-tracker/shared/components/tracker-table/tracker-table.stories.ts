@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { argsToTemplate } from '@storybook/angular';
 import { TrackerTable } from './tracker-table';
-import { CpeCreditCourse, CpeCreditWire } from '@core/models/cpe-credit.model';
+import { CpeCreditCourse, CpeCreditWire } from '@features/cpe-tracker/models/cpe-credit.model';
 
 const course = (overrides: Partial<CpeCreditCourse>): CpeCreditCourse => ({
   id: 1,

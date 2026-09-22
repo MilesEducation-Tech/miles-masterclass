@@ -4,7 +4,7 @@ import { NgIcon } from '@ng-icons/core';
 import { DialogRef } from '@core/services/dialog/dialog';
 import { Utils } from '@core/services/utils/utils';
 import { Button } from '../../ui/button/button';
-import { logo } from '@core/constant/icon';
+import { logo } from '@core/constants/icon';
 import { environment } from '@env/environment';
 
 /**

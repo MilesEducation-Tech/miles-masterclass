@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/components/ui/button/button';
 import { Spinner } from '@shared/components/ui/spinner/spinner';
-import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { AdminAuth } from '@admin/core/services/admin-auth';
 import { PERM } from '@core/models/admin/admin-rbac.model';
 import { HasPermissionDirective } from '@admin/shared/directives/has-permission.directive';
 import { RbacFacade, RbacPermission, RbacRole } from './shared/services/rbac-facade';

@@ -1,7 +1,7 @@
 import { NgOptimizedImage } from '@angular/common';
 import { Component } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
-import { appStoreIcon, googlePlayIcon } from '@core/constant/icon';
+import { appStoreIcon, googlePlayIcon } from '@core/constants/icon';
 import { FooterLink } from '@core/models/footer.model';
 
 @Component({

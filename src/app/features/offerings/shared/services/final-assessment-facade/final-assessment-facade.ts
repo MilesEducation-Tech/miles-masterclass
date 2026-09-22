@@ -6,7 +6,7 @@ import { map, tap, switchMap } from 'rxjs/operators';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Utils } from '@core/services/utils/utils';
 import { Analytics } from '@core/services/analytics/analytics';
-import { ASSESSMENT_ROUTES } from '@core/models/assessment.model';
+import { ASSESSMENT_ROUTES } from '@features/offerings/models/assessment.model';
 import { RouteParams, RouteRequest, RouteResponse } from '@core/models/http.model';
 
 type CourseDetailsResponse = RouteResponse<typeof ASSESSMENT_ROUTES.getCourseDetails>;

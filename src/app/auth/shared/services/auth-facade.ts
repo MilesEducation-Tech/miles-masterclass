@@ -2,7 +2,7 @@ import { DestroyRef, Service, computed, inject, linkedSignal, signal } from '@an
 import { form, required, validate } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { CountryCodeOption, dialCodeWithLength } from '@core/constant/dial-code';
+import { CountryCodeOption, dialCodeWithLength } from '@core/constants/dial-code';
 import { AuthFailure, OtpChannel, isTerminalFailure, toAuthFailure } from '@core/models/auth.model';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { HttpErrorResponse } from '@angular/common/http';

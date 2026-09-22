@@ -22,7 +22,7 @@ import {
   CpeSummaryWire,
   CpeTrackerResponse,
   toCertificateTarget,
-} from '@core/models/cpe-credit.model';
+} from '@features/cpe-tracker/models/cpe-credit.model';
 import { CreditsSummary } from '@core/models/cpe-tracker.model';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Utils } from '@core/services/utils/utils';

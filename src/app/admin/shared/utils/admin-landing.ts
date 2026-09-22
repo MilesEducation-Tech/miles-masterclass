@@ -1,4 +1,4 @@
-import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { AdminAuth } from '@admin/core/services/admin-auth';
 import { PERM } from '@core/models/admin/admin-rbac.model';
 
 const LANDING_ROUTES: { perm: string; path: string }[] = [

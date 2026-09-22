@@ -2,7 +2,7 @@ import { Component, computed, OnInit, signal } from '@angular/core';
 import { DialogRef } from '@core/services/dialog/dialog';
 import { Button } from '@shared/components/ui/button/button';
 import { cn } from '@shared/utils/cn';
-import { MicroLearningFilterOption } from '@core/models/micro-learning-course.model';
+import { MicroLearningFilterOption } from '@features/offerings/models/micro-learning-course.model';
 
 export interface MicroLearningFilterSheetData {
   title: string;

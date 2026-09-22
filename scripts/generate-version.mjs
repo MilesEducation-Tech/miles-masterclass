@@ -3,7 +3,7 @@
  *
  * Writes a unique version for the current build into two places that must
  * agree per deploy:
- *   1. `src/app/shared/core/version/app-version.ts` — baked into the browser
+ *   1. `src/app/core/version/app-version.ts` — baked into the browser
  *      and server bundles (the "running" version).
  *   2. `public/version.json` — copied to the build output and also served by
  *      the SSR server at `/version.json` (the "deployed" version a client
@@ -39,7 +39,7 @@ function shortSha() {
 const version = `${shortSha()}.${Date.now()}`;
 const builtAt = new Date().toISOString();
 
-const tsPath = join(root, 'src/app/shared/core/version/app-version.ts');
+const tsPath = join(root, 'src/app/core/version/app-version.ts');
 mkdirSync(dirname(tsPath), { recursive: true });
 writeFileSync(
   tsPath,

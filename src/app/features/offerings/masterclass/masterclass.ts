@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { Route } from '@angular/router';
 import { environment } from '@env/environment';
-import { FeatureFacade } from '@features/shared/services/feature-facade/feature-facade';
+import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
 import { Vertical } from '@shared/components/cards/vertical/vertical';
 import { Carousel } from '@shared/components/carousel/carousel';

@@ -16,7 +16,7 @@ import {
   CpeRowAction,
   cpeRowActions,
   DELIVERY_METHOD,
-} from '@core/models/cpe-credit.model';
+} from '@features/cpe-tracker/models/cpe-credit.model';
 import { FieldOfStudy } from '@core/models/course.model';
 import { Button } from '@shared/components/ui/button/button';
 import { CategoriesList } from '@shared/components/categories-list/categories-list';

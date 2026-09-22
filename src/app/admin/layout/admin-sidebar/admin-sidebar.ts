@@ -17,9 +17,9 @@ import {
   lucideTicket,
   lucideUserPlus,
 } from '@ng-icons/lucide';
-import { AdminAuth } from '@core/services/admin-auth/admin-auth';
+import { AdminAuth } from '@admin/core/services/admin-auth';
 import { PERM } from '@core/models/admin/admin-rbac.model';
-import { logo, logoIcon } from '@core/constant/icon';
+import { logo, logoIcon } from '@core/constants/icon';
 import { Button } from '@shared/components/ui/button/button';
 
 interface SidebarItem {

@@ -7,52 +7,89 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- Phase: **2 — Path aliases ✅ COMPLETE.** Report: [phase-02](reports/phase-02.md).
-  `verifier` **8/8 green** (lint 6s · unit tests 18s · build local 26s · build prod 30s ·
-  storybook 24s · format 15s · bundle report · ssr smoke 3s, all four routes).
-  `reviewer` **PASS — no spec violations.**
-- What landed: **2 config files + 380 `.ts` files edited, 0 files moved/created/deleted.**
-  **1,464 relative import specifiers converted to aliases**, in four verified batches —
-  A `@env`/`@testing`/`@layout` (82), B `@admin`/`@features` + intra-area cross-unit (212),
-  C `@shared` (450), D `@core` (717), plus 3 pilots. Re-running all four batches in `--dry` mode
-  afterwards reports **0 remaining**, so the conversion is complete, not partial.
-  Final usage: `@core/` 719 · `@shared/` 450 · `@admin/` 137 · `@features/` 75 · `@env/` 50 ·
-  `@testing/` 28 · `@layout/` 5.
-- **`@core/*` points at today's `./src/app/shared/core/*`** (PLAN.md §3 listed `./src/app/core/*`,
-  which does not exist until Phase 3). **Phase 3's core move is therefore a one-line tsconfig flip
-  instead of 719 import rewrites** — but it must be flipped in **BOTH** `tsconfig.json` **and**
-  `.storybook/tsconfig.json`.
-- **Invariant for every later phase: core is reached only via `@core/*`, never `@shared/core/*`.**
-  The two aliases overlap today and `@shared/core/…` would break silently in Phase 3. The codemod
-  enforced longest-alias-wins; `grep -rn "'@shared/core" src` returns **0**.
-- ⚠️ **Storybook does not inherit root `paths`** — caught in step 1 by a deliberate pilot import in a
-  `.stories.ts`, before the codemod ran. `@storybook/angular` is webpack5 and resolves through
-  `tsconfig-paths-webpack-plugin@4.2.0`, which rewrites only `baseUrl` across `extends` (never
-  `paths`) and anchors to the directory of the config it loads, so the root's `./src/...` targets
-  resolve to `.storybook/src/...` and miss. Fix: the same block re-declared in
-  `.storybook/tsconfig.json` with `../src/...` targets. `verify.mjs --quick` typechecks only
-  `tsconfig.app.json`, so this would otherwise have surfaced only at the end-of-phase gate.
-- **No dependency added.** PLAN.md §3's "add `eslint-import-resolver-typescript`" is **not** needed
-  here: `eslint-plugin-import` is absent, no type-aware config is on, no `parserOptions.project` is
-  set, and no rule resolves specifiers. It belongs to **Phase 7**, which adds the rules that need it.
-- **Bundle parity proven**, which is the real gate for this phase: initial **12 files, 501.5 KB raw /
-  101.5 KB gzip** (−0.1% gzip vs baseline = compression noise), lazy **271 chunks** unchanged.
-  The Phase 1 mock-leak needles were re-run explicitly because all 50 `environment` imports now go
-  through `@env/*` — `ACMEALLI-55AA11BB` and `partnerMock` are still **absent** from the production
-  browser bundle, so `fileReplacements` still fire through the alias.
-- **38 crossing imports deliberately left relative** — targets in `pages/` (32), `auth/` (5),
-  `configuration/` (1) and `src/app/*.ts`. §3 defines no alias for these; Phases 3–6 dissolve those
-  folders and rewrite the imports then.
-- ⚠️ **Build-generated churn is in the diff again** (Phase 1's open question 6, still open):
-  `public/version.json` + `src/app/shared/core/version/app-version.ts` are rewritten by every `pre*`
-  script and will dirty every remaining phase. To get a clean Phase 2 commit:
-  `git checkout -- public/version.json src/app/shared/core/version/app-version.ts`
-  (Claude is blocked from that form by the harness guard.)
-- Branch: **`refactor/structure-2`**, clean before this session. Baselines present.
-- Next command: commit Phase 2 (message in [phase-02](reports/phase-02.md) §5), then
-  **`/refactor-phase 3`** (core). Phase 3's move list is PLAN.md §3; the reference-update checklist
-  it must not miss is in "Findings from Phase 2" below. No unticked decision gates Phase 3 —
-  the remaining ones gate phases 5, 6, 10, 11 and 13.
+- Phase: **3 — Core ⏸ code complete, blocked on ONE user action.**
+  Report: [phase-03](reports/phase-03.md). `verifier` **8/8 green** after one self-inflicted format fix.
+  `reviewer` **FAIL — sole blocker: the two files in `docs/refactor/baseline/` were re-recorded.**
+- 🚨 **Do this first, before anything else:**
+  ```
+  git checkout HEAD -- docs/refactor/baseline/
+  ```
+  The `verifier` run passed `--record-baseline`, overwriting `bundle.json` (274 → 271 lazy chunks,
+  501.9 → 501.5 KB) and stripping `ssr.json`'s trailing newline. PROMPT.md §2.3 forbids re-recording
+  and CLAUDE.md forbids Claude touching that folder, so the revert is yours. **My delegation error** —
+  I asked the subagent for a full-gate run without explicitly forbidding the record flag.
+  **Consequence: the bundle gate's reported "+0.0% vs baseline" this run is vacuous** — it compared the
+  build against a baseline recorded from that same build. The valid parity check is by hand against
+  Phase 2's figures: initial 501.5 KB raw / 101.5 KB gzip, 271 lazy chunks, largest lazy
+  3418.2 KB — **all three identical to Phase 2.** Re-run the verifier (no record flag) after reverting
+  to get the gate to say so on its own authority.
+- Related, for your judgement: the **original** baseline predates Phase 1, which deliberately removed
+  the partner mock (274 → 271 chunks, −21 KB). So it has been stale-by-design since Phase 1 and every
+  phase has compared against pre-hygiene numbers. Re-recording may well be right — but as a deliberate
+  act, not a verification side effect.
+- Once the baseline is restored and the verifier re-run is green, Phase 3 is ✅. Commit message is in
+  [phase-03](reports/phase-03.md) §5. Then **`/refactor-phase 4`** (shared & layout).
+- **Phase 4 inherits three things from this phase:** (a) `core/services/utils/utils.ts:48` is the last
+  `core → features` edge and Phase 4's move of that file to `shared/services/utils.ts` closes it;
+  (b) the 6 refused push-down rows below, several of which unblock once Phase 4 moves the shared
+  dialogs/cards that hold them in core; (c) Phase 2's finding that six component `.css` files use
+  `@reference '../../../../styles/styles.css'`, which TS aliases do not cover.
+- Branch `refactor/structure-3`, clean at session start. Baselines present. No unticked decision gates
+  this phase.
+- **Step plan** (mark each done here as it lands):
+  1. ✅ **Bulk move** `src/app/shared/core/` → `src/app/core/`, `constant/` → `constants/`.
+     Flip `@core/*` in **both** `tsconfig.json` and `.storybook/tsconfig.json`. Repoint the five
+     hardcoded-path consumers (`tsconfig.spec.json`, `eslint.config.mjs` ×2 ignores, `angular.json`
+     `fileReplacements` ×2, `scripts/generate-version.mjs`) and the three `src/*.ts` relatives
+     (`legacy-redirects.ts`, `seo.ts`, `server.ts`). Rewrite 35 `@core/constant/` specifiers and
+     7 intra-core `../constant/` relatives to `constants/`.
+  2. ✅ **Merge facades**: `features/shared/services/{feature-facade,section-filters-facade}` →
+     `core/services/` (PLAN.md §2 finding 1).
+  3. ✅ **Push down to admin** — scope cut by the audit. Moved: `models/admin/{admin-auth,audit-log}.model.ts`
+     - `services/{admin-auth,audit-log}` + **`interceptors/admin-token`** → `admin/core/`;
+       `shared/utils/seo/seo-csv.ts` → `admin/seo/utils/`. **Not moved:** `admin-rbac.model.ts`,
+       `seo.models.ts`, `supabase-seo.ts` (see Decisions).
+  4. ✅ **Push down to existing features** — payment (3), offerings (5), cpe-tracker (2).
+     **Not moved:** `form.model.ts`, `video-player.model.ts`, `constants/video-player.ts`,
+     `cpe-tracker.model.ts`, `caira-badge.model.ts`, `badge.model.ts` (see Decisions).
+  5. ✅ **Push down to Phase-5 features — DEFERRED in full to Phase 5, deliberately.**
+     faq, legal, milesverse, faculty, auth: every consumer of these 12 files still lives in
+     `src/app/pages/**` or `src/app/auth/`, and the destination feature folders do not exist.
+     Phase 5 creates each folder and moves its pages; the constants/models/services travel in the
+     same per-feature session instead of being split across two phases.
+- **Deviation from the ~30-file step guidance, deliberate:** step 1 moves 126 files in one `git mv`.
+  The folder must move atomically — `@core/*` is a single alias line, so splitting it would require a
+  broken intermediate state with two overlapping core roots. The actual risk surface is ~15 config and
+  import lines, not 126 files, and every one is enumerated above.
+- **Phase 2 verified facts this phase leans on:** zero relative imports escape `shared/core/`
+  (all aliased), and `grep '@shared/core' src` returns 0 — so the bulk move breaks nothing that the
+  alias flip does not fix.
+- **PLAN.md path correction:** §3 lists `utils/seo/seo-csv.ts` under "From `shared/core/...`".
+  It actually lives at `src/app/shared/utils/seo/seo-csv.ts`. Destination (`admin/seo/`) unchanged.
+- **Status: steps 1–5 done. `verifier` 8/8 green after one fix.**
+  First verifier run was **7/8 — format check RED on 5 files.** Cause was mechanical and entirely
+  self-inflicted: the alias rewrites changed import-specifier lengths, so Prettier's 100-char
+  `printWidth` wanted those import statements reflowed — one had grown past 100 chars
+  (`assessment.model.ts`), one had shrunk below it (`footer-overlay.ts`), and three others likewise.
+  Fixed by running Prettier on **only those 5 files**, not `pnpm format:fix` across `src/`, so no
+  untouched file was reformatted (AGENTS.md §8). `pnpm format` now reports
+  "All matched files use Prettier code style!", with typecheck + lint still green.
+  **Bundle parity holds — but check it against Phase 2, not against the gate's own number:**
+  initial 12 files, 501.5 KB raw / 101.5 KB gzip, 271 lazy chunks, largest lazy 3418.2 KB —
+  all identical to Phase 2's recorded figures. The gate's own "+0.0% vs baseline" is **vacuous this
+  run** because the baseline was re-recorded first (see the blocker at the top). SSR smoke passed all
+  four routes.
+- ⚠️ **Build-generated churn recurred, third phase running (open question 6, still open).** The
+  verifier's builds rewrote `public/version.json` and — now at its new path —
+  `src/app/core/version/app-version.ts`. They are the only source files newer than this file, and
+  neither is a Phase 3 edit. To get a clean Phase 3 commit:
+  `git checkout -- public/version.json src/app/core/version/app-version.ts`
+  (Claude is blocked from that form by the harness guard.) Note the path moved this phase, so the
+  Phase 2 version of this command is now stale.
+- **Result so far: `core/` has exactly ONE outbound boundary violation left** —
+  `core/services/utils/utils.ts:48` imports `@features/payment/.../payment-facade`. PLAN.md §2
+  finding 3 already assigns that file to `shared/services/utils.ts` in **Phase 4**, so Phase 4 closes
+  it. Every other `core → features|admin|layout` edge is gone.
 
 ## Part A tracker
 
@@ -61,7 +98,7 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 | 0     | Audit & plan    | ✅     | [phase-00](reports/phase-00.md) |           |
 | 1     | Hygiene         | ✅     | [phase-01](reports/phase-01.md) |           |
 | 2     | Path aliases    | ✅     | [phase-02](reports/phase-02.md) |           |
-| 3     | Core            | ⬜     |                                 |           |
+| 3     | Core            | ⏸      | [phase-03](reports/phase-03.md) |           |
 | 4     | Shared & layout | ⬜     |                                 |           |
 | 5     | Features        | ⬜     |                                 |           |
 | 6     | Admin           | ⬜     |                                 |           |
@@ -119,6 +156,46 @@ Phase 12's first session moves design tokens into `@theme`.
 - [x] ~~Components with explicit `ChangeDetectionStrategy.Eager`~~ — **NOT APPLICABLE.** All 18
       explicit `changeDetection:` lines in `src/` are `OnPush`; there are zero `Eager` and zero
       `Default`. Closed by Phase 0.
+
+New decisions raised by Phase 3 — **PLAN.md §3's Phase 3 push-down table is partly wrong.**
+The `import-auditor` sweep (35 files, 128 references) found that 6 of its rows would create a new
+boundary violation instead of clearing one. I executed the rows that are safe and stopped on these.
+Each needs your call before the phase that owns it:
+
+- [ ] **`models/seo.models.ts` + `services/seo/supabase-seo.ts` must NOT go to `admin/seo/`.**
+      PLAN.md sends them there, but `core/services/seo/seo-manager.ts` imports both, and
+      `shared/utils/seo/course-seo-{config,setup}.ts` import `SeoConfig`. That is the SEO render path
+      for **every page on the site**, not an admin path — the move would force `core → admin` and
+      `shared → admin`. Recommendation: **strike these two rows from the plan**; they are core.
+- [ ] **`models/form.model.ts` is not an offerings model.** PLAN.md sends it to `features/offerings/`,
+      but it holds the generic `SelectOption` / `AutoCompleteOption` types used by
+      `core/services/job-sectors`, `shared/components/ui/autocomplete`, `shared/components/enquiry-form`
+      and `shared/components/dialog/firm-sponsorship-dialog`. Recommendation: **strike the row**; it is core.
+- [ ] **`models/video-player.model.ts` + `constants/video-player.ts` cannot go to `features/offerings/`.**
+      `shared/components/{video-js,audio-js}` both import **and re-export** `VideoState`/`PlayerMode`,
+      so every consumer of those players would transitively depend on `features/offerings`. PROMPT.md §3
+      explicitly lists `video-js` under `shared/components/`. Recommendation: **strike the rows**; they are core.
+- [ ] **`models/{cpe-tracker,caira-badge,badge}.model.ts` are blocked by shared UI, not by core.**
+      Six `shared/components` cards/dialogs (`badge-hero-card`, `badge-info-dialog`,
+      `badge-claim-upsell-dialog`, `cpe-compliance-dialog`, `caira-level-stack`,
+      `caira-badge-info-dialog`) and three `shared/components/cards/badge-*` import them directly.
+      PLAN.md §3 **Phase 4** already moves feature-specific dialogs to their owners. Recommendation:
+      **move these three models in Phase 4/5, after their dialogs move** — not in Phase 3.
+- [ ] **`models/admin/admin-rbac.model.ts` is blocked the same way**, by
+      `shared/components/dialog/edit-admin-roles-dialog`. PLAN.md §3 Phase 4 (line 216) already assigns
+      that dialog to `admin/`. Recommendation: **move the model in Phase 4 with its dialog.**
+      Consequence today: `core/models/admin/` holds exactly one file.
+- [ ] **Phase 3 added a move PLAN.md does not list: `core/interceptors/admin-token/` → `admin/core/interceptors/`.**
+      It was mandatory — that interceptor imports `AdminAuth`, `AuditLog` and `AuditCategory` directly,
+      so moving those three to `admin/core/` without it would have inverted the layering to `core → admin`.
+      PROMPT.md §3 lists interceptors under `admin/core/`, so this is the spec-correct home, but note it is
+      still registered globally in `app.config.ts` (`withInterceptors`), which now imports from `@admin/`.
+      **Confirm you are happy with the composition root reaching into `admin/`.**
+- [ ] **Phase 3 deferred PLAN.md's faq / legal / milesverse / faculty / auth push-downs (12 files) to Phase 5.**
+      Every consumer still lives in `src/app/pages/**` or `src/app/auth/`, and none of the destination
+      feature folders exist yet. Doing them now would create five near-empty feature folders and split each
+      feature across two phases. Recommendation: **accept** — Phase 5 moves each feature's pages and its
+      constants/models/services in one session.
 
 New decisions raised by Phase 0:
 
@@ -258,6 +335,49 @@ These are environment and product observations the repair surfaced. None changed
    I cannot re-record (harness-owned); you run `--record-baseline` after deciding.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-09-22 **Phase 3 steps 3–4 ✅ — 17 files pushed out of core; 6 PLAN.md push-downs refused.**
+  The `import-auditor` sweep over all 35 candidate files (128 referencing file:line entries) is what
+  drove this: **most of PLAN.md §3's Phase 3 push-down table would have created new boundary
+  violations rather than cleared them.** Moved to `admin/core/` (flat files, matching admin's existing
+  convention): `admin-auth.model.ts`, `audit-log.model.ts`, `admin-auth.ts`, `audit-log.ts` — **plus
+  `interceptors/admin-token-interceptor.ts`, which PLAN.md does not list.** That interceptor is the
+  single root cause tying all three admin files to `core/`: it imports `AdminAuth`, `AuditLog` and
+  `AuditCategory` directly, so moving them without it would have inverted the layering into
+  `core → admin`. PROMPT.md §3 puts admin interceptors in `admin/core/` anyway, so it moved too;
+  `app.config.ts` now wires it from `@admin/core/interceptors/…`. Also moved `seo-csv.ts` + spec →
+  `admin/seo/utils/` (admin-only, clean). Then payment (`constants/payment.ts`,
+  `constants/location-min.ts` + its `eslint.config.mjs` ignore, `guards/payment.guard.ts` — that guard
+  already imported `@features/payment/…`, so the move **fixes** a live `core → features` violation),
+  offerings (`assessment.model.ts`, `feedback-model.ts`, `micro-learning-course.model.ts`,
+  `app-download-prompt.ts` + spec) and `cpe-credit.model.ts` + spec → `features/cpe-tracker/models/`
+  (**not** PLAN.md's `features/tracker/`, which Phase 5 creates by merging the two trackers — moving
+  into a folder that does not exist yet would have made every importer a cross-feature import).
+  Typecheck ×2 + lint green after each step.
+- 2026-09-22 **Phase 3 step 2 ✅ — the two shared facades merged into `core/services/`.**
+  `git mv` of `features/shared/services/{feature-facade,section-filters-facade}` →
+  `core/services/` (4 files, renames), 16 alias specifiers rewritten
+  `@features/shared/services/...` → `@core/services/...`. Both facades were already
+  **`@core/*`-only in their own imports** — zero feature dependencies — so this is a pure move that
+  clears PLAN.md §2 finding 1's 15-importer violation with no logic change. `features/shared/` now
+  holds only `services/tracks/`, which stays for Phase 5 (its 2 importers are `features/features.ts`
+  and a `cpa-landing` component, both inside `features/`). Typecheck ×2 + lint green.
+- 2026-09-22 **Phase 3 step 1 ✅ — core moved, aliases flipped, typecheck + lint green.**
+  `git mv src/app/shared/core src/app/core` (126 files, all recorded as renames) and
+  `git mv core/constant core/constants`. `@core/*` retargeted in `tsconfig.json` **and**
+  `.storybook/tsconfig.json`. Five hardcoded-path consumers repointed (`tsconfig.spec.json` icon
+  include, `eslint.config.mjs` ×2 `location*.ts` ignores, `angular.json` ×2 `fileReplacements`,
+  `scripts/generate-version.mjs:42` write target) plus the three `src/*.ts` relatives
+  (`legacy-redirects.ts`, `seo.ts`, `server.ts`) and one comment path in
+  `testing/partner-mock/dev-interceptors.ts`. 35 `@core/constant/` specifiers across 33 files and
+  7 intra-core `../constant/` relatives rewritten to `constants/`. A repo-wide grep for the old
+  path over `src`, `.storybook`, `scripts`, `angular.json`, `tsconfig*.json` and `eslint.config.mjs`
+  returns **NONE**. Gates: `tsc -p tsconfig.app.json` clean, `tsc -p tsconfig.spec.json` clean,
+  `pnpm lint` "All files pass linting".
+  **⚠️ Note for the user:** the harness Bash guard rejects every command whose text contains the
+  verify script's path, so Claude cannot run the per-step `--quick` wrapper at all. Each step was
+  gated by running its two underlying checks (typecheck + lint) directly instead. End-of-phase
+  verification still goes through the `verifier` subagent, which is unaffected.
 
 - 2026-09-22 **Phase 2 ✅ complete — aliases added and 1,464 imports converted; 8/8 green.**
   `tsconfig.json` gets the 7 aliases (no `baseUrl`, `./` targets, `moduleResolution` untouched);
