@@ -7,37 +7,65 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- Phase: pre-refactor spec repair (awaiting approval of `prompts/spec-repair.md`). Phase 0 not started.
-- Feature / step: storybook gate fixed ✅; baselines recorded ✅; unit-test gate scoped, not yet fixed ⏸
-- Branch: **master** (expected `refactor/structure` — NOT switched; user decides)
+- Phase: **0 — Audit & plan ✅ complete.** `docs/refactor/PLAN.md` written; report at
+  `docs/refactor/reports/phase-00.md`. **No source changes.**
+- Feature / step: — (Phase 0 has no steps). **PLAN.md approved 2026-09-22.**
+  Two things still block Phase 1: the red unit-test gate (`prompts/spec-repair.md` still unapproved)
+  and the branch switch. Neither is caused by Phase 0.
+- Branch: **master** (expected `refactor/structure` — NOT switched; user decides). Phase 0 wrote only
+  docs, but **Phase 1 moves source**, so switch before then.
 - Last verify: 2026-09-22 **user ran `verify.mjs --record-baseline`** — 7 pass / 1 fail.
   lint ✅ · unit tests ❌ (79 of 424) · build local ✅ · build prod ✅ · storybook ✅ 22s ·
   format ✅ · bundle report ✅ · ssr smoke ✅. Baselines written:
   `docs/refactor/baseline/ssr.json` + `bundle.json` (initial 501.9 KB raw / 101.6 KB gzip, 12 files;
-  274 lazy chunks, largest 3418.2 KB).
-- Next command: (user) approve `prompts/spec-repair.md`, then I execute it; also decide on the
-  course-route SEO caveat below and whether to re-record afterwards.
+  274 lazy chunks, largest 3418.2 KB — **now identified: it is `constant/location-min.ts`**, see
+  PLAN.md §7).
+  Phase 0 added one gate check of its own: `pnpm exec tsc -p tsconfig.app.json --noEmit` is clean,
+  with no TS 6 deprecation warnings.
+- Next command: `/refactor-phase 1` — **but only after** (a) the unit-test gate is green
+  (approve + execute `prompts/spec-repair.md`), and (b) you have switched to `refactor/structure`.
+  Phase 1 is the first phase that moves source and the first that needs a green `verifier` run.
+  The remaining unticked decisions below gate phases 5, 6, 10, 11 and 13 — not Phase 1.
 
 ## Part A tracker
 
-| Phase | Scope           | Status | Report | Committed |
-| ----- | --------------- | ------ | ------ | --------- |
-| 0     | Audit & plan    | ⬜     |        |           |
-| 1     | Hygiene         | ⬜     |        |           |
-| 2     | Path aliases    | ⬜     |        |           |
-| 3     | Core            | ⬜     |        |           |
-| 4     | Shared & layout | ⬜     |        |           |
-| 5     | Features        | ⬜     |        |           |
-| 6     | Admin           | ⬜     |        |           |
-| 7     | Boundaries      | ⬜     |        |           |
+| Phase | Scope           | Status | Report                          | Committed |
+| ----- | --------------- | ------ | ------------------------------- | --------- |
+| 0     | Audit & plan    | ✅     | [phase-00](reports/phase-00.md) |           |
+| 1     | Hygiene         | ⬜     |                                 |           |
+| 2     | Path aliases    | ⬜     |                                 |           |
+| 3     | Core            | ⬜     |                                 |           |
+| 4     | Shared & layout | ⬜     |                                 |           |
+| 5     | Features        | ⬜     |                                 |           |
+| 6     | Admin           | ⬜     |                                 |           |
+| 7     | Boundaries      | ⬜     |                                 |           |
 
 ## Part B tracker
 
-Phase 0 fills in the feature rows. Each cell holds a status. Run features top to bottom.
+Filled by Phase 0 from PLAN.md §13. Each cell holds a status. **Run features top to bottom** —
+ordered smallest/lowest-risk first so the pattern is proven before it reaches `offerings`.
+Names are the **post-Part-A** folder names (so `features/tracker` = today's caira-tracker + cpe-tracker).
+`—` = not applicable to that phase.
 
-| Feature / area      | 8 Services | 9 Data | 10 UI | 11 Defer+Lazy | 12 Tailwind |
-| ------------------- | ---------- | ------ | ----- | ------------- | ----------- |
-| (filled by Phase 0) |            |        |       |               |             |
+| Feature / area                 | 8 Services | 9 Data | 10 UI | 11 Defer+Lazy  | 12 Tailwind |
+| ------------------------------ | ---------- | ------ | ----- | -------------- | ----------- |
+| `shared/ui` (primitives)       | —          | —      | ⬜    | —              | ⬜          |
+| `features/blog`                | ⬜         | ⬜     | —     | ⬜             | ⬜          |
+| `features/library`             | ⬜         | ⬜     | —     | ⬜             | ⬜          |
+| `features/tracker` (caira+cpe) | ⬜         | ⬜     | —     | ⬜             | ⬜          |
+| `features/auth`                | ⬜         | ⬜     | —     | ⬜             | ⬜          |
+| `layout`                       | ⬜         | ⬜     | ⬜    | — (above fold) | ⬜          |
+| `features/home`                | ⬜         | ⬜     | —     | ⬜             | ⬜          |
+| `features/partners`            | ⬜         | ⬜     | —     | ⬜             | ⬜          |
+| `features/payment`             | ⬜         | ⬜     | —     | ⬜             | ⬜          |
+| `features/offerings`           | ⬜         | ⬜     | —     | ⬜             | ⬜          |
+| `admin/*` (non-partner)        | ⬜         | ⬜     | —     | ⬜             | ⬜          |
+| `admin/partner-platform(-v2)`  | ⬜         | ⬜     | —     | ⬜             | ⬜          |
+
+Phase 11 also has two **one-off, first-session** items that are not per-feature:
+enable `provideClientHydration(withIncrementalHydration())`, and move
+`@import 'video.js/dist/video-js.css'` out of the global `styles.css`.
+Phase 12's first session moves design tokens into `@theme`.
 
 | Phase | Scope                         | Status | Report |
 | ----- | ----------------------------- | ------ | ------ |
@@ -46,18 +74,56 @@ Phase 0 fills in the feature rows. Each cell holds a status. Run features top to
 
 ## Decisions (owner: user)
 
-- [ ] PLAN.md approved (Phase 0)
-- [ ] Baseline recorded on untouched code: `node scripts/refactor/verify.mjs --record-baseline`
-- [ ] Phase 6: v1 partner platform removal and v2 → `partner-platform` rename
-- [ ] Phase 7: temporary warnings allowed for violations Part B will fix (list them)
-- [ ] Phase 10: CDK usages approved for migration to ng-primitives
-- [ ] Phase 13: consolidate partner landing pages (yes/no)
-- [ ] Components with explicit `ChangeDetectionStrategy.Eager`: keep or convert
+- [x] **PLAN.md approved (Phase 0)** — approved by the user 2026-09-22.
+- [x] Baseline recorded on untouched code — done 2026-09-22 (see the course-route caveat, Q8)
+- [ ] Phase 6: v1 partner platform removal and v2 → `partner-platform` rename.
+      **Phase 0 finding:** v1 is not removable as a unit. Its routed pages are dead (routes commented
+      out in `admin.routes.ts`), but `partner-platform/shared/` is the live models/services layer for
+      v2 (39 edges) and 6 other admin features (17 edges), and v2 imports 3 dialogs out of v1's dead
+      pages. Phase 6 extracts that layer to `admin/core/` first; removal is a later decision.
+- [ ] Phase 7: temporary warnings allowed for violations Part B will fix. **Expected list:** the
+      `Utils` → shared-dialog imports that Phase 11 converts to dynamic `import()`.
+- [ ] Phase 10: CDK usages. **Phase 0 finding: only 2 exist** — `CdkTrapFocus` (`layout/header`) and
+      `BreakpointObserver` (`how-to-claim-credly-badge`). ng-primitives has no equivalent for either.
+      **Recommendation: keep both**, migrate neither.
+- [ ] Phase 13: consolidate partner landing pages (yes/no). **Phase 0 finding: strongly supported** —
+      `ctcpa` vs `dscpa` differ by 8 hunks, all name/id swaps; 10 of 12 pages collapse into one
+      config-driven page. See PLAN.md §10.
+- [x] ~~Components with explicit `ChangeDetectionStrategy.Eager`~~ — **NOT APPLICABLE.** All 18
+      explicit `changeDetection:` lines in `src/` are `OnPush`; there are zero `Eager` and zero
+      `Default`. Closed by Phase 0.
+
+New decisions raised by Phase 0:
+
+- [ ] Phase 5: dissolve `pages/` per PLAN.md §3 (the target structure has no top-level `pages/`;
+      the destination of each page folder is the judgement call).
+- [ ] Phase 5: promote `home/components/offerings/*` (14 cross-feature importers) and
+      `partner-content-list` (6) into `shared/components/`.
+- [ ] Phase 11: how to fix the **839 KB gzip** `constant/location-min.ts` chunk — serve from the API
+      (`v2/locations/autocomplete/` already exists) or `await import()` behind the country field.
+      Biggest single perf win in the audit.
+
+Decisions the user already settled in-session on 2026-09-22 (recorded, no action needed):
+
+- [x] Trackers: **merge** `caira-tracker` + `cpe-tracker` → `features/tracker/{caira,cpe}/` in
+      Phase 5, breaking their circular dependency.
+- [x] Dead code: **list only, do not delete.** Consequence: `constant/location.ts` (25 MB,
+      969,250 lines, zero importers) gets `git mv`'d in Phase 3 and stays in the ESLint ignore list.
+- [x] `Utils` service: **move to `shared/services/utils.ts`** in Phase 4, not into `core/`.
 
 ## Open questions (from Claude)
 
-1. **Branch.** We are on `master`, not `refactor/structure`. Create/switch it yourself before Phase 0
-   (I do not switch branches). — still open.
+0. **NEW (Phase 0) — bugs found, logged not fixed** (spec §7). Full list in
+   `reports/phase-00.md` §3. The ones worth acting on outside the refactor:
+   `--radius-4xl` is used at `styles.css:297,303,308` but never defined; the 8 `@ng-icons/*` packages
+   are in `devDependencies` while production code imports them via `configuration/ng-icon.ts`;
+   `lenis` is an unused dependency; `app.config.ts` wires a dev-only mock interceptor into the
+   production root injector (Phase 1 fixes that one). Two AGENTS.md §9 statements are stale —
+   `pnpm start` uses port **4101** not 4100, and the initial bundle is **501.9 KB**, not "near its
+   2.00 MB budget". Phase 14 should correct both.
+1. **Branch.** We are on `master`, not `refactor/structure`. Phase 0 wrote only docs so it was safe,
+   but **Phase 1 moves source** — create/switch it yourself before then (I do not switch branches).
+   — still open.
 2. ~~**Storybook gate.**~~ **RESOLVED 2026-09-22.** User chose restore. `git checkout 8271fa4^ -- .storybook`
    brought back main/preview/manager/tsconfig×2/typings; `pnpm build-storybook` completes successfully.
    Config-only, nothing under `src/`.
@@ -107,6 +173,22 @@ Phase 0 fills in the feature rows. Each cell holds a status. Run features top to
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-09-22 **PLAN.md approved by the user.** Decision ticked. Phase 1 not started — it still needs
+  the green unit-test gate and the branch switch. No `src/` changes.
+- 2026-09-22 **Phase 0 ✅ complete.** Wrote `docs/refactor/PLAN.md` (13 sections) and
+  `reports/phase-00.md`. **No `src/` changes** — read-only audit plus one throwaway import-graph
+  script in the session scratchpad. Parsed all 708 non-spec `.ts` files: **~150 real boundary
+  violations**. Headline findings: (a) the 3418 KB / **839 KB gzip** largest lazy chunk is
+  `constant/location-min.ts`, used by one file, and its sibling `location.ts` (25 MB) has zero
+  importers; (b) Phase 8 is near-mechanical — zero constructor injection, zero class-based
+  guards/interceptors, zero `InjectionToken`/`useClass`/`useFactory`, so **no `@Injectable` needs
+  keeping**; (c) admin partner-platform v1 is not removable as a unit — its `shared/` backs v2 and
+  6 other admin features; (d) `feature-facade` is imported by `core`/`shared`/`layout`, so it is
+  core, not feature code; (e) `pages/` is a second features root. Three spec bullets are already
+  satisfied: no committed `.DS_Store`, no `baseUrl` to remove, no `@source`/Storybook globs to
+  update. Closed the `ChangeDetectionStrategy.Eager` decision as **not applicable** (all 18 are
+  `OnPush`). User settled 3 decisions in-session: merge the trackers, list-only dead code, move
+  `Utils` to `shared/`. Filled the Part B tracker with 12 ordered rows.
 - 2026-09-22 no-op: user asked for an empty test snapshot via `git`; refused by
   `.claude/hooks/guard-bash.mjs` ("Never commit"). Nothing was recorded, HEAD still `444d638`.
   No `src/` changes this session — the stop gate fired only because pre-existing dirty files
