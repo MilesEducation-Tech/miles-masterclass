@@ -5,13 +5,27 @@ import {
   ElementRef,
   input,
   model,
-  viewChildren,
+  viewChild,
 } from '@angular/core';
 import type { FormValueControl } from '@angular/forms/signals';
+import { NgpInputOtp, NgpInputOtpInput, NgpInputOtpSlot } from 'ng-primitives/input-otp';
 import { cn } from '../../../utils/cn';
 
+/**
+ * OTP entry built on `ngpInputOtp`.
+ *
+ * The primitive replaces what used to be one `<input>` per digit plus ~180
+ * lines of input/keydown/paste/focus juggling: it renders a single hidden
+ * input (`autocomplete="one-time-code"`, so browser autofill and screen
+ * readers work) and drives presentational slots that expose `data-filled`,
+ * `data-active`, `data-caret` and `data-placeholder`.
+ *
+ * The public API is unchanged, so the login, webinar-registration and faculty
+ * forms keep binding `[formField]`, `[length]`, `[autoFocus]` as before.
+ */
 @Component({
   selector: 'app-otp',
+  imports: [NgpInputOtp, NgpInputOtpInput, NgpInputOtpSlot],
   templateUrl: './otp.html',
   styleUrl: './otp.css',
   host: {
@@ -27,17 +41,19 @@ export class Otp implements FormValueControl<string> {
   readonly description = input('');
   readonly required = input(false);
   readonly autoFocus = input(false);
+  /** Character shown in an empty slot. */
+  readonly placeholder = input('');
   // eslint-disable-next-line @angular-eslint/no-input-rename -- intentional class merging
   readonly userClass = input('', { alias: 'class' });
 
+  /** The single hidden input the primitive drives; target for `autoFocus`. */
+  private readonly otpInput = viewChild<ElementRef<HTMLInputElement>>('otpInput');
+
   constructor() {
-    // Focus the first digit input once the view exists in the DOM. The OTP
-    // template renders `digitArray()` (>=1) inputs unconditionally, so
-    // `inputs()[0]` is populated by the time `afterNextRender` fires.
-    // `afterNextRender` is browser-only — SSR-safe by design.
+    // `afterNextRender` is browser-only, so this is SSR-safe by design.
     afterNextRender(() => {
       if (!this.autoFocus()) return;
-      this.inputs()[0]?.nativeElement.focus();
+      this.otpInput()?.nativeElement.focus();
     });
   }
 
@@ -52,140 +68,31 @@ export class Otp implements FormValueControl<string> {
   readonly invalid = input<boolean>(false);
   readonly errors = input<readonly any[]>([]);
 
-  // Internal state
-  private readonly inputs = viewChildren<ElementRef<HTMLInputElement>>('digitInput');
+  /**
+   * `NgpInputOtp` has no readonly mode, so a readonly control is disabled —
+   * both refuse input, they only differ in styling.
+   */
+  readonly isDisabled = computed(() => this.disabled() || this.readonly());
 
-  readonly digitArray = computed(() => {
-    return Array.from({ length: this.length() }, (_, i) => i);
-  });
+  readonly slots = computed(() => Array.from({ length: this.length() }, (_, i) => i));
 
-  readonly currentValues = computed(() => {
-    const val = this.value() || '';
-    return val.split('').slice(0, this.length());
-  });
-
-  readonly allowedRegex = computed(() => {
+  /** Allowed characters, as the regex source string the primitive expects. */
+  readonly otpPattern = computed(() => {
     switch (this.type()) {
       case 'number':
-        return /^[0-9]$/;
+        return '[0-9]';
       case 'alphanumeric':
-        return /^[a-zA-Z0-9]$/;
+        return '[a-zA-Z0-9]';
       case 'text':
       default:
-        return /^.$/;
+        return '.';
     }
   });
 
-  readonly inputMode = computed(() => {
-    switch (this.type()) {
-      case 'number':
-        return 'tel';
-      case 'alphanumeric':
-      case 'text':
-      default:
-        return 'text';
-    }
-  });
+  readonly inputMode = computed<'tel' | 'text'>(() => (this.type() === 'number' ? 'tel' : 'text'));
 
-  readonly validationPattern = computed(() => {
-    switch (this.type()) {
-      case 'number':
-        return '[0-9]*';
-      case 'alphanumeric':
-        return '[a-zA-Z0-9]*';
-      case 'text':
-      default:
-        return '.*';
-    }
-  });
-
-  handleInput(event: Event, index: number): void {
-    const input = event.target as HTMLInputElement;
-    const val = input.value;
-
-    if (val) {
-      // Keep only the last character entered
-      const char = val.slice(-1);
-
-      // Validate based on type
-      if (!this.allowedRegex().test(char)) {
-        input.value = this.currentValues()[index] || '';
-        return;
-      }
-
-      const currentVal = (this.value() || '').split('');
-
-      // Pad if necessary
-      while (currentVal.length < this.length()) {
-        currentVal.push('');
-      }
-
-      currentVal[index] = char;
-      this.value.set(currentVal.join('').slice(0, this.length()));
-
-      // Move to next input if exists
-      if (index < this.length() - 1) {
-        this.focusInput(index + 1);
-      }
-    }
-  }
-
-  handleKeyDown(event: KeyboardEvent, index: number): void {
-    if (event.key === 'Backspace') {
-      const currentVal = (this.value() || '').split('');
-
-      if (!currentVal[index] && index > 0) {
-        // If current is empty, move back and clear previous
-        event.preventDefault();
-        currentVal[index - 1] = '';
-        this.value.set(currentVal.join(''));
-        this.focusInput(index - 1);
-      } else {
-        // Just clear current
-        currentVal[index] = '';
-        this.value.set(currentVal.join(''));
-      }
-    } else if (event.key === 'ArrowLeft' && index > 0) {
-      event.preventDefault();
-      this.focusInput(index - 1);
-    } else if (event.key === 'ArrowRight' && index < this.length() - 1) {
-      event.preventDefault();
-      this.focusInput(index + 1);
-    }
-  }
-
-  handlePaste(event: ClipboardEvent): void {
-    event.preventDefault();
-    const pastedData = event.clipboardData?.getData('text') || '';
-
-    // Filter based on type
-    let filteredChars = '';
-    const regex = this.allowedRegex();
-    for (const char of pastedData) {
-      if (regex.test(char)) {
-        filteredChars += char;
-      }
-    }
-
-    const valueToSet = filteredChars.slice(0, this.length());
-
-    if (valueToSet) {
-      this.value.set(valueToSet);
-      // Focus the next empty input or the last one
-      const nextIndex = Math.min(valueToSet.length, this.length() - 1);
-      this.focusInput(nextIndex);
-    }
-  }
-
-  handleBlur(): void {
+  protected onBlur(): void {
     this.touched.set(true);
-  }
-
-  private focusInput(index: number): void {
-    const inputElements = this.inputs();
-    if (inputElements[index]) {
-      inputElements[index].nativeElement.focus();
-    }
   }
 
   // Classes
@@ -193,10 +100,10 @@ export class Otp implements FormValueControl<string> {
 
   readonly labelClasses = computed(() => 'label');
 
-  readonly digitInputClasses = computed(() => {
+  readonly slotClasses = computed(() => {
     const baseClasses =
-      ' w-12 h-12 text-center text-lg font-semibold rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors';
-    const errorClass = this.invalid() && this.touched() ? 'focus-visible:ring-destructive' : '';
+      'flex items-center justify-center w-12 h-12 text-center text-lg font-semibold rounded-md border border-input bg-background transition-colors cursor-pointer relative';
+    const errorClass = this.invalid() && this.touched() ? 'border-destructive' : '';
     return cn(baseClasses, errorClass);
   });
 

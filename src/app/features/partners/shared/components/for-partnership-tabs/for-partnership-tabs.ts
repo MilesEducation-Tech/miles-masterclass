@@ -1,6 +1,6 @@
 import { NgComponentOutlet } from '@angular/common';
 import { Component, input, model, Type } from '@angular/core';
-import { Tab, TabContent, TabList, TabPanel, Tabs } from '@angular/aria/tabs';
+import { NgpTabButton, NgpTabList, NgpTabPanel, NgpTabset } from 'ng-primitives/tabs';
 import { cn } from '../../../../../shared/utils/cn';
 
 export interface PartnershipTab {
@@ -15,7 +15,7 @@ export interface PartnershipTab {
 
 @Component({
   selector: 'app-for-partnership-tabs',
-  imports: [Tabs, TabList, Tab, TabPanel, TabContent, NgComponentOutlet],
+  imports: [NgpTabset, NgpTabList, NgpTabButton, NgpTabPanel, NgComponentOutlet],
   templateUrl: './for-partnership-tabs.html',
   styleUrl: './for-partnership-tabs.css',
 })

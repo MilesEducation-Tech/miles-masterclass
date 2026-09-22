@@ -1,32 +1,36 @@
 <div [class]="wrapperClasses()">
   @if (label()) {
-    <label [for]="id() + '-0'" [class]="labelClasses()">
+    <label [for]="id()" [class]="labelClasses()">
       {{ label() }}
       @if (required()) {
         <sup class="text-destructive ml-1" aria-label="required">*</sup>
       }
     </label>
   }
-  <div class="flex flex-wrap gap-2" (paste)="handlePaste($event)">
-    @for (i of digitArray(); track i) {
-      <input
-        #digitInput
-        type="text"
-        [attr.inputmode]="inputMode()"
-        [attr.pattern]="validationPattern()"
-        autocomplete="one-time-code"
-        [id]="id() + '-' + i"
-        [class]="digitInputClasses()"
-        [value]="currentValues()[i] || ''"
-        [disabled]="disabled()"
-        [readonly]="readonly()"
-        [attr.aria-label]="'Digit ' + (i + 1)"
-        (input)="handleInput($event, i)"
-        (keydown)="handleKeyDown($event, i)"
-        (blur)="handleBlur()"
-        maxlength="1"
-      />
-    }
+
+  <div
+    ngpInputOtp
+    [(ngpInputOtpValue)]="value"
+    [ngpInputOtpDisabled]="isDisabled()"
+    [ngpInputOtpPattern]="otpPattern()"
+    [ngpInputOtpInputMode]="inputMode()"
+    [ngpInputOtpPlaceholder]="placeholder()"
+  >
+    <!-- The one real control: hidden, but what the browser autofills and what
+         assistive technology reads. The slots below are presentational. -->
+    <input
+      #otpInput
+      ngpInputOtpInput
+      [id]="id()"
+      [attr.aria-label]="label() || 'One-time code'"
+      (blur)="onBlur()"
+    />
+
+    <div class="flex flex-wrap gap-2">
+      @for (slot of slots(); track slot) {
+        <div ngpInputOtpSlot [class]="slotClasses()"></div>
+      }
+    </div>
   </div>
 
   @if (description()) {

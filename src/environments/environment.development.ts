@@ -11,7 +11,7 @@ export const environment = {
    */
   SITE_URL: 'https://uat.milesmasterclass.com',
 
-  BASE_API_URL: 'https://uat-api.milesmasterclass.com/api/',
+  BASE_API_URL: 'https://uat-api.milescaira.com/',
 
   /**
    * Dev-only key for the Miles SSO support OTP-reveal endpoint, used by the

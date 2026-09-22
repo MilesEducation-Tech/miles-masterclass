@@ -1,68 +1,49 @@
-import { Injectable, signal, PLATFORM_ID, inject } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { Toast, ToastOptions, ToastTimer, ToastType } from '../../models/notification.model';
+import { Injectable, inject } from '@angular/core';
+import { NgpToastManager, type NgpToastOptions } from 'ng-primitives/toast';
+import { ToastComponent, ToastContext } from '../../../components/ui/toast/toast';
+import { ToastOptions, ToastPosition, ToastType } from '../../models/notification.model';
 
+/**
+ * Thin facade over `NgpToastManager`.
+ *
+ * The `success` / `error` / `info` signatures are unchanged, so the ~145 call
+ * sites across the app are untouched. What went away is everything underneath:
+ * the toast list signal, the per-toast `setTimeout` bookkeeping and the
+ * pause/resume-on-hover pair are all handled by the primitive now, as is the
+ * positioned container that `NotificationComponent` used to render.
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class NotificationService {
-  private readonly platformId = inject(PLATFORM_ID);
-  readonly toasts = signal<Toast[]>([]);
-  private readonly timers = new Map<string, ToastTimer>();
+  private readonly toastManager = inject(NgpToastManager);
+
+  /** This project's positions use left/right; the primitive uses start/end. */
+  private static readonly PLACEMENTS: Record<
+    ToastPosition,
+    NonNullable<NgpToastOptions['placement']>
+  > = {
+    'top-left': 'top-start',
+    'top-center': 'top-center',
+    'top-right': 'top-end',
+    'bottom-left': 'bottom-start',
+    'bottom-center': 'bottom-center',
+    'bottom-right': 'bottom-end',
+  };
 
   show(title: string, message: string, type: ToastType, options?: ToastOptions): void {
-    const id = crypto.randomUUID();
+    const closable = options?.closable ?? true;
     const duration = options?.duration ?? 3000;
-    const newToast: Toast = {
-      id,
-      title,
-      message,
-      type,
+    const context: ToastContext = { title, message, type, closable };
+
+    this.toastManager.show(ToastComponent, {
+      placement: NotificationService.PLACEMENTS[options?.position ?? 'top-right'],
       duration,
-      closable: options?.closable ?? true,
-      position: options?.position ?? 'top-right',
-    };
-
-    this.toasts.update((toasts) => [newToast, ...toasts]);
-
-    if (duration > 0) {
-      this.startTimer(id, duration);
-    }
-  }
-
-  private startTimer(id: string, duration: number): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-
-    const timeoutId = setTimeout(() => {
-      this.remove(id);
-    }, duration);
-
-    this.timers.set(id, {
-      timeoutId,
-      startTime: Date.now(),
-      remainingTime: duration,
+      // A zero/negative duration used to mean "never auto-dismiss".
+      persistent: duration <= 0,
+      dismissible: closable,
+      context,
     });
-  }
-
-  pauseTimer(id: string): void {
-    const timer = this.timers.get(id);
-    if (timer?.timeoutId) {
-      clearTimeout(timer.timeoutId);
-      timer.timeoutId = null;
-      timer.remainingTime -= Date.now() - timer.startTime;
-    }
-  }
-
-  resumeTimer(id: string): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-
-    const timer = this.timers.get(id);
-    if (timer && !timer.timeoutId && timer.remainingTime > 0) {
-      timer.startTime = Date.now();
-      timer.timeoutId = setTimeout(() => {
-        this.remove(id);
-      }, timer.remainingTime);
-    }
   }
 
   success(title: string, message: string, options?: ToastOptions): void {
@@ -75,14 +56,5 @@ export class NotificationService {
 
   info(title: string, message: string, options?: ToastOptions): void {
     this.show(title, message, 'info', options);
-  }
-
-  remove(id: string): void {
-    const timer = this.timers.get(id);
-    if (timer?.timeoutId) {
-      clearTimeout(timer.timeoutId);
-    }
-    this.timers.delete(id);
-    this.toasts.update((toasts) => toasts.filter((t) => t.id !== id));
   }
 }

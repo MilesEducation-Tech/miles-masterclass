@@ -3,10 +3,20 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matCloseRound } from '@ng-icons/material-icons/round';
 import { ButtonSize, ButtonVariant } from '../../../core/models/button.model';
 import { cn } from '../../../utils/cn';
+import { NgpButton } from 'ng-primitives/button';
 
+/**
+ * Styled button wrapping the native element with `ngpButton`.
+ *
+ * The primitive is applied in the template rather than as a host directive: the
+ * documented `button[app-button]` shape would move the button onto the host and
+ * break all 431 `<app-button>` call sites for no visible gain. In template mode
+ * it still contributes the hover/press/focus-visible handling and exposes them
+ * as `data-*` attributes on the inner button.
+ */
 @Component({
   selector: 'app-button',
-  imports: [NgIcon],
+  imports: [NgIcon, NgpButton],
   templateUrl: './button.html',
   styleUrl: './button.css',
   providers: [provideIcons({ matCloseRound })],

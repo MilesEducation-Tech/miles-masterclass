@@ -17,7 +17,11 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronRight } from '@ng-icons/lucide';
-import { Menu, MenuItem, MenuTrigger } from '@angular/aria/menu';
+import {
+  NgpCollapsible,
+  NgpCollapsibleContent,
+  NgpCollapsibleTrigger,
+} from 'ng-primitives/collapsible';
 import { NavItem } from '../../core/models/nav.model';
 import { cn } from '../../utils/cn';
 import { Utils } from '../../core/services/utils/utils';
@@ -27,7 +31,14 @@ const VIEWPORT_MARGIN = 16;
 
 @Component({
   selector: 'app-nav-menu-item',
-  imports: [RouterLink, NgIcon, Menu, MenuItem, MenuTrigger, forwardRef(() => NavMenuItem)],
+  imports: [
+    RouterLink,
+    NgIcon,
+    NgpCollapsible,
+    NgpCollapsibleTrigger,
+    NgpCollapsibleContent,
+    forwardRef(() => NavMenuItem),
+  ],
   providers: [provideIcons({ lucideChevronRight })],
   templateUrl: './nav-menu-item.html',
   styleUrl: './nav-menu-item.css',
@@ -48,13 +59,22 @@ export class NavMenuItem {
   readonly cn = cn;
   readonly flipped = signal(false);
 
-  private readonly subPanel = viewChild<Menu<unknown>>('subPanel');
+  /**
+   * Sub-panel open state.
+   *
+   * `ngpCollapsible` rather than a menu primitive: this panel renders in
+   * normal flow — stacked inline inside the mobile drawer, and only promoted
+   * to an absolutely-positioned flyout at `lg`. A menu primitive portals its
+   * content to the body and positions it with floating-ui, which would lose
+   * the inline mobile layout entirely.
+   */
+  readonly subPanelOpen = signal(false);
+
   private readonly triggerBtn = viewChild<ElementRef<HTMLButtonElement>>('triggerBtn');
 
   constructor() {
     effect(() => {
-      const panel = this.subPanel();
-      if (!panel?.visible()) return;
+      if (!this.subPanelOpen()) return;
       afterNextRender(() => this.recheckPosition(), { injector: this.injector });
     });
   }
@@ -84,13 +104,13 @@ export class NavMenuItem {
   }
 
   bubble(): void {
-    this.subPanel()?.close();
+    this.subPanelOpen.set(false);
     this.navigated.emit();
   }
 
   recheckPosition(): void {
     if (!isPlatformBrowser(this.platformId)) return;
-    if (!this.subPanel()?.visible()) return;
+    if (!this.subPanelOpen()) return;
     const btn = this.triggerBtn()?.nativeElement;
     if (!btn) return;
     const rect = btn.getBoundingClientRect();

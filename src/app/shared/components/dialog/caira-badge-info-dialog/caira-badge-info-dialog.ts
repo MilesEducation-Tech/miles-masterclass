@@ -9,7 +9,7 @@ import {
   resource,
   signal,
 } from '@angular/core';
-import { Tab, TabContent, TabList, TabPanel, Tabs } from '@angular/aria/tabs';
+import { NgpTabButton, NgpTabList, NgpTabPanel, NgpTabset } from 'ng-primitives/tabs';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import { DialogRef } from '../../../core/services/dialog/dialog';
 import {
@@ -58,7 +58,7 @@ const EMPTY_DETAIL: BadgeV2Response<CairaLadderItem | null> = { data: null };
  */
 @Component({
   selector: 'app-caira-badge-info-dialog',
-  imports: [Button, NgOptimizedImage, Spinner, Tabs, TabList, Tab, TabPanel, TabContent],
+  imports: [Button, NgOptimizedImage, Spinner, NgpTabset, NgpTabList, NgpTabButton, NgpTabPanel],
   templateUrl: './caira-badge-info-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

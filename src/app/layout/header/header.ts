@@ -23,7 +23,17 @@ import { animationFrameScheduler, fromEvent } from 'rxjs';
 import { auditTime, filter, map } from 'rxjs/operators';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideChevronRight, lucideMenu, lucideX } from '@ng-icons/lucide';
-import { Menu, MenuContent, MenuTrigger } from '@angular/aria/menu';
+import {
+  NgpAccordion,
+  NgpAccordionContent,
+  NgpAccordionItem,
+  NgpAccordionTrigger,
+} from 'ng-primitives/accordion';
+import {
+  NgpCollapsible,
+  NgpCollapsibleContent,
+  NgpCollapsibleTrigger,
+} from 'ng-primitives/collapsible';
 import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { crownIcon, logo } from '../../shared/core/constant/icon';
 import { NavActionKind, NavItem } from '../../shared/core/models/nav.model';
@@ -62,9 +72,13 @@ const ROUTE_MATCH_OPTIONS: IsActiveMatchOptions = {
     SectionNav,
     UserAvatarMenu,
     NavMenuItem,
-    Menu,
-    MenuTrigger,
-    MenuContent,
+    NgpAccordion,
+    NgpAccordionItem,
+    NgpAccordionTrigger,
+    NgpAccordionContent,
+    NgpCollapsible,
+    NgpCollapsibleTrigger,
+    NgpCollapsibleContent,
     CdkTrapFocus,
   ],
   providers: [provideIcons({ lucideChevronDown, lucideChevronRight, lucideMenu, lucideX })],
@@ -243,10 +257,35 @@ export class Header {
    * for every document click; we close only when the drawer is open and the
    * click target sits outside the host element.
    */
+  /**
+   * Which desktop nav dropdown is open, by item label.
+   *
+   * The dropdowns are a single-select `ngpAccordion` rather than independent
+   * collapsibles so that opening one closes the others — behaviour the old
+   * menu primitive provided for free, and which a disclosure does not.
+   */
+  readonly openNavItem = signal<string | null>(null);
+
+  protected onNavOpenChange(value: string | string[] | null): void {
+    this.openNavItem.set(Array.isArray(value) ? (value[0] ?? null) : value);
+  }
+
+  closeNavDropdown(): void {
+    this.openNavItem.set(null);
+  }
+
   onDocumentClick(event: MouseEvent): void {
-    if (!this.isMobileMenuOpen()) return;
     const target = event.target as Node | null;
-    if (!target || this.hostRef.nativeElement.contains(target)) return;
+    const outside = !target || !this.hostRef.nativeElement.contains(target);
+
+    // Closing on an outside click is also something the menu primitive did on
+    // its own; a disclosure has no notion of "outside".
+    if (outside && this.openNavItem() !== null) {
+      this.closeNavDropdown();
+    }
+
+    if (!this.isMobileMenuOpen()) return;
+    if (!outside) return;
     this.closeMobileMenu();
   }
 

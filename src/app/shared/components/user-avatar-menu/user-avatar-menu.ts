@@ -5,7 +5,7 @@ import { NavigationEnd, Router, RouterLink, Event as RouterEvent } from '@angula
 import { filter, map } from 'rxjs/operators';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideLogOut, lucideShoppingBag, lucideUser } from '@ng-icons/lucide';
-import { Menu, MenuItem, MenuTrigger } from '@angular/aria/menu';
+import { NgpMenu, NgpMenuItem, NgpMenuTrigger } from 'ng-primitives/menu';
 import { cn } from '../../utils/cn';
 import { Utils } from '../../core/services/utils/utils';
 import { Analytics } from '../../core/services/analytics/analytics';
@@ -13,7 +13,7 @@ import { User } from '../../core/models/profile.model';
 
 @Component({
   selector: 'app-user-avatar-menu',
-  imports: [RouterLink, NgIcon, Menu, MenuItem, MenuTrigger],
+  imports: [RouterLink, NgIcon, NgpMenu, NgpMenuItem, NgpMenuTrigger],
   providers: [provideIcons({ lucideChevronDown, lucideLogOut, lucideShoppingBag, lucideUser })],
   templateUrl: './user-avatar-menu.html',
   styleUrl: './user-avatar-menu.css',

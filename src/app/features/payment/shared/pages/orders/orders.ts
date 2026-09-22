@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Menu, MenuContent, MenuItem, MenuTrigger } from '@angular/aria/menu';
+import { NgpMenu, NgpMenuItem, NgpMenuTrigger } from 'ng-primitives/menu';
 import { PaymentFacade } from '../../service/payment-facade/payment-facade';
 import { CartItem, CartItemConfig } from '../../components/cart-item/cart-item';
 import { PageLoading } from '../../../../../shared/components/ui/page-loading/page-loading';
@@ -32,10 +32,9 @@ interface OrderActions {
     NgIcon,
     CurrencyPipe,
     DatePipe,
-    Menu,
-    MenuContent,
-    MenuItem,
-    MenuTrigger,
+    NgpMenu,
+    NgpMenuItem,
+    NgpMenuTrigger,
   ],
   templateUrl: './orders.html',
   styleUrl: './orders.css',

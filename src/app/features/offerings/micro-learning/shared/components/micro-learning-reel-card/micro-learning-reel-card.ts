@@ -26,7 +26,7 @@ import {
   matVolumeOffRound,
   matVolumeUpRound,
 } from '@ng-icons/material-icons/round';
-import { Menu, MenuContent, MenuItem, MenuTrigger } from '@angular/aria/menu';
+import { NgpMenu, NgpMenuItem, NgpMenuTrigger } from 'ng-primitives/menu';
 import { Button } from '../../../../../../shared/components/ui/button/button';
 import {
   PlayerMode,
@@ -55,7 +55,7 @@ const PREVIEW_LIMIT_SECONDS = 60;
 
 @Component({
   selector: 'app-micro-learning-reel-card',
-  imports: [NgIcon, Button, VideoJs, TotalCpeCreditsPipe, Menu, MenuItem, MenuTrigger, MenuContent],
+  imports: [NgIcon, Button, VideoJs, TotalCpeCreditsPipe, NgpMenu, NgpMenuItem, NgpMenuTrigger],
   templateUrl: './micro-learning-reel-card.html',
   styleUrl: './micro-learning-reel-card.css',
   host: {

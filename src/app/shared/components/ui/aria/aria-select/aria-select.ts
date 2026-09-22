@@ -1,20 +1,33 @@
-import { Listbox, Option } from '@angular/aria/listbox';
-import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
-import { Component, computed, ElementRef, input, model, signal, viewChild } from '@angular/core';
+import { Component, computed, input, model, signal } from '@angular/core';
 import type { FormValueControl } from '@angular/forms/signals';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronDown } from '@ng-icons/heroicons/outline';
+import {
+  NgpSelect,
+  NgpSelectDropdown,
+  NgpSelectOption,
+  NgpSelectPortal,
+} from 'ng-primitives/select';
 import { AriaSelectOption, dedupeAriaOptions } from '../../../../core/models/aria.model';
 import { cn } from '../../../../utils/cn';
 
 /**
- * ARIA single-select dropdown built on `@angular/aria/listbox` rendered in a
- * `CdkConnectedOverlay`. A button serves as the trigger and displays the
- * selected option's label.
+ * Single-select dropdown built on `ngpSelect`.
+ *
+ * The primitive replaced the `CdkConnectedOverlay` plumbing this used to
+ * carry — the open signal wiring, the focus dance between trigger and
+ * listbox, escape handling and the manual `aria-haspopup` / `aria-expanded` /
+ * `aria-controls` attributes. It positions the dropdown itself and provides
+ * the combobox ARIA pattern, including `aria-selected` per option.
+ *
+ * The trigger is a `<div>` rather than a `<button>` because the dropdown
+ * portal has to be a DOM descendant of the element carrying `ngpSelect`, and
+ * a `<button>` cannot contain one. The primitive supplies `role="combobox"`
+ * and `tabindex`, and the floating label is associated via `aria-labelledby`.
  */
 @Component({
   selector: 'app-aria-select',
-  imports: [Listbox, Option, CdkConnectedOverlay, CdkOverlayOrigin, NgIcon],
+  imports: [NgpSelect, NgpSelectDropdown, NgpSelectOption, NgpSelectPortal, NgIcon],
   templateUrl: './aria-select.html',
   styleUrl: './aria-select.css',
   providers: [provideIcons({ heroChevronDown })],
@@ -41,13 +54,12 @@ export class AriaSelect<V = unknown> implements FormValueControl<V | null> {
 
   readonly icons = signal({ chevronDown: heroChevronDown });
 
+  /** Mirrors the primitive's dropdown state so the chevron and floating label
+   *  can react to it. */
   readonly isOpen = signal(false);
 
-  private readonly triggerEl = viewChild<ElementRef<HTMLButtonElement>>('triggerEl');
-  private readonly listboxEl = viewChild<ElementRef<HTMLUListElement>>('listboxEl');
-
   readonly inputId = computed(() => `${this.id()}-input`);
-  readonly listboxId = computed(() => `${this.id()}-listbox`);
+  readonly labelId = computed(() => `${this.id()}-label`);
   readonly hintId = computed(() => `${this.id()}-hint`);
   readonly errorId = computed(() => `${this.id()}-error`);
 
@@ -57,11 +69,6 @@ export class AriaSelect<V = unknown> implements FormValueControl<V | null> {
     const v = this.value();
     if (v == null) return '';
     return this.options().find((o) => o.value === v)?.label ?? '';
-  });
-
-  readonly listboxValues = computed<unknown[]>(() => {
-    const v = this.value();
-    return v == null ? [] : [v];
   });
 
   readonly displayError = computed(() => this.invalid() && this.errors().length > 0);
@@ -86,35 +93,20 @@ export class AriaSelect<V = unknown> implements FormValueControl<V | null> {
     ),
   );
 
-  toggle() {
-    if (this.disabled() || this.readonly()) return;
-    this.isOpen.update((v) => !v);
+  protected onOpenChange(open: boolean): void {
+    this.isOpen.set(open);
+    // Closing the dropdown is the commit point, same as the old overlay detach.
+    if (!open) this.touched.set(true);
   }
 
-  close() {
-    if (!this.isOpen()) return;
-    this.isOpen.set(false);
-    this.touched.set(true);
-    queueMicrotask(() => this.triggerEl()?.nativeElement.focus());
-  }
-
-  onOverlayAttached() {
-    queueMicrotask(() => this.listboxEl()?.nativeElement.focus());
-  }
-
-  onListboxValuesChange(values: unknown[]) {
-    const next = (values[0] ?? null) as V | null;
-    // Empty emissions are not user commits: the listbox prunes values missing
-    // from the rendered options (e.g. before async options load) and explicit
-    // mode re-toggles emit []. Keep the current value and stay open.
+  protected onValueChange(next: V | null): void {
+    // Empty emissions are not user commits: the select prunes values missing
+    // from the rendered options (e.g. before async options load).
     if (next == null) return;
-    if (next !== this.value()) {
-      this.value.set(next);
-    }
-    this.close();
+    if (next !== this.value()) this.value.set(next);
   }
 
-  handleBlur() {
+  protected handleBlur(): void {
     this.touched.set(true);
   }
 }

@@ -1,4 +1,5 @@
 import { Component, computed, input } from '@angular/core';
+import { NgpProgress, NgpProgressIndicator } from 'ng-primitives/progress';
 
 /** Available progress bar variants */
 export type ProgressVariant = 'default' | 'success' | 'warning' | 'error' | 'info';
@@ -22,6 +23,7 @@ export type LabelPosition = 'none' | 'right' | 'inside' | 'top';
  */
 @Component({
   selector: 'app-progress',
+  imports: [NgpProgress, NgpProgressIndicator],
   template: `
     @if (label() === 'top') {
       <div class="flex justify-between items-center mb-1">
@@ -30,20 +32,26 @@ export type LabelPosition = 'none' | 'right' | 'inside' | 'top';
       </div>
     }
     <div class="flex items-center gap-2" [class]="containerClass()">
+      <!-- ngpProgress owns role="progressbar" and the aria-value* trio, and
+           reflects data-progressing / data-indeterminate / data-complete. A
+           null value is what puts it in the indeterminate state. -->
       <div
+        ngpProgress
         class="progress-track"
         [class]="trackClass()"
         [class.track-determinate]="!indeterminate()"
-        role="progressbar"
-        [attr.aria-valuenow]="clampedValue()"
-        [attr.aria-valuemin]="0"
-        [attr.aria-valuemax]="100"
+        [ngpProgressValue]="indeterminate() ? null : clampedValue()"
         [attr.aria-label]="ariaLabel() || labelText() || 'Progress'"
       >
         @if (indeterminate()) {
-          <div class="progress-indeterminate" [class]="fillClass()"></div>
+          <div ngpProgressIndicator class="progress-indeterminate" [class]="fillClass()"></div>
         } @else {
-          <div class="progress-fill" [class]="fillClass()" [style.width.%]="clampedValue()">
+          <div
+            ngpProgressIndicator
+            class="progress-fill"
+            [class]="fillClass()"
+            [style.width.%]="clampedValue()"
+          >
             @if (label() === 'inside' && clampedValue() > 15) {
               <span class="progress-label-inside">{{ displayValue() }}%</span>
             }

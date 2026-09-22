@@ -1,3 +1,23 @@
 :host {
   display: inline-block;
 }
+
+/* State comes from the primitive's data attributes rather than bound classes. */
+[ngpRating] {
+  cursor: pointer;
+  outline: none;
+}
+
+[ngpRating][data-readonly],
+[ngpRating][data-disabled] {
+  cursor: default;
+}
+
+[ngpRating][data-disabled] {
+  opacity: 0.5;
+}
+
+[ngpRating][data-focus-visible] {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

@@ -17,21 +17,14 @@
       <p class="mt-1 text-sm text-muted-foreground">Current Reward Status: {{ statusLabel() }}</p>
     </div>
 
-    <div ngTabs class="mt-8 block">
-      <div
-        ngTabList
-        [(selectedTab)]="selectedTab"
-        orientation="horizontal"
-        selectionMode="explicit"
-        wrap
-        class="grid grid-cols-3 border-b border-border/60 mb-6"
-      >
+    <div ngpTabset [(ngpTabsetValue)]="selectedTab" class="mt-8 block">
+      <div ngpTabList class="grid grid-cols-3 border-b border-border/60 mb-6">
         @for (tab of tabs; track tab.key) {
           <button
-            ngTab
+            ngpTabButton
             type="button"
-            [value]="tab.key"
-            class="-mb-px cursor-pointer border-b-2 border-transparent px-2 pb-3 text-sm font-medium text-muted-foreground transition-colors outline-none aria-selected:border-accent aria-selected:font-semibold aria-selected:text-white focus-visible:ring-2 focus-visible:ring-ring"
+            [ngpTabButtonValue]="tab.key"
+            class="-mb-px cursor-pointer border-b-2 border-transparent bg-transparent px-2 pb-3 text-sm font-medium text-muted-foreground transition-colors outline-none data-[active]:border-accent data-[active]:font-semibold data-[active]:text-white data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring"
           >
             {{ tab.label }}
           </button>
@@ -39,29 +32,27 @@
       </div>
 
       @for (tab of tabs; track tab.key) {
-        <div ngTabPanel [value]="tab.key" class="outline-none">
-          <ng-template ngTabContent>
-            @if (isLoading()) {
-              <div class="flex justify-center py-6 text-muted-foreground">
-                <app-spinner size="lg" />
-              </div>
-            } @else {
-              <ul class="space-y-3">
-                @for (bullet of bulletsFor(tab.key); track bullet.title) {
-                  <li class="flex gap-2 text-sm leading-relaxed">
-                    <span aria-hidden="true" class="text-muted-foreground">&bull;</span>
-                    <span>
-                      <span class="font-semibold text-white">{{ bullet.title }}</span>
-                      <br />
-                      <span class="text-muted-foreground"> {{ bullet.description }}</span>
-                    </span>
-                  </li>
-                } @empty {
-                  <li class="text-sm text-muted-foreground">Details are on their way.</li>
-                }
-              </ul>
-            }
-          </ng-template>
+        <div ngpTabPanel [ngpTabPanelValue]="tab.key" class="outline-none">
+          @if (isLoading()) {
+            <div class="flex justify-center py-6 text-muted-foreground">
+              <app-spinner size="lg" />
+            </div>
+          } @else {
+            <ul class="space-y-3">
+              @for (bullet of bulletsFor(tab.key); track bullet.title) {
+                <li class="flex gap-2 text-sm leading-relaxed">
+                  <span aria-hidden="true" class="text-muted-foreground">&bull;</span>
+                  <span>
+                    <span class="font-semibold text-white">{{ bullet.title }}</span>
+                    <br />
+                    <span class="text-muted-foreground"> {{ bullet.description }}</span>
+                  </span>
+                </li>
+              } @empty {
+                <li class="text-sm text-muted-foreground">Details are on their way.</li>
+              }
+            </ul>
+          }
         </div>
       }
     </div>

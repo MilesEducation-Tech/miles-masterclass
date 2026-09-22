@@ -1,12 +1,24 @@
-import { Component, computed, input, output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroStar } from '@ng-icons/heroicons/outline';
 import { heroStarSolid } from '@ng-icons/heroicons/solid';
+import { NgpRating, NgpRatingItem } from 'ng-primitives/rating';
 
+/**
+ * Star rating built on `ngpRating`.
+ *
+ * The primitive owns the value, the hover preview, keyboard interaction and the
+ * `role="slider"` ARIA wiring; this component only supplies the star markup and
+ * the project's styling hooks. Partial stars come from the per-item `fraction`
+ * (0–1), which replaces the old `getStarState` / `getPartialPercent` pair.
+ *
+ * The public API is unchanged from the hand-rolled version, so consumers keep
+ * binding `[value]`, `[isReadonly]`, `[max]`, `size`, `containerClass` and
+ * `starClass` exactly as before.
+ */
 @Component({
   selector: 'app-rating-star',
-  imports: [CommonModule, NgIcon],
+  imports: [NgIcon, NgpRating, NgpRatingItem],
   templateUrl: './rating-star.html',
   styleUrl: './rating-star.css',
   viewProviders: [provideIcons({ heroStar, heroStarSolid })],
@@ -22,35 +34,11 @@ export class RatingStar {
   containerClass = input<string>('flex items-center gap-1');
   starClass = input<string>('');
 
+  /**
+   * Accessible name for the rating. `ngpRating` exposes `role="slider"`, which
+   * needs a name — the individual stars are no longer separate controls.
+   */
+  ariaLabel = input<string>('Rating');
+
   valueChange = output<number>();
-
-  stars = computed(() => {
-    return Array(this.max())
-      .fill(0)
-      .map((_, i) => i + 1);
-  });
-
-  handleRate(rating: number) {
-    if (this.isReadonly()) return;
-    this.valueChange.emit(rating);
-  }
-
-  // Calculate clip path percentage for partial stars if needed
-  // But CSS width overlay is easier.
-  // We need to determine for each star if it is Full, Empty, or Partial.
-
-  getStarState(index: number, value: number) {
-    // index is 1-based (1..5)
-    // value is e.g. 4.3
-    if (value >= index) return 'full';
-    if (value > index - 1) return 'partial'; // e.g. 4.3 > 4
-    return 'empty';
-  }
-
-  getPartialPercent(index: number, value: number) {
-    // index 5, value 4.3.
-    // percent = (value - (index - 1)) * 100
-    // (4.3 - 4) * 100 = 30%
-    return Math.round((value - (index - 1)) * 100) + '%';
-  }
 }

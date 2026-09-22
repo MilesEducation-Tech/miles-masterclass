@@ -1,4 +1,4 @@
-import { Listbox, Option } from '@angular/aria/listbox';
+import { NgpListbox, NgpListboxOption } from 'ng-primitives/listbox';
 import { Component, computed, input, output } from '@angular/core';
 
 export interface CheckboxListOption {
@@ -7,12 +7,17 @@ export interface CheckboxListOption {
 }
 
 /**
- * Multi-select list built on `@angular/aria/listbox` with `multi="true"`.
- * Each option renders a check glyph driven by `aria-selected`.
+ * Multi-select list built on `ngpListbox` in `multiple` mode. Each option
+ * renders a check glyph driven by the primitive's `data-selected` attribute.
+ *
+ * `aria-selected` is bound by hand from the option directive's `selected()`
+ * signal: unlike `@angular/aria`, `NgpListbox` exposes selection only as a
+ * `data-*` attribute, and a `role="option"` with no `aria-selected` leaves
+ * screen-reader users unable to tell what is checked.
  */
 @Component({
   selector: 'app-checkbox-list',
-  imports: [Listbox, Option],
+  imports: [NgpListbox, NgpListboxOption],
   templateUrl: './checkbox-list.html',
   styleUrl: './checkbox-list.css',
 })
@@ -22,9 +27,8 @@ export class CheckboxList {
   readonly selectionChange = output<readonly (string | number)[]>();
 
   /**
-   * `ngListbox.values` is a `ModelSignal<V[]>` (mutable). Callers pass a
-   * `readonly` array; we expose a fresh mutable copy here so the type checker
-   * is happy and the listbox can't accidentally mutate caller-owned state.
+   * Callers pass a `readonly` array; hand the listbox a fresh mutable copy so
+   * the type checker is happy and it can't mutate caller-owned state.
    */
   readonly mutableSelected = computed<(string | number)[]>(() => [...this.selected()]);
 

@@ -25,20 +25,24 @@ describe('AriaSelect', () => {
     expect(component).toBeTruthy();
   });
 
-  it('does not auto-select the first option when opened with no value', async () => {
-    component.toggle();
-    fixture.detectChanges();
-    await fixture.whenStable();
-
+  it('starts with no selection', () => {
     expect(component.value()).toBeNull();
-    expect(component.isOpen()).toBe(true);
   });
 
-  it('keeps the current value when the listbox emits an empty commit', () => {
+  // The open/close cycle and "don't auto-select on open" are `ngpSelect`'s
+  // behaviour now, so they are no longer asserted here. What remains ours is
+  // the null-emission guard: the primitive prunes values that aren't in the
+  // rendered options (e.g. a seeded value before async options land), and that
+  // must not wipe the current selection.
+  it('keeps the current value when the select emits a null commit', () => {
     component.value.set('a');
-    component.onListboxValuesChange([]);
+    component['onValueChange'](null);
 
     expect(component.value()).toBe('a');
-    expect(component.isOpen()).toBe(false);
+  });
+
+  it('mirrors the selected option label', () => {
+    component.value.set('b');
+    expect(component.selectedLabel()).toBe('Beta');
   });
 });

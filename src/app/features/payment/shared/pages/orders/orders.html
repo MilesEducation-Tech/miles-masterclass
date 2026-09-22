@@ -74,23 +74,27 @@
                    the menus that are already instantiated, so indexing it by row
                    left every row but the first with no menu at all. -->
               <div class="ml-auto relative">
-                <app-button ngMenuTrigger [menu]="orderMenu" variant="outline" size="sm">
+                <app-button
+                  [ngpMenuTrigger]="orderMenu"
+                  ngpMenuTriggerPlacement="bottom-end"
+                  variant="outline"
+                  size="sm"
+                >
                   <ng-icon name="matMoreVertOutline" size="18" class="mr-1" />
                   Actions
                 </app-button>
 
-                <div
-                  ngMenu
-                  #orderMenu="ngMenu"
-                  [class.hidden]="!orderMenu.visible()"
-                  class="absolute right-0 top-full mt-1 z-30 rounded-lg border border-border bg-[#1C2A37] shadow-xl py-1 flex flex-col"
-                >
-                  <ng-template ngMenuContent>
+                <!-- Portalled and positioned by the primitive, so the absolute
+                     positioning and the visible() toggle are gone. -->
+                <ng-template #orderMenu>
+                  <div
+                    ngpMenu
+                    class="z-30 rounded-lg border border-border bg-[#1C2A37] shadow-xl py-1 flex flex-col"
+                  >
                     <!-- Payment Confirmation - always visible -->
                     <app-button
-                      ngMenuItem
+                      ngpMenuItem
                       variant="ghost"
-                      value="payment-confirmation"
                       class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
                       (clicked)="paymentConfirmation(order.id, order.payment_status)"
                     >
@@ -101,9 +105,8 @@
                     <!-- Stripe Receipt - only for stripe orders -->
                     @if (orderActionsMap().get(order.id)?.hasStripeReceipt) {
                       <app-button
-                        ngMenuItem
+                        ngpMenuItem
                         variant="ghost"
-                        value="stripe-receipt"
                         class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
                         (clicked)="downloadStripeReceipt(order.id)"
                       >
@@ -115,9 +118,8 @@
                     <!-- Cancel Auto Renewal - stripe subscription with Active/ReSubscribe status -->
                     @if (orderActionsMap().get(order.id)?.showCancelAutoRenewal) {
                       <app-button
-                        ngMenuItem
+                        ngpMenuItem
                         variant="ghost"
-                        value="cancel-auto-renewal"
                         class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
                         (clicked)="cancelAutoRenewal(order.id)"
                       >
@@ -129,9 +131,8 @@
                     <!-- Reactivate Auto Renewal - stripe subscription with Deactivate status -->
                     @if (orderActionsMap().get(order.id)?.showReactivateAutoRenewal) {
                       <app-button
-                        ngMenuItem
+                        ngpMenuItem
                         variant="ghost"
-                        value="reactivate-auto-renewal"
                         class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
                         (clicked)="reactivateAutoRenewal(order.id)"
                       >
@@ -139,8 +140,8 @@
                         Reactivate Auto Renewal
                       </app-button>
                     }
-                  </ng-template>
-                </div>
+                  </div>
+                </ng-template>
               </div>
             </div>
 

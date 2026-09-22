@@ -1,17 +1,17 @@
-<div ngTabs [class]="containerClass()">
-  <div
-    ngTabList
-    [orientation]="orientation()"
-    [selectionMode]="selectionMode()"
-    [(selectedTab)]="selectedTab"
-    [class]="tabListClass()"
-  >
+<div
+  ngpTabset
+  [(ngpTabsetValue)]="selectedTab"
+  [ngpTabsetOrientation]="orientation()"
+  [ngpTabsetActivateOnFocus]="selectionMode() === 'follow'"
+  [class]="containerClass()"
+>
+  <div ngpTabList [class]="tabListClass()">
     @for (tab of tabs(); track tab.id) {
       <button
-        ngTab
+        ngpTabButton
         type="button"
-        [value]="tab.id"
-        [disabled]="tab.disabled ?? false"
+        [ngpTabButtonValue]="tab.id"
+        [ngpTabButtonDisabled]="tab.disabled ?? false"
         [class]="cn(tabClass(), tab.headingClass)"
       >
         {{ tab.heading }}
@@ -20,14 +20,12 @@
   </div>
 
   @for (tab of tabs(); track tab.id) {
-    <div ngTabPanel [value]="tab.id" [class]="cn(panelClass(), tab.contentClass)">
-      <ng-template ngTabContent>
-        @if (asComponent(tab.content); as comp) {
-          <ng-container *ngComponentOutlet="comp; inputs: tab.contentInputs" />
-        } @else {
-          <div [innerHTML]="asHtml(tab.content)"></div>
-        }
-      </ng-template>
+    <div ngpTabPanel [ngpTabPanelValue]="tab.id" [class]="cn(panelClass(), tab.contentClass)">
+      @if (asComponent(tab.content); as comp) {
+        <ng-container *ngComponentOutlet="comp; inputs: tab.contentInputs" />
+      } @else {
+        <div [innerHTML]="asHtml(tab.content)"></div>
+      }
     </div>
   }
 </div>

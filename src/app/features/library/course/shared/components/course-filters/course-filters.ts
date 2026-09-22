@@ -1,9 +1,9 @@
 import {
-  AccordionContent,
-  AccordionGroup,
-  AccordionPanel,
-  AccordionTrigger,
-} from '@angular/aria/accordion';
+  NgpAccordion,
+  NgpAccordionContent,
+  NgpAccordionItem,
+  NgpAccordionTrigger,
+} from 'ng-primitives/accordion';
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronDown } from '@ng-icons/heroicons/outline';
@@ -17,10 +17,10 @@ import {
 @Component({
   selector: 'app-course-filters',
   imports: [
-    AccordionGroup,
-    AccordionTrigger,
-    AccordionPanel,
-    AccordionContent,
+    NgpAccordion,
+    NgpAccordionItem,
+    NgpAccordionTrigger,
+    NgpAccordionContent,
     CheckboxList,
     NgIcon,
   ],

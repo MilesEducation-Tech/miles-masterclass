@@ -11,13 +11,17 @@
   }
 </div>
 
-<div ngAccordionGroup multiExpandable wrap class="flex flex-col divide-y divide-border/40">
+<div
+  ngpAccordion
+  ngpAccordionType="multiple"
+  ngpAccordionCollapsible
+  class="flex flex-col divide-y divide-border/40"
+>
   @for (group of groups(); track group.key) {
-    <section class="py-2">
+    <section ngpAccordionItem [ngpAccordionItemValue]="group.key" class="py-2">
       <button
-        ngAccordionTrigger
-        [panel]="panel"
-        class="w-full flex items-center justify-between gap-2 py-2 px-1 text-left text-sm font-medium text-foreground rounded-md outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        ngpAccordionTrigger
+        class="group w-full flex items-center justify-between gap-2 py-2 px-1 text-left text-sm font-medium text-foreground rounded-md bg-transparent border-0 outline-none data-[focus-visible]:ring-2 data-[focus-visible]:ring-accent"
       >
         <span class="flex items-center gap-2">
           {{ group.label }}
@@ -32,18 +36,16 @@
         <ng-icon
           name="heroChevronDown"
           size="16"
-          class="text-muted-foreground transition-transform aria-expanded:rotate-180"
+          class="text-muted-foreground transition-transform group-data-[open]:rotate-180"
         />
       </button>
 
-      <div ngAccordionPanel #panel="ngAccordionPanel" class="mt-1">
-        <ng-template ngAccordionContent>
-          <app-checkbox-list
-            [options]="group.options"
-            [selected]="selectedFor(group.key)"
-            (selectionChange)="update(group.key, $event)"
-          />
-        </ng-template>
+      <div ngpAccordionContent class="mt-1">
+        <app-checkbox-list
+          [options]="group.options"
+          [selected]="selectedFor(group.key)"
+          (selectionChange)="update(group.key, $event)"
+        />
       </div>
     </section>
   }

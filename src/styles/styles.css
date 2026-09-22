@@ -419,3 +419,15 @@ swiper-container {
 .cdk-overlay-container {
   z-index: 10000;
 }
+
+/*
+ * ng-primitives ships no styles, so a closed collapsible still renders unless
+ * we hide it. `display: none` is the faithful equivalent of the
+ * `[hidden]="!panel.visible()"` binding the previous menu-based nav panels
+ * used — the panels bring their own fade-in animation class, so the
+ * height-based open/close animation from the docs isn't wanted here.
+ */
+[ngpCollapsibleContent][data-closed],
+[ngpAccordionContent][data-closed] {
+  display: none;
+}

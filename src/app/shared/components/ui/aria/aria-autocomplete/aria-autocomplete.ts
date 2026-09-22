@@ -1,5 +1,3 @@
-import { Listbox, Option } from '@angular/aria/listbox';
-import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
 import {
   Component,
   computed,
@@ -17,17 +15,38 @@ import {
 import type { FormValueControl } from '@angular/forms/signals';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronDown, heroXMark } from '@ng-icons/heroicons/outline';
+import {
+  NgpCombobox,
+  NgpComboboxDropdown,
+  NgpComboboxInput,
+  NgpComboboxOption,
+  NgpComboboxPortal,
+} from 'ng-primitives/combobox';
 import { AriaSelectOption, dedupeAriaOptions } from '../../../../core/models/aria.model';
 import { cn } from '../../../../utils/cn';
 
 /**
- * ARIA-style autocomplete: text input + listbox popover via `CdkConnectedOverlay`.
- * Internal client-side substring filter against `options`. For server-side
- * filtering use `<app-aria-combobox>` (consumer provides filtered options).
+ * Autocomplete built on `ngpCombobox`.
+ *
+ * The primitive owns the dropdown (positioning, portal, open state), keyboard
+ * navigation and `aria-activedescendant` — replacing the `CdkConnectedOverlay`
+ * template, the manual `isOpen` juggling, the hand-written combobox ARIA
+ * attributes and the keydown-forwarding hack that re-dispatched arrow keys at
+ * the listbox element.
+ *
+ * Filtering, the query mirror and the clear button stay here: they are this
+ * component's own behaviour, not the primitive's.
  */
 @Component({
   selector: 'app-aria-autocomplete',
-  imports: [Listbox, Option, CdkConnectedOverlay, CdkOverlayOrigin, NgIcon],
+  imports: [
+    NgpCombobox,
+    NgpComboboxDropdown,
+    NgpComboboxInput,
+    NgpComboboxOption,
+    NgpComboboxPortal,
+    NgIcon,
+  ],
   templateUrl: './aria-autocomplete.html',
   styleUrl: './aria-autocomplete.css',
   providers: [provideIcons({ heroChevronDown, heroXMark })],
@@ -70,8 +89,6 @@ export class AriaAutocomplete<V = unknown> implements FormValueControl<V | null>
   readonly isOpen = signal(false);
 
   private readonly inputEl = viewChild<ElementRef<HTMLInputElement>>('inputEl');
-  private readonly listboxEl = viewChild<ElementRef<HTMLUListElement>>('listboxEl');
-  protected readonly listbox = viewChild(Listbox);
 
   private readonly inputFocused = signal(false);
 
@@ -151,66 +168,30 @@ export class AriaAutocomplete<V = unknown> implements FormValueControl<V | null>
 
   onFocus() {
     this.inputFocused.set(true);
-    if (this.disabled() || this.readonly()) return;
-    this.isOpen.set(true);
-  }
-
-  /** Reopen the list when the already-focused input is clicked again. */
-  onInputClick() {
-    if (this.disabled() || this.readonly()) return;
-    this.isOpen.set(true);
   }
 
   onInput(event: Event) {
-    const v = (event.target as HTMLInputElement).value;
-    this.query.set(v);
-    this.isOpen.set(true);
+    this.query.set((event.target as HTMLInputElement).value);
   }
 
-  close() {
-    if (!this.isOpen()) return;
-    this.isOpen.set(false);
-    this.touched.set(true);
+  /** Mirrors the primitive's dropdown state for the chevron rotation. */
+  protected onOpenChange(open: boolean): void {
+    this.isOpen.set(open);
+    if (!open) this.touched.set(true);
   }
 
-  onOverlayAttached() {
-    // Keep focus on the input — user is still typing/navigating.
-  }
-
-  /** Forward list navigation from the input to the listbox (combobox pattern). */
-  onKeydown(event: KeyboardEvent) {
-    if (this.disabled() || this.readonly()) return;
-    const isArrow = event.key === 'ArrowDown' || event.key === 'ArrowUp';
-    if (!isArrow && !(event.key === 'Enter' && this.isOpen())) return;
-    event.preventDefault();
-    if (!this.isOpen()) {
-      this.isOpen.set(true);
-      return;
-    }
-    this.listboxEl()?.nativeElement.dispatchEvent(
-      new KeyboardEvent('keydown', { key: event.key, bubbles: false }),
-    );
-  }
-
-  onListboxValuesChange(values: unknown[]) {
-    const next = (values[0] ?? null) as V | null;
-    // Empty emissions are not user commits: the listbox prunes values missing
-    // from the rendered (filtered) options and explicit mode re-toggles emit
-    // []. Keep the current value and stay open.
+  protected onValueChange(next: V | null): void {
+    // Empty emissions are not user commits: the combobox prunes values missing
+    // from the rendered (filtered) options.
     if (next == null) return;
     this.value.set(next);
     const selected = this.options().find((o) => o.value === next);
     if (selected) this.query.set(selected.label);
-    this.close();
-    queueMicrotask(() => this.inputEl()?.nativeElement.focus());
   }
 
   handleBlur() {
-    // Option clicks preventDefault on mousedown, so the input only blurs on a
-    // genuine focus-out — safe to close immediately.
     this.inputFocused.set(false);
     this.touched.set(true);
-    this.close();
   }
 
   clear(event: Event) {

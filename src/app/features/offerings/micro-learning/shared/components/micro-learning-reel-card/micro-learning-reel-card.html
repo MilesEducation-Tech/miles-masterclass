@@ -148,26 +148,26 @@
   @if (active()) {
     <button
       type="button"
-      ngMenuTrigger
-      [menu]="optionsMenu"
+      [ngpMenuTrigger]="optionsMenu"
+      ngpMenuTriggerPlacement="top-end"
       class="grid place-items-center h-10 w-10 rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80 cursor-pointer"
       aria-label="More options"
     >
       <ng-icon name="matMoreVertRound" size="20" aria-hidden="true" />
     </button>
 
-    <div
-      ngMenu
-      #optionsMenu="ngMenu"
-      (itemSelected)="onMenuItemSelected($event)"
-      [class.hidden]="!optionsMenu.visible()"
-      class="absolute bottom-12 right-0 z-50 w-56 bg-secondary/95 backdrop-blur-md text-foreground rounded-xl py-2 shadow-xl border border-border/40"
-    >
-      <ng-template ngMenuContent>
+    <!-- Portalled and positioned by the primitive. The single
+         `(itemSelected)` dispatch is now a per-item click: `ngpMenuItem`
+         carries no value, and each item already knows what it does. -->
+    <ng-template #optionsMenu>
+      <div
+        ngpMenu
+        class="z-50 w-56 bg-secondary/95 backdrop-blur-md text-foreground rounded-xl py-2 shadow-xl border border-border/40"
+      >
         <button
           type="button"
-          ngMenuItem
-          [value]="'about'"
+          ngpMenuItem
+          (click)="onMenuItemSelected('about')"
           class="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-background/40 transition-colors cursor-pointer text-left"
         >
           <ng-icon name="matInfoRound" size="18" aria-hidden="true" />
@@ -175,8 +175,8 @@
         </button>
         <button
           type="button"
-          ngMenuItem
-          [value]="'transcript'"
+          ngpMenuItem
+          (click)="onMenuItemSelected('transcript')"
           class="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-background/40 transition-colors cursor-pointer text-left"
         >
           <ng-icon name="matLinkRound" size="18" aria-hidden="true" />
@@ -184,14 +184,14 @@
         </button>
         <button
           type="button"
-          ngMenuItem
-          [value]="'glossary'"
+          ngpMenuItem
+          (click)="onMenuItemSelected('glossary')"
           class="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-background/40 transition-colors cursor-pointer text-left"
         >
           <ng-icon name="matMenuBookRound" size="18" aria-hidden="true" />
           <span>Glossary</span>
         </button>
-      </ng-template>
-    </div>
+      </div>
+    </ng-template>
   }
 </div>

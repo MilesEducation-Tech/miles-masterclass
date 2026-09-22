@@ -37,9 +37,16 @@
         <!-- Right Navigation - Desktop -->
         @if (!isMobile()) {
           <nav class="flex justify-between items-center gap-2" aria-label="Primary">
-            <ul class="flex items-center gap-2 list-none m-0 p-0">
+            <ul
+              class="flex items-center gap-2 list-none m-0 p-0"
+              ngpAccordion
+              ngpAccordionType="single"
+              ngpAccordionCollapsible
+              [ngpAccordionValue]="openNavItem()"
+              (ngpAccordionValueChange)="onNavOpenChange($event)"
+            >
               @for (item of navItems(); track item.label; let first = $first) {
-                <li class="relative">
+                <li class="relative" ngpAccordionItem [ngpAccordionItemValue]="item.label">
                   @if (item.type === 'link') {
                     <a
                       [routerLink]="utils.localePath(item.route)"
@@ -116,8 +123,7 @@
                   @if (item.type === 'menu') {
                     <button
                       type="button"
-                      ngMenuTrigger
-                      [menu]="dropdownPanel"
+                      ngpAccordionTrigger
                       [class]="
                         cn(
                           'flex items-center gap-1 px-2 py-1.5 text-sm font-semibold text-foreground rounded-3xl hover:text-accent transition-all duration-200 cursor-pointer border-0 bg-transparent outline-none focus:outline-none ',
@@ -142,16 +148,12 @@
                     </button>
 
                     <div
-                      ngMenu
-                      #dropdownPanel="ngMenu"
-                      [hidden]="!dropdownPanel.visible()"
+                      ngpAccordionContent
                       class="absolute top-[calc(100%+8px)] right-0 min-w-[220px] max-w-[300px] bg-popover/95 backdrop-blur-xl rounded-xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1)] z-1000 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)] origin-top-center"
                     >
-                      <ng-template ngMenuContent>
-                        @for (child of item.children; track child.label) {
-                          <app-nav-menu-item [item]="child" (navigated)="dropdownPanel.close()" />
-                        }
-                      </ng-template>
+                      @for (child of item.children; track child.label) {
+                        <app-nav-menu-item [item]="child" (navigated)="closeNavDropdown()" />
+                      }
                     </div>
                   }
                 </li>
@@ -347,11 +349,10 @@
                     }
 
                     @if (item.type === 'menu' && item.children?.length) {
-                      <div class="relative">
+                      <div class="relative" ngpCollapsible>
                         <button
                           type="button"
-                          ngMenuTrigger
-                          [menu]="mobileTopMenu"
+                          ngpCollapsibleTrigger
                           [class]="
                             cn(
                               'flex items-center justify-between w-full p-4 text-foreground text-[15px] font-medium bg-transparent border-0 rounded-[10px] cursor-pointer transition-all duration-200 hover:bg-muted outline-none focus:outline-none ',
@@ -377,16 +378,12 @@
                           />
                         </button>
                         <div
-                          ngMenu
-                          #mobileTopMenu="ngMenu"
-                          [hidden]="!mobileTopMenu.visible()"
+                          ngpCollapsibleContent
                           class="mt-1 mb-1 ml-2 bg-muted rounded-lg p-2 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)]"
                         >
-                          <ng-template ngMenuContent>
-                            @for (child of item.children; track child.label) {
-                              <app-nav-menu-item [item]="child" (navigated)="closeMobileMenu()" />
-                            }
-                          </ng-template>
+                          @for (child of item.children; track child.label) {
+                            <app-nav-menu-item [item]="child" (navigated)="closeMobileMenu()" />
+                          }
                         </div>
                       </div>
                     }
