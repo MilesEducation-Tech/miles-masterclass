@@ -11,7 +11,7 @@ import {
   WebinarClaimState,
 } from './shared/components/webinar-claim-card/webinar-claim-card';
 import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
-import { Faq } from '../../../pages/faq/faq';
+import { Faq } from '@shared/components/faq/faq';
 import { UpcomingPremiere } from '@core/models/feature.model';
 import { Content } from '@core/models/course.model';
 

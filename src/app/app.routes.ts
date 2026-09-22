@@ -2,9 +2,9 @@ import { Routes } from '@angular/router';
 import { validateProfessionCountryGuard } from '@core/guards/validate-profession-country.guard';
 import { rootRedirectGuard } from '@core/guards/root-redirect.guard';
 import { onboardingGuard } from '@core/guards/auth/onboarding.guard';
-import { PageNotFound } from './pages/page-not-found/page-not-found';
+import { PageNotFound } from '@features/page-not-found/pages/page-not-found/page-not-found';
 import { BlogLayout } from '@layout/blog-layout/blog-layout';
-import { Compliance } from './pages/compliance/compliance';
+import { Compliance } from '@features/legal/pages/compliance/compliance';
 
 export const routes: Routes = [
   { path: 'auth', loadChildren: () => import('./auth/auth').then((m) => m.authRoutes) },

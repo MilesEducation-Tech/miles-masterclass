@@ -4,7 +4,7 @@ import { CourseRelatedSection } from '@shared/components/course-related-section/
 import { CourseChapterList } from '../../../../shared/components/course-chapter-list/course-chapter-list';
 import { CourseResources } from '../../../../shared/components/course-resources/course-resources';
 import { PodcastCourseHeroSkeleton } from '@shared/components/skeleton/podcast-course-hero-skeleton/podcast-course-hero-skeleton';
-import { Faq } from '../../../../../../pages/faq/faq';
+import { Faq } from '@shared/components/faq/faq';
 import { AppDownloadPrompt } from '@features/offerings/services/app-download-prompt';
 import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
 // NOTE: Podcast detail currently shares MasterclassFacade with the masterclass

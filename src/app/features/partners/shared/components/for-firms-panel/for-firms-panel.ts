@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
-import { iconBentoAi } from '../../models/partner-icons';
+import { iconBentoAi } from '@core/constants/partner-icons';
 import { environment } from '@env/environment';
 
 @Component({

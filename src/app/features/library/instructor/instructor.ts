@@ -18,7 +18,7 @@ import { InstructorCard } from '@shared/components/cards/instructor-card/instruc
 import { InstructorListItem } from '@core/models/library.model';
 import { Utils } from '@shared/services/utils';
 import { InstructorFacade } from './shared/services/instructor-facade/instructor-facade';
-import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
+import { PartnerContentList } from '@shared/components/partner-content-list/partner-content-list';
 
 @Component({
   selector: 'app-instructor',

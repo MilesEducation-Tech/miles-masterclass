@@ -18,7 +18,7 @@ import {
   iconChart,
   iconLaptop,
   iconLearners,
-} from '../../models/partner-icons';
+} from '@core/constants/partner-icons';
 import {
   PartnershipContentInput,
   PartnershipContent,
@@ -26,7 +26,7 @@ import {
 import {
   PartnerContentItem,
   PartnerContentList,
-} from '../../components/partner-content-list/partner-content-list';
+} from '@shared/components/partner-content-list/partner-content-list';
 import { environment } from '@env/environment';
 import { Dialog } from '@core/services/dialog/dialog';
 import { ScrollService } from '@core/services/scroll/scroll';

@@ -17,8 +17,8 @@ import { FinalAssessmentFacade } from '../shared/services/final-assessment-facad
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
 import { ComingSoon } from '@shared/components/cards/coming-soon/coming-soon';
-import { Faq } from '../../../pages/faq/faq';
-import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
+import { Faq } from '@shared/components/faq/faq';
+import { PartnerContentList } from '@shared/components/partner-content-list/partner-content-list';
 import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
 
 @Component({

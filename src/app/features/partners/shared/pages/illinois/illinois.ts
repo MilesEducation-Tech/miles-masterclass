@@ -6,7 +6,7 @@ import {
 import {
   PartnerContentItem,
   PartnerContentList,
-} from '../../components/partner-content-list/partner-content-list';
+} from '@shared/components/partner-content-list/partner-content-list';
 import { environment } from '@env/environment';
 import { Dialog } from '@core/services/dialog/dialog';
 import { ScrollService } from '@core/services/scroll/scroll';
@@ -36,7 +36,7 @@ import {
   iconFunctionSpecificCases,
   iconHowAiWorks,
   iconStandards,
-} from '../../models/partner-icons';
+} from '@core/constants/partner-icons';
 import { Button } from '@shared/ui/button/button';
 import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
 import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';

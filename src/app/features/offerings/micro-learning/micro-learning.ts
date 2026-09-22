@@ -29,8 +29,8 @@ import { Vertical } from '@shared/components/cards/vertical/vertical';
 import { ComingSoon } from '@shared/components/cards/coming-soon/coming-soon';
 import { Utils } from '@shared/services/utils';
 import { MicroLearningHero } from './shared/components/micro-learning-hero/micro-learning-hero';
-import { Faq } from '../../../pages/faq/faq';
-import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
+import { Faq } from '@shared/components/faq/faq';
+import { PartnerContentList } from '@shared/components/partner-content-list/partner-content-list';
 
 @Component({
   selector: 'app-micro-learning',

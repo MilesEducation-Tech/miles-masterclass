@@ -9,7 +9,7 @@ import { BlogCard } from '../../components/blog-card/blog-card';
 import { BlogCompactItem } from '../../components/blog-compact-item/blog-compact-item';
 import { BlogFeatureCard } from '../../components/blog-feature-card/blog-feature-card';
 import { SeoManager } from '@core/services/seo/seo-manager';
-import { Faq } from '../../../../pages/faq/faq';
+import { Faq } from '@shared/components/faq/faq';
 
 /**
  * Blog landing page (design screen 1): hero + search, a featured mosaic,

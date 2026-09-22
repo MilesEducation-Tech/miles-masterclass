@@ -7,7 +7,7 @@ import {
 import {
   PartnerContentItem,
   PartnerContentList,
-} from '../../components/partner-content-list/partner-content-list';
+} from '@shared/components/partner-content-list/partner-content-list';
 import { PARTNER_OFFERINGS } from '@features/home/components/offerings/offerings.config';
 import { environment } from '@env/environment';
 import { ScrollService } from '@core/services/scroll/scroll';
