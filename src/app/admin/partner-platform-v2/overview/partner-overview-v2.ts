@@ -1,8 +1,8 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { Button } from '@shared/components/ui/button/button';
-import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { Button } from '@shared/ui/button/button';
+import { Spinner } from '@shared/ui/spinner/spinner';
 import { StatCard } from '@admin/partner-platform/shared/components/stat-card/stat-card';
 import { Firm, PartnerCode } from '@admin/partner-platform/shared/models/partner-platform.model';
 import { PartnerAdminMe } from '@admin/partner-platform/shared/services/partner-admin-me';

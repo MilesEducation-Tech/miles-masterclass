@@ -14,7 +14,7 @@ import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import { FeatureApiResponse } from '@core/models/feature.model';
 import { InstructorListItem } from '@core/models/library.model';
 import { ApiClient } from '@core/services/api-client/api-client';
-import { parseNextPage } from '@shared/utils/parse-next-page';
+import { parseNextPage } from '@core/utils/parse-next-page';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 
 /**

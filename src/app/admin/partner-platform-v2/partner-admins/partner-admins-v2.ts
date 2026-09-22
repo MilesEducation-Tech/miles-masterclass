@@ -1,9 +1,9 @@
 import { Component, DestroyRef, EnvironmentInjector, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take } from 'rxjs';
-import { Button } from '@shared/components/ui/button/button';
-import { Spinner } from '@shared/components/ui/spinner/spinner';
-import { CreatePartnerAdminDialog } from '@shared/components/dialog/create-partner-admin-dialog/create-partner-admin-dialog';
+import { Button } from '@shared/ui/button/button';
+import { Spinner } from '@shared/ui/spinner/spinner';
+import { CreatePartnerAdminDialog } from '@admin/partner-platform-v2/dialogs/create-partner-admin-dialog/create-partner-admin-dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import { PartnerAdmin } from '@admin/partner-platform/shared/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/partner-platform/shared/services/partner-superadmin-facade';

@@ -1,5 +1,5 @@
 import { AdminAuth } from '@admin/core/services/admin-auth';
-import { PERM } from '@core/models/admin/admin-rbac.model';
+import { PERM } from '@admin/core/admin-rbac.model';
 
 const LANDING_ROUTES: { perm: string; path: string }[] = [
   { perm: PERM.DASHBOARD_VIEW, path: '/admin/dashboard' },

@@ -5,9 +5,9 @@ import { faSolidArrowUpRightFromSquare } from '@ng-icons/font-awesome/solid';
 import { logo } from '@core/constants/icon';
 import { ContentAbout, ContentDetails } from '@core/models/course.model';
 import { CategoriesList } from '../categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '@core/pipes/total-cpe-credits/total-cpe-credits.pipe';
-import { DurationPipe } from '@core/pipes/duration/duration-pipe';
-import { Utils } from '@core/services/utils/utils';
+import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
+import { Utils } from '@shared/services/utils';
 import { Router } from '@angular/router';
 import { Dialog } from '@core/services/dialog/dialog';
 

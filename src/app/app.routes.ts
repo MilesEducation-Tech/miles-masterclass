@@ -3,7 +3,7 @@ import { validateProfessionCountryGuard } from '@core/guards/validate-profession
 import { rootRedirectGuard } from '@core/guards/root-redirect.guard';
 import { onboardingGuard } from '@core/guards/auth/onboarding.guard';
 import { PageNotFound } from './pages/page-not-found/page-not-found';
-import { BlogLayout } from './pages/blog-layout/blog-layout';
+import { BlogLayout } from '@layout/blog-layout/blog-layout';
 import { Compliance } from './pages/compliance/compliance';
 
 export const routes: Routes = [

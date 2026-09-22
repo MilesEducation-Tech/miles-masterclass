@@ -13,11 +13,11 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { VideoChapter } from '../../../../shared/components/video-chapter/video-chapter';
 import { Backward } from '@shared/components/backward/backward';
 import { ChapterFacade } from '../../../../shared/services/chapter-facade/chapter-facade';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { exitChapterToCourse } from '@shared/utils/exit-chapter';
-import { UtilsDialog, UtilsDialogData } from '@shared/components/dialog/utils-dialog/utils-dialog';
+import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
 
 @Component({
   selector: 'app-masterclass-chapter',

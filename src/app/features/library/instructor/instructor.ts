@@ -16,7 +16,7 @@ import { heroMagnifyingGlass } from '@ng-icons/heroicons/outline';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { InstructorCard } from '@shared/components/cards/instructor-card/instructor-card';
 import { InstructorListItem } from '@core/models/library.model';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { InstructorFacade } from './shared/services/instructor-facade/instructor-facade';
 import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
 

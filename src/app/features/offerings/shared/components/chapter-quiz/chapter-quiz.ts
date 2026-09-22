@@ -12,7 +12,7 @@ import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CourseChapter, QuizQuestion } from '@core/models/course.model';
 import { ChapterFacade } from '../../services/chapter-facade/chapter-facade';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 
 @Component({
   selector: 'app-chapter-quiz',

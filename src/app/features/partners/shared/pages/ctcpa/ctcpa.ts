@@ -13,7 +13,7 @@ import { environment } from '@env/environment';
 import { ScrollService } from '@core/services/scroll/scroll';
 import { Offering } from '@features/home/components/offerings/offerings';
 import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
 
 @Component({

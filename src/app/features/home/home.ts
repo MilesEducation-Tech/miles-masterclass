@@ -17,9 +17,9 @@ import { SectionNav, SectionNavItem } from '@shared/components/section-nav/secti
 import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
 import { Faq } from '../../pages/faq/faq';
 import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan-benefits';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { Router } from '@angular/router';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { CairaLevelStack } from '@shared/components/caira-level-stack/caira-level-stack';
 import { SurroundCarousel } from '@shared/components/surround-carousel/surround-carousel';
 

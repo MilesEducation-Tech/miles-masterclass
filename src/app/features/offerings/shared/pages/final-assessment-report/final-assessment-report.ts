@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FinalAssessmentFacade } from '../../services/final-assessment-facade/final-assessment-facade';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroChevronRight,
@@ -12,10 +12,10 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { SubmitFinalAssessmentResponse } from '@features/offerings/models/assessment.model';
 import { ContentDetails } from '@core/models/course.model';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { Logger } from '@core/services/logger/logger';
 import { DatePipe } from '@angular/common';
-import { PageLoading } from '@shared/components/ui/page-loading/page-loading';
+import { PageLoading } from '@shared/ui/page-loading/page-loading';
 
 @Component({
   selector: 'app-final-assessment-report',

@@ -1,5 +1,5 @@
 import { Route } from '@angular/router';
-import { DynamicLayout } from '../pages/dynamic-layout/dynamic-layout';
+import { DynamicLayout } from '@layout/dynamic-layout/dynamic-layout';
 import { uaeCairaMatchGuard } from '@core/guards/uae-caira-match.guard';
 import { UaeCairaFacade } from '../pages/uae-caira/shared/services/uae-caira-facade/uae-caira-facade';
 import { Tracks } from '@features/shared/services/tracks/tracks';

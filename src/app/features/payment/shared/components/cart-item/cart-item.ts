@@ -4,9 +4,9 @@ import { CartItemData, OrderItem } from '@core/models/payment.model';
 import { environment } from '@env/environment';
 import { NgIcon } from '@ng-icons/core';
 import { matDeleteOutline, matEditOutline } from '@ng-icons/material-icons/outline';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { RouterLink } from '@angular/router';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 
 export type CartDisplayItem = CartItemData | OrderItem;
 

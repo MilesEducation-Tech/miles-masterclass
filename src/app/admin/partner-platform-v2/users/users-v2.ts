@@ -1,13 +1,13 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '@shared/components/ui/button/button';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/ui/button/button';
 import {
   BlockStatusDialog,
   BlockStatusDialogData,
   BlockStatusDialogResult,
-} from '@shared/components/dialog/block-status-dialog/block-status-dialog';
+} from '@shared/dialogs/block-status-dialog/block-status-dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import {
   BlockedStatusFilter,
@@ -16,7 +16,7 @@ import {
 import { PartnerAdminMe } from '@admin/partner-platform/shared/services/partner-admin-me';
 import { PartnerUsersFacade } from '@admin/users/shared/services/partner-users-facade/partner-users-facade';
 import { UsersTable } from '@admin/users/shared/components/users-table/users-table';
-import { TabStrip } from '@shared/components/ui/tab-strip/tab-strip';
+import { TabStrip } from '@shared/ui/tab-strip/tab-strip';
 
 const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },

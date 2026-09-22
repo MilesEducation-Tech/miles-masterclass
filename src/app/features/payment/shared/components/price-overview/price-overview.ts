@@ -4,10 +4,10 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronLeft, heroChevronRight, heroXMark } from '@ng-icons/heroicons/outline';
 import { PaymentFacade } from '../../service/payment-facade/payment-facade';
 
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { svglStripe } from '@ng-icons/svgl';
 import { Router } from '@angular/router';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { CouponList } from '@core/models/payment.model';
 
 @Component({

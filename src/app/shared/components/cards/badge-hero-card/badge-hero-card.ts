@@ -2,7 +2,7 @@ import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideLinkedin, lucideLock } from '@ng-icons/lucide';
 import { BadgeItem } from '@core/models/cpe-tracker.model';
-import { Button } from '../../ui/button/button';
+import { Button } from '../../../ui/button/button';
 import {
   badgeHaloHex,
   badgeLevelGradient,

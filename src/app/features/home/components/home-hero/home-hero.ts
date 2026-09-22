@@ -1,7 +1,7 @@
 import { Component, inject, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { logoIcon } from '@core/constants/icon';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { environment } from '@env/environment';
 import { VideoPoster } from '@shared/components/video-poster/video-poster';
 import { MilesSlug } from '@shared/components/miles-slug/miles-slug';
@@ -9,7 +9,7 @@ import {
   AppDownloadDialog,
   MASTERCLASS_APP_STORE_URL,
   MASTERCLASS_PLAY_STORE_URL,
-} from '@shared/components/dialog/app-download-dialog/app-download-dialog';
+} from '@shared/dialogs/app-download-dialog/app-download-dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 
 @Component({

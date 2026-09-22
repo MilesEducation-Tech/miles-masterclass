@@ -9,10 +9,10 @@ import {
   matPlayArrowRound,
   matTimelapseRound,
 } from '@ng-icons/material-icons/round';
-import { DurationPipe } from '@core/pipes/duration/duration-pipe';
-import { Progress } from '@shared/components/ui/progress/progress';
+import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
+import { Progress } from '@shared/ui/progress/progress';
 import { RecordDisk } from '@shared/components/record-disk/record-disk';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 
 @Component({
   selector: 'app-course-chapter-list',

@@ -18,9 +18,9 @@ import {
   DELIVERY_METHOD,
 } from '@features/cpe-tracker/models/cpe-credit.model';
 import { FieldOfStudy } from '@core/models/course.model';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { CategoriesList } from '@shared/components/categories-list/categories-list';
-import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { Spinner } from '@shared/ui/spinner/spinner';
 import { cn } from '@shared/utils/cn';
 import { DELIVERY_COLORS, FIELD_COLORS } from '../../constants/cpe-tracker.constants';
 

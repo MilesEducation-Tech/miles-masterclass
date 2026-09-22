@@ -2,7 +2,7 @@ import { Component, computed, input, output } from '@angular/core';
 import { BadgeAction, BadgeCardButton, BadgeCardData } from '@core/models/badge.model';
 import { badgeHaloHex } from '../../../utils/badge-level';
 import { CategoriesList } from '../../categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '@core/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits.pipe';
 
 export interface BadgeCardActionEvent {
   action: BadgeAction;

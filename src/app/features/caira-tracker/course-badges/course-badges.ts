@@ -31,8 +31,8 @@ import {
   matchesBadgeFilter,
 } from '@core/models/caira-badge.model';
 import { ApiClient } from '@core/services/api-client/api-client';
-import { Button } from '@shared/components/ui/button/button';
-import { ErrorState } from '@shared/components/ui/error-state/error-state';
+import { Button } from '@shared/ui/button/button';
+import { ErrorState } from '@shared/ui/error-state/error-state';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 import { BadgeFilterChips } from '../shared/components/badge-filter-chips/badge-filter-chips';
 import { CourseBadgeCard } from '../shared/components/course-badge-card/course-badge-card';

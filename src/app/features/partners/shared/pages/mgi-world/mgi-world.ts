@@ -11,7 +11,7 @@ import {
   PartnershipContent,
 } from '../../components/partnership-content/partnership-content';
 import { PlanPointer, PlanBenefits } from '@shared/components/plan-benefits/plan-benefits';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
 import { Offering } from '@features/home/components/offerings/offerings';
 import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';

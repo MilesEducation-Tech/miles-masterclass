@@ -6,14 +6,11 @@ import {
   required,
   validate,
 } from '@angular/forms/signals';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
-import { Button } from '@shared/components/ui/button/button';
-import {
-  CheckboxList,
-  CheckboxListOption,
-} from '@shared/components/ui/checkbox-list/checkbox-list';
-import { Forms } from '@shared/components/ui/forms/forms';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+import { Button } from '@shared/ui/button/button';
+import { CheckboxList, CheckboxListOption } from '@shared/ui/checkbox-list/checkbox-list';
+import { Forms } from '@shared/ui/forms/forms';
 import { AriaSelectOption } from '@core/models/aria.model';
 import { AllocationPicker } from '@admin/partner-platform/shared/components/allocation-picker/allocation-picker';
 import { DialogRef } from '@core/services/dialog/dialog';

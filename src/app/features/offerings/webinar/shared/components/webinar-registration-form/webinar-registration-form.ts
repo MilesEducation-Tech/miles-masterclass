@@ -7,12 +7,12 @@ import {
   validate,
 } from '@angular/forms/signals';
 
-import { AriaAutocomplete } from '@shared/components/ui/aria/aria-autocomplete/aria-autocomplete';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '@shared/components/ui/button/button';
-import { Forms } from '@shared/components/ui/forms/forms';
-import { Otp } from '@shared/components/ui/otp/otp';
-import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { AriaAutocomplete } from '@shared/ui/aria/aria-autocomplete/aria-autocomplete';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/ui/button/button';
+import { Forms } from '@shared/ui/forms/forms';
+import { Otp } from '@shared/ui/otp/otp';
+import { Spinner } from '@shared/ui/spinner/spinner';
 import { CountryCodeOption, dialCodeWithLength } from '@core/constants/dial-code';
 import { AutoCompleteOption } from '@core/models/form.model';
 

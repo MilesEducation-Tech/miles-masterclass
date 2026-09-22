@@ -5,15 +5,15 @@ import {
   UtilsDialog,
   UtilsDialogData,
   DialogButton,
-} from '@shared/components/dialog/utils-dialog/utils-dialog';
+} from '@shared/dialogs/utils-dialog/utils-dialog';
 import {
   ComplianceDialogData,
   CpeComplianceDialog,
-} from '@shared/components/dialog/cpe-compliance-dialog/cpe-compliance-dialog';
+} from '@features/cpe-tracker/dialogs/cpe-compliance-dialog/cpe-compliance-dialog';
 import {
   CertificateDialogData,
   CertificateDownloadDialog,
-} from '@shared/components/dialog/certificate-download-dialog/certificate-download-dialog';
+} from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
 import { CertificateTarget } from '@features/cpe-tracker/models/cpe-credit.model';
 
 export interface DialogResult<T = unknown> {

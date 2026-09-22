@@ -1,6 +1,6 @@
 /**
  * Shared types for the ARIA-primitive component library
- * under `src/app/shared/components/ui/aria/`.
+ * under `src/app/shared/ui/aria/`.
  */
 
 export type AriaInputType =

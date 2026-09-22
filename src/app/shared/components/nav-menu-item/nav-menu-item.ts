@@ -24,7 +24,7 @@ import {
 } from 'ng-primitives/collapsible';
 import { NavItem } from '@core/models/nav.model';
 import { cn } from '../../utils/cn';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 
 const PANEL_MAX_WIDTH = 300;
 const VIEWPORT_MARGIN = 16;

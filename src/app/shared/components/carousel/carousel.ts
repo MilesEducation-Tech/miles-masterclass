@@ -26,7 +26,7 @@ import { NgIcon } from '@ng-icons/core';
 import { Heading } from '../heading/heading';
 import { filterIcon } from '@core/constants/icon';
 import { Dialog } from '@core/services/dialog/dialog';
-import { FilterDialog } from '../dialog/filter-dialog/filter-dialog';
+import { FilterDialog } from '../../dialogs/filter-dialog/filter-dialog';
 import { Hover } from '../cards/hover/hover';
 import {
   apiDataToDialogShape,

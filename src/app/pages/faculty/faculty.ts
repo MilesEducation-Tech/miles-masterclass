@@ -14,12 +14,12 @@ import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 
 import { PlanScrollingGallery } from '@features/payment/shared/components/plan-scrolling-gallery/plan-scrolling-gallery';
-import { AriaAutocomplete } from '@shared/components/ui/aria/aria-autocomplete/aria-autocomplete';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '@shared/components/ui/button/button';
-import { Forms } from '@shared/components/ui/forms/forms';
-import { Otp } from '@shared/components/ui/otp/otp';
-import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { AriaAutocomplete } from '@shared/ui/aria/aria-autocomplete/aria-autocomplete';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/ui/button/button';
+import { Forms } from '@shared/ui/forms/forms';
+import { Otp } from '@shared/ui/otp/otp';
+import { Spinner } from '@shared/ui/spinner/spinner';
 import { dialCodeWithLength } from '@core/constants/dial-code';
 import { placeSuggestions } from '@core/services/location-autocomplete/location-autocomplete';
 import { logo, mcGrawHillLogo } from '@core/constants/icon';
@@ -30,7 +30,7 @@ import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { SalesforceLead } from '@core/services/salesforce-lead/salesforce-lead';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 
 const FACULTY_REGISTER_URL = 'v2/faculty/register/';
 const FACULTY_VERIFY_URL = 'v2/faculty/verify/';

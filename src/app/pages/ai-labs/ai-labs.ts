@@ -51,23 +51,23 @@ import {
   PressDirective,
 } from '@code_with_sachin/ngx-motion';
 import type { SwiperOptions } from 'swiper/types';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { Carousel } from '@shared/components/carousel/carousel';
 import {
   AiLabAgentCard,
   AiLabAgentDialog,
   AiLabAgentDialogResult,
-} from '@shared/components/dialog/ai-lab-agent-dialog/ai-lab-agent-dialog';
-import { AiLabTermsDialog } from '@shared/components/dialog/ai-lab-terms-dialog/ai-lab-terms-dialog';
-import { UtilsDialog } from '@shared/components/dialog/utils-dialog/utils-dialog';
-import { DurationPipe } from '@core/pipes/duration/duration-pipe';
+} from '@shared/dialogs/ai-lab-agent-dialog/ai-lab-agent-dialog';
+import { AiLabTermsDialog } from '@shared/dialogs/ai-lab-terms-dialog/ai-lab-terms-dialog';
+import { UtilsDialog } from '@shared/dialogs/utils-dialog/utils-dialog';
+import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
 import { CommonResponse, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Dialog } from '@core/services/dialog/dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import { Storage } from '@core/services/storage/storage';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import {
   AI_LAB_FAQS,
   AI_LAB_FEATURES,

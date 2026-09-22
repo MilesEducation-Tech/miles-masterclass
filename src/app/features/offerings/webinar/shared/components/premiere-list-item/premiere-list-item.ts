@@ -1,7 +1,7 @@
 import { Component, computed, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { CategoriesList } from '@shared/components/categories-list/categories-list';
 import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
 import { UpcomingPremiere, WebinarCta, WebinarDate } from '@core/models/feature.model';

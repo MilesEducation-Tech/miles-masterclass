@@ -1,6 +1,6 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, computed, input, model, signal } from '@angular/core';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { PartnerCode, SeatAllocation } from '../../models/partner-platform.model';
 
 interface AllocationRow {

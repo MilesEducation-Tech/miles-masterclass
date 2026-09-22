@@ -13,8 +13,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { firstValueFrom, fromEvent, take, takeUntil } from 'rxjs';
-import { Button } from '@shared/components/ui/button/button';
-import { Spinner } from '@shared/components/ui/spinner/spinner';
+import { Button } from '@shared/ui/button/button';
+import { Spinner } from '@shared/ui/spinner/spinner';
 import { Dialog } from '@core/services/dialog/dialog';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
@@ -32,7 +32,7 @@ import {
   FirmFormDialog,
   FirmFormDialogData,
 } from './shared/components/firm-form-dialog/firm-form-dialog';
-import { AriaSelect } from '@shared/components/ui/aria/aria-select/aria-select';
+import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
 import { AriaSelectOption } from '@core/models/aria.model';
 import { AdminAuth } from '@admin/core/services/admin-auth';
 

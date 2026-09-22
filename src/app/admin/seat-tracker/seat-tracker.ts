@@ -1,7 +1,7 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { DeprecationBanner } from '@admin/shared/components/deprecation-banner/deprecation-banner';
 import { PartnerNetworkFacade } from '@admin/partner-platform/shared/services/partner-network-facade';
 import { PartnerAdminMe } from '@admin/partner-platform/shared/services/partner-admin-me';

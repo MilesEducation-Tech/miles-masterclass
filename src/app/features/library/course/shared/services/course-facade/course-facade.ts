@@ -20,7 +20,7 @@ import {
   LibraryFiltersData,
 } from '@core/models/library-filters.model';
 import { ApiClient } from '@core/services/api-client/api-client';
-import { parseNextPage } from '@shared/utils/parse-next-page';
+import { parseNextPage } from '@core/utils/parse-next-page';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 
 /**

@@ -17,7 +17,7 @@ import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { Dialog } from '@core/services/dialog/dialog';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { Analytics } from '@core/services/analytics/analytics';
 import {
   CommonResponse,
@@ -32,7 +32,7 @@ import {
   MASTERCLASS_ROUTES,
 } from '@core/models/masterclass.model';
 import { ContentDetails } from '@core/models/course.model';
-import { UtilsDialog } from '@shared/components/dialog/utils-dialog/utils-dialog';
+import { UtilsDialog } from '@shared/dialogs/utils-dialog/utils-dialog';
 import {
   MicroLearningQuizDialog,
   MicroLearningQuizDialogData,

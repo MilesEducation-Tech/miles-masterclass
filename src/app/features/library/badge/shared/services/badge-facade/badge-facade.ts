@@ -19,8 +19,8 @@ import {
 } from '@core/models/badge.model';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Analytics } from '@core/services/analytics/analytics';
-import { Utils } from '@core/services/utils/utils';
-import { parseNextPage } from '@shared/utils/parse-next-page';
+import { Utils } from '@shared/services/utils';
+import { parseNextPage } from '@core/utils/parse-next-page';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 
 /**

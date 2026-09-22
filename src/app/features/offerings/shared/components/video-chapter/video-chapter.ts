@@ -30,7 +30,7 @@ import { Analytics } from '@core/services/analytics/analytics';
 import {
   HtmlContentDialog,
   HtmlContentDialogData,
-} from '@shared/components/dialog/html-content-dialog/html-content-dialog';
+} from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 
 @Component({
   selector: 'app-video-chapter',

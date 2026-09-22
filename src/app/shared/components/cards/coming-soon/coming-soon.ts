@@ -3,10 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgIcon } from '@ng-icons/core';
 import { faSolidBell, faSolidPlay } from '@ng-icons/font-awesome/solid';
 import { matBookmarkRound } from '@ng-icons/material-icons/round';
-import { Button } from '../../ui/button/button';
+import { Button } from '../../../ui/button/button';
 import { CategoriesList } from '../../categories-list/categories-list';
 import { Content } from '@core/models/course.model';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 
 @Component({
   selector: 'app-coming-soon',

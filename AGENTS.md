@@ -43,7 +43,7 @@ Routing is locale-scoped: `/:country/:profession_type/...` (e.g. `/us/cpa/master
 **Out of scope — do not build unless explicitly asked**
 
 - New state management (NgRx, Akita, etc.). Signals + RxJS is the answer.
-- A component library or CSS framework swap. Tailwind v4 + `shared/components/ui` is the answer.
+- A component library or CSS framework swap. Tailwind v4 + `shared/ui` is the answer.
 - Social features (comments, following, feeds), gamification beyond the existing badges, or a recommendation engine.
 - Server-side business logic in this repo. The Angular SSR server renders and serves — it is not the backend.
 - Speculative abstractions: no interface with one implementation, no config for a value that never changes.

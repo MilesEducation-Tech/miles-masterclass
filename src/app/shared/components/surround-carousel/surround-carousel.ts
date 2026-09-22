@@ -19,7 +19,7 @@ import { ApiClient } from '@core/services/api-client/api-client';
 import { Content } from '@core/models/course.model';
 import { ContentResponse, TRACK_ROUTES } from '@core/models/track.model';
 import { Logger } from '@core/services/logger/logger';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { Viewport } from '@core/services/viewport/viewport';
 
 // `import type` is erased at compile time, so naming the engine here does NOT

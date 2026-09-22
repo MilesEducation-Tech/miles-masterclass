@@ -5,7 +5,7 @@ import { CourseBadgeItem, WebinarBadgeItem } from '@core/models/caira-badge.mode
 import { Analytics } from '@core/services/analytics/analytics';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { BadgeActionSource, badgeActionTarget } from '../../utils/badge-action';
 
 /**

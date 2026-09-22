@@ -9,13 +9,13 @@ import {
 } from '@angular/forms/signals';
 import { SelectOption } from '@core/models/form.model';
 import { EnquiryService } from '@core/services/enquiry/enquiry';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { NotificationService } from '@core/services/notification/notification';
-import { Button } from '../ui/button/button';
-import { AriaInput } from '../ui/aria/aria-input/aria-input';
-import { AriaMultiselect } from '../ui/aria/aria-multiselect/aria-multiselect';
-import { Forms } from '../ui/forms/forms';
-import { Spinner } from '../ui/spinner/spinner';
+import { Button } from '../../ui/button/button';
+import { AriaInput } from '../../ui/aria/aria-input/aria-input';
+import { AriaMultiselect } from '../../ui/aria/aria-multiselect/aria-multiselect';
+import { Forms } from '../../ui/forms/forms';
+import { Spinner } from '../../ui/spinner/spinner';
 import { RouterLink } from '@angular/router';
 
 export interface EnquiryModel {

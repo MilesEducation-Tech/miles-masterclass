@@ -5,7 +5,7 @@ import { Storage } from '@core/services/storage/storage';
 import {
   AI_LAB_ASSESSMENT_REPORT,
   AiLabAssessmentReport,
-} from '@shared/components/dialog/ai-lab-agent-dialog/ai-lab-agent-about/ai-lab-agent-about.model';
+} from '@shared/dialogs/ai-lab-agent-dialog/ai-lab-agent-about/ai-lab-agent-about.model';
 import { CopilotWorkflow, MOCK_WORKFLOWS } from './ai-labs.model';
 
 /** localStorage key for the per-chapter submission map. One key, JSON blob. */

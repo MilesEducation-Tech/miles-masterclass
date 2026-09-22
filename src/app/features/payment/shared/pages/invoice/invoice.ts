@@ -17,15 +17,15 @@ import { PaymentStatus } from '../../components/payment-status/payment-status';
 import { PaymentFacade } from '../../service/payment-facade/payment-facade';
 import { CartItem } from '../../components/cart-item/cart-item';
 import { PriceOverview } from '../../components/price-overview/price-overview';
-import { Utils } from '@core/services/utils/utils';
+import { Utils } from '@shared/services/utils';
 import { Analytics } from '@core/services/analytics/analytics';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { heroArrowDownTray, heroChevronLeft } from '@ng-icons/heroicons/outline';
 import { NotificationService } from '@core/services/notification/notification';
 import { DatePipe } from '@angular/common';
 import { Dialog } from '@core/services/dialog/dialog';
-import { UtilsDialog, UtilsDialogData } from '@shared/components/dialog/utils-dialog/utils-dialog';
+import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
 
 @Component({
   selector: 'app-invoice',

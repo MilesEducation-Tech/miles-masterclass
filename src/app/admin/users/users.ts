@@ -1,14 +1,14 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
-import { AriaInput } from '@shared/components/ui/aria/aria-input/aria-input';
-import { Button } from '@shared/components/ui/button/button';
+import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+import { Button } from '@shared/ui/button/button';
 import { Dialog } from '@core/services/dialog/dialog';
 import {
   BlockStatusDialog,
   BlockStatusDialogData,
   BlockStatusDialogResult,
-} from '@shared/components/dialog/block-status-dialog/block-status-dialog';
+} from '@shared/dialogs/block-status-dialog/block-status-dialog';
 import { DeprecationBanner } from '@admin/shared/components/deprecation-banner/deprecation-banner';
 import { UsersTable } from './shared/components/users-table/users-table';
 import { PartnerAdminMe } from '@admin/partner-platform/shared/services/partner-admin-me';

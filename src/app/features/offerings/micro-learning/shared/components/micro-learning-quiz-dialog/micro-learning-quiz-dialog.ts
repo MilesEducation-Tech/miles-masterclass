@@ -6,7 +6,7 @@ import {
   MicroLearningReel,
 } from '@features/offerings/models/micro-learning-course.model';
 import { CourseChapter } from '@core/models/course.model';
-import { Button } from '@shared/components/ui/button/button';
+import { Button } from '@shared/ui/button/button';
 import { MicroLearningCourseFacade } from '../../../../shared/services/micro-learning-course-facade/micro-learning-course-facade';
 
 export interface MicroLearningQuizDialogData {

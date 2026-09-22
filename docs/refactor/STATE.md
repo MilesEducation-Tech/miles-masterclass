@@ -7,89 +7,56 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- Phase: **3 — Core ⏸ code complete, blocked on ONE user action.**
-  Report: [phase-03](reports/phase-03.md). `verifier` **8/8 green** after one self-inflicted format fix.
-  `reviewer` **FAIL — sole blocker: the two files in `docs/refactor/baseline/` were re-recorded.**
-- 🚨 **Do this first, before anything else:**
-  ```
-  git checkout HEAD -- docs/refactor/baseline/
-  ```
-  The `verifier` run passed `--record-baseline`, overwriting `bundle.json` (274 → 271 lazy chunks,
-  501.9 → 501.5 KB) and stripping `ssr.json`'s trailing newline. PROMPT.md §2.3 forbids re-recording
-  and CLAUDE.md forbids Claude touching that folder, so the revert is yours. **My delegation error** —
-  I asked the subagent for a full-gate run without explicitly forbidding the record flag.
-  **Consequence: the bundle gate's reported "+0.0% vs baseline" this run is vacuous** — it compared the
-  build against a baseline recorded from that same build. The valid parity check is by hand against
-  Phase 2's figures: initial 501.5 KB raw / 101.5 KB gzip, 271 lazy chunks, largest lazy
-  3418.2 KB — **all three identical to Phase 2.** Re-run the verifier (no record flag) after reverting
-  to get the gate to say so on its own authority.
-- Related, for your judgement: the **original** baseline predates Phase 1, which deliberately removed
-  the partner mock (274 → 271 chunks, −21 KB). So it has been stale-by-design since Phase 1 and every
-  phase has compared against pre-hygiene numbers. Re-recording may well be right — but as a deliberate
-  act, not a verification side effect.
-- Once the baseline is restored and the verifier re-run is green, Phase 3 is ✅. Commit message is in
-  [phase-03](reports/phase-03.md) §5. Then **`/refactor-phase 4`** (shared & layout).
-- **Phase 4 inherits three things from this phase:** (a) `core/services/utils/utils.ts:48` is the last
-  `core → features` edge and Phase 4's move of that file to `shared/services/utils.ts` closes it;
-  (b) the 6 refused push-down rows below, several of which unblock once Phase 4 moves the shared
-  dialogs/cards that hold them in core; (c) Phase 2's finding that six component `.css` files use
-  `@reference '../../../../styles/styles.css'`, which TS aliases do not cover.
-- Branch `refactor/structure-3`, clean at session start. Baselines present. No unticked decision gates
-  this phase.
-- **Step plan** (mark each done here as it lands):
-  1. ✅ **Bulk move** `src/app/shared/core/` → `src/app/core/`, `constant/` → `constants/`.
-     Flip `@core/*` in **both** `tsconfig.json` and `.storybook/tsconfig.json`. Repoint the five
-     hardcoded-path consumers (`tsconfig.spec.json`, `eslint.config.mjs` ×2 ignores, `angular.json`
-     `fileReplacements` ×2, `scripts/generate-version.mjs`) and the three `src/*.ts` relatives
-     (`legacy-redirects.ts`, `seo.ts`, `server.ts`). Rewrite 35 `@core/constant/` specifiers and
-     7 intra-core `../constant/` relatives to `constants/`.
-  2. ✅ **Merge facades**: `features/shared/services/{feature-facade,section-filters-facade}` →
-     `core/services/` (PLAN.md §2 finding 1).
-  3. ✅ **Push down to admin** — scope cut by the audit. Moved: `models/admin/{admin-auth,audit-log}.model.ts`
-     - `services/{admin-auth,audit-log}` + **`interceptors/admin-token`** → `admin/core/`;
-       `shared/utils/seo/seo-csv.ts` → `admin/seo/utils/`. **Not moved:** `admin-rbac.model.ts`,
-       `seo.models.ts`, `supabase-seo.ts` (see Decisions).
-  4. ✅ **Push down to existing features** — payment (3), offerings (5), cpe-tracker (2).
-     **Not moved:** `form.model.ts`, `video-player.model.ts`, `constants/video-player.ts`,
-     `cpe-tracker.model.ts`, `caira-badge.model.ts`, `badge.model.ts` (see Decisions).
-  5. ✅ **Push down to Phase-5 features — DEFERRED in full to Phase 5, deliberately.**
-     faq, legal, milesverse, faculty, auth: every consumer of these 12 files still lives in
-     `src/app/pages/**` or `src/app/auth/`, and the destination feature folders do not exist.
-     Phase 5 creates each folder and moves its pages; the constants/models/services travel in the
-     same per-feature session instead of being split across two phases.
-- **Deviation from the ~30-file step guidance, deliberate:** step 1 moves 126 files in one `git mv`.
-  The folder must move atomically — `@core/*` is a single alias line, so splitting it would require a
-  broken intermediate state with two overlapping core roots. The actual risk surface is ~15 config and
-  import lines, not 126 files, and every one is enumerated above.
-- **Phase 2 verified facts this phase leans on:** zero relative imports escape `shared/core/`
-  (all aliased), and `grep '@shared/core' src` returns 0 — so the bulk move breaks nothing that the
-  alias flip does not fix.
-- **PLAN.md path correction:** §3 lists `utils/seo/seo-csv.ts` under "From `shared/core/...`".
-  It actually lives at `src/app/shared/utils/seo/seo-csv.ts`. Destination (`admin/seo/`) unchanged.
-- **Status: steps 1–5 done. `verifier` 8/8 green after one fix.**
-  First verifier run was **7/8 — format check RED on 5 files.** Cause was mechanical and entirely
-  self-inflicted: the alias rewrites changed import-specifier lengths, so Prettier's 100-char
-  `printWidth` wanted those import statements reflowed — one had grown past 100 chars
-  (`assessment.model.ts`), one had shrunk below it (`footer-overlay.ts`), and three others likewise.
-  Fixed by running Prettier on **only those 5 files**, not `pnpm format:fix` across `src/`, so no
-  untouched file was reformatted (AGENTS.md §8). `pnpm format` now reports
-  "All matched files use Prettier code style!", with typecheck + lint still green.
-  **Bundle parity holds — but check it against Phase 2, not against the gate's own number:**
-  initial 12 files, 501.5 KB raw / 101.5 KB gzip, 271 lazy chunks, largest lazy 3418.2 KB —
-  all identical to Phase 2's recorded figures. The gate's own "+0.0% vs baseline" is **vacuous this
-  run** because the baseline was re-recorded first (see the blocker at the top). SSR smoke passed all
-  four routes.
-- ⚠️ **Build-generated churn recurred, third phase running (open question 6, still open).** The
-  verifier's builds rewrote `public/version.json` and — now at its new path —
-  `src/app/core/version/app-version.ts`. They are the only source files newer than this file, and
-  neither is a Phase 3 edit. To get a clean Phase 3 commit:
-  `git checkout -- public/version.json src/app/core/version/app-version.ts`
-  (Claude is blocked from that form by the harness guard.) Note the path moved this phase, so the
-  Phase 2 version of this command is now stale.
-- **Result so far: `core/` has exactly ONE outbound boundary violation left** —
-  `core/services/utils/utils.ts:48` imports `@features/payment/.../payment-facade`. PLAN.md §2
-  finding 3 already assigns that file to `shared/services/utils.ts` in **Phase 4**, so Phase 4 closes
-  it. Every other `core → features|admin|layout` edge is gone.
+- Phase: **4 — Shared & layout ✅ complete.** Report: [phase-04](reports/phase-04.md).
+  `verifier` **8/8 green** with the snapshot folder untouched (no record flag — verified).
+  `reviewer` clean after two bookkeeping fixes, both in this file, neither a code defect.
+- **Phase 3 is ✅, not ⏸** — that status was stale. Phase 3 is committed (`abebb2a`) and merged via
+  PR #5, and you resolved its blocker by **committing the re-recorded snapshot deliberately**, so the
+  figures it compares against are now the post-Phase-1 ones. That is why this phase's bundle gate is
+  meaningful on its own authority where Phase 3's was not.
+- **To get a clean Phase 4 commit** (build-generated churn, fourth phase running — open question 6),
+  restore the two build-regenerated files `public/version.json` and
+  `src/app/core/version/app-version.ts` from HEAD. Neither is a Phase 4 edit; the harness blocks
+  Claude from running that command form, so it is yours.
+- Commit message is in [phase-04](reports/phase-04.md) §5. Then **`/refactor-phase 5 <feature>`**
+  (features, run per feature).
+- **The headline result — Part A's boundary work is now mostly done:**
+
+  | Edge                              | Before | After           | Left                                                              |
+  | --------------------------------- | ------ | --------------- | ----------------------------------------------------------------- |
+  | `core → shared`                   | 25     | **2**           | `notification → @shared/ui/toast`; `update-checker` (dynamic)     |
+  | `core → features\|admin\|layout`  | 2      | **0**           | —                                                                 |
+  | `shared → features\|admin\|pages` | 16     | **6** (3 files) | `subscription-dialog` ×2, `utils.ts` ×2, `ai-lab-agent-dialog` ×2 |
+
+  All 8 remaining edges are deferred deliberately, and every one is already covered by the Phase 7
+  temporary-warning decision you ticked. Nothing new was introduced.
+
+- **Phase 5 inherits four things from this phase:**
+  (a) `shared/dialogs/ai-lab-{dialog,terms-dialog,agent-dialog}` are waiting on `features/ai-labs/` —
+  `ai-lab-agent-dialog` still holds 2 relative imports into `pages/ai-labs/`;
+  (b) `faq-content` was **not** promoted to `shared/` (PLAN.md §2 finding 2's importer count is wrong —
+  see Decisions), so Phase 5 decides its home when `features/{faq,legal}` are created;
+  (c) the 12 `features/* → pages/faq` edges are imports of the routed `pages/faq/faq` page, not of
+  `faq-content` — they clear when `pages/faq` becomes `features/faq`;
+  (d) `features/<f>/dialogs/` folders now exist for offerings, payment, cpe-tracker and caira-tracker;
+  the tracker merge must carry `cpe-tracker/dialogs/` and `caira-tracker/dialogs/` into
+  `features/tracker/{cpe,caira}/`.
+- **Step plan — all six done:**
+  1. ✅ `shared/components/ui/` → `shared/ui/` (13 children; `aria/` keeps its folder for Phase 10).
+  2. ✅ `shared/components/dialog/` → `shared/dialogs/`. **Run as ONE step with step 1, deliberately** —
+     59 imports inside `dialog/*` point at `../../ui/…` and stay valid only because both folders lose
+     the same `components/` segment. 176 files; 291 alias specifiers; 37 relative imports the
+     `import-auditor` caught that no path-based grep could match; 4 `@reference` depths corrected.
+  3. ✅ 14 dialogs → owners; `admin-rbac.model.ts` → `admin/core/`, emptying `core/models/admin/`.
+  4. ✅ `core/pipes/*` → `shared/pipes/`; 5 pure helpers → `core/utils/` (clears all 8
+     `core → @shared/utils` edges).
+  5. ✅ `Utils` + `EngagementDialog` → `shared/services/` as flat files.
+  6. ✅ 4 layouts → `layout/`. Only 3 import sites changed; **no lazy route string referenced any of
+     them** — all four were eager `component:`/static imports.
+- **Config surfaces needed no change at all**, re-verified against the post-Phase-3 tree:
+  `angular.json`, `tsconfig*.json`, `.storybook/*`, `eslint.config.mjs`, `vercel.json`. The spec's §5
+  fourth Phase 4 bullet is a confirmed no-op — Storybook globs are path-agnostic and no `@source`
+  directive exists anywhere.
 
 ## Part A tracker
 
@@ -98,8 +65,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 | 0     | Audit & plan    | ✅     | [phase-00](reports/phase-00.md) |           |
 | 1     | Hygiene         | ✅     | [phase-01](reports/phase-01.md) |           |
 | 2     | Path aliases    | ✅     | [phase-02](reports/phase-02.md) |           |
-| 3     | Core            | ⏸      | [phase-03](reports/phase-03.md) |           |
-| 4     | Shared & layout | ⬜     |                                 |           |
+| 3     | Core            | ✅     | [phase-03](reports/phase-03.md) |           |
+| 4     | Shared & layout | ✅     | [phase-04](reports/phase-04.md) |           |
 | 5     | Features        | ⬜     |                                 |           |
 | 6     | Admin           | ⬜     |                                 |           |
 | 7     | Boundaries      | ⬜     |                                 |           |
@@ -156,6 +123,51 @@ Phase 12's first session moves design tokens into `@theme`.
 - [x] ~~Components with explicit `ChangeDetectionStrategy.Eager`~~ — **NOT APPLICABLE.** All 18
       explicit `changeDetection:` lines in `src/` are `OnPush`; there are zero `Eager` and zero
       `Default`. Closed by Phase 0.
+
+New decisions raised by Phase 4 — **five PLAN.md Phase 4 rows were refused**, on the same test
+Phase 3 used: execute the rows that clear a boundary violation, refuse the ones that create one.
+Each needs your call before the phase that would own it.
+
+- [ ] **`app-download-dialog` must NOT go to `features/home/`.** Its importers are `features/home`
+      **and** `features/offerings` — two features, so §3's placement rule puts it in `shared/`.
+      Recommendation: **strike the row**; it is shared UI.
+- [ ] **`certificate-download-dialog` must NOT go to the tracker.** Importers are
+      `features/cpe-tracker`, `features/library` and `Utils` — again two features.
+      Recommendation: **strike the row.**
+- [ ] **`subscription-dialog` → `features/payment/` is net zero, so it was not done.** Its only two
+      importers are `Utils` and `EngagementDialog`, both of which now live in `shared/services/`.
+      Moving the dialog would trade its 2 outbound `→ features/payment` edges for 2 new inbound
+      `shared → features` edges, and the new ones are **static** where nothing improves.
+      Recommendation: **defer to Phase 11**, which converts those two services' dialog imports to
+      dynamic `import()` and unblocks the move properly.
+- [ ] **`faq-content` → `shared/components/` was NOT done — PLAN.md §2 finding 2 is wrong about it.**
+      The finding claims 16 importers "across offerings, blog, home, partners, uae-caira, connect-us
+      and pages/shared", which is what justified promoting it to `shared/`. The real count is **5**,
+      and every one is inside `pages/faq` (3) or `pages/shared` (2, the legal-doc/legal-section
+      components). The 12 `features/* → pages/faq` edges PLAN.md §2 counts are imports of the routed
+      **`pages/faq/faq`** page component, not of `faq-content`. Both actual consumers become Phase 5
+      features (`features/faq`, `features/legal`). Recommendation: **strike the row** and let Phase 5
+      decide, since after that phase the import may not cross a feature boundary at all.
+- [ ] **`{cpe-tracker,caira-badge,badge}.model.ts` stay in `core/models/` — closing the Phase 3 row.**
+      Phase 3 deferred these here on the theory that their dialogs were the blocker. They are not.
+      `cpe-compliance-dialog` and `caira-badge-info-dialog` did move out this phase, and the models
+      still cannot follow, because the real blockers are shared **cards** that §3 keeps in
+      `shared/components/`: `cards/badge-{card,course-card,level-card}`, `cards/badge-hero-card`, and
+      `caira-level-stack`. `shared → core` is legal and `shared → features` is not, so leaving the
+      models in core is the boundary-correct outcome, not a compromise.
+      Recommendation: **strike all three rows permanently** — they are core models.
+
+Also settled by Phase 4, no action needed:
+
+- [x] **`admin-rbac.model.ts` moved to `admin/core/`** as the Phase 3 row recommended, together with
+      `edit-admin-roles-dialog`. 13 specifiers repointed; `core/models/admin/` no longer exists.
+- [ ] **Correction to the Phase 3 claim that Phase 4 closes the last `core → features` edge.**
+      It does not. Moving `utils.ts` into `shared/services/` **relabels** that edge `shared → features`,
+      which §3 bans just as firmly. `utils.ts` still imports `PaymentFacade` statically (line 48) and
+      `cart-drawer-dialog` dynamically (line 767). This is a **Phase 11** item — and note that
+      promoting `PaymentFacade` into `core/` the way `FeatureFacade` was promoted in Phase 3 is the
+      wrong fix here: it would pull the payment domain into core. **Confirm you are content for this
+      edge to survive Part A.**
 
 New decisions raised by Phase 3 — **PLAN.md §3's Phase 3 push-down table is partly wrong.**
 The `import-auditor` sweep (35 files, 128 references) found that 6 of its rows would create a new
@@ -335,6 +347,75 @@ These are environment and product observations the repair surfaced. None changed
    I cannot re-record (harness-owned); you run `--record-baseline` after deciding.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-09-22 **Phase 4 steps 5+6 ✅ — `Utils`/`EngagementDialog` to `shared/services/`, 4 layouts to
+  `layout/`. Full gate run 8/8 GREEN, bundle byte-identical.** `core → shared` finishes at **2 of the
+  original 25** (`notification → @shared/ui/toast`, `update-checker → version-update-dialog`, the latter
+  already a dynamic import) and `core → features|admin|layout` at **0**. Step 5 aliased 15 intra-core
+  relatives in the two moved files and repointed 64 inbound specifiers. Step 6 needed only **3** edits —
+  no lazy route string points at any layout; all four are eager `component:`/static imports, and
+  `main-layout`/`blog-layout` already reached header and footer through `@layout/*`.
+  **Format check was red again, same mechanism as Phase 3 but the opposite direction** — 2 files
+  (`admin-users.ts`, `firm-form-dialog.ts`) whose `checkbox-list` import _shrank_ below the 100-char
+  `printWidth` once `@shared/components/ui/` became `@shared/ui/`, so Prettier wanted it collapsed onto
+  one line. Fixed on those 2 files only, never `format:fix` across `src/`.
+  Gates: lint 6s, unit 15s, local build 22s, prod build 24s, storybook 19s, format 13s, bundle, ssr 4s.
+  **The bundle gate is meaningful this time** (no record flag, verified: `git status` on the snapshot
+  folder is empty): initial 12 files / 501.5 KB raw / 101.5 KB gzip, 271 lazy chunks, largest lazy
+  3418.2 KB / 839.1 gz — every figure identical. 204 renames + 178 modified files and not one byte of
+  bundle drift. SSR smoke OK on all 4 routes.
+  **`reviewer` returned FAIL on two bookkeeping items, both now closed, neither a code defect:** the five
+  refused PLAN.md rows were written into the session plan but never into this file's Decisions (added
+  above — `faq-content` was the one it flagged as "undone and undocumented"; it is a deliberate refusal,
+  because PLAN.md §2 finding 2's "16 importers" is wrong and the true count is 5), and steps 5–6 were
+  complete in the tree but still ⬜ here. It also **corrected my boundary count**: `shared → features|pages`
+  is **3 files / 6 import lines**, not 4 — I had counted before step 5 moved `utils.ts` into `shared/`.
+  One stale doc path it found is fixed: `AGENTS.md:46` said `shared/components/ui`.
+  Reviewer confirmed **zero logic change** across all 382 touched files — every hunk is an import
+  specifier, dynamic `import()`, `@reference` path or doc comment; no `changeDetection`, template,
+  selector, style or behaviour edit, and no disable/ignore/skip pragma introduced.
+
+- 2026-09-22 **Phase 4 steps 3+4 ✅ — 14 dialogs pushed to owners, pipes and helpers swapped; gates green.**
+  `shared → features|admin|pages` drops **16 → 4**, `core → shared` **25 → 14**. The 4 left are exactly the
+  two deferred items (`subscription-dialog`'s 2 payment imports, `ai-lab-agent-dialog`'s 2 into `pages/ai-labs`).
+  35 inbound specifiers rewritten across 27 files; 25 outbound `'../../ui/…'` relatives in the moved dialogs
+  converted to `@shared/ui/…` (a relative path would have resolved to `features/<f>/ui/…` and broken).
+  `admin-rbac.model.ts` moved to `admin/core/` with `edit-admin-roles-dialog`, 13 specifiers repointed —
+  **`core/models/admin/` is now gone**, closing the Phase 3 note that it held exactly one file.
+  Step 4: 3 pipes → `shared/pipes/` (no core consumer; all 14 importers are UI) and 5 pure helpers the other
+  way → `core/utils/`, clearing all 8 `core → @shared/utils` edges. `total-cpe-credits.pipe.ts` needed its
+  `'../../models/course.model'` aliased to `@core/…` on arrival.
+  **Correction to this file's own Phase 3 claim, and to my Phase 4 plan.** Phase 3 recorded that moving
+  `utils.ts` to `shared/services/` "closes" the last `core → features` edge. It does not — it **relabels** it
+  `shared → features`, which the spec bans just as firmly. `utils.ts` imports `PaymentFacade` statically
+  (line 48) and `cart-drawer-dialog` lazily (line 767, now pointing at `@features/payment/dialogs/`), and
+  step 5 carries both into `shared/`. Moving the dialog still nets −1 (it cleared 2 of its own outbound
+  payment edges), but the edge itself survives Phase 4 and belongs to **Phase 11**, when `Utils`' dialog
+  coupling becomes dynamic. Promoting `PaymentFacade` to `core/` the way `FeatureFacade` was promoted is
+  **not** the answer — it would drag the payment domain into core.
+
+- 2026-09-22 **Phase 4 steps 1+2 ✅ — `ui/` and `dialog/` out of `shared/components/`; typecheck ×2 + lint green.**
+  Run as ONE step, deliberately: 59 imports inside `dialog/*` point at `../../ui/...`, and those strings
+  stay byte-for-byte valid only because both folders lose the same `components/` segment. Splitting the
+  two moves would have broken all 59 in the intermediate state. 176 files, every one recorded as a rename.
+  **The `import-auditor` is what made this safe, and it changed the plan.** My own grep found the 291
+  alias specifiers (224 `ui` + 67 `dialog`) and concluded the rest was config — wrong. The auditor found
+  **37 further relative imports that break**, none of which contain the literal `shared/components` and so
+  matched no path-based grep: 9 from `dialogs/` out to non-moving siblings (`video-js`, `miles-slug`,
+  `course-about`, `categories-list`, `cards/badge-hero-card`) which need a _deeper_ `../../components/…`;
+  14 the other way, from `cards/`, `slider/`, `carousel/`, `enquiry-form/`, `caira-level-stack/` into
+  `ui/` and `dialogs/`; and 14 into `shared/utils/` which need a _shallower_ path. Two directions of
+  breakage inside the same files — `webinar-details-dialog.ts` has a surviving `../../ui/…` two lines
+  above three that break. Fixed per-import, not per-file.
+  Two traps worth recording: `toast.ts:6` used `'../../../../shared/utils/cn'` — an up-and-back-into-shared
+  detour that worked only by depth accident, so the correct fix is `'../../utils/cn'`, not one fewer `../`;
+  and `core/services/{utils,engagement-dialog,update-checker}` all import `'../dialog/dialog'`, which is
+  the **`Dialog` overlay service** in `core/services/dialog/`, not this folder — excluded as a false positive.
+  4 Tailwind `@reference` paths corrected 5 `../` → 4 (`course-info`, `webinar-details-dialog`,
+  `ai-lab-agent-dialog` `.css`, and the inline block in `ui/progress/progress.ts:72`); all 8 `@reference`
+  targets in `src/` were then resolved against the filesystem and every one lands on `src/styles/styles.css`.
+  One stale doc-comment path fixed (`core/models/aria.model.ts:3`). Repo-wide grep for the old paths over
+  `src`, `.storybook`, `angular.json`, `tsconfig*.json` and `eslint.config.mjs` returns **NONE**.
 
 - 2026-09-22 **Phase 3 steps 3–4 ✅ — 17 files pushed out of core; 6 PLAN.md push-downs refused.**
   The `import-auditor` sweep over all 35 candidate files (128 referencing file:line entries) is what

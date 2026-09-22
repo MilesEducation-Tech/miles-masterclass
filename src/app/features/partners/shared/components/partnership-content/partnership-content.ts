@@ -28,7 +28,7 @@ import { FeatureApiResponse } from '@core/models/feature.model';
 import { ApiCourseType } from '@core/models/library-filters.model';
 import { ContentResponse, TRACK_ROUTES, TracksResponse } from '@core/models/track.model';
 import { ApiClient } from '@core/services/api-client/api-client';
-import { parseNextPage } from '@shared/utils/parse-next-page';
+import { parseNextPage } from '@core/utils/parse-next-page';
 
 export type ContentType = 'MASTERCLASS' | 'PODCAST' | 'MICRO-LEARNING' | 'TRACKS';
 
