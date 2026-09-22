@@ -11,11 +11,11 @@ ran first over all 8 candidate symbols (**74 distinct reference lines**), so the
 on evidence. It produced three findings, **two of which contradict PLAN.md**, and the user settled all
 three before any file moved.
 
-| Step | What                                                                          | Files | Refs updated |
-| ---- | ----------------------------------------------------------------------------- | ----- | ------------ |
-| 1    | `pages/faq/shared/components/faq-content/` → `shared/components/faq-content/` | 4     | 3            |
-| 2    | Build `features/legal/` from 4 sources; dissolve `pages/shared/`              | 17    | 2            |
-| 3    | `pages/compliance/` → `features/compliance/pages/compliance/`                 | 4     | 2            |
+| Step | What                                                                                | Files | Refs updated |
+| ---- | ----------------------------------------------------------------------------------- | ----- | ------------ |
+| 1    | `pages/faq/shared/components/faq-content/` → `shared/components/faq-content/`       | 4     | 3            |
+| 2    | Build `features/legal/` from 4 sources; dissolve `pages/shared/`                    | 17    | 2            |
+| 3    | `pages/compliance/` → `features/legal/pages/compliance/` (see the correction below) | 4     | 2            |
 
 **25 files moved, every one recorded by git as a rename** — `git diff -M100% --stat` reports
 0 insertions / 0 deletions across all of them. Only 4 files carry content edits, and every hunk in them
@@ -23,12 +23,14 @@ is an import specifier.
 
 ### The three decisions
 
-1. **`compliance` got its OWN `features/compliance/`, not `features/legal/pages/compliance/`** — a
-   deliberate deviation from PLAN.md §3. The audit proved it shares **zero** code with the other two
-   legal pages: its only imports are `@angular/core`, `@angular/platform-browser` and
-   `@env/environment`; it defines its own local `ComplianceDocument` interface and never renders
-   `<app-legal-doc>`. PLAN.md grouped it by topic, not by coupling. It was still done in this session
-   because it arrived as part of the `legal` bundle.
+1. **`compliance` — SUPERSEDED. It now lives at `features/legal/pages/compliance/`, per PLAN.md.**
+   This commit (`d12ae67`) did give it its own `features/compliance/`, on the finding that it shares
+   **zero** code with the other two legal pages — its only imports are `@angular/core`,
+   `@angular/platform-browser` and `@env/environment`, it defines its own local `ComplianceDocument`
+   interface, and it never renders `<app-legal-doc>`. **The user reversed that afterwards**, keeping
+   PLAN.md's topical grouping, and confirmed the reversal on 2026-09-22. The four files are
+   byte-identical either way; only the folder and the two route imports differ. The zero-shared-code
+   finding still stands as a fact about the component — it simply was not the deciding factor.
 2. **`faq-content` promoted to `shared/components/faq-content/`.** `legal-doc.ts:18` and
    `legal-section.ts:3` both imported it out of `pages/faq/`, so `features/legal → features/faq` — which
    §3 bans. Its three non-spec consumers are legal-doc, legal-section and `faq-item`, i.e. **two
@@ -68,7 +70,7 @@ features/legal/
   components/{legal-doc,legal-section}/
   constants/{privacy-policy,terms-of-service}.ts
   models/legal-doc.model.ts
-features/compliance/pages/compliance/
+features/legal/pages/compliance/          ← moved here by the user after this commit
 shared/components/faq-content/
 ```
 
@@ -120,7 +122,11 @@ legacy redirects and footer links are unaffected.
 ## 3. Decisions needed / skipped / suspicious
 
 1. **For the `faq` session: resolve the `shared → features` conflict** described in §1. This is the only
-   open item this session creates.
+   open item this session creates. **UPDATE (`connect-us` session, 2026-09-22): dissolved, not
+   resolved.** The user chose to promote the routed `Faq` component to `shared/components/faq/`, which
+   empties `pages/faq/` completely — so **there is no `features/faq/` at all**, decision 3 has no
+   destination, and `faq.model.ts` + `constants/faq.ts` stay in `core/`. The §3 conflict this section
+   describes cannot arise. See [phase-05-connect-us](phase-05-connect-us.md).
 2. **`/compliance` is registered twice at inconsistent scopes, and has no locale-scoped page route.**
    `app.routes.ts:25` mounts it **top-level** (outside `:country/:profession_type`); `features.ts:77`
    mounts it **only** under the mobile-webview subtree. There is no `/:c/:p/compliance`.
@@ -170,6 +176,8 @@ compliance into its own feature and promoting faq-content to shared/.
 - pages/shared/ is now gone entirely; pages/ is down to 9 folders
 - compliance moved to its own features/compliance/ rather than into
   features/legal/, because it shares no code with the legal pages
+  (NOTE: reversed by the user after this commit — it now lives at
+  features/legal/pages/compliance/, per PLAN.md's grouping)
 - faq-content promoted to shared/components/: its consumers span two
   top-level features, so PROMPT.md section 3 requires shared/
 - no routes files added: every page is registered eagerly via component:

@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
-import { Faq } from '../faq/faq';
+import { Faq } from '@shared/components/faq/faq';
 
 @Component({
   selector: 'app-connect-us',

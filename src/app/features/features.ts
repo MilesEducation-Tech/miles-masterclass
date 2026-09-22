@@ -3,11 +3,11 @@ import { DynamicLayout } from '@layout/dynamic-layout/dynamic-layout';
 import { uaeCairaMatchGuard } from '@core/guards/uae-caira-match.guard';
 import { UaeCairaFacade } from '../pages/uae-caira/shared/services/uae-caira-facade/uae-caira-facade';
 import { Tracks } from '@features/shared/services/tracks/tracks';
-import { Faq } from '../pages/faq/faq';
+import { Faq } from '@shared/components/faq/faq';
 import { TermsOfService } from '@features/legal/pages/terms-of-service/terms-of-service';
 import { PrivacyPolicy } from '@features/legal/pages/privacy-policy/privacy-policy';
 import { MasterclassFacade } from '@features/offerings/shared/services/masterclass-facade/masterclass-facade';
-import { Compliance } from '@features/compliance/pages/compliance/compliance';
+import { Compliance } from '@features/legal/pages/compliance/compliance';
 
 export const featuresRoutes: Route[] = [
   {
@@ -90,7 +90,8 @@ export const featuresRoutes: Route[] = [
       },
       {
         path: 'connect-us',
-        loadComponent: () => import('../pages/connect-us/connect-us').then((m) => m.ConnectUs),
+        loadComponent: () =>
+          import('@features/connect-us/pages/connect-us/connect-us').then((m) => m.ConnectUs),
       },
       {
         path: 'how-to-claim-credly-badge',

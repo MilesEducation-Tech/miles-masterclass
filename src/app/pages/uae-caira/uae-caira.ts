@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 
 import { UpcomingPremiere } from '@core/models/feature.model';
 import { environment } from '@env/environment';
-import { Faq } from '../../pages/faq/faq';
+import { Faq } from '@shared/components/faq/faq';
 import { CairaLevelsSection } from './shared/components/caira-levels-section/caira-levels-section';
 import { CairaWebinarSection } from './shared/components/caira-webinar-section/caira-webinar-section';
 import { LocalTimeZonePipe } from './shared/pipes/local-time-zone.pipe';

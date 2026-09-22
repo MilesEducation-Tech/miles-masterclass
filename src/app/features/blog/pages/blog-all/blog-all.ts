@@ -16,7 +16,7 @@ import { toBlogPostView } from '../../utils/blog.util';
 import { BlogBanner } from '../../components/blog-banner/blog-banner';
 import { BlogListItem } from '../../components/blog-list-item/blog-list-item';
 import { SeoManager } from '@core/services/seo/seo-manager';
-import { Faq } from '../../../../pages/faq/faq';
+import { Faq } from '@shared/components/faq/faq';
 
 /**
  * Browse / search page (design screen 2). Reached from the home search box and

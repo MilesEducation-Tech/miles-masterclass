@@ -11,7 +11,7 @@ import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { FinalAssessmentFacade } from '../shared/services/final-assessment-facade/final-assessment-facade';
 import { FeedbackFacade } from '../shared/services/feedback-facade/feedback-facade';
 import { ChapterFacade } from '../shared/services/chapter-facade/chapter-facade';
-import { Faq } from '../../../pages/faq/faq';
+import { Faq } from '@shared/components/faq/faq';
 import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
 
 @Component({

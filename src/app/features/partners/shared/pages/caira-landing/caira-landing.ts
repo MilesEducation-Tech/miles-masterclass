@@ -20,7 +20,7 @@ import {
   iconCairaSignUp,
 } from '../../models/caira-step-icons';
 import { environment } from '@env/environment';
-import { Faq } from '../../../../../pages/faq/faq';
+import { Faq } from '@shared/components/faq/faq';
 
 @Component({
   selector: 'app-caira-landing',

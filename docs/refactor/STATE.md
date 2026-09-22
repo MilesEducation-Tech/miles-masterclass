@@ -7,69 +7,61 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- Phase: **5 — Features (per feature) 🟡.** Two features done:
-  `page-not-found` ✅ (committed `1462e72`) and **`legal` + `compliance` ✅** — report:
-  [phase-05-legal](reports/phase-05-legal.md). `verifier` **8/8 green**, bundle **byte-identical for
-  the third phase running**, `reviewer` **PASS with zero violations**.
-- **The session opened blocked and was unblocked by evidence, not by assumption.** A read-only
-  `import-auditor` sweep over 8 symbols / **74 reference lines** ran before anything moved, and it
-  contradicted PLAN.md twice. The user then settled all three calls:
-  1. **`compliance` → its own `features/compliance/`**, not `features/legal/pages/compliance/`.
-     Deliberate PLAN.md deviation: zero shared code with the legal pages (verified — its only imports
-     are `@angular/core`, `@angular/platform-browser`, `@env/environment`).
-  2. **`faq-content` → `shared/components/`.** Consumers span two top-level features, so §3 forces it.
-     **Closes the Phase 4 deferral**, whose premise is now disproved.
-  3. **`faq.model.ts` → `features/faq/models/`** — user chose PLAN.md's row over my recommendation.
-     Settled and recorded; **deliberately NOT executed** (see below).
-- **Step plan — all 3 done:**
-  1. ✅ `pages/faq/shared/components/faq-content/` → `shared/components/faq-content/` (4 files, 3 refs).
-  2. ✅ `features/legal/{pages,components,constants,models}/` built from 4 sources (17 files).
-     **`pages/shared/` dissolved entirely** — it held nothing else.
-  3. ✅ `pages/compliance/` → `features/compliance/pages/compliance/` (4 files).
-     **25 files moved, all renames at 0 insertions / 0 deletions** (reviewer verified with
-     `git diff -M100% --stat`). Only 4 files carry edits, every hunk an import specifier.
-- **`src/app/pages/` is down to 9 folders:** `ai-labs`, `connect-us`, `faculty`, `faq`,
-  `how-to-claim-credly-badge`, `instructor-details`, `milesverse`, `uae-caira` — plus nothing else;
-  `shared/`, `compliance`, `privacy-policy`, `terms-of-service` and `page-not-found` are all gone.
-- ⚠️ **The one open item this session creates — for the `faq` session.** Decisions 2 and 3 are
-  **jointly inconsistent with §3**: `shared/components/faq-content` imports `FAQContent` from
-  `faq.model`, so once `faq.model` moves into `features/faq/` that edge becomes **`shared → features`**,
-  §3's hardest ban and stricter than the `features → features` edge decision 3 knowingly accepts.
-  A move alone cannot resolve it. Three options for that session: (a) keep the import but make it
-  `import type` and grant a Phase 7 exemption — the type is erased at runtime, so the edge is
-  compile-time only; (b) move **only** `FAQContent`/`richContent` to `shared/` and leave the rest of
-  `faq.model.ts` behind; (c) revert decision 3 and keep `faq.model.ts` in `core/`.
-  **`faq.model.ts` is untouched in `core/` today** — executing decision 3 now was impossible anyway,
-  since `features/faq/` does not exist and moving into a non-existent feature folder is the exact error
-  Phase 3 avoided.
-- **Build churn was cleaned again** (`public/version.json`, `core/version/app-version.ts` restored with
-  `git checkout HEAD --`). **The diff is commit-ready as-is:** 25 renames + 4 import-only edits + this
-  file + the report.
-- Commit message is in [phase-05-legal](reports/phase-05-legal.md) §5. Then
-  **`/refactor-phase 5 <feature>`**. Suggested next: **`faq`** — it is the feature that must resolve the
-  `shared → features` item above, and `faq-content` has already been lifted out of its way. After that:
-  `connect-us`, `how-to-claim-credly-badge`, `milesverse`, `uae-caira`, `ai-labs`,
-  `instructor-details`/`faculty`, `auth`, then the in-`features/` work (`cpa-landing` shared layer,
-  tracker merge, payment `service/`→`services/`, offerings, home/blog normalisation) and finally
-  deleting the empty `app/pages/`.
+- Phase: **5 — Features (per feature) 🟡.** Done: `page-not-found` ✅ (`1462e72`),
+  `legal` + `compliance` ✅ (`d12ae67`), **`connect-us` + the `Faq` promotion ✅** — report:
+  [phase-05-connect-us](reports/phase-05-connect-us.md). `verifier` **8/8 green**, `reviewer` **PASS,
+  zero violations**, bundle **byte-identical for the fourth phase running** with the **lazy chunk count
+  held at 271 → 271**.
+- **Step plan — both done:**
+  1. ✅ `Faq` → `shared/components/faq/` and `faq-item` → `shared/components/faq-item/` (8 files,
+     16 refs). **`pages/faq/` deleted — fully emptied.**
+  2. ✅ `pages/connect-us/` → `features/connect-us/pages/connect-us/` (4 files, 1 ref). Still **lazy**.
+     **12 moves, every one `R100`** — byte-identical, zero content delta.
+- **What this session actually settled.** `connect-us` is a 2-line composite
+  (`<app-enquiry-form>` + `<app-faq />`), so it could not move until `Faq`'s home was decided. The audit
+  showed **13 files import the routed `Faq` across 7 top-level features**, because `faq.ts:14` has a
+  `standalone` input that exists purely so the page can be embedded. The user chose §3's placement rule
+  over §3's "routed components live in `pages/`", and the promotion **clears all 13 edges outright**.
+- ⚠️ **A claim this file carried since Phase 4 was wrong and is now corrected.** It said the
+  `features/* → pages/faq` edges "clear when `pages/faq` becomes `features/faq`". **They relabel to
+  `features/* → features/faq`, banned identically** — the same error as the Phase 3 `utils.ts` claim
+  Phase 4 had to correct. Two different files, same mistake, twice. **Worth watching for a third time.**
+- ✅ **The open `shared → features` item is DISSOLVED, not deferred.** With `pages/faq/` gone there is
+  **no `features/faq/` and never will be**, so the decision to move `faq.model.ts` → `features/faq/models/`
+  has **no destination**. `faq.model.ts` and `constants/faq.ts` stay in `core/` — the originally
+  recommended outcome. PLAN.md §3's Phase 3 row for them is permanently moot. **Nothing is outstanding.**
+- ✅ **`compliance` records corrected.** The user's out-of-band move to `features/legal/pages/compliance/`
+  is confirmed intentional; [phase-05-legal](reports/phase-05-legal.md) §1 decision 1, its shape diagram,
+  step table, commit-message note and §3 item 1 are all updated. That move was made with a plain `mv`,
+  so it rides in **this** commit as delete + untracked; all 4 files verified byte-identical to `HEAD`,
+  and git resolves it as a rename at commit time.
+- **`src/app/pages/` is down to 7 folders:** `ai-labs`, `faculty`, `how-to-claim-credly-badge`,
+  `instructor-details`, `milesverse`, `uae-caira`.
+- **⚠️ First session with real visual blast radius** — `Faq` renders on 13 pages. The gates prove it
+  compiles and SSRs; they do **not** prove it still renders. See the report's §4 QA list.
+- Build churn cleaned. Commit message is in [phase-05-connect-us](reports/phase-05-connect-us.md) §5.
+  Then **`/refactor-phase 5 <feature>`** — suggested next: `uae-caira` (its `Faq` import is already
+  fixed, so it is now a plain move), then `how-to-claim-credly-badge`, `milesverse`, `ai-labs`,
+  `instructor-details`/`faculty`, `auth`, the in-`features/` work (`cpa-landing` shared layer, tracker
+  merge, payment `service/`→`services/`, offerings, home/blog normalisation), and finally deleting the
+  empty `app/pages/`.
 - **Phase 5 carry-over from Phase 4 still open:** `shared/dialogs/ai-lab-{dialog,terms-dialog,agent-dialog}`
   wait on `features/ai-labs/` (`ai-lab-agent-dialog` holds 2 relative imports into `pages/ai-labs/`);
-  the 12 `features/* → pages/faq` edges import the routed `pages/faq/faq` page and clear when `faq`
-  moves; the tracker merge must carry `cpe-tracker/dialogs/` and `caira-tracker/dialogs/` into
-  `features/tracker/{cpe,caira}/`.
+  the tracker merge must carry `cpe-tracker/dialogs/` and `caira-tracker/dialogs/` into
+  `features/tracker/{cpe,caira}/`. **The `pages/faq` carry-over item is closed by this session.**
 
 ## Part A tracker
 
-| Phase | Scope           | Status | Report                                                                                                                                                                               | Committed                  |
-| ----- | --------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- |
-| 0     | Audit & plan    | ✅     | [phase-00](reports/phase-00.md)                                                                                                                                                      |                            |
-| 1     | Hygiene         | ✅     | [phase-01](reports/phase-01.md)                                                                                                                                                      |                            |
-| 2     | Path aliases    | ✅     | [phase-02](reports/phase-02.md)                                                                                                                                                      |                            |
-| 3     | Core            | ✅     | [phase-03](reports/phase-03.md)                                                                                                                                                      |                            |
-| 4     | Shared & layout | ✅     | [phase-04](reports/phase-04.md)                                                                                                                                                      |                            |
-| 5     | Features        | 🟡     | `page-not-found` ✅ [phase-05-page-not-found](reports/phase-05-page-not-found.md) · `legal`+`compliance` ✅ [phase-05-legal](reports/phase-05-legal.md) · 9 folders left in `pages/` | `page-not-found` `1462e72` |
-| 6     | Admin           | ⬜     |                                                                                                                                                                                      |                            |
-| 7     | Boundaries      | ⬜     |                                                                                                                                                                                      |                            |
+| Phase | Scope           | Status | Report                                                                                                                                                                                                                                                                         | Committed            |
+| ----- | --------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------- |
+| 0     | Audit & plan    | ✅     | [phase-00](reports/phase-00.md)                                                                                                                                                                                                                                                |                      |
+| 1     | Hygiene         | ✅     | [phase-01](reports/phase-01.md)                                                                                                                                                                                                                                                |                      |
+| 2     | Path aliases    | ✅     | [phase-02](reports/phase-02.md)                                                                                                                                                                                                                                                |                      |
+| 3     | Core            | ✅     | [phase-03](reports/phase-03.md)                                                                                                                                                                                                                                                |                      |
+| 4     | Shared & layout | ✅     | [phase-04](reports/phase-04.md)                                                                                                                                                                                                                                                |                      |
+| 5     | Features        | 🟡     | `page-not-found` ✅ [phase-05-page-not-found](reports/phase-05-page-not-found.md) · `legal`+`compliance` ✅ [phase-05-legal](reports/phase-05-legal.md) · `connect-us` + `Faq` promotion ✅ [phase-05-connect-us](reports/phase-05-connect-us.md) · 7 folders left in `pages/` | `1462e72`, `d12ae67` |
+| 6     | Admin           | ⬜     |                                                                                                                                                                                                                                                                                |                      |
+| 7     | Boundaries      | ⬜     |                                                                                                                                                                                                                                                                                |                      |
 
 ## Part B tracker
 
@@ -221,6 +213,10 @@ New decisions raised by Phase 0:
       folders (`privacy-policy`, `terms-of-service`, `compliance` + `pages/shared/components/legal-*`),
       `instructor-details` vs `faculty` (PLAN.md sends them to two different features), and
       `pages/shared` itself.
+- [x] **Phase 5 / `compliance` placement — REVERSED by the user 2026-09-22 and confirmed.**
+      It lives at **`features/legal/pages/compliance/`**, per PLAN.md's grouping, not the separate
+      `features/compliance/` that commit `d12ae67` created. The zero-shared-code finding still stands
+      as a fact; it simply was not the deciding factor. Report corrected.
 - [x] **Phase 5 / `legal` — SETTLED by the user 2026-09-22, all three calls. Executed; see
       [phase-05-legal](reports/phase-05-legal.md).** Outcome: (1) `compliance` → its **own**
       `features/compliance/`; (2) `faq-content` → `shared/components/` ✅ done; (3) `faq.model.ts` →
@@ -242,7 +238,28 @@ New decisions raised by Phase 0:
       Consequence: `core/constants/{privacy-policy,terms-of-service}.ts` and
       `core/models/legal-doc.model.ts` may still move down into `features/legal/`, because
       `features/legal → @core/models/faq.model` is a legal direction.
-- [ ] **Phase 5 / `faq` — resolve the `shared → features` edge decision 3 creates.**
+- [x] **Phase 5 / `Faq` component — SETTLED 2026-09-22: option (a), promoted to
+      `shared/components/faq/`. Executed; see [phase-05-connect-us](reports/phase-05-connect-us.md).**
+      All 13 banned edges cleared outright. Knock-on: `pages/faq/` is empty and deleted, so there is
+      **no `features/faq/`**. Original analysis kept for reference:
+      **Blocks `connect-us`, and 13 import sites in total.** Raised 2026-09-22 by the `connect-us`
+      audit. `Faq` is the routed `/faq` page **and** an embeddable section — `faq.ts:14` has a
+      `standalone` input that exists purely for embedding. **13 files import it**, spanning **7
+      top-level features**: `offerings` (6), `blog` (3), `home`, `partners`, plus `connect-us` and
+      `uae-caira` which become features this phase. §3's two rules conflict here: the placement rule
+      says promote to `shared/`; "routed components always live in `pages/`" says keep it in the
+      feature. - **(a) Promote the whole component to `shared/components/faq/`.** A pure move, zero logic
+      change, clears all 13 edges at once, and directly follows the placement rule — the same
+      reasoning already approved for `faq-content`. Cost: a routed component lives in `shared/`, so
+      `features.ts` would route `component: Faq` out of `@shared/`. **Recommended.** - **(b) Keep it in `features/faq/pages/faq/` and accept 13 `features → features` edges**, all
+      covered by a Phase 7 temporary-warning exemption. Cheapest now, largest permanent residue, and
+      it makes `features/faq` a dependency of most of the app. - **(c) Split it: a shared `faq` widget plus a thin routed page that wraps it.** The correct end
+      state, but it is a **logic change**, which Part A forbids — so this is Part B (Phase 10/12)
+      work and `connect-us` would stay blocked until then. Not recommended for now.
+- [x] **Phase 5 / `faq` — DISSOLVED 2026-09-22, not resolved.** Promoting `Faq` to `shared/` empties
+      `pages/faq/`, so **`features/faq/` does not exist** and the decision to move `faq.model.ts` there
+      has no destination. `faq.model.ts` and `constants/faq.ts` stay in `core/` — the originally
+      recommended outcome — and PLAN.md §3's Phase 3 row for them is permanently moot. Original:
       `shared/components/faq-content` imports `FAQContent` from `faq.model`. Moving `faq.model.ts` into
       `features/faq/models/` turns that into **`shared → features`**, which §3 bans outright — a
       stricter ban than the `features → features` edge decision 3 accepted, and not fixable by a move.
@@ -356,6 +373,29 @@ These are environment and product observations the repair surfaced. None changed
    (a hardcoded absolute `/us/accounting/privacy-policy`), and an inline `<a href="/privacy-policy">`
    inside `core/constants/terms-of-service.ts:26`. All key off the **URL**, not the file path.
 
+## Findings from the Phase 5 `connect-us` audit (logged, not fixed — PROMPT.md §7)
+
+1. **STATE.md carry-over (c) was wrong and is now corrected.** It claimed the `features/* → pages/faq`
+   edges "clear when `pages/faq` becomes `features/faq`". They **relabel** to `features/* → features/faq`,
+   which §3 bans identically — the same relabeling error as the Phase 3 `utils.ts` claim that Phase 4
+   corrected. No edge is cleared by that move; only a decision on `Faq`'s home clears them.
+2. **`connect-us` is almost nothing of its own.** The whole component is
+   `<app-enquiry-form [enquiry_type]="…" /> <app-faq />` inside one container div, with a single
+   `enquiryType` input. Once `Faq`'s home is settled the move is ~4 files and one import line.
+3. **`connect-us.css` is empty (0 bytes) but still carries a `styleUrl`** — same Phase 12 item as
+   `page-not-found.css`.
+4. **`connect-us` has no story and no inbound import besides its own spec.** Its only registration is
+   the lazy `loadComponent` at `features.ts:91-93` — it is the first Phase 5 feature that is genuinely
+   lazy-loaded, unlike `page-not-found` and the legal pages, which are all eager.
+5. **URL strings that must not change:** `seo.ts:79` (`STATIC_PATHS`), `legacy-redirects.ts:189`
+   (`/accounting/help-desk` → `/{c}/{p}/connect-us`), `legacy-redirects.spec.ts:31,164`, and
+   `features/payment/shared/pages/plan/plan.ts:285` which navigates to `/${country}/${profession}/connect-us`.
+   All key off the URL segment, not the file path.
+6. **False positive worth recording so nobody chases it:**
+   `pages/how-to-claim-credly-badge/how-to-claim-credly-badge.html:36` contains
+   `scrollToSection('connect-us')` inside a **commented-out** button — a dead in-page anchor id, not a
+   route or a component reference.
+
 ## Open questions (from Claude)
 
 0. **NEW (Phase 0) — bugs found, logged not fixed** (spec §7). Full list in
@@ -423,6 +463,71 @@ These are environment and product observations the repair surfaced. None changed
    I cannot re-record (harness-owned); you run `--record-baseline` after deciding.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-09-22 **Phase 5 `connect-us` + the `Faq` promotion ✅ — 12 R100 renames, 8/8 GREEN, reviewer
+  PASS with zero violations, lazy chunk count held at 271.** Started ⏸ blocked: `connect-us` is a
+  2-line composite (`<app-enquiry-form>` + `<app-faq />`) importing the **routed FAQ page** from
+  `'../faq/faq'`, so moving it would have produced `'../../../../pages/faq/faq'` — a relative import
+  crossing top-level folders, forbidden by §3, with **no `@pages/*` alias** (Phase 2 left `pages/`
+  un-aliased by design). Creating a violation instead of clearing one is the Phase 3/4 refusal test, so
+  nothing moved until the user decided.
+  **⚠️ Corrected a wrong claim this file had carried since Phase 4:** the `features/* → pages/faq`
+  edges do **not** "clear when `pages/faq` becomes `features/faq`" — they **relabel** to
+  `features/* → features/faq`, banned identically. Exactly the Phase 3 `utils.ts` error Phase 4 had to
+  correct. Same mistake, two different files, twice — **worth watching for a third.**
+  Counts re-derived from the import graph rather than trusted from PLAN.md (wrong twice already):
+  **13 importers of the routed `Faq` across 7 top-level features** — offerings 6, blog 3, home,
+  partners, plus `connect-us` and `uae-caira` — and `features.ts:6`, the legitimate route registration.
+  Root cause: `faq.ts:14`'s `standalone = input<boolean>(true)`, an input that exists **only** so the
+  routed page can be embedded as a widget. User chose §3's placement rule over §3's "routed components
+  live in `pages/`" → **`shared/components/faq/`**, with `faq-item` beside it. The audit had confirmed
+  it was safe: neither component imports anything from `features/*` or `pages/*`, so no
+  `shared → features` edge is created, and `AccordionMode` is consumed only by its own sibling.
+  **`pages/faq/` is now deleted — fully emptied** (`faq-content` had already left in the `legal`
+  session). **Consequence: there is no `features/faq/` and never will be**, which **dissolves** the
+  open `shared → features` item — the `faq.model.ts → features/faq/models/` decision has no
+  destination, so `faq.model.ts` and `constants/faq.ts` stay in `core/`, the originally recommended
+  outcome. Nothing outstanding.
+  One Prettier reflow: the `@features/…` alias pushed `connect-us`'s `loadComponent` line past the
+  100-char `printWidth` — same mechanism as Phases 3 and 4, and again only that one file was formatted.
+  `connect-us` stays **lazy**, the first Phase 5 feature that genuinely is.
+  Also handled: the user's out-of-band `compliance` move to `features/legal/pages/compliance/` (plain
+  `mv`, not `git mv`) — left alone, verified byte-identical to `HEAD`, confirmed intentional, and the
+  `phase-05-legal` report corrected in five places. It rides in this commit as delete + untracked.
+  Gates: lint 5s, unit 16s, local 23s, prod 29s, storybook 23s, format 14s, bundle, ssr 4s. Bundle
+  **+0.0%**, and the phase's specific risk — that promoting a component out of a lazy route tree
+  reshuffles chunks — did **not** materialise: 271 → 271, largest lazy unchanged in size and rank, only
+  its content hash moved. Reviewer separately confirmed zero relative `Faq` crossings remain, both
+  route registrations survive, and the `faq` / `mobile/faq` / `connect-us` path strings are
+  byte-unchanged. **`src/app/pages/` is down to 7 folders.**
+  ⚠️ **First session with real visual blast radius — `Faq` renders on 13 pages.** The gates prove it
+  compiles and SSRs, not that it renders. QA list in the report §4.
+
+- 2026-09-22 **Phase 5 `connect-us` ⏸ BLOCKED — read-only audit only, ZERO source changes.**
+  Preconditions passed (tree clean, `legal` committed at `d12ae67`, destination spec-named in the same
+  PLAN.md row as `page-not-found`), but the `import-auditor` found that moving it would **create** a §3
+  violation rather than clear one — the test Phases 3 and 4 used to refuse PLAN.md rows.
+  **`connect-us` is a 2-line composite: `<app-enquiry-form>` + `<app-faq />`.** It imports `Faq`, the
+  **routed FAQ page**, from `'../faq/faq'`. Moving it to `features/connect-us/pages/connect-us/` while
+  `Faq` stays at `pages/faq/` turns that into `'../../../../pages/faq/faq'` — a relative import crossing
+  top-level folders, forbidden by §3, and **no `@pages/*` alias exists** (Phase 2 left `pages/`
+  un-aliased by design).
+  **⚠️ Corrected a wrong claim this file has been carrying: carry-over (c).** It said the
+  `features/* → pages/faq` edges "clear when `pages/faq` becomes `features/faq`". **They do not — they
+  relabel to `features/* → features/faq`, banned identically.** Precisely the Phase 3 `utils.ts`
+  error ("closes the last `core → features` edge" → actually relabels it `shared → features`) that
+  Phase 4 had to correct. Counts re-derived from the import graph rather than trusted from PLAN.md,
+  whose figures have now been wrong twice: **13 files import the routed `Faq`**, spanning **7
+  top-level features** — offerings (6), blog (3), home, partners, plus `connect-us` and `uae-caira`
+  which become features this phase — plus `features.ts:6`, the legitimate route registration.
+  **Root cause: `Faq` is deliberately dual-purpose.** `faq.ts:14` declares
+  `standalone = input<boolean>(true)`, an input that exists only so the routed page can be embedded as
+  a section widget. §3's placement rule (2+ features → promote to `shared/`) and §3's "routed
+  components always live in `pages/`" point in opposite directions for this one component, so it is a
+  user decision, not a judgement I should make silently. Three options recorded under Decisions;
+  **(a) promote to `shared/components/faq/`** is recommended — a pure move, zero logic change, clears
+  all 13 edges, and the same reasoning the user already approved for `faq-content`.
+  `connect-us` is a ~4-file move the moment that lands.
 
 - 2026-09-22 **Phase 5 `legal` + `compliance` ✅ — 25 renames, 3 decisions settled, 8/8 GREEN,
   reviewer PASS with zero violations.** Started ⏸ blocked (the `"dissolve pages/"` decision was

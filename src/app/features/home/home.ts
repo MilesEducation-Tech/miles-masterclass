@@ -15,7 +15,7 @@ import { HomeHero } from './components/home-hero/home-hero';
 import { Offering } from './components/offerings/offerings';
 import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
 import { PartnerContentList } from '@features/partners/shared/components/partner-content-list/partner-content-list';
-import { Faq } from '../../pages/faq/faq';
+import { Faq } from '@shared/components/faq/faq';
 import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan-benefits';
 import { Button } from '@shared/ui/button/button';
 import { Router } from '@angular/router';

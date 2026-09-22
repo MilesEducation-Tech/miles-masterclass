@@ -4,7 +4,7 @@ import { rootRedirectGuard } from '@core/guards/root-redirect.guard';
 import { onboardingGuard } from '@core/guards/auth/onboarding.guard';
 import { PageNotFound } from '@features/page-not-found/pages/page-not-found/page-not-found';
 import { BlogLayout } from '@layout/blog-layout/blog-layout';
-import { Compliance } from '@features/compliance/pages/compliance/compliance';
+import { Compliance } from '@features/legal/pages/compliance/compliance';
 
 export const routes: Routes = [
   { path: 'auth', loadChildren: () => import('./auth/auth').then((m) => m.authRoutes) },
