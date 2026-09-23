@@ -4,5 +4,6 @@ allowBuilds:
   esbuild: true
   lmdb: true
   msgpackr-extract: true
+  unrs-resolver: true
 minimumReleaseAgeExclude:
   - "@milesverse/sdk@0.1.0"

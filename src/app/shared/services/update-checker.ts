@@ -1,8 +1,8 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
-import { APP_VERSION } from '../../version/app-version';
-import { Dialog } from '../dialog/dialog';
+import { APP_VERSION } from '@core/version/app-version';
+import { Dialog } from '@core/services/dialog/dialog';
 
 /**
  * Detects when a newer build has been deployed while the user is on an older

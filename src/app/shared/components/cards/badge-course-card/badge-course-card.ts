@@ -1,10 +1,10 @@
-import { NgClass, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
 import { badgeInstructorName, BadgeCourseItem } from '@core/models/badge.model';
 
 @Component({
   selector: 'app-badge-course-card',
-  imports: [NgOptimizedImage, NgClass],
+  imports: [NgOptimizedImage],
   templateUrl: './badge-course-card.html',
   styleUrl: './badge-course-card.css',
 })

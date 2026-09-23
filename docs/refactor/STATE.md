@@ -7,6 +7,37 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🏁 **PHASE 7 (boundaries) IS DONE — and closes ⛔, not ✅, on your decision.** Report:
+  [phase-07](reports/phase-07.md). `reviewer` **PASS, zero violations**.
+  **7 of 8 gates green; `lint` is red with exactly 8 known
+  violations and nothing else.** You chose to leave them at `error` unexempted rather than carry
+  them as temporary warnings, so PROMPT.md §6's "full green run" is unreachable this phase.
+  Bundle **byte-identical to baseline** (12 files / 501.5 KB raw / 101.5 KB gzip, 271 lazy chunks);
+  SSR matched all 4 routes; **baselines stayed clean** after the full run, so open question −1 did
+  not recur. **Part A ends here.**
+- ✅ **The dynamic-import worry is closed.** The Phase 5 note warned Phase 7's config "must cover
+  dynamic imports or it will report seven and silently miss two". `boundaries/dependency-nodes`
+  includes `dynamic-import` by default and **both** dynamic violations were reported; proven with
+  a targeted canary before any result was trusted. Caveat for Phase 11: only **string-literal**
+  dynamic imports are analysed — `import(someVar)` is invisible to the rule.
+- ⚠️ **The planned `Notification` move was DROPPED on evidence, so the residue is 8, not 7.**
+  My pre-phase grep said "36 importers, zero in `core/`" — **wrong**, it matched only the alias
+  form. `import-auditor` found two **relative** importers inside core:
+  `core/services/network/network.ts:3` and `core/services/partner-code/partner-code.ts:5`. Both are
+  core singletons that cannot move, so relocating `Notification` would have turned **1 violation
+  into 2**. **Consequence: `notification.ts:3` has no move-only fix** — finding 1 below now has an
+  owner (Phase 10, toast migration) but needs a real dependency inversion, not a `git mv`.
+- ✅ **The pre-commit hook is NOT blocked.** `eslint --fix` over exactly this phase's changed files
+  exits 0, because dropping the `Notification` move means **no violating file is touched**. No
+  `--no-verify` needed and nothing was weakened.
+- **Phase 7 is UNCOMMITTED.** Commit message in §5 of [phase-07](reports/phase-07.md). Exclude
+  `public/version.json` and `core/version/app-version.ts` (build-generated, open question 6).
+- **Next: Part B. `/refactor-phase 8` (services), first feature top-to-bottom in the Part B tracker.**
+  Before that, three Part B items this phase pinned down: `notification.ts:3` → **Phase 10**;
+  the seven `PaymentFacade` edges → **Phase 11** (they need lazy injection; no move clears them);
+  and **enable `boundaries/no-unknown-dependencies` once Phase 11 turns lint green**, because
+  until then the 8 errors _are_ the resolver canary and a green lint is the anomaly.
+
 - 🏁 **PHASE 6 (admin) IS COMPLETE.** All four steps done in one session, **8/8 gates green**,
   `reviewer` **PASS, zero violations**. Report: [phase-06](reports/phase-06.md).
   **143 files changed: 136 renames (all rename-detected, no lost history) + 7 modified-only.**
@@ -28,13 +59,15 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   **Phase 14 note:** both numbers are real and measure different things — open question 0 calls
   AGENTS.md §9 stale, but AGENTS.md is right about the _budget_ metric and the bundle report is right
   about the `index.html` metric. Explain the two, don't just swap the number.
-- **Phase 6 is UNCOMMITTED.** Commit message in §5 of [phase-06](reports/phase-06.md). Exclude
+- ✅ **[CORRECTED 2026-09-23] Phase 6 IS committed** (`8e7255c`, merged at `2debbf4`); the working
+  tree was clean at the start of Phase 7. The note below was stale.
+  ~~**Phase 6 is UNCOMMITTED.**~~ Commit message in §5 of [phase-06](reports/phase-06.md). Exclude
   `public/version.json` and `core/version/app-version.ts` (build-generated, open question 6), and
   **delete the untracked stray harness cache directory rather than committing it** — it is my
   artefact (report §3 item 4) and I am guard-blocked from removing it.
 - **Decisions waiting on you, before or with Phase 7:** the **v1 cutover** (now a self-contained
   deletion — 12 files, 8 commented route blocks, plus the `-v2` rename); whether Phase 7 bans
-  `admin/<x> → admin/<y>` (**7 live edges**, all partner-v2 into route-dead siblings — the pre-phase
+  `admin/<x> → admin/<y>` (**[CORRECTED by Phase 7: 18 live edges, not 7]**, all partner-v2 into route-dead siblings — the pre-phase
   estimate of 8 was one too many, it wrongly counted a directive that now resolves to `admin/core/`);
   and the still-unticked `app.config.ts:23` question.
 
@@ -61,7 +94,7 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 | 4     | Shared & layout | ✅     | [phase-04](reports/phase-04.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |                                                                                                        |
 | 5     | Features        | ✅     | `page-not-found` ✅ [phase-05-page-not-found](reports/phase-05-page-not-found.md) · `legal`+`compliance` ✅ [phase-05-legal](reports/phase-05-legal.md) · `connect-us`+`Faq` ✅ [phase-05-connect-us](reports/phase-05-connect-us.md) · `uae-caira` ✅ [phase-05-uae-caira](reports/phase-05-uae-caira.md) · magnet promotion ✅ [phase-05-magnet-promotion](reports/phase-05-magnet-promotion.md) · **dissolve `pages/` ✅** [phase-05-pages-dissolve](reports/phase-05-pages-dissolve.md) · **`auth` ✅** [phase-05-auth](reports/phase-05-auth.md) · **`library` ✅** [phase-05-library](reports/phase-05-library.md) · **`home` ✅** [phase-05-home](reports/phase-05-home.md) · **`tracker` ✅** [phase-05-tracker](reports/phase-05-tracker.md) · **`partners` ✅** [phase-05-partners](reports/phase-05-partners.md) · **`payment` ✅** [phase-05-payment](reports/phase-05-payment.md) · **`offerings` ✅** [phase-05-offerings](reports/phase-05-offerings.md) — **ZERO `shared/` layers left under `features/`**; `features → features` edges 23 → 2; `features → features` down to **2 lines**; last cycle dissolved, sequenced in [PHASE-05-REMAINING.md](PHASE-05-REMAINING.md) | `1462e72`, `d12ae67`, `9961f69`, `15335f5`; `e71cb0f`, `9b0be7c`, `abb3d1b`; **offerings uncommitted** |
 | 6     | Admin           | ✅     | [phase-06](reports/phase-06.md) — `admin/shared/` + 12 internal `shared/` layers → **0**; `v2 → v1` edges **39 → 0**; all routed components in `pages/`; 136 renames, 8/8 green, reviewer PASS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | **uncommitted**                                                                                        |     |
-| 7     | Boundaries      | ⬜     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |                                                                                                        |
+| 7     | Boundaries      | ⛔     | [phase-07](reports/phase-07.md) — boundaries encoded at `error`; **7/8 gates green, lint red with exactly 8 known violations by your decision**; 1 rename, 3 files of violations fixed; dynamic imports proven covered                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | **uncommitted**                                                                                        |
 
 ## Part B tracker
 
@@ -96,6 +129,31 @@ Phase 12's first session moves design tokens into `@theme`.
 | 14    | Documentation                 | ⬜     |        |
 
 ## Decisions (owner: user)
+
+Settled for Phase 7 by the user 2026-09-23, before execution:
+
+- [x] **Phase 7 / the residual violations stay at `error`, UNEXEMPTED.** No per-file `warn` block, no
+      `eslint-disable`, no `allow` carve-out. **Consequence accepted in advance: `pnpm lint` fails and
+      Phase 7 closes ⛔.** Eight violations remain — seven are `PaymentFacade` and one is
+      `Notification → @shared/ui/toast`. **No move clears any of them:** promoting `PaymentFacade` to
+      `core/` drags `coupon-dialog` (`payment-facade.ts:39`), `cart-drawer-dialog` (`:625`) and
+      `cart-item` in behind it, i.e. the payment domain into core, which the Phase 5 analysis rejected
+      on a 13-internal-vs-2-external count. Reversing this decision later is a self-contained config
+      block; nothing depends on it.
+- [x] **Phase 7 / `admin/<x> → admin/<y>` is NOT banned.** §3 says "admin imports only from core,
+      shared, and itself", which permits it. Implemented as a **single `admin` element**, so all
+      **18** such edges (not the 7 Phase 6 recorded — the 11 `v1 partner-platform → v2` edges were
+      never counted) are intra-element and free. **Re-banning is a one-line change** —
+      `pattern: "src/app/admin/*", capture: ["adminFeature"]` — and `eslint.config.mjs` says so at the
+      call site.
+- [x] **Phase 7 / a `layout → features|admin` ban was ADDED, extending §3.** §3 states outbound rules
+      for core, shared, features, admin and testing but is **silent on `layout`**. A literal
+      transcription would not have reported `footer-overlay.ts:22`, which STATE.md has counted as a
+      banned edge since Phase 5. **Phase 14 must add the layout rule to AGENTS.md §3** so the spec and
+      the linter agree.
+- [x] **Phase 7 / the class/style directive usages were fixed now, not deferred to Phase 12.**
+      2 files, 6 lines, `[class]` binding for an identical class string. Zero usages remain repo-wide,
+      so the ban ships at `error` with no exemption.
 
 Settled for Phase 6 by the user 2026-09-23, before execution (all four change the shape of the work):
 
@@ -336,27 +394,27 @@ New decisions raised by Phase 0:
       **Counts re-derived from the import graph** (PLAN.md's have been wrong twice):
 
       | Component (current home) | own feature | external features | total |
-                                                                                                                                                                                  | --- | --- | --- | --- |
-                                                                                                                                                                                  | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
-                                                                                                                                                                                  | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                  | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                  | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
-                                                                                                                                                                                  | `home/components/app-download` | 1 | uae-caira | 2 |
-                                                                                                                                                                                  | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
+                                                                                                                                                                                      | --- | --- | --- | --- |
+                                                                                                                                                                                      | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
+                                                                                                                                                                                      | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                      | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                      | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
+                                                                                                                                                                                      | `home/components/app-download` | 1 | uae-caira | 2 |
+                                                                                                                                                                                      | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
 
-                                                                                                                                                                                  All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
-                                                                                                                                                                                  precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
-                                                                                                                                                                                  **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
-                                                                                                                                                                                  because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
-                                                                                                                                                                                  (14 importers) is still open and unverified — treat its count with the same suspicion.
-                                                                                                                                                                                  - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
-                                                                                                                                                                                    partners (11 pages), offerings, home, library.
-                                                                                                                                                                                  - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
-                                                                                                                                                                                    temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
-                                                                                                                                                                                  - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
-                                                                                                                                                                                    `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
-                                                                                                                                                                                    structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
-                                                                                                                                                                                    so it needs an explicit override.
+                                                                                                                                                                                      All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
+                                                                                                                                                                                      precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
+                                                                                                                                                                                      **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
+                                                                                                                                                                                      because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
+                                                                                                                                                                                      (14 importers) is still open and unverified — treat its count with the same suspicion.
+                                                                                                                                                                                      - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
+                                                                                                                                                                                        partners (11 pages), offerings, home, library.
+                                                                                                                                                                                      - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
+                                                                                                                                                                                        temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
+                                                                                                                                                                                      - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
+                                                                                                                                                                                        `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
+                                                                                                                                                                                        structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
+                                                                                                                                                                                        so it needs an explicit override.
 
 - [ ] **`features/shared/services/tracks/` has no home in the target structure.** Raised 2026-09-23.
       It sits at the `features/` root, which §3 does not contain. Importers are
@@ -629,6 +687,21 @@ an ordinary run rather than only when explicitly asked — if it does, this recu
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-09-23 🏁 **PHASE 7 COMPLETE — all 6 steps ✅, 7/8 GREEN (lint red by decision), reviewer PASS.**
+  Report: [phase-07](reports/phase-07.md). `eslint-plugin-boundaries@7.2.0` +
+  `eslint-import-resolver-typescript@4.4.5`; 8 element descriptors, 6 `disallow` policies,
+  `boundaries/dependencies` at `error` with object selectors and `{{ }}` templates, no deprecated
+  syntax. **Three settings are load-bearing, not cosmetic:** `partialMatch: false` (the v7 default
+  would classify `admin/core/**` as element `core` and invent false errors),
+  `flag-as-external.unresolvableAlias: false` (a dead resolver would otherwise pass every check
+  silently), and a `source` catch-all in `boundaries/files` (without it the `noneOf` testing
+  selector never fires). **Resolver proven live with 3 canaries before any result was trusted** —
+  including both dynamic `import()` violations, closing the Phase 5 worry. Fixed: `update-checker`
+  → `shared/services/` (100% rename), 3 out-and-back specifiers in `html-to-pdf.directive.ts`, and
+  the 2 class-directive usages. **The planned `Notification` move was dropped on evidence** — my
+  grep missed 2 relative importers inside `core/`, so the move would have turned 1 violation into
+  2; residue is 8, not 7. Side effect: no violating file is touched, so the pre-commit hook passes.
+  Bundle byte-identical to baseline; baselines stayed clean.
 - 2026-09-23 🏁 **PHASE 6 COMPLETE — steps 3 + 4 ✅, 8/8 GREEN, reviewer PASS.**
   Report: [phase-06](reports/phase-06.md). Step 3: the ten non-partner features flattened —
   internal `shared/` dissolved, routed page → `pages/`, `components|dialogs|models|services|utils`
