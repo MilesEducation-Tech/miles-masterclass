@@ -182,6 +182,57 @@ damage — but the window belongs on one side of the wire. Ask for `join_opens_a
 | **D** | Attendance-pending state + "what you missed"                                       | §6.1 and §6.2 shipped             |
 | **E** | Flip `liveEnabled`, verify the lease end to end                                    | §6.3 shipped                      |
 
+### Phase E pre-flight — hosting, checked against Zoom's official Angular sample
+
+Our `ZoomMeetingClient` was compared line by line against `zoom/meetingsdk-angular-sample`
+(`app-new.component.ts`, the Component View variant — the default `app.component.ts` is Client
+View and not what we use). **Every `init()` and `join()` option matches**: `zoomAppRoot`,
+`language`, `patchJsMedia`, `leaveOnPageUnload`; `signature`, `sdkKey`, `meetingNumber`,
+`password`, `userName`, `userEmail`, `tk`. Two deliberate differences, both ours:
+
+- We `import()` the SDK **dynamically** inside `join()`; the sample imports it statically. A static
+  import puts 3.6 MB in `main` and fails the 2.00 MB budget.
+- The sample injects `NgZone`; we do not, because this app is zoneless — there is no zone to run
+  outside of.
+
+`zak` is deliberately not passed: it authorises STARTING a session as host, and our learners join
+as attendees.
+
+**The sample is a localhost demo, so it covers none of the following. All of it is server config,
+none of it is code, and none of it can be validated until Q3 ships.**
+
+| #   | Setting                                                       | Status                  | Notes                                                                                                                                                                                                              |
+| --- | ------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `Cross-Origin-Opener-Policy` / `Cross-Origin-Embedder-Policy` | ✅ **DONE**             | Added scoped to `/:country/:profession/webinar/:id/live`. Unblocks `SharedArrayBuffer` → Gallery View, Virtual Background, 720p, Chrome tab audio.                                                                 |
+| 2   | `Permissions-Policy: camera=()`                               | ✅ **DONE**             | Now `camera=(self)`. An attendee promoted to panelist can turn on video.                                                                                                                                           |
+| 3   | Content-Security-Policy                                       | ✅ **no change needed** | Verified against the SDK's needs: `script-src` carries `'unsafe-eval'` (the WASM media layer), `connect-src 'self' https: wss:` (Zoom signalling), `worker-src 'self' blob:`, `media-src`/`img-src` carry `blob:`. |
+
+**Why `credentialless` and not `require-corp`.** Cross-origin isolation normally demands every
+cross-origin subresource send CORP, and this site loads images from CloudFront, fonts from Google,
+plus GTM, Clarity and Calendly — none of which do. `require-corp` would have broken all of them.
+`credentialless` strips credentials from no-cors subresource loads instead of demanding CORP; every
+one of those assets is public, so nothing changes for them. CORS requests to the API are `cors` mode
+and carry their `Authorization` header unaffected.
+
+**Why the camera fix changed the GLOBAL value instead of adding a scoped override.** Vercel's docs
+specify that `source` matches the incoming pathname, but are silent on which rule wins when two
+matching rules set the SAME header key. A scoped `Permissions-Policy` override would have depended
+on that undocumented behaviour. `camera=(self)` is the browser's own default when no header is
+present, it grants nothing to third parties, and the user is still prompted — so widening it
+globally is both safe and deterministic. The COOP/COEP rule introduces NEW keys, so it has no
+precedence question at all.
+
+**Verify after deploying** (the headers cannot be tested locally — `pnpm serve:ssr` does not read
+`vercel.json`):
+
+```bash
+curl -sI https://<host>/us/cpa/webinar/<uuid>/live | grep -i 'cross-origin\|permissions-policy'
+```
+
+Then, on that page, confirm `crossOriginIsolated === true` in the console. Safari does not support
+`credentialless`; there it stays `false` and the SDK degrades exactly as it does today, which is the
+intended fallback rather than a failure.
+
 **Phase A is the whole of what can be finished today**, and it closes the one gap that breaks the
 happy path for a signed-out visitor.
 

@@ -65,6 +65,55 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     "110/120 Minutes | 7 out of 8 Poll Questions Answered" line, which is the answer to "what did
     the learner miss". `webinar-card.ts` and the facade both carry a comment naming the exact four
     fields that restore it.
+- 🔒 **Zoom hosting config implemented, from the official Angular sample + Zoom's own docs.**
+  Our `ZoomMeetingClient` was compared against `zoom/meetingsdk-angular-sample`'s
+  **`app-new.component.ts`** (the Component View variant — the default `app.component.ts` is Client
+  View and is NOT what we use). **Every `init()`/`join()` option matches.** Two deliberate
+  differences, both ours and both correct: we `import()` the SDK dynamically (static would put
+  3.6 MB in `main` and fail the budget) and we inject no `NgZone` (the app is zoneless). `zak` is
+  correctly omitted — it authorises STARTING as host, and learners join as attendees.
+  Two `vercel.json` changes, the parts a localhost sample cannot show:
+  - **`Permissions-Policy: camera=()` → `camera=(self)`.** The old value disabled the camera
+    outright, so an attendee promoted to panelist could not turn on video. Changed the GLOBAL value
+    rather than adding a scoped override **on purpose**: Vercel documents that `source` matches the
+    incoming pathname but is SILENT on which rule wins when two matching rules set the same header
+    key, and a scoped override would have depended on that. `camera=(self)` is the browser's own
+    default when the header is absent and grants nothing to third parties.
+  - **COOP `same-origin` + COEP `credentialless`, scoped to
+    `/:country/:profession/webinar/:id/live`.** Enables `SharedArrayBuffer`, which Zoom requires for
+    Gallery View, Virtual Background, 720p and Chrome tab audio. **`require-corp` would have broken
+    the site** — it demands CORP on every cross-origin subresource, and CloudFront images, Google
+    Fonts, GTM, Clarity and Calendly send none. `credentialless` strips credentials from no-cors
+    loads instead; all those assets are public, and CORS API calls keep their `Authorization`.
+    New header keys, so no precedence question. Safari ignores `credentialless` and degrades to
+    today's behaviour, which is the intended fallback.
+  - **CSP needed no change** — verified against the SDK: `'unsafe-eval'` for the WASM media layer,
+    `connect-src https: wss:`, `worker-src blob:`, `blob:` on `media-src`/`img-src`.
+  - **NOT testable locally** — `pnpm serve:ssr` does not read `vercel.json`. Verify after deploy
+    with `curl -sI …/live` and `crossOriginIsolated === true` in the console.
+- ⚠️ **Pre-existing defect found while checking for duplicate header keys (NOT fixed, spun out).**
+  `vercel.json` has two rules that both match `/sw.js` and both set `Cache-Control` — the static
+  asset rule (`immutable`, one year) and `/sw.js`'s own (`no-cache`). Which wins is the same
+  undocumented behaviour described above. If the immutable one wins, the service worker can never
+  update and the `update-checker` flow breaks with it. Needs verification against the DEPLOYED site.
+
+- ❓ **"Why is there React code in an Angular repo?" — answered, and the answer is load-bearing.**
+  Zoom's Meeting SDK Component View IS a React app internally. `@zoom/meetingsdk` declares
+  `react`/`react-dom`/`redux`/`react-redux` as PEER dependencies; pnpm installs
+  `react@18.3.1` + `react-dom@18.3.1` into `node_modules/.pnpm/` and deliberately does NOT hoist
+  them, so the SDK can reach React and our code cannot. React is correctly absent from
+  `package.json` — it is not our dependency.
+  The four `allowedCommonJsDependencies` entries in `angular.json` exist because the SDK ships a
+  **UMD (CommonJS)** bundle that `require()`s all three. **Tested, not assumed:** removing them
+  takes `build:prod` from **3 warnings to 6** (`Module 'react' … is not ESM`). Restored; back to 3.
+  Zero React reaches the initial bundle — it is all inside the lazy webinar chunk, and `main.js`
+  measured byte-identical to master.
+  **Consequence for Q3:** if the backend never ships the Meeting SDK endpoints, dropping
+  `@zoom/meetingsdk` removes React, Redux and ~3.6 MB from the project outright.
+- ⚠️ **Mid-investigation correction, caught by the build:** I stated react "isn't installed" after
+  checking only the top level of `node_modules`. Wrong — pnpm's strict isolation puts peer deps in
+  the store, not the root. Check `node_modules/.pnpm/` before concluding a package is absent.
+
 - 🧹 **Module slimmed on a measured audit, not a hunch** ("do we need all these services?").
   **Answer: the four services stay; `utils/` was the bloated half.** `WebinarRegistration` is
   injected by the routes AND both pages, not just the facade, and folding it in makes a 680-line
@@ -563,27 +612,27 @@ New decisions raised by Phase 0:
       **Counts re-derived from the import graph** (PLAN.md's have been wrong twice):
 
       | Component (current home) | own feature | external features | total |
-                                                                                                                                                                                              | --- | --- | --- | --- |
-                                                                                                                                                                                              | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
-                                                                                                                                                                                              | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                              | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                              | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
-                                                                                                                                                                                              | `home/components/app-download` | 1 | uae-caira | 2 |
-                                                                                                                                                                                              | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
+                                                                                                                                                                                                  | --- | --- | --- | --- |
+                                                                                                                                                                                                  | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
+                                                                                                                                                                                                  | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                  | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                  | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                  | `home/components/app-download` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                  | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
 
-                                                                                                                                                                                              All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
-                                                                                                                                                                                              precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
-                                                                                                                                                                                              **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
-                                                                                                                                                                                              because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
-                                                                                                                                                                                              (14 importers) is still open and unverified — treat its count with the same suspicion.
-                                                                                                                                                                                              - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
-                                                                                                                                                                                                partners (11 pages), offerings, home, library.
-                                                                                                                                                                                              - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
-                                                                                                                                                                                                temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
-                                                                                                                                                                                              - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
-                                                                                                                                                                                                `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
-                                                                                                                                                                                                structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
-                                                                                                                                                                                                so it needs an explicit override.
+                                                                                                                                                                                                  All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
+                                                                                                                                                                                                  precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
+                                                                                                                                                                                                  **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
+                                                                                                                                                                                                  because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
+                                                                                                                                                                                                  (14 importers) is still open and unverified — treat its count with the same suspicion.
+                                                                                                                                                                                                  - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
+                                                                                                                                                                                                    partners (11 pages), offerings, home, library.
+                                                                                                                                                                                                  - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
+                                                                                                                                                                                                    temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
+                                                                                                                                                                                                  - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
+                                                                                                                                                                                                    `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
+                                                                                                                                                                                                    structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
+                                                                                                                                                                                                    so it needs an explicit override.
 
 - [ ] **`features/shared/services/tracks/` has no home in the target structure.** Raised 2026-09-23.
       It sits at the `features/` root, which §3 does not contain. Importers are
