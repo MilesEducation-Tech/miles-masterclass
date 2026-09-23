@@ -19,10 +19,15 @@ export interface WebinarRegistrationDialogData {
 }
 
 /**
- * Pre-login registration dialog opened from list items (e.g.
- * `PremiereListItem`) when a guest clicks "Book Now". Wraps the same
- * `<app-webinar-registration-form>` the hero uses, so the entire REGISTER →
- * OTP → DONE state machine and Log-in CTA swap come along for free.
+ * Pre-login registration dialog: a guest clicks "Book Now" and registers here.
+ * Wraps the same `<app-webinar-registration-form>` the hero uses, so the entire
+ * REGISTER → OTP → DONE state machine and Log-in CTA swap come along for free.
+ *
+ * ORPHANED — nothing imports it. It was already unreferenced before the webinar
+ * rebuild (its caller, `PremiereListItem`, is gone with the design-only shell
+ * that feature replaced), and the new module registers through
+ * `WebinarRegistration` instead. Delete it, or wire it to the new flow; it is
+ * left in place here only because removing it is not this port's job.
  */
 @Component({
   selector: 'app-webinar-registration-dialog',

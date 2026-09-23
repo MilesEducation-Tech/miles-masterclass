@@ -38,8 +38,20 @@ export const serverRoutes: ServerRoute[] = [
     path: ':country/:profession_type/caira-tracker/**',
     renderMode: RenderMode.Client,
   },
+  // The live meeting page, and ONLY it. The Zoom Meeting SDK touches `window`,
+  // `document` and WebAssembly at module scope, so there is nothing to render
+  // on the server and attempting it throws. A bare path does not cover its
+  // children (see `caira-tracker` above), so the wildcard segment is required.
+  //
+  // The list and detail pages are deliberately absent: they are public,
+  // indexable surfaces and `WebinarFacade` is written for exactly that — its
+  // feed resource fetches the anonymous `pre_login` page ON THE SERVER and
+  // skips only `post_login` (whose token lives in the browser). Listing
+  // `webinar` as Client here would hand a crawler "no webinars scheduled".
+  // The old entry that did was a leftover from the dead placeholder page this
+  // feature replaced, which had no data layer to render.
   {
-    path: ':country/:profession_type/webinar',
+    path: ':country/:profession_type/webinar/*/live',
     renderMode: RenderMode.Client,
   },
   // Checkout pages (plan / cart / billing / review / invoice) depend on

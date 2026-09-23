@@ -73,6 +73,11 @@ export const DYNAMIC_SLUG_PREFIXES: readonly string[] = [
   'podcast/',
   'micro-learning/',
   'ai-labs/',
+  // `webinar/:id` and `webinar/:id/…`. The detail page sets its own `Event`
+  // structured data from the row (see `webinar/utils/webinar-seo.ts`); the bare
+  // `webinar` landing page is NOT covered by this prefix and keeps its
+  // Supabase-managed row.
+  'webinar/',
   'admin',
 ] as const;
 

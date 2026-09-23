@@ -1,0 +1,128 @@
+<div class="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 md:px-6">
+  @if (ejection(); as reason) {
+    <!-- This surface lost the session. The SDK is already torn down; all that is
+         left is to explain which of the two ways it happened. -->
+    <section class="rounded-xl border border-border bg-card px-6 py-10 text-center" role="alert">
+      <h1 class="text-lg font-medium">
+        @switch (reason) {
+          @case ('taken-over-locally') {
+            You joined from another window
+          }
+          @case ('superseded-remotely') {
+            You joined from another device
+          }
+          @case ('meeting-ended') {
+            The session has ended
+          }
+          @default {
+            You were disconnected
+          }
+        }
+      </h1>
+      <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+        You can only attend one session at a time — that is what keeps your attendance record
+        accurate for CPE. This window has been disconnected.
+      </p>
+      <button
+        type="button"
+        class="mt-6 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+        (click)="confirmTakeover()"
+      >
+        Bring the session back here
+      </button>
+    </section>
+  } @else if (conflict(); as blocked) {
+    <!-- Takeover with confirmation. A hard block would strand anyone whose
+         browser crashed mid-session; a silent takeover would let a stray
+         background tab eject the window they are actually watching. -->
+    <section class="rounded-xl border border-border bg-card px-6 py-10 text-center">
+      <h1 class="text-lg font-medium">You are already in a session</h1>
+
+      @if (blocked.source === 'local-tab') {
+        <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+          This session is open in another tab or window of this browser.
+        </p>
+      } @else {
+        <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+          {{ blocked.detail }}
+        </p>
+        @if (blocked.holder; as holder) {
+          <dl class="mx-auto mt-4 max-w-sm space-y-1 text-sm text-muted-foreground">
+            @if (holder.webinar_name) {
+              <div class="flex justify-between gap-4">
+                <dt>Session</dt>
+                <dd class="text-foreground">{{ holder.webinar_name }}</dd>
+              </div>
+            }
+            @if (holder.device_label) {
+              <div class="flex justify-between gap-4">
+                <dt>Device</dt>
+                <dd class="text-foreground">{{ holder.device_label }}</dd>
+              </div>
+            }
+            <div class="flex justify-between gap-4">
+              <dt>Active since</dt>
+              <dd class="text-foreground">{{ holder.started_at | date: 'shortTime' }}</dd>
+            </div>
+          </dl>
+        }
+      }
+
+      <button
+        type="button"
+        class="mt-6 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+        (click)="confirmTakeover()"
+      >
+        Join here instead
+      </button>
+      <p class="mt-3 text-xs text-muted-foreground">The other window will be disconnected.</p>
+    </section>
+  } @else if (isMobile()) {
+    <!-- Handheld: we hold the lease but open Zoom's own client, because
+         Component View is not supported on mobile browsers. -->
+    <section class="rounded-xl border border-border bg-card px-6 py-10 text-center">
+      <h1 class="text-lg font-medium">{{ title() }}</h1>
+      <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+        Open this session in the Zoom app. Your attendance is still recorded, so your CPE credit is
+        unaffected — but the in-page experience needs a desktop browser.
+      </p>
+      @if (mobileJoinUrl(); as url) {
+        <a
+          [href]="url"
+          target="_blank"
+          rel="noopener"
+          class="mt-6 inline-flex rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+        >
+          Open in Zoom
+        </a>
+      } @else {
+        <p class="mt-6 text-sm text-muted-foreground">
+          Your join link is not ready yet. Please refresh in a moment.
+        </p>
+      }
+    </section>
+  } @else {
+    <app-meeting-stage
+      [title]="title()"
+      [isPreparing]="isPreparing()"
+      [statusText]="statusText()"
+      (leave)="leave()"
+    />
+
+    @if (zoom.error(); as error) {
+      <div
+        class="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-4 text-center"
+        role="alert"
+      >
+        <p class="text-sm">{{ error.message }}</p>
+        <button
+          type="button"
+          class="mt-3 rounded-md border border-border px-4 py-2 text-sm transition-colors hover:border-accent/50"
+          (click)="start(id(), false)"
+        >
+          Try again
+        </button>
+      </div>
+    }
+  }
+</div>

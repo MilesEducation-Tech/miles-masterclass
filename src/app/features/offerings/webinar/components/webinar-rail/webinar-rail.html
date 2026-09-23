@@ -1,0 +1,132 @@
+@let items = visible();
+@let tabs = levels();
+
+@if (webinars().length > 0 || showWhenEmpty()) {
+  <section class="mx-auto w-full max-w-360">
+    <header class="flex flex-col items-center text-center">
+      <!-- Heading, flanked by a rule that ends in a diamond on each side. The
+           rules are centred on the whole heading block, so they sit beside a
+           one-line heading on desktop and beside the stacked one on mobile. -->
+      <div class="flex w-full items-center justify-center gap-3 sm:gap-5">
+        <span class="flex flex-1 items-center justify-end gap-1.5 sm:flex-none" aria-hidden="true">
+          <span class="h-px w-12 bg-linear-to-r from-transparent to-foreground/45 sm:w-24"></span>
+          <span class="size-1.5 rotate-45 bg-foreground/70"></span>
+        </span>
+
+        <h2
+          class="flex flex-col items-center gap-1.5 text-2xl font-bold tracking-wide sm:flex-row sm:gap-3 sm:text-3xl md:text-4xl"
+        >
+          @if (withCairaMark()) {
+            <!-- The wordmark carries its own "Certified AI-Ready Accountant"
+                 lockup, so it is sized by height and the alt text stands in for
+                 the word it replaces in the heading. -->
+            <img
+              [src]="cairaMark"
+              alt="CAIRA"
+              class="h-8 w-auto shrink-0 sm:h-9 md:h-10"
+              loading="lazy"
+              decoding="async"
+            />
+          }
+          <span>{{ heading() }}</span>
+        </h2>
+
+        <span class="flex flex-1 items-center gap-1.5 sm:flex-none" aria-hidden="true">
+          <span class="size-1.5 rotate-45 bg-foreground/70"></span>
+          <span class="h-px w-12 bg-linear-to-l from-transparent to-foreground/45 sm:w-24"></span>
+        </span>
+      </div>
+
+      @if (description(); as desc) {
+        <p class="mt-4 max-w-xl text-sm text-pretty text-muted-foreground md:text-base">
+          {{ desc }}
+        </p>
+      }
+
+      @if (tabs.length > 0) {
+        <div
+          class="mt-6 inline-flex items-center gap-1 rounded-full border border-border bg-muted/60 p-1.5 md:mt-8"
+          role="group"
+          [attr.aria-label]="heading() + ' level filter'"
+        >
+          @for (level of tabs; track level.number) {
+            @let isSelected = selectedLevel() === level.number;
+            <button
+              type="button"
+              [attr.aria-pressed]="isSelected"
+              class="cursor-pointer rounded-full px-5 py-2 text-sm font-medium transition-colors sm:px-7"
+              [class]="
+                isSelected ? 'bg-white text-black' : 'text-muted-foreground hover:text-foreground'
+              "
+              (click)="selectedLevel.set(level.number)"
+            >
+              {{ level.name }}
+            </button>
+          }
+        </div>
+      }
+    </header>
+
+    @if (items.length > 0) {
+      @if (isStrip()) {
+        <!-- The scrolling rail the past sections have always used. Swiper
+             handles the overflow, so there is no "Show more" here. -->
+        <div class="mt-10 md:mt-14">
+          <app-swiper-strip [items]="items" [swiperConfig]="stripConfig">
+            <ng-template let-webinar>
+              <app-webinar-card
+                class="block"
+                layout="card"
+                [webinar]="webinar"
+                [bucket]="bucket()"
+                [isRegistering]="registeringIds().has(webinar.id)"
+                (register)="register.emit($event)"
+                (join)="join.emit($event)"
+              />
+            </ng-template>
+          </app-swiper-strip>
+        </div>
+      } @else {
+        <!-- Below `md` this is a snap carousel, as the design has it; from `md`
+             the same cards stack as full-width rows. Pure CSS, so it costs no
+             JS and needs no viewport probe that SSR would have to guess at. -->
+        <div
+          class="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] md:mt-14 md:snap-none md:flex-col md:gap-12 md:overflow-x-visible md:pb-0"
+        >
+          @for (webinar of items; track webinar.id) {
+            <app-webinar-card
+              class="block w-[85%] shrink-0 snap-start md:w-full md:shrink"
+              [webinar]="webinar"
+              [bucket]="bucket()"
+              [isRegistering]="registeringIds().has(webinar.id)"
+              (register)="register.emit($event)"
+              (join)="join.emit($event)"
+            />
+          }
+        </div>
+      }
+
+      @if (canShowMore()) {
+        <div class="mt-10 flex justify-center md:mt-12">
+          <!-- A plain button, not `app-button`. That component aliases `class`
+               to an input, so Angular ALSO applies whatever is passed to the
+               host element — with a background and a fixed size that paints a
+               second box behind the real one. -->
+          <button
+            type="button"
+            class="flex h-[45px] w-[141px] cursor-pointer items-center justify-center gap-2.5 rounded-[8px] bg-surface-control p-2.5 text-sm font-medium transition-colors hover:bg-surface-control/80"
+            (click)="showMore()"
+          >
+            Show more
+          </button>
+        </div>
+      }
+    } @else {
+      <p
+        class="mt-10 rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground"
+      >
+        {{ emptyMessage() }}
+      </p>
+    }
+  </section>
+}

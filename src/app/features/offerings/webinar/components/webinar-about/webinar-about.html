@@ -1,0 +1,165 @@
+@let w = webinar();
+@let aboutCopy = about();
+@let objectiveList = objectives();
+
+<div class="mx-auto flex w-full max-w-[1456px] flex-col gap-10 px-4 md:gap-20">
+  @if (aboutCopy) {
+    <section class="flex w-full gap-8 max-md:flex-col">
+      <div class="w-full md:w-1/4">
+        <h2 class="text-xl font-semibold md:text-3xl">About the Webinar</h2>
+      </div>
+      <div
+        class="w-full text-sm leading-relaxed font-medium text-muted-foreground md:w-3/4 md:text-base"
+      >
+        {{ aboutCopy }}
+      </div>
+    </section>
+  }
+
+  @if (objectiveList.length > 0) {
+    <section class="flex w-full gap-8 max-md:flex-col">
+      <div class="w-full md:w-1/4">
+        <h2 class="text-xl font-semibold md:text-3xl">Learning Objectives</h2>
+      </div>
+      <div class="w-full md:w-3/4">
+        <ul class="flex flex-col gap-2">
+          @for (item of objectiveList; track $index) {
+            <li class="rounded-full bg-surface-panel px-6 py-3 text-sm font-medium md:text-base">
+              {{ item }}
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+  }
+
+  <!-- A certifying organisation only means something when the session actually
+       carries credit; a zero-credit webinar has no NASBA claim to make. -->
+  @if (hasCpe()) {
+    <section class="flex w-full gap-8 max-md:flex-col">
+      <div class="w-full md:w-1/4">
+        <h2 class="text-xl font-semibold md:text-3xl">Certifying Organisations</h2>
+      </div>
+
+      <div class="flex w-full flex-col gap-12 md:w-3/4">
+        <div class="flex flex-col gap-8">
+          <h3 class="text-base font-semibold md:text-lg">
+            National Association of State Boards of Accountancy (NASBA)
+          </h3>
+
+          <img
+            [src]="nasbaLogo"
+            alt="National Registry of CPE Sponsors"
+            class="w-20 md:w-24"
+            width="105"
+            height="138"
+            loading="lazy"
+            decoding="async"
+          />
+
+          <div class="flex flex-col gap-6">
+            <ul class="flex flex-col gap-3 text-muted-foreground">
+              <li class="text-sm md:text-base">
+                Continuing Professional Education Credit (CPE):
+                <span class="font-medium text-foreground">{{ w.cpe_credits }} CPE</span>
+              </li>
+
+              @if (fieldsOfStudy().length > 0) {
+                <li class="text-sm md:text-base">
+                  Fields of Study:
+                  <span class="inline-flex flex-wrap items-center gap-x-2 gap-y-1 align-middle">
+                    @for (field of fieldsOfStudy(); track field.name; let last = $last) {
+                      <span class="inline-flex items-center gap-2">
+                        <span class="font-medium text-foreground">{{ field.name }}</span>
+                        <span class="rounded bg-muted px-2 py-0.5 text-xs text-foreground">
+                          {{ field.credit }} CPE
+                        </span>
+                      </span>
+                      @if (!last) {
+                        <span aria-hidden="true" class="text-muted-foreground">|</span>
+                      }
+                    }
+                  </span>
+                </li>
+              }
+
+              @for (row of disclosures(); track row.label) {
+                <li class="text-sm md:text-base">
+                  {{ row.label }}:
+                  <span class="font-medium text-foreground">{{ row.value }}</span>
+                </li>
+              }
+            </ul>
+
+            @if (revisionDates().length > 0) {
+              <ul class="flex flex-col gap-2 text-muted-foreground">
+                @for (row of revisionDates(); track row.label) {
+                  <li class="text-sm md:text-base">
+                    {{ row.label }}:
+                    <span class="text-foreground">{{ row.value }}</span>
+                  </li>
+                }
+              </ul>
+            }
+
+            @if (earningRules().length > 0) {
+              <div class="flex flex-col gap-3">
+                <h4 class="text-base font-medium md:text-lg">
+                  To earn CPE credits, the learner is expected to:
+                </h4>
+                <ul class="flex list-disc flex-col gap-2 pl-5 text-muted-foreground">
+                  @for (rule of earningRules(); track rule) {
+                    <li class="text-sm md:text-base">{{ rule }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <div class="text-sm leading-relaxed text-muted-foreground md:text-base">
+              <p>
+                If you undertake this course for CPE credits, you can leave final comments in the
+                Feedback.
+              </p>
+              <p class="mt-4">
+                Miles Masterclass Inc. is registered with the National Association of State Boards
+                of Accountancy (NASBA) as a sponsor of continuing professional education on the
+                National Registry of CPE Sponsors. State boards of accountancy have final authority
+                on the acceptance of individual courses for CPE credit. Complaints regarding
+                registered sponsors may be submitted to the National Registry of CPE Sponsors
+                through its web site:
+                <a
+                  href="https://nasbaregistry.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-accent underline underline-offset-2"
+                >
+                  www.nasbaregistry.org
+                </a>
+              </p>
+              <p class="mt-4">
+                For course refund policy, issue resolution, and additional info please refer to the
+                FAQs on the Overview tab. For more information regarding administrative policies
+                such as complaint and refund, please contact our offices at
+                <a
+                  href="mailto:support@milesmasterclass.com"
+                  class="text-accent underline underline-offset-2"
+                >
+                  support&#64;milesmasterclass.com
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-6">
+          <ng-icon [svg]="milesLogo" class="h-auto! w-40!" aria-label="Miles Education" />
+          <h3 class="text-base font-semibold md:text-lg">Miles Education Private Limited</h3>
+          <p class="text-sm text-muted-foreground md:text-base">
+            To earn the Miles Learning Certificate, the learner is expected to complete all videos
+            and chapter quizzes
+          </p>
+        </div>
+      </div>
+    </section>
+  }
+</div>

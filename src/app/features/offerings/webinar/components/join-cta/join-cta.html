@@ -1,0 +1,58 @@
+@let starts = startsAt();
+@let leadingIcon = icon();
+
+<div class="flex flex-col gap-2" [class.w-full]="prominent()">
+  @if (isActionable()) {
+    <app-button
+      [variant]="variant()"
+      [size]="prominent() ? 'lg' : 'default'"
+      [class]="buttonClass()"
+      (clicked)="onClick()"
+    >
+      @if (leadingIcon) {
+        <ng-icon [svg]="leadingIcon" size="1.15rem" aria-hidden="true" />
+      }
+      {{ label() }}
+    </app-button>
+  } @else if (isBusy()) {
+    <!-- Disabled rather than hidden: the button must not move under the cursor
+         while the 202 handshake resolves. -->
+    <app-button
+      [variant]="variant()"
+      [size]="prominent() ? 'lg' : 'default'"
+      [class]="buttonClass()"
+      [disabled]="true"
+    >
+      <app-spinner size="xs" />
+      <span>{{ label() }}</span>
+    </app-button>
+  } @else if (dense()) {
+    <!-- v2 rendered every non-actionable state as a DISABLED secondary button
+         (`@case ('ended')` / `@case ('joined')`), not as a bordered chip. The
+         chip was both wider and taller, which pushed the info button and the
+         CPE pill onto a second line. -->
+    <app-button variant="secondary" class="rounded-md" [disabled]="true">
+      {{ label() }}
+    </app-button>
+  } @else {
+    <span
+      class="inline-flex items-center gap-2 rounded-[8px] border border-outline bg-surface-raised px-6 py-3.5 text-sm text-muted-foreground"
+      [class.justify-center]="prominent()"
+    >
+      {{ label() }}
+    </span>
+  }
+
+  @if (showCountdown() && starts !== null) {
+    <!-- The hero gets the sentence form; a card strip has no room for it. -->
+    <app-webinar-countdown
+      [target]="starts"
+      [format]="prominent() ? 'long' : 'compact'"
+      [label]="prominent() ? 'This webinar starts in' : 'Starts in'"
+    />
+  }
+
+  @if (!dense() && note(); as noteText) {
+    <p class="text-xs text-muted-foreground" [class.text-center]="prominent()">{{ noteText }}</p>
+  }
+</div>

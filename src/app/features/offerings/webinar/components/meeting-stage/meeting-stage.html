@@ -1,0 +1,35 @@
+<div class="flex min-h-[70vh] flex-col gap-4">
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex flex-col">
+      <h1 class="text-lg font-medium">{{ title() }}</h1>
+      @if (statusText(); as status) {
+        <p class="text-sm text-muted-foreground">{{ status }}</p>
+      }
+    </div>
+    <button
+      type="button"
+      class="rounded-md border border-border px-4 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive"
+      (click)="leave.emit()"
+    >
+      Leave session
+    </button>
+  </header>
+
+  <div class="relative flex-1 overflow-hidden rounded-xl border border-border bg-black">
+    @if (isPreparing()) {
+      <div
+        class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/90"
+      >
+        <span
+          class="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-accent"
+          aria-hidden="true"
+        ></span>
+        <p class="text-sm text-muted-foreground">Connecting you to the session…</p>
+      </div>
+    }
+
+    <!-- The SDK owns everything inside this element. Do not style it, do not
+         project content into it, and do not let preflight resets reach it. -->
+    <div #zoomRoot class="h-full min-h-[70vh] w-full"></div>
+  </div>
+</div>

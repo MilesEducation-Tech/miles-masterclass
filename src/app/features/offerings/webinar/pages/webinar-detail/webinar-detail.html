@@ -1,0 +1,56 @@
+@let w = webinar();
+
+<!-- Same section rhythm as the landing page, set in one place. -->
+<div class="flex flex-col space-y-16 overflow-hidden md:space-y-28 lg:space-y-40">
+  @if (w) {
+    <app-webinar-hero
+      [webinar]="w"
+      [isRegistering]="isRegistering()"
+      (register)="onRegister()"
+      (join)="onJoin()"
+    />
+
+    <app-webinar-about [webinar]="w" />
+
+    <app-webinar-faq />
+  } @else if (isLoading()) {
+    <div class="flex justify-center py-24" role="status" aria-label="Loading webinar">
+      <app-spinner size="xl" />
+    </div>
+  } @else if (isMissing()) {
+    <!-- `webinar-details-page` answered 404. The contract makes that answer
+         deliberately ambiguous between "no such id" and "an id you may not
+         see", so this is the only copy that can honestly be shown. The page
+         also goes `noindex` — see `webinar-seo.ts`. -->
+    <div class="mx-auto w-11/12 max-w-xl py-24 text-center">
+      <h1 class="text-xl font-semibold">We could not find that webinar</h1>
+      <p class="mt-2 text-sm text-muted-foreground">
+        It may have been removed, or the link may be out of date.
+      </p>
+      <a
+        routerLink="../"
+        queryParamsHandling="preserve"
+        class="mt-6 inline-flex h-10 items-center justify-center rounded-[8px] border border-outline px-6 text-sm font-medium transition-colors hover:border-accent/50"
+      >
+        All webinars
+      </a>
+    </div>
+  } @else {
+    <!-- Neither found nor a confirmed 404: the request itself failed. Saying
+         "we could not find that webinar" here would blame the learner's link
+         for our own outage, and there IS something to retry. -->
+    <div class="mx-auto w-11/12 max-w-xl py-24 text-center">
+      <h1 class="text-xl font-semibold">We could not load this webinar</h1>
+      <p class="mt-2 text-sm text-muted-foreground">
+        Something went wrong on our side. Please try again in a moment.
+      </p>
+      <a
+        routerLink="../"
+        queryParamsHandling="preserve"
+        class="mt-6 inline-flex h-10 items-center justify-center rounded-[8px] border border-outline px-6 text-sm font-medium transition-colors hover:border-accent/50"
+      >
+        All webinars
+      </a>
+    </div>
+  }
+</div>

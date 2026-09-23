@@ -25,6 +25,46 @@ export const environment = {
    */
   SSO_SUPPORT_API_KEY: '',
 
+  /**
+   * Webinar module tuning. None of these are secrets — the Zoom SDK Secret
+   * lives in Django and the signature is minted there (see AGENTS.md §7); the
+   * client only ever receives a short-lived signature plus the `sdk_key` that
+   * accompanies it.
+   */
+  WEBINAR: {
+    /**
+     * How long before the start the Join button appears.
+     *
+     * Fallback only IN PRINCIPLE: `joinOpensAt()` prefers a server-sent
+     * `join_opens_at`, but that field appears NOWHERE in
+     * `EVENTS_API_CONTRACT_V1`, so today this value is the whole rule and it is
+     * computed in the browser. A skewed clock can therefore show Join early and
+     * have the server refuse it — `ServerClock` syncs off the feed's
+     * `server_time` to bound that. Ask the backend for `join_opens_at`.
+     */
+    joinWindowMinutes: 15,
+    /**
+     * Whether "Join" opens the in-app `/live` page (Zoom Meeting SDK + session
+     * lease) or the registrant's own `join_url` in Zoom.
+     *
+     * OFF until the backend ships it. `EVENTS_API_CONTRACT_V1` has no
+     * `attendance-session/*` and no `meeting-sdk-signature` route, so the
+     * embedded page cannot acquire a lease or mint a signature — it would show
+     * a spinner and a 404. The page, the SDK and the lease client all ship
+     * inert behind this; flipping it to `true` is the whole cutover.
+     */
+    liveEnabled: false,
+    /** Custom (non-Zoom) poll surface. Flip on once the poll API ships. */
+    pollsEnabled: false,
+    /** Lease heartbeat cadence. Server TTL is 45s — three misses before eviction. */
+    leaseHeartbeatSeconds: 15,
+    /**
+     * Ceiling on the registration status poll. `ZOOM_PENDING_APPROVAL` is
+     * terminal but reports as `PENDING`, so an uncapped loop spins forever.
+     */
+    registrationPollCapSeconds: 45,
+  },
+
   // MilesVerse API origin. Empty = MilesVerse pages show not-connected.
   MILESVERSE_API_URL: 'https://api.milesverse.ai',
 
