@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
+import { VideoListWrapper } from '@shared/components/video-list-wrapper/video-list-wrapper';
 import { environment } from '@env/environment';
 import {
   PartnerContentItem,
@@ -13,8 +13,8 @@ import {
 import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
 import { Button } from '@shared/ui/button/button';
 import { ScrollService } from '@core/services/scroll/scroll';
-import { Offering } from '@features/home/components/offerings/offerings';
-import { PARTNER_OFFERINGS } from '@features/home/components/offerings/offerings.config';
+import { Offering } from '@shared/components/offerings/offerings';
+import { PARTNER_OFFERINGS } from '@core/constants/offerings.config';
 
 @Component({
   selector: 'app-dscpa',

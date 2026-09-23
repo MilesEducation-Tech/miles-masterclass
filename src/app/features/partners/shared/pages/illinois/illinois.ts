@@ -38,7 +38,7 @@ import {
   iconStandards,
 } from '@core/constants/partner-icons';
 import { Button } from '@shared/ui/button/button';
-import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
+import { VideoListWrapper } from '@shared/components/video-list-wrapper/video-list-wrapper';
 import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
 import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan-benefits';
 

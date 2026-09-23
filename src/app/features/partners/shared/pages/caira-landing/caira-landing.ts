@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
+import { VideoListWrapper } from '@shared/components/video-list-wrapper/video-list-wrapper';
 import {
   PartnerContentItem,
   PartnerContentList,

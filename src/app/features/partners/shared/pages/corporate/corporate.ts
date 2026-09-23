@@ -30,7 +30,7 @@ import {
 import { environment } from '@env/environment';
 import { Dialog } from '@core/services/dialog/dialog';
 import { ScrollService } from '@core/services/scroll/scroll';
-import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
+import { VideoListWrapper } from '@shared/components/video-list-wrapper/video-list-wrapper';
 import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
 import { Button } from '@shared/ui/button/button';
 

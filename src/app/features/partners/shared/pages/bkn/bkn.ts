@@ -6,7 +6,7 @@ import {
 import { logo } from '@core/constants/icon';
 import { Button } from '@shared/ui/button/button';
 import { environment } from '@env/environment';
-import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
+import { VideoListWrapper } from '@shared/components/video-list-wrapper/video-list-wrapper';
 import {
   ForPartnershipTabs,
   PartnershipTab,

@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { environment } from '@env/environment';
 import { ScrollService } from '@core/services/scroll/scroll';
-import { MGI_PARTNER_OFFERINGS } from '@features/home/components/offerings/offerings.config';
+import { MGI_PARTNER_OFFERINGS } from '@core/constants/offerings.config';
 import {
   PartnerContentItem,
   PartnerContentList,
@@ -13,8 +13,8 @@ import {
 import { PlanPointer, PlanBenefits } from '@shared/components/plan-benefits/plan-benefits';
 import { Button } from '@shared/ui/button/button';
 import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
-import { Offering } from '@features/home/components/offerings/offerings';
-import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
+import { Offering } from '@shared/components/offerings/offerings';
+import { VideoListWrapper } from '@shared/components/video-list-wrapper/video-list-wrapper';
 
 @Component({
   selector: 'app-mgi-world',

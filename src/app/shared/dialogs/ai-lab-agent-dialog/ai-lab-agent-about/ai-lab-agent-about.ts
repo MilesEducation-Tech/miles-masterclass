@@ -3,7 +3,7 @@ import { NgIcon } from '@ng-icons/core';
 import { heroChevronRight } from '@ng-icons/heroicons/outline';
 import { logo } from '@core/constants/icon';
 import { ContentAbout, ContentDetails } from '@core/models/course.model';
-import { AiLabAssessmentReport } from './ai-lab-agent-about.model';
+import { AiLabAssessmentReport } from '@core/models/ai-lab-assessment.model';
 
 /**
  * The "about" block for the AI Lab agent dialog — a clone of

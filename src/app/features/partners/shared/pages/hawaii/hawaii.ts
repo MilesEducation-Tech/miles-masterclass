@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { environment } from '@env/environment';
 import { ScrollService } from '@core/services/scroll/scroll';
-import { PARTNER_OFFERINGS } from '@features/home/components/offerings/offerings.config';
+import { PARTNER_OFFERINGS } from '@core/constants/offerings.config';
 import {
   PartnerContentItem,
   PartnerContentList,
@@ -11,10 +11,10 @@ import {
   PartnershipContent,
 } from '../../components/partnership-content/partnership-content';
 import { PlanPointer, PlanBenefits } from '@shared/components/plan-benefits/plan-benefits';
-import { Offering } from '@features/home/components/offerings/offerings';
+import { Offering } from '@shared/components/offerings/offerings';
 import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
 import { Button } from '@shared/ui/button/button';
-import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
+import { VideoListWrapper } from '@shared/components/video-list-wrapper/video-list-wrapper';
 
 @Component({
   selector: 'app-hawaii',

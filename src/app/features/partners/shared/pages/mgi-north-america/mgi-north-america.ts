@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { VideoListWrapper } from '../../components/video-list-wrapper/video-list-wrapper';
+import { VideoListWrapper } from '@shared/components/video-list-wrapper/video-list-wrapper';
 import { Button } from '@shared/ui/button/button';
 import {
   PartnerContentItem,
@@ -10,11 +10,11 @@ import {
   PartnershipContentInput,
 } from '../../components/partnership-content/partnership-content';
 import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan-benefits';
-import { Offering } from '@features/home/components/offerings/offerings';
+import { Offering } from '@shared/components/offerings/offerings';
 import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
 import { environment } from '@env/environment';
 import { ScrollService } from '@core/services/scroll/scroll';
-import { MGI_PARTNER_OFFERINGS } from '@features/home/components/offerings/offerings.config';
+import { MGI_PARTNER_OFFERINGS } from '@core/constants/offerings.config';
 
 @Component({
   selector: 'app-mgi-north-america',

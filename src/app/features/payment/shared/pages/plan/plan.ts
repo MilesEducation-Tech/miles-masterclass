@@ -2,7 +2,7 @@ import { Component, computed, DestroyRef, effect, inject, signal, untracked } fr
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { PaymentFacade } from '../../service/payment-facade/payment-facade';
-import { PlanScrollingGallery } from '../../components/plan-scrolling-gallery/plan-scrolling-gallery';
+import { PlanScrollingGallery } from '@shared/components/plan-scrolling-gallery/plan-scrolling-gallery';
 import { PlanComparisonTable } from '../../components/plan-comparison-table/plan-comparison-table';
 import { PlanSelectionCard } from '../../components/plan-selection-card/plan-selection-card';
 import { PromoOffer } from '../../components/promo-offer/promo-offer';
