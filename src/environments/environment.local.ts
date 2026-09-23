@@ -22,6 +22,16 @@ export const environment = {
    */
   SSO_SUPPORT_API_KEY: '',
 
+  WEBINAR: {
+    joinWindowMinutes: 15,
+    /** In-app `/live` page. Off until the attendance-session routes exist. */
+    liveEnabled: false,
+    /** Flip to `true` locally once the poll API exists, to exercise the panel. */
+    pollsEnabled: false,
+    leaseHeartbeatSeconds: 15,
+    registrationPollCapSeconds: 45,
+  },
+
   // MilesVerse API origin. Empty = MilesVerse pages show not-connected.
   MILESVERSE_API_URL: 'https://uat.milesverse.ai',
 

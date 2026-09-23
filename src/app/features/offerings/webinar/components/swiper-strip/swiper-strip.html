@@ -1,0 +1,31 @@
+@let cards = items();
+@let tpl = cardTemplate();
+
+<!-- Deferred so `swiper/element` is fetched only once a strip is actually on
+     screen, and so the server renders the skeleton rather than an uninitialised
+     custom element with every slide stacked full-width. -->
+@defer (on idle) {
+  <swiper-container
+    #swiperContainer
+    init="false"
+    [slides-per-view]="config()?.slidesPerView"
+    [space-between]="config()?.spaceBetween"
+    [breakpoints]="config()?.breakpoints"
+    [direction]="config()?.direction ?? 'horizontal'"
+    [rewind]="config()?.rewind ?? false"
+  >
+    @for (item of cards; track $index) {
+      <swiper-slide>
+        @if (tpl) {
+          <ng-container *ngTemplateOutlet="tpl; context: { $implicit: item, $index }" />
+        }
+      </swiper-slide>
+    }
+  </swiper-container>
+} @placeholder {
+  <div class="flex gap-6" aria-hidden="true">
+    @for (i of skeletons; track i) {
+      <div class="w-72 shrink-0 animate-pulse rounded-2xl bg-muted" [class]="skeletonClass()"></div>
+    }
+  </div>
+}

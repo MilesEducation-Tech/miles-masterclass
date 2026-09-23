@@ -1,324 +1,115 @@
-<section class="relative w-full min-h-screen overflow-hidden pt-20 flex items-center">
-  <!-- backdrop -->
-  <div class="absolute inset-0 z-0">
-    @if (thumbnail()) {
-      <img
-        [src]="thumbnail()"
-        [alt]=""
-        class="w-full h-full object-cover"
-        loading="eager"
-        aria-hidden="true"
-      />
-    }
-    <div
-      class="absolute inset-0 bg-linear-to-t from-background via-background/85 to-transparent pointer-events-none backdrop-blur-2xl"
-    ></div>
-  </div>
+@let w = webinar();
+@let art = artwork();
+@let session = sessionLabel();
 
-  <!-- Reusable card body (categories → title → instructor → credits → badge row → description → date pill → zoom). -->
-  <ng-template #cardBody>
-    @if (webinar().fields_of_study.length) {
-      <app-categories-list
-        class="text-xs md:text-sm text-black"
-        [items]="webinar().fields_of_study"
-        separator=" | "
-      />
-    }
-    <h2 class="text-xl md:text-3xl font-bold">{{ webinar().webinar_title }}</h2>
-    @if (instructorNames().length) {
-      <p class="text-sm md:text-base text-black">By {{ instructorNames().join(', ') }}</p>
-    }
+<section class="relative isolate w-full overflow-hidden">
+  <!-- 1456px wide, column, centred, 31px between the artwork and the copy.
+       `max-w`, not `w`, so it still shrinks below that; `px-4` keeps the
+       gutter the design leaves either side.
 
-    <div class="flex justify-between">
-      <div class="flex flex-col space-y-1 md:space-y-2">
-        @if (webinar().fields_of_study.length) {
-          <div
-            class="self-start inline-flex items-center rounded-lg border-2 border-accent/40 bg-accent/5 text-accent px-3 py-1 md:px-4 text-sm md:text-base font-medium"
-          >
-            {{ webinar().fields_of_study | totalCpeCredits }} Credits
-          </div>
+       `max-w-hero` / `gap-hero-gap` / `max-w-hero-art` are NAMED theme values
+       in styles.css, not bracket values. The editor offers to rewrite brackets
+       into spacing-scale forms, and `gap-7.75` / `max-w-247.5` are not classes
+       at all — that scale takes integer multipliers only — so the gap and the
+       artwork's width silently disappear. A named token already has a
+       canonical class, so there is nothing left to "fix". -->
+  <div
+    class="mx-auto flex w-full max-w-hero flex-col items-center gap-hero-gap px-4 pt-10 sm:pt-12 md:pt-16 lg:pt-20"
+  >
+    <!-- Artwork. 990 × 466.241 from the design, as a ratio so it scales down
+         intact. 16:9 below `md`: that ratio is 184px tall on a 390px phone,
+         and the mobile mock uses 16:9 anyway. -->
+    @if (linkToDetail()) {
+      <a
+        [routerLink]="[w.id]"
+        queryParamsHandling="preserve"
+        class="block relative aspect-video w-full max-w-hero-art overflow-hidden rounded-2xl border-[0.871px] border-white md:aspect-[990/466.241] md:rounded-3xl"
+        [attr.aria-label]="w.name"
+      >
+        @if (art) {
+          <img
+            [src]="art"
+            [alt]="w.name"
+            class="h-full w-full object-cover"
+            fetchpriority="high"
+            decoding="async"
+          />
+        } @else {
+          <!-- Hold the frame rather than collapsing the page around a missing
+               asset — the whole banner is sized off this box. -->
+          <div class="h-full w-full bg-muted"></div>
         }
+      </a>
+    } @else {
+      <div
+        class="relative aspect-video w-full max-w-hero-art overflow-hidden rounded-2xl border-[0.871px] border-white md:aspect-[990/466.241] md:rounded-3xl"
+      >
+        @if (art) {
+          <img
+            [src]="art"
+            [alt]="w.name"
+            class="h-full w-full object-cover"
+            fetchpriority="high"
+            decoding="async"
+          />
+        } @else {
+          <!-- Hold the frame rather than collapsing the page around a missing
+               asset — the whole banner is sized off this box. -->
+          <div class="h-full w-full bg-muted"></div>
+        }
+      </div>
+    }
 
-        <app-caira-credly-badge
-          class="shrink-0 [&_img[alt=CAIRA]]:invert"
-          [includedForCaira]="webinar().included_for_caira!"
-          [hasIndividualBadge]="webinar().has_individual_badge!"
-          [cairaLevel]="webinar().caira_level!"
-          variant="inline"
+    <div class="flex flex-col items-center text-center">
+      @if (live()) {
+        <span
+          class="inline-flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-[0.6875rem] font-semibold tracking-[0.18em] text-destructive uppercase"
+        >
+          <span class="size-1.5 animate-pulse rounded-full bg-destructive"></span>
+          Live now
+        </span>
+      } @else {
+        <span
+          class="inline-flex items-center gap-2 rounded-full border border-success/40 bg-success/10 px-3 py-1 text-[0.6875rem] font-semibold tracking-[0.18em] text-success uppercase"
+        >
+          <span class="size-1.5 rounded-full bg-success"></span>
+          Live webinar
+        </span>
+      }
+
+      <h1
+        class="mt-5 max-w-4xl text-xl leading-tight font-bold text-balance sm:text-xl md:mt-6 md:text-2xl lg:text-3xl"
+      >
+        {{ w.name }}
+      </h1>
+
+      @if (w.short_description) {
+        <p class="mt-3 max-w-4xl text-sm text-pretty text-muted-foreground md:mt-4 md:text-sm">
+          {{ w.short_description }}
+        </p>
+      }
+
+      @if (session) {
+        <p
+          class="mt-8 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase md:mt-10"
+        >
+          Upcoming session
+        </p>
+        <p class="mt-1.5 text-base font-semibold text-accent-premium sm:text-lg md:text-xl">
+          {{ session }}
+        </p>
+      }
+
+      <div class="mt-7 w-full max-w-sm md:mt-8 md:max-w-70">
+        <app-join-cta
+          [webinar]="w"
+          [cta]="cta()"
+          [prominent]="true"
+          [icon]="ticketIcon"
+          (register)="register.emit(w.id)"
+          (join)="join.emit(w.id)"
         />
       </div>
-      @if (webinar().badge_icon_url) {
-        <div class="relative">
-          <img
-            [ngSrc]="webinar().badge_icon_url!"
-            fill
-            alt="Badge Icon"
-            class="h-7 w-auto"
-            draggable="false"
-          />
-        </div>
-      }
     </div>
-
-    @if (webinar().short_course_overview) {
-      <p class="text-sm md:text-base text-black">
-        {{ webinar().short_course_overview }}
-      </p>
-    }
-
-    @if (nextSession()) {
-      <div
-        class="w-full text-center bg-muted text-white rounded-xl px-4 py-1 md:py-2 text-base md:text-lg font-medium tracking-wide"
-      >
-        {{ nextSession()!.start_date | date: "d MMM ''yy · h:mm a" }}
-        {{ nextSession()!.start_date | localTimeZone }}
-      </div>
-    }
-
-    <div
-      class="flex items-center justify-start gap-2 text-accent max-md:mt-6 max-md:pt-6"
-      aria-label="Hosted on Zoom"
-    >
-      <div class="size-8 rounded-full bg-accent overflow-hidden flex items-center justify-center">
-        <ng-icon name="heroVideoCameraSolid" size="1rem" color="white" aria-hidden="true" />
-      </div>
-      <ng-icon [svg]="zoomLogo" class="w-14! h-auto!" aria-hidden="true" />
-    </div>
-  </ng-template>
-
-  <div
-    class="h-auto min-h-full container w-auto mx-auto px-4 md:px-6 items-center flex justify-center pt-28 z-50"
-  >
-    @if (isAuthed()) {
-      <!--
-        AUTH path: single card.
-        Desktop: horizontal (image left ~40%, content right) — taller / wider for
-        readability on a logged-in dashboard.
-        Mobile: vertical (image on top, content below).
-      -->
-      <article class="md:top-mask left-mask">
-        <div class="md:bottom-mask right-mask">
-          <div
-            class="md:x-ticket relative y-ticket bg-white my-auto text-black rounded-2xl overflow-hidden md:gap-5 gap-2 flex flex-col md:flex-row-reverse w-full max-w-6xl mx-auto px-5 py-10 md:p-8"
-          >
-            <!--
-            Auth-path thumbnail container.
-            - Mobile (<md): aspect-9/16 portrait → uses `vertical_thumbnail` via the
-              `<img>` fallback below.
-            - md+ (≥md): the `<source media="(min-width: 768px)">` kicks in and
-              the browser swaps to `horizontal_thumbnail` (square_thumbnail as
-              fallback); container goes `md:aspect-auto md:self-stretch` so the
-              landscape image fills the card height.
-          -->
-            <!-- <div
-              class="absolute top-0 left-[calc(70%-4px)] h-full border-dotted border-l-8 border-white max-md:hidden z-10"
-            ></div>
-            <div
-              class="absolute left-0 top-[calc(80%-2px)] w-full border-dotted border-b-8 border-background md:hidden z-10"
-            ></div> -->
-            <div
-              class="relative w-full md:w-2/5 md:shrink-0 aspect-video md:aspect-square overflow-hidden rounded-xl"
-            >
-              @if (thumbnail()) {
-                <picture>
-                  <source media="(min-width: 768px)" [srcset]="squareThumbnail()" />
-                  <img
-                    [src]="thumbnail()"
-                    [alt]="webinar().webinar_title"
-                    class="w-full aspect-video md:aspect-square object-cover rounded-xl"
-                    loading="eager"
-                  />
-                </picture>
-              } @else {
-                <!-- No artwork on the payload — hold the slot so the ticket
-                     card keeps its shape instead of collapsing. -->
-                <div
-                  class="w-full h-full aspect-video md:aspect-square rounded-xl bg-muted"
-                  aria-hidden="true"
-                ></div>
-              }
-              @if (tag() === 'live') {
-                <span
-                  class="absolute top-3 left-3 inline-flex items-center gap-2 rounded-full bg-red-500 text-white px-3 py-1 text-xs font-semibold uppercase tracking-wide"
-                >
-                  <span class="size-2 rounded-full bg-white animate-pulse"></span>Now Live
-                </span>
-              } @else if (startsInLabel(); as countdown) {
-                <span
-                  class="absolute top-3 left-3 inline-flex items-center gap-2 rounded-full bg-amber-500 text-black px-3 py-1 text-xs font-semibold tracking-wide"
-                >
-                  Webinar starts in {{ countdown }}
-                </span>
-              }
-              @if (attendanceTag(); as att) {
-                <span
-                  class="absolute top-3 right-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide"
-                  [class]="att.classes"
-                >
-                  {{ att.label }}
-                </span>
-              }
-            </div>
-
-            <div class="flex-1 flex flex-col gap-1">
-              <ng-container *ngTemplateOutlet="cardBody" />
-              <div class="flex flex-wrap gap-3">
-                @switch (cta()) {
-                  @case ('book') {
-                    <app-button
-                      variant="primary"
-                      size="default"
-                      [disabled]="ctaDisabled()"
-                      (clicked)="book()"
-                      >{{ booking() ? 'Booking…' : 'Book Now' }}</app-button
-                    >
-                  }
-                  @case ('joined') {
-                    <app-button variant="secondary" size="default" [disabled]="true"
-                      >Booked</app-button
-                    >
-                  }
-                  @case ('join-live') {
-                    <app-button variant="primary" size="default" (clicked)="joinLive()"
-                      >Join Live</app-button
-                    >
-                  }
-                  @case ('submit-feedback') {
-                    <app-button variant="primary" size="default" (clicked)="submitFeedback()"
-                      >Submit Feedback</app-button
-                    >
-                  }
-                  @case ('download-certificate') {
-                    <app-button variant="primary" size="default" (clicked)="downloadCertificate()"
-                      >Download Certificate</app-button
-                    >
-                  }
-                  @case ('series-awarded') {
-                    <span
-                      class="inline-flex items-center rounded-md bg-muted px-4 py-2 text-sm text-muted-foreground"
-                    >
-                      Recurring webinar — CPE already awarded for this series
-                    </span>
-                  }
-                  @case ('watch-recording') {
-                    <app-button variant="primary" size="default" (clicked)="watchRecording()"
-                      >Watch Recording</app-button
-                    >
-                  }
-                  @case ('ended') {
-                    <app-button variant="secondary" size="default" [disabled]="true"
-                      >Ended</app-button
-                    >
-                  }
-                }
-                @if (!hideLearnMore()) {
-                  <app-button variant="outline" size="default" (clicked)="openDetails()"
-                    >Learn More</app-button
-                  >
-                }
-                <app-button
-                  variant="outline"
-                  size="default"
-                  class="gap-2"
-                  aria-label="Share webinar"
-                  (clicked)="share()"
-                >
-                  <ng-icon name="phosphorShareFatFill" size="18" aria-hidden="true" />
-                  Share
-                </app-button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </article>
-    } @else {
-      <!--
-        GUEST path: vertical card + registration form.
-        Desktop: side-by-side. Mobile: stacked (card on top, form below).
-      -->
-      <div
-        class="flex flex-col md:flex-row flex-wrap items-center gap-6 md:gap-10 justify-between container mx-auto"
-      >
-        <!--
-          Ticket-style guest card. `.ticket-x` styles the wrapper (wavy sides
-          + corner cut + outline) and via descendant selectors gives the first
-          child a bottom-edge notch and the last child a top-edge notch +
-          `-23px` overlap. The two half-circles meet into one perforation at
-          70% between image (stub) and body (main).
-          Wrapper is intentionally transparent so the perforation shows the
-          page background through; bg-white lives on each child.
-        -->
-        <article class="left-mask relative md:w-1/2 mx-auto md:min-w-[420px]">
-          <div class="right-mask">
-            <div
-              class="y-ticket bg-white text-black rounded-2xl overflow-hidden gap-2 md:gap-5 flex flex-col w-full md:w-[420px] md:shrink-0 max-w-7xl mx-auto px-5 py-10 md:p-8 relative"
-            >
-              <!-- <div
-                class="absolute left-0 top-[calc(80%-2px)] w-full border-dotted border-b-8 border-background md:hidden z-10"
-              ></div> -->
-              <div class="bg-white relative w-full aspect-video overflow-hidden rounded-md">
-                <img
-                  [src]="
-                    webinar().horizontal_thumbnail ||
-                    webinar().square_thumbnail ||
-                    webinar().vertical_thumbnail
-                  "
-                  [alt]="webinar().webinar_title"
-                  class="w-full h-full object-cover"
-                  loading="eager"
-                />
-                @if (tag() === 'live') {
-                  <span
-                    class="absolute top-3 left-3 inline-flex items-center gap-2 rounded-full bg-red-500 text-white px-3 py-1 text-xs font-semibold uppercase tracking-wide"
-                  >
-                    <span class="size-2 rounded-full bg-white animate-pulse"></span>Now Live
-                  </span>
-                } @else if (startsInLabel(); as countdown) {
-                  <span
-                    class="absolute top-3 left-3 inline-flex items-center gap-2 rounded-full bg-amber-500 text-black px-3 py-1 text-xs font-semibold tracking-wide"
-                  >
-                    Webinar starts in {{ countdown }}
-                  </span>
-                }
-                @if (attendanceTag(); as att) {
-                  <span
-                    class="absolute top-3 right-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide"
-                    [class]="att.classes"
-                  >
-                    {{ att.label }}
-                  </span>
-                }
-              </div>
-              <div class="bg-white flex flex-col gap-2 md:gap-3">
-                <ng-container *ngTemplateOutlet="cardBody" />
-              </div>
-            </div>
-          </div>
-        </article>
-
-        <div class="flex-1 flex flex-col gap-4 max-w-md mx-auto min-w-xs">
-          <div
-            class="bg-card text-card-foreground rounded-2xl shadow-2xl p-5 md:p-6 flex flex-col gap-4 border border-border"
-          >
-            <div class="flex flex-col gap-1">
-              <h2 class="text-xl md:text-2xl font-semibold">Secure Your Seat</h2>
-              <p class="text-sm text-muted-foreground sr-only">
-                Sign up below and we'll save your spot for "{{ webinar().webinar_title }}".
-              </p>
-            </div>
-            <app-webinar-registration-form
-              [webinarId]="webinar().id"
-              [webinarDateId]="nextSession()?.id ?? 0"
-              [webinarTitle]="webinar().webinar_title"
-              (submitted)="onGuestRegistration($event)"
-            />
-            <p class="text-xs text-muted-foreground">
-              Once you're registered, the Zoom link and calendar invite are on their way to your
-              inbox.
-            </p>
-          </div>
-        </div>
-      </div>
-    }
   </div>
 </section>

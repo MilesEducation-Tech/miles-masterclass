@@ -1,5 +1,8 @@
 allowBuilds:
   "@parcel/watcher": true
+  # Its postinstall only prints a notice about bot/AI use cases — nothing to
+  # build, so denying it keeps installs quiet without losing anything.
+  '@zoom/meetingsdk': false
   core-js: true
   esbuild: true
   lmdb: true

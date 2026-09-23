@@ -1,0 +1,223 @@
+@let w = webinar();
+@let thumb = thumbnail();
+@let parts = session();
+@let level = cairaLevel();
+
+<article [class]="articleClass()">
+  @if (isRowLayout()) {
+    <!-- ==================================================================
+         Row form. One DOM that is a stacked card below `md` and a three-column
+         row above it — date pill | copy | artwork — by way of `order` on the
+         artwork, since grid auto-placement follows order-modified document
+         order.
+         ================================================================== -->
+    @if (parts) {
+      <div
+        class="hidden h-[161px] w-[152px] flex-col items-center justify-between rounded-[16px] border border-hairline bg-surface-raised py-4 text-center md:flex"
+      >
+        <span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          {{ parts.month }}
+        </span>
+        <span class="text-5xl leading-none font-bold">{{ parts.day }}</span>
+        <span class="text-xs font-medium text-accent-premium">
+          {{ parts.time }} ({{ parts.zone }})
+        </span>
+      </div>
+    } @else {
+      <!-- Hold the column so the copy does not slide left on a row whose start
+           time never made it into the feed. -->
+      <div class="hidden md:block" aria-hidden="true"></div>
+    }
+
+    <div
+      class="order-first aspect-video w-full md:relative md:order-last md:aspect-auto md:h-[180px] md:w-[378px]"
+    >
+      <!-- The banner sits at the right of the box; the 58px it leaves on the
+           left is exactly what the round badge overhangs into. -->
+      <div
+        class="h-full w-full overflow-hidden rounded-[16px] bg-muted md:absolute md:top-0 md:right-0 md:h-[180px] md:w-[320px]"
+      >
+        @if (thumb) {
+          <img
+            [src]="thumb"
+            [alt]="w.name"
+            class="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        }
+      </div>
+
+      @if (badge(); as badgeUrl) {
+        <img
+          [src]="badgeUrl"
+          alt=""
+          aria-hidden="true"
+          class="absolute bottom-0 left-0 hidden size-[101px] rounded-full object-cover md:block"
+          loading="lazy"
+          decoding="async"
+        />
+      }
+    </div>
+
+    <div class="flex min-w-0 flex-1 flex-col gap-3">
+      <a
+        [routerLink]="[w.id]"
+        queryParamsHandling="preserve"
+        class="text-lg leading-snug font-semibold text-balance transition-colors hover:text-accent md:text-xl md:uppercase lg:text-2xl"
+      >
+        {{ w.name }}
+      </a>
+
+      @if (w.short_description) {
+        <p
+          class="line-clamp-3 text-sm text-pretty text-muted-foreground md:line-clamp-2 md:text-base"
+        >
+          {{ w.short_description }}
+        </p>
+      }
+
+      @if (level) {
+        <div class="flex items-center gap-2">
+          <img
+            [src]="cairaMark"
+            alt="CAIRA"
+            class="h-4 w-auto md:h-5"
+            loading="lazy"
+            decoding="async"
+          />
+          <span class="text-sm font-semibold md:text-base">{{ level }}</span>
+        </div>
+      }
+
+      @if (sessionLabel(); as label) {
+        <div class="md:hidden">
+          <p class="text-xs font-medium tracking-[0.15em] text-muted-foreground uppercase">
+            {{ sessionLineLabel() }}
+          </p>
+          <p class="mt-0.5 text-sm font-semibold text-accent-premium">{{ label }}</p>
+        </div>
+      }
+
+      <div class="mt-auto flex flex-wrap items-start gap-3 pt-1">
+        <app-join-cta
+          [webinar]="w"
+          [cta]="cta()"
+          (register)="register.emit(w.id)"
+          (join)="join.emit(w.id)"
+        />
+        <a
+          [routerLink]="[w.id]"
+          queryParamsHandling="preserve"
+          class="inline-flex items-center justify-center rounded-[8px] border border-outline px-6 py-3.5 text-sm font-medium whitespace-nowrap transition-colors hover:border-accent/50"
+        >
+          More Info
+        </a>
+      </div>
+    </div>
+  } @else {
+    <!-- ==================================================================
+         Card form, taken class-for-class from the v2 `app-horizontal` these
+         strips rendered.
+
+         Note what is NOT here: no border, no background, no padding. That
+         component is a bare `flex flex-col space-y-2` stack straight onto the
+         page, and the card chrome an earlier pass added was the main reason
+         these read as a different design from the rest of the site.
+         ================================================================== -->
+    <a
+      [routerLink]="[w.id]"
+      queryParamsHandling="preserve"
+      class="relative flex aspect-video w-full flex-col overflow-hidden rounded-lg"
+      [attr.aria-label]="w.name"
+    >
+      <div class="relative inset-0 z-0 h-full w-full">
+        @if (thumb) {
+          <img
+            [src]="thumb"
+            [alt]="w.name"
+            class="relative z-0 h-full w-full object-cover transition-transform duration-300 group-hover/card:scale-105"
+            loading="lazy"
+            decoding="async"
+            draggable="false"
+          />
+        }
+      </div>
+      <!-- Scrim, revealed on hover, so the pill keeps its contrast over a
+           bright frame of artwork. -->
+      <div
+        class="absolute inset-0 z-10 h-full w-full bg-linear-to-t from-black to-50% to-transparent opacity-0 transition-opacity duration-300 group-hover/card:opacity-100"
+      ></div>
+
+      @if (statusTag(); as tag) {
+        <span
+          class="absolute top-3 left-3 z-20 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase"
+          [class]="tag.classes"
+        >
+          {{ tag.label }}
+        </span>
+      }
+    </a>
+
+    <div class="flex flex-col space-y-1">
+      <a
+        [routerLink]="[w.id]"
+        queryParamsHandling="preserve"
+        class="line-clamp-2 text-sm font-medium text-white"
+      >
+        {{ w.name }}
+      </a>
+
+      <div class="flex min-h-10 min-w-0 items-center justify-between gap-2">
+        @if (categories(); as cats) {
+          <span class="min-w-0 flex-1 truncate text-sm text-muted-foreground">{{ cats }}</span>
+        } @else {
+          <span class="flex-1"></span>
+        }
+        @if (level) {
+          <!-- The v2 `variant="inline"` badge, verbatim. Credly is not in it —
+               v1 carries no `has_individual_badge`, so there is nothing to key
+               it on. v2 kept the level `sr-only`; the new design shows it. -->
+          <div
+            class="inline-flex shrink-0 items-center gap-2 rounded-lg border border-input bg-transparent px-2 py-1 text-base whitespace-nowrap text-white"
+          >
+            <span class="flex items-center gap-1">
+              <img [src]="cairaMark" alt="CAIRA" class="h-5 w-auto" draggable="false" />
+              <span class="font-semibold">{{ level }}</span>
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <app-join-cta
+          [webinar]="w"
+          [cta]="cta()"
+          [dense]="true"
+          (register)="register.emit(w.id)"
+          (join)="join.emit(w.id)"
+        />
+        <!-- v2 opened a course-info dialog here. That dialog reaches the whole
+             legacy feature closure, so this goes to the detail page instead —
+             same affordance, a destination that exists. -->
+        <a
+          [routerLink]="[w.id]"
+          queryParamsHandling="preserve"
+          class="flex aspect-square size-10 cursor-pointer items-center justify-center rounded-full bg-secondary p-0 outline outline-white/40"
+          aria-label="More about this webinar"
+        >
+          <ng-icon name="faSolidInfo" class="size-8" aria-hidden="true" />
+        </a>
+      </div>
+      @if (w.cpe_credits; as cpe) {
+        <span
+          class="inline-flex h-10 cursor-default items-center rounded-md border border-accent px-4 text-sm font-medium whitespace-nowrap text-accent"
+        >
+          {{ cpe }} CPE
+        </span>
+      }
+    </div>
+  }
+</article>

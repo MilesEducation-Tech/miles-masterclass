@@ -66,6 +66,7 @@
     "@supabase/supabase-js": "^2.98.0",
     "@types/video.js": "^7.3.58",
     "@videojs/http-streaming": "^3.17.2",
+    "@zoom/meetingsdk": "^6.2.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "express": "^5.1.0",

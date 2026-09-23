@@ -136,6 +136,14 @@ interface CatalogItem {
   title: string;
 }
 
+/**
+ * A webinar's sitemap entry. UUID only, and no title — the canonical detail URL
+ * is `webinar/:id` with no slug segment.
+ */
+interface WebinarLoc {
+  id: string;
+}
+
 type ApiRow = Record<string, unknown>;
 
 /**
@@ -194,20 +202,37 @@ function fetchInstructors(): Promise<CatalogItem[]> {
   return fetchPaginated(`${API_BASE}/instructor/?page=1`, pickInstructor);
 }
 
-/** Webinars exposed via the public `webinar/filter/` feed. */
-async function fetchWebinars(): Promise<CatalogItem[]> {
-  const response = await fetch(`${API_BASE}/webinar/filter/`, {
-    headers: { accept: 'application/json' },
-  });
+/**
+ * Crawlable webinars, from the Events v1 landing feed.
+ *
+ * `?login_type=pre_login` is the anonymous surface and the endpoint is
+ * `AllowAny`, so this needs no token — which is what makes it usable from a
+ * sitemap generator. Only the two forward-looking buckets are listed: the three
+ * backward-looking ones are statements about a BOOKING and are empty without a
+ * token anyway.
+ *
+ * Ids are UUIDs. The legacy `webinar/filter/` feed this replaced returned the
+ * integer `webinar_id_as_per_mf_sf`, which the detail page cannot resolve —
+ * the contract is explicit that the id is the UUID and never that integer.
+ */
+async function fetchWebinars(): Promise<WebinarLoc[]> {
+  const response = await fetch(
+    `${API_BASE}/web-api/v1/events/webinar-main-page/?login_type=pre_login`,
+    { headers: { accept: 'application/json' } },
+  );
   if (!response.ok) return [];
   const json = (await response.json()) as {
-    data?: { id?: number; webinar_title?: string }[];
+    data?: Record<string, { id?: string }[] | undefined>;
   };
-  return (json.data ?? [])
-    .filter((w): w is { id: number; webinar_title: string } => {
-      return typeof w?.id === 'number' && !!w.webinar_title;
-    })
-    .map((w) => ({ id: w.id, title: w.webinar_title }));
+  const buckets = [json.data?.['highlight_webinars'], json.data?.['upcoming_webinars']];
+
+  const ids = new Set<string>();
+  for (const bucket of buckets) {
+    for (const row of bucket ?? []) {
+      if (typeof row?.id === 'string' && row.id) ids.add(row.id);
+    }
+  }
+  return [...ids].map((id) => ({ id }));
 }
 
 /** Gather every crawlable absolute URL. Catalog failures degrade gracefully. */
@@ -223,9 +248,12 @@ async function collectLocs(): Promise<string[]> {
     }
   });
 
-  const webinars = await fetchWebinars().catch(() => [] as CatalogItem[]);
+  // One segment, no title slug: `webinar/:id` is the canonical detail URL the
+  // page itself emits. The two-segment form still resolves, but only via a 302,
+  // and a sitemap full of redirects is a sitemap search engines discount.
+  const webinars = await fetchWebinars().catch(() => [] as WebinarLoc[]);
   for (const webinar of webinars) {
-    locs.add(`${SITE_ORIGIN}${PREFIX}/webinar/${webinar.id}/${slugify(webinar.title)}`);
+    locs.add(`${SITE_ORIGIN}${PREFIX}/webinar/${webinar.id}`);
   }
 
   const instructors = await fetchInstructors().catch(() => [] as CatalogItem[]);

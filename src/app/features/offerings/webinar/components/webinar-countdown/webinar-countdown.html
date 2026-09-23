@@ -1,0 +1,8 @@
+<span
+  class="inline-flex items-center gap-1.5 text-sm"
+  [class]="isImminent() ? 'text-accent font-medium' : 'text-muted-foreground'"
+>
+  <span>{{ label() }}</span>
+  <!-- tabular-nums stops the label reflowing as digits change width -->
+  <span class="font-numeric tabular-nums">{{ display() }}</span>
+</span>

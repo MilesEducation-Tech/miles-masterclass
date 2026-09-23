@@ -171,6 +171,33 @@ export default [
             ],
           },
         ],
+        // The web app does not call `app-api/` routes. That surface belongs to the
+        // mobile app; this project uses `api/v1/` and `web-api/v1/` only.
+        //
+        // This is a lint rule rather than a convention because the temptation is
+        // specific and already documented: `app-api/v1/events/all-bookings/` is
+        // the ONLY place the attended-duration and poll-count fields exist, and
+        // the design asks for them (the "110/120 Minutes" line on a completed
+        // card). Someone will find that endpoint and reach for it. See
+        // `docs/WEBINAR_API_QUESTIONS.md` Q2 — the answer is to ask for a
+        // `web-api` twin, not to cross the surface.
+        //
+        // Matches the URL string, not an import, so `no-restricted-imports`
+        // cannot express it. Comments are not AST nodes, so the explanatory
+        // comments naming this endpoint do not trip it.
+        'no-restricted-syntax': [
+          'error',
+          {
+            selector: "Literal[value=/app-api\\//]",
+            message:
+              'Banned: the web app does not call `app-api/` routes (that surface is the mobile app\'s). Use `api/v1/` or `web-api/v1/`; if only an app-api route has the data, ask for a web twin — see docs/WEBINAR_API_QUESTIONS.md.',
+          },
+          {
+            selector: "TemplateElement[value.raw=/app-api\\//]",
+            message:
+              'Banned: the web app does not call `app-api/` routes (that surface is the mobile app\'s). Use `api/v1/` or `web-api/v1/`; if only an app-api route has the data, ask for a web twin — see docs/WEBINAR_API_QUESTIONS.md.',
+          },
+        ],
         '@typescript-eslint/no-restricted-imports': [
           'error',
           {

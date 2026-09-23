@@ -7,6 +7,237 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🏁 **OFF-PHASE FEATURE WORK DONE AND VERIFIED — branch `feat/webinar`, not a refactor phase.**
+  `reviewer` **PASS, zero structural violations**; `verifier` **GREEN** (7 of 8 gates green, `lint`
+  red only with the 8 known Phase 7 errors, `ssr smoke` red only on the pre-existing route below).
+  **UNCOMMITTED: 42 new files, 28 tracked modifications/deletions.**
+  The webinar design + API binding from `feat/webinar-implementation` was ported onto master's
+  post-Phase-7 structure. **That branch was NOT merged and must not be** — its merge base is
+  `555cab6` (`feature/zoom-sdk`) on the _"strip app to admin-only"_ lineage, while master went the
+  opposite way (`98532b5 Revert Of the latest miles-masterclass code from V3` → CAIRA auth →
+  phases 1–7). Merging it would re-apply the strip and revert the refactor. 41 files were
+  re-created by hand instead, laid out to §3 (`components/ pages/ services/ models/ utils/`, no
+  `shared/` layer, `@core`/`@shared`/`@env` aliases).
+- **Part A structure held: lint is still EXACTLY the 8 known Phase 7 errors, no 9th.** The port
+  adds no boundary edge — the module imports only `@core`, `@shared`, `@env` and itself.
+  Unit tests 154 files green (152 on master + the 2 ported specs).
+- ⚠️ **Two gate deviations are PRE-EXISTING, proven by a `master` worktree build, not assumed.**
+  (1) `ssr smoke` fails on `/us/accounting/masterclass/154/adulting-in-business`; clean master
+  serves byte-identical output (`<title>{{title}}</title>`, 1 ld+json) because this machine cannot
+  reach the course API. (2) The course-feedback page throws 2 `uncaughtException`s under a dead
+  API; master's own masterclass feedback route throws the same two.
+- ⚠️ **Initial bundle +3,593 bytes raw (+0.2 KB gzip), and it is ALL CSS.** Measured file-by-file
+  against a master build: `styles.css` 376,177 → 379,940 (+3,763, the new Tailwind v4 theme tokens
+  and the utilities the webinar templates use), JS **−170** bytes, `main.js` byte-identical.
+  **Zero JS growth — the 3.6 MB Zoom SDK is lazy-only**, in the `embedded` chunk.
+  Phase 14 note: this is the first change to make the initial bundle non-byte-identical to
+  baseline since Phase 5, and Tailwind v4's single global sheet makes that unavoidable for any
+  feature that introduces a token.
+- ✅ **FINAL GATES, post-hardening: no red is attributable to this work.**
+  `unit tests` **156 files / 490 passed + 1 skipped**; `lint` red with **exactly the 8** known
+  Phase 7 errors, 0 warnings; `build local`/`build prod`/`storybook`/`format`/`bundle report` green;
+  `tsc -p tsconfig.json --noEmit` exits 0. `ssr smoke` red on the one pre-existing masterclass
+  route only. Bundle initial **12 files / 504.6 KB raw / 101.7 KB gzip** (+0.2 KB gzip vs baseline,
+  all of it the Tailwind tokens in `styles.css`).
+- ⚠️ **`verifier` MISREPORTED the typecheck failure — do not trust that line in its transcript.**
+  It called the first run's `TS2304: Cannot find name 'WebinarLoc'` "a stale build-cache flake, not
+  a real code defect". It was a real defect: the interface genuinely was not in the file. The agent
+  ran WHILE I was fixing it, so its second run passed, and the line numbers it offered as proof
+  (143/218/254 vs the original 210/246) shifted precisely BECAUSE the fix inserted those lines.
+  The stop gate's typecheck caught the same error independently. Nothing was flaky.
+
+- 🏁 **PHASE A OF THE WEBINAR FLOW PLAN IS DONE** (plan: `prompts/webinar-flow-completion.md`,
+  written after auditing the module against the user's described flow AND `EVENTS_API_CONTRACT_V1`).
+  Verdict on arrival: **~60% aligned — shape right, nothing to re-architect.**
+  - **Join window 50 → 15 minutes** across all three environments, with the spec fixtures moved
+    (12:10 → 12:45 boundaries). The prod comment that called this a "fallback" was corrected:
+    `join_opens_at` appears **0 times** in the contract, so this value IS the rule and it is
+    computed in the browser — `ServerClock` bounds the skew, but ask the backend for the field.
+  - **Sign-in gate on Register.** A signed-out visitor correctly sees "Register Now" (`pre_login`
+    carries no `registration` block), and used to POST straight to a 401. Now `UtilsDialog` (reused,
+    not a new component) → `/auth/login?redirect=<current url>`, the same parameter `authGuard`
+    uses. **Four specs pin it**, including "does NOT call the API when signed out".
+  - **Countdown now targets the SESSION START, not the join-open moment**, and gained a long form:
+    "This webinar starts in 4 days and 3 hours" on the hero, compact `4d 03h` in a card strip.
+  - **`all-bookings` deleted outright** — endpoint, resource, `bookingsByWebinarId`, `BookingRow`,
+    `booking.model.ts`, and both component inputs. It is app-api-only and the user has banned that
+    surface, so it could never fire. **This removed a rendered design element**: the
+    "110/120 Minutes | 7 out of 8 Poll Questions Answered" line, which is the answer to "what did
+    the learner miss". `webinar-card.ts` and the facade both carry a comment naming the exact four
+    fields that restore it.
+- ✅ **PHASE B DONE — the `app-api/` ban is now enforced by lint, not by memory.**
+  `eslint.config.mjs` gained a `no-restricted-syntax` rule; AGENTS.md §6 gained a line beside the
+  Django / Supabase / Partner-Platform split.
+  **TWO selectors are required, and this is the part worth remembering:** `Literal` catches a plain
+  string, but our endpoint registries build URLs as `` `${ROOT}app-api/...` `` — a template literal.
+  A `Literal`-only rule would have passed every real case while looking like it worked.
+  `TemplateElement[value.raw=/app-api\//]` covers that half.
+  **Proven with a canary before being trusted**, following the Phase 7 precedent: a temporary file
+  holding both shapes plus a `web-api` control took lint 8 → 10, the control stayed silent, and
+  deleting it returned to exactly 8. Comments naming the endpoint do NOT trip it — comments are not
+  AST nodes, so the explanatory notes in `webinar-card.ts` and `webinar-facade.ts` survive.
+  Gates after: tests **158 / 500**, lint exactly 8, `tsc --noEmit` clean, format clean.
+
+- 🔒 **Zoom hosting config implemented, from the official Angular sample + Zoom's own docs.**
+  Our `ZoomMeetingClient` was compared against `zoom/meetingsdk-angular-sample`'s
+  **`app-new.component.ts`** (the Component View variant — the default `app.component.ts` is Client
+  View and is NOT what we use). **Every `init()`/`join()` option matches.** Two deliberate
+  differences, both ours and both correct: we `import()` the SDK dynamically (static would put
+  3.6 MB in `main` and fail the budget) and we inject no `NgZone` (the app is zoneless). `zak` is
+  correctly omitted — it authorises STARTING as host, and learners join as attendees.
+  Two `vercel.json` changes, the parts a localhost sample cannot show:
+  - **`Permissions-Policy: camera=()` → `camera=(self)`.** The old value disabled the camera
+    outright, so an attendee promoted to panelist could not turn on video. Changed the GLOBAL value
+    rather than adding a scoped override **on purpose**: Vercel documents that `source` matches the
+    incoming pathname but is SILENT on which rule wins when two matching rules set the same header
+    key, and a scoped override would have depended on that. `camera=(self)` is the browser's own
+    default when the header is absent and grants nothing to third parties.
+  - **COOP `same-origin` + COEP `credentialless`, scoped to
+    `/:country/:profession/webinar/:id/live`.** Enables `SharedArrayBuffer`, which Zoom requires for
+    Gallery View, Virtual Background, 720p and Chrome tab audio. **`require-corp` would have broken
+    the site** — it demands CORP on every cross-origin subresource, and CloudFront images, Google
+    Fonts, GTM, Clarity and Calendly send none. `credentialless` strips credentials from no-cors
+    loads instead; all those assets are public, and CORS API calls keep their `Authorization`.
+    New header keys, so no precedence question. Safari ignores `credentialless` and degrades to
+    today's behaviour, which is the intended fallback.
+  - **CSP needed no change** — verified against the SDK: `'unsafe-eval'` for the WASM media layer,
+    `connect-src https: wss:`, `worker-src blob:`, `blob:` on `media-src`/`img-src`.
+  - **NOT testable locally** — `pnpm serve:ssr` does not read `vercel.json`. Verify after deploy
+    with `curl -sI …/live` and `crossOriginIsolated === true` in the console.
+- ⚠️ **Pre-existing defect found while checking for duplicate header keys (NOT fixed, spun out).**
+  `vercel.json` has two rules that both match `/sw.js` and both set `Cache-Control` — the static
+  asset rule (`immutable`, one year) and `/sw.js`'s own (`no-cache`). Which wins is the same
+  undocumented behaviour described above. If the immutable one wins, the service worker can never
+  update and the `update-checker` flow breaks with it. Needs verification against the DEPLOYED site.
+
+- ❓ **"Why is there React code in an Angular repo?" — answered, and the answer is load-bearing.**
+  Zoom's Meeting SDK Component View IS a React app internally. `@zoom/meetingsdk` declares
+  `react`/`react-dom`/`redux`/`react-redux` as PEER dependencies; pnpm installs
+  `react@18.3.1` + `react-dom@18.3.1` into `node_modules/.pnpm/` and deliberately does NOT hoist
+  them, so the SDK can reach React and our code cannot. React is correctly absent from
+  `package.json` — it is not our dependency.
+  The four `allowedCommonJsDependencies` entries in `angular.json` exist because the SDK ships a
+  **UMD (CommonJS)** bundle that `require()`s all three. **Tested, not assumed:** removing them
+  takes `build:prod` from **3 warnings to 6** (`Module 'react' … is not ESM`). Restored; back to 3.
+  Zero React reaches the initial bundle — it is all inside the lazy webinar chunk, and `main.js`
+  measured byte-identical to master.
+  **Consequence for Q3:** if the backend never ships the Meeting SDK endpoints, dropping
+  `@zoom/meetingsdk` removes React, Redux and ~3.6 MB from the project outright.
+- ⚠️ **Mid-investigation correction, caught by the build:** I stated react "isn't installed" after
+  checking only the top level of `node_modules`. Wrong — pnpm's strict isolation puts peer deps in
+  the store, not the root. Check `node_modules/.pnpm/` before concluding a package is absent.
+
+- 🧹 **Module slimmed on a measured audit, not a hunch** ("do we need all these services?").
+  **Answer: the four services stay; `utils/` was the bloated half.** `WebinarRegistration` is
+  injected by the routes AND both pages, not just the facade, and folding it in makes a 680-line
+  facade; `MeetingSession` (lease integrity) and `ZoomMeetingClient` (SDK rendering) must stay
+  apart, because merging them couples CPE-bearing attendance to a vendor SDK.
+  - **`zoom-join-params.ts` deleted — 73 lines, ZERO importers.** It parsed `tk` out of `join_url`
+    as a fallback, but `toJoinParams` reads the signature response directly and nothing ever wired
+    it up. The model comment that pointed at it now states the real position: no `registrant_token`
+    from the backend (Q6) means the SDK path has no token at all.
+  - **`ServerClock` was a `@Service` sitting in `utils/` — a §3 misplacement `reviewer` and I both
+    missed**, in a file mixing one DI service with eight pure functions. Split into
+    `services/server-clock.ts` (ticker + clock-skew) and `utils/session-time.ts` (pure, no Angular,
+    TestBed-free). 8 importers rewired; most only ever wanted the pure half.
+    **Lesson: `reviewer` checks folder SHAPE, not whether a DI class is in the right folder.**
+  - `webinar-icons.ts` (one SVG, one consumer, no core equivalent) folded into `brand-assets.ts`.
+  - Net 49 → 48 files, ~90 lines of dead and duplicated code gone.
+- ⚠️ **I introduced a 9th lint error during the split and lint caught it.** The new service imported
+  `parseIso` unused — because `syncFrom` was hand-rolling `Date.parse` + `Number.isNaN`, which IS
+  `parseIso`. Fixed by using the helper and deleting the duplicate, not by dropping the import.
+  Back to exactly 8.
+- ⏸ **One deletion left on your decision: `webinar-preview.ts`, 256 lines**, the largest remaining
+  util — a dev-only stand-in feed with one importer, which its own comment says exists only because
+  UAT had no future-dated webinar. If UAT has data now it is the biggest remaining cut; if not it is
+  the only way to view the hero and upcoming rail. Not removed unilaterally.
+- ✅ Gates after the slim: **158 files / 500 passed + 1 skipped**, lint exactly 8, `tsc --noEmit`
+  clean, format clean.
+- 📄 **`docs/WEBINAR_API_QUESTIONS.md` added** — the eight backend questions with checkable evidence
+  (Q1 attendance-pending, Q2 duration/poll fields on a web route, Q3 Meeting SDK + lease routes,
+  Q4 feedback/certificate/badge, Q5 `join_opens_at`, Q6 `registrant_token`, Q7 `product` vs
+  `subject`, Q8 enrolment filtering). **Q1–Q4 block the flow.** Q3 carries a trap worth repeating:
+  `attendance-session/release` on tab close can only be a `sendBeacon`, which cannot set headers and
+  cannot preflight a JSON body — if the backend designs it as a normal authenticated POST, every
+  closed tab leaks a lease until TTL.
+
+- ⚠️ **Two of my own defects were caught by tooling, not by me, in this pass.** A too-greedy slice
+  deleted the `detailsPage` endpoint along with `allBookings` (caught by the build); and
+  `formatCountdownLong` rendered "1 minute and 0 seconds", contradicting its own doc comment
+  (caught by the test I wrote for it — the test was right, the implementation was wrong).
+- ✅ Gates after Phase A: **tests 158 files / 500 passed + 1 skipped**, lint exactly 8,
+  `tsc --noEmit` clean, format clean, `build:prod` green with the 3 documented budget warnings.
+- **Phases B–E remain blocked or unscheduled** — see §6 of the plan. Four of the user's described
+  steps cannot be finished without backend work: attendance-pending is not expressible
+  (`attended_status` is not on the card and `""` shares a bucket with genuine absence), "what you
+  missed" has no web-surface source, the Meeting SDK has no endpoints, and webinar
+  feedback/certificate/badge routes are unconfirmed.
+
+- ⚠️ **A silent edit miss, caught by the stop gate's typecheck, not by me.** The `WebinarLoc`
+  interface `src/seo.ts` now needs was inserted with an UNASSERTED `str.replace` — the anchor did
+  not match, so the type never landed while every other edit in that pass did. `pnpm build`,
+  `pnpm lint` and `pnpm test` all stayed GREEN through it, because the sitemap generator is
+  compiled separately from the app graph; only `tsc -p tsconfig.json --noEmit` saw it.
+  **Lesson for the remaining phases: `build` is not a typecheck of `src/*.ts` outside `src/app/`,
+  and every scripted edit asserts its anchor.** Fixed; typecheck now exits 0.
+
+- 🔒 **HARDENING PASS DONE, driven by `postman/` (the contract), not by reading the code alone.**
+  `EVENTS_API_CONTRACT_V1` settled three things the ported comments got wrong:
+  1. **The Zoom lease layer does not exist.** 118 requests, ZERO `attendance-session/*` and ZERO
+     `meeting-sdk-signature` (`sdk` and `meeting` have 0 occurrences anywhere in the collection),
+     and `join_opens_at` / `registrant_token` have 0 too. `/live` was built against plan A1.
+     **Gated behind `environment.WEBINAR.liveEnabled` (false)**: `canMatch` keeps the route and
+     the 3.6 MB SDK chunk unreachable, and `resolveJoinTarget` sends Join to the registrant's
+     `join_url` instead — which is what the contract actually returns. Flipping one boolean is
+     the whole cutover.
+  2. **A per-webinar endpoint DOES exist** — `web-api/v1/events/webinar-details-page/?webinar_id=`,
+     **AllowAny**. The ported comment claiming "v1 has no per-webinar route" was wrong, and the
+     detail page was reading only the feed, so a deep link or a crawler got "we could not find
+     that webinar" for a webinar that exists. Now bound, with 404 / error / loading told apart.
+  3. **`all-bookings` moved to `app-api/` on 2026-09-17** and "the web twin is not built" — so its
+     404 is expected, not a bug. Left calling `web-api/` **on your decision**, with the contract
+     note recorded at the endpoint so the next reader does not re-investigate it.
+- 🐛 **Four defects fixed, one of them a token leak.** `resolveStatusUrl` followed a server-issued
+  absolute `status_url` verbatim, and since `ApiClient` forwards absolutes untouched while
+  `appInterceptor` attaches the learner bearer, a foreign origin in that field would have sent the
+  token off-platform (AGENTS.md §7). Now origin-pinned, with a spec that asserts the refusal. Also:
+  `MeetingSession.acquire` leaked the lease + heartbeat when `claimLease` succeeded but
+  `mintSignature` failed; `teardown()` used the header-less beacon where an authenticated POST
+  works; the registration poll ran for up to 45s after the page was destroyed.
+- 🔍 **SEO finished, and it found two more of my own gaps.** `webinar/` added to
+  `DYNAMIC_SLUG_PREFIXES`; the detail page emits title/description/canonical/OG/Twitter and
+  schema.org **`Event`** (not `Course` — `setupCourseSeo` is slug-driven and would assert wrong
+  data), `noindex` on a confirmed 404, and a brand fallback so the page is never bare. Reuses
+  `routeUrlToCanonicalUrl`, so webinar URLs collapse to the canonical locale like every other page.
+  **`src/seo.ts` was emitting sitemap webinar URLs from the legacy `webinar/filter/` feed with
+  INTEGER ids in the two-segment form** — after this port those 302 to a page that 404s. Repointed
+  at the Events feed, UUIDs, one segment, matching the canonical.
+- ✅ Tests **156 files / 490 passed** (was 154/480): new specs cover the join gate and the
+  origin pin. Lint still exactly 8.
+- 🧹 **`reviewer` surfaced one stale comment, now corrected.**
+  `offerings/dialogs/webinar-registration-dialog/webinar-registration-dialog.ts` named
+  `PremiereListItem`, which this port deleted. The dialog has **zero importers on master too** —
+  it was already orphaned before the rebuild — so the comment now says so rather than pretending
+  it has a caller. Deleting it and its dead dependency tree (`WebinarRegistrationForm`,
+  `UpcomingPremiere`) is queued as separate work; it is not this port's job.
+- **Three things the port had to fix that were not in the plan:**
+  1. The detail URL went from `webinar/:courseId/:courseTitle` to `webinar/:id`, but the CPE
+     tracker (`courseCommands`), the CAIRA badge actions, `features.routes.ts` and
+     `src/legacy-redirects.ts` all still build the 2-segment form. Fixed at the root with ONE
+     `:id/:courseTitle` → `:id` redirect route instead of editing four callers.
+  2. **A bare path in `app.routes.server.ts` does NOT cover its children** — the file says so
+     itself for `caira-tracker`. Master's `webinar` → Client entry would therefore have left
+     `/live` server-rendering the Zoom SDK. Now only `webinar/*/live` is Client.
+  3. Master's blanket `webinar` → Client was **removed**: `WebinarFacade` fetches the anonymous
+     `pre_login` feed ON THE SERVER by design, and the old entry was a leftover from the dead
+     placeholder page. The list went from a 5.7 KB CSR shell to 217 KB of server-rendered markup.
+     **This is an SEO posture change to a live page — flag it to the user, it is reversible in
+     one entry.**
+- **Nothing is committed.** Exclude `public/version.json` and `core/version/app-version.ts`
+  (build-generated, open question 6).
+- **Part B is unaffected: `/refactor-phase 8` (services) is still next.** The five ported services
+  already use `@Service({ autoProvided: false })`, so Phase 8 inherits them in its target shape.
+
 - 🏁 **PHASE 7 (boundaries) IS DONE — and closes ⛔, not ✅, on your decision.** Report:
   [phase-07](reports/phase-07.md). `reviewer` **PASS, zero violations**.
   **7 of 8 gates green; `lint` is red with exactly 8 known
@@ -394,27 +625,27 @@ New decisions raised by Phase 0:
       **Counts re-derived from the import graph** (PLAN.md's have been wrong twice):
 
       | Component (current home) | own feature | external features | total |
-                                                                                                                                                                                      | --- | --- | --- | --- |
-                                                                                                                                                                                      | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
-                                                                                                                                                                                      | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                      | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                      | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
-                                                                                                                                                                                      | `home/components/app-download` | 1 | uae-caira | 2 |
-                                                                                                                                                                                      | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
+                                                                                                                                                                                                      | --- | --- | --- | --- |
+                                                                                                                                                                                                      | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
+                                                                                                                                                                                                      | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                      | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                      | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                      | `home/components/app-download` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                      | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
 
-                                                                                                                                                                                      All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
-                                                                                                                                                                                      precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
-                                                                                                                                                                                      **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
-                                                                                                                                                                                      because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
-                                                                                                                                                                                      (14 importers) is still open and unverified — treat its count with the same suspicion.
-                                                                                                                                                                                      - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
-                                                                                                                                                                                        partners (11 pages), offerings, home, library.
-                                                                                                                                                                                      - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
-                                                                                                                                                                                        temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
-                                                                                                                                                                                      - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
-                                                                                                                                                                                        `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
-                                                                                                                                                                                        structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
-                                                                                                                                                                                        so it needs an explicit override.
+                                                                                                                                                                                                      All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
+                                                                                                                                                                                                      precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
+                                                                                                                                                                                                      **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
+                                                                                                                                                                                                      because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
+                                                                                                                                                                                                      (14 importers) is still open and unverified — treat its count with the same suspicion.
+                                                                                                                                                                                                      - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
+                                                                                                                                                                                                        partners (11 pages), offerings, home, library.
+                                                                                                                                                                                                      - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
+                                                                                                                                                                                                        temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
+                                                                                                                                                                                                      - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
+                                                                                                                                                                                                        `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
+                                                                                                                                                                                                        structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
+                                                                                                                                                                                                        so it needs an explicit override.
 
 - [ ] **`features/shared/services/tracks/` has no home in the target structure.** Raised 2026-09-23.
       It sits at the `features/` root, which §3 does not contain. Importers are
@@ -686,6 +917,16 @@ an ordinary run rather than only when explicitly asked — if it does, this recu
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-09-23 🏁 **OFF-PHASE: webinar module ported onto master (branch `feat/webinar`) — reviewer
+  PASS, verifier GREEN.** Not a
+  refactor phase. `feat/webinar-implementation` was NOT merged — it forks from the
+  "strip app to admin-only" lineage that master reverted, so 41 files were re-created by hand into
+  the §3 shape. Adaptations: `LEARNER_SESSION` → `AuthSession` (that token existed only because
+  auth was stripped on that branch); `IS_LEARNER_REQUEST` + `learnerContext()` deleted
+  (`appInterceptor` already attaches the learner bearer); `injectContentLocale()` → `Utils`;
+  `swiper-strip` placed INSIDE webinar, not `shared/`, because it has one consumer. Lint still
+  exactly 8; tests 154 green; initial bundle +3.6 KB, all of it CSS, zero JS.
 
 - 2026-09-23 🏁 **PHASE 7 COMPLETE — all 6 steps ✅, 7/8 GREEN (lint red by decision), reviewer PASS.**
   Report: [phase-07](reports/phase-07.md). `eslint-plugin-boundaries@7.2.0` +

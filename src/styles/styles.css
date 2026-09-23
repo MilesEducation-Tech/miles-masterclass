@@ -20,6 +20,19 @@
   --muted-foreground: rgb(163, 163, 163);
   --accent: rgb(42, 133, 255);
   --mm-warn: #f6bc53;
+  /* Surfaces and lines from the webinar design pass. Named by role rather than
+     by the component that first needed them, and added as tokens rather than
+     inlined because the design hands these out as exact hexes and they recur
+     across the date box, both row buttons and "Show more".
+       raised  — a panel lifted off the #0E0E0E page (the date box)
+       control — a neutral button fill ("Show more")
+       hairline / outline — the two border weights the design uses */
+  --mm-surface-raised: #18181c;
+  --mm-surface-control: #3b3b3b;
+  /* panel — the desaturated navy behind list rows on the detail page */
+  --mm-surface-panel: #1e293b;
+  --mm-hairline: rgba(255, 255, 255, 0.06);
+  --mm-outline: #32353b;
   /* Status green. Lived only in `.admin-theme` until the AI Lab course page
      needed it on the public site (step ticks, CPE-recording pill, completed
      progress). `bg-success`/`text-success` were already being used by
@@ -162,6 +175,11 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-premium: var(--mm-warn);
+  --color-surface-raised: var(--mm-surface-raised);
+  --color-surface-control: var(--mm-surface-control);
+  --color-surface-panel: var(--mm-surface-panel);
+  --color-hairline: var(--mm-hairline);
+  --color-outline: var(--mm-outline);
   --color-success: var(--mm-success);
   --color-success-foreground: var(--mm-success-fg);
   --color-success-bg: var(--mm-success-bg);
@@ -189,6 +207,15 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
+
+  /* Exact figures from the webinar hero design. Named rather than written as
+     bracket values (`max-w-[990px]`, `gap-[31px]`) because the editor offers
+     to "canonicalise" those into `max-w-247.5` / `gap-7.75`, which are not
+     classes — the spacing scale only takes integer multipliers — and the rule
+     silently disappears. A named token has a canonical class already. */
+  --container-hero: 1456px;
+  --container-hero-art: 990px;
+  --spacing-hero-gap: 31px;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
