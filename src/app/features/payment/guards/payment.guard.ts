@@ -4,7 +4,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRouteSnapshot, CanActivateFn, Router, UrlTree } from '@angular/router';
 import { filter, map, take } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
+import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
 

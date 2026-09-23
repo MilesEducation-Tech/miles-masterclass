@@ -7,7 +7,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { PaymentFacade } from '../../service/payment-facade/payment-facade';
+import { PaymentFacade } from '../../services/payment-facade';
 import { NotificationService } from '@core/services/notification/notification';
 import { locationJsonMin } from '@features/payment/constants/location-min';
 import {

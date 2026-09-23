@@ -26,7 +26,7 @@ import { Dialog } from '@core/services/dialog/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
-import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
+import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { Analytics } from '@core/services/analytics/analytics';
 
 // Extract types from routes for type safety

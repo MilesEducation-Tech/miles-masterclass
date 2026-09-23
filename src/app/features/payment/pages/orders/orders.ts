@@ -2,7 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgpMenu, NgpMenuItem, NgpMenuTrigger } from 'ng-primitives/menu';
-import { PaymentFacade } from '../../service/payment-facade/payment-facade';
+import { PaymentFacade } from '../../services/payment-facade';
 import { CartItem, CartItemConfig } from '../../components/cart-item/cart-item';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { ErrorState } from '@shared/ui/error-state/error-state';

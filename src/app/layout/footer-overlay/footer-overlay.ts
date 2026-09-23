@@ -19,7 +19,7 @@ import { Analytics } from '@core/services/analytics/analytics';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Utils } from '@shared/services/utils';
 import { FeatureFacade, FeatureResource } from '@core/services/feature-facade/feature-facade';
-import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
+import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { GlobalSearchDialog } from '@layout/dialogs/global-search-dialog/global-search-dialog';
 import {
   CalendlyDialog,

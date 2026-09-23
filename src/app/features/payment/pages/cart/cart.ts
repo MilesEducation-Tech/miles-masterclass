@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { PaymentFacade } from '../../service/payment-facade/payment-facade';
+import { PaymentFacade } from '../../services/payment-facade';
 import { CartItem } from '../../components/cart-item/cart-item';
 import { EmptyCart } from '../../components/empty-cart/empty-cart';
 

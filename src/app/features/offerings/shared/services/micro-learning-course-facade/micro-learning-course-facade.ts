@@ -37,7 +37,7 @@ import {
   MicroLearningQuizDialog,
   MicroLearningQuizDialogData,
 } from '../../../micro-learning/shared/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog';
-import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
+import { PaymentFacade } from '@features/payment/services/payment-facade';
 import {
   ActionStatus,
   deriveActionStatus,

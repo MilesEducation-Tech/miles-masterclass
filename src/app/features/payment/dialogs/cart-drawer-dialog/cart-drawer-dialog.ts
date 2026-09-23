@@ -3,8 +3,8 @@ import { CurrencyPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { DialogRef } from '@core/services/dialog/dialog';
 import { Utils } from '@shared/services/utils';
-import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
-import { CartItem } from '@features/payment/shared/components/cart-item/cart-item';
+import { PaymentFacade } from '@features/payment/services/payment-facade';
+import { CartItem } from '@features/payment/components/cart-item/cart-item';
 import { Button } from '@shared/ui/button/button';
 
 @Component({

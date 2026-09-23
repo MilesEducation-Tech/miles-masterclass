@@ -2,7 +2,7 @@ import { Component, inject, output, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucideCheck } from '@ng-icons/lucide';
-import { PaymentFacade } from '../../service/payment-facade/payment-facade';
+import { PaymentFacade } from '../../services/payment-facade';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { CouponList } from '@core/models/payment.model';

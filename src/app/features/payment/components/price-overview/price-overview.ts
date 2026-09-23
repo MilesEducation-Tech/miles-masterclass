@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronLeft, heroChevronRight, heroXMark } from '@ng-icons/heroicons/outline';
-import { PaymentFacade } from '../../service/payment-facade/payment-facade';
+import { PaymentFacade } from '../../services/payment-facade';
 
 import { Button } from '@shared/ui/button/button';
 import { svglStripe } from '@ng-icons/svgl';

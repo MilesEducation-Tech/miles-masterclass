@@ -45,7 +45,7 @@ import { Viewport, ScreenInfo } from '@core/services/viewport/viewport';
 // eagerly instantiated (injected by the header/footer chrome), so a static
 // import would pull the dialog and its `@angular/forms` dependency into the
 // initial bundle.
-import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
+import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Logger } from '@core/services/logger/logger';
 import { canAccessCpeMode, CpeModeGateContent } from '@shared/utils/cpe-mode-access';

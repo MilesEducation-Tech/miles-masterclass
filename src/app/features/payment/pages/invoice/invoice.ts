@@ -14,7 +14,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { PaymentStatus } from '../../components/payment-status/payment-status';
-import { PaymentFacade } from '../../service/payment-facade/payment-facade';
+import { PaymentFacade } from '../../services/payment-facade';
 import { CartItem } from '../../components/cart-item/cart-item';
 import { PriceOverview } from '../../components/price-overview/price-overview';
 import { Utils } from '@shared/services/utils';
