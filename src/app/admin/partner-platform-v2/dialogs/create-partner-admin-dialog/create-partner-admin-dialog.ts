@@ -13,12 +13,9 @@ import {
   PartnerAdmin,
   PartnerCapability,
   PartnerRole,
-} from '@admin/partner-platform/shared/models/partner-platform.model';
-import {
-  AdminProvisioning,
-  INITIAL_ADMIN_PASSWORD,
-} from '@admin/partner-platform/shared/services/admin-provisioning';
-import { PartnerSuperAdminFacade } from '@admin/partner-platform/shared/services/partner-superadmin-facade';
+} from '@admin/core/models/partner-platform.model';
+import { AdminProvisioning, INITIAL_ADMIN_PASSWORD } from '@admin/core/services/admin-provisioning';
+import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
 
 const ROLE_OPTIONS: AriaSelectOption<PartnerRole>[] = [
   { value: 'network', label: 'Network admin' },

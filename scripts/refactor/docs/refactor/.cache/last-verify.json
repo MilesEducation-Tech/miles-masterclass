@@ -1,0 +1,20 @@
+{
+  "mode": "quick",
+  "at": "2026-09-23T10:00:35.704Z",
+  "ok": false,
+  "results": [
+    {
+      "name": "typecheck",
+      "status": "fail",
+      "seconds": 1,
+      "log": "docs/refactor/.cache/verify-typecheck.log",
+      "tail": "error TS5058: The specified path does not exist: 'tsconfig.app.json'."
+    },
+    {
+      "name": "lint",
+      "status": "pass",
+      "seconds": 6,
+      "log": "docs/refactor/.cache/verify-lint.log"
+    }
+  ]
+}
