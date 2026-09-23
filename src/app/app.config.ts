@@ -23,7 +23,7 @@ import { appInterceptor } from '@core/interceptors/app/app-interceptor';
 import { adminTokenInterceptor } from '@admin/core/interceptors/admin-token-interceptor';
 import { devInterceptors } from '@core/interceptors/dev/dev-interceptors';
 import { Network } from '@core/services/network/network';
-import { UpdateChecker } from '@core/services/update-checker/update-checker';
+import { UpdateChecker } from '@shared/services/update-checker';
 import { Analytics } from '@core/services/analytics/analytics';
 
 export const appConfig: ApplicationConfig = {

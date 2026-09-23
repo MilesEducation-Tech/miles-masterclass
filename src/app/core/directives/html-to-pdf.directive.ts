@@ -1,13 +1,13 @@
 import { Directive, ElementRef, inject, input, output, signal, computed } from '@angular/core';
-import { HtmlToPdf } from '../../core/services/html-to-pdf/html-to-pdf';
-import { Logger } from '../../core/services/logger/logger';
+import { HtmlToPdf } from '../services/html-to-pdf/html-to-pdf';
+import { Logger } from '../services/logger/logger';
 import type {
   PageSize,
   Orientation,
   PdfMargins,
   PdfExclude,
   PdfOptions,
-} from '../../core/services/html-to-pdf/html-to-pdf.model';
+} from '../services/html-to-pdf/html-to-pdf.model';
 
 @Directive({
   selector: '[appHtmlToPdf]',

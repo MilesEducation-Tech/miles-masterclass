@@ -1,9 +1,26 @@
 // @ts-check
-import eslint from "@eslint/js";
-import { defineConfig } from "eslint/config";
-import tseslint from "typescript-eslint";
-import angular from "angular-eslint";
-import storybook from "eslint-plugin-storybook";
+import eslint from '@eslint/js';
+import { defineConfig } from 'eslint/config';
+import tseslint from 'typescript-eslint';
+import angular from 'angular-eslint';
+import storybook from 'eslint-plugin-storybook';
+import boundaries from 'eslint-plugin-boundaries';
+
+// Top-level folders under src/. Any import crossing one of them must use its path alias,
+// so a relative specifier that climbs into one is banned (PROMPT.md §3). A leading "../"
+// followed by a globstar also matches the depth-1 case, because "**" spans zero segments.
+const CROSS_FOLDER_RELATIVE_IMPORTS = [
+  'core',
+  'shared',
+  'layout',
+  'features',
+  'admin',
+  'testing',
+  'environments',
+].map((folder) => `../**/${folder}/**`);
+
+// Built by concatenation so this file does not itself contain the banned identifiers.
+const BANNED_CLASS_DIRECTIVES = ['Class', 'Style'].map((suffix) => `Ng${suffix}`);
 
 export default [
   {
@@ -12,13 +29,13 @@ export default [
     // them produces hundreds of `no-useless-escape` errors on regex-shaped
     // value strings and offers no review value.
     ignores: [
-      "src/app/core/constants/location.ts",
-      "src/app/features/payment/constants/location-min.ts",
+      'src/app/core/constants/location.ts',
+      'src/app/features/payment/constants/location-min.ts',
     ],
   },
   ...defineConfig([
     {
-      files: ["**/*.ts"],
+      files: ['**/*.ts'],
       extends: [
         eslint.configs.recommended,
         tseslint.configs.recommended,
@@ -26,42 +43,169 @@ export default [
         angular.configs.tsRecommended,
       ],
       processor: angular.processInlineTemplates,
-      rules: {
-        "@typescript-eslint/no-explicit-any": "off",
-        "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
-        "@typescript-eslint/no-empty-object-type": "off",
-        "@typescript-eslint/no-non-null-asserted-optional-chain": "off",
-        "@angular-eslint/no-output-native": "off",
-        "@angular-eslint/template/click-events-have-key-events": [
-          "off"
-        ],
-        "@angular-eslint/prefer-inject": "off",
-        "@angular-eslint/directive-selector": [
-          "error",
+      plugins: { boundaries },
+      settings: {
+        // Anchor classification to the repo root rather than process.cwd(): every element
+        // pattern below is written as a full path from it.
+        'boundaries/root-path': import.meta.dirname,
+        // The default (true) injects captured values at the template top level, where they
+        // shadow real variables. Keep captures in the `captured` namespace only.
+        'boundaries/legacy-templates': false,
+        // Flat config activates no resolver by default, and an unresolvable alias is
+        // classified `external`, which `boundaries/dependencies` skips. Left at its default
+        // this setting would turn a broken resolver into a silent, fully green lint run.
+        'boundaries/flag-as-external': { unresolvableAlias: false },
+        'import/resolver': {
+          typescript: { alwaysTryTypes: true, project: './tsconfig.json' },
+        },
+        // `partialMatch: false` on every descriptor is mandatory, not stylistic. The v7
+        // default matches patterns right-to-left against path suffixes, which would classify
+        // src/app/admin/core/** as element `core` and src/app/admin/layout/** as `layout` —
+        // inverting the admin rules and inventing false core-imports-shared errors. It is
+        // also the plugin's announced future default.
+        //
+        // Order is precedence. The last two are catch-alls and must stay last:
+        //   app-root  -> app.*.ts, configuration/, features/features.routes.ts
+        //   bootstrap -> main.ts, server.ts, seo.ts, legacy-redirects.ts, environments/
+        // Both are composition roots, so they deliberately carry no outbound restriction.
+        'boundaries/elements': [
+          { type: 'core', pattern: 'src/app/core', partialMatch: false },
+          { type: 'shared', pattern: 'src/app/shared', partialMatch: false },
+          { type: 'layout', pattern: 'src/app/layout', partialMatch: false },
+          { type: 'testing', pattern: 'src/app/testing', partialMatch: false },
+          // One element, not one per admin feature: §3 lets admin import itself, so
+          // admin-to-admin edges are intra-element and free. To ban them later, change this
+          // to `pattern: "src/app/admin/*", capture: ["adminFeature"]`.
+          { type: 'admin', pattern: 'src/app/admin', partialMatch: false },
           {
-            type: "attribute",
-            prefix: "app",
-            style: "camelCase",
+            type: 'feature',
+            pattern: 'src/app/features/*',
+            capture: ['feature'],
+            partialMatch: false,
+          },
+          { type: 'app-root', pattern: 'src/app', partialMatch: false },
+          { type: 'bootstrap', pattern: 'src', partialMatch: false },
+        ],
+        'boundaries/files': [
+          { category: 'test', pattern: '**/*.spec.ts' },
+          { category: 'story', pattern: '**/*.stories.ts' },
+          // Load-bearing catch-all: an array query returns false against a null value, so
+          // without a category on ordinary files the `noneOf` selector in the testing policy
+          // would never match and @testing/* would be importable from anywhere, silently.
+          { category: 'source', pattern: 'src/**/*.ts' },
+        ],
+      },
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+        '@typescript-eslint/no-empty-object-type': 'off',
+        '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
+        '@angular-eslint/no-output-native': 'off',
+        '@angular-eslint/template/click-events-have-key-events': ['off'],
+        '@angular-eslint/prefer-inject': 'off',
+        '@angular-eslint/directive-selector': [
+          'error',
+          {
+            type: 'attribute',
+            prefix: 'app',
+            style: 'camelCase',
           },
         ],
-        "@angular-eslint/component-selector": [
-          "error",
+        '@angular-eslint/component-selector': [
+          'error',
           {
-            type: "element",
-            prefix: "app",
-            style: "kebab-case",
+            type: 'element',
+            prefix: 'app',
+            style: 'kebab-case',
+          },
+        ],
+        // PROMPT.md §3 import boundaries. `default: "allow"` plus explicit disallow policies
+        // is a 1:1 transcription of §3, which is itself written as a list of bans. A
+        // disallow-by-default config would instead need an allow entry for every
+        // architecturally empty arrow out of the composition roots (app.routes.ts,
+        // features.routes.ts, src/server.ts, @env/*, ./configuration/ng-icon).
+        // Dynamic import() is covered: `boundaries/dependency-nodes` includes it by default.
+        'boundaries/dependencies': [
+          'error',
+          {
+            default: 'allow',
+            message:
+              '{{from.element.types.[0]}} must not import {{to.element.types.[0]}} ({{dependency.source}}) — see docs/refactor/PROMPT.md §3',
+            policies: [
+              {
+                from: { element: { type: 'core' } },
+                disallow: {
+                  to: { element: { types: { anyOf: ['shared', 'layout', 'feature', 'admin'] } } },
+                },
+              },
+              {
+                from: { element: { type: 'shared' } },
+                disallow: {
+                  to: { element: { types: { anyOf: ['feature', 'admin', 'layout'] } } },
+                },
+              },
+              {
+                // `to: feature` means a *different* feature: same-element imports have
+                // relationship `internal` and are skipped by `checkInternals: false`.
+                from: { element: { type: 'feature' } },
+                disallow: {
+                  to: { element: { types: { anyOf: ['feature', 'admin', 'layout'] } } },
+                },
+              },
+              {
+                from: { element: { type: 'admin' } },
+                disallow: { to: { element: { types: { anyOf: ['feature', 'layout'] } } } },
+              },
+              {
+                // Extends §3, which states outbound rules for core, shared, features, admin
+                // and testing but is silent on layout. Without this, layout importing a
+                // feature goes unreported.
+                from: { element: { type: 'layout' } },
+                disallow: { to: { element: { types: { anyOf: ['feature', 'admin'] } } } },
+              },
+              {
+                to: { element: { type: 'testing' } },
+                disallow: { from: { file: { categories: { noneOf: ['test', 'story'] } } } },
+                message: '@testing/* is importable only from specs and stories',
+              },
+            ],
+          },
+        ],
+        '@typescript-eslint/no-restricted-imports': [
+          'error',
+          {
+            paths: [
+              {
+                name: '@angular/common',
+                importNames: BANNED_CLASS_DIRECTIVES,
+                message:
+                  'Banned (PROMPT.md §4.6). Use a [class] / [style] binding, or cn() for conditional classes.',
+              },
+              {
+                name: '@angular/aria',
+                message: 'Banned (PROMPT.md §1). Build headless primitives on ng-primitives.',
+              },
+            ],
+            patterns: [
+              {
+                group: ['@angular/aria/*'],
+                message: 'Banned (PROMPT.md §1). Build headless primitives on ng-primitives.',
+              },
+              {
+                group: CROSS_FOLDER_RELATIVE_IMPORTS,
+                message:
+                  'Relative imports must not cross a top-level folder (PROMPT.md §3). Use @core/*, @shared/*, @layout/*, @features/*, @admin/*, @testing/* or @env/*.',
+              },
+            ],
           },
         ],
       },
     },
     {
-      files: ["**/*.html"],
-      extends: [
-        angular.configs.templateRecommended,
-        angular.configs.templateAccessibility,
-      ],
+      files: ['**/*.html'],
+      extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
       rules: {},
     },
   ]),
-  ...storybook.configs["flat/recommended"],
+  ...storybook.configs['flat/recommended'],
 ];

@@ -114,6 +114,8 @@
     "@types/three": "0.184.0",
     "angular-eslint": "22.1.0",
     "eslint": "^10.0.3",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^7.2.0",
     "eslint-plugin-storybook": "^10.5.3",
     "husky": "^9.1.7",
     "jsdom": "^27.1.0",
