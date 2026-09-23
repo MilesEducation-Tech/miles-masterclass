@@ -142,6 +142,8 @@ Two backends. Do not cross the wires.
 
 **Partner Platform** — Django `/partner-admin/...`, tagged with the `IS_ADMIN_REQUEST` context token so `adminTokenInterceptor` attaches the admin token instead of the learner token.
 
+**Surfaces: this app uses `api/v1/` and `web-api/v1/` only — never `app-api/`.** That surface belongs to the mobile app. An ESLint rule (`no-restricted-syntax`) fails the build on an `app-api/` string, because the temptation is real and specific: some fields exist on an app route and nowhere else. When that happens, ask the backend for a `web-api` twin — do not cross the surface. Open cases are in `docs/WEBINAR_API_QUESTIONS.md`.
+
 Never invent a path. For auth and account routes the contract is `docs/AUTH_API.md`, backed by the generated `postman/`. If a route is in neither the code nor those, ask.
 
 **Services: `@Service()`, not `@Injectable`.** Angular 22 ships `@Service()` and `ng generate service` emits it by default (`--injectable` is the opt-out). Use `@Service({ autoProvided: false })` for anything that must be listed in a route's `providers` — that is what makes a route-scoped facade's lifetime explicit. Scaffold with `ng generate`; do not hand-write the file.

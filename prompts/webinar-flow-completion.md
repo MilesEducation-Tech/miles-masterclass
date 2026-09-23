@@ -88,10 +88,15 @@ failing on every signed-in page load. This is a deletion, not a feature.
 Right now nothing stops the next person reaching for `app-api/`. Two cheap guards, both proposed
 rather than assumed:
 
-- An ESLint `no-restricted-syntax` rule banning the `app-api/` string literal under `src/app/`, with
-  the message naming this decision. (Touches `eslint.config.mjs`, which Phase 7 owns — worth a
-  separate look so it does not collide with the boundaries config.)
-- A line in AGENTS.md §6 next to the existing Django / Supabase / Partner-Platform split.
+- ✅ An ESLint `no-restricted-syntax` rule banning the `app-api/` string under `src/app/`. TWO
+  selectors are needed, not one: `Literal` catches a plain string, `TemplateElement` catches the
+  interpolated form — which is the shape our endpoint registries actually use
+  (`` `${ROOT}app-api/...` ``), so a `Literal`-only rule would have missed every real case.
+  **Proven with a canary before being trusted**, per the Phase 7 precedent: a temporary file with
+  both shapes plus a `web-api` control took lint 8 → 10, the control stayed silent, and removing it
+  returned to 8. Explanatory comments naming the endpoint do not trip it — comments are not AST
+  nodes.
+- ✅ A line in AGENTS.md §6 next to the Django / Supabase / Partner-Platform split.
 
 ### 5.6 Feedback → certificate → badge is absent from the webinar module
 
@@ -174,13 +179,13 @@ damage — but the window belongs on one side of the wire. Ask for `join_opens_a
 
 ## 7. Proposed order
 
-| Phase | Contents                                                                           | Depends on                        |
-| ----- | ---------------------------------------------------------------------------------- | --------------------------------- |
-| **A** | §5.1 window → 15m, §5.2 login gate, §5.3 countdown copy, §5.4 delete `allBookings` | nothing — ship immediately        |
-| **B** | §5.5 app-api guard (lint rule + AGENTS.md)                                         | a look at Phase 7's eslint config |
-| **C** | §5.6 + §5.7 feedback → certificate → badge, behind a capability flag               | §6.4, §6.5, §6.6 answered         |
-| **D** | Attendance-pending state + "what you missed"                                       | §6.1 and §6.2 shipped             |
-| **E** | Flip `liveEnabled`, verify the lease end to end                                    | §6.3 shipped                      |
+| Phase     | Contents                                                                           | Depends on                 |
+| --------- | ---------------------------------------------------------------------------------- | -------------------------- |
+| **A**     | §5.1 window → 15m, §5.2 login gate, §5.3 countdown copy, §5.4 delete `allBookings` | nothing — ship immediately |
+| ~~**B**~~ | ✅ **DONE** — §5.5 app-api guard (lint rule + AGENTS.md)                           | —                          |
+| **C**     | §5.6 + §5.7 feedback → certificate → badge, behind a capability flag               | §6.4, §6.5, §6.6 answered  |
+| **D**     | Attendance-pending state + "what you missed"                                       | §6.1 and §6.2 shipped      |
+| **E**     | Flip `liveEnabled`, verify the lease end to end                                    | §6.3 shipped               |
 
 ### Phase E pre-flight — hosting, checked against Zoom's official Angular sample
 

@@ -65,6 +65,19 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     "110/120 Minutes | 7 out of 8 Poll Questions Answered" line, which is the answer to "what did
     the learner miss". `webinar-card.ts` and the facade both carry a comment naming the exact four
     fields that restore it.
+- ✅ **PHASE B DONE — the `app-api/` ban is now enforced by lint, not by memory.**
+  `eslint.config.mjs` gained a `no-restricted-syntax` rule; AGENTS.md §6 gained a line beside the
+  Django / Supabase / Partner-Platform split.
+  **TWO selectors are required, and this is the part worth remembering:** `Literal` catches a plain
+  string, but our endpoint registries build URLs as `` `${ROOT}app-api/...` `` — a template literal.
+  A `Literal`-only rule would have passed every real case while looking like it worked.
+  `TemplateElement[value.raw=/app-api\//]` covers that half.
+  **Proven with a canary before being trusted**, following the Phase 7 precedent: a temporary file
+  holding both shapes plus a `web-api` control took lint 8 → 10, the control stayed silent, and
+  deleting it returned to exactly 8. Comments naming the endpoint do NOT trip it — comments are not
+  AST nodes, so the explanatory notes in `webinar-card.ts` and `webinar-facade.ts` survive.
+  Gates after: tests **158 / 500**, lint exactly 8, `tsc --noEmit` clean, format clean.
+
 - 🔒 **Zoom hosting config implemented, from the official Angular sample + Zoom's own docs.**
   Our `ZoomMeetingClient` was compared against `zoom/meetingsdk-angular-sample`'s
   **`app-new.component.ts`** (the Component View variant — the default `app.component.ts` is Client
@@ -612,27 +625,27 @@ New decisions raised by Phase 0:
       **Counts re-derived from the import graph** (PLAN.md's have been wrong twice):
 
       | Component (current home) | own feature | external features | total |
-                                                                                                                                                                                                  | --- | --- | --- | --- |
-                                                                                                                                                                                                  | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
-                                                                                                                                                                                                  | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                  | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                  | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                  | `home/components/app-download` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                  | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
+                                                                                                                                                                                                      | --- | --- | --- | --- |
+                                                                                                                                                                                                      | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
+                                                                                                                                                                                                      | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                      | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                      | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                      | `home/components/app-download` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                      | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
 
-                                                                                                                                                                                                  All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
-                                                                                                                                                                                                  precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
-                                                                                                                                                                                                  **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
-                                                                                                                                                                                                  because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
-                                                                                                                                                                                                  (14 importers) is still open and unverified — treat its count with the same suspicion.
-                                                                                                                                                                                                  - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
-                                                                                                                                                                                                    partners (11 pages), offerings, home, library.
-                                                                                                                                                                                                  - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
-                                                                                                                                                                                                    temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
-                                                                                                                                                                                                  - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
-                                                                                                                                                                                                    `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
-                                                                                                                                                                                                    structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
-                                                                                                                                                                                                    so it needs an explicit override.
+                                                                                                                                                                                                      All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
+                                                                                                                                                                                                      precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
+                                                                                                                                                                                                      **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
+                                                                                                                                                                                                      because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
+                                                                                                                                                                                                      (14 importers) is still open and unverified — treat its count with the same suspicion.
+                                                                                                                                                                                                      - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
+                                                                                                                                                                                                        partners (11 pages), offerings, home, library.
+                                                                                                                                                                                                      - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
+                                                                                                                                                                                                        temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
+                                                                                                                                                                                                      - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
+                                                                                                                                                                                                        `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
+                                                                                                                                                                                                        structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
+                                                                                                                                                                                                        so it needs an explicit override.
 
 - [ ] **`features/shared/services/tracks/` has no home in the target structure.** Raised 2026-09-23.
       It sits at the `features/` root, which §3 does not contain. Importers are
