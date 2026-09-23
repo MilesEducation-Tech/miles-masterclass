@@ -7,7 +7,7 @@ import { DialogRef } from '@core/services/dialog/dialog';
 import { Button } from '@shared/ui/button/button';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { Logger } from '@core/services/logger/logger';
-import { PaymentFacade } from '@features/payment/shared/service/payment-facade/payment-facade';
+import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { CouponList, CartDetails } from '@core/models/payment.model';
 
 export interface CouponDialogData {

@@ -7,7 +7,10 @@ import { BlogLayout } from '@layout/blog-layout/blog-layout';
 import { Compliance } from '@features/legal/pages/compliance/compliance';
 
 export const routes: Routes = [
-  { path: 'auth', loadChildren: () => import('./auth/auth').then((m) => m.authRoutes) },
+  {
+    path: 'auth',
+    loadChildren: () => import('@features/auth/auth.routes').then((m) => m.authRoutes),
+  },
 
   {
     path: 'admin',
@@ -59,7 +62,7 @@ export const routes: Routes = [
     path: ':country/:profession_type',
     canMatch: [onboardingGuard],
     canActivate: [validateProfessionCountryGuard],
-    loadChildren: () => import('@features/features').then((m) => m.featuresRoutes),
+    loadChildren: () => import('@features/features.routes').then((m) => m.featuresRoutes),
   },
   {
     path: '',

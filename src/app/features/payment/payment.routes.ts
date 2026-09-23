@@ -4,7 +4,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { ResolveFn, Routes } from '@angular/router';
 import { filter, map, take } from 'rxjs/operators';
 import { paymentGuard } from '@features/payment/guards/payment.guard';
-import { PaymentFacade } from './shared/service/payment-facade/payment-facade';
+import { PaymentFacade } from './services/payment-facade';
 
 /**
  * Ensures the cart bucket is loaded before any child route activates.
@@ -57,15 +57,15 @@ const cartResolver: ResolveFn<boolean> = () => {
 export const PAYMENT_ROUTES: Routes = [
   {
     path: 'plan',
-    loadComponent: () => import('./shared/pages/plan/plan').then((m) => m.Plan),
+    loadComponent: () => import('./pages/plan/plan').then((m) => m.Plan),
   },
   {
     path: 'invoice/:orderId',
-    loadComponent: () => import('./shared/pages/invoice/invoice').then((m) => m.Invoice),
+    loadComponent: () => import('./pages/invoice/invoice').then((m) => m.Invoice),
   },
   {
     path: 'order-history',
-    loadComponent: () => import('./shared/pages/orders/orders').then((m) => m.Orders),
+    loadComponent: () => import('./pages/orders/orders').then((m) => m.Orders),
   },
   {
     path: '',
@@ -77,20 +77,18 @@ export const PAYMENT_ROUTES: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./shared/components/overview-wrapper/overview-wrapper').then(
-            (m) => m.OverviewWrapper,
-          ),
+          import('./components/overview-wrapper/overview-wrapper').then((m) => m.OverviewWrapper),
         children: [
           { path: '', redirectTo: 'cart', pathMatch: 'full' },
           {
             path: 'cart',
-            loadComponent: () => import('./shared/pages/cart/cart').then((m) => m.Cart),
+            loadComponent: () => import('./pages/cart/cart').then((m) => m.Cart),
             data: { pathType: 'cart' },
           },
           {
             path: 'billing',
             canActivate: [paymentGuard],
-            loadComponent: () => import('./shared/pages/billing/billing').then((m) => m.Billing),
+            loadComponent: () => import('./pages/billing/billing').then((m) => m.Billing),
             data: { pathType: 'billing' },
           },
         ],
@@ -101,7 +99,7 @@ export const PAYMENT_ROUTES: Routes = [
         // TODO(payment): /review currently re-renders the Invoice component as
         // a checkout-review screen. Replace with a dedicated `Review` page when
         // the design lands; the route name and component shouldn't disagree.
-        loadComponent: () => import('./shared/pages/invoice/invoice').then((m) => m.Invoice),
+        loadComponent: () => import('./pages/invoice/invoice').then((m) => m.Invoice),
         data: { pathType: 'review' },
       },
     ],
