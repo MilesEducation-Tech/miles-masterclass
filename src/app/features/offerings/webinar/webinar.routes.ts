@@ -6,7 +6,7 @@ import { MeetingSession } from './services/meeting-session';
 import { WebinarFacade } from './services/webinar-facade';
 import { WebinarRegistration } from './services/webinar-registration';
 import { ZoomMeetingClient } from './services/zoom-meeting-client';
-import { ServerClock } from './utils/server-clock';
+import { ServerClock } from './services/server-clock';
 
 /**
  * The webinar feature's routes.

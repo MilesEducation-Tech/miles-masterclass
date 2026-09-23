@@ -144,8 +144,12 @@ export interface WebinarRegistrationInfo {
 
   /**
    * The Zoom registrant token — the `tk` query parameter in `join_url`.
-   * Optional because the backend field is still being added; until it lands,
-   * `zoom-join-params.ts` falls back to parsing it out of `join_url`.
+   *
+   * Optional because it appears NOWHERE in `EVENTS_API_CONTRACT_V1` (see
+   * `docs/WEBINAR_API_QUESTIONS.md`, Q6). A `join_url`-parsing fallback used to
+   * live in `zoom-join-params.ts`; it was deleted because nothing ever called
+   * it — `toJoinParams` reads this field straight off the signature response,
+   * so until the backend sends it the SDK path has no token at all.
    */
   registrant_token?: string | null;
   /**

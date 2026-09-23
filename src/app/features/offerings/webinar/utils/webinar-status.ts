@@ -5,7 +5,7 @@ import {
   WebinarCard,
   WebinarRegistrationInfo,
 } from '../models/webinar.model';
-import { parseIso } from './server-clock';
+import { parseIso } from './session-time';
 
 /**
  * The webinar CTA state machine.

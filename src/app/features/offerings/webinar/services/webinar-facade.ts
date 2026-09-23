@@ -29,7 +29,7 @@ import {
   WebinarDetail,
   WebinarDetailsResponse,
 } from '../models/webinar.model';
-import { ServerClock } from '../utils/server-clock';
+import { ServerClock } from './server-clock';
 import { toWebinarError, WebinarError } from '../utils/webinar-error';
 import { buildPreviewFeed, PREVIEW_ON, PREVIEW_PARAM } from '../utils/webinar-preview';
 import { WebinarRegistration } from './webinar-registration';

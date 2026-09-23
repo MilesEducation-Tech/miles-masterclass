@@ -1,4 +1,4 @@
-import { formatCountdown, formatCountdownLong, splitDuration } from './server-clock';
+import { formatCountdown, formatCountdownLong, splitDuration } from './session-time';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;

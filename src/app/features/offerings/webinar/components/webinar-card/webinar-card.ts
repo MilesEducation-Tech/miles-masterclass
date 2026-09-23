@@ -4,7 +4,8 @@ import { faSolidInfo } from '@ng-icons/font-awesome/solid';
 import { RouterLink } from '@angular/router';
 import { WebinarCard as WebinarCardModel } from '../../models/webinar.model';
 import { BRAND_MARKS } from '../../utils/brand-assets';
-import { formatSessionLabel, ServerClock, sessionParts } from '../../utils/server-clock';
+import { ServerClock } from '../../services/server-clock';
+import { formatSessionLabel, sessionParts } from '../../utils/session-time';
 import { ctaFor, WebinarBucket } from '../../utils/webinar-status';
 import { JoinCta } from '../join-cta/join-cta';
 

@@ -6,12 +6,8 @@ import {
   inject,
   input,
 } from '@angular/core';
-import {
-  formatCountdown,
-  formatCountdownLong,
-  ServerClock,
-  splitDuration,
-} from '../../utils/server-clock';
+import { ServerClock } from '../../services/server-clock';
+import { formatCountdown, formatCountdownLong, splitDuration } from '../../utils/session-time';
 
 /**
  * Time remaining until a moment, ticking once a second.

@@ -5,7 +5,7 @@ import { ButtonVariant } from '@core/models/button.model';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { WebinarCard } from '../../models/webinar.model';
 import { CTA_LABELS, needsCountdown, WebinarCta } from '../../utils/webinar-status';
-import { parseIso } from '../../utils/server-clock';
+import { parseIso } from '../../utils/session-time';
 import { WebinarCountdown } from '../webinar-countdown/webinar-countdown';
 
 /**
@@ -32,7 +32,7 @@ export class JoinCta {
   /**
    * Inline SVG to lead the button with, or `null` for none. A raw mark rather
    * than an `@ng-icons` name because these come from the design files, not a
-   * pack — see `webinar-icons.ts`.
+   * pack — see `brand-assets.ts`.
    */
   readonly icon = input<string | null>(null);
   /**

@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { WebinarCard as WebinarCardModel } from '../../models/webinar.model';
-import { formatSessionLabel, ServerClock } from '../../utils/server-clock';
-import { TICKET_ICON } from '../../utils/webinar-icons';
+import { ServerClock } from '../../services/server-clock';
+import { formatSessionLabel } from '../../utils/session-time';
+import { TICKET_ICON } from '../../utils/brand-assets';
 import { ctaFor, isLive } from '../../utils/webinar-status';
 import { JoinCta } from '../join-cta/join-cta';
 

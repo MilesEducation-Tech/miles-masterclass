@@ -65,6 +65,40 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     "110/120 Minutes | 7 out of 8 Poll Questions Answered" line, which is the answer to "what did
     the learner miss". `webinar-card.ts` and the facade both carry a comment naming the exact four
     fields that restore it.
+- 🧹 **Module slimmed on a measured audit, not a hunch** ("do we need all these services?").
+  **Answer: the four services stay; `utils/` was the bloated half.** `WebinarRegistration` is
+  injected by the routes AND both pages, not just the facade, and folding it in makes a 680-line
+  facade; `MeetingSession` (lease integrity) and `ZoomMeetingClient` (SDK rendering) must stay
+  apart, because merging them couples CPE-bearing attendance to a vendor SDK.
+  - **`zoom-join-params.ts` deleted — 73 lines, ZERO importers.** It parsed `tk` out of `join_url`
+    as a fallback, but `toJoinParams` reads the signature response directly and nothing ever wired
+    it up. The model comment that pointed at it now states the real position: no `registrant_token`
+    from the backend (Q6) means the SDK path has no token at all.
+  - **`ServerClock` was a `@Service` sitting in `utils/` — a §3 misplacement `reviewer` and I both
+    missed**, in a file mixing one DI service with eight pure functions. Split into
+    `services/server-clock.ts` (ticker + clock-skew) and `utils/session-time.ts` (pure, no Angular,
+    TestBed-free). 8 importers rewired; most only ever wanted the pure half.
+    **Lesson: `reviewer` checks folder SHAPE, not whether a DI class is in the right folder.**
+  - `webinar-icons.ts` (one SVG, one consumer, no core equivalent) folded into `brand-assets.ts`.
+  - Net 49 → 48 files, ~90 lines of dead and duplicated code gone.
+- ⚠️ **I introduced a 9th lint error during the split and lint caught it.** The new service imported
+  `parseIso` unused — because `syncFrom` was hand-rolling `Date.parse` + `Number.isNaN`, which IS
+  `parseIso`. Fixed by using the helper and deleting the duplicate, not by dropping the import.
+  Back to exactly 8.
+- ⏸ **One deletion left on your decision: `webinar-preview.ts`, 256 lines**, the largest remaining
+  util — a dev-only stand-in feed with one importer, which its own comment says exists only because
+  UAT had no future-dated webinar. If UAT has data now it is the biggest remaining cut; if not it is
+  the only way to view the hero and upcoming rail. Not removed unilaterally.
+- ✅ Gates after the slim: **158 files / 500 passed + 1 skipped**, lint exactly 8, `tsc --noEmit`
+  clean, format clean.
+- 📄 **`docs/WEBINAR_API_QUESTIONS.md` added** — the eight backend questions with checkable evidence
+  (Q1 attendance-pending, Q2 duration/poll fields on a web route, Q3 Meeting SDK + lease routes,
+  Q4 feedback/certificate/badge, Q5 `join_opens_at`, Q6 `registrant_token`, Q7 `product` vs
+  `subject`, Q8 enrolment filtering). **Q1–Q4 block the flow.** Q3 carries a trap worth repeating:
+  `attendance-session/release` on tab close can only be a `sendBeacon`, which cannot set headers and
+  cannot preflight a JSON body — if the backend designs it as a normal authenticated POST, every
+  closed tab leaks a lease until TTL.
+
 - ⚠️ **Two of my own defects were caught by tooling, not by me, in this pass.** A too-greedy slice
   deleted the `detailsPage` endpoint along with `allBookings` (caught by the build); and
   `formatCountdownLong` rendered "1 minute and 0 seconds", contradicting its own doc comment
@@ -529,27 +563,27 @@ New decisions raised by Phase 0:
       **Counts re-derived from the import graph** (PLAN.md's have been wrong twice):
 
       | Component (current home) | own feature | external features | total |
-                                                                                                                                                                                          | --- | --- | --- | --- |
-                                                                                                                                                                                          | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
-                                                                                                                                                                                          | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                          | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                          | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
-                                                                                                                                                                                          | `home/components/app-download` | 1 | uae-caira | 2 |
-                                                                                                                                                                                          | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
+                                                                                                                                                                                              | --- | --- | --- | --- |
+                                                                                                                                                                                              | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
+                                                                                                                                                                                              | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                              | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                              | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
+                                                                                                                                                                                              | `home/components/app-download` | 1 | uae-caira | 2 |
+                                                                                                                                                                                              | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
 
-                                                                                                                                                                                          All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
-                                                                                                                                                                                          precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
-                                                                                                                                                                                          **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
-                                                                                                                                                                                          because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
-                                                                                                                                                                                          (14 importers) is still open and unverified — treat its count with the same suspicion.
-                                                                                                                                                                                          - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
-                                                                                                                                                                                            partners (11 pages), offerings, home, library.
-                                                                                                                                                                                          - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
-                                                                                                                                                                                            temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
-                                                                                                                                                                                          - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
-                                                                                                                                                                                            `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
-                                                                                                                                                                                            structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
-                                                                                                                                                                                            so it needs an explicit override.
+                                                                                                                                                                                              All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
+                                                                                                                                                                                              precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
+                                                                                                                                                                                              **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
+                                                                                                                                                                                              because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
+                                                                                                                                                                                              (14 importers) is still open and unverified — treat its count with the same suspicion.
+                                                                                                                                                                                              - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
+                                                                                                                                                                                                partners (11 pages), offerings, home, library.
+                                                                                                                                                                                              - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
+                                                                                                                                                                                                temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
+                                                                                                                                                                                              - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
+                                                                                                                                                                                                `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
+                                                                                                                                                                                                structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
+                                                                                                                                                                                                so it needs an explicit override.
 
 - [ ] **`features/shared/services/tracks/` has no home in the target structure.** Raised 2026-09-23.
       It sits at the `features/` root, which §3 does not contain. Importers are

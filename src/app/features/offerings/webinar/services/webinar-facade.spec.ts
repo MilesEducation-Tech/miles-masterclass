@@ -9,7 +9,7 @@ import { AuthSession } from '@core/services/auth-session/auth-session';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
-import { ServerClock } from '../utils/server-clock';
+import { ServerClock } from './server-clock';
 import { WebinarFacade } from './webinar-facade';
 import { WebinarRegistration } from './webinar-registration';
 
