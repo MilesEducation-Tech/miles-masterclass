@@ -48,23 +48,44 @@ export interface IdentifyRequest {
   identifier: string;
 }
 
+/**
+ * How a given identifier authenticates.
+ *
+ * Values seen today are `email_otp`, `phone_otp` and `password`; `saml` arrives
+ * with enterprise SSO. Typed as a widening union so an unrecognised method from
+ * the SSO is data, not a compile error — this backend passes the SSO's body
+ * through whole and does not pin its schema.
+ */
+export type AuthMethod = 'email_otp' | 'phone_otp' | 'password' | 'saml' | (string & {});
+
 export interface IdentifyResponse {
-  /** Render this list rather than assuming a form. When enterprise SSO ships,
-   *  the same endpoint starts answering `saml` and a client that renders the
-   *  list needs no change. */
-  methods: string[];
-  defaultMethod: string;
+  accountType: string;
+  /**
+   * Render this list rather than assuming a form. `methods` follows the KIND of
+   * identifier: an email gives `["email_otp", "password"]`, a phone gives
+   * `["phone_otp", "password"]`, a username gives `["password", "email_otp"]`.
+   *
+   * Note what is NOT in here: the bare string `"otp"`. Matching on that is how
+   * every account ends up looking like enterprise SSO.
+   */
+  methods: AuthMethod[];
+  /** The one to pre-select. Do not reorder `methods` to make it first. */
+  defaultMethod: AuthMethod;
+  /** Built from what was TYPED, not from anything stored. */
+  maskedEmail: string | null;
+  maskedPhone: string | null;
   /**
    * `null` for an identifier the SSO has never seen — and it is the ONLY
    * negative signal in this body. `methods`, `defaultMethod` and the masks are
-   * built from what was typed, not from anything stored, so they are identical
-   * for a known and an unknown identifier. Never build a "no such account"
-   * message from this response; there is nothing here to build it from.
+   * identical for a known and an unknown identifier, so there is nothing here
+   * to build a "no such account" message from. Never render one.
    */
   communicationId: string | null;
-  /** Masked destinations, keyed by method. Exact shape needs a live capture —
-   *  UAT answers 503 (SSO not configured) as of 2026-09-22. */
-  maskedDestinations?: Record<string, string>;
+}
+
+/** True for any one-time-code method, whatever the channel. */
+export function isOtpMethod(method: AuthMethod): boolean {
+  return method.endsWith('_otp');
 }
 
 export interface OtpSendRequest {

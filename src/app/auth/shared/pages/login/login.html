@@ -14,7 +14,7 @@
            under no cooldown and no lock. Making people wait 90s to fix a typo is
            the one thing guaranteed not to help. -->
       <app-button class="w-max" variant="link" size="link" (clicked)="authFacade.goBackToLogin()">
-        {{ authFacade.loginType() === 'PHONE' ? 'Wrong number? Edit' : 'Wrong email? Edit' }}
+        {{ authFacade.loginMethod() === 'PHONE' ? 'Wrong number? Edit' : 'Wrong email? Edit' }}
       </app-button>
     </div>
   } @else {
@@ -28,19 +28,14 @@
   }
   <app-forms type="signal" class="space-y-4! flex flex-col mt-2" (submitted)="onSubmit()">
     @if (authFacade.loginStep() === 'LOGIN') {
-      <!-- The hidden QA login route is email-only (the OTP reveal is keyed by
-           email address), so it renders no method tabs at all rather than a
-           single dead one. -->
-      @if (!authFacade.isDevLogin()) {
-        <app-tab-strip
-          tabClass="px-8"
-          [options]="authFacade.loginMethodTabs"
-          [selected]="authFacade.selectedTabLabel()"
-          (selectionChange)="authFacade.selectLoginMethod($event)"
-        />
-      }
+      <app-tab-strip
+        tabClass="px-8"
+        [options]="authFacade.loginMethodTabs"
+        [selected]="authFacade.selectedTabLabel()"
+        (selectionChange)="authFacade.selectLoginMethod($event)"
+      />
       <div class="flex space-x-2">
-        @if (authFacade.loginType() === 'PHONE') {
+        @if (authFacade.loginMethod() === 'PHONE') {
           <div class="w-[140px]">
             <app-aria-autocomplete
               id="country_code"
@@ -71,15 +66,6 @@
           />
         }
       </div>
-      <!-- India is WhatsApp-only and everywhere else is SMS-only, both decided
-           server-side from the country code. Predict it here so the user knows
-           which app to watch before the code goes out; after it has gone, the
-           confirmation screen states what the response actually reported. -->
-      <!-- @if (authFacade.loginType() === 'PHONE') {
-        <p class="description text-sm!">
-          Your verification code will be sent {{ authFacade.expectedDeliveryNote() }}.
-        </p>
-      } -->
       <!-- The mandatory terms checkbox is deliberately not rendered on either tab.
            Acceptance is implied by the "By signing up or logging in…" notice below,
            and `terms` is held accepted in the model so submit behaviour is unchanged. -->
@@ -96,7 +82,7 @@
       >
         <!--  class="font-normal text-sm! leading-tight! description" -->
         <span labelLink>
-          @if (authFacade.loginType() === 'PHONE') {
+          @if (authFacade.loginMethod() === 'PHONE') {
             <!-- Kept on one line: the address wraps whole to the next line, and the
                  label's `text-justify` spreads the short line before it so no gap is
                  left after "contact". -->
@@ -213,7 +199,7 @@
             Try again in
             <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
           </span>
-          @if (authFacade.loginType() === 'PHONE') {
+          @if (authFacade.loginMethod() === 'PHONE') {
             <app-button variant="link" size="link" (clicked)="authFacade.signInWithEmailInstead()">
               Sign in with email instead
             </app-button>

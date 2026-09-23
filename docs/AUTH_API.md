@@ -100,15 +100,22 @@ The sequence is: verify → `profile_status: "new_user"` → complete the profil
 
 ## 3. Sign-in, end to end
 
-1. **`auth-identify/`** — the first call of any login, always. It reports which methods this
-   identifier can use.
-   - **Render `methods`; do not assume a form.** When enterprise SSO ships, this same endpoint starts
-     answering `saml` with a redirect. A client that renders the list needs no change.
-   - **Do not build a "no such account" message from this response.** An identifier the SSO has never
-     seen returns the same `methods`, `defaultMethod` and masks as a known one — the masks are built
-     from what was typed, not from anything stored. `communicationId` is `null` for an unknown
-     identifier and is the only existence signal, which is why this route is first-party only and the
-     most tightly throttled of the five at 20/min.
+1. **`auth-identify/`** — the first call of any login, always. It is wired as an **async validator on
+   the identifier field** (`validateHttp`), not as a step in the submit handler, so it fires as soon
+   as the identifier looks complete, debounced by 400 ms. The field's `valid()` is false while it is
+   pending, which is what the submit button is already gated on — "identify first, always" is
+   therefore structural, and the submit path issues only `auth-otp-send/`.
+   - **`methods` never contains the bare string `"otp"`.** The values are `email_otp`, `phone_otp`,
+     `password` and later `saml`, and they follow the KIND of identifier: an email gives
+     `["email_otp", "password"]`, a phone gives `["phone_otp", "password"]`, a username gives
+     `["password", "email_otp"]`. Match with `isOtpMethod()` (suffix `_otp`), never on equality —
+     matching `"otp"` is how every account ends up looking like enterprise SSO.
+   - An account with no `*_otp` method becomes a **field error** ("signs in through your
+     organisation"), so the form refuses the submit rather than a bespoke banner doing it.
+   - **A failed identify reports nothing** (`onError` returns `null`): a background call must never
+     put an error under a field the user is still typing in, and it must not block the send.
+   - The `when` gate asks "is this worth a round trip yet?" from the **value only**. It must not read
+     `state.invalid()` — this validator feeds that signal, and reading it is a computation cycle.
 2. **`auth-otp-send/`** — sends the code.
    - **Write UI copy from the returned `channel`**, never from what was sent. It is `email`, `sms` or
      `whatsapp`, and phone routing is a table at the SSO that changes with no deploy on either side.
@@ -238,3 +245,27 @@ The collection ships **zero saved example responses**, so every response shape i
 documentation prose rather than a captured payload. When a real token is obtainable, capture
 `identify`, `otp-send`, `otp-verify` and `questions/` into `docs/contracts/` and tighten the three
 items above.
+
+---
+
+## 7. Password sign-in is not available, and that is a backend gap
+
+`auth-identify/` legitimately answers `password` in `methods`, and the Miles SSO implements
+`POST /auth/password/login` (`{identifier, password}`; password 8-128 chars; always
+`401 Invalid credentials` on failure, never distinguishing a missing account from a wrong password).
+
+**The MilesCAIRA backend does not proxy it.** It proxies five auth routes — identify, otp-send,
+otp-verify, token-refresh, logout — and password login is not among them. The gap is visible in the
+backend's own settings: `DEFAULT_THROTTLE_RATES` reserves a `web_login_password` scope at 10/min
+which the contract records as declared on _"nothing in this repository"_.
+
+So this client filters `password` out of `methods` (`PASSWORD_LOGIN_ENABLED = false` in
+`auth-facade.ts`). That degrades safely: every documented identifier kind also carries an OTP method
+— email → `email_otp`, phone → `phone_otp`, username → `email_otp` — so sign-in works in all of
+them.
+
+**The backend ask is one route:** `POST api/v1/account/auth-password-login/` proxying
+`POST /auth/password/login` and returning the same session body as `auth-otp-verify/` (including the
+merged `profile_status` and `is_test_user`). When it lands, add it to `AUTH_ROUTES`, flip
+`PASSWORD_LOGIN_ENABLED`, and render the password field for accounts whose `defaultMethod` is
+`password`.

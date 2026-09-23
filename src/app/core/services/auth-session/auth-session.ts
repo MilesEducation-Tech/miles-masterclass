@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { PLATFORM_ID, Service, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
@@ -6,13 +5,10 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '@env/environment';
 import {
   AUTH_ROUTES,
-  AuthFailure,
-  IdentifyResponse,
   OtpSendResponse,
   ProfileStatus,
   SessionResponse,
   isSessionResponse,
-  toAuthFailure,
 } from '../../models/auth.model';
 import { SKIP_ERROR_NOTIFICATION } from '../../models/http.model';
 import { ApiClient } from '../api-client/api-client';
@@ -76,17 +72,6 @@ export class AuthSession {
   readonly needsOnboarding = computed(() => this._profileStatus() === 'new_user');
 
   // ── Commands ──────────────────────────────────────────────────────────────
-
-  /**
-   * "How does this person authenticate?" — the first call of any login, always.
-   *
-   * Do NOT build a "no such account" message from the result: an identifier the
-   * SSO has never seen answers with the same `methods`, `defaultMethod` and
-   * masks as a known one, by design.
-   */
-  identify(identifier: string): Promise<IdentifyResponse> {
-    return firstValueFrom(this.api.call(AUTH_ROUTES.identify, { identifier }, { context: QUIET }));
-  }
 
   /** Send a one-time code. Read `channel` and `cooldownSeconds` off the result. */
   sendOtp(identifier: string): Promise<OtpSendResponse> {
@@ -252,13 +237,6 @@ export class AuthSession {
       secure: environment.production,
       sameSite: 'Lax',
     });
-  }
-
-  /** Convenience for callers that want the typed failure rather than the raw error. */
-  static failureOf(err: unknown): AuthFailure {
-    return toAuthFailure(
-      err instanceof HttpErrorResponse ? err : new HttpErrorResponse({ status: 0 }),
-    );
   }
 }
 

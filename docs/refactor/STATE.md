@@ -8,8 +8,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 ## Now
 
 - Phase: **5 — Features (per feature) 🟡.** Committed: `page-not-found` (`1462e72`),
-  `legal`+`compliance` (`d12ae67`). **Uncommitted, all green:** `connect-us`+`Faq`, `uae-caira`,
-  the user's `compliance` revert, and **the magnet promotion ✅** — report:
+  `legal`+`compliance` (`d12ae67`), and `connect-us`+`Faq` + `uae-caira` + **the magnet promotion ✅**
+  (`9961f69`, merged `3f49678`). Report:
   [phase-05-magnet-promotion](reports/phase-05-magnet-promotion.md). `verifier` **8/8 green**,
   `reviewer` **PASS, zero violations**.
 - **The magnet promotion resolved the `uae-caira` decision — user chose option (a), all six.**
@@ -46,6 +46,25 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   `instructor-details`, `milesverse`); `app/auth/` → `features/auth/`; **13 internal `shared/` layers**
   (partners' still has 5 components + pages); `payment/shared/service` → `services/`; the 4 route-table
   extractions; the tracker merge; home/blog normalisation; then delete `app/pages/`.
+
+- ⚠️ **Out-of-band feature work landed on `auth` (2026-09-23) — NOT a refactor step, uncommitted.**
+  Learner sign-in now calls `auth-identify/` as soon as the identifier looks complete, as an **async
+  validator on the identifier field** (`validateHttp`, 400 ms debounce), so the form itself gates the
+  submit. A follow-up simplification pass then cut **171 lines** from the same files: `auth-facade.ts`
+  638 → **514**, `login.html` 273 → **248**, `auth-session.ts` −22.
+  Touched: `src/app/auth/shared/services/auth-facade.ts` (+ new `auth-facade.spec.ts`),
+  `src/app/auth/shared/pages/login/login.html`, `src/app/core/models/auth.model.ts` (+ spec),
+  `src/app/core/services/auth-session/auth-session.ts`, `docs/AUTH_API.md`.
+  Gates green: lint, `build:prod`, **444 tests passing / 0 failing**.
+  Three consequences for this refactor:
+  1. **`src/app/auth/` is still unmoved** and is one of the folders Phase 5 has left. When it moves to
+     `features/auth/`, the `import-auditor` must pick up the **new spec file** and the facade's new
+     `@core/services/api-client` (`apiUrl`) and `@core/models/auth.model` imports.
+  2. **Part B is largely pre-done for `features/auth`.** The facade is `@Service()`, the HTTP is
+     signal-forms async validation, and the dead flow signals are already gone — which is most of what
+     Phases 8 and 9 were going to do to it. Check before redoing it.
+  3. **`auth-session.ts` lost `identify()` and `failureOf()`** (no callers once the form owns
+     identify). Anything in a later phase that assumed `AuthSession.identify` exists needs rechecking.
 
 ## Part A tracker
 
@@ -280,27 +299,27 @@ New decisions raised by Phase 0:
       **Counts re-derived from the import graph** (PLAN.md's have been wrong twice):
 
       | Component (current home) | own feature | external features | total |
-          | --- | --- | --- | --- |
-          | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
-          | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
-          | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
-          | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
-          | `home/components/app-download` | 1 | uae-caira | 2 |
-          | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
+                      | --- | --- | --- | --- |
+                      | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
+                      | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
+                      | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
+                      | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
+                      | `home/components/app-download` | 1 | uae-caira | 2 |
+                      | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
 
-          All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
-          precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
-          **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
-          because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
-          (14 importers) is still open and unverified — treat its count with the same suspicion.
-          - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
-            partners (11 pages), offerings, home, library.
-          - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
-            temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
-          - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
-            `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
-            structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
-            so it needs an explicit override.
+                      All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
+                      precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
+                      **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
+                      because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
+                      (14 importers) is still open and unverified — treat its count with the same suspicion.
+                      - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
+                        partners (11 pages), offerings, home, library.
+                      - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
+                        temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
+                      - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
+                        `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
+                        structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
+                        so it needs an explicit override.
 
 - [ ] Phase 11: how to fix the **839 KB gzip** `constant/location-min.ts` chunk — serve from the API
       (`v2/locations/autocomplete/` already exists) or `await import()` behind the country field.
@@ -496,6 +515,27 @@ These are environment and product observations the repair surfaced. None changed
    I cannot re-record (harness-owned); you run `--record-baseline` after deciding.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-09-23 **`auth` simplification pass (still outside the refactor, still uncommitted): −171 lines.**
+  Replaced a hand-rolled identify chain — `validIdentifier` + `settledIdentifier` + `httpResource` +
+  `currentIdentity` + an `effect`/`setTimeout`/`untracked` debounce — with one `validateHttp` async
+  validator on the identifier field, which owns the debounce, the cancellation and the gating. Also
+  deleted nine dead flow signals (`isIdentifying`, `canUsePassword`, `showPasswordFirst`, `otpMethod`,
+  `maskedDestination`, `supportEmailParts`, `expectedDeliveryNote`, `isDevLogin`, `loginType`), three
+  unread `AuthModel` fields, and two unused `AuthSession` members. One real bug found on the way:
+  gating `when` on `state.invalid()` is a **computation cycle**, because the validator feeds that
+  signal — it now gates on the value only. 444 tests green; the debounce assertion still fails if the
+  debounce is set to 0, so it is not vacuous.
+
+- 2026-09-23 **Feature work on `auth`, outside the refactor (uncommitted).** `auth-identify/` now
+  fires on valid identifier input, debounced, and the login form is driven by the returned `methods`.
+  Recorded here only because it changes files Phase 5 has yet to move — see the ⚠️ bullet under
+  "Now". Three things worth carrying forward: the previous code matched `methods.includes('otp')`,
+  which the API **never** sends (`email_otp` / `phone_otp` / `password` / `saml`), so every login was
+  dead — fixed; `debounced()` from `@angular/core` was tried and **removed**, because it returns a
+  lazy `Resource` that never activates when read only from inside another resource's request function
+  (an `effect` replaced it); and password sign-in is **gated off**, because the backend proxies no
+  password route — a one-route backend ask, written up in `docs/AUTH_API.md` §7.
 
 - 2026-09-22 **Phase 5 magnet promotion ✅ — 16 files moved, 26 import sites, 8/8 GREEN, reviewer
   PASS with zero violations.** Resolves the cross-feature-edge decision the `uae-caira` move raised;

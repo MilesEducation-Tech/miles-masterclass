@@ -1,6 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { AUTH_ROUTES, AUTH_ROUTE_PATHS, isSessionResponse, toAuthFailure } from './auth.model';
+import {
+  AUTH_ROUTES,
+  AUTH_ROUTE_PATHS,
+  isOtpMethod,
+  isSessionResponse,
+  toAuthFailure,
+} from './auth.model';
 
 describe('auth.model', () => {
   describe('toAuthFailure', () => {
@@ -90,5 +96,36 @@ describe('auth.model', () => {
     expect(AUTH_ROUTE_PATHS).toHaveLength(5);
     expect(AUTH_ROUTE_PATHS).toContain(AUTH_ROUTES.refresh.path);
     expect(AUTH_ROUTE_PATHS).toContain(AUTH_ROUTES.logout.path);
+  });
+
+  /**
+   * The matrix from the contract. This exists because the first implementation
+   * matched on the bare string `'otp'`, which appears in NONE of these — so
+   * every account looked like enterprise SSO and no one could sign in.
+   */
+  describe('isOtpMethod', () => {
+    it('accepts every documented one-time-code method', () => {
+      expect(isOtpMethod('email_otp')).toBe(true);
+      expect(isOtpMethod('phone_otp')).toBe(true);
+    });
+
+    it('rejects the methods that are not a code', () => {
+      expect(isOtpMethod('password')).toBe(false);
+      expect(isOtpMethod('saml')).toBe(false);
+    });
+
+    it('rejects the bare string "otp", which the API never sends', () => {
+      expect(isOtpMethod('otp')).toBe(false);
+    });
+
+    it.each([
+      [['email_otp', 'password'], true],
+      [['phone_otp', 'password'], true],
+      [['password', 'email_otp'], true],
+      [['saml'], false],
+      [['password'], false],
+    ])('methods %j -> can be sent a code: %s', (methods, expected) => {
+      expect((methods as string[]).some(isOtpMethod)).toBe(expected);
+    });
   });
 });

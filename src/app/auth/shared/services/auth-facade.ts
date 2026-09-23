@@ -1,19 +1,25 @@
-import { DestroyRef, Service, computed, inject, linkedSignal, signal } from '@angular/core';
-import { form, required, validate } from '@angular/forms/signals';
+import { DestroyRef, Service, computed, inject, signal } from '@angular/core';
+import { email, form, required, validate, validateHttp } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { CountryCodeOption, dialCodeWithLength } from '@core/constants/dial-code';
-import { AuthFailure, OtpChannel, isTerminalFailure, toAuthFailure } from '@core/models/auth.model';
+import {
+  AUTH_ROUTES,
+  AuthFailure,
+  IdentifyResponse,
+  OtpChannel,
+  isOtpMethod,
+  isTerminalFailure,
+  toAuthFailure,
+} from '@core/models/auth.model';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { HttpErrorResponse } from '@angular/common/http';
 
 export interface AuthModel {
+  /** Email or phone, whichever tab is showing. The SSO works out which. */
   identifier: string;
-  email: string;
   country_code: string;
-  phone: string;
-  /** Terms acceptance. Held true — the notice by the submit button implies it. */
-  terms: boolean;
   /** Optional SMS/WhatsApp (or email) marketing consent. */
   consent: boolean;
 }
@@ -33,6 +39,17 @@ const MAX_ATTEMPTS = 5;
 
 /** Used only until a send response tells us the real `cooldownSeconds`. */
 const FALLBACK_COOLDOWN_SECONDS = 60;
+
+/**
+ * How long the identifier must sit still before `auth-identify/` is called.
+ *
+ * `l@e.co` is valid and so is `l@e.com` one keystroke later, so without this the
+ * endpoint fires on nearly every keystroke past the first valid prefix. The
+ * backend declares a 20/min intent for this route and — per the contract's own
+ * measurement — does not currently enforce it, which makes restraint the
+ * client's job rather than something a 429 will impose.
+ */
+const IDENTIFY_DEBOUNCE_MS = 400;
 
 /**
  * The sign-in screen's own state.
@@ -66,13 +83,8 @@ export class AuthFacade {
    */
   readonly isTerminal = signal(false);
 
-  /**
-   * Which login method the tab strip has selected. Defaults to PHONE.
-   */
-  readonly loginMethod = linkedSignal<boolean, 'PHONE' | 'EMAIL'>({
-    source: () => false,
-    computation: () => 'PHONE',
-  });
+  /** Which login method the tab strip has selected. */
+  readonly loginMethod = signal<'PHONE' | 'EMAIL'>('PHONE');
 
   /** Tab labels rendered by `app-tab-strip` on the login form. */
   readonly loginMethodTabs = ['Mobile', 'Email'] as const;
@@ -80,10 +92,8 @@ export class AuthFacade {
   /** The tab label that maps to the current `loginMethod`. */
   readonly selectedTabLabel = computed(() => (this.loginMethod() === 'PHONE' ? 'Mobile' : 'Email'));
 
-  readonly loginType = computed<'EMAIL' | 'PHONE' | 'NONE'>(() => this.loginMethod());
-
-  /** ponytail: the hidden QA login route went with the auth layer. */
-  readonly isDevLogin = computed(() => false);
+  /** Just the dial code, so toggling consent cannot re-trigger identify. */
+  private readonly countryCode = computed(() => this.authModel().country_code);
 
   // ── OTP delivery / rate-limit surface ─────────────────────────────────────
 
@@ -123,7 +133,7 @@ export class AuthFacade {
    * would be offering something the API cannot do.
    */
   readonly resendAction = computed<'resend' | 'sms' | 'email'>(() =>
-    this.isLockedOut() && this.loginType() === 'PHONE' ? 'email' : 'resend',
+    this.isLockedOut() && this.loginMethod() === 'PHONE' ? 'email' : 'resend',
   );
 
   readonly resendTimerDisplay = computed(() => {
@@ -144,33 +154,14 @@ export class AuthFacade {
     }
   });
 
-  readonly authModel = signal<AuthModel>({
-    identifier: '',
-    email: '',
-    country_code: '+1',
-    phone: '',
-    terms: true,
-    consent: false,
-  });
+  readonly authModel = signal<AuthModel>({ identifier: '', country_code: '+1', consent: false });
 
   readonly otpModel = signal<OtpModel>({ identifier: '', otp: '' });
-
-  /**
-   * Where the code *would* go, before any response has said so.
-   *
-   * Every country currently resolves to SMS at the SSO — WhatsApp routing is
-   * off until delivery is proved end to end — so this no longer singles out
-   * +91. Once the code is sent, `otpDeliveryNote` states what actually
-   * happened, which is the only trustworthy source.
-   */
-  readonly expectedDeliveryNote = computed(() =>
-    this.loginType() === 'EMAIL' ? 'by email' : 'by SMS',
-  );
 
   /** The identifier as it should appear on the OTP confirmation screen. */
   readonly displayIdentifier = computed(() => {
     const model = this.authModel();
-    if (this.loginType() === 'PHONE') {
+    if (this.loginMethod() === 'PHONE') {
       // Filter empty parts so we don't produce a leading space when
       // country_code is somehow missing.
       return [model.country_code, model.identifier].filter(Boolean).join(' ');
@@ -213,7 +204,7 @@ export class AuthFacade {
    * template's `labelLink` slot, which sits immediately after this text.
    */
   readonly consentLabel = computed(() =>
-    this.loginType() === 'PHONE'
+    this.loginMethod() === 'PHONE'
       ? 'I agree to receive recurring informational and promotional messages from Miles Masterclass via SMS and WhatsApp, including webinar registration confirmations, reminders, joining instructions, educational updates, course information and offers, sent using automated technology. Message frequency may vary. Message and data rates may apply. Reply STOP to opt out or HELP for assistance, or contact'
       : "I'd like to receive promotional and informational emails from Miles Masterclass, including invitations to upcoming events, program updates, and offers. I can unsubscribe at any time using the link in any email.",
   );
@@ -222,24 +213,31 @@ export class AuthFacade {
   readonly supportEmail = 'support@milesmasterclass.com';
 
   /**
-   * `supportEmail` split at the "@". The template renders these either side of
-   * a `<wbr>` so the address can break at its natural point.
+   * Whether the identifier looks complete enough to ask the SSO about.
+   *
+   * Looser than validation on purpose, and value-only so it cannot depend on
+   * the validity it contributes to.
    */
-  readonly supportEmailParts = {
-    local: this.supportEmail.slice(0, this.supportEmail.indexOf('@') + 1),
-    domain: this.supportEmail.slice(this.supportEmail.indexOf('@') + 1),
-  };
+  private isWorthIdentifying(value: string): boolean {
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    if (this.loginMethod() === 'EMAIL') return /.+@.+\..+/.test(trimmed);
+    return /^\d+$/.test(trimmed) && trimmed.length >= this.minPhoneLength();
+  }
+
+  /** Shortest phone number the selected dial code accepts. */
+  private minPhoneLength(): number {
+    return this.countryCodes().find((c) => c.CountryCode === this.countryCode())?.phLengthMin ?? 7;
+  }
 
   readonly loginForm = form<AuthModel>(this.authModel, (loginSchema) => {
     // Dynamic checks rather than `pattern`, which expects a static RegExp.
     validate(loginSchema.identifier, ({ value }) => {
-      const type = this.loginType();
       // Let `required` own the empty case so we don't surface "Must be digits"
       // on an untouched/empty Mobile field.
       if (!value()) return null;
-      if (type === 'NONE') return null;
 
-      if (type === 'PHONE') {
+      if (this.loginMethod() === 'PHONE') {
         if (!/^\d+$/.test(value())) {
           return { kind: 'pattern', message: 'Must be digits' };
         }
@@ -256,14 +254,18 @@ export class AuthFacade {
             return { kind: 'maxlength', message: `Maximum length is ${max}` };
           }
         }
-      } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value())) {
-        return { kind: 'email', message: 'Invalid Email Address' };
       }
       return null;
     });
 
+    // Built-in, and only while the Email tab is showing.
+    email(loginSchema.identifier, {
+      when: () => this.loginMethod() === 'EMAIL',
+      message: 'Invalid Email Address',
+    });
+
     validate(loginSchema.country_code, ({ value }) => {
-      if (this.loginType() !== 'PHONE') return null;
+      if (this.loginMethod() !== 'PHONE') return null;
       if (!value()) return { kind: 'required', message: 'Country code is required' };
       const selectedCode = this.countryCodes().find(
         (c) => c.CountryCode === this.authModel().country_code,
@@ -272,6 +274,58 @@ export class AuthFacade {
     });
 
     required(loginSchema.identifier, { message: 'Please enter your email or phone number' });
+
+    /**
+     * `auth-identify/` — "how does this person authenticate?" — as an async
+     * validator on the identifier itself.
+     *
+     * This is the whole prefetch: `debounce` waits out the keystrokes, `when`
+     * keeps it off a half-typed address, and the framework cancels a request
+     * the user has already typed past. `valid()` is false while it is pending,
+     * so the submit button waits for it without anything here saying so — which
+     * is what makes "identify first, always" structural rather than a step
+     * `submitLogin` has to remember.
+     */
+    validateHttp(loginSchema.identifier, {
+      // Deliberately NOT `state.invalid()`: this validator feeds that signal,
+      // so reading it here is a cycle ("Detected cycle in computations").
+      //
+      // It is also a different question. Validation asks "is this acceptable?";
+      // this asks "is this worth a network round trip yet?", and a looser,
+      // value-only answer is the right one.
+      when: ({ value }) => this.isWorthIdentifying(value()),
+      debounce: IDENTIFY_DEBOUNCE_MS,
+      request: ({ value }) => ({
+        url: apiUrl(AUTH_ROUTES.identify.path),
+        method: 'POST',
+        body: {
+          identifier:
+            this.loginMethod() === 'PHONE'
+              ? `${this.countryCode()}${value()}`.replace(/\s+/g, '')
+              : value().trim(),
+        },
+      }),
+      onSuccess: (result) => {
+        // The values are `email_otp`, `phone_otp`, `password` and later `saml` —
+        // never a bare `otp`. An account with no `*_otp` method cannot be sent a
+        // code at all, which today means enterprise SSO.
+        const methods = (result as IdentifyResponse).methods ?? [];
+        if (methods.length && !methods.some(isOtpMethod)) {
+          return {
+            kind: 'sso_only',
+            message:
+              'This account signs in through your organisation. Please use your company sign-in page.',
+          };
+        }
+        // Nothing positive is reported: identify answers identically for a known
+        // and an unknown identifier, so any success signal would be an
+        // account-existence oracle.
+        return null;
+      },
+      // A background call must never put an error under a field the user is
+      // still typing in. A failed identify simply does not block the send.
+      onError: () => null,
+    });
   });
 
   readonly otpForm = form<OtpModel>(this.otpModel, (otpSchema) => {
@@ -310,36 +364,27 @@ export class AuthFacade {
    */
   private toIdentifier(): string {
     const model = this.authModel();
-    if (this.loginType() !== 'PHONE') return model.identifier.trim();
+    if (this.loginMethod() !== 'PHONE') return model.identifier.trim();
     return `${model.country_code}${model.identifier}`.replace(/\s+/g, '');
   }
 
   /**
-   * `auth-identify/` then `auth-otp-send/`. Identify is the first call of any
-   * login, always — it reports which methods this identifier can use, and it is
-   * where SAML will appear when enterprise SSO ships.
+   * Send the code.
+   *
+   * `auth-identify/` is not called here. It is an async validator on the
+   * identifier field (see `loginForm`), so the form is only valid once identify
+   * has answered and offered an OTP method — which is what the submit button is
+   * already gated on. "Identify first, always" is therefore structural rather
+   * than a step this method has to remember.
    */
   async submitLogin(): Promise<void> {
     if (this.isLoading() || !this.canSendOtp()) return;
 
-    const identifier = this.toIdentifier();
     this.isLoading.set(true);
     this.error.set(null);
 
     try {
-      const identity = await this.auth.identify(identifier);
-
-      // Render what the SSO says is available rather than assuming an OTP box.
-      // A client that reads this list needs no change when `saml` starts
-      // appearing here; one that hardcoded the form needs a rewrite.
-      if (identity.methods?.length && !identity.methods.includes('otp')) {
-        this.error.set(
-          'This account signs in through your organisation. Please use your company sign-in page.',
-        );
-        return;
-      }
-
-      await this.send(identifier);
+      await this.send(this.toIdentifier());
       this.otpModel.set({ identifier: this.displayIdentifier(), otp: '' });
       this.loginStep.set('OTP');
     } catch (err) {
