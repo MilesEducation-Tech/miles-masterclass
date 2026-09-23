@@ -1,19 +1,18 @@
 export const PARTNER_ROUTES = [
   {
     path: 'caira',
-    loadComponent: () =>
-      import('./shared/pages/caira-landing/caira-landing').then((m) => m.CairaLanding),
+    loadComponent: () => import('./pages/caira-landing/caira-landing').then((m) => m.CairaLanding),
   },
   {
     path: 'cpe-for-corporate',
-    loadComponent: () => import('./shared/pages/corporate/corporate').then((m) => m.Corporate),
+    loadComponent: () => import('./pages/corporate/corporate').then((m) => m.Corporate),
   },
   {
     path: 'partners',
     children: [
       {
         path: 'boomer-knowledge-network',
-        loadComponent: () => import('./shared/pages/bkn/bkn').then((m) => m.Bkn),
+        loadComponent: () => import('./pages/bkn/bkn').then((m) => m.Bkn),
       },
       // {
       //   path: 'alabama-society-of-cpas',
@@ -21,40 +20,37 @@ export const PARTNER_ROUTES = [
       // },
       {
         path: 'connecticut-society-of-cpas',
-        loadComponent: () => import('./shared/pages/ctcpa/ctcpa').then((m) => m.Ctcpa),
+        loadComponent: () => import('./pages/ctcpa/ctcpa').then((m) => m.Ctcpa),
       },
       {
         path: 'delaware-society-of-cpas',
-        loadComponent: () => import('./shared/pages/dscpa/dscpa').then((m) => m.Dscpa),
+        loadComponent: () => import('./pages/dscpa/dscpa').then((m) => m.Dscpa),
       },
       {
         path: 'illinois-society-of-cpas',
-        loadComponent: () => import('./shared/pages/illinois/illinois').then((m) => m.Illinois),
+        loadComponent: () => import('./pages/illinois/illinois').then((m) => m.Illinois),
       },
       {
         path: 'hawaii-society-of-cpas',
-        loadComponent: () => import('./shared/pages/hawaii/hawaii').then((m) => m.Hawaii),
+        loadComponent: () => import('./pages/hawaii/hawaii').then((m) => m.Hawaii),
       },
       {
         path: 'mgi-world',
-        loadComponent: () => import('./shared/pages/mgi-world/mgi-world').then((m) => m.MgiWorld),
+        loadComponent: () => import('./pages/mgi-world/mgi-world').then((m) => m.MgiWorld),
       },
       {
         path: 'mgi-north-america',
         loadComponent: () =>
-          import('./shared/pages/mgi-north-america/mgi-north-america').then(
-            (m) => m.MGINorthAmerica,
-          ),
+          import('./pages/mgi-north-america/mgi-north-america').then((m) => m.MGINorthAmerica),
       },
       {
         path: 'allinial-global',
         loadComponent: () =>
-          import('./shared/pages/allinial-global/allinial-global').then((m) => m.AllinialGlobal),
+          import('./pages/allinial-global/allinial-global').then((m) => m.AllinialGlobal),
       },
       {
         path: 'cpacanada',
-        loadComponent: () =>
-          import('./shared/pages/cpa-canada/cpa-canada').then((m) => m.CpaCanada),
+        loadComponent: () => import('./pages/cpa-canada/cpa-canada').then((m) => m.CpaCanada),
       },
     ],
   },
