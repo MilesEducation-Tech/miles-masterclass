@@ -1,33 +1,33 @@
 import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
-import { adminAuthGuard } from '@admin/shared/guards/admin-auth.guard';
-import { adminGuestGuard } from '@admin/shared/guards/admin-guest.guard';
-import { permissionGuard } from '@admin/shared/guards/permission.guard';
-import { PERM } from '@admin/core/admin-rbac.model';
+import { adminAuthGuard } from '@admin/core/guards/admin-auth.guard';
+import { adminGuestGuard } from '@admin/core/guards/admin-guest.guard';
+import { permissionGuard } from '@admin/core/guards/permission.guard';
+import { PERM } from '@admin/core/models/admin-rbac.model';
 import { AdminAuth } from '@admin/core/services/admin-auth';
-import { adminLandingPath, partnerV2LandingPath } from '@admin/shared/utils/admin-landing';
-import { UserOnboardingFacade } from '@admin/user-onboarding/shared/services/user-onboarding-facade';
-import { LeadsFacade } from '@admin/leads/shared/services/leads-facade';
-import { UserReportFacade } from '@admin/user-report/shared/services/user-report-facade';
-import { RbacFacade } from '@admin/roles-permissions/shared/services/rbac-facade';
-import { PartnerAdminMe } from '@admin/partner-platform/shared/services/partner-admin-me';
-import { PartnerSuperAdminFacade } from '@admin/partner-platform/shared/services/partner-superadmin-facade';
-import { PartnerNetworkFacade } from '@admin/partner-platform/shared/services/partner-network-facade';
-import { PartnerReportFacade } from '@admin/partner-platform/reports/shared/services/partner-report-facade';
-import { PartnerUsersFacade } from '@admin/users/shared/services/partner-users-facade/partner-users-facade';
+import { adminLandingPath, partnerV2LandingPath } from '@admin/core/utils/admin-landing';
+import { UserOnboardingFacade } from '@admin/user-onboarding/services/user-onboarding-facade';
+import { LeadsFacade } from '@admin/leads/services/leads-facade';
+import { UserReportFacade } from '@admin/user-report/services/user-report-facade';
+import { RbacFacade } from '@admin/roles-permissions/services/rbac-facade';
+import { PartnerAdminMe } from '@admin/core/services/partner-admin-me';
+import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
+import { PartnerNetworkFacade } from '@admin/core/services/partner-network-facade';
+import { PartnerReportFacade } from '@admin/partner-platform-v2/services/partner-report-facade';
+import { PartnerUsersFacade } from '@admin/users/services/partner-users-facade';
 
 export const adminRoutes: Routes = [
   {
     path: 'login',
     canMatch: [adminGuestGuard],
     loadComponent: () =>
-      import('@admin/shared/components/admin-login/admin-login').then((m) => m.AdminLogin),
+      import('@admin/auth/pages/admin-login/admin-login').then((m) => m.AdminLogin),
   },
   {
     path: 'forgot-password',
     canMatch: [adminGuestGuard],
     loadComponent: () =>
-      import('@admin/shared/pages/admin-forgot-password/admin-forgot-password').then(
+      import('@admin/auth/pages/admin-forgot-password/admin-forgot-password').then(
         (m) => m.AdminForgotPassword,
       ),
   },
@@ -36,14 +36,13 @@ export const adminRoutes: Routes = [
     // itself requires that session to do anything.
     path: 'reset-password',
     loadComponent: () =>
-      import('@admin/shared/pages/admin-reset-password/admin-reset-password').then(
+      import('@admin/auth/pages/admin-reset-password/admin-reset-password').then(
         (m) => m.AdminResetPassword,
       ),
   },
   {
     path: 'forbidden',
-    loadComponent: () =>
-      import('@admin/shared/components/forbidden/forbidden').then((m) => m.Forbidden),
+    loadComponent: () => import('@admin/auth/pages/forbidden/forbidden').then((m) => m.Forbidden),
   },
   {
     path: '',
@@ -60,7 +59,9 @@ export const adminRoutes: Routes = [
         path: 'dashboard',
         canMatch: [permissionGuard(PERM.DASHBOARD_VIEW)],
         loadComponent: () =>
-          import('@admin/dashboard/admin-dashboard/admin-dashboard').then((m) => m.AdminDashboard),
+          import('@admin/dashboard/pages/admin-dashboard/admin-dashboard').then(
+            (m) => m.AdminDashboard,
+          ),
       },
       {
         path: 'seo',
@@ -84,7 +85,7 @@ export const adminRoutes: Routes = [
         path: 'leads',
         providers: [LeadsFacade],
         canMatch: [permissionGuard(PERM.LEADS_READ)],
-        loadComponent: () => import('@admin/leads/leads').then((m) => m.Leads),
+        loadComponent: () => import('@admin/leads/pages/leads/leads').then((m) => m.Leads),
       },
       // ---- Deprecated: superseded by Partner Platform v2 / partner-v2 onboarding.
       //       {
@@ -98,33 +99,34 @@ export const adminRoutes: Routes = [
       //             PERM.PARTNER_USERS_READ,
       //           ),
       //         ],
-      //         loadComponent: () => import('@admin/users/users').then((m) => m.Users),
+      //         loadComponent: () => import('@admin/users/pages/users/users').then((m) => m.Users),
       //       },
       //       {
       //         // Partner Code Tracker — network admins (tracker:read) only; sub-company
       //         // admins get Vendor Users only. platform:read (Miles ops) keeps access.
       //         path: 'partner-code-tracker',
       //         canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_READ, PERM.PARTNER_TRACKER_READ)],
-      //         loadComponent: () => import('@admin/seat-tracker/seat-tracker').then((m) => m.SeatTracker),
+      //         loadComponent: () => import('@admin/seat-tracker/pages/seat-tracker/seat-tracker').then((m) => m.SeatTracker),
       //       },
       {
         path: 'reports/user-report',
         providers: [UserReportFacade],
         canMatch: [permissionGuard(PERM.REPORTS_USER_REPORT_READ)],
-        loadComponent: () => import('@admin/user-report/user-report').then((m) => m.UserReport),
+        loadComponent: () =>
+          import('@admin/user-report/pages/user-report/user-report').then((m) => m.UserReport),
       },
       // ---- Deprecated: superseded by Partner Platform v2 / partner-v2 onboarding.
       //       {
       //         path: 'partner/networks',
       //         canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
       //         loadComponent: () =>
-      //           import('@admin/partner-platform/super-admin/networks/networks').then((m) => m.Networks),
+      //           import('@admin/partner-platform/pages/networks/networks').then((m) => m.Networks),
       //       },
       //       {
       //         path: 'partner/networks/:id/tracker',
       //         canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_READ)],
       //         loadComponent: () =>
-      //           import('@admin/partner-platform/super-admin/network-tracker/network-tracker').then(
+      //           import('@admin/partner-platform/pages/network-tracker/network-tracker').then(
       //             (m) => m.NetworkTracker,
       //           ),
       //       },
@@ -132,20 +134,20 @@ export const adminRoutes: Routes = [
       //         path: 'partner/partner-codes',
       //         canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
       //         loadComponent: () =>
-      //           import('@admin/partner-platform/super-admin/partner-codes/partner-codes').then(
+      //           import('@admin/partner-platform/pages/partner-codes/partner-codes').then(
       //             (m) => m.PartnerCodes,
       //           ),
       //       },
       //       {
       //         path: 'partner/reports',
       //         canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
-      //         loadComponent: () => import('@admin/partner-platform/reports/reports').then((m) => m.Reports),
+      //         loadComponent: () => import('@admin/partner-platform/pages/reports/reports').then((m) => m.Reports),
       //       },
       //       {
       //         path: 'partner/dashboard',
       //         canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_READ)],
       //         loadComponent: () =>
-      //           import('@admin/partner-platform/network-admin/dashboard/partner-dashboard').then(
+      //           import('@admin/partner-platform/pages/partner-dashboard/partner-dashboard').then(
       //             (m) => m.PartnerDashboard,
       //           ),
       //       },
@@ -176,14 +178,16 @@ export const adminRoutes: Routes = [
             path: 'superadmin/networks',
             canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
             loadComponent: () =>
-              import('@admin/partner-platform-v2/networks/networks-v2').then((m) => m.NetworksV2),
+              import('@admin/partner-platform-v2/pages/networks-v2/networks-v2').then(
+                (m) => m.NetworksV2,
+              ),
           },
           {
             // READ can look at the hub; the write actions inside are MANAGE-gated.
             path: 'superadmin/networks/:id',
             canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE, PERM.PARTNER_PLATFORM_READ)],
             loadComponent: () =>
-              import('@admin/partner-platform-v2/network-detail/network-detail-v2').then(
+              import('@admin/partner-platform-v2/pages/network-detail-v2/network-detail-v2').then(
                 (m) => m.NetworkDetailV2,
               ),
           },
@@ -191,19 +195,19 @@ export const adminRoutes: Routes = [
             path: 'superadmin/firms',
             canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
             loadComponent: () =>
-              import('@admin/partner-platform-v2/firms/firms-v2').then((m) => m.FirmsV2),
+              import('@admin/partner-platform-v2/pages/firms-v2/firms-v2').then((m) => m.FirmsV2),
           },
           {
             path: 'superadmin/codes',
             canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
             loadComponent: () =>
-              import('@admin/partner-platform-v2/codes/codes-v2').then((m) => m.CodesV2),
+              import('@admin/partner-platform-v2/pages/codes-v2/codes-v2').then((m) => m.CodesV2),
           },
           {
             path: 'superadmin/partner-admins',
             canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
             loadComponent: () =>
-              import('@admin/partner-platform-v2/partner-admins/partner-admins-v2').then(
+              import('@admin/partner-platform-v2/pages/partner-admins-v2/partner-admins-v2').then(
                 (m) => m.PartnerAdminsV2,
               ),
           },
@@ -211,7 +215,9 @@ export const adminRoutes: Routes = [
             path: 'superadmin/reports',
             canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_MANAGE)],
             loadComponent: () =>
-              import('@admin/partner-platform-v2/reports/reports-v2').then((m) => m.ReportsV2),
+              import('@admin/partner-platform-v2/pages/reports-v2/reports-v2').then(
+                (m) => m.ReportsV2,
+              ),
           },
           {
             // Same componentless-parent pattern as v1 user-onboarding: list + form
@@ -224,21 +230,21 @@ export const adminRoutes: Routes = [
                 path: '',
                 pathMatch: 'full',
                 loadComponent: () =>
-                  import('@admin/partner-platform-v2/onboarding/onboarding-v2').then(
+                  import('@admin/partner-platform-v2/pages/onboarding-v2/onboarding-v2').then(
                     (m) => m.OnboardingV2,
                   ),
               },
               {
                 path: 'new',
                 loadComponent: () =>
-                  import('@admin/user-onboarding/shared/components/user-form/user-form').then(
+                  import('@admin/user-onboarding/pages/user-form/user-form').then(
                     (m) => m.UserForm,
                   ),
               },
               {
                 path: ':id/edit',
                 loadComponent: () =>
-                  import('@admin/user-onboarding/shared/components/user-form/user-form').then(
+                  import('@admin/user-onboarding/pages/user-form/user-form').then(
                     (m) => m.UserForm,
                   ),
               },
@@ -254,7 +260,7 @@ export const adminRoutes: Routes = [
               ),
             ],
             loadComponent: () =>
-              import('@admin/partner-platform-v2/overview/partner-overview-v2').then(
+              import('@admin/partner-platform-v2/pages/partner-overview-v2/partner-overview-v2').then(
                 (m) => m.PartnerOverviewV2,
               ),
           },
@@ -262,7 +268,9 @@ export const adminRoutes: Routes = [
             path: 'panel/tracker',
             canMatch: [permissionGuard(PERM.PARTNER_PLATFORM_READ, PERM.PARTNER_TRACKER_READ)],
             loadComponent: () =>
-              import('@admin/partner-platform-v2/tracker/tracker-v2').then((m) => m.TrackerV2),
+              import('@admin/partner-platform-v2/pages/tracker-v2/tracker-v2').then(
+                (m) => m.TrackerV2,
+              ),
           },
           {
             path: 'panel/users',
@@ -274,7 +282,7 @@ export const adminRoutes: Routes = [
               ),
             ],
             loadComponent: () =>
-              import('@admin/partner-platform-v2/users/users-v2').then((m) => m.UsersV2),
+              import('@admin/partner-platform-v2/pages/users-v2/users-v2').then((m) => m.UsersV2),
           },
           {
             // Same adaptive page as the superadmin route — for panel admins the
@@ -282,7 +290,9 @@ export const adminRoutes: Routes = [
             path: 'panel/reports',
             canMatch: [permissionGuard(PERM.PARTNER_TRACKER_READ, PERM.PARTNER_USERS_READ)],
             loadComponent: () =>
-              import('@admin/partner-platform-v2/reports/reports-v2').then((m) => m.ReportsV2),
+              import('@admin/partner-platform-v2/pages/reports-v2/reports-v2').then(
+                (m) => m.ReportsV2,
+              ),
           },
         ],
       },
@@ -290,7 +300,8 @@ export const adminRoutes: Routes = [
         path: 'admin-users',
         providers: [PartnerSuperAdminFacade],
         canMatch: [permissionGuard(PERM.ADMIN_USERS_MANAGE)],
-        loadComponent: () => import('@admin/admin-users/admin-users').then((m) => m.AdminUsers),
+        loadComponent: () =>
+          import('@admin/admin-users/pages/admin-users/admin-users').then((m) => m.AdminUsers),
       },
       // ---- Deprecated: superseded by Partner Platform v2 / partner-v2 onboarding.
       //       {
@@ -305,19 +316,19 @@ export const adminRoutes: Routes = [
       //             path: '',
       //             pathMatch: 'full',
       //             loadComponent: () =>
-      //               import('@admin/user-onboarding/user-onboarding').then((m) => m.UserOnboarding),
+      //               import('@admin/user-onboarding/pages/user-onboarding/user-onboarding').then((m) => m.UserOnboarding),
       //           },
       //           {
       //             path: 'new',
       //             loadComponent: () =>
-      //               import('@admin/user-onboarding/shared/components/user-form/user-form').then(
+      //               import('@admin/user-onboarding/pages/user-form/user-form').then(
       //                 (m) => m.UserForm,
       //               ),
       //           },
       //           {
       //             path: ':id/edit',
       //             loadComponent: () =>
-      //               import('@admin/user-onboarding/shared/components/user-form/user-form').then(
+      //               import('@admin/user-onboarding/pages/user-form/user-form').then(
       //                 (m) => m.UserForm,
       //               ),
       //           },
@@ -329,14 +340,17 @@ export const adminRoutes: Routes = [
         // resource() directly.
         path: 'audit-log',
         canMatch: [permissionGuard(PERM.AUDIT_READ)],
-        loadComponent: () => import('@admin/audit-log/audit-log').then((m) => m.AuditLogPage),
+        loadComponent: () =>
+          import('@admin/audit-log/pages/audit-log/audit-log').then((m) => m.AuditLogPage),
       },
       {
         path: 'roles-permissions',
         providers: [RbacFacade],
         canMatch: [permissionGuard(PERM.ADMIN_ROLES_MANAGE, PERM.ADMIN_PERMISSIONS_MANAGE)],
         loadComponent: () =>
-          import('@admin/roles-permissions/roles-permissions').then((m) => m.RolesPermissions),
+          import('@admin/roles-permissions/pages/roles-permissions/roles-permissions').then(
+            (m) => m.RolesPermissions,
+          ),
       },
       {
         path: '**',

@@ -18,7 +18,7 @@ import {
   lucideUserPlus,
 } from '@ng-icons/lucide';
 import { AdminAuth } from '@admin/core/services/admin-auth';
-import { PERM } from '@admin/core/admin-rbac.model';
+import { PERM } from '@admin/core/models/admin-rbac.model';
 import { logo, logoIcon } from '@core/constants/icon';
 import { Button } from '@shared/ui/button/button';
 

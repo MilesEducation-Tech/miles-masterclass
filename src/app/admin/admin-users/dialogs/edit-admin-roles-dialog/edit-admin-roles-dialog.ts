@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { DialogRef } from '@core/services/dialog/dialog';
-import { toggleRoleSlug } from '@admin/core/admin-rbac.model';
+import { toggleRoleSlug } from '@admin/core/models/admin-rbac.model';
 import { Button } from '@shared/ui/button/button';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 
