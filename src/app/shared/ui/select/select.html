@@ -1,0 +1,46 @@
+<div
+  ngpSelect
+  [id]="id()"
+  [ngpSelectMultiple]="multiple()"
+  [ngpSelectValue]="selection()"
+  [ngpSelectDisabled]="disabled() || readonly()"
+  [ngpSelectDropdownOffset]="6"
+  (ngpSelectValueChange)="onValueChange($event)"
+  (ngpSelectOpenChange)="onOpenChange($event)"
+  [attr.aria-labelledby]="labelledBy()"
+  [attr.aria-describedby]="describedBy()"
+  [attr.aria-required]="required() || null"
+  [attr.aria-invalid]="invalid() || null"
+  class="flex w-full cursor-pointer items-center justify-between gap-2 rounded-md border border-border bg-transparent px-3 py-2 text-sm data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[focus]:border-ring"
+>
+  <span class="truncate" [class]="display() ? '' : 'text-muted-foreground'">
+    {{ display() || placeholder() }}
+  </span>
+  <span aria-hidden="true" class="text-muted-foreground">&#9662;</span>
+
+  <!-- The dropdown is portalled out of this element, so it carries its own
+       colours rather than inheriting the trigger's. `--ngp-select-width` is set
+       by the primitive and keeps it the width of the trigger. -->
+  <div
+    *ngpSelectPortal
+    ngpSelectDropdown
+    style="width: var(--ngp-select-width)"
+    class="z-1001 max-h-60 overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+  >
+    @for (option of renderOptions(); track option.value) {
+      <div
+        ngpSelectOption
+        [ngpSelectOptionValue]="option.value"
+        [ngpSelectOptionDisabled]="option.disabled ?? false"
+        class="group/opt flex cursor-pointer items-center justify-between gap-2 rounded px-3 py-2 text-sm outline-none data-[active]:bg-secondary/60 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[hover]:bg-secondary/40"
+      >
+        <span class="truncate">{{ option.label }}</span>
+        <span aria-hidden="true" class="opacity-0 group-data-[selected]/opt:opacity-100"
+          >&#10003;</span
+        >
+      </div>
+    } @empty {
+      <p class="px-3 py-2 text-sm text-muted-foreground">{{ emptyMessage() }}</p>
+    }
+  </div>
+</div>
