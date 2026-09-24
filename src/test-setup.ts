@@ -1,3 +1,12 @@
+import { beforeEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { TOAST_COMPONENT } from '@core/services/notification/notification';
+import {
+  CART_DRAWER_DIALOG,
+  SUBSCRIPTION_DIALOG,
+} from '@core/services/dialog/feature-dialog-tokens';
+import { ToastComponent } from '@shared/ui/toast/toast';
+
 /**
  * Global unit-test setup, wired via `setupFiles` on the `test` target in
  * angular.json.
@@ -56,5 +65,41 @@ if (typeof Blob !== 'undefined' && typeof Blob.prototype.text !== 'function') {
     });
   };
 }
+
+/**
+ * `NotificationService` is a core singleton that resolves the toast component
+ * through the `TOAST_COMPONENT` token, because core must not import shared
+ * (PROMPT.md §3). `app.config.ts` binds it for the running app; specs get no
+ * app config, so without this ~60 suites fail with NG0201 the moment anything
+ * injects `NotificationService` — usually transitively, via a facade.
+ *
+ * This supplies a real dependency rather than silencing anything: it binds the
+ * same component the app binds, so a spec that shows a toast exercises the
+ * real path. `configureTestingModule` merges across calls, so suites that
+ * configure their own module still get this.
+ */
+beforeEach(() => {
+  TestBed.configureTestingModule({
+    providers: [
+      { provide: TOAST_COMPONENT, useValue: ToastComponent },
+      // The loader is only invoked when something actually opens the drawer, so
+      // binding the real one here costs nothing at setup and keeps the path faithful.
+      {
+        provide: CART_DRAWER_DIALOG,
+        useValue: () =>
+          import('@features/payment/dialogs/cart-drawer-dialog/cart-drawer-dialog').then(
+            (m) => m.CartDrawerDialog,
+          ),
+      },
+      {
+        provide: SUBSCRIPTION_DIALOG,
+        useValue: () =>
+          import('@features/payment/dialogs/subscription-dialog/subscription-dialog').then(
+            (m) => m.SubscriptionDialog,
+          ),
+      },
+    ],
+  });
+});
 
 export {};

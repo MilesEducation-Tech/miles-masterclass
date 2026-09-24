@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { Service, PLATFORM_ID, inject } from '@angular/core';
 import type { MarkingScheme, SessionRecord, TranscriptTurn } from '../models/report.model';
 
 /** The just-finished run handed from the briefing to the report page. */
@@ -28,7 +28,7 @@ const SCHEMA_VERSION = 1;
  * work end-to-end. When the backend evaluator lands, the report page will read
  * GET /sessions/{id}/report instead and this becomes a cache/fallback.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class MilesVerseSessions {
   private readonly platformId = inject(PLATFORM_ID);
 

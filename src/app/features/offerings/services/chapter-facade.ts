@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Service, signal } from '@angular/core';
 import { Logger } from '@core/services/logger/logger';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Dialog } from '@core/services/dialog/dialog';
@@ -29,7 +29,7 @@ type SubmitQuizAnswerResponse = RouteResponse<typeof MASTERCLASS_ROUTES.submitQu
 type ChapterQuizReportResponse = RouteResponse<typeof MASTERCLASS_ROUTES.chapterQuizReport>;
 type ChapterQuizReportParams = RouteParams<typeof MASTERCLASS_ROUTES.chapterQuizReport>;
 
-@Injectable()
+@Service({ autoProvided: false })
 export class ChapterFacade {
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);

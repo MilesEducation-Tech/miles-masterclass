@@ -20,7 +20,7 @@ import { MasterclassFacade } from '../../../services/masterclass-facade';
 import { RatingStar } from '@shared/components/rating-star/rating-star';
 import { Utils } from '@shared/services/utils';
 import { CategoriesList } from '@shared/components/categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits-pipe';
 import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
 
 @Component({

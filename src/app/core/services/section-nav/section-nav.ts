@@ -1,12 +1,4 @@
-import {
-  Injectable,
-  signal,
-  computed,
-  inject,
-  DestroyRef,
-  PLATFORM_ID,
-  effect,
-} from '@angular/core';
+import { Service, signal, computed, inject, DestroyRef, PLATFORM_ID, effect } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Viewport } from '../viewport/viewport';
 
@@ -29,9 +21,7 @@ export interface SectionNavItem {
  * NOTE: Must be providedIn: 'root' because HeaderSectionNav (in Header layout)
  * and MasterclassSectionNav (in lazy route) need to share the same instance.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class SectionNavService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);

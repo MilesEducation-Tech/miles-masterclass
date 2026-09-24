@@ -1,4 +1,4 @@
-import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { Service, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Observable, delay, of, tap } from 'rxjs';
 import { Storage } from '@core/services/storage/storage';
@@ -27,7 +27,7 @@ const PASS_MARK = 70;
  * downstream (persistence, `overall`, the dialog, the hero) already speaks the
  * final `AiLabAssessmentReport` shape.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class AiLabSubmission {
   private readonly storage = inject(Storage);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));

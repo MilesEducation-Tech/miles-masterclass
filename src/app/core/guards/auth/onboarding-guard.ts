@@ -10,7 +10,7 @@ import { AuthSession } from '../../services/auth-session/auth-session';
  * describes the identity store — whether the SSO still needs a name — and it is
  * a boolean of the OPPOSITE polarity. A user can be fully known to the SSO and
  * still be `new_user` here. Swapping one for the other inverts this gate
- * silently, which is why `onboarding.guard.spec.ts` asserts it.
+ * silently, which is why `onboarding-guard.spec.ts` asserts it.
  */
 export const onboardingGuard: CanMatchFn = () => {
   const auth = inject(AuthSession);

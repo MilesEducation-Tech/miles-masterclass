@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 
 import { AuthSession } from '../../services/auth-session/auth-session';
 import { ProfileStatus } from '../../models/auth.model';
-import { onboardingGuard } from './onboarding.guard';
+import { onboardingGuard } from './onboarding-guard';
 
 describe('onboardingGuard', () => {
   let profileStatus: ReturnType<typeof signal<ProfileStatus | null>>;

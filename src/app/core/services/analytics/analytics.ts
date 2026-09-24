@@ -1,4 +1,4 @@
-import { Injectable, Injector, PLATFORM_ID, afterNextRender, effect, inject } from '@angular/core';
+import { Service, Injector, PLATFORM_ID, afterNextRender, effect, inject } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { environment } from '@env/environment';
 import { Consent } from '../consent/consent';
@@ -48,7 +48,7 @@ declare global {
  * Depends on {@link Consent} (reads its signals via `effect`); Consent does NOT depend on
  * Analytics, so there is no DI cycle.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class Analytics {
   private readonly doc = inject(DOCUMENT);
   private readonly injector = inject(Injector);

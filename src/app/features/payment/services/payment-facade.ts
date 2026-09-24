@@ -1,7 +1,7 @@
 import {
   DestroyRef,
   inject,
-  Injectable,
+  Service,
   signal,
   computed,
   linkedSignal,
@@ -30,6 +30,7 @@ import { User } from '@core/models/profile.model';
 import { NotificationService } from '@core/services/notification/notification';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
+import { CartStore } from '@core/services/cart/cart-store';
 import { Dialog } from '@core/services/dialog/dialog';
 // Dialog components are loaded lazily (dynamic import in the open* methods below)
 // so they — and their `@angular/forms` dependency — stay out of the initial
@@ -64,9 +65,7 @@ type SubscriptionPlansResponse = RouteResponse<typeof PAYMENT_ROUTES.getSubscrip
 const PLANS_STATE_KEY = makeStateKey<SubscriptionPlan[]>('payment.subscriptionPlans');
 const RECOMMENDED_PLANS_STATE_KEY = makeStateKey<SubscriptionPlan[]>('payment.recommendedPlans');
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class PaymentFacade {
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
@@ -78,29 +77,23 @@ export class PaymentFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly analytics = inject(Analytics);
 
-  readonly cartItemRemoved = signal<number | null>(null);
-  cartData = signal<CartDetails | null>(null);
+  /**
+   * Cart state lives in `CartStore` (core) because the footer overlay (layout)
+   * and two offerings facades (feature) read it, and PROMPT.md §3 lets neither
+   * import this feature. These are aliases, not copies — same signal objects —
+   * so every existing call site here and in the payment pages is unchanged.
+   */
+  private readonly cart = inject(CartStore);
+  readonly cartItemRemoved = this.cart.cartItemRemoved;
+  readonly cartData = this.cart.cartData;
   orderData = signal<OrderByIdResponseData | null>(null);
   ordersData = signal<OrderByIdResponseData[]>([]);
   ordersLoading = signal<boolean>(false);
   ordersError = signal<string | null>(null);
-  /**
-   * `true` only while an HTTP fetch is actively in flight. Defaults to `false`
-   * so consumers can reliably distinguish "no fetch started yet"
-   * (`loading=false`, `cartData=null`) from "fetch in flight" (`loading=true`).
-   * Without this, the `cartResolver` / `paymentGuard` could deadlock on a hard
-   * refresh because the wait would never resolve.
-   */
-  loading = signal<boolean>(false);
-  error = signal<string | null>(null);
-  /**
-   * `true` after the first `loadMyBucket()` settles (success OR error). Used
-   * for idempotency — `cartData === null` alone is ambiguous because the API
-   * can legitimately resolve with `null` (empty bucket / errored response),
-   * and using it as a gate caused effects that re-fire on `loading` changes
-   * to loop forever calling the API.
-   */
-  cartFetched = signal<boolean>(false);
+  /** All three are `CartStore`'s; see the note on `cartData` above. */
+  readonly loading = this.cart.loading;
+  readonly error = this.cart.error;
+  readonly cartFetched = this.cart.cartFetched;
   billingAddress = signal<UserAddress[]>([]);
   /**
    * User's selected address, linked to `billingAddress`: the selection is kept
@@ -208,55 +201,14 @@ export class PaymentFacade {
     };
   });
 
-  /**
-   * Single write-point for the cart signal so any cart-wide massaging happens in
-   * one place.
-   * ponytail: TEST OVERRIDE — forces `pay_method: 'monthly'` on every cart item
-   * so the monthly cart UI can be exercised before the backend sends the flag.
-   * REMOVE the `.map(...)` once the API returns pay_method.
-   */
+  /** Single write-point for the cart signal; the signal itself is `CartStore`'s. */
   private setCartData(cart: CartDetails | null): void {
-    if (cart?.cartitem_data) {
-      cart = {
-        ...cart,
-        // ponytail: TEST OVERRIDE — stamp monthly only on subscription items
-        // (courses can't be EMI). REMOVE once the API sends pay_method.
-        cartitem_data: cart.cartitem_data.map((i) => i),
-        //   i.item_details?.delivery_mode === 'subscription'
-        //     ? { ...i, pay_method: 'monthly' as const }
-        //     : i,
-        // ),
-      };
-    }
-    this.cartData.set(cart);
+    this.cart.setCartData(cart);
   }
 
-  /**
-   * Loads the user's cart bucket. Idempotent by default — won't re-fetch while
-   * a request is in flight or after a successful load. Pass `{ force: true }`
-   * to bypass the cache (used by the explicit retry button).
-   */
+  /** Delegates to `CartStore`; see the note on `cartData`. */
   loadMyBucket(options: { force?: boolean } = {}): void {
-    if (!options.force) {
-      if (this.loading()) return; // already in flight
-      if (this.cartFetched()) return; // already attempted (success or error)
-    }
-    this.loading.set(true);
-    this.error.set(null);
-    this.http.get<MyBucketResponse>(PAYMENT_ROUTES.myBucket.path).subscribe({
-      next: (res) => {
-        this.setCartData(res?.data ?? null);
-        this.cartFetched.set(true);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.logger.error('Failed to load my bucket', err);
-        this.setCartData(null);
-        this.cartFetched.set(true);
-        this.error.set('Failed to load my bucket');
-        this.loading.set(false);
-      },
-    });
+    this.cart.loadMyBucket(options);
   }
 
   loadBillingAddress() {

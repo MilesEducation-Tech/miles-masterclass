@@ -1,4 +1,4 @@
-import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { Service, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { environment } from '@env/environment';
 import { Storage } from '../storage/storage';
@@ -19,7 +19,7 @@ import {
  * SSR-safe: on the server it simply reports the opt-in defaults and never shows
  * the banner (the banner component is browser-only anyway).
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class Consent {
   private readonly storage = inject(Storage);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));

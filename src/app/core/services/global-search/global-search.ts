@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { ApiClient } from '../api-client/api-client';
@@ -14,9 +14,7 @@ import {
  * cold observable so callers can plug it into a debounced `switchMap` —
  * in-flight requests are cancelled by the operator when a new query arrives.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class GlobalSearch {
   private readonly api = inject(ApiClient);
   private readonly logger = inject(Logger);

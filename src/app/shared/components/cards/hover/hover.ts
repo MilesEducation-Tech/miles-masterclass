@@ -10,7 +10,7 @@ import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-ico
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Logger } from '@core/services/logger/logger';
 import { CategoriesList } from '../../categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits-pipe';
 import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
 
 @Component({

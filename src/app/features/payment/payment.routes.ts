@@ -3,7 +3,7 @@ import { inject, PLATFORM_ID } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { ResolveFn, Routes } from '@angular/router';
 import { filter, map, take } from 'rxjs/operators';
-import { paymentGuard } from '@features/payment/guards/payment.guard';
+import { paymentGuard } from '@features/payment/guards/payment-guard';
 import { PaymentFacade } from './services/payment-facade';
 
 /**

@@ -22,12 +22,12 @@
   "/us/accounting/masterclass/154/adulting-in-business": {
     "status": 200,
     "location": null,
-    "title": "Miles Masterclass",
-    "description": "Watch &quot;Miles Masterclass&quot; on Miles Masterclass — AI-driven CPE for accounting professionals.",
+    "title": "{{title}}",
+    "description": "{{description}}",
     "canonical": "",
     "h1": "",
-    "jsonLdBlocks": 0,
-    "textLength": 23907
+    "jsonLdBlocks": 1,
+    "textLength": 23899
   },
   "/admin/login": {
     "status": 200,

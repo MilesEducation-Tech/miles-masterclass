@@ -1,6 +1,6 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 
-import { inject, Injectable, PLATFORM_ID } from '@angular/core';
+import { inject, Service, PLATFORM_ID } from '@angular/core';
 
 import { ApiClient } from '../api-client/api-client';
 import { Logger } from '../logger/logger';
@@ -23,7 +23,7 @@ import { Logger } from '../logger/logger';
  * and never surfaces an error. A dropped event is logged and forgotten — the
  * user's own interaction must always succeed on its own terms.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class MilesActivity {
   private readonly http = inject(ApiClient);
   private readonly logger = inject(Logger);

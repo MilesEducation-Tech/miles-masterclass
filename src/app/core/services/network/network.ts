@@ -1,4 +1,4 @@
-import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { Service, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { NotificationService } from '../notification/notification';
 /**
@@ -34,9 +34,7 @@ declare global {
 
 export type ConnectionQuality = 'good' | 'poor' | 'offline';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class Network {
   private readonly notificationService = inject(NotificationService);
   private readonly platformId = inject(PLATFORM_ID);

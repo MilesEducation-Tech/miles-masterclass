@@ -1,6 +1,6 @@
 import { Route } from '@angular/router';
 import { DynamicLayout } from '@layout/dynamic-layout/dynamic-layout';
-import { uaeCairaMatchGuard } from '@core/guards/uae-caira-match.guard';
+import { uaeCairaMatchGuard } from '@core/guards/uae-caira-match-guard';
 import { UaeCairaFacade } from '@features/uae-caira/services/uae-caira-facade';
 import { Faq } from '@shared/components/faq/faq';
 import { TermsOfService } from '@features/legal/pages/terms-of-service/terms-of-service';

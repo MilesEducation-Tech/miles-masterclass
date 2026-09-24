@@ -3,7 +3,7 @@ import {
   computed,
   effect,
   inject,
-  Injectable,
+  Service,
   linkedSignal,
   PLATFORM_ID,
   resource,
@@ -52,7 +52,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
  */
 // Route-scoped (see admin.routes.ts): the injector dies on navigation, which
 // aborts in-flight resource() loads and stops this page's calls firing elsewhere.
-@Injectable()
+@Service({ autoProvided: false })
 export class PartnerNetworkFacade {
   private readonly api = inject(ApiClient);
   private readonly notification = inject(NotificationService);

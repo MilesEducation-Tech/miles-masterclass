@@ -1,5 +1,5 @@
 import { HttpContext } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { Observable, catchError, map, of, shareReplay } from 'rxjs';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
@@ -28,7 +28,7 @@ interface SectionFiltersEnvelope {
  * - Caches per `${courseType}:${section}:${trackId}` for the session (filter
  *   universes are stable; the values applied don't change them).
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class SectionFiltersFacade {
   private readonly api = inject(ApiClient);
   private readonly cache = new Map<string, Observable<LibraryFiltersData | null>>();

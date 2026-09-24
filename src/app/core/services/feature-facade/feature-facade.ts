@@ -1,4 +1,4 @@
-import { inject, Injectable, signal, Injector, DestroyRef, PLATFORM_ID } from '@angular/core';
+import { inject, Service, signal, Injector, DestroyRef, PLATFORM_ID } from '@angular/core';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FeatureApiKey,
@@ -509,9 +509,7 @@ function dropIdOnlyFieldsOfStudy<T>(data: T): T {
   return rest as T;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class FeatureFacade {
   private resources = new Map<string, FeatureResource>();
   private readonly api = inject(ApiClient);

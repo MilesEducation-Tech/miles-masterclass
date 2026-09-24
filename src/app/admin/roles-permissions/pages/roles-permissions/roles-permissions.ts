@@ -4,7 +4,7 @@ import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { AdminAuth } from '@admin/core/services/admin-auth';
 import { PERM } from '@admin/core/models/admin-rbac.model';
-import { HasPermissionDirective } from '@admin/core/directives/has-permission.directive';
+import { HasPermissionDirective } from '@admin/core/directives/has-permission';
 import {
   RbacFacade,
   RbacPermission,

@@ -4,7 +4,7 @@ import {
   computed,
   effect,
   inject,
-  Injectable,
+  Service,
   linkedSignal,
   PLATFORM_ID,
   resource,
@@ -60,7 +60,7 @@ interface CourseDetailResponse {
  */
 // Route-scoped (see admin.routes.ts): the injector dies on navigation, which
 // aborts in-flight resource() loads and stops this page's calls firing elsewhere.
-@Injectable()
+@Service({ autoProvided: false })
 export class UserReportFacade {
   private readonly api = inject(ApiClient);
   private readonly logger = inject(Logger);

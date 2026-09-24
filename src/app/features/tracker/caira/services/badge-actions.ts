@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { CourseBadgeItem, WebinarBadgeItem } from '@core/models/caira-badge.model';
@@ -16,7 +16,7 @@ import { BadgeActionSource, badgeActionTarget } from '../utils/badge-action';
  *
  * The *decision* lives in the pure `badgeActionTarget()`; this only executes it.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class BadgeActions {
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);

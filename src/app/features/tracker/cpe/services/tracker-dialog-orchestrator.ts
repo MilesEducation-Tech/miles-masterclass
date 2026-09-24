@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Dialog } from '@core/services/dialog/dialog';
 import {
@@ -27,9 +27,7 @@ export interface DialogResult<T = unknown> {
  * Keeps all dialog copy + config in one place. Callers only know the
  * intent ("open the certificate dialog"), not the shared dialog behind it.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class TrackerDialogOrchestrator {
   private readonly dialog = inject(Dialog);
 

@@ -3,7 +3,7 @@ import {
   DestroyRef,
   effect,
   inject,
-  Injectable,
+  Service,
   Injector,
   signal,
   untracked,
@@ -37,7 +37,7 @@ import {
   MicroLearningQuizDialog,
   MicroLearningQuizDialogData,
 } from '../micro-learning/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog';
-import { PaymentFacade } from '@features/payment/services/payment-facade';
+import { CartStore } from '@core/services/cart/cart-store';
 import {
   ActionStatus,
   deriveActionStatus,
@@ -123,7 +123,7 @@ function detailsToReel(details: SeedableDetails): MicroLearningReel {
   };
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class MicroLearningCourseFacade {
   private readonly http = inject(ApiClient);
   private readonly logger = inject(Logger);
@@ -133,7 +133,9 @@ export class MicroLearningCourseFacade {
   private readonly location = inject(Location);
   private readonly utils = inject(Utils);
   private readonly analytics = inject(Analytics);
-  private readonly payment = inject(PaymentFacade);
+  // Only the cart-removal signal is needed here, and it lives in core so this
+  // feature does not have to import the payment feature (PROMPT.md §3).
+  private readonly cart = inject(CartStore);
   private readonly destroyRef = inject(DestroyRef);
 
   /**
@@ -224,7 +226,7 @@ export class MicroLearningCourseFacade {
   constructor() {
     // Sync local cart state when a reel is removed via the cart drawer.
     effect(() => {
-      const removedId = this.payment.cartItemRemoved();
+      const removedId = this.cart.cartItemRemoved();
       untracked(() => {
         if (removedId == null) return;
         this.detailsList.update((list) =>

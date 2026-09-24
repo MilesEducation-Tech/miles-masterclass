@@ -12,7 +12,7 @@ import { ContentAbout } from '@core/models/course.model';
 import { UpcomingPremiere, WebinarCta, WebinarTag } from '@core/models/feature.model';
 import { Utils } from '@shared/services/utils';
 import { DatePipe } from '@angular/common';
-import { LocalTimeZonePipe } from '@shared/pipes/local-time-zone/local-time-zone.pipe';
+import { LocalTimeZonePipe } from '@shared/pipes/local-time-zone/local-time-zone-pipe';
 
 export interface WebinarDetailsDialogData {
   webinar: UpcomingPremiere;

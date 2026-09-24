@@ -1,8 +1,8 @@
 import { Route } from '@angular/router';
 import { AuthFacade } from './services/auth-facade';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
-import { authGuard } from '@core/guards/auth/auth.guard';
-import { guestGuard } from '@core/guards/auth/guest.guard';
+import { authGuard } from '@core/guards/auth/auth-guard';
+import { guestGuard } from '@core/guards/auth/guest-guard';
 import { Auth } from './auth';
 
 export const authRoutes: Route[] = [

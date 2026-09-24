@@ -4,7 +4,7 @@ import {
   effect,
   EnvironmentInjector,
   inject,
-  Injectable,
+  Service,
   Injector,
   signal,
 } from '@angular/core';
@@ -45,11 +45,14 @@ import { Viewport, ScreenInfo } from '@core/services/viewport/viewport';
 // eagerly instantiated (injected by the header/footer chrome), so a static
 // import would pull the dialog and its `@angular/forms` dependency into the
 // initial bundle.
-import { PaymentFacade } from '@features/payment/services/payment-facade';
+import { CartStore } from '@core/services/cart/cart-store';
+import {
+  CART_DRAWER_DIALOG,
+  SUBSCRIPTION_DIALOG,
+} from '@core/services/dialog/feature-dialog-tokens';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Logger } from '@core/services/logger/logger';
 import { canAccessCpeMode, CpeModeGateContent } from '@shared/utils/cpe-mode-access';
-import { SubscriptionDialog } from '@shared/dialogs/subscription-dialog/subscription-dialog';
 import { UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
 
 type StartFinalAssessmentParams = RouteParams<typeof MASTERCLASS_ROUTES.startFinalAssessment>;
@@ -108,9 +111,7 @@ export type CourseInfoInput = Content | ContentDetails;
  *   const country = utils.country();      // e.g., 'in', 'us'
  *   const profession = utils.profession(); // e.g., 'accounting', 'finance'
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class Utils {
   private readonly router = inject(Router);
   private readonly dialog = inject(Dialog);
@@ -118,7 +119,11 @@ export class Utils {
   private readonly storage = inject(Storage);
   private readonly injector = inject(Injector);
   private readonly notification = inject(NotificationService);
-  private readonly payment = inject(PaymentFacade);
+  // Cart state and its loader live in core, so this shared service does not
+  // import the payment feature (PROMPT.md §3).
+  private readonly cart = inject(CartStore);
+  private readonly cartDrawerDialog = inject(CART_DRAWER_DIALOG);
+  private readonly subscriptionDialog = inject(SUBSCRIPTION_DIALOG);
   private readonly featureFacade = inject(FeatureFacade);
   private readonly analytics = inject(Analytics);
   private readonly logger = inject(Logger);
@@ -421,18 +426,21 @@ export class Utils {
    * `false` so the caller can bail.
    *
    * Same dialog and options `EngagementDialog` uses, so the paywall a learner
-   * meets here is identical to the one everywhere else. `SubscriptionDialog`
-   * is already in the initial bundle (`EngagementDialog` is injected by
-   * `App`), so the static import costs nothing extra.
+   * meets here is identical to the one everywhere else. The dialog now lives in
+   * `features/payment` and is resolved through `SUBSCRIPTION_DIALOG`, so this
+   * stays synchronous: the open is fired and not awaited, exactly as before,
+   * and the gate's `false` is returned immediately either way.
    */
   requireCpeModeAccess(content: CpeModeGateContent): boolean {
     if (this.canAccessCpeMode(content)) return true;
 
     // ponytail: the guest branch (redirect to login) went with the auth layer.
-    this.dialog.open<SubscriptionDialog, void>(SubscriptionDialog, {
-      maxWidth: '95vw',
-      ariaLabel: 'Subscribe to a plan',
-    });
+    void this.subscriptionDialog().then((SubscriptionDialog) =>
+      this.dialog.open<unknown, void>(SubscriptionDialog, {
+        maxWidth: '95vw',
+        ariaLabel: 'Subscribe to a plan',
+      }),
+    );
     return false;
   }
 
@@ -762,9 +770,8 @@ export class Utils {
   }
 
   async openCartDrawer(): Promise<void> {
-    this.payment.loadMyBucket({ force: true });
-    const { CartDrawerDialog } =
-      await import('@features/payment/dialogs/cart-drawer-dialog/cart-drawer-dialog');
+    this.cart.loadMyBucket({ force: true });
+    const CartDrawerDialog = await this.cartDrawerDialog();
     this.dialog.open(CartDrawerDialog, {
       width: '500px',
       maxWidth: '90vw',

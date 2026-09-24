@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { Service, PLATFORM_ID, inject } from '@angular/core';
 import type { AuditCategory, AuditDetail } from '../models/audit-log.model';
 import { Logger } from '@core/services/logger/logger';
 import { Supabase } from '@core/services/supabase/supabase';
@@ -26,7 +26,7 @@ import { Supabase } from '@core/services/supabase/supabase';
  * does NOT inject `AdminAuth` — that would be a dependency cycle (AdminAuth
  * records its own sign-in) and the server is the authority on identity anyway.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class AuditLog {
   private readonly supabase = inject(Supabase);
   private readonly logger = inject(Logger);

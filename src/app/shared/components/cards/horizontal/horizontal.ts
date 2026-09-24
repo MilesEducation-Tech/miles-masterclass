@@ -20,7 +20,7 @@ import { Content } from '@core/models/course.model';
 import { UpcomingPremiere, WebinarCta } from '@core/models/feature.model';
 import { Logger } from '@core/services/logger/logger';
 import { CategoriesList } from '../../categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits-pipe';
 import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
 
 @Component({

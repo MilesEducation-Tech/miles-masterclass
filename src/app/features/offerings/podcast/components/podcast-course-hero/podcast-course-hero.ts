@@ -20,7 +20,7 @@ import { phosphorShareFatFill, phosphorDownloadSimpleFill } from '@ng-icons/phos
 import { phosphorCards } from '@ng-icons/phosphor-icons/regular';
 import { RecordDisk } from '@shared/components/record-disk/record-disk';
 import { CategoriesList } from '@shared/components/categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits-pipe';
 import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
 
 @Component({

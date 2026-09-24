@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { inject, Injectable, PLATFORM_ID } from '@angular/core';
+import { inject, Service, PLATFORM_ID } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -33,7 +33,7 @@ const CAIRA_LEVELS = [1, 2, 3] as const;
  * page's static marketing sections without firing authed library calls; the
  * level carousels hydrate client-side.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class UaeCairaFacade {
   private readonly api = inject(ApiClient);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));

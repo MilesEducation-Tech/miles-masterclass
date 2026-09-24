@@ -1,6 +1,6 @@
 import {
   DestroyRef,
-  Injectable,
+  Service,
   Injector,
   PLATFORM_ID,
   WritableSignal,
@@ -20,7 +20,7 @@ import {
   ProfileCompletionDialog,
   ProfileCompletionDialogResult,
 } from '@shared/dialogs/profile-completion-dialog/profile-completion-dialog';
-import { SubscriptionDialog } from '@shared/dialogs/subscription-dialog/subscription-dialog';
+import { SUBSCRIPTION_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
 import { AiLabDialog } from '@shared/dialogs/ai-lab-dialog/ai-lab-dialog';
 
 type DialogKind = 'aiLab' | 'profile' | 'subscription';
@@ -88,15 +88,14 @@ const DISMISSAL_KEYS: Record<DialogKind, string> = {
  *
  * Browser-only — the stream never starts during SSR.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class EngagementDialog {
   private readonly dialog = inject(Dialog);
   private readonly router = inject(Router);
   private readonly feature = inject(FeatureFacade);
   private readonly storage = inject(Storage);
   private readonly injector = inject(Injector);
+  private readonly subscriptionDialog = inject(SUBSCRIPTION_DIALOG);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -244,12 +243,20 @@ export class EngagementDialog {
     // ponytail: the server re-validation used the removed session service, so
     // the upsell opens straight away when something asks for it.
     this.markDismissed('subscription');
-    const ref = this.dialog.open<SubscriptionDialog, void>(SubscriptionDialog, {
-      maxWidth: '95vw',
-      ariaLabel: 'Subscribe to a plan',
-      injector: this.injector,
-    });
-    return from(this.afterClosed(ref)).pipe(switchMap(() => EMPTY));
+    // The dialog lives in `features/payment` and is resolved through
+    // `SUBSCRIPTION_DIALOG`, so opening it is now async; the returned stream is
+    // unchanged — it still completes when the dialog closes.
+    return from(
+      this.subscriptionDialog().then((SubscriptionDialog) =>
+        this.afterClosed(
+          this.dialog.open<unknown, void>(SubscriptionDialog, {
+            maxWidth: '95vw',
+            ariaLabel: 'Subscribe to a plan',
+            injector: this.injector,
+          }),
+        ),
+      ),
+    ).pipe(switchMap(() => EMPTY));
   }
 
   /**

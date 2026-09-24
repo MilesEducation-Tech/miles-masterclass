@@ -212,6 +212,27 @@ export default [
                 name: '@angular/aria',
                 message: 'Banned (PROMPT.md §1). Build headless primitives on ng-primitives.',
               },
+              // PROMPT.md §4.1 / Phase 8. `@Service()` is `providedIn: 'root'` and
+              // `@Service({ autoProvided: false })` is a bare `@Injectable()` —
+              // identical at runtime (`ɵɵdefineService` sets
+              // `providedIn: autoProvided === false ? null : 'root'`).
+              //
+              // The allowlist for this rule is deliberately EMPTY, because the
+              // Phase 8 audit found nothing to put in it: zero `InjectionToken`,
+              // zero `multi: true`, and zero `providedIn` other than `'root'`
+              // anywhere in `src/`.
+              //
+              // What WOULD justify an exception, since `@Service` cannot express
+              // any of it: `useClass` / `useValue` / `useExisting` / `useFactory` /
+              // `deps`, or `providedIn: 'platform' | 'any' | <NgModule>`. If one of
+              // those ever lands, add a scoped `files: [...]` override block turning
+              // this rule off for that file, and say why at the call site.
+              {
+                name: '@angular/core',
+                importNames: ['Injectable'],
+                message:
+                  'Banned (PROMPT.md §4.1). Use @Service() for a root singleton, or @Service({ autoProvided: false }) for one listed in a providers array. Keep @Injectable only for a provider shape @Service cannot express (useClass/useValue/useExisting/useFactory/deps, or providedIn other than root) — and add a scoped override here if so.',
+              },
             ],
             patterns: [
               {

@@ -3,7 +3,7 @@ import { HttpResponse } from '@angular/common/http';
 import {
   computed,
   inject,
-  Injectable,
+  Service,
   linkedSignal,
   PLATFORM_ID,
   resource,
@@ -43,7 +43,7 @@ const PAGE_SIZE = 30;
  */
 // Route-scoped (see admin.routes.ts): the injector dies on navigation, which
 // aborts in-flight resource() loads and stops this page's calls firing elsewhere.
-@Injectable()
+@Service({ autoProvided: false })
 export class LeadsFacade {
   private readonly api = inject(ApiClient);
   private readonly logger = inject(Logger);
