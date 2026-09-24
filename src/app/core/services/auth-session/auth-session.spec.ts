@@ -172,4 +172,37 @@ describe('AuthSession', () => {
 
     expect(auth.needsOnboarding()).toBe(true);
   });
+
+  /**
+   * `is_onboarding_completed` from `user_details/` is the ONLY access
+   * restriction taken off that row, and the gate must distinguish "not
+   * completed" from "nobody has said yet" — an unknown that redirected would
+   * bounce every learner whose `userData` cookie went missing back into an
+   * onboarding they finished long ago.
+   */
+  describe('the onboarding gate', () => {
+    it('does not redirect while the milestone is unknown', () => {
+      signedInWith(jwt(3600)); // no userData cookie: status is null
+      expect(auth.isOnboardingCompleted()).toBeNull();
+      expect(auth.needsOnboarding()).toBe(false);
+    });
+
+    it('redirects on a known-false and lets a known-true through', () => {
+      signedInWith(jwt(3600));
+
+      auth.setMilestones(false, false);
+      expect(auth.needsOnboarding()).toBe(true);
+
+      auth.setMilestones(true, false);
+      expect(auth.needsOnboarding()).toBe(false);
+      // Carried for later use; nothing gates on it today.
+      expect(auth.isProfileCompleted()).toBe(false);
+    });
+
+    it('never redirects a signed-out visitor', () => {
+      auth = TestBed.inject(AuthSession);
+      auth.setMilestones(false, false);
+      expect(auth.needsOnboarding()).toBe(false);
+    });
+  });
 });
