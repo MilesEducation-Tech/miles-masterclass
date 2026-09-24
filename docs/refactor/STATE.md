@@ -7,6 +7,159 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🐛 **OFF-PHASE (2026-09-24, part 6): A11Y HOLE FOUND BY READING THE PRIMITIVES' SOURCE —
+  `NgpSelect` is the ONE control primitive that does NOT call `ngpFormControl`.**
+  `ngpInput`, `ngpTextarea` and `ngpCheckbox` all do, so inside an `ngpFormField` they pick up
+  `aria-labelledby` and `aria-describedby` for free. A select does not: **dropped into a form field
+  it announces with NO ACCESSIBLE NAME**, and a `<label for>` cannot rescue it because the trigger
+  is a `div` — `for` only binds to a labelable element. The repo's own `aria-multiselect` patches
+  this by hand (`[attr.aria-labelledby]`), which is the tell that it has always been missing.
+  - `Select` now reads `injectFormFieldState({ optional: true })` and binds `aria-labelledby` /
+    `aria-describedby` from the field's registered labels and descriptions. Optional on purpose —
+    the control still works standalone, and then naming it is the caller's job.
+  - `profile.html` now picks the label ELEMENT by control kind: a real `<label ngpLabel [attr.for]>`
+    for the native ones (input/textarea/number/date) and a plain `<span ngpLabel>` for the widget
+    ones (select, checkbox), so nothing claims an association the DOM would not honour.
+  - A host-component spec proves it: `role="combobox"`, `aria-labelledby="intent-label"`,
+    `aria-describedby="intent-help"`. 160 files / **519 tests** pass, build green, eslint clean.
+  - Considered and rejected: moving `ngpSelect` onto the component's host element via the
+    `ngpSelect()` composable + `ngpFormControl()`, which is the library's "reusable component"
+    pattern. It would have bought the same naming plus `data-invalid`/`data-touched`, but
+    `ngpFormControl` also binds `aria-invalid` from `controlStatus()`, and `controlStatus()` only
+    understands `NgControl` — **it knows nothing about signal forms** — so it would have fought this
+    control's own `aria-invalid` binding for an attribute it can never populate. Noted here so the
+    next person does not "fix" it that way.
+
+- 📌 **OFF-PHASE (2026-09-24, part 5): the select is now ONE REUSABLE CONTROL —
+  `shared/ui/select/` (`Select`, `app-select`) — and TWO REAL DEFECTS behind "options not coming
+  properly" are fixed, both of them already documented in this repo's own code.**
+  - 🐛 **The prune race.** `ngpSelect` PRUNES any value it cannot find among the rendered options and
+    emits the pruned result. On a server-driven form the options come from `questions/` and the value
+    from `profile/` — two resources — so a seeded answer that arrives first emits back as `null`/`[]`
+    and **silently erases itself**. `aria-multiselect.ts:113` carries the same guard with the same
+    comment; my inline markup had none. Now carried over, with a test.
+  - 🐛 **Duplicate option values.** `@for (... track option.value)` THROWS NG0955 on a repeated key,
+    which takes the whole dropdown down — `dedupeAriaOptions` exists in `core/models/aria.model.ts`
+    for exactly this. `Select` dedupes (first wins), with a test.
+  - ⚠️ **`required()` DOES NOT FIRE ON AN EMPTY ARRAY.** Read from the installed runtime, not
+    assumed: `isEmpty` is `'' | false | null | undefined | NaN`, so `[]` is NOT empty to it. Every
+    multi-value field therefore needs `required()` for the REQUIRED metadata (that is what puts
+    `aria-required` on the control through `[formField]`) **plus** an explicit `validate()` that
+    actually fires. Both are in `profile.ts` now with the reason written next to them.
+  - Also learned the hard way, recorded so the next spec does not lose an hour: **jsdom's selector
+    engine is case-SENSITIVE about attribute names** (`[ngpSelectOption]` matches nothing; use
+    `[ngpselectoption]`), and the **portal lands on a macrotask** — `whenStable()` is not enough, the
+    test must `setTimeout` before it can see the options.
+  - **8 tests in `select.spec.ts` prove it against the real DOM**: options render in order, a click
+    commits a LIST, labels show (single and multi), duplicates drop, a seeded value survives a prune,
+    a rendered value can still be deselected, touched flips on close. Stories cover single, multiple,
+    preselected, disabled, empty and a signal-forms demo.
+  - `profile.html` now uses `<app-select [formField]="field.choices" />` for both select kinds; the
+    inline `ngpSelect` markup is gone. `build:prod` green, eslint clean, 160 files / 518 tests pass.
+  - ⚠️ **STILL NOT SEEN IN A BROWSER.** The Browser pane refuses `localhost:6006` and the launch
+    config it would need is harness-owned, so the visual check is the user's:
+    `pnpm storybook` then **UI/Select**. Everything above is proven by the DOM in tests, not by eye.
+
+- 📌 **OFF-PHASE (2026-09-24, part 4): the profile form's controls are now RAW ng-primitives — the
+  `app-aria-*` wrappers are gone from this page** (`profile.html` rewritten, `profile.ts` imports
+  swapped). `NgpFormField`/`NgpLabel`/`NgpDescription` + `NgpInput`, `NgpTextarea`, `NgpCheckbox`,
+  `NgpSelect`(+`Dropdown`/`Option`/`Portal`), plain Tailwind, no floating labels, no `app-forms`
+  wrapper (a plain `<form (submit)>`).
+  **SCOPE: this page only. 52 other files still use `shared/ui/aria/*` and were NOT touched** —
+  ripping those out repo-wide is its own change, not a rider on the questionnaire work.
+  ⚠️ **ng-primitives 0.131.0 has NO signal-forms integration** — no `FormValueControl`, nothing that
+  accepts `[formField]` (checked the installed types, not the docs mirror). So the binding splits in
+  two, deliberately: native elements (`ngpInput`, `ngpTextarea`) take `[formField]` straight from
+  `@angular/forms/signals`, while `NgpSelect` and `NgpCheckbox` bind to the field's own
+  `WritableSignal` — `[(ngpSelectValue)]="field.choices().value"`. That works because `FieldState.value`
+  IS writable; it is the documented hand-off point, not a workaround.
+  Model slots renamed `value`/`values` → `text`/`choices` so the template reads `field.text().value`
+  instead of the unreadable `field.value().value`; **a single-select now shares the `choices` slot**
+  with multi (one key, `ngpSelectMultiple` off), which also collapsed two serializer branches into one.
+  ⚠️ **`label-has-associated-control` fired and was fixed properly, NOT disabled**: `NgpLabel` does set
+  `for` (and `aria-labelledby`) at runtime — `attrBinding(element, 'for', htmlFor)` in the installed
+  source — but the linter cannot see it, so every control now carries `[id]="question.code"` and the
+  label binds the same id. The association is now true both statically and at runtime.
+  Verified the three non-obvious Tailwind classes actually emitted into the built CSS
+  (`w-(--ngp-select-width)`, `z-1001`, `data-hover:` variants) rather than silently compiling to nothing.
+  `build:prod` green, eslint clean, `pnpm test` 159 files / 509 passed + 1 skipped.
+  **NOT verified in a browser: this page needs a live session and the API, so the rendering and the
+  dropdown behaviour are unproven.**
+
+- ⚠️ **NOT MINE, FLAGGED NOT TOUCHED: the whole `features/blog` tree (35 files) is DELETED in the
+  working tree and the `blog-test` route + its eager `BlogLayout` import are gone from
+  `app.routes.ts`.** This appeared DURING the 2026-09-24 off-phase session, between two `git status`
+  runs, and none of it is my edit — likely a concurrent session starting Phase 9 (blog). I have not
+  restored or committed any of it. **Phase 9 starts from a tree that already lost blog; decide
+  whether that is intended before committing anything.**
+  It also explains a bundle number: initial total is now **1.92 MB, under the 2.00 MB budget**, down
+  from 2.06 MB — that drop is the blog removal (the eager `BlogLayout` import), NOT the auth work.
+
+- 📌 **OFF-PHASE (2026-09-24, part 3): the profile/onboarding form is now SERVER-DRIVEN END TO END
+  and built on signal forms.** `profile.{ts,html}` rewritten, `profile.spec.ts` added (6 new tests).
+  **Every field comes from `GET questions/` and nothing else** — the hardcoded identity block
+  (first/last name, email, phone, city, location) is GONE, which also settles the duplicate-field
+  problem logged in part 1: the questionnaire already serves `first_name` / `last_name` / `email` as
+  questions. `user_details/` is no longer a second form; it only SEEDS blanks (so a learner whose
+  name the SSO knows is not asked twice) and takes back the four codes that are also writable columns.
+  Model is one row per question with three typed slots (`value` / `values` / `flag`) rather than one
+  `AnswerValue` union — a field binds to a CONTROL, and a multiselect needs `string[]` while a
+  checkbox needs `boolean`, so a union would need a cast at every binding.
+  Schema is `applyEach` over the array, and **every rule joins back to its question through the row's
+  own `code`, not the item index** — `index` exists only on the ITEM context, not on its children
+  (the compiler caught this), and the code survives re-ordering anyway.
+  `is_required` → `required`/`validate`; `parent_question` → `hidden`, which matters because **a
+  hidden field does not contribute to its parent's validity** — a required question the learner
+  cannot see therefore cannot block submit. Nothing is required on `flag`: `false` IS an answer.
+  Dirty tracking is now `form().dirty()`, replacing the hand-rolled JSON diff.
+  `pnpm test` 159 files / **509 passed** + 1 skipped; `build:prod` green; eslint clean on the
+  changed trees.
+
+- 📌 **OFF-PHASE (2026-09-24, part 2): the onboarding GATE now runs on `is_onboarding_completed`,
+  the only access restriction taken off `GET user_details/`** (the user supplied a real payload for
+  that route too). 4 more files: `auth-session.{ts,spec.ts}`, `account-api.ts`, `profile.ts`.
+  `AuthSession` keeps `isOnboardingCompleted` and `isProfileCompleted` as `boolean | null` signals —
+  `isProfileCompleted` is CARRIED, NOT GATED ON, by the user's decision, for a future rule.
+  `needsOnboarding` is now `isAuthenticated() && isOnboardingCompleted() === false`: **only a known
+  `false` redirects**, because `null` (nobody has said yet) must not bounce a learner who finished
+  onboarding months ago and merely lost the `userData` cookie. Three specs pin exactly that
+  (503 passing now, was 500).
+  The flags are SEEDED from the session's `profile_status` so a reload gates before any request goes
+  out, then overwritten by the row — `AccountApi` pushes them in an `effect`, because `AuthSession`
+  cannot read the row itself (`AccountApi` injects it, so reading back would be a DI cycle).
+  `profile.ts` also pushes the milestones off the `PATCH profile/` response before navigating, so the
+  redirect cannot race the row reload and re-trigger `onboardingGuard`.
+  `onboardingGuard` itself is UNCHANGED and rule 4 still holds — this is the milestone, never the
+  token's `miles.onboarding_required` claim.
+  **The real `user_details/` payload also corrected the model: `id` is a UUID STRING, not a number;
+  `middle_name` and `tags` come back `null`.**
+  Bundle: initial overage 56.63 → 57.44 kB, so **+0.81 kB, mine** — `AuthSession`/`AccountApi` are in
+  the initial chunk. Budget was already exceeded before this change.
+
+- 📌 **OFF-PHASE (2026-09-24): the onboarding/profile questionnaire was retyped against a REAL
+  `GET questions/` payload the user supplied.** Not a refactor phase, not part of Phase 8's change
+  set — 3 files, on top of the uncommitted Phase 8 work: `core/models/account.model.ts`,
+  `features/auth/pages/profile/profile.{ts,html}`.
+  The `Question` interface had been guessed from contract prose (the route is 403 without a token and
+  the collection ships no examples) and was **wrong on every field that matters**: `question` not
+  `label`, `answer_format` not `type`, `section` is `''` not `null`, options are
+  `{ text, value: string[] }` not `{ id, label, value }`, plus `id`, `help_text`, `placeholder`,
+  `validation`, `parent_question`, `parent_answer_value`. `controlOf`'s substring guessing is now an
+  exact `answer_format` switch, and the old ponytail comment saying "tighten this the first time a
+  live payload is available" is discharged.
+  **Option values are LISTS even for `single_select`**, so a select answer PATCHes back verbatim
+  (`user_intent: ["licensed_accountant"]`); the aria controls take a joined key and the option is
+  **looked up** by it, never split.
+  Two judgement calls flagged to the user, both unconfirmed: (1) `first_name`/`last_name`/`email`
+  arrive as questions AND are rendered by the identity block, so they render once and are submitted
+  as answers from the user row — without that, two REQUIRED onboarding questions could never be
+  answered and the milestone would never advance; (2) `parent_question` gating is implemented from
+  inferred semantics (every sample value is `null`), and an unresolvable parent SHOWS the child so a
+  wrong read cannot make a question unanswerable.
+  `build:prod` green, `pnpm test` 158/500+1 (baseline match), eslint clean on the changed files.
+  Bundle budget warning is pre-existing — **verified by stash-building HEAD: identical 56.63 kB
+  overage**, so this change moved nothing.
+
 - 🏁 **PHASE 8 (services) IS DONE AND CLOSES ✅.** Report: [phase-08](reports/phase-08.md).
   **`pnpm lint` is fully green** — all 8 Phase 7 boundary violations cleared, so §6's "full green run"
   is reachable and the ⛔ recorded earlier no longer applies.
@@ -976,27 +1129,27 @@ New decisions raised by Phase 0:
       **Counts re-derived from the import graph** (PLAN.md's have been wrong twice):
 
       | Component (current home) | own feature | external features | total |
-                                                                                                                                                                                                          | --- | --- | --- | --- |
-                                                                                                                                                                                                          | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
-                                                                                                                                                                                                          | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                          | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                          | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                          | `home/components/app-download` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                          | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
+                                                                                                                                                                                                              | --- | --- | --- | --- |
+                                                                                                                                                                                                              | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
+                                                                                                                                                                                                              | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                              | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                              | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                              | `home/components/app-download` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                              | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
 
-                                                                                                                                                                                                          All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
-                                                                                                                                                                                                          precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
-                                                                                                                                                                                                          **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
-                                                                                                                                                                                                          because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
-                                                                                                                                                                                                          (14 importers) is still open and unverified — treat its count with the same suspicion.
-                                                                                                                                                                                                          - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
-                                                                                                                                                                                                            partners (11 pages), offerings, home, library.
-                                                                                                                                                                                                          - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
-                                                                                                                                                                                                            temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
-                                                                                                                                                                                                          - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
-                                                                                                                                                                                                            `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
-                                                                                                                                                                                                            structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
-                                                                                                                                                                                                            so it needs an explicit override.
+                                                                                                                                                                                                              All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
+                                                                                                                                                                                                              precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
+                                                                                                                                                                                                              **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
+                                                                                                                                                                                                              because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
+                                                                                                                                                                                                              (14 importers) is still open and unverified — treat its count with the same suspicion.
+                                                                                                                                                                                                              - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
+                                                                                                                                                                                                                partners (11 pages), offerings, home, library.
+                                                                                                                                                                                                              - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
+                                                                                                                                                                                                                temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
+                                                                                                                                                                                                              - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
+                                                                                                                                                                                                                `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
+                                                                                                                                                                                                                structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
+                                                                                                                                                                                                                so it needs an explicit override.
 
 - [ ] **`features/shared/services/tracks/` has no home in the target structure.** Raised 2026-09-23.
       It sits at the `features/` root, which §3 does not contain. Importers are
@@ -1269,6 +1422,12 @@ an ordinary run rather than only when explicitly asked — if it does, this recu
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-09-24 - OFF-PHASE - NgpSelect does not call ngpFormControl, so a select in a form field had NO accessible name; Select now reads the field state for aria-labelledby/describedby, profile.html uses span labels for widget controls; 519 tests
+- 2026-09-24 - OFF-PHASE - shared `app-select` on ngpSelect + signal forms; fixed the value-prune race and NG0955 duplicate keys; `required()` ignores empty arrays so choices need required+validate; 8 DOM tests + 6 stories; 518 passing
+- 2026-09-24 · OFF-PHASE · profile controls rebuilt on raw ng-primitives (page-scoped; 52 other aria users untouched); ng-primitives 0.131.0 has no signal-forms support so select/checkbox bind FieldState.value directly; label lint fixed by pinning ids, not by disabling; build+lint green, 509 tests
+- 2026-09-24 · OFF-PHASE · profile form rebuilt on signal forms, fields 100% from `questions/` (identity block removed); applyEach joins on `code` not index; hidden gating keeps unreachable required questions from blocking submit; +6 mapping tests (509 passing) · ⚠️ features/blog deleted in the tree by something OTHER than this session — flagged, untouched
+- 2026-09-24 · OFF-PHASE · onboarding gate moved to `is_onboarding_completed` (null ≠ false, only known-false redirects); `isProfileCompleted` carried unused; UserDetails.id is a UUID string; tests 158/503+1, build green, +0.81 kB initial
+- 2026-09-24 · OFF-PHASE · onboarding questions retyped from a live `questions/` payload; select answers save as value LISTS; identity questions answered from the user row; parent gating inferred; build green, tests 158/500+1
 - 2026-09-24 - P8 - option 2 part C done: SubscriptionDialog moved to features/payment, 2 loader tokens in core/services/dialog/feature-dialog-tokens.ts; LINT FULLY GREEN (0 errors), tests 158/500+1
 - 2026-09-24 - P8 - CART_DRAWER_DIALOG token clears utils.ts:767; lint 8->2; pre-commit hook PASSES; 56 specs needed the token bound in test-setup too
 - 2026-09-24 · P8 · CORRECTION · open question -1 SOLVED: a baseline-recording run writes the baselines even when lint fails (the gate loop does not abort); my "recurrence" claim is retracted, and the baselines must NOT be restored — they are the user's deliberate record

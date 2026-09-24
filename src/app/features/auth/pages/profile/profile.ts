@@ -1,13 +1,23 @@
 import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { FormField, applyEach, form, hidden, required, validate } from '@angular/forms/signals';
 import { Observable, map } from 'rxjs';
 
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
-import { AriaAutocomplete } from '@shared/ui/aria/aria-autocomplete/aria-autocomplete';
-import { AriaMultiselect } from '@shared/ui/aria/aria-multiselect/aria-multiselect';
+import { NgpCheckbox } from 'ng-primitives/checkbox';
+import { NgpDescription, NgpFormField, NgpLabel } from 'ng-primitives/form-field';
+import { NgpInput } from 'ng-primitives/input';
+import { NgpTextarea } from 'ng-primitives/textarea';
+import { Select } from '@shared/ui/select/select';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { AnswerMap, AnswerValue, Question, UserDetailsPatch } from '@core/models/account.model';
+import {
+  AnswerMap,
+  AnswerValue,
+  Question,
+  QuestionOption,
+  UserDetails,
+  UserDetailsPatch,
+} from '@core/models/account.model';
 import { AccountApi } from '@core/services/account-api/account-api';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { OnboardingApi } from '@core/services/onboarding-api/onboarding-api';
@@ -16,29 +26,150 @@ import { Logger } from '@core/services/logger/logger';
 import { Dialog } from '@core/services/dialog/dialog';
 import { DialogButton, UtilsDialog } from '@shared/dialogs/utils-dialog/utils-dialog';
 
-/** How a question should be rendered. */
-type Control = 'text' | 'number' | 'boolean' | 'single' | 'multi';
+/** Which control a question renders as. */
+export type Control = 'text' | 'textarea' | 'number' | 'boolean' | 'date' | 'single' | 'multi';
+
+/**
+ * One question, prepared for the template.
+ *
+ * `index` is the position in the form array — the template needs it to reach
+ * `form[index]`, and the schema's `applyEach` logic gets the same number back
+ * from its item context, which is what joins a field to its question.
+ */
+interface Entry {
+  index: number;
+  question: Question;
+  control: Control;
+  /** Options as the aria controls want them — `value` is the option KEY. */
+  options: { label: string; value: string }[];
+}
+
+/**
+ * One row of the form model.
+ *
+ * Three typed slots rather than one `AnswerValue` union, because a field binds
+ * to a CONTROL: a multiselect needs `string[]`, a checkbox needs `boolean`, and
+ * a union satisfies neither without a cast at every binding. Which slot a
+ * question uses follows from its `answer_format` and nothing else.
+ */
+interface AnswerField {
+  /** The question `code` — the key this answer is stored under. */
+  code: string;
+  /** Text, textarea, number and date, plus the chosen KEY of a single-select. */
+  text: string;
+  /** The chosen KEYS of a multi-select. */
+  choices: string[];
+  /** Boolean formats. */
+  flag: boolean;
+}
+
+/**
+ * The aria controls speak in single string values; `questions/` speaks in value
+ * LISTS (`value: ["licensed_accountant"]`, even for a single-select). The key
+ * bridges the two, and an option is always looked up by it rather than the key
+ * being split apart — so a value containing the separator cannot corrupt the
+ * answer that goes back to the API.
+ */
+export function optionKey(option: QuestionOption): string {
+  return option.value.join('|');
+}
+
+export function keysToValues(question: Question, keys: readonly string[]): string[] {
+  const byKey = new Map((question.options ?? []).map((o) => [optionKey(o), o.value]));
+  return keys.flatMap((key) => byKey.get(key) ?? []);
+}
+
+export function valuesToKeys(question: Question, values: readonly string[]): string[] {
+  const given = new Set(values);
+  return (question.options ?? [])
+    .filter((o) => o.value.length > 0 && o.value.every((v) => given.has(v)))
+    .map(optionKey);
+}
+
+/** An answer is a list for the select formats and a scalar for the rest. */
+function asList(value: AnswerValue | undefined): string[] {
+  if (value === undefined || value === null || value === '') return [];
+  return Array.isArray(value) ? value : [String(value)];
+}
+
+export function controlOf(question: Question): Control {
+  switch (question.answer_format) {
+    case 'single_select':
+      return 'single';
+    case 'multi_select':
+      return 'multi';
+    case 'textarea':
+      return 'textarea';
+    case 'number':
+      return 'number';
+    case 'boolean':
+      return 'boolean';
+    case 'date':
+      return 'date';
+    case 'text':
+      return 'text';
+    default:
+      // An unknown format is not an error: options mean a choice, anything else
+      // is free text.
+      return question.options?.length ? 'single' : 'text';
+  }
+}
+
+/**
+ * Codes the user row can answer on the learner's behalf.
+ *
+ * The questionnaire OWNS the form — `first_name` and `email` are questions like
+ * any other and render from `questions/` alone. This only decides what a blank
+ * one starts out showing, so a learner whose name the SSO already knows is not
+ * asked to type it again.
+ */
+function rowDefaults(user: UserDetails | null): Record<string, string> {
+  if (!user) return {};
+  return {
+    first_name: user.first_name ?? '',
+    last_name: user.last_name ?? '',
+    middle_name: user.middle_name ?? '',
+    email: user.email ?? '',
+    phone_number: user.phone_number ?? '',
+    city: user.city ?? '',
+    location: user.location ?? '',
+  };
+}
+
+/** Answer codes that are also columns on the user row, and writable there. */
+const ROW_WRITABLE = ['first_name', 'last_name', 'city', 'location'] as const;
 
 /**
  * Profile and onboarding.
  *
- * This page used to be a FIXED form over the old API's reference data —
- * companies, sectors, job roles, state boards, professional courses. None of
- * that exists on the MilesCAIRA Accounts API, which splits the same screen in
- * two:
+ * EVERY field on this page comes from `GET questions/` — there is no fixed
+ * form here and adding a question is a backend change, not a frontend one. The
+ * backend decides which questions exist, in what order, with what options,
+ * which are required and which are revealed by an earlier answer.
  *
- *   - `user_details/` — the user row: name, phone, location. Fixed fields.
- *   - `questions/` + `profile/` — a SERVER-DRIVEN questionnaire. The backend
- *     decides which questions exist, in what order, with what options; this
- *     page only renders them. Adding a question is a backend change now, not a
- *     frontend one.
+ *   - `questions/` says what to render.
+ *   - `profile/` says what has been answered. The two join on `code`.
+ *   - `user_details/` is not a second form; it only seeds blanks (see
+ *     `rowDefaults`) and takes back the four codes that are also columns on it.
  *
- * `questions/` says what to render and `profile/` says what has been answered;
- * the two join on the question `code`.
+ * Built on signal forms: the model is one row per question, the schema is
+ * applied per item by `applyEach`, and `required` / `hidden` are driven by the
+ * payload's own `is_required` and `parent_question` fields.
  */
 @Component({
   selector: 'app-profile',
-  imports: [AriaInput, AriaAutocomplete, AriaMultiselect, Button, Spinner],
+  imports: [
+    FormField,
+    NgpCheckbox,
+    NgpDescription,
+    NgpFormField,
+    NgpInput,
+    NgpLabel,
+    NgpTextarea,
+    Select,
+    Button,
+    Spinner,
+  ],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
   host: {
@@ -84,28 +215,9 @@ export class Profile {
 
   readonly isOnboarding = computed(() => this.onboarding.form() === 'onboarding');
 
-  // ── The user row ──────────────────────────────────────────────────────────
-
   private readonly user = computed(() =>
     this.account.user.hasValue() ? this.account.user.value() : null,
   );
-
-  readonly email = computed(() => this.user()?.email ?? '');
-  readonly phone = computed(() => {
-    const u = this.user();
-    if (!u?.phone_number) return '';
-    return `${u.country_code ?? ''} ${u.phone_number}`.trim();
-  });
-
-  /**
-   * Editable identity fields, re-seeded whenever the row reloads but writable
-   * in between — `linkedSignal` is exactly that shape, and it means a reload
-   * after save does not strand the user's edits.
-   */
-  readonly firstName = linkedSignal(() => this.user()?.first_name ?? '');
-  readonly lastName = linkedSignal(() => this.user()?.last_name ?? '');
-  readonly city = linkedSignal(() => this.user()?.city ?? '');
-  readonly location = linkedSignal(() => this.user()?.location ?? '');
 
   // ── The questionnaire ─────────────────────────────────────────────────────
 
@@ -116,112 +228,253 @@ export class Profile {
       : [],
   );
 
+  /** Control + option keys, derived from `questions/` alone so they stay stable
+   *  while the learner types. */
+  private readonly entries = computed<Entry[]>(() =>
+    this.questions().map((question, index) => ({
+      index,
+      question,
+      control: controlOf(question),
+      options: (question.options ?? []).map((o) => ({ label: o.text, value: optionKey(o) })),
+    })),
+  );
+
+  private readonly byCode = computed(
+    () => new Map(this.entries().map((entry) => [entry.question.code, entry])),
+  );
+
+  /** What `profile/` already holds. */
+  private readonly saved = computed<AnswerMap>(() =>
+    this.onboarding.answers.hasValue() ? (this.onboarding.answers.value() ?? {}) : {},
+  );
+
   /**
-   * `section` is a label to group by. It does NOT affect ordering and there are
-   * no screen buckets, so the groups are built in first-appearance order and
-   * the questions inside each keep the order the server sent.
+   * The form model: one row per question, re-seeded whenever either resource
+   * reloads but written straight through by the form in between — which is
+   * exactly `linkedSignal`, and it means a reload after save does not strand
+   * what the learner typed.
    */
-  readonly sections = computed(() => {
-    const groups = new Map<string, Question[]>();
-    for (const q of this.questions()) {
-      const key = q.section ?? '';
-      (groups.get(key) ?? groups.set(key, []).get(key)!).push(q);
-    }
-    return Array.from(groups, ([title, questions]) => ({ title, questions }));
+  private readonly model = linkedSignal<AnswerField[]>(() => {
+    const answers = this.saved();
+    const defaults = rowDefaults(this.user());
+    return this.entries().map(({ question, control }) => {
+      const code = question.code;
+      const stored = answers[code];
+      const blank: AnswerField = { code, text: '', choices: [], flag: false };
+
+      switch (control) {
+        case 'multi':
+          return { ...blank, choices: valuesToKeys(question, asList(stored)) };
+        case 'single':
+          // One key, in the same slot as a multi-select — the only difference
+          // is that the primitive is not in `multiple` mode.
+          return { ...blank, choices: valuesToKeys(question, asList(stored)).slice(0, 1) };
+        case 'boolean':
+          return { ...blank, flag: stored === true };
+        default:
+          return {
+            ...blank,
+            text: stored === undefined || stored === null ? (defaults[code] ?? '') : String(stored),
+          };
+      }
+    });
   });
 
   /**
-   * The working answer set: what came back from `profile/`, plus whatever the
-   * user has changed since. Re-seeded when the resource reloads.
+   * The form.
+   *
+   * `applyEach` is what makes a server-driven form possible: one schema, applied
+   * to every row, with the question behind each row reached through the item
+   * context's `index`.
    */
-  private readonly answers = linkedSignal<AnswerMap>(() =>
-    this.onboarding.answers.hasValue() ? { ...(this.onboarding.answers.value() ?? {}) } : {},
-  );
+  protected readonly form = form<AnswerField[]>(this.model, (path) => {
+    applyEach(path, (item) => {
+      // Every rule joins back to its question through the row's own `code`.
+      // `index` is only on the ITEM context, not on its children, and the code
+      // is the better key anyway — it survives the list being re-ordered.
+      //
+      // A gated question is HIDDEN, not merely unrendered. A hidden field does
+      // not contribute to its parent's validity, so a required question the
+      // learner can't even see cannot block the form — the bug this would
+      // otherwise be.
+      hidden(item, { when: ({ value }) => !this.isRevealed(value().code) });
 
-  answerOf(question: Question): AnswerValue {
-    const stored = this.answers()[question.code];
-    if (stored !== undefined) return stored;
-    // An unanswered question needs a value of the right SHAPE, or a multiselect
-    // bound to `undefined` renders nothing and a checkbox renders indeterminate.
-    switch (this.controlOf(question)) {
-      case 'multi':
-        return [];
-      case 'boolean':
-        return false;
-      case 'number':
-        return '';
-      default:
-        return '';
-    }
-  }
+      required(item.text, {
+        when: ({ valueOf }) => this.requiresSlot(valueOf(item.code), 'text'),
+        message: 'This answer is required.',
+      });
 
-  setAnswer(question: Question, value: unknown): void {
-    this.answers.update((current) => ({ ...current, [question.code]: value as AnswerValue }));
-    // Clear the server's complaint about this field as soon as it is touched.
-    if (this.fieldErrors()[question.code]) {
-      this.fieldErrors.update(({ [question.code]: _drop, ...rest }) => rest);
+      // `choices` needs BOTH rules, and neither is redundant:
+      //
+      //  - `required` carries the REQUIRED metadata, which is what marks the
+      //    control `aria-required` through `[formField]`. It raises no error
+      //    here, because the forms package's emptiness test is
+      //    `'' | false | null | undefined | NaN` — an empty ARRAY is not empty
+      //    to it.
+      //  - `validate` is therefore the rule that actually fires, for BOTH
+      //    select kinds, since a single-select holds its one key in this slot.
+      required(item.choices, {
+        when: ({ valueOf }) => this.requiresSlot(valueOf(item.code), 'choices'),
+      });
+      validate(item.choices, ({ valueOf, value }) =>
+        this.requiresSlot(valueOf(item.code), 'choices') && value().length === 0
+          ? { kind: 'required', message: 'Choose an option.' }
+          : null,
+      );
+
+      // No rule on `flag`: `false` IS an answer to a yes/no question, and
+      // requiring `true` would turn every optional consent into a blocker.
+    });
+  });
+
+  /** Groups for the template. `section` is a label — it does NOT affect order,
+   *  so groups are built in first-appearance order and keep the server's. */
+  readonly sections = computed(() => {
+    const groups = new Map<string, Entry[]>();
+    for (const entry of this.entries()) {
+      const key = entry.question.section || '';
+      (groups.get(key) ?? groups.set(key, []).get(key)!).push(entry);
     }
-  }
+    return Array.from(groups, ([title, entries]) => ({ title, entries }));
+  });
+
+  /** The current answer VALUES (not keys) per code — what gating reads. */
+  private readonly currentValues = computed<Map<string, string[]>>(() => {
+    const rows = this.model();
+    const out = new Map<string, string[]>();
+    for (const { index, question, control } of this.entries()) {
+      const row = rows[index];
+      if (!row) continue;
+      switch (control) {
+        case 'multi':
+        case 'single':
+          out.set(question.code, keysToValues(question, row.choices));
+          break;
+        case 'boolean':
+          out.set(question.code, [String(row.flag)]);
+          break;
+        default:
+          out.set(question.code, row.text ? [row.text] : []);
+      }
+    }
+    return out;
+  });
 
   /**
-   * Which control to render.
-   *
-   * ponytail: driven primarily by whether the question HAS options, because
-   * that is knowable at runtime, with `type` only used to refine. The `type`
-   * vocabulary is not documented anywhere and could not be captured — every
-   * `auth-*` route on UAT answers 503 as of 2026-09-22, so no token could be
-   * obtained to read `questions/`. Tighten this to an exact `type` switch the
-   * first time a live payload is available.
+   * A gated question shows only once its parent holds the answer that reveals
+   * it. A parent we cannot resolve shows the child rather than hiding it — a
+   * mis-read gate must never make a question unanswerable.
    */
-  controlOf(question: Question): Control {
-    const type = (question.type ?? '').toLowerCase();
-    if (question.options?.length) {
-      return type.includes('multi') || type.includes('checkbox') ? 'multi' : 'single';
-    }
-    if (type.includes('bool') || type.includes('toggle')) return 'boolean';
-    if (type.includes('number') || type.includes('int') || type.includes('decimal'))
-      return 'number';
-    return 'text';
+  private isRevealed(code: string): boolean {
+    const question = this.byCode().get(code)?.question;
+    if (!question?.parent_question) return true;
+
+    const parent = this.questions().find((q) => q.id === question.parent_question);
+    if (!parent) return true;
+
+    const given = this.currentValues().get(parent.code) ?? [];
+    const expected = question.parent_answer_value;
+    if (expected === null) return given.length > 0;
+    return (Array.isArray(expected) ? expected : [expected]).some((v) => given.includes(v));
   }
 
-  optionsOf(question: Question) {
-    return (question.options ?? []).map((o) => ({ label: o.label, value: o.value }));
-  }
-
-  asStringArray(value: AnswerValue): string[] {
-    return Array.isArray(value) ? value : [];
+  /** Whether the question behind `code` must fill a given slot. */
+  private requiresSlot(code: string, slot: 'text' | 'choices'): boolean {
+    const entry = this.byCode().get(code);
+    if (!entry?.question.is_required) return false;
+    const isChoice = entry.control === 'single' || entry.control === 'multi';
+    return slot === 'choices' ? isChoice : !isChoice && entry.control !== 'boolean';
   }
 
   // ── Save ──────────────────────────────────────────────────────────────────
 
-  private identityPatch(): UserDetailsPatch {
-    const u = this.user();
-    if (!u) return {};
+  /**
+   * The model back in the API's shape: selects give the option's value LIST
+   * verbatim, booleans give a boolean, numbers give a number.
+   *
+   * A hidden question is never sent — its answer is not one the learner was
+   * asked for. An untouched blank is omitted too, since PATCH is partial and an
+   * omitted code keeps whatever it had; a blank that CLEARS a stored answer is
+   * sent, because omitting it would silently ignore the edit.
+   */
+  private toAnswerMap(): AnswerMap {
+    const rows = this.model();
+    const stored = this.saved();
+    const out: AnswerMap = {};
+
+    for (const { index, question, control } of this.entries()) {
+      const row = rows[index];
+      if (!row || !this.isRevealed(question.code)) continue;
+      const code = question.code;
+
+      switch (control) {
+        case 'multi':
+        case 'single': {
+          const values = keysToValues(question, row.choices);
+          if (values.length || code in stored) out[code] = values;
+          break;
+        }
+        case 'boolean':
+          out[code] = row.flag;
+          break;
+        case 'number': {
+          const text = row.text.trim();
+          if (text !== '') out[code] = Number(text);
+          break;
+        }
+        default: {
+          const text = row.text.trim();
+          if (text !== '' || code in stored) out[code] = text;
+        }
+      }
+    }
+    return out;
+  }
+
+  /**
+   * The four answers that are also columns on the user row, mirrored back so
+   * the name the app renders everywhere else follows the form. Idempotent: an
+   * unchanged value is not sent, and an empty patch is refused before it can
+   * become a 400.
+   */
+  private identityPatch(answers: AnswerMap): UserDetailsPatch {
+    const user = this.user();
+    if (!user) return {};
     const patch: UserDetailsPatch = {};
-    if (this.firstName() !== (u.first_name ?? '')) patch.first_name = this.firstName();
-    if (this.lastName() !== (u.last_name ?? '')) patch.last_name = this.lastName();
-    if (this.city() !== (u.city ?? '')) patch.city = this.city();
-    if (this.location() !== (u.location ?? '')) patch.location = this.location();
+    for (const key of ROW_WRITABLE) {
+      const next = answers[key];
+      if (typeof next === 'string' && next !== (user[key] ?? '')) patch[key] = next;
+    }
     return patch;
+  }
+
+  onSubmit(event: Event): void {
+    event.preventDefault();
+    void this.save();
   }
 
   async save(): Promise<void> {
     if (this.isSaving()) return;
+
+    // Errors only show on a touched field, so an untouched required question
+    // would otherwise reject the submit with nothing on screen to explain it.
+    this.form().markAsTouched();
+    if (this.form().invalid()) return;
+
     this.isSaving.set(true);
     this.fieldErrors.set({});
 
-    const before = this.auth.profileStatus();
-
     try {
-      // The user row and the answers are two different resources, so this is
-      // two writes. The identity patch is skipped when nothing changed — an
-      // empty body is a 400 ("Send at least one field to update.").
-      await this.account.updateUser(this.identityPatch());
+      const answers = this.toAnswerMap();
 
-      // `null` is REFUSED by this endpoint rather than read as "clear", so an
-      // untouched answer is omitted entirely. PATCH is partial by definition:
-      // a code left out keeps whatever it had.
-      const result = await this.onboarding.saveAnswers(this.nonNullAnswers());
+      // The user row and the answers are two different resources, so this is
+      // two writes.
+      await this.account.updateUser(this.identityPatch(answers));
+
+      // `null` is REFUSED by this endpoint rather than read as "clear", so no
+      // code is ever sent as null. PATCH is partial by definition: a code left
+      // out keeps whatever it had.
+      const result = await this.onboarding.saveAnswers(answers);
 
       // The write always succeeds; the milestone advances only when every
       // required, shown question has an answer. A non-empty `missing` is NOT an
@@ -234,12 +487,17 @@ export class Profile {
         return;
       }
 
+      // The save response carries the milestones, so the gate can move before
+      // the user row reloads — otherwise the redirect below races the reload
+      // and `onboardingGuard` sends the learner straight back here.
+      this.auth.setMilestones(result.is_onboarding_completed, result.is_profile_completed);
+
       // RULE 5, and the single most common integration bug on this surface:
       // `miles.onboarding_required` is minted INTO the access token, so if the
       // milestone just advanced we must rotate BEFORE navigating. Skipping this
       // re-reads a stale claim and bounces the user straight back into the
       // onboarding they just finished.
-      if (result.profile_status !== before) {
+      if (result.profile_status !== this.auth.profileStatus()) {
         await this.auth.forceRefresh();
       }
 
@@ -252,29 +510,14 @@ export class Profile {
     }
   }
 
-  private nonNullAnswers(): AnswerMap {
-    return Object.fromEntries(
-      Object.entries(this.answers()).filter(([, v]) => v !== null && v !== undefined),
-    );
-  }
-
   // ── Unsaved-changes protection ────────────────────────────────────────────
 
   /**
-   * True once the user has changed anything that is not yet persisted.
-   *
    * Onboarding is the case that matters: several answers typed and then a stray
    * back-navigation loses all of them, and the API has no draft state to
    * recover from — a partial `PATCH profile/` is the only thing that persists.
    */
-  readonly isDirty = computed(() => {
-    if (Object.keys(this.identityPatch()).length) return true;
-    const saved = this.onboarding.answers.hasValue() ? (this.onboarding.answers.value() ?? {}) : {};
-    const current = this.answers();
-    return Object.keys(current).some(
-      (code) => JSON.stringify(current[code]) !== JSON.stringify(saved[code]),
-    );
-  });
+  readonly isDirty = computed(() => this.form().dirty());
 
   onBeforeUnload(event: BeforeUnloadEvent): void {
     if (!this.isDirty() || this.isSaving()) return;

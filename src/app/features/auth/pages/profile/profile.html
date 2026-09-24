@@ -1,5 +1,5 @@
-<div class="flex flex-col space-y-6 max-w-2xl mx-auto md:p-6">
-  <div class="flex flex-col space-y-3">
+<div class="mx-auto flex max-w-2xl flex-col gap-6 md:p-6">
+  <div class="flex flex-col gap-2">
     <p class="text-2xl font-bold text-white">
       {{ isOnboarding() ? 'Tell us about yourself' : 'Your Profile' }}
     </p>
@@ -19,100 +19,129 @@
       We couldn't load your profile. Please refresh and try again.
     </p>
   } @else {
-    <form class="space-y-6 flex flex-col" (ngSubmit)="save()">
-      <!-- Identity — the `user_details/` row. Email and phone are the sign-in
-           identifiers and are set at the SSO, so they are shown, not edited. -->
-      <div class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <app-aria-input id="first_name" label="First Name" [(value)]="firstName" />
-          <app-aria-input id="last_name" label="Last Name" [(value)]="lastName" />
-        </div>
+    <!-- Every field below is server-driven: `questions/` decides which exist,
+         their order, their options, which are required and which are revealed
+         by an earlier answer. `section` is a grouping label and does not affect
+         order.
 
-        <app-aria-input
-          id="email"
-          label="Email"
-          type="email"
-          [value]="email()"
-          [readonly]="true"
-          hint="Used to sign in. Contact support to change it."
-        />
-
-        @if (phone()) {
-          <app-aria-input id="phone" label="Mobile" [value]="phone()" [readonly]="true" />
-        }
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <app-aria-input id="city" label="City" [(value)]="city" />
-          <app-aria-input id="location" label="Location" [(value)]="location" />
-        </div>
-      </div>
-
-      <!-- The questionnaire. Everything below is server-driven: the backend
-           decides which questions exist, their order and their options, and
-           this template only renders them. `section` is a grouping label and
-           does not affect order. -->
+         The controls are ng-primitives directives on plain elements — no
+         wrapper components, no floating labels. State comes from the
+         primitives' own `data-*` attributes. -->
+    <form class="flex flex-col gap-6" (submit)="onSubmit($event)">
       @for (section of sections(); track section.title) {
-        <div class="space-y-4">
+        <div class="flex flex-col gap-4">
           @if (section.title) {
             <p class="text-sm font-semibold text-white/80">{{ section.title }}</p>
           }
 
-          @for (question of section.questions; track question.code) {
-            @let control = controlOf(question);
-            @let answer = answerOf(question);
+          @for (entry of section.entries; track entry.question.code) {
+            @let question = entry.question;
+            @let field = form[entry.index];
 
-            @switch (control) {
-              @case ('multi') {
-                <app-aria-multiselect
-                  [id]="question.code"
-                  [label]="question.label"
-                  [options]="optionsOf(question)"
-                  [value]="asStringArray(answer)"
-                  (valueChange)="setAnswer(question, $event)"
-                />
-              }
-              @case ('single') {
-                <app-aria-autocomplete
-                  [id]="question.code"
-                  [label]="question.label"
-                  placeholder="Select..."
-                  [options]="optionsOf(question)"
-                  [value]="answer"
-                  (valueChange)="setAnswer(question, $event)"
-                />
-              }
-              @case ('boolean') {
-                <app-aria-input
-                  [id]="question.code"
-                  type="checkbox"
-                  [label]="question.label"
-                  [value]="answer"
-                  (valueChange)="setAnswer(question, $event)"
-                />
-              }
-              @case ('number') {
-                <app-aria-input
-                  [id]="question.code"
-                  type="number"
-                  [label]="question.label"
-                  [value]="answer"
-                  (valueChange)="setAnswer(question, $event)"
-                />
-              }
-              @default {
-                <app-aria-input
-                  [id]="question.code"
-                  [label]="question.label"
-                  [value]="answer"
-                  (valueChange)="setAnswer(question, $event)"
-                />
-              }
-            }
+            <!-- A gated question is hidden by the schema; the `@if` keeps it out
+                 of the DOM as well, as the signal-forms guidance recommends. -->
+            @if (field && !field().hidden()) {
+              @let slot =
+                entry.control === 'boolean'
+                  ? field.flag
+                  : entry.control === 'single' || entry.control === 'multi'
+                    ? field.choices
+                    : field.text;
 
-            <!-- A 400 from `PATCH profile/` is keyed by question code, one
-                 message per bad answer — so it renders against its own field. -->
-            @if (fieldErrors()[question.code]; as message) {
-              <p class="text-sm text-destructive" role="alert">{{ message }}</p>
+              <div ngpFormField class="flex flex-col gap-1.5">
+                <!-- `for` only binds to a LABELABLE element, so the widget
+                     controls (a select's div, a checkbox's span) get a plain
+                     span instead and are named through `aria-labelledby`, which
+                     `ngpFormField` wires from this element's id. -->
+                @if (
+                  entry.control === 'text' ||
+                  entry.control === 'textarea' ||
+                  entry.control === 'number' ||
+                  entry.control === 'date'
+                ) {
+                  <label ngpLabel [attr.for]="question.code" class="text-sm font-medium text-white">
+                    {{ question.question }}
+                    @if (question.is_required) {
+                      <span aria-hidden="true" class="text-white/50">*</span>
+                    }
+                  </label>
+                } @else {
+                  <span ngpLabel class="text-sm font-medium text-white">
+                    {{ question.question }}
+                    @if (question.is_required) {
+                      <span aria-hidden="true" class="text-white/50">*</span>
+                    }
+                  </span>
+                }
+
+                @if (question.help_text && question.help_text !== question.question) {
+                  <p ngpDescription class="text-xs text-white/60">{{ question.help_text }}</p>
+                }
+
+                @switch (entry.control) {
+                  @case ('single') {
+                    <app-select
+                      [id]="question.code"
+                      [options]="entry.options"
+                      [placeholder]="question.placeholder || 'Select an option'"
+                      [formField]="field.choices"
+                    />
+                  }
+                  @case ('multi') {
+                    <app-select
+                      multiple
+                      [id]="question.code"
+                      [options]="entry.options"
+                      [placeholder]="question.placeholder || 'Select any that apply'"
+                      [formField]="field.choices"
+                    />
+                  }
+                  @case ('boolean') {
+                    <span
+                      ngpCheckbox
+                      [id]="question.code"
+                      class="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded border border-white/30 text-xs text-white data-[checked]:border-sky-400 data-[checked]:bg-sky-500"
+                      [(ngpCheckboxChecked)]="field.flag().value"
+                    >
+                      @if (field.flag().value()) {
+                        <span aria-hidden="true">✓</span>
+                      }
+                    </span>
+                  }
+                  @case ('textarea') {
+                    <textarea
+                      ngpTextarea
+                      rows="4"
+                      [id]="question.code"
+                      [placeholder]="question.placeholder"
+                      [formField]="field.text"
+                      class="w-full rounded-md border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/40"
+                    ></textarea>
+                  }
+                  @default {
+                    <input
+                      ngpInput
+                      [id]="question.code"
+                      [type]="entry.control"
+                      [placeholder]="question.placeholder"
+                      [formField]="field.text"
+                      class="w-full rounded-md border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/40"
+                    />
+                  }
+                }
+
+                @if (slot().touched() && slot().errors().length) {
+                  <p class="text-xs text-red-400" role="alert">
+                    {{ slot().errors()[0].message }}
+                  </p>
+                }
+
+                <!-- A 400 from `PATCH profile/` is keyed by question code, one
+                     message per bad answer — so it renders against its own field. -->
+                @if (fieldErrors()[question.code]; as message) {
+                  <p class="text-xs text-red-400" role="alert">{{ message }}</p>
+                }
+              </div>
             }
           }
         </div>

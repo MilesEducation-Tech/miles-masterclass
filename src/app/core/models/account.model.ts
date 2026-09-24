@@ -26,14 +26,15 @@ export type ProfileForm = 'onboarding' | 'profile';
  * auth responses instead.
  */
 export interface UserDetails {
-  id: number;
+  /** A UUID, not a number — never arithmetic, never a sort key. */
+  id: string;
   sso_user_id: string;
   email: string;
   username: string;
   phone_number: string | null;
   country_code: string | null;
   first_name: string;
-  middle_name: string;
+  middle_name: string | null;
   last_name: string;
   full_name: string;
   profile_picture: string | null;
@@ -54,7 +55,8 @@ export interface UserDetails {
   profile_status: ProfileStatus;
   is_onboarding_completed: boolean;
   is_profile_completed: boolean;
-  tags: string[];
+  /** `null` on a fresh account, not `[]`. */
+  tags: string[] | null;
   created_at: string;
   updated_at: string;
   last_login: string | null;
@@ -101,33 +103,54 @@ export type AnswerValue = string | number | boolean | string[];
  */
 export type AnswerMap = Record<string, AnswerValue>;
 
+/**
+ * How a question is answered — drives which control renders.
+ *
+ * Confirmed from a live `questions/` payload: `text` and `single_select`. The
+ * rest are the backend's declared vocabulary; an unrecognised value is not an
+ * error, it falls back to a free-text control (or a choice when the question
+ * ships options).
+ */
+export type AnswerFormat =
+  'text' | 'textarea' | 'number' | 'boolean' | 'date' | 'single_select' | 'multi_select';
+
 export interface QuestionOption {
-  id: number | string;
-  label: string;
-  value: string;
+  /** What the learner reads. */
+  text: string;
+  /**
+   * What gets stored. ALWAYS a list, even for a single-select — and the answer
+   * written back to `profile/` is this list verbatim, which is why the option
+   * is looked up rather than its key split apart.
+   */
+  value: string[];
 }
 
-/**
- * One question from `GET questions/`.
- *
- * ponytail: typed from the contract prose plus what the onboarding form has to
- * render. The collection ships NO example responses and the route is 403
- * without a token, so this could not be confirmed against a live payload —
- * capture one and tighten this the first time a real token is available.
- */
+/** One question from `GET questions/`. */
 export interface Question {
+  /** UUID. `parent_question` points at this, NOT at `code`. */
+  id: string;
+  /** The key the answer is stored under in `AnswerMap`. */
   code: string;
-  label: string;
-  /** Drives which control renders. */
-  type: string;
-  /** A label you may group by. It does NOT affect ordering, and there are no
-   *  screen buckets — the legacy `Screen1`/`Screen2` keying is gone. */
-  section: string | null;
+  question: string;
+  help_text: string;
+  placeholder: string;
+  answer_format: AnswerFormat | (string & {});
+  /** A label you may group by. It does NOT affect ordering, and `''` means
+   *  ungrouped — there are no screen buckets. */
+  section: string;
   /** `both` appears under EITHER `form` value — which is why membership is one
    *  column rather than two booleans. */
   visibility: ProfileForm | 'both';
   display_order: number;
   is_required: boolean;
+  /** Extra rules (length, range, pattern). Null on every question captured so
+   *  far, so the shape is unknown — carried, not interpreted. */
+  validation: unknown;
+  /** `id` of the question that gates this one; `null` = always shown. */
+  parent_question: string | null;
+  /** The parent answer(s) that reveal this question. `null` with a parent set
+   *  means any answer reveals it. */
+  parent_answer_value: string | string[] | null;
   options: QuestionOption[];
 }
 
