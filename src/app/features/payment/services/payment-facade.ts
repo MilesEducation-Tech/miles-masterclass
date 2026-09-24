@@ -90,10 +90,28 @@ export class PaymentFacade {
   ordersData = signal<OrderByIdResponseData[]>([]);
   ordersLoading = signal<boolean>(false);
   ordersError = signal<string | null>(null);
-  /** All three are `CartStore`'s; see the note on `cartData` above. */
-  readonly loading = this.cart.loading;
-  readonly error = this.cart.error;
   readonly cartFetched = this.cart.cartFetched;
+
+  /**
+   * `loading` / `error` are NOT cart-only, and that only became visible when the
+   * cart fetch moved to an `httpResource` in Phase 9.
+   *
+   * They used to be plain writable signals owned by `CartStore`, and this facade
+   * wrote them for things that have nothing to do with the cart bucket:
+   * `proceedToPayment()` and `loadOrderById()` both drive them. `CartStore`'s half
+   * is now derived from its resource and therefore read-only, so this facade keeps
+   * its own writable pair for its own operations and ORs the two together.
+   *
+   * The OR is what preserves existing behaviour rather than quietly narrowing it:
+   * `paymentGuard` and `cartResolver` wait on `loading`, so today they also wait
+   * out a checkout POST. Deriving `loading` from the cart resource alone would have
+   * silently stopped that. If that wait turns out to be unwanted, it is a separate,
+   * deliberate change — not a side effect of a data-layer refactor.
+   */
+  private readonly opLoading = signal(false);
+  private readonly opError = signal<string | null>(null);
+  readonly loading = computed(() => this.cart.loading() || this.opLoading());
+  readonly error = computed(() => this.cart.error() ?? this.opError());
   billingAddress = signal<UserAddress[]>([]);
   /**
    * User's selected address, linked to `billingAddress`: the selection is kept
@@ -465,7 +483,7 @@ export class PaymentFacade {
       return;
     }
 
-    this.loading.set(true);
+    this.opLoading.set(true);
 
     this.http
       .post<CheckoutResponse>(PAYMENT_ROUTES.proceedToPayment.path, {
@@ -475,7 +493,7 @@ export class PaymentFacade {
       })
       .subscribe({
         next: (res) => {
-          this.loading.set(false);
+          this.opLoading.set(false);
           if (res?.data?.approval_url) {
             this.analytics.trackEvent('begin_checkout', {
               cart_id: cartId,
@@ -488,7 +506,7 @@ export class PaymentFacade {
           }
         },
         error: (err) => {
-          this.loading.set(false);
+          this.opLoading.set(false);
           this.logger.error('Failed to proceed to payment', err);
         },
       });
@@ -712,20 +730,20 @@ export class PaymentFacade {
   }
 
   loadOrderById(orderId: string) {
-    this.loading.set(true);
-    this.error.set(null);
+    this.opLoading.set(true);
+    this.opError.set(null);
 
     const path = `${PAYMENT_ROUTES.getOrderById.path}?order_id=${orderId}`;
     this.http.get<OrderByIdResponse>(path).subscribe({
       next: (res) => {
         this.orderData.set(res?.data ?? null);
-        this.loading.set(false);
+        this.opLoading.set(false);
       },
       error: (err) => {
         this.logger.error('Failed to load order details', err);
         this.orderData.set(null);
-        this.error.set('Failed to load order details');
-        this.loading.set(false);
+        this.opError.set('Failed to load order details');
+        this.opLoading.set(false);
       },
     });
   }

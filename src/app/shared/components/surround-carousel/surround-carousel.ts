@@ -1,3 +1,4 @@
+import { httpResource } from '@angular/common/http';
 import {
   afterNextRender,
   Component,
@@ -6,16 +7,14 @@ import {
   effect,
   ElementRef,
   inject,
-  resource,
   signal,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft, lucideArrowRight } from '@ng-icons/lucide';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 
-import { ApiClient } from '@core/services/api-client/api-client';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { Content } from '@core/models/course.model';
 import { ContentResponse, TRACK_ROUTES } from '@core/models/track.model';
 import { Logger } from '@core/services/logger/logger';
@@ -108,7 +107,6 @@ const EMPTY_RESPONSE: ContentResponse = { status_code: 200, data: [] };
 export class SurroundCarousel {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly api = inject(ApiClient);
   private readonly viewport = inject(Viewport);
   private readonly logger = inject(Logger);
   private readonly utils = inject(Utils);
@@ -117,28 +115,24 @@ export class SurroundCarousel {
   private readonly listRef = viewChild<ElementRef<HTMLElement>>('list');
 
   /**
-   * One read, straight through `ApiClient` — same shape as `caira-level-stack`,
-   * which is the precedent for a shared marketing component that needs a single
-   * endpoint and has no facade of its own.
+   * One `httpResource` — same shape as `caira-level-stack`, which is the
+   * precedent for a shared marketing component that needs a single endpoint and
+   * has no facade of its own. The request-object overload rather than the plain
+   * URL one, because the course type is a query param.
    *
    * The track endpoint answers anonymously (verified: 200 with no token), so
    * this renders for guests and needs no auth gate. Params are unconditional so
    * it renders into the SSR HTML and hydrates from the transfer cache rather
-   * than refetching.
+   * than refetching — `httpResource` goes through `HttpClient`, so the global
+   * `withHttpTransferCacheOptions` in `app.config.ts` still covers it.
    */
-  private readonly courses = resource({
-    params: () => ({}),
-    loader: ({ abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<ContentResponse>(
-            TRACK_ROUTES.trackContent.path.replace(':id', String(AI_LAB_TRACK_ID)),
-            { params: { course_type: AI_LAB_API_TYPE } },
-          )
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: EMPTY_RESPONSE },
-      ),
-  });
+  private readonly courses = httpResource<ContentResponse>(
+    () => ({
+      url: apiUrl(TRACK_ROUTES.trackContent.path.replace(':id', String(AI_LAB_TRACK_ID))),
+      params: { course_type: AI_LAB_API_TYPE },
+    }),
+    { defaultValue: EMPTY_RESPONSE },
+  );
 
   private readonly localePrefix = computed(
     () => `/${this.utils.country()}/${this.utils.profession()}`,

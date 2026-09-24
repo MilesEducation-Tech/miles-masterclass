@@ -2,6 +2,7 @@
 // ^ Loads GSAP's ambient global `gsap` namespace for the `gsap.MatchMedia` type
 // without a runtime import — gsap is `sideEffects:false`, so a real top-level
 // import would be tree-shaken and warn. Type-surface only.
+import { httpResource } from '@angular/common/http';
 import {
   afterNextRender,
   Component,
@@ -9,13 +10,11 @@ import {
   DestroyRef,
   ElementRef,
   inject,
-  resource,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 
 import { Button } from '../../ui/button/button';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { Utils } from '@shared/services/utils';
 import { Viewport } from '@core/services/viewport/viewport';
 import { BadgeV2Response, CairaLadderItem } from '@core/models/caira-badge.model';
@@ -104,6 +103,14 @@ const FALLBACK_LEVELS: CairaLevelCard[] = [
   },
 ];
 
+/**
+ * The CAIRA ladder list. A bare literal rather than a `*_ROUTES` entry because
+ * that is what it was before this conversion; promoting it to the registry would
+ * mean touching the tracker's readers too, which belongs to the `features/tracker`
+ * row rather than here.
+ */
+const CAIRA_LADDER_URL = 'v2/caira-badges/';
+
 const EMPTY_LADDER: BadgeV2Response<CairaLadderItem[]> = { data: [] };
 
 /**
@@ -121,7 +128,6 @@ const EMPTY_LADDER: BadgeV2Response<CairaLadderItem[]> = { data: [] };
 export class CairaLevelStack {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly api = inject(ApiClient);
   private readonly utils = inject(Utils);
   private readonly viewport = inject(Viewport);
   protected readonly router = inject(Router);
@@ -134,18 +140,14 @@ export class CairaLevelStack {
    * `locked` with zero progress), so a guest home page can use it — and because
    * it needs no token there is no reason to skip it on the server. Params are
    * unconditional so this renders into the SSR HTML and hydrates from the
-   * transfer cache rather than refetching.
+   * transfer cache rather than refetching — `httpResource` goes through
+   * `HttpClient`, so the global `withHttpTransferCacheOptions` in `app.config.ts`
+   * still covers it and no per-resource option is needed.
    */
-  private readonly ladder = resource({
-    params: () => ({}),
-    loader: ({ abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<BadgeV2Response<CairaLadderItem[]>>('v2/caira-badges/')
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: EMPTY_LADDER },
-      ),
-  });
+  private readonly ladder = httpResource<BadgeV2Response<CairaLadderItem[]>>(
+    () => apiUrl(CAIRA_LADDER_URL),
+    { defaultValue: EMPTY_LADDER },
+  );
 
   /**
    * `hasValue()` first: reading `.value()` on an errored resource throws and

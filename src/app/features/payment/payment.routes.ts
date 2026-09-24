@@ -33,6 +33,14 @@ const cartResolver: ResolveFn<boolean> = () => {
   // Wait for the in-flight request to settle, then unblock activation.
   // `take(1)` completes the stream so the router doesn't hold an open
   // subscription after navigation.
+  //
+  // `loading` is derived from an `httpResource` since Phase 9, and this wait is
+  // only safe because of one measured fact: `reload()` flips the resource's status
+  // to `reloading` SYNCHRONOUSLY, so by the time `toObservable` samples, `loading`
+  // is already true and the filter cannot pass on a stale settled state. The
+  // resource reaching `error` also clears `loading`, so a failed cart unblocks
+  // navigation and `paymentGuard` then redirects on `facade.error()` — it must not
+  // hang here waiting for a success that will never come.
   return toObservable(facade.loading).pipe(
     filter((loading) => !loading),
     take(1),

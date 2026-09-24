@@ -1,37 +1,66 @@
-import { Service, Signal, computed, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of, shareReplay } from 'rxjs';
-import { ApiClient } from '../api-client/api-client';
-import { Logger } from '../logger/logger';
+import { httpResource } from '@angular/common/http';
+import { Service, computed } from '@angular/core';
+import { apiUrl } from '../api-client/api-client';
 import { JobRole, JobSector, PROFILE_ROUTES } from '../../models/profile.model';
 import { CommonResponse } from '../../models/http.model';
 import { AutoCompleteOption } from '../../models/form.model';
 
+/** Empty envelope, so `sectors()` is always a real array and callers need no guard. */
+const EMPTY_SECTORS: CommonResponse<JobSector[]> = {
+  data: [],
+  status: false,
+  message: '',
+};
+
 /**
  * Single source of truth for the `user/job-sectors/` list (sectors with
- * nested roles). The endpoint is fetched exactly once per app instance —
- * subsequent consumers (profile page, profile-completion dialog, anything
- * future) share the same cached signal.
+ * nested roles). One `httpResource`, so the endpoint is fetched once and every
+ * consumer — profile page, profile-completion dialog, anything future — shares
+ * the same cached signal.
  *
- * Lazy: HTTP fires the first time something injects the service. `shareReplay`
- * keeps the result alive across multiple `toSignal` subscriptions inside the
- * service itself; the outer `toSignal` then exposes a synchronous read.
+ * Three things worth knowing:
+ *
+ *  1. **No auth gate, deliberately.** Unlike `AccountApi`/`OnboardingApi`, this
+ *     endpoint is not user-scoped, so the request function is unconditional and
+ *     there is no `isAuthenticated()` check to add. Do not "fix" that by adding
+ *     one — it would stop the list loading for signed-out visitors, who see it
+ *     in the profile-completion dialog.
+ *  2. **`defaultValue` AND a `hasValue()` guard — both are needed.** PROMPT.md
+ *     §4.2 asks for a default on lists, which covers idle and loading; the guard
+ *     covers the error state, where `value()` throws regardless of the default.
+ *     See the note on `sectors` below.
+ *  3. **The resource is public so callers can read `.isLoading()`/`.error()`.**
+ *     The previous implementation swallowed failures into `[]` via `catchError`
+ *     and a `Logger.error`, which left no way to tell "no sectors" from "the
+ *     request failed". Nothing renders that distinction today, but the state is
+ *     now there instead of discarded.
+ *
+ * Timing note: the old `toSignal` subscribed at field-initialiser time, so HTTP
+ * fired the moment anything injected the service. A resource fetches once it is
+ * first read by a reactive consumer instead. The only consumer reads
+ * `sectorOptions()` straight from its template, so in practice this is the same
+ * moment.
  */
 @Service()
 export class JobSectors {
-  private readonly http = inject(ApiClient);
-  private readonly logger = inject(Logger);
+  readonly sectorsResource = httpResource<CommonResponse<JobSector[]>>(
+    () => apiUrl(PROFILE_ROUTES.getJobSectorList.path),
+    { defaultValue: EMPTY_SECTORS },
+  );
 
-  readonly sectors: Signal<JobSector[]> = toSignal(
-    this.http.get<CommonResponse<JobSector[]>>(PROFILE_ROUTES.getJobSectorList.path).pipe(
-      map((res) => res?.data ?? []),
-      catchError((err) => {
-        this.logger.error('Failed to load job sectors', err);
-        return of<JobSector[]>([]);
-      }),
-      shareReplay({ bufferSize: 1, refCount: false }),
-    ),
-    { initialValue: [] as JobSector[] },
+  /**
+   * The sector list, or `[]` while loading and on failure.
+   *
+   * The `hasValue()` guard is NOT redundant with `defaultValue` — that was the one
+   * real trap in this conversion. A `defaultValue` covers the idle and loading
+   * states, but reading `value()` on a resource in its ERROR state still throws,
+   * so without this guard a 500 on `user/job-sectors/` would throw inside the
+   * profile-completion dialog's template. The old `catchError(() => of([]))`
+   * returned an empty list instead, and that behaviour has to survive. This is
+   * why `caira-level-stack` carries both a default and a guard too.
+   */
+  readonly sectors = computed<JobSector[]>(() =>
+    this.sectorsResource.hasValue() ? (this.sectorsResource.value()?.data ?? []) : [],
   );
 
   /** Sector list shaped for `<app-autocomplete>`. */

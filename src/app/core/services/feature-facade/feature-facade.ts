@@ -1,4 +1,16 @@
-import { inject, Service, signal, Injector, DestroyRef, PLATFORM_ID } from '@angular/core';
+import { httpResource } from '@angular/common/http';
+import {
+  computed,
+  DestroyRef,
+  inject,
+  Injector,
+  linkedSignal,
+  PLATFORM_ID,
+  runInInjectionContext,
+  Service,
+  signal,
+  Signal,
+} from '@angular/core';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FeatureApiKey,
@@ -13,7 +25,8 @@ import {
   EMPTY_COURSE_FILTERS,
   selectionsEqual,
 } from '@core/models/library-filters.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
+import { AuthSession } from '@core/services/auth-session/auth-session';
 import { normalizeBookmarkField } from '@core/models/course.model';
 import { switchMap, map, tap, catchError, startWith, groupBy, mergeMap } from 'rxjs/operators';
 import { of, forkJoin, combineLatest, defer, Subject, EMPTY, Observable } from 'rxjs';
@@ -29,12 +42,67 @@ export interface ResourceRequest {
   page: number;
 }
 
+/** What one settled non-track list response contributes to the resource's state. */
+interface ListSnapshot {
+  page: number;
+  data: any[];
+  pagination: PaginationData | undefined;
+  meta: Record<string, unknown> | undefined;
+}
+
+/**
+ * Unwrap a list response into rows, pagination and leftover metadata.
+ *
+ * Hoisted out of the old `items$` `switchMap` so the `httpResource` path and the
+ * track path cannot drift apart. Two shapes are in play and both are real: most
+ * list endpoints return `{ data: Content[], pagination_data }`, while a few return
+ * a bare array, and single-item endpoints (`lastViewed` → `v2/user/last_viewed/`)
+ * return one `Content` object — wrapped here so consumers keep reading `items()[0]`.
+ */
+function unwrapListResponse(response: FeatureApiResponse<any[]> | any[] | null | undefined): {
+  data: any[];
+  pagination: PaginationData | undefined;
+  meta: Record<string, unknown> | undefined;
+} {
+  const {
+    data: rawData,
+    pagination_data,
+    ...rest
+  } = Array.isArray(response)
+    ? { data: response, pagination_data: undefined }
+    : (response ?? { data: [], pagination_data: undefined });
+
+  // Normalize each item's bookmark field so consumers only ever read
+  // `added_bookmark`. Some list endpoints ship `is_bookmarked` instead; the
+  // helper also walks `{content: []}` track-shaped items so nested courses get
+  // the same treatment.
+  const data = Array.isArray(rawData)
+    ? rawData.map((item) => normalizeBookmarkField(item))
+    : rawData
+      ? [normalizeBookmarkField(rawData)]
+      : [];
+
+  return {
+    data,
+    pagination: pagination_data,
+    meta: Object.keys(rest).length > 0 ? (rest as Record<string, unknown>) : undefined,
+  };
+}
+
 export class FeatureResource {
   readonly page = signal(1);
-  readonly paginationData = signal<PaginationData | undefined>(undefined);
-  readonly items = signal<any[]>([]);
-  readonly isLoading = signal(false);
-  readonly metadata = signal<Record<string, unknown> | undefined>(undefined);
+
+  /**
+   * `true` for `key === 'track'`, which is the ONE key that does not go through
+   * `listResource`.
+   *
+   * The track branch fans out — one `tracks/` GET, then a `forkJoin` of one
+   * content GET per track, with per-track pagination and per-track filter streams
+   * keyed by `groupBy`/`mergeMap`. One `httpResource` is one request and N is only
+   * known at runtime, so that branch keeps its RxJS pipeline. Everything else is a
+   * single request and is a resource.
+   */
+  private readonly isTrack: boolean;
 
   /**
    * Filters applied to non-track listings. Setting via `setFilters()` resets
@@ -50,13 +118,6 @@ export class FeatureResource {
   readonly trackFilters = signal<ReadonlyMap<number, CourseFilterSelection>>(new Map());
 
   private trackStates = new Map<number, { nextPage: number | null }>();
-
-  /**
-   * Page accumulator (page number → rows) — the source of truth behind `items`.
-   * `patchItems`/`prependItem` mutate it so local edits persist across the next
-   * pagination flatten instead of being clobbered by the cached pages.
-   */
-  private readonly pages = new Map<number, any[]>();
 
   // Observable stream of pagination requests
   private readonly request$: import('rxjs').Observable<{
@@ -75,6 +136,116 @@ export class FeatureResource {
   /** Per-track filter-change refetch trigger. */
   private readonly trackFilterSubject = new Subject<number>();
 
+  /**
+   * The non-track list read.
+   *
+   * Returning `undefined` from the request function puts the resource in the idle
+   * state and sends no request at all. That covers four cases, all of which the
+   * old pipeline handled with an early `of({data: [], ...})`:
+   *   - the track key, which owns its own pipeline;
+   *   - the server, where this class has always fetched nothing (see the ctor);
+   *   - a key with no route entry;
+   *   - a `requiresAuth` resource with nobody signed in.
+   *
+   * `refreshTrigger` is deliberately NOT read here. A resource refetches when its
+   * request OBJECT changes, so a counter that does not appear in the request would
+   * be tracked and then ignored; `refresh()` calls `reload()` instead.
+   */
+  private readonly listResource;
+
+  /**
+   * One settled response, captured as a single value.
+   *
+   * `page` is captured HERE rather than read separately by each consumer, and that
+   * is load-bearing: it keeps the page number and the rows that belong to it in one
+   * atomic snapshot, so the accumulator can never file page 1's rows under page 2.
+   * Measured rather than assumed — the instant `page` changes, the resource reports
+   * `status: 'loading'` and `hasValue(): false`, because its status and value are
+   * themselves pull-based `computed`s over the same request signal and the graph is
+   * glitch-free. There is no window in which both are readable and disagree.
+   */
+  private readonly listSnapshot;
+
+  /**
+   * Accumulated rows.
+   *
+   * A `linkedSignal`, not a `computed`, because it has two external write paths
+   * that must keep working: `FeatureFacade.applyBookmarkChange()` calls
+   * `items.update()` to flip a bookmark flag across every loaded listing without a
+   * round-trip, and the track pipeline sets it directly.
+   *
+   * Accumulation runs through the computation's own `previous` value: page 1
+   * replaces, later pages append. That is deliberately NOT a side-effecting page
+   * Map — an earlier draft filed rows into a `Map` from inside this computation and
+   * it was wrong, because a computation is LAZY: if nothing read `items()` between
+   * page 1 settling and page 2 arriving, page 1 never made it into the Map and was
+   * lost. Accumulating through `previous` has no such hole, and it makes local
+   * edits survive for free, since `patchItems`/`prependItem` writes ARE `previous`.
+   *
+   * One consequence worth knowing: a non-first page must not be re-requested for
+   * the same page number, or its rows would append twice. Nothing does — every
+   * refetch path (`refresh()`, `setFilters()`) resets to page 1 first.
+   */
+  readonly items = linkedSignal<ListSnapshot | 'unauthorized' | null, any[]>({
+    source: () => this.listSnapshot(),
+    computation: (snapshot, previous) => {
+      // Signed out on a resource that requires auth: drop everything, exactly as
+      // the old `requiresAuth && !isAuthenticated` branch did.
+      if (snapshot === 'unauthorized') return [];
+
+      // Idle or loading — hold what we already have. The old pipeline's
+      // `startWith([])` supplied the same first render.
+      if (snapshot === null) return previous?.value ?? [];
+
+      // Page 1 replaces, later pages append. Accumulating through `previous`
+      // rather than a Map is what makes `patchItems`/`prependItem` survive the
+      // next page load for free: their writes ARE `previous.value`.
+      return snapshot.page === 1 ? snapshot.data : [...(previous?.value ?? []), ...snapshot.data];
+    },
+  });
+
+  /**
+   * Pagination for the current listing. Writable because `adjustBookmarkCount()`
+   * nudges `total_count` when a bookmark row is added or removed locally, so an
+   * "X bookmarks" label stays honest without a refetch. A later real response
+   * replaces it, which is what happened before this phase too.
+   */
+  readonly paginationData = linkedSignal<
+    ListSnapshot | 'unauthorized' | null,
+    PaginationData | undefined
+  >({
+    source: () => this.listSnapshot(),
+    computation: (snapshot, previous) => {
+      if (snapshot === 'unauthorized') return undefined;
+      // Keep the previous pagination while a request is in flight, so a "load
+      // more" control does not flicker to disabled mid-load.
+      if (snapshot === null) return previous?.value;
+      return snapshot.pagination;
+    },
+  });
+
+  /** Leftover top-level response fields (e.g. section titles). Same lifetime as pagination. */
+  readonly metadata = linkedSignal<
+    ListSnapshot | 'unauthorized' | null,
+    Record<string, unknown> | undefined
+  >({
+    source: () => this.listSnapshot(),
+    computation: (snapshot, previous) => {
+      if (snapshot === 'unauthorized') return undefined;
+      if (snapshot === null) return previous?.value;
+      return snapshot.meta ?? previous?.value;
+    },
+  });
+
+  /**
+   * Writable because the track pipeline still drives it by hand; for every other
+   * key it tracks the resource, which covers both `loading` and `reloading`.
+   */
+  readonly isLoading = linkedSignal<boolean, boolean>({
+    source: () => (this.isTrack ? false : this.listResource.isLoading()),
+    computation: (loading) => loading,
+  });
+
   constructor(
     private key: FeatureApiKey,
     private type: string,
@@ -82,103 +253,99 @@ export class FeatureResource {
     private injector: Injector,
     private destroyRef: DestroyRef,
     private isBrowser: boolean,
+    private isAuthenticated: Signal<boolean>,
     private options: FeatureResourceOptions = {},
   ) {
-    // Skip all HTTP subscriptions on the server to prevent SSR task tracking errors.
-    // `EMPTY` is `Observable<never>` so it's safely assignable to any
-    // `Observable<T>` — no `as any` cast needed.
-    if (!this.isBrowser) {
+    this.isTrack = key === 'track';
+
+    // `httpResource` has to be created in an injection context and this class is
+    // instantiated with `new`, not injected — hence the explicit `Injector`.
+    this.listResource = runInInjectionContext(this.injector, () =>
+      httpResource<FeatureApiResponse<any[]>>(() => {
+        if (!this.isBrowser || this.isTrack) return undefined;
+
+        const route = FEATURE_ROUTES[this.key as keyof typeof FEATURE_ROUTES];
+        if (!route) return undefined;
+        if (this.options?.requiresAuth && !this.isAuthenticated()) return undefined;
+
+        // Route defaults + dynamic params + applied filters. `lastViewed` is a
+        // single global endpoint and takes no query params.
+        const params: Record<string, any> = { ...(route.params || {}) };
+        if (this.key !== 'lastViewed') {
+          params['page'] = this.page();
+          if (this.type && this.key !== 'premiere') {
+            params['course_type'] = this.type;
+          }
+        }
+        appendFilterParams(params, this.filters());
+
+        return { url: apiUrl(route.path), params };
+      }),
+    );
+
+    this.listSnapshot = computed<ListSnapshot | 'unauthorized' | null>(() => {
+      if (this.isTrack || !this.isBrowser) return null;
+      if (this.options?.requiresAuth && !this.isAuthenticated()) return 'unauthorized';
+
+      // `lastViewed` takes no page param, so it is always page 1 however far another
+      // listing has paged.
+      const page = this.key === 'lastViewed' ? 1 : this.page();
+
+      // A failure counts as SETTLED WITH NO ROWS, which is what the old
+      // `catchError(() => of({ data: [], pagination: undefined, ... }))` produced.
+      // Treating it as "not settled" instead would leave the previous pagination in
+      // place, and a stale `next_page` means an infinite-scroll container keeps
+      // asking for a page that just failed.
+      if (this.listResource.error()) {
+        return { page, data: [], pagination: undefined, meta: undefined };
+      }
+      if (!this.listResource.hasValue()) return null;
+
+      const { data, pagination, meta } = unwrapListResponse(this.listResource.value());
+      return { page, data, pagination, meta };
+    });
+
+    // The track pipeline below is the only remaining RxJS path, and it is skipped
+    // on the server to avoid SSR task-tracking errors. `EMPTY` is
+    // `Observable<never>`, so it is safely assignable to any `Observable<T>`.
+    // Non-track keys never build it at all — their resource is the whole story.
+    if (!this.isBrowser || !this.isTrack) {
       this.request$ = EMPTY;
       this.items$ = EMPTY;
       return;
     }
 
+    // Unchanged from before this phase, other than `isAuthenticated` now being a
+    // real signal instead of a hardcoded `false`. Note `filters` is in the stream
+    // even though a track listing's own filters are per-track and travel through
+    // `trackFilterSubject`: the top-level signal still re-requests page 1, which is
+    // the behaviour that was here, so it stays.
     this.request$ = combineLatest([
       toObservable(this.page, { injector: this.injector }),
       toObservable(this.refreshTrigger, { injector: this.injector }),
       toObservable(this.filters, { injector: this.injector }),
     ]).pipe(
-      map(([page, refresh, filters]) => {
-        return {
-          key: this.key,
-          type: this.type,
-          page,
-          // ponytail: was `auth.isAuthenticated` — part of the request key so
-          // guest and signed-in results never shared a cache entry. Always
-          // false now; restore the session signal here when auth returns.
-          isAuthenticated: false,
-          refresh,
-          filters,
-        };
-      }),
+      map(([page, refresh, filters]) => ({
+        key: this.key,
+        type: this.type,
+        page,
+        isAuthenticated: this.isAuthenticated(),
+        refresh,
+        filters,
+      })),
     );
 
     this.items$ = this.request$.pipe(
-      switchMap(({ key, type, page, isAuthenticated, filters }) => {
+      switchMap(({ type, page, isAuthenticated }) => {
         this.isLoading.set(true);
 
-        // If resource requires auth and user is not authenticated, return empty
         if (this.options?.requiresAuth && !isAuthenticated) {
           this.isLoading.set(false);
-          // Clear pagination when unauthorized
           this.paginationData.set(undefined);
           return of({ data: [], pagination: undefined, meta: undefined, page, isAuthenticated });
         }
 
-        if (key === 'track') {
-          return this.loadTracks(page, type, isAuthenticated);
-        }
-
-        const route = FEATURE_ROUTES[key as keyof typeof FEATURE_ROUTES];
-        if (!route)
-          return of({ data: [], pagination: undefined, meta: undefined, page, isAuthenticated });
-
-        // Construct params: Route defaults + Dynamic params + applied filters.
-        // `lastViewed` is a single global endpoint — it takes no query params.
-        const params: any = { ...(route.params || {}) };
-
-        if (key !== 'lastViewed') {
-          params.page = page;
-          if (type && key !== 'premiere') {
-            params['course_type'] = type;
-          }
-        }
-
-        appendFilterParams(params, filters);
-
-        return this.api.get<FeatureApiResponse<any[]>>(route.path, { params }).pipe(
-          map((response) => {
-            const {
-              data: rawData,
-              pagination_data,
-              ...rest
-            } = Array.isArray(response)
-              ? { data: response, pagination_data: undefined }
-              : (response ?? { data: [], pagination_data: undefined });
-            // Normalize each item's bookmark field so consumers only ever
-            // read `added_bookmark`. Some list endpoints ship `is_bookmarked`
-            // instead; the helper also walks `{content: []}` track-shaped
-            // items so nested courses get the same treatment.
-            // Most list endpoints return `data: Content[]`. Single-item
-            // endpoints (e.g. `lastViewed` → `v2/user/last_viewed/`) return one
-            // `Content` object — wrap it so consumers keep reading `items()[0]`.
-            const data = Array.isArray(rawData)
-              ? rawData.map((item) => normalizeBookmarkField(item))
-              : rawData
-                ? [normalizeBookmarkField(rawData)]
-                : [];
-            return {
-              data,
-              pagination: pagination_data,
-              meta: Object.keys(rest).length > 0 ? rest : undefined,
-              page,
-              isAuthenticated,
-            };
-          }),
-          catchError(() =>
-            of({ data: [], pagination: undefined, meta: undefined, page, isAuthenticated }),
-          ),
-        );
+        return this.loadTracks(page, type, isAuthenticated);
       }),
       tap(({ pagination, meta }) => {
         this.paginationData.set(pagination);
@@ -187,18 +354,12 @@ export class FeatureResource {
         }
         this.isLoading.set(false);
       }),
-      // Accumulate pages into the instance-level `pages` map so local mutations
-      // (`patchItems`/`prependItem`) edit the same source of truth and survive
-      // the next flatten. `page === 1` is treated as a fresh fetch and resets
-      // the accumulator; an auth drop on a protected resource clears it.
+      // Same accumulation rule as the resource path: page 1 replaces, later pages
+      // append onto whatever `items` currently holds — which includes any local
+      // `patchItems`/`prependItem` edit, so those survive a page load.
       map(({ data, page, isAuthenticated }) => {
-        if (this.options?.requiresAuth && !isAuthenticated) {
-          this.pages.clear();
-          return [];
-        }
-        if (page === 1) this.pages.clear();
-        this.pages.set(page, data);
-        return this.flattenPages();
+        if (this.options?.requiresAuth && !isAuthenticated) return [];
+        return page === 1 ? data : [...this.items(), ...data];
       }),
       startWith([]),
     );
@@ -276,9 +437,25 @@ export class FeatureResource {
       });
   }
 
+  /**
+   * Re-fetch page 1.
+   *
+   * The two branches force a refetch differently and both are needed. The track
+   * pipeline is a `combineLatest`, so bumping a counter re-emits it. A resource
+   * refetches only when its request OBJECT changes, so a counter would be tracked
+   * and then ignored — it calls `reload()` instead. `reload()` is only needed when
+   * the page did not actually change, because a real page change already produces
+   * a different request; calling both would fire two requests for one refresh.
+   */
   refresh() {
+    const wasFirstPage = this.page() === 1;
     this.page.set(1);
-    this.refreshTrigger.update((v) => v + 1);
+
+    if (this.isTrack) {
+      this.refreshTrigger.update((v) => v + 1);
+      return;
+    }
+    if (wasFirstPage) this.listResource.reload();
   }
 
   loadNextPage() {
@@ -290,36 +467,26 @@ export class FeatureResource {
     }
   }
 
-  /** Flatten the page accumulator into a single ordered list. */
-  private flattenPages(): any[] {
-    const sortedKeys = Array.from(this.pages.keys()).sort((a, b) => a - b);
-    return sortedKeys.flatMap((k) => this.pages.get(k)!);
-  }
-
   /**
-   * Apply a reference-preserving transform (map/filter) to every accumulated
-   * page and re-publish `items`. Editing through here — rather than
-   * `items.set()` — keeps the page accumulator authoritative, so the change
-   * survives the next pagination flatten. The transform MUST return the same
-   * array reference when it changes nothing. Returns whether anything changed.
+   * Apply a reference-preserving transform (map/filter) to the accumulated rows.
+   * The transform MUST return the same array reference when it changes nothing.
+   * Returns whether anything changed.
+   *
+   * There is no separate page accumulator to keep in step any more: `items`
+   * accumulates through its own previous value, so a write here IS what the next
+   * page appends onto, and the edit survives without extra bookkeeping.
    */
-  patchItems(transform: (pageItems: any[]) => any[]): boolean {
-    let changed = false;
-    for (const [page, arr] of this.pages) {
-      const next = transform(arr);
-      if (next !== arr) {
-        this.pages.set(page, next);
-        changed = true;
-      }
-    }
-    if (changed) this.items.set(this.flattenPages());
-    return changed;
+  patchItems(transform: (rows: any[]) => any[]): boolean {
+    const current = this.items();
+    const next = transform(current);
+    if (next === current) return false;
+    this.items.set(next);
+    return true;
   }
 
-  /** Prepend a row to the first page (and re-publish `items`). */
+  /** Prepend a row (and re-publish `items`). */
   prependItem(item: any): void {
-    this.pages.set(1, [item, ...(this.pages.get(1) ?? [])]);
-    this.items.set(this.flattenPages());
+    this.items.update((rows) => [item, ...rows]);
   }
 
   loadNextTrackPage(trackId: number) {
@@ -517,6 +684,14 @@ export class FeatureFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
+  /**
+   * The BOOLEAN, never the token string. Every resource in the app gates on this
+   * for the same reason: a request function tracks every signal it reads, so
+   * gating on the token would re-fire every listing in the application on each
+   * rotation. See `auth-session.ts`.
+   */
+  private readonly auth = inject(AuthSession);
+
   // Keys whose result depends on the user's profile (sector, job_role, watch history).
   // Used by `refreshPersonalized` when profile data changes mid-session.
   private static readonly PERSONALIZED_KEYS = new Set<FeatureApiKey>([
@@ -547,6 +722,7 @@ export class FeatureFacade {
           this.injector,
           this.destroyRef,
           this.isBrowser,
+          this.auth.isAuthenticated,
           options,
         ),
       );

@@ -1,3 +1,4 @@
+import { httpResource } from '@angular/common/http';
 import { Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, forkJoin, of } from 'rxjs';
@@ -12,9 +13,16 @@ import {
   RelatedContentType,
   RELATED_CONTENT_ROUTES,
 } from '@core/models/related-content.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { swiperConfigEven, swiperConfigPodcast } from '@core/config/swiper.config';
+
+/** Empty envelope for the related-content resource's `defaultValue`. */
+const EMPTY_RELATED: CommonResponse<Content[]> = {
+  data: [],
+  status: false,
+  message: '',
+};
 
 interface InstructorCarousel {
   instructorId: number;
@@ -46,7 +54,47 @@ export class CourseRelatedSection {
   private readonly logger = inject(Logger);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly relatedCards = signal<Content[]>([]);
+  /**
+   * Related content for the current course.
+   *
+   * The request function reads `courseId()`/`courseType()` directly, which is the
+   * whole point of the conversion: the old version was an `effect()` that called
+   * `.subscribe()` and wrote a signal, and that effect re-fired whenever
+   * `courseType()` changed even if `courseId()` had not. A resource re-requests
+   * only when its request object actually differs.
+   *
+   * `defaultValue` AND the `hasValue()` guard below are both required — a default
+   * covers idle and loading, but `value()` still throws in the error state, and a
+   * failed related-content fetch must collapse the section rather than take the
+   * course page down. That replaces the old `catchError` + `Logger.warn`, and the
+   * failure is now observable via `relatedResource.error()` instead of discarded.
+   */
+  private readonly relatedResource = httpResource<CommonResponse<Content[]>>(
+    () => {
+      const id = this.courseId();
+      const type = this.courseType();
+      // undefined = idle, no request. Matches the old `if (!id || !type) return`.
+      if (!id || !type) return undefined;
+      return {
+        url: apiUrl(RELATED_CONTENT_ROUTES.getRelatedContent.path),
+        params: { id, type },
+      };
+    },
+    { defaultValue: EMPTY_RELATED },
+  );
+
+  /**
+   * Defensive filter: hide the current course if the API mistakenly includes it in
+   * its own related list. This now reads `courseId()` inside a `computed`, so it
+   * tracks properly — the old version read it inside a `.subscribe()` callback,
+   * outside any reactive context.
+   */
+  protected readonly relatedCards = computed<Content[]>(() => {
+    const rows = this.relatedResource.hasValue() ? (this.relatedResource.value()?.data ?? []) : [];
+    const id = this.courseId();
+    return rows.filter((c) => c.id !== id);
+  });
+
   protected readonly instructorCarousels = signal<InstructorCarousel[]>([]);
 
   protected readonly swiperConfig = computed(() =>
@@ -61,13 +109,8 @@ export class CourseRelatedSection {
   );
 
   constructor() {
-    // Related-content fetch — fires as soon as the (id, type) pair lands.
-    effect(() => {
-      const id = this.courseId();
-      const type = this.courseType();
-      if (!id || !type) return;
-      this.loadRelated(id, type);
-    });
+    // No effect for related content any more — `relatedResource`'s request
+    // function is the trigger, and it fires as soon as the (id, type) pair lands.
 
     // Lead + co-instructors are fetched in parallel; an instructor with no
     // courses of the current type is dropped so the page doesn't render an
@@ -86,31 +129,6 @@ export class CourseRelatedSection {
       }
       this.loadInstructorCourses(details, ids, type);
     });
-  }
-
-  private loadRelated(id: number, type: RelatedContentType): void {
-    this.http
-      .get<CommonResponse<Content[]>>(RELATED_CONTENT_ROUTES.getRelatedContent.path, {
-        params: { id, type },
-      })
-      .pipe(
-        catchError((err) => {
-          this.logger.warn('Related content fetch failed', err);
-          return of({
-            data: [],
-            status: false,
-            status_code: 0,
-            message: '',
-          } as CommonResponse<Content[]>);
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((res) => {
-        // Defensive filter: hide the current course if the API mistakenly
-        // includes it in its own related list.
-        const filtered = (res.data ?? []).filter((c) => c.id !== this.courseId());
-        this.relatedCards.set(filtered);
-      });
   }
 
   private collectInstructorIds(details: InstructorDetails): number[] {

@@ -1,9 +1,10 @@
+import { HttpRequest, provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
 
 import { SurroundCarousel } from './surround-carousel';
-import { ApiClient } from '@core/services/api-client/api-client';
 import { Content } from '@core/models/course.model';
 import { ContentResponse } from '@core/models/track.model';
 import { Utils } from '@shared/services/utils';
@@ -16,6 +17,14 @@ import { Utils } from '@shared/services/utils';
  * jsdom has no WebGL context, so every test below takes exactly the path a
  * reduced-motion or mobile visitor takes. That is deliberate: it is the path
  * that has to survive without a GPU.
+ *
+ * Phase 9 note: this suite used to mock `ApiClient` and record its calls. The read
+ * is an `httpResource` now, which goes through `HttpClient`/`HttpBackend` and never
+ * touches `ApiClient` — that mock would have sat there observing nothing while every
+ * assertion still passed. It is `HttpTestingController` now, and the endpoint
+ * assertion is stronger for it: `match(() => true)` proves exactly ONE request was
+ * made and that its URL and params are right, rather than trusting a predicate that
+ * would quietly match zero.
  */
 
 function row(id: number, overrides: Partial<Content> = {}): Content {
@@ -31,26 +40,18 @@ function row(id: number, overrides: Partial<Content> = {}): Content {
 }
 
 describe('SurroundCarousel', () => {
-  /** Every call the component made, so the endpoint itself is under test. */
-  let requests: { path: string; options?: { params?: Record<string, unknown> } }[];
+  /** Every request the component made, so the endpoint itself stays under test. */
+  let requests: HttpRequest<unknown>[];
 
   async function render(rows: Content[]): Promise<ComponentFixture<SurroundCarousel>> {
-    requests = [];
     const response: ContentResponse = { status_code: 200, data: rows };
 
     await TestBed.configureTestingModule({
       imports: [SurroundCarousel],
       providers: [
         provideRouter([]),
-        {
-          provide: ApiClient,
-          useValue: {
-            get: (path: string, options?: { params?: Record<string, unknown> }) => {
-              requests.push({ path, options });
-              return of(response);
-            },
-          },
-        },
+        provideHttpClient(),
+        provideHttpClientTesting(),
         {
           provide: Utils,
           useValue: {
@@ -63,10 +64,19 @@ describe('SurroundCarousel', () => {
       ],
     }).compileComponents();
 
+    const backend = TestBed.inject(HttpTestingController);
     const fixture = TestBed.createComponent(SurroundCarousel);
     fixture.detectChanges();
-    await fixture.whenStable();
+
+    // Flush BEFORE awaiting stability: a pending request never stabilises, and the
+    // await would hang until the test times out.
+    const pending = backend.match(() => true);
+    requests = pending.map((r) => r.request);
+    pending.forEach((r) => r.flush(response));
+
+    await TestBed.inject(ApplicationRef).whenStable();
     fixture.detectChanges();
+    backend.verify();
     return fixture;
   }
 
@@ -77,8 +87,12 @@ describe('SurroundCarousel', () => {
     await render([row(1), row(2)]);
 
     expect(requests.length).toBe(1);
-    expect(requests[0].path).toBe('v2/tracks/7/courses/');
-    expect(requests[0].options?.params).toEqual({ course_type: 'ai_lab' });
+    // Track 7 is the AI Lab track; the path is built from TRACK_ROUTES with :id replaced.
+    expect(requests[0].url).toContain('v2/tracks/7/courses/');
+    expect(requests[0].method).toBe('GET');
+    expect(requests[0].params.get('course_type')).toBe('ai_lab');
+    // appInterceptor owns the bearer; nothing is hand-attached here.
+    expect(requests[0].headers.has('Authorization')).toBe(false);
   });
 
   it('renders one link per lab, on the kebab-case ai-labs segment', async () => {
