@@ -1,8 +1,8 @@
 import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
-import { adminAuthGuard } from '@admin/core/guards/admin-auth.guard';
-import { adminGuestGuard } from '@admin/core/guards/admin-guest.guard';
-import { permissionGuard } from '@admin/core/guards/permission.guard';
+import { adminAuthGuard } from '@admin/core/guards/admin-auth-guard';
+import { adminGuestGuard } from '@admin/core/guards/admin-guest-guard';
+import { permissionGuard } from '@admin/core/guards/permission-guard';
 import { PERM } from '@admin/core/models/admin-rbac.model';
 import { AdminAuth } from '@admin/core/services/admin-auth';
 import { adminLandingPath, partnerV2LandingPath } from '@admin/core/utils/admin-landing';

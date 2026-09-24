@@ -6,7 +6,7 @@ import { environment } from '@env/environment';
 import { Faq } from '@shared/components/faq/faq';
 import { CairaLevelsSection } from '../../components/caira-levels-section/caira-levels-section';
 import { CairaWebinarSection } from '../../components/caira-webinar-section/caira-webinar-section';
-import { LocalTimeZonePipe } from '@shared/pipes/local-time-zone/local-time-zone.pipe';
+import { LocalTimeZonePipe } from '@shared/pipes/local-time-zone/local-time-zone-pipe';
 import { AppDownload } from '@shared/components/app-download/app-download';
 import { WebinarRegistrationForm } from '@shared/components/webinar-registration-form/webinar-registration-form';
 import { CairaStep, CairaStepsGrid } from '@shared/components/caira-steps-grid/caira-steps-grid';

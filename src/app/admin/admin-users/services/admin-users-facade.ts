@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { computed, inject, Injectable, PLATFORM_ID, resource } from '@angular/core';
+import { computed, inject, Service, PLATFORM_ID, resource } from '@angular/core';
 import { Supabase } from '@core/services/supabase/supabase';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
@@ -51,7 +51,7 @@ const EMPTY: AdminUsersData = { roles: [], permissions: [], rolePermissions: {},
  * Supabase tables, not the Django REST API). RLS already restricts these reads
  * to admin:users:manage. Read-only — onboarding happens via generated SQL.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class AdminUsersFacade {
   private readonly supabase = inject(Supabase);
   private readonly logger = inject(Logger);

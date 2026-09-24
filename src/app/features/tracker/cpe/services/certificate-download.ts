@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { DestroyRef, Service, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpContext } from '@angular/common/http';
@@ -35,9 +35,7 @@ import {
  *
  * SSR-safe: any `window`/`fetch`/DOM access is guarded by `isPlatformBrowser`.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class CertificateDownload {
   private readonly api = inject(ApiClient);
   private readonly notification = inject(NotificationService);

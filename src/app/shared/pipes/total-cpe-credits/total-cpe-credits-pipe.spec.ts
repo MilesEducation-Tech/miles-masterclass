@@ -1,4 +1,4 @@
-import { TotalCpeCreditsPipe } from './total-cpe-credits.pipe';
+import { TotalCpeCreditsPipe } from './total-cpe-credits-pipe';
 
 describe('TotalCpeCreditsPipe', () => {
   const pipe = new TotalCpeCreditsPipe();

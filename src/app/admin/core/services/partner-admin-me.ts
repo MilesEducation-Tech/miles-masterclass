@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { computed, inject, Injectable, PLATFORM_ID, resource } from '@angular/core';
+import { computed, inject, Service, PLATFORM_ID, resource } from '@angular/core';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { AdminAuth } from '@admin/core/services/admin-auth';
@@ -28,7 +28,7 @@ const PARTNER_ME_ENDPOINT = 'partners/panel/me/';
  */
 // Route-scoped (see admin.routes.ts): the injector dies on navigation, which
 // aborts in-flight resource() loads and stops this page's calls firing elsewhere.
-@Injectable()
+@Service({ autoProvided: false })
 export class PartnerAdminMe {
   private readonly api = inject(ApiClient);
   private readonly auth = inject(AdminAuth);

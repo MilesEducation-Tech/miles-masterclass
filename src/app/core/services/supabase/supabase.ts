@@ -1,13 +1,11 @@
-import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { Service, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { environment } from '@env/environment';
 
 const ADMIN_STORAGE_KEY = environment.SUPABASE.SupabaseUser;
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class Supabase {
   private client: SupabaseClient | null = null;
   private clientPromise: Promise<SupabaseClient> | null = null;

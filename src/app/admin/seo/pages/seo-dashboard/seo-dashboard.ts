@@ -26,7 +26,7 @@ import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
 import { Button } from '@shared/ui/button/button';
 import { AriaSelectOption } from '@core/models/aria.model';
 import { PERM } from '@admin/core/models/admin-rbac.model';
-import { HasPermissionDirective } from '@admin/core/directives/has-permission.directive';
+import { HasPermissionDirective } from '@admin/core/directives/has-permission';
 
 @Component({
   selector: 'app-seo-dashboard',

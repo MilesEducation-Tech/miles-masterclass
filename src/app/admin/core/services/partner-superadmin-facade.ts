@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { computed, inject, Injectable, PLATFORM_ID, resource } from '@angular/core';
+import { computed, inject, Service, PLATFORM_ID, resource } from '@angular/core';
 import { firstValueFrom, fromEvent, Observable, takeUntil } from 'rxjs';
 import { PERM } from '@admin/core/models/admin-rbac.model';
 import { AdminAuth } from '@admin/core/services/admin-auth';
@@ -51,7 +51,7 @@ const assignSeatUrl = (seatId: number) => `partners/superadmin/seats/${seatId}/a
  */
 // Route-scoped (see admin.routes.ts): the injector dies on navigation, which
 // aborts in-flight resource() loads and stops this page's calls firing elsewhere.
-@Injectable()
+@Service({ autoProvided: false })
 export class PartnerSuperAdminFacade {
   private readonly api = inject(ApiClient);
   private readonly auth = inject(AdminAuth);

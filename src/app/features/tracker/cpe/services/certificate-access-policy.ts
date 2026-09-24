@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import { CurrentPlanData } from '@core/models/payment.model';
 
 export type AccessDecision = 'allow' | 'upsellTrial' | 'claimPrompt';
@@ -7,9 +7,7 @@ export type AccessDecision = 'allow' | 'upsellTrial' | 'claimPrompt';
  * Pure policy: decide whether a user can download a certificate, should be
  * prompted to upgrade their plan, or is eligible to claim one first.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class CertificateAccessPolicy {
   decide(plan: CurrentPlanData | null): AccessDecision {
     if (!plan) return 'upsellTrial';

@@ -3,7 +3,7 @@ import {
   computed,
   effect,
   inject,
-  Injectable,
+  Service,
   linkedSignal,
   PLATFORM_ID,
   resource,
@@ -29,7 +29,7 @@ import { withPreviousValue } from '@shared/utils/with-previous-value';
  * the Course page injects this facade. Visiting Instructor/Badge libraries
  * does not trigger course requests.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class CourseFacade {
   private readonly api = inject(ApiClient);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));

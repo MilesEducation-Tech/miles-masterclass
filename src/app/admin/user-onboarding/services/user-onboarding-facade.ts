@@ -4,7 +4,7 @@ import {
   computed,
   effect,
   inject,
-  Injectable,
+  Service,
   linkedSignal,
   PLATFORM_ID,
   resource,
@@ -63,7 +63,7 @@ const offlinePaymentUrl = (userId: number) => `${SUPERADMIN_USERS}${userId}/offl
  * Route-scoped (provided on the `user-onboarding` parent route) so the list and
  * the create/edit form share one instance — reference data is fetched once.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class UserOnboardingFacade {
   private readonly api = inject(ApiClient);
   private readonly notification = inject(NotificationService);

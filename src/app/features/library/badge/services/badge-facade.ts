@@ -3,7 +3,7 @@ import {
   computed,
   effect,
   inject,
-  Injectable,
+  Service,
   linkedSignal,
   PLATFORM_ID,
   resource,
@@ -29,7 +29,7 @@ import { withPreviousValue } from '@shared/utils/with-previous-value';
  * fires until the Badge page (or `BadgeCard`'s `claimBadge` action) injects
  * this facade.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class BadgeFacade {
   private readonly api = inject(ApiClient);
   private readonly analytics = inject(Analytics);

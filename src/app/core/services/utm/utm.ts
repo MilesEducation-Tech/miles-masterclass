@@ -1,5 +1,5 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { Service, PLATFORM_ID, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 
@@ -39,7 +39,7 @@ export interface PassUtmDataRequest {
  * `utm_url` to the pre-login auth + webinar registration calls so a signup can
  * be tied back to the campaign.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class Utm {
   private readonly http = inject(ApiClient);
   private readonly storage = inject(Storage);

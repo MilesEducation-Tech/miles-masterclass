@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { Service, PLATFORM_ID, inject } from '@angular/core';
 import {
   createMilesverse,
   MilesverseApiError,
@@ -18,7 +18,7 @@ import {
 import { environment } from '@env/environment';
 
 /** MilesVerse SDK facade: catalogue, sessions, and SSO auth. Browser-only. */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class MilesVerse {
   private readonly platformId = inject(PLATFORM_ID);
   private client: Milesverse | null = null;

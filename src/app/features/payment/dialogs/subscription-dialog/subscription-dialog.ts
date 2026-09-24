@@ -2,11 +2,11 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCheck } from '@ng-icons/lucide';
 import { DialogRef } from '@core/services/dialog/dialog';
-import { PaymentFacade } from '@features/payment/services/payment-facade';
-import { PlanSelectionCard } from '@features/payment/components/plan-selection-card/plan-selection-card';
-import { PageLoading } from '../../ui/page-loading/page-loading';
-import { ErrorState } from '../../ui/error-state/error-state';
-import { Button } from '../../ui/button/button';
+import { PaymentFacade } from '../../services/payment-facade';
+import { PlanSelectionCard } from '../../components/plan-selection-card/plan-selection-card';
+import { PageLoading } from '@shared/ui/page-loading/page-loading';
+import { ErrorState } from '@shared/ui/error-state/error-state';
+import { Button } from '@shared/ui/button/button';
 
 @Component({
   selector: 'app-subscription-dialog',

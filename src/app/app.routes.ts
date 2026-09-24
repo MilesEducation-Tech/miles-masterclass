@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
-import { validateProfessionCountryGuard } from '@core/guards/validate-profession-country.guard';
-import { rootRedirectGuard } from '@core/guards/root-redirect.guard';
-import { onboardingGuard } from '@core/guards/auth/onboarding.guard';
+import { validateProfessionCountryGuard } from '@core/guards/validate-profession-country-guard';
+import { rootRedirectGuard } from '@core/guards/root-redirect-guard';
+import { onboardingGuard } from '@core/guards/auth/onboarding-guard';
 import { PageNotFound } from '@features/page-not-found/pages/page-not-found/page-not-found';
 import { BlogLayout } from '@layout/blog-layout/blog-layout';
 import { Compliance } from '@features/legal/pages/compliance/compliance';

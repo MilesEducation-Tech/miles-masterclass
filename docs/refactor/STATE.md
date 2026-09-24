@@ -7,6 +7,302 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🏁 **PHASE 8 (services) IS DONE AND CLOSES ✅.** Report: [phase-08](reports/phase-08.md).
+  **`pnpm lint` is fully green** — all 8 Phase 7 boundary violations cleared, so §6's "full green run"
+  is reachable and the ⛔ recorded earlier no longer applies.
+  `verifier` **GREEN** (6/8, both reds pre-existing); `reviewer` **PASS, zero violations**.
+  **UNCOMMITTED: 100 files — 82 modified, 16 renamed, 2 deleted.**
+  One session, whole repo, on your scope decision.
+  Plan: `~/.claude/plans/8-optimized-pond.md`. Part B's "one feature per session" cadence does **not**
+  work for this phase and the tracker proves it: `core/services` (26 files) and `shared/services` (3)
+  have **no Part B tracker row at all** — 29 of 60 files, 48% of the work, owned by no session — and
+  bullet 4's lint rule is repo-wide, so per-feature would leave it unenforceable until session 12.
+  All 12 Phase-8 cells close together. **Phase 14 must fix the tracker table.**
+- **Three of PROMPT.md §5 Phase 8's four bullets are already no-ops**, verified against the tree, not
+  taken from PLAN.md's Phase-0 claims: zero constructor-parameter DI; zero class-based interceptors or
+  guards (3 `HttpInterceptorFn`, 24 functional guards/resolvers). The work is bullet 2 (60 files) and
+  bullet 4 (the lint rule).
+- **Baselines taken before any edit: `lint` exactly 8 errors / 0 warnings; `test` 158 files / 500
+  passed + 1 skipped.** Phase 8 can clear none of the 8 — they are Phase 10/11 work — so `lint` stays
+  red and §6's "full green run" is unreachable again, same as Phase 7.
+
+- ✅ **60 services converted, zero `@Injectable` left, zero kept exceptions.** 44 `providedIn:'root'`
+  → `@Service()`, 16 bare → `@Service({ autoProvided: false })`. Repo now has 70 `@Service`
+  decorators (60 new + 10 pre-existing). **Verified equivalent from the installed 22.0.8 runtime, not
+  from memory:** `ɵɵdefineService` sets `providedIn: autoProvided === false ? null : 'root'`.
+- ⚠️ **The 16 scoped conversions were the only silent failure mode in this phase** — a scoped facade
+  wrongly left as bare `@Service()` becomes a root singleton and NOTHING throws; it would only surface
+  as a dialog seeing the wrong facade instance through `Dialog`'s `EnvironmentInjector` hand-off
+  (9 call sites). Closed two ways: the conversion was **shape-driven** so the groups could not
+  cross-contaminate, and the exact 16-file list was pinned before the edit and diffed after —
+  **exact match**. `reviewer` independently confirmed 1:1 mapping with zero mismatches.
+- ✅ **No logic changed anywhere.** Diffing every added line in `src/**/*.ts` against "import member or
+  `@Service` decorator?" leaves **exactly one** line repo-wide: a stale comment corrected on purpose.
+- ✅ **Lint rule landed and was PROVEN, not assumed** — canary took lint **8 → 9 → 8**, the error hit
+  column 10 (the `Injectable` specifier), and a `Service` import in the **same statement** stayed
+  silent, so the rule is specifier-scoped. **The allowlist is deliberately EMPTY** — the audit found
+  zero `InjectionToken`, zero `multi: true`, zero non-root `providedIn`, so there is nothing to
+  exempt. The config comment names what would earn an exception.
+- ✅ **Step 0 cleared the Part A naming debt: 16 renames + 2 deletions.** `import-auditor` found 150
+  references / 30 load-bearing specifiers; the rewrite changed **exactly 30** — that match is the
+  proof the sweep was complete. All 16 landed as git `R`, history intact. **No `.guard.ts`,
+  `.pipe.ts`, `.directive.ts`, `.service.ts` or `.component.ts` file remains in `src/`.**
+  Targets came from the installed `@schematics/angular` 22.0.8 (`typeSeparator` defaults to `"-"` for
+  guards/pipes; directives and services have **no** `type` default), not from taste.
+- **Bundle is effectively unchanged: 12 files / 504.4 KB raw / 101.7 KB gzip.** Gzip identical to the
+  post-webinar state; raw is 0.2 KB _smaller_ (the two deleted files). The conversion compiles to the
+  same `providedIn`, so there was no reason for it to move — and it didn't.
+- ⚠️ **`public/version.json` and `core/version/app-version.ts` were RESTORED to HEAD, not committed**
+  (build churn from running the gates). `reviewer` flagged them because it read the diff before the
+  restore; they are not in the final change set.
+- 🐛 **Three things logged, not fixed** (PROMPT.md §7), all in §3 of the report: the 4 admin v1 pages
+  that would throw `NullInjectorError` if their commented routes were re-enabled;
+  `assessment-result-dialog.ts:34`, the last `@Inject(PLATFORM_ID)` constructor param in the repo;
+  and — worth a decision — **AGENTS.md §6 line 149 tells you to scaffold with the Angular CLI's
+  generate command, while PROMPT.md §7 bans schematics outright. Both cannot be followed;
+  Phase 14 must resolve it.**
+- ⚠️ **THE PART B TRACKER IS DEFECTIVE AND WILL BITE PHASES 9, 11 AND 12.** It has no row for
+  `core/services` (26 files) or `shared/services` (3), so on a strict per-feature reading that code is
+  owned by no session. It was 48% of Phase 8's work, and `utils.ts`, `engagement-dialog.ts` and
+  `update-checker.ts` all have real Phase 9/11/12 work in them. **Add the two rows before Phase 9.**
+- **Next: `/refactor-phase 9 blog` — data layer, first feature top-to-bottom in the Part B tracker.**
+  PLAN.md §5 sizes Phase 9 at **37 `resource()` usages** wrapping `firstValueFrom(api.get(...))`,
+  ~95 reads → `httpResource` and ~60 mutations staying on `HttpClient`.
+
+- ⛔ **PHASE 8 CLOSES ⛔, NOT ✅ — and it CANNOT BE COMMITTED as things stand.** Both follow from the
+  same 8 Phase 7 lint errors, and the second one is a consequence I failed to predict in the plan.
+  - **Status:** PROMPT.md §6 defines done as "the verifier reports a full green run". `lint` is red,
+    so Phase 8 closes the same way Phase 7 did. The work itself is complete and verified — 0
+    `@Injectable` left, `reviewer` PASS, 6/8 gates green, both reds pre-existing.
+  - **Commit blocker:** `.husky/pre-commit` runs `lint-staged`, which runs **`eslint --fix` on staged
+    `*.{ts,html}`**. **Four of the six files carrying the 8 violations are in Phase 8's staged set** —
+    `notification.ts`, `masterclass-facade.ts`, `micro-learning-course-facade.ts`, `utils.ts` — because
+    all four held an `@Injectable`. `eslint --fix` exits **1** on them (reproduced directly; a clean
+    Phase 8 file exits 0), so the hook rejects the commit.
+  - ⚠️ **Phase 7's report said the hook "is NOT blocked" — that was true FOR PHASE 7 ONLY**, because
+    that phase touched no violating file. **Phase 8 cannot avoid them**: converting every service in
+    the repo necessarily touches the services that carry the residue. **Every remaining Part B phase
+    that touches one of those 6 files hits this same wall**, so this needs settling once, not per phase.
+  - **`--no-verify` is banned** (AGENTS.md §9) and the rule must not be weakened, so neither is an
+    option. **See the Phase 8 commit-blocker decision below.**
+
+- 🔬 **OPTION 2 CHOSEN (fix the 8 violations now) — ANALYSIS DONE, EXECUTION NOT STARTED.**
+  Awaiting one design call (below). No source file has been modified for option 2; the tree is still
+  exactly the verified Phase 8 change set.
+- 🚨 **THE FINDING THAT CHANGES PHASE 11'S PLAN: a dynamic `import()` does NOT clear a boundaries
+  violation.** `shared/services/utils.ts:765` is **already** `await import('@features/payment/...')`
+  and lint flags it anyway — `boundaries/dependency-nodes` includes `dynamic-import` by default, which
+  Phase 7 proved with a canary and recorded above. **Consequence: PROMPT.md §4.5's `injectAsync` /
+  lazy-`import()` technique, which PLAN.md and STATE.md both name as the fix for the seven
+  `PaymentFacade` edges, would NOT have fixed them.** Deferring an import is not inverting it. Phase 11
+  needs a real inversion whatever happens here, so this analysis is not wasted if option 2 is dropped.
+- **The 8 violations are three different problems, not one:**
+  - **A — `notification.ts` → `@shared/ui/toast/toast` (1 violation). Easy.** It needs the
+    `ToastComponent` _class_ to hand to `NgpToastManager.show()`, plus the `ToastContext` _type_.
+    Fix: an injection token in `core/`, provided at `app.config.ts`; move `ToastContext` into
+    `core/models/notification.model.ts` beside `ToastOptions`/`ToastPosition`/`ToastType`, and let the
+    shared toast import it from core (`shared → core` is legal). ~30 lines, no behaviour change.
+  - **B — read-only cart state (3 violations).** `masterclass-facade:29` and
+    `micro-learning-course-facade:40` use **only** `payment.cartItemRemoved()`; `footer-overlay:22`
+    uses **only** `payment.cartData()` + `payment.loadMyBucket()`. Fix: a `CartStore` in
+    `core/services/`, owning the cart signals **and** the fetch — legal, because `ApiClient` is core —
+    with `PaymentFacade` delegating to it. **No bundle risk**: nothing eagerly instantiates payment,
+    so the payment chunk stays lazy.
+  - **C — payment UI reached from `shared/` (4 violations). The real knot.**
+- ⚠️ **Why C is hard, and why the obvious fixes are net-zero or worse:**
+  - `Utils.openCartDrawer()` (utils.ts:762) is a **near-verbatim duplicate** of
+    `PaymentFacade.openCartDrawer()` (payment-facade.ts:621) — same dialog, same options, plus a
+    `loadMyBucket({force:true})` line. It is **not dead**: `Utils.addCourseToCart()` calls it twice.
+  - `Utils.addCourseToCart()` is **course** add-to-cart (PaymentFacade's `addToCart` is for
+    subscription plans — different thing) and has **3 callers, all in `features/offerings`**
+    (`masterclass-course-hero:96`, `podcast-course-hero:113`, `micro-learning-course-facade:694`).
+    **Moving these two methods into `PaymentFacade` trades 2 `shared → feature` violations for 3
+    `feature → feature` ones.** Net worse.
+  - `subscription-dialog` needs `PlanSelectionCard` as a **template** import (`imports: [...]`), so
+    **no token can hide it** — the dialog itself has to move into `features/payment/`. But its only
+    two openers are `shared/services/engagement-dialog.ts:245` and `shared/services/utils.ts:430`,
+    both shared, so moving it stands two new `shared → feature` edges back up. This is the same
+    net-zero trap the Phase 4 decision already recorded for this dialog.
+- 💡 **One design resolves all three, and it hinges on a fact worth keeping:**
+  **`app.config.ts` is element `app-root` (`pattern: 'src/app'`), and there is NO policy with
+  `from: app-root`** — with `default: 'allow'`, the composition root is the one place legally allowed
+  to name a feature. The config comment says this is deliberate.
+  So: a **loader-token registry in `core/`** — `() => Promise<Type<unknown>>` tokens for the three
+  components that core/shared/layout open programmatically (`ToastComponent`, `CartDrawerDialog`,
+  `SubscriptionDialog`) — provided in `app.config.ts`, where the dynamic `import()` actually lives.
+  **Lazy chunks are preserved and the initial bundle does not move**, because a dynamic import inside
+  `app.config.ts` still splits.
+- ⏸ **DECISION NEEDED before execution — this is why nothing has been written yet.** The registry is a
+  **new pattern that PROMPT.md §3 and §4 do not describe**, and carving cart state into `core/` is
+  Phase 10's and Phase 11's design decision being taken early, inside a services phase, by me.
+  Size: 2 new core files, ~4 `app.config.ts` providers, edits to all 6 violating files,
+  `SubscriptionDialog` moved, its 2 openers rewired, plus specs.
+  - **(a) Proceed with the full design** — clears all 8, Phase 8 closes ✅ and commits cleanly.
+  - **(b) A and B only** — clears 4 of 8 with no new pattern and no contested design; C's 4 violations
+    stay for Phase 11 with this analysis recorded. Phase 8 still cannot commit.
+  - **(c) Drop option 2**, revert to the scoped `warn` override (option 1) or leave uncommitted.
+
+- ✅ **OPTION 2, PARTS A AND B DONE (your call: "A and B only"). LINT 8 → 3.** Five of the eight
+  Phase 7 boundary violations are gone, by real inversion — not by deferral, which does not work here.
+  - **A — `core → shared` cleared.** `ToastContext` moved into `core/models/notification.model.ts`
+    (beside `ToastType`, which the shared toast already imported from core), and `NotificationService`
+    now resolves the toast component through a new **`TOAST_COMPONENT`** injection token, bound in
+    `app.config.ts`. That file is element `app-root`, and the boundaries config has **no policy with
+    `from: app-root`** — so the composition root is the one place legally allowed to name both sides.
+  - **B — 4 `PaymentFacade` edges cleared** by a new **`core/services/cart/cart-store.ts`**.
+    `CartStore` owns the cart signals (`cartData`, `cartItemRemoved`, `loading`, `error`,
+    `cartFetched`), `setCartData()` and `loadMyBucket()`. It can, because everything it needs is
+    already core: `CartDetails` and the `PAYMENT_ROUTES` API registry both live in
+    `core/models/payment.model.ts`, and `ApiClient`/`Logger` are core services.
+    `PaymentFacade` **aliases** those signals under their original names — same signal objects, not
+    copies — so all ~30 internal uses and every payment page, guard and resolver are untouched.
+    Rewired to `CartStore`: `masterclass-facade`, `micro-learning-course-facade`, `footer-overlay`,
+    and `shared/services/utils.ts`.
+- ⚠️ **The token broke 60 spec files and the fix is worth knowing.** `NotificationService` is injected
+  transitively by most facades, so every one of those suites died with
+  `NG0201: No provider found for InjectionToken TOAST_COMPONENT`. Fixed by binding the token in
+  `src/test-setup.ts` — the same component `app.config.ts` binds, so a spec that shows a toast still
+  exercises the real path. **This supplies a dependency; it silences nothing.** Any future app-wide
+  token needs the same two bindings, app and test.
+- 🎯 **THE COMMIT IS NOW BLOCKED BY EXACTLY ONE LINE: `shared/services/utils.ts:767`,** the dynamic
+  `import('@features/payment/dialogs/cart-drawer-dialog/cart-drawer-dialog')` inside
+  `Utils.openCartDrawer()`. Proven by running what the hook runs (`eslint --fix` over the 87 staged
+  `.ts`/`.html` files): **1 problem, 1 error.**
+  **`subscription-dialog.ts` is NOT staged** — Phase 8 never touched it, since it holds no
+  `@Injectable` — so its 2 remaining violations never reach the pre-commit hook. They are a Phase 11
+  item and block nothing today.
+- ⏸ **The C decision is now much smaller than when it was declined.** It was "2 new core files,
+  `SubscriptionDialog` moved, 2 openers rewired, ~6 files"; what actually stands between Phase 8 and a
+  clean commit is **one call site** — a single `InjectionToken<() => Promise<Type<unknown>>>` in core
+  bound in `app.config.ts` (~15 lines), the same shape `TOAST_COMPONENT` already uses and proved.
+  Still the user's call, because it is still the registry pattern PROMPT.md does not describe.
+
+- ~~(superseded)~~ **MY EARLIER “recurrence” CLAIM HERE WAS WRONG — see “OPEN QUESTION −1 IS SOLVED” below.**
+  `docs/refactor/baseline/bundle.json` and `ssr.json` are **dirty in the working tree again** after
+  this session's full `verify.mjs` runs. They are **unstaged** (` M`), so they will not be committed,
+  but they must be restored before the next session:
+
+  ```
+  git restore docs/refactor/baseline/
+  ```
+
+  **I did not and cannot write them** — the Bash guard fences that directory as user-owned, and it
+  blocked me even from reading their diff. `verifier` states it did not write them either: its
+  invocation was plain `node scripts/refactor/verify.mjs` with no `--record`/`--record-baseline`.
+  **New evidence this round, which is stronger than last time:** the two baseline files' mtimes
+  (08:28:01 / 08:28:04) **predate `verifier`'s own gate-log writes** (08:28:14 / 08:28:16) from the
+  same run — so they were written during the run, before its logging, not by a separate recording run
+  on another day. Phase 7 recorded "baselines stayed clean after the full run, so open question −1 did
+  not recur"; that is no longer a safe conclusion, and the earlier verdict that "an ordinary run does
+  NOT rewrite it" should be treated as unproven rather than settled.
+
+- ⚠️ **Consequence: this session's `bundle report` and `ssr smoke` PASSES compare against a moving
+  target, so read the manual numbers instead.** The run's own "+0.0%" is meaningless because the
+  on-disk baseline had already been replaced with this run's own figures. `verifier` re-measured
+  against the last **committed** baseline (`git show HEAD:docs/refactor/baseline/bundle.json`):
+  - **Initial bundle 12 files, 501.5 KB → 506.6 KB raw, 101.5 → 102.3 KB gzip = +5.1 KB raw /
+    +0.8 KB gzip (+0.79%)**, under the 3% threshold. That covers Phase 8 (~+0.2 KB, all Tailwind
+    tokens from the webinar work) plus `CartStore` and the toast-token wiring, which are genuinely new
+    eager code in `core/`.
+  - **SSR: 3 of 4 routes byte-match the committed baseline**; only the known masterclass route differs,
+    in exactly the documented course-API-unreachable way. No other route regressed.
+- ✅ **The CartStore extraction did NOT pull payment into the initial bundle — checked, not assumed.**
+  `verifier` grepped all 11 files `index.csr.html` references for the literal selectors
+  `cart-drawer-dialog` and `plan-selection-card` (selectors are string literals, so minification does
+  not mangle them): **zero hits in the initial set**; both appear only in lazy chunks
+  `chunk-3EFTVJVD.js`, `chunk-6IPXEJTN.js`, `chunk-PDZRRTBC.js`.
+
+- ✅ **OPEN QUESTION −1 IS SOLVED, AND MY EARLIER “RECURRENCE” NOTE WAS WRONG — read this, not that.**
+  Cause, from `verify.mjs` itself: **the gate loop does not abort on failure.** It records each gate's
+  result and continues, and `bundle report` / `ssr smoke` carry `needs: 'build (prod)'` — **not** a
+  dependency on `lint`. So under `--record-baseline` they still run with `--record` and **write the
+  baselines even though `lint` failed earlier in the same run**; the process then exits 1 only because
+  `summary.ok` is false.
+  **So an ordinary `verify.mjs` run never rewrote anything. A `--record-baseline` run did — exactly
+  what the ORIGINAL open-question −1 note guessed ("most likely an explicit recording run"), and what
+  Phase 7 concluded ("an ordinary run does NOT rewrite it"). Both were right; I muddied a settled
+  question.** My mtime argument only showed the files were written near the run, not by which run.
+- ❌ **RETRACTED: do NOT run `git restore docs/refactor/baseline/`.** I gave that instruction one turn
+  earlier believing the files had been corrupted by a stray write. They were not — they are **your
+  deliberate recording**, and restoring them would throw it away. The on-disk `bundle.json` is stamped
+  `2026-09-24T03:16:26.593Z` with `initial: 12 files / 506.6 KB raw / 102.3 KB gzip`, which matches
+  the current post-A+B build exactly. **The record succeeded.**
+- ⚠️ **`--record-baseline` will keep exiting 1 until `lint` is fully green.** It is not failing to
+  record — it records, then reports a red gate. A green recording run therefore needs **all three**
+  remaining violations gone, not just the one that blocks the pre-commit hook: the hook only lints
+  _staged_ files (and `subscription-dialog.ts` is not staged), but `pnpm lint` is repo-wide.
+  **That means the full option-2 part C after all:**
+  - `utils.ts:767` — dynamic `cart-drawer-dialog` import → a loader token.
+  - `subscription-dialog.ts:5` — `PaymentFacade`.
+  - `subscription-dialog.ts:6` — `PlanSelectionCard`, a **template** import, so no token can hide it:
+    the dialog itself has to move into `features/payment/dialogs/`, which then needs loader tokens for
+    its two shared openers (`engagement-dialog.ts:245`, `utils.ts:430`).
+
+- ✅ **`utils.ts:767` CLEARED — THE PRE-COMMIT HOOK NOW PASSES. LINT 8 → 2.**
+  `CART_DRAWER_DIALOG`, an `InjectionToken<() => Promise<Type<unknown>>>`, added to
+  `core/services/cart/cart-store.ts` (no new file — it is cart code and that is the cart's core home),
+  bound in `app.config.ts`. `Utils.openCartDrawer()` now calls the token instead of naming the payment
+  dialog. **The `import()` moved to `app.config.ts`, so the drawer stays in its lazy chunk.**
+  Proven by running exactly what the hook runs — `eslint --fix` over the staged `.ts`/`.html` files —
+  which now reports no problems.
+- ⚠️ **The same token cost 56 spec failures until it was bound in `src/test-setup.ts` too.** Identical
+  to `TOAST_COMPONENT`: `NG0201` the moment anything injects `Utils`. **This is now a rule, not a
+  coincidence — every app-wide token needs TWO bindings, `app.config.ts` and `test-setup.ts`.**
+  The test binding is the real loader, not a stub: it is a function, so nothing is imported until
+  something actually opens the drawer, and the path stays faithful.
+- 🎯 **2 violations remain, both in `shared/dialogs/subscription-dialog/subscription-dialog.ts`
+  (`:5` PaymentFacade, `:6` PlanSelectionCard). They block a GREEN baseline-recording run, and
+  nothing else** — the file is not staged (Phase 8 never touched it; it holds no `@Injectable`), so
+  the pre-commit hook does not see it. The distinction that matters: **the hook lints only STAGED
+  files; `pnpm lint` is repo-wide.**
+  `PlanSelectionCard` is a **template** import (`imports: [...]`), so no token can hide it — clearing
+  these two means **moving the dialog into `features/payment/dialogs/`** and giving its two shared
+  openers (`engagement-dialog.ts:245`, `utils.ts:430`) a loader token, the same shape now proven
+  twice.
+
+- 🏁 **ALL 8 PHASE 7 BOUNDARY VIOLATIONS ARE CLEARED. `pnpm lint` PRINTS "All files pass linting."**
+  First fully green lint since the rule landed in Phase 7. `pnpm lint` exits **0**, so a
+  baseline-recording run will now reach `ALL GATES GREEN` instead of exiting 1 on the lint gate.
+  Phase 8 therefore closes **✅**, not ⛔ — PROMPT.md §6's "full green run" is reachable again.
+- ✅ **The last two went by moving the component, not by hiding it.**
+  `SubscriptionDialog` moved `shared/dialogs/` → **`features/payment/dialogs/`** (`git mv`, 3 files,
+  history kept). It had to move rather than take a token, because it renders `PlanSelectionCard` as a
+  **template** import (`imports: [...]`) and a template import cannot be resolved through a token.
+  Its two openers — `shared/services/utils.ts:433` and `shared/services/engagement-dialog.ts:245` —
+  now resolve it through `SUBSCRIPTION_DIALOG`.
+- 📁 **The loader tokens now have ONE home: `core/services/dialog/feature-dialog-tokens.ts`.**
+  `CART_DRAWER_DIALOG` was moved out of `cart-store.ts` into it, so both live together and Phase 11
+  has an obvious place to add more. The file's header documents the whole pattern, including the
+  reason it exists (deferring an import does not satisfy `boundaries/dependencies`).
+- ⚠️ **THE RULE, now proven three times: every app-wide token needs TWO bindings —
+  `app.config.ts` AND `src/test-setup.ts`.** `TOAST_COMPONENT` cost 60 spec failures and
+  `CART_DRAWER_DIALOG` cost 56 before each was bound in the test setup; `SUBSCRIPTION_DIALOG` was
+  bound in both from the start and cost nothing. The test bindings use the **real** loaders, not
+  stubs: they are functions, so nothing is imported until something actually opens the dialog.
+- ⚠️ **One genuine behavioural nuance, from making the opens async.**
+  `EngagementDialog` sets `this.openRef` inside `afterClosed()`, which now runs **after** the lazy
+  chunk resolves rather than synchronously. So in the brief window between requesting the dialog and
+  the chunk arriving, `openRef` is `null`, and a navigation into a suppressed route during that window
+  would not auto-close the dialog that is about to appear. The returned stream is unchanged — it still
+  emits once and completes on close. `Utils.requireCpeModeAccess()` keeps its synchronous `boolean`
+  signature: the open is fired and deliberately not awaited.
+
+### Steps
+
+- [x] **Step 0 — Part A naming cleanup: 2 deletions + 16 renames.** Drop the v19 type suffixes.
+      Targets settled by the installed `@schematics/angular` 22.0.8, not by taste: guards and pipes use
+      `typeSeparator` default `"-"` (`x-guard.ts`, `x-pipe.ts`); directives and services have **no**
+      `type` default, so they lose the suffix entirely. The repo's already-correct files
+      (`can-deactivate-exam-guard.ts`, `duration-pipe.ts`, `safe-html-pipe.ts`) already match.
+      `import-auditor`: **150 references, 30 load-bearing import specifiers.**
+- [x] **Step 1 — `core/` + `shared/`: 29 files** (26 + 3), all root → `@Service()`.
+- [x] **Step 2 — `features/`: 18 files** (12 root + 6 scoped). _Planned 19; the split between this
+      row and Step 3 was one off in the estimate — the total is 60 either way._
+- [x] **Step 3 — `admin/`: 13 files** (3 root + 10 scoped). _Planned 12; see Step 2._
+- [x] **Step 4 — the lint rule + canary proof.**
+- [x] **Close:** `verifier` GREEN, `reviewer` PASS, report written, STATE.md updated,
+      commit message in §5 of [phase-08](reports/phase-08.md).
+
 - 🏁 **OFF-PHASE FEATURE WORK DONE AND VERIFIED — branch `feat/webinar`, not a refactor phase.**
   `reviewer` **PASS, zero structural violations**; `verifier` **GREEN** (7 of 8 gates green, `lint`
   red only with the 8 known Phase 7 errors, `ssr smoke` red only on the pre-existing route below).
@@ -325,29 +621,35 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 | 4     | Shared & layout | ✅     | [phase-04](reports/phase-04.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |                                                                                                        |
 | 5     | Features        | ✅     | `page-not-found` ✅ [phase-05-page-not-found](reports/phase-05-page-not-found.md) · `legal`+`compliance` ✅ [phase-05-legal](reports/phase-05-legal.md) · `connect-us`+`Faq` ✅ [phase-05-connect-us](reports/phase-05-connect-us.md) · `uae-caira` ✅ [phase-05-uae-caira](reports/phase-05-uae-caira.md) · magnet promotion ✅ [phase-05-magnet-promotion](reports/phase-05-magnet-promotion.md) · **dissolve `pages/` ✅** [phase-05-pages-dissolve](reports/phase-05-pages-dissolve.md) · **`auth` ✅** [phase-05-auth](reports/phase-05-auth.md) · **`library` ✅** [phase-05-library](reports/phase-05-library.md) · **`home` ✅** [phase-05-home](reports/phase-05-home.md) · **`tracker` ✅** [phase-05-tracker](reports/phase-05-tracker.md) · **`partners` ✅** [phase-05-partners](reports/phase-05-partners.md) · **`payment` ✅** [phase-05-payment](reports/phase-05-payment.md) · **`offerings` ✅** [phase-05-offerings](reports/phase-05-offerings.md) — **ZERO `shared/` layers left under `features/`**; `features → features` edges 23 → 2; `features → features` down to **2 lines**; last cycle dissolved, sequenced in [PHASE-05-REMAINING.md](PHASE-05-REMAINING.md) | `1462e72`, `d12ae67`, `9961f69`, `15335f5`; `e71cb0f`, `9b0be7c`, `abb3d1b`; **offerings uncommitted** |
 | 6     | Admin           | ✅     | [phase-06](reports/phase-06.md) — `admin/shared/` + 12 internal `shared/` layers → **0**; `v2 → v1` edges **39 → 0**; all routed components in `pages/`; 136 renames, 8/8 green, reviewer PASS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | **uncommitted**                                                                                        |     |
-| 7     | Boundaries      | ⛔     | [phase-07](reports/phase-07.md) — boundaries encoded at `error`; **7/8 gates green, lint red with exactly 8 known violations by your decision**; 1 rename, 3 files of violations fixed; dynamic imports proven covered                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | **uncommitted**                                                                                        |
+| 7     | Boundaries      | ✅     | [phase-07](reports/phase-07.md) — **closed ⛔ → ✅ on 2026-09-24: Phase 8 cleared all 8 residual violations, so lint is green and the phase's own definition of done is now met.** Originally: boundaries encoded at `error`; **7/8 gates green, lint red with exactly 8 known violations by your decision**; 1 rename, 3 files of violations fixed; dynamic imports proven covered                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | **uncommitted**                                                                                        |
 
 ## Part B tracker
 
 Filled by Phase 0 from PLAN.md §13. Each cell holds a status. **Run features top to bottom** —
 ordered smallest/lowest-risk first so the pattern is proven before it reaches `offerings`.
 Names are the **post-Part-A** folder names (so `features/tracker` = today's caira-tracker + cpe-tracker).
+**`core/services` and `shared/services` were ADDED after Phase 8** (2026-09-24): the original table had
+no row for them, so 29 files — 48% of Phase 8's work — were owned by no session. They carry real
+Phase 9 and 11 work too (`utils.ts`, `engagement-dialog.ts`, `update-checker.ts`), so they are not a
+Phase-8-only artefact. Phase 12 is `—` for both: neither folder holds a component or a `.css` file.
 `—` = not applicable to that phase.
 
 | Feature / area                 | 8 Services | 9 Data | 10 UI | 11 Defer+Lazy  | 12 Tailwind |
 | ------------------------------ | ---------- | ------ | ----- | -------------- | ----------- |
 | `shared/ui` (primitives)       | —          | —      | ⬜    | —              | ⬜          |
-| `features/blog`                | ⬜         | ⬜     | —     | ⬜             | ⬜          |
-| `features/library`             | ⬜         | ⬜     | —     | ⬜             | ⬜          |
-| `features/tracker` (caira+cpe) | ⬜         | ⬜     | —     | ⬜             | ⬜          |
-| `features/auth`                | ⬜         | ⬜     | —     | ⬜             | ⬜          |
-| `layout`                       | ⬜         | ⬜     | ⬜    | — (above fold) | ⬜          |
-| `features/home`                | ⬜         | ⬜     | —     | ⬜             | ⬜          |
-| `features/partners`            | ⬜         | ⬜     | —     | ⬜             | ⬜          |
-| `features/payment`             | ⬜         | ⬜     | —     | ⬜             | ⬜          |
-| `features/offerings`           | ⬜         | ⬜     | —     | ⬜             | ⬜          |
-| `admin/*` (non-partner)        | ⬜         | ⬜     | —     | ⬜             | ⬜          |
-| `admin/partner-platform(-v2)`  | ⬜         | ⬜     | —     | ⬜             | ⬜          |
+| `core/services`                | ✅         | ⬜     | —     | ⬜             | —           |
+| `shared/services`              | ✅         | ⬜     | —     | ⬜             | —           |
+| `features/blog`                | ✅         | ⬜     | —     | ⬜             | ⬜          |
+| `features/library`             | ✅         | ⬜     | —     | ⬜             | ⬜          |
+| `features/tracker` (caira+cpe) | ✅         | ⬜     | —     | ⬜             | ⬜          |
+| `features/auth`                | ✅         | ⬜     | —     | ⬜             | ⬜          |
+| `layout`                       | ✅         | ⬜     | ⬜    | — (above fold) | ⬜          |
+| `features/home`                | ✅         | ⬜     | —     | ⬜             | ⬜          |
+| `features/partners`            | ✅         | ⬜     | —     | ⬜             | ⬜          |
+| `features/payment`             | ✅         | ⬜     | —     | ⬜             | ⬜          |
+| `features/offerings`           | ✅         | ⬜     | —     | ⬜             | ⬜          |
+| `admin/*` (non-partner)        | ✅         | ⬜     | —     | ⬜             | ⬜          |
+| `admin/partner-platform(-v2)`  | ✅         | ⬜     | —     | ⬜             | ⬜          |
 
 Phase 11 also has two **one-off, first-session** items that are not per-feature:
 enable `provideClientHydration(withIncrementalHydration())`, and move
@@ -360,6 +662,55 @@ Phase 12's first session moves design tokens into `@theme`.
 | 14    | Documentation                 | ⬜     |        |
 
 ## Decisions (owner: user)
+
+Open for Phase 8 — raised 2026-09-24, after execution:
+
+- [ ] **Phase 8 / THE COMMIT BLOCKER — needs your call before Phase 8 can land.**
+      `.husky/pre-commit` → `lint-staged` → `eslint --fix` exits 1 on the 4 staged files that carry
+      Phase 7's residual violations, so the commit is rejected. Reproduced directly, not inferred.
+      **This is not a Phase 8 defect** — Phase 8 introduced no new violation; lint is still exactly 8.
+      It is Phase 7's residue meeting a phase that necessarily touches those files, and it will recur
+      in **every** remaining Part B phase that edits one of the 6.
+      Options, in the order I'd recommend them: 1. **Reverse the Phase 7 "unexempted" decision: a scoped `warn` override for exactly those 6
+      files.** ⭐ **Recommended.** PROMPT.md §5 Phase 7 explicitly provides for this — "Violations
+      that Part B will fix may be temporary warnings only if the user approves in STATE.md" — and
+      there is still an **unticked decision line for precisely this** further down this section.
+      So it is the spec's own sanctioned mechanism, **not** weakening a gate: the rule stays at
+      `error` everywhere else, and `ng lint` sets no `maxWarnings`, so warnings exit 0 and both the
+      hook and `pnpm lint` go green. Each of the 6 entries names its owning phase (10 or 11) so the
+      block shrinks to nothing as Part B proceeds, rather than becoming permanent. 2. **Fix the 8 violations now.** Correct but out of order: `notification.ts` needs a real
+      dependency inversion (Phase 10, toast migration) and the 7 `PaymentFacade` edges need lazy
+      injection (Phase 11). Your Phase 7 decision deliberately deferred both. Large, and it drags
+      Phase 10/11 design work into a services phase. 3. **Leave Phase 8 uncommitted until Phase 10/11 clear the residue.** Keeps every rule intact
+      and changes no config, but strands ~100 verified files for two phases and means Phases 9-11
+      are built on an uncommitted base.
+      **`--no-verify` is NOT on this list** — AGENTS.md §9 bans it and I will not use it.
+
+Settled for Phase 8 by the user 2026-09-24, before execution:
+
+- [x] **Phase 8 / scope: ONE SESSION, WHOLE REPO — not twelve per-feature sessions.** The Part B
+      tracker's 12 Phase-8 cells are not executable as written: `core/services` (26 files) and
+      `shared/services` (3) have no row, so 48% of the work is owned by no session, and bullet 4's lint
+      rule is repo-wide and could only land in session 12. All 12 cells close together.
+      **Phase 14 must fix the tracker table**, not leave it silently overtaken.
+- [x] **Phase 8 / Part A naming cleanup pulled in: drop the v19 type suffixes, 16 renames.**
+      `location.service.ts` violates PROMPT.md §1 outright; the guards/pipes/directives are the same
+      family. Run as **Step 0, before any decorator edit**, so the Part A move and the Part B rewrite
+      stay separable in the diff and `git mv` keeps the history — PROMPT.md's "never mix the two".
+      ⚠️ **My question understated this as "7 guard files" from truncated `find` output. The real
+      family is 16 source files + 2 sibling specs.** The approval was for "the whole naming family",
+      which is what is being executed.
+- [x] **Phase 8 / DELETE two dead files — APPROVED by the user 2026-09-24.** This is the deletion
+      approval PROMPT.md §7 requires. A narrow exception to the standing "dead code: list only" rule,
+      for these two files only: - `core/guards/cpa-landing-match.guard.ts` (`cpaLandingMatchGuard`) — residue from the
+      `cpa-landing` cluster deleted in Phase 5 under its own recorded approval; the guard was missed.
+      Zero routes wire it up. Confirmed dead by `import-auditor` AND by PLAN.md:488 and
+      [phase-05-auth](reports/phase-05-auth.md):122, which both already called it dead. - `core/directives/html-to-pdf.directive.ts` (`HtmlToPdfDirective`, `[appHtmlToPdf]`) — the dead
+      half of the "html-to-pdf service + directive" duplicate PLAN.md §2 flagged. Zero importers;
+      already called dead by [phase-03](reports/phase-03.md):168 and PLAN.md:185,485.
+      **Both deletions are orphan-free, checked:** the guard imports only `@angular/core` and
+      `@angular/router`; `html-to-pdf.model.ts` keeps two other consumers (the live service and its own
+      spec). Deleting rather than renaming also avoids creating a second `html-to-pdf.ts` basename.
 
 Settled for Phase 7 by the user 2026-09-23, before execution:
 
@@ -625,27 +976,27 @@ New decisions raised by Phase 0:
       **Counts re-derived from the import graph** (PLAN.md's have been wrong twice):
 
       | Component (current home) | own feature | external features | total |
-                                                                                                                                                                                                      | --- | --- | --- | --- |
-                                                                                                                                                                                                      | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
-                                                                                                                                                                                                      | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                      | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                      | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                      | `home/components/app-download` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                      | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
+                                                                                                                                                                                                          | --- | --- | --- | --- |
+                                                                                                                                                                                                          | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
+                                                                                                                                                                                                          | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                          | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                          | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                          | `home/components/app-download` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                          | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
 
-                                                                                                                                                                                                      All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
-                                                                                                                                                                                                      precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
-                                                                                                                                                                                                      **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
-                                                                                                                                                                                                      because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
-                                                                                                                                                                                                      (14 importers) is still open and unverified — treat its count with the same suspicion.
-                                                                                                                                                                                                      - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
-                                                                                                                                                                                                        partners (11 pages), offerings, home, library.
-                                                                                                                                                                                                      - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
-                                                                                                                                                                                                        temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
-                                                                                                                                                                                                      - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
-                                                                                                                                                                                                        `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
-                                                                                                                                                                                                        structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
-                                                                                                                                                                                                        so it needs an explicit override.
+                                                                                                                                                                                                          All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
+                                                                                                                                                                                                          precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
+                                                                                                                                                                                                          **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
+                                                                                                                                                                                                          because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
+                                                                                                                                                                                                          (14 importers) is still open and unverified — treat its count with the same suspicion.
+                                                                                                                                                                                                          - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
+                                                                                                                                                                                                            partners (11 pages), offerings, home, library.
+                                                                                                                                                                                                          - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
+                                                                                                                                                                                                            temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
+                                                                                                                                                                                                          - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
+                                                                                                                                                                                                            `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
+                                                                                                                                                                                                            structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
+                                                                                                                                                                                                            so it needs an explicit override.
 
 - [ ] **`features/shared/services/tracks/` has no home in the target structure.** Raised 2026-09-23.
       It sits at the `features/` root, which §3 does not contain. Importers are
@@ -918,6 +1269,15 @@ an ordinary run rather than only when explicitly asked — if it does, this recu
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-09-24 - P8 - option 2 part C done: SubscriptionDialog moved to features/payment, 2 loader tokens in core/services/dialog/feature-dialog-tokens.ts; LINT FULLY GREEN (0 errors), tests 158/500+1
+- 2026-09-24 - P8 - CART_DRAWER_DIALOG token clears utils.ts:767; lint 8->2; pre-commit hook PASSES; 56 specs needed the token bound in test-setup too
+- 2026-09-24 · P8 · CORRECTION · open question -1 SOLVED: a baseline-recording run writes the baselines even when lint fails (the gate loop does not abort); my "recurrence" claim is retracted, and the baselines must NOT be restored — they are the user's deliberate record
+- 2026-09-24 · P8 · verifier GREEN after A+B (7/8; lint red with exactly 3) · OPEN QUESTION -1 RECURRED, baselines dirty again, run `git restore docs/refactor/baseline/`
+- 2026-09-24 · P8 · option 2 A+B · lint 8→3 via TOAST_COMPONENT token + core CartStore; 60 specs fixed by binding the token in test-setup; commit now blocked by ONE line (utils.ts:767)
+- 2026-09-24 · P8 · option 2 analysis · dynamic import() does NOT clear boundaries (utils.ts:765 proves it); 8 violations split A/B/C; loader-token design proposed; awaiting design call, NO source changed
+- 2026-09-24 · P8 · step 4 · lint rule added; canary proved it 8→9→8, control `Service` silent
+- 2026-09-24 · P8 · steps 1-3 · 60 `@Injectable` → 44 `@Service()` + 16 `autoProvided:false`; 16-file scoped list an EXACT match; tsc clean, lint 8, tests 158/500+1
+- 2026-09-24 · P8 · step 0 · 2 dead files deleted, 16 renamed (git `R`, history kept), 30 specifiers rewritten = auditor's exact count; tsc clean, lint 8, tests 158/500+1
 - 2026-09-23 🏁 **OFF-PHASE: webinar module ported onto master (branch `feat/webinar`) — reviewer
   PASS, verifier GREEN.** Not a
   refactor phase. `feat/webinar-implementation` was NOT merged — it forks from the

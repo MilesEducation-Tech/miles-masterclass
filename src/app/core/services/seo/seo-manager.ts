@@ -2,7 +2,7 @@ import { isPlatformServer } from '@angular/common';
 import {
   DOCUMENT,
   inject,
-  Injectable,
+  Service,
   makeStateKey,
   PLATFORM_ID,
   TransferState,
@@ -31,7 +31,7 @@ type ManagedTagSelector =
 /** Result of `loadFromSupabase`. Lets callers tell apart row-found vs fallback vs failure. */
 export type SeoLoadStatus = 'row' | 'fallback' | 'failed';
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class SeoManager {
   private readonly titleService = inject(Title);
   private readonly metaService = inject(Meta);

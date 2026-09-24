@@ -42,7 +42,7 @@ import {
   MicroLearningReel,
   ReelActivityPayload,
 } from '@features/offerings/models/micro-learning-course.model';
-import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits.pipe';
+import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits-pipe';
 import { Utils } from '@shared/services/utils';
 
 /**

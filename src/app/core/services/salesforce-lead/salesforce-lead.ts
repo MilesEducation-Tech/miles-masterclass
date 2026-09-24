@@ -1,5 +1,5 @@
 import { HttpContext } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { environment } from '@env/environment';
 import {
@@ -69,7 +69,7 @@ interface SalesforceLeadResponse {
  * and never surfaces an error. A lead that fails to post is logged and dropped
  * — the user's own submit must always succeed on its own terms.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class SalesforceLead {
   private readonly http = inject(ApiClient);
   private readonly logger = inject(Logger);

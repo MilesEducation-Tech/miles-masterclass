@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { computed, inject, Injectable, PLATFORM_ID, resource } from '@angular/core';
+import { computed, inject, Service, PLATFORM_ID, resource } from '@angular/core';
 import { Supabase } from '@core/services/supabase/supabase';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
@@ -51,7 +51,7 @@ export interface PermissionInput {
  */
 // Route-scoped (see admin.routes.ts): the injector dies on navigation, which
 // aborts in-flight resource() loads and stops this page's calls firing elsewhere.
-@Injectable()
+@Service({ autoProvided: false })
 export class RbacFacade {
   private readonly supabase = inject(Supabase);
   private readonly logger = inject(Logger);

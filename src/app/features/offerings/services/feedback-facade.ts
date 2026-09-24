@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
@@ -24,7 +24,7 @@ type CourseDetailsParams = RouteParams<typeof FEEDBACK_ROUTES.getCourseDetails>;
 type UserFeedbackResponse = RouteResponse<typeof FEEDBACK_ROUTES.userFeedback>;
 type UserFeedbackParams = RouteParams<typeof FEEDBACK_ROUTES.userFeedback>;
 
-@Injectable()
+@Service({ autoProvided: false })
 export class FeedbackFacade {
   private readonly apiClient = inject(ApiClient);
   private readonly utils = inject(Utils);

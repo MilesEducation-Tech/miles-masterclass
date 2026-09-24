@@ -15,7 +15,7 @@ import { firstValueFrom, fromEvent, take, takeUntil } from 'rxjs';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { Dialog } from '@core/services/dialog/dialog';
-import { HasPermissionDirective } from '@admin/core/directives/has-permission.directive';
+import { HasPermissionDirective } from '@admin/core/directives/has-permission';
 import { PERM } from '@admin/core/models/admin-rbac.model';
 import { StatCard } from '@admin/partner-platform-v2/components/stat-card/stat-card';
 import {

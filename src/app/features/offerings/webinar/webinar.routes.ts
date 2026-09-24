@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from '@core/guards/auth/auth.guard';
+import { authGuard } from '@core/guards/auth/auth-guard';
 import { environment } from '@env/environment';
 import { FeedbackFacade } from '../services/feedback-facade';
 import { MeetingSession } from './services/meeting-session';

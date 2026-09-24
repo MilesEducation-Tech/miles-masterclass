@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Service, inject, signal } from '@angular/core';
 import { Observable, catchError, map, of, tap } from 'rxjs';
 import { ApiClient } from '../api-client/api-client';
 import { Logger } from '../logger/logger';
@@ -13,9 +13,7 @@ import { PROFILE_ROUTES } from '../../models/profile.model';
  * Owns the loading flag, success/error toasts, and the post-success profile
  * refresh so callers don't repeat the recipe.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class PartnerCode {
   private readonly http = inject(ApiClient);
   private readonly logger = inject(Logger);

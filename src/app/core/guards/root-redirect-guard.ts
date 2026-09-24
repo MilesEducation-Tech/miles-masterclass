@@ -1,6 +1,6 @@
 import { CanActivateFn, Router } from '@angular/router';
 import { inject } from '@angular/core';
-import { LocationService } from '../services/location/location.service';
+import { LocationService } from '../services/location/location';
 
 export const rootRedirectGuard: CanActivateFn = () => {
   const router = inject(Router);

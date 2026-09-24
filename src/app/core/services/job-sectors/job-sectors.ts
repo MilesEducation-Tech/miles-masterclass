@@ -1,4 +1,4 @@
-import { Injectable, Signal, computed, inject } from '@angular/core';
+import { Service, Signal, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, shareReplay } from 'rxjs';
 import { ApiClient } from '../api-client/api-client';
@@ -17,9 +17,7 @@ import { AutoCompleteOption } from '../../models/form.model';
  * keeps the result alive across multiple `toSignal` subscriptions inside the
  * service itself; the outer `toSignal` then exposes a synchronous read.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class JobSectors {
   private readonly http = inject(ApiClient);
   private readonly logger = inject(Logger);

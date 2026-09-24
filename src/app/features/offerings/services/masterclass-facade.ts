@@ -1,4 +1,4 @@
-import { computed, DestroyRef, effect, inject, Injectable, signal, untracked } from '@angular/core';
+import { computed, DestroyRef, effect, inject, Service, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpContext, HttpResponse } from '@angular/common/http';
 import { forkJoin, catchError, of, tap, type Observable } from 'rxjs';
@@ -26,7 +26,7 @@ import { Dialog } from '@core/services/dialog/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
-import { PaymentFacade } from '@features/payment/services/payment-facade';
+import { CartStore } from '@core/services/cart/cart-store';
 import { Analytics } from '@core/services/analytics/analytics';
 
 // Extract types from routes for type safety
@@ -41,7 +41,7 @@ type SetCpeModeResponse = RouteResponse<typeof MASTERCLASS_ROUTES.setCpeMode>;
 
 type CourseContentParams = RouteParams<typeof MASTERCLASS_ROUTES.getCourseContent>;
 
-@Injectable()
+@Service({ autoProvided: false })
 export class MasterclassFacade {
   // ... dependencies ...
   private readonly logger = inject(Logger);
@@ -51,7 +51,9 @@ export class MasterclassFacade {
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(Dialog);
   private readonly utils = inject(Utils);
-  private readonly payment = inject(PaymentFacade);
+  // Only the cart-removal signal is needed here, and it lives in core so this
+  // feature does not have to import the payment feature (PROMPT.md §3).
+  private readonly cart = inject(CartStore);
   private readonly analytics = inject(Analytics);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -64,7 +66,7 @@ export class MasterclassFacade {
   readonly downloadingExerciseFiles = signal(false);
 
   private readonly cartItemRemovedEffect = effect(() => {
-    const removedCourseId = this.payment.cartItemRemoved();
+    const removedCourseId = this.cart.cartItemRemoved();
     untracked(() => {
       if (removedCourseId && this.courseDetails()?.id === removedCourseId) {
         this.courseDetails.update((course) =>

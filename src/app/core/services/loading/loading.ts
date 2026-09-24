@@ -1,12 +1,10 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Service, signal, computed } from '@angular/core';
 
 /**
  * Service to track global loading state across HTTP requests.
  * Used by the app interceptor to show/hide loading indicators.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class LoadingService {
   /** Number of active HTTP requests */
   private readonly _activeRequests = signal(0);

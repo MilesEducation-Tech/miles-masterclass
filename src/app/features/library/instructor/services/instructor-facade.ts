@@ -3,7 +3,7 @@ import {
   computed,
   effect,
   inject,
-  Injectable,
+  Service,
   linkedSignal,
   PLATFORM_ID,
   resource,
@@ -23,7 +23,7 @@ import { withPreviousValue } from '@shared/utils/with-previous-value';
  * Instructor page, so visiting Course/Badge libraries never triggers
  * `instructor/` requests.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class InstructorFacade {
   private readonly api = inject(ApiClient);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));

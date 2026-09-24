@@ -1,0 +1,52 @@
+---
+name: git-workflow
+description: This repo's branching, commit, PR and merge-conflict conventions. Use when starting work on a ticket, naming a branch, writing a commit message or PR description, reviewing a diff before it's raised, rebasing or updating a branch, resolving merge conflicts (especially rename conflicts after the structure refactor), or when asked how we ship changes.
+---
+
+# Git workflow
+
+Authoritative detail lives in `docs/engineering/git-workflow.md`. Read it before answering anything it covers.
+This skill is the fast path.
+
+## Model
+GitHub Flow. `main` is production and protected. Short-lived branches (1–3 days) off `main`, one per ticket,
+PR with a Vercel preview, 1 approval (2 for `core/`, `shared/`, auth, payments), squash merge, delete branch.
+No `develop` branch.
+
+## Starting work
+```bash
+git checkout main && git pull
+git checkout -b feat/MIL-231-seat-allocation
+```
+Branch prefixes: `feat/ fix/ chore/ refactor/ docs/ hotfix/`.
+
+## Commits
+`type(scope): imperative subject`, lowercase, no trailing period. Body explains *why*. Footer carries the ticket.
+Never propose `--no-verify`. If husky/lint-staged rejects a commit, fix the code.
+
+## Raising a PR
+Fill the template in `.github/pull_request_template.md`: what, why (ticket), how to test, screenshots for any
+UI change (mobile 375px + desktop), and the checklist. Before review and again before merge:
+```bash
+git fetch origin && git rebase origin/main && git push --force-with-lease
+```
+`--force-with-lease`, never plain `--force`, and never on a shared branch.
+
+## Reviewing a diff
+Check: scope matches the ticket; PR under ~400 lines; no new suppressions; structure and import boundaries
+from `AGENTS.md`; Tailwind instead of new CSS; tests for the changed behavior; screenshots present for UI.
+
+## Merge conflicts after the structure refactor
+Paths moved en masse, so for a branch that predates the refactor use **merge, not rebase**:
+```bash
+git checkout main && git pull
+git checkout your-branch
+git merge main
+```
+"Deleted by them" means the file moved. Find the new path with
+`git log --diff-filter=R --find-renames -- old/path`, apply your change there, and `git add` the new path.
+Rebasing here makes you resolve the same conflict once per commit.
+
+## Never
+Commit to `main` directly · force-push a shared branch · commit `.env`, keys, `dist/`, `node_modules/`,
+`.angular/`, `.DS_Store` · hand-edit `pnpm-lock.yaml` · leave a branch open for weeks.

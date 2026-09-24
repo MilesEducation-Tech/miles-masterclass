@@ -3,7 +3,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
-import { HasPermissionDirective } from '@admin/core/directives/has-permission.directive';
+import { HasPermissionDirective } from '@admin/core/directives/has-permission';
 import { PERM } from '@admin/core/models/admin-rbac.model';
 import { LeadsTable } from '@admin/leads/components/leads-table/leads-table';
 import { LeadsFacade } from '@admin/leads/services/leads-facade';

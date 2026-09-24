@@ -1,6 +1,6 @@
 // custom-dialog.service.ts
 import {
-  Injectable,
+  Service,
   ComponentRef,
   EnvironmentInjector,
   createComponent,
@@ -93,9 +93,7 @@ export class DialogRef<T = unknown, R = unknown> {
   }
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class Dialog {
   private readonly appRef = inject(ApplicationRef);
   private readonly injector = inject(EnvironmentInjector);

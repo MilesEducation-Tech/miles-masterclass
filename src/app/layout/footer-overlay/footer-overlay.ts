@@ -19,7 +19,7 @@ import { Analytics } from '@core/services/analytics/analytics';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Utils } from '@shared/services/utils';
 import { FeatureFacade, FeatureResource } from '@core/services/feature-facade/feature-facade';
-import { PaymentFacade } from '@features/payment/services/payment-facade';
+import { CartStore } from '@core/services/cart/cart-store';
 import { GlobalSearchDialog } from '@layout/dialogs/global-search-dialog/global-search-dialog';
 import {
   CalendlyDialog,
@@ -63,7 +63,9 @@ export class FooterOverlay {
   protected readonly consent = inject(Consent);
   private readonly analytics = inject(Analytics);
   private readonly feature = inject(FeatureFacade);
-  private readonly payment = inject(PaymentFacade);
+  // Cart state and its loader live in core, so layout does not import a
+  // feature (PROMPT.md §3).
+  private readonly cart = inject(CartStore);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly isBrowser = isPlatformBrowser(this.platformId);
@@ -122,7 +124,7 @@ export class FooterOverlay {
   });
 
   // ── Cart count ─────────────────────────────────────────────────────────
-  protected readonly cartCount = computed(() => this.payment.cartData()?.cartitem_data.length ?? 0);
+  protected readonly cartCount = computed(() => this.cart.cartData()?.cartitem_data.length ?? 0);
 
   // ── State machine: what to render in the bar ───────────────────────────
   protected readonly cardKind = computed<'continue' | 'subscribe' | 'corporate' | 'none'>(() => {
@@ -175,7 +177,7 @@ export class FooterOverlay {
     // forever if the API resolved with null/error.
     effect(() => {
       if (this.isLoggedIn()) {
-        untracked(() => this.payment.loadMyBucket());
+        untracked(() => this.cart.loadMyBucket());
       }
     });
 

@@ -1,7 +1,7 @@
 import { isPlatformServer } from '@angular/common';
 import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import {
-  Injectable,
+  Service,
   PLATFORM_ID,
   TransferState,
   inject,
@@ -25,7 +25,7 @@ import { BlogListQuery, BlogPostsResult, WpCategory, WpPost } from '../models/bl
  * - Every request opts out of the Miles auth token and the global error toast
  *   via the shared `HttpContext` flags.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class BlogApi {
   private readonly http = inject(HttpClient);
   private readonly transferState = inject(TransferState);

@@ -5,7 +5,7 @@ import {
   DestroyRef,
   effect,
   inject,
-  Injectable,
+  Service,
   PLATFORM_ID,
   resource,
   signal,
@@ -88,7 +88,7 @@ export interface CertificateDownloadProgress extends Omit<DownloadProgress, 'pha
  */
 // Route-scoped (see admin.routes.ts): the injector dies on navigation, which
 // aborts in-flight resource() loads and stops this page's calls firing elsewhere.
-@Injectable()
+@Service({ autoProvided: false })
 export class PartnerReportFacade {
   private readonly api = inject(ApiClient);
   private readonly me = inject(PartnerAdminMe);

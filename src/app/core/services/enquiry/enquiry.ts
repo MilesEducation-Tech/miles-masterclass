@@ -1,5 +1,5 @@
 import { HttpContext } from '@angular/common/http';
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { catchError, finalize, Observable, throwError } from 'rxjs';
 import { SKIP_AUTH_TOKEN, SKIP_ERROR_NOTIFICATION } from '../../models/http.model';
 import { drfErrorMessage } from '@core/utils/drf-error-message';
@@ -25,7 +25,7 @@ export interface EnquiryResponse {
 
 const LEADS_URL = 'partners/leads/';
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class EnquiryService {
   private readonly api = inject(ApiClient);
   private readonly logger = inject(Logger);

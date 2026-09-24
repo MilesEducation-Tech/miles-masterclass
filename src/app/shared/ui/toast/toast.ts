@@ -2,16 +2,8 @@ import { Component, computed, inject } from '@angular/core';
 import { injectToastContext, NgpToast, NgpToastManager } from 'ng-primitives/toast';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { heroXMark } from '@ng-icons/heroicons/outline';
-import { ToastType } from '@core/models/notification.model';
+import { ToastContext } from '@core/models/notification.model';
 import { cn } from '../../utils/cn';
-
-/** What `NotificationService` hands each toast when it shows one. */
-export interface ToastContext {
-  title: string;
-  message: string;
-  type: ToastType;
-  closable: boolean;
-}
 
 /**
  * A single toast, rendered by `NgpToastManager`.

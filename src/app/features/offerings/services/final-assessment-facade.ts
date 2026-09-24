@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { Storage } from '@core/services/storage/storage';
 import { QuizQuestion, ContentDetails } from '@core/models/course.model';
 import { Observable, of } from 'rxjs';
@@ -25,7 +25,7 @@ type SubmitFinalAssessmentRequest = RouteRequest<typeof ASSESSMENT_ROUTES.submit
 type AssessmentReportResponse = RouteResponse<typeof ASSESSMENT_ROUTES.finalAssessmentReport>;
 type AssessmentReportRequest = RouteRequest<typeof ASSESSMENT_ROUTES.finalAssessmentReport>;
 
-@Injectable()
+@Service({ autoProvided: false })
 export class FinalAssessmentFacade {
   private readonly storage = inject(Storage);
   private readonly apiClient = inject(ApiClient);
