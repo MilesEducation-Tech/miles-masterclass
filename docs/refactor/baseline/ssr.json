@@ -12,22 +12,22 @@
   "/us/accounting/partners/cpacanada": {
     "status": 200,
     "location": null,
-    "title": "Miles Masterclass - AI-Powered CPE Training for Accounting Professionals",
-    "description": "Finally, CPE that's all about AI in Accounting. Master Classes, Podcasts, Reels &amp; Live Premieres.",
+    "title": "CPA Canada Member CPD on AI in Accounting | Miles",
+    "description": "CPA Canada members get exclusive access to Miles Masterclass CPD on AI in accounting - practical, workflow-driven courses, not just another content library.",
     "canonical": "https://www.milesmasterclass.com/us/accounting/partners/cpacanada",
     "h1": "",
     "jsonLdBlocks": 1,
-    "textLength": 3121
+    "textLength": 3098
   },
   "/us/accounting/masterclass/154/adulting-in-business": {
     "status": 200,
     "location": null,
-    "title": "{{title}}",
+    "title": "{{title}} | Master Class | Miles Masterclass",
     "description": "{{description}}",
     "canonical": "",
     "h1": "",
     "jsonLdBlocks": 1,
-    "textLength": 23899
+    "textLength": 23934
   },
   "/admin/login": {
     "status": 200,

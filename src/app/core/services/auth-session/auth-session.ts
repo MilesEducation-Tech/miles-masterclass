@@ -50,9 +50,29 @@ export class AuthSession {
   private readonly _profileStatus = signal<ProfileStatus | null>(this.readProfileStatus());
   private readonly _isTestUser = signal<boolean>(false);
 
+  /**
+   * The two milestones as `user_details/` reports them — `null` until something
+   * has said, which is NOT the same as `false`.
+   *
+   * Seeded from the session's `profile_status` so a reload can gate before any
+   * request goes out, then overwritten with the row's own booleans the moment
+   * `AccountApi` has them (it pushes; this service cannot read the row itself
+   * without a DI cycle). `is_onboarding_completed` is the ONLY access
+   * restriction taken from that row.
+   */
+  private readonly _isOnboardingCompleted = signal<boolean | null>(
+    milestoneOf(this.readProfileStatus(), 'onboarding'),
+  );
+  /** Carried, not gated on — nothing branches on this yet, by decision. */
+  private readonly _isProfileCompleted = signal<boolean | null>(
+    milestoneOf(this.readProfileStatus(), 'profile'),
+  );
+
   readonly accessToken = this._accessToken.asReadonly();
   readonly profileStatus = this._profileStatus.asReadonly();
   readonly isTestUser = this._isTestUser.asReadonly();
+  readonly isOnboardingCompleted = this._isOnboardingCompleted.asReadonly();
+  readonly isProfileCompleted = this._isProfileCompleted.asReadonly();
 
   /**
    * A BOOLEAN, deliberately.
@@ -65,11 +85,29 @@ export class AuthSession {
   readonly isAuthenticated = computed(() => this._accessToken().length > 0);
 
   /**
-   * Rule 4: branch on `profile_status`, never on the token's
-   * `miles.onboarding_required` claim — they are different facts of opposite
-   * polarity.
+   * The onboarding gate, and the only thing `user_details/` restricts access
+   * on: onboarding completed → the rest of the app is reachable.
+   *
+   * Rule 4 still holds — this is the MILESTONE, never the token's
+   * `miles.onboarding_required` claim, which describes the identity store and
+   * has the opposite polarity.
+   *
+   * Only a known `false` redirects. `null` means nothing has told us yet, and
+   * an unknown must not bounce a learner who finished onboarding months ago —
+   * the row corrects it a moment later either way.
    */
-  readonly needsOnboarding = computed(() => this._profileStatus() === 'new_user');
+  readonly needsOnboarding = computed(
+    () => this.isAuthenticated() && this._isOnboardingCompleted() === false,
+  );
+
+  /**
+   * The authoritative milestones, from `GET user_details/` or from the
+   * `PATCH profile/` response. Pushed in by the caller that holds them.
+   */
+  setMilestones(onboardingCompleted: boolean, profileCompleted: boolean): void {
+    this._isOnboardingCompleted.set(onboardingCompleted);
+    this._isProfileCompleted.set(profileCompleted);
+  }
 
   // ── Commands ──────────────────────────────────────────────────────────────
 
@@ -201,6 +239,10 @@ export class AuthSession {
     this._refreshToken.set(session.refreshToken);
     this._profileStatus.set(session.profile_status);
     this._isTestUser.set(session.is_test_user);
+    // A rotation after onboarding carries the NEW status, so the gate has to
+    // move with it — this is the other half of rule 5.
+    this._isOnboardingCompleted.set(milestoneOf(session.profile_status, 'onboarding'));
+    this._isProfileCompleted.set(milestoneOf(session.profile_status, 'profile'));
 
     this.writeCookie(environment.AUTH.accessToken, session.accessToken);
     this.writeCookie(environment.AUTH.refreshToken, session.refreshToken);
@@ -212,6 +254,8 @@ export class AuthSession {
     this._refreshToken.set('');
     this._profileStatus.set(null);
     this._isTestUser.set(false);
+    this._isOnboardingCompleted.set(null);
+    this._isProfileCompleted.set(null);
 
     if (!this.isBrowser) return;
     this.storage.deleteCookie(environment.AUTH.accessToken);
@@ -238,6 +282,20 @@ export class AuthSession {
       sameSite: 'Lax',
     });
   }
+}
+
+/**
+ * The milestone booleans `user_details/` reports, derived from the session's
+ * `profile_status` — the same two facts, which is why the row's own booleans
+ * can overwrite these without a contradiction. `null` in, `null` out: an
+ * unknown status must not read as "not completed".
+ */
+function milestoneOf(
+  status: ProfileStatus | null,
+  which: 'onboarding' | 'profile',
+): boolean | null {
+  if (status === null) return null;
+  return which === 'onboarding' ? status !== 'new_user' : status === 'profile_completed';
 }
 
 /**

@@ -7,6 +7,388 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🏁 **PHASE 9 (data layer) IS DONE AND CLOSES ✅ — all five steps (0–4).** Report:
+  [phase-09-core-shared](reports/phase-09-core-shared.md).
+  `reviewer` **PASS twice, zero violations** (once over steps 0–3, once over the step-4 diff, the second
+  verified against the installed Angular 22.0.8 source rather than from memory).
+  Tests **163 files / 554 passed + 1 skipped** (baseline 160/519).
+  **UNCOMMITTED: 16 files — 12 modified, 4 new.** Commit message in §5 of the report.
+  Exclude `public/version.json` + `core/version/app-version.ts` (build-generated, already restored).
+- ⏸ **`verifier` 7/8 GREEN — `ssr smoke` IS RED, AND IT IS A STALE BASELINE, NOT THIS WORK.**
+  Steps 0–3 alone reached all 8 green; the red appeared on the step-4 run, so it was chased rather than
+  accepted. Two routes differ from `baseline/ssr.json`: `partners/cpacanada` renders the **real** CPA
+  Canada SEO copy where the baseline holds the generic brand fallback, and `masterclass/154/...` renders
+  `{{title}} | Master Class | Miles Masterclass` where the baseline holds bare `{{title}}`.
+  ⚠️ **MY FIRST HYPOTHESIS WAS WRONG AND IS RECORDED AS SUCH.** I guessed a timeout race in
+  `SeoManager.loadFromSupabase` (`TIMEOUT_SERVER_MS = 4500`, with a brand-default fallback — mechanically
+  real). It is **not** that: the failure is **deterministic**, identical across 3 harness runs and 5
+  direct `curl`s of the built server. Four facts settle attribution:
+  **(1)** both diffs go the wrong way for a regression — the renders contain _more_ correct SEO data, and
+  a regression loses data rather than inventing correct partner copy;
+  **(2)** `git diff 07afb23..HEAD` over `core/services/seo`, `shared/utils/seo`, `features/partners`,
+  `features/offerings/masterclass` and `app.ts` is **EMPTY** — the baseline was recorded at `07afb23` and
+  the SEO code is byte-identical to the code that produced it;
+  **(3)** nothing in this phase's diff is reachable from the SEO path (grep-confirmed, all 7 files);
+  **(4)** `{{title}}` is still unresolved, i.e. the documented pre-existing course-API condition.
+  **So `ssr.json` captured a render in which two Supabase `seo_pages` rows had not resolved.** What I
+  could not establish from inside the repo is _when_ those rows were last edited — a data question.
+- ✅ **PHASE 9 CLOSES ✅ ON YOUR DECISION (2026-09-24), with `ssr smoke` red.** Recorded plainly so the
+  next reader is not misled: PROMPT.md §6 asks for a full green run and this phase does **not** have one.
+  You closed it ✅ anyway because the single red gate is a **stale recorded baseline**, not a defect —
+  proven four ways (§2 of the report). This is the deliberate opposite of the Phase 7 call, where the red
+  was a real, unexempted lint violation. **The distinction is the evidence, not the colour of the gate.**
+- ⏸ **STILL OPEN, and NOT closed by the ✅ above: re-record BOTH baselines.** `bundle.json` predates the
+  blog removal (phantom −13 KB); `ssr.json` predates two Supabase `seo_pages` rows resolving. Only you
+  can record them. **Every future phase will keep reporting a phantom bundle win and a red `ssr smoke`
+  until you do**, and the next genuine SSR regression will be indistinguishable from this known noise.
+- 📉 **THE BUNDLE'S −13 KB GZIP IS NOT THIS PHASE'S — do not credit it to Phase 9.** The harness reports
+  initial gzip 102.3 → 89.2 KB (−12.8%) against the recorded baseline, which is far too large for a
+  data-layer change. Attributed with a clean `git worktree` build of `HEAD` measured by one identical
+  script: **`HEAD` = 454.7 KB raw / 88.1 KB gzip; working tree = 454.6 / 88.0. My delta is −0.1 KB.**
+  The whole drop belongs to the other session's commits, overwhelmingly the blog removal — `styles.css`
+  went ~380 → 298.4 KB raw, and its content hash `styles-L2LIUX2D.css` is **identical** between `HEAD`
+  and my tree, which proves I did not touch it. `main.js` is 91.6 KB in both.
+  (Superseded by the combined baseline decision above — it now covers `ssr.json` too.)
+
+- 🟡 **PHASE 9 (data layer) — scope `core/services` + `shared/services`
+  (+ `shared/components`, `shared/dialogs`), on your decision, NOT `features/blog`.**
+  Plan: `~/.claude/plans/9-moonlit-lecun.md`. **Baseline re-taken at `890e52d`: `lint` exit 0,
+  `test` 160 files / 519 passed + 1 skipped.**
+  ⚠️ **HEAD MOVED MID-PLANNING.** Four commits landed on this branch from another session
+  (`49fc0a8` onboarding gate, `42dabf8` `shared/ui/select`, `6b4adff` profile-questionnaire rebuild,
+  `890e52d` blog removal). All committed, tree clean, nothing stranded — but the baseline was
+  re-measured and **all nine Phase 9 target paths were re-diffed against the new HEAD and come back
+  untouched**. `account-api.ts:43,47` and `auth-session.ts:85` were re-read rather than trusted:
+  the boolean-gate idiom this phase copies survives `6b4adff` intact.
+- 🔎 **THE FINDING THAT RESHAPED THE PHASE: `shared/services/**` has ZERO `httpResource`
+  candidates**, and the tracker rows that own the real work did not exist.
+  Its five HTTP calls are three POSTs and two GETs, and **both GETs are click-triggered one-shots**:
+  `claimBadge()` is a side-effecting claim wearing a GET (three consumer shapes — raw Observable,
+  `firstValueFrom`, `.subscribe`), and `openAdditionalResources()` **is** the click, existing only to
+  open a dialog on completion. Converting either would claim badges on render and re-open dialogs on
+  refetch. Meanwhile `caira-level-stack:139` and `surround-carousel:129` — in `shared/components`,
+  which had **no row at all** — are already `resource()` wrapping `firstValueFrom(api.get(...))`,
+  precisely what PLAN.md §5 calls "the direct `httpResource` conversions". Hence the two new rows.
+- 🚨 **`FeatureResource` hardcodes `isAuthenticated` to `false` (`feature-facade.ts:109`), so every
+  `{requiresAuth: true}` resource returns `[]` WITHOUT ISSUING A REQUEST.** That is seven carousel
+  keys dead today — `inprogress`, `lastViewed`, `bookmark`, `completed`, `recommended`,
+  `complimentary`, `becauseYouWatched` — across masterclass, podcast and micro-learning. Roughly half
+  the GET surface of the file. **Your decision: re-wire it to `AuthSession.isAuthenticated()`**, which
+  becomes the `httpResource` request-function gate. **This is a visible behaviour change and the
+  phase's main QA risk.** `footer-overlay.ts:100` hardcodes `isLoggedIn = signal(false)` the same way
+  and must be checked, not assumed separate.
+- ⚠️ **`CartStore` conversion carries a specific deadlock trap, recorded so it is not rediscovered.**
+  `payment-guard.ts:40` reads `loading()` **synchronously** (`if (!facade.loading()) return
+checkCartState()`), and **`httpResource().isLoading()` is `false` before the request fires** — a
+  naive swap makes the guard read "not started" as "finished", which is exactly the deadlock
+  `cart-store.ts:38`'s own comment warns about. **The fix is `status()`, not `isLoading()`**: it
+  distinguishes `idle` from `loading`, which the boolean cannot. `cartResolver`'s wait must filter on
+  `'resolved' || 'error'` — omitting `'error'` hangs route activation forever on a failed cart.
+- ⚠️ **Three spec files change MEANING, not just shape.** `surround-carousel.spec.ts` (160 lines)
+  mocks `ApiClient` and asserts endpoint + params — `httpResource` goes through `HttpClient`/
+  `HttpBackend`, so that mock stops observing anything and must move to `HttpTestingController`.
+  `caira-level-stack.spec.ts` (22 lines) provides **no HTTP at all** and passes only because the
+  resource errors and `hasValue()` swallows it, so it currently tests `FALLBACK_LEVELS` and nothing
+  else. `feature-facade.spec.ts` is a 16-line smoke test — a 724-line file with 21 importers and 29
+  `getResource()` call sites has **zero** HTTP coverage.
+
+- 🔎 **STEP 1 FINDING 1 — `defaultValue` does NOT make `value()` safe. It still THROWS in the error
+  state.** This is the single most important thing to carry into steps 2–4. A `defaultValue` covers
+  `idle` and `loading` only; on an errored resource `value()` throws, so
+  `computed(() => res.value()?.data ?? [])` **throws inside the template** on a 500 — a straight
+  regression against the `catchError(() => of([]))` it replaces. **Every converted read needs BOTH a
+  `defaultValue` and a `hasValue()` guard.** I shipped the unguarded version first and the new spec
+  caught it; `caira-level-stack` already carries both, which now reads as deliberate rather than
+  redundant. PROMPT.md §4.2 says "guard every `.value()` read with `.hasValue()`" and it means it
+  even when a default is set.
+- 🔎 **STEP 1 FINDING 2 — the repo's spec settle idiom is INSUFFICIENT for asserting a flushed
+  value.** `account-api.spec.ts` uses `void res.value(); TestBed.tick();` and that is fine _there_
+  because it only ever asserts request counts and `hasValue() === false`. `TestBed.tick()` is
+  synchronous while a resource applies its response on a microtask, so a tick-only settle sees the
+  `defaultValue` and never the flushed payload — five of my seven tests failed on exactly that before
+  the cause was found. **The settle that works is `await TestBed.inject(ApplicationRef).whenStable()`**
+  (there is no `TestBed.whenStable()` in 22.0.8 — it does not compile). Proven with a throwaway probe
+  spec before trusting it. Use this in steps 2–4 and in the `FeatureFacade` tests.
+
+- 🔎 **STEP 4 FINDING 1 — I SHIPPED A REAL DEFECT AND THE NEW TESTS CAUGHT IT: you cannot accumulate
+  by mutating a Map inside a signal computation, because a computation is LAZY.** The first draft filed
+  each settled page into the existing `pages` Map from inside the `items` computation. Two tests failed:
+  if nothing read `items()` between page 1 settling and page 2 arriving, page 1 was **never folded in
+  and was silently lost**. Rewritten to accumulate through the computation's own `previous` value —
+  page 1 replaces, later pages append — which has no such hole and **deletes the `pages` Map and
+  `flattenPages()` outright**, because `patchItems`/`prependItem` writes simply _are_ `previous.value`.
+  Net: simpler and more correct than what it replaced. One standing constraint: a non-first page must
+  never be re-requested for the same page number or its rows would append twice; nothing does, since
+  every refetch path resets to page 1 first.
+- 🔎 **STEP 4 FINDING 2 — `refresh()` needs two different mechanisms and one of them is a trap.**
+  A resource refetches only when its request OBJECT changes, so the old `refreshTrigger` counter would
+  be _tracked and then ignored_ by a request function — it cannot force a refetch. The non-track path
+  calls `reload()` instead, and **only when the page did not actually change**, because a real page
+  change already produces a different request and doing both would fire two requests per refresh.
+  The track path keeps the counter, since its `combineLatest` does re-emit on it.
+- 🐛 **STEP 4 FINDING 3 — a faithfulness gap I nearly shipped: an errored resource must count as
+  SETTLED WITH NO ROWS, and must clear `paginationData`.** The old pipeline's
+  `catchError(() => of({ data: [], pagination: undefined, ... }))` cleared pagination on failure.
+  Treating an error as "not settled" instead leaves the previous pagination in place, and a stale
+  `next_page` means an infinite-scroll container **keeps asking for the page that just failed**.
+  Caught by re-reading my own diff, not by a gate; now explicit in `listSnapshot` and pinned by a test.
+- 🐛 **STEP 4 FINDING 4 — MY OWN STEP-2 TEST STUB WAS LEAKING GLOBALLY and only step 4 exposed it.**
+  `caira-level-stack.spec.ts` called `vi.stubGlobal('matchMedia', ...)` with no restore.
+  `vi.stubGlobal` writes `globalThis`, which outlives the file, and `core/services/viewport` is also
+  backed by `matchMedia` — a stub answering `matches: false` to every query makes `Viewport` resolve to
+  `mobile`, which broke `section-nav.spec.ts`'s header-docking test. It passed in steps 2 and 3 purely
+  by execution order; changing `feature-facade.ts` reshuffled that order and surfaced it. Fixed with
+  `afterEach(() => vi.unstubAllGlobals())` and a comment naming the trap. **Suite re-run twice to
+  confirm stability, not once.** Lesson for the remaining phases: a global stub in any spec is a
+  cross-file hazard, and a green suite is not proof it is absent.
+
+### Phase 9 steps
+
+- [x] **Step 0 — tracker repair (docs only).** Added `shared/components` + `shared/dialogs` rows;
+      **removed the `features/blog` row** (the module is gone as of `890e52d`, so PLAN.md §13 row 2
+      and PLAN.md §5's `blog-api.ts` claim are both stale); marked the four in-scope rows 🟡.
+- [x] **Step 1 — `JobSectors` → `httpResource` + a new 7-test spec.** `toSignal` +
+      `map`/`catchError`/`shareReplay` + `Logger` collapsed to one resource with a `defaultValue`;
+      `ApiClient` dropped entirely (`apiUrl` is a free function, so the injection was dead).
+      `sectorOptions`/`rolesFor`/`resolveIds` byte-identical, so the one consumer
+      (`profile-completion-dialog`) is untouched. Gates: tests **161 files / 526 passed + 1 skipped**
+      (+1 file, +7 tests), `tsc --noEmit` 0, `lint` 0, `format` clean.
+      🔎 **Two findings worth more than the conversion, both caught by the new tests:** see the two
+      bullets under "Now".
+- [x] **Step 2 — `shared/components` rendered reads: 3 conversions, 3 specs, all green.**
+      2a `caira-level-stack`, 2b `surround-carousel`, 2c `course-related-section` related read only.
+      Each dropped a `resource()` + `firstValueFrom` + `takeUntil(abortSignal)` + `ApiClient`
+      injection for one `httpResource`; 2c additionally **deleted an `effect()` + `.subscribe()` +
+      `signal.set()`**, which is the §4.2 pattern this phase exists for.
+      ⚠️ **`shared/dialogs` turned out to have nothing to convert** — `ai-lab-agent-dialog` is
+      blocked on `this.data` being assigned after construction, `certificate-download-dialog` is
+      POST + blob, `profile-completion-dialog` is PATCH. So the new `shared/dialogs` tracker row is
+      correct to exist but has no Phase 9 work; it is marked ✅-by-vacuity at close, not skipped.
+      **`course-related-section.ts:131` (instructor `forkJoin` fan-out) deliberately NOT converted**
+      — one `httpResource` is one request and N is only known at runtime. `catchError`/`of`/
+      `takeUntilDestroyed`/`Logger`/`ApiClient` all remain in that file _because_ of it.
+      Tests **162 files / 534 passed + 1 skipped**; `tsc` 0, `lint` 0, `format` clean.
+      🔎 **Three spec lessons, all of which cost a red run first:**
+      (1) **Never `await whenStable()` before flushing** — with a real `HttpClient` the pending
+      request means the app never stabilises and the await hangs to timeout. `caira-level-stack`'s
+      old suite could only await freely because it had **no `HttpClient` at all**.
+      (2) `surround-carousel`'s `ApiClient` mock **stopped observing anything** the moment the read
+      became an `httpResource`; every assertion would still have passed. Ported to
+      `HttpTestingController` with `match(() => true)`, which proves exactly one request was made
+      rather than trusting a predicate that can quietly match zero.
+      (3) Counting rendered `app-horizontal`/slide elements counts **zero** regardless of data —
+      `app-carousel` fills itself via swiper + `ng-template`, neither of which runs in jsdom. Assert
+      on what the carousel is _handed_ instead.
+- [x] **Step 3 — `CartStore` → `httpResource`, + an 8-test spec it never had.**
+      `cartData` is a `linkedSignal` over the resource (writable, because
+      `PaymentFacade.setCartData()` pushes coupon/checkout responses in with no refetch);
+      `loading`/`error`/`cartFetched` are `computed()` off it. Tests **163 files / 542 passed**,
+      `tsc` 0, `lint` 0, `format` clean.
+      🚨 **THE GATE IS LOAD-BEARING — do not "simplify" it away.** An `httpResource` whose request
+      function returns a URL is in the **`loading` state from construction** (measured with a probe,
+      not assumed). An ungated cart resource would therefore fire an **authenticated `mybucket`
+      request the moment anything injected `CartStore`** — which includes `Utils` (64 importers) and
+      `footer-overlay`, i.e. **every page in the app**. A private `wanted` signal keeps the request
+      function returning `undefined` (idle, no request) until a caller actually asks, which is
+      exactly what the old imperative `loadMyBucket()` did.
+      ✅ **The resolver needed NO rewrite, and that is a measured result rather than a hope.** Two
+      facts make the existing `toObservable(loading).pipe(filter(l => !l), take(1))` faithful:
+      `reload()` flips status to `reloading` **synchronously**, and opening the `wanted` gate flips
+      `loading` to `true` **synchronously** too (`immediately-after-first-call:loading=true`). So the
+      resolver cannot sample a stale settled state and wave a deep link through with an unloaded
+      cart. The reasoning is recorded at the call site; the plan's fear that `isLoading()` would be
+      `false` before the request fired was **wrong**, and only a probe could have shown that.
+      🚨 **UNPLANNED FINDING, caught by `tsc` and worth the whole step: `PaymentFacade.loading` and
+      `.error` were NEVER cart-only.** The facade _writes_ them for `proceedToPayment()` and
+      `loadOrderById()` — operations with nothing to do with the cart bucket. Once `CartStore`'s half
+      became derived (read-only), 8 assignments failed to compile. Fixed by giving the facade its own
+      `opLoading`/`opError` and **OR-ing them with the cart's**, which preserves today's behaviour
+      exactly: `paymentGuard`/`cartResolver` wait on `loading`, so today they also wait out a checkout
+      POST. Deriving `loading` from the cart alone would have silently stopped that — a behaviour
+      change smuggled in by a refactor. If that wait is unwanted, it is a separate decision.
+      ⚠️ **Still needs your manual QA — the gates cannot see checkout.** Add to cart → drawer →
+      `/payment/cart` → `/billing` → `/review`, and a **hard refresh directly on `/payment/billing`**.
+- [ ] **Step 4 — `FeatureFacade`:** 4a re-wire `requiresAuth`, 4b convert the non-track list read,
+      4c leave the track fan-out and `getAbout()` on RxJS, 4d `runInInjectionContext` + keep the SSR
+      skip, 4e tests after (your decision).
+- [x] **Step 4 — `FeatureFacade` DONE.** 422 lines changed in the facade + 295 in its spec.
+      4a `requiresAuth` re-wired to `AuthSession.isAuthenticated()`; 4b the non-track list read is an
+      `httpResource`; 4c the track fan-out and `getAbout()` stay on RxJS; 4d `runInInjectionContext`
+      with the existing `Injector`, SSR skip preserved; 4e **11 `HttpTestingController` tests** where
+      there was previously only `expect(service).toBeTruthy()`.
+      Tests **163 files / 552 passed + 1 skipped**, `lint` 0, `tsc` 0, `format` clean.
+      🚨 **THE BEHAVIOUR CHANGE IS BIGGER THAN "7 KEYS": 15 LIVE `getResource({requiresAuth:true})`
+      CALL SITES** — masterclass 6, podcast 6, micro-learning 3 — all of which issued **no request at
+      all** before this step. They now fetch for signed-in users. `footer-overlay`'s 16th call site
+      stays dead behind its own hardcoded flag (see below). **This is the phase's main QA risk.**
+      ✅ **`isLoading`, `items`, `paginationData`, `metadata` are `linkedSignal`, NOT `computed`** —
+      they had to stay writable: `applyBookmarkChange()` calls `items.update()` across every loaded
+      listing, `adjustBookmarkCount()` writes `paginationData`, and the track pipeline drives all four
+      by hand.
+      ⚠️ **`footer-overlay.ts:100` is NOT the same problem and was deliberately left alone.** Its
+      `isLoggedIn = signal(false)` reads the **removed `Auth` service**, not `AuthSession`, and its
+      sibling `subscribed` has no available source at all — re-wiring one without the other would
+      change what the overlay renders. That belongs to the `layout` row, not a data-layer phase.
+- [x] **Close:** `reviewer` PASS twice (steps 0–3, then the step-4 diff against the installed Angular
+      source), report written, STATE.md updated, commit message in §5 of the report. `verifier` 7/8 —
+      `ssr smoke` red and **proven** stale: deterministic across 3 harness runs + 5 direct `curl`s, both
+      diffs in the _more-correct_ direction, and `git diff 07afb23..HEAD` over the SEO path EMPTY.
+      Bundle delta attributed by a clean `HEAD` worktree build, not assumed.
+      **Next: `/refactor-phase 9 library` — `features/library` is the next Phase 9 row.**
+
+- 🐛 **OFF-PHASE (2026-09-24, part 6): A11Y HOLE FOUND BY READING THE PRIMITIVES' SOURCE —
+  `NgpSelect` is the ONE control primitive that does NOT call `ngpFormControl`.**
+  `ngpInput`, `ngpTextarea` and `ngpCheckbox` all do, so inside an `ngpFormField` they pick up
+  `aria-labelledby` and `aria-describedby` for free. A select does not: **dropped into a form field
+  it announces with NO ACCESSIBLE NAME**, and a `<label for>` cannot rescue it because the trigger
+  is a `div` — `for` only binds to a labelable element. The repo's own `aria-multiselect` patches
+  this by hand (`[attr.aria-labelledby]`), which is the tell that it has always been missing.
+  - `Select` now reads `injectFormFieldState({ optional: true })` and binds `aria-labelledby` /
+    `aria-describedby` from the field's registered labels and descriptions. Optional on purpose —
+    the control still works standalone, and then naming it is the caller's job.
+  - `profile.html` now picks the label ELEMENT by control kind: a real `<label ngpLabel [attr.for]>`
+    for the native ones (input/textarea/number/date) and a plain `<span ngpLabel>` for the widget
+    ones (select, checkbox), so nothing claims an association the DOM would not honour.
+  - A host-component spec proves it: `role="combobox"`, `aria-labelledby="intent-label"`,
+    `aria-describedby="intent-help"`. 160 files / **519 tests** pass, build green, eslint clean.
+  - Considered and rejected: moving `ngpSelect` onto the component's host element via the
+    `ngpSelect()` composable + `ngpFormControl()`, which is the library's "reusable component"
+    pattern. It would have bought the same naming plus `data-invalid`/`data-touched`, but
+    `ngpFormControl` also binds `aria-invalid` from `controlStatus()`, and `controlStatus()` only
+    understands `NgControl` — **it knows nothing about signal forms** — so it would have fought this
+    control's own `aria-invalid` binding for an attribute it can never populate. Noted here so the
+    next person does not "fix" it that way.
+
+- 📌 **OFF-PHASE (2026-09-24, part 5): the select is now ONE REUSABLE CONTROL —
+  `shared/ui/select/` (`Select`, `app-select`) — and TWO REAL DEFECTS behind "options not coming
+  properly" are fixed, both of them already documented in this repo's own code.**
+  - 🐛 **The prune race.** `ngpSelect` PRUNES any value it cannot find among the rendered options and
+    emits the pruned result. On a server-driven form the options come from `questions/` and the value
+    from `profile/` — two resources — so a seeded answer that arrives first emits back as `null`/`[]`
+    and **silently erases itself**. `aria-multiselect.ts:113` carries the same guard with the same
+    comment; my inline markup had none. Now carried over, with a test.
+  - 🐛 **Duplicate option values.** `@for (... track option.value)` THROWS NG0955 on a repeated key,
+    which takes the whole dropdown down — `dedupeAriaOptions` exists in `core/models/aria.model.ts`
+    for exactly this. `Select` dedupes (first wins), with a test.
+  - ⚠️ **`required()` DOES NOT FIRE ON AN EMPTY ARRAY.** Read from the installed runtime, not
+    assumed: `isEmpty` is `'' | false | null | undefined | NaN`, so `[]` is NOT empty to it. Every
+    multi-value field therefore needs `required()` for the REQUIRED metadata (that is what puts
+    `aria-required` on the control through `[formField]`) **plus** an explicit `validate()` that
+    actually fires. Both are in `profile.ts` now with the reason written next to them.
+  - Also learned the hard way, recorded so the next spec does not lose an hour: **jsdom's selector
+    engine is case-SENSITIVE about attribute names** (`[ngpSelectOption]` matches nothing; use
+    `[ngpselectoption]`), and the **portal lands on a macrotask** — `whenStable()` is not enough, the
+    test must `setTimeout` before it can see the options.
+  - **8 tests in `select.spec.ts` prove it against the real DOM**: options render in order, a click
+    commits a LIST, labels show (single and multi), duplicates drop, a seeded value survives a prune,
+    a rendered value can still be deselected, touched flips on close. Stories cover single, multiple,
+    preselected, disabled, empty and a signal-forms demo.
+  - `profile.html` now uses `<app-select [formField]="field.choices" />` for both select kinds; the
+    inline `ngpSelect` markup is gone. `build:prod` green, eslint clean, 160 files / 518 tests pass.
+  - ⚠️ **STILL NOT SEEN IN A BROWSER.** The Browser pane refuses `localhost:6006` and the launch
+    config it would need is harness-owned, so the visual check is the user's:
+    `pnpm storybook` then **UI/Select**. Everything above is proven by the DOM in tests, not by eye.
+
+- 📌 **OFF-PHASE (2026-09-24, part 4): the profile form's controls are now RAW ng-primitives — the
+  `app-aria-*` wrappers are gone from this page** (`profile.html` rewritten, `profile.ts` imports
+  swapped). `NgpFormField`/`NgpLabel`/`NgpDescription` + `NgpInput`, `NgpTextarea`, `NgpCheckbox`,
+  `NgpSelect`(+`Dropdown`/`Option`/`Portal`), plain Tailwind, no floating labels, no `app-forms`
+  wrapper (a plain `<form (submit)>`).
+  **SCOPE: this page only. 52 other files still use `shared/ui/aria/*` and were NOT touched** —
+  ripping those out repo-wide is its own change, not a rider on the questionnaire work.
+  ⚠️ **ng-primitives 0.131.0 has NO signal-forms integration** — no `FormValueControl`, nothing that
+  accepts `[formField]` (checked the installed types, not the docs mirror). So the binding splits in
+  two, deliberately: native elements (`ngpInput`, `ngpTextarea`) take `[formField]` straight from
+  `@angular/forms/signals`, while `NgpSelect` and `NgpCheckbox` bind to the field's own
+  `WritableSignal` — `[(ngpSelectValue)]="field.choices().value"`. That works because `FieldState.value`
+  IS writable; it is the documented hand-off point, not a workaround.
+  Model slots renamed `value`/`values` → `text`/`choices` so the template reads `field.text().value`
+  instead of the unreadable `field.value().value`; **a single-select now shares the `choices` slot**
+  with multi (one key, `ngpSelectMultiple` off), which also collapsed two serializer branches into one.
+  ⚠️ **`label-has-associated-control` fired and was fixed properly, NOT disabled**: `NgpLabel` does set
+  `for` (and `aria-labelledby`) at runtime — `attrBinding(element, 'for', htmlFor)` in the installed
+  source — but the linter cannot see it, so every control now carries `[id]="question.code"` and the
+  label binds the same id. The association is now true both statically and at runtime.
+  Verified the three non-obvious Tailwind classes actually emitted into the built CSS
+  (`w-(--ngp-select-width)`, `z-1001`, `data-hover:` variants) rather than silently compiling to nothing.
+  `build:prod` green, eslint clean, `pnpm test` 159 files / 509 passed + 1 skipped.
+  **NOT verified in a browser: this page needs a live session and the API, so the rendering and the
+  dropdown behaviour are unproven.**
+
+- ⚠️ **NOT MINE, FLAGGED NOT TOUCHED: the whole `features/blog` tree (35 files) is DELETED in the
+  working tree and the `blog-test` route + its eager `BlogLayout` import are gone from
+  `app.routes.ts`.** This appeared DURING the 2026-09-24 off-phase session, between two `git status`
+  runs, and none of it is my edit — likely a concurrent session starting Phase 9 (blog). I have not
+  restored or committed any of it. **Phase 9 starts from a tree that already lost blog; decide
+  whether that is intended before committing anything.**
+  It also explains a bundle number: initial total is now **1.92 MB, under the 2.00 MB budget**, down
+  from 2.06 MB — that drop is the blog removal (the eager `BlogLayout` import), NOT the auth work.
+
+- 📌 **OFF-PHASE (2026-09-24, part 3): the profile/onboarding form is now SERVER-DRIVEN END TO END
+  and built on signal forms.** `profile.{ts,html}` rewritten, `profile.spec.ts` added (6 new tests).
+  **Every field comes from `GET questions/` and nothing else** — the hardcoded identity block
+  (first/last name, email, phone, city, location) is GONE, which also settles the duplicate-field
+  problem logged in part 1: the questionnaire already serves `first_name` / `last_name` / `email` as
+  questions. `user_details/` is no longer a second form; it only SEEDS blanks (so a learner whose
+  name the SSO knows is not asked twice) and takes back the four codes that are also writable columns.
+  Model is one row per question with three typed slots (`value` / `values` / `flag`) rather than one
+  `AnswerValue` union — a field binds to a CONTROL, and a multiselect needs `string[]` while a
+  checkbox needs `boolean`, so a union would need a cast at every binding.
+  Schema is `applyEach` over the array, and **every rule joins back to its question through the row's
+  own `code`, not the item index** — `index` exists only on the ITEM context, not on its children
+  (the compiler caught this), and the code survives re-ordering anyway.
+  `is_required` → `required`/`validate`; `parent_question` → `hidden`, which matters because **a
+  hidden field does not contribute to its parent's validity** — a required question the learner
+  cannot see therefore cannot block submit. Nothing is required on `flag`: `false` IS an answer.
+  Dirty tracking is now `form().dirty()`, replacing the hand-rolled JSON diff.
+  `pnpm test` 159 files / **509 passed** + 1 skipped; `build:prod` green; eslint clean on the
+  changed trees.
+
+- 📌 **OFF-PHASE (2026-09-24, part 2): the onboarding GATE now runs on `is_onboarding_completed`,
+  the only access restriction taken off `GET user_details/`** (the user supplied a real payload for
+  that route too). 4 more files: `auth-session.{ts,spec.ts}`, `account-api.ts`, `profile.ts`.
+  `AuthSession` keeps `isOnboardingCompleted` and `isProfileCompleted` as `boolean | null` signals —
+  `isProfileCompleted` is CARRIED, NOT GATED ON, by the user's decision, for a future rule.
+  `needsOnboarding` is now `isAuthenticated() && isOnboardingCompleted() === false`: **only a known
+  `false` redirects**, because `null` (nobody has said yet) must not bounce a learner who finished
+  onboarding months ago and merely lost the `userData` cookie. Three specs pin exactly that
+  (503 passing now, was 500).
+  The flags are SEEDED from the session's `profile_status` so a reload gates before any request goes
+  out, then overwritten by the row — `AccountApi` pushes them in an `effect`, because `AuthSession`
+  cannot read the row itself (`AccountApi` injects it, so reading back would be a DI cycle).
+  `profile.ts` also pushes the milestones off the `PATCH profile/` response before navigating, so the
+  redirect cannot race the row reload and re-trigger `onboardingGuard`.
+  `onboardingGuard` itself is UNCHANGED and rule 4 still holds — this is the milestone, never the
+  token's `miles.onboarding_required` claim.
+  **The real `user_details/` payload also corrected the model: `id` is a UUID STRING, not a number;
+  `middle_name` and `tags` come back `null`.**
+  Bundle: initial overage 56.63 → 57.44 kB, so **+0.81 kB, mine** — `AuthSession`/`AccountApi` are in
+  the initial chunk. Budget was already exceeded before this change.
+
+- 📌 **OFF-PHASE (2026-09-24): the onboarding/profile questionnaire was retyped against a REAL
+  `GET questions/` payload the user supplied.** Not a refactor phase, not part of Phase 8's change
+  set — 3 files, on top of the uncommitted Phase 8 work: `core/models/account.model.ts`,
+  `features/auth/pages/profile/profile.{ts,html}`.
+  The `Question` interface had been guessed from contract prose (the route is 403 without a token and
+  the collection ships no examples) and was **wrong on every field that matters**: `question` not
+  `label`, `answer_format` not `type`, `section` is `''` not `null`, options are
+  `{ text, value: string[] }` not `{ id, label, value }`, plus `id`, `help_text`, `placeholder`,
+  `validation`, `parent_question`, `parent_answer_value`. `controlOf`'s substring guessing is now an
+  exact `answer_format` switch, and the old ponytail comment saying "tighten this the first time a
+  live payload is available" is discharged.
+  **Option values are LISTS even for `single_select`**, so a select answer PATCHes back verbatim
+  (`user_intent: ["licensed_accountant"]`); the aria controls take a joined key and the option is
+  **looked up** by it, never split.
+  Two judgement calls flagged to the user, both unconfirmed: (1) `first_name`/`last_name`/`email`
+  arrive as questions AND are rendered by the identity block, so they render once and are submitted
+  as answers from the user row — without that, two REQUIRED onboarding questions could never be
+  answered and the milestone would never advance; (2) `parent_question` gating is implemented from
+  inferred semantics (every sample value is `null`), and an unresolvable parent SHOWS the child so a
+  wrong read cannot make a question unanswerable.
+  `build:prod` green, `pnpm test` 158/500+1 (baseline match), eslint clean on the changed files.
+  Bundle budget warning is pre-existing — **verified by stash-building HEAD: identical 56.63 kB
+  overage**, so this change moved nothing.
+
 - 🏁 **PHASE 8 (services) IS DONE AND CLOSES ✅.** Report: [phase-08](reports/phase-08.md).
   **`pnpm lint` is fully green** — all 8 Phase 7 boundary violations cleared, so §6's "full green run"
   is reachable and the ⛔ recorded earlier no longer applies.
@@ -634,12 +1016,31 @@ Phase 9 and 11 work too (`utils.ts`, `engagement-dialog.ts`, `update-checker.ts`
 Phase-8-only artefact. Phase 12 is `—` for both: neither folder holds a component or a `.css` file.
 `—` = not applicable to that phase.
 
+**`shared/components` and `shared/dialogs` were ADDED at the start of Phase 9** (2026-09-24), the
+third and fourth rows the Phase 0 table never had. They are where the phase's cleanest `httpResource`
+conversions actually live — `caira-level-stack` and `surround-carousel` are already
+`resource()` wrapping `firstValueFrom(api.get(...))`, which PLAN.md §5 itself calls "the direct
+`httpResource` conversions" — while `shared/services/**` turned out to have **zero** candidates.
+Without these rows that code was owned by no session, exactly as `core/services` was in Phase 8.
+
+**`features/blog` was REMOVED from this table at the start of Phase 9** (2026-09-24), not skipped:
+`src/app/features/blog/` no longer exists. The module was deleted in `890e52d` ("blog section
+removed"), so PLAN.md §13's row 2 (_"`features/blog`, 31 files, self-contained, own HTTP client"_) and
+PLAN.md §5's claim that `features/blog/services/blog-api.ts` is one of only two files injecting
+`HttpClient` directly are **both stale**. Recorded rather than silently dropped so the next session
+knows it was checked. ⚠️ **Blog residue survives the module and is NOT Phase 9's job** (dead code:
+list only, PROMPT.md §7): `layout/blog-layout/` + its spec, blog entries in `app.routes.ts`,
+`src/seo.ts`, `src/server.ts`, `src/legacy-redirects.spec.ts`, `shared/utils/seo/seo-route-slug.ts`,
+`layout/footer.ts`, `core/services/analytics/analytics.ts`, and a `BLOG` key in all three
+`environment*.ts`. Deleting it is a Part A-shaped cleanup and needs its own approval.
+
 | Feature / area                 | 8 Services | 9 Data | 10 UI | 11 Defer+Lazy  | 12 Tailwind |
 | ------------------------------ | ---------- | ------ | ----- | -------------- | ----------- |
 | `shared/ui` (primitives)       | —          | —      | ⬜    | —              | ⬜          |
-| `core/services`                | ✅         | ⬜     | —     | ⬜             | —           |
-| `shared/services`              | ✅         | ⬜     | —     | ⬜             | —           |
-| `features/blog`                | ✅         | ⬜     | —     | ⬜             | ⬜          |
+| `core/services`                | ✅         | ✅     | —     | ⬜             | —           |
+| `shared/services`              | ✅         | ✅     | —     | ⬜             | —           |
+| `shared/components`            | ✅         | ✅     | —     | ⬜             | ⬜          |
+| `shared/dialogs`               | ✅         | ✅     | —     | ⬜             | ⬜          |
 | `features/library`             | ✅         | ⬜     | —     | ⬜             | ⬜          |
 | `features/tracker` (caira+cpe) | ✅         | ⬜     | —     | ⬜             | ⬜          |
 | `features/auth`                | ✅         | ⬜     | —     | ⬜             | ⬜          |
@@ -662,6 +1063,52 @@ Phase 12's first session moves design tokens into `@theme`.
 | 14    | Documentation                 | ⬜     |        |
 
 ## Decisions (owner: user)
+
+Settled for Phase 9 by the user 2026-09-24, AFTER execution:
+
+- [x] **Phase 9 closes ✅ despite `ssr smoke` being red.** PROMPT.md §6 defines done as "the verifier
+      reports a full green run", and this phase has 7 of 8. Closed ✅ on the grounds that the red is a
+      **stale recorded baseline** rather than a defect: the failure is deterministic (3 harness runs, 5
+      direct `curl`s), both route diffs render _more_ correct SEO data than the record,
+      `git diff 07afb23..HEAD` over the whole SEO path is **empty**, and nothing in the change set is
+      reachable from that path. ⚠️ **This is a deliberate departure from the Phase 7 precedent**, where
+      the same "one red gate" situation was closed ⛔ — the difference is that Phase 7's red was a real
+      unexempted lint violation, while this one is a measurement artefact. **Recorded so that "Phase 9
+      closed ✅ with a red gate" is never cited as a precedent for closing over an unexplained red.**
+      The baseline re-record remains open and is tracked separately in "Now".
+
+Settled for Phase 9 by the user 2026-09-24, before execution:
+
+- [x] **Phase 9 / scope: `core/services` + `shared/services` FIRST, not `features/blog`.** These are
+      the two rows the tracker lists above `features/blog`. I recommended `features/blog` and flagged
+      that these are app-wide singletons whose consumers live in tracker rows that have not run —
+      a mistake here breaks the app rather than one page, and per-feature verification is not
+      available. The user chose these anyway; the risk is accepted and recorded in the report.
+      _(Moot for blog either way: `src/app/features/blog/` was deleted in `890e52d`.)_
+- [x] **Phase 9 / `FeatureFacade` IS IN SCOPE — redesign it, not just the easy conversions.**
+      I recommended against it in one session: 724 lines, 21 importers, 29 `getResource()` call
+      sites, a page accumulator, a runtime-N `forkJoin` fan-out, and a 16-line smoke test for
+      coverage. The user chose to include it. Only the **non-track list read** converts; the track
+      branch and `getAbout()` stay on RxJS with comments saying why.
+- [x] **Phase 9 / `requiresAuth` gets RE-WIRED to `AuthSession.isAuthenticated()`.** It is
+      hardcoded `false` today, so seven carousel keys never fetch at all. The options were: log it
+      per PROMPT.md §7 (my recommendation — "log bugs, don't fix them"), re-wire it, or delete the
+      option. The user chose to re-wire. ⚠️ **This is a deliberate, visible behaviour change**:
+      carousels that are silently empty today will start rendering data, so the visual and SSR diff
+      for this phase is expected to be non-trivial. That is the intent, not a regression.
+- [x] **Phase 9 / `CartStore` IS CONVERTED and `cartResolver` rewritten.** I recommended deferring
+      it to the `features/payment` row, where its resolver, guard and pages can be verified together;
+      exploration additionally surfaced five concrete objections, the sharpest being that
+      `payment-guard.ts:40` reads `loading()` synchronously while `httpResource().isLoading()` is
+      `false` before the request fires. The user chose to convert now. The fix is to key the guard and
+      resolver on **`status()`**, which distinguishes `idle` from `loading`; `'error'` must be in the
+      resolver's filter or a failed cart hangs navigation. **Checkout cannot be proven by the gates
+      and needs the user's manual QA**, including a hard refresh on `/payment/billing`.
+- [x] **Phase 9 / `FeatureFacade` tests come AFTER the redesign, not before.** I recommended
+      characterization tests first, since they are the only thing that could catch a behaviour
+      changed by accident on a 21-importer file with no existing coverage. The user chose
+      redesign-first. Consequence, stated plainly: the new tests prove the new code does what the new
+      code does. The manual QA list carries that weight instead.
 
 Open for Phase 8 — raised 2026-09-24, after execution:
 
@@ -976,27 +1423,27 @@ New decisions raised by Phase 0:
       **Counts re-derived from the import graph** (PLAN.md's have been wrong twice):
 
       | Component (current home) | own feature | external features | total |
-                                                                                                                                                                                                          | --- | --- | --- | --- |
-                                                                                                                                                                                                          | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
-                                                                                                                                                                                                          | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                          | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                          | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                          | `home/components/app-download` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                          | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
+                                                                                                                                                                                                                  | --- | --- | --- | --- |
+                                                                                                                                                                                                                  | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
+                                                                                                                                                                                                                  | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                  | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                  | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                  | `home/components/app-download` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                  | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
 
-                                                                                                                                                                                                          All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
-                                                                                                                                                                                                          precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
-                                                                                                                                                                                                          **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
-                                                                                                                                                                                                          because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
-                                                                                                                                                                                                          (14 importers) is still open and unverified — treat its count with the same suspicion.
-                                                                                                                                                                                                          - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
-                                                                                                                                                                                                            partners (11 pages), offerings, home, library.
-                                                                                                                                                                                                          - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
-                                                                                                                                                                                                            temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
-                                                                                                                                                                                                          - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
-                                                                                                                                                                                                            `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
-                                                                                                                                                                                                            structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
-                                                                                                                                                                                                            so it needs an explicit override.
+                                                                                                                                                                                                                  All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
+                                                                                                                                                                                                                  precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
+                                                                                                                                                                                                                  **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
+                                                                                                                                                                                                                  because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
+                                                                                                                                                                                                                  (14 importers) is still open and unverified — treat its count with the same suspicion.
+                                                                                                                                                                                                                  - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
+                                                                                                                                                                                                                    partners (11 pages), offerings, home, library.
+                                                                                                                                                                                                                  - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
+                                                                                                                                                                                                                    temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
+                                                                                                                                                                                                                  - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
+                                                                                                                                                                                                                    `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
+                                                                                                                                                                                                                    structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
+                                                                                                                                                                                                                    so it needs an explicit override.
 
 - [ ] **`features/shared/services/tracks/` has no home in the target structure.** Raised 2026-09-23.
       It sits at the `features/` root, which §3 does not contain. Importers are
@@ -1269,6 +1716,18 @@ an ordinary run rather than only when explicitly asked — if it does, this recu
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-09-24 · PHASE 9 · CLOSED ✅ on user decision with `ssr smoke` red (proven stale baseline, not a defect — deliberate departure from the Phase 7 ⛔ precedent, recorded as such) · all 5 steps, 16 files, 6 reads → `httpResource`, 163 files / 554 tests, reviewer PASS ×2 · baseline re-record still OPEN
+- 2026-09-24 · PHASE 9 · step 4 `FeatureFacade`: non-track read → `httpResource`, `requiresAuth` re-wired to the real boolean (15 live call sites go from no-request to fetching), track fan-out + `getAbout()` left on RxJS, 11 new HTTP tests replacing a 1-line smoke test · FOUND: Map-in-a-computation accumulation is broken by laziness (now accumulates via `previous`, Map deleted); `refreshTrigger` cannot force a resource refetch (`reload()` does); an errored resource must clear pagination or infinite scroll retries forever; my step-2 `vi.stubGlobal` was leaking across spec files · 163 files / 552 tests
+- 2026-09-24 · PHASE 9 · steps 0-3 CLOSE GREEN: verifier ALL 8 GATES GREEN (first ever, ssr smoke included), reviewer PASS, 163 files / 542 tests · bundle -13 KB gzip proven NOT mine via a clean HEAD worktree build (my delta -0.1 KB; styles.css hash identical) → re-record bundle.json · step 4 FeatureFacade deliberately not started, design preserved in the report
+- 2026-09-24 · PHASE 9 · step 3 `CartStore` → `httpResource` + 8-test spec · a gated `wanted` signal is REQUIRED (an ungated resource is `loading` from construction and would fetch the cart on every page); resolver needed no rewrite because `reload()` and the gate both flip `loading` synchronously (probed) · `tsc` caught that `PaymentFacade.loading`/`.error` were never cart-only — split into `opLoading`/`opError` OR-ed with the cart's · 163 files / 542 tests
+- 2026-09-24 · PHASE 9 · step 2: `caira-level-stack`, `surround-carousel`, `course-related-section` reads → `httpResource` (3 specs: 1 rewritten off a now-blind `ApiClient` mock, 1 given HTTP it never had, 1 created from nothing) · instructor `forkJoin` fan-out left on RxJS on purpose · 162 files / 534 tests, lint 0, tsc 0, format clean
+- 2026-09-24 · PHASE 9 · step 0 tracker repair (+`shared/components`/`shared/dialogs` rows, −`features/blog` row) and step 1 `JobSectors` → `httpResource` + 7-test spec · FOUND: `defaultValue` does NOT stop `value()` throwing in the error state (needs `hasValue()` too), and `TestBed.tick()` alone never settles a flushed value — `await ApplicationRef.whenStable()` does · 161 files / 526 tests, lint 0, tsc 0, format clean
+- 2026-09-24 - OFF-PHASE - NgpSelect does not call ngpFormControl, so a select in a form field had NO accessible name; Select now reads the field state for aria-labelledby/describedby, profile.html uses span labels for widget controls; 519 tests
+- 2026-09-24 - OFF-PHASE - shared `app-select` on ngpSelect + signal forms; fixed the value-prune race and NG0955 duplicate keys; `required()` ignores empty arrays so choices need required+validate; 8 DOM tests + 6 stories; 518 passing
+- 2026-09-24 · OFF-PHASE · profile controls rebuilt on raw ng-primitives (page-scoped; 52 other aria users untouched); ng-primitives 0.131.0 has no signal-forms support so select/checkbox bind FieldState.value directly; label lint fixed by pinning ids, not by disabling; build+lint green, 509 tests
+- 2026-09-24 · OFF-PHASE · profile form rebuilt on signal forms, fields 100% from `questions/` (identity block removed); applyEach joins on `code` not index; hidden gating keeps unreachable required questions from blocking submit; +6 mapping tests (509 passing) · ⚠️ features/blog deleted in the tree by something OTHER than this session — flagged, untouched
+- 2026-09-24 · OFF-PHASE · onboarding gate moved to `is_onboarding_completed` (null ≠ false, only known-false redirects); `isProfileCompleted` carried unused; UserDetails.id is a UUID string; tests 158/503+1, build green, +0.81 kB initial
+- 2026-09-24 · OFF-PHASE · onboarding questions retyped from a live `questions/` payload; select answers save as value LISTS; identity questions answered from the user row; parent gating inferred; build green, tests 158/500+1
 - 2026-09-24 - P8 - option 2 part C done: SubscriptionDialog moved to features/payment, 2 loader tokens in core/services/dialog/feature-dialog-tokens.ts; LINT FULLY GREEN (0 errors), tests 158/500+1
 - 2026-09-24 - P8 - CART_DRAWER_DIALOG token clears utils.ts:767; lint 8->2; pre-commit hook PASSES; 56 specs needed the token bound in test-setup too
 - 2026-09-24 · P8 · CORRECTION · open question -1 SOLVED: a baseline-recording run writes the baselines even when lint fails (the gate loop does not abort); my "recurrence" claim is retracted, and the baselines must NOT be restored — they are the user's deliberate record

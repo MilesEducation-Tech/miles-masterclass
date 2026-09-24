@@ -1,5 +1,5 @@
 import { httpResource } from '@angular/common/http';
-import { Service, inject } from '@angular/core';
+import { Service, effect, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -47,6 +47,19 @@ export class AccountApi {
   readonly appStatus = httpResource<AppStatus>(() =>
     this.auth.isAuthenticated() ? apiUrl(ACCOUNT_ROUTES.appStatus.path) : undefined,
   );
+
+  constructor() {
+    // This row is authoritative for the two milestones, and `is_onboarding_completed`
+    // is the only thing on it that restricts access. `AuthSession` owns the gate
+    // but cannot read the row itself — this service injects it, so the push goes
+    // this way round. Until it lands, the gate runs on the value seeded from the
+    // session cookie.
+    effect(() => {
+      if (!this.user.hasValue()) return;
+      const row = this.user.value();
+      this.auth.setMilestones(row.is_onboarding_completed, row.is_profile_completed);
+    });
+  }
 
   /**
    * PATCH the caller's own row, then reload so the resource stays the single
