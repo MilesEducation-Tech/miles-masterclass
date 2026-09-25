@@ -91,11 +91,13 @@ The rest of this document works either way.
 
 ## 3. The build stamps identity into the bundle
 
-**Shipped.** `scripts/generate-version.mjs` runs in the `prebuild`/`prestart` hooks and writes two files
-that must agree per deploy:
+**Shipped.** `scripts/generate-version.mjs` runs in the `prebuild`, `prestart`, `pretest` and `prelint`
+hooks — and once after install via `prepare` — and writes two files that must agree per deploy. Both are
+**gitignored**, precisely because every one of those paths regenerates them:
 
-1. **`src/app/core/version/app-version.ts`** — exports `APP_VERSION` and `APP_BUILT_AT`, and is imported
-   by both the browser and server bundles. This is the _running_ version.
+1. **`src/app/core/version/app-version.ts`** — exports `APP_VERSION` (the build id), plus `APP_SEMVER`,
+   `APP_SHA` and `APP_BUILT_AT`. Imported by both the browser and server bundles. This is the _running_
+   build.
 2. **`public/version.json`** — copied to the build output and served at `/version.json`. This is the
    _deployed_ version a client polls.
 
@@ -163,6 +165,12 @@ Caching rules that make all this safe (`vercel.json` headers):
 | `index.html` / SSR HTML | `no-cache`                            | The entry point must always be current     | `TODO`                                                          |
 | `/version.json`         | `no-store`                            | Skew detection is worthless if it's cached | shipped on the SSR route; `TODO` for the CDN-served static copy |
 | `/assets/*` (unhashed)  | `public, max-age=3600`                | Compromise for images and fonts            | `TODO`                                                          |
+
+> **Why the HTML header lives in `src/server.ts` and not `vercel.json`.** Routes here are extensionless, so
+> a `vercel.json` rule broad enough to catch them (`/(.*)`) would also match hashed assets, and would then
+> have to be ordered against the `immutable` rule to avoid un-caching every bundle. Setting it on the
+> Angular handler is unambiguous: `express.static` is registered before it, so only rendered HTML is
+> touched. `/assets/*` is still uncovered — a separate, low-risk `vercel.json` addition.
 
 ## 5. Runtime handles version skew
 
@@ -235,15 +243,18 @@ scary, you're using versions to do a flag's job.
 
 ## Checklist for adopting this
 
-- [ ] commitlint wired into husky and CI
+- [x] commitlint wired into husky (`.husky/commit-msg`) and CI (the `commitlint` required check)
 - [ ] release-please workflow added; first Release PR merged
-- [ ] `generate-version.mjs` emits `version`, `sha`, `builtAt` and `buildId`, with the SHA coming from CI
+- [x] `generate-version.mjs` emits `version`, `sha`, `builtAt` and `buildId`, with the SHA coming from CI
 - [x] Build identity compiled into both bundles via the generated `app-version.ts` (`APP_VERSION`)
 - [x] `GET /version.json` route in `server.ts` with `no-store`
-- [ ] `vercel.json` headers match the caching table in section 4
+- [x] Entry-point HTML is `no-cache` and `/version.json` is `no-store` — both set in `src/server.ts`
+      rather than `vercel.json`, to avoid ordering a broad `Cache-Control` rule against the hashed-asset
+      `immutable` rule. `/assets/*` is still uncovered
 - [ ] Vercel Skew Protection enabled, and the deployment ID wired into requests
 - [x] Update checker compares versions and prompts on mismatch
-- [ ] `withNavigationErrorHandler` added to `provideRouter`
+- [x] `withNavigationErrorHandler` added to `provideRouter`, scoped to chunk-load failures and guarded
+      against reload loops
 - [ ] Sentry release tag and source maps uploaded per deploy
 - [x] ~~Service worker update flow and the update dialog reconciled into one prompt~~ — N/A, the SW is
       push-only and has no update flow

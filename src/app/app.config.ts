@@ -1,13 +1,17 @@
 import {
   ApplicationConfig,
   inject,
+  PLATFORM_ID,
   provideBrowserGlobalErrorListeners,
   provideEnvironmentInitializer,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import {
+  NavigationError,
   provideRouter,
   withComponentInputBinding,
   withInMemoryScrolling,
+  withNavigationErrorHandler,
   withViewTransitions,
 } from '@angular/router';
 
@@ -32,6 +36,46 @@ import {
 } from '@core/services/dialog/feature-dialog-tokens';
 import { ToastComponent } from '@shared/ui/toast/toast';
 
+/**
+ * Last-resort recovery from version skew, the third layer in
+ * docs/engineering/versioning.md §5.
+ *
+ * A tab running an old bundle asks for a lazy chunk by its old hashed filename.
+ * If that file is gone from the current deployment the navigation just dies, so
+ * reload onto the new build at the URL the user was heading for — they land where
+ * they meant to, on code that exists.
+ */
+const STALE_CHUNK_RELOAD_KEY = 'app:stale-chunk-reload';
+
+/** Bundler/browser wordings for "the JS you asked for did not load". */
+const CHUNK_LOAD_FAILURE =
+  /failed to fetch dynamically imported module|error loading dynamically imported module|loading chunk .* failed|importing a module script failed|failed to load module script/i;
+
+function recoverFromStaleChunk(event: NavigationError): void {
+  if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
+
+  // why: only chunk-load failures. A 404 route, a rejected guard or a resolver
+  // throwing are all normal navigation errors, and reloading those would put the
+  // user in a reload loop over a page that was never going to render.
+  const error = event.error as { message?: string } | string | undefined;
+  const message = typeof error === 'string' ? error : (error?.message ?? '');
+  if (!CHUNK_LOAD_FAILURE.test(message)) return;
+
+  // why: one attempt per URL. If the chunk is missing from the NEW deployment too
+  // — a genuinely broken build rather than skew — a second reload loops forever.
+  // sessionStorage (not localStorage) so the guard dies with the tab.
+  try {
+    if (sessionStorage.getItem(STALE_CHUNK_RELOAD_KEY) === event.url) return;
+    sessionStorage.setItem(STALE_CHUNK_RELOAD_KEY, event.url);
+  } catch {
+    // Storage blocked: without a guard we cannot bound the retries, and an
+    // infinite reload loop is worse for the user than one failed navigation.
+    return;
+  }
+
+  location.assign(event.url);
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
@@ -53,6 +97,7 @@ export const appConfig: ApplicationConfig = {
       withComponentInputBinding(),
       withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' }),
       withViewTransitions(),
+      withNavigationErrorHandler(recoverFromStaleChunk),
     ),
     provideIconsProvider(),
     // Binds the core NotificationService to the shared toast component. Only the

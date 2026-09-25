@@ -205,7 +205,7 @@ Then, depending on what changed:
   Then navigate between two SEO-owning pages in a browser and confirm `document.querySelectorAll('meta[property^="og:"]').length` doesn't grow.
 - **Bundle-affecting change**: the initial bundle sits near its 2.00 MB budget. If `build:prod` warns, lazy-load — don't raise the budget.
 
-Known baseline: `pnpm lint` and `pnpm test` are **already red** from pre-existing debt (stale mocks, a11y rules). Compare against the baseline on `master` — don't claim you broke or fixed something you didn't. `build:prod` is the gate that must stay green. Respect the Husky pre-commit hook; never bypass with `--no-verify`.
+Known baseline (re-measured 2026-09-25): **all five gates are green** — `pnpm lint` exit 0, `pnpm ng test --watch=false` 163 files / 554 passed + 1 skipped, `pnpm format` clean, `pnpm build:prod` and `pnpm build-storybook` exit 0. An earlier version of this note claimed lint and test were "already red from pre-existing debt"; that debt was paid off during the refactor and the note went stale. **So a red gate now means you broke it** — don't reach for the baseline as an excuse. All five are required status checks on `master` (see `docs/engineering/github-setup.md`). Respect the Husky hooks; bypassing them only delays the same failure in CI, where it cannot be skipped.
 
 ---
 

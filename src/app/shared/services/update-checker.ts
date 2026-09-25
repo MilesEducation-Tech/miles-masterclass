@@ -65,9 +65,14 @@ export class UpdateChecker {
     this.lastCheckAt = now;
 
     fetch(`/version.json?_=${now}`, { cache: 'no-store' })
-      .then((res) => (res.ok ? (res.json() as Promise<{ version?: string }>) : null))
+      .then((res) => (res.ok ? (res.json() as Promise<{ buildId?: string }>) : null))
       .then((data) => {
-        const deployed = data?.version;
+        // why: `buildId`, never `version`. `version` is the SemVer (e.g. "3.0.1"),
+        // which changes only at a release and is NOT what this compares against —
+        // reading it here would mismatch `APP_VERSION` on every single check and
+        // show every user a permanent update dialog. No fallback to `version` for
+        // the same reason. An absent `buildId` deliberately does nothing.
+        const deployed = data?.buildId;
         if (deployed && deployed !== this.runningVersion && !this.prompted) {
           this.prompted = true;
           void this.openDialog();
