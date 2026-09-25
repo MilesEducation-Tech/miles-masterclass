@@ -57,10 +57,10 @@ export default {
     //      locked enum would reject outright.
     //   2. CLAUDE.md's list is itself stale: it names `blog` (that feature was
     //      removed) and `cpe-tracker` (the folder is `tracker`).
-    // Scope is still checked where it actually lands: because we squash-merge, the
-    // commit on master is the PR title, and the `pr-title` CI job validates that.
-    // Enforcing a second, drifting copy of the list on every local commit buys
-    // nothing and blocks real work. See the note in git-workflow.md §3.
+    // So scope is a convention reviewers hold you to, not a gate — anywhere. If that
+    // ever changes, the one place to enforce it is the PR title (that is what lands on
+    // master), and .github/workflows/pr-title.yml holds the measured list ready to
+    // uncomment. One list, one place. See the note in git-workflow.md §3.
     'scope-empty': [0],
   },
 };

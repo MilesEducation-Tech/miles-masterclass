@@ -106,9 +106,13 @@ This list **is enforced** — commitlint rejects anything else. (`revert` is als
 >    been removed, and `cpe-tracker`, where the folder is `tracker`. Drift in a doc is untidy; drift in a
 >    _blocking_ gate stops work.
 >
-> Scope is still checked where it actually matters. Because we squash-merge, the commit that lands on
-> `master` is the **PR title**, and the `pr-title` CI job validates that. So use a sensible scope from the
-> list above, and expect the PR title — not every local commit — to be held to it.
+> So **scope is a convention a reviewer holds you to, not a gate.** Use one from the list above. The
+> `type` is what carries machine meaning — it decides the version bump — and that _is_ enforced, on both
+> your commits and the PR title.
+>
+> If we ever want scope enforced, the place to do it is the PR title (that is what lands on `master`), and
+> `.github/workflows/pr-title.yml` carries the measured list ready to uncomment. One switch, one list, one
+> place to keep current.
 
 Line length: the subject may run to **100 characters** (not the conventional 72 — the house style here is
 descriptive, and several existing subjects run to 77). Long lines in the _body_ are a warning, not an
