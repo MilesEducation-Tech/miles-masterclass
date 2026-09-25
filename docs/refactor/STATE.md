@@ -7,6 +7,17 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🏁 **PHASE 10 row `shared/ui` IS DONE ✅ (2026-09-25).** Report: [phase-10-shared-ui](reports/phase-10-shared-ui.md).
+  `verifier` **8/8 GREEN** (tests 163 files / 571 passed + 1 skipped), `reviewer` **PASS**. **UNCOMMITTED** —
+  commit message in §5 of the report. `autocomplete` deleted; `aria-input` checkbox/radio on ng-primitives.
+  ⚠️ Bundle report says **+9.8 KB initial gzip — PROVEN AN ARTEFACT**: `main`'s static closure is
+  byte-identical (565.2 KB gz, 46 files) before and after; only which 10 chunks get `modulepreload` changed.
+  `bundle-report.mjs` measures the preload list, not the real eager closure (~565 KB gz) — **your harness, your
+  call** (report §2). ⚠️ **Suspected latent a11y bug logged, not fixed:** `aria-select`/`aria-autocomplete` likely
+  lose hand-bound `aria-labelledby` on first render, same `ngpFormControl` mechanism (report §3.2).
+  **Next:** `/refactor-phase 10 layout` (header popovers + `CdkTrapFocus` → `ngpFocusTrap`), or any other
+  Phase 10 cell now in the tracker.
+
 - 🔧 **2026-09-25, NON-REFACTOR HOTFIX — Vercel deploy was failing, no refactor phase moved, no `src/`
   change.** The deploy aborted with `Node.js version v24.14.1 detected. The Angular CLI requires a
 minimum Node.js version of v22.22.3 or v24.15.0 or v26.0.0` (exit 3). Read `node_modules/@angular/cli/bin/ng.js:58-73`:
@@ -1073,11 +1084,11 @@ list only, PROMPT.md §7): `layout/blog-layout/` + its spec, blog entries in `ap
 
 | Feature / area                 | 8 Services | 9 Data | 10 UI | 11 Defer+Lazy  | 12 Tailwind |
 | ------------------------------ | ---------- | ------ | ----- | -------------- | ----------- |
-| `shared/ui` (primitives)       | —          | —      | ⬜    | —              | ⬜          |
-| `core/services`                | ✅         | ✅     | —     | ⬜             | —           |
+| `shared/ui` (primitives)       | —          | —      | ✅    | —              | ⬜          |
+| `core/services`                | ✅         | ✅     | ⬜ ¹  | ⬜             | —           |
 | `shared/services`              | ✅         | ✅     | —     | ⬜             | —           |
-| `shared/components`            | ✅         | ✅     | —     | ⬜             | ⬜          |
-| `shared/dialogs`               | ✅         | ✅     | —     | ⬜             | ⬜          |
+| `shared/components`            | ✅         | ✅     | ⬜ ²  | ⬜             | ⬜          |
+| `shared/dialogs`               | ✅         | ✅     | ⬜ ³  | ⬜             | ⬜          |
 | `features/library`             | ✅         | ⬜     | —     | ⬜             | ⬜          |
 | `features/tracker` (caira+cpe) | ✅         | ⬜     | —     | ⬜             | ⬜          |
 | `features/auth`                | ✅         | ⬜     | —     | ⬜             | ⬜          |
@@ -1085,9 +1096,17 @@ list only, PROMPT.md §7): `layout/blog-layout/` + its spec, blog entries in `ap
 | `features/home`                | ✅         | ⬜     | —     | ⬜             | ⬜          |
 | `features/partners`            | ✅         | ⬜     | —     | ⬜             | ⬜          |
 | `features/payment`             | ✅         | ⬜     | —     | ⬜             | ⬜          |
-| `features/offerings`           | ✅         | ⬜     | —     | ⬜             | ⬜          |
-| `admin/*` (non-partner)        | ✅         | ⬜     | —     | ⬜             | ⬜          |
+| `features/offerings`           | ✅         | ⬜     | ⬜ ⁴  | ⬜             | ⬜          |
+| `admin/*` (non-partner)        | ✅         | ⬜     | ⬜ ⁵  | ⬜             | ⬜          |
 | `admin/partner-platform(-v2)`  | ✅         | ⬜     | —     | ⬜             | ⬜          |
+
+**Phase 10 cells added 2026-09-25** (the Phase 0 table gave the UI phase only `shared/ui` + `layout`,
+leaving the plan's biggest Phase 10 item owned by no session — same gap Phases 8/9 hit). Owners
+grep-confirmed: ¹ `core/services/dialog` (325 LOC + `styles/dialog.css`, ~45 dialogs) →
+`ng-primitives/dialog`; ² `categories-list` tooltip, `consent-banner` switch, `nav-menu-item` +
+`user-avatar-menu` popovers, `faq-item` accordion; ³ `ai-lab-agent-about` switch + `ai-lab-agent-dialog`
+radio; ⁴ `dialogs/select-cpe-mode` radio; ⁵ `admin/layout/admin-sidebar` popover. `layout` keeps its
+cell: header popovers + `CdkTrapFocus` → `ngpFocusTrap` (decision below).
 
 Phase 11 also has two **one-off, first-session** items that are not per-feature:
 enable `provideClientHydration(withIncrementalHydration())`, and move
@@ -1100,6 +1119,17 @@ Phase 12's first session moves design tokens into `@theme`.
 | 14    | Documentation                 | ⬜     |        |
 
 ## Decisions (owner: user)
+
+Settled for Phase 10 by the user 2026-09-25, before execution:
+
+- [x] **Phase 10 / scope: `shared/ui` row only**, plus new tracker cells for the orphaned Phase 10
+      items (Dialog service, shared components/dialogs, offerings, admin) — each its own session.
+- [x] **Phase 10 / DELETE `shared/ui/autocomplete/` — APPROVED.** The PROMPT.md §7 deletion approval.
+      5 files, 713 LOC, zero consumers; `aria-autocomplete` replaced it everywhere.
+- [x] **Phase 10 / CDK — supersedes the Phase 0 line below.** Phase 0's premise ("no equivalent") was
+      wrong for the trap: ng-primitives ships `ngpFocusTrap`. **`layout/header` `CdkTrapFocus` →
+      `ngpFocusTrap`** in the `layout` session (check initial-focus + restore; there is no
+      `AutoCapture` flag). **`BreakpointObserver` stays**; `@angular/cdk` stays in `package.json`.
 
 Settled for Phase 9 by the user 2026-09-24, AFTER execution:
 
@@ -1279,7 +1309,7 @@ Settled for Phase 6 by the user 2026-09-23, before execution (all four change th
       pages. Phase 6 extracts that layer to `admin/core/` first; removal is a later decision.
 - [ ] Phase 7: temporary warnings allowed for violations Part B will fix. **Expected list:** the
       `Utils` → shared-dialog imports that Phase 11 converts to dynamic `import()`.
-- [ ] Phase 10: CDK usages. **Phase 0 finding: only 2 exist** — `CdkTrapFocus` (`layout/header`) and
+- [x] Phase 10: CDK usages — **SETTLED 2026-09-25, see Phase 10 decisions above.** **Phase 0 finding: only 2 exist** — `CdkTrapFocus` (`layout/header`) and
       `BreakpointObserver` (`how-to-claim-credly-badge`). ng-primitives has no equivalent for either.
       **Recommendation: keep both**, migrate neither.
 - [ ] Phase 13: consolidate partner landing pages (yes/no). **Phase 0 finding: strongly supported** —
@@ -1460,27 +1490,27 @@ New decisions raised by Phase 0:
       **Counts re-derived from the import graph** (PLAN.md's have been wrong twice):
 
       | Component (current home) | own feature | external features | total |
-                                                                                                                                                                                                                                                          | --- | --- | --- | --- |
-                                                                                                                                                                                                                                                          | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
-                                                                                                                                                                                                                                                          | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                                                          | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                                                          | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                                                          | `home/components/app-download` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                                                          | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
+                                                                                                                                                                                                                                                              | --- | --- | --- | --- |
+                                                                                                                                                                                                                                                              | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
+                                                                                                                                                                                                                                                              | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                                                              | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                                                              | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                                                              | `home/components/app-download` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                                                              | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
 
-                                                                                                                                                                                                                                                          All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
-                                                                                                                                                                                                                                                          precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
-                                                                                                                                                                                                                                                          **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
-                                                                                                                                                                                                                                                          because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
-                                                                                                                                                                                                                                                          (14 importers) is still open and unverified — treat its count with the same suspicion.
-                                                                                                                                                                                                                                                          - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
-                                                                                                                                                                                                                                                            partners (11 pages), offerings, home, library.
-                                                                                                                                                                                                                                                          - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
-                                                                                                                                                                                                                                                            temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
-                                                                                                                                                                                                                                                          - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
-                                                                                                                                                                                                                                                            `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
-                                                                                                                                                                                                                                                            structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
-                                                                                                                                                                                                                                                            so it needs an explicit override.
+                                                                                                                                                                                                                                                              All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
+                                                                                                                                                                                                                                                              precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
+                                                                                                                                                                                                                                                              **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
+                                                                                                                                                                                                                                                              because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
+                                                                                                                                                                                                                                                              (14 importers) is still open and unverified — treat its count with the same suspicion.
+                                                                                                                                                                                                                                                              - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
+                                                                                                                                                                                                                                                                partners (11 pages), offerings, home, library.
+                                                                                                                                                                                                                                                              - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
+                                                                                                                                                                                                                                                                temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
+                                                                                                                                                                                                                                                              - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
+                                                                                                                                                                                                                                                                `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
+                                                                                                                                                                                                                                                                structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
+                                                                                                                                                                                                                                                                so it needs an explicit override.
 
 - [ ] **`features/shared/services/tracks/` has no home in the target structure.** Raised 2026-09-23.
       It sits at the `features/` root, which §3 does not contain. Importers are
@@ -1753,6 +1783,10 @@ an ordinary run rather than only when explicitly asked — if it does, this recu
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-09-25 · Phase 10 `shared/ui` · CLOSE — verifier 8/8 green (format fixed on round 2), reviewer PASS, browser keyboard check on /auth/login, bundle +9.8 KB attributed to modulepreload reshuffle (static closure identical) · ✅ report written
+- 2026-09-25 · Phase 10 `shared/ui` · Steps 2+3 aria-input → ngpCheckbox/ngpRadioGroup · ✅ quick green; new spec caught `ngpFormControl` wiping hand-bound aria-labelledby/describedby on first render → fixed with ngpFormField/ngpLabel/ngpDescription
+- 2026-09-25 · Phase 10 `shared/ui` · Step 1 `git rm` autocomplete (5 files) + 2 stale job-sectors comments · ✅ quick green
+- 2026-09-25 · Phase 10 `shared/ui` · Step 0 bookkeeping — 3 decisions recorded, Phase 10 cells added for 5 orphaned owners · ✅
 - 2026-09-25 · NON-REFACTOR · **BLOB-DOWNLOAD CI FAILURE FIXED** (uncommitted) — the Phase 4 Blocker 2. Root cause: a jsdom run has TWO Blob implementations and they are not interchangeable (`nodeBlob instanceof Blob` is false), while JSZip decides blob-ness from the STRING TAG `[object Blob]` — which both satisfy — and then reads it with jsdom's `FileReader`, which accepts only jsdom blobs. `new Response(blob)` is what picks an implementation, and WHICH one depends on the Node version: on Node 24 the global `Response` is jsdom's (probed: `res.blob()` has the same ctor, FileReader ACCEPTED), on Node 22 it is undici's → native blob → throws. **REPRODUCED THE CI FAILURE ON NODE 24** by making the stub return a `node:buffer` Blob: the same 3 tests failed with the IDENTICAL error string, so the diagnosis is confirmed rather than inferred — brew's node@22 is 22.13.1, under the Angular CLI 22.22.3 floor, so a real Node 22 run was impossible. Fix is confined to the SPEC (`blob-download.ts` untouched): the stubbed fetch no longer round-trips through a real `Response`, it returns the blob it built, so the Blob/FileReader pair is coherent on every Node. Added a guard test `yields a blob JSZip can actually read` (it was one of the 4 that failed under simulation, proving it bites). Only 1 spec in the repo used `new Response(`, so no central test-setup patch was needed. lint 0, prettier 0, tests **164 files / 560 passed + 1 skipped**; no eslint-disable / @ts-ignore / skipped / focused tests. Updated enforcement-verified.md §4 + verdict table + recovery step 3, and AGENTS.md §9 (no longer lists it as an open exception). ⚠️ Node 24 passes either way, so the guard can only catch a regression IN CI — the first CI run after the recovery merge is the real confirmation.
 - 2026-09-25 · NON-REFACTOR · enforcement-harness PHASE 4 verification → `docs/engineering/enforcement-verified.md` (uncommitted). Platform layer VERIFIED CORRECT from the API: squash=PR_TITLE (C8 fixed), ruleset has all 5 rules incl. `required_status_checks` with 4 contexts + strict (C1 fixed), last_push/unattributed both false, tag-protection live (refs/tags/v*, 0 bypass), secret scanning + push protection + dependabot all enabled, CODEOWNERS 0 errors / admin perm. 🚨 **BUT THE REPO IS CURRENTLY UNMERGEABLE WITHOUT ADMIN BYPASS — the Phase 3 lockout I warned about has HAPPENED.** PR #14 merged at 05:33 carrying only Phases 0-1, with BOTH checks red, via bypass — so `master` still has the OLD workflows: `pr-title.yml` has ONLY the `pr-title` job (no `commitlint`, no `branch-name`, so 2 of 4 required contexts can NEVER report → permanently pending → every PR blocked), its `types` comma bug is live (CI log literally prints `Available types: - feat,fix,...` as ONE entry, confirming my Phase 2 diagnosis), and `ci.yml` still triggers on `branches: [main]`. Proof the bypass was used red: the squash commit on master is `Feat/git version setup (#14)`, which FAILS the commitlint rules that same PR installed. 🚨 **SECOND BLOCKER: CI `verify` is RED** — 3 failures in `blob-download.spec.ts`, a Node (undici) `Blob` from `response.blob()` reaching jsdom's `FileReader` via jszip's string-tag check; green locally (164/559) with jsdom lockfile-pinned identically, so it is ENVIRONMENTAL (CI ubuntu+Node22 vs local macOS+Node24). ⚠️ COULD NOT REPRODUCE: brew node@22 is 22.13.1, below the Angular CLI 22.22.3 floor — the same floor as the Vercel bug — so Node-major vs OS is NOT isolated and I say so rather than claiming a cause. Spawned task_e469e66b for it. **CORRECTED my own AGENTS.md §9 edit**: it claimed all five gates green, which was measured on Node 24 and is NOT true of CI, the environment that decides merges — it now names the environment and the one known exception. Recovery order in §6 of the report: conventional-titled PR from this branch → one last bypass merge (the only option, since the 2 missing jobs cannot report until they exist on master) → fix blob-download → re-run the checklist.
 - 2026-09-25 · NON-REFACTOR · PHASE 6b AMENDED after the user hit a 409: **the ORG forbids Actions from creating PRs** (`The organization does not allow GitHub Actions to create or approve pull requests`), so the repo-level `can_approve_pull_request_reviews=true` PUT is REFUSED and cannot be made to work. Org policy could not be read back (403, not org admin). That policy binds the GITHUB_TOKEN; a PAT authenticates as a USER, so the Release PR is an ordinary user-authored PR and is out of scope of it — which is also the fix for the required-checks problem, so ONE token solves both. **`RELEASE_PLEASE_TOKEN` is therefore REQUIRED, not preferred**, and the `|| secrets.GITHUB_TOKEN` fallback was REMOVED: in this org it could only fail loudly on every master push. Workflow now gates on a job-level `env.HAS_TOKEN` (the `secrets` context is NOT available in a job-level `if`) and SKIPS WITH A NOTICE when unset, so master stays green instead of looking broken. Recommended a GitHub App token over a personal PAT in the docs — a PAT ties the release pipeline to one person's account. ⚠️ NOT VERIFIED FROM HERE: that a PAT actually clears the org policy — it is the documented workaround, and the first push to master after the secret lands is the real proof. Prerequisites cut from 3 to 2 (token + the v3.0.1 tag).

@@ -1,6 +1,9 @@
 import { Component, computed, input, model, signal } from '@angular/core';
 import type { FormValueControl } from '@angular/forms/signals';
 import { NgIcon, provideIcons } from '@ng-icons/core';
+import { NgpCheckbox } from 'ng-primitives/checkbox';
+import { NgpDescription, NgpFormField, NgpLabel } from 'ng-primitives/form-field';
+import { NgpRadioGroup, NgpRadioIndicator, NgpRadioItem } from 'ng-primitives/radio';
 import { heroCheck, heroEye, heroEyeSlash } from '@ng-icons/heroicons/outline';
 import { AriaInputSize, AriaInputType } from '@core/models/aria.model';
 import { cn } from '../../../utils/cn';
@@ -15,12 +18,22 @@ interface AriaInputOption {
 /**
  * Drop-in primitive input wrapping a native `<input>` / `<textarea>` with the
  * project's floating-label styling. Supports text, email, password, number,
- * tel, url, search, date, time, datetime-local, textarea, checkbox, radio.
+ * tel, url, search, date, time, datetime-local, textarea, checkbox, radio —
+ * the last two are ng-primitives (`ngpCheckbox`, `ngpRadioGroup`), not native inputs.
  * For combobox-style selection use `app-aria-select` / `app-aria-multiselect`.
  */
 @Component({
   selector: 'app-aria-input',
-  imports: [NgIcon],
+  imports: [
+    NgIcon,
+    NgpCheckbox,
+    NgpDescription,
+    NgpFormField,
+    NgpLabel,
+    NgpRadioGroup,
+    NgpRadioIndicator,
+    NgpRadioItem,
+  ],
   templateUrl: './aria-input.html',
   styleUrl: './aria-input.css',
   providers: [provideIcons({ heroCheck, heroEye, heroEyeSlash })],
@@ -81,6 +94,13 @@ export class AriaInput implements FormValueControl<any> {
   readonly isChecked = computed(() => this.value() === true);
   readonly displayError = computed(() => this.invalid() && this.errors().length > 0);
 
+  /**
+   * aria-invalid for the ng-primitives controls. ngpFormControl also writes this attribute
+   * (invalid AND touched, else removed), so it must compute the same thing or whichever
+   * binding ran last would win.
+   */
+  readonly primitiveAriaInvalid = computed(() => (this.invalid() && this.touched()) || null);
+
   readonly describedBy = computed(() => {
     const parts: string[] = [];
     if (this.hint() && !this.displayError()) parts.push(this.hintId());
@@ -125,10 +145,10 @@ export class AriaInput implements FormValueControl<any> {
 
   readonly checkboxClasses = computed(() =>
     cn(
-      'peer h-5 w-5 shrink-0 rounded border border-input bg-background ring-offset-background',
+      'peer inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-input bg-background ring-offset-background',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-      'disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer transition-colors appearance-none',
-      this.isChecked() && 'bg-primary border-accent',
+      'disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer transition-colors',
+      'data-[checked]:bg-primary data-[checked]:border-accent',
       this.displayError() && 'border-accent',
     ),
   );
