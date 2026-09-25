@@ -1,5 +1,5 @@
 {
-  "name": "main-protection",
+  "name": "master-protection",
   "target": "branch",
   "enforcement": "active",
   "conditions": {
@@ -9,15 +9,9 @@
     }
   },
   "rules": [
-    {
-      "type": "deletion"
-    },
-    {
-      "type": "non_fast_forward"
-    },
-    {
-      "type": "required_linear_history"
-    },
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    { "type": "required_linear_history" },
     {
       "type": "pull_request",
       "parameters": {
@@ -25,6 +19,7 @@
         "dismiss_stale_reviews_on_push": true,
         "require_code_owner_review": true,
         "require_last_push_approval": false,
+        "require_extra_approval_for_unattributed_changes": false,
         "required_review_thread_resolution": true,
         "allowed_merge_methods": ["squash"]
       }
@@ -34,12 +29,10 @@
       "parameters": {
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
-          {
-            "context": "verify"
-          },
-          {
-            "context": "pr-title"
-          }
+          { "context": "verify" },
+          { "context": "pr-title" },
+          { "context": "commitlint" },
+          { "context": "branch-name" }
         ]
       }
     }

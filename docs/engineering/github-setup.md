@@ -119,68 +119,62 @@ back on.
 Same thing via the API, which you can commit as `.github/rulesets/master.json` and re-apply anywhere:
 
 ```bash
-# creating it for the first time
-gh api -X POST repos/OWNER/REPO/rulesets --input .github/rulesets/master.json
-
-# amending the one that already exists — prefer this
-gh api -X PUT repos/OWNER/REPO/rulesets/RULESET_ID --input .github/rulesets/master.json
+# This repo already HAS the ruleset (id 23922688) — amend it, never POST a second one.
+gh api -X PUT repos/MilesEducation-Tech/miles-masterclass/rulesets/23922688 \
+  --input .github/rulesets/master.json
 ```
 
-```json
-{
-  "name": "master-protection",
-  "target": "branch",
-  "enforcement": "active",
-  "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
-  "rules": [
-    { "type": "deletion" },
-    { "type": "non_fast_forward" },
-    { "type": "required_linear_history" },
-    {
-      "type": "pull_request",
-      "parameters": {
-        "required_approving_review_count": 1,
-        "dismiss_stale_reviews_on_push": true,
-        "require_code_owner_review": true,
-        "require_last_push_approval": false,
-        "require_extra_approval_for_unattributed_changes": false,
-        "required_review_thread_resolution": true,
-        "allowed_merge_methods": ["squash"]
-      }
-    },
-    {
-      "type": "required_status_checks",
-      "parameters": {
-        "strict_required_status_checks_policy": true,
-        "required_status_checks": [
-          { "context": "verify" },
-          { "context": "pr-title" },
-          { "context": "commitlint" },
-          { "context": "branch-name" }
-        ]
-      }
-    }
-  ],
-  "bypass_actors": [{ "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always" }]
-}
-```
+> ⚠️ **Do not apply the `required_status_checks` rule until those four checks have each reported at least
+> once.** The API accepts any context string — unlike the UI picker, it does not verify the check exists —
+> so a typo or a not-yet-run job becomes a check that is permanently "pending", and every PR is blocked
+> including the one that would fix it. Merge the CI workflows first, watch all four go green on their own
+> PR, then apply this.
+
+The payload itself lives at **[`.github/rulesets/master.json`](../../.github/rulesets/master.json)** —
+read it there rather than from a copy in this document, which would drift. The two things in it worth
+knowing without opening the file:
+
+- `required_status_checks` lists **four** contexts (`verify`, `pr-title`, `commitlint`, `branch-name`), and
+  `strict_required_status_checks_policy: true` means a branch must also be up to date with `master`.
+- `require_last_push_approval` and `require_extra_approval_for_unattributed_changes` are both **false**.
+  Both demand an approver who isn't the last pusher, which cannot be satisfied in a one-reviewer repo.
 
 Don't trust that `actor_id` blindly — role IDs vary. Add the bypass once in the UI, then read the real values
 back and keep that file as the committed source of truth:
 
 ```bash
-gh api repos/MilesEducation-Tech/miles-masterclass/rulesets --jq '.[] | {id, name}'
-gh api repos/MilesEducation-Tech/miles-masterclass/rulesets/RULESET_ID > .github/rulesets/master.json
+gh api repos/MilesEducation-Tech/miles-masterclass/rulesets --jq '.[] | {id, name, target}'
+gh api repos/MilesEducation-Tech/miles-masterclass/rulesets/23922688 \
+  --jq '{name, enforcement, rules: [.rules[].type], pr: (.rules[]|select(.type=="pull_request").parameters), checks: (.rules[]|select(.type=="required_status_checks").parameters)}'
 ```
 
-> **Re-record that file whenever you change a rule or rename a CI job.** A committed ruleset that has
-> drifted from the live one is worse than no file at all, because the next person applies it and silently
-> reverts a rule somebody added in the UI.
+> **Re-record `.github/rulesets/*.json` whenever you change a rule or rename a CI job.** A committed
+> ruleset that has drifted from the live one is worse than no file at all, because the next person applies
+> it and silently reverts a rule somebody added in the UI. The committed files here are the **intended
+> input**; the command above is how you check the live state still matches.
 
 ### Protect the release tags too
 
-A second ruleset, target **tags**, pattern `v*`, with "Restrict deletions" and "Block force pushes" enabled.
-Without it, anyone can move `v3.1.0` to point at different code, and your rollback target silently changes.
+A second ruleset, target **tags**, pattern `refs/tags/v*`, with "Restrict deletions" and "Block force
+pushes" enabled. Without it, anyone can move `v3.1.0` to point at different code, and your rollback target
+silently changes.
+
+```bash
+gh api -X POST repos/MilesEducation-Tech/miles-masterclass/rulesets \
+  --input .github/rulesets/tags.json
+```
+
+**This one has no bypass actors, deliberately — including for the admin.** Moving a release tag changes
+what Instant Rollback rolls back _to_, which is the one thing that must stay trustworthy when production is
+broken. A wrong tag is fixed by cutting the next version, not by moving the old one. If you genuinely must,
+set the ruleset to "Disabled" for the minute it takes and turn it straight back on.
+
+Verify the pattern actually matched, rather than assuming — `refs/tags/v*` is the full-ref form, and a
+pattern that matches nothing gives you a green ruleset that protects nothing:
+
+```bash
+git tag -d v3.0.1 && git push --delete origin v3.0.1   # must be REJECTED
+```
 
 ---
 
@@ -438,14 +432,27 @@ something that has already been public for months.
 
 ## 10. Rollout order (don't lock yourself out)
 
-1. Merge `ci.yml` and `pr-title.yml` on a normal PR, so the checks exist and have run once.
-2. Add CODEOWNERS and the PR template.
-3. Create/amend `master-protection` in **Evaluate** mode. Open a test PR and read the ruleset insights.
-4. Switch it to **Active**. Confirm that `git push origin master` from your machine is now rejected.
-5. Add the tag ruleset.
-6. Turn on Dependabot and secret scanning.
-7. Set Actions workflow permissions to read-only, and pin third-party actions.
-8. Tell the team: paste the updated `git-workflow.md`, and say clearly which day the rules go live.
+Some of this is already done here, so the list below is the **remaining** order. What is already true:
+CODEOWNERS and the PR template are in place, `master-protection` exists and is **Active** with the review
+rules live, and Actions workflow permissions are already read-only.
+
+What is left, in this order — step 1 before step 3 is the part that matters:
+
+1. **Merge `ci.yml` and `pr-title.yml`**, and watch all four checks (`verify`, `pr-title`, `commitlint`,
+   `branch-name`) report on that PR. Until a check has reported once, requiring it blocks every merge.
+2. Fix the repository settings (§1). **`squash_merge_commit_title=PR_TITLE` is the one that matters** — the
+   repo is currently on `COMMIT_OR_PR_TITLE`, under which a single commit's message can become the commit
+   on `master`, and then linting the PR title has guaranteed nothing.
+3. Amend `master-protection` from `.github/rulesets/master.json` (§2): this adds the missing
+   `required_status_checks` rule and turns off the two approval rules that deadlock a one-reviewer repo.
+   Set enforcement to **Evaluate** first if you want a dry run, open a throwaway PR, read the ruleset
+   insights, then set it back to **Active**.
+4. Confirm `git push origin master` is rejected for a non-admin, and that a red PR cannot merge.
+5. Add the tag ruleset, then verify it by trying to delete `v3.0.1` (§2).
+6. Turn on Dependabot and secret scanning + push protection — but **check `postman/` for live tokens
+   first** (§8). This repo is public.
+7. Tell the team: paste `git-workflow.md`, and say clearly which day the rules go live. Remove the rollout
+   banner at the top of that doc once this checklist is green.
 
 ## Verification checklist
 
