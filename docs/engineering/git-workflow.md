@@ -88,10 +88,31 @@ We use **Conventional Commits**, because release notes and the version bump are 
 ```
 
 **Types:** `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `style`, `perf`, `build`, `ci`.
+This list **is enforced** — commitlint rejects anything else. (`revert` is also accepted, because
+`git revert` writes it for you.)
 
 **Scope** is the area of the app, matching our folder structure: `core`, `shared`, `layout`, `admin`,
-`payment`, `offerings`, `cpe-tracker`, `partners`, `blog`, `seo`, `auth`. Plus `deps` and `release` for
-dependency bumps and release commits.
+`payment`, `offerings`, `tracker`, `partners`, `seo`, `auth`, plus the other feature folders
+(`library`, `legal`, `home`, `milesverse`, `ai-labs`, `uae-caira`, `connect-us`, `faculty`), and
+`deps` / `release` for dependency bumps and release commits.
+
+> **Scope is not machine-enforced on your local commits, and that is deliberate.** Two reasons, both
+> measured rather than assumed:
+>
+> 1. This repo's history uses **23 distinct scopes**, and only four of them appear in any canonical list.
+>    The most common by far is `structure` (15 commits) — the structure refactor's own required
+>    convention. A locked list would reject the work we are actively doing.
+> 2. Any such list drifts. The one in `CLAUDE.md` already has: it names `blog`, a feature that has since
+>    been removed, and `cpe-tracker`, where the folder is `tracker`. Drift in a doc is untidy; drift in a
+>    _blocking_ gate stops work.
+>
+> Scope is still checked where it actually matters. Because we squash-merge, the commit that lands on
+> `master` is the **PR title**, and the `pr-title` CI job validates that. So use a sensible scope from the
+> list above, and expect the PR title — not every local commit — to be held to it.
+
+Line length: the subject may run to **100 characters** (not the conventional 72 — the house style here is
+descriptive, and several existing subjects run to 77). Long lines in the _body_ are a warning, not an
+error, so an unwrappable URL or a path table won't block a commit.
 
 Good:
 
