@@ -7,6 +7,17 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🏁 **PHASE 10 row `shared/components` IS DONE ✅ (2026-09-25).** Report:
+  [phase-10-shared-components](reports/phase-10-shared-components.md). Full gates **8/8 GREEN** (165 files /
+  586 passed + 1 skipped), `reviewer` **PASS**. **UNCOMMITTED** — commit message in §5 of the report.
+  `categories-list` tooltip → `ngpTooltip`, consent switches → `ngpSwitch`, `faq-item` → `ngpCollapsible`;
+  `user-avatar-menu`/`nav-menu-item` were already primitives. ⚠️ **Real +1.0 KB gz initial** — the eager consent
+  banner pulls `ngp-switch` into `main`; Phase 11 option: `@defer` its preferences panel. ⚠️ Tooltip and consent
+  banner could not be browser-checked locally (no data / consent off) — specs cover them; visual QA in report §4.
+  New finding for the `offerings` Phase 10 cell: `webinar-faq` is a second hand-rolled FAQ accordion.
+  **Next:** commit, then another Phase 10 cell — `shared/dialogs`, `features/offerings`, `admin/*`, or
+  `core/services` (Dialog, the big one).
+
 - 🏁 **PHASE 10 row `layout` IS DONE ✅ (2026-09-25).** Report: [phase-10-layout](reports/phase-10-layout.md).
   Full gates **8/8 GREEN** (tests 163 files / 577 passed + 1 skipped), `reviewer` **PASS**. **UNCOMMITTED** —
   commit message in §5 of the report. Header drawer `CdkTrapFocus` → `ngpFocusTrap` + focus restore to the
@@ -1106,7 +1117,7 @@ list only, PROMPT.md §7): `layout/blog-layout/` + its spec, blog entries in `ap
 | `shared/ui` (primitives)       | —          | —      | ✅    | —              | ⬜          |
 | `core/services`                | ✅         | ✅     | ⬜ ¹  | ⬜             | —           |
 | `shared/services`              | ✅         | ✅     | —     | ⬜             | —           |
-| `shared/components`            | ✅         | ✅     | ⬜ ²  | ⬜             | ⬜          |
+| `shared/components`            | ✅         | ✅     | ✅ ²  | ⬜             | ⬜          |
 | `shared/dialogs`               | ✅         | ✅     | ⬜ ³  | ⬜             | ⬜          |
 | `features/library`             | ✅         | ⬜     | —     | ⬜             | ⬜          |
 | `features/tracker` (caira+cpe) | ✅         | ⬜     | —     | ⬜             | ⬜          |
@@ -1124,7 +1135,7 @@ leaving the plan's biggest Phase 10 item owned by no session — same gap Phases
 grep-confirmed: ¹ `core/services/dialog` (325 LOC + `styles/dialog.css`, ~45 dialogs) →
 `ng-primitives/dialog`; ² `categories-list` tooltip, `consent-banner` switch, `nav-menu-item` +
 `user-avatar-menu` popovers, `faq-item` accordion; ³ `ai-lab-agent-about` switch + `ai-lab-agent-dialog`
-radio; ⁴ `dialogs/select-cpe-mode` radio; ⁵ `admin/layout/admin-sidebar` popover. `layout` keeps its
+radio; ⁴ `dialogs/select-cpe-mode` radio + `webinar/components/webinar-faq` hand-rolled accordion (found 2026-09-25); ⁵ `admin/layout/admin-sidebar` popover. `layout` keeps its
 cell: header popovers + `CdkTrapFocus` → `ngpFocusTrap` (decision below).
 
 Phase 11 also has two **one-off, first-session** items that are not per-feature:
@@ -1813,6 +1824,10 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-09-25 · Phase 10 `shared/components` · CLOSE — verify.mjs 8/8 green, reviewer PASS, FAQ browser-checked (animation, single mode, keyboard), +1.0 KB gz initial attributed to eager consent banner, report written · ✅
+- 2026-09-25 · Phase 10 `shared/components` · Step 3 faq-item → ngpCollapsible (API kept; `data-[closed]:grid!` overrides the global display:none to keep the animation); spec 1 → 4 · ✅ quick green
+- 2026-09-25 · Phase 10 `shared/components` · Step 2 consent-banner switches → ngpSwitch/Thumb; new spec (3) · ✅ quick green
+- 2026-09-25 · Phase 10 `shared/components` · Step 1 categories-list tooltip → ngpTooltip (−61 lines; fixes shared hardcoded id) · ✅ quick green
 - 2026-09-25 · Phase 10 `layout` · CLOSE — verify.mjs 8/8 green on 3rd run (2 reds = network-dependent partners specs, proven unrelated), reviewer PASS, 375px keyboard check, report written · ✅
 - 2026-09-25 · Phase 10 `layout` · Step 1 CdkTrapFocus → ngpFocusTrap + toggler focus restore; 3 tests (2 fail without the restore) · ✅ quick green
 - 2026-09-25 · Phase 9 `layout` · CLOSE — verify.mjs 8/8 green (run directly; verifier subagent blocked by guard hook), reviewer PASS, signed-out browser check, report written · ✅

@@ -1,16 +1,20 @@
+<!-- The open state stays owned here (single mode is coordinated by the parent through
+     openFaqId/faqToggled); the primitive supplies the ids, aria-expanded/aria-controls and
+     find-in-page reveal. -->
 <div
+  ngpCollapsible
+  [ngpCollapsibleOpen]="isOpen()"
+  (ngpCollapsibleOpenChange)="toggle()"
   class="rounded-lg overflow-hidden mb-3"
   [class.border-l-2]="level() > 0"
   [class.border-gray-600]="level() > 0"
 >
   <button
+    ngpCollapsibleTrigger
     class="group relative w-full px-5 py-4 bg-gray-800 hover:bg-gray-750 transition-all delay-300 duration-200 flex items-center justify-between gap-4 text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950"
     [class.rounded-t-lg]="!isOpen()"
     [class.rounded-lg]="!isOpen()"
     [class.rounded-b-none]="isOpen()"
-    (click)="toggle()"
-    [attr.aria-expanded]="isOpen()"
-    [attr.aria-controls]="'panel-' + faq().id"
     type="button"
   >
     <div class="flex items-center gap-3 flex-1">
@@ -29,9 +33,12 @@
     />
   </button>
 
+  <!-- `data-[closed]:grid!` beats the global `[ngpCollapsibleContent][data-closed]
+       { display: none }` in styles.css, which would otherwise cut the grid-rows
+       open/close animation. -->
   <div
-    [id]="'panel-' + faq().id"
-    class="grid overflow-hidden transition-[grid-template-rows] duration-350 ease-[cubic-bezier(0.4,0,0.2,1)]"
+    ngpCollapsibleContent
+    class="grid data-[closed]:grid! overflow-hidden transition-[grid-template-rows] duration-350 ease-[cubic-bezier(0.4,0,0.2,1)]"
     [class.grid-rows-[0fr]]="!isOpen()"
     [class.grid-rows-[1fr]]="isOpen()"
     role="region"

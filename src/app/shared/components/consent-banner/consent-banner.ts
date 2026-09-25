@@ -1,7 +1,7 @@
 import { Component, afterNextRender, effect, inject, signal } from '@angular/core';
+import { NgpSwitch, NgpSwitchThumb } from 'ng-primitives/switch';
 import { Consent } from '@core/services/consent/consent';
 import { CONSENT_CATEGORIES, ConsentCategory, ConsentState } from '@core/models/consent.model';
-import { cn } from '../../utils/cn';
 
 /**
  * Cookie-consent banner + preferences panel.
@@ -14,13 +14,13 @@ import { cn } from '../../utils/cn';
  */
 @Component({
   selector: 'app-consent-banner',
+  imports: [NgpSwitch, NgpSwitchThumb],
   templateUrl: './consent-banner.html',
   styleUrl: './consent-banner.css',
 })
 export class ConsentBanner {
   protected readonly consent = inject(Consent);
   protected readonly categories = CONSENT_CATEGORIES;
-  protected readonly cn = cn;
 
   /** Render only after hydration to keep server + client markup identical. */
   protected readonly mounted = signal(false);

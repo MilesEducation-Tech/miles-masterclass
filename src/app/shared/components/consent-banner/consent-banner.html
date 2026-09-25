@@ -77,28 +77,19 @@
                   <p class="text-xs leading-relaxed text-neutral-400">{{ cat.description }}</p>
                 </div>
 
+                <!-- Locked tiers stay on: the primitive ignores clicks when disabled, and
+                     toggle() is a no-op for them either way. -->
                 <button
-                  type="button"
-                  role="switch"
-                  [attr.aria-checked]="isOn(cat.id)"
+                  ngpSwitch
+                  [ngpSwitchChecked]="isOn(cat.id)"
+                  [ngpSwitchDisabled]="cat.locked"
+                  (ngpSwitchCheckedChange)="toggle(cat.id)"
                   [attr.aria-label]="cat.title"
-                  [disabled]="cat.locked"
-                  (click)="toggle(cat.id)"
-                  [class]="
-                    cn(
-                      'relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
-                      isOn(cat.id) ? 'bg-emerald-500' : 'bg-neutral-600',
-                      cat.locked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-                    )
-                  "
+                  class="relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer bg-neutral-600 data-[checked]:bg-emerald-500 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-60"
                 >
                   <span
-                    [class]="
-                      cn(
-                        'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
-                        isOn(cat.id) ? 'translate-x-5' : 'translate-x-0.5'
-                      )
-                    "
+                    ngpSwitchThumb
+                    class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform translate-x-0.5 data-[checked]:translate-x-5"
                   ></span>
                 </button>
               </li>
