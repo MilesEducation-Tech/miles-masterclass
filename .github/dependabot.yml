@@ -1,0 +1,52 @@
+# Dependency updates — see docs/engineering/github-setup.md §8.
+#
+# Grouping is the whole point here. Angular's packages must move together or the
+# build breaks, and twenty separate PRs that each fail `pnpm build:prod` are worse
+# than one that passes. Every group below exists because splitting it produces a
+# PR that cannot go green on its own.
+#
+# The commit prefixes are chosen to satisfy our own gates: `chore` and `ci` are
+# valid commitlint types, and the `dependabot/*` branch names are allow-listed in
+# both .husky/pre-commit and the branch-name CI job.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: '/'
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 5
+    groups:
+      # The framework, its CLI and its build tooling are version-locked to each
+      # other. `@angular*` covers @angular/*, @angular-devkit/* and @angular/build.
+      angular:
+        patterns: ['@angular*', 'angular-eslint']
+      storybook:
+        patterns: ['@storybook/*', 'storybook', 'eslint-plugin-storybook']
+      # Eight @ng-icons packages all sit on the same version; ungrouped they arrive
+      # as eight PRs that only work once all eight land.
+      ng-icons:
+        patterns: ['@ng-icons/*']
+      # Runtime, so not covered by dev-minor below. The player, its HLS engine and
+      # its YouTube tech are coupled, and @types/video.js tracks the major.
+      videojs:
+        patterns: ['video.js', '@videojs/*', 'videojs-youtube', '@types/video.js']
+      # @types/three is pinned to an exact three version (0.184.0). Split, one half
+      # of the pair always breaks the type-check.
+      three:
+        patterns: ['three', '@types/three']
+      # Browser/SSR twins on the same version line. On different versions the server
+      # and client read cookies differently, which is the worst kind of SSR bug.
+      cookie-service:
+        patterns: ['ngx-cookie-service', 'ngx-cookie-service-ssr']
+      # Everything else dev-only, minor and patch, in one PR. Majors still come
+      # through on their own so they get read properly.
+      dev-minor:
+        dependency-type: development
+        update-types: ['minor', 'patch']
+    commit-message:
+      prefix: 'chore(deps)'
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule: { interval: monthly }
+    commit-message:
+      prefix: 'ci(deps)'
