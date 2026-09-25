@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpContext } from '@angular/common/http';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matPlayArrowRound } from '@ng-icons/material-icons/round';
+import { NgpRadioGroup, NgpRadioIndicator, NgpRadioItem } from 'ng-primitives/radio';
 import { DialogRef } from '@core/services/dialog/dialog';
 import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
 import { ApiClient } from '@core/services/api-client/api-client';
@@ -64,7 +65,16 @@ export type AiLabAgentDialogResult = 'launch';
  */
 @Component({
   selector: 'app-ai-lab-agent-dialog',
-  imports: [Button, MilesSlug, NgIcon, DurationPipe, AiLabAgentAbout],
+  imports: [
+    Button,
+    MilesSlug,
+    NgIcon,
+    DurationPipe,
+    AiLabAgentAbout,
+    NgpRadioGroup,
+    NgpRadioIndicator,
+    NgpRadioItem,
+  ],
   templateUrl: './ai-lab-agent-dialog.html',
   styleUrl: './ai-lab-agent-dialog.css',
   providers: [provideIcons({ matPlayArrowRound })],

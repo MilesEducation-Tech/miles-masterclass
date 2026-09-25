@@ -108,33 +108,43 @@
               }
             </div>
           } @else if (workflows()?.length) {
-            <fieldset class="mt-4 space-y-2">
-              <legend class="sr-only">Your published Copilot workflows</legend>
+            <!-- ngpRadioGroup owns role="radiogroup", roving focus and Up/Down; the label
+                 is the text the sr-only <legend> used to give the native radios.
+                 Behaviour change vs the native radios: ngpRadioItem selects on FOCUS, so
+                 tabbing into the group with nothing picked selects the first workflow.
+                 Accepted because it only enables Submit; scoring still needs that click. -->
+            <div
+              ngpRadioGroup
+              ngpRadioGroupOrientation="vertical"
+              [ngpRadioGroupValue]="selectedWorkflowId()"
+              (ngpRadioGroupValueChange)="selectedWorkflowId.set($event)"
+              aria-label="Your published Copilot workflows"
+              class="mt-4 space-y-2"
+            >
               @for (wf of workflows(); track wf.id) {
-                <label
-                  [class]="
-                    selectedWorkflowId() === wf.id
-                      ? 'flex cursor-pointer items-center gap-3 rounded-xl border border-accent bg-accent/10 p-4 transition-colors'
-                      : 'flex cursor-pointer items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-accent/40'
-                  "
+                <button
+                  type="button"
+                  ngpRadioItem
+                  [ngpRadioItemValue]="wf.id"
+                  class="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-border p-4 text-left transition-colors hover:border-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[checked]:border-accent data-[checked]:bg-accent/10"
                 >
-                  <input
-                    type="radio"
-                    name="workflow"
-                    class="size-4 shrink-0 accent-accent"
-                    [value]="wf.id"
-                    [checked]="selectedWorkflowId() === wf.id"
-                    (change)="selectedWorkflowId.set(wf.id)"
-                  />
+                  <span
+                    ngpRadioIndicator
+                    class="group flex size-4 shrink-0 items-center justify-center rounded-full border border-muted-foreground data-[checked]:border-accent"
+                  >
+                    <span
+                      class="hidden size-2 rounded-full bg-accent group-data-[checked]:block"
+                    ></span>
+                  </span>
                   <span class="flex-1">
                     <span class="block text-sm font-medium text-foreground">{{ wf.name }}</span>
                     <span class="block text-xs text-muted-foreground">
                       {{ wf.environmentName }} · Published {{ wf.publishedOn }}
                     </span>
                   </span>
-                </label>
+                </button>
               }
-            </fieldset>
+            </div>
             <app-button
               variant="ghost"
               class="mt-4 h-12 w-full rounded-xl bg-accent text-base"

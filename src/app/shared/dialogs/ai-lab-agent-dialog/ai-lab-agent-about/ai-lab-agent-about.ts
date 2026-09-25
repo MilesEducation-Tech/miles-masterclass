@@ -1,5 +1,11 @@
 import { Component, computed, input, signal } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
+import {
+  NgpCollapsible,
+  NgpCollapsibleContent,
+  NgpCollapsibleTrigger,
+} from 'ng-primitives/collapsible';
+import { NgpSwitch, NgpSwitchThumb } from 'ng-primitives/switch';
 import { heroChevronRight } from '@ng-icons/heroicons/outline';
 import { logo } from '@core/constants/icon';
 import { ContentAbout, ContentDetails } from '@core/models/course.model';
@@ -22,7 +28,14 @@ import { AiLabAssessmentReport } from '@core/models/ai-lab-assessment.model';
  */
 @Component({
   selector: 'app-ai-lab-agent-about',
-  imports: [NgIcon],
+  imports: [
+    NgIcon,
+    NgpCollapsible,
+    NgpCollapsibleContent,
+    NgpCollapsibleTrigger,
+    NgpSwitch,
+    NgpSwitchThumb,
+  ],
   templateUrl: './ai-lab-agent-about.html',
 })
 export class AiLabAgentAbout {
