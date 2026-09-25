@@ -7,6 +7,17 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🏁 **PHASE 10 row `layout` IS DONE ✅ (2026-09-25).** Report: [phase-10-layout](reports/phase-10-layout.md).
+  Full gates **8/8 GREEN** (tests 163 files / 577 passed + 1 skipped), `reviewer` **PASS**. **UNCOMMITTED** —
+  commit message in §5 of the report. Header drawer `CdkTrapFocus` → `ngpFocusTrap` + focus restore to the
+  hamburger (CDK parity). Desktop dropdowns were already `ngpAccordion` — left alone. Browser-checked at 375px.
+  ⚠️ **Two of three full runs were RED on unit tests from `features/partners`, not this change** — partners page
+  specs call the live API (`partnership-content`, no HTTP testing backend); latency 0.4–5.3 s → hook timeouts or a
+  null-body crash in a later spec. Task raised to fix the specs. ⚠️ Header `isLoggedIn`/`userData`/`hasActivePlan`
+  are dead like footer-overlay's were — a follow-up, not done here. Escape doesn't close the drawer (pre-existing).
+  **Next:** commit. Remaining Phase 10 cells: `core/services` (Dialog — the big one), `shared/components`,
+  `shared/dialogs`, `features/offerings`, `admin/*` — e.g. `/refactor-phase 10 shared/components`.
+
 - 🏁 **PHASE 9 row `layout` IS DONE ✅ (2026-09-25).** Report: [phase-09-layout](reports/phase-09-layout.md).
   Full gates **8/8 GREEN** (tests 163 files / 574 passed + 1 skipped), `reviewer` **PASS**. **UNCOMMITTED** —
   commit message in §5 of the report. `footer-overlay.isLoggedIn` → `AuthSession.isAuthenticated`
@@ -1100,7 +1111,7 @@ list only, PROMPT.md §7): `layout/blog-layout/` + its spec, blog entries in `ap
 | `features/library`             | ✅         | ⬜     | —     | ⬜             | ⬜          |
 | `features/tracker` (caira+cpe) | ✅         | ⬜     | —     | ⬜             | ⬜          |
 | `features/auth`                | ✅         | ⬜     | —     | ⬜             | ⬜          |
-| `layout`                       | ✅         | ✅     | ⬜    | — (above fold) | ⬜          |
+| `layout`                       | ✅         | ✅     | ✅    | — (above fold) | ⬜          |
 | `features/home`                | ✅         | ⬜     | —     | ⬜             | ⬜          |
 | `features/partners`            | ✅         | ⬜     | —     | ⬜             | ⬜          |
 | `features/payment`             | ✅         | ⬜     | —     | ⬜             | ⬜          |
@@ -1508,27 +1519,27 @@ New decisions raised by Phase 0:
       **Counts re-derived from the import graph** (PLAN.md's have been wrong twice):
 
       | Component (current home) | own feature | external features | total |
-                                                                                                                                                                                                                                                                  | --- | --- | --- | --- |
-                                                                                                                                                                                                                                                                  | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
-                                                                                                                                                                                                                                                                  | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                                                                  | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                                                                  | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                                                                  | `home/components/app-download` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                                                                  | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
+                                                                                                                                                                                                                                                                      | --- | --- | --- | --- |
+                                                                                                                                                                                                                                                                      | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
+                                                                                                                                                                                                                                                                      | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                                                                      | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                                                                      | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                                                                      | `home/components/app-download` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                                                                      | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
 
-                                                                                                                                                                                                                                                                  All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
-                                                                                                                                                                                                                                                                  precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
-                                                                                                                                                                                                                                                                  **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
-                                                                                                                                                                                                                                                                  because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
-                                                                                                                                                                                                                                                                  (14 importers) is still open and unverified — treat its count with the same suspicion.
-                                                                                                                                                                                                                                                                  - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
-                                                                                                                                                                                                                                                                    partners (11 pages), offerings, home, library.
-                                                                                                                                                                                                                                                                  - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
-                                                                                                                                                                                                                                                                    temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
-                                                                                                                                                                                                                                                                  - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
-                                                                                                                                                                                                                                                                    `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
-                                                                                                                                                                                                                                                                    structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
-                                                                                                                                                                                                                                                                    so it needs an explicit override.
+                                                                                                                                                                                                                                                                      All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
+                                                                                                                                                                                                                                                                      precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
+                                                                                                                                                                                                                                                                      **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
+                                                                                                                                                                                                                                                                      because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
+                                                                                                                                                                                                                                                                      (14 importers) is still open and unverified — treat its count with the same suspicion.
+                                                                                                                                                                                                                                                                      - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
+                                                                                                                                                                                                                                                                        partners (11 pages), offerings, home, library.
+                                                                                                                                                                                                                                                                      - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
+                                                                                                                                                                                                                                                                        temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
+                                                                                                                                                                                                                                                                      - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
+                                                                                                                                                                                                                                                                        `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
+                                                                                                                                                                                                                                                                        structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
+                                                                                                                                                                                                                                                                        so it needs an explicit override.
 
 - [ ] **`features/shared/services/tracks/` has no home in the target structure.** Raised 2026-09-23.
       It sits at the `features/` root, which §3 does not contain. Importers are
@@ -1702,26 +1713,27 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Open questions (from Claude)
 
--1. **[RESOLVED 2026-09-23 — restored on the user's instruction; did NOT recur.]** The recorded
-baseline was overwritten at some point on 2026-09-23. `git restore` put both files back (`at` =
-`2026-09-22T13:14:25.980Z`, lazy = 10254.9 / 3042.3). **The next full `verify.mjs` run — the auth
-session, 8/8 green — left that directory completely clean**, checked immediately afterwards, so an
-ordinary run does NOT rewrite it and my first diagnosis was wrong. The overwrite most likely came
-from an explicit recording run earlier that day. **Cause unconfirmed, so keep checking that
-directory's git status after every full verifier run** until it is understood. Original report:
-Discovered 2026-09-23. `docs/refactor/baseline/bundle.json` and `ssr.json` are both dirty in the
-working tree. `bundle.json`'s `at` stamp moved from `2026-09-22T13:14:25.980Z` to
-`2026-09-23T06:00:54.440Z`, and its `lazy` figures moved from **10254.9 / 3042.3** to
-**10256.7 / 3043** — exactly the _current_ post-refactor numbers the verifier reported as the
-delta. **The baseline now equals the present state, so it no longer measures anything.**
-`ssr.json`'s change is only a stripped trailing newline, but it came from the same run.
-I did not and cannot write these — they are guard-fenced as user-owned, and PROMPT.md section 2.3
-reserves baseline recording to you. Left untouched deliberately.
-**Fix before the next session:** `git restore docs/refactor/baseline/`
-Left uncorrected, every remaining Phase 5 session and all of Part B would compare against a
-baseline that already contains this phase's changes, and a real bundle regression could pass the
-gate silently. Also worth checking whether `scripts/refactor/verify.mjs` rewrites the baseline on
-an ordinary run rather than only when explicitly asked — if it does, this recurs every session.
+- **(2026-09-25) Header session state is dead** — `header.ts` `isLoggedIn`/`userData`/`hasActivePlan` are hardcoded signed-out since `Auth` was removed, so signed-in users see guest nav. Same class as `footer-overlay` (fixed in phase-09-layout). Want a follow-up session to wire `isLoggedIn` to `AuthSession`? `userData` needs a `user_details` read; `hasActivePlan` has no source.
+  -1. **[RESOLVED 2026-09-23 — restored on the user's instruction; did NOT recur.]** The recorded
+  baseline was overwritten at some point on 2026-09-23. `git restore` put both files back (`at` =
+  `2026-09-22T13:14:25.980Z`, lazy = 10254.9 / 3042.3). **The next full `verify.mjs` run — the auth
+  session, 8/8 green — left that directory completely clean**, checked immediately afterwards, so an
+  ordinary run does NOT rewrite it and my first diagnosis was wrong. The overwrite most likely came
+  from an explicit recording run earlier that day. **Cause unconfirmed, so keep checking that
+  directory's git status after every full verifier run** until it is understood. Original report:
+  Discovered 2026-09-23. `docs/refactor/baseline/bundle.json` and `ssr.json` are both dirty in the
+  working tree. `bundle.json`'s `at` stamp moved from `2026-09-22T13:14:25.980Z` to
+  `2026-09-23T06:00:54.440Z`, and its `lazy` figures moved from **10254.9 / 3042.3** to
+  **10256.7 / 3043** — exactly the _current_ post-refactor numbers the verifier reported as the
+  delta. **The baseline now equals the present state, so it no longer measures anything.**
+  `ssr.json`'s change is only a stripped trailing newline, but it came from the same run.
+  I did not and cannot write these — they are guard-fenced as user-owned, and PROMPT.md section 2.3
+  reserves baseline recording to you. Left untouched deliberately.
+  **Fix before the next session:** `git restore docs/refactor/baseline/`
+  Left uncorrected, every remaining Phase 5 session and all of Part B would compare against a
+  baseline that already contains this phase's changes, and a real bundle regression could pass the
+  gate silently. Also worth checking whether `scripts/refactor/verify.mjs` rewrites the baseline on
+  an ordinary run rather than only when explicitly asked — if it does, this recurs every session.
 
 0. **NEW (Phase 0) — bugs found, logged not fixed** (spec §7). Full list in
    `reports/phase-00.md` §3. The ones worth acting on outside the refactor:
@@ -1801,6 +1813,8 @@ an ordinary run rather than only when explicitly asked — if it does, this recu
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-09-25 · Phase 10 `layout` · CLOSE — verify.mjs 8/8 green on 3rd run (2 reds = network-dependent partners specs, proven unrelated), reviewer PASS, 375px keyboard check, report written · ✅
+- 2026-09-25 · Phase 10 `layout` · Step 1 CdkTrapFocus → ngpFocusTrap + toggler focus restore; 3 tests (2 fail without the restore) · ✅ quick green
 - 2026-09-25 · Phase 9 `layout` · CLOSE — verify.mjs 8/8 green (run directly; verifier subagent blocked by guard hook), reviewer PASS, signed-out browser check, report written · ✅
 - 2026-09-25 · Phase 9 `layout` · Step 1 isLoggedIn → AuthSession.isAuthenticated; 3 gating tests (proven to fail on the old hardcoded flag) · ✅ quick green
 - 2026-09-25 · Phase 9 `layout` · Step 0 bookkeeping — decision recorded (wire isLoggedIn), tracker 🟡 · ✅

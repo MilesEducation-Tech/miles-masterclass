@@ -170,6 +170,7 @@
         @if (isMobile()) {
           <div class="flex items-center relative">
             <button
+              #mobileToggler
               type="button"
               class="toggler flex-col gap-y-1 flex cursor-pointer z-100 bg-transparent border-none p-1"
               [attr.aria-expanded]="isMobileMenuOpen()"
@@ -213,8 +214,7 @@
                 role="dialog"
                 aria-modal="true"
                 aria-label="Site navigation"
-                cdkTrapFocus
-                cdkTrapFocusAutoCapture
+                ngpFocusTrap
                 class="absolute top-[calc(100%+12px)] right-0 min-w-[280px] max-w-[90vw] max-h-[calc(100vh-120px)] overflow-y-auto bg-popover/98 backdrop-blur-2xl rounded-2xl p-3 shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.1)] z-1000 animate-[mobileMenuSlideIn_0.3s_cubic-bezier(0.4,0,0.2,1)] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-[10px]"
               >
                 <!-- Logged-in user info + profile actions -->
