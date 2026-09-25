@@ -16,6 +16,7 @@ import { auditTime, filter, map } from 'rxjs/operators';
 
 import { Consent } from '@core/services/consent/consent';
 import { Analytics } from '@core/services/analytics/analytics';
+import { AuthSession } from '@core/services/auth-session/auth-session';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Utils } from '@shared/services/utils';
 import { FeatureFacade, FeatureResource } from '@core/services/feature-facade/feature-facade';
@@ -94,10 +95,11 @@ export class FooterOverlay {
     () => this.isScrolled() && this.routeAllowed() && !this.consent.bannerOpen(),
   );
 
-  // ── ponytail: inert session + subscription state ───────────────────────
-  // Both read the removed `Auth` service. Signed-out with no plan is the
-  // design the overlay now always shows.
-  protected readonly isLoggedIn = signal(false);
+  // ── Session + subscription state ────────────────────────────────────────
+  // The boolean, never the token: a rotation must not re-fire the effects below.
+  protected readonly isLoggedIn = inject(AuthSession).isAuthenticated;
+  // ponytail: nothing in the app holds the user's plan (see `utils.ts`), so
+  // "no plan" stays the answer and the subscribe upsell shows to everyone.
   protected readonly subscribed = signal<boolean | null>(false);
 
   // ── In-progress data (auth-gated; reuses FeatureFacade cache) ──────────
