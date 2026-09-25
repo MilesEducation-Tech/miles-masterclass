@@ -207,10 +207,10 @@ Then, depending on what changed:
 
 Known baseline (re-measured 2026-09-25) — **state the environment, because it changes the answer:**
 
-- **Locally (macOS, Node 24.15):** all five green. `pnpm lint` 0, `pnpm ng test --watch=false` 164 files / 559 passed + 1 skipped, `pnpm format` 0, `pnpm build:prod` 0, `pnpm build-storybook` 0.
-- **In CI (ubuntu, Node 22.x) — `verify` is RED:** 3 failures in `src/app/shared/utils/blob-download.spec.ts`, a Node `Blob` reaching jsdom's `FileReader`. `jsdom` is lockfile-pinned identically, so this is environmental, not a dependency drift. **It is a known, open defect — not something you broke**, and it is the one exception to the rule below. Detail and root cause: `docs/engineering/enforcement-verified.md` §4.
+- **Locally (macOS, Node 24.15):** all five green. `pnpm lint` 0, `pnpm ng test --watch=false` 164 files / 560 passed + 1 skipped, `pnpm format` 0, `pnpm build:prod` 0, `pnpm build-storybook` 0.
+- **In CI (ubuntu, Node 22.x):** was red on 3 `blob-download.spec.ts` failures — a Node `Blob` reaching jsdom's `FileReader`. **Fixed**; root cause and the proof in `docs/engineering/enforcement-verified.md` §4.
 
-Apart from that one spec, **a red gate means you broke it** — the old "lint and test are already red from pre-existing debt" note was stale and that debt is paid off, so don't reach for it as an excuse. Compare against the environment you are running in, and say which one you measured.
+**A red gate means you broke it** — the old "lint and test are already red from pre-existing debt" note was stale and that debt is paid off, so don't reach for it as an excuse. But **say which environment you measured**: that `blob-download` bug passed locally and failed only in CI, and a local-green/CI-red split is the hardest kind to debug if nobody records which side they ran.
 
 All five gates are required status checks on `master` (see `docs/engineering/github-setup.md`). Respect the Husky hooks; bypassing them only delays the same failure in CI, where it cannot be skipped.
 

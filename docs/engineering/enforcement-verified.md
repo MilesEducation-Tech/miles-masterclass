@@ -11,14 +11,14 @@ workflows on `master` are an older, broken revision that cannot satisfy them.
 
 ## 1. Verdict in one table
 
-| Layer                       | State                                                                           |
-| --------------------------- | ------------------------------------------------------------------------------- |
-| Repository settings         | ✅ all correct                                                                  |
-| `master-protection` ruleset | ✅ all five rules live, including `required_status_checks`                      |
-| `tag-protection` ruleset    | ✅ live, `refs/tags/v*`, no bypass                                              |
-| Security / supply chain     | ✅ secret scanning, push protection and Dependabot updates all enabled          |
-| **CI on `master`**          | 🚨 **stale and broken — see §3. This is what blocks everything.**               |
-| **Test suite in CI**        | 🚨 **red: 3 failures in `blob-download.spec.ts` that do not reproduce locally** |
+| Layer                       | State                                                                   |
+| --------------------------- | ----------------------------------------------------------------------- |
+| Repository settings         | ✅ all correct                                                          |
+| `master-protection` ruleset | ✅ all five rules live, including `required_status_checks`              |
+| `tag-protection` ruleset    | ✅ live, `refs/tags/v*`, no bypass                                      |
+| Security / supply chain     | ✅ secret scanning, push protection and Dependabot updates all enabled  |
+| **CI on `master`**          | 🚨 **stale and broken — see §3. This is what blocks everything.**       |
+| **Test suite in CI**        | ✅ **fixed** — the 3 `blob-download.spec.ts` failures are resolved (§4) |
 
 ---
 
@@ -138,7 +138,7 @@ Evidence that the bypass was used while red: the squashed commit on `master` is
 
 ---
 
-## 4. 🚨 Blocker 2 — `verify` is red on three tests that pass locally
+## 4. ✅ Blocker 2 (resolved) — `verify` was red on three tests that passed locally
 
 ```
 FAIL src/app/shared/utils/blob-download.spec.ts
@@ -171,12 +171,35 @@ collide depends on how the globals resolve, which is what changes between Node m
 
 **This is a test-environment defect, not a product defect** — a real browser has exactly one `Blob`.
 
-### Not reproduced locally, and why
+### ✅ Fixed, and proven without a Node 22 machine
 
 Homebrew's `node@22` is **22.13.1**, below the Angular CLI's floor (`v22.22.3`), so `ng test` hard-aborts
-before running — the same floor that broke the Vercel deploy. Isolating Node-major from OS needs a real
-22.22.3+. **Two variables differ and neither has been eliminated**; the Node major is the likelier of the two,
-not a proven cause.
+before running — the same floor that broke the Vercel deploy. Rather than guess, the CI condition was
+**reproduced on Node 24** by making the stubbed `fetch` hand back a Node blob, which is precisely what
+undici's `Response.blob()` does:
+
+```
+FAIL downloadFiles > caps parallel fetches and reports progress through every phase
+FAIL downloadFiles > ships a zip with FAILED.txt when some fetches fail and tolerateFailures is on
+FAIL downloadFiles > saves a single item directly unless forceZip asks for the folder structure
+FAIL downloadFiles > yields a blob JSZip can actually read
+TypeError: Failed to execute 'readAsArrayBuffer' on 'FileReader': parameter 1 is not of type 'Blob'.
+```
+
+The same three tests CI reported, with the identical error string — so the diagnosis is confirmed, not
+inferred. The fourth is a new guard test added alongside the fix.
+
+**The fix is confined to the spec; `blob-download.ts` is untouched.** The stub no longer round-trips its
+blob through a real `Response`, because constructing one is what picks a `Blob` implementation, and which
+one it picks varies by Node version. Handing back the blob the stub created keeps it coherent everywhere.
+`fetchAsBlob` only reads `ok`, `status` and `blob()`, so the code path under test is unchanged.
+
+After the fix: **164 files / 560 passed + 1 skipped**, `pnpm lint` 0, prettier clean. No
+`eslint-disable`, `@ts-ignore`, skipped or focused tests.
+
+One honest limitation: on Node 24 the suite passes _either way_, so the new guard test cannot catch a
+regression **on this machine** — only in CI, which is where it matters, and where it would otherwise have
+been a silent local pass.
 
 ### Consequence for `AGENTS.md`
 
@@ -209,8 +232,8 @@ Each of these needs an action that would change the repository.
 2. **Merge it with the admin bypass.** This is unavoidable and correct: `commitlint` and `branch-name`
    cannot report until they exist on `master`, so no ordinary merge is possible. It is the last bypass the
    process should need.
-3. **Fix `blob-download.spec.ts` (§4).** Until then `verify` stays red and the bypass remains the only way
-   to merge — which is the situation this whole harness exists to end.
+3. ~~Fix `blob-download.spec.ts` (§4).~~ ✅ **Done** — `verify` should now go green once step 2 lands. The
+   first CI run after that merge is the confirmation, since this machine cannot run CI's Node version.
 4. **Re-run this checklist**, and complete §5 with a colleague for the items that need a non-admin.
 5. Only then remove the rollout banner at the top of `git-workflow.md`.
 
