@@ -47,6 +47,9 @@
     "*.{ts,html,css,scss,json,md}": "prettier --write"
   },
   "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "packageManager": "pnpm@12.5.1",
   "dependencies": {
     "@angular/animations": "^22.0.7",
@@ -95,6 +98,8 @@
     "@angular/cli": "^22.0.7",
     "@angular/compiler-cli": "^22.0.7",
     "@angular/platform-browser-dynamic": "22.0.7",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "@eslint/js": "^10.0.1",
     "@ng-icons/bootstrap-icons": "^33.0.0",
     "@ng-icons/core": "^33.0.0",
