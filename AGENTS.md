@@ -205,7 +205,14 @@ Then, depending on what changed:
   Then navigate between two SEO-owning pages in a browser and confirm `document.querySelectorAll('meta[property^="og:"]').length` doesn't grow.
 - **Bundle-affecting change**: the initial bundle sits near its 2.00 MB budget. If `build:prod` warns, lazy-load — don't raise the budget.
 
-Known baseline (re-measured 2026-09-25): **all five gates are green** — `pnpm lint` exit 0, `pnpm ng test --watch=false` 163 files / 554 passed + 1 skipped, `pnpm format` clean, `pnpm build:prod` and `pnpm build-storybook` exit 0. An earlier version of this note claimed lint and test were "already red from pre-existing debt"; that debt was paid off during the refactor and the note went stale. **So a red gate now means you broke it** — don't reach for the baseline as an excuse. All five are required status checks on `master` (see `docs/engineering/github-setup.md`). Respect the Husky hooks; bypassing them only delays the same failure in CI, where it cannot be skipped.
+Known baseline (re-measured 2026-09-25) — **state the environment, because it changes the answer:**
+
+- **Locally (macOS, Node 24.15):** all five green. `pnpm lint` 0, `pnpm ng test --watch=false` 164 files / 559 passed + 1 skipped, `pnpm format` 0, `pnpm build:prod` 0, `pnpm build-storybook` 0.
+- **In CI (ubuntu, Node 22.x) — `verify` is RED:** 3 failures in `src/app/shared/utils/blob-download.spec.ts`, a Node `Blob` reaching jsdom's `FileReader`. `jsdom` is lockfile-pinned identically, so this is environmental, not a dependency drift. **It is a known, open defect — not something you broke**, and it is the one exception to the rule below. Detail and root cause: `docs/engineering/enforcement-verified.md` §4.
+
+Apart from that one spec, **a red gate means you broke it** — the old "lint and test are already red from pre-existing debt" note was stale and that debt is paid off, so don't reach for it as an excuse. Compare against the environment you are running in, and say which one you measured.
+
+All five gates are required status checks on `master` (see `docs/engineering/github-setup.md`). Respect the Husky hooks; bypassing them only delays the same failure in CI, where it cannot be skipped.
 
 ---
 
