@@ -1,0 +1,12 @@
+<div ngpDialogOverlay [ngpDialogOverlayCloseOnClick]="dismissible()" [class]="overlayClasses()">
+  <div
+    ngpDialog
+    [attr.aria-label]="ariaLabel()"
+    [class]="panelClasses()"
+    [style.width]="width()"
+    [style.max-width]="maxWidth()"
+    [style.height]="height()"
+  >
+    <ng-content />
+  </div>
+</div>

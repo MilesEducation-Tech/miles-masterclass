@@ -1,7 +1,7 @@
 import { Service, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AppDownloadDialog } from '@shared/dialogs/app-download-dialog/app-download-dialog';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Viewport } from '@core/services/viewport/viewport';
 
 const SESSION_KEY = 'app_download_prompted';
@@ -22,7 +22,7 @@ interface RelatedApp {
 export class AppDownloadPrompt {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly viewport = inject(Viewport);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
 
   maybePrompt(): void {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -51,6 +51,6 @@ export class AppDownloadPrompt {
       // Detection failed — fall through and show the prompt.
     }
 
-    this.dialog.open(AppDownloadDialog, { maxWidth: '360px' });
+    this.dialogs.open(AppDownloadDialog);
   }
 }

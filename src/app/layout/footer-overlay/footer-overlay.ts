@@ -17,6 +17,7 @@ import { auditTime, filter, map } from 'rxjs/operators';
 import { Consent } from '@core/services/consent/consent';
 import { Analytics } from '@core/services/analytics/analytics';
 import { AuthSession } from '@core/services/auth-session/auth-session';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Utils } from '@shared/services/utils';
 import { FeatureFacade, FeatureResource } from '@core/services/feature-facade/feature-facade';
@@ -58,6 +59,7 @@ export class FooterOverlay {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
   private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
   // Suppress the overlay while the cookie-consent banner is open so the two
   // fixed bottom UIs don't overlap (no-op unless consent is active in prod).
@@ -244,12 +246,6 @@ export class FooterOverlay {
   }
 
   protected openSearch(): void {
-    this.dialog.open(GlobalSearchDialog, {
-      width: 'min(95vw, 720px)',
-      maxWidth: '95vw',
-      ariaLabel: 'Global search',
-      enterAnimationDuration: '200ms',
-      exitAnimationDuration: '180ms',
-    });
+    this.dialogs.open(GlobalSearchDialog);
   }
 }

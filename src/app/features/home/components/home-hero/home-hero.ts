@@ -10,7 +10,7 @@ import {
   MASTERCLASS_APP_STORE_URL,
   MASTERCLASS_PLAY_STORE_URL,
 } from '@shared/dialogs/app-download-dialog/app-download-dialog';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 
 @Component({
   selector: 'app-home-hero',
@@ -20,7 +20,7 @@ import { Dialog } from '@core/services/dialog/dialog';
 })
 export class HomeHero {
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   readonly S3_BUCKET_URL = environment.S3_BUCKET_URL;
 
   readonly icons = signal({
@@ -52,7 +52,7 @@ export class HomeHero {
         : null;
 
     if (!storeUrl) {
-      this.dialog.open(AppDownloadDialog, { maxWidth: '360px' });
+      this.dialogs.open(AppDownloadDialog);
       return;
     }
 
