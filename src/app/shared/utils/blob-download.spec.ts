@@ -13,6 +13,32 @@ describe('downloadFiles', () => {
   /** Per-URL behaviour: 'ok', 'fail', or a promise gate to hold the request open. */
   let behaviour: Record<string, 'ok' | 'fail'>;
 
+  /**
+   * Minimal stand-in for a fetch `Response`, deliberately NOT a real one.
+   *
+   * There are two `Blob` implementations in a jsdom test run — jsdom's and
+   * Node's — and they are not interchangeable: `nodeBlob instanceof Blob` is
+   * `false`, so jsdom's `FileReader` rejects a Node blob with "parameter 1 is
+   * not of type 'Blob'". JSZip walks into that trap, because it decides a value
+   * is blob-like from its string tag (`[object Blob]`, which both satisfy) and
+   * then reads it with `FileReader`.
+   *
+   * Constructing a real `Response` picks an implementation for us, and *which*
+   * one depends on the environment: on Node 24 the global `Response` is jsdom's,
+   * so `res.blob()` yields a jsdom blob and everything lines up; on Node 22 it
+   * is Node's undici, so `res.blob()` yields a Node blob and the zip tests blow
+   * up. That is exactly how this suite came to pass locally and fail in CI.
+   *
+   * Handing back the blob we constructed keeps the pair coherent on every Node
+   * version. `fetchAsBlob` only ever touches `ok`, `status` and `blob()`, so the
+   * code path under test is unchanged.
+   */
+  const stubResponse = (body: Blob | null, status = 200) => ({
+    ok: status >= 200 && status < 300,
+    status,
+    blob: async () => body ?? new Blob(),
+  });
+
   beforeEach(() => {
     saved.length = 0;
     inFlight = peak = 0;
@@ -25,8 +51,8 @@ describe('downloadFiles', () => {
         await new Promise((r) => setTimeout(r, 5));
         inFlight--;
         if (init?.signal?.aborted) throw init.signal.reason;
-        if (behaviour[url] === 'fail') return new Response(null, { status: 404 });
-        return new Response(new Blob([`pdf:${url}`], { type: 'application/pdf' }));
+        if (behaviour[url] === 'fail') return stubResponse(null, 404);
+        return stubResponse(new Blob([`pdf:${url}`], { type: 'application/pdf' }));
       }),
     );
     // Capture saves instead of poking a real anchor.
@@ -100,6 +126,27 @@ describe('downloadFiles', () => {
       forceZip: true,
     });
     expect(saved.map((s) => s.name)).toEqual(['A - U.pdf', 'x.zip']);
+  });
+
+  /**
+   * Guards the `stubResponse` contract above: whatever `fetch` yields has to be a
+   * blob this environment's `FileReader` can read, because that is what JSZip
+   * does with it. Reintroducing a real `Response` breaks this on any Node whose
+   * global `Response` is undici's rather than jsdom's — which is a CI failure and
+   * a local pass, the worst combination to debug.
+   */
+  it('yields a blob JSZip can actually read', async () => {
+    const res = await fetch('https://cdn/cert-0.pdf');
+    const blob = await res.blob();
+    expect(blob).toBeInstanceOf(Blob);
+    await expect(
+      new Promise<number>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as ArrayBuffer).byteLength);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsArrayBuffer(blob);
+      }),
+    ).resolves.toBeGreaterThan(0);
   });
 
   it('saveBlob no-ops on the server', () => {

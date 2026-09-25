@@ -1,18 +1,148 @@
-# .github/workflows/pr-title.yml
 name: pr-title
+
+# Three gates on the shape of a contribution, all required checks on the
+# master-protection ruleset. The job names are the check contexts — don't rename
+# them without re-recording .github/rulesets/master.json.
 on:
   pull_request:
-    types: [opened, edited, synchronize]
+    types: [opened, edited, synchronize, reopened]
+
 permissions:
+  contents: read
   pull-requests: read
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
+  # Because we squash-merge with "Pull request title and description", the PR
+  # title BECOMES the commit on master. This is the only gate standing between a
+  # sloppy title and the permanent history.
   pr-title:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: amannn/action-semantic-pull-request@v5
+      # Pinned to a commit SHA rather than the v5 tag, because this action
+      # receives GITHUB_TOKEN. SHA = v5 as of 2026-09-25; Dependabot's
+      # github-actions ecosystem will propose newer ones (v6 is out).
+      - uses: amannn/action-semantic-pull-request@e32d7e603df1aa1ba07e981f2a23455dee596825
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          types: feat,fix,refactor,chore,docs,test,style,perf,build,ci
-          scopes: core,shared,layout,admin,payment,offerings,cpe-tracker,partners,blog,seo,auth,deps,release
+          # NEWLINE-delimited, not comma. The action treats each line as a regex
+          # wrapped in ^$, so a comma-separated list becomes one pattern
+          # `^feat,fix,…$` that matches nothing and fails every title.
+          types: |
+            feat
+            fix
+            refactor
+            chore
+            docs
+            test
+            style
+            perf
+            build
+            ci
+            revert
+
+          # Scope is NOT constrained here, deliberately — see the note in
+          # docs/engineering/git-workflow.md §3. History uses 23 distinct scopes
+          # against a canonical list of 11, the most common being `structure`
+          # (the refactor's own convention), and that list is already stale
+          # (`blog` was removed, `cpe-tracker` is really `tracker`). A drifting
+          # allow-list in a blocking gate stops work for no real benefit.
+          #
+          # To make it strict later, uncomment this block — the list below is the
+          # measured union of the real feature folders and the scopes in use:
+          #
+          # scopes: |
+          #   core
+          #   shared
+          #   layout
+          #   admin
+          #   seo
+          #   auth
+          #   payment
+          #   offerings
+          #   tracker
+          #   partners
+          #   library
+          #   legal
+          #   home
+          #   milesverse
+          #   ai-labs
+          #   uae-caira
+          #   connect-us
+          #   faculty
+          #   masterclass
+          #   podcast
+          #   micro-learning
+          #   webinar
+          #   assessment
+          #   chapter
+          #   structure
+          #   services
+          #   ui
+          #   deps
+          #   release
           requireScope: false
+
+          # Mirrors commitlint's subject-case rule, so the PR title is held to the
+          # same standard as the commits: no leading capital.
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" must start lowercase, to match the commit
+            rules in docs/engineering/git-workflow.md §3.
+
+          # why: closes the gap this repo has TODAY. On a single-commit PR GitHub
+          # offers that commit's message as the squash subject, and the repo is
+          # still configured with squash_merge_commit_title=COMMIT_OR_PR_TITLE —
+          # so a bad single commit can become the commit on master even with a
+          # good PR title. Harmless to keep once that setting is fixed.
+          validateSingleCommit: true
+
+  # A second line of defence for commit messages: the husky commit-msg hook is
+  # advisory by design (--no-verify skips it), so the same rules run here where
+  # they cannot be skipped.
+  commitlint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # commitlint needs the history on both sides of the range below.
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Explicit base/head SHAs rather than `origin/${{ github.base_ref }}`:
+      # the named ref is not always resolvable in a PR checkout, and these two
+      # are exactly the commits the PR adds.
+      - run: >
+          pnpm exec commitlint
+          --from ${{ github.event.pull_request.base.sha }}
+          --to ${{ github.event.pull_request.head.sha }}
+          --verbose
+
+  # Mirrors the guard in .husky/pre-commit, for the same reason as commitlint above.
+  branch-name:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Branch must be named <type>/<description>
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          case "$BRANCH" in
+            # Bot branches: Dependabot and release-please name their own, and
+            # neither will adopt our convention. Without these two lines every
+            # dependency-update and release PR would be unmergeable.
+            dependabot/*|release-please--*) exit 0 ;;
+            feat/*|fix/*|chore/*|refactor/*|docs/*|test/*|style/*|perf/*|build/*|ci/*|hotfix/*) exit 0 ;;
+          esac
+          echo "::error::Branch '$BRANCH' must be named <type>/<description> — e.g. feat/MIL-231-seat-allocation. Types: feat fix chore refactor docs test style perf build ci hotfix. See docs/engineering/git-workflow.md §2"
+          exit 1

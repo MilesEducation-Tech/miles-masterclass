@@ -23,3 +23,4 @@ The problem this solves.
 - [ ] Follows the structure rules in AGENTS.md (placement, boundaries, naming)
 - [ ] Tailwind utilities used; no new component CSS unless unavoidable
 - [ ] Tested on the preview URL, mobile + desktop
+- [ ] Branch is `type/TICKET-description` and the PR title is a Conventional Commit

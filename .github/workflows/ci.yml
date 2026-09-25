@@ -1,9 +1,11 @@
 name: CI
+
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [master]
 
+# A compromised dependency in CI cannot push to the repo.
 permissions:
   contents: read
 
@@ -12,18 +14,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The job name IS the required status check context ("verify") in the
+  # master-protection ruleset. Renaming it silently stops satisfying the rule,
+  # and a check that never reports reads as "pending" — i.e. blocked forever.
   verify:
     runs-on: ubuntu-latest
+    # A hung job would otherwise burn the default 6h and block every merge
+    # behind a required check that never completes.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+
+      # Must come BEFORE setup-node: `cache: pnpm` needs the pnpm binary to
+      # resolve the store path. Deliberately unversioned so it reads
+      # `packageManager` from package.json instead of drifting from it.
       - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
+          # Matches `engines.node` (22.x), which exists because Angular CLI 22
+          # aborts below ^24.15.0 on the 24.x line and Vercel's 24 image is 24.14.1.
           node-version: 22
           cache: pnpm
+
+      # --frozen-lockfile so an out-of-date pnpm-lock.yaml fails here instead of
+      # silently resolving something different from what anyone tested.
       - run: pnpm install --frozen-lockfile
+
+      # Cheapest gates first: format and lint finish in under a minute, so a
+      # missing space fails fast instead of after two full builds.
+      - run: pnpm format
       - run: pnpm lint
       - run: pnpm ng test --watch=false
       - run: pnpm build:prod
       - run: pnpm build-storybook
-      - run: pnpm format

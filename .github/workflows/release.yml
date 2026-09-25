@@ -1,0 +1,60 @@
+name: release
+
+# Keeps an open Release PR on master that accumulates the next version number and
+# the changelog. Merging it bumps package.json, writes CHANGELOG.md, tags vX.Y.Z
+# and cuts a GitHub Release. See docs/engineering/versioning.md §2.
+on:
+  push:
+    branches: [master]
+
+# Elevated above the repo default (read-only) because release-please commits the
+# version bump and opens the PR itself.
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  # NOT cancel-in-progress: a half-cancelled release can leave a tag without its
+  # GitHub Release, and the next run then thinks that version already shipped.
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # `secrets` is not available in a job-level `if`, so surface it as an env
+      # value and gate the steps on that instead.
+      HAS_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN != '' }}
+    steps:
+      # why: RELEASE_PLEASE_TOKEN is REQUIRED here, not a nicety, for two
+      # independent reasons — and there is deliberately no GITHUB_TOKEN fallback,
+      # because in this org that fallback cannot work and would just fail loudly
+      # on every push to master:
+      #
+      #   1. The ORGANISATION forbids GitHub Actions from creating pull requests
+      #      ("The organization does not allow GitHub Actions to create or approve
+      #      pull requests", HTTP 409 on the repo-level setting). That policy binds
+      #      the GITHUB_TOKEN. A PAT authenticates as a user, so the Release PR is
+      #      an ordinary user-authored PR and is not subject to it.
+      #   2. A PR opened with GITHUB_TOKEN does not trigger `pull_request`
+      #      workflows, so the Release PR would receive NONE of the four required
+      #      checks and could only be merged by bypassing them.
+      #
+      # Until the secret exists, skip with a notice rather than failing: a red run
+      # on every master push reads as "master is broken", which it is not.
+      - name: Explain the skip
+        if: env.HAS_TOKEN != 'true'
+        run: |
+          echo "::notice::RELEASE_PLEASE_TOKEN is not set, so no Release PR was opened. See docs/engineering/versioning.md section 2 — the org blocks Actions from creating PRs, so a PAT (or GitHub App token) is required, not optional."
+
+      # Pinned to a commit SHA (the v4 annotated tag dereferences to this commit)
+      # rather than the tag: this action receives a token. v5 exists; Dependabot's
+      # github-actions ecosystem will propose it.
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071
+        if: env.HAS_TOKEN == 'true'
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

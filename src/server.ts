@@ -6,7 +6,7 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
-import { APP_VERSION } from './app/core/version/app-version';
+import { APP_BUILT_AT, APP_SEMVER, APP_SHA, APP_VERSION } from './app/core/version/app-version';
 import { registerSeoRoutes } from './seo';
 import { registerServiceWorkerRoute } from './service-worker';
 import { registerLegacyRedirects } from './legacy-redirects';
@@ -59,7 +59,9 @@ const appEngine = new AngularNodeAppEngine({
  */
 app.get('/version.json', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
-  res.json({ version: APP_VERSION });
+  // `buildId` is what UpdateChecker compares; `version`/`sha`/`builtAt` are for
+  // humans — a support ticket or a bug report maps to an exact commit from these.
+  res.json({ version: APP_SEMVER, sha: APP_SHA, builtAt: APP_BUILT_AT, buildId: APP_VERSION });
 });
 
 /**
@@ -162,6 +164,14 @@ app.use(
  * Handle all other requests by rendering the Angular application.
  */
 app.use((req, res, next) => {
+  // The SSR-rendered HTML is the entry point, so it must never be cached: a stale
+  // shell hands the browser asset filenames that no longer exist on the newest
+  // deployment. Set here rather than in `vercel.json` on purpose — a Cache-Control
+  // rule broad enough to catch extensionless routes there would also have to be
+  // ordered against the hashed-asset `immutable` rule, and getting that precedence
+  // wrong silently breaks asset caching. `express.static` is registered above, so
+  // this only ever touches rendered HTML.
+  res.setHeader('Cache-Control', 'no-cache');
   appEngine
     .handle(req)
     .then((response) => (response ? writeResponseToNodeResponse(response, res) : next()))

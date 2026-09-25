@@ -205,7 +205,14 @@ Then, depending on what changed:
   Then navigate between two SEO-owning pages in a browser and confirm `document.querySelectorAll('meta[property^="og:"]').length` doesn't grow.
 - **Bundle-affecting change**: the initial bundle sits near its 2.00 MB budget. If `build:prod` warns, lazy-load — don't raise the budget.
 
-Known baseline: `pnpm lint` and `pnpm test` are **already red** from pre-existing debt (stale mocks, a11y rules). Compare against the baseline on `master` — don't claim you broke or fixed something you didn't. `build:prod` is the gate that must stay green. Respect the Husky pre-commit hook; never bypass with `--no-verify`.
+Known baseline (re-measured 2026-09-25) — **state the environment, because it changes the answer:**
+
+- **Locally (macOS, Node 24.15):** all five green. `pnpm lint` 0, `pnpm ng test --watch=false` 164 files / 560 passed + 1 skipped, `pnpm format` 0, `pnpm build:prod` 0, `pnpm build-storybook` 0.
+- **In CI (ubuntu, Node 22.x):** was red on 3 `blob-download.spec.ts` failures — a Node `Blob` reaching jsdom's `FileReader`. **Fixed**; root cause and the proof in `docs/engineering/enforcement-verified.md` §4.
+
+**A red gate means you broke it** — the old "lint and test are already red from pre-existing debt" note was stale and that debt is paid off, so don't reach for it as an excuse. But **say which environment you measured**: that `blob-download` bug passed locally and failed only in CI, and a local-green/CI-red split is the hardest kind to debug if nobody records which side they ran.
+
+All five gates are required status checks on `master` (see `docs/engineering/github-setup.md`). Respect the Husky hooks; bypassing them only delays the same failure in CI, where it cannot be skipped.
 
 ---
 

@@ -59,43 +59,76 @@ changed URLs, or a forced re-login.
 
 ## 2. The release tool cuts the version
 
-**`TODO` — not wired up yet.** `package.json` currently sits at `3.0.1`, with no `CHANGELOG.md` and no tags.
+**Shipped** — `.github/workflows/release.yml`. **release-please** watches `master` and keeps an open
+"Release PR" that accumulates the next version number and the changelog. Merging that PR bumps
+`package.json`, writes `CHANGELOG.md`, creates the tag `v3.1.0`, and cuts a GitHub Release.
 
-**release-please** is the simplest option for an app. It watches `master` and keeps an open "Release PR" that
-accumulates the next version number and the changelog. Merging that PR bumps `package.json`, writes
-`CHANGELOG.md`, creates the tag `v3.1.0`, and creates a GitHub Release.
+We prefer this over semantic-release's release-on-every-merge: the PR step gives one place to review the
+changelog before it becomes public.
 
-```yaml
-# .github/workflows/release.yml
-name: Release
-on:
-  push:
-    branches: [master]
-permissions:
-  contents: write
-  pull-requests: write
-jobs:
-  release-please:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: googleapis/release-please-action@v4
-        with:
-          release-type: node
-```
+Two files pin where it starts from, because this repo had a version but **no tags**:
 
-semantic-release does the same job with no PR step, which suits teams that release on every merge.
-We prefer the PR step: it gives one place to review the changelog before it becomes public.
+- `.release-please-manifest.json` — `{".": "3.0.1"}`, the last released version. Without it,
+  release-please has to guess, and a surprise `1.0.0` Release PR is a confusing first impression.
+- `release-please-config.json` — `release-type: node`, plus **`bootstrap-sha`** pinned to the commit the
+  tool should treat as "already released". Without that, the first Release PR's changelog is built from
+  the **entire project history**, including the pre-convention commits whose messages were never written
+  to be read in a changelog.
 
-Until this is set up, bump `package.json` manually in a `chore(release): v3.1.0` commit and tag it.
+`include-component-in-tag: false` is deliberate: it produces `v3.1.0` rather than a component-prefixed
+tag, which is what the `refs/tags/v*` tag ruleset in `github-setup.md` §2 actually protects. Change one
+and you must change the other, or releases stop being immutable.
+
+### Two things it needs before it can work
+
+1. **A `RELEASE_PLEASE_TOKEN` secret — required, not optional.** Two independent reasons, either of which
+   alone would force it:
+
+   - **The organisation forbids Actions from creating pull requests.** Enabling the repo-level setting is
+     refused outright:
+
+     ```
+     409 Conflict — The organization does not allow GitHub Actions to create or approve pull requests
+     ```
+
+     That policy binds the `GITHUB_TOKEN`. Opening the Release PR _is_ release-please's entire mechanism,
+     so with only the default token it can never work here. A PAT authenticates as a **user**, so the
+     Release PR is an ordinary user-authored PR and the Actions policy does not apply to it.
+
+   - **A PR opened with `GITHUB_TOKEN` does not trigger `pull_request` workflows.** Even in an org that
+     allowed the above, the Release PR would receive **none** of the four required checks, they would sit
+     "pending" forever, and it could only be merged by bypassing the very gates this setup exists to
+     enforce.
+
+   Use a fine-grained PAT with `contents: write` and `pull-requests: write` on this repo. Until the secret
+   exists the workflow **skips with a notice** rather than failing, so pushes to `master` stay green.
+
+   > **Prefer a GitHub App token to a personal one** if the org allows it (`actions/create-github-app-token`
+   > mints one per run). A PAT ties the release pipeline to one person's account, so it breaks when they
+   > rotate credentials or leave — a bad dependency for the thing that ships your software. The PAT is the
+   > quick path; the App is the durable one.
+   >
+   > If neither is acceptable, the fallback is the manual release at the end of this section. It is not a
+   > failure state — it is what we did before this workflow existed.
+
+2. **A `v3.0.1` tag at the bootstrap commit** (`7bc8f63`), so the tool and the git history agree on what
+   shipped. Annotate it and publish it to the remote.
+
+The repo's default workflow permissions stay `read`; `release.yml` elevates its own in a `permissions:`
+block, which is the narrower arrangement.
+
+If you ever need to release by hand, bump `package.json` in a `chore(release): v3.1.0` commit and tag it.
 The rest of this document works either way.
 
 ## 3. The build stamps identity into the bundle
 
-**Shipped.** `scripts/generate-version.mjs` runs in the `prebuild`/`prestart` hooks and writes two files
-that must agree per deploy:
+**Shipped.** `scripts/generate-version.mjs` runs in the `prebuild`, `prestart`, `pretest` and `prelint`
+hooks — and once after install via `prepare` — and writes two files that must agree per deploy. Both are
+**gitignored**, precisely because every one of those paths regenerates them:
 
-1. **`src/app/core/version/app-version.ts`** — exports `APP_VERSION` and `APP_BUILT_AT`, and is imported
-   by both the browser and server bundles. This is the _running_ version.
+1. **`src/app/core/version/app-version.ts`** — exports `APP_VERSION` (the build id), plus `APP_SEMVER`,
+   `APP_SHA` and `APP_BUILT_AT`. Imported by both the browser and server bundles. This is the _running_
+   build.
 2. **`public/version.json`** — copied to the build output and served at `/version.json`. This is the
    _deployed_ version a client polls.
 
@@ -163,6 +196,12 @@ Caching rules that make all this safe (`vercel.json` headers):
 | `index.html` / SSR HTML | `no-cache`                            | The entry point must always be current     | `TODO`                                                          |
 | `/version.json`         | `no-store`                            | Skew detection is worthless if it's cached | shipped on the SSR route; `TODO` for the CDN-served static copy |
 | `/assets/*` (unhashed)  | `public, max-age=3600`                | Compromise for images and fonts            | `TODO`                                                          |
+
+> **Why the HTML header lives in `src/server.ts` and not `vercel.json`.** Routes here are extensionless, so
+> a `vercel.json` rule broad enough to catch them (`/(.*)`) would also match hashed assets, and would then
+> have to be ordered against the `immutable` rule to avoid un-caching every bundle. Setting it on the
+> Angular handler is unambiguous: `express.static` is registered before it, so only rendered HTML is
+> touched. `/assets/*` is still uncovered — a separate, low-risk `vercel.json` addition.
 
 ## 5. Runtime handles version skew
 
@@ -235,15 +274,19 @@ scary, you're using versions to do a flag's job.
 
 ## Checklist for adopting this
 
-- [ ] commitlint wired into husky and CI
-- [ ] release-please workflow added; first Release PR merged
-- [ ] `generate-version.mjs` emits `version`, `sha`, `builtAt` and `buildId`, with the SHA coming from CI
+- [x] commitlint wired into husky (`.husky/commit-msg`) and CI (the `commitlint` required check)
+- [x] release-please workflow added (`.github/workflows/release.yml`) — the first Release PR still has to
+      merge, and it needs the three prerequisites in §2
+- [x] `generate-version.mjs` emits `version`, `sha`, `builtAt` and `buildId`, with the SHA coming from CI
 - [x] Build identity compiled into both bundles via the generated `app-version.ts` (`APP_VERSION`)
 - [x] `GET /version.json` route in `server.ts` with `no-store`
-- [ ] `vercel.json` headers match the caching table in section 4
+- [x] Entry-point HTML is `no-cache` and `/version.json` is `no-store` — both set in `src/server.ts`
+      rather than `vercel.json`, to avoid ordering a broad `Cache-Control` rule against the hashed-asset
+      `immutable` rule. `/assets/*` is still uncovered
 - [ ] Vercel Skew Protection enabled, and the deployment ID wired into requests
 - [x] Update checker compares versions and prompts on mismatch
-- [ ] `withNavigationErrorHandler` added to `provideRouter`
+- [x] `withNavigationErrorHandler` added to `provideRouter`, scoped to chunk-load failures and guarded
+      against reload loops
 - [ ] Sentry release tag and source maps uploaded per deploy
 - [x] ~~Service worker update flow and the update dialog reconciled into one prompt~~ — N/A, the SW is
       push-only and has no update flow

@@ -12,6 +12,9 @@ case "$branch" in
   # master is listed on purpose: the manual release procedure in git-workflow.md §7
   # commits `chore(release): vX.Y.Z` directly on master.
   master | uat) exit 0 ;;
+  # Bot-authored branches, so checking one out to fix its build isn't blocked.
+  # Kept in step with the same list in .github/workflows/pr-title.yml.
+  dependabot/* | release-please--*) exit 0 ;;
   feat/* | fix/* | chore/* | refactor/* | docs/* | test/* | style/* | perf/* | build/* | ci/* | hotfix/*) exit 0 ;;
 esac
 
