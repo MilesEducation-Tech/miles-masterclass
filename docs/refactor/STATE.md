@@ -7,6 +7,43 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-09-25, NON-REFACTOR HOTFIX — Vercel deploy was failing, no refactor phase moved, no `src/`
+  change.** The deploy aborted with `Node.js version v24.14.1 detected. The Angular CLI requires a
+minimum Node.js version of v22.22.3 or v24.15.0 or v26.0.0` (exit 3). Read `node_modules/@angular/cli/bin/ng.js:58-73`:
+  the check is a **hard abort with no env override** — only majors 23/25 get a warning-and-continue.
+  Cause: nothing in the repo pinned Node (no `engines`, no `.nvmrc`), so Vercel used its default 24.x,
+  whose image sits at **24.14.1 — one patch below the CLI floor**. Vercel only lets you choose a
+  **major** and picks the patch itself (docs confirmed), so `24.x` cannot fix this; Node 22's latest is
+  **22.23.3**, well past the 22.22.3 floor. **Fix: `engines.node: "22.x"` in `package.json`** (overrides
+  the dashboard setting) **+ `node -v` echoed at the top of `vercel.sh`** so the next deploy log proves
+  the patch instead of us guessing. ⚠️ **Unverified from inside the repo:** Vercel's exact 22.x patch —
+  only a deploy shows it. If it lands below 22.22.3, the fallback is installing Node inside `vercel.sh`.
+  `.github/workflows/ci.yml` uses `node-version: 22`, which resolves to latest 22, so **CI was never
+  affected**. ❓ **Left for the user:** the failing log line was `pnpm run lint`, but `vercel.json`'s
+  `buildCommand` is `sh vercel.sh` and never lints — something outside `vercel.json` (a dashboard Build
+  Command override?) is running lint on Vercel. Flagged, not touched.
+
+- 📌 **2026-09-24/25, SEPARATE TRACK — NOT REFACTOR WORK. Phase 9's state below is UNCHANGED.**
+  A session was spent planning the **engineering enforcement harness** (git workflow / GitHub setup /
+  versioning), written to [`prompts/engineering-enforcement-harness.md`](../../prompts/engineering-enforcement-harness.md).
+  Nothing under `src/` was touched and no refactor phase moved. Recorded here only because the stop gate
+  fires on any file change, and because **one measurement in it contradicts `AGENTS.md` and matters to
+  this refactor**: all five gates are GREEN today — `lint` 0, `ng test --watch=false` 0
+  (**163 files / 554 passed + 1 skipped**, matching Phase 9's recorded numbers exactly), `format` 0,
+  `build:prod` 0, `build-storybook` 0. `AGENTS.md` §9's "lint and test are already red from
+  pre-existing debt" is **stale** and is queued for correction in that plan's Phase 6.
+  ⚠️ Those verification runs regenerated `public/version.json` + `core/version/app-version.ts`; the guard
+  hook blocks me from restoring them, so the user was asked to `git checkout --` both.
+  **Two decisions the user locked there (2026-09-24):** keep `master` (docs get corrected, no rename),
+  and gitignore the two build-generated files behind `pretest`/`prelint` hooks.
+  **2026-09-25 — that plan's PHASE 0 IS WRITTEN (uncommitted):** `docs/engineering/{git-workflow,github-setup,versioning}.md`,
+  1,119 lines, which **fixes the two dangling `docs/engineering/*` links in `CLAUDE.md`** (verified: both now
+  resolve). Corrections applied vs the source docs: `main`→`master` throughout, `@ms-sachin-singh`→
+  `@me-sachin-singh` (the docs were wrong, `.github/CODEOWNERS` was right), duplicate §10 renumbered to
+  §10/§11, and the `APP_BUILD` `--define` passage rewritten to document the `app-version.ts` mechanism that
+  actually ships. Every not-yet-wired item is marked `TODO` so the docs don't describe fiction as fact.
+  Prettier clean. **No `src/` change, so lint/test/build were not re-run for this — nothing they cover moved.**
+
 - 🏁 **PHASE 9 (data layer) IS DONE AND CLOSES ✅ — all five steps (0–4).** Report:
   [phase-09-core-shared](reports/phase-09-core-shared.md).
   `reviewer` **PASS twice, zero violations** (once over steps 0–3, once over the step-4 diff, the second
@@ -1423,27 +1460,27 @@ New decisions raised by Phase 0:
       **Counts re-derived from the import graph** (PLAN.md's have been wrong twice):
 
       | Component (current home) | own feature | external features | total |
-                                                                                                                                                                                                                  | --- | --- | --- | --- |
-                                                                                                                                                                                                                  | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
-                                                                                                                                                                                                                  | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                  | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                  | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                  | `home/components/app-download` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                  | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
+                                                                                                                                                                                                                              | --- | --- | --- | --- |
+                                                                                                                                                                                                                              | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
+                                                                                                                                                                                                                              | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                              | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                              | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                              | `home/components/app-download` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                              | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
 
-                                                                                                                                                                                                                  All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
-                                                                                                                                                                                                                  precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
-                                                                                                                                                                                                                  **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
-                                                                                                                                                                                                                  because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
-                                                                                                                                                                                                                  (14 importers) is still open and unverified — treat its count with the same suspicion.
-                                                                                                                                                                                                                  - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
-                                                                                                                                                                                                                    partners (11 pages), offerings, home, library.
-                                                                                                                                                                                                                  - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
-                                                                                                                                                                                                                    temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
-                                                                                                                                                                                                                  - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
-                                                                                                                                                                                                                    `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
-                                                                                                                                                                                                                    structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
-                                                                                                                                                                                                                    so it needs an explicit override.
+                                                                                                                                                                                                                              All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
+                                                                                                                                                                                                                              precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
+                                                                                                                                                                                                                              **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
+                                                                                                                                                                                                                              because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
+                                                                                                                                                                                                                              (14 importers) is still open and unverified — treat its count with the same suspicion.
+                                                                                                                                                                                                                              - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
+                                                                                                                                                                                                                                partners (11 pages), offerings, home, library.
+                                                                                                                                                                                                                              - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
+                                                                                                                                                                                                                                temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
+                                                                                                                                                                                                                              - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
+                                                                                                                                                                                                                                `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
+                                                                                                                                                                                                                                structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
+                                                                                                                                                                                                                                so it needs an explicit override.
 
 - [ ] **`features/shared/services/tracks/` has no home in the target structure.** Raised 2026-09-23.
       It sits at the `features/` root, which §3 does not contain. Importers are
@@ -1716,6 +1753,10 @@ an ordinary run rather than only when explicitly asked — if it does, this recu
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-09-25 · NON-REFACTOR · enforcement-harness PHASE 1: commitlint + `.husky/commit-msg` + branch-name guard in `pre-commit` (uncommitted) · 16/16 message cases and 11/11 branch cases pass, husky wrapper verified end-to-end · MEASURED-AND-RELAXED two rules that would have blocked real work: `header-max-length` 72→100 (5 of the last 40 subjects run 73-77) and `footer-max-line-length` to a warning (it rejects `36bb915`, a well-formed commit, over a path table); scope left free-form (23 scopes in history, 4 in CLAUDE.md's list, and its list is stale: `blog` removed, `cpe-tracker` vs `tracker`) · history now 9/72 failing, all genuinely pre-convention · ⚠️ FOUND: `HEAD` (405ecb6) has the commitlint deps in `package.json` but NOT in `pnpm-lock.yaml`, so `--frozen-lockfile` would fail CI — fixed forward by this phase's lockfile · ⚠️ I broke `engines.node` to `>=22.12.0` and it got committed in 405ecb6; `vercel.sh` documents why it must be `22.x` (Vercel's 24.x image is 24.14.1, under Angular CLI 22's ^24.15.0 floor, so the build aborts) — reverted here · lint 0, tests 163 files / 554 passed
+- 2026-09-25 · NON-REFACTOR HOTFIX · Vercel deploy red: its default 24.x image is **24.14.1**, one patch under the Angular CLI 22 floor `^22.22.3 || ^24.15.0 || >=26.0.0`, and `bin/ng.js` aborts hard with no override · Vercel only exposes a major and owns the patch, so `24.x` is useless; pinned `engines.node: "22.x"` (latest 22 is 22.23.3) + `node -v` at the top of `vercel.sh` to prove the patch next deploy · CI (`node-version: 22`) was never affected · OPEN: something outside `vercel.json` runs `pnpm run lint` on Vercel · docs/config only, no `src/` change
+- 2026-09-25 · NON-REFACTOR · enforcement-harness PHASE 0: wrote `docs/engineering/{git-workflow,github-setup,versioning}.md` (1,119 lines, prettier clean, uncommitted) · fixes 2 dangling `CLAUDE.md` links · corrected `main`→`master`, the `@ms-sachin-singh` handle (docs wrong, CODEOWNERS right), duplicate §10, and the `APP_BUILD` define that does not exist · unshipped items marked `TODO`, incl. a rollout-status banner so nobody thinks commitlint blocks them yet · docs-only, no `src/` change
+- 2026-09-24 · NON-REFACTOR · enforcement-harness plan written to `prompts/engineering-enforcement-harness.md` (no `src/` change, no phase moved) · MEASURED all 5 gates GREEN incl. 163 files / 554 tests, so `AGENTS.md` §9's "already red" baseline is stale · live repo audit found the ruleset has NO `required_status_checks` (red CI merges today) and `squash_merge_commit_title=COMMIT_OR_PR_TITLE` (so PR-title linting guarantees nothing) · user locked: keep `master`, gitignore the 2 generated version files
 - 2026-09-24 · PHASE 9 · CLOSED ✅ on user decision with `ssr smoke` red (proven stale baseline, not a defect — deliberate departure from the Phase 7 ⛔ precedent, recorded as such) · all 5 steps, 16 files, 6 reads → `httpResource`, 163 files / 554 tests, reviewer PASS ×2 · baseline re-record still OPEN
 - 2026-09-24 · PHASE 9 · step 4 `FeatureFacade`: non-track read → `httpResource`, `requiresAuth` re-wired to the real boolean (15 live call sites go from no-request to fetching), track fan-out + `getAbout()` left on RxJS, 11 new HTTP tests replacing a 1-line smoke test · FOUND: Map-in-a-computation accumulation is broken by laziness (now accumulates via `previous`, Map deleted); `refreshTrigger` cannot force a resource refetch (`reload()` does); an errored resource must clear pagination or infinite scroll retries forever; my step-2 `vi.stubGlobal` was leaking across spec files · 163 files / 552 tests
 - 2026-09-24 · PHASE 9 · steps 0-3 CLOSE GREEN: verifier ALL 8 GATES GREEN (first ever, ssr smoke included), reviewer PASS, 163 files / 542 tests · bundle -13 KB gzip proven NOT mine via a clean HEAD worktree build (my delta -0.1 KB; styles.css hash identical) → re-record bundle.json · step 4 FeatureFacade deliberately not started, design preserved in the report

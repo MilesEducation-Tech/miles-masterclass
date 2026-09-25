@@ -1,1 +1,22 @@
 pnpm exec lint-staged
+
+# Branch naming is part of the workflow contract (docs/engineering/git-workflow.md §2).
+# Checked at commit time so a bad name surfaces before the first commit rather than
+# at PR time, when renaming means re-pushing.
+#
+# A detached HEAD (rebase, cherry-pick, bisect) has no branch to check, so skip it —
+# otherwise an interactive rebase would fail on every replayed commit.
+branch=$(git symbolic-ref --quiet --short HEAD) || exit 0
+
+case "$branch" in
+  # master is listed on purpose: the manual release procedure in git-workflow.md §7
+  # commits `chore(release): vX.Y.Z` directly on master.
+  master | uat) exit 0 ;;
+  feat/* | fix/* | chore/* | refactor/* | docs/* | test/* | style/* | perf/* | build/* | ci/* | hotfix/*) exit 0 ;;
+esac
+
+echo "✖ Branch '$branch' is not named <type>/<description>." >&2
+echo "  types: feat fix chore refactor docs test style perf build ci hotfix" >&2
+echo "  e.g.   feat/MIL-231-seat-allocation" >&2
+echo "  see    docs/engineering/git-workflow.md §2" >&2
+exit 1
