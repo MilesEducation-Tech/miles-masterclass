@@ -7,14 +7,16 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- ⏸ **PHASE 10 row `shared/dialogs` — CODE DONE, AWAITING YOUR DECISION (2026-09-25).** Report:
-  [phase-10-shared-dialogs](reports/phase-10-shared-dialogs.md). `reviewer` **PASS** (round 2). **UNCOMMITTED** —
-  commit message in §5. AI-lab about-panel disclosures → `ngpCollapsible`, wrong-only → `ngpSwitch`, workflow
-  radios → `ngpRadioGroup` (select-on-focus change documented + specced). 7/8 gates green; **`unit tests` red 3× on
-  the pre-existing `features/partners` live-API flake, REPRODUCED AT HEAD without this diff under `CI=1`** (the env
-  `verify.mjs` and GitHub Actions both set). See the decision below.
-  **Next:** decide (a) or (b) under "Decisions"; for (a) run the "Stop partners specs hitting the live API" task,
-  commit, then rerun `/refactor-phase 10 shared/dialogs` to re-verify and close.
+- 🏁 **PHASE 10 row `shared/dialogs` IS DONE ✅ (2026-09-25).** Report:
+  [phase-10-shared-dialogs](reports/phase-10-shared-dialogs.md). The refactor itself is committed (`4119a8d`).
+  Closed ✅ once your decision (a) landed: full gates **8/8 GREEN** (168 files / 594 passed + 1 skipped).
+  **UNCOMMITTED — one commit left: `test(core): stop unit tests reaching the live API`** — `src/test-setup.ts` +
+  `src/test-setup.spec.ts` (+ STATE.md and the updated report). Root cause: no HTTP providers → Angular's root
+  `HttpClient` uses `FetchBackend` → real `fetch` → live API from jsdom. The setup now rejects any real `fetch`
+  with a message naming the fix; **5/5 `CI=1` runs clean** (HEAD: 1/2 red). ⚠️ `partnership-content.ts:245`
+  still has the product-side null-body bug — logged, not fixed.
+  **Next:** commit, then another Phase 10 cell — `features/offerings`, `admin/*`, or `core/services`
+  (Dialog, the big one).
 
 - 🏁 **PHASE 10 row `shared/components` IS DONE ✅ (2026-09-25).** Report:
   [phase-10-shared-components](reports/phase-10-shared-components.md). Full gates **8/8 GREEN** (165 files /
@@ -1127,7 +1129,7 @@ list only, PROMPT.md §7): `layout/blog-layout/` + its spec, blog entries in `ap
 | `core/services`                | ✅         | ✅     | ⬜ ¹  | ⬜             | —           |
 | `shared/services`              | ✅         | ✅     | —     | ⬜             | —           |
 | `shared/components`            | ✅         | ✅     | ✅ ²  | ⬜             | ⬜          |
-| `shared/dialogs`               | ✅         | ✅     | ⏸ ³   | ⬜             | ⬜          |
+| `shared/dialogs`               | ✅         | ✅     | ✅ ³  | ⬜             | ⬜          |
 | `features/library`             | ✅         | ⬜     | —     | ⬜             | ⬜          |
 | `features/tracker` (caira+cpe) | ✅         | ⬜     | —     | ⬜             | ⬜          |
 | `features/auth`                | ✅         | ⬜     | —     | ⬜             | ⬜          |
@@ -1161,7 +1163,7 @@ Phase 12's first session moves design tokens into `@theme`.
 
 Raised by Phase 10 `shared/dialogs` 2026-09-25 — needed before this row can close:
 
-- [ ] **Phase 10 / `shared/dialogs`: the unit-test gate is red on a pre-existing flake.** The
+- [x] **Phase 10 / `shared/dialogs`: the unit-test gate is red on a pre-existing flake. → USER CHOSE (a) 2026-09-25: fix the partners specs first, as a separate commit, then re-verify this row.** The
       `features/partners` page specs call the live API (`partnership-content.ts:245`, no HTTP testing
       backend); under `CI=1` it reproduced **at HEAD without this diff** (6 unhandled), while this diff ran
       clean 2/2 under `CI=1` and 3/3 plain. **(a) ⭐ Recommended: fix the partners specs first** (task
@@ -1550,27 +1552,27 @@ New decisions raised by Phase 0:
       **Counts re-derived from the import graph** (PLAN.md's have been wrong twice):
 
       | Component (current home) | own feature | external features | total |
-                                                                                                                                                                                                                                                                              | --- | --- | --- | --- |
-                                                                                                                                                                                                                                                                              | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
-                                                                                                                                                                                                                                                                              | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                                                                              | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                                                                              | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                                                                              | `home/components/app-download` | 1 | uae-caira | 2 |
-                                                                                                                                                                                                                                                                              | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
+                                                                                                                                                                                                                                                                                              | --- | --- | --- | --- |
+                                                                                                                                                                                                                                                                                              | `partners/shared/components/partner-content-list` | 11 | offerings (3), home, library, uae-caira | **5** |
+                                                                                                                                                                                                                                                                                              | `partners/shared/components/caira-steps-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                                                                                              | `partners/shared/components/caira-feature-grid` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                                                                                              | `partners/shared/models/caira-step-icons` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                                                                                              | `home/components/app-download` | 1 | uae-caira | 2 |
+                                                                                                                                                                                                                                                                                              | `offerings/webinar/shared/components/webinar-registration-form` | 2 | uae-caira | 2 |
 
-                                                                                                                                                                                                                                                                              All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
-                                                                                                                                                                                                                                                                              precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
-                                                                                                                                                                                                                                                                              **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
-                                                                                                                                                                                                                                                                              because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
-                                                                                                                                                                                                                                                                              (14 importers) is still open and unverified — treat its count with the same suspicion.
-                                                                                                                                                                                                                                                                              - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
-                                                                                                                                                                                                                                                                                partners (11 pages), offerings, home, library.
-                                                                                                                                                                                                                                                                              - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
-                                                                                                                                                                                                                                                                                temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
-                                                                                                                                                                                                                                                                              - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
-                                                                                                                                                                                                                                                                                `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
-                                                                                                                                                                                                                                                                                structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
-                                                                                                                                                                                                                                                                                so it needs an explicit override.
+                                                                                                                                                                                                                                                                                              All six meet §3's "2+ top-level features → promote to `shared/`" bar, and Phase 4 set the
+                                                                                                                                                                                                                                                                                              precedent by keeping `app-download-dialog` in `shared/` on exactly a 2-feature count.
+                                                                                                                                                                                                                                                                                              **`partner-content-list` is the strong case at 5 features; the other five are 2-feature only
+                                                                                                                                                                                                                                                                                              because `uae-caira` exists.** Note Phase 0's separate `home/components/offerings/*` item
+                                                                                                                                                                                                                                                                                              (14 importers) is still open and unverified — treat its count with the same suspicion.
+                                                                                                                                                                                                                                                                                              - **(a) Promote all six.** Follows §3 and PLAN.md literally; clears every edge. ~20 files across
+                                                                                                                                                                                                                                                                                                partners (11 pages), offerings, home, library.
+                                                                                                                                                                                                                                                                                              - **(b) Promote only `partner-content-list`**, leave the other five for Phase 7's
+                                                                                                                                                                                                                                                                                                temporary-warning list. Smallest diff that fixes the real magnet. **Recommended.**
+                                                                                                                                                                                                                                                                                              - **(c) Make `uae-caira` a sub-feature of `partners`.** Four of the six edges point into
+                                                                                                                                                                                                                                                                                                `partners/shared/`, and `partners` already owns `caira-landing`, so this dissolves them
+                                                                                                                                                                                                                                                                                                structurally. Contradicts PLAN.md's explicit `pages/uae-caira/ → features/uae-caira/` mapping,
+                                                                                                                                                                                                                                                                                                so it needs an explicit override.
 
 - [ ] **`features/shared/services/tracks/` has no home in the target structure.** Raised 2026-09-23.
       It sits at the `features/` root, which §3 does not contain. Importers are
@@ -1844,6 +1846,9 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-09-25 · Phase 10 `shared/dialogs` · CLOSE ✅ — verify.mjs 8/8 green after the flake fix; report updated · ✅
+- 2026-09-25 · NON-REFACTOR (own commit) · test-setup rejects real `fetch` (root cause: default FetchBackend hit the live API from specs lacking provideHttpClientTesting); +2 guard tests; 5/5 CI=1 runs clean · ✅
+- 2026-09-25 · NON-REFACTOR (test fix, own commit) · user chose (a): fixing the specs that reach the live API, before closing Phase 10 `shared/dialogs` · 🟡
 - 2026-09-25 · Phase 10 `shared/dialogs` · CLOSE ⏸ — reviewer PASS (round 2), report written; unit-test gate red on the partners flake reproduced at HEAD under CI=1; decision (a)/(b) requested · ⏸
 - 2026-09-25 · Phase 10 `shared/dialogs` · Close attempt — verify.mjs red 3× on the partners live-API flake, reproduced at HEAD under CI=1; reviewer FAIL → select-on-focus flagged (comment + spec), re-review pending · ⏸
 - 2026-09-25 · Phase 10 `shared/dialogs` · Step 2 workflow radios → ngpRadioGroup (vertical); new spec (2) · ✅ quick green

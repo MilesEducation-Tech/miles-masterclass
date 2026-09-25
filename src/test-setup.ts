@@ -67,6 +67,29 @@ if (typeof Blob !== 'undefined' && typeof Blob.prototype.text !== 'function') {
 }
 
 /**
+ * Unit tests never touch the network.
+ *
+ * With no HTTP providers, Angular's root `HttpClient` falls back to `FetchBackend`, which
+ * calls the real global `fetch` — so a spec that forgot `provideHttpClientTesting()` was
+ * calling the live API. Its reply landed at a random time: a slow one timed the spec's
+ * `whenStable()` out, an empty one threw inside whichever spec was running by then. That
+ * flaked the suite under `CI=1` only (different scheduling), i.e. in CI and `verify.mjs`.
+ *
+ * Rejecting here turns that into a deterministic, local failure that names the fix. Specs
+ * that exercise `fetch` on purpose (`blob-download`, `update-checker`) stub it themselves,
+ * which replaces this for their run.
+ */
+globalThis.fetch = (input: RequestInfo | URL) => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  return Promise.reject(
+    new Error(
+      `Unit test attempted a real network request to ${url}. ` +
+        'Add provideHttpClient() + provideHttpClientTesting() to the spec, or stub fetch.',
+    ),
+  );
+};
+
+/**
  * `NotificationService` is a core singleton that resolves the toast component
  * through the `TOAST_COMPONENT` token, because core must not import shared
  * (PROMPT.md §3). `app.config.ts` binds it for the running app; specs get no

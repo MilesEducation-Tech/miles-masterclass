@@ -1,7 +1,7 @@
 # Phase 10 — Headless UI · `shared/dialogs`
 
-Date: 2026-09-25 · Branch: `refactor/structure-10` · **Status: ⏸.** The code is done and reviewed. The unit-test
-gate is red on a **pre-existing** flake that was reproduced at HEAD, and your decision is needed (§3).
+Date: 2026-09-25 · Branch: `refactor/structure-10` · **Status: ✅.** First closed ⏸ on a pre-existing
+test flake; you chose option (a), the flake was fixed at its root in a separate commit, and the full gates are now green (§2).
 
 ## 1. Summary
 
@@ -35,7 +35,7 @@ the specs are the only verification. They switch the flag on for their own run a
 | Gate            | Result                                                                                                                                                                                                                                                                                                                                      |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | lint            | ✅                                                                                                                                                                                                                                                                                                                                          |
-| unit tests      | ❌ **in all 3 `verify.mjs` runs, from the pre-existing `features/partners` flake, not from this diff (proof below)**. Clean runs with this diff: 167 files · 591 passed + 1 skipped, before the 3rd dialog test was added; that test passes on its own.                                                                                     |
+| unit tests      | ✅ after the flake fix: **168 files · 594 passed** + 1 skipped. Before it, all 3 `verify.mjs` runs were ❌ on the pre-existing partners flake (below).                                                                                                                                                                                      |
 | build (local)   | ✅                                                                                                                                                                                                                                                                                                                                          |
 | build (prod)    | ✅                                                                                                                                                                                                                                                                                                                                          |
 | storybook build | ✅                                                                                                                                                                                                                                                                                                                                          |
@@ -64,17 +64,27 @@ tested. That was fixed with a comment and a spec.
 
 I **stopped retrying at 3 red runs**, as the phase rules require, rather than rerunning until one came up green.
 
+### Resolution: option (a), fixed at the root (separate commit)
+
+- **Root cause:** with no HTTP providers, Angular 22's root `HttpClient` falls back to **`FetchBackend`**, which calls
+  the real global `fetch`. So any spec without `provideHttpClientTesting()` hit the live API. A slow reply left
+  `whenStable()` waiting until the hook timed out. An empty `200` resolved to a `null` body inside a later spec.
+- **The fix is in `src/test-setup.ts`, not in ~20 partners specs:** the global `fetch` rejects immediately, with a
+  message naming the fix. Every such request now fails fast and deterministically. `partnership-content`'s own
+  `catchError(() => ({ data: [] }))` absorbs the failure, and nothing stays pending. Specs that exercise `fetch` on
+  purpose (`blob-download`, `update-checker`) stub it themselves, which overrides the guard. This tightens the gate; it
+  does not loosen it.
+- **Pinned by `src/test-setup.spec.ts` (2 tests):** a raw `fetch` rejects with the message, and an `HttpClient` request
+  fails fast with `status: 0` and never reaches the network.
+- **Proof it works:** **5 of 5 full runs under `CI=1` are clean**, with 0 unhandled errors and 0 timeouts. The same setting failed 1 of 2 at HEAD. The full `verify.mjs` run is then 8/8 green.
+- **Why not simply add `provideHttpClientTesting()` spec by spec:** that fixes only the specs someone remembers. The
+  guard covers every current and future spec at the one shared entry point.
+
 ## 3. Decisions needed / skipped / suspicious
 
-- **⏸ DECISION: how to close this row.**
-  - **(a) Fix the flake first (recommended).** Run the already-raised task "Stop partners specs hitting the live API",
-    which gives those specs `provideHttpClientTesting()`, commit it, and rerun `verify.mjs`. That should turn this row
-    green on its own. It also protects CI, and every future Phase 10/11/12 row, which will keep hitting this.
-  - **(b) Close ✅ on the evidence above**, the way Phase 9 closed on its stale SSR baseline. This red is explained and
-    was reproduced at HEAD, which is the distinction the Phase 9 decision drew. But the gate stays red for everyone until
-    (a) lands anyway.
+- **Decision taken:** option (a), recorded in STATE.md. There are no open decisions for this row.
 - **Suspicious:** `partnership-content.ts:243-245` dereferences `res.data` with no null guard. That is a real product bug
-  the flake exposes; it is logged in the partners task.
+  the flake exposed. The guard stops it firing in tests, but **the product bug remains**: a `200` with an empty body would crash that component in production. It is logged here for a fix branch.
 - **STATE.md formatting drift:** each commit's formatter pushes an old nested table in the Phase 0 decisions
   (~line 1530) further right. It is whitespace only, but it grows every run. That section is yours; worth reflowing once.
 - No `@Injectable` was touched, no CSS file was kept or added, and no heavy-library service is involved.
