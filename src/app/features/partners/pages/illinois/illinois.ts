@@ -1,8 +1,6 @@
 import { Component, inject } from '@angular/core';
-import {
-  CalendlyDialog,
-  CalendlyDialogData,
-} from '@shared/dialogs/calendly-dialog/calendly-dialog';
+// Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import {
   PartnerContentItem,
   PartnerContentList,
@@ -341,7 +339,8 @@ export class Illinois {
     this.scrollService.scrollToId(id, { offset: 96 });
   }
 
-  openScheduler(): void {
+  async openScheduler(): Promise<void> {
+    const { CalendlyDialog } = await import('@shared/dialogs/calendly-dialog/calendly-dialog');
     this.dialogs.open(CalendlyDialog, {
       data: {
         ariaLabel: 'Schedule a demo',
