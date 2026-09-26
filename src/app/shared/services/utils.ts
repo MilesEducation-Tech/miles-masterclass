@@ -16,8 +16,11 @@ import { filter, tap } from 'rxjs/operators';
 import { DynamicRouteParams, ProfessionType, CountryCode } from '@core/models/route-params.model';
 import { PROFESSIONS } from '@core/constants/profession';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Dialog } from '@core/services/dialog/dialog';
-import { UtilsDialog, DialogButton } from '@shared/dialogs/utils-dialog/utils-dialog';
+import {
+  UtilsDialog,
+  UtilsDialogData,
+  UtilsDialogResult,
+} from '@shared/dialogs/utils-dialog/utils-dialog';
 import { ShareDialog, ShareDialogData } from '@shared/dialogs/share-dialog/share-dialog';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Analytics } from '@core/services/analytics/analytics';
@@ -54,7 +57,6 @@ import {
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Logger } from '@core/services/logger/logger';
 import { canAccessCpeMode, CpeModeGateContent } from '@shared/utils/cpe-mode-access';
-import { UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
 
 type StartFinalAssessmentParams = RouteParams<typeof MASTERCLASS_ROUTES.startFinalAssessment>;
 
@@ -115,7 +117,6 @@ export type CourseInfoInput = Content | ContentDetails;
 @Service()
 export class Utils {
   private readonly router = inject(Router);
-  private readonly dialog = inject(Dialog);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly http = inject(ApiClient);
   private readonly storage = inject(Storage);
@@ -330,13 +331,7 @@ export class Utils {
     const titleSlug = this.slugify(courseTitle);
 
     const examRulesArray: string[] = examRules ? examRules.split(/\r?\n/) : [];
-    const dialogRef = this.dialog.open<
-      UtilsDialog,
-      { action?: DialogButton['action']; result: boolean }
-    >(UtilsDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
+    const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title: 'Final Assessment',
         containerClass: 'flex flex-col space-y-4 text-left',
@@ -345,10 +340,11 @@ export class Utils {
           { type: 'list', items: examRulesArray, ordered: true },
         ],
         buttons: [{ label: 'Start Exam', variant: 'default', action: 'confirm' }],
+        maxWidth: '100%',
       },
     });
 
-    dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!(result?.result && result?.action === 'confirm')) return;
 
       const cached: QuizQuestion[] =
@@ -574,14 +570,11 @@ export class Utils {
       buttons: config.buttons,
     };
 
-    const ref = this.dialog.open<UtilsDialog, { action?: string; result: boolean }>(UtilsDialog, {
-      data,
-      width: 'auto',
-      maxWidth: '32rem',
-      disableClose: false,
+    const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: { ...data, maxWidth: '32rem' },
     });
 
-    ref.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!result?.result) return;
       if (result.action === 'confirm') config.onConfirm();
       else if (result.action === 'cancel') config.onCancel?.();
@@ -768,15 +761,13 @@ export class Utils {
             .filter((link) => !!link.href);
 
           if (links.length) {
-            this.dialog.open(UtilsDialog, {
-              maxWidth: '100%',
-              enterAnimationDuration: '300ms',
-              exitAnimationDuration: '300ms',
+            this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
               data: {
                 title: 'Additional Resources',
                 containerClass: 'max-w-lg text-left!',
                 content: [{ type: 'links', items: links }],
                 buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
+                maxWidth: '100%',
               },
             });
           } else {

@@ -13,8 +13,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { merge } from 'rxjs';
-import { Dialog } from '@core/services/dialog/dialog';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   matPlayArrowRound,
@@ -72,7 +70,6 @@ export class VideoPoster {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
-  private readonly dialog = inject(Dialog);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly hostElement = inject(ElementRef);
@@ -149,13 +146,10 @@ export class VideoPoster {
       this.schedulePlayback();
     });
 
-    // Pause video when any dialog is opened. Both managers while dialogs migrate to
-    // ng-primitives (Phase 10); the hand-rolled one goes with its last dialog.
-    merge(this.dialog.afterOpened$, this.dialogs.afterOpened)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.pauseIfPlaying();
-      });
+    // Pause video when any dialog is opened.
+    this.dialogs.afterOpened.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.pauseIfPlaying();
+    });
 
     // Cleanup on destroy
     this.destroyRef.onDestroy(() => {

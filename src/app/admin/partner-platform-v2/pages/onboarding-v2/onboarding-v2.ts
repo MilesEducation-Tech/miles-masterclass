@@ -17,9 +17,12 @@ import {
   ApplyPartnerCodeDialogData,
   ApplyPartnerCodeDialogResult,
 } from '@shared/dialogs/apply-partner-code-dialog/apply-partner-code-dialog';
-import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
+import {
+  UtilsDialog,
+  UtilsDialogData,
+  UtilsDialogResult,
+} from '@shared/dialogs/utils-dialog/utils-dialog';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Dialog } from '@core/services/dialog/dialog';
 import {
   RecordPaymentDialog,
   RecordPaymentDialogData,
@@ -47,7 +50,6 @@ import { UserOnboardingFacade } from '@admin/user-onboarding/services/user-onboa
 })
 export class OnboardingV2 {
   protected readonly facade = inject(UserOnboardingFacade);
-  private readonly dialog = inject(Dialog);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -81,7 +83,7 @@ export class OnboardingV2 {
     const yesNo = (v: boolean | null | undefined) => (v == null ? '—' : v ? 'Yes' : 'No');
     const date = (v: string | null) => (v ? formatDate(v, 'MMM d, y, h:mm a', 'en-US') : '—');
     const text = (v: string | null | undefined) => (v && v.trim() ? v : '—');
-    this.dialog.open<UtilsDialog>(UtilsDialog, {
+    this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title: `${user.first_name} ${user.last_name}`.trim() || user.email,
         containerClass: 'max-w-lg text-left!',
@@ -116,9 +118,9 @@ export class OnboardingV2 {
           },
         ],
         buttons: [{ label: 'Close', action: 'close' }],
+        maxWidth: '560px',
+        ariaLabel: `Details for ${user.email}`,
       } satisfies UtilsDialogData,
-      maxWidth: '560px',
-      ariaLabel: `Details for ${user.email}`,
     });
   }
 
@@ -149,7 +151,7 @@ export class OnboardingV2 {
 
   /** The receipt link and ids the toast can't hold — read-only, so UtilsDialog. */
   private showPaymentResult(user: InternalUser, paid: OfflinePaymentResult): void {
-    this.dialog.open<UtilsDialog>(UtilsDialog, {
+    this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title: `Payment recorded — ${user.email}`,
         containerClass: 'max-w-lg text-left!',
@@ -176,9 +178,9 @@ export class OnboardingV2 {
             : []),
         ],
         buttons: [{ label: 'Close', action: 'close' }],
+        maxWidth: '560px',
+        ariaLabel: 'Payment recorded',
       } satisfies UtilsDialogData,
-      maxWidth: '560px',
-      ariaLabel: 'Payment recorded',
     });
   }
 

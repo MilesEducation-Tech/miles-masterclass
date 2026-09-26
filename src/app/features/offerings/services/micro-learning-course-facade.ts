@@ -17,7 +17,6 @@ import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Dialog } from '@core/services/dialog/dialog';
 import { Utils } from '@shared/services/utils';
 import { Analytics } from '@core/services/analytics/analytics';
 import {
@@ -33,7 +32,11 @@ import {
   MASTERCLASS_ROUTES,
 } from '@core/models/masterclass.model';
 import { ContentDetails } from '@core/models/course.model';
-import { UtilsDialog } from '@shared/dialogs/utils-dialog/utils-dialog';
+import {
+  UtilsDialog,
+  UtilsDialogData,
+  UtilsDialogResult,
+} from '@shared/dialogs/utils-dialog/utils-dialog';
 import {
   MicroLearningQuizDialog,
   MicroLearningQuizDialogData,
@@ -129,7 +132,6 @@ export class MicroLearningCourseFacade {
   private readonly http = inject(ApiClient);
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
-  private readonly dialog = inject(Dialog);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
@@ -151,7 +153,7 @@ export class MicroLearningCourseFacade {
     (this.router.getCurrentNavigation()?.extras?.state?.[NANO_LEARNING_HANDOFF_KEY] as
       NanoLearningPage | undefined) ?? null;
   /**
-   * Route-scoped injector passed to `Dialog.open` so the opened dialog can
+   * Route-scoped injector passed to `NgpDialogManager.open` so the opened dialog can
    * resolve route-level providers (e.g., `ChapterFacade`, which `ChapterQuiz`
    * injects).
    */
@@ -831,18 +833,15 @@ export class MicroLearningCourseFacade {
       ? 'Heads up! Switching means starting fresh - your current progress will reset. Step into CPE Mode to earn your certificate and level up your learning journey.'
       : 'Heads up! Switching to Preview Mode means you can explore freely without CPE tracking. Your CPE progress will be paused.';
 
-    const dialogRef = this.dialog.open<UtilsDialog>(UtilsDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      disableClose: false,
+    const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title,
         content: [{ type: 'text', value: description }],
         buttons: [{ label: 'Switch', variant: 'default', action: 'confirm' }],
+        maxWidth: '100%',
       },
     });
-    dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (result) this.selectCpeMode(cpeModeStatus);
     });
   }

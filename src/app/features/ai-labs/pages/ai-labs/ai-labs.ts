@@ -59,13 +59,16 @@ import {
   AiLabAgentDialogResult,
 } from '@shared/dialogs/ai-lab-agent-dialog/ai-lab-agent-dialog';
 import { AiLabTermsDialog } from '@shared/dialogs/ai-lab-terms-dialog/ai-lab-terms-dialog';
-import { UtilsDialog } from '@shared/dialogs/utils-dialog/utils-dialog';
+import {
+  UtilsDialog,
+  UtilsDialogData,
+  UtilsDialogResult,
+} from '@shared/dialogs/utils-dialog/utils-dialog';
 import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
 import { CommonResponse, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Dialog } from '@core/services/dialog/dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import { Storage } from '@core/services/storage/storage';
 import { Utils } from '@shared/services/utils';
@@ -215,7 +218,6 @@ export class AiLabs {
   protected readonly milesAuth = {
     isLoadingProfile: signal(false),
   };
-  private readonly dialog = inject(Dialog);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
@@ -672,12 +674,8 @@ export class AiLabs {
     onConfirm: () => void,
     cancelLabel?: string,
   ): void {
-    this.dialog
-      .open<UtilsDialog, { action?: string; result: boolean }>(UtilsDialog, {
-        maxWidth: '100%',
-        enterAnimationDuration: '300ms',
-        exitAnimationDuration: '300ms',
-        disableClose: false,
+    this.dialogs
+      .open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
         data: {
           title,
           containerClass: '',
@@ -688,9 +686,10 @@ export class AiLabs {
               : []),
             { label: cta, variant: 'default', action: 'confirm' },
           ],
+          maxWidth: '100%',
         },
       })
-      .afterClosed$.pipe(takeUntilDestroyed(this.destroyRef))
+      .afterClosed.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((res) => {
         if (res?.action === 'confirm') onConfirm();
       });

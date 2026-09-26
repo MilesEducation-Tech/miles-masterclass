@@ -1,12 +1,6 @@
 import { Provider } from '@angular/core';
 import { NgpDialogRef } from 'ng-primitives/dialog';
 
-export class MockDialogRef {
-  close(_result?: any) {
-    // no-op test double
-  }
-}
-
 /**
  * Provides the `NgpDialogRef` that `injectDialogRef()` resolves inside a dialog built on
  * ng-primitives, for stories. No vitest here (stories bundle this file); specs that need

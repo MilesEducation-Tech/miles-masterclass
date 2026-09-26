@@ -16,9 +16,13 @@ import {
   heroTrash,
   heroXMark,
 } from '@ng-icons/heroicons/outline';
-import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
+import {
+  UtilsDialog,
+  UtilsDialogData,
+  UtilsDialogResult,
+} from '@shared/dialogs/utils-dialog/utils-dialog';
 import { computeSeoScore, createDefaultSeoPage, SeoPage } from '@core/models/seo.models';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { SupabaseSeo } from '@core/services/seo/supabase-seo';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
@@ -54,7 +58,7 @@ export class SeoDashboard implements OnInit {
   private readonly supabaseSeo = inject(SupabaseSeo);
   private readonly router = inject(Router);
   private readonly logger = inject(Logger);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly pages = signal<SeoPage[]>([]);
@@ -207,12 +211,11 @@ export class SeoDashboard implements OnInit {
         { label: 'Delete', variant: 'destructive', action: 'confirm' },
       ],
     };
-    const ref = this.dialog.open<UtilsDialog, { action?: string; result: boolean }>(UtilsDialog, {
-      data,
-      maxWidth: '32rem',
+    const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: { ...data, maxWidth: '32rem' },
     });
     return new Promise<boolean>((resolve) => {
-      ref.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((res) => {
+      ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((res) => {
         resolve(res?.action === 'confirm' && res?.result === true);
       });
     });

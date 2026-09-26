@@ -1,7 +1,6 @@
 import { computed, inject, Service, signal } from '@angular/core';
 import { Logger } from '@core/services/logger/logger';
 import { ApiClient } from '@core/services/api-client/api-client';
-import { Dialog } from '@core/services/dialog/dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import { Analytics } from '@core/services/analytics/analytics';
 import { RouteParams, RouteResponse, RouteRequest } from '@core/models/http.model';
@@ -35,7 +34,6 @@ export class ChapterFacade {
   private readonly notification = inject(NotificationService);
   private readonly http = inject(ApiClient);
   private readonly router = inject(Router);
-  private readonly dialog = inject(Dialog);
   private readonly analytics = inject(Analytics);
 
   // State signals with proper types

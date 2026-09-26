@@ -1,11 +1,11 @@
 import { Service, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Dialog } from '@core/services/dialog/dialog';
 import {
   UtilsDialog,
   UtilsDialogData,
   DialogButton,
+  UtilsDialogResult,
 } from '@shared/dialogs/utils-dialog/utils-dialog';
 import {
   ComplianceDialogData,
@@ -24,13 +24,12 @@ export interface DialogResult<T = unknown> {
 }
 
 /**
- * Thin wrapper over `Dialog` that encapsulates every dialog the tracker opens.
+ * Thin wrapper over `NgpDialogManager` that encapsulates every dialog the tracker opens.
  * Keeps all dialog copy + config in one place. Callers only know the
  * intent ("open the certificate dialog"), not the shared dialog behind it.
  */
 @Service()
 export class TrackerDialogOrchestrator {
-  private readonly dialog = inject(Dialog);
   private readonly dialogs = inject(NgpDialogManager);
 
   /**
@@ -63,8 +62,9 @@ export class TrackerDialogOrchestrator {
         { label: 'Upgrade', variant: 'default', action: 'confirm' },
       ],
     };
-    return this.dialog.open<UtilsDialog, DialogResult>(UtilsDialog, { maxWidth: '100%', data })
-      .afterClosed$;
+    return this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: { ...data, maxWidth: '100%' },
+    }).afterClosed;
   }
 
   openCompliance(data: ComplianceDialogData): Observable<unknown> {

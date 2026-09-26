@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiClient } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { ServerClock } from './server-clock';
@@ -33,7 +33,7 @@ describe('WebinarFacade.register — sign-in gate', () => {
     isAuthenticated.set(false);
     registerSpy = vi.fn().mockResolvedValue({ result: 'registered' });
     afterClosed = new Subject();
-    dialogOpen = vi.fn().mockReturnValue({ afterClosed$: afterClosed.asObservable() });
+    dialogOpen = vi.fn().mockReturnValue({ afterClosed: afterClosed.asObservable() });
     navigate = vi.fn();
 
     TestBed.configureTestingModule({
@@ -49,7 +49,7 @@ describe('WebinarFacade.register — sign-in gate', () => {
             isRegistering: () => false,
           },
         },
-        { provide: Dialog, useValue: { open: dialogOpen } },
+        { provide: NgpDialogManager, useValue: { open: dialogOpen } },
         { provide: Router, useValue: { navigate, url: '/us/cpa/webinar/w1' } },
         {
           provide: ActivatedRoute,

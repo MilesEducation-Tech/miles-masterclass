@@ -19,12 +19,15 @@ import {
   SelectCpeModeData,
   SelectCpeModeResult,
 } from '@features/offerings/dialogs/select-cpe-mode/select-cpe-mode';
-import { UtilsDialog } from '@shared/dialogs/utils-dialog/utils-dialog';
+import {
+  UtilsDialog,
+  UtilsDialogData,
+  UtilsDialogResult,
+} from '@shared/dialogs/utils-dialog/utils-dialog';
 import { ContentDetails, CourseChapter, normalizeBookmarkField } from '@core/models/course.model';
 import { CourseContentResponse, MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Dialog } from '@core/services/dialog/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
@@ -51,7 +54,6 @@ export class MasterclassFacade {
   private readonly http = inject(ApiClient);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly dialog = inject(Dialog);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
   // Only the cart-removal signal is needed here, and it lives in core so this
@@ -424,18 +426,15 @@ export class MasterclassFacade {
       ? 'Heads up! Switching means starting fresh - your current progress will reset. Step into CPE Mode to earn your certificate and level up your learning journey.'
       : 'Heads up! Switching to Preview Mode means you can explore freely without CPE tracking. Your CPE progress will be paused.';
 
-    const dialogRef = this.dialog.open<UtilsDialog>(UtilsDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      disableClose: false,
+    const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title,
         content: [{ type: 'text', value: description }],
         buttons: [{ label: 'Switch', variant: 'default', action: 'confirm' }],
+        maxWidth: '100%',
       },
     });
-    dialogRef.afterClosed$.subscribe((result) => {
+    dialogRef.afterClosed.subscribe((result) => {
       if (result) {
         this.selectCpeMode(cpeModeStatus, false);
       }

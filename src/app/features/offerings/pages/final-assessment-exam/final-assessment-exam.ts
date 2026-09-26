@@ -5,8 +5,11 @@ import { Button } from '@shared/ui/button/button';
 import { FinalAssessmentFacade } from '../../services/final-assessment-facade';
 import { ContentDetails, QuizQuestion } from '@core/models/course.model';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Dialog } from '@core/services/dialog/dialog';
-import { UtilsDialog, DialogButton } from '@shared/dialogs/utils-dialog/utils-dialog';
+import {
+  UtilsDialog,
+  UtilsDialogData,
+  UtilsDialogResult,
+} from '@shared/dialogs/utils-dialog/utils-dialog';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { CanDeactivateComponent } from '@core/guards/can-deactivate-exam-guard';
@@ -42,7 +45,6 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
   sessionId = input<string>();
 
   private readonly facade = inject(FinalAssessmentFacade);
-  private readonly dialog = inject(Dialog);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
   private readonly logger = inject(Logger);
@@ -121,10 +123,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
       return true;
     }
 
-    const dialogRef = this.dialog.open<
-      UtilsDialog,
-      { action?: DialogButton['action']; result: boolean }
-    >(UtilsDialog, {
+    const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title: 'Exit Assessment?',
         content: [
@@ -141,7 +140,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
       },
     });
 
-    return dialogRef.afterClosed$.pipe(
+    return dialogRef.afterClosed.pipe(
       map((result) => {
         if (result?.action === 'confirm') {
           this.facade.clearAssessmentData();
@@ -217,10 +216,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
 
     if (unanswered.length > 0) {
       // Show dialog if options are missing
-      const dialogRef = this.dialog.open<
-        UtilsDialog,
-        { action?: DialogButton['action']; result: boolean; data?: any }
-      >(UtilsDialog, {
+      const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
         data: {
           title: 'Assessment Incomplete',
           content: [
@@ -237,7 +233,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
         },
       });
 
-      dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+      dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
         if (result && result.data !== undefined) {
           this.currentQuestionIndex.set(result.data);
         }

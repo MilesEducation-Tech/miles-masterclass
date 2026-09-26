@@ -1,7 +1,8 @@
 import { Component, computed } from '@angular/core';
+import { injectDialogRef } from 'ng-primitives/dialog';
 
 import { Button } from '@shared/ui/button/button';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { UpcomingPremiere } from '@core/models/feature.model';
 import {
   WebinarRegistrationForm,
@@ -31,13 +32,16 @@ export interface WebinarRegistrationDialogData {
  */
 @Component({
   selector: 'app-webinar-registration-dialog',
-  imports: [Button, WebinarRegistrationForm],
+  imports: [Button, WebinarRegistrationForm, DialogShell],
   templateUrl: './webinar-registration-dialog.html',
   styleUrl: './webinar-registration-dialog.css',
 })
 export class WebinarRegistrationDialog {
-  dialogRef!: DialogRef<WebinarRegistrationDialog, 'registered' | 'closed'>;
-  data!: WebinarRegistrationDialogData;
+  private readonly dialogRef = injectDialogRef<
+    WebinarRegistrationDialogData,
+    'registered' | 'closed'
+  >();
+  private readonly data = this.dialogRef.data;
 
   protected readonly webinar = computed(() => this.data.webinar);
   // ponytail: was `nextSessionOf()` from the removed webinar status utils.

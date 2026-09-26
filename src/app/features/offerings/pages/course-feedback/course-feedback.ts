@@ -8,9 +8,13 @@ import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { FeedbackCategory } from '@features/offerings/models/feedback-model';
 import { ContentDetails } from '@core/models/course.model';
 import { Utils } from '@shared/services/utils';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { User } from '@core/models/profile.model';
-import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
+import {
+  UtilsDialog,
+  UtilsDialogData,
+  UtilsDialogResult,
+} from '@shared/dialogs/utils-dialog/utils-dialog';
 
 const PROFILE_INCOMPLETE_DIALOG_DATA: UtilsDialogData = {
   containerClass: 'py-12 px-6',
@@ -40,7 +44,7 @@ export class CourseFeedback {
   readonly router = inject(Router);
   readonly route = inject(ActivatedRoute);
   private readonly utils = inject(Utils);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
 
   // ponytail: inert — was `auth.currentUser`.
   currentUser = signal<User | null>(null);
@@ -197,14 +201,16 @@ export class CourseFeedback {
   }
 
   private openProfileIncompleteDialog(): void {
-    const dialogRef = this.dialog.open(UtilsDialog, {
-      width: '500px',
-      maxWidth: '95vw',
-      ariaLabel: 'Complete your profile to submit feedback',
-      data: PROFILE_INCOMPLETE_DIALOG_DATA,
+    const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: {
+        ...PROFILE_INCOMPLETE_DIALOG_DATA,
+        width: '500px',
+        maxWidth: '95vw',
+        ariaLabel: 'Complete your profile to submit feedback',
+      },
     });
 
-    dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result: any) => {
+    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result: any) => {
       if (result?.action === 'confirm') {
         this.router.navigate(['/auth/profile'], {
           queryParams: { redirect: this.router.url },

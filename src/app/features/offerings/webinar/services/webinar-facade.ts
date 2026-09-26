@@ -16,9 +16,13 @@ import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { NotificationService } from '@core/services/notification/notification';
-import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
+import {
+  UtilsDialog,
+  UtilsDialogData,
+  UtilsDialogResult,
+} from '@shared/dialogs/utils-dialog/utils-dialog';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
   LoginType,
@@ -75,7 +79,7 @@ export class WebinarFacade {
   private readonly api = inject(ApiClient);
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(AuthSession);
@@ -428,13 +432,11 @@ export class WebinarFacade {
       ],
     };
 
-    const ref = this.dialog.open<UtilsDialog, { action?: string; result: boolean }>(UtilsDialog, {
-      data,
-      width: 'auto',
-      maxWidth: '28rem',
+    const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: { ...data, maxWidth: '28rem' },
     });
 
-    ref.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (result?.action !== 'confirm') return;
       void this.router.navigate(['/auth/login'], {
         queryParams: { redirect: this.router.url },

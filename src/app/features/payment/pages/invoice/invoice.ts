@@ -24,8 +24,12 @@ import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { heroArrowDownTray, heroChevronLeft } from '@ng-icons/heroicons/outline';
 import { NotificationService } from '@core/services/notification/notification';
 import { DatePipe } from '@angular/common';
-import { Dialog } from '@core/services/dialog/dialog';
-import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
+import {
+  UtilsDialog,
+  UtilsDialogData,
+  UtilsDialogResult,
+} from '@shared/dialogs/utils-dialog/utils-dialog';
 
 @Component({
   selector: 'app-invoice',
@@ -50,7 +54,7 @@ export class Invoice {
   private readonly pdfService = injectAsync(() =>
     import('@core/services/html-to-pdf/html-to-pdf').then((m) => m.HtmlToPdf),
   );
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
 
   readonly invoiceContent = viewChild<ElementRef<HTMLElement>>('invoiceContent');
 
@@ -242,14 +246,11 @@ export class Invoice {
       ],
     };
 
-    const ref = this.dialog.open<UtilsDialog, { action?: string; result: boolean }>(UtilsDialog, {
-      data: dialogData,
-      width: 'auto',
-      maxWidth: '32rem',
-      disableClose: true,
+    const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: { ...dialogData, maxWidth: '32rem', disableClose: true },
     });
 
-    ref.afterClosed$.subscribe((result) => {
+    ref.afterClosed.subscribe((result) => {
       if (result?.action === 'confirm' && result.result) {
         this.facade.proceedToPayment();
       }

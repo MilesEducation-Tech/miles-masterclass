@@ -12,9 +12,12 @@ import { ErrorState } from '@shared/ui/error-state/error-state';
 import { SubscriptionPlan } from '@core/models/payment.model';
 import { NotificationService } from '@core/services/notification/notification';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Dialog } from '@core/services/dialog/dialog';
 import { Utils } from '@shared/services/utils';
-import { UtilsDialog } from '@shared/dialogs/utils-dialog/utils-dialog';
+import {
+  UtilsDialog,
+  UtilsDialogData,
+  UtilsDialogResult,
+} from '@shared/dialogs/utils-dialog/utils-dialog';
 // Type-only (matches the facade's convention): the runtime class comes from the
 // `import()` inside `onApplyPartnerCode`, so the dialog stays out of this chunk.
 import type {
@@ -46,7 +49,6 @@ export class Plan {
   private readonly facade = inject(PaymentFacade);
   private readonly router = inject(Router);
   private readonly notification = inject(NotificationService);
-  private readonly dialog = inject(Dialog);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
   private readonly destroyRef = inject(DestroyRef);
@@ -290,14 +292,16 @@ export class Plan {
   }
 
   protected openSignupDialog(): void {
-    const dialogRef = this.dialog.open(UtilsDialog, {
-      width: '500px',
-      maxWidth: '95vw',
-      ariaLabel: 'Sign up to access content',
-      data: SIGNUP_DIALOG_DATA,
+    const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: {
+        ...SIGNUP_DIALOG_DATA,
+        width: '500px',
+        maxWidth: '95vw',
+        ariaLabel: 'Sign up to access content',
+      },
     });
 
-    dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result: any) => {
+    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result: any) => {
       if (result?.action === 'confirm') {
         this.router.navigate(['/auth/login'], {
           queryParams: { redirect: this.router.url },

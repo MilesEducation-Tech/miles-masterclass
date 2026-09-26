@@ -14,10 +14,14 @@ import { VideoChapter } from '../../../components/video-chapter/video-chapter';
 import { Backward } from '@shared/components/backward/backward';
 import { ChapterFacade } from '../../../services/chapter-facade';
 import { Utils } from '@shared/services/utils';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { exitChapterToCourse } from '@shared/utils/exit-chapter';
-import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
+import {
+  UtilsDialog,
+  UtilsDialogData,
+  UtilsDialogResult,
+} from '@shared/dialogs/utils-dialog/utils-dialog';
 
 @Component({
   selector: 'app-masterclass-chapter',
@@ -35,7 +39,7 @@ export class MasterclassChapter {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly utils = inject(Utils);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly logger = inject(Logger);
   private readonly videoChapter = viewChild(VideoChapter);
 
@@ -204,14 +208,11 @@ export class MasterclassChapter {
       ],
     };
 
-    const ref = this.dialog.open<UtilsDialog, { action?: string; result: boolean }>(UtilsDialog, {
-      data: dialogData,
-      width: 'auto',
-      maxWidth: '32rem',
-      disableClose: true,
+    const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: { ...dialogData, maxWidth: '32rem', disableClose: true },
     });
 
-    ref.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (result?.action === 'confirm' && result.result) {
         this.chapterFacade
           .selectCpeMode(true)

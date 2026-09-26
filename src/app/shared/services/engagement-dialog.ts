@@ -113,7 +113,7 @@ export class EngagementDialog {
   /**
    * The engagement dialog *we* currently have open, if any. Tracked so a
    * navigation into a suppressed route can close it without touching dialogs
-   * opened by anything else (`Dialog.closeAll()` would).
+   * opened by anything else (`NgpDialogManager.closeAll()` would).
    */
   private openRef: { close(): unknown } | null = null;
 
