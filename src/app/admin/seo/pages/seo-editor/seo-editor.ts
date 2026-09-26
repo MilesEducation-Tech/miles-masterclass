@@ -1,4 +1,16 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal, input } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  OnInit,
+  resource,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -49,8 +61,25 @@ export class SeoEditor implements OnInit {
   private readonly logger = inject(Logger);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly page = signal<SeoPage | null>(null);
-  readonly loading = signal(true);
+  /** The page's SEO row, or a fresh default when the slug has none yet. Reloads when the slug changes. */
+  private readonly pageResource = resource({
+    params: () => this.slug() || undefined,
+    loader: async ({ params: rawSlug }): Promise<SeoPage> => {
+      const decodedSlug = decodeURIComponent(rawSlug);
+      this.logger.debug(`[SeoEditor] Loading SEO configuration for slug: ${decodedSlug}`);
+      const data = await this.supabaseSeo.getBySlug(decodedSlug);
+      if (data) return data;
+      this.logger.info(`[SeoEditor] Creating default SEO config for slug: ${decodedSlug}`);
+      return createDefaultSeoPage(decodedSlug, decodedSlug, 'static');
+    },
+  });
+
+  /** The loaded row, then edited in place by the live preview and replaced by a save. */
+  readonly page = linkedSignal<SeoPage | null>(() =>
+    this.pageResource.hasValue() ? this.pageResource.value() : null,
+  );
+  /** True until a row is in hand, as before (it never had a failure state: `getBySlug` answers null). */
+  readonly loading = computed(() => !this.pageResource.hasValue());
   readonly saving = signal(false);
   readonly saveSuccess = signal(false);
   readonly saveError = signal('');
@@ -109,32 +138,23 @@ export class SeoEditor implements OnInit {
     return 'bg-red-500/15 text-red-400';
   });
 
+  constructor() {
+    // Fill the form once per load. It reads the RESOURCE, not `page`, so the preview's
+    // `page.set()` on every keystroke cannot re-fill the form under the user.
+    effect(() => {
+      if (!this.pageResource.hasValue()) return;
+      const loaded = this.pageResource.value();
+      untracked(() => this.populateForm(loaded));
+    });
+  }
+
   ngOnInit(): void {
-    this.loadPage();
     // Debounce preview/score recompute so each keystroke isn't a full CD pass
     // (`computeSeoScore` is cheap, but the page signal write fans out into
     // any view binding that reads it).
     this.form.valueChanges
       .pipe(debounceTime(150), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.updatePreviewSignals());
-  }
-
-  async loadPage(): Promise<void> {
-    const rawSlug = this.slug();
-    if (!rawSlug) return;
-
-    const decodedSlug = decodeURIComponent(rawSlug);
-    this.loading.set(true);
-    this.logger.debug(`[SeoEditor] Loading SEO configuration for slug: ${decodedSlug}`);
-
-    let data = await this.supabaseSeo.getBySlug(decodedSlug);
-    if (!data) {
-      this.logger.info(`[SeoEditor] Creating default SEO config for slug: ${decodedSlug}`);
-      data = createDefaultSeoPage(decodedSlug, decodedSlug, 'static');
-    }
-    this.page.set(data);
-    this.populateForm(data);
-    this.loading.set(false);
   }
 
   private populateForm(page: SeoPage): void {

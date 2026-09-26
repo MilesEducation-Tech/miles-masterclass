@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
@@ -36,7 +36,7 @@ type EditableTextField = 'page_slug' | 'page_name' | 'title' | 'description' | '
   ],
   templateUrl: './seo-bulk-upload.html',
 })
-export class SeoBulkUpload implements OnInit {
+export class SeoBulkUpload {
   private readonly supabaseSeo = inject(SupabaseSeo);
   private readonly router = inject(Router);
   private readonly logger = inject(Logger);
@@ -54,8 +54,14 @@ export class SeoBulkUpload implements OnInit {
   readonly importing = signal(false);
   readonly importError = signal<string | null>(null);
   readonly fileName = signal<string | null>(null);
+  private readonly existingPages = resource({ loader: () => this.supabaseSeo.getAll() });
   /** Slugs already in the table — drives the New vs Overwrite badge. */
-  private readonly existingSlugs = signal<Set<string>>(new Set());
+  private readonly existingSlugs = computed(
+    () =>
+      new Set(
+        (this.existingPages.hasValue() ? this.existingPages.value() : []).map((p) => p.page_slug),
+      ),
+  );
 
   readonly summary = computed(() => {
     const rows = this.rows();
@@ -79,11 +85,6 @@ export class SeoBulkUpload implements OnInit {
   });
 
   readonly canImport = computed(() => this.summary().valid > 0 && !this.importing());
-
-  async ngOnInit(): Promise<void> {
-    const pages = await this.supabaseSeo.getAll();
-    this.existingSlugs.set(new Set(pages.map((p) => p.page_slug)));
-  }
 
   isExisting(slug: string): boolean {
     return this.existingSlugs().has(slug);

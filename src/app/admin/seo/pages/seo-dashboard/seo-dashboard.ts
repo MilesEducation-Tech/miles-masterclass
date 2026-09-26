@@ -1,4 +1,12 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  linkedSignal,
+  resource,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
@@ -53,7 +61,7 @@ import { HasPermissionDirective } from '@admin/core/directives/has-permission';
   ],
   templateUrl: './seo-dashboard.html',
 })
-export class SeoDashboard implements OnInit {
+export class SeoDashboard {
   protected readonly PERM = PERM;
   private readonly supabaseSeo = inject(SupabaseSeo);
   private readonly router = inject(Router);
@@ -61,10 +69,38 @@ export class SeoDashboard implements OnInit {
   private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly pages = signal<SeoPage[]>([]);
-  readonly loading = signal(true);
+  /**
+   * Every SEO page (`resource()`: supabase-js, not HttpClient). A write sits inside
+   * this read, as it always did: an EMPTY table is seeded with the defaults and
+   * re-read. `seedDefaults()` re-checks for rows first, so a repeat seeds nothing.
+   */
+  private readonly pagesResource = resource({
+    loader: async (): Promise<SeoPage[]> => {
+      let data = await this.supabaseSeo.getAll();
+      if (data.length === 0) {
+        const seeded = await this.supabaseSeo.seedDefaults();
+        if (seeded === null) {
+          throw new Error(
+            'Could not load SEO pages. Check your Supabase configuration and try again.',
+          );
+        }
+        data = await this.supabaseSeo.getAll();
+      }
+      this.logger.info(`[SeoDashboard] Loaded ${data.length} SEO pages`);
+      return data;
+    },
+  });
+
+  /** Delete and the active toggle patch this in place; a reload replaces it. */
+  readonly pages = linkedSignal<SeoPage[]>(() =>
+    this.pagesResource.hasValue() ? this.pagesResource.value() : [],
+  );
+  readonly loading = computed(() => this.pagesResource.isLoading());
   /** Surfaced to the template so misconfig/network errors aren't silent. */
-  readonly loadError = signal<string | null>(null);
+  readonly loadError = computed(() => {
+    const err = this.pagesResource.error();
+    return err ? (err.message ?? 'Could not load SEO pages.') : null;
+  });
   readonly searchQuery = signal('');
   readonly filterType = signal<'all' | 'static' | 'dynamic'>('all');
   protected readonly filterOptions: AriaSelectOption<'all' | 'static' | 'dynamic'>[] = [
@@ -147,32 +183,9 @@ export class SeoDashboard implements OnInit {
     }
   }
 
-  ngOnInit(): void {
-    this.loadPages();
-  }
-
-  async loadPages(): Promise<void> {
-    this.loading.set(true);
-    this.loadError.set(null);
-
-    let data = await this.supabaseSeo.getAll();
-
-    // Seed defaults only if table is completely empty.
-    if (data.length === 0) {
-      const seeded = await this.supabaseSeo.seedDefaults();
-      if (seeded === null) {
-        this.loadError.set(
-          'Could not load SEO pages. Check your Supabase configuration and try again.',
-        );
-        this.loading.set(false);
-        return;
-      }
-      data = await this.supabaseSeo.getAll();
-    }
-
-    this.logger.info(`[SeoDashboard] Loaded ${data.length} SEO pages`);
-    this.pages.set(data);
-    this.loading.set(false);
+  /** The error banner's Retry. */
+  loadPages(): void {
+    this.pagesResource.reload();
   }
 
   editPage(page: SeoPage): void {

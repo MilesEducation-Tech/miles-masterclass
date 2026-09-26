@@ -1,16 +1,8 @@
 import { isPlatformBrowser } from '@angular/common';
-import { HttpResponse } from '@angular/common/http';
-import {
-  computed,
-  inject,
-  Service,
-  linkedSignal,
-  PLATFORM_ID,
-  resource,
-  signal,
-} from '@angular/core';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { HttpResponse, httpResource } from '@angular/common/http';
+import { computed, inject, Service, linkedSignal, PLATFORM_ID, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { fileNameFromContentDisposition, saveBlob } from '@shared/utils/blob-download';
@@ -73,25 +65,13 @@ export class LeadsFacade {
 
   // ---- Listing resource ----------------------------------------------------
 
-  private readonly rawResource = resource({
-    params: () => {
-      if (!this.isBrowser) return undefined;
-      return {
-        page: this.pageNumber(),
-        search: this.searchTerm(),
-        status: this.statusFilter(),
-      };
-    },
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<LeadsResponse>(LEADS, {
-            params: { ...this.filterParams(), page: params.page, page_count: PAGE_SIZE },
-            context: adminContext(),
-          })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { data: [], pagination_data: EMPTY_PAGINATION } as LeadsResponse },
-      ),
+  private readonly rawResource = httpResource<LeadsResponse>(() => {
+    if (!this.isBrowser) return undefined;
+    return {
+      url: apiUrl(LEADS),
+      params: { ...this.filterParams(), page: this.pageNumber(), page_count: PAGE_SIZE },
+      context: adminContext(),
+    };
   });
 
   private readonly leadsResource = withPreviousValue(this.rawResource);
@@ -105,8 +85,11 @@ export class LeadsFacade {
     },
   });
 
-  readonly pagination = computed<PartnerPagination>(
-    () => this.leadsResource.value()?.pagination_data ?? EMPTY_PAGINATION,
+  /** Guarded: `value()` throws on an errored resource, which would take the banner down with it. */
+  readonly pagination = computed<PartnerPagination>(() =>
+    this.leadsResource.hasValue()
+      ? (this.leadsResource.value()?.pagination_data ?? EMPTY_PAGINATION)
+      : EMPTY_PAGINATION,
   );
   readonly totalCount = computed(() => this.pagination().total_count);
   readonly currentPage = computed(() => this.pageNumber());

@@ -1,4 +1,4 @@
-import { HttpContext } from '@angular/common/http';
+import { HttpContext, httpResource } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import {
   computed,
@@ -28,7 +28,7 @@ import {
   ProfessionalCourseList,
   StateBoardList,
 } from '@core/models/profile.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
@@ -80,18 +80,18 @@ export class UserOnboardingFacade {
     return { context: new HttpContext().set(SKIP_AUTH_TOKEN, true), ...extra };
   }
 
-  /** Generic reference-list loader (relative → `BASE_API_URL`) — we only read `.data`. */
+  /**
+   * Generic reference list (relative → `BASE_API_URL`): we only read `.data`.
+   * Returns the list itself, `[]` while loading and on failure. The guard matters
+   * because `value()` throws on an errored resource.
+   */
   private list<T>(path: string) {
-    return resource({
-      params: () => (this.isBrowser ? { path } : undefined),
-      loader: ({ abortSignal }) =>
-        firstValueFrom(
-          this.api
-            .get<{ data: T[] }>(path, this.publicOpts())
-            .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-          { defaultValue: { data: [] as T[] } },
-        ).then((r) => r?.data ?? []),
-    });
+    const res = httpResource<T[]>(
+      () =>
+        this.isBrowser ? { url: apiUrl(path), context: this.publicOpts().context } : undefined,
+      { defaultValue: [], parse: (raw) => (raw as { data?: T[] }).data ?? [] },
+    );
+    return computed(() => (res.hasValue() ? res.value() : []));
   }
 
   // ---- Users list ----------------------------------------------------------
@@ -102,25 +102,17 @@ export class UserOnboardingFacade {
   readonly pageNumber = signal(1);
   readonly pageSize = 30;
 
-  private readonly rawUsersResource = resource({
-    params: () => {
-      if (!this.isBrowser) return undefined;
-      return { page: this.pageNumber(), search: this.searchTerm(), domain: this.domainFilter() };
-    },
-    loader: ({ params, abortSignal }) => {
-      const httpParams: Record<string, string | number> = {
-        page: params.page,
-        page_size: this.pageSize,
-      };
-      if (params.search) httpParams['search'] = params.search;
-      if (params.domain) httpParams['domain'] = params.domain;
-      return firstValueFrom(
-        this.api
-          .get<UsersListResponse>(SUPERADMIN_USERS, this.opts({ params: httpParams }))
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { data: [] } as UsersListResponse },
-      );
-    },
+  private readonly rawUsersResource = httpResource<UsersListResponse>(() => {
+    if (!this.isBrowser) return undefined;
+    const params: Record<string, string | number> = {
+      page: this.pageNumber(),
+      page_size: this.pageSize,
+    };
+    const search = this.searchTerm();
+    const domain = this.domainFilter();
+    if (search) params['search'] = search;
+    if (domain) params['domain'] = domain;
+    return { url: apiUrl(SUPERADMIN_USERS), params, context: this.opts().context };
   });
 
   private readonly usersResource = withPreviousValue(this.rawUsersResource);
@@ -133,7 +125,10 @@ export class UserOnboardingFacade {
     },
   });
 
-  readonly pagination = computed(() => this.usersResource.value()?.pagination_data);
+  /** Guarded: `value()` throws on an errored resource. */
+  readonly pagination = computed(() =>
+    this.usersResource.hasValue() ? this.usersResource.value()?.pagination_data : undefined,
+  );
   readonly isLoading = computed(() => this.usersResource.isLoading());
   /** Backend `message` when the load failed, else null — the banner renders it verbatim. */
   readonly error = computed(() =>
@@ -182,18 +177,20 @@ export class UserOnboardingFacade {
 
   // ---- Partner codes (+ Creator default) -----------------------------------
 
-  private readonly partnerCodesResource = resource({
-    params: () => (this.isBrowser ? {} : undefined),
-    loader: ({ abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<PartnerCodesResponse>('partners/superadmin/partner-codes/', this.opts())
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { partner_codes: [] } as PartnerCodesResponse },
-      ).then((r) => r?.partner_codes ?? []),
-  });
+  private readonly partnerCodesResource = httpResource<PartnerCode[]>(
+    () =>
+      this.isBrowser
+        ? { url: apiUrl('partners/superadmin/partner-codes/'), context: this.opts().context }
+        : undefined,
+    {
+      defaultValue: [],
+      parse: (raw) => (raw as PartnerCodesResponse).partner_codes ?? [],
+    },
+  );
 
-  readonly partnerCodes = computed<PartnerCode[]>(() => this.partnerCodesResource.value() ?? []);
+  readonly partnerCodes = computed<PartnerCode[]>(() =>
+    this.partnerCodesResource.hasValue() ? this.partnerCodesResource.value() : [],
+  );
 
   readonly partnerCodeOptions = computed<AriaSelectOption<string>[]>(() =>
     this.partnerCodes()
@@ -228,23 +225,22 @@ export class UserOnboardingFacade {
 
   // ---- Reference dropdowns -------------------------------------------------
 
-  private readonly professionsRes = this.list<ProfessionList>('professions/');
+  private readonly professions = this.list<ProfessionList>('professions/');
   readonly professionOptions = computed<AriaSelectOption<number>[]>(() =>
-    (this.professionsRes.value() ?? []).map((p) => ({ value: p.id, label: p.name })),
+    this.professions().map((p) => ({ value: p.id, label: p.name })),
   );
 
-  private readonly coursesRes = this.list<ProfessionalCourseList>('user/professional-course/');
+  private readonly courses = this.list<ProfessionalCourseList>('user/professional-course/');
   readonly courseOptions = computed<AriaSelectOption<number>[]>(() =>
-    (this.coursesRes.value() ?? []).map((c) => ({ value: c.id, label: c.title })),
+    this.courses().map((c) => ({ value: c.id, label: c.title })),
   );
 
-  private readonly stateBoardsRes = this.list<StateBoardList>('user/state-boards/');
+  private readonly stateBoards = this.list<StateBoardList>('user/state-boards/');
   readonly stateBoardOptions = computed<AriaSelectOption<number>[]>(() =>
-    (this.stateBoardsRes.value() ?? []).map((s) => ({ value: s.id, label: s.name })),
+    this.stateBoards().map((s) => ({ value: s.id, label: s.name })),
   );
 
-  private readonly jobSectorsRes = this.list<JobSector>('user/job-sectors/');
-  readonly jobSectors = computed<JobSector[]>(() => this.jobSectorsRes.value() ?? []);
+  readonly jobSectors = this.list<JobSector>('user/job-sectors/');
   readonly sectorOptions = computed<AriaSelectOption<number>[]>(() =>
     this.jobSectors().map((s) => ({ value: s.id, label: s.name })),
   );
@@ -257,6 +253,8 @@ export class UserOnboardingFacade {
   }
 
   // ---- Company typeahead ---------------------------------------------------
+  // Deliberately still `resource()` over the Observable: a debounced typeahead is a
+  // search, which PROMPT.md §4.2 keeps off `httpResource`. The page owns the debounce.
 
   readonly companyQuery = signal('');
 
@@ -275,7 +273,10 @@ export class UserOnboardingFacade {
   });
 
   readonly companyOptions = computed<AriaSelectOption<number>[]>(() =>
-    (this.companiesRes.value() ?? []).map((c) => ({ value: c.id, label: c.company_name })),
+    (this.companiesRes.hasValue() ? this.companiesRes.value() : []).map((c) => ({
+      value: c.id,
+      label: c.company_name,
+    })),
   );
 
   setCompanyQuery(query: string): void {
