@@ -14,7 +14,6 @@ import { Button } from '../../ui/button/button';
 import { CairaCredlyBadge } from '../cards/caira-credly-badge/caira-credly-badge';
 import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits-pipe';
 import { matInfoOutline } from '@ng-icons/material-icons/outline';
-import { CourseInfo } from '../../dialogs/course-info/course-info';
 import { Utils } from '@shared/services/utils';
 import { Router } from '@angular/router';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
@@ -196,7 +195,9 @@ export class Slider {
     }
   }
 
-  openCourseInfoDialog(card: Content) {
+  async openCourseInfoDialog(card: Content) {
+    // Loaded on open, so the dialog is not part of this component's chunk (§4.4).
+    const { CourseInfo } = await import('../../dialogs/course-info/course-info');
     const dialogRef = this.dialogs.open(CourseInfo, { data: card });
 
     dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
