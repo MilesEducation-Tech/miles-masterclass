@@ -26,7 +26,7 @@ jobs:
       # Pinned to a commit SHA rather than the v5 tag, because this action
       # receives GITHUB_TOKEN. SHA = v5 as of 2026-09-25; Dependabot's
       # github-actions ecosystem will propose newer ones (v6 is out).
-      - uses: amannn/action-semantic-pull-request@e32d7e603df1aa1ba07e981f2a23455dee596825
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
