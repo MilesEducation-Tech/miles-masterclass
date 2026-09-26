@@ -7,7 +7,6 @@ import { Button } from '../../ui/button/button';
   selector: 'app-filter-dialog',
   imports: [Button, DialogShell],
   templateUrl: './filter-dialog.html',
-  styleUrl: './filter-dialog.css',
 })
 export class FilterDialog implements OnInit {
   private readonly dialogRef = injectDialogRef<Record<string, any[]>, Record<string, any[]>>();

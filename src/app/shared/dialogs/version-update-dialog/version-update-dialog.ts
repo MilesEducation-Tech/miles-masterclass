@@ -12,7 +12,7 @@ import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
   selector: 'app-version-update-dialog',
   imports: [DialogShell],
   templateUrl: './version-update-dialog.html',
-  styleUrl: './version-update-dialog.css',
+  host: { class: 'block' },
 })
 export class VersionUpdateDialog {
   readonly updating = signal(false);

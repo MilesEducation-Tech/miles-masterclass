@@ -20,7 +20,6 @@ import { Utils } from '@shared/services/utils';
   selector: 'app-course-info',
   imports: [VideoPoster, Button, MilesSlug, NgIcon, CourseAbout, DialogShell],
   templateUrl: './course-info.html',
-  styleUrl: './course-info.css',
   providers: [
     provideIcons({
       matPlayArrowRound,

@@ -28,7 +28,7 @@ interface ProfileCompletionFormState {
   selector: 'app-profile-completion-dialog',
   imports: [AriaAutocomplete, Button, DialogShell, Forms, AngularFormField],
   templateUrl: './profile-completion-dialog.html',
-  styleUrl: './profile-completion-dialog.css',
+  host: { class: 'block' },
 })
 export class ProfileCompletionDialog {
   protected readonly dialogRef = injectDialogRef<void, ProfileCompletionDialogResult>();

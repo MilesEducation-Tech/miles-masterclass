@@ -51,6 +51,7 @@ const CALENDLY_SCRIPT_SRC = 'https://assets.calendly.com/assets/external/widget.
   imports: [Button, DialogShell],
   templateUrl: './calendly-dialog.html',
   styleUrl: './calendly-dialog.css',
+  host: { class: 'block' },
 })
 export class CalendlyDialog {
   private readonly dialogRef = injectDialogRef<CalendlyDialogData, boolean | undefined>();

@@ -79,7 +79,7 @@ type CertificateVariant = 'nasba' | 'miles';
   standalone: true,
   imports: [CommonModule, NgIcon, Button, DialogShell],
   templateUrl: './certificate-download-dialog.html',
-  styleUrl: './certificate-download-dialog.css',
+  host: { class: 'block' },
   viewProviders: [
     provideIcons({
       phosphorDownloadSimpleFill,

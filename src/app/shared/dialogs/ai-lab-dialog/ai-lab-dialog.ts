@@ -19,6 +19,7 @@ import { environment } from '@env/environment';
   imports: [Button, DialogShell, NgIcon],
   templateUrl: './ai-lab-dialog.html',
   styleUrl: './ai-lab-dialog.css',
+  host: { class: 'block' },
 })
 export class AiLabDialog {
   protected readonly dialogRef = injectDialogRef<void, void>();

@@ -41,16 +41,7 @@ export interface VideoDialogData {
       </div>
     </app-dialog-shell>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-        width: 100%;
-        height: 100%;
-        max-height: inherit;
-      }
-    `,
-  ],
+  host: { class: 'block h-full w-full max-h-[inherit]' },
 })
 export class VideoDialog {
   private readonly dialogRef = injectDialogRef<VideoDialogData>();

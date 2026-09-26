@@ -73,7 +73,6 @@ const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.miles.
   selector: 'app-utils-dialog',
   imports: [Button, NgIcon, DialogShell],
   templateUrl: './utils-dialog.html',
-  styleUrl: './utils-dialog.css',
 })
 export class UtilsDialog {
   private readonly dialogRef = injectDialogRef<UtilsDialogData, UtilsDialogResult>();

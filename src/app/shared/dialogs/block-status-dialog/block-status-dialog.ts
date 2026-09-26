@@ -24,7 +24,7 @@ export interface BlockStatusDialogResult {
   imports: [Button, AriaInput, NgIcon, DialogShell],
   providers: [provideIcons({ heroShieldExclamation, heroShieldCheck })],
   templateUrl: './block-status-dialog.html',
-  styleUrl: './block-status-dialog.css',
+  host: { class: 'block' },
 })
 export class BlockStatusDialog {
   private readonly dialogRef = injectDialogRef<BlockStatusDialogData, BlockStatusDialogResult>();

@@ -45,6 +45,7 @@ type DialogResult = 'closed' | 'book' | 'submit-feedback' | 'download-certificat
   ],
   templateUrl: './webinar-details-dialog.html',
   styleUrl: './webinar-details-dialog.css',
+  host: { class: 'block' },
   providers: [provideIcons({ matCalendarMonthRound, phosphorShareFatFill })],
 })
 export class WebinarDetailsDialog {

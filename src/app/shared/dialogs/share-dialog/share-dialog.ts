@@ -15,7 +15,6 @@ export interface ShareDialogData {
   selector: 'app-share-dialog',
   imports: [Button, DialogShell, NgIcon],
   templateUrl: './share-dialog.html',
-  styleUrl: './share-dialog.css',
 })
 export class ShareDialog implements OnInit {
   private readonly dialogRef = injectDialogRef<ShareDialogData>();

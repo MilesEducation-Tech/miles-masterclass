@@ -78,7 +78,6 @@ export type AiLabAgentDialogResult = 'launch';
     DialogShell,
   ],
   templateUrl: './ai-lab-agent-dialog.html',
-  styleUrl: './ai-lab-agent-dialog.css',
   providers: [provideIcons({ matPlayArrowRound })],
 })
 export class AiLabAgentDialog implements OnInit {

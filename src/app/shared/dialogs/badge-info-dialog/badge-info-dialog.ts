@@ -21,7 +21,6 @@ export interface BadgeInfoDialogResult {
   selector: 'app-badge-info-dialog',
   imports: [BadgeHeroCard, Button, DialogShell],
   templateUrl: './badge-info-dialog.html',
-  styleUrl: './badge-info-dialog.css',
 })
 export class BadgeInfoDialog {
   private readonly dialogRef = injectDialogRef<BadgeInfoDialogData, BadgeInfoDialogResult>();

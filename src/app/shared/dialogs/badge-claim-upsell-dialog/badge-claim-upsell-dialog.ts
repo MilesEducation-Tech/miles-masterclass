@@ -20,7 +20,6 @@ export interface BadgeClaimUpsellDialogResult {
   selector: 'app-badge-claim-upsell-dialog',
   imports: [Button, DialogShell],
   templateUrl: './badge-claim-upsell-dialog.html',
-  styleUrl: './badge-claim-upsell-dialog.css',
 })
 export class BadgeClaimUpsellDialog {
   private readonly dialogRef = injectDialogRef<
