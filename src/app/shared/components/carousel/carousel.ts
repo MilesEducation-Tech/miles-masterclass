@@ -45,7 +45,7 @@ import { SectionFiltersFacade } from '@core/services/section-filters-facade/sect
  * unstyled 0x0 nodes and the rail silently has no dots. The element bundle
  * would carry them, but it also drags in every other module.
  *
- * Verbatim from `swiper/modules/pagination-element.min.css` (swiper 12.2.0),
+ * Verbatim from `swiper/modules/pagination-element.min.css` (swiper 14.2.0),
  * minus the progressbar / fraction / vertical / rtl variants this app has no
  * use for. Re-copy that file on a swiper major.
  */
@@ -64,6 +64,7 @@ const PAGINATION_STYLES = `
   button.swiper-pagination-bullet{appearance:none;border:none;box-shadow:none;margin:0;padding:0}
   .swiper-pagination-clickable .swiper-pagination-bullet{cursor:pointer}
   .swiper-pagination-bullet:only-child{display:none!important}
+  .swiper-pagination-lock{display:none}
   .swiper-pagination-bullet-active{background:var(--swiper-pagination-color,var(--swiper-theme-color));opacity:var(--swiper-pagination-bullet-opacity,1)}
   .swiper-horizontal>.swiper-pagination-bullets .swiper-pagination-bullet,.swiper-pagination-horizontal.swiper-pagination-bullets .swiper-pagination-bullet{margin:0 var(--swiper-pagination-bullet-horizontal-gap,4px)}
   .swiper-horizontal>.swiper-pagination-bullets.swiper-pagination-bullets-dynamic,.swiper-pagination-horizontal.swiper-pagination-bullets.swiper-pagination-bullets-dynamic{left:50%;transform:translateX(-50%);white-space:nowrap}
