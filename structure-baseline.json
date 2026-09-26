@@ -1,0 +1,123 @@
+{
+  "$comment": "Ratchet baseline for scripts/check-structure.mjs (MIL-240). Only shrink it: run the script with --prune after fixing. Adding an entry needs a reason and a CODEOWNERS review.",
+  "routedOutsidePages": {
+    "src/app/features/payment/payment.routes.ts → ./components/overview-wrapper/overview-wrapper": "overview-wrapper is a routed layout shell for the payment pages; move to pages/ or layout"
+  },
+  "componentStylesheets": {
+    "src/app/admin/layout/admin-sidebar/admin-sidebar.css": ".active-nav-item, applied by routerLinkActive; kept lazy (Phase 12 decision b)",
+    "src/app/admin/partner-platform-v2/dialogs/partner-report-preview-dialog/partner-report-preview-dialog.css": "PDF DOM captured by html2canvas-pro, which cannot parse color-mix()/oklch",
+    "src/app/admin/seat-tracker/components/seat-tracker-table/seat-tracker-table.css": ".drill-btn / .send-input; kept lazy (Phase 12 decision b)",
+    "src/app/features/ai-labs/pages/ai-labs/ai-labs.css": "not reviewed: feature outside the Phase 12 tracker",
+    "src/app/features/connect-us/pages/connect-us/connect-us.css": "EMPTY or comment-only — delete with its styleUrl (feature outside the Phase 12 tracker)",
+    "src/app/features/faculty/pages/faculty/faculty.css": "not reviewed: feature outside the Phase 12 tracker",
+    "src/app/features/how-to-claim-credly-badge/pages/how-to-claim-credly-badge/how-to-claim-credly-badge.css": "not reviewed: feature outside the Phase 12 tracker",
+    "src/app/features/legal/components/legal-doc/legal-doc.css": "not reviewed: feature outside the Phase 12 tracker",
+    "src/app/features/legal/components/legal-section/legal-section.css": "EMPTY or comment-only — delete with its styleUrl (feature outside the Phase 12 tracker)",
+    "src/app/features/legal/pages/compliance/compliance.css": "EMPTY or comment-only — delete with its styleUrl (feature outside the Phase 12 tracker)",
+    "src/app/features/legal/pages/privacy-policy/privacy-policy.css": "EMPTY or comment-only — delete with its styleUrl (feature outside the Phase 12 tracker)",
+    "src/app/features/legal/pages/terms-of-service/terms-of-service.css": "EMPTY or comment-only — delete with its styleUrl (feature outside the Phase 12 tracker)",
+    "src/app/features/library/badge/components/badge-spot-animation/badge-spot-animation.css": "Angular-scoped @keyframes (+ the classes that use them)",
+    "src/app/features/milesverse/pages/briefing/briefing-session.css": "not reviewed: feature outside the Phase 12 tracker (has @keyframes)",
+    "src/app/features/milesverse/pages/briefing/briefing.css": "not reviewed: feature outside the Phase 12 tracker",
+    "src/app/features/milesverse/pages/milesverse/milesverse.css": "not reviewed: feature outside the Phase 12 tracker",
+    "src/app/features/milesverse/pages/report/report.css": "not reviewed: feature outside the Phase 12 tracker (has @keyframes)",
+    "src/app/features/milesverse/pages/subject/subject.css": "not reviewed: feature outside the Phase 12 tracker",
+    "src/app/features/offerings/micro-learning/components/micro-learning-reel-card/micro-learning-reel-card.css": "third-party DOM: ::ng-deep video.js overrides, :has() rule, :host layout",
+    "src/app/features/page-not-found/pages/page-not-found/page-not-found.css": "EMPTY or comment-only — delete with its styleUrl (feature outside the Phase 12 tracker)",
+    "src/app/features/payment/components/empty-cart/empty-cart.css": "Angular-scoped @keyframes (+ the classes that use them)",
+    "src/app/features/uae-caira/components/caira-levels-section/caira-levels-section.css": "not reviewed: feature outside the Phase 12 tracker",
+    "src/app/features/uae-caira/components/caira-webinar-section/caira-webinar-section.css": "not reviewed: feature outside the Phase 12 tracker",
+    "src/app/features/uae-caira/pages/uae-caira/uae-caira.css": "not reviewed: feature outside the Phase 12 tracker",
+    "src/app/shared/components/caira-level-stack/caira-level-stack.css": "kept in Phase 12 with a reason in its report",
+    "src/app/shared/components/cards/horizontal/horizontal.css": "kept in Phase 12 with a reason in its report",
+    "src/app/shared/components/carousel/carousel.css": "third-party DOM: Swiper internals",
+    "src/app/shared/components/consent-banner/consent-banner.css": "Angular-scoped @keyframes (+ the classes that use them)",
+    "src/app/shared/components/faq-item/faq-item.css": "Angular-scoped @keyframes (+ the classes that use them)",
+    "src/app/shared/components/floating-assets/floating-assets.css": "Angular-scoped @keyframes (+ the classes that use them)",
+    "src/app/shared/components/laptop/laptop.css": "Angular-scoped @keyframes (+ the classes that use them)",
+    "src/app/shared/components/marquee/marquee.css": "Angular-scoped @keyframes (+ the classes that use them)",
+    "src/app/shared/components/micro-learning-hero-phone-mockup/micro-learning-hero-phone-mockup.css": "Angular-scoped @keyframes (+ the classes that use them)",
+    "src/app/shared/components/plan-scrolling-gallery/plan-scrolling-gallery.css": "Angular-scoped @keyframes (+ the classes that use them)",
+    "src/app/shared/components/record-disk/record-disk.css": "Angular-scoped @keyframes (+ the classes that use them)",
+    "src/app/shared/components/skeleton/slider-skeleton/slider-skeleton.css": "Angular-scoped @keyframes (+ the classes that use them)",
+    "src/app/shared/components/slider/slider.css": ":host / pseudo-element rules",
+    "src/app/shared/components/surround-carousel/surround-carousel.css": ":host / pseudo-element rules",
+    "src/app/shared/dialogs/ai-lab-dialog/ai-lab-dialog.css": "Angular-scoped @keyframes (+ the classes that use them)",
+    "src/app/shared/dialogs/calendly-dialog/calendly-dialog.css": "third-party DOM: the iframe Calendly's embed script injects",
+    "src/app/shared/dialogs/webinar-details-dialog/webinar-details-dialog.css": "Angular-scoped @keyframes (+ the classes that use them)",
+    "src/app/shared/ui/button/button.css": ":host rules the slider nav buttons depend on (restored in Phase 12)",
+    "src/app/shared/ui/dialog-shell/dialog-shell.css": "Angular-scoped @keyframes (+ the classes that use them)"
+  },
+  "inlineStyles": {
+    "src/app/admin/partner-platform/dialogs/network-firms-dialog/network-firms-dialog.html": {
+      "count": 4,
+      "reason": "unrouted v1 partner platform (retirement pending)"
+    },
+    "src/app/admin/partner-platform/pages/network-tracker/network-tracker.html": {
+      "count": 3,
+      "reason": "unrouted v1 partner platform (retirement pending)"
+    },
+    "src/app/admin/partner-platform/pages/networks/networks.html": {
+      "count": 7,
+      "reason": "unrouted v1 partner platform (retirement pending)"
+    },
+    "src/app/admin/partner-platform/pages/partner-codes/partner-codes.html": {
+      "count": 6,
+      "reason": "unrouted v1 partner platform (retirement pending)"
+    },
+    "src/app/admin/partner-platform/pages/partner-dashboard/partner-dashboard.html": {
+      "count": 3,
+      "reason": "unrouted v1 partner platform (retirement pending)"
+    },
+    "src/app/admin/partner-platform/pages/reports/reports.html": {
+      "count": 7,
+      "reason": "unrouted v1 partner platform (retirement pending)"
+    },
+    "src/app/features/library/badge/components/badge-spot-animation/badge-spot-animation.html": {
+      "count": 3,
+      "reason": "animation-delay: the component CSS animation shorthand is unlayered and would reset a utility"
+    },
+    "src/app/features/milesverse/pages/briefing/briefing.html": {
+      "count": 1,
+      "reason": "two-property transition with per-property durations"
+    },
+    "src/app/features/milesverse/pages/report/report.html": {
+      "count": 2,
+      "reason": ".mv-card panels: unlayered .mv-card rule would beat a utility"
+    },
+    "src/app/features/offerings/micro-learning/components/micro-learning-hero/micro-learning-hero.html": {
+      "count": 3,
+      "reason": "multi-layer gradients (one-offs)"
+    },
+    "src/app/shared/components/micro-learning-hero-phone-mockup/micro-learning-hero-phone-mockup.html": {
+      "count": 1,
+      "reason": "one-off text-shadow"
+    },
+    "src/app/shared/dialogs/ai-lab-dialog/ai-lab-dialog.html": {
+      "count": 6,
+      "reason": "animation-delay: the component CSS animation shorthand is unlayered and would reset a utility"
+    },
+    "src/app/shared/dialogs/calendly-dialog/calendly-dialog.html": {
+      "count": 1,
+      "reason": "Calendly embed container"
+    }
+  },
+  "tokenHex": {
+    "src/app/features/offerings/components/chapter-quiz/chapter-quiz.html": {
+      "count": 1,
+      "reason": "panel colour used as text; the token name would mislead"
+    },
+    "src/app/features/payment/dialogs/coupon-dialog/coupon-dialog.html": {
+      "count": 6,
+      "reason": "value-equal but unrelated tokens (#3b82f6 = --ring, #60a5fa = --chart-1, #4B5563 = --mm-quiz-line-hover)"
+    },
+    "src/app/shared/components/skeleton/chapter-skeleton/chapter-skeleton.html": {
+      "count": 4,
+      "reason": "CONVERT: player skeleton → bg-player-panel / bg-player-thumb (found by MIL-240)"
+    },
+    "src/app/shared/dialogs/profile-completion-dialog/profile-completion-dialog.html": {
+      "count": 2,
+      "reason": "CONVERT: the payment sheet gradient → from-sheet-top to-sheet-bottom (found by MIL-240)"
+    }
+  }
+}

@@ -45,6 +45,8 @@ jobs:
       # missing space fails fast instead of after two full builds.
       - run: pnpm format
       - run: pnpm lint
+      # `pnpm lint` also runs scripts/check-structure.mjs; this tests the checker itself.
+      - run: pnpm test:scripts
       - run: pnpm ng test --watch=false
       - run: pnpm build:prod
       - run: pnpm build-storybook
