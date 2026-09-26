@@ -5,7 +5,7 @@ import { Button } from '@shared/ui/button/button';
   selector: 'app-subscribe-card',
   imports: [Button],
   templateUrl: './subscribe-card.html',
-  styleUrl: './subscribe-card.css',
+  host: { class: 'block w-full' },
 })
 export class SubscribeCard {
   readonly title = input.required<string>();

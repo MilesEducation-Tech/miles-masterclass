@@ -46,9 +46,8 @@ type InProgressType = 'masterclass' | 'podcast' | 'micro_learning';
   selector: 'app-footer-overlay',
   imports: [SubscribeCard, ContinueLearningCard, UtilsIconCluster],
   templateUrl: './footer-overlay.html',
-  styleUrl: './footer-overlay.css',
   host: {
-    class: 'z-50',
+    class: 'contents z-50',
   },
 })
 export class FooterOverlay {

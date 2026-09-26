@@ -7,6 +7,5 @@ import { Footer } from '@layout/footer/footer';
   selector: 'app-blog-layout',
   imports: [Header, RouterOutlet, Footer],
   templateUrl: './blog-layout.html',
-  styleUrl: './blog-layout.css',
 })
 export class BlogLayout {}

@@ -52,7 +52,7 @@ const TYPE_ORDER: SearchCourseType[] = [
   imports: [ReactiveFormsModule, NgIcon, DialogShell],
   providers: [provideIcons({ lucideSearch, lucideX })],
   templateUrl: './global-search-dialog.html',
-  styleUrl: './global-search-dialog.css',
+  host: { class: 'block' },
 })
 export class GlobalSearchDialog implements AfterViewInit {
   private readonly dialogRef = injectDialogRef();

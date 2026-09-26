@@ -16,7 +16,6 @@ import { User } from '@core/models/profile.model';
   selector: 'app-footer',
   imports: [RouterLink, NgIcon, NgOptimizedImage],
   templateUrl: './footer.html',
-  styleUrl: './footer.css',
 })
 export class Footer {
   private readonly router = inject(Router);

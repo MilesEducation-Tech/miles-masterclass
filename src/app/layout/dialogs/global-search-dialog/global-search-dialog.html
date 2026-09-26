@@ -1,14 +1,15 @@
 <app-dialog-shell width="min(95vw, 720px)" maxWidth="95vw" ariaLabel="Global search">
-  <div class="global-search-dialog flex flex-col w-full">
+  <div class="flex flex-col w-full min-w-[min(720px,95vw)]">
     <div class="search-bar flex items-center gap-3 px-5 py-4 border-b border-border">
       <ng-icon name="lucideSearch" class="text-muted-foreground text-2xl shrink-0" />
+      <!-- Strip the WebKit search-input cancel button — we own the clear UX. -->
       <input
         #searchInput
         type="search"
         autocomplete="off"
         spellcheck="false"
         placeholder="SearchMaster Classes, podcasts, micro-learning…"
-        class="flex-1 bg-transparent text-foreground text-lg placeholder:text-muted-foreground outline-none"
+        class="flex-1 bg-transparent text-foreground text-lg placeholder:text-muted-foreground outline-none [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-cancel-button]:appearance-none"
         [formControl]="searchControl"
         (keydown)="onKeyDown($event)"
         aria-label="Search input"
@@ -57,8 +58,8 @@
               <li>
                 <button
                   type="button"
-                  class="result-row flex items-center gap-3 w-full text-left px-5 py-3 hover:bg-card-hover transition-colors"
-                  [class.is-focused]="isFocused(item)"
+                  class="flex items-center gap-3 w-full text-left px-5 py-3 hover:bg-card-hover transition-colors focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
+                  [class.bg-card-hover]="isFocused(item)"
                   (click)="selectResult(item)"
                 >
                   <img

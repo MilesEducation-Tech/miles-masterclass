@@ -8,6 +8,5 @@ import { FooterOverlay } from '@layout/footer-overlay/footer-overlay';
   selector: 'app-main-layout',
   imports: [Header, Footer, FooterOverlay, RouterOutlet],
   templateUrl: './main-layout.html',
-  styleUrl: './main-layout.css',
 })
 export class MainLayout {}
