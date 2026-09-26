@@ -2,8 +2,6 @@ import { Routes } from '@angular/router';
 import { validateProfessionCountryGuard } from '@core/guards/validate-profession-country-guard';
 import { rootRedirectGuard } from '@core/guards/root-redirect-guard';
 import { onboardingGuard } from '@core/guards/auth/onboarding-guard';
-import { PageNotFound } from '@features/page-not-found/pages/page-not-found/page-not-found';
-import { Compliance } from '@features/legal/pages/compliance/compliance';
 
 export const routes: Routes = [
   {
@@ -17,14 +15,24 @@ export const routes: Routes = [
   },
   {
     path: 'page-not-found',
-    component: PageNotFound,
+    loadComponent: () =>
+      import('@features/page-not-found/pages/page-not-found/page-not-found').then(
+        (m) => m.PageNotFound,
+      ),
   },
   {
     path: 'maintenance',
-    component: PageNotFound,
+    loadComponent: () =>
+      import('@features/page-not-found/pages/page-not-found/page-not-found').then(
+        (m) => m.PageNotFound,
+      ),
   },
 
-  { path: 'compliance', component: Compliance },
+  {
+    path: 'compliance',
+    loadComponent: () =>
+      import('@features/legal/pages/compliance/compliance').then((m) => m.Compliance),
+  },
   // Headless WordPress blog, rendered natively via the WP REST API. Top-level
   // `/blog` so the URL matches WordPress's permalinks (`/blog/<slug>`). Uses
   // the standard BlogLayout so the site header + footer wrap the blog pages.

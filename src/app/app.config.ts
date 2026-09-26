@@ -21,6 +21,7 @@ import {
   provideClientHydration,
   withEventReplay,
   withHttpTransferCacheOptions,
+  withIncrementalHydration,
 } from '@angular/platform-browser';
 import { provideIconsProvider } from './configuration/ng-icon';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -89,6 +90,9 @@ export const appConfig: ApplicationConfig = {
     ),
     provideClientHydration(
       withEventReplay(),
+      // Lets a `@defer (hydrate on …)` block render its content on the server and
+      // hydrate later. A plain `@defer` still serves only its placeholder.
+      withIncrementalHydration(),
       withHttpTransferCacheOptions({
         includePostRequests: false,
       }),
