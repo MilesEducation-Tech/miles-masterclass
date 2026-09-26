@@ -13,11 +13,8 @@ import { SubscriptionPlan } from '@core/models/payment.model';
 import { NotificationService } from '@core/services/notification/notification';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Utils } from '@shared/services/utils';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-  UtilsDialogResult,
-} from '@shared/dialogs/utils-dialog/utils-dialog';
+// Type-only: UtilsDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 // Type-only (matches the facade's convention): the runtime class comes from the
 // `import()` inside `onApplyPartnerCode`, so the dialog stays out of this chunk.
 import type {
@@ -291,7 +288,8 @@ export class Plan {
     });
   }
 
-  protected openSignupDialog(): void {
+  protected async openSignupDialog(): Promise<void> {
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
     const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         ...SIGNUP_DIALOG_DATA,

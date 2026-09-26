@@ -4,12 +4,12 @@ import {
   effect,
   inject,
   linkedSignal,
+  resource,
   signal,
   untracked,
 } from '@angular/core';
 import { PaymentFacade } from '../../services/payment-facade';
 import { NotificationService } from '@core/services/notification/notification';
-import { locationJsonMin } from '@features/payment/constants/location-min';
 import {
   disabled,
   form,
@@ -97,16 +97,33 @@ export class Billing {
     });
   });
 
-  // Location Options
-  readonly countryOptions: { label: string; value: string }[] = locationJsonMin.map((c) => ({
-    label: c.name,
-    value: c.name,
-  }));
+  // Location data is ~839 KB gzipped, so it loads only while the address form is
+  // open (PROMPT.md §4.4; your Phase 11 decision). Someone who picks a saved
+  // address never downloads it. The module is cached after the first import.
+  readonly locations = resource({
+    params: () => (this.showForm() ? true : undefined),
+    loader: () => import('@features/payment/constants/location-min').then((m) => m.locationJsonMin),
+  });
+  private readonly locationData = computed(() =>
+    this.locations.hasValue() ? this.locations.value() : [],
+  );
+
+  readonly countryOptions = computed(() =>
+    this.locationData().map((c) => ({ label: c.name, value: c.name })),
+  );
+
+  readonly countryPlaceholder = computed(() =>
+    this.locations.isLoading()
+      ? 'Loading countries…'
+      : this.locations.error()
+        ? "Couldn't load countries, reopen the form to retry"
+        : 'Select Country',
+  );
 
   readonly stateOptions = computed(() => {
     const countryIso2 = this.initialFormState().country;
     if (!countryIso2) return [];
-    const country = locationJsonMin.find((c) => c.name === countryIso2);
+    const country = this.locationData().find((c) => c.name === countryIso2);
     return country?.states?.map((s) => ({ label: s.name, value: s.name })) || [];
   });
 
@@ -115,7 +132,7 @@ export class Billing {
     const stateCode = this.initialFormState().state;
     if (!countryIso2 || !stateCode) return [];
 
-    const country = locationJsonMin.find((c) => c.name === countryIso2);
+    const country = this.locationData().find((c) => c.name === countryIso2);
     const state = country?.states?.find((s) => s.name === stateCode);
     return state?.cities?.map((c) => ({ label: c.name, value: c.name })) || [];
   });

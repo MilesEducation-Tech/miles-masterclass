@@ -116,8 +116,8 @@
         <app-aria-autocomplete
           id="country"
           label="Country"
-          placeholder="Select Country"
-          [options]="countryOptions"
+          [placeholder]="countryPlaceholder()"
+          [options]="countryOptions()"
           [formField]="billingForm.country"
         />
         <app-aria-autocomplete

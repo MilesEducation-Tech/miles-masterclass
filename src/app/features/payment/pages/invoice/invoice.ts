@@ -25,11 +25,8 @@ import { heroArrowDownTray, heroChevronLeft } from '@ng-icons/heroicons/outline'
 import { NotificationService } from '@core/services/notification/notification';
 import { DatePipe } from '@angular/common';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-  UtilsDialogResult,
-} from '@shared/dialogs/utils-dialog/utils-dialog';
+// Type-only: UtilsDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 
 @Component({
   selector: 'app-invoice',
@@ -214,7 +211,7 @@ export class Invoice {
     this.cartItems().some((item) => item.item_type === 'subscription'),
   );
 
-  proceedToPayment() {
+  async proceedToPayment() {
     if (!this.termsAccepted()) {
       this.notification.error('', 'Please accept the terms and conditions to proceed.');
       return;
@@ -246,6 +243,7 @@ export class Invoice {
       ],
     };
 
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
     const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: { ...dialogData, maxWidth: '32rem', disableClose: true },
     });
