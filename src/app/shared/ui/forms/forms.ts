@@ -10,7 +10,6 @@ type FormType = 'signal' | 'model' | 'reactive';
   selector: 'app-forms',
   imports: [ReactiveFormsModule, FormsModule, NgTemplateOutlet],
   templateUrl: './forms.html',
-  styleUrl: './forms.css',
 })
 export class Forms {
   readonly type = input.required<FormType>();

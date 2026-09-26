@@ -29,7 +29,6 @@ import { cn } from '../../../utils/cn';
   selector: 'app-aria-select',
   imports: [NgpSelect, NgpSelectDropdown, NgpSelectOption, NgpSelectPortal, NgIcon],
   templateUrl: './aria-select.html',
-  styleUrl: './aria-select.css',
   providers: [provideIcons({ heroChevronDown })],
 })
 export class AriaSelect<V = unknown> implements FormValueControl<V | null> {

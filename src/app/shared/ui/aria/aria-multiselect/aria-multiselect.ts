@@ -24,7 +24,6 @@ import { cn } from '../../../utils/cn';
   selector: 'app-aria-multiselect',
   imports: [NgpSelect, NgpSelectDropdown, NgpSelectOption, NgpSelectPortal, NgIcon],
   templateUrl: './aria-multiselect.html',
-  styleUrl: './aria-multiselect.css',
   providers: [provideIcons({ heroChevronDown, heroXMark, heroCheck })],
 })
 export class AriaMultiselect<V = unknown> implements FormValueControl<V[]> {

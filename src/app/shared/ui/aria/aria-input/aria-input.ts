@@ -35,7 +35,6 @@ interface AriaInputOption {
     NgpRadioItem,
   ],
   templateUrl: './aria-input.html',
-  styleUrl: './aria-input.css',
   providers: [provideIcons({ heroCheck, heroEye, heroEyeSlash })],
 })
 export class AriaInput implements FormValueControl<any> {

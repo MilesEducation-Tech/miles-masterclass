@@ -38,7 +38,6 @@ export interface SelectMenuOption<V extends string = string> {
     },
   ],
   templateUrl: './select-menu.html',
-  styleUrl: './select-menu.css',
   providers: [provideIcons({ heroChevronDown })],
   host: {
     class:

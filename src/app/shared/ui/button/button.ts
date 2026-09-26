@@ -18,7 +18,11 @@ import { NgpButton } from 'ng-primitives/button';
   selector: 'app-button',
   imports: [NgIcon, NgpButton],
   templateUrl: './button.html',
-  styleUrl: './button.css',
+  // `!` keeps what the old unlayered `:host { display: inline-block }` did: it
+  // outranked every layered utility, so the `flex`/`block` classes 24 call sites
+  // put on <app-button> never changed its display. A plain `inline-block` would
+  // tie with them in the utilities layer and let them start winning.
+  host: { class: 'inline-block!' },
   providers: [provideIcons({ matCloseRound })],
 })
 export class Button {

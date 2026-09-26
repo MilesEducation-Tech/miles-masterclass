@@ -24,7 +24,6 @@ import { Component, computed, input } from '@angular/core';
       <span class="sr-only">Loading...</span>
     </div>
   `,
-  styles: ``,
 })
 export class Spinner {
   readonly size = input<'xs' | 'sm' | 'md' | 'lg' | 'xl'>('md');

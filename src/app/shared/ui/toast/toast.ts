@@ -19,7 +19,6 @@ import { cn } from '../../utils/cn';
   imports: [NgIconComponent],
   hostDirectives: [NgpToast],
   templateUrl: './toast.html',
-  styleUrl: './toast.css',
   providers: [provideIcons({ heroXMark })],
   host: {
     'animate.enter': 'toast-enter-top',

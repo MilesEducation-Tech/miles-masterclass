@@ -48,7 +48,6 @@ import { cn } from '../../../utils/cn';
     NgIcon,
   ],
   templateUrl: './aria-autocomplete.html',
-  styleUrl: './aria-autocomplete.css',
   providers: [provideIcons({ heroChevronDown, heroXMark })],
 })
 export class AriaAutocomplete<V = unknown> implements FormValueControl<V | null> {

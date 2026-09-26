@@ -32,6 +32,9 @@
   /* panel — the desaturated navy behind list rows on the detail page */
   --mm-surface-panel: #1e293b;
   --mm-hairline: rgba(255, 255, 255, 0.06);
+  /* state — the deep navy card behind empty and error states (error-state,
+     empty cart, billing's "no address", payment's empty panel) */
+  --mm-surface-state: #151f2b;
   --mm-outline: #32353b;
   /* Status green. Lived only in `.admin-theme` until the AI Lab course page
      needed it on the public site (step ticks, CPE-recording pill, completed
@@ -183,6 +186,23 @@
   --color-success: var(--mm-success);
   --color-success-foreground: var(--mm-success-fg);
   --color-success-bg: var(--mm-success-bg);
+  --color-surface-state: var(--mm-surface-state);
+  /* Admin palette. Defined only under `.admin-theme` (see above), so these
+     utilities resolve to nothing on the public site — the same as the
+     `var(--mm-*)` inline styles they replace in the admin rows. */
+  --color-fg-2: var(--mm-fg-2);
+  --color-fg-3: var(--mm-fg-3);
+  --color-surface-2: var(--mm-surface-2);
+  --color-surface-3: var(--mm-surface-3);
+  --color-warn: var(--mm-warn);
+  --color-warn-foreground: var(--mm-warn-fg);
+  --color-warn-bg: var(--mm-warn-bg);
+  --color-info: var(--mm-info);
+  --color-info-foreground: var(--mm-info-fg);
+  --color-info-bg: var(--mm-info-bg);
+  --color-danger: var(--mm-danger);
+  --color-danger-foreground: var(--mm-danger-fg);
+  --color-danger-bg: var(--mm-danger-bg);
   --color-accent-foreground: var(--accent-foreground);
   --color-miles: var(--mm-yellow);
   --color-destructive: var(--destructive);
@@ -207,6 +227,7 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
+  --font-numeric: var(--font-numeric);
 
   /* Exact figures from the webinar hero design. Named rather than written as
      bracket values (`max-w-[990px]`, `gap-[31px]`) because the editor offers
@@ -230,6 +251,12 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
+
+  /* Header dropdown entrances. The keyframes live in animation.css (a separate
+     global sheet, so unscoped); these name the exact timings header.html
+     spells out today as `animate-[dropdownFadeIn_0.2s_…]`. */
+  --animate-dropdown-in: dropdownFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --animate-mobile-menu-in: mobileMenuSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {

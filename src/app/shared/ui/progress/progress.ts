@@ -1,5 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import { NgpProgress, NgpProgressIndicator } from 'ng-primitives/progress';
+import { cn } from '../../utils/cn';
 
 /** Available progress bar variants */
 export type ProgressVariant = 'default' | 'success' | 'warning' | 'error' | 'info';
@@ -37,28 +38,36 @@ export type LabelPosition = 'none' | 'right' | 'inside' | 'top';
            null value is what puts it in the indeterminate state. -->
       <div
         ngpProgress
-        class="progress-track"
+        class="relative flex-1 overflow-hidden rounded-full"
         [class]="trackClass()"
-        [class.track-determinate]="!indeterminate()"
         [ngpProgressValue]="indeterminate() ? null : clampedValue()"
         [attr.aria-label]="ariaLabel() || labelText() || 'Progress'"
       >
         @if (indeterminate()) {
-          <div ngpProgressIndicator class="progress-indeterminate" [class]="fillClass()"></div>
+          <div
+            ngpProgressIndicator
+            class="progress-indeterminate h-full w-2/5 rounded-full"
+            [class]="fillClass()"
+          ></div>
         } @else {
           <div
             ngpProgressIndicator
-            class="progress-fill"
+            class="flex h-full items-center justify-end rounded-full pr-2 transition-[width] duration-500 ease-out"
             [class]="fillClass()"
             [style.width.%]="clampedValue()"
           >
             @if (label() === 'inside' && clampedValue() > 15) {
-              <span class="progress-label-inside">{{ displayValue() }}%</span>
+              <span class="text-xs font-semibold text-white drop-shadow-sm"
+                >{{ displayValue() }}%</span
+              >
             }
           </div>
         }
         @if (striped() && !indeterminate()) {
-          <div class="progress-stripes" [class.animate-stripes]="animated()"></div>
+          <div
+            class="pointer-events-none absolute inset-0 bg-size-[1rem_1rem] bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0.15)_75%,transparent_75%,transparent)]"
+            [class.animate-stripes]="animated()"
+          ></div>
         }
       </div>
       @if (label() === 'right') {
@@ -68,78 +77,11 @@ export type LabelPosition = 'none' | 'right' | 'inside' | 'top';
       }
     </div>
   `,
+  host: { class: 'block w-full' },
+  // Only what utilities can't carry: the two keyframe animations. They stay in
+  // the component (not `@theme`) because Angular scopes keyframe names to the
+  // component, so the `animation` rules have to sit next to them.
   styles: `
-    @reference '../../../../styles/styles.css';
-
-    :host {
-      @apply block w-full;
-    }
-
-    .progress-track {
-      @apply relative flex-1 overflow-hidden rounded-full;
-      background-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .progress-track.track-determinate {
-      @apply bg-muted;
-    }
-
-    /* Sizes */
-    .track-xs {
-      @apply h-1;
-    }
-    .track-sm {
-      @apply h-2;
-    }
-    .track-md {
-      @apply h-3;
-    }
-    .track-lg {
-      @apply h-4;
-    }
-
-    .progress-fill {
-      @apply h-full rounded-full flex items-center justify-end pr-2;
-      @apply transition-[width] duration-500 ease-out;
-    }
-
-    .progress-label-inside {
-      @apply text-xs font-semibold text-white drop-shadow-sm;
-    }
-
-    /* Variants */
-    .fill-default {
-      @apply bg-primary;
-    }
-    .fill-success {
-      @apply bg-green-500;
-    }
-    .fill-warning {
-      @apply bg-amber-500;
-    }
-    .fill-error {
-      @apply bg-red-500;
-    }
-    .fill-info {
-      @apply bg-blue-500;
-    }
-
-    /* Striped pattern */
-    .progress-stripes {
-      @apply absolute inset-0 pointer-events-none;
-      background-image: linear-gradient(
-        45deg,
-        rgba(255, 255, 255, 0.15) 25%,
-        transparent 25%,
-        transparent 50%,
-        rgba(255, 255, 255, 0.15) 50%,
-        rgba(255, 255, 255, 0.15) 75%,
-        transparent 75%,
-        transparent
-      );
-      background-size: 1rem 1rem;
-    }
-
     .animate-stripes {
       animation: progress-stripes 1s linear infinite;
     }
@@ -153,10 +95,7 @@ export type LabelPosition = 'none' | 'right' | 'inside' | 'top';
       }
     }
 
-    /* Indeterminate loading animation */
     .progress-indeterminate {
-      @apply h-full rounded-full;
-      width: 40%;
       animation: indeterminate-slide 1.5s ease-in-out infinite;
     }
 
@@ -217,25 +156,25 @@ export class Progress {
     return this.label() === 'right' ? 'w-full' : '';
   });
 
-  /** Track classes based on size */
+  /** Track classes: height by size; the determinate track sits on `bg-muted`. */
   protected readonly trackClass = computed(() => {
     const sizeMap: Record<ProgressSize, string> = {
-      xs: 'track-xs',
-      sm: 'track-sm',
-      md: 'track-md',
-      lg: 'track-lg',
+      xs: 'h-1',
+      sm: 'h-2',
+      md: 'h-3',
+      lg: 'h-4',
     };
-    return sizeMap[this.size()];
+    return cn(sizeMap[this.size()], this.indeterminate() ? 'bg-white/20' : 'bg-muted');
   });
 
   /** Fill classes based on variant */
   protected readonly fillClass = computed(() => {
     const variantMap: Record<ProgressVariant, string> = {
-      default: 'fill-default',
-      success: 'fill-success',
-      warning: 'fill-warning',
-      error: 'fill-error',
-      info: 'fill-info',
+      default: 'bg-primary',
+      success: 'bg-green-500',
+      warning: 'bg-amber-500',
+      error: 'bg-red-500',
+      info: 'bg-blue-500',
     };
     return variantMap[this.variant()];
   });
