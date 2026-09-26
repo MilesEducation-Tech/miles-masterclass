@@ -1,5 +1,10 @@
 pnpm exec lint-staged
 
+# Structure & modernization rules ESLint can't express (AGENTS.md §3–§4): naming, pages/,
+# component CSS, static styles, @defer placeholders, token colours. Whole-repo but <1s, and a
+# ratchet against structure-baseline.json, so it only fails on something new.
+node scripts/check-structure.mjs
+
 # Branch naming is part of the workflow contract (docs/engineering/git-workflow.md §2).
 # Checked at commit time so a bad name surfaces before the first commit rather than
 # at PR time, when renaming means re-pushing.
