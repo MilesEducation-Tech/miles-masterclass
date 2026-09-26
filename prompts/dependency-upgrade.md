@@ -37,7 +37,8 @@ release is blocked by a peer dependency, record the blocker and leave the packag
 - ✅ **Angular 22.2.0** added to the same branch at your request, through `pnpm up` because the guard blocks the CLI
   updater. Nothing was skipped: core, cdk and cli ship no migrations newer than 22.0.0, and ssr has none.
 - ✅ PR A committed (`12581ac`). ✅ PR B vitest 5.0.2 + jsdom 30.1.1: all 692 tests pass unchanged.
-- Next: C (ng-icons 36), D (swiper 14).
+- ✅ PR C ng-icons 36.1.0: `lucideLinkedin` (removed in Lucide 1.x) → `phosphorLinkedinLogo` in `badge-hero-card`.
+- Next: D (swiper 14).
 
 ## Original decisions
 

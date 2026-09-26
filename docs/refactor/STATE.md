@@ -7,7 +7,7 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **MIL-241 dependency upgrade (2026-09-26), plan `prompts/dependency-upgrade.md`, approved by you.** Node 24 (your choice; Vercel doesn't list 26). PR A (non-Angular minor versions + Node 24) is done on `chore/MIL-241-deps-minor`, and every gate is green locally. **UNCOMMITTED — you commit.** Confirm the Vercel preview runs Node ≥ 24.15. Angular 22.2.0 is on the same branch too (bumped with pnpm; there are no migrations after 22.0.0). PR A committed. PR B (vitest 5 / jsdom 30) is done on `chore/MIL-241-deps-test-tooling`, all green, **UNCOMMITTED**. Next: C (ng-icons 36), D (swiper 14). TypeScript 7 and motion 13 are blocked by peer dependencies.
+- 🟡 **MIL-241 dependency upgrade (2026-09-26), plan `prompts/dependency-upgrade.md`, approved by you.** Node 24 (your choice; Vercel doesn't list 26). PR A (non-Angular minor versions + Node 24) is done on `chore/MIL-241-deps-minor`, and every gate is green locally. **UNCOMMITTED — you commit.** Confirm the Vercel preview runs Node ≥ 24.15. Angular 22.2.0 is on the same branch too (bumped with pnpm; there are no migrations after 22.0.0). PR A and PR B committed. PR C (ng-icons 36) is done on `chore/MIL-241-deps-ng-icons`, all green, **UNCOMMITTED**. Next: D (swiper 14). TypeScript 7 and motion 13 are blocked by peer dependencies.
 
 - 🟡 **POST-REFACTOR: MIL-240 permanent structure harness (2026-09-26), plan `prompts/structure-harness.md`, approved by you.** Refactor PR opened: MilesEducation-Tech/miles-masterclass#26 (`refactor/structure-10` → `master`).
   - [x] PR 1 `chore/MIL-240-eslint-modernization-rules` (stacked on `refactor/structure-10`): `prefer-inject` + `prefer-control-flow` on, `OnDestroy` import banned, `no-explicit-any` error with a 34-file warn ratchet; last constructor injection + 2 milesverse `OnDestroy` converted. lint 0 errors, tests 182/692, format, build:prod green. **UNCOMMITTED — you commit.**
@@ -2373,6 +2373,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-09-27 · MIL-241 · PR B committed (0c3d0fe). PR C ng-icons 33 → 36.1.0 on `chore/MIL-241-deps-ng-icons`; only break: `lucideLinkedin` removed (Lucide 1.x has no brand icons) → `phosphorLinkedinLogo` in badge-hero-card; every @ng-icons import checked against v36; lint/test/format/build:prod/storybook green · uncommitted
 - 2026-09-26 · MIL-241 · PR A committed (12581ac). PR B vitest 4 → 5.0.2, jsdom 27 → 30.1.1 on `chore/MIL-241-deps-test-tooling`, no spec changes needed; tests 182/692, lint, format, build:prod, test:scripts green · uncommitted. Separate `docs/MIL-241-no-ai-commit-trailer` worktree: CLAUDE.md "no AI attribution" rule · uncommitted
 - 2026-09-26 · MIL-241 · Angular 22.0.8 → 22.2.0 (all @angular/*, devkit, cdk) via pnpm; no 22.1+ migrations exist; lint/test/format/build:prod/storybook/SSR green; initial 240.08 kB gz · uncommitted
 - 2026-09-26 · MIL-241 · PR A non-Angular minor bumps + Node 24 (engines, CI); @types/node held at 24.13.6 by minimumReleaseAge; lint/test/format/build:prod/storybook/SSR green · uncommitted
