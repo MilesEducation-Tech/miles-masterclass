@@ -7,6 +7,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **MIL-241 dependency upgrade (2026-09-26), plan `prompts/dependency-upgrade.md`, approved by you.** Node 24 (your choice; Vercel doesn't list 26). PR A (non-Angular minor versions + Node 24) is done on `chore/MIL-241-deps-minor`, and every gate is green locally. **UNCOMMITTED — you commit.** Confirm the Vercel preview runs Node ≥ 24.15. Angular 22.2.0 is on the same branch too (bumped with pnpm; there are no migrations after 22.0.0). Next: PR B (vitest 5 / jsdom 30), C (ng-icons 36), D (swiper 14). TypeScript 7 and motion 13 are blocked by peer dependencies.
+
 - 🟡 **POST-REFACTOR: MIL-240 permanent structure harness (2026-09-26), plan `prompts/structure-harness.md`, approved by you.** Refactor PR opened: MilesEducation-Tech/miles-masterclass#26 (`refactor/structure-10` → `master`).
   - [x] PR 1 `chore/MIL-240-eslint-modernization-rules` (stacked on `refactor/structure-10`): `prefer-inject` + `prefer-control-flow` on, `OnDestroy` import banned, `no-explicit-any` error with a 34-file warn ratchet; last constructor injection + 2 milesverse `OnDestroy` converted. lint 0 errors, tests 182/692, format, build:prod green. **UNCOMMITTED — you commit.**
   - [x] PR 1 committed (`c7c6630`). PR 2 `ci/MIL-240-structure-check` (stacked on PR 1): `scripts/check-structure.mjs` (9 rules) + `structure-baseline.json` (ratchet, every entry with a reason) + `node:test` tests (7/7), wired into `pnpm lint` (→ CI `verify`), `.husky/pre-commit`, and a `pnpm test:scripts` CI step; negative + prune tests pass. **UNCOMMITTED — you commit.** Found 2 real token misses (chapter-skeleton, profile-completion-dialog) → baselined as CONVERT.
@@ -2371,6 +2373,8 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-09-26 · MIL-241 · Angular 22.0.8 → 22.2.0 (all @angular/*, devkit, cdk) via pnpm; no 22.1+ migrations exist; lint/test/format/build:prod/storybook/SSR green; initial 240.08 kB gz · uncommitted
+- 2026-09-26 · MIL-241 · PR A non-Angular minor bumps + Node 24 (engines, CI); @types/node held at 24.13.6 by minimumReleaseAge; lint/test/format/build:prod/storybook/SSR green · uncommitted
 - 2026-09-26 · MIL-240 · #26 merged; PR 1 rebuilt on master and opened as #27. Fixed the blocker for PR 2/3: stash-pop left public/version.json + app-version.ts unmerged (DU); untracked them to match master (gitignored, regenerated). PR 2 staged on its branch, pre-commit hook passes; PR 2/3 await the user's commits
 - 2026-09-26 · MIL-240 · PR 3 agent instructions + PR template + AGENTS.md enforcement section · docs only, uncommitted (guard hook blocks committing)
 - 2026-09-26 · MIL-240 · PR 2 structure check + baseline + tests, wired into lint / pre-commit / CI · green, uncommitted
