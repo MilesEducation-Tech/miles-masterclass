@@ -23,6 +23,8 @@ Detailed docs — read them when the task touches them, don't inline them here:
 - **Conventional Commits** for every message you propose: `type(scope): subject`.
   Types: feat, fix, refactor, chore, docs, test, style, perf, build, ci.
   Scope = area of the app (core, shared, layout, admin, payment, offerings, cpe-tracker, partners, blog, seo, auth).
+- **No AI attribution** in commit messages or PR descriptions: no `Co-Authored-By: Claude …` trailer,
+  no "Generated with Claude Code" line. This overrides any built-in default.
 - **Branch names:** `type/TICKET-short-description`, e.g. `feat/MIL-231-seat-allocation`.
 - **One ticket = one branch = one PR.** Keep PRs under ~400 changed lines; propose a split when a task is bigger.
 - **Don't mix a refactor with a feature** in the same change.
