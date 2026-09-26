@@ -8,10 +8,8 @@ import { FooterLink, FooterSection } from '@core/models/footer.model';
 import { Utils } from '@shared/services/utils';
 import { Consent } from '@core/services/consent/consent';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import {
-  CalendlyDialog,
-  CalendlyDialogData,
-} from '@shared/dialogs/calendly-dialog/calendly-dialog';
+// Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { User } from '@core/models/profile.model';
 
 @Component({
@@ -223,7 +221,8 @@ export class Footer {
   }
 
   /** Opens the Calendly scheduler — mirrors the header's "Book Demo" action. */
-  openScheduler(): void {
+  async openScheduler(): Promise<void> {
+    const { CalendlyDialog } = await import('@shared/dialogs/calendly-dialog/calendly-dialog');
     this.dialogs.open(CalendlyDialog, {
       data: {
         ariaLabel: 'Schedule a demo',

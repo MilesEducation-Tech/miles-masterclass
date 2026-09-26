@@ -21,11 +21,8 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Utils } from '@shared/services/utils';
 import { FeatureFacade, FeatureResource } from '@core/services/feature-facade/feature-facade';
 import { CartStore } from '@core/services/cart/cart-store';
-import { GlobalSearchDialog } from '@layout/dialogs/global-search-dialog/global-search-dialog';
-import {
-  CalendlyDialog,
-  CalendlyDialogData,
-} from '@shared/dialogs/calendly-dialog/calendly-dialog';
+// Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { Content } from '@core/models/course.model';
 
 import { SubscribeCard } from './components/subscribe-card/subscribe-card';
@@ -212,7 +209,8 @@ export class FooterOverlay {
     }
   }
 
-  protected onScheduleDiscoveryCall(): void {
+  protected async onScheduleDiscoveryCall(): Promise<void> {
+    const { CalendlyDialog } = await import('@shared/dialogs/calendly-dialog/calendly-dialog');
     this.dialogs.open(CalendlyDialog, {
       data: {
         ariaLabel: 'Schedule a discovery call',
@@ -242,7 +240,9 @@ export class FooterOverlay {
     this.router.navigate(['/', this.utils.country(), this.utils.profession(), 'payment', 'cart']);
   }
 
-  protected openSearch(): void {
+  protected async openSearch(): Promise<void> {
+    const { GlobalSearchDialog } =
+      await import('@layout/dialogs/global-search-dialog/global-search-dialog');
     this.dialogs.open(GlobalSearchDialog);
   }
 }

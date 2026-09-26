@@ -48,10 +48,8 @@ import { NavMenuItem } from '@shared/components/nav-menu-item/nav-menu-item';
 import { GUEST_NAV, LOGGED_IN_NAV } from './nav.config';
 import { Utils } from '@shared/services/utils';
 import { Viewport } from '@core/services/viewport/viewport';
-import {
-  CalendlyDialog,
-  CalendlyDialogData,
-} from '@shared/dialogs/calendly-dialog/calendly-dialog';
+// Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { User } from '@core/models/profile.model';
 
@@ -302,7 +300,8 @@ export class Header {
     this.closeMobileMenu();
   }
 
-  openScheduler(): void {
+  async openScheduler(): Promise<void> {
+    const { CalendlyDialog } = await import('@shared/dialogs/calendly-dialog/calendly-dialog');
     this.dialogs.open(CalendlyDialog, {
       data: {
         ariaLabel: 'Schedule a demo',
