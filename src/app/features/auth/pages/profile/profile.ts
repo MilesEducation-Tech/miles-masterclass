@@ -1,7 +1,7 @@
 import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormField, applyEach, form, hidden, required, validate } from '@angular/forms/signals';
-import { Observable, map } from 'rxjs';
+import { Observable, from, map, switchMap } from 'rxjs';
 
 import { NgpCheckbox } from 'ng-primitives/checkbox';
 import { NgpDescription, NgpFormField, NgpLabel } from 'ng-primitives/form-field';
@@ -24,11 +24,8 @@ import { OnboardingApi } from '@core/services/onboarding-api/onboarding-api';
 import { NotificationService } from '@core/services/notification/notification';
 import { Logger } from '@core/services/logger/logger';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-  UtilsDialogResult,
-} from '@shared/dialogs/utils-dialog/utils-dialog';
+// Type-only: the dialog loads with `import()` when the leave guard fires (§4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 
 /** Which control a question renders as. */
 export type Control = 'text' | 'textarea' | 'number' | 'boolean' | 'date' | 'single' | 'multi';
@@ -532,23 +529,28 @@ export class Profile {
   canDeactivate(): Observable<boolean> | boolean {
     if (!this.isDirty() || this.isSaving()) return true;
 
-    const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
-      data: {
-        title: 'Leave without saving?',
-        content: [
-          {
-            type: 'text',
-            value: 'Your answers have not been saved yet and will be lost if you leave now.',
-          },
-        ],
-        buttons: [
-          { label: 'Keep editing', variant: 'outline', action: 'close' },
-          { label: 'Leave', variant: 'destructive', action: 'confirm' },
-        ],
-      },
-    });
+    const opened = import('@shared/dialogs/utils-dialog/utils-dialog').then(({ UtilsDialog }) =>
+      this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+        data: {
+          title: 'Leave without saving?',
+          content: [
+            {
+              type: 'text',
+              value: 'Your answers have not been saved yet and will be lost if you leave now.',
+            },
+          ],
+          buttons: [
+            { label: 'Keep editing', variant: 'outline', action: 'close' },
+            { label: 'Leave', variant: 'destructive', action: 'confirm' },
+          ],
+        },
+      }),
+    );
 
-    return dialogRef.afterClosed.pipe(map((result) => result?.action === 'confirm'));
+    return from(opened).pipe(
+      switchMap((ref) => ref.afterClosed),
+      map((result) => result?.action === 'confirm'),
+    );
   }
 
   /** A 400 here is keyed by question code, one message per bad answer. */
