@@ -45,7 +45,6 @@ import { ScrollService } from '@core/services/scroll/scroll';
     EnquiryForm,
   ],
   templateUrl: './bkn.html',
-  styleUrl: './bkn.css',
 })
 export class Bkn {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

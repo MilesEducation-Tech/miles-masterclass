@@ -28,7 +28,6 @@ import { VideoListWrapper } from '@shared/components/video-list-wrapper/video-li
     VideoListWrapper,
   ],
   templateUrl: './cpa-canada.html',
-  styleUrl: './cpa-canada.css',
 })
 export class CpaCanada {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

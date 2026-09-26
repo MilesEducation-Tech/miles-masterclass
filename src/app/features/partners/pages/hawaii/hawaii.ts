@@ -28,7 +28,6 @@ import { VideoListWrapper } from '@shared/components/video-list-wrapper/video-li
     VideoListWrapper,
   ],
   templateUrl: './hawaii.html',
-  styleUrl: './hawaii.css',
 })
 export class Hawaii {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

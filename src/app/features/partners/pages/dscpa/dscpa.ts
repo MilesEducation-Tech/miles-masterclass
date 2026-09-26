@@ -28,7 +28,6 @@ import { PARTNER_OFFERINGS } from '@core/constants/offerings.config';
     Offering,
   ],
   templateUrl: './dscpa.html',
-  styleUrl: './dscpa.css',
 })
 export class Dscpa {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

@@ -28,7 +28,6 @@ import { VideoListWrapper } from '@shared/components/video-list-wrapper/video-li
     VideoListWrapper,
   ],
   templateUrl: './ctcpa.html',
-  styleUrl: './ctcpa.css',
 })
 export class Ctcpa {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

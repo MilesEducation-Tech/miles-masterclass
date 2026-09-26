@@ -29,7 +29,6 @@ import { ALLINIAL_GLOBAL_LOGO } from '@core/constants/icon';
     PlanBenefits,
   ],
   templateUrl: './allinial-global.html',
-  styleUrl: './allinial-global.css',
 })
 export class AllinialGlobal {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

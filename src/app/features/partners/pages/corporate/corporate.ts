@@ -43,7 +43,6 @@ import { Button } from '@shared/ui/button/button';
     ForPartnershipTabs,
   ],
   templateUrl: './corporate.html',
-  styleUrl: './corporate.css',
 })
 export class Corporate {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

@@ -35,6 +35,10 @@
   /* state — the deep navy card behind empty and error states (error-state,
      empty cart, billing's "no address", payment's empty panel) */
   --mm-surface-state: #151f2b;
+  /* pill — the frosted "<Partner> Members Access" pill on the partner landing
+     heroes: its label and its CTA fill, repeated on 7 partner pages */
+  --mm-pill-label: #f5f5f7;
+  --mm-pill-cta: #0071e3;
   --mm-outline: #32353b;
   /* Status green. Lived only in `.admin-theme` until the AI Lab course page
      needed it on the public site (step ticks, CPE-recording pill, completed
@@ -187,6 +191,8 @@
   --color-success-foreground: var(--mm-success-fg);
   --color-success-bg: var(--mm-success-bg);
   --color-surface-state: var(--mm-surface-state);
+  --color-pill-label: var(--mm-pill-label);
+  --color-pill-cta: var(--mm-pill-cta);
   /* Admin palette. Defined only under `.admin-theme` (see above), so these
      utilities resolve to nothing on the public site — the same as the
      `var(--mm-*)` inline styles they replace in the admin rows. */

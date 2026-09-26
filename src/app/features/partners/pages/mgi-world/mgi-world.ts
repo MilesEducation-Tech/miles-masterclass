@@ -28,7 +28,6 @@ import { VideoListWrapper } from '@shared/components/video-list-wrapper/video-li
     VideoListWrapper,
   ],
   templateUrl: './mgi-world.html',
-  styleUrl: './mgi-world.css',
 })
 export class MgiWorld {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

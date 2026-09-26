@@ -17,7 +17,6 @@ export interface PartnershipTab {
   selector: 'app-for-partnership-tabs',
   imports: [NgpTabset, NgpTabList, NgpTabButton, NgpTabPanel, NgComponentOutlet],
   templateUrl: './for-partnership-tabs.html',
-  styleUrl: './for-partnership-tabs.css',
 })
 export class ForPartnershipTabs {
   tabs = input<PartnershipTab[]>([]);

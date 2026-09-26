@@ -28,7 +28,6 @@ import { MGI_PARTNER_OFFERINGS } from '@core/constants/offerings.config';
     EnquiryForm,
   ],
   templateUrl: './mgi-north-america.html',
-  styleUrl: './mgi-north-america.css',
 })
 export class MGINorthAmerica {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

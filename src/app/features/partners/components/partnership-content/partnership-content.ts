@@ -74,7 +74,6 @@ const SECTION_PRESETS: Record<ContentType, Pick<ContentSection, 'cardType' | 'sw
   selector: 'app-partnership-content',
   imports: [Carousel, Horizontal, Square, Vertical],
   templateUrl: './partnership-content.html',
-  styleUrl: './partnership-content.css',
 })
 export class PartnershipContent {
   private readonly http = inject(ApiClient);

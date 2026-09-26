@@ -52,7 +52,6 @@ import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan
     PlanBenefits,
   ],
   templateUrl: './illinois.html',
-  styleUrl: './illinois.css',
 })
 export class Illinois {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
