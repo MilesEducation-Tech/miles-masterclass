@@ -38,7 +38,9 @@ release is blocked by a peer dependency, record the blocker and leave the packag
   updater. Nothing was skipped: core, cdk and cli ship no migrations newer than 22.0.0, and ssr has none.
 - ✅ PR A committed (`12581ac`). ✅ PR B vitest 5.0.2 + jsdom 30.1.1: all 692 tests pass unchanged.
 - ✅ PR C ng-icons 36.1.0: `lucideLinkedin` (removed in Lucide 1.x) → `phosphorLinkedinLogo` in `badge-hero-card`.
-- Next: D (swiper 14).
+- ✅ PR D swiper 14.2.0: no API changes needed. The copied pagination CSS in `carousel.ts` was re-synced; the only
+  new rule is `.swiper-pagination-lock`.
+- Still blocked: TypeScript 7 (until Angular 23) and motion 13 (until ngx-motion supports it).
 
 ## Original decisions
 
