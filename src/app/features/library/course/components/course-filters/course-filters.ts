@@ -26,7 +26,6 @@ import {
   ],
   providers: [provideIcons({ heroChevronDown })],
   templateUrl: './course-filters.html',
-  styleUrl: './course-filters.css',
 })
 export class CourseFilters {
   readonly groups = input.required<readonly CourseFilterGroup[]>();

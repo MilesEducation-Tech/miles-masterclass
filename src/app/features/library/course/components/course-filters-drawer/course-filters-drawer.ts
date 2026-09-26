@@ -23,7 +23,6 @@ export interface CourseFiltersDrawerData {
   imports: [CourseFilters, DialogShell, NgIcon],
   providers: [provideIcons({ heroXMark })],
   templateUrl: './course-filters-drawer.html',
-  styleUrl: './course-filters-drawer.css',
 })
 export class CourseFiltersDrawer {
   // Assigned by the `Dialog` service after `createComponent` (see dialog.ts:227-229).

@@ -25,7 +25,6 @@ import { PartnerContentList } from '@shared/components/partner-content-list/part
   imports: [InstructorCard, NgIcon, PartnerContentList],
   providers: [provideIcons({ heroMagnifyingGlass })],
   templateUrl: './instructor.html',
-  styleUrl: './instructor.css',
 })
 export class Instructor {
   readonly facade = inject(InstructorFacade);

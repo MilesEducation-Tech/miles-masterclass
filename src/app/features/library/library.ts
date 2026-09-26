@@ -11,6 +11,5 @@ import { Backward } from '@shared/components/backward/backward';
       <router-outlet />
     </div>
   `,
-  styles: ``,
 })
 export class Library {}

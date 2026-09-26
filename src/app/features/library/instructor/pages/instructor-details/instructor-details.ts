@@ -59,7 +59,6 @@ interface InstructorCoursesResponse {
     Square,
   ],
   templateUrl: './instructor-details.html',
-  styleUrl: './instructor-details.css',
 })
 export class InstructorDetails {
   readonly instructorId = input(0, { transform: numberAttribute });

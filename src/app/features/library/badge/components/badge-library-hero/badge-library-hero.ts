@@ -6,7 +6,6 @@ import { BadgeSpotAnimation } from '../badge-spot-animation/badge-spot-animation
   selector: 'app-badge-library-hero',
   imports: [BadgeSpotAnimation],
   templateUrl: './badge-library-hero.html',
-  styleUrl: './badge-library-hero.css',
 })
 export class BadgeLibraryHero {
   protected readonly S3_BUCKET_URL = environment.S3_BUCKET_URL;

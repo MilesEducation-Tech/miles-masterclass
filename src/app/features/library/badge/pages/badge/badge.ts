@@ -53,7 +53,6 @@ const COURSE_TYPE_ROUTE: Record<string, string> = {
   selector: 'app-badge',
   imports: [BadgeLibraryHero, TabStrip, SelectMenu, BadgeCard],
   templateUrl: './badge.html',
-  styleUrl: './badge.css',
 })
 export class Badge {
   readonly facade = inject(BadgeFacade);

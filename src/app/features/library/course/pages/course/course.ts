@@ -27,7 +27,6 @@ import { CourseFacade } from '../../services/course-facade';
   imports: [TabStrip, Vertical, CourseFilters, NgIcon],
   providers: [provideIcons({ heroFunnel })],
   templateUrl: './course.html',
-  styleUrl: './course.css',
   host: {
     class: 'p-4',
   },
