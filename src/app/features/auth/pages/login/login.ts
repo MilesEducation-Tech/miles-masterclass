@@ -25,7 +25,6 @@ import { Utils } from '@shared/services/utils';
     RouterLink,
   ],
   templateUrl: './login.html',
-  styleUrl: './login.css',
 })
 export class Login {
   readonly authFacade = inject(AuthFacade);

@@ -172,7 +172,6 @@ const ROW_WRITABLE = ['first_name', 'last_name', 'city', 'location'] as const;
     Spinner,
   ],
   templateUrl: './profile.html',
-  styleUrl: './profile.css',
   host: {
     // Covers a tab close / reload, which the router guard below cannot see.
     '(window:beforeunload)': 'onBeforeUnload($event)',
