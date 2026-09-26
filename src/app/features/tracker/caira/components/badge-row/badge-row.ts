@@ -1,4 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
+import { httpResource } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,17 +7,15 @@ import {
   inject,
   input,
   PLATFORM_ID,
-  resource,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import {
   BadgeCourseType,
   BadgeV2Response,
   CourseBadgeItem,
   WebinarBadgeItem,
 } from '@core/models/caira-badge.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { BadgeActions } from '../../services/badge-actions';
 import { trackerLinks } from '../../../utils/tracker-links';
 import { CourseBadgeCard } from '../course-badge-card/course-badge-card';
@@ -48,7 +47,6 @@ export class BadgeRow {
   /** Route for "View All", relative to the tracker (e.g. `course-badges`). */
   readonly viewAllLink = input.required<string>();
 
-  private readonly api = inject(ApiClient);
   private readonly actions = inject(BadgeActions);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -62,22 +60,21 @@ export class BadgeRow {
     this.isWebinar() ? {} : { course_type: this.courseType() },
   );
 
-  private readonly rowResource = resource({
-    params: () => (this.isBrowser ? { courseType: this.courseType() } : undefined),
-    loader: ({ params, abortSignal }) => {
-      const request =
-        params.courseType === 'webinar'
-          ? this.api.get<BadgeV2Response<RowItem[]>>('v2/webinar-badges/')
-          : this.api.get<BadgeV2Response<RowItem[]>>('v2/course-badges/', {
-              params: { course_type: params.courseType },
-            });
-      return firstValueFrom(request.pipe(takeUntil(fromEvent(abortSignal, 'abort'))), {
-        defaultValue: EMPTY,
-      });
+  private readonly rowResource = httpResource<BadgeV2Response<RowItem[]>>(
+    () => {
+      if (!this.isBrowser) return undefined;
+      const courseType = this.courseType();
+      return courseType === 'webinar'
+        ? { url: apiUrl('v2/webinar-badges/') }
+        : { url: apiUrl('v2/course-badges/'), params: { course_type: courseType } };
     },
-  });
+    { defaultValue: EMPTY },
+  );
 
-  protected readonly items = computed(() => this.rowResource.value()?.data ?? []);
+  /** Guarded: `value()` throws on an errored resource, and a failed fetch must read as "no data". */
+  protected readonly items = computed(() =>
+    this.rowResource.hasValue() ? (this.rowResource.value()?.data ?? []) : [],
+  );
   protected readonly isLoading = computed(() => this.rowResource.isLoading());
 
   /**

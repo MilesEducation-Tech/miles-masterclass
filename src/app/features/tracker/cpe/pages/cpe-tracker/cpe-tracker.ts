@@ -1,4 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
+import { httpResource } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,12 +7,10 @@ import {
   inject,
   linkedSignal,
   PLATFORM_ID,
-  resource,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft } from '@ng-icons/lucide';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import {
   CPE_COURSE_TYPE_OPTIONS,
   CPE_LEDGER_OPTIONS,
@@ -24,7 +23,7 @@ import {
   toCertificateTarget,
 } from '@features/tracker/cpe/models/cpe-credit.model';
 import { CreditsSummary } from '@core/models/cpe-tracker.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { Utils } from '@shared/services/utils';
 import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
 import { AriaSelectOption } from '@core/models/aria.model';
@@ -72,7 +71,6 @@ type CourseTypeChoice = CpeCourseType | 'all';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CpeTracker {
-  private readonly api = inject(ApiClient);
   private readonly utils = inject(Utils);
   private readonly router = inject(Router);
   private readonly certificates = inject(CertificateDownload);
@@ -126,20 +124,16 @@ export class CpeTracker {
    * that flipping the CAIRA/Others tab doesn't refetch — don't add `ledger()`
    * to these params.
    */
-  private readonly summaryResource = resource({
-    params: () => (this.isBrowser ? { year: this.year() } : undefined),
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<CpeTrackerResponse<CpeSummaryWire>>('v2/cpe-tracker/summary/', {
-            params: { year: params.year },
-          })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: undefined as unknown as CpeTrackerResponse<CpeSummaryWire> },
-      ),
-  });
+  private readonly summaryResource = httpResource<CpeTrackerResponse<CpeSummaryWire>>(() =>
+    this.isBrowser
+      ? { url: apiUrl('v2/cpe-tracker/summary/'), params: { year: this.year() } }
+      : undefined,
+  );
 
-  private readonly summary = computed(() => this.summaryResource.value()?.data ?? null);
+  /** Guarded: `value()` throws on an errored resource. */
+  private readonly summary = computed(() =>
+    this.summaryResource.hasValue() ? (this.summaryResource.value()?.data ?? null) : null,
+  );
   protected readonly isSummaryLoading = computed(() => this.summaryResource.isLoading());
 
   protected readonly creditsEarned = computed(() => {
@@ -150,42 +144,39 @@ export class CpeTracker {
 
   // ---- Credit list -------------------------------------------------------
 
-  private readonly listResource = resource({
-    params: () =>
-      this.isBrowser
-        ? {
-            ledger: this.ledger(),
-            courseType: this.courseTypeParam(),
-            year: this.year(),
-            page: this.page(),
-          }
-        : undefined,
-    loader: ({ params, abortSignal }) => {
-      const httpParams: Record<string, string | number> = {
-        ledger: params.ledger,
-        year: params.year,
-        page: params.page,
+  private readonly listResource = httpResource<CpeTrackerResponse<CpeCreditWire[]>>(
+    () => {
+      if (!this.isBrowser) return undefined;
+      const params: Record<string, string | number> = {
+        ledger: this.ledger(),
+        year: this.year(),
+        page: this.page(),
         page_count: PAGE_COUNT,
       };
-      if (params.courseType) httpParams['course_type'] = params.courseType;
-      return firstValueFrom(
-        this.api
-          .get<CpeTrackerResponse<CpeCreditWire[]>>('v2/cpe-tracker/', { params: httpParams })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: EMPTY_LIST },
-      );
+      const courseType = this.courseTypeParam();
+      if (courseType) params['course_type'] = courseType;
+      return { url: apiUrl('v2/cpe-tracker/'), params };
     },
-  });
+    { defaultValue: EMPTY_LIST },
+  );
 
   /** Stale-while-revalidate, so paging never blanks the table mid-request. */
   private readonly list = withPreviousValue(this.listResource);
 
-  protected readonly rows = computed(() => this.list.value()?.data ?? []);
+  /**
+   * The loaded page, or `undefined`. Guarded: `value()` throws on an errored resource,
+   * which took the table down before its own `hasListError` state could render.
+   */
+  private readonly listPage = computed(() =>
+    this.list.hasValue() ? this.list.value() : undefined,
+  );
+
+  protected readonly rows = computed(() => this.listPage()?.data ?? []);
   protected readonly isListLoading = computed(() => this.list.isLoading());
   protected readonly hasListError = computed(() => !!this.list.error());
   protected readonly currentPage = computed(() => this.page());
 
-  private readonly totalRows = computed(() => this.list.value()?.pagination_data?.total_count ?? 0);
+  private readonly totalRows = computed(() => this.listPage()?.pagination_data?.total_count ?? 0);
 
   protected readonly totalPages = computed(() =>
     Math.max(1, Math.ceil(this.totalRows() / PAGE_COUNT)),

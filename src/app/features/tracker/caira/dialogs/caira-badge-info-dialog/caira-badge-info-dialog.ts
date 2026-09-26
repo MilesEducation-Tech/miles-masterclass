@@ -1,16 +1,7 @@
 import { NgOptimizedImage } from '@angular/common';
-import { HttpContext } from '@angular/common/http';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  linkedSignal,
-  resource,
-  signal,
-} from '@angular/core';
+import { HttpContext, httpResource } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, computed, linkedSignal, signal } from '@angular/core';
 import { NgpTabButton, NgpTabList, NgpTabPanel, NgpTabset } from 'ng-primitives/tabs';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import { injectDialogRef } from 'ng-primitives/dialog';
 import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import {
@@ -21,7 +12,7 @@ import {
   CairaLadderItem,
 } from '@core/models/caira-badge.model';
 import { SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 
@@ -73,8 +64,6 @@ const EMPTY_DETAIL: BadgeV2Response<CairaLadderItem | null> = { data: null };
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CairaBadgeInfoDialog {
-  private readonly api = inject(ApiClient);
-
   private readonly dialogRef = injectDialogRef<
     CairaBadgeInfoDialogData,
     CairaBadgeInfoDialogResult
@@ -95,21 +84,18 @@ export class CairaBadgeInfoDialog {
    * Errors are silenced: the header has already rendered and the tabs fall back
    * to their empty copy, so a toast stacked over an open dialog adds nothing.
    */
-  private readonly detailResource = resource({
-    params: () => {
+  private readonly detailResource = httpResource<BadgeV2Response<CairaLadderItem | null>>(
+    () => {
       const id = this._data()?.level.badge.id;
-      return id ? { id } : undefined;
-    },
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<BadgeV2Response<CairaLadderItem | null>>(`v2/caira-badges/${params.id}/`, {
+      return id
+        ? {
+            url: apiUrl(`v2/caira-badges/${id}/`),
             context: new HttpContext().set(SKIP_ERROR_NOTIFICATION, true),
-          })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: EMPTY_DETAIL },
-      ),
-  });
+          }
+        : undefined;
+    },
+    { defaultValue: EMPTY_DETAIL },
+  );
 
   protected readonly isLoading = computed(() => this.detailResource.isLoading());
 

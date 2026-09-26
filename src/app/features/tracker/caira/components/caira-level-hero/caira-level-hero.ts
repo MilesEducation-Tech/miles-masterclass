@@ -1,4 +1,5 @@
 import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
+import { httpResource } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,14 +7,12 @@ import {
   inject,
   linkedSignal,
   PLATFORM_ID,
-  resource,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideChevronUp, lucideInfo } from '@ng-icons/lucide';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import { BadgeV2Response, CairaLadderItem } from '@core/models/caira-badge.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Button } from '@shared/ui/button/button';
 import { Progress } from '@shared/ui/progress/progress';
@@ -47,7 +46,6 @@ const EMPTY_LADDER: BadgeV2Response<CairaLadderItem[]> = { data: [] };
   host: { class: 'block' },
 })
 export class CairaLevelHero {
-  private readonly api = inject(ApiClient);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -56,20 +54,17 @@ export class CairaLevelHero {
 
   // ---- Ladder ------------------------------------------------------------
 
-  private readonly ladderResource = resource({
-    // `undefined` params disable the resource — the ladder is per-user and
-    // the endpoint requires a token, so there is nothing to server-render.
-    params: () => (this.isBrowser ? {} : undefined),
-    loader: ({ abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<BadgeV2Response<CairaLadderItem[]>>('v2/caira-badges/')
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: EMPTY_LADDER },
-      ),
-  });
+  private readonly ladderResource = httpResource<BadgeV2Response<CairaLadderItem[]>>(
+    // `undefined` disables the resource — the ladder is per-user and the
+    // endpoint requires a token, so there is nothing to server-render.
+    () => (this.isBrowser ? apiUrl('v2/caira-badges/') : undefined),
+    { defaultValue: EMPTY_LADDER },
+  );
 
-  protected readonly ladder = computed(() => this.ladderResource.value()?.data ?? []);
+  /** Guarded: `value()` throws on an errored resource. */
+  protected readonly ladder = computed(() =>
+    this.ladderResource.hasValue() ? (this.ladderResource.value()?.data ?? []) : [],
+  );
   protected readonly isLoading = computed(() => this.ladderResource.isLoading());
 
   /**
