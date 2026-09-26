@@ -1,9 +1,18 @@
-import { Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Backward } from '@shared/components/backward/backward';
 import { Button } from '@shared/ui/button/button';
 import { FinalAssessmentFacade } from '../../services/final-assessment-facade';
-import { ContentDetails, QuizQuestion } from '@core/models/course.model';
+import { QuizQuestion } from '@core/models/course.model';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import {
   UtilsDialog,
@@ -58,11 +67,13 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
   isAssessmentPassed = this.facade.isAssessmentPassed;
 
   // State
-  questions = signal<QuizQuestion[]>([]);
-  courseDetails = signal<ContentDetails | null>(null);
+  /** The learner's working copy: reset whenever the facade loads a new attempt. */
+  questions = linkedSignal<QuizQuestion[]>(() => this.facade.questions());
+  courseDetails = this.facade.courseDetails;
   currentQuestionIndex = signal(0);
   isSubmitted = signal(false);
-  isLoading = signal(false);
+  private readonly isSubmitting = signal(false);
+  isLoading = computed(() => this.facade.isLoading() || this.isSubmitting());
 
   // Computed
   currentQuestion = computed(() => {
@@ -103,9 +114,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
         this.facade.courseId.set(courseId);
         this.facade.sessionId.set(sessionId);
         this.currentQuestionIndex.set(0);
-        this.questions.set([]);
         this.isSubmitted.set(false);
-        this.loadQuestions();
       } else {
         this.logger.warn('FinalAssessmentExam: Missing inputs', { courseId, sessionId });
       }
@@ -149,21 +158,6 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
         return false;
       }),
     );
-  }
-
-  loadQuestions() {
-    this.isLoading.set(true);
-    this.facade.loadAssessmentData().subscribe({
-      next: (data) => {
-        // If passed, questions might be empty, but details are there.
-        this.questions.set(data.questions || []);
-        this.courseDetails.set(data.details);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.isLoading.set(false);
-      },
-    });
   }
 
   selectOption(optionKey: string) {
@@ -239,7 +233,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
         }
       });
     } else {
-      this.isLoading.set(true);
+      this.isSubmitting.set(true);
       const answersRecord: Record<number, string> = {};
       questions.forEach((q) => {
         if (q.user_selected_option) answersRecord[q.id] = q.user_selected_option;
@@ -247,7 +241,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
 
       this.facade.submitAssessment(answersRecord).subscribe({
         next: (response) => {
-          this.isLoading.set(false);
+          this.isSubmitting.set(false);
           this.isSubmitted.set(true);
           this.facade.clearAssessmentData();
 
@@ -274,7 +268,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
           }
         },
         error: () => {
-          this.isLoading.set(false);
+          this.isSubmitting.set(false);
         },
       });
     }

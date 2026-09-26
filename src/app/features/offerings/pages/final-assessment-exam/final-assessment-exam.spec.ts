@@ -36,7 +36,9 @@ describe('FinalAssessmentExam', () => {
       courseId: signal<string>(''),
       sessionId: signal<string>(''),
       isAssessmentPassed: signal<boolean>(false),
-      loadAssessmentData: vi.fn(),
+      courseDetails: signal<any>(null),
+      questions: signal<any[]>([]),
+      isLoading: signal<boolean>(false),
       updateQuestion: vi.fn(),
       submitAssessment: vi.fn(),
       clearAssessmentData: vi.fn(),
@@ -88,9 +90,6 @@ describe('FinalAssessmentExam', () => {
     // Set inputs
     fixture.componentRef.setInput('courseId', '123');
     fixture.componentRef.setInput('sessionId', '456');
-
-    // Default load success
-    mockFacade.loadAssessmentData.mockReturnValue(of({ questions: [], details: {} }));
   });
 
   it('should create', () => {
@@ -147,9 +146,8 @@ describe('FinalAssessmentExam', () => {
   it('should submit successfully and open result dialog (passed)', () => {
     // Setup questions
     const questions = [{ id: 1, question: 'Q1', user_selected_option: 'a', option_a: 'A' } as any];
-    // Re-mock loadAssessmentData and trigger load
-    mockFacade.loadAssessmentData.mockReturnValue(of({ questions, details: {} }));
-    component['loadQuestions']();
+    // The facade loads the attempt; the page's working copy follows it
+    mockFacade.questions.set(questions);
     fixture.detectChanges();
 
     // Submit
@@ -170,8 +168,7 @@ describe('FinalAssessmentExam', () => {
   it('should handle retake action from dialog', () => {
     // Setup
     const details = { id: 123, title: 'Course', course_type: 'masterclass', exam_rules: [] };
-    mockFacade.loadAssessmentData.mockReturnValue(of({ questions: [], details }));
-    component['loadQuestions'](); // Ensure details set
+    mockFacade.courseDetails.set(details);
     fixture.detectChanges();
 
     // Trigger dialog action handling manually

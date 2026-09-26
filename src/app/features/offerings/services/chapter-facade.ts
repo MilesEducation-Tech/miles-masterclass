@@ -5,19 +5,12 @@ import { NotificationService } from '@core/services/notification/notification';
 import { Analytics } from '@core/services/analytics/analytics';
 import { RouteParams, RouteResponse, RouteRequest } from '@core/models/http.model';
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
-import { ContentDetails, CourseChapter, normalizeBookmarkField } from '@core/models/course.model';
-import { catchError, forkJoin, of, tap } from 'rxjs';
+import { courseLoad, CourseLoadParams } from '../utils/course-load';
+import { catchError, of, tap } from 'rxjs';
 import { Router } from '@angular/router';
 
 type SetCpeModeRequest = RouteRequest<typeof MASTERCLASS_ROUTES.setCpeMode>;
 type SetCpeModeResponse = RouteResponse<typeof MASTERCLASS_ROUTES.setCpeMode>;
-
-// Extract types from routes for type safety
-type CourseDetailsResponse = RouteResponse<typeof MASTERCLASS_ROUTES.getCourseDetails>;
-type CourseDetailsParams = RouteParams<typeof MASTERCLASS_ROUTES.getCourseDetails>;
-
-type CourseChapterResponse = RouteResponse<typeof MASTERCLASS_ROUTES.getCourseChapter>;
-type CourseChapterParams = RouteParams<typeof MASTERCLASS_ROUTES.getCourseChapter>;
 
 type MyClassActivityRequest = RouteRequest<typeof MASTERCLASS_ROUTES.myClassActivity>;
 type MyClassActivityResponse = RouteResponse<typeof MASTERCLASS_ROUTES.myClassActivity>;
@@ -36,57 +29,19 @@ export class ChapterFacade {
   private readonly router = inject(Router);
   private readonly analytics = inject(Analytics);
 
-  // State signals with proper types
-  readonly courseDetails = signal<ContentDetails | null>(null);
-  readonly courseChapters = signal<CourseChapter[]>([]);
-  readonly loading = signal(false);
-  readonly error = signal<string | null>(null);
+  private readonly course = courseLoad();
+  readonly courseDetails = this.course.details;
+  readonly courseChapters = this.course.chapters;
 
-  /**
-   * Load course details and chapters in parallel.
-   * HTTP responses are automatically cached by Angular's HTTP transfer cache.
-   * @param params - Course ID and type parameters
-   */
-  loadCourse(params: CourseDetailsParams & Pick<CourseChapterParams, 'course_type'>): void {
-    this.loading.set(true);
-    this.error.set(null);
+  /** In flight: `selectCpeMode()`'s POST, separate from the two reads. */
+  private readonly opLoading = signal(false);
 
-    const courseDetailsParams: CourseDetailsParams = { id: params.id };
-    const courseChapterParams: CourseChapterParams = {
-      id: params.id,
-      course_type: params.course_type,
-    };
+  readonly loading = computed(() => this.opLoading() || this.course.isLoading());
+  readonly error = this.course.error;
 
-    forkJoin({
-      details: this.http.get<CourseDetailsResponse>(
-        MASTERCLASS_ROUTES.getCourseDetails.path.replace(':course_type', params.course_type),
-        {
-          params: courseDetailsParams,
-        },
-      ),
-      chapters: this.http.get<CourseChapterResponse>(MASTERCLASS_ROUTES.getCourseChapter.path, {
-        params: courseChapterParams,
-      }),
-    })
-      .pipe(
-        tap(({ details, chapters }) => {
-          if (details?.data) {
-            details.data.learning_objective_list = details.data.learning_objectives.split('\r\n');
-            this.courseDetails.set(normalizeBookmarkField(details.data));
-          }
-          if (chapters?.data) {
-            this.courseChapters.set(chapters.data);
-          }
-          this.loading.set(false);
-        }),
-        catchError((err) => {
-          this.loading.set(false);
-          this.error.set(err?.error?.message || 'Failed to load course data');
-          this.logger.error('Failed to load course', err);
-          return of(null);
-        }),
-      )
-      .subscribe();
+  /** Point both reads at a course. */
+  loadCourse(params: CourseLoadParams): void {
+    this.course.load(params);
   }
 
   readonly selectedChapterId = signal<number | null>(null);
@@ -114,10 +69,8 @@ export class ChapterFacade {
   });
 
   clear() {
-    this.courseDetails.set(null);
-    this.courseChapters.set([]);
-    this.loading.set(false);
-    this.error.set(null);
+    this.course.clear();
+    this.opLoading.set(false);
     this.selectedChapterId.set(null);
   }
 
@@ -298,7 +251,7 @@ export class ChapterFacade {
       return of(null);
     }
 
-    this.loading.set(true);
+    this.opLoading.set(true);
 
     const body: SetCpeModeRequest = {
       masterclass_id: course.id,
@@ -307,7 +260,7 @@ export class ChapterFacade {
 
     return this.http.post<SetCpeModeResponse>(MASTERCLASS_ROUTES.setCpeMode.path, body).pipe(
       tap(() => {
-        this.loading.set(false);
+        this.opLoading.set(false);
         this.notification.success(
           'Mode Selected',
           cpeModeStatus ? 'CPE Certification Mode enabled' : 'Preview Mode enabled',
@@ -336,7 +289,7 @@ export class ChapterFacade {
         );
       }),
       catchError((err) => {
-        this.loading.set(false);
+        this.opLoading.set(false);
         this.logger.error('Failed to set CPE mode', err);
         return of(null);
       }),

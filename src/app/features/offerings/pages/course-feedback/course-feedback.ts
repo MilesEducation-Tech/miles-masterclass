@@ -1,12 +1,10 @@
-import { Component, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, effect, inject, input, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FeedbackFacade } from '../../services/feedback-facade';
 import { RatingStar } from '@shared/components/rating-star/rating-star';
 import { Button } from '@shared/ui/button/button';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
-import { FeedbackCategory } from '@features/offerings/models/feedback-model';
-import { ContentDetails } from '@core/models/course.model';
 import { Utils } from '@shared/services/utils';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { User } from '@core/models/profile.model';
@@ -48,72 +46,35 @@ export class CourseFeedback {
 
   // ponytail: inert — was `auth.currentUser`.
   currentUser = signal<User | null>(null);
-  categories = signal<FeedbackCategory[]>([]);
-  courseDetails = signal<ContentDetails | null>(null);
-  ratings = signal<Record<number, number>>({});
-  otherComments = signal<string>('');
+  protected readonly categories = this.facade.categories;
+  protected readonly courseDetails = this.facade.courseDetails;
+  /** A submitted course is shown read-only, with the learner's answers filled in. */
+  protected readonly isReadOnly = this.facade.feedbackSubmitted;
+  /** Editable, but reset to the learner's submitted answers once they load. */
+  ratings = linkedSignal<Record<number, number>>(() => {
+    const ratingMap: Record<number, number> = {};
+    // `category_details.id` is the category id (the row's root `feedback_category` is the same).
+    this.facade
+      .userFeedback()
+      ?.feedback_details.forEach(
+        (item) => (ratingMap[item.category_details.id] = item.feedback_answer),
+      );
+    return ratingMap;
+  });
+  otherComments = linkedSignal(() => this.facade.userFeedback()?.other_comments || '');
   isSubmitting = signal(false);
-  isReadOnly = signal(false);
 
   // Post-submission state
   submissionSuccess = signal(false);
   certificateUrls = signal<{ miles?: string; nasba?: string } | null>(null);
 
   constructor() {
+    // An effect, not a one-shot read: the router reuses this component when only
+    // the course id changes.
     effect(() => {
       const id = this.courseId();
-      if (id) {
-        this.loadData(Number(id));
-      }
+      this.facade.showCourse(id ? Number(id) : null);
     });
-  }
-
-  loadData(courseId: number) {
-    // Load Categories
-    this.facade
-      .getFeedbackCategories()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (data) => this.categories.set(data),
-      });
-
-    // Load Course Details
-    this.facade
-      .getCourseDetails(courseId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (data) => {
-          this.courseDetails.set(data);
-          // Check if feedback is already submitted
-          if (data.user_feedback_details?.user_feedback_submitted) {
-            this.isReadOnly.set(true);
-            this.loadUserFeedback(courseId);
-          }
-        },
-      });
-  }
-
-  loadUserFeedback(courseId: number) {
-    this.facade
-      .getUserFeedback(courseId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (data) => {
-          if (data && data.length > 0) {
-            const feedback = data[0];
-            const ratingMap: Record<number, number> = {};
-            feedback.feedback_details.forEach((item) => {
-              // Note: item.category_details.id is the category ID
-              // But in the example json: "category_details": { "id": 13 }
-              // and "feedback_category": 13 at root of item.
-              // We can use item.feedback_category or item.category_details.id
-              ratingMap[item.category_details.id] = item.feedback_answer;
-            });
-            this.ratings.set(ratingMap);
-            this.otherComments.set(feedback.other_comments || '');
-          }
-        },
-      });
   }
 
   setRating(categoryId: number, value: number) {
