@@ -31,7 +31,6 @@ const FIELD_CARD_COLORS: Record<string, string> = {
   selector: 'app-cpe-compliance-dialog',
   imports: [DecimalPipe, Button, DialogShell],
   templateUrl: './cpe-compliance-dialog.html',
-  styleUrl: './cpe-compliance-dialog.css',
 })
 export class CpeComplianceDialog {
   private readonly dialogRef = injectDialogRef<ComplianceDialogData>();

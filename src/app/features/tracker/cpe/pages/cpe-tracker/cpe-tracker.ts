@@ -70,7 +70,6 @@ type CourseTypeChoice = CpeCourseType | 'all';
   ],
   providers: [provideIcons({ lucideArrowLeft })],
   templateUrl: './cpe-tracker.html',
-  styleUrl: './cpe-tracker.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CpeTracker {
