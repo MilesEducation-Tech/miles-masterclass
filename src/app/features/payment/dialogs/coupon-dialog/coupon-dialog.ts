@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { httpResource } from '@angular/common/http';
 import { CurrencyPipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -9,7 +10,13 @@ import { Button } from '@shared/ui/button/button';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { Logger } from '@core/services/logger/logger';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
-import { CouponList, CartDetails } from '@core/models/payment.model';
+import {
+  CartDetails,
+  CouponList,
+  CouponListResponse,
+  PAYMENT_ROUTES,
+} from '@core/models/payment.model';
+import { apiUrl } from '@core/services/api-client/api-client';
 
 export interface CouponDialogData {
   cartData: CartDetails;
@@ -31,33 +38,31 @@ export class CouponDialog implements OnInit {
   private readonly logger = inject(Logger);
 
   readonly couponCodeControl = new FormControl('', { nonNullable: true });
-  readonly coupons = signal<CouponList[]>([]);
-  readonly loading = signal(true);
+  /** The list is read once per dialog open; applying a coupon closes the dialog. */
+  private readonly couponsResource = httpResource<CouponListResponse>(() =>
+    apiUrl(PAYMENT_ROUTES.listCoupon.path),
+  );
+  /** Guarded: `value()` throws on an errored resource; a failure shows the empty state. */
+  readonly coupons = computed<CouponList[]>(() =>
+    this.couponsResource.hasValue() ? (this.couponsResource.value()?.data ?? []) : [],
+  );
+  readonly loading = computed(() => this.couponsResource.isLoading());
   readonly applying = signal(false);
   readonly expandedCoupons = signal<Set<number>>(new Set());
   readonly appliedCouponCode = signal<string | null>(null);
 
   ngOnInit(): void {
     this.appliedCouponCode.set(this.data?.cartData?.applied_coupon?.coupon_code ?? null);
-    this.loadCoupons();
   }
 
   close(): void {
     this.dialogRef.close();
   }
 
-  loadCoupons(): void {
-    this.loading.set(true);
-    this.facade.getCoupons().subscribe({
-      next: (res) => {
-        this.coupons.set(res.data ?? []);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.logger.error('Failed to load coupons', err);
-        this.coupons.set([]);
-        this.loading.set(false);
-      },
+  constructor() {
+    effect(() => {
+      const err = this.couponsResource.error();
+      if (err) this.logger.error('Failed to load coupons', err);
     });
   }
 
