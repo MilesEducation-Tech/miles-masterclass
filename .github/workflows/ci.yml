@@ -28,7 +28,7 @@ jobs:
       # Must come BEFORE setup-node: `cache: pnpm` needs the pnpm binary to
       # resolve the store path. Deliberately unversioned so it reads
       # `packageManager` from package.json instead of drifting from it.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v4
         with:
