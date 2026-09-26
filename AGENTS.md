@@ -417,7 +417,7 @@ pnpm build:prod    # the real gate: AOT + bundle budget
 
 Then, depending on what changed:
 
-- **UI**: `pnpm start` (port **4100**) and verify in a browser. Type checks are not feature correctness.
+- **UI**: `pnpm start` (port **4101**) and verify in a browser. Type checks are not feature correctness.
 - **SSR / server code**: `pnpm build && pnpm serve:ssr:miles-masterclass-v3`, then load the route — catches `window`/`document` leaks that dev mode hides.
 - **SEO**: after the SSR run, confirm the served HTML carries the tags:
   ```bash
@@ -426,14 +426,34 @@ Then, depending on what changed:
   Then navigate between two SEO-owning pages in a browser and confirm `document.querySelectorAll('meta[property^="og:"]').length` doesn't grow.
 - **Bundle-affecting change**: the initial bundle sits near its 2.00 MB budget. If `build:prod` warns, lazy-load — don't raise the budget.
 
-Known baseline (re-measured 2026-09-25) — **state the environment, because it changes the answer:**
+Known baseline — **state the environment, because it changes the answer:**
 
-- **Locally (macOS, Node 24.15):** all five green. `pnpm lint` 0, `pnpm ng test --watch=false` 164 files / 560 passed + 1 skipped, `pnpm format` 0, `pnpm build:prod` 0, `pnpm build-storybook` 0.
+- **Locally (macOS, Node 24.15), re-measured 2026-09-26:** all green. `pnpm lint` 0 errors (135 legacy `any` warnings, see below), `pnpm ng test --watch=false` 182 files / 692 passed + 1 skipped, `pnpm format` 0, `pnpm build:prod` 0, `pnpm build-storybook` 0.
 - **In CI (ubuntu, Node 22.x):** was red on 3 `blob-download.spec.ts` failures — a Node `Blob` reaching jsdom's `FileReader`. **Fixed**; root cause and the proof in `docs/engineering/enforcement-verified.md` §4.
 
 **A red gate means you broke it** — the old "lint and test are already red from pre-existing debt" note was stale and that debt is paid off, so don't reach for it as an excuse. But **say which environment you measured**: that `blob-download` bug passed locally and failed only in CI, and a local-green/CI-red split is the hardest kind to debug if nobody records which side they ran.
 
-All five gates are required status checks on `master` (see `docs/engineering/github-setup.md`). Respect the Husky hooks; bypassing them only delays the same failure in CI, where it cannot be skipped.
+The gates run inside the required `verify` check on `master`, next to `pr-title`, `commitlint` and `branch-name` (see `docs/engineering/github-setup.md`). Respect the Husky hooks; bypassing them only delays the same failure in CI, where it cannot be skipped.
+
+### What enforces the rules
+
+The rules in this file hold for every contributor and every tool (Claude Code, Cursor, Copilot, Codex, Gemini, or none), because they are checked where all of them pass through: git hooks locally, required CI checks on the PR, and branch rulesets on `master`. Agent instruction files (`CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`) only point here.
+
+| What                                                                                                                                                                             | Local (Husky)                                | CI (required on `master`)                      |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------- |
+| Branch name `type/TICKET-description`                                                                                                                                            | `pre-commit`                                 | `branch-name`                                  |
+| Conventional Commits                                                                                                                                                             | `commit-msg` → commitlint                    | `commitlint`, `pr-title` (the squash title)    |
+| Import boundaries, `inject()`, `@if`/`@for`, `DestroyRef`, no `any`, no `@angular/aria` / `Injectable` / `NgClass` / `NgStyle` / `app-api/`                                      | `lint-staged` → ESLint (staged files)        | `verify` → `pnpm lint`                         |
+| Naming, plural folders, no `shared/` in a feature, routed components in `pages/`, component CSS reasons, static styles, `@defer` placeholders, colours equal to a `@theme` token | `pre-commit` → `scripts/check-structure.mjs` | `verify` → `pnpm lint` (+ `pnpm test:scripts`) |
+| Formatting, tests, AOT build + bundle budget, Storybook                                                                                                                          | `lint-staged` → Prettier                     | `verify`                                       |
+| One reviewed, squash-merged PR per change; protected tags; releases                                                                                                              | —                                            | rulesets, `CODEOWNERS`, release-please         |
+
+**When a check fails:**
+
+- **ESLint:** fix the code. Never `eslint-disable` or `@ts-ignore`. The 34 files in `LEGACY_ANY_FILES` (`eslint.config.mjs`) only warn on `any`; remove a file from that list when its `any`s are gone, and never add one.
+- **Structure check** (`pnpm check:structure`): it's a ratchet against `structure-baseline.json`.
+  - A **new** violation fails. Fix it; a baseline entry is only for a genuine §4.6-style exception, needs a reason, and is reviewed via `CODEOWNERS`.
+  - A **fixed** one fails as "out of date". Run `node scripts/check-structure.mjs --prune`, which only removes or lowers entries, and commit the smaller baseline.
 
 ---
 
