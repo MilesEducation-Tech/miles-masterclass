@@ -6,7 +6,6 @@ import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
   selector: 'app-square',
   imports: [NgOptimizedImage, CairaCredlyBadge],
   templateUrl: './square.html',
-  styleUrl: './square.css',
   host: {
     class: 'w-full relative aspect-square rounded-md block overflow-hidden',
   },

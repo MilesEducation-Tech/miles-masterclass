@@ -10,7 +10,6 @@ export type CairaCredlyBadgeVariant = 'overlay' | 'inline';
 @Component({
   selector: 'app-caira-credly-badge',
   templateUrl: './caira-credly-badge.html',
-  styleUrl: './caira-credly-badge.css',
 })
 export class CairaCredlyBadge {
   readonly includedForCaira = input.required<boolean>();

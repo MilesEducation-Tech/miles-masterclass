@@ -17,6 +17,8 @@ import { CONSENT_CATEGORIES, ConsentCategory, ConsentState } from '@core/models/
   imports: [NgpSwitch, NgpSwitchThumb],
   templateUrl: './consent-banner.html',
   styleUrl: './consent-banner.css',
+  // The banner positions itself fixed, so the host shouldn't affect layout.
+  host: { class: 'contents' },
 })
 export class ConsentBanner {
   protected readonly consent = inject(Consent);

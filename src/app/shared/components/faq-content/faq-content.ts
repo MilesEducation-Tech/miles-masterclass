@@ -7,7 +7,6 @@ import { FAQContent } from '@core/models/faq.model';
   selector: 'app-faq-content',
   imports: [],
   templateUrl: './faq-content.html',
-  styleUrl: './faq-content.css',
 })
 export class FaqContent {
   private readonly sanitizer = inject(DomSanitizer);

@@ -35,6 +35,31 @@ import { Viewport } from '@core/services/viewport/viewport';
  * <app-slider [items]="sliderItems" />
  * ```
  */
+/*
+ * Slide classes, one complete list per position. Complete rather than a base
+ * plus modifiers: a base `xl:w-[150px]` would outrank a modifier's `w-full` at
+ * `xl` (variants sort after plain utilities), which the old stylesheet avoided
+ * only by rule order.
+ */
+const SLIDE_BASE =
+  'absolute bg-center bg-cover overflow-hidden transition-all duration-700 ease-out';
+const SLIDE_FULL = `${SLIDE_BASE} sm:bottom-32 bottom-8 md:aspect-9/16 aspect-video left-0 top-0 w-full h-full translate-y-0 rounded-none shadow-none opacity-100`;
+const SLIDE_THUMB = `${SLIDE_BASE} sm:bottom-32 bottom-8 xl:w-[150px] w-[120px] md:aspect-9/16 aspect-video rounded-xl shadow-[inset_0_20px_30px_rgba(255,255,255,0.3)]`;
+const SLIDE_CLASS = [
+  `${SLIDE_FULL} z-0`, // behind the hero
+  `${SLIDE_FULL} z-1`, // hero
+  `${SLIDE_THUMB} left-1/2 z-2`,
+  `${SLIDE_THUMB} xl:left-[calc(50%+180px)] left-[calc(50%+140px)] z-2`,
+  `${SLIDE_THUMB} xl:left-[calc(50%+360px)] left-[calc(50%+280px)] z-2`,
+];
+const SLIDE_HIDDEN = `${SLIDE_THUMB} xl:left-[calc(50%+660px)] left-[calc(50%+500px)] opacity-0 z-1`;
+
+const CONTENT_BASE =
+  'absolute bottom-20 left-6 z-2 mx-auto w-10/12 sm:left-20 sm:w-2/5 text-sm font-normal text-white opacity-0 font-[Helvetica,sans-serif] text-shadow-[0_3px_8px_rgba(0,0,0,0.5)]';
+// `slideIn` is the global keyframe in styles/animation.css.
+const CONTENT_VISIBLE = `${CONTENT_BASE} flex flex-col gap-2 sm:gap-4 animate-[slideIn_0.75s_ease-in-out_0.3s_forwards]`;
+const CONTENT_HIDDEN = `${CONTENT_BASE} hidden`;
+
 @Component({
   selector: 'app-slider',
   imports: [
@@ -103,6 +128,14 @@ export class Slider {
 
   /** Total number of slides */
   protected readonly totalSlides = computed(() => this.items().length);
+
+  protected itemClass(position: number): string {
+    return SLIDE_CLASS[position] ?? SLIDE_HIDDEN;
+  }
+
+  protected contentClass(visible: boolean): string {
+    return visible ? CONTENT_VISIBLE : CONTENT_HIDDEN;
+  }
 
   constructor() {
     this.destroyRef.onDestroy(() => {

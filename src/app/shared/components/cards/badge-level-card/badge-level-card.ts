@@ -6,7 +6,6 @@ import { BadgeLevelItem } from '@core/models/badge.model';
   selector: 'app-badge-level-card',
   imports: [NgOptimizedImage],
   templateUrl: './badge-level-card.html',
-  styleUrl: './badge-level-card.css',
 })
 export class BadgeLevelCard {
   readonly badge = input.required<BadgeLevelItem>();

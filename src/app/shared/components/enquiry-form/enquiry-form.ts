@@ -44,7 +44,6 @@ const emptyModel = (enquiry_type: string): EnquiryModel => ({
   selector: 'app-enquiry-form',
   imports: [Forms, AriaInput, AriaMultiselect, FormFieldSignal, Button, Spinner, RouterLink],
   templateUrl: './enquiry-form.html',
-  styleUrl: './enquiry-form.css',
   host: { ngSkipHydration: 'true' },
 })
 export class EnquiryForm {

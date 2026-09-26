@@ -15,7 +15,6 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
   selector: 'app-course-about',
   imports: [NgIcon, DatePipe, NgOptimizedImage, CategoriesList, TotalCpeCreditsPipe, DurationPipe],
   templateUrl: './course-about.html',
-  styleUrl: './course-about.css',
 })
 export class CourseAbout {
   card = input.required<ContentAbout | ContentDetails>();

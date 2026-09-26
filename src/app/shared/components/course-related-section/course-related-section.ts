@@ -42,7 +42,7 @@ interface InstructorCarousel {
   selector: 'app-course-related-section',
   imports: [Carousel, Horizontal, Square],
   templateUrl: './course-related-section.html',
-  styleUrl: './course-related-section.css',
+  host: { class: 'block' },
 })
 export class CourseRelatedSection {
   readonly courseId = input.required<number>();

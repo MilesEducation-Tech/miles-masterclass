@@ -6,7 +6,6 @@ import { HeroReelItem } from '@core/models/hero-reel-item.model';
   selector: 'app-micro-learning-hero-reel-card',
   imports: [NgOptimizedImage],
   templateUrl: './micro-learning-hero-reel-card.html',
-  styleUrl: './micro-learning-hero-reel-card.css',
   host: {
     class: 'block w-full h-full relative',
   },

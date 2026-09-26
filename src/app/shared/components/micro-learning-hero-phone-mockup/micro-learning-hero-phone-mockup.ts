@@ -15,6 +15,7 @@ export type PhoneMediaType = 'image' | 'video';
   imports: [MicroLearningHeroReelCard, NgOptimizedImage],
   templateUrl: './micro-learning-hero-phone-mockup.html',
   styleUrl: './micro-learning-hero-phone-mockup.css',
+  host: { class: 'inline-flex' },
 })
 export class MicroLearningHeroPhoneMockup {
   readonly feedItems = input<HeroReelItem[]>([]);

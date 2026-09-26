@@ -24,7 +24,6 @@ import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
     CairaCredlyBadge,
   ],
   templateUrl: './hover.html',
-  styleUrl: './hover.css',
   host: {
     class: 'w-full h-auto overflow-hidden block',
   },

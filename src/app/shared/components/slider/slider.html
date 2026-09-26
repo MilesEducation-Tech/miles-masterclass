@@ -1,5 +1,5 @@
 <ul
-  class="slider"
+  class="relative m-0 aspect-9/16 w-full list-none p-0 sm:aspect-video"
   role="region"
   aria-label="Image slider"
   aria-roledescription="carousel"
@@ -8,13 +8,7 @@
 >
   @for (item of orderedItems(); track item.id; let i = $index) {
     <li
-      class="item"
-      [class.item--behind]="i === 0"
-      [class.item--hero]="i === 1"
-      [class.item--thumb-1]="i === 2"
-      [class.item--thumb-2]="i === 3"
-      [class.item--thumb-3]="i === 4"
-      [class.item--hidden]="i >= 5"
+      [class]="itemClass(i)"
       [attr.aria-hidden]="i !== 1"
       role="group"
       [attr.aria-roledescription]="'slide'"
@@ -70,15 +64,17 @@
         </div>
       }
 
-      <div class="content" [class.content--visible]="i === 1">
+      <div [class]="contentClass(i === 1)">
         <app-miles-slug slug="miles masterclass" ngSkipHydration />
-        <h2 class="title">{{ item.title }}</h2>
-        <h2 class="subtitle">
+        <h2 class="text-2xl font-bold tracking-tight uppercase md:text-4xl">{{ item.title }}</h2>
+        <h2 class="text-xl font-semibold tracking-widest text-accent md:text-3xl">
           By {{ item.instructor_details.first_name }} {{ item.instructor_details.last_name }}
         </h2>
-        <p class="description">{{ item.course_short_overview }}</p>
+        <p class="text-sm text-neutral-400 md:text-base">{{ item.course_short_overview }}</p>
         <div class="flex items-center space-x-2">
-          <h3 class="subtitle bg-transparent border border-input rounded-lg px-2 py-1 text-sm!">
+          <h3
+            class="text-xl font-semibold tracking-widest text-accent md:text-3xl bg-transparent border border-input rounded-lg px-2 py-1 text-sm!"
+          >
             {{ item.fields_of_study | totalCpeCredits: item.class_credits }} CPE
           </h3>
           <app-caira-credly-badge
@@ -108,7 +104,10 @@
   }
 </ul>
 
-<nav class="nav" aria-label="Slider navigation">
+<nav
+  class="absolute bottom-8 left-6 z-10 flex gap-2 select-none sm:left-1/2 sm:-translate-x-1/2"
+  aria-label="Slider navigation"
+>
   <app-button
     variant="ghost"
     type="button"

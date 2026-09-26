@@ -13,7 +13,6 @@ export interface BadgeCardActionEvent {
   selector: 'app-badge-card',
   imports: [CategoriesList, TotalCpeCreditsPipe],
   templateUrl: './badge-card.html',
-  styleUrl: './badge-card.css',
 })
 export class BadgeCard {
   readonly card = input.required<BadgeCardData>();

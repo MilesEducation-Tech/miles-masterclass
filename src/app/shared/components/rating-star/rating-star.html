@@ -1,6 +1,8 @@
 <!-- RatingStar Component -->
+<!-- State comes from the primitive's data attributes rather than bound classes. -->
 <div
   ngpRating
+  class="cursor-pointer outline-none data-readonly:cursor-default data-disabled:cursor-default data-disabled:opacity-50 data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-current data-focus-visible:outline-solid"
   [class]="containerClass()"
   [attr.aria-label]="ariaLabel()"
   [ngpRatingValue]="value()"

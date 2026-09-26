@@ -12,7 +12,6 @@ import { Utils } from '@shared/services/utils';
   selector: 'app-coming-soon',
   imports: [Button, CategoriesList, NgIcon],
   templateUrl: './coming-soon.html',
-  styleUrl: './coming-soon.css',
 })
 export class ComingSoon {
   private readonly utils = inject(Utils);

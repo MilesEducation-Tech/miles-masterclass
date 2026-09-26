@@ -22,7 +22,6 @@ interface WaveConfig {
   selector: 'app-wave-canvas',
   imports: [NgOptimizedImage],
   templateUrl: './wave-canvas.html',
-  styleUrl: './wave-canvas.css',
 })
 export class WaveCanvas {
   readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('wavesCanvas');

@@ -35,6 +35,7 @@ interface GalleryColumn {
   selector: 'app-plan-scrolling-gallery',
   templateUrl: './plan-scrolling-gallery.html',
   styleUrl: './plan-scrolling-gallery.css',
+  host: { class: 'block min-h-0 flex-1' },
 })
 export class PlanScrollingGallery {
   // Deterministic initial order so SSR and hydration match. Re-shuffled on the

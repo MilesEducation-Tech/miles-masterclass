@@ -12,7 +12,7 @@ export interface CairaFeatureItem {
   selector: 'app-caira-feature-grid',
   imports: [],
   templateUrl: './caira-feature-grid.html',
-  styleUrl: './caira-feature-grid.css',
+  host: { class: 'block' },
 })
 export class CairaFeatureGrid {
   readonly items = input<CairaFeatureItem[]>([]);

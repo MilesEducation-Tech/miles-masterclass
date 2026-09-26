@@ -41,7 +41,6 @@ const VIEWPORT_MARGIN = 16;
   ],
   providers: [provideIcons({ lucideChevronRight })],
   templateUrl: './nav-menu-item.html',
-  styleUrl: './nav-menu-item.css',
   encapsulation: ViewEncapsulation.None,
   host: {
     '(window:resize)': 'recheckPosition()',

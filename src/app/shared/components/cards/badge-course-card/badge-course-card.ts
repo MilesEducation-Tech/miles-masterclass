@@ -6,7 +6,6 @@ import { badgeInstructorName, BadgeCourseItem } from '@core/models/badge.model';
   selector: 'app-badge-course-card',
   imports: [NgOptimizedImage],
   templateUrl: './badge-course-card.html',
-  styleUrl: './badge-course-card.css',
 })
 export class BadgeCourseCard {
   readonly badge = input.required<BadgeCourseItem>();

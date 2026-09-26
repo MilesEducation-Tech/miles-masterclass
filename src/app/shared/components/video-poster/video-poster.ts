@@ -50,7 +50,6 @@ import {
   selector: 'app-video-poster',
   imports: [NgIcon],
   templateUrl: './video-poster.html',
-  styleUrl: './video-poster.css',
   providers: [
     provideIcons({
       matPlayArrowRound,

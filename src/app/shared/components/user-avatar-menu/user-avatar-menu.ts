@@ -17,7 +17,6 @@ import { AuthSession } from '@core/services/auth-session/auth-session';
   imports: [RouterLink, NgIcon, NgpMenu, NgpMenuItem, NgpMenuTrigger],
   providers: [provideIcons({ lucideChevronDown, lucideLogOut, lucideShoppingBag, lucideUser })],
   templateUrl: './user-avatar-menu.html',
-  styleUrl: './user-avatar-menu.css',
   encapsulation: ViewEncapsulation.None,
 })
 export class UserAvatarMenu {

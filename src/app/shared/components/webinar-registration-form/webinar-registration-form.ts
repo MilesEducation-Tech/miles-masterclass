@@ -57,7 +57,7 @@ export interface WebinarRegistrationFormValue {
   selector: 'app-webinar-registration-form',
   imports: [AngularFormField, AriaAutocomplete, AriaInput, Button, Forms, Otp, Spinner],
   templateUrl: './webinar-registration-form.html',
-  styleUrl: './webinar-registration-form.css',
+  host: { class: 'block' },
 })
 export class WebinarRegistrationForm {
   /** Webinar context — kept so the hero's existing bindings still resolve. */
