@@ -5,11 +5,7 @@ import { Button } from '@shared/ui/button/button';
 import { environment } from '@env/environment';
 import { VideoPoster } from '@shared/components/video-poster/video-poster';
 import { MilesSlug } from '@shared/components/miles-slug/miles-slug';
-import {
-  AppDownloadDialog,
-  MASTERCLASS_APP_STORE_URL,
-  MASTERCLASS_PLAY_STORE_URL,
-} from '@shared/dialogs/app-download-dialog/app-download-dialog';
+import { MASTERCLASS_APP_STORE_URL, MASTERCLASS_PLAY_STORE_URL } from '@core/constants/app-store';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 
 @Component({
@@ -52,7 +48,10 @@ export class HomeHero {
         : null;
 
     if (!storeUrl) {
-      this.dialogs.open(AppDownloadDialog);
+      // Desktop only: load the QR dialog on demand (§4.4). Phones never reach it.
+      void import('@shared/dialogs/app-download-dialog/app-download-dialog').then(
+        ({ AppDownloadDialog }) => this.dialogs.open(AppDownloadDialog),
+      );
       return;
     }
 

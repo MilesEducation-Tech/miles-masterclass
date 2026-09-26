@@ -5,10 +5,7 @@ import { injectDialogRef } from 'ng-primitives/dialog';
 import { Button } from '../../ui/button/button';
 import { DialogShell } from '../../ui/dialog-shell/dialog-shell';
 
-export const MASTERCLASS_APP_STORE_URL =
-  'https://apps.apple.com/in/app/miles-masterclass-ai-cpe/id6736642042';
-export const MASTERCLASS_PLAY_STORE_URL =
-  'https://play.google.com/store/apps/details?id=com.miles.masterclass&hl=en';
+import { MASTERCLASS_APP_STORE_URL, MASTERCLASS_PLAY_STORE_URL } from '@core/constants/app-store';
 
 interface StoreLink {
   label: string;
