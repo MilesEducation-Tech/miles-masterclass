@@ -23,7 +23,7 @@ jobs:
     # behind a required check that never completes.
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Must come BEFORE setup-node: `cache: pnpm` needs the pnpm binary to
       # resolve the store path. Deliberately unversioned so it reads
