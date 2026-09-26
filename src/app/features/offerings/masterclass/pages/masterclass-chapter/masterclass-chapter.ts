@@ -17,11 +17,8 @@ import { Utils } from '@shared/services/utils';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { exitChapterToCourse } from '@shared/utils/exit-chapter';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-  UtilsDialogResult,
-} from '@shared/dialogs/utils-dialog/utils-dialog';
+// Type-only: UtilsDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 
 @Component({
   selector: 'app-masterclass-chapter',
@@ -179,7 +176,7 @@ export class MasterclassChapter {
     }
   }
 
-  handleFirstChapterEnded() {
+  async handleFirstChapterEnded(): Promise<void> {
     const nextChapter = this.navigation().next;
     if (!nextChapter) return;
 
@@ -208,6 +205,7 @@ export class MasterclassChapter {
       ],
     };
 
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
     const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: { ...dialogData, maxWidth: '32rem', disableClose: true },
     });

@@ -7,7 +7,6 @@ import {
   heroArrowRight,
   heroArrowPath,
 } from '@ng-icons/heroicons/outline';
-import confetti from 'canvas-confetti';
 import { Button } from '@shared/ui/button/button';
 import { injectDialogRef } from 'ng-primitives/dialog';
 import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
@@ -36,11 +35,13 @@ export class AssessmentResultDialog implements OnInit {
 
   ngOnInit() {
     if (this.data.isPassed && isPlatformBrowser(this.platformId)) {
-      this.fireConfetti();
+      void this.fireConfetti();
     }
   }
 
-  fireConfetti() {
+  async fireConfetti(): Promise<void> {
+    // canvas-confetti loads only for a pass (PROMPT.md §1 heavy-library list).
+    const { default: confetti } = await import('canvas-confetti');
     const duration = 3000;
     const end = Date.now() + duration;
 

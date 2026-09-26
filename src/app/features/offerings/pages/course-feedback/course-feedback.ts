@@ -8,11 +8,8 @@ import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Utils } from '@shared/services/utils';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { User } from '@core/models/profile.model';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-  UtilsDialogResult,
-} from '@shared/dialogs/utils-dialog/utils-dialog';
+// Type-only: UtilsDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 
 const PROFILE_INCOMPLETE_DIALOG_DATA: UtilsDialogData = {
   containerClass: 'py-12 px-6',
@@ -103,7 +100,7 @@ export class CourseFeedback {
     // completed profile. Anything other than literal `true` is treated as
     // not-completed so legacy responses that omit the field still prompt.
     if (this.currentUser()?.is_profile_completed !== true) {
-      this.openProfileIncompleteDialog();
+      void this.openProfileIncompleteDialog();
       return;
     }
 
@@ -161,7 +158,8 @@ export class CourseFeedback {
     }
   }
 
-  private openProfileIncompleteDialog(): void {
+  private async openProfileIncompleteDialog(): Promise<void> {
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
     const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         ...PROFILE_INCOMPLETE_DIALOG_DATA,

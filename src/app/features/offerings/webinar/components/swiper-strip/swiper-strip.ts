@@ -16,7 +16,6 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import { FreeMode, Mousewheel } from 'swiper/modules';
 import type { SwiperOptions } from 'swiper/types';
 import { ensureSwiperElement } from '@shared/utils/swiper/ensure-swiper-element';
 
@@ -120,7 +119,11 @@ export class SwiperStrip {
   private async initSwiper(): Promise<void> {
     if (!this.container) return;
 
-    await ensureSwiperElement();
+    // swiper/modules loads alongside swiper/element, not with this component.
+    const [, { FreeMode, Mousewheel }] = await Promise.all([
+      ensureSwiperElement(),
+      import('swiper/modules'),
+    ]);
     // The registration import is one-off but still async, so the component can
     // have been torn down while it was in flight.
     if (this.isDestroyed || !this.container) return;

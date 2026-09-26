@@ -35,7 +35,8 @@ describe('AppDownloadPrompt', () => {
   it('opens the dialog once per session on mobile', async () => {
     service.maybePrompt();
     await vi.advanceTimersByTimeAsync(1001);
-    expect(dialogOpen).toHaveBeenCalledTimes(1);
+    // The dialog class arrives through a dynamic import() after the timer.
+    await vi.waitFor(() => expect(dialogOpen).toHaveBeenCalledTimes(1));
 
     service.maybePrompt();
     await vi.advanceTimersByTimeAsync(1001);

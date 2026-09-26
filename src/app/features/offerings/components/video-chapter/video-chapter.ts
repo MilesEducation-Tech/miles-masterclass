@@ -27,10 +27,8 @@ import { faClipboard } from '@ng-icons/font-awesome/regular';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { MasterclassFacade } from '../../services/masterclass-facade';
 import { Analytics } from '@core/services/analytics/analytics';
-import {
-  HtmlContentDialog,
-  HtmlContentDialogData,
-} from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
+// Type-only: HtmlContentDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 
 @Component({
   selector: 'app-video-chapter',
@@ -327,7 +325,7 @@ export class VideoChapter {
 
     const cached = this.transcriptCache.get(chapter.id);
     if (cached) {
-      this.openTranscriptDialog(cached, chapter.chapter_name);
+      void this.openTranscriptDialog(cached, chapter.chapter_name);
       return;
     }
 
@@ -341,13 +339,18 @@ export class VideoChapter {
         next: (response) => {
           if (response?.data?.chapter?.transcript_text) {
             this.transcriptCache.set(chapter.id, response.data.chapter.transcript_text);
-            this.openTranscriptDialog(response.data.chapter.transcript_text, chapter.chapter_name);
+            void this.openTranscriptDialog(
+              response.data.chapter.transcript_text,
+              chapter.chapter_name,
+            );
           }
         },
       });
   }
 
-  private openTranscriptDialog(html: string, chapterName: string) {
+  private async openTranscriptDialog(html: string, chapterName: string): Promise<void> {
+    const { HtmlContentDialog } =
+      await import('@features/offerings/dialogs/html-content-dialog/html-content-dialog');
     this.dialogs.open<HtmlContentDialogData>(HtmlContentDialog, {
       data: {
         title: `Transcript - ${chapterName}`,

@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
-import {
-  CalendlyDialog,
-  CalendlyDialogData,
-} from '@shared/dialogs/calendly-dialog/calendly-dialog';
+// Type-only: CalendlyDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { Button } from '@shared/ui/button/button';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 
@@ -39,7 +37,8 @@ export class WebinarMeetCta {
 
   private readonly dialogs = inject(NgpDialogManager);
 
-  protected onBook(): void {
+  protected async onBook(): Promise<void> {
+    const { CalendlyDialog } = await import('@shared/dialogs/calendly-dialog/calendly-dialog');
     this.dialogs.open(CalendlyDialog, {
       data: {
         ariaLabel: 'Book a 15-minute call',

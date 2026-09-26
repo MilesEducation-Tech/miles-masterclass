@@ -125,25 +125,28 @@ describe('FinalAssessmentExam', () => {
     expect(result).toBe(true);
   });
 
-  it('should prompt confirmation if not submitted and navigating away', () => {
+  it('should prompt confirmation if not submitted and navigating away', async () => {
     component.isSubmitted.set(false);
     mockFacade.isAssessmentPassed.set(false);
 
     const obs = component.canDeactivate();
-    expect(mockDialogs.open).toHaveBeenCalledWith(UtilsDialog, expect.anything());
 
     // Simulate confirm
     let allowed = false;
     if (typeof obs !== 'boolean') {
       obs.subscribe((res) => (allowed = res));
     }
+    // The dialog class arrives through a dynamic import().
+    await vi.waitFor(() =>
+      expect(mockDialogs.open).toHaveBeenCalledWith(UtilsDialog, expect.anything()),
+    );
     dialogAfterClosedSubject.next({ action: 'confirm' });
 
     expect(allowed).toBe(true);
     expect(mockFacade.clearAssessmentData).toHaveBeenCalled();
   });
 
-  it('should submit successfully and open result dialog (passed)', () => {
+  it('should submit successfully and open result dialog (passed)', async () => {
     // Setup questions
     const questions = [{ id: 1, question: 'Q1', user_selected_option: 'a', option_a: 'A' } as any];
     // The facade loads the attempt; the page's working copy follows it
@@ -161,7 +164,9 @@ describe('FinalAssessmentExam', () => {
 
     expect(mockFacade.submitAssessment).toHaveBeenCalled();
     expect(component.isSubmitted()).toBe(true);
-    expect(mockDialogs.open).toHaveBeenCalledWith(AssessmentResultDialog, expect.anything());
+    await vi.waitFor(() =>
+      expect(mockDialogs.open).toHaveBeenCalledWith(AssessmentResultDialog, expect.anything()),
+    );
     expect(mockFacade.clearAssessmentData).toHaveBeenCalled();
   });
 

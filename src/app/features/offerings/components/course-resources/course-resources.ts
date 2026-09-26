@@ -4,12 +4,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideVideo, lucideFileText, lucideDownload, lucideBot } from '@ng-icons/lucide';
 import { MasterclassFacade } from '../../services/masterclass-facade';
-import { VideoDialog, VideoDialogData } from '@shared/dialogs/video-dialog/video-dialog';
+// Type-only: VideoDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { VideoDialogData } from '@shared/dialogs/video-dialog/video-dialog';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import {
-  HtmlContentDialog,
-  HtmlContentDialogData,
-} from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
+// Type-only: HtmlContentDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 
 @Component({
   selector: 'app-course-resources',
@@ -83,7 +82,7 @@ export class CourseResources {
 
   handleResourceClick(resource: any) {
     if (resource.action === 'navigate') {
-      this.openVideoDialog();
+      void this.openVideoDialog();
     } else if (resource.action === 'glossary') {
       this.openGlossary();
     } else if (resource.action === 'exercise') {
@@ -97,7 +96,7 @@ export class CourseResources {
 
   openGlossary() {
     if (this.glossaryCache) {
-      this.openGlossaryDialog(this.glossaryCache);
+      void this.openGlossaryDialog(this.glossaryCache);
       return;
     }
 
@@ -110,12 +109,14 @@ export class CourseResources {
       .subscribe((response) => {
         if (response?.data?.glossary_transcript_text) {
           this.glossaryCache = response.data.glossary_transcript_text;
-          this.openGlossaryDialog(this.glossaryCache);
+          void this.openGlossaryDialog(this.glossaryCache);
         }
       });
   }
 
-  private openGlossaryDialog(html: string) {
+  private async openGlossaryDialog(html: string): Promise<void> {
+    const { HtmlContentDialog } =
+      await import('@features/offerings/dialogs/html-content-dialog/html-content-dialog');
     const courseTitle = this.masterclassFacade.courseDetails()?.title ?? '';
     this.dialogs.open<HtmlContentDialogData>(HtmlContentDialog, {
       data: {
@@ -125,7 +126,7 @@ export class CourseResources {
     });
   }
 
-  openVideoDialog() {
+  async openVideoDialog(): Promise<void> {
     const courseDetails = this.masterclassFacade.courseDetails();
     if (!courseDetails) return;
     if (!courseDetails.navigation_link) return;
@@ -140,6 +141,7 @@ export class CourseResources {
       videoType = 'application/x-mpegURL';
     }
 
+    const { VideoDialog } = await import('@shared/dialogs/video-dialog/video-dialog');
     this.dialogs.open<VideoDialogData>(VideoDialog, {
       data: {
         videoSource: {

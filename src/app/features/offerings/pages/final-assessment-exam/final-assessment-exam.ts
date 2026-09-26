@@ -14,16 +14,12 @@ import { Button } from '@shared/ui/button/button';
 import { FinalAssessmentFacade } from '../../services/final-assessment-facade';
 import { QuizQuestion } from '@core/models/course.model';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-  UtilsDialogResult,
-} from '@shared/dialogs/utils-dialog/utils-dialog';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+// Type-only: both dialogs load with `import()` when opened (PROMPT.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
+import { from, Observable } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 import { CanDeactivateComponent } from '@core/guards/can-deactivate-exam-guard';
-import {
-  AssessmentResultDialog,
+import type {
   AssessmentResultAction,
   AssessmentResultData,
 } from '@features/offerings/dialogs/assessment-result-dialog/assessment-result-dialog';
@@ -132,24 +128,27 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
       return true;
     }
 
-    const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
-      data: {
-        title: 'Exit Assessment?',
-        content: [
-          {
-            type: 'text',
-            value:
-              'Are you sure you want to leave the assessment? Your progress will currently be lost if you leave without submitting.',
-          },
-        ],
-        buttons: [
-          { label: 'Cancel', variant: 'outline', action: 'close' },
-          { label: 'Exit', variant: 'destructive', action: 'confirm' }, // using submit to mean 'confirm exit' since mapped to result: true
-        ],
-      },
-    });
+    const opened = import('@shared/dialogs/utils-dialog/utils-dialog').then(({ UtilsDialog }) =>
+      this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+        data: {
+          title: 'Exit Assessment?',
+          content: [
+            {
+              type: 'text',
+              value:
+                'Are you sure you want to leave the assessment? Your progress will currently be lost if you leave without submitting.',
+            },
+          ],
+          buttons: [
+            { label: 'Cancel', variant: 'outline', action: 'close' },
+            { label: 'Exit', variant: 'destructive', action: 'confirm' }, // using submit to mean 'confirm exit' since mapped to result: true
+          ],
+        },
+      }),
+    );
 
-    return dialogRef.afterClosed.pipe(
+    return from(opened).pipe(
+      switchMap((ref) => ref.afterClosed),
       map((result) => {
         if (result?.action === 'confirm') {
           this.facade.clearAssessmentData();
@@ -203,13 +202,14 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
     return (question as any)[`option_${option}`] || '';
   }
 
-  submit() {
+  async submit(): Promise<void> {
     // Validate if all questions have answers
     const questions = this.questions();
     const unanswered = questions.filter((q) => !q.user_selected_option);
 
     if (unanswered.length > 0) {
       // Show dialog if options are missing
+      const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
       const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
         data: {
           title: 'Assessment Incomplete',
@@ -259,7 +259,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
               message = `You scored ${score}%. Don't give up! Review the material and try again to achieve the passing score of ${passingScore}%.`;
             }
 
-            this.openResultDialog({
+            void this.openResultDialog({
               isPassed,
               score,
               message,
@@ -274,7 +274,9 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
     }
   }
 
-  private openResultDialog(data: AssessmentResultData) {
+  private async openResultDialog(data: AssessmentResultData): Promise<void> {
+    const { AssessmentResultDialog } =
+      await import('@features/offerings/dialogs/assessment-result-dialog/assessment-result-dialog');
     const dialogRef = this.dialogs.open<AssessmentResultData, AssessmentResultAction>(
       AssessmentResultDialog,
       { data },

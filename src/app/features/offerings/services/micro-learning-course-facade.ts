@@ -32,15 +32,9 @@ import {
   MASTERCLASS_ROUTES,
 } from '@core/models/masterclass.model';
 import { ContentDetails } from '@core/models/course.model';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-  UtilsDialogResult,
-} from '@shared/dialogs/utils-dialog/utils-dialog';
-import {
-  MicroLearningQuizDialog,
-  MicroLearningQuizDialogData,
-} from '../micro-learning/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog';
+// Type-only: both dialogs load with `import()` when opened (PROMPT.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
+import type { MicroLearningQuizDialogData } from '../micro-learning/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog';
 import { CartStore } from '@core/services/cart/cart-store';
 import {
   ActionStatus,
@@ -818,7 +812,7 @@ export class MicroLearningCourseFacade {
       .subscribe();
   }
 
-  toggleCpeMode(cpeModeStatus: boolean): void {
+  async toggleCpeMode(cpeModeStatus: boolean): Promise<void> {
     const isSwitchingToCpe = cpeModeStatus === true;
 
     // Upgrade only. Switching down to Preview stays open to everyone.
@@ -833,6 +827,7 @@ export class MicroLearningCourseFacade {
       ? 'Heads up! Switching means starting fresh - your current progress will reset. Step into CPE Mode to earn your certificate and level up your learning journey.'
       : 'Heads up! Switching to Preview Mode means you can explore freely without CPE tracking. Your CPE progress will be paused.';
 
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
     const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title,
@@ -1020,7 +1015,7 @@ export class MicroLearningCourseFacade {
 
     if (reel.quiz_details?.questions?.length) {
       this.markActiveReelActionStatus(ActionStatus.TAKE_QUIZ);
-      this.launchQuizDialog(reel);
+      void this.launchQuizDialog(reel);
       return;
     }
 
@@ -1057,7 +1052,7 @@ export class MicroLearningCourseFacade {
             quiz_details: quiz,
           };
           this.markActiveReelActionStatus(ActionStatus.TAKE_QUIZ);
-          this.launchQuizDialog(fresh);
+          void this.launchQuizDialog(fresh);
         }),
         catchError((err) => {
           this.logger.error('Failed to fetch chapter quiz', err);
@@ -1070,11 +1065,13 @@ export class MicroLearningCourseFacade {
       .subscribe();
   }
 
-  private launchQuizDialog(reel: MicroLearningReel): void {
+  private async launchQuizDialog(reel: MicroLearningReel): Promise<void> {
     // Pause the active reel's player before the modal mounts so audio doesn't
     // continue behind the dialog. Token-based — reel card pauses inside an
     // effect when the value flips.
     this.pauseRequest.set({ id: reel.id, token: ++this.tokenSeq });
+    const { MicroLearningQuizDialog } =
+      await import('../micro-learning/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog');
     this.dialogs.open<MicroLearningQuizDialogData>(MicroLearningQuizDialog, {
       data: { reel },
       injector: this.injector,

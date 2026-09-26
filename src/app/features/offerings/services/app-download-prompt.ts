@@ -1,6 +1,5 @@
 import { Service, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { AppDownloadDialog } from '@shared/dialogs/app-download-dialog/app-download-dialog';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Viewport } from '@core/services/viewport/viewport';
 
@@ -51,6 +50,9 @@ export class AppDownloadPrompt {
       // Detection failed — fall through and show the prompt.
     }
 
+    // The dialog loads only for the visitors who actually see it (PROMPT.md §4.4).
+    const { AppDownloadDialog } =
+      await import('@shared/dialogs/app-download-dialog/app-download-dialog');
     this.dialogs.open(AppDownloadDialog);
   }
 }

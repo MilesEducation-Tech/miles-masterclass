@@ -16,19 +16,15 @@ import { AppDownloadPrompt } from '@features/offerings/services/app-download-pro
 import { NotificationService } from '@core/services/notification/notification';
 import { MicroLearningCourseFacade } from '../../../services/micro-learning-course-facade';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
-import {
-  HtmlContentDialog,
-  HtmlContentDialogData,
-} from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
+// Type-only: the three dialogs below load with `import()` when opened (PROMPT.md §4.4).
+import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 import { MicroLearningTopBar } from '../../components/micro-learning-top-bar/micro-learning-top-bar';
 import { MicroLearningReelCard } from '../../components/micro-learning-reel-card/micro-learning-reel-card';
 import { MicroLearningReelNav } from '../../components/micro-learning-reel-nav/micro-learning-reel-nav';
-import {
-  MicroLearningFilterSheet,
+import type {
   MicroLearningFilterSheetData,
   MicroLearningFilterSheetResult,
 } from '../../components/micro-learning-filter-sheet/micro-learning-filter-sheet';
-import { MicroLearningAboutPanel } from '../../components/micro-learning-about-panel/micro-learning-about-panel';
 import {
   MicroLearningFilterOption,
   MicroLearningOptionId,
@@ -201,7 +197,9 @@ export class MicroLearningCourse {
     this.muted.update((value) => !value);
   }
 
-  openFilters(): void {
+  async openFilters(): Promise<void> {
+    const { MicroLearningFilterSheet } =
+      await import('../../components/micro-learning-filter-sheet/micro-learning-filter-sheet');
     const ref = this.dialogs.open<MicroLearningFilterSheetData, MicroLearningFilterSheetResult>(
       MicroLearningFilterSheet,
       { data: { title: 'Field of study', options: this.filters(), visibleCount: 5 } },
@@ -236,7 +234,7 @@ export class MicroLearningCourse {
     if (!reel) return;
     const cached = this.transcriptCache.get(reel.id);
     if (cached) {
-      this.showHtmlDialog(`Transcript - ${reel.title}`, cached);
+      void this.showHtmlDialog(`Transcript - ${reel.title}`, cached);
       return;
     }
     this.facade
@@ -252,7 +250,7 @@ export class MicroLearningCourse {
           return;
         }
         this.transcriptCache.set(reel.id, html);
-        this.showHtmlDialog(`Transcript - ${reel.title}`, html);
+        void this.showHtmlDialog(`Transcript - ${reel.title}`, html);
       });
   }
 
@@ -266,7 +264,7 @@ export class MicroLearningCourse {
     if (!reel) return;
     const cached = this.glossaryCache.get(reel.id);
     if (cached) {
-      this.showHtmlDialog(`${reel.title} - Glossary`, cached);
+      void this.showHtmlDialog(`${reel.title} - Glossary`, cached);
       return;
     }
     this.facade
@@ -279,11 +277,13 @@ export class MicroLearningCourse {
           return;
         }
         this.glossaryCache.set(reel.id, html);
-        this.showHtmlDialog(`${reel.title} - Glossary`, html);
+        void this.showHtmlDialog(`${reel.title} - Glossary`, html);
       });
   }
 
-  private showHtmlDialog(title: string, htmlContent: string): void {
+  private async showHtmlDialog(title: string, htmlContent: string): Promise<void> {
+    const { HtmlContentDialog } =
+      await import('@features/offerings/dialogs/html-content-dialog/html-content-dialog');
     this.dialogs.open<HtmlContentDialogData>(HtmlContentDialog, { data: { title, htmlContent } });
   }
 
@@ -292,7 +292,7 @@ export class MicroLearningCourse {
     if (!reel) return;
     const cached = this.aboutCache.get(reel.id);
     if (cached) {
-      this.showAboutPanel(cached);
+      void this.showAboutPanel(cached);
       return;
     }
     this.feature
@@ -315,11 +315,13 @@ export class MicroLearningCourse {
             .filter(Boolean),
         };
         this.aboutCache.set(reel.id, enriched);
-        this.showAboutPanel(enriched);
+        void this.showAboutPanel(enriched);
       });
   }
 
-  private showAboutPanel(data: ContentAbout): void {
+  private async showAboutPanel(data: ContentAbout): Promise<void> {
+    const { MicroLearningAboutPanel } =
+      await import('../../components/micro-learning-about-panel/micro-learning-about-panel');
     this.dialogs.open(MicroLearningAboutPanel, { data });
   }
 }

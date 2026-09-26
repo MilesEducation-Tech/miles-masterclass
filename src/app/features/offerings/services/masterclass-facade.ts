@@ -14,16 +14,12 @@ import {
   RouteResponse,
   SKIP_ERROR_NOTIFICATION,
 } from '@core/models/http.model';
-import {
-  SelectCpeMode,
+// Type-only: both dialogs load with `import()` when opened (PROMPT.md §4.4).
+import type {
   SelectCpeModeData,
   SelectCpeModeResult,
 } from '@features/offerings/dialogs/select-cpe-mode/select-cpe-mode';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-  UtilsDialogResult,
-} from '@shared/dialogs/utils-dialog/utils-dialog';
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { CourseChapter } from '@core/models/course.model';
 import { courseLoad, CourseLoadParams } from '../utils/course-load';
 import { CourseContentResponse, MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
@@ -137,7 +133,7 @@ export class MasterclassFacade {
   launchCourse() {
     // ponytail: bounced guests to `/auth/login` first. No session layer now.
     if (!this.courseDetails()?.cpe_mode_details) {
-      this.selectCpeModeDialog();
+      void this.selectCpeModeDialog();
       return;
     }
     this.analytics.trackEvent('start_course', {
@@ -170,7 +166,7 @@ export class MasterclassFacade {
     if (!this.utils.requireCpeModeAccess(course)) return;
 
     if (!this.courseDetails()?.cpe_mode_details) {
-      this.selectCpeModeDialog();
+      void this.selectCpeModeDialog();
       return;
     }
 
@@ -286,7 +282,7 @@ export class MasterclassFacade {
     }
   }
 
-  selectCpeModeDialog() {
+  async selectCpeModeDialog(): Promise<void> {
     const course = this.courseDetails();
     if (!course) return;
 
@@ -297,6 +293,8 @@ export class MasterclassFacade {
     // all reach the picker through this one method.
     if (!this.utils.requireCpeModeAccess(course)) return;
 
+    const { SelectCpeMode } =
+      await import('@features/offerings/dialogs/select-cpe-mode/select-cpe-mode');
     const dialogRef = this.dialogs.open<SelectCpeModeData, SelectCpeModeResult>(SelectCpeMode, {
       data: {
         type: 'Masterclass',
@@ -374,7 +372,7 @@ export class MasterclassFacade {
       .subscribe();
   }
 
-  toggleCpeMode(cpeModeStatus: boolean) {
+  async toggleCpeMode(cpeModeStatus: boolean): Promise<void> {
     const isSwitchingToCpe = cpeModeStatus === true;
 
     // Only the upgrade needs a subscription. Switching *down* to Preview must
@@ -391,6 +389,7 @@ export class MasterclassFacade {
       ? 'Heads up! Switching means starting fresh - your current progress will reset. Step into CPE Mode to earn your certificate and level up your learning journey.'
       : 'Heads up! Switching to Preview Mode means you can explore freely without CPE tracking. Your CPE progress will be paused.';
 
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
     const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title,

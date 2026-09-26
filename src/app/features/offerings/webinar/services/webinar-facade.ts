@@ -19,11 +19,8 @@ import { apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { NotificationService } from '@core/services/notification/notification';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-  UtilsDialogResult,
-} from '@shared/dialogs/utils-dialog/utils-dialog';
+// Type-only: UtilsDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
   LoginType,
@@ -380,7 +377,7 @@ export class WebinarFacade {
    */
   async register(webinarId: string): Promise<void> {
     if (!this.auth.isAuthenticated()) {
-      this.promptSignIn();
+      await this.promptSignIn();
       return;
     }
 
@@ -433,7 +430,7 @@ export class WebinarFacade {
    * The dialog is `UtilsDialog` rather than a webinar-specific component —
    * a title, a line of copy and two buttons is exactly what it is for.
    */
-  private promptSignIn(): void {
+  private async promptSignIn(): Promise<void> {
     const data: UtilsDialogData = {
       title: 'Sign in to register',
       containerClass: 'max-w-md text-left!',
@@ -450,6 +447,7 @@ export class WebinarFacade {
       ],
     };
 
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
     const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: { ...data, maxWidth: '28rem' },
     });
