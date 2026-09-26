@@ -1,10 +1,14 @@
 <div
-  [class]="isInvoice() ? 'md:w-9/12 w-11/12 mx-auto mt-32' : 'box w-10/12 mx-auto max-sm:w-full'"
+  [class]="
+    isInvoice()
+      ? 'md:w-9/12 w-11/12 mx-auto mt-32'
+      : '[mask:radial-gradient(24px_at_75%_100%,#0000_98%,#000)_50%_calc(100%-24px)/96px_100%_repeat-x,radial-gradient(24px_at_25%_50%,#000_99%,#0000_101%)_bottom/96px_48px_repeat-x] w-10/12 mx-auto max-sm:w-full'
+  "
   class="rounded-2xl overflow-hidden"
 >
   <div
     #invoiceContent
-    class="bg-linear-to-br from-[#507192] via-[#34495F] to-[#18222C] flex flex-col items-center text-white px-6 h-full mx-auto space-y-6 pt-10 pb-20"
+    class="bg-linear-to-br from-plan-4 via-plan-3 to-plan-1 flex flex-col items-center text-white px-6 h-full mx-auto space-y-6 pt-10 pb-20"
   >
     @if (showSkeleton()) {
       <!-- Mirrors the loaded layout below so nothing shifts when the order arrives -->
@@ -84,7 +88,7 @@
     } @else if (isInvoice()) {
       <app-payment-status [status]="paymentStatus()" />
       <div
-        class="flex w-full flex-col space-y-4 bg-linear-to-tl from-[#18222C] via-[#06345B] to-[#6297E3] rounded-2xl p-6"
+        class="flex w-full flex-col space-y-4 bg-linear-to-tl from-plan-1 via-plan-2 to-plan-5 rounded-2xl p-6"
       >
         <div class="flex w-full justify-between no-print">
           <p class="text-2xl text-white font-semibold">Order Details</p>

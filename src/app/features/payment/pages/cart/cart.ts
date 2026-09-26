@@ -7,7 +7,6 @@ import { EmptyCart } from '../../components/empty-cart/empty-cart';
   selector: 'app-cart',
   imports: [CartItem, EmptyCart],
   templateUrl: './cart.html',
-  styleUrl: './cart.css',
   host: {
     class: 'space-y-4',
   },

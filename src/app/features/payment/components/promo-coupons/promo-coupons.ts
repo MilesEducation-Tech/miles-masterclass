@@ -18,7 +18,7 @@ import { CouponList } from '@core/models/payment.model';
   providers: [CurrencyPipe],
   viewProviders: [provideIcons({ lucideCopy, lucideCheck })],
   templateUrl: './promo-coupons.html',
-  styleUrl: './promo-coupons.css',
+  host: { class: 'block' },
 })
 export class PromoCoupons {
   private readonly facade = inject(PaymentFacade);

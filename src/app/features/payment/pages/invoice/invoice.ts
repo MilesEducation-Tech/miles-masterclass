@@ -32,7 +32,6 @@ import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-d
   selector: 'app-invoice',
   imports: [PaymentStatus, CartItem, PriceOverview, Button, NgIconComponent, DatePipe, RouterLink],
   templateUrl: './invoice.html',
-  styleUrl: './invoice.css',
   providers: [provideIcons({ heroChevronLeft, heroArrowDownTray })],
   host: {
     class: 'relative',

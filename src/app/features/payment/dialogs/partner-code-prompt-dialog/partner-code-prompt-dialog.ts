@@ -36,7 +36,7 @@ export interface PartnerCodePromptData {
   selector: 'app-partner-code-prompt-dialog',
   imports: [Button, AriaInput, DialogShell, Forms, AngularFormField],
   templateUrl: './partner-code-prompt-dialog.html',
-  styleUrl: './partner-code-prompt-dialog.css',
+  host: { class: 'block' },
 })
 export class PartnerCodePromptDialog {
   private readonly dialogRef = injectDialogRef<

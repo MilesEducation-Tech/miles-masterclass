@@ -7,7 +7,6 @@ import { UserAddress } from '@core/models/payment.model';
   selector: 'app-address',
   imports: [NgIcon],
   templateUrl: './address.html',
-  styleUrl: './address.css',
   viewProviders: [provideIcons({ matEditOutline, matDeleteOutline })],
   host: {
     role: 'radio',

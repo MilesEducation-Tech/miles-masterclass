@@ -39,6 +39,22 @@
      heroes: its label and its CTA fill, repeated on 7 partner pages */
   --mm-pill-label: #f5f5f7;
   --mm-pill-cta: #0071e3;
+  /* Payment-flow palette, each hex repeated across 2+ payment components.
+       action — the selected-address border/dot and the address links
+       surface-inset — the price box, coupon input and unselected plan panel
+       surface-deep — the promo and plan-selection cards
+       sheet-top / sheet-bottom — the navy gradient behind 3 payment dialogs
+       plan-1…5 — the plan/invoice card gradient stops, darkest to lightest */
+  --mm-action: #4285f4;
+  --mm-surface-inset: #162230;
+  --mm-surface-deep: #0f141a;
+  --mm-sheet-top: #0f2237;
+  --mm-sheet-bottom: #1a3a5c;
+  --mm-plan-1: #18222c;
+  --mm-plan-2: #06345b;
+  --mm-plan-3: #34495f;
+  --mm-plan-4: #507192;
+  --mm-plan-5: #6297e3;
   --mm-outline: #32353b;
   /* Status green. Lived only in `.admin-theme` until the AI Lab course page
      needed it on the public site (step ticks, CPE-recording pill, completed
@@ -193,6 +209,16 @@
   --color-surface-state: var(--mm-surface-state);
   --color-pill-label: var(--mm-pill-label);
   --color-pill-cta: var(--mm-pill-cta);
+  --color-action: var(--mm-action);
+  --color-surface-inset: var(--mm-surface-inset);
+  --color-surface-deep: var(--mm-surface-deep);
+  --color-sheet-top: var(--mm-sheet-top);
+  --color-sheet-bottom: var(--mm-sheet-bottom);
+  --color-plan-1: var(--mm-plan-1);
+  --color-plan-2: var(--mm-plan-2);
+  --color-plan-3: var(--mm-plan-3);
+  --color-plan-4: var(--mm-plan-4);
+  --color-plan-5: var(--mm-plan-5);
   /* Admin palette. Defined only under `.admin-theme` (see above), so these
      utilities resolve to nothing on the public site — the same as the
      `var(--mm-*)` inline styles they replace in the admin rows. */

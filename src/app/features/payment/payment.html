@@ -18,8 +18,8 @@
               class="flex items-center sm:size-12 size-10 rounded-full justify-center"
               [class]="
                 step.active
-                  ? 'bg-linear-to-tl from-[#18222C] via-[#34495F] to-[#507192]'
-                  : 'bg-[#162230]'
+                  ? 'bg-linear-to-tl from-plan-1 via-plan-3 to-plan-4'
+                  : 'bg-surface-inset'
               "
             >
               <ng-icon [svg]="step.icon" [class]="step.active ? 'scale-150' : ''" />
@@ -40,7 +40,7 @@
   </div>
   <!-- } @else {
     <div
-      class="mx-auto container flex flex-col items-center justify-center py-8 px-4 text-center bg-[#151F2B] rounded-lg shadow-md"
+      class="mx-auto container flex flex-col items-center justify-center py-8 px-4 text-center bg-surface-state rounded-lg shadow-md"
     >
       <svg
         class="max-w-1/2 max-sm:max-w-full overflow-visible!"

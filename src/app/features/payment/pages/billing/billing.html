@@ -22,7 +22,7 @@
   @if (!showForm()) {
     <button
       type="button"
-      class="no-file-found flex w-full flex-col items-center justify-center py-8 px-4 text-center bg-[#151F2B] rounded-lg shadow-md cursor-pointer border border-transparent transition-colors hover:border-[#4285f4] hover:bg-[#1a2634] focus-visible:outline-none focus-visible:border-[#4285f4] focus-visible:ring-2 focus-visible:ring-[#4285f4]/40"
+      class="no-file-found flex w-full flex-col items-center justify-center py-8 px-4 text-center bg-surface-state rounded-lg shadow-md cursor-pointer border border-transparent transition-colors hover:border-action hover:bg-[#1a2634] focus-visible:outline-none focus-visible:border-action focus-visible:ring-2 focus-visible:ring-action/40"
       (click)="showForm.set(true)"
     >
       <svg
@@ -54,7 +54,7 @@
       <span class="block text-gray-400 mt-2">
         A billing address is required to complete your purchase.
       </span>
-      <span class="mt-4 text-sm font-medium text-[#4285f4]">+ Add billing address</span>
+      <span class="mt-4 text-sm font-medium text-action">+ Add billing address</span>
     </button>
   }
 }
@@ -63,7 +63,7 @@
   <app-button
     variant="ghost"
     (clicked)="showForm() ? cancelEditing() : showForm.set(true)"
-    class="w-auto text-[#4285F4] hover:bg-transparent"
+    class="w-auto text-action hover:bg-transparent"
   >
     {{
       showForm() && !editingAddressId()
@@ -76,7 +76,7 @@
 @if (showForm()) {
   <div class="auth-card max-w-full!">
     @if (editingAddressId()) {
-      <p class="text-sm text-[#4285f4] font-medium mb-2">✏️ Editing address</p>
+      <p class="text-sm text-action font-medium mb-2">✏️ Editing address</p>
     }
     <app-forms type="signal" class="space-y-4 flex flex-col rounded-lg" (submitted)="save()">
       <app-aria-input id="name" label="Name" [formField]="billingForm.name" />

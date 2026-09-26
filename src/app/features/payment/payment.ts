@@ -22,7 +22,6 @@ function deepestChild(snapshot: ActivatedRouteSnapshot): ActivatedRouteSnapshot 
   selector: 'app-payment',
   imports: [RouterOutlet, NgIconComponent],
   templateUrl: './payment.html',
-  styleUrl: './payment.css',
 })
 export class Payment {
   private readonly route = inject(ActivatedRoute);

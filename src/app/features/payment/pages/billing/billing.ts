@@ -29,7 +29,6 @@ import { Address } from '../../components/address/address';
   selector: 'app-billing',
   imports: [Forms, AriaInput, Button, AriaAutocomplete, AngularFormField, Address],
   templateUrl: './billing.html',
-  styleUrl: './billing.css',
   host: {
     class: 'space-y-4 flex flex-col',
   },

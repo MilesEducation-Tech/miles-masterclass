@@ -12,7 +12,6 @@ import { Button } from '@shared/ui/button/button';
   selector: 'app-cart-drawer-dialog',
   imports: [CartItem, Button, CurrencyPipe, DialogShell],
   templateUrl: './cart-drawer-dialog.html',
-  styleUrl: './cart-drawer-dialog.css',
 })
 export class CartDrawerDialog {
   private readonly dialogRef = injectDialogRef();

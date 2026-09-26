@@ -5,7 +5,7 @@ import { Utils } from '@shared/services/utils';
 @Component({
   selector: 'app-promo-offer',
   templateUrl: './promo-offer.html',
-  styleUrl: './promo-offer.css',
+  host: { class: 'block' },
 })
 export class PromoOffer {
   private readonly router = inject(Router);

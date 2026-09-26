@@ -28,7 +28,6 @@ export interface CouponDialogData {
   providers: [CurrencyPipe],
   viewProviders: [provideIcons({ heroXMark, heroPlus, heroMinus })],
   templateUrl: './coupon-dialog.html',
-  styleUrl: './coupon-dialog.css',
 })
 export class CouponDialog implements OnInit {
   private readonly dialogRef = injectDialogRef<CouponDialogData, CartDetails | undefined>();

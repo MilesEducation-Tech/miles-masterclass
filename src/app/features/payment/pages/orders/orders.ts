@@ -37,7 +37,6 @@ interface OrderActions {
     NgpMenuTrigger,
   ],
   templateUrl: './orders.html',
-  styleUrl: './orders.css',
   viewProviders: [
     provideIcons({
       matFileDownloadOutline,

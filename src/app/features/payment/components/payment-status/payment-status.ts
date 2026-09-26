@@ -6,7 +6,6 @@ import { NgIconComponent } from '@ng-icons/core';
   selector: 'app-payment-status',
   imports: [NgIconComponent],
   templateUrl: './payment-status.html',
-  styleUrl: './payment-status.css',
 })
 export class PaymentStatus {
   status = input.required<'success' | 'pending' | 'cancelled'>();

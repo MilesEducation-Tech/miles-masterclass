@@ -14,7 +14,6 @@ export type PlanAction = 'subscribe' | 'free-trial' | 'enquire' | 'firm-sponsors
   selector: 'app-plan-card',
   imports: [CurrencyPipe, NgIcon],
   templateUrl: './plan-card.html',
-  styleUrl: './plan-card.css',
 })
 export class PlanCard {
   readonly plan = input.required<SubscriptionPlan>();
@@ -129,8 +128,7 @@ export class PlanCard {
   );
 
   readonly cardClasses = computed(() => {
-    if (this.isRecommended())
-      return 'bg-linear-to-br from-[#6297E3]/60 via-[#06345B] to-[#18222C] ';
+    if (this.isRecommended()) return 'bg-linear-to-br from-plan-5/60 via-plan-2 to-plan-1 ';
     if (this.isEnterprise()) return 'bg-linear-to-tr from-[#1A2027] to-[#203144] from-50%';
     return 'bg-linear-to-tr from-[#1A2027] to-[#203144] from-50%';
   });

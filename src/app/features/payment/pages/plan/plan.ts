@@ -40,7 +40,6 @@ interface BillingCard {
     ErrorState,
   ],
   templateUrl: './plan.html',
-  styleUrl: './plan.css',
 })
 export class Plan {
   private readonly facade = inject(PaymentFacade);

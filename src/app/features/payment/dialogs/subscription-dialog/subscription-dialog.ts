@@ -14,7 +14,7 @@ import { Button } from '@shared/ui/button/button';
   imports: [PlanSelectionCard, PageLoading, ErrorState, Button, DialogShell, NgIcon],
   providers: [provideIcons({ lucideCheck })],
   templateUrl: './subscription-dialog.html',
-  styleUrl: './subscription-dialog.css',
+  host: { class: 'block' },
 })
 export class SubscriptionDialog {
   // The orchestrator marks `dismissedSubscription` at open-time, so the close

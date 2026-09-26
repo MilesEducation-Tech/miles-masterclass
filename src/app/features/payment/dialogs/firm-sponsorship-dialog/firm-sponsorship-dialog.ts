@@ -39,7 +39,7 @@ interface SponsorshipFormState {
   selector: 'app-firm-sponsorship-dialog',
   imports: [Button, AriaInput, AriaAutocomplete, DialogShell, Forms, AngularFormField],
   templateUrl: './firm-sponsorship-dialog.html',
-  styleUrl: './firm-sponsorship-dialog.css',
+  host: { class: 'block' },
 })
 export class FirmSponsorshipDialog {
   private readonly dialogRef = injectDialogRef<
