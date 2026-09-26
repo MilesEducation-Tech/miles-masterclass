@@ -31,4 +31,39 @@ describe('FinalAssessmentReport', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('expands each question as an ngpCollapsible disclosure', async () => {
+    component.isLoading.set(false);
+    component.reportData.set({
+      total_correct: 0,
+      total_questions: 1,
+      result_details: { my_percentage: 0 },
+      question_answers: [
+        {
+          id: 1,
+          is_correct: false,
+          answer: 'a',
+          question_object: { question: 'What is GAAP?', option_a: 'A', correct_option: 'b' },
+        },
+      ],
+    } as never);
+    await fixture.whenStable();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const trigger = Array.from(el.querySelectorAll('button')).find((b) =>
+      b.textContent?.includes('What is GAAP?'),
+    )!;
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    const panel = el.querySelector(`[id="${trigger.getAttribute('aria-controls')}"]`)!;
+    expect(panel).not.toBeNull();
+
+    trigger.click();
+    await fixture.whenStable();
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(component.isExpanded(1)).toBe(true);
+
+    trigger.click();
+    await fixture.whenStable();
+    expect(component.isExpanded(1)).toBe(false);
+  });
 });

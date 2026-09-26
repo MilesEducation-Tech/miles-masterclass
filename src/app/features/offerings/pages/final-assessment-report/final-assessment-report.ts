@@ -1,3 +1,8 @@
+import {
+  NgpCollapsible,
+  NgpCollapsibleContent,
+  NgpCollapsibleTrigger,
+} from 'ng-primitives/collapsible';
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FinalAssessmentFacade } from '../../services/final-assessment-facade';
 import { Button } from '@shared/ui/button/button';
@@ -18,7 +23,15 @@ import { PageLoading } from '@shared/ui/page-loading/page-loading';
 
 @Component({
   selector: 'app-final-assessment-report',
-  imports: [Button, NgIcon, DatePipe, PageLoading],
+  imports: [
+    Button,
+    NgIcon,
+    DatePipe,
+    PageLoading,
+    NgpCollapsible,
+    NgpCollapsibleContent,
+    NgpCollapsibleTrigger,
+  ],
   templateUrl: './final-assessment-report.html',
   styleUrl: './final-assessment-report.css',
   viewProviders: [

@@ -22,119 +22,116 @@
       your mode later.
     </p> -->
 
-      <div class="space-y-4">
+      <!-- ngpRadioGroup owns role="radiogroup", roving focus and Up/Down. Labelled with the
+           heading's text: ngpRadioGroup manages aria-labelledby itself and drops a bound one. Each card is an ngpRadioItem button, so its content is spans:
+           headings and paragraphs are not allowed inside a <button>.
+           Behaviour change vs the native radios: ngpRadioItem selects on FOCUS, so tabbing
+           into the group with nothing picked selects Preview Mode. It only enables Continue;
+           confirming still needs that click. -->
+      <div
+        ngpRadioGroup
+        ngpRadioGroupOrientation="vertical"
+        [ngpRadioGroupValue]="selectedMode()"
+        (ngpRadioGroupValueChange)="selectedMode.set($event)"
+        [attr.aria-label]="'Choose your ' + data.type + ' mode'"
+        class="space-y-4"
+      >
         <!-- Preview Mode Option (selectedMode = false) -->
-        <label
-          for="preview-mode"
-          class="group relative block cursor-pointer rounded-lg border-2 transition-all duration-300 p-5"
-          [class.border-blue-500]="selectedMode() === false"
-          [class.bg-blue-500/10]="selectedMode() === false"
-          [class.border-gray-600]="selectedMode() !== false"
-          [class.hover:border-gray-500]="selectedMode() !== false"
-          [class.bg-gray-800/50]="selectedMode() !== false"
-          [class.hover:bg-gray-700/50]="selectedMode() !== false"
+        <button
+          type="button"
+          ngpRadioItem
+          [ngpRadioItemValue]="false"
+          class="group relative flex w-full cursor-pointer gap-4 rounded-lg border-2 p-5 text-left transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[checked]:border-blue-500 data-[checked]:bg-blue-500/10 not-data-[checked]:border-gray-600 not-data-[checked]:bg-gray-800/50 not-data-[checked]:hover:border-gray-500 not-data-[checked]:hover:bg-gray-700/50"
         >
-          <div class="flex gap-4">
-            <div class="shrink-0 mt-1">
-              <input
-                autocomplete="off"
-                type="radio"
-                name="mode"
-                id="preview-mode"
-                class="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600"
-                [checked]="selectedMode() === false"
-                (change)="selectedMode.set(false)"
-              />
-            </div>
-            <div class="flex-1 space-y-2">
-              <div class="flex items-center gap-3">
-                <h3 class="text-white font-semibold text-lg">🎭 Preview Mode</h3>
+          <span class="mt-1 shrink-0">
+            <span
+              ngpRadioIndicator
+              class="group flex size-5 items-center justify-center rounded-full border-2 border-gray-600 bg-gray-700 data-[checked]:border-blue-600"
+            >
+              <span
+                class="hidden size-2.5 rounded-full bg-blue-600 group-data-[checked]:block"
+              ></span>
+            </span>
+          </span>
+          <span class="block flex-1 space-y-2">
+            <span class="flex items-center gap-3">
+              <span class="text-white font-semibold text-lg">🎭 Preview Mode</span>
 
-                <span
-                  class="px-2 py-1 text-green-100 text-xs font-medium rounded-full bg-green-600"
-                >
-                  FREE
-                </span>
-              </div>
-              <p class="text-gray-300 md:text-sm text-xs leading-relaxed">
-                Preview Mode lets you go at your own pace, no strings attached. No certificate here,
-                but if you change your mind and want that CPE cert, you can switch—just know you’ll
-                have to start from scratch!
-              </p>
-              <div class="flex flex-wrap gap-2 mt-3">
-                <span
-                  class="inline-flex items-center px-2 py-1 bg-gray-700 text-gray-300 md:text-xs text-[10px] rounded"
-                >
-                  ✓ Self-paced learning
-                </span>
-                <span
-                  class="inline-flex items-center px-2 py-1 bg-gray-700 text-gray-300 md:text-xs text-[10px] rounded"
-                >
-                  ✓ No time restrictions
-                </span>
-                <span
-                  class="inline-flex items-center px-2 py-1 bg-gray-700 text-gray-300 md:text-xs text-[10px] rounded"
-                >
-                  ✗ No certificate
-                </span>
-              </div>
-            </div>
-          </div>
-        </label>
+              <span class="px-2 py-1 text-green-100 text-xs font-medium rounded-full bg-green-600">
+                FREE
+              </span>
+            </span>
+            <span class="block text-gray-300 md:text-sm text-xs leading-relaxed">
+              Preview Mode lets you go at your own pace, no strings attached. No certificate here,
+              but if you change your mind and want that CPE cert, you can switch—just know you’ll
+              have to start from scratch!
+            </span>
+            <span class="flex flex-wrap gap-2 mt-3">
+              <span
+                class="inline-flex items-center px-2 py-1 bg-gray-700 text-gray-300 md:text-xs text-[10px] rounded"
+              >
+                ✓ Self-paced learning
+              </span>
+              <span
+                class="inline-flex items-center px-2 py-1 bg-gray-700 text-gray-300 md:text-xs text-[10px] rounded"
+              >
+                ✓ No time restrictions
+              </span>
+              <span
+                class="inline-flex items-center px-2 py-1 bg-gray-700 text-gray-300 md:text-xs text-[10px] rounded"
+              >
+                ✗ No certificate
+              </span>
+            </span>
+          </span>
+        </button>
 
         <!-- CPE Mode Option (selectedMode = true) -->
-        <label
-          for="cpe-mode"
-          class="group relative block cursor-pointer rounded-lg border-2 transition-all duration-300 p-5"
-          [class.border-blue-500]="selectedMode() === true"
-          [class.bg-blue-500/10]="selectedMode() === true"
-          [class.border-gray-600]="selectedMode() !== true"
-          [class.hover:border-gray-500]="selectedMode() !== true"
-          [class.bg-gray-800/50]="selectedMode() !== true"
-          [class.hover:bg-gray-700/50]="selectedMode() !== true"
+        <button
+          type="button"
+          ngpRadioItem
+          [ngpRadioItemValue]="true"
+          class="group relative flex w-full cursor-pointer gap-4 rounded-lg border-2 p-5 text-left transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[checked]:border-blue-500 data-[checked]:bg-blue-500/10 not-data-[checked]:border-gray-600 not-data-[checked]:bg-gray-800/50 not-data-[checked]:hover:border-gray-500 not-data-[checked]:hover:bg-gray-700/50"
         >
-          <div class="flex gap-4">
-            <div class="shrink-0 mt-1">
-              <input
-                autocomplete="off"
-                type="radio"
-                name="mode"
-                id="cpe-mode"
-                class="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600"
-                [checked]="selectedMode() === true"
-                (change)="selectedMode.set(true)"
-              />
-            </div>
-            <div class="flex-1 space-y-2">
-              <div class="flex items-center gap-3">
-                <h3 class="text-white font-semibold text-lg">🏆 CPE Certification Mode</h3>
-              </div>
-              <p class="text-gray-300 md:text-sm text-xs leading-relaxed">
-                Ready to earn that CPE certificate?
-                {{ data.type === 'Podcast' && data.format === 'audio' ? 'listen' : 'watch' }} at the
-                set speed, tackle quizzes, and ace the final exam. It’s a straight path to
-                certification, but hey, it’s an investment in your future!
-              </p>
-              <div class="flex flex-wrap gap-2 mt-3">
-                <span
-                  class="inline-flex items-center px-2 py-1 bg-blue-700 text-blue-100 md:text-xs text-[10px] rounded"
-                >
-                  ✓ CPE Certificate
-                </span>
-                <span
-                  class="inline-flex items-center px-2 py-1 bg-blue-700 text-blue-100 md:text-xs text-[10px] rounded"
-                >
-                  ✓ Quizzes & Assessments
-                </span>
-                <span
-                  class="inline-flex items-center px-2 py-1 bg-blue-700 text-blue-100 md:text-xs text-[10px] rounded"
-                >
-                  ✓ Progress tracking
-                </span>
-              </div>
-            </div>
-          </div>
-        </label>
+          <span class="mt-1 shrink-0">
+            <span
+              ngpRadioIndicator
+              class="group flex size-5 items-center justify-center rounded-full border-2 border-gray-600 bg-gray-700 data-[checked]:border-blue-600"
+            >
+              <span
+                class="hidden size-2.5 rounded-full bg-blue-600 group-data-[checked]:block"
+              ></span>
+            </span>
+          </span>
+          <span class="block flex-1 space-y-2">
+            <span class="flex items-center gap-3">
+              <span class="text-white font-semibold text-lg">🏆 CPE Certification Mode</span>
+            </span>
+            <span class="block text-gray-300 md:text-sm text-xs leading-relaxed">
+              Ready to earn that CPE certificate?
+              {{ data.type === 'Podcast' && data.format === 'audio' ? 'listen' : 'watch' }} at the
+              set speed, tackle quizzes, and ace the final exam. It’s a straight path to
+              certification, but hey, it’s an investment in your future!
+            </span>
+            <span class="flex flex-wrap gap-2 mt-3">
+              <span
+                class="inline-flex items-center px-2 py-1 bg-blue-700 text-blue-100 md:text-xs text-[10px] rounded"
+              >
+                ✓ CPE Certificate
+              </span>
+              <span
+                class="inline-flex items-center px-2 py-1 bg-blue-700 text-blue-100 md:text-xs text-[10px] rounded"
+              >
+                ✓ Quizzes & Assessments
+              </span>
+              <span
+                class="inline-flex items-center px-2 py-1 bg-blue-700 text-blue-100 md:text-xs text-[10px] rounded"
+              >
+                ✓ Progress tracking
+              </span>
+            </span>
+          </span>
+        </button>
       </div>
 
       <!-- Action Buttons -->

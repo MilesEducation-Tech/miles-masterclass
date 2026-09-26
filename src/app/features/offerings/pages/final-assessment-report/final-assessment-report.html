@@ -77,42 +77,44 @@
     <!-- Questions List -->
     <div class="flex flex-col gap-4">
       @for (item of filteredQuestions(); track item.id; let i = $index) {
+        <!-- ngpCollapsible supplies aria-expanded/aria-controls and the panel ids. The
+             trigger is a native <button> (the primitive relies on native activation), so
+             its inner blocks are spans. The expanded Set stays owned here. -->
         <div
+          ngpCollapsible
+          [ngpCollapsibleOpen]="isExpanded(item.id)"
+          (ngpCollapsibleOpenChange)="toggleExpand(item.id)"
           class="rounded-lg border border-[#3E4552] bg-[#161E26] overflow-hidden transition-all duration-200"
           [class.border-l-4]="!item.is_correct"
           [class.border-l-red-500]="!item.is_correct"
         >
           <!-- Header / Summary -->
-          <div
-            class="p-4 flex items-center justify-between cursor-pointer hover:bg-[#1C2530]"
-            role="button"
-            tabindex="0"
-            [attr.aria-expanded]="expandedItems().has(item.id)"
-            (click)="toggleExpand(item.id)"
-            (keydown.enter)="toggleExpand(item.id)"
-            (keydown.space)="toggleExpand(item.id); $event.preventDefault()"
+          <button
+            type="button"
+            ngpCollapsibleTrigger
+            class="p-4 flex w-full items-center justify-between text-left cursor-pointer hover:bg-[#1C2530] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
-            <div class="flex gap-4 items-center flex-1 pr-4">
+            <span class="flex gap-4 items-center flex-1 pr-4">
               <span class="text-gray-400 w-6 shrink-0">{{ i + 1 }}.</span>
               <span class="text-gray-200 font-medium line-clamp-2 md:line-clamp-1 select-none">{{
                 item.question_object.question
               }}</span>
-            </div>
+            </span>
 
-            <div class="flex items-center gap-4 shrink-0">
+            <span class="flex items-center gap-4 shrink-0">
               <!-- Badge -->
               @if (item.is_correct) {
-                <div
+                <span
                   class="px-4 py-1 rounded-full bg-[#E6F4EA] text-[#1E8E3E] text-sm font-bold min-w-[100px] text-center"
                 >
                   Correct
-                </div>
+                </span>
               } @else {
-                <div
+                <span
                   class="px-4 py-1 rounded-full bg-[#FCE8E6] text-[#D93025] text-sm font-bold min-w-[100px] text-center"
                 >
                   Incorrect
-                </div>
+                </span>
               }
 
               <!-- Chevron -->
@@ -121,13 +123,16 @@
                 class="text-gray-400 transition-transform duration-200"
                 [class.rotate-90]="isExpanded(item.id)"
                 size="1.2em"
+                aria-hidden="true"
               ></ng-icon>
-            </div>
-          </div>
+            </span>
+          </button>
 
-          <!-- Expanded Details Wrapper -->
+          <!-- Expanded Details Wrapper. `data-[closed]:grid!` beats the global
+               `[ngpCollapsibleContent][data-closed] { display: none }`, keeping the animation. -->
           <div
-            class="grid transition-[grid-template-rows] duration-300 ease-out"
+            ngpCollapsibleContent
+            class="grid data-[closed]:grid! transition-[grid-template-rows] duration-300 ease-out"
             [class.grid-rows-[1fr]]="isExpanded(item.id)"
             [class.grid-rows-[0fr]]="!isExpanded(item.id)"
           >

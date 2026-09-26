@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { injectDialogRef } from 'ng-primitives/dialog';
+import { NgpRadioGroup, NgpRadioIndicator, NgpRadioItem } from 'ng-primitives/radio';
 import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '@shared/ui/button/button';
 
@@ -19,7 +19,7 @@ export interface SelectCpeModeResult {
 
 @Component({
   selector: 'app-select-cpe-mode',
-  imports: [Button, DialogShell, FormsModule],
+  imports: [Button, DialogShell, NgpRadioGroup, NgpRadioIndicator, NgpRadioItem],
   templateUrl: './select-cpe-mode.html',
   styleUrl: './select-cpe-mode.css',
   host: {

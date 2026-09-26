@@ -1,5 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  NgpAccordion,
+  NgpAccordionContent,
+  NgpAccordionItem,
+  NgpAccordionTrigger,
+} from 'ng-primitives/accordion';
 import { matAddRound, matRemoveRound } from '@ng-icons/material-icons/round';
 import { FaqContent } from '@shared/components/faq-content/faq-content';
 import { resolveFaqData } from '@core/constants/faq';
@@ -23,12 +29,19 @@ import { Utils } from '@shared/services/utils';
  *
  * The accordion is local rather than the FAQ page's `app-faq-item`: that one
  * recurses to arbitrary depth and carries grey-card styling, and this list is
- * two fixed levels styled as dividers.
+ * two fixed levels styled as dividers. Both levels are `ngpAccordion`s.
  */
 @Component({
   selector: 'app-webinar-faq',
   host: { class: 'block' },
-  imports: [NgIcon, FaqContent],
+  imports: [
+    NgIcon,
+    FaqContent,
+    NgpAccordion,
+    NgpAccordionContent,
+    NgpAccordionItem,
+    NgpAccordionTrigger,
+  ],
   templateUrl: './webinar-faq.html',
   providers: [provideIcons({ matAddRound, matRemoveRound })],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,13 +67,14 @@ export class WebinarFaq {
   protected readonly openId = signal<number | null>(null);
   protected readonly openChildId = signal<number | null>(null);
 
-  protected toggle(id: number): void {
-    this.openId.update((current) => (current === id ? null : id));
+  /** Single, collapsible accordion: the value is one id, or `null` when all are closed. */
+  protected openCategory(value: number | number[] | null): void {
+    this.openId.set(Array.isArray(value) ? (value[0] ?? null) : value);
     // Leaving a category behind should not leave a question open inside it.
     this.openChildId.set(null);
   }
 
-  protected toggleChild(id: number): void {
-    this.openChildId.update((current) => (current === id ? null : id));
+  protected openQuestion(value: number | number[] | null): void {
+    this.openChildId.set(Array.isArray(value) ? (value[0] ?? null) : value);
   }
 }
