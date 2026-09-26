@@ -96,8 +96,7 @@
         <!-- no participation: one message instead of a zeroed report -->
         <div class="mv-card mt-8 flex flex-col items-center gap-3 p-12 text-center">
           <span
-            class="flex size-14 items-center justify-center rounded-full"
-            style="background: #ef44441a; color: #ef4444"
+            class="flex size-14 items-center justify-center rounded-full bg-destructive/10 text-destructive"
           >
             <ng-icon name="lucideMicOff" class="text-2xl" aria-hidden="true" />
           </span>
@@ -108,10 +107,7 @@
         <!-- headline: dial + radar (radar only once there are enough axes) -->
         <div [class]="headlineGridClass()">
           <div class="mv-card flex flex-col items-center justify-center gap-4 p-8">
-            <div
-              class="relative inline-flex items-center justify-center"
-              style="width: 176px; height: 176px"
-            >
+            <div class="relative inline-flex size-44 items-center justify-center">
               <svg width="176" height="176" class="-rotate-90">
                 <circle
                   cx="88"
@@ -131,7 +127,7 @@
                   stroke-linecap="round"
                   [attr.stroke-dasharray]="dialC"
                   [attr.stroke-dashoffset]="dialOffset()"
-                  style="transition: stroke-dashoffset 1s ease-out"
+                  class="transition-[stroke-dashoffset] duration-1000 ease-[ease-out]"
                 />
               </svg>
               <div class="absolute flex flex-col items-center">
@@ -404,15 +400,14 @@
             @if (rep.strengths.length) {
               <div class="mv-card p-6" style="border-color: #27ae604d; background: #27ae6014">
                 <h2
-                  class="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider"
-                  style="color: #27ae60"
+                  class="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-success"
                 >
                   <ng-icon name="lucideCheck" aria-hidden="true" /> Strengths
                 </h2>
                 <ul class="space-y-2">
                   @for (s of rep.strengths; track $index) {
                     <li class="flex gap-2 text-foreground/80">
-                      <span style="color: #27ae60">•</span> {{ s }}
+                      <span class="text-success">•</span> {{ s }}
                     </li>
                   }
                 </ul>
@@ -421,15 +416,14 @@
             @if (rep.growthAreas.length) {
               <div class="mv-card p-6" style="border-color: #f6bc534d; background: #f6bc5314">
                 <h2
-                  class="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider"
-                  style="color: #f6bc53"
+                  class="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-warn"
                 >
                   <ng-icon name="lucideTrendingUp" aria-hidden="true" /> Growth areas
                 </h2>
                 <ul class="space-y-2">
                   @for (s of rep.growthAreas; track $index) {
                     <li class="flex gap-2 text-foreground/80">
-                      <span style="color: #f6bc53">•</span> {{ s }}
+                      <span class="text-warn">•</span> {{ s }}
                     </li>
                   }
                 </ul>

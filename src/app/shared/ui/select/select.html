@@ -24,8 +24,7 @@
   <div
     *ngpSelectPortal
     ngpSelectDropdown
-    style="width: var(--ngp-select-width)"
-    class="z-1001 max-h-60 overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+    class="z-1001 max-h-60 overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none w-(--ngp-select-width)"
   >
     @for (option of renderOptions(); track option.value) {
       <div

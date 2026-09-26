@@ -31,7 +31,7 @@
           [formField]="form.network_id"
         />
         @if (isEdit()) {
-          <p class="-mt-1 text-xs" style="color: var(--mm-fg-3)">
+          <p class="-mt-1 text-xs text-fg-3">
             A firm's network can't be changed here — its seat pool follows it.
           </p>
         }
@@ -41,7 +41,7 @@
           placeholder="acme.com, acme.co.uk"
           [formField]="form.email_domains"
         />
-        <p class="-mt-1 text-xs" style="color: var(--mm-fg-3)">
+        <p class="-mt-1 text-xs text-fg-3">
           Comma-separated. Gates who can redeem this firm's seats — leave blank to allow any email.
         </p>
 
@@ -59,7 +59,7 @@
             @if (eligibleCodes().length) {
               <app-allocation-picker [codes]="eligibleCodes()" [(allocations)]="allocations" />
             } @else {
-              <p class="text-xs" style="color: var(--mm-fg-3)">
+              <p class="text-xs text-fg-3">
                 No eligible partner codes for this scope yet — create one under Partner Codes first.
               </p>
             }
@@ -91,7 +91,7 @@
                 label="Admin email"
                 [formField]="form.admin_email"
               />
-              <p class="-mt-1 text-xs" style="color: var(--mm-fg-3)">
+              <p class="-mt-1 text-xs text-fg-3">
                 Creates the login and registers it as this firm's admin in the same call, so a
                 failure never leaves the firm half set up.
               </p>
@@ -104,17 +104,17 @@
                 [formField]="form.admin_user_id"
               />
               @if (adminUsersError()) {
-                <p class="-mt-1 text-xs" style="color: var(--mm-danger-fg)" role="alert">
+                <p class="-mt-1 text-xs text-danger-foreground" role="alert">
                   {{ adminUsersError() }}
                 </p>
               } @else if (adminUsersLoading()) {
-                <p class="-mt-1 text-xs" style="color: var(--mm-fg-3)">Loading logins…</p>
+                <p class="-mt-1 text-xs text-fg-3">Loading logins…</p>
               } @else if (!adminUserOptions().length) {
-                <p class="-mt-1 text-xs" style="color: var(--mm-fg-3)">
+                <p class="-mt-1 text-xs text-fg-3">
                   No existing admin logins found — create a new one instead.
                 </p>
               } @else {
-                <p class="-mt-1 text-xs" style="color: var(--mm-fg-3)">
+                <p class="-mt-1 text-xs text-fg-3">
                   Registers this login as the firm's admin on the backend. Its Supabase roles and
                   email domains are left as they are; logins already registered as a partner admin
                   can't be picked.
@@ -122,9 +122,7 @@
               }
             }
             <div class="flex flex-col gap-1.5">
-              <p class="text-xs uppercase tracking-wide" style="color: var(--mm-fg-3)">
-                Admin capabilities
-              </p>
+              <p class="text-xs uppercase tracking-wide text-fg-3">Admin capabilities</p>
               <app-checkbox-list
                 [options]="capabilityOptions"
                 [selected]="adminCapabilities()"

@@ -8,10 +8,7 @@
   @if (rows().length) {
     <div class="overflow-x-auto rounded-lg border border-white/10">
       <table class="w-full text-left text-sm">
-        <thead
-          class="text-[11px] uppercase tracking-wider"
-          style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
-        >
+        <thead class="text-[11px] uppercase tracking-wider text-fg-3 bg-surface-2">
           <tr class="whitespace-nowrap">
             <th class="w-8 px-2 py-3"><span class="sr-only">Expand notes</span></th>
             <th class="px-4 py-3 font-semibold">Name</th>
@@ -84,11 +81,7 @@
               </td>
             </tr>
             @if (isExpanded(row.id)) {
-              <tr
-                ngpCollapsibleContent
-                class="border-t border-white/5"
-                style="background: var(--mm-surface-2)"
-              >
+              <tr ngpCollapsibleContent class="border-t border-white/5 bg-surface-2">
                 <td></td>
                 <td colspan="8" class="px-4 py-3">
                   @if (canWrite()) {
@@ -111,12 +104,7 @@
                       Save notes
                     </app-button>
                   } @else {
-                    <div
-                      class="text-[11px] uppercase tracking-wider mb-1"
-                      style="color: var(--mm-fg-3)"
-                    >
-                      Notes
-                    </div>
+                    <div class="text-[11px] uppercase tracking-wider mb-1 text-fg-3">Notes</div>
                     <p class="text-sm text-neutral-200 whitespace-pre-wrap">{{ row.notes }}</p>
                   }
                 </td>

@@ -51,13 +51,13 @@
               Add seats to the network pool
             </legend>
             @if (eligibleCodes().length) {
-              <p class="text-xs" style="color: var(--mm-fg-3)">
+              <p class="text-xs text-fg-3">
                 Optional. Mints coupons straight to the network — they show in the tracker with no
                 sub-company until you allocate them to a firm.
               </p>
               <app-allocation-picker [codes]="eligibleCodes()" [(allocations)]="allocations" />
             } @else {
-              <p class="text-xs" style="color: var(--mm-fg-3)">
+              <p class="text-xs text-fg-3">
                 No network or global partner codes yet — create one under Partner Codes first.
               </p>
             }

@@ -58,8 +58,7 @@
     <div
       *ngpComboboxPortal
       ngpComboboxDropdown
-      style="width: var(--ngp-combobox-width)"
-      class="list-none p-1 max-h-60 overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-lg outline-none box-border"
+      class="list-none p-1 max-h-60 overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-lg outline-none box-border w-(--ngp-combobox-width)"
     >
       @for (option of filteredOptions(); track option.value) {
         <div

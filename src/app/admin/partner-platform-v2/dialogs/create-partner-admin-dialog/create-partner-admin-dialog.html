@@ -38,7 +38,7 @@
           [(value)]="adminUserId"
         />
         @if (adminUsersError()) {
-          <p class="-mt-3 text-xs" style="color: var(--mm-danger-fg)" role="alert">
+          <p class="-mt-3 text-xs text-danger-foreground" role="alert">
             {{ adminUsersError() }}
           </p>
         } @else if (adminUsersLoading()) {
@@ -66,9 +66,7 @@
           <app-aria-input id="cpa-name" type="text" label="Full name" [(value)]="fullName" />
         </div>
         @if (emailInvalid()) {
-          <p class="-mt-3 text-xs" style="color: var(--mm-danger-fg)" role="alert">
-            Enter a valid email.
-          </p>
+          <p class="-mt-3 text-xs text-danger-foreground" role="alert">Enter a valid email.</p>
         }
       }
 

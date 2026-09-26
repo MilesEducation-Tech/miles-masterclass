@@ -2,7 +2,7 @@
   <header class="flex flex-wrap items-start justify-between gap-3">
     <div class="flex flex-col gap-1">
       <h1 class="text-2xl font-bold leading-tight">Partner Admins</h1>
-      <p class="text-sm" style="color: var(--mm-fg-3)">
+      <p class="text-sm text-fg-3">
         Django partner-admin logins and the capabilities they hold. Scope decides what they see;
         capabilities decide what they can do.
       </p>
@@ -11,21 +11,14 @@
   </header>
 
   @if (facade.partnerAdminsError()) {
-    <div
-      class="px-3 py-2 text-sm rounded-md"
-      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
-      role="alert"
-    >
+    <div class="px-3 py-2 text-sm rounded-md bg-danger-bg text-danger-foreground" role="alert">
       {{ facade.partnerAdminsError() }}
     </div>
   }
 
   <div class="overflow-x-auto rounded-md border border-white/10">
     <table class="w-full text-left text-sm">
-      <thead
-        class="text-[11px] uppercase tracking-wider"
-        style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
-      >
+      <thead class="text-[11px] uppercase tracking-wider text-fg-3 bg-surface-2">
         <tr>
           <th class="px-4 py-3 font-semibold">Email</th>
           <th class="px-4 py-3 font-semibold">Role</th>
@@ -38,22 +31,21 @@
         @for (admin of facade.partnerAdmins(); track admin.id) {
           <tr class="hover:bg-white/3 transition-colors">
             <td class="px-4 py-4 font-semibold whitespace-nowrap">{{ admin.email }}</td>
-            <td class="px-4 py-4 capitalize" style="color: var(--mm-fg-2)">{{ admin.role }}</td>
-            <td class="px-4 py-4" style="color: var(--mm-fg-2)">{{ scopeLabel(admin) }}</td>
+            <td class="px-4 py-4 capitalize text-fg-2">{{ admin.role }}</td>
+            <td class="px-4 py-4 text-fg-2">{{ scopeLabel(admin) }}</td>
             <td class="px-4 py-4">
               @if (admin.capabilities.length) {
                 <span class="flex flex-wrap gap-1">
                   @for (capability of admin.capabilities; track capability) {
                     <span
-                      class="inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px]"
-                      style="background: var(--mm-surface-2); color: var(--mm-fg-2)"
+                      class="inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px] bg-surface-2 text-fg-2"
                     >
                       {{ capability }}
                     </span>
                   }
                 </span>
               } @else {
-                <span style="color: var(--mm-fg-3)">—</span>
+                <span class="text-fg-3">—</span>
               }
             </td>
             <td class="px-4 py-4">
@@ -71,7 +63,7 @@
         } @empty {
           @if (!facade.partnerAdminsLoading()) {
             <tr>
-              <td colspan="5" class="px-4 py-8 text-center" style="color: var(--mm-fg-3)">
+              <td colspan="5" class="px-4 py-8 text-center text-fg-3">
                 No partner admins yet. Create the first one above.
               </td>
             </tr>

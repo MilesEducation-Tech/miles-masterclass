@@ -15,17 +15,13 @@
   </header>
 
   @if (facade.error()) {
-    <div
-      class="px-3 py-2 text-sm rounded-md"
-      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
-      role="alert"
-    >
+    <div class="px-3 py-2 text-sm rounded-md bg-danger-bg text-danger-foreground" role="alert">
       Failed to load admin data. Refresh the page or check your connection.
     </div>
   }
 
   <!-- Existing admins -->
-  <div class="rounded-md border border-white/10" style="background: var(--mm-surface-2)">
+  <div class="rounded-md border border-white/10 bg-surface-2">
     <div class="px-4 py-3 border-b border-white/10 flex items-center gap-2">
       <h2 class="text-sm font-semibold">Existing admin users</h2>
       @if (facade.isLoading()) {
@@ -53,11 +49,9 @@
               <td class="px-4 py-2">
                 <div class="flex flex-wrap gap-1">
                   @for (role of admin.roles; track role.id) {
-                    <span
-                      class="rounded px-2 py-0.5 text-xs"
-                      style="background: var(--mm-surface-3); color: var(--mm-fg-2)"
-                      >{{ role.name }}</span
-                    >
+                    <span class="rounded px-2 py-0.5 text-xs bg-surface-3 text-fg-2">{{
+                      role.name
+                    }}</span>
                   } @empty {
                     <span class="text-white/50">—</span>
                   }
@@ -148,10 +142,7 @@
 
   <!-- Configure new admin / register an existing login -->
   @if (showForm()) {
-    <div
-      class="rounded-md border border-white/10 p-4 flex flex-col gap-5"
-      style="background: var(--mm-surface-2)"
-    >
+    <div class="rounded-md border border-white/10 p-4 flex flex-col gap-5 bg-surface-2">
       <div class="flex items-center justify-between">
         <h2 class="text-sm font-semibold">
           @if (registerFor(); as existing) {
@@ -166,20 +157,14 @@
       </div>
 
       @if (prefilledNetworkName()) {
-        <div
-          class="px-3 py-2 text-xs rounded-md"
-          style="background: var(--mm-info-bg); color: var(--mm-info-fg)"
-        >
+        <div class="px-3 py-2 text-xs rounded-md bg-info-bg text-info-foreground">
           Provisioning an admin for network <b>{{ prefilledNetworkName() }}</b
           >. Pick a partner role below — the network is pre-selected.
         </div>
       }
 
       @if (prefilledFirmName()) {
-        <div
-          class="px-3 py-2 text-xs rounded-md"
-          style="background: var(--mm-info-bg); color: var(--mm-info-fg)"
-        >
+        <div class="px-3 py-2 text-xs rounded-md bg-info-bg text-info-foreground">
           Provisioning an admin for firm <b>{{ prefilledFirmName() }}</b
           >. Pick the firm (sub-company) role below — the firm is pre-selected.
         </div>
@@ -242,10 +227,7 @@
       }
 
       @if (isPartnerRole()) {
-        <div
-          class="rounded-md border p-4 flex flex-col gap-4"
-          style="background: var(--card); border-color: var(--mm-info)"
-        >
+        <div class="rounded-md border p-4 flex flex-col gap-4 bg-card border-info">
           <div class="flex flex-col gap-1">
             <h3 class="text-sm font-semibold">Partner Platform provisioning</h3>
             <p class="text-xs text-white/60">

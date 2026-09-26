@@ -1,6 +1,5 @@
 <header
-  class="sticky top-0 z-10 flex items-center gap-4 border-b border-border px-8 py-2 backdrop-blur rounded-lg"
-  style="background: rgba(14, 39, 66, 0.6)"
+  class="sticky top-0 z-10 flex items-center gap-4 border-b border-border px-8 py-2 backdrop-blur rounded-lg bg-[rgba(14,39,66,0.6)]"
   role="banner"
 >
   <app-button
@@ -16,13 +15,12 @@
   <div class="min-w-0 flex-1">
     <nav
       aria-label="Breadcrumb"
-      class="flex items-center text-[12px] font-semibold mb-0.5"
-      style="color: var(--mm-fg-3)"
+      class="flex items-center text-[12px] font-semibold mb-0.5 text-fg-3"
     >
       <span>Workspace · </span>
       <b class="ml-1 text-foreground font-semibold">{{ workspaceLabel }}</b>
       @for (crumb of crumbs(); track crumb.label) {
-        <span class="mx-2" style="color: var(--mm-fg-3)">·</span>
+        <span class="mx-2 text-fg-3">·</span>
         @if (crumb.link) {
           <a [href]="crumb.link" class="hover:text-foreground transition-colors">
             {{ crumb.label }}
@@ -32,10 +30,7 @@
         }
       }
     </nav>
-    <h1
-      class="text-[24px] font-bold leading-tight text-white truncate"
-      style="font-family: var(--font-numeric, var(--font-sans))"
-    >
+    <h1 class="text-[24px] font-bold leading-tight text-white truncate font-numeric">
       {{ title() }}
     </h1>
   </div>

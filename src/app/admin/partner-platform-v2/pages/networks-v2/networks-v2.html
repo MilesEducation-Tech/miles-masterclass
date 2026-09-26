@@ -2,7 +2,7 @@
   <header class="flex flex-wrap items-start justify-between gap-3">
     <div class="flex flex-col gap-1">
       <h1 class="text-2xl font-bold leading-tight">Networks</h1>
-      <p class="text-sm" style="color: var(--mm-fg-3)">
+      <p class="text-sm text-fg-3">
         Partner networks and their seat pools. Open a network to manage its firms, seats and
         reports.
       </p>
@@ -11,21 +11,14 @@
   </header>
 
   @if (facade.networksError()) {
-    <div
-      class="px-3 py-2 text-sm rounded-md"
-      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
-      role="alert"
-    >
+    <div class="px-3 py-2 text-sm rounded-md bg-danger-bg text-danger-foreground" role="alert">
       {{ facade.networksError() }}
     </div>
   }
 
   <div class="overflow-x-auto rounded-md border border-white/10">
     <table class="w-full text-left text-sm">
-      <thead
-        class="text-[11px] uppercase tracking-wider"
-        style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
-      >
+      <thead class="text-[11px] uppercase tracking-wider text-fg-3 bg-surface-2">
         <tr>
           <th class="px-4 py-3 font-semibold">Network</th>
           <th class="px-4 py-3 font-semibold">Slug</th>
@@ -41,18 +34,15 @@
         @for (network of facade.networks(); track network.id) {
           <tr class="hover:bg-white/3 transition-colors">
             <td class="px-4 py-4 font-semibold whitespace-nowrap">{{ network.name }}</td>
-            <td class="px-4 py-4" style="color: var(--mm-fg-3)">{{ network.slug }}</td>
+            <td class="px-4 py-4 text-fg-3">{{ network.slug }}</td>
             <td class="px-4 py-4 text-right tabular-nums">{{ network.total_seats }}</td>
-            <td class="px-4 py-4 text-right tabular-nums" style="color: var(--mm-fg-2)">
+            <td class="px-4 py-4 text-right tabular-nums text-fg-2">
               {{ network.allocated_seats }}
             </td>
-            <td
-              class="px-4 py-4 text-right font-semibold tabular-nums"
-              style="color: var(--mm-info)"
-            >
+            <td class="px-4 py-4 text-right font-semibold tabular-nums text-info">
               {{ network.unallocated_seats }}
             </td>
-            <td class="px-4 py-4 text-right tabular-nums" style="color: var(--mm-fg-2)">
+            <td class="px-4 py-4 text-right tabular-nums text-fg-2">
               {{ network.used_seats }}
             </td>
             <td class="px-4 py-4">
@@ -87,7 +77,7 @@
         } @empty {
           @if (!facade.networksLoading()) {
             <tr>
-              <td colspan="8" class="px-4 py-8 text-center" style="color: var(--mm-fg-3)">
+              <td colspan="8" class="px-4 py-8 text-center text-fg-3">
                 No networks yet. Create the first one to get started.
               </td>
             </tr>

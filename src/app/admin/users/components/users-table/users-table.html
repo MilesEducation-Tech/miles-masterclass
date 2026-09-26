@@ -8,10 +8,7 @@
   @if (rows().length) {
     <div class="overflow-x-auto rounded-lg border border-white/10">
       <table class="w-full text-left text-sm">
-        <thead
-          class="text-[11px] uppercase tracking-wider"
-          style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
-        >
+        <thead class="text-[11px] uppercase tracking-wider text-fg-3 bg-surface-2">
           <tr>
             <th class="px-4 py-3 font-semibold">Name</th>
             <th class="px-4 py-3 font-semibold">Email</th>
@@ -89,7 +86,7 @@
               <td class="px-4 py-3 text-right tabular-nums font-medium text-neutral-100">
                 {{ row.courses_in_progress_cpe | number: '1.0-2' }}
               </td>
-              <td class="px-4 py-3 text-right tabular-nums" style="color: var(--mm-success-fg)">
+              <td class="px-4 py-3 text-right tabular-nums text-success-foreground">
                 {{ row.cpe_credits_earned | number: '1.0-2' }}
               </td>
               <td class="px-4 py-3 text-right tabular-nums text-neutral-300">
@@ -98,16 +95,14 @@
               <td class="px-4 py-3">
                 @if (row.is_blocked) {
                   <span
-                    class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium"
-                    style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
+                    class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-danger-bg text-danger-foreground"
                   >
                     <ng-icon name="lucideShieldOff" class="text-sm" aria-hidden="true" />
                     Blocked
                   </span>
                 } @else {
                   <span
-                    class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium"
-                    style="background: var(--mm-success-bg); color: var(--mm-success-fg)"
+                    class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-success-bg text-success-foreground"
                   >
                     <ng-icon name="lucideShieldCheck" class="text-sm" aria-hidden="true" />
                     Active

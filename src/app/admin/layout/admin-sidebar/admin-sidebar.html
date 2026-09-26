@@ -20,13 +20,12 @@
     @for (section of visibleSections(); track section.id) {
       @if (!collapsed()) {
         <div
-          class="font-bold text-[10px] tracking-[0.12em] uppercase px-[10px] pt-[14px] pb-2"
-          style="color: var(--mm-fg-3)"
+          class="font-bold text-[10px] tracking-[0.12em] uppercase px-[10px] pt-[14px] pb-2 text-fg-3"
         >
           {{ section.label }}
         </div>
       } @else if (!$first) {
-        <div class="my-2 mx-[10px] h-px" style="background: var(--sidebar-border)"></div>
+        <div class="my-2 mx-[10px] h-px bg-sidebar-border"></div>
       }
 
       <ul class="space-y-0.5">
@@ -45,11 +44,10 @@
                 <span class="flex-1 truncate">{{ item.label }}</span>
                 @if (item.badge) {
                   <span
-                    class="ml-auto font-bold text-[10px] px-[7px] py-[2px] rounded-full"
+                    class="ml-auto font-bold text-[10px] px-[7px] py-[2px] rounded-full text-white"
                     [style.background]="
                       item.badge.tone === 'warn' ? 'var(--mm-warn)' : 'var(--primary)'
                     "
-                    style="color: #fff"
                   >
                     {{ item.badge.value }}
                   </span>
@@ -77,8 +75,7 @@
       class="inline-flex items-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer h-auto w-full justify-start gap-[10px] p-3 rounded-[10px] text-left bg-(--mm-surface-2) hover:opacity-90"
     >
       <span
-        class="w-9 h-9 rounded-full inline-flex items-center justify-center font-bold text-[13px] text-white shrink-0"
-        style="background: linear-gradient(135deg, #1f60bd, #2a85ff)"
+        class="w-9 h-9 rounded-full inline-flex items-center justify-center font-bold text-[13px] text-white shrink-0 bg-linear-135/srgb from-[#1f60bd] to-primary"
         aria-hidden="true"
       >
         {{ userInitial() }}
@@ -87,15 +84,14 @@
         <span class="flex flex-1 flex-col min-w-0 leading-tight">
           <span class="font-bold text-[13px] text-white truncate">{{ displayName() }}</span>
           @if (displayEmail()) {
-            <span class="text-[11px] truncate" style="color: var(--mm-fg-3)">
+            <span class="text-[11px] truncate text-fg-3">
               {{ displayEmail() }}
             </span>
           }
         </span>
         <ng-icon
           name="lucideChevronRight"
-          class="text-[16px] shrink-0"
-          style="color: var(--mm-fg-3)"
+          class="text-[16px] shrink-0 text-fg-3"
           aria-hidden="true"
         />
       }
@@ -109,10 +105,10 @@
         <div class="px-2 py-2">
           <div class="font-medium text-sm truncate text-white">{{ displayName() }}</div>
           @if (displayEmail()) {
-            <div class="text-xs truncate" style="color: var(--mm-fg-3)">{{ displayEmail() }}</div>
+            <div class="text-xs truncate text-fg-3">{{ displayEmail() }}</div>
           }
           @if (roleNames()) {
-            <div class="text-xs truncate mt-0.5" style="color: var(--mm-fg-3)">
+            <div class="text-xs truncate mt-0.5 text-fg-3">
               {{ roleNames() }}
             </div>
           }

@@ -48,11 +48,7 @@
 
   <!-- Error -->
   @if (error()) {
-    <div
-      class="px-3 py-2 text-sm rounded-md"
-      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
-      role="alert"
-    >
+    <div class="px-3 py-2 text-sm rounded-md bg-danger-bg text-danger-foreground" role="alert">
       {{ error() }}
     </div>
   }
@@ -68,10 +64,7 @@
     @if (rows().length) {
       <div class="overflow-x-auto rounded-lg border border-white/10">
         <table class="w-full text-left text-sm">
-          <thead
-            class="text-[11px] uppercase tracking-wider"
-            style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
-          >
+          <thead class="text-[11px] uppercase tracking-wider text-fg-3 bg-surface-2">
             <tr class="whitespace-nowrap">
               <th class="w-8 px-2 py-3"><span class="sr-only">Expand detail</span></th>
               <th class="px-4 py-3 font-semibold">When</th>
@@ -151,20 +144,11 @@
               </tr>
 
               @if (isExpanded(row.id)) {
-                <tr
-                  ngpCollapsibleContent
-                  class="border-t border-white/5"
-                  style="background: var(--mm-surface-2)"
-                >
+                <tr ngpCollapsibleContent class="border-t border-white/5 bg-surface-2">
                   <td></td>
                   <td colspan="5" class="px-4 py-3">
                     @if (changeLines(row).length) {
-                      <div
-                        class="text-[11px] uppercase tracking-wider mb-2"
-                        style="color: var(--mm-fg-3)"
-                      >
-                        Detail
-                      </div>
+                      <div class="text-[11px] uppercase tracking-wider mb-2 text-fg-3">Detail</div>
                       <dl class="grid gap-1 text-sm">
                         @for (line of changeLines(row); track line.key) {
                           <div class="grid grid-cols-[10rem_1fr] gap-2">

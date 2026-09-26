@@ -31,7 +31,7 @@
           aria-label="Invoice file"
         />
         @if (fileError(); as error) {
-          <span class="text-xs" style="color: var(--mm-danger-fg)" role="alert">{{ error }}</span>
+          <span class="text-xs text-danger-foreground" role="alert">{{ error }}</span>
         } @else if (file()) {
           <span class="text-xs text-neutral-400 break-all">Selected: {{ file()!.name }}</span>
         }
@@ -54,7 +54,7 @@
         [attr.role]="canSubmit() ? null : 'status'"
       >
         @if (hasBoth()) {
-          <span style="color: var(--mm-danger-fg)">
+          <span class="text-danger-foreground">
             Send an invoice <em>or</em> a comment, not both.
           </span>
         } @else {

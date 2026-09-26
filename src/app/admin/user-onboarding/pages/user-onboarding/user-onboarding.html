@@ -23,11 +23,7 @@
 
   <!-- Error banner -->
   @if (facade.error()) {
-    <div
-      class="px-3 py-2 text-sm rounded-md"
-      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
-      role="alert"
-    >
+    <div class="px-3 py-2 text-sm rounded-md bg-danger-bg text-danger-foreground" role="alert">
       Failed to load users. Try refreshing the page or check your connection.
     </div>
   }

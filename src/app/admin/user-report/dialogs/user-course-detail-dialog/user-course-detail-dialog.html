@@ -21,11 +21,7 @@
           <p class="text-sm">Loading course details…</p>
         </div>
       } @else if (errorMessage()) {
-        <div
-          class="px-3 py-2 text-sm rounded-md"
-          style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
-          role="alert"
-        >
+        <div class="px-3 py-2 text-sm rounded-md bg-danger-bg text-danger-foreground" role="alert">
           {{ errorMessage() }}
         </div>
       } @else if (!courses().length) {
@@ -37,21 +33,16 @@
       } @else {
         <ul class="flex flex-col gap-3">
           @for (course of courses(); track course.course_id) {
-            <li
-              class="rounded-lg border border-white/10 p-4"
-              style="background: var(--mm-surface-2)"
-            >
+            <li class="rounded-lg border border-white/10 p-4 bg-surface-2">
               <div class="flex items-center gap-2 mb-2">
                 <span
-                  class="px-2 py-0.5 rounded-full text-[11px] font-medium"
-                  style="background: var(--mm-info-bg); color: var(--mm-info-fg)"
+                  class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-info-bg text-info-foreground"
                 >
                   {{ badgeLabel(course.course_type) }}
                 </span>
                 @if (course.is_caira_course) {
                   <span
-                    class="px-2 py-0.5 rounded-full text-[11px] font-medium"
-                    style="background: var(--mm-success-bg); color: var(--mm-success-fg)"
+                    class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-success-bg text-success-foreground"
                   >
                     CAiRA{{ course.caira_level ? ' · L' + course.caira_level : '' }}
                   </span>
@@ -63,7 +54,7 @@
               <dl class="mt-3 grid grid-cols-3 gap-3 text-xs">
                 <div class="flex flex-col gap-0.5">
                   <dt class="text-white/50">CPE credits</dt>
-                  <dd class="font-semibold tabular-nums" style="color: var(--mm-success-fg)">
+                  <dd class="font-semibold tabular-nums text-success-foreground">
                     {{ course.cpe_credits | number: '1.0-2' }}
                   </dd>
                 </div>

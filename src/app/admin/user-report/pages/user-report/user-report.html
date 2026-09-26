@@ -43,11 +43,7 @@
 
   <!-- Error banner -->
   @if (facade.error()) {
-    <div
-      class="px-3 py-2 text-sm rounded-md"
-      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
-      role="alert"
-    >
+    <div class="px-3 py-2 text-sm rounded-md bg-danger-bg text-danger-foreground" role="alert">
       Failed to load the user report. Try refreshing the page or check your connection.
     </div>
   }
@@ -63,10 +59,7 @@
     @if (facade.rows().length) {
       <div class="overflow-x-auto rounded-lg border border-white/10">
         <table class="w-full text-left text-sm">
-          <thead
-            class="text-[11px] uppercase tracking-wider"
-            style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
-          >
+          <thead class="text-[11px] uppercase tracking-wider text-fg-3 bg-surface-2">
             <tr class="whitespace-nowrap">
               <th class="px-4 py-3 font-semibold">Name</th>
               <th class="px-4 py-3 font-semibold">Email</th>
