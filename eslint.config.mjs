@@ -96,13 +96,17 @@ export default [
         ],
       },
       rules: {
-        '@typescript-eslint/no-explicit-any': 'off',
+        // AGENTS.md §8: no `any`. An error everywhere, so no new file can introduce it; the
+        // files that already use it are downgraded to a warning in LEGACY_ANY_FILES below.
+        '@typescript-eslint/no-explicit-any': 'error',
         '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
         '@typescript-eslint/no-empty-object-type': 'off',
         '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
         '@angular-eslint/no-output-native': 'off',
         '@angular-eslint/template/click-events-have-key-events': ['off'],
-        '@angular-eslint/prefer-inject': 'off',
+        // AGENTS.md §4.1: dependencies come from `inject()`, never constructor parameters.
+        // Phase 8 converted every constructor; this keeps it that way.
+        '@angular-eslint/prefer-inject': 'error',
         '@angular-eslint/directive-selector': [
           'error',
           {
@@ -188,14 +192,14 @@ export default [
         'no-restricted-syntax': [
           'error',
           {
-            selector: "Literal[value=/app-api\\//]",
+            selector: 'Literal[value=/app-api\\//]',
             message:
-              'Banned: the web app does not call `app-api/` routes (that surface is the mobile app\'s). Use `api/v1/` or `web-api/v1/`; if only an app-api route has the data, ask for a web twin — see docs/WEBINAR_API_QUESTIONS.md.',
+              "Banned: the web app does not call `app-api/` routes (that surface is the mobile app's). Use `api/v1/` or `web-api/v1/`; if only an app-api route has the data, ask for a web twin — see docs/WEBINAR_API_QUESTIONS.md.",
           },
           {
-            selector: "TemplateElement[value.raw=/app-api\\//]",
+            selector: 'TemplateElement[value.raw=/app-api\\//]',
             message:
-              'Banned: the web app does not call `app-api/` routes (that surface is the mobile app\'s). Use `api/v1/` or `web-api/v1/`; if only an app-api route has the data, ask for a web twin — see docs/WEBINAR_API_QUESTIONS.md.',
+              "Banned: the web app does not call `app-api/` routes (that surface is the mobile app's). Use `api/v1/` or `web-api/v1/`; if only an app-api route has the data, ask for a web twin — see docs/WEBINAR_API_QUESTIONS.md.",
           },
         ],
         '@typescript-eslint/no-restricted-imports': [
@@ -233,6 +237,14 @@ export default [
                 message:
                   'Banned (PROMPT.md §4.1). Use @Service() for a root singleton, or @Service({ autoProvided: false }) for one listed in a providers array. Keep @Injectable only for a provider shape @Service cannot express (useClass/useValue/useExisting/useFactory/deps, or providedIn other than root) — and add a scoped override here if so.',
               },
+              // AGENTS.md §8: cleanup runs through `DestroyRef` (+ `takeUntilDestroyed()`),
+              // never the `OnDestroy` lifecycle interface.
+              {
+                name: '@angular/core',
+                importNames: ['OnDestroy'],
+                message:
+                  'Banned (AGENTS.md §8). Inject DestroyRef and register cleanup with destroyRef.onDestroy(...) or takeUntilDestroyed().',
+              },
             ],
             patterns: [
               {
@@ -249,10 +261,56 @@ export default [
         ],
       },
     },
+    // LEGACY_ANY_FILES — the ratchet for `no-explicit-any` (AGENTS.md §8). These 34 files
+    // already used `any` when the rule became an error (MIL-240, 135 hits), so they only warn:
+    // the debt stays visible in every lint run without failing it. Every other file errors.
+    // Remove a file from this list once its `any`s are gone; never add one.
+    {
+      files: [
+        'src/app/core/models/feature.model.ts',
+        'src/app/core/models/http.model.ts',
+        'src/app/core/models/library-filters.model.ts',
+        'src/app/core/services/feature-facade/feature-facade.ts',
+        'src/app/core/services/location/location.ts',
+        'src/app/core/services/logger/logger.ts',
+        'src/app/core/services/section-filters-facade/section-filters-facade.spec.ts',
+        'src/app/features/offerings/components/chapter-quiz/chapter-quiz.ts',
+        'src/app/features/offerings/components/course-resources/course-resources.ts',
+        'src/app/features/offerings/pages/course-feedback/course-feedback.ts',
+        'src/app/features/offerings/pages/final-assessment-exam/final-assessment-exam.spec.ts',
+        'src/app/features/offerings/pages/final-assessment-exam/final-assessment-exam.ts',
+        'src/app/features/offerings/pages/final-assessment-report/final-assessment-report.ts',
+        'src/app/features/offerings/services/chapter-facade.ts',
+        'src/app/features/payment/pages/plan/plan.ts',
+        'src/app/layout/footer/footer.stories.ts',
+        'src/app/layout/footer/footer.ts',
+        'src/app/layout/header/header.stories.ts',
+        'src/app/shared/components/app-download/app-download.ts',
+        'src/app/shared/components/cards/horizontal/horizontal.ts',
+        'src/app/shared/components/cards/hover/hover.ts',
+        'src/app/shared/components/cards/vertical/vertical.ts',
+        'src/app/shared/components/carousel/carousel.ts',
+        'src/app/shared/components/laptop/laptop.ts',
+        'src/app/shared/components/marquee/marquee.ts',
+        'src/app/shared/components/slider/slider.ts',
+        'src/app/shared/dialogs/filter-dialog/filter-dialog.ts',
+        'src/app/shared/dialogs/utils-dialog/utils-dialog.ts',
+        'src/app/shared/ui/aria/aria-autocomplete/aria-autocomplete.ts',
+        'src/app/shared/ui/aria/aria-input/aria-input.ts',
+        'src/app/shared/ui/aria/aria-multiselect/aria-multiselect.ts',
+        'src/app/shared/ui/aria/aria-select/aria-select.ts',
+        'src/app/shared/ui/otp/otp.ts',
+        'src/app/testing/mocks/services.mock.ts',
+      ],
+      rules: { '@typescript-eslint/no-explicit-any': 'warn' },
+    },
     {
       files: ['**/*.html'],
       extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
-      rules: {},
+      rules: {
+        // AGENTS.md §8: built-in control flow (`@if` / `@for` / `@switch`), never `*ngIf` / `*ngFor`.
+        '@angular-eslint/template/prefer-control-flow': 'error',
+      },
     },
   ]),
   ...storybook.configs['flat/recommended'],

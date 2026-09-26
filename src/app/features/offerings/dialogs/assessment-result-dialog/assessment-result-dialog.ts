@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
@@ -30,8 +30,7 @@ export type AssessmentResultAction = 'report' | 'course' | 'retake';
 export class AssessmentResultDialog implements OnInit {
   private readonly dialogRef = injectDialogRef<AssessmentResultData, AssessmentResultAction>();
   protected readonly data = this.dialogRef.data;
-
-  constructor(@Inject(PLATFORM_ID) private platformId: object) {}
+  private readonly platformId = inject(PLATFORM_ID);
 
   ngOnInit() {
     if (this.data.isPassed && isPlatformBrowser(this.platformId)) {

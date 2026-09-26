@@ -1,7 +1,7 @@
 import { NgTemplateOutlet, isPlatformBrowser } from '@angular/common';
 import {
   Component,
-  type OnDestroy,
+  DestroyRef,
   type OnInit,
   PLATFORM_ID,
   computed,
@@ -170,11 +170,13 @@ interface AnamClient {
   ],
   host: { class: 'block', '(document:keydown.escape)': 'onEscapeKey()' },
 })
-export class MilesverseBriefing implements OnInit, OnDestroy {
+export class MilesverseBriefing implements OnInit {
   readonly id = input<string>('');
 
   private readonly milesverse = inject(MilesVerse);
   private readonly platformId = inject(PLATFORM_ID);
+  // Teardown on destroy, via DestroyRef rather than the OnDestroy hook (AGENTS.md §8).
+  private readonly teardownOnDestroy = inject(DestroyRef).onDestroy(() => this.teardownSession());
   private readonly router = inject(Router);
   private readonly store = inject(MilesVerseSessions);
   protected readonly utils = inject(Utils);
@@ -350,10 +352,6 @@ export class MilesverseBriefing implements OnInit, OnDestroy {
     if (isPlatformBrowser(this.platformId) && this.milesverse.enabled) {
       void this.load();
     }
-  }
-
-  ngOnDestroy(): void {
-    this.teardownSession();
   }
 
   private humanize(key: string): string {

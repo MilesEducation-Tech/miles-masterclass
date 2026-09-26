@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import {
   Component,
-  type OnDestroy,
+  DestroyRef,
   type OnInit,
   PLATFORM_ID,
   computed,
@@ -226,8 +226,13 @@ function unscoredReport(abandoned: boolean): SessionReport {
   ],
   host: { class: 'milesverse block' },
 })
-export class MilesverseReport implements OnInit, OnDestroy {
+export class MilesverseReport implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
+  // Teardown on destroy, via DestroyRef rather than the OnDestroy hook (AGENTS.md §8).
+  private readonly teardownOnDestroy = inject(DestroyRef).onDestroy(() => {
+    this.destroyed = true;
+    this.stopAnalyzeTicker();
+  });
   private readonly route = inject(ActivatedRoute);
   private readonly store = inject(MilesVerseSessions);
   private readonly milesverse = inject(MilesVerse);
@@ -523,11 +528,6 @@ export class MilesverseReport implements OnInit, OnDestroy {
       }
       await new Promise((resolve) => setTimeout(resolve, ASSESSMENT_POLL_INTERVAL_MS));
     }
-  }
-
-  ngOnDestroy(): void {
-    this.destroyed = true;
-    this.stopAnalyzeTicker();
   }
 
   private finish(pending: PendingSession, report: SessionReport): void {
