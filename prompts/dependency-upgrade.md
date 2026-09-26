@@ -36,7 +36,8 @@ release is blocked by a peer dependency, record the blocker and leave the packag
   because 24.19.0 (published 2026-09-25, skipping 24.14–24.18) fails `minimumReleaseAge`. Bump it after the window.
 - ✅ **Angular 22.2.0** added to the same branch at your request, through `pnpm up` because the guard blocks the CLI
   updater. Nothing was skipped: core, cdk and cli ship no migrations newer than 22.0.0, and ssr has none.
-- Next: PR B (vitest 5 / jsdom 30), C (ng-icons 36), D (swiper 14).
+- ✅ PR A committed (`12581ac`). ✅ PR B vitest 5.0.2 + jsdom 30.1.1: all 692 tests pass unchanged.
+- Next: C (ng-icons 36), D (swiper 14).
 
 ## Original decisions
 
