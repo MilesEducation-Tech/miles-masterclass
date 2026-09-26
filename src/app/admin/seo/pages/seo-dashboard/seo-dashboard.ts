@@ -27,11 +27,8 @@ import {
   heroTrash,
   heroXMark,
 } from '@ng-icons/heroicons/outline';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-  UtilsDialogResult,
-} from '@shared/dialogs/utils-dialog/utils-dialog';
+// Type-only: UtilsDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { computeSeoScore, createDefaultSeoPage, SeoPage } from '@core/models/seo.models';
 import { NgpDialogContext, NgpDialogManager, NgpDialogRef } from 'ng-primitives/dialog';
 import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
@@ -228,7 +225,7 @@ export class SeoDashboard {
     }
   }
 
-  private confirmDelete(page: SeoPage): Promise<boolean> {
+  private async confirmDelete(page: SeoPage): Promise<boolean> {
     const data: UtilsDialogData = {
       title: `Delete "${page.page_name}"?`,
       containerClass: 'max-w-md',
@@ -243,6 +240,7 @@ export class SeoDashboard {
         { label: 'Delete', variant: 'destructive', action: 'confirm' },
       ],
     };
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
     const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: { ...data, maxWidth: '32rem' },
     });

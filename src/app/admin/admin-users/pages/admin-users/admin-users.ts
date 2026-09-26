@@ -8,10 +8,8 @@ import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
 import { Button } from '@shared/ui/button/button';
 import { CheckboxList, CheckboxListOption } from '@shared/ui/checkbox-list/checkbox-list';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import {
-  EditAdminRolesDialog,
-  EditAdminRolesDialogData,
-} from '@admin/admin-users/dialogs/edit-admin-roles-dialog/edit-admin-roles-dialog';
+// Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { EditAdminRolesDialogData } from '@admin/admin-users/dialogs/edit-admin-roles-dialog/edit-admin-roles-dialog';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import { AdminAuth } from '@admin/core/services/admin-auth';
@@ -104,7 +102,9 @@ export class AdminUsers {
   }
 
   /** Replace an existing admin's role set (the `set_admin_user_roles` RPC). */
-  protected editRoles(admin: AdminUserListRow): void {
+  protected async editRoles(admin: AdminUserListRow): Promise<void> {
+    const { EditAdminRolesDialog } =
+      await import('@admin/admin-users/dialogs/edit-admin-roles-dialog/edit-admin-roles-dialog');
     const ref = this.dialogs.open<EditAdminRolesDialogData, string[] | undefined>(
       EditAdminRolesDialog,
       {

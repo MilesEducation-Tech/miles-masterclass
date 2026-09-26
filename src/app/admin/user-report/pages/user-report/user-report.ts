@@ -24,10 +24,8 @@ import {
   mergeCourseIds,
 } from '@admin/user-report/models/user-report.model';
 import { UserReportFacade } from '@admin/user-report/services/user-report-facade';
-import {
-  UserCourseDetailDialog,
-  UserCourseDetailDialogData,
-} from '@admin/user-report/dialogs/user-course-detail-dialog/user-course-detail-dialog';
+// Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { UserCourseDetailDialogData } from '@admin/user-report/dialogs/user-course-detail-dialog/user-course-detail-dialog';
 
 @Component({
   selector: 'app-user-report',
@@ -81,16 +79,18 @@ export class UserReport {
   }
 
   /** Open the drill-down for one metric bucket. No-op with a toast when empty. */
-  protected openCourseDetail(
+  protected async openCourseDetail(
     row: UserReportRow,
     category: CourseDetailCategory,
     courseIds: CourseIds,
-  ): void {
+  ): Promise<void> {
     if (!hasCourseIds(courseIds)) {
       this.notification.info('No course data', 'There are no courses for this field.');
       return;
     }
 
+    const { UserCourseDetailDialog } =
+      await import('@admin/user-report/dialogs/user-course-detail-dialog/user-course-detail-dialog');
     this.dialogs.open<UserCourseDetailDialogData>(UserCourseDetailDialog, {
       data: {
         userName: row.name,
@@ -111,6 +111,6 @@ export class UserReport {
       row.courses_completed_preview_ids,
       row.courses_in_progress_preview_ids,
     ]);
-    this.openCourseDetail(row, 'All Courses', merged);
+    void this.openCourseDetail(row, 'All Courses', merged);
   }
 }
