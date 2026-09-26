@@ -1,0 +1,27 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `UserNameViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `account-name-v1`  
+  **Methods on this view:** GET, POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Read or correct the name that goes on the caller's certificate.
+
+  Body template generated from `UserNameUpdateRequestSerializerV1`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/account/name/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "firstName": "",
+      "lastName": ""
+    }
+examples: ./.resources/UNIVERSAL POST account-name-v1.resources/examples
+order: 7000

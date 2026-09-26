@@ -1,0 +1,36 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/ai-labs/courses/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: level
+      value: ""
+      disabled: true
+    - key: page
+      value: ""
+      disabled: true
+    - key: page_size
+      value: ""
+      disabled: true
+    - key: search
+      value: ""
+      disabled: true
+    - key: track
+      value: ""
+      disabled: true
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "invalid_query",
+        "errors": "<pydantic_error_list(exc)>"
+      }
+order: 2000

@@ -1,0 +1,33 @@
+$kind: http-example
+name: 500 Internal Server Error (2) - Shared envelope from `utils/view_errors
+request:
+  url: "{{base_url}}/api/v1/catalogue/products/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: is_book
+      value: ""
+      disabled: true
+    - key: page
+      value: ""
+      disabled: true
+    - key: page_size
+      value: ""
+      disabled: true
+    - key: search
+      value: ""
+      disabled: true
+response:
+  statusCode: 500
+  statusText: Internal Server Error
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "message": "Could not load the product list."
+      }
+order: 6000

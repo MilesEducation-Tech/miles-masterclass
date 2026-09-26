@@ -1,181 +1,209 @@
-<!-- Structure cloned from course-info.html: full-bleed hero with a bottom fade,
+<app-dialog-shell maxWidth="100%" [ariaLabel]="data.name">
+  <!-- Structure cloned from course-info.html: full-bleed hero with a bottom fade,
      content block overlaid bottom-left, details below. -->
-<!-- Width in viewport units, not a percentage: the dialog container is
+  <!-- Width in viewport units, not a percentage: the dialog container is
      shrink-to-fit, so a `w-10/12` here has nothing definite to resolve against
      and collapses the whole dialog to a ~150px strip on a phone. -->
-<div class="relative flex w-[92vw] flex-col space-y-4 bg-background sm:w-[70vw]">
-  <div class="absolute top-4 right-4 z-10 flex w-full justify-end px-4">
-    <app-button variant="close" size="sm" (clicked)="close()" />
-  </div>
+  <div class="relative flex w-[92vw] flex-col space-y-4 bg-background sm:w-[70vw]">
+    <div class="absolute top-4 right-4 z-10 flex w-full justify-end px-4">
+      <app-button variant="close" size="sm" (clicked)="close()" />
+    </div>
 
-  <div class="ai-lab-hero relative flex aspect-video w-full overflow-hidden">
-    <div
-      class="pointer-events-none absolute inset-0 z-1 h-full w-full bg-linear-to-t from-background from-10% via-background/50 to-transparent"
-    ></div>
-    <div class="absolute inset-0 z-0 h-full w-full">
-      <!-- A plain image, not `app-video-poster`: the catalogue supplies a still
+    <!--
+      Phone: the 16:9 hero is ~190px tall and the overlaid block (slug, title,
+      runtime, description, CTA) is ~400px, so as an absolute bottom-0 overlay it
+      renders almost entirely above the hero, outside the dialog. Below `sm` the
+      hero drops its aspect ratio and the block sits in normal flow over the image
+      (the max-sm: classes below). The slideIn animation ends on translateY(-20%)
+      anchored to bottom-0; in flow that just leaves a gap, so it is dropped there
+      and opacity is set directly.
+    -->
+    <div class="relative flex aspect-video w-full overflow-hidden max-sm:aspect-auto">
+      <div
+        class="pointer-events-none absolute inset-0 z-1 h-full w-full bg-linear-to-t from-background from-10% via-background/50 to-transparent"
+      ></div>
+      <div class="absolute inset-0 z-0 h-full w-full">
+        <!-- A plain image, not `app-video-poster`: the catalogue supplies a still
            thumbnail and the chapter's source is HLS, which a bare <video> can't
            play anyway. -->
-      @if (data.thumbnail) {
-        <img
-          [src]="data.thumbnail"
-          [alt]="data.thumbnailAlt ?? data.name"
-          class="h-full w-full object-cover object-top"
-          decoding="async"
-        />
-      } @else {
-        <div class="h-full w-full bg-linear-to-br from-secondary to-muted" aria-hidden="true"></div>
-      }
-    </div>
+        @if (data.thumbnail) {
+          <img
+            [src]="data.thumbnail"
+            [alt]="data.thumbnailAlt ?? data.name"
+            class="h-full w-full object-cover object-top"
+            decoding="async"
+          />
+        } @else {
+          <div
+            class="h-full w-full bg-linear-to-br from-secondary to-muted"
+            aria-hidden="true"
+          ></div>
+        }
+      </div>
 
-    <div class="content content--visible">
-      <app-miles-slug slug="miles ai labs" />
+      <div
+        class="absolute bottom-0 left-6 z-2 mx-auto flex w-10/12 flex-col gap-1 text-sm font-normal text-white opacity-0 font-[Helvetica,sans-serif] text-shadow-[0_3px_8px_rgba(0,0,0,0.5)] sm:left-12 sm:w-3/4 sm:gap-2 animate-[slideIn_0.75s_ease-in-out_0.3s_forwards] max-sm:static max-sm:m-0 max-sm:w-full max-sm:px-5 max-sm:pt-36 max-sm:pb-5 max-sm:animate-none max-sm:opacity-100"
+      >
+        <app-miles-slug slug="miles ai labs" />
 
-      <h2 class="title">{{ data.name }}{{ data.nameSuffix }}</h2>
+        <h2 class="text-xl font-bold tracking-tight text-white uppercase md:text-2xl">
+          {{ data.name }}{{ data.nameSuffix }}
+        </h2>
 
-      <!-- Occupies the "By {instructor}" slot of the original. Chapters carry a
+        <!-- Occupies the "By {instructor}" slot of the original. Chapters carry a
            runtime and quiz size; the static tiles carry neither, so the line
            disappears rather than rendering an empty subtitle. -->
-      @if (data.durationSeconds || data.questionCount) {
-        <h3 class="subtitle">
-          @if (data.durationSeconds) {
-            {{ data.durationSeconds | duration: 'compact' }}
-          }
-          @if (data.durationSeconds && data.questionCount) {
-            <span aria-hidden="true">·</span>
-          }
-          @if (data.questionCount) {
-            {{ data.questionCount }} quiz
-            {{ data.questionCount === 1 ? 'question' : 'questions' }}
-          }
-        </h3>
-      }
+        @if (data.durationSeconds || data.questionCount) {
+          <h3 class="text-lg font-semibold tracking-widest text-accent md:text-xl">
+            @if (data.durationSeconds) {
+              {{ data.durationSeconds | duration: 'compact' }}
+            }
+            @if (data.durationSeconds && data.questionCount) {
+              <span aria-hidden="true">·</span>
+            }
+            @if (data.questionCount) {
+              {{ data.questionCount }} quiz
+              {{ data.questionCount === 1 ? 'question' : 'questions' }}
+            }
+          </h3>
+        }
 
-      <p class="description">{{ data.description }}</p>
+        <p class="text-sm text-neutral-400 md:text-base">{{ data.description }}</p>
 
-      <div class="mt-4 flex items-center space-x-3">
-        <app-button
-          variant="ghost"
-          class="gap-1 rounded-lg bg-white text-black"
-          (clicked)="launch()"
-        >
-          <ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />
-          Launch AI Lab
-        </app-button>
+        <div class="mt-4 flex items-center space-x-3">
+          <app-button
+            variant="ghost"
+            class="gap-1 rounded-lg bg-white text-black"
+            (clicked)="launch()"
+          >
+            <ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />
+            Launch AI Lab
+          </app-button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ===================== WORKFLOW SUBMISSION =====================
+    <!-- ===================== WORKFLOW SUBMISSION =====================
        Chapter-backed tiles carry an exercise: pick a workflow published in
        Copilot Studio, submit it, get a score. Static tiles have no chapterId,
        so the whole block is absent for them. The full graded report renders in
        the `app-ai-lab-agent-about` block below (fed the same `report()`). -->
-  @if (assessmentEnabled && data.chapterId !== undefined) {
-    <div class="px-6 sm:px-12">
-      @if (report(); as report) {
-        <div
-          class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-accent/40 bg-accent/10 p-5"
-        >
-          <div>
-            <p class="text-sm font-semibold text-foreground">Workflow submitted</p>
-            <p class="mt-1 text-sm text-muted-foreground">
-              Scored on {{ report.flow.agentName }} — see the full assessment below.
-            </p>
-          </div>
-          <div class="flex items-center gap-4">
-            <span class="text-3xl font-bold text-accent">{{ report.scorePercent }}%</span>
-            <app-button variant="outline" size="sm" (clicked)="resubmit()">
-              Submit another
-            </app-button>
-          </div>
-        </div>
-      } @else {
-        <div class="rounded-2xl border border-border bg-muted p-5 sm:p-6">
-          <h3 class="text-base font-semibold text-foreground">Submit your workflow</h3>
-          <p class="mt-1 text-sm text-muted-foreground">
-            Pick a workflow you've built and published in Copilot Studio to submit it as this
-            chapter's exercise and have it scored.
-          </p>
-
-          @if (loadingWorkflows()) {
-            <div class="mt-4 space-y-2">
-              @for (p of [1, 2, 3]; track p) {
-                <div
-                  class="h-16 animate-pulse rounded-xl border border-border bg-background/40"
-                  aria-hidden="true"
-                ></div>
-              }
-            </div>
-          } @else if (workflows()?.length) {
-            <fieldset class="mt-4 space-y-2">
-              <legend class="sr-only">Your published Copilot workflows</legend>
-              @for (wf of workflows(); track wf.id) {
-                <label
-                  [class]="
-                    selectedWorkflowId() === wf.id
-                      ? 'flex cursor-pointer items-center gap-3 rounded-xl border border-accent bg-accent/10 p-4 transition-colors'
-                      : 'flex cursor-pointer items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-accent/40'
-                  "
-                >
-                  <input
-                    type="radio"
-                    name="workflow"
-                    class="size-4 shrink-0 accent-accent"
-                    [value]="wf.id"
-                    [checked]="selectedWorkflowId() === wf.id"
-                    (change)="selectedWorkflowId.set(wf.id)"
-                  />
-                  <span class="flex-1">
-                    <span class="block text-sm font-medium text-foreground">{{ wf.name }}</span>
-                    <span class="block text-xs text-muted-foreground">
-                      {{ wf.environmentName }} · Published {{ wf.publishedOn }}
-                    </span>
-                  </span>
-                </label>
-              }
-            </fieldset>
-            <app-button
-              variant="ghost"
-              class="mt-4 h-12 w-full rounded-xl bg-accent text-base"
-              [disabled]="!selectedWorkflowId() || submittingWorkflow()"
-              (clicked)="submitWorkflow()"
-            >
-              {{ submittingWorkflow() ? 'Scoring your workflow…' : 'Submit for scoring' }}
-            </app-button>
-          } @else {
-            <div class="mt-4 rounded-xl border border-border bg-background/40 p-5 text-center">
-              <p class="text-sm text-muted-foreground">
-                No published workflows found. Build and publish one in Copilot Studio first, then
-                come back to submit it.
+    @if (assessmentEnabled && data.chapterId !== undefined) {
+      <div class="px-6 sm:px-12">
+        @if (report(); as report) {
+          <div
+            class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-accent/40 bg-accent/10 p-5"
+          >
+            <div>
+              <p class="text-sm font-semibold text-foreground">Workflow submitted</p>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Scored on {{ report.flow.agentName }} — see the full assessment below.
               </p>
-              <app-button
-                variant="ghost"
-                class="mt-4 gap-1 rounded-lg bg-white text-black"
-                (clicked)="launch()"
-              >
-                <ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />
-                Launch AI Lab
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-3xl font-bold text-accent">{{ report.scorePercent }}%</span>
+              <app-button variant="outline" size="sm" (clicked)="resubmit()">
+                Submit another
               </app-button>
             </div>
-          }
-        </div>
-      }
-    </div>
-  }
+          </div>
+        } @else {
+          <div class="rounded-2xl border border-border bg-muted p-5 sm:p-6">
+            <h3 class="text-base font-semibold text-foreground">Submit your workflow</h3>
+            <p class="mt-1 text-sm text-muted-foreground">
+              Pick a workflow you've built and published in Copilot Studio to submit it as this
+              chapter's exercise and have it scored.
+            </p>
 
-  <!-- The original's `app-course-about` slot, on a local clone of that
+            @if (loadingWorkflows()) {
+              <div class="mt-4 space-y-2">
+                @for (p of [1, 2, 3]; track p) {
+                  <div
+                    class="h-16 animate-pulse rounded-xl border border-border bg-background/40"
+                    aria-hidden="true"
+                  ></div>
+                }
+              </div>
+            } @else if (workflows()?.length) {
+              <!-- ngpRadioGroup owns role="radiogroup", roving focus and Up/Down; the label
+                 is the text the sr-only <legend> used to give the native radios.
+                 Behaviour change vs the native radios: ngpRadioItem selects on FOCUS, so
+                 tabbing into the group with nothing picked selects the first workflow.
+                 Accepted because it only enables Submit; scoring still needs that click. -->
+              <div
+                ngpRadioGroup
+                ngpRadioGroupOrientation="vertical"
+                [ngpRadioGroupValue]="selectedWorkflowId()"
+                (ngpRadioGroupValueChange)="selectedWorkflowId.set($event)"
+                aria-label="Your published Copilot workflows"
+                class="mt-4 space-y-2"
+              >
+                @for (wf of workflows(); track wf.id) {
+                  <button
+                    type="button"
+                    ngpRadioItem
+                    [ngpRadioItemValue]="wf.id"
+                    class="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-border p-4 text-left transition-colors hover:border-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[checked]:border-accent data-[checked]:bg-accent/10"
+                  >
+                    <span
+                      ngpRadioIndicator
+                      class="group flex size-4 shrink-0 items-center justify-center rounded-full border border-muted-foreground data-[checked]:border-accent"
+                    >
+                      <span
+                        class="hidden size-2 rounded-full bg-accent group-data-[checked]:block"
+                      ></span>
+                    </span>
+                    <span class="flex-1">
+                      <span class="block text-sm font-medium text-foreground">{{ wf.name }}</span>
+                      <span class="block text-xs text-muted-foreground">
+                        {{ wf.environmentName }} · Published {{ wf.publishedOn }}
+                      </span>
+                    </span>
+                  </button>
+                }
+              </div>
+              <app-button
+                variant="ghost"
+                class="mt-4 h-12 w-full rounded-xl bg-accent text-base"
+                [disabled]="!selectedWorkflowId() || submittingWorkflow()"
+                (clicked)="submitWorkflow()"
+              >
+                {{ submittingWorkflow() ? 'Scoring your workflow…' : 'Submit for scoring' }}
+              </app-button>
+            } @else {
+              <div class="mt-4 rounded-xl border border-border bg-background/40 p-5 text-center">
+                <p class="text-sm text-muted-foreground">
+                  No published workflows found. Build and publish one in Copilot Studio first, then
+                  come back to submit it.
+                </p>
+                <app-button
+                  variant="ghost"
+                  class="mt-4 gap-1 rounded-lg bg-white text-black"
+                  (clicked)="launch()"
+                >
+                  <ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />
+                  Launch AI Lab
+                </app-button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- The original's `app-course-about` slot, on a local clone of that
        component so the AI Lab design can be changed without touching the course
        dialog. Fed by `v2/masterclass/details/` for the section's course; the
        static tiles have no course, so they render the hero alone. The submitted
        report (if any) reveals the assessment section inside it. -->
-  @if (details(); as about) {
-    <div class="px-6 sm:px-12">
-      <app-ai-lab-agent-about [card]="about" [report]="report()" />
-    </div>
-  } @else if (loadingDetails()) {
-    <div class="px-6 py-10 sm:px-12">
-      <div class="h-40 animate-pulse rounded-lg bg-slate-800" aria-hidden="true"></div>
-    </div>
-  }
-</div>
+    @if (details(); as about) {
+      <div class="px-6 sm:px-12">
+        <app-ai-lab-agent-about [card]="about" [report]="report()" />
+      </div>
+    } @else if (loadingDetails()) {
+      <div class="px-6 py-10 sm:px-12">
+        <div class="h-40 animate-pulse rounded-lg bg-slate-800" aria-hidden="true"></div>
+      </div>
+    }
+  </div>
+</app-dialog-shell>

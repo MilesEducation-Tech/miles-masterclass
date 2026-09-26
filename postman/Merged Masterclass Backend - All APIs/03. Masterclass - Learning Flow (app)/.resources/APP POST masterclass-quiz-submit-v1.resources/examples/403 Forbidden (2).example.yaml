@@ -1,0 +1,29 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/quiz/{{chapter_id}}/submit/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "question_id": "00000000-0000-0000-0000-000000000000",
+        "selected_option_ids": [
+          "00000000-0000-0000-0000-000000000000"
+        ]
+      }
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "already_completed"
+      }
+order: 7000

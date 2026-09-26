@@ -1,3 +1,8 @@
+import {
+  NgpCollapsible,
+  NgpCollapsibleContent,
+  NgpCollapsibleTrigger,
+} from 'ng-primitives/collapsible';
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FinalAssessmentFacade } from '../../services/final-assessment-facade';
 import { Button } from '@shared/ui/button/button';
@@ -11,7 +16,6 @@ import {
 } from '@ng-icons/heroicons/outline';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SubmitFinalAssessmentResponse } from '@features/offerings/models/assessment.model';
-import { ContentDetails } from '@core/models/course.model';
 import { Utils } from '@shared/services/utils';
 import { Logger } from '@core/services/logger/logger';
 import { DatePipe } from '@angular/common';
@@ -19,9 +23,16 @@ import { PageLoading } from '@shared/ui/page-loading/page-loading';
 
 @Component({
   selector: 'app-final-assessment-report',
-  imports: [Button, NgIcon, DatePipe, PageLoading],
+  imports: [
+    Button,
+    NgIcon,
+    DatePipe,
+    PageLoading,
+    NgpCollapsible,
+    NgpCollapsibleContent,
+    NgpCollapsibleTrigger,
+  ],
   templateUrl: './final-assessment-report.html',
-  styleUrl: './final-assessment-report.css',
   viewProviders: [
     provideIcons({
       heroChevronRight,
@@ -45,7 +56,7 @@ export class FinalAssessmentReport {
 
   // State
   reportData = signal<SubmitFinalAssessmentResponse['data'] | null>(null);
-  courseDetails = signal<ContentDetails | null>(null);
+  courseDetails = this.facade.courseDetails;
   showWrongOnly = signal(false);
   expandedItems = signal<Set<number>>(new Set());
   isLoading = signal(true);
@@ -93,8 +104,7 @@ export class FinalAssessmentReport {
       }
 
       if (courseId) {
-        this.facade.courseId.set(courseId); // Ensure facade has courseId if needed for other calls
-        this.loadCourseDetails();
+        this.facade.courseId.set(courseId);
       }
     });
   }
@@ -109,20 +119,6 @@ export class FinalAssessmentReport {
       error: (err) => {
         this.logger.error('Error loading report', err);
         this.isLoading.set(false);
-      },
-    });
-  }
-
-  loadCourseDetails() {
-    const courseId = this.courseId();
-    if (!courseId) return;
-
-    this.facade.getCourseDetails(Number(courseId)).subscribe({
-      next: (data) => {
-        this.courseDetails.set(data);
-      },
-      error: (err) => {
-        this.logger.error('Error loading course details', err);
       },
     });
   }

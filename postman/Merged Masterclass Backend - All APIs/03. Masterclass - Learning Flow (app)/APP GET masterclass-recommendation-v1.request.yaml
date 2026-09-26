@@ -1,0 +1,23 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassRecommendationViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-recommendation-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  GET /masterclass/recommendation/?course_type=masterclass|podcast|reels
+
+  Query parameters (disabled by default): `course_type`
+url: "{{base_url}}/api/v1/masterclass/recommendation/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: course_type
+    value: ""
+    disabled: true
+examples: ./.resources/APP GET masterclass-recommendation-v1.resources/examples
+order: 24000

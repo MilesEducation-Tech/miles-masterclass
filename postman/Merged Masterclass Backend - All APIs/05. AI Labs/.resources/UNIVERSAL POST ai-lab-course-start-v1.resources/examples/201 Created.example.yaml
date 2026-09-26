@@ -1,0 +1,25 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/ai-labs/course-start/{{ai_lab_course_id}}/"
+  method: POST
+  headers:
+    Accept: application/json
+response:
+  statusCode: 201
+  statusText: Created
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "ai_lab_course_id": "<str(ai_lab_course_id)>",
+        "enrollment_id": "<str(enrollment_id)>",
+        "enrollment_created": "<created>",
+        "started_at": "<started_at>",
+        "expires_at": "<expires_at>",
+        "is_course_closed": false,
+        "disabled_masterclass_course_ids": "<lock_state['child_course_ids']>"
+      }
+order: 3000

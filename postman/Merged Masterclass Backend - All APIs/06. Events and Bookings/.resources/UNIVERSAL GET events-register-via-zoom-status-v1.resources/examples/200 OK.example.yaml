@@ -1,0 +1,29 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/events/register-via-zoom-status/{{attempt_id}}/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "attempt_id": "<str(attempt['id'])>",
+        "status": "<attempt['status']>",
+        "registration_status": "<fe_registration_status(attempt['status'])>",
+        "zoom_attempts": "<attempt['zoom_attempts']>",
+        "last_status_code": "<attempt['last_status_code']>",
+        "error_message": "<attempt['error_message']>",
+        "error_code": "<attempt['error_code']>",
+        "mf_retry_count": "<attempt['mf_retry_count']>",
+        "join_url": "<attempt['join_url']>",
+        "registered_email": "<attempt['registered_email']>",
+        "booking_id": "<str(attempt['booking_id'])>",
+        "completed_at": "<attempt['completed_at']>"
+      }
+order: 1000

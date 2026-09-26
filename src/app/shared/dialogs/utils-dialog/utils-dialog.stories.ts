@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { UtilsDialog } from './utils-dialog';
-import { MockDialogRef } from '@testing/mocks/dialog.mock';
+import { moduleMetadata } from '@storybook/angular';
+import { UtilsDialog, UtilsDialogData } from './utils-dialog';
+import { provideStoryDialogRef } from '@testing/mocks/dialog.mock';
 
 const meta: Meta<UtilsDialog> = {
   title: 'Dialog/Utils',
@@ -18,11 +19,10 @@ export default meta;
 type Story = StoryObj<UtilsDialog>;
 
 export const Confirmation: Story = {
-  render: () => ({
-    props: {
-      init(component: UtilsDialog) {
-        component.dialogRef = new MockDialogRef() as any;
-        component.data = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        provideStoryDialogRef<UtilsDialogData>({
           title: 'Confirm Action',
           containerClass: '',
           content: [
@@ -32,24 +32,18 @@ export const Confirmation: Story = {
             { label: 'Cancel', variant: 'outline', action: 'cancel' as const },
             { label: 'Confirm', variant: 'default', action: 'confirm' as const },
           ],
-        };
-      },
-    },
-    template: `
-      <div style="width: 500px;">
-        <app-utils-dialog #comp />
-        {{ init(comp) }}
-      </div>
-    `,
-  }),
+        }),
+      ],
+    }),
+  ],
+  render: () => ({ template: `<div style="width: 500px;"><app-utils-dialog /></div>` }),
 };
 
 export const InfoWithList: Story = {
-  render: () => ({
-    props: {
-      init(component: UtilsDialog) {
-        component.dialogRef = new MockDialogRef() as any;
-        component.data = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        provideStoryDialogRef<UtilsDialogData>({
           title: 'Course Requirements',
           containerClass: '',
           content: [
@@ -76,24 +70,18 @@ export const InfoWithList: Story = {
             },
           ],
           buttons: [{ label: 'Got It', variant: 'default', action: 'close' as const }],
-        };
-      },
-    },
-    template: `
-      <div style="width: 500px;">
-        <app-utils-dialog #comp />
-        {{ init(comp) }}
-      </div>
-    `,
-  }),
+        }),
+      ],
+    }),
+  ],
+  render: () => ({ template: `<div style="width: 500px;"><app-utils-dialog /></div>` }),
 };
 
 export const WarningNote: Story = {
-  render: () => ({
-    props: {
-      init(component: UtilsDialog) {
-        component.dialogRef = new MockDialogRef() as any;
-        component.data = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        provideStoryDialogRef<UtilsDialogData>({
           title: 'Important Notice',
           containerClass: '',
           content: [
@@ -112,24 +100,18 @@ export const WarningNote: Story = {
             { label: 'Later', variant: 'ghost', action: 'cancel' as const },
             { label: 'Renew Now', variant: 'default', action: 'confirm' as const },
           ],
-        };
-      },
-    },
-    template: `
-      <div style="width: 500px;">
-        <app-utils-dialog #comp />
-        {{ init(comp) }}
-      </div>
-    `,
-  }),
+        }),
+      ],
+    }),
+  ],
+  render: () => ({ template: `<div style="width: 500px;"><app-utils-dialog /></div>` }),
 };
 
 export const WithTable: Story = {
-  render: () => ({
-    props: {
-      init(component: UtilsDialog) {
-        component.dialogRef = new MockDialogRef() as any;
-        component.data = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        provideStoryDialogRef<UtilsDialogData>({
           title: 'CPE Credit Summary',
           containerClass: '',
           content: [
@@ -145,14 +127,9 @@ export const WithTable: Story = {
             },
           ],
           buttons: [{ label: 'Close', variant: 'outline', action: 'close' as const }],
-        };
-      },
-    },
-    template: `
-      <div style="width: 500px;">
-        <app-utils-dialog #comp />
-        {{ init(comp) }}
-      </div>
-    `,
-  }),
+        }),
+      ],
+    }),
+  ],
+  render: () => ({ template: `<div style="width: 500px;"><app-utils-dialog /></div>` }),
 };

@@ -1,0 +1,15 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/account/faqs/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: "[]"
+order: 1000

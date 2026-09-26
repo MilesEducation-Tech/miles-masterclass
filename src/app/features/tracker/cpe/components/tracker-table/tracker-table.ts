@@ -66,7 +66,6 @@ export interface TrackerRowView {
     }),
   ],
   templateUrl: './tracker-table.html',
-  styleUrl: './tracker-table.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block w-full' },
 })

@@ -1,0 +1,127 @@
+@let p = partner();
+<div class="flex flex-col space-y-20 items-center relative w-full overflow-hidden z-0">
+  @if (p.hero; as hero) {
+    <div
+      class="absolute -z-10 top-0 -left-1/2 w-full md:aspect-video max-md:h-[80vh] bg-[radial-gradient(circle,var(--color-accent)_30%,transparent_80%)] blur-[200px]"
+    ></div>
+    <div
+      class="absolute -z-10 top-0 left-1/2 w-full md:aspect-video max-md:h-[80vh] blur-[200px]"
+      [class]="hero.glowClass"
+    ></div>
+    <section
+      class="h-screen w-11/12 mx-auto flex flex-col justify-end pb-20 items-center relative space-y-12"
+    >
+      <app-partner-content-list [content]="hero.content" />
+      <div
+        class="flex md:space-x-3 max-md:flex-col max-md:space-y-4 items-center md:w-2/3 w-full md:justify-center"
+      >
+        <app-button
+          variant="secondary"
+          class="rounded-md font-semibold px-14"
+          (clicked)="scrollTo(p.contentSectionId)"
+          >Explore Courses</app-button
+        >
+        <app-button
+          class="text-black bg-white rounded-md font-semibold px-5"
+          variant="ghost"
+          (clicked)="scrollTo(p.sectionId)"
+          >Schedule Discovery Call</app-button
+        >
+      </div>
+    </section>
+    <section class="flex w-11/12 mx-auto flex-col space-y-10 scroll-mt-24">
+      <app-partner-content-list [content]="p.complianceContent" />
+      @defer (on viewport; prefetch on idle) {
+        <app-video-list-wrapper [videoList]="videoList" />
+      } @placeholder {
+        <div class="w-full aspect-video"></div>
+      }
+    </section>
+  } @else {
+    <section class="flex w-11/12 mx-auto flex-col space-y-10 scroll-mt-24 mt-44">
+      <div class="flex flex-col space-y-6">
+        <app-partner-content-list [content]="p.complianceContent" />
+        <div class="flex items-center justify-center space-x-3">
+          <app-button
+            class="text-white bg-card rounded-md font-semibold px-3"
+            variant="ghost"
+            (clicked)="scrollTo(p.sectionId)"
+            >Book Demo</app-button
+          >
+          <app-button
+            class="text-black bg-white rounded-md font-semibold px-2"
+            variant="ghost"
+            (clicked)="openScheduler()"
+            >Schedule Discovery Call</app-button
+          >
+        </div>
+      </div>
+      @defer (on viewport; prefetch on idle) {
+        <app-video-list-wrapper [videoList]="videoList" />
+      } @placeholder {
+        <div class="w-full aspect-video"></div>
+      }
+    </section>
+  }
+  <section class="flex w-11/12 mx-auto flex-col space-y-10">
+    <app-partner-content-list [content]="p.partnershipMeansContent" />
+    <app-for-partnership-tabs
+      [tabs]="p.partnershipTabs"
+      [selectedTab]="p.selectedTab"
+      containerClass="w-full"
+      tabListClass="flex justify-center items-center space-x-6 !mt-14"
+      tabClass="relative md:text-xl leading-relaxed text-base font-semibold cursor-pointer transition-all duration-300 text-gray-400 aria-selected:text-accent
+                after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:bg-accent after:w-0 after:transition-all after:duration-500
+                hover:after:w-full aria-selected:after:w-full
+                focus-visible:outline-none"
+      panelClass="animate-fade-in"
+    />
+  </section>
+  @if (p.benefits; as benefits) {
+    <section class="flex w-11/12 mx-auto flex-col space-y-10">
+      <app-plan-benefits [heading]="benefits.heading" [planPointers]="benefits.planPointers">
+        <p class="text-gray-400 md:text-lg text-sm">
+          {{ benefits.offer.lead }}
+          <strong class="font-semibold text-white"> {{ benefits.offer.highlight }}</strong>
+          @for (line of benefits.offer.lines; track $index) {
+            <br />
+            {{ line }}
+          }
+        </p>
+        <app-button
+          variant="ghost"
+          class="text-black bg-white rounded-full px-5 w-fit min-w-56 md:text-base text-sm"
+          (clicked)="scrollTo(p.sectionId)"
+        >
+          Schedule Discovery Call
+        </app-button>
+      </app-plan-benefits>
+    </section>
+  }
+  <section [id]="p.contentSectionId" class="flex w-11/12 mx-auto flex-col space-y-10">
+    <app-partner-content-list [content]="p.sampleContent" />
+    <app-partnership-content [content]="partnershipContent" />
+  </section>
+  <!-- Without the strategy-call block below the form, the section needs its own bottom margin. -->
+  <section
+    [id]="p.sectionId"
+    class="flex w-11/12 mx-auto flex-col space-y-10 scroll-mt-24"
+    [class.mb-32]="!p.orContent"
+  >
+    <app-partner-content-list [content]="p.footerContent" />
+    <div class="w-full mx-auto flex justify-center">
+      <app-enquiry-form [enquiry_type]="p.enquiryType" />
+    </div>
+    @if (p.orContent; as orContent) {
+      <div class="flex flex-col">
+        <app-partner-content-list [content]="orContent" containerClass="gap-4 mb-0!" />
+        <app-button
+          class="w-full md:w-auto mx-auto text-accent"
+          variant="ghost"
+          (clicked)="openScheduler()"
+          >Book a Strategy Call</app-button
+        >
+      </div>
+    }
+  </section>
+</div>

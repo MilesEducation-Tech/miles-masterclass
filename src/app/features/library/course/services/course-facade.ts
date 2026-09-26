@@ -1,4 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
+import { httpResource } from '@angular/common/http';
 import {
   computed,
   effect,
@@ -6,11 +7,9 @@ import {
   Service,
   linkedSignal,
   PLATFORM_ID,
-  resource,
   signal,
   untracked,
 } from '@angular/core';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import { Content } from '@core/models/course.model';
 import { FeatureApiResponse } from '@core/models/feature.model';
 import {
@@ -19,7 +18,7 @@ import {
   EMPTY_COURSE_FILTERS,
   LibraryFiltersData,
 } from '@core/models/library-filters.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { parseNextPage } from '@core/utils/parse-next-page';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 
@@ -31,18 +30,22 @@ import { withPreviousValue } from '@shared/utils/with-previous-value';
  */
 @Service()
 export class CourseFacade {
-  private readonly api = inject(ApiClient);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   // ---- Library filters (single fetch, drives the sidebar) ------------------
 
-  private readonly libraryFiltersResource = resource({
-    params: () => (this.isBrowser ? {} : undefined),
-    loader: () =>
-      firstValueFrom(this.api.get<FeatureApiResponse<LibraryFiltersData>>('v2/library-filters/')),
-  });
+  private readonly libraryFiltersResource = httpResource<FeatureApiResponse<LibraryFiltersData>>(
+    () => (this.isBrowser ? apiUrl('v2/library-filters/') : undefined),
+  );
 
-  readonly libraryFilters = computed(() => this.libraryFiltersResource.value()?.data);
+  /**
+   * Guarded: `value()` throws on an errored resource, so a failed `v2/library-filters/`
+   * (a 404 in local/UAT) used to throw on every change detection and take the page down.
+   * Now the sidebar just has no filters.
+   */
+  readonly libraryFilters = computed(() =>
+    this.libraryFiltersResource.hasValue() ? this.libraryFiltersResource.value()?.data : undefined,
+  );
   readonly isLibraryFiltersLoading = computed(() => this.libraryFiltersResource.isLoading());
 
   // ---- Course listing -------------------------------------------------------
@@ -51,35 +54,19 @@ export class CourseFacade {
   readonly courseFilters = signal<CourseFilterSelection>(EMPTY_COURSE_FILTERS);
   private readonly coursePage = signal(1);
 
-  private readonly rawCourseResource = resource({
-    params: () => {
-      if (!this.isBrowser) return undefined;
-      return {
-        course_type: this.courseType(),
-        filters: this.courseFilters(),
-        page: this.coursePage(),
-      };
-    },
-    loader: ({ params, abortSignal }) => {
-      // Multi-select filters are serialized as comma-separated values per
-      // the backend contract (e.g. `instructor_ids=1361,1522`), not as
-      // repeated query params. Single-value entries are emitted plainly.
-      const httpParams: Record<string, string | number> = {
-        course_type: params.course_type,
-        page: params.page,
-      };
-      for (const [key, values] of Object.entries(params.filters)) {
-        if (values.length > 0) httpParams[key] = values.join(',');
-      }
-      return firstValueFrom(
-        this.api
-          .get<FeatureApiResponse<Content[]>>('v2/library/', { params: httpParams })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        {
-          defaultValue: { data: [] as Content[] } as FeatureApiResponse<Content[]>,
-        },
-      );
-    },
+  private readonly rawCourseResource = httpResource<FeatureApiResponse<Content[]>>(() => {
+    if (!this.isBrowser) return undefined;
+    // Multi-select filters are serialized as comma-separated values per
+    // the backend contract (e.g. `instructor_ids=1361,1522`), not as
+    // repeated query params. Single-value entries are emitted plainly.
+    const params: Record<string, string | number> = {
+      course_type: this.courseType(),
+      page: this.coursePage(),
+    };
+    for (const [key, values] of Object.entries(this.courseFilters())) {
+      if (values.length > 0) params[key] = values.join(',');
+    }
+    return { url: apiUrl('v2/library/'), params };
   });
 
   private readonly courseResource = withPreviousValue(this.rawCourseResource);
@@ -94,7 +81,10 @@ export class CourseFacade {
     },
   });
 
-  readonly coursePagination = computed(() => this.courseResource.value()?.pagination_data);
+  /** Guarded like `libraryFilters`: `value()` throws on an errored resource. */
+  readonly coursePagination = computed(() =>
+    this.courseResource.hasValue() ? this.courseResource.value()?.pagination_data : undefined,
+  );
   readonly isCourseLoading = computed(() => this.courseResource.isLoading());
   readonly courseError = computed(() => this.courseResource.error());
 

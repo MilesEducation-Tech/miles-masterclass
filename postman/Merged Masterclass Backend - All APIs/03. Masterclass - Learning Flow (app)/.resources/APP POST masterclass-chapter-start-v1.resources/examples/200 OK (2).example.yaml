@@ -1,0 +1,19 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/chapter/{{chapter_id}}/start/"
+  method: POST
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "reset_required": true,
+        "message": "Your 365-day window has expired. All progress has been reset. A new window has started."
+      }
+order: 2000

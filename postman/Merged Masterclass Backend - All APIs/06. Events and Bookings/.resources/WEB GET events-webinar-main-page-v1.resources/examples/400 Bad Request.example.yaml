@@ -1,0 +1,24 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/web-api/v1/events/webinar-main-page/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: login_type
+      value: ""
+      disabled: true
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "code": "invalid_request",
+        "errors": "<pydantic_error_list(exc)>"
+      }
+order: 2000

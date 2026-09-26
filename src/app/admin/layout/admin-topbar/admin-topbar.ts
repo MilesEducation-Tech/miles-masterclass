@@ -63,7 +63,7 @@ const SEGMENT_LABELS: Record<string, string> = {
     provideIcons({ lucidePanelLeft, lucideBell, lucideDownload, lucidePlus, lucideSearch }),
   ],
   templateUrl: './admin-topbar.html',
-  styleUrl: './admin-topbar.css',
+  host: { class: 'contents' },
 })
 export class AdminTopbar {
   private readonly router = inject(Router);

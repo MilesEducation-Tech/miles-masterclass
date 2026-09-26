@@ -1,79 +1,82 @@
-<div
-  class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] md:w-[520px] mx-auto overflow-hidden relative rounded-xl"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="create-partner-code-title"
->
-  <div class="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
-    <h2 id="create-partner-code-title" class="text-xl font-bold text-white">Create partner code</h2>
-    <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
+<app-dialog-shell maxWidth="520px" ariaLabel="Create partner code">
+  <div
+    class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] md:w-[520px] mx-auto overflow-hidden relative rounded-xl"
+  >
+    <div class="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+      <h2 id="create-partner-code-title" class="text-xl font-bold text-white">
+        Create partner code
+      </h2>
+      <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
+    </div>
+
+    <app-forms type="signal" class="space-y-0 flex flex-col" (submitted)="submit()">
+      <div class="flex flex-col gap-5 px-6 py-6">
+        <app-aria-input
+          id="pc-code"
+          type="text"
+          label="Code"
+          placeholder="ALLINIAL-STD"
+          [formField]="form.code"
+        />
+
+        <app-aria-input
+          id="pc-price"
+          type="number"
+          label="Discounted price"
+          placeholder="299"
+          step="0.01"
+          [formField]="form.discounted_price"
+        />
+
+        <app-aria-select
+          id="pc-scope"
+          label="Assign to"
+          [options]="scopeOptions()"
+          [formField]="form.scope"
+        />
+
+        <app-aria-input
+          id="pc-description"
+          type="text"
+          label="Description (optional)"
+          placeholder="Allinial standard plan"
+          [formField]="form.description"
+        />
+
+        <app-aria-input
+          id="pc-stripe-price"
+          type="text"
+          label="Stripe price ID (optional)"
+          placeholder="price_1N…"
+          [formField]="form.stripe_price_id"
+        />
+
+        <app-aria-input
+          id="pc-valid-to"
+          type="datetime-local"
+          label="Valid to (optional)"
+          [formField]="form.valid_to"
+        />
+        <p class="-mt-3 text-xs text-fg-3">
+          Expiry for direct (non-seat) redemption. Seats minted from this plan are unaffected.
+        </p>
+
+        <app-aria-input
+          id="pc-auto-subscribe"
+          type="checkbox"
+          label="Auto-subscribe on redemption"
+          [formField]="form.auto_subscribe"
+        />
+      </div>
+
+      <div
+        class="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10 bg-white/3"
+      >
+        <app-button variant="outline" size="default" class="text-white" (clicked)="close()">
+          Cancel
+        </app-button>
+        <app-button variant="primary" size="default" type="submit"> Create code </app-button>
+      </div>
+    </app-forms>
   </div>
-
-  <app-forms type="signal" class="space-y-0 flex flex-col" (submitted)="submit()">
-    <div class="flex flex-col gap-5 px-6 py-6">
-      <app-aria-input
-        id="pc-code"
-        type="text"
-        label="Code"
-        placeholder="ALLINIAL-STD"
-        [formField]="form.code"
-      />
-
-      <app-aria-input
-        id="pc-price"
-        type="number"
-        label="Discounted price"
-        placeholder="299"
-        step="0.01"
-        [formField]="form.discounted_price"
-      />
-
-      <app-aria-select
-        id="pc-scope"
-        label="Assign to"
-        [options]="scopeOptions()"
-        [formField]="form.scope"
-      />
-
-      <app-aria-input
-        id="pc-description"
-        type="text"
-        label="Description (optional)"
-        placeholder="Allinial standard plan"
-        [formField]="form.description"
-      />
-
-      <app-aria-input
-        id="pc-stripe-price"
-        type="text"
-        label="Stripe price ID (optional)"
-        placeholder="price_1N…"
-        [formField]="form.stripe_price_id"
-      />
-
-      <app-aria-input
-        id="pc-valid-to"
-        type="datetime-local"
-        label="Valid to (optional)"
-        [formField]="form.valid_to"
-      />
-      <p class="-mt-3 text-xs" style="color: var(--mm-fg-3)">
-        Expiry for direct (non-seat) redemption. Seats minted from this plan are unaffected.
-      </p>
-
-      <app-aria-input
-        id="pc-auto-subscribe"
-        type="checkbox"
-        label="Auto-subscribe on redemption"
-        [formField]="form.auto_subscribe"
-      />
-    </div>
-
-    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10 bg-white/3">
-      <app-button variant="outline" size="default" class="text-white" (clicked)="close()">
-        Cancel
-      </app-button>
-      <app-button variant="primary" size="default" type="submit"> Create code </app-button>
-    </div>
-  </app-forms>
-</div>
+</app-dialog-shell>

@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { toggleRoleSlug } from '@admin/core/models/admin-rbac.model';
 import { Button } from '@shared/ui/button/button';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
@@ -29,13 +30,13 @@ export interface EditAdminRolesDialogData {
  */
 @Component({
   selector: 'app-edit-admin-roles-dialog',
-  imports: [Button, AriaInput],
+  imports: [Button, AriaInput, DialogShell],
   templateUrl: './edit-admin-roles-dialog.html',
-  styleUrl: './edit-admin-roles-dialog.css',
+  host: { class: 'block' },
 })
 export class EditAdminRolesDialog implements OnInit {
-  dialogRef!: DialogRef<EditAdminRolesDialog, string[] | undefined>;
-  data!: EditAdminRolesDialogData;
+  private readonly dialogRef = injectDialogRef<EditAdminRolesDialogData, string[] | undefined>();
+  protected readonly data = this.dialogRef.data;
 
   protected readonly selected = signal<ReadonlySet<string>>(new Set());
 

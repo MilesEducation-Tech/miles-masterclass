@@ -1,0 +1,26 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/app-api/v1/account/lms-login/{{course}}/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "access_token": "",
+        "uid": ""
+      }
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "detail": "Authentication credentials were not provided."
+      }
+order: 6000

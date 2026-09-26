@@ -102,40 +102,43 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
       <!-- Left: Form -->
-      <div class="min-w-0">
+      <!-- ngpTabset: roles, ids, aria-selected/-controls and arrow-key roving come from the
+           primitive. The active tab still drives which panel renders (`@if`), as before. -->
+      <div
+        class="min-w-0"
+        ngpTabset
+        [ngpTabsetValue]="activeSection()"
+        (ngpTabsetValueChange)="onSectionChange($event)"
+      >
         <!-- Section Tabs -->
         <nav
+          ngpTabList
           class="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-none"
-          role="tablist"
           aria-label="SEO sections"
         >
           <button
-            role="tab"
+            type="button"
+            ngpTabButton
+            ngpTabButtonValue="basic"
             class="whitespace-nowrap flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             [class]="
               activeSection() === 'basic'
                 ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300'
                 : 'bg-slate-800/50 border-slate-700/30 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
             "
-            [attr.aria-selected]="activeSection() === 'basic'"
-            (click)="setSection('basic')"
-            id="tab-basic"
-            aria-controls="panel-basic"
           >
             <ng-icon name="heroDocumentText"></ng-icon> Basic SEO
           </button>
           <button
-            role="tab"
+            type="button"
+            ngpTabButton
+            ngpTabButtonValue="og"
             class="whitespace-nowrap flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             [class]="
               activeSection() === 'og'
                 ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300'
                 : 'bg-slate-800/50 border-slate-700/30 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
             "
-            [attr.aria-selected]="activeSection() === 'og'"
-            (click)="setSection('og')"
-            id="tab-og"
-            aria-controls="panel-og"
           >
             <span
               class="font-serif italic font-bold text-base w-4 h-4 inline-flex items-center justify-center leading-none"
@@ -144,17 +147,15 @@
             Open Graph
           </button>
           <button
-            role="tab"
+            type="button"
+            ngpTabButton
+            ngpTabButtonValue="twitter"
             class="whitespace-nowrap flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             [class]="
               activeSection() === 'twitter'
                 ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300'
                 : 'bg-slate-800/50 border-slate-700/30 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
             "
-            [attr.aria-selected]="activeSection() === 'twitter'"
-            (click)="setSection('twitter')"
-            id="tab-twitter"
-            aria-controls="panel-twitter"
           >
             <span
               class="font-sans font-black text-base w-4 h-4 inline-flex items-center justify-center leading-none"
@@ -163,17 +164,15 @@
             Twitter / X
           </button>
           <button
-            role="tab"
+            type="button"
+            ngpTabButton
+            ngpTabButtonValue="advanced"
             class="whitespace-nowrap flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             [class]="
               activeSection() === 'advanced'
                 ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300'
                 : 'bg-slate-800/50 border-slate-700/30 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
             "
-            [attr.aria-selected]="activeSection() === 'advanced'"
-            (click)="setSection('advanced')"
-            id="tab-advanced"
-            aria-controls="panel-advanced"
           >
             <ng-icon name="heroCodeBracket"></ng-icon> Advanced
           </button>
@@ -187,9 +186,8 @@
           <!-- BASIC SEO SECTION -->
           @if (activeSection() === 'basic') {
             <div
-              id="panel-basic"
-              role="tabpanel"
-              aria-labelledby="tab-basic"
+              ngpTabPanel
+              ngpTabPanelValue="basic"
               class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300"
             >
               <!-- Title -->
@@ -199,18 +197,29 @@
                   class="text-sm font-semibold text-slate-200 flex items-center gap-2"
                 >
                   Page Title
+                  <!-- ngpTooltip: shows on hover AND keyboard focus, and links the text to the trigger
+                       with aria-describedby (it used to sit hidden inside the label, and so inside the field's name). -->
                   <span
-                    class="text-slate-500 hover:text-indigo-400 cursor-help transition-colors group relative"
-                    role="tooltip"
+                    tabindex="0"
+                    aria-label="More info"
+                    class="text-slate-500 hover:text-indigo-400 focus-visible:text-indigo-400 cursor-help transition-colors outline-none"
+                    [ngpTooltipTrigger]="fieldTip1"
+                    ngpTooltipTriggerPlacement="top"
+                    [ngpTooltipTriggerOffset]="8"
+                    [ngpTooltipTriggerShowDelay]="0"
+                    [ngpTooltipTriggerHideDelay]="0"
                   >
-                    <ng-icon name="heroInformationCircle"></ng-icon>
-                    <span
-                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center font-normal"
+                    <ng-icon name="heroInformationCircle" aria-hidden="true"></ng-icon>
+                  </span>
+                  <ng-template #fieldTip1>
+                    <div
+                      ngpTooltip
+                      class="z-50 w-64 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl pointer-events-none text-center font-normal"
                     >
                       This is what appears as the clickable blue link in Google. Keep it between
                       30–60 characters.
-                    </span>
-                  </span>
+                    </div>
+                  </ng-template>
                 </label>
                 <input
                   id="seo-title"
@@ -249,18 +258,29 @@
                   class="text-sm font-semibold text-slate-200 flex items-center gap-2"
                 >
                   Search Description
+                  <!-- ngpTooltip: shows on hover AND keyboard focus, and links the text to the trigger
+                       with aria-describedby (it used to sit hidden inside the label, and so inside the field's name). -->
                   <span
-                    class="text-slate-500 hover:text-indigo-400 cursor-help transition-colors group relative"
-                    role="tooltip"
+                    tabindex="0"
+                    aria-label="More info"
+                    class="text-slate-500 hover:text-indigo-400 focus-visible:text-indigo-400 cursor-help transition-colors outline-none"
+                    [ngpTooltipTrigger]="fieldTip2"
+                    ngpTooltipTriggerPlacement="top"
+                    [ngpTooltipTriggerOffset]="8"
+                    [ngpTooltipTriggerShowDelay]="0"
+                    [ngpTooltipTriggerHideDelay]="0"
                   >
-                    <ng-icon name="heroInformationCircle"></ng-icon>
-                    <span
-                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center font-normal"
+                    <ng-icon name="heroInformationCircle" aria-hidden="true"></ng-icon>
+                  </span>
+                  <ng-template #fieldTip2>
+                    <div
+                      ngpTooltip
+                      class="z-50 w-64 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl pointer-events-none text-center font-normal"
                     >
                       This appears below the title in Google. Summarize what the page is about.
                       70–160 characters ideal.
-                    </span>
-                  </span>
+                    </div>
+                  </ng-template>
                 </label>
                 <textarea
                   id="seo-desc"
@@ -297,18 +317,29 @@
                   class="text-sm font-semibold text-slate-200 flex items-center gap-2"
                 >
                   Keywords
+                  <!-- ngpTooltip: shows on hover AND keyboard focus, and links the text to the trigger
+                       with aria-describedby (it used to sit hidden inside the label, and so inside the field's name). -->
                   <span
-                    class="text-slate-500 hover:text-indigo-400 cursor-help transition-colors group relative"
-                    role="tooltip"
+                    tabindex="0"
+                    aria-label="More info"
+                    class="text-slate-500 hover:text-indigo-400 focus-visible:text-indigo-400 cursor-help transition-colors outline-none"
+                    [ngpTooltipTrigger]="fieldTip3"
+                    ngpTooltipTriggerPlacement="top"
+                    [ngpTooltipTriggerOffset]="8"
+                    [ngpTooltipTriggerShowDelay]="0"
+                    [ngpTooltipTriggerHideDelay]="0"
                   >
-                    <ng-icon name="heroInformationCircle"></ng-icon>
-                    <span
-                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center font-normal"
+                    <ng-icon name="heroInformationCircle" aria-hidden="true"></ng-icon>
+                  </span>
+                  <ng-template #fieldTip3>
+                    <div
+                      ngpTooltip
+                      class="z-50 w-64 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl pointer-events-none text-center font-normal"
                     >
                       Comma-separated keywords. Use 3-15 relevant terms. E.g. "CPE, accounting, AI
                       training"
-                    </span>
-                  </span>
+                    </div>
+                  </ng-template>
                 </label>
                 <input
                   id="seo-keywords"
@@ -330,18 +361,29 @@
                   class="text-sm font-semibold text-slate-200 flex items-center gap-2"
                 >
                   Robots Directive
+                  <!-- ngpTooltip: shows on hover AND keyboard focus, and links the text to the trigger
+                       with aria-describedby (it used to sit hidden inside the label, and so inside the field's name). -->
                   <span
-                    class="text-slate-500 hover:text-indigo-400 cursor-help transition-colors group relative"
-                    role="tooltip"
+                    tabindex="0"
+                    aria-label="More info"
+                    class="text-slate-500 hover:text-indigo-400 focus-visible:text-indigo-400 cursor-help transition-colors outline-none"
+                    [ngpTooltipTrigger]="fieldTip4"
+                    ngpTooltipTriggerPlacement="top"
+                    [ngpTooltipTriggerOffset]="8"
+                    [ngpTooltipTriggerShowDelay]="0"
+                    [ngpTooltipTriggerHideDelay]="0"
                   >
-                    <ng-icon name="heroInformationCircle"></ng-icon>
-                    <span
-                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center font-normal"
+                    <ng-icon name="heroInformationCircle" aria-hidden="true"></ng-icon>
+                  </span>
+                  <ng-template #fieldTip4>
+                    <div
+                      ngpTooltip
+                      class="z-50 w-72 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl pointer-events-none text-center font-normal"
                     >
                       Controls if search engines show this page. Use "index, follow" for most pages.
                       Use "noindex" to hide.
-                    </span>
-                  </span>
+                    </div>
+                  </ng-template>
                 </label>
                 <select
                   id="seo-robots"
@@ -394,9 +436,8 @@
           <!-- OPEN GRAPH SECTION -->
           @if (activeSection() === 'og') {
             <div
-              id="panel-og"
-              role="tabpanel"
-              aria-labelledby="tab-og"
+              ngpTabPanel
+              ngpTabPanelValue="og"
               class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300"
             >
               <div
@@ -547,9 +588,8 @@
           <!-- TWITTER SECTION -->
           @if (activeSection() === 'twitter') {
             <div
-              id="panel-twitter"
-              role="tabpanel"
-              aria-labelledby="tab-twitter"
+              ngpTabPanel
+              ngpTabPanelValue="twitter"
               class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300"
             >
               <div
@@ -717,9 +757,8 @@
           <!-- ADVANCED SECTION -->
           @if (activeSection() === 'advanced') {
             <div
-              id="panel-advanced"
-              role="tabpanel"
-              aria-labelledby="tab-advanced"
+              ngpTabPanel
+              ngpTabPanelValue="advanced"
               class="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300"
             >
               <div class="flex flex-col gap-1.5">
@@ -728,18 +767,29 @@
                   class="text-sm font-semibold text-slate-200 flex items-center gap-2"
                 >
                   Canonical URL
+                  <!-- ngpTooltip: shows on hover AND keyboard focus, and links the text to the trigger
+                       with aria-describedby (it used to sit hidden inside the label, and so inside the field's name). -->
                   <span
-                    class="text-slate-500 hover:text-indigo-400 cursor-help transition-colors group relative"
-                    role="tooltip"
+                    tabindex="0"
+                    aria-label="More info"
+                    class="text-slate-500 hover:text-indigo-400 focus-visible:text-indigo-400 cursor-help transition-colors outline-none"
+                    [ngpTooltipTrigger]="fieldTip5"
+                    ngpTooltipTriggerPlacement="top"
+                    [ngpTooltipTriggerOffset]="8"
+                    [ngpTooltipTriggerShowDelay]="0"
+                    [ngpTooltipTriggerHideDelay]="0"
                   >
-                    <ng-icon name="heroInformationCircle"></ng-icon>
-                    <span
-                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center font-normal"
+                    <ng-icon name="heroInformationCircle" aria-hidden="true"></ng-icon>
+                  </span>
+                  <ng-template #fieldTip5>
+                    <div
+                      ngpTooltip
+                      class="z-50 w-72 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl pointer-events-none text-center font-normal"
                     >
                       The "official" URL for this page. Prevents duplicate content issues. Leave
                       blank if unsure.
-                    </span>
-                  </span>
+                    </div>
+                  </ng-template>
                 </label>
                 <input
                   id="seo-canonical"
@@ -783,18 +833,29 @@
                   class="text-sm font-semibold text-slate-200 flex items-center gap-2"
                 >
                   Structured Data (JSON-LD)
+                  <!-- ngpTooltip: shows on hover AND keyboard focus, and links the text to the trigger
+                       with aria-describedby (it used to sit hidden inside the label, and so inside the field's name). -->
                   <span
-                    class="text-slate-500 hover:text-indigo-400 cursor-help transition-colors group relative"
-                    role="tooltip"
+                    tabindex="0"
+                    aria-label="More info"
+                    class="text-slate-500 hover:text-indigo-400 focus-visible:text-indigo-400 cursor-help transition-colors outline-none"
+                    [ngpTooltipTrigger]="fieldTip6"
+                    ngpTooltipTriggerPlacement="top"
+                    [ngpTooltipTriggerOffset]="8"
+                    [ngpTooltipTriggerShowDelay]="0"
+                    [ngpTooltipTriggerHideDelay]="0"
                   >
-                    <ng-icon name="heroInformationCircle"></ng-icon>
-                    <span
-                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 text-center font-normal"
+                    <ng-icon name="heroInformationCircle" aria-hidden="true"></ng-icon>
+                  </span>
+                  <ng-template #fieldTip6>
+                    <div
+                      ngpTooltip
+                      class="z-50 w-72 p-2.5 bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl shadow-xl pointer-events-none text-center font-normal"
                     >
                       Advanced: Add schema.org structured data for rich search results. Must be
                       valid JSON.
-                    </span>
-                  </span>
+                    </div>
+                  </ng-template>
                 </label>
                 <textarea
                   id="seo-jsonld"

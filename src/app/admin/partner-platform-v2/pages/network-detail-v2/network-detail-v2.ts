@@ -1,20 +1,17 @@
-import { isPlatformBrowser } from '@angular/common';
 import {
   Component,
   DestroyRef,
   EnvironmentInjector,
-  PLATFORM_ID,
   computed,
   inject,
-  resource,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom, fromEvent, take, takeUntil } from 'rxjs';
+import { take } from 'rxjs';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { HasPermissionDirective } from '@admin/core/directives/has-permission';
 import { PERM } from '@admin/core/models/admin-rbac.model';
 import { StatCard } from '@admin/partner-platform-v2/components/stat-card/stat-card';
@@ -25,24 +22,17 @@ import {
   CreateFirmResponse,
 } from '@admin/core/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
-import {
-  AllocateSeatsDialog,
-  AllocateSeatsDialogData,
-} from '@admin/partner-platform-v2/dialogs/allocate-seats-dialog/allocate-seats-dialog';
-import {
-  NetworkFormDialog,
+// Type-only: dialog components below load with `import()` when opened (PROMPT.md §4.4).
+import type { AllocateSeatsDialogData } from '@admin/partner-platform-v2/dialogs/allocate-seats-dialog/allocate-seats-dialog';
+import type {
   NetworkFormDialogData,
   NetworkFormResult,
 } from '@admin/partner-platform-v2/dialogs/network-form-dialog/network-form-dialog';
-import {
-  AssignSeatDialog,
+import type {
   AssignSeatDialogData,
   AssignSeatResult,
 } from '@admin/partner-platform-v2/dialogs/assign-seat-dialog/assign-seat-dialog';
-import {
-  FirmFormDialog,
-  FirmFormDialogData,
-} from '@admin/partner-platform-v2/dialogs/firm-form-dialog/firm-form-dialog';
+import type { FirmFormDialogData } from '@admin/partner-platform-v2/dialogs/firm-form-dialog/firm-form-dialog';
 import { AdminAuth } from '@admin/core/services/admin-auth';
 
 /**
@@ -66,28 +56,22 @@ export class NetworkDetailV2 {
   private readonly facade = inject(PartnerSuperAdminFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly dialog = inject(Dialog);
-  // Dialogs are built by the root Dialog service; hand it this page's injector
-  // so the route-scoped facade resolves instead of a NullInjectorError.
+  private readonly dialogs = inject(NgpDialogManager);
+  // Dialogs are created under the root injector; pass this page's injector as the
+  // dialog's `injector` so the route-scoped facade resolves instead of a NullInjectorError.
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /** Editing a network or firm is super-admin only. */
   protected readonly canEdit = inject(AdminAuth).isSuperAdmin;
 
   protected readonly networkId = signal<number>(Number(this.route.snapshot.paramMap.get('id')));
 
-  private readonly detailResource = resource({
-    params: () => (this.isBrowser && this.networkId() > 0 ? { id: this.networkId() } : undefined),
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.facade.networkDetail(params.id).pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-      ),
-  });
+  private readonly detailResource = this.facade.networkDetailResource(this.networkId);
 
+  /** Guarded: `value()` throws on an errored resource, before the page's error banner could show. */
   private readonly detail = computed<NetworkDetailResponse | undefined>(() =>
-    this.detailResource.value(),
+    this.detailResource.hasValue() ? this.detailResource.value() : undefined,
   );
 
   protected readonly isLoading = computed(() => this.detailResource.isLoading());
@@ -110,84 +94,80 @@ export class NetworkDetailV2 {
   });
 
   /** Edit fields and/or mint seats into the pool — `PATCH /superadmin/networks/<id>/`. */
-  protected openEdit(): void {
+  protected async openEdit(): Promise<void> {
     const network = this.network();
     if (!network) return;
-    const ref = this.dialog.open<NetworkFormDialog, NetworkFormResult | undefined>(
+    const { NetworkFormDialog } =
+      await import('@admin/partner-platform-v2/dialogs/network-form-dialog/network-form-dialog');
+    const ref = this.dialogs.open<NetworkFormDialogData, NetworkFormResult | undefined>(
       NetworkFormDialog,
-      {
-        data: { network } satisfies NetworkFormDialogData,
-        environmentInjector: this.envInjector,
-        maxWidth: '520px',
-        ariaLabel: 'Edit network',
-      },
+      { data: { network } satisfies NetworkFormDialogData, injector: this.envInjector },
     );
-    ref.afterClosed$
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (result) => {
-        if (!result) return;
-        const saved = await this.facade.updateNetwork(network.id, {
-          name: result.name,
-          total_seats: result.total_seats,
-          is_active: result.is_active,
-          ...(result.allocations.length ? { allocations: result.allocations } : {}),
-        });
-        if (saved) this.detailResource.reload();
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(async (result) => {
+      if (!result) return;
+      const saved = await this.facade.updateNetwork(network.id, {
+        name: result.name,
+        total_seats: result.total_seats,
+        is_active: result.is_active,
+        ...(result.allocations.length ? { allocations: result.allocations } : {}),
       });
+      if (saved) this.detailResource.reload();
+    });
   }
 
   /** Top up one firm's seats — `POST /superadmin/firms/<id>/allocate/`. */
-  protected openAllocate(firm: Firm): void {
-    const ref = this.dialog.open<AllocateSeatsDialog, number | undefined>(AllocateSeatsDialog, {
-      data: { firm } satisfies AllocateSeatsDialogData,
-      environmentInjector: this.envInjector,
-      maxWidth: '520px',
-      ariaLabel: `Add seats to ${firm.name}`,
-    });
-    ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((minted) => {
+  protected async openAllocate(firm: Firm): Promise<void> {
+    const { AllocateSeatsDialog } =
+      await import('@admin/partner-platform-v2/dialogs/allocate-seats-dialog/allocate-seats-dialog');
+    const ref = this.dialogs.open<AllocateSeatsDialogData, number | undefined>(
+      AllocateSeatsDialog,
+      { data: { firm } satisfies AllocateSeatsDialogData, injector: this.envInjector },
+    );
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((minted) => {
       if (minted != null) this.detailResource.reload();
     });
   }
 
   /** Move a pool seat onto a member firm — `POST /superadmin/seats/<id>/assign-firm/`. */
-  protected openAssignSeat(): void {
-    const ref = this.dialog.open<AssignSeatDialog, AssignSeatResult | undefined>(AssignSeatDialog, {
-      data: { firms: this.firms() } satisfies AssignSeatDialogData,
-      environmentInjector: this.envInjector,
-      maxWidth: '480px',
-      ariaLabel: 'Assign a pool seat to a firm',
+  protected async openAssignSeat(): Promise<void> {
+    const { AssignSeatDialog } =
+      await import('@admin/partner-platform-v2/dialogs/assign-seat-dialog/assign-seat-dialog');
+    const ref = this.dialogs.open<AssignSeatDialogData, AssignSeatResult | undefined>(
+      AssignSeatDialog,
+      { data: { firms: this.firms() } satisfies AssignSeatDialogData, injector: this.envInjector },
+    );
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(async (result) => {
+      if (!result) return;
+      const seat = await this.facade.assignSeatToFirm(result.seatId, result.firmId);
+      if (seat) this.detailResource.reload();
     });
-    ref.afterClosed$
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (result) => {
-        if (!result) return;
-        const seat = await this.facade.assignSeatToFirm(result.seatId, result.firmId);
-        if (seat) this.detailResource.reload();
-      });
   }
 
   /** Add a member firm here — `POST /superadmin/firms/` with this network pre-selected. */
-  protected openCreateFirm(): void {
-    const ref = this.dialog.open<FirmFormDialog, CreateFirmResponse | undefined>(FirmFormDialog, {
-      data: { networkId: this.networkId() } satisfies FirmFormDialogData,
-      environmentInjector: this.envInjector,
-      maxWidth: '560px',
-      ariaLabel: 'Create firm',
-    });
-    ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((created) => {
+  protected async openCreateFirm(): Promise<void> {
+    const { FirmFormDialog } =
+      await import('@admin/partner-platform-v2/dialogs/firm-form-dialog/firm-form-dialog');
+    const ref = this.dialogs.open<FirmFormDialogData, CreateFirmResponse | undefined>(
+      FirmFormDialog,
+      {
+        data: { networkId: this.networkId() } satisfies FirmFormDialogData,
+        injector: this.envInjector,
+      },
+    );
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((created) => {
       if (created) this.detailResource.reload();
     });
   }
 
   /** Edit one member firm — `PATCH /superadmin/firms/<id>/`. */
-  protected openEditFirm(firm: Firm): void {
-    const ref = this.dialog.open<FirmFormDialog, Firm | undefined>(FirmFormDialog, {
+  protected async openEditFirm(firm: Firm): Promise<void> {
+    const { FirmFormDialog } =
+      await import('@admin/partner-platform-v2/dialogs/firm-form-dialog/firm-form-dialog');
+    const ref = this.dialogs.open<FirmFormDialogData, Firm | undefined>(FirmFormDialog, {
       data: { firm } satisfies FirmFormDialogData,
-      environmentInjector: this.envInjector,
-      maxWidth: '560px',
-      ariaLabel: `Edit ${firm.name}`,
+      injector: this.envInjector,
     });
-    ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((updated) => {
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((updated) => {
       if (updated) this.detailResource.reload();
     });
   }

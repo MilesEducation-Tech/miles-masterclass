@@ -1,0 +1,483 @@
+$kind: collection
+description: |-
+  # Merged Masterclass Backend - All APIs
+
+  GENERATED from the live URLconf by `Miscellaneous/Scripts/generate_postman_collection.py` on 2026-09-25.
+  Do not hand-edit: re-run the script after any routing change.
+
+  **123 mounted API routes** -> **130 requests** across **16 folders**. The Django admin UI is excluded; it is not an API surface.
+
+  Request bodies: 38 of 52 write endpoints carry a template generated from the view's own validator. The rest either take no body by design (stated on the request) or use a pattern the generator does not yet read.
+
+  ## Breaking changes, shipped 2026-09-24
+
+  Re-import rather than merging. A client built before this date still calls paths that MOVED, and the old ones 404 with no redirect shim.
+
+  - **Maintenance split three ways (2026-09-24).** `account/app-maintainance/` -> `account/app/maintainance-status/`, `account/web/app-status/` -> `account/web/maintainance-status/`, and the staff POST toggle moved to `account/universal/maintainance-status/`. Both probes are now anonymous and answer the same two keys, `is_maintenance` and `force_logout_all_user`.
+  - **The web probe lost three keys.** `is_web_maintenance` is now `is_maintenance`; `is_pathway` and `is_onboarding_completed` are gone from it entirely - `GET account/user-details/` already answers both.
+  - **`account/user_details/` (underscore) was DELETED**, along with its PATCH. `account/user-details/` (hyphen) is the only one left and is GET-only; write profile fields through `PATCH account/profile/`.
+  - **Six lead-capture routes** now file a Salesforce enquiry: `talk-to-us/`, `enquiry/`, and the four programme funnels under `caira/`, `cpa/` and `cma/`. The four funnels take NO body - any key is a 400.
+
+  ## Setup
+
+  1. Import all four files and select the LOCAL, UAT or PROD environment.
+  2. Set `login_identifier` to the e-mail or phone you are testing with.
+  3. Send **POST auth-otp-send-v1**, put the code you receive in `otp_code`, then send **POST auth-otp-verify-v1**.
+
+  That is the whole setup. `token` and `refresh_token` are written by the scripts - do not paste a token in by hand, and do not expect one to survive a logout.
+
+  Webhook requests are the exception: they are `noauth` and carry their own secret header, so set `lms_notification_webhook_key` and `miles_one_webhook_secret` for **16. Inbound Webhooks (secret header, no JWT)**.
+
+  ## What runs automatically
+
+  Everything below is Postman-side scripting. There is no companion runner and nothing writes to disk; the environment is the only state.
+
+  - **The access token renews itself.** The collection pre-request script reads `exp` out of the JWT and refreshes when fewer than `token_refresh_skew_seconds` (120) remain. Refresh tokens ROTATE, so the new pair is stored immediately - which is also why nothing here ever refreshes twice at once. Set `auto_refresh` to `off` to stop it.
+  - **Path parameters fill themselves.** After any 2xx JSON response the collection test script walks the body and writes any key matching a path variable into the environment, so a list request sets up the detail request that follows it. `id` is deliberately NOT harvested - it is the path parameter of one route (the certificate webhook) and the commonest key in every list body, so set it by hand. It fills a variable ONLY WHEN THAT VARIABLE IS EMPTY, so a value you pinned yourself is never overwritten - clear it if you want it re-harvested. Set `auto_capture` to `off` to stop it. Only the FIRST element of a list is read, and only keys named exactly like the path variable.
+  - **Every response is checked for the baseline**: no 5xx, and a JSON content type parses. Response time is logged, never asserted - it is a property of the machine the run is on.
+  - **A 401 or 403 explains itself** in the console instead of leaving a bare status code: whether a token is set at all, and whether a webhook secret rather than a token is what the route wanted.
+  - **The three session routes carry their own scripts** - verify stores the minted pair, refresh stores the rotated pair, logout clears both, and only on a 2xx.
+
+  Query parameters are present but DISABLED, so a request sends nothing it was not asked to send.
+
+  ## What each request tells you
+
+  Open any request's Documentation pane. It carries the view and permission behind the route, the body it accepts, the query parameters it declares, every error `code` it can return and what each one means, and the shape of the response - taken from the contracts the frontend web team works to. There is no separate documentation folder to go and read: the detail is on the request you are about to send.
+
+  ## Saved examples
+
+  Every request carries saved examples - 686 of them, 5.3 per request - one per outcome that request can produce. Pick them from the dropdown beside Send to see the success body, each validation failure, the authentication refusal and the 500 envelope without having to provoke them.
+
+  **They are READ OFF THE HANDLER, not written by hand.** Each one comes from a `Response(...)` in the view's own source - including the ones built in a shared helper or in the function the handler delegates to - so when a handler changes shape the examples change with it on the next run. A saved example is the part of a collection that normally rots first, and a tester comparing a live 400 against a stale example cannot tell which of the two is wrong.
+
+  **A value in angle brackets was not invented.** `"user_id": "<str(user_id)>"` means the key is there and the script could not resolve its value from the source - it shows you where the value comes from instead of fabricating one that would look like a format guarantee. The response SHAPE in those cases is in the contract text further down the same pane.
+
+  **Status codes with no example are not outcomes that cannot happen.** A route whose response is proxied from an upstream service carries that service's status, which is not readable from this side - the five sign-in routes are the case in point, and their success bodies are documented in the contract text instead.
+
+  ## Folders
+
+  - **01. Authentication and Session** - 5 routes, 5 requests (5 UNIVERSAL).
+  - **02. Account, Profile and Reference Content** - 16 routes, 19 requests (2 APP, 14 UNIVERSAL).
+  - **03. Masterclass - Learning Flow (app)** - 27 routes, 27 requests (26 APP, 1 WEBHOOK).
+  - **04. MasterclassWeb - Learning Flow (web)** - 19 routes, 19 requests (19 WEB).
+  - **05. AI Labs** - 5 routes, 5 requests (5 UNIVERSAL).
+  - **06. Events and Bookings** - 6 routes, 6 requests (2 APP, 2 UNIVERSAL, 2 WEB).
+  - **07. CAIRA - Badges, Certificates, CPE** - 5 routes, 5 requests (5 UNIVERSAL).
+  - **08. Notifications and Bell** - 5 routes, 5 requests (5 UNIVERSAL).
+  - **09. Catalogue** - 11 routes, 11 requests (11 UNIVERSAL).
+  - **10. Commerce** - 7 routes, 11 requests (7 UNIVERSAL).
+  - **11. Engagement - Likes, Saves, Watches** - 4 routes, 4 requests (4 UNIVERSAL).
+  - **12. Homepage Content** - 3 routes, 3 requests (3 UNIVERSAL).
+  - **13. Industry Unplugged** - 2 routes, 2 requests (2 UNIVERSAL).
+  - **14. Varun Masterclass** - 5 routes, 5 requests (5 UNIVERSAL).
+  - **15. Learn Page (app)** - 1 routes, 1 requests (1 APP).
+  - **16. Inbound Webhooks (secret header, no JWT)** - 2 routes, 2 requests (2 WEBHOOK).
+
+  ## Conventions that apply to every request
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ## 1. Conventions
+
+  ### 1.1 Every path moved under `account/`, and there is no redirect
+
+  Ported paths were namespaced under `account/` on 2026-08-12. Django does not treat `faqs` and
+  `account/faqs` as the same route, so an un-updated build gets a **404, not a redirect**. No shim exists.
+
+  Two legacy oddities are reproduced on purpose and are not typos to fix on your side:
+
+  - `maintainance` is **misspelt** in all three maintenance paths, matching `settings.APP_UNDER_MAINTENANCE`'s
+    readers. It stays: a path that spells it correctly next to settings that do not is worse than one
+    consistent mistake.
+  - Every path now carries a trailing slash, including `country` and `faqs`, which did not have one in legacy.
+
+  ### 1.2 Authentication
+
+  `Authorization: Bearer <jwt>` where the table says JWT. A **bad or expired token answers `403`, not `401`** -
+  DRF downgrades an authentication failure when the authenticator does not implement `authenticate_header()`, and
+  ours does not. Do not key token-refresh on 401 alone.
+
+  The endpoints marked "enforced in handler" are a different shape: they carry no permission class, so an
+  anonymous request reaches the handler and gets a **401** from an explicit check inside it. So on those four you
+  can see 401 for anonymous and 403 for a broken token, from the same route.
+
+  ### 1.3 Undeclared keys are rejected
+
+  Request bodies and query strings are validated strictly. A key the endpoint does not declare is a 400 naming
+  it. Sending a known key as `null` is also rejected where the field does not allow null - strict validation
+  forbids the key's *presence*, so "send it as null to be safe" does not work.
+
+  ### 1.4 Error envelopes
+
+  The auth proxy routes (section 2) return **the SSO's own body, whole and untouched**, whatever it contains.
+  Everything this backend generates itself uses one of:
+
+  ```json
+  { "message": "Sign-in is temporarily unavailable. Please try again." }
+  { "code": "account_blocked", "message": "This account has been blocked..." }
+  { "message": "Invalid request.", "details": { "country": ["..."] } }
+  ```
+
+  DRF validation failures on the serializer-backed routes come back as DRF's native shape - a map of field name
+  to a list of messages - not the `{status, code, errors[]}` envelope the Events routes use. **The two apps do
+  not share an error shape.** Handle both.
+
+  ---
+
+  ## 2. The login flow
+
+  Five routes, in order. All five are proxies onto the Miles SSO auth API: they OBTAIN a token, they do not
+  verify one. Verification is local, against the issuer's JWKS, on every subsequent request.
+
+  ```
+  auth-identify  ->  auth-otp-send  ->  auth-otp-verify  ->  (session)
+                                                               |
+                                              auth-token-refresh (rotate)
+                                                               |
+                                                         auth-logout
+  ```
+
+  ## 6. Maintenance probes
+
+  RESTRUCTURED 2026-09-24, and this is a **breaking change on three counts**: both probe paths moved,
+  the web payload lost three keys and renamed a fourth, and the POST toggle moved to a third route.
+  There is no shim; an un-updated build 404s on the first call it makes.
+
+  | was | is |
+  | --- | --- |
+  | `GET account/app-maintainance/` | `GET account/app/maintainance-status/` |
+  | `GET account/web/app-status/` | `GET account/web/maintainance-status/` |
+  | `POST account/app-maintainance/` | `POST account/universal/maintainance-status/` |
+
+  ### 8.2 The two apps do not share an error shape
+
+  Events returns `{status, code, errors[]}` and asks you to switch on `code`. Accounts returns DRF's native
+  validation shape, a bare `{message}`, or the SSO's body untouched. There is no single error parser that covers
+  both. See 1.4.
+
+  ### 8.3 The auth routes return the SSO's body, not ours
+
+  Everything on the five auth routes except the two local flags and the refusals listed in 2.3 is passed through
+  from the Miles SSO verbatim, including fields not documented here. Treat unknown keys as additive, and do not
+  assume our version pins their schema.
+
+  ## 1. Conventions
+
+  ### 1.1 Three path prefixes, and the split is deliberate
+
+  - `api/v1/events/...` - SHARED. The registration handshake. One write path, one contract, one set of side
+    effects (Zoom -> Booking -> Salesforce). A web caller and an app caller register identically.
+  - `web-api/v1/events/...` - WEB-ONLY READS. The landing feed and the detail page behind it.
+  - `app-api/v1/events/...` - APP-ONLY READS. The bookings feed.
+
+  What a page renders is genuinely surface-shaped: bucket counts, ordering and payload width differ between a
+  browser and a phone, so a read belongs to the surface that renders it. No route has a twin on the other read
+  prefix yet.
+
+  The rule this encodes: writes stay shared, reads split by surface.
+
+  `app-api/` was added on 2026-09-17 and `all-bookings/` moved onto it. An earlier version of this document
+  described that route as web-only; that was wrong, and the prefix is the part of this scheme that names the
+  surface, so it was corrected rather than left. It was MOVED, not aliased - this document went out the same
+  day, so there is no shipped client on the old path.
+
+  Note that `Masterclass` splits web from app a DIFFERENT way, by domain segment (`api/v1/masterclass/` vs
+  `api/v1/masterclass-web/`). Which scheme a surface uses is a fact to look up, not to derive.
+
+  ### 1.2 Authentication
+
+  `Authorization: Bearer <jwt>` on every route above, except `webinar-main-page?login_type=pre_login`, which is
+  served anonymously.
+
+  **`webinar-details-page` TAKES NO `login_type` AND IS NOT GATED.** It derives the surface from the request:
+  send a token and you get the post-login page with its `registration` block, send none and you get the
+  pre-login page without it. A signed-out visitor can open a webinar page.
+
+  **CHANGED 2026-09-18.** It shipped on 2026-09-17 as `IsAuthenticated`, answering `403` to anonymous callers.
+  If you built against that, the 403 is gone and `data.login_type` now tells you which surface you received.
+
+  A BAD OR EXPIRED TOKEN ANSWERS `403`, NOT `401`. This is true of every authenticated route in this backend,
+  not just these four: DRF downgrades an authentication failure to 403 when the authenticator does not implement
+  `authenticate_header()`, and ours does not. Do not key token-refresh logic on 401 alone. The one `401` this app
+  returns is a different case entirely - see section 6.2.
+
+  ### 1.3 Undeclared parameters are rejected, not ignored
+
+  Every request body and query string is validated strictly. A key the endpoint does not declare is a 400 naming
+  that key; it is not silently dropped. A typo'd filter therefore fails loudly instead of returning an
+  unfiltered 200.
+
+  ### 1.4 Error envelopes
+
+  Validation failure (400):
+
+  ```json
+  {
+    "status": "error",
+    "code": "invalid_request",
+    "errors": [{ "field": "login_type", "message": "Field required" }]
+  }
+  ```
+
+  `field` is dot-joined, so a bad key inside a list element reads as `chapters.0.chapter_id`. An undeclared key
+  comes back with that key as `field`.
+
+  Domain refusal (400 / 404 / 409):
+
+  ```json
+  { "status": "error", "code": "webinar_not_found", "detail": "Webinar does not exist." }
+  ```
+
+  SWITCH ON `code`, NEVER ON THE HTTP STATUS AND NEVER ON `detail`. The `code` values are the stable contract;
+  wording and status can move.
+
+  One inconsistency to handle before you write the error handler: the `authentication_required` refusal from
+  `webinar-main-page` carries `message` where every other refusal carries `detail`. Read `detail ?? message`.
+
+  ### 1.5 Status codes are real
+
+  The legacy V4 register endpoint answered `500` for every input and state problem, because FE reserved 400/404
+  for token-refresh and logout flows. These routes return the real `400` / `404` / `409` / `401`. If an
+  interceptor still treats any 4xx as a session problem, that has to change before you point at these routes.
+  A client that switches on `code` rather than on status needs no change.
+
+  ---
+variables:
+  base_url: "{{base_url}}"
+  address_id: ""
+  ai_lab_course_id: ""
+  attempt_id: ""
+  chapter_id: ""
+  collection_id: ""
+  course: ""
+  course_id: ""
+  id: ""
+  instructor_id: ""
+  item_id: ""
+  line_id: ""
+  order_id: ""
+  product_id: ""
+  subject_id: ""
+  variant_id: ""
+  video_id: ""
+scripts:
+  - type: http:beforeRequest
+    code: |-
+      /* Merged Masterclass Backend - collection pre-request. Runs before EVERY request here.
+       *
+       * It does two things and deliberately nothing else: it refuses to send a
+       * request into an unconfigured environment, and it renews the access token
+       * BEFORE it expires.
+       *
+       * WHY BEFORE EXPIRY AND NOT ON A 401. `AuthTokenRefreshViewV1` states it in its
+       * own docstring - the access token is short on purpose and cannot be revoked
+       * once issued, so the documented client behaviour is to rotate ahead of time.
+       * Retrying after a 401 would also mean re-sending the original request, which
+       * is wrong for a POST that has already taken effect.
+       *
+       * REFRESH TOKENS ROTATE AND THE OLD ONE DIES ABOUT TEN SECONDS AFTER USE, so
+       * the rotated pair is stored the moment it arrives and two refreshes must never
+       * run at once. Postman sends one request at a time and waits for this script's
+       * `pm.sendRequest` callback before sending the real one, so exactly one refresh
+       * is ever in flight - do not "improve" this into a parallel send.
+       *
+       * Set `auto_refresh` to `off` in the environment to disable it.
+       */
+      var REFRESH_PATH = "/api/v1/account/auth-token-refresh/";
+
+      // The five auth routes are excluded: refreshing before the call that MINTS the
+      // session is nonsense, and refreshing before the refresh is recursion.
+      var AUTH_REQUESTS = [
+          "auth-identify-v1", "auth-otp-send-v1", "auth-otp-verify-v1",
+          "auth-token-refresh-v1", "auth-logout-v1"
+      ];
+
+      function isAuthRequest() {
+          var name = pm.info.requestName || "";
+          for (var i = 0; i < AUTH_REQUESTS.length; i += 1) {
+              if (name.indexOf(AUTH_REQUESTS[i]) !== -1) { return true; }
+          }
+          return false;
+      }
+
+      function decodeSegment(segment) {
+          // Postman has shipped `Buffer` in every sandbox version and `atob` only in
+          // recent ones, so both are tried rather than either being assumed. `typeof`
+          // on an undeclared name is safe in JavaScript; a bare reference is not.
+          var padded = segment.replace(/-/g, "+").replace(/_/g, "/");
+          while (padded.length % 4 !== 0) { padded += "="; }
+          if (typeof atob === "function") { return atob(padded); }
+          return Buffer.from(padded, "base64").toString("utf8");
+      }
+
+      function jwtExpiry(token) {
+          // Returns the `exp` claim in epoch seconds, or null if this is not a JWT.
+          // The signature is NOT checked and must not be - the server does that, and
+          // a client that verifies its own token is only checking its own arithmetic.
+          var parts = String(token || "").split(".");
+          if (parts.length !== 3) { return null; }
+          try {
+              var claims = JSON.parse(decodeSegment(parts[1]));
+              return typeof claims.exp === "number" ? claims.exp : null;
+          } catch (err) {
+              return null;
+          }
+      }
+
+      var baseUrl = pm.environment.get("base_url");
+      if (!baseUrl) {
+          // Thrown, not logged. A request sent to a literal "{{base_url}}" fails with
+          // an invalid-URL error that says nothing about the cause.
+          throw new Error(
+              "base_url is empty. Import Merged_Masterclass_Backend_LOCAL / UAT / PROD" +
+              ".postman_environment.json and select one from the environment picker."
+          );
+      }
+
+      var autoRefresh = String(pm.environment.get("auto_refresh") || "on").toLowerCase();
+      var skew = parseInt(pm.environment.get("token_refresh_skew_seconds") || "120", 10);
+      var accessToken = pm.environment.get("token");
+      var refreshToken = pm.environment.get("refresh_token");
+      var expiresAt = jwtExpiry(accessToken);
+      var now = Math.floor(Date.now() / 1000);
+
+      if (autoRefresh === "on" && refreshToken && expiresAt !== null &&
+              expiresAt - now <= skew && !isAuthRequest()) {
+          pm.sendRequest({
+              url: baseUrl + REFRESH_PATH,
+              method: "POST",
+              header: { "Content-Type": "application/json", "Accept": "application/json" },
+              body: { mode: "raw", raw: JSON.stringify({ refreshToken: refreshToken }) }
+          }, function (err, res) {
+              if (err) {
+                  console.log("[auth] refresh could not be sent: " + err);
+                  return;
+              }
+              if (res.code !== 200) {
+                  // Left for the tester rather than cleared. An expired refresh token
+                  // needs a new OTP, and silently blanking the session would present
+                  // that as "the collection lost my login".
+                  console.log("[auth] refresh refused with " + res.code + " - run POST " +
+                              "auth-otp-verify-v1 again to mint a new session.");
+                  return;
+              }
+              var body = res.json();
+              if (body.accessToken) { pm.environment.set("token", body.accessToken); }
+              // Store the ROTATED refresh token. Keeping the old one is the single
+              // most expensive mistake here: it dies seconds later and every
+              // subsequent refresh then fails against a token that looks valid.
+              if (body.refreshToken) { pm.environment.set("refresh_token", body.refreshToken); }
+              console.log("[auth] access token renewed with " + (expiresAt - now) + "s left.");
+          });
+      }
+    language: text/javascript
+  - type: http:afterResponse
+    code: |-
+      /* Merged Masterclass Backend - collection test script. Runs after EVERY request here.
+       *
+       * Three jobs: assert the baseline every endpoint owes regardless of what it
+       * does, explain a 401 instead of leaving it as a bare code, and harvest path
+       * parameters out of responses so the collection can be run end to end without
+       * pasting UUIDs between requests.
+       *
+       * Set `auto_capture` to `off` in the environment to disable the harvesting.
+       */
+      var CAPTURE_KEYS = ["address_id", "ai_lab_course_id", "attempt_id", "chapter_id", "collection_id", "course", "course_id", "instructor_id", "item_id", "line_id", "order_id", "product_id", "subject_id", "variant_id", "video_id"];
+
+      var MAX_DEPTH = 6;
+
+      pm.test("No server error", function () {
+          pm.expect(pm.response.code).to.be.below(500);
+      });
+
+      var contentType = pm.response.headers.get("Content-Type") || "";
+      var isJson = contentType.indexOf("application/json") !== -1;
+
+      if (isJson) {
+          pm.test("Body parses as JSON", function () {
+              pm.response.json();
+          });
+      }
+
+      // NOT AN ASSERTION. Response time is a property of the machine the run is on,
+      // so failing a test on it would make the collection red on a laptop and green
+      // in a datacentre for the same code. It is recorded so a regression is visible.
+      console.log("[timing] " + pm.info.requestName + " " + pm.response.responseTime + "ms");
+
+      if (pm.response.code === 403 || pm.response.code === 401) {
+          /* A BAD OR EXPIRED TOKEN ANSWERS 403 HERE, NOT 401. Both contracts state it
+           * and it is true of every authenticated route in this backend: DRF
+           * downgrades an authentication failure to 403 when the authenticator does
+           * not implement `authenticate_header()`, and this one does not. So the
+           * usual reading - 401 means signed out, 403 means not allowed - is exactly
+           * inverted on this API, and the note below says so rather than letting a
+           * tester chase a permission problem that is really an expired token.
+           *
+           * The 401s that DO occur are a different case: `privacy-policy/`,
+           * `terms-and-conditions/` and the QR routes check the caller inside the
+           * handler, so an ANONYMOUS request to those gets a real 401.
+           */
+          var hasToken = !!pm.environment.get("token");
+          if (!hasToken) {
+              console.log("[auth] " + pm.response.code + " and `token` is empty - " +
+                          "run POST auth-otp-verify-v1 first.");
+          } else if (pm.response.code === 403) {
+              console.log("[auth] 403 with a token set. On this API that usually " +
+                          "means EXPIRED, not forbidden - 403 is what a failed " +
+                          "authentication returns. Run POST auth-token-refresh-v1, " +
+                          "and only suspect permissions if that does not fix it. For " +
+                          "a webhook request check the secret header instead.");
+          } else {
+              console.log("[auth] 401 with a token set - this route checks the caller " +
+                          "inside its handler, so the token was not read at all.");
+          }
+      }
+
+      function capture(value, key) {
+          // ONLY AN EMPTY SLOT IS FILLED. A tester who pinned a specific course to
+          // work against must not have it overwritten by whatever the next list
+          // endpoint happened to return first - that turns a deliberate run into a
+          // random one, and it is impossible to notice from the request pane.
+          if (pm.environment.get(key)) { return; }
+          if (typeof value !== "string" && typeof value !== "number") { return; }
+          var text = String(value);
+          if (!text) { return; }
+          pm.environment.set(key, text);
+          console.log("[capture] " + key + " = " + text);
+      }
+
+      function walk(node, depth) {
+          if (depth > MAX_DEPTH || node === null || typeof node !== "object") { return; }
+          if (Array.isArray(node)) {
+              // The FIRST element only. Walking the whole list would set each key
+              // from the last row that carried it, which is the least predictable of
+              // the available choices; the first row is at least the one on screen.
+              if (node.length > 0) { walk(node[0], depth + 1); }
+              return;
+          }
+          Object.keys(node).forEach(function (key) {
+              if (CAPTURE_KEYS.indexOf(key) !== -1) {
+                  capture(node[key], key);
+              } else {
+                  walk(node[key], depth + 1);
+              }
+          });
+      }
+
+      if (isJson && pm.response.code < 300 &&
+              String(pm.environment.get("auto_capture") || "on").toLowerCase() === "on") {
+          try {
+              walk(pm.response.json(), 0);
+          } catch (err) {
+              console.log("[capture] response was not walkable: " + err);
+          }
+      }
+    language: text/javascript
+auth:
+  - id: fbfffa0c-61d1-4d84-971c-1671a0c2bb64
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{token}}"

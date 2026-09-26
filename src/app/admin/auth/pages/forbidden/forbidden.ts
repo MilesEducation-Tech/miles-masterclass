@@ -11,7 +11,7 @@ import { adminLandingPath } from '@admin/core/utils/admin-landing';
   imports: [Button, NgIcon],
   providers: [provideIcons({ lucideShieldAlert })],
   templateUrl: './forbidden.html',
-  styleUrl: './forbidden.css',
+  host: { class: 'block' },
 })
 export class Forbidden {
   private readonly router = inject(Router);

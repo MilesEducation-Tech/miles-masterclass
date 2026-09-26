@@ -1,4 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
+import { httpResource } from '@angular/common/http';
 import {
   computed,
   effect,
@@ -6,18 +7,17 @@ import {
   Service,
   linkedSignal,
   PLATFORM_ID,
-  resource,
   signal,
   untracked,
 } from '@angular/core';
-import { firstValueFrom, fromEvent, takeUntil, tap } from 'rxjs';
+import { tap } from 'rxjs';
 import {
   BADGE_STATUS_OPTIONS,
   BadgeApiResponse,
   BadgeItem,
   BadgeStatusFilter,
 } from '@core/models/badge.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { Analytics } from '@core/services/analytics/analytics';
 import { Utils } from '@shared/services/utils';
 import { parseNextPage } from '@core/utils/parse-next-page';
@@ -31,19 +31,22 @@ import { withPreviousValue } from '@shared/utils/with-previous-value';
  */
 @Service()
 export class BadgeFacade {
-  private readonly api = inject(ApiClient);
   private readonly analytics = inject(Analytics);
   private readonly utils = inject(Utils);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   // ---- Badge categories (single fetch, seeds the tab strip) ---------------
 
-  private readonly badgeCategoriesResource = resource({
-    params: () => (this.isBrowser ? {} : undefined),
-    loader: () => firstValueFrom(this.api.get<BadgeApiResponse<string[]>>('badge-categories/')),
-  });
+  private readonly badgeCategoriesResource = httpResource<BadgeApiResponse<string[]>>(() =>
+    this.isBrowser ? apiUrl('badge-categories/') : undefined,
+  );
 
-  readonly badgeCategories = computed(() => this.badgeCategoriesResource.value()?.data ?? []);
+  /** Guarded: `value()` throws on an errored resource. */
+  readonly badgeCategories = computed(() =>
+    this.badgeCategoriesResource.hasValue()
+      ? (this.badgeCategoriesResource.value()?.data ?? [])
+      : [],
+  );
   readonly isBadgeCategoriesLoading = computed(() => this.badgeCategoriesResource.isLoading());
 
   // ---- Badge listing -------------------------------------------------------
@@ -53,31 +56,13 @@ export class BadgeFacade {
   readonly badgeStatus = signal<BadgeStatusFilter>('');
   private readonly badgePage = signal(1);
 
-  private readonly rawBadgeResource = resource({
-    params: () => {
-      const cat = this.badgeCategory();
-      if (!this.isBrowser || !cat) return undefined;
-      return { course_type: cat, status: this.badgeStatus(), page: this.badgePage() };
-    },
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<BadgeApiResponse<BadgeItem[]>>('course-badges/', {
-            params: {
-              course_type: params.course_type,
-              status: params.status,
-              page: params.page,
-            },
-          })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        {
-          defaultValue: {
-            status_code: 0,
-            data: [],
-            message: 'aborted',
-          } as BadgeApiResponse<BadgeItem[]>,
-        },
-      ),
+  private readonly rawBadgeResource = httpResource<BadgeApiResponse<BadgeItem[]>>(() => {
+    const cat = this.badgeCategory();
+    if (!this.isBrowser || !cat) return undefined;
+    return {
+      url: apiUrl('course-badges/'),
+      params: { course_type: cat, status: this.badgeStatus(), page: this.badgePage() },
+    };
   });
 
   private readonly badgeResource = withPreviousValue(this.rawBadgeResource);
@@ -92,7 +77,10 @@ export class BadgeFacade {
     },
   });
 
-  readonly badgePagination = computed(() => this.badgeResource.value()?.pagination_data);
+  /** Guarded: `value()` throws on an errored resource. */
+  readonly badgePagination = computed(() =>
+    this.badgeResource.hasValue() ? this.badgeResource.value()?.pagination_data : undefined,
+  );
   readonly isBadgeLoading = computed(() => this.badgeResource.isLoading());
   readonly badgeError = computed(() => this.badgeResource.error());
 

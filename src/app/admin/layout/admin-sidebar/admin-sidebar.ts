@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import {
@@ -20,7 +20,7 @@ import {
 import { AdminAuth } from '@admin/core/services/admin-auth';
 import { PERM } from '@admin/core/models/admin-rbac.model';
 import { logo, logoIcon } from '@core/constants/icon';
-import { Button } from '@shared/ui/button/button';
+import { NgpMenu, NgpMenuItem, NgpMenuTrigger } from 'ng-primitives/menu';
 
 interface SidebarItem {
   id: string;
@@ -40,7 +40,7 @@ interface SidebarSection {
 
 @Component({
   selector: 'app-admin-sidebar',
-  imports: [NgIcon, RouterLink, RouterLinkActive, Button],
+  imports: [NgIcon, RouterLink, RouterLinkActive, NgpMenu, NgpMenuItem, NgpMenuTrigger],
   providers: [
     provideIcons({
       lucideLayoutDashboard,
@@ -61,16 +61,13 @@ interface SidebarSection {
   ],
   templateUrl: './admin-sidebar.html',
   styleUrl: './admin-sidebar.css',
-  host: {
-    '(document:keydown.escape)': 'onEscape()',
-  },
+  host: { class: 'contents' },
 })
 export class AdminSidebar {
   protected readonly auth = inject(AdminAuth);
   private readonly router = inject(Router);
 
   readonly collapsed = input(false);
-  readonly userMenuOpen = signal(false);
   logos = {
     logo,
     logoIcon,
@@ -285,21 +282,8 @@ export class AdminSidebar {
       .join(' · '),
   );
 
-  toggleUserMenu(): void {
-    this.userMenuOpen.update((v) => !v);
-  }
-
-  closeUserMenu(): void {
-    this.userMenuOpen.set(false);
-  }
-
   async logout(): Promise<void> {
-    this.closeUserMenu();
     await this.auth.signOut();
     await this.router.navigateByUrl('/admin/login');
-  }
-
-  protected onEscape(): void {
-    if (this.userMenuOpen()) this.closeUserMenu();
   }
 }

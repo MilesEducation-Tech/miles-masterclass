@@ -1,0 +1,47 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `ProfileViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `account-profile-v1`  
+  **Methods on this view:** GET, PATCH  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  GET the caller's own answers, keyed by question code.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 4.1 READ THIS FIRST: `profile/` changed meaning on 2026-09-09
+
+  Until 2026-09-09, `api/v1/account/profile/` served the **user row**. It does not any more - that is
+  `user_details/` (section 3). `profile/` now reads **questionnaire answers and nothing else**.
+
+  The rename was done deliberately while there was only one claimant, so the two never shared a name. If you have
+  code written against the old `profile/`, it is now pointing at a different resource that will return a
+  completely different shape.
+
+  ### 4.3 `GET profile/` - the caller's answers
+
+  ```json
+  { "highest_qualification": "CA", "years_experience": 3, "interests": ["AI", "Audit"] }
+  ```
+
+  A **bare map keyed by question code**, and the value is the answer itself - not an object describing it. Text
+  gives a string, select formats give a list, booleans give `true`/`false`, numbers give a number. An empty
+  answer set is `{}`, not a 404: having answered nothing is a normal state.
+
+  Flattened on 2026-09-10 from `{"type", "value", "choice_value"}` per code. **`type` is no longer reported
+  here** - join `questions/` on `code` if you need it.
+
+  Key order is the display order. There is no separate ordering field in the response.
+url: "{{base_url}}/api/v1/account/profile/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET account-profile-v1.resources/examples
+order: 9000

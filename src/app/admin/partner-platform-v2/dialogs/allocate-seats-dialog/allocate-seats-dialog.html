@@ -1,46 +1,45 @@
-<div
-  class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] md:w-[520px] mx-auto overflow-hidden relative rounded-xl"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="allocate-seats-title"
->
-  <div class="flex items-start justify-between px-5 py-3 border-b border-white/10 shrink-0">
-    <div class="min-w-0">
-      <h2 id="allocate-seats-title" class="text-base font-semibold text-white truncate">
-        Add seats
-      </h2>
-      <p class="text-xs text-white/60 truncate">{{ data.firm.name }}</p>
-    </div>
-    <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
-  </div>
-
-  <div class="px-5 py-5">
-    <app-forms type="signal" class="space-y-0 flex flex-col gap-4" (submitted)="submit()">
-      <app-aria-select
-        id="alloc-code"
-        label="Partner code"
-        [options]="codeOptions()"
-        [formField]="form.partner_code"
-      />
-      <app-aria-input id="alloc-count" type="number" label="Seats" [formField]="form.count" />
-      <app-aria-input
-        id="alloc-expiry"
-        type="date"
-        label="Expiry date (optional)"
-        [formField]="form.expiry_date"
-      />
-      <p class="-mt-1 text-xs" style="color: var(--mm-fg-3)">
-        Seats are priced from the selected plan and minted straight to this firm.
-      </p>
-
-      <div class="flex items-center justify-end gap-3">
-        <app-button variant="outline" size="default" class="text-white" (clicked)="close()">
-          Cancel
-        </app-button>
-        <app-button variant="primary" size="default" type="submit" [disabled]="submitting()">
-          {{ submitting() ? 'Minting…' : 'Add seats' }}
-        </app-button>
+<app-dialog-shell maxWidth="520px" [ariaLabel]="'Add seats to ' + data.firm.name">
+  <div
+    class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] md:w-[520px] mx-auto overflow-hidden relative rounded-xl"
+  >
+    <div class="flex items-start justify-between px-5 py-3 border-b border-white/10 shrink-0">
+      <div class="min-w-0">
+        <h2 id="allocate-seats-title" class="text-base font-semibold text-white truncate">
+          Add seats
+        </h2>
+        <p class="text-xs text-white/60 truncate">{{ data.firm.name }}</p>
       </div>
-    </app-forms>
+      <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
+    </div>
+
+    <div class="px-5 py-5">
+      <app-forms type="signal" class="space-y-0 flex flex-col gap-4" (submitted)="submit()">
+        <app-aria-select
+          id="alloc-code"
+          label="Partner code"
+          [options]="codeOptions()"
+          [formField]="form.partner_code"
+        />
+        <app-aria-input id="alloc-count" type="number" label="Seats" [formField]="form.count" />
+        <app-aria-input
+          id="alloc-expiry"
+          type="date"
+          label="Expiry date (optional)"
+          [formField]="form.expiry_date"
+        />
+        <p class="-mt-1 text-xs text-fg-3">
+          Seats are priced from the selected plan and minted straight to this firm.
+        </p>
+
+        <div class="flex items-center justify-end gap-3">
+          <app-button variant="outline" size="default" class="text-white" (clicked)="close()">
+            Cancel
+          </app-button>
+          <app-button variant="primary" size="default" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Minting…' : 'Add seats' }}
+          </app-button>
+        </div>
+      </app-forms>
+    </div>
   </div>
-</div>
+</app-dialog-shell>

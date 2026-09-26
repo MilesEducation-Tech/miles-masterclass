@@ -1,0 +1,57 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `AuthLogoutViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `auth-logout-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** none  
+  **Permission:** AllowAny
+
+  POST - end the session at the SSO.
+
+  **No request body by design.** Bearer header only; the SSO reads the token, not a body.
+
+  **This request carries its own test script** on top of the collection-level one - open the Scripts tab to read what it writes into the environment.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 2.5 `POST auth-logout/` - end the session at the SSO
+
+  Empty body. Takes the bearer from the inbound `Authorization` header and forwards it.
+
+  Missing or non-Bearer header is a 401 with
+  `{"message": "Authorization header with a Bearer token is required."}`.
+
+  Note this deliberately does **not** resolve the token to a local user first: logout must work for a token this
+  database has no row for, because a session worth ending still exists.
+
+  ---
+url: "{{base_url}}/api/v1/account/auth-logout/"
+method: POST
+headers:
+  Accept: application/json
+scripts:
+  - type: afterResponse
+    code: |-
+      /* Clear the session once the SSO has ended it.
+       *
+       * Cleared on 2xx ONLY. A logout that failed leaves a session still live at the
+       * SSO, and blanking the variables would hide that behind an empty environment
+       * that merely looks logged out.
+       */
+      if (pm.response.code >= 200 && pm.response.code < 300) {
+          pm.environment.set("token", "");
+          pm.environment.set("refresh_token", "");
+          console.log("[auth] session ended and both tokens cleared.");
+      } else {
+          console.log("[auth] logout returned " + pm.response.code +
+                      " - tokens left in place because the session may still be live.");
+      }
+    language: text/javascript
+examples: ./.resources/UNIVERSAL POST auth-logout-v1.resources/examples
+order: 2000

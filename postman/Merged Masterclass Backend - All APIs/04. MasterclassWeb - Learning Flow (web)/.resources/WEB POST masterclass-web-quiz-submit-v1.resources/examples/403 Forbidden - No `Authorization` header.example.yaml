@@ -1,0 +1,28 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass-web/quiz-submit/{{chapter_id}}/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "question_id": "00000000-0000-0000-0000-000000000000",
+        "selected_option_ids": [
+          "00000000-0000-0000-0000-000000000000"
+        ]
+      }
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "detail": "Authentication credentials were not provided."
+      }
+order: 6000

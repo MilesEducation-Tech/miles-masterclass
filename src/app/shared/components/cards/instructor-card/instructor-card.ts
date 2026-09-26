@@ -8,7 +8,6 @@ import { InstructorListItem } from '@core/models/library.model';
   selector: 'app-instructor-card',
   imports: [NgOptimizedImage, NgIcon],
   templateUrl: './instructor-card.html',
-  styleUrl: './instructor-card.css',
   viewProviders: [provideIcons({ svglLinkedin, svglFacebook, svglInstagram, svglYoutube })],
 })
 export class InstructorCard {

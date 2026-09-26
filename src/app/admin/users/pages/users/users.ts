@@ -3,7 +3,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import {
   BlockStatusDialog,
   BlockStatusDialogData,
@@ -25,13 +25,12 @@ const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
   selector: 'app-admin-users',
   imports: [AriaInput, Button, UsersTable, DeprecationBanner],
   templateUrl: './users.html',
-  styleUrl: './users.css',
   host: { class: 'block w-full' },
 })
 export class Users {
   protected readonly facade = inject(PartnerUsersFacade);
   private readonly me = inject(PartnerAdminMe);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Django capabilities gate these server-side — mirror them in the UI. */
@@ -87,17 +86,18 @@ export class Users {
   protected onBlockToggle(user: PartnerPanelUser): void {
     const action: BlockStatusDialogData['action'] = user.is_blocked ? 'unblock' : 'block';
 
-    const ref = this.dialog.open<BlockStatusDialog, BlockStatusDialogResult>(BlockStatusDialog, {
-      data: {
-        action,
-        userName: user.name,
-        userEmail: user.email,
-      } satisfies BlockStatusDialogData,
-      maxWidth: '480px',
-      ariaLabel: action === 'block' ? 'Block user' : 'Unblock user',
-    });
+    const ref = this.dialogs.open<BlockStatusDialogData, BlockStatusDialogResult>(
+      BlockStatusDialog,
+      {
+        data: {
+          action,
+          userName: user.name,
+          userEmail: user.email,
+        } satisfies BlockStatusDialogData,
+      },
+    );
 
-    ref.afterClosed$.pipe(take(1)).subscribe(async (result) => {
+    ref.afterClosed.pipe(take(1)).subscribe(async (result) => {
       if (!result?.confirmed) return;
       await this.facade.setBlockStatus(user, action === 'block', result.reason);
     });

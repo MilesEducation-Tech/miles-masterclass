@@ -1,0 +1,22 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/recommendation/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: course_type
+      value: ""
+      disabled: true
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "<body>": "<_envelope(_course_type_error_message(params.errors), [], ok=False, code=status.HTTP_400_BAD_REQUEST)>"
+      }
+order: 2000

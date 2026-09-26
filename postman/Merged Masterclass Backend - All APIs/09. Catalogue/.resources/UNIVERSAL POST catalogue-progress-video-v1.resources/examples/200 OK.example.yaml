@@ -1,0 +1,31 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/catalogue/progress/video/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "youtube_video_id": "",
+        "watched": false
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "created": "<created>",
+        "result": {
+          "youtube_video_id": "<row.youtube_video_id>",
+          "watched": "<row.watched>"
+        }
+      }
+order: 1000

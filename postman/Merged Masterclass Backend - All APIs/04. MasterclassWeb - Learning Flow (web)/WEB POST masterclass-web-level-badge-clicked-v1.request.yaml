@@ -1,0 +1,26 @@
+$kind: http-request
+description: |-
+  **Surface:** WEB  
+  **View:** `MasterclassWebLevelBasedBadgeClickedViewV1`  
+  **Module:** `MasterclassWeb.views`  
+  **Route name:** `masterclass-web-level-badge-clicked-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  POST /masterclass-web/caira/level_based_badge_clicked/
+
+  Body template generated from `(inline request.data.get reads)`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/masterclass-web/level-badge-clicked/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "credly_assertion_id": ""
+    }
+examples: ./.resources/WEB POST masterclass-web-level-badge-clicked-v1.resources/examples
+order: 15000

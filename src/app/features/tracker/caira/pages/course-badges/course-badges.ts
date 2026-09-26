@@ -1,4 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
+import { httpResource } from '@angular/common/http';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -9,7 +10,6 @@ import {
   inject,
   linkedSignal,
   PLATFORM_ID,
-  resource,
   untracked,
   viewChild,
 } from '@angular/core';
@@ -17,7 +17,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft } from '@ng-icons/lucide';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import {
   badgeNextPage,
   badgeTotalCount,
@@ -30,7 +29,7 @@ import {
   isEarnedState,
   matchesBadgeFilter,
 } from '@core/models/caira-badge.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { Button } from '@shared/ui/button/button';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
@@ -59,7 +58,6 @@ const VALID_TYPES = COURSE_BADGE_TYPES.map((t) => t.value).filter(
   host: { class: 'block' },
 })
 export class CourseBadges {
-  private readonly api = inject(ApiClient);
   private readonly actions = inject(BadgeActions);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
@@ -96,20 +94,16 @@ export class CourseBadges {
     computation: () => 1,
   });
 
-  private readonly listResource = resource({
-    params: () =>
-      this.isBrowser ? { courseType: this.courseType(), page: this.page() } : undefined,
-    loader: ({ params, abortSignal }) => {
-      const httpParams: Record<string, string | number> = { page: params.page };
-      if (params.courseType) httpParams['course_type'] = params.courseType;
-      return firstValueFrom(
-        this.api
-          .get<BadgeV2Response<CourseBadgeItem[]>>('v2/course-badges/', { params: httpParams })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: EMPTY },
-      );
+  private readonly listResource = httpResource<BadgeV2Response<CourseBadgeItem[]>>(
+    () => {
+      if (!this.isBrowser) return undefined;
+      const params: Record<string, string | number> = { page: this.page() };
+      const courseType = this.courseType();
+      if (courseType) params['course_type'] = courseType;
+      return { url: apiUrl('v2/course-badges/'), params };
     },
-  });
+    { defaultValue: EMPTY },
+  );
 
   /** Stale-while-revalidate, so loading page 2 never blanks page 1. */
   private readonly list = withPreviousValue(this.listResource);
@@ -137,9 +131,15 @@ export class CourseBadges {
     () => this.items().filter((b) => isEarnedState(b.action_state)).length,
   );
 
-  protected readonly totalCount = computed(() =>
-    badgeTotalCount(this.list.value()?.pagination_data),
+  /**
+   * Guarded: `value()` throws on an errored resource, which would take the page down
+   * before its own `hasError` state could render.
+   */
+  private readonly pagination = computed(() =>
+    this.list.hasValue() ? this.list.value()?.pagination_data : undefined,
   );
+
+  protected readonly totalCount = computed(() => badgeTotalCount(this.pagination()));
   protected readonly isLoading = computed(() => this.list.isLoading());
   protected readonly hasError = computed(() => !!this.list.error());
   protected readonly isFirstPage = computed(() => this.isLoading() && !this.items().length);
@@ -164,7 +164,7 @@ export class CourseBadges {
 
   private loadNext(): void {
     if (this.list.isLoading()) return;
-    const next = badgeNextPage(this.list.value()?.pagination_data);
+    const next = badgeNextPage(this.pagination());
     if (next !== null && next !== this.page()) this.page.set(next);
   }
 

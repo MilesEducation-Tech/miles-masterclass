@@ -25,7 +25,6 @@ export type BadgeState = 'coming_soon' | 'claimable' | 'claimed' | 'unlocked' | 
   imports: [Button, NgIcon],
   providers: [provideIcons({ lucideLinkedin, lucideLock })],
   templateUrl: './badge-hero-card.html',
-  styleUrl: './badge-hero-card.css',
   host: { class: 'block w-full' },
 })
 export class BadgeHeroCard {

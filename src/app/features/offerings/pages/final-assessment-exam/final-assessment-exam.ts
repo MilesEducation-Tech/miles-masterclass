@@ -1,16 +1,25 @@
-import { Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Backward } from '@shared/components/backward/backward';
 import { Button } from '@shared/ui/button/button';
 import { FinalAssessmentFacade } from '../../services/final-assessment-facade';
-import { ContentDetails, QuizQuestion } from '@core/models/course.model';
-import { Dialog } from '@core/services/dialog/dialog';
-import { UtilsDialog, DialogButton } from '@shared/dialogs/utils-dialog/utils-dialog';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { QuizQuestion } from '@core/models/course.model';
+import { NgpDialogManager } from 'ng-primitives/dialog';
+// Type-only: both dialogs load with `import()` when opened (PROMPT.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
+import { from, Observable } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 import { CanDeactivateComponent } from '@core/guards/can-deactivate-exam-guard';
-import {
-  AssessmentResultDialog,
+import type {
   AssessmentResultAction,
   AssessmentResultData,
 } from '@features/offerings/dialogs/assessment-result-dialog/assessment-result-dialog';
@@ -30,7 +39,6 @@ import {
   selector: 'app-final-assessment-exam',
   imports: [Backward, NgIconComponent, Button, PageLoading],
   templateUrl: './final-assessment-exam.html',
-  styleUrl: './final-assessment-exam.css',
   viewProviders: [provideIcons({ heroCheckCircle, heroXCircle, heroArrowRight, heroArrowPath })],
   host: {
     '(window:beforeunload)': 'onBeforeUnload($event)',
@@ -41,7 +49,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
   sessionId = input<string>();
 
   private readonly facade = inject(FinalAssessmentFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
   private readonly logger = inject(Logger);
   private readonly router = inject(Router);
@@ -54,11 +62,13 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
   isAssessmentPassed = this.facade.isAssessmentPassed;
 
   // State
-  questions = signal<QuizQuestion[]>([]);
-  courseDetails = signal<ContentDetails | null>(null);
+  /** The learner's working copy: reset whenever the facade loads a new attempt. */
+  questions = linkedSignal<QuizQuestion[]>(() => this.facade.questions());
+  courseDetails = this.facade.courseDetails;
   currentQuestionIndex = signal(0);
   isSubmitted = signal(false);
-  isLoading = signal(false);
+  private readonly isSubmitting = signal(false);
+  isLoading = computed(() => this.facade.isLoading() || this.isSubmitting());
 
   // Computed
   currentQuestion = computed(() => {
@@ -99,9 +109,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
         this.facade.courseId.set(courseId);
         this.facade.sessionId.set(sessionId);
         this.currentQuestionIndex.set(0);
-        this.questions.set([]);
         this.isSubmitted.set(false);
-        this.loadQuestions();
       } else {
         this.logger.warn('FinalAssessmentExam: Missing inputs', { courseId, sessionId });
       }
@@ -119,27 +127,27 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
       return true;
     }
 
-    const dialogRef = this.dialog.open<
-      UtilsDialog,
-      { action?: DialogButton['action']; result: boolean }
-    >(UtilsDialog, {
-      data: {
-        title: 'Exit Assessment?',
-        content: [
-          {
-            type: 'text',
-            value:
-              'Are you sure you want to leave the assessment? Your progress will currently be lost if you leave without submitting.',
-          },
-        ],
-        buttons: [
-          { label: 'Cancel', variant: 'outline', action: 'close' },
-          { label: 'Exit', variant: 'destructive', action: 'confirm' }, // using submit to mean 'confirm exit' since mapped to result: true
-        ],
-      },
-    });
+    const opened = import('@shared/dialogs/utils-dialog/utils-dialog').then(({ UtilsDialog }) =>
+      this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+        data: {
+          title: 'Exit Assessment?',
+          content: [
+            {
+              type: 'text',
+              value:
+                'Are you sure you want to leave the assessment? Your progress will currently be lost if you leave without submitting.',
+            },
+          ],
+          buttons: [
+            { label: 'Cancel', variant: 'outline', action: 'close' },
+            { label: 'Exit', variant: 'destructive', action: 'confirm' }, // using submit to mean 'confirm exit' since mapped to result: true
+          ],
+        },
+      }),
+    );
 
-    return dialogRef.afterClosed$.pipe(
+    return from(opened).pipe(
+      switchMap((ref) => ref.afterClosed),
       map((result) => {
         if (result?.action === 'confirm') {
           this.facade.clearAssessmentData();
@@ -148,21 +156,6 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
         return false;
       }),
     );
-  }
-
-  loadQuestions() {
-    this.isLoading.set(true);
-    this.facade.loadAssessmentData().subscribe({
-      next: (data) => {
-        // If passed, questions might be empty, but details are there.
-        this.questions.set(data.questions || []);
-        this.courseDetails.set(data.details);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.isLoading.set(false);
-      },
-    });
   }
 
   selectOption(optionKey: string) {
@@ -208,17 +201,15 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
     return (question as any)[`option_${option}`] || '';
   }
 
-  submit() {
+  async submit(): Promise<void> {
     // Validate if all questions have answers
     const questions = this.questions();
     const unanswered = questions.filter((q) => !q.user_selected_option);
 
     if (unanswered.length > 0) {
       // Show dialog if options are missing
-      const dialogRef = this.dialog.open<
-        UtilsDialog,
-        { action?: DialogButton['action']; result: boolean; data?: any }
-      >(UtilsDialog, {
+      const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+      const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
         data: {
           title: 'Assessment Incomplete',
           content: [
@@ -235,13 +226,13 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
         },
       });
 
-      dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+      dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
         if (result && result.data !== undefined) {
           this.currentQuestionIndex.set(result.data);
         }
       });
     } else {
-      this.isLoading.set(true);
+      this.isSubmitting.set(true);
       const answersRecord: Record<number, string> = {};
       questions.forEach((q) => {
         if (q.user_selected_option) answersRecord[q.id] = q.user_selected_option;
@@ -249,7 +240,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
 
       this.facade.submitAssessment(answersRecord).subscribe({
         next: (response) => {
-          this.isLoading.set(false);
+          this.isSubmitting.set(false);
           this.isSubmitted.set(true);
           this.facade.clearAssessmentData();
 
@@ -267,7 +258,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
               message = `You scored ${score}%. Don't give up! Review the material and try again to achieve the passing score of ${passingScore}%.`;
             }
 
-            this.openResultDialog({
+            void this.openResultDialog({
               isPassed,
               score,
               message,
@@ -276,23 +267,21 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
           }
         },
         error: () => {
-          this.isLoading.set(false);
+          this.isSubmitting.set(false);
         },
       });
     }
   }
 
-  private openResultDialog(data: AssessmentResultData) {
-    const dialogRef = this.dialog.open<AssessmentResultDialog, AssessmentResultAction>(
+  private async openResultDialog(data: AssessmentResultData): Promise<void> {
+    const { AssessmentResultDialog } =
+      await import('@features/offerings/dialogs/assessment-result-dialog/assessment-result-dialog');
+    const dialogRef = this.dialogs.open<AssessmentResultData, AssessmentResultAction>(
       AssessmentResultDialog,
-      {
-        data,
-        disableClose: true,
-        maxWidth: '500px',
-      },
+      { data },
     );
 
-    dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((action) => {
+    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((action) => {
       this.handleDialogAction(action);
     });
   }

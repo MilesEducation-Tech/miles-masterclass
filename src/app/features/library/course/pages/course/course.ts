@@ -18,9 +18,8 @@ import {
   CourseFilterGroup,
   CourseFilterSelection,
 } from '@core/models/library-filters.model';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { CourseFilters } from '../../components/course-filters/course-filters';
-import { CourseFiltersDrawer } from '../../components/course-filters-drawer/course-filters-drawer';
 import { CourseFacade } from '../../services/course-facade';
 
 @Component({
@@ -28,14 +27,13 @@ import { CourseFacade } from '../../services/course-facade';
   imports: [TabStrip, Vertical, CourseFilters, NgIcon],
   providers: [provideIcons({ heroFunnel })],
   templateUrl: './course.html',
-  styleUrl: './course.css',
   host: {
     class: 'p-4',
   },
 })
 export class Course {
   readonly facade = inject(CourseFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly tabs = COURSE_TYPE_TABS;
@@ -148,10 +146,11 @@ export class Course {
   }
 
   /** Mobile button → opens the same `CourseFilters` body inside a right drawer. */
-  openMobileFilters() {
-    this.dialog.open(CourseFiltersDrawer, {
-      position: 'right',
-      ariaLabel: 'Course filters',
+  async openMobileFilters() {
+    // Loaded on open: the drawer is mobile-only and user-initiated (§4.4).
+    const { CourseFiltersDrawer } =
+      await import('../../components/course-filters-drawer/course-filters-drawer');
+    this.dialogs.open(CourseFiltersDrawer, {
       data: {
         groups: () => this.groups(),
         selection: () => this.facade.courseFilters(),

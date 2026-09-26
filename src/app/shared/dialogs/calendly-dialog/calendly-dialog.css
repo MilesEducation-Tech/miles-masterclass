@@ -1,7 +1,4 @@
-:host {
-  display: block;
-}
-
+/* Must stay: this iframe is injected by Calendly's embed script (third-party DOM). */
 .calendly-inline-widget iframe {
   width: 100%;
   height: 100%;

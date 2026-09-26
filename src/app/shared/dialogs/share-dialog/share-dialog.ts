@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '../../ui/button/button';
 import { NgIcon } from '@ng-icons/core';
 import { heroLink, heroCheck } from '@ng-icons/heroicons/outline';
@@ -12,13 +13,12 @@ export interface ShareDialogData {
 
 @Component({
   selector: 'app-share-dialog',
-  imports: [Button, NgIcon],
+  imports: [Button, DialogShell, NgIcon],
   templateUrl: './share-dialog.html',
-  styleUrl: './share-dialog.css',
 })
 export class ShareDialog implements OnInit {
-  dialogRef!: DialogRef<ShareDialog>;
-  data!: ShareDialogData;
+  private readonly dialogRef = injectDialogRef<ShareDialogData>();
+  protected readonly data = this.dialogRef.data;
   private readonly document = inject(DOCUMENT);
   private readonly logger = inject(Logger);
 

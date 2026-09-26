@@ -1,7 +1,7 @@
 import { computed, DestroyRef, effect, inject, Service, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpContext, HttpResponse } from '@angular/common/http';
-import { forkJoin, catchError, of, tap, type Observable } from 'rxjs';
+import { catchError, of, tap, type Observable } from 'rxjs';
 import {
   fileNameFromContentDisposition,
   sanitizeFileName,
@@ -14,15 +14,17 @@ import {
   RouteResponse,
   SKIP_ERROR_NOTIFICATION,
 } from '@core/models/http.model';
-import {
-  SelectCpeMode,
+// Type-only: both dialogs load with `import()` when opened (PROMPT.md §4.4).
+import type {
+  SelectCpeModeData,
   SelectCpeModeResult,
 } from '@features/offerings/dialogs/select-cpe-mode/select-cpe-mode';
-import { UtilsDialog } from '@shared/dialogs/utils-dialog/utils-dialog';
-import { ContentDetails, CourseChapter, normalizeBookmarkField } from '@core/models/course.model';
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
+import { CourseChapter } from '@core/models/course.model';
+import { courseLoad, CourseLoadParams } from '../utils/course-load';
 import { CourseContentResponse, MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
 import { ApiClient } from '@core/services/api-client/api-client';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
@@ -30,12 +32,6 @@ import { CartStore } from '@core/services/cart/cart-store';
 import { Analytics } from '@core/services/analytics/analytics';
 
 // Extract types from routes for type safety
-type CourseDetailsResponse = RouteResponse<typeof MASTERCLASS_ROUTES.getCourseDetails>;
-type CourseDetailsParams = RouteParams<typeof MASTERCLASS_ROUTES.getCourseDetails>;
-
-type CourseChapterResponse = RouteResponse<typeof MASTERCLASS_ROUTES.getCourseChapter>;
-type CourseChapterParams = RouteParams<typeof MASTERCLASS_ROUTES.getCourseChapter>;
-
 type SetCpeModeRequest = RouteRequest<typeof MASTERCLASS_ROUTES.setCpeMode>;
 type SetCpeModeResponse = RouteResponse<typeof MASTERCLASS_ROUTES.setCpeMode>;
 
@@ -49,7 +45,7 @@ export class MasterclassFacade {
   private readonly http = inject(ApiClient);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
   // Only the cart-removal signal is needed here, and it lives in core so this
   // feature does not have to import the payment feature (PROMPT.md §3).
@@ -57,11 +53,15 @@ export class MasterclassFacade {
   private readonly analytics = inject(Analytics);
   private readonly destroyRef = inject(DestroyRef);
 
-  // Status signals ...
-  readonly courseDetails = signal<ContentDetails | null>(null);
-  readonly courseChapters = signal<CourseChapter[]>([]);
-  readonly loading = signal(false);
-  readonly error = signal<string | null>(null);
+  private readonly course = courseLoad();
+  readonly courseDetails = this.course.details;
+  readonly courseChapters = this.course.chapters;
+
+  /** In flight: `selectCpeMode()`'s POST, separate from the two reads. */
+  private readonly opLoading = signal(false);
+
+  readonly loading = computed(() => this.opLoading() || this.course.isLoading());
+  readonly error = this.course.error;
   /** True while an exercise-file download is in flight (drives the resource-row spinner). */
   readonly downloadingExerciseFiles = signal(false);
 
@@ -111,63 +111,29 @@ export class MasterclassFacade {
     return Math.round((totalWatched / totalDuration) * 100);
   });
 
-  /**
-   * Load course details and chapters in parallel.
-   * HTTP responses are automatically cached by Angular's HTTP transfer cache.
-   * @param params - Course ID and type parameters
-   */
-  loadCourse(params: CourseDetailsParams & Pick<CourseChapterParams, 'course_type'>): void {
-    this.loading.set(true);
-    this.error.set(null);
-
-    const courseDetailsParams: CourseDetailsParams = { id: params.id };
-    const courseChapterParams: CourseChapterParams = {
-      id: params.id,
-      course_type: params.course_type,
-    };
-
-    forkJoin({
-      details: this.http.get<CourseDetailsResponse>(
-        MASTERCLASS_ROUTES.getCourseDetails.path.replace(':course_type', params.course_type),
-        {
-          params: courseDetailsParams,
-        },
-      ),
-      chapters: this.http.get<CourseChapterResponse>(MASTERCLASS_ROUTES.getCourseChapter.path, {
-        params: courseChapterParams,
+  /** Once per load, for the course the server just returned (not on local edits). */
+  private readonly viewItemEffect = effect(() => {
+    const details = this.course.loadedDetails();
+    if (!details) return;
+    untracked(() =>
+      this.analytics.trackEvent('view_item', {
+        course_id: details.id,
+        course_name: details.title,
+        course_type: this.course.params()?.course_type,
       }),
-    })
-      .pipe(
-        tap(({ details, chapters }) => {
-          if (details?.data) {
-            details.data.learning_objective_list = details.data.learning_objectives.split('\r\n');
-            this.courseDetails.set(normalizeBookmarkField(details.data));
-            this.analytics.trackEvent('view_item', {
-              course_id: details.data.id,
-              course_name: details.data.title,
-              course_type: params.course_type,
-            });
-          }
-          if (chapters?.data) {
-            this.courseChapters.set(chapters.data);
-          }
-          this.loading.set(false);
-        }),
-        catchError((err) => {
-          this.loading.set(false);
-          this.error.set(err?.error?.message || 'Failed to load course data');
-          this.logger.error('Failed to load course', err);
-          return of(null);
-        }),
-      )
-      .subscribe();
+    );
+  });
+
+  /** Point both reads at a course. */
+  loadCourse(params: CourseLoadParams): void {
+    this.course.load(params);
   }
 
   // ... (launchCourse, navigateToChapter, isChapterComplete, getBlockingChapter, findInProgressChapter, selectCpeModeDialog methods unchanged) ...
   launchCourse() {
     // ponytail: bounced guests to `/auth/login` first. No session layer now.
     if (!this.courseDetails()?.cpe_mode_details) {
-      this.selectCpeModeDialog();
+      void this.selectCpeModeDialog();
       return;
     }
     this.analytics.trackEvent('start_course', {
@@ -200,7 +166,7 @@ export class MasterclassFacade {
     if (!this.utils.requireCpeModeAccess(course)) return;
 
     if (!this.courseDetails()?.cpe_mode_details) {
-      this.selectCpeModeDialog();
+      void this.selectCpeModeDialog();
       return;
     }
 
@@ -316,7 +282,7 @@ export class MasterclassFacade {
     }
   }
 
-  selectCpeModeDialog() {
+  async selectCpeModeDialog(): Promise<void> {
     const course = this.courseDetails();
     if (!course) return;
 
@@ -327,11 +293,9 @@ export class MasterclassFacade {
     // all reach the picker through this one method.
     if (!this.utils.requireCpeModeAccess(course)) return;
 
-    const dialogRef = this.dialog.open<SelectCpeMode, SelectCpeModeResult>(SelectCpeMode, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      disableClose: true,
+    const { SelectCpeMode } =
+      await import('@features/offerings/dialogs/select-cpe-mode/select-cpe-mode');
+    const dialogRef = this.dialogs.open<SelectCpeModeData, SelectCpeModeResult>(SelectCpeMode, {
       data: {
         type: 'Masterclass',
         format: 'video',
@@ -339,7 +303,7 @@ export class MasterclassFacade {
         activePlan: course.active_plan,
       },
     });
-    dialogRef.afterClosed$.subscribe((result) => {
+    dialogRef.afterClosed.subscribe((result) => {
       if (result) {
         this.selectCpeMode(result.cpe_mode_status);
       }
@@ -357,7 +321,7 @@ export class MasterclassFacade {
       return;
     }
 
-    this.loading.set(true);
+    this.opLoading.set(true);
 
     const body: SetCpeModeRequest = {
       masterclass_id: course.id,
@@ -368,7 +332,7 @@ export class MasterclassFacade {
       .post<SetCpeModeResponse>(MASTERCLASS_ROUTES.setCpeMode.path, body)
       .pipe(
         tap(() => {
-          this.loading.set(false);
+          this.opLoading.set(false);
           this.notification.success(
             'Mode Selected',
             cpeModeStatus ? 'CPE Certification Mode enabled' : 'Preview Mode enabled',
@@ -400,7 +364,7 @@ export class MasterclassFacade {
           if (navigate) setTimeout(() => this.navigateToChapter(), 500);
         }),
         catchError((err) => {
-          this.loading.set(false);
+          this.opLoading.set(false);
           this.logger.error('Failed to set CPE mode', err);
           return of(null);
         }),
@@ -408,7 +372,7 @@ export class MasterclassFacade {
       .subscribe();
   }
 
-  toggleCpeMode(cpeModeStatus: boolean) {
+  async toggleCpeMode(cpeModeStatus: boolean): Promise<void> {
     const isSwitchingToCpe = cpeModeStatus === true;
 
     // Only the upgrade needs a subscription. Switching *down* to Preview must
@@ -425,18 +389,16 @@ export class MasterclassFacade {
       ? 'Heads up! Switching means starting fresh - your current progress will reset. Step into CPE Mode to earn your certificate and level up your learning journey.'
       : 'Heads up! Switching to Preview Mode means you can explore freely without CPE tracking. Your CPE progress will be paused.';
 
-    const dialogRef = this.dialog.open<UtilsDialog>(UtilsDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      disableClose: false,
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+    const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title,
         content: [{ type: 'text', value: description }],
         buttons: [{ label: 'Switch', variant: 'default', action: 'confirm' }],
+        maxWidth: '100%',
       },
     });
-    dialogRef.afterClosed$.subscribe((result) => {
+    dialogRef.afterClosed.subscribe((result) => {
       if (result) {
         this.selectCpeMode(cpeModeStatus, false);
       }
@@ -444,10 +406,8 @@ export class MasterclassFacade {
   }
 
   clear() {
-    this.courseDetails.set(null);
-    this.courseChapters.set([]);
-    this.loading.set(false);
-    this.error.set(null);
+    this.course.clear();
+    this.opLoading.set(false);
   }
 
   /**

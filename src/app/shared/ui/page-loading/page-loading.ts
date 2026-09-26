@@ -5,7 +5,6 @@ import { Spinner } from '../spinner/spinner';
   selector: 'app-page-loading',
   imports: [Spinner],
   templateUrl: './page-loading.html',
-  styles: ``,
   host: {
     class: 'flex items-center justify-center w-full',
     '[class]': 'fullScreen() ? "min-h-screen" : "min-h-64"',

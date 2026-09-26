@@ -4,7 +4,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 
 import { CourseInfo } from './course-info';
-import { MockDialogRef } from '@testing/mocks/dialog.mock';
+import { provideMockDialogRef, stubDialogShell } from '@testing/mocks/dialog-ref.mock';
 import { MOCK_CONTENT_ABOUT } from '@testing/mocks/content.mock';
 
 describe('CourseInfo', () => {
@@ -12,15 +12,19 @@ describe('CourseInfo', () => {
   let fixture: ComponentFixture<CourseInfo>;
 
   beforeEach(async () => {
+    stubDialogShell(CourseInfo);
     await TestBed.configureTestingModule({
       imports: [CourseInfo],
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideMockDialogRef(MOCK_CONTENT_ABOUT),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CourseInfo);
     component = fixture.componentInstance;
-    component.dialogRef = new MockDialogRef() as unknown as CourseInfo['dialogRef'];
-    component.data = MOCK_CONTENT_ABOUT;
     await fixture.whenStable();
   });
 

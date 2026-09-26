@@ -12,7 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   matPlayArrowRound,
@@ -50,7 +50,6 @@ import {
   selector: 'app-video-poster',
   imports: [NgIcon],
   templateUrl: './video-poster.html',
-  styleUrl: './video-poster.css',
   providers: [
     provideIcons({
       matPlayArrowRound,
@@ -70,7 +69,7 @@ export class VideoPoster {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly hostElement = inject(ElementRef);
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -146,8 +145,8 @@ export class VideoPoster {
       this.schedulePlayback();
     });
 
-    // Pause video when any dialog is opened
-    this.dialog.afterOpened$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+    // Pause video when any dialog is opened.
+    this.dialogs.afterOpened.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.pauseIfPlaying();
     });
 

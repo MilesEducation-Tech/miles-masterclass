@@ -7,7 +7,6 @@ import { Component } from '@angular/core';
   selector: 'app-podcast-hero',
   imports: [WaveCanvas, NgOptimizedImage],
   templateUrl: './podcast-hero.html',
-  styleUrl: './podcast-hero.css',
 })
 export class PodcastHero {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

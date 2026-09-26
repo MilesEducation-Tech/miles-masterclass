@@ -1,0 +1,40 @@
+$kind: http-example
+name: 400 Bad Request (3) - Shared envelope from `utils/view_errors
+request:
+  url: "{{base_url}}/api/v1/commerce/addresses/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "line1": "",
+        "city": "",
+        "state": "",
+        "postal_code": "",
+        "country": "",
+        "label": "",
+        "name": "",
+        "phone": "",
+        "line2": "",
+        "landmark": "",
+        "is_default": false
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "invalid_query",
+        "errors": [
+          "<one entry per rejected query parameter>"
+        ]
+      }
+order: 4000

@@ -1,0 +1,22 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass-web/levels-progress/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": true,
+        "data": {
+          "total_cpe_credits": "<float(total_row['total_cpe_credits'])>",
+          "levels": "<[lv for block in grouped.values() for lv in _rotate_to_ongoing(block)]>"
+        }
+      }
+order: 1000

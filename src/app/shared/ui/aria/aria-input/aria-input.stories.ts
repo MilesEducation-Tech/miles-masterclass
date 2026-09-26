@@ -83,6 +83,30 @@ export const Radio: Story = {
   },
 };
 
+export const CheckboxChecked: Story = {
+  args: {
+    id: 'terms-checked',
+    type: 'checkbox',
+    label: 'I agree to the terms and conditions',
+    value: true,
+  },
+};
+
+/** Arrow keys move and select within the group; the disabled option is skipped. */
+export const RadioSelected: Story = {
+  args: {
+    id: 'plan-selected',
+    type: 'radio',
+    label: 'Pick a plan',
+    value: 'pro',
+    options: [
+      { value: 'free', label: 'Free' },
+      { value: 'pro', label: 'Pro' },
+      { value: 'team', label: 'Team', disabled: true },
+    ],
+  },
+};
+
 export const WithError: Story = {
   args: {
     id: 'email',

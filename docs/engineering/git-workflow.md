@@ -2,6 +2,10 @@
 
 How we branch, review and ship. Read this once; keep the "Daily routine" section handy.
 
+> **Just want the commands?** [`git-playbook.md`](git-playbook.md) is the step-by-step version of this
+> document: every flow (feature, fix, hotfix, UAT sign-off, revert), how to keep unrelated code out of a
+> PR, and what to do when CI goes red.
+
 > **Our default branch is `master`, not `main`.** If you've worked on repos that use `main`, translate as
 > you read — every command here says `master` because that is what the remote actually has.
 

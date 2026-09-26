@@ -2,19 +2,14 @@ import { Component, EnvironmentInjector, computed, inject } from '@angular/core'
 import { ActivatedRoute } from '@angular/router';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { StatCard } from '@admin/partner-platform-v2/components/stat-card/stat-card';
 import { PartnerAdminMe } from '@admin/core/services/partner-admin-me';
 import { PartnerNetworkFacade } from '@admin/core/services/partner-network-facade';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
-import {
-  PartnerReportPreviewDialog,
-  PartnerReportPreviewDialogData,
-} from '@admin/partner-platform-v2/dialogs/partner-report-preview-dialog/partner-report-preview-dialog';
-import {
-  ReportItemsDialog,
-  ReportItemsDialogData,
-} from '@admin/partner-platform-v2/dialogs/report-items-dialog/report-items-dialog';
+// Type-only: dialog components below load with `import()` when opened (PROMPT.md §4.4).
+import type { PartnerReportPreviewDialogData } from '@admin/partner-platform-v2/dialogs/partner-report-preview-dialog/partner-report-preview-dialog';
+import type { ReportItemsDialogData } from '@admin/partner-platform-v2/dialogs/report-items-dialog/report-items-dialog';
 import { CertificateDownloadProgress } from '@admin/partner-platform-v2/components/certificate-download-progress/certificate-download-progress';
 import { ReportUsersTable } from '@admin/partner-platform-v2/components/report-users-table/report-users-table';
 import {
@@ -63,9 +58,9 @@ export class ReportsV2 {
   protected readonly me = inject(PartnerAdminMe);
   private readonly superFacade = inject(PartnerSuperAdminFacade);
   private readonly networkFacade = inject(PartnerNetworkFacade);
-  private readonly dialog = inject(Dialog);
-  // Dialogs are built by the root Dialog service; hand it this page's injector
-  // so the route-scoped facade resolves instead of a NullInjectorError.
+  private readonly dialogs = inject(NgpDialogManager);
+  // Dialogs are created under the root injector; pass this page's injector as the
+  // dialog's `injector` so the route-scoped facade resolves instead of a NullInjectorError.
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly route = inject(ActivatedRoute);
 
@@ -125,16 +120,15 @@ export class ReportsV2 {
   });
 
   /** The printable "Partner Learning Report" for the current scope + dates. */
-  protected openPreview(): void {
-    this.dialog.open<PartnerReportPreviewDialog>(PartnerReportPreviewDialog, {
+  protected async openPreview(): Promise<void> {
+    const { PartnerReportPreviewDialog } =
+      await import('@admin/partner-platform-v2/dialogs/partner-report-preview-dialog/partner-report-preview-dialog');
+    this.dialogs.open<PartnerReportPreviewDialogData>(PartnerReportPreviewDialog, {
       data: {
         partnerName: this.title(),
         domains: this.previewDomains(),
       } satisfies PartnerReportPreviewDialogData,
-      environmentInjector: this.envInjector,
-      width: '1040px',
-      maxWidth: '95vw',
-      ariaLabel: 'Partner learning report',
+      injector: this.envInjector,
     });
   }
 
@@ -289,16 +283,16 @@ export class ReportsV2 {
     void this.facade.downloadAllCertificates(this.title());
   }
 
-  protected openItems(row: ReportUserRow): void {
-    this.dialog.open<ReportItemsDialog>(ReportItemsDialog, {
+  protected async openItems(row: ReportUserRow): Promise<void> {
+    const { ReportItemsDialog } =
+      await import('@admin/partner-platform-v2/dialogs/report-items-dialog/report-items-dialog');
+    this.dialogs.open<ReportItemsDialogData>(ReportItemsDialog, {
       data: {
         userId: row.user_id,
         userName: row.name,
         subject: this.facade.subject(),
       } satisfies ReportItemsDialogData,
-      environmentInjector: this.envInjector,
-      maxWidth: '720px',
-      ariaLabel: `Report details for ${row.name}`,
+      injector: this.envInjector,
     });
   }
 }

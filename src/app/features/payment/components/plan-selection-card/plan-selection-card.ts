@@ -28,7 +28,7 @@ interface PriceDisplay {
   providers: [CurrencyPipe],
   viewProviders: [provideIcons({ matInfoRound })],
   templateUrl: './plan-selection-card.html',
-  styleUrl: './plan-selection-card.css',
+  host: { class: 'block' },
 })
 export class PlanSelectionCard {
   private readonly currencyPipe = inject(CurrencyPipe);

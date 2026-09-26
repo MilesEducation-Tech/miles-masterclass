@@ -1,0 +1,35 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `AILabCourseListViewV1`  
+  **Module:** `AILabs.views`  
+  **Route name:** `ai-lab-course-list-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Paginated AI Lab catalogue with per-learner lock state.
+
+  Query parameters (disabled by default): `level`, `page`, `page_size`, `search`, `track`
+url: "{{base_url}}/api/v1/ai-labs/courses/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: level
+    value: ""
+    disabled: true
+  - key: page
+    value: ""
+    disabled: true
+  - key: page_size
+    value: ""
+    disabled: true
+  - key: search
+    value: ""
+    disabled: true
+  - key: track
+    value: ""
+    disabled: true
+examples: ./.resources/UNIVERSAL GET ai-lab-course-list-v1.resources/examples
+order: 5000

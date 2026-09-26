@@ -1,0 +1,21 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/account/name/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "first_name": "<row['first_name'] or ''>",
+        "last_name": "<row['last_name'] or ''>",
+        "full_name": "<row['full_name'] or ''>",
+        "status": "Success"
+      }
+order: 1000

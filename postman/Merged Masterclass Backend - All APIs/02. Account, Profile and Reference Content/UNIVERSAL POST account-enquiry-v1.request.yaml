@@ -1,0 +1,67 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `EnquiryViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `account-enquiry-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Record the caller's interest in one programme.
+
+  Body template generated from `EnquiryRequestSerializerV1`. Values are placeholders, not fixtures.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ## 10. Lead capture - six routes that file a Salesforce enquiry
+
+  All six take a JWT, POST only, and answer the SAME envelope. **None of them proxies Salesforce's
+  response body**, which is a deliberate change from legacy: returning `response.json()` straight through
+  made the CRM's schema part of this contract and leaked internal lead ids to a handset.
+
+  ```json
+  { "message": "Your request has been received. Our team will be in touch.", "status": "Success" }
+  ```
+
+  - `200` - Salesforce accepted the lead.
+  - `502` - Salesforce refused or was unreachable. `{"message": "This service is temporarily unavailable,
+    please try again later.", "status": "Failed"}`.
+
+  The learner is always taken from the token, never from the body.
+
+  ### 10.1 The two contact routes - the learner named no programme
+
+  | Route | Body | Programme filed against |
+  | --- | --- | --- |
+  | `POST account/talk-to-us/` | none | pinned to US CPA, as legacy did |
+  | `POST account/enquiry/` | `{"course_id": <int>}` | the programme the learner tapped |
+
+  Both also start the learner's **pathway-driven** webinar auto-registration, which fans out to every
+  audience their `user.pathway` implies - up to three webinars.
+
+  ### 10.3 What happens after the 200
+
+  The Salesforce lead is **awaited** - you are told whether it was recorded. The webinar booking and the
+  Netcore push are **detached**, and their outcome is not in the status code. A 200 means the lead was
+  filed; it does not mean a seat was confirmed.
+
+  Auto-registration fires even when Salesforce refused. A CRM outage is not a reason to withhold a
+  webinar seat from a learner who just expressed interest.
+url: "{{base_url}}/api/v1/account/enquiry/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "course_id": 0
+    }
+examples: ./.resources/UNIVERSAL POST account-enquiry-v1.resources/examples
+order: 4000

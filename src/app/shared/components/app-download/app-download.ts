@@ -8,7 +8,6 @@ import { FooterLink } from '@core/models/footer.model';
   selector: 'app-app-download',
   imports: [NgIcon, NgOptimizedImage],
   templateUrl: './app-download.html',
-  styleUrl: './app-download.css',
 })
 export class AppDownload {
   readonly appStoreLinks: FooterLink[] = [

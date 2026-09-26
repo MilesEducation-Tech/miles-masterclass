@@ -1,0 +1,35 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/commerce/address/{{address_id}}/"
+  method: PATCH
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "line1": "",
+        "city": "",
+        "state": "",
+        "postal_code": "",
+        "country": "",
+        "label": "",
+        "name": "",
+        "phone": "",
+        "line2": "",
+        "landmark": "",
+        "is_default": false
+      }
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "detail": "Authentication credentials were not provided."
+      }
+order: 6000

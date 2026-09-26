@@ -7,7 +7,6 @@ import { Utils } from '@shared/services/utils';
   selector: 'app-faq',
   imports: [FaqItem],
   templateUrl: './faq.html',
-  styleUrl: './faq.css',
 })
 export class Faq {
   private readonly utils = inject(Utils);

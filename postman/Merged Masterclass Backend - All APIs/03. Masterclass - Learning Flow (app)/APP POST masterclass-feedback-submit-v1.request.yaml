@@ -1,0 +1,33 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassFeedbackSubmitViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-feedback-submit-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  6.11 POST /caira/masterclass/<course_id>/feedback/submit/
+
+  Body template generated from `FeedbackSubmitRequest`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/masterclass/{{course_id}}/feedback/submit/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "responses": [
+        {
+          "question_id": "00000000-0000-0000-0000-000000000000",
+          "rating": 0,
+          "text_response": ""
+        }
+      ],
+      "optional_feedback_text": ""
+    }
+examples: ./.resources/APP POST masterclass-feedback-submit-v1.resources/examples
+order: 7000

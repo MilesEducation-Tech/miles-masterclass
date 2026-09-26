@@ -8,10 +8,7 @@
   @if (rows().length) {
     <div class="overflow-x-auto rounded-lg border border-white/10">
       <table class="w-full text-left text-sm">
-        <thead
-          class="text-[11px] uppercase tracking-wider"
-          style="color: var(--mm-fg-3); background: var(--mm-surface-2)"
-        >
+        <thead class="text-[11px] uppercase tracking-wider text-fg-3 bg-surface-2">
           <tr class="whitespace-nowrap">
             <th class="w-8 px-2 py-3"><span class="sr-only">Expand notes</span></th>
             <th class="px-4 py-3 font-semibold">Name</th>
@@ -24,27 +21,34 @@
             <th class="px-4 py-3 font-semibold">Created</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-white/5">
-          @for (row of rows(); track row.id) {
+        <!-- One <tbody ngpCollapsible> per row + its details row, so the trigger and the
+             panel share a collapsible (several tbodies are valid HTML). It supplies the
+             trigger's aria-expanded/aria-controls, which used to land on <app-button>'s host,
+             not the focusable button. -->
+        @for (row of rows(); track row.id) {
+          <tbody
+            ngpCollapsible
+            [ngpCollapsibleOpen]="isExpanded(row.id)"
+            (ngpCollapsibleOpenChange)="toggleExpand(row.id)"
+            class="border-b border-white/5 last:border-b-0"
+          >
             <tr class="hover:bg-white/3 transition-colors align-top">
               <td class="px-2 py-3 align-middle">
                 @if (row.notes || canWrite()) {
-                  <app-button
-                    variant="ghost"
-                    size="icon"
-                    class="h-6 w-6 text-neutral-400 hover:bg-white/10 hover:text-white"
-                    [attr.aria-expanded]="isExpanded(row.id)"
-                    [ariaLabel]="
+                  <button
+                    type="button"
+                    ngpCollapsibleTrigger
+                    class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer h-6 w-6 text-neutral-400 hover:bg-white/10 hover:text-white"
+                    [attr.aria-label]="
                       (isExpanded(row.id) ? 'Hide' : 'Show') + ' notes for ' + row.full_name
                     "
-                    (clicked)="toggleExpand(row.id)"
                   >
                     <ng-icon
                       [name]="isExpanded(row.id) ? 'lucideChevronDown' : 'lucideChevronRight'"
                       class="text-base"
                       aria-hidden="true"
                     />
-                  </app-button>
+                  </button>
                 }
               </td>
               <td class="px-4 py-3 text-neutral-100">{{ row.full_name }}</td>
@@ -77,7 +81,7 @@
               </td>
             </tr>
             @if (isExpanded(row.id)) {
-              <tr style="background: var(--mm-surface-2)">
+              <tr ngpCollapsibleContent class="border-t border-white/5 bg-surface-2">
                 <td></td>
                 <td colspan="8" class="px-4 py-3">
                   @if (canWrite()) {
@@ -100,19 +104,14 @@
                       Save notes
                     </app-button>
                   } @else {
-                    <div
-                      class="text-[11px] uppercase tracking-wider mb-1"
-                      style="color: var(--mm-fg-3)"
-                    >
-                      Notes
-                    </div>
+                    <div class="text-[11px] uppercase tracking-wider mb-1 text-fg-3">Notes</div>
                     <p class="text-sm text-neutral-200 whitespace-pre-wrap">{{ row.notes }}</p>
                   }
                 </td>
               </tr>
             }
-          }
-        </tbody>
+          </tbody>
+        }
       </table>
     </div>
 

@@ -1,150 +1,150 @@
-<div
-  class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] md:w-[560px] mx-auto overflow-hidden relative rounded-xl"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="firm-form-title"
+<app-dialog-shell
+  maxWidth="560px"
+  [ariaLabel]="data?.firm ? 'Edit ' + data.firm.name : 'Create firm'"
 >
-  <div class="flex items-start justify-between px-5 py-3 border-b border-white/10 shrink-0">
-    <div class="min-w-0">
-      <h2 id="firm-form-title" class="text-base font-semibold text-white truncate">
-        {{ title() }}
-      </h2>
-      <p class="text-xs text-white/60 truncate">
-        {{
-          isEdit()
-            ? 'Name, email domains and status. Seats and admins have their own actions.'
-            : 'Optionally mint its first seats and create its admin login in one step'
-        }}
-      </p>
-    </div>
-    <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
-  </div>
-
-  <div class="px-5 py-5 max-h-[80svh] overflow-y-auto">
-    <app-forms type="signal" class="space-y-0 flex flex-col gap-4" (submitted)="submit()">
-      <app-aria-input id="cf-name" label="Firm name" [formField]="form.name" />
-      <app-aria-select
-        id="cf-network"
-        label="Network"
-        [options]="networkOptions()"
-        [formField]="form.network_id"
-      />
-      @if (isEdit()) {
-        <p class="-mt-1 text-xs" style="color: var(--mm-fg-3)">
-          A firm's network can't be changed here — its seat pool follows it.
+  <div
+    class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] md:w-[560px] mx-auto overflow-hidden relative rounded-xl"
+  >
+    <div class="flex items-start justify-between px-5 py-3 border-b border-white/10 shrink-0">
+      <div class="min-w-0">
+        <h2 id="firm-form-title" class="text-base font-semibold text-white truncate">
+          {{ title() }}
+        </h2>
+        <p class="text-xs text-white/60 truncate">
+          {{
+            isEdit()
+              ? 'Name, email domains and status. Seats and admins have their own actions.'
+              : 'Optionally mint its first seats and create its admin login in one step'
+          }}
         </p>
-      }
-      <app-aria-input
-        id="cf-domains"
-        label="Email domains (optional)"
-        placeholder="acme.com, acme.co.uk"
-        [formField]="form.email_domains"
-      />
-      <p class="-mt-1 text-xs" style="color: var(--mm-fg-3)">
-        Comma-separated. Gates who can redeem this firm's seats — leave blank to allow any email.
-      </p>
+      </div>
+      <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
+    </div>
 
-      @if (isEdit()) {
-        <app-aria-input
-          id="cf-active"
-          type="checkbox"
-          label="Active"
-          [formField]="form.is_active"
+    <div class="px-5 py-5 max-h-[80svh] overflow-y-auto">
+      <app-forms type="signal" class="space-y-0 flex flex-col gap-4" (submitted)="submit()">
+        <app-aria-input id="cf-name" label="Firm name" [formField]="form.name" />
+        <app-aria-select
+          id="cf-network"
+          label="Network"
+          [options]="networkOptions()"
+          [formField]="form.network_id"
         />
-      } @else {
-        <!-- Optional first mint — any number of codes, each with a count + optional expiry -->
-        <fieldset class="flex flex-col gap-2">
-          <legend class="text-sm font-medium text-white mb-1">Mint first seats (optional)</legend>
-          @if (eligibleCodes().length) {
-            <app-allocation-picker [codes]="eligibleCodes()" [(allocations)]="allocations" />
-          } @else {
-            <p class="text-xs" style="color: var(--mm-fg-3)">
-              No eligible partner codes for this scope yet — create one under Partner Codes first.
-            </p>
-          }
-        </fieldset>
+        @if (isEdit()) {
+          <p class="-mt-1 text-xs text-fg-3">
+            A firm's network can't be changed here — its seat pool follows it.
+          </p>
+        }
+        <app-aria-input
+          id="cf-domains"
+          label="Email domains (optional)"
+          placeholder="acme.com, acme.co.uk"
+          [formField]="form.email_domains"
+        />
+        <p class="-mt-1 text-xs text-fg-3">
+          Comma-separated. Gates who can redeem this firm's seats — leave blank to allow any email.
+        </p>
 
-        <!-- Optional atomic admin -->
-        <app-aria-input
-          id="cf-create-admin"
-          type="checkbox"
-          label="Create the firm's admin login now"
-          [formField]="form.create_admin"
-        />
-        @if (createAdmin()) {
-          <app-aria-select
-            id="cf-admin-source"
-            label="Admin login"
-            [options]="adminSourceOptions"
-            [formField]="form.admin_source"
+        @if (isEdit()) {
+          <app-aria-input
+            id="cf-active"
+            type="checkbox"
+            label="Active"
+            [formField]="form.is_active"
           />
-          @if (newAdmin()) {
-            <app-aria-input
-              id="cf-admin-name"
-              label="Admin full name"
-              [formField]="form.admin_name"
-            />
-            <app-aria-input
-              id="cf-admin-email"
-              type="email"
-              label="Admin email"
-              [formField]="form.admin_email"
-            />
-            <p class="-mt-1 text-xs" style="color: var(--mm-fg-3)">
-              Creates the login and registers it as this firm's admin in the same call, so a failure
-              never leaves the firm half set up.
-            </p>
-          } @else {
-            <app-aria-select
-              id="cf-admin-user"
-              label="Existing login"
-              placeholder="Select a Supabase login"
-              [options]="adminUserOptions()"
-              [formField]="form.admin_user_id"
-            />
-            @if (adminUsersError()) {
-              <p class="-mt-1 text-xs" style="color: var(--mm-danger-fg)" role="alert">
-                {{ adminUsersError() }}
-              </p>
-            } @else if (adminUsersLoading()) {
-              <p class="-mt-1 text-xs" style="color: var(--mm-fg-3)">Loading logins…</p>
-            } @else if (!adminUserOptions().length) {
-              <p class="-mt-1 text-xs" style="color: var(--mm-fg-3)">
-                No existing admin logins found — create a new one instead.
-              </p>
+        } @else {
+          <!-- Optional first mint — any number of codes, each with a count + optional expiry -->
+          <fieldset class="flex flex-col gap-2">
+            <legend class="text-sm font-medium text-white mb-1">Mint first seats (optional)</legend>
+            @if (eligibleCodes().length) {
+              <app-allocation-picker [codes]="eligibleCodes()" [(allocations)]="allocations" />
             } @else {
-              <p class="-mt-1 text-xs" style="color: var(--mm-fg-3)">
-                Registers this login as the firm's admin on the backend. Its Supabase roles and
-                email domains are left as they are; logins already registered as a partner admin
-                can't be picked.
+              <p class="text-xs text-fg-3">
+                No eligible partner codes for this scope yet — create one under Partner Codes first.
               </p>
             }
-          }
-          <div class="flex flex-col gap-1.5">
-            <p class="text-xs uppercase tracking-wide" style="color: var(--mm-fg-3)">
-              Admin capabilities
-            </p>
-            <app-checkbox-list
-              [options]="capabilityOptions"
-              [selected]="adminCapabilities()"
-              (selectionChange)="onCapabilitiesChange($event)"
-            />
-          </div>
-        }
-      }
+          </fieldset>
 
-      <div class="flex items-center justify-end gap-3">
-        <app-button variant="outline" size="default" class="text-white" (clicked)="close()">
-          Cancel
-        </app-button>
-        <app-button variant="primary" size="default" type="submit" [disabled]="submitting()">
-          @if (submitting()) {
-            {{ isEdit() ? 'Saving…' : 'Creating…' }}
-          } @else {
-            {{ isEdit() ? 'Save changes' : 'Create firm' }}
+          <!-- Optional atomic admin -->
+          <app-aria-input
+            id="cf-create-admin"
+            type="checkbox"
+            label="Create the firm's admin login now"
+            [formField]="form.create_admin"
+          />
+          @if (createAdmin()) {
+            <app-aria-select
+              id="cf-admin-source"
+              label="Admin login"
+              [options]="adminSourceOptions"
+              [formField]="form.admin_source"
+            />
+            @if (newAdmin()) {
+              <app-aria-input
+                id="cf-admin-name"
+                label="Admin full name"
+                [formField]="form.admin_name"
+              />
+              <app-aria-input
+                id="cf-admin-email"
+                type="email"
+                label="Admin email"
+                [formField]="form.admin_email"
+              />
+              <p class="-mt-1 text-xs text-fg-3">
+                Creates the login and registers it as this firm's admin in the same call, so a
+                failure never leaves the firm half set up.
+              </p>
+            } @else {
+              <app-aria-select
+                id="cf-admin-user"
+                label="Existing login"
+                placeholder="Select a Supabase login"
+                [options]="adminUserOptions()"
+                [formField]="form.admin_user_id"
+              />
+              @if (adminUsersError()) {
+                <p class="-mt-1 text-xs text-danger-foreground" role="alert">
+                  {{ adminUsersError() }}
+                </p>
+              } @else if (adminUsersLoading()) {
+                <p class="-mt-1 text-xs text-fg-3">Loading logins…</p>
+              } @else if (!adminUserOptions().length) {
+                <p class="-mt-1 text-xs text-fg-3">
+                  No existing admin logins found — create a new one instead.
+                </p>
+              } @else {
+                <p class="-mt-1 text-xs text-fg-3">
+                  Registers this login as the firm's admin on the backend. Its Supabase roles and
+                  email domains are left as they are; logins already registered as a partner admin
+                  can't be picked.
+                </p>
+              }
+            }
+            <div class="flex flex-col gap-1.5">
+              <p class="text-xs uppercase tracking-wide text-fg-3">Admin capabilities</p>
+              <app-checkbox-list
+                [options]="capabilityOptions"
+                [selected]="adminCapabilities()"
+                (selectionChange)="onCapabilitiesChange($event)"
+              />
+            </div>
           }
-        </app-button>
-      </div>
-    </app-forms>
+        }
+
+        <div class="flex items-center justify-end gap-3">
+          <app-button variant="outline" size="default" class="text-white" (clicked)="close()">
+            Cancel
+          </app-button>
+          <app-button variant="primary" size="default" type="submit" [disabled]="submitting()">
+            @if (submitting()) {
+              {{ isEdit() ? 'Saving…' : 'Creating…' }}
+            } @else {
+              {{ isEdit() ? 'Save changes' : 'Create firm' }}
+            }
+          </app-button>
+        </div>
+      </app-forms>
+    </div>
   </div>
-</div>
+</app-dialog-shell>

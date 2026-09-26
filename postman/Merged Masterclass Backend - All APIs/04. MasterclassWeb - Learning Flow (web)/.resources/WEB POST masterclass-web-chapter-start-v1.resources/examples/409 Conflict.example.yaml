@@ -1,0 +1,20 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass-web/chapter-start/{{chapter_id}}/"
+  method: POST
+  headers:
+    Accept: application/json
+response:
+  statusCode: 409
+  statusText: Conflict
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "already_started_via_7dc",
+        "message": "This course was started via the 7DC partner flow. Complete the course on the partner's platform; the in-app player cannot be used in parallel."
+      }
+order: 6000

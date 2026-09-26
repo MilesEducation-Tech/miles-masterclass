@@ -1,0 +1,33 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass-web/feedback-submit/{{course_id}}/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "responses": [
+          {
+            "question_id": "00000000-0000-0000-0000-000000000000",
+            "rating": 0,
+            "text_response": ""
+          }
+        ],
+        "optional_feedback_text": ""
+      }
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "feedback_already_submitted"
+      }
+order: 6000

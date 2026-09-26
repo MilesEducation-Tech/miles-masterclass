@@ -25,11 +25,8 @@ import {
 } from '@core/models/badge.model';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
-import { Dialog } from '@core/services/dialog/dialog';
-import {
-  CertificateDialogData,
-  CertificateDownloadDialog,
-} from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
+import type { CertificateDialogData } from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
 import { BadgeLibraryHero } from '../../components/badge-library-hero/badge-library-hero';
 import { BadgeFacade } from '../../services/badge-facade';
 
@@ -56,12 +53,11 @@ const COURSE_TYPE_ROUTE: Record<string, string> = {
   selector: 'app-badge',
   imports: [BadgeLibraryHero, TabStrip, SelectMenu, BadgeCard],
   templateUrl: './badge.html',
-  styleUrl: './badge.css',
 })
 export class Badge {
   readonly facade = inject(BadgeFacade);
   private readonly utils = inject(Utils);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -188,7 +184,7 @@ export class Badge {
       });
   }
 
-  private downloadCertificate(card: BadgeCardData) {
+  private async downloadCertificate(card: BadgeCardData) {
     if (!card.courseId) {
       this.notify.error('Unavailable', 'Course details not available for certificate.');
       return;
@@ -212,12 +208,10 @@ export class Badge {
           }
         : undefined,
     };
-    this.dialog.open<CertificateDownloadDialog, CertificateDialogData>(CertificateDownloadDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      data,
-    });
+    // Loaded on open, so the dialog is not part of this page's chunk (§4.4).
+    const { CertificateDownloadDialog } =
+      await import('@shared/dialogs/certificate-download-dialog/certificate-download-dialog');
+    this.dialogs.open(CertificateDownloadDialog, { data });
   }
 
   /**

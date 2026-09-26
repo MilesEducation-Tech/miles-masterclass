@@ -1,0 +1,29 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `PrivacyPolicyViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `privacy-policy-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** none  
+  **Permission:** AllowAny
+
+  Retrieve privacy-policy items in display order.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 7.3 `GET privacy-policy/` and `GET terms-and-conditions/`
+
+  JWT, enforced in the handler. Both return their items ordered by `order`. Only active items.
+
+  ---
+url: "{{base_url}}/api/v1/account/privacy-policy/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET privacy-policy-v1.resources/examples
+order: 8000

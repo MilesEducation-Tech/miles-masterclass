@@ -1,4 +1,4 @@
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import {
   afterNextRender,
   Component,
@@ -6,23 +6,21 @@ import {
   DestroyRef,
   effect,
   ElementRef,
-  EmbeddedViewRef,
   inject,
   Injector,
   input,
   PLATFORM_ID,
-  Renderer2,
   signal,
-  TemplateRef,
   viewChild,
   viewChildren,
-  ViewContainerRef,
 } from '@angular/core';
+import { NgpTooltip, NgpTooltipArrow, NgpTooltipTrigger } from 'ng-primitives/tooltip';
 import { FieldOfStudy } from '@core/models/course.model';
 
 @Component({
   selector: 'app-categories-list',
   standalone: true,
+  imports: [NgpTooltip, NgpTooltipArrow, NgpTooltipTrigger],
   templateUrl: './categories-list.html',
   host: {
     class: 'block min-w-0 max-w-full',
@@ -32,9 +30,6 @@ export class CategoriesList {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly injector = inject(Injector);
-  private readonly renderer = inject(Renderer2);
-  private readonly vcr = inject(ViewContainerRef);
-  private readonly document = inject(DOCUMENT);
 
   readonly items = input<FieldOfStudy[]>([]);
   readonly separator = input<string>(', ');
@@ -43,14 +38,9 @@ export class CategoriesList {
   readonly showCredits = input<boolean>(false);
 
   readonly containerRef = viewChild<ElementRef<HTMLDivElement>>('container');
-  readonly moreRef = viewChild<ElementRef<HTMLElement>>('moreRef');
   private readonly measureItems = viewChildren<ElementRef<HTMLElement>>('measureItem');
-  private readonly tooltipTemplate = viewChild<TemplateRef<unknown>>('tooltipTemplate');
 
   private readonly visibleCount = signal<number>(-1);
-  readonly tooltipVisible = signal<boolean>(false);
-  readonly tooltipTop = signal<number>(0);
-  readonly tooltipLeft = signal<number>(0);
 
   readonly visibleItems = computed(() => {
     const list = this.items();
@@ -74,9 +64,6 @@ export class CategoriesList {
 
   private resizeObserver?: ResizeObserver;
   private canvasCtx?: CanvasRenderingContext2D;
-  private tooltipView: EmbeddedViewRef<unknown> | null = null;
-
-  private readonly onScrollHide = () => this.hideTooltip();
 
   constructor() {
     if (this.isBrowser) {
@@ -99,61 +86,9 @@ export class CategoriesList {
         },
         { injector: this.injector },
       );
-
-      effect(() => {
-        const visible = this.tooltipVisible();
-        const template = this.tooltipTemplate();
-        if (visible && template) {
-          this.mountTooltip(template);
-          window.addEventListener('scroll', this.onScrollHide, true);
-          window.addEventListener('resize', this.onScrollHide);
-        } else {
-          this.unmountTooltip();
-          window.removeEventListener('scroll', this.onScrollHide, true);
-          window.removeEventListener('resize', this.onScrollHide);
-        }
-      });
     }
 
-    inject(DestroyRef).onDestroy(() => {
-      this.resizeObserver?.disconnect();
-      if (this.isBrowser) {
-        window.removeEventListener('scroll', this.onScrollHide, true);
-        window.removeEventListener('resize', this.onScrollHide);
-        this.unmountTooltip();
-      }
-    });
-  }
-
-  showTooltip(): void {
-    const el = this.moreRef()?.nativeElement;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    this.tooltipTop.set(rect.top);
-    this.tooltipLeft.set(rect.left + rect.width / 2);
-    this.tooltipVisible.set(true);
-  }
-
-  hideTooltip(): void {
-    this.tooltipVisible.set(false);
-  }
-
-  private mountTooltip(template: TemplateRef<unknown>): void {
-    if (this.tooltipView) return;
-    this.tooltipView = this.vcr.createEmbeddedView(template);
-    this.tooltipView.detectChanges();
-    for (const node of this.tooltipView.rootNodes) {
-      this.renderer.appendChild(this.document.body, node);
-    }
-  }
-
-  private unmountTooltip(): void {
-    if (!this.tooltipView) return;
-    for (const node of this.tooltipView.rootNodes) {
-      if (node.parentNode) this.renderer.removeChild(this.document.body, node);
-    }
-    this.tooltipView.destroy();
-    this.tooltipView = null;
+    inject(DestroyRef).onDestroy(() => this.resizeObserver?.disconnect());
   }
 
   private setupCanvas(): void {

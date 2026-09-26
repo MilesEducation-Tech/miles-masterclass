@@ -15,7 +15,7 @@
       <section class="w-full flex-1 min-h-0 max-h-full flex gap-3 items-center justify-center">
         <div
           #reelScroller
-          class="h-full aspect-9/16 max-w-full min-h-0 overflow-y-auto snap-y snap-mandatory scroll-smooth hide-scrollbar"
+          class="h-full aspect-9/16 max-w-full min-h-0 overflow-y-auto snap-y snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           (scrollend)="onReelScroll()"
         >
           @for (episode of facade.detailsList(); track episode.id) {

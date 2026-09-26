@@ -13,7 +13,7 @@ interface ComparisonColumn {
   selector: 'app-plan-comparison-table',
   imports: [NgIcon],
   templateUrl: './plan-comparison-table.html',
-  styleUrl: './plan-comparison-table.css',
+  host: { class: 'block' },
 })
 export class PlanComparisonTable {
   readonly plans = input.required<SubscriptionPlan[]>();

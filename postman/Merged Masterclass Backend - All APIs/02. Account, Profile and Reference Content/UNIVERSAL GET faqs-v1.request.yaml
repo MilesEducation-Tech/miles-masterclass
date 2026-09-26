@@ -1,0 +1,49 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `FAQsViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `faqs-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** none  
+  **Permission:** AllowAny
+
+  Retrieve FAQs grouped by category.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 7.2 `GET faqs/`
+
+  A list of categories, each `{id, category, order, faqs: [{id, question, answer, order, created_at,
+  modified_at}]}`.
+
+  A category literally named `all` (case-insensitive, whitespace-trimmed) receives **every** FAQ across all
+  categories rather than only its own.
+
+  **Public by decision, and safe to call before login.** No `Authorization` header is inspected, so a stale or
+  expired token cannot turn a help page into a 403. Send a token or do not - it changes nothing.
+
+  ### 8.1 `faqs/` is public on purpose, and now says so
+
+  Its docstring used to claim "JWT required" while the code served anyone - it declared an authenticator but no
+  permission class, and **declaring an `authentication_classes` does not require authentication**: without a
+  permission class DRF falls back to `AllowAny`. The same defect was found and fixed on `questions/` on
+  2026-09-09.
+
+  Resolved on 2026-09-17 by making the intent explicit rather than by adding a token check: FAQs are help content
+  on a pre-login screen, and the maintainer's decision is that they stay open. The authenticator was removed
+  entirely, so a **stale or expired token can no longer 403 the FAQ list** - which is what would have happened
+  had the declaration simply been left in place beside an `AllowAny`.
+
+  `privacy-policy/` and `terms-and-conditions/` still carry the same missing permission class but compensate with
+  an explicit check in the handler, so they do refuse anonymous callers - with a 401 rather than a 403.
+url: "{{base_url}}/api/v1/account/faqs/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET faqs-v1.resources/examples
+order: 5000

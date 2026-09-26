@@ -33,10 +33,10 @@
       @if (getOptionText(currentQuestion(), option)) {
         <button
           class="flex items-start gap-4 p-3 rounded-lg border text-left transition-all"
-          [class.border-[#3E4552]]="selectedOption() !== option"
+          [class.border-quiz-line]="selectedOption() !== option"
           [class.bg-transparent]="selectedOption() !== option"
           [class.border-blue-500]="selectedOption() === option && !isSubmitted()"
-          [class.bg-[#2C3442]]="selectedOption() === option"
+          [class.bg-quiz-selected]="selectedOption() === option"
           [disabled]="isSubmitted()"
           (click)="selectOption(option)"
         >
@@ -80,9 +80,9 @@
   </div>
 
   <!-- Footer Actions -->
-  <div class="mt-auto flex justify-between items-center pt-6 border-t border-[#3E4552]">
+  <div class="mt-auto flex justify-between items-center pt-6 border-t border-quiz-line">
     <button
-      class="px-6 py-2 rounded bg-[#3E4552] text-white hover:bg-[#4B5563] disabled:opacity-50"
+      class="px-6 py-2 rounded bg-quiz-line text-white hover:bg-quiz-line-hover disabled:opacity-50"
       [disabled]="currentQuestionIndex() === 0"
       (click)="prevQuestion()"
     >

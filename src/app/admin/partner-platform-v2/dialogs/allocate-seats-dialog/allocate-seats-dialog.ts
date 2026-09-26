@@ -5,7 +5,8 @@ import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
 import { Button } from '@shared/ui/button/button';
 import { Forms } from '@shared/ui/forms/forms';
 import { AriaSelectOption } from '@core/models/aria.model';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Firm } from '@admin/core/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
 
@@ -30,13 +31,13 @@ const EMPTY: AllocateFormModel = { partner_code: null, count: '', expiry_date: '
  */
 @Component({
   selector: 'app-allocate-seats-dialog',
-  imports: [AngularFormField, Forms, AriaInput, AriaSelect, Button],
+  imports: [AngularFormField, Forms, AriaInput, AriaSelect, Button, DialogShell],
   templateUrl: './allocate-seats-dialog.html',
 })
 export class AllocateSeatsDialog {
   /** Resolves with the number of seats minted, or undefined on cancel. */
-  dialogRef!: DialogRef<AllocateSeatsDialog, number | undefined>;
-  data!: AllocateSeatsDialogData;
+  private readonly dialogRef = injectDialogRef<AllocateSeatsDialogData, number | undefined>();
+  protected readonly data = this.dialogRef.data;
 
   private readonly facade = inject(PartnerSuperAdminFacade);
 

@@ -1,0 +1,32 @@
+$kind: http-example
+name: 400 Bad Request (3) - Shared envelope from `utils/view_errors
+request:
+  url: "{{base_url}}/api/v1/catalogue/variants/bulk-lookup/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "variant_ids": [
+          "00000000-0000-0000-0000-000000000000"
+        ]
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "invalid_query",
+        "errors": [
+          "<one entry per rejected query parameter>"
+        ]
+      }
+order: 4000

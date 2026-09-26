@@ -11,7 +11,6 @@ import { PartnerPanelUser } from '@admin/core/models/partner-platform.model';
   imports: [DecimalPipe, NgIcon, Button, Spinner],
   providers: [provideIcons({ lucideShieldOff, lucideShieldCheck, lucideEye, lucideEyeOff })],
   templateUrl: './users-table.html',
-  styleUrl: './users-table.css',
   host: { class: 'block w-full' },
 })
 export class UsersTable {

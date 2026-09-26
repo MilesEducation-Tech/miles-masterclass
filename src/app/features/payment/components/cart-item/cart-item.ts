@@ -31,7 +31,6 @@ const DEFAULT_CONFIG: Required<CartItemConfig> = {
   selector: 'app-cart-item',
   imports: [NgOptimizedImage, NgIcon, CurrencyPipe, Button, RouterLink],
   templateUrl: './cart-item.html',
-  styleUrl: './cart-item.css',
   host: {
     '[class]':
       'stacked() ? "flex flex-col gap-3" : "flex justify-between max-sm:flex-col sm:flex-row"',

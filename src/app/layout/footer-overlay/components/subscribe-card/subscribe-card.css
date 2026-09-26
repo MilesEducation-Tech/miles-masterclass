@@ -1,8 +1,0 @@
-:host {
-  display: block;
-  width: 100%;
-}
-
-.subscribe-card {
-  background-image: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
-}

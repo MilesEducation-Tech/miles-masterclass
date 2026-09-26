@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 
 export interface RecordPaymentDialogData {
   userEmail: string;
@@ -31,18 +32,20 @@ export interface RecordPaymentDialogResult {
  * so the activation is never untraceable.
  *
  * Pure UI — returns what was captured; the list page performs the multipart
- * upload via the facade. `data` / `dialogRef` are property-injected by the
- * Dialog service.
+ * upload via the facade.
  */
 @Component({
   selector: 'app-record-payment-dialog',
-  imports: [Button, AriaInput],
+  imports: [Button, AriaInput, DialogShell],
   templateUrl: './record-payment-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecordPaymentDialog {
-  dialogRef!: DialogRef<RecordPaymentDialog, RecordPaymentDialogResult | undefined>;
-  data!: RecordPaymentDialogData;
+  private readonly dialogRef = injectDialogRef<
+    RecordPaymentDialogData,
+    RecordPaymentDialogResult | undefined
+  >();
+  protected readonly data = this.dialogRef.data;
 
   protected readonly file = signal<File | null>(null);
   protected readonly comment = signal('');

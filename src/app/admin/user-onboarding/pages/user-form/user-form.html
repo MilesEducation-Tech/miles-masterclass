@@ -12,11 +12,7 @@
   </header>
 
   @if (missingUser()) {
-    <div
-      class="px-3 py-2 text-sm rounded-md"
-      style="background: var(--mm-warn-bg); color: var(--mm-warn-fg)"
-      role="alert"
-    >
+    <div class="px-3 py-2 text-sm rounded-md bg-warn-bg text-warn-foreground" role="alert">
       This user's details weren't loaded. Open the user from the list to edit their existing data,
       or the fields below start blank.
     </div>
@@ -25,10 +21,7 @@
   <app-forms type="signal" class="flex flex-col gap-8 max-w-4xl" (submitted)="submit()">
     <!-- Personal -->
     <fieldset class="flex flex-col gap-5">
-      <legend
-        class="text-sm font-semibold uppercase tracking-wider mb-1"
-        style="color: var(--mm-fg-3)"
-      >
+      <legend class="text-sm font-semibold uppercase tracking-wider mb-1 text-fg-3">
         Personal
       </legend>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -68,12 +61,7 @@
 
     <!-- Profile -->
     <fieldset class="flex flex-col gap-5">
-      <legend
-        class="text-sm font-semibold uppercase tracking-wider mb-1"
-        style="color: var(--mm-fg-3)"
-      >
-        Profile
-      </legend>
+      <legend class="text-sm font-semibold uppercase tracking-wider mb-1 text-fg-3">Profile</legend>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <app-aria-autocomplete
           id="uf-partner-code"
@@ -123,10 +111,7 @@
 
     <!-- Corporate (optional) -->
     <fieldset class="flex flex-col gap-5">
-      <legend
-        class="text-sm font-semibold uppercase tracking-wider mb-1"
-        style="color: var(--mm-fg-3)"
-      >
+      <legend class="text-sm font-semibold uppercase tracking-wider mb-1 text-fg-3">
         Corporate <span class="normal-case font-normal">(optional)</span>
       </legend>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -165,10 +150,7 @@
 
     <!-- Consent -->
     <fieldset class="flex flex-col gap-3">
-      <legend
-        class="text-sm font-semibold uppercase tracking-wider mb-1"
-        style="color: var(--mm-fg-3)"
-      >
+      <legend class="text-sm font-semibold uppercase tracking-wider mb-1 text-fg-3">
         Status &amp; consent
       </legend>
       <app-aria-input

@@ -7,23 +7,20 @@ import { appStoreIcon, googlePlayIcon, instagramIcon } from '@core/constants/ico
 import { FooterLink, FooterSection } from '@core/models/footer.model';
 import { Utils } from '@shared/services/utils';
 import { Consent } from '@core/services/consent/consent';
-import { Dialog } from '@core/services/dialog/dialog';
-import {
-  CalendlyDialog,
-  CalendlyDialogData,
-} from '@shared/dialogs/calendly-dialog/calendly-dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
+// Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { User } from '@core/models/profile.model';
 
 @Component({
   selector: 'app-footer',
   imports: [RouterLink, NgIcon, NgOptimizedImage],
   templateUrl: './footer.html',
-  styleUrl: './footer.css',
 })
 export class Footer {
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   // Exposed for the footer "Cookie settings" link (reopens the consent panel).
   protected readonly consent = inject(Consent);
 
@@ -223,11 +220,11 @@ export class Footer {
   }
 
   /** Opens the Calendly scheduler — mirrors the header's "Book Demo" action. */
-  openScheduler(): void {
-    this.dialog.open<CalendlyDialog, boolean>(CalendlyDialog, {
-      width: 'min(95vw, 760px)',
-      ariaLabel: 'Schedule a demo',
+  async openScheduler(): Promise<void> {
+    const { CalendlyDialog } = await import('@shared/dialogs/calendly-dialog/calendly-dialog');
+    this.dialogs.open(CalendlyDialog, {
       data: {
+        ariaLabel: 'Schedule a demo',
         url: 'https://calendly.com/rohan-singhai-milesmasterclass/30min',
         closeAction: true,
       } satisfies CalendlyDialogData,

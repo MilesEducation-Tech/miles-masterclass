@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CommerceAddressViewV1`  
+  **Module:** `Commerce.views`  
+  **Route name:** `commerce-address-v1`  
+  **Methods on this view:** GET, PATCH, DELETE  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Read, edit or remove one of the learner's addresses.
+url: "{{base_url}}/api/v1/commerce/address/{{address_id}}/"
+method: DELETE
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL DELETE commerce-address-v1.resources/examples
+order: 3000

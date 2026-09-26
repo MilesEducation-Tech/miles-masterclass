@@ -1,0 +1,30 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/web-api/v1/events/webinar-main-page/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: login_type
+      value: ""
+      disabled: true
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "message": "Webinar main page retrieved successfully.",
+        "data": {
+          "login_type": "<params.login_type>",
+          "highlight_webinars": "<highlight>",
+          "upcoming_webinars": "<upcoming>",
+          "completed_webinar": "<completed>",
+          "absent_webinar": "<absent>",
+          "missed_webinar": "<missed>"
+        }
+      }
+order: 1000

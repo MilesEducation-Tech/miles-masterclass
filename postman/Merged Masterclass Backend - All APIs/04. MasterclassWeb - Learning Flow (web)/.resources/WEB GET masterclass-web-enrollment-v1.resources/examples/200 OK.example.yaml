@@ -1,0 +1,24 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass-web/enrollment/{{course_id}}/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "course_id": "<str(course.id)>",
+        "is_enrolled": false,
+        "is_course_closed": false,
+        "started_at": null,
+        "expires_at": null,
+        "days_remaining": null,
+        "is_expired": false
+      }
+order: 1000

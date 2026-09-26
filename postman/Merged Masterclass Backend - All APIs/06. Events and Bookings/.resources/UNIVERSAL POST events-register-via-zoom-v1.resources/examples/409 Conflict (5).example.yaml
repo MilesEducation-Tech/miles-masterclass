@@ -1,0 +1,27 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/events/register-via-zoom/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "webinar_id": "00000000-0000-0000-0000-000000000000"
+      }
+response:
+  statusCode: 409
+  statusText: Conflict
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "code": "webinar_start_time_missing",
+        "detail": "This webinar has no scheduled start time yet. Please try again once the schedule is published."
+      }
+order: 12000

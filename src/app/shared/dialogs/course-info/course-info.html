@@ -1,51 +1,57 @@
-<div class="flex flex-col space-y-4 sm:w-[70vw] w-10/12 relative bg-background">
-  <div class="absolute top-4 right-4 w-full flex justify-end px-4 z-10">
-    <app-button variant="close" size="sm" (clicked)="close()" />
-  </div>
-  <div class="flex w-full aspect-video relative overflow-hidden">
-    <div
-      class="absolute inset-0 w-full h-full z-1 bg-linear-to-t from-background to-transparent from-10% via-background/50 pointer-events-none"
-    ></div>
-    <div class="absolute inset-0 w-full h-full z-0">
-      <app-video-poster [videoSrc]="data.thumbnail_gif" [posterSrc]="data.horizontal_thumbnail" />
+<app-dialog-shell maxWidth="100%" [ariaLabel]="data.title" [dismissible]="false">
+  <div class="flex flex-col space-y-4 sm:w-[70vw] w-10/12 relative bg-background">
+    <div class="absolute top-4 right-4 w-full flex justify-end px-4 z-10">
+      <app-button variant="close" size="sm" (clicked)="close()" />
     </div>
-    <div class="content content--visible">
-      <app-miles-slug slug="miles masterclass" />
-      <h2 class="title">{{ data.title }}</h2>
-      <h2 class="subtitle">
-        By {{ data.instructor_details.first_name }} {{ data.instructor_details.last_name }}
-      </h2>
-      <p class="description">{{ data.course_short_overview }}</p>
-      <div class="flex space-x-3 items-center mt-4">
-        <app-button
-          variant="ghost"
-          class="bg-white text-black rounded-lg gap-1"
-          (clicked)="watchNow()"
-          ><ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />{{
-            data.course_type.toLowerCase() === 'podcast' ? 'Listen Now' : 'Watch Now'
-          }}</app-button
-        >
-        <app-button
-          variant="ghost"
-          class="bg-card text-white rounded-lg w-10 flex justify-center items-center p-0"
-          [attr.aria-label]="bookmarked() ? 'Remove bookmark' : 'Add bookmark'"
-          (clicked)="toggleBookmark()"
-          ><ng-icon
-            [name]="bookmarked() ? 'matBookmarkRound' : 'matBookmarkBorderRound'"
-            size="24"
-            aria-hidden="true"
-        /></app-button>
-        <app-button
-          variant="ghost"
-          class="bg-card text-white rounded-lg w-10 flex justify-center items-center p-0"
-          aria-label="Share course"
-          (clicked)="openShare()"
-          ><ng-icon name="phosphorShareFatFill" size="24" aria-hidden="true"
-        /></app-button>
+    <div class="flex w-full aspect-video relative overflow-hidden">
+      <div
+        class="absolute inset-0 w-full h-full z-1 bg-linear-to-t from-background to-transparent from-10% via-background/50 pointer-events-none"
+      ></div>
+      <div class="absolute inset-0 w-full h-full z-0">
+        <app-video-poster [videoSrc]="data.thumbnail_gif" [posterSrc]="data.horizontal_thumbnail" />
+      </div>
+      <div
+        class="absolute bottom-0 left-6 z-2 mx-auto flex w-10/12 flex-col gap-1 text-sm font-normal text-white opacity-0 font-[Helvetica,sans-serif] text-shadow-[0_3px_8px_rgba(0,0,0,0.5)] sm:left-12 sm:w-3/4 sm:gap-2 animate-[slideIn_0.75s_ease-in-out_0.3s_forwards]"
+      >
+        <app-miles-slug slug="miles masterclass" />
+        <h2 class="text-xl font-bold tracking-tight text-white uppercase md:text-2xl">
+          {{ data.title }}
+        </h2>
+        <h2 class="text-lg font-semibold tracking-widest text-accent md:text-xl">
+          By {{ data.instructor_details.first_name }} {{ data.instructor_details.last_name }}
+        </h2>
+        <p class="text-sm text-neutral-400 md:text-base">{{ data.course_short_overview }}</p>
+        <div class="flex space-x-3 items-center mt-4">
+          <app-button
+            variant="ghost"
+            class="bg-white text-black rounded-lg gap-1"
+            (clicked)="watchNow()"
+            ><ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />{{
+              data.course_type.toLowerCase() === 'podcast' ? 'Listen Now' : 'Watch Now'
+            }}</app-button
+          >
+          <app-button
+            variant="ghost"
+            class="bg-card text-white rounded-lg w-10 flex justify-center items-center p-0"
+            [attr.aria-label]="bookmarked() ? 'Remove bookmark' : 'Add bookmark'"
+            (clicked)="toggleBookmark()"
+            ><ng-icon
+              [name]="bookmarked() ? 'matBookmarkRound' : 'matBookmarkBorderRound'"
+              size="24"
+              aria-hidden="true"
+          /></app-button>
+          <app-button
+            variant="ghost"
+            class="bg-card text-white rounded-lg w-10 flex justify-center items-center p-0"
+            aria-label="Share course"
+            (clicked)="openShare()"
+            ><ng-icon name="phosphorShareFatFill" size="24" aria-hidden="true"
+          /></app-button>
+        </div>
       </div>
     </div>
+    <div class="sm:px-12 px-6">
+      <app-course-about [card]="data" />
+    </div>
   </div>
-  <div class="sm:px-12 px-6">
-    <app-course-about [card]="data" />
-  </div>
-</div>
+</app-dialog-shell>

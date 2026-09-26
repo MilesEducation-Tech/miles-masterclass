@@ -18,11 +18,7 @@ import { matArrowBackRound } from '@ng-icons/material-icons/round';
       <span class="text-sm font-medium">{{ label() }}</span>
     </button>
   `,
-  styles: `
-    :host {
-      display: block;
-    }
-  `,
+  host: { class: 'block' },
   viewProviders: [provideIcons({ matArrowBackRound })],
 })
 export class Backward {

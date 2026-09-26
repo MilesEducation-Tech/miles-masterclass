@@ -3,7 +3,7 @@ import { signal } from '@angular/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AppDownloadPrompt } from './app-download-prompt';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Viewport } from '@core/services/viewport/viewport';
 
 describe('AppDownloadPrompt', () => {
@@ -20,7 +20,7 @@ describe('AppDownloadPrompt', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: Viewport, useValue: { isMobile } },
-        { provide: Dialog, useValue: { open: dialogOpen } },
+        { provide: NgpDialogManager, useValue: { open: dialogOpen } },
       ],
     });
     service = TestBed.inject(AppDownloadPrompt);
@@ -35,7 +35,8 @@ describe('AppDownloadPrompt', () => {
   it('opens the dialog once per session on mobile', async () => {
     service.maybePrompt();
     await vi.advanceTimersByTimeAsync(1001);
-    expect(dialogOpen).toHaveBeenCalledTimes(1);
+    // The dialog class arrives through a dynamic import() after the timer.
+    await vi.waitFor(() => expect(dialogOpen).toHaveBeenCalledTimes(1));
 
     service.maybePrompt();
     await vi.advanceTimersByTimeAsync(1001);

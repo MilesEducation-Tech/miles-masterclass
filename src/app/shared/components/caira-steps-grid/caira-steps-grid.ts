@@ -15,7 +15,7 @@ export interface CairaStep {
   selector: 'app-caira-steps-grid',
   imports: [NgIcon],
   templateUrl: './caira-steps-grid.html',
-  styleUrl: './caira-steps-grid.css',
+  host: { class: 'block' },
 })
 export class CairaStepsGrid {
   readonly steps = input<CairaStep[]>([]);

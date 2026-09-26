@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular';
 import { AssessmentResultDialog } from './assessment-result-dialog';
-import { MockDialogRef } from '@testing/mocks/dialog.mock';
+import { provideStoryDialogRef } from '@testing/mocks/dialog.mock';
 
 const meta: Meta<AssessmentResultDialog> = {
   title: 'Dialog/AssessmentResult',
@@ -18,67 +18,49 @@ export default meta;
 type Story = StoryObj<AssessmentResultDialog>;
 
 export const Passed: Story = {
-  render: () => ({
-    props: {
-      init(component: AssessmentResultDialog) {
-        component.dialogRef = new MockDialogRef() as any;
-        component.data = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        provideStoryDialogRef({
           isPassed: true,
           score: 85,
           message: 'Congratulations! You passed the assessment.',
           passingScore: 75,
-        };
-      },
-    },
-    template: `
-      <div style="width: 450px;">
-        <app-assessment-result-dialog #comp />
-        {{ init(comp) }}
-      </div>
-    `,
-  }),
+        }),
+      ],
+    }),
+  ],
+  render: () => ({ template: `<div style="width: 450px;"><app-assessment-result-dialog /></div>` }),
 };
 
 export const Failed: Story = {
-  render: () => ({
-    props: {
-      init(component: AssessmentResultDialog) {
-        component.dialogRef = new MockDialogRef() as any;
-        component.data = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        provideStoryDialogRef({
           isPassed: false,
           score: 60,
           message: 'You did not meet the passing score. You can retake the assessment.',
           passingScore: 75,
-        };
-      },
-    },
-    template: `
-      <div style="width: 450px;">
-        <app-assessment-result-dialog #comp />
-        {{ init(comp) }}
-      </div>
-    `,
-  }),
+        }),
+      ],
+    }),
+  ],
+  render: () => ({ template: `<div style="width: 450px;"><app-assessment-result-dialog /></div>` }),
 };
 
 export const BarellyPassed: Story = {
-  render: () => ({
-    props: {
-      init(component: AssessmentResultDialog) {
-        component.dialogRef = new MockDialogRef() as any;
-        component.data = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        provideStoryDialogRef({
           isPassed: true,
           score: 75,
           message: 'You passed! You met the minimum passing score.',
           passingScore: 75,
-        };
-      },
-    },
-    template: `
-      <div style="width: 450px;">
-        <app-assessment-result-dialog #comp />
-        {{ init(comp) }}
-      </div>
-    `,
-  }),
+        }),
+      ],
+    }),
+  ],
+  render: () => ({ template: `<div style="width: 450px;"><app-assessment-result-dialog /></div>` }),
 };

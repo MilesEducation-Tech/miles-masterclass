@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassCourseCategoryListViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-course-category-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  GET /masterclass/course-category/
+url: "{{base_url}}/api/v1/masterclass/course-category/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/APP GET masterclass-course-category-v1.resources/examples
+order: 10000

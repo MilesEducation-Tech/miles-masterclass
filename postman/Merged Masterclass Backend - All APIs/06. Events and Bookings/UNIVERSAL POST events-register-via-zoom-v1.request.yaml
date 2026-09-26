@@ -1,0 +1,137 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `RegisterViaZoomViewV1`  
+  **Module:** `EventsPage.views`  
+  **Route name:** `events-register-via-zoom-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  ``POST events/register-via-zoom-v1/`` - register the caller for a webinar.
+
+  Body template generated from `RegisterViaZoomRequestV1`. Values are placeholders, not fixtures.
+
+  ---
+
+  > From `EVENTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ## 2. `POST api/v1/events/register-via-zoom/`
+
+  Registers the authenticated caller for a webinar. Authenticated. Shared web + app.
+
+  This is a `202` handshake, not a synchronous registration. The endpoint answers immediately with an
+  `attempt_id`; the actual work - Zoom registrant, then `Booking` plus `BookingDetails`, then the Salesforce
+  forward - runs in the background. Poll the status route (section 3) for the outcome.
+
+  The reason is latency: the Zoom leg is three attempts with 1s and 3s backoff and the Salesforce leg is another
+  three, so a worst case that still ENDS IN SUCCESS is around six round trips and roughly 8 seconds. That is not
+  a request to hold open.
+
+  ### 2.1 Request body
+
+  ```json
+  {
+    "webinar_id": "3f1a9c7e-5b42-4d9a-8f10-2c6be7d41a55"
+  }
+  ```
+
+  | Field | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `webinar_id` | UUID | yes | The `Events.Webinar` PRIMARY KEY. Not the MF/SF integer id. |
+
+  ONE FIELD, AND THAT IS THE WHOLE BODY. Nothing else is accepted - see 1.3.
+
+  THE WEBINAR IS ADDRESSED BY UUID, which is a change from legacy. Legacy took the producing service's integer
+  and resolved it as `(webinar_id, webinar_type)` - a compound lookup, because that integer is unique only in
+  combination with the type. An integer-only lookup here would either need the type threaded through the client
+  contract or would silently resolve to whichever row Postgres returned first. Whatever feed hands you a webinar
+  should expose its `id`; `webinar-main-page` (section 6) does.
+
+  ONE INPUT SURFACE. Legacy read each parameter from the query string first and fell back to the JSON body. Here
+  the body is canonical - a query parameter on this route is a 400.
+
+  ### 2.2 `202 Accepted` - the normal answer
+
+  ```json
+  {
+    "status": "accepted",
+    "registration_status": "PENDING",
+    "message": "Registration started. Pull to refresh.",
+    "attempt_id": "9c2f1b70-8e4d-4a11-93cc-0d5a6f2e8b31",
+    "status_url": "/api/v1/events/register-via-zoom-status/9c2f1b70-8e4d-4a11-93cc-0d5a6f2e8b31/"
+  }
+  ```
+
+  `status_url` is built server-side off the URLconf, so it cannot drift from the real route. Prefer following it
+  over assembling the path yourself.
+
+  ### 2.3 `200 OK` - already registered
+
+  Not an error. The caller already holds a live booking for this webinar, and NO pipeline is spawned.
+
+  ```json
+  {
+    "status": "already_registered",
+    "code": "already_registered",
+    "message": "You are already registered for this webinar.",
+    "booking_id": "b41e77a2-1cf9-4c02-9c6e-3a8d5e0f1b22"
+  }
+  ```
+
+  ### 2.4 Idempotency, in two layers
+
+  The expensive mistake here is a duplicate Zoom registrant, so a double-tap is absorbed rather than refused:
+
+  1. A LIVE BOOKING -> `200 already_registered` (section 2.3).
+  2. AN IN-FLIGHT ATTEMPT (`PENDING` or `ZOOM_RETRYING`) -> `202` carrying THAT attempt's id, with
+     `message: "Registration already in progress."` Poll the one already running; do not start a second.
+
+  A third guard sits under both: a short per-`(user, webinar)` lock. If two taps land inside the same few
+  milliseconds, the loser gets `409 registration_in_progress` with `retry_after_seconds`. Retry once after that
+  and you will get the in-flight `202`.
+
+  ### 2.5 Every refusal
+
+  | HTTP | `code` | When |
+  | --- | --- | --- |
+  | 400 | `invalid_request` | Body failed validation, or carried an undeclared key. Carries `errors[]`. |
+  | 400 | `missing_email` | The user's profile has no email. Zoom requires one. |
+  | 400 | `invalid_email` | Profile email is malformed. |
+  | 400 | `missing_first_name` | Profile has no first name. |
+  | 400 | `invalid_first_name` | First name contains non-ASCII - in practice an emoji pasted into a profile. Zoom rejects it with a terminal 400. |
+  | 404 | `webinar_not_found` | No such webinar row. |
+  | 409 | `unsupported_webinar_type` | The row is not a `webinar` or an `offline` event. Orientations and premiers have their own flows. |
+  | 409 | `webinar_inactive` | Soft-deleted or temporarily deactivated. 409 AND NOT 404 DELIBERATELY - the row exists and your copy of it is not wrong, so do not discard the webinar; it may come back. |
+  | 409 | `webinar_cancelled` | The session was cancelled. A cancelled webinar stays `active=True`, so this is a separate flag rather than a variant of the one above. |
+  | 409 | `webinar_start_time_missing` | The webinar has no scheduled start time yet. An ops data problem, not a client error - surface `detail` and let the user retry later. |
+  | 409 | `registration_in_progress` | Lock contention. Carries `retry_after_seconds` (currently 15). Retry once. |
+
+  The four profile refusals are worth handling specifically: each `detail` is already written as user-facing copy
+  naming what to fix in the profile, and none is retryable without that fix. They are checked BEFORE any Zoom
+  call, so the user learns synchronously instead of polling to a terminal failure.
+
+  Order of evaluation, which is the order you will hit them: body validation -> webinar resolution (404 / the
+  four 409s) -> profile preflight (the four 400s) -> idempotency (200 / 202) -> lock contention (409).
+
+  ### 2.6 `offline` webinars take the identical path
+
+  An in-person event still goes through the full Zoom -> Booking -> Salesforce write path, and the learner still
+  gets a Zoom registrant record and a join URL - they simply do not use it. No client branch is needed.
+
+  ---
+url: "{{base_url}}/api/v1/events/register-via-zoom/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "webinar_id": "00000000-0000-0000-0000-000000000000"
+    }
+examples: ./.resources/UNIVERSAL POST events-register-via-zoom-v1.resources/examples
+order: 2000

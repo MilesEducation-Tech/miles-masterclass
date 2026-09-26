@@ -2,7 +2,7 @@
   <!-- Header -->
   <header class="flex flex-wrap items-start justify-between gap-3">
     <div class="flex flex-col gap-1">
-      <p class="text-base font-semibold" style="color: var(--mm-fg-3)">Reports</p>
+      <p class="text-base font-semibold text-fg-3">Reports</p>
       <h1 class="text-3xl font-extrabold leading-tight">{{ title() }}</h1>
     </div>
     @if (canViewReports()) {
@@ -44,7 +44,7 @@
     <!-- Reachable with the Supabase perm alone; the Django row/capability is separate. -->
     <div class="rounded-xl border border-white/10 bg-card p-8 text-center max-w-lg mx-auto">
       <h2 class="text-lg font-bold mb-2">Reports not enabled</h2>
-      <p class="text-sm" style="color: var(--mm-fg-3)">
+      <p class="text-sm text-fg-3">
         Reports need a partner admin account with the super role or a report-read capability. Ask a
         super admin to provision yours.
       </p>
@@ -102,17 +102,13 @@
       <!-- Supers only: unscoped until a target is picked — nothing is fetched yet. -->
       <div class="rounded-xl border border-white/10 bg-card p-8 text-center max-w-lg mx-auto">
         <h2 class="text-lg font-bold mb-2">Pick a network or firm</h2>
-        <p class="text-sm" style="color: var(--mm-fg-3)">
+        <p class="text-sm text-fg-3">
           Reports are scoped to one partner at a time. Choose a scope above to load it.
         </p>
       </div>
     } @else {
       @if (facade.summaryError()) {
-        <div
-          class="px-3 py-2 text-sm rounded-md"
-          style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
-          role="alert"
-        >
+        <div class="px-3 py-2 text-sm rounded-md bg-danger-bg text-danger-foreground" role="alert">
           {{ facade.summaryError() }}
         </div>
       }
@@ -132,8 +128,7 @@
 
         @if (facade.usersError()) {
           <div
-            class="px-3 py-2 text-sm rounded-md"
-            style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
+            class="px-3 py-2 text-sm rounded-md bg-danger-bg text-danger-foreground"
             role="alert"
           >
             {{ facade.usersError() }}

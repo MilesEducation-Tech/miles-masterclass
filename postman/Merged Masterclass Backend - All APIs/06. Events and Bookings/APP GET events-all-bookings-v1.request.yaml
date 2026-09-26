@@ -1,0 +1,187 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `AllBookingsViewV1`  
+  **Module:** `EventsPage.views`  
+  **Route name:** `events-all-bookings-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  ``GET events/all-bookings-v1/`` - every booking the caller holds.
+
+  Query parameters (disabled by default): `window`
+
+  ---
+
+  > From `EVENTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ## 5. `GET app-api/v1/events/all-bookings/`
+
+  Every booking the calling user holds. Authenticated. App only; the web twin is not built.
+
+  **MOVED FROM `web-api/v1/events/all-bookings/` ON 2026-09-17.** Same view, same response, same route name
+  (`events-all-bookings-v1`) - only the prefix changed. There is no redirect.
+
+  `Booking` is one table serving two things under a database-level XOR: a row either points at a webinar or
+  carries a 1:1 `booking_type`, never both and never neither. This endpoint returns BOTH sides, each row tagged
+  with its `kind`.
+
+  ### 5.1 Query parameters
+
+  | Param | Type | Default | Values |
+  | --- | --- | --- | --- |
+  | `window` | string | `all` | `all`, `upcoming`, `past` |
+
+  There is deliberately NO `kind` filter: both kinds come from one table in one query, so filtering server-side
+  would save no work, and you already receive them pre-bucketed.
+
+  Any other parameter is a 400.
+
+  ### 5.2 Response
+
+  ```json
+  {
+    "message": "Bookings retrieved successfully.",
+    "data": {
+      "upcoming": { "webinar": [], "one_on_one": [] },
+      "past": { "webinar": [], "one_on_one": [] }
+    }
+  }
+  ```
+
+  `data.upcoming` is present only when `window` is `all` or `upcoming`; `data.past` only when `window` is `all`
+  or `past`. Both inner keys are always present when their window is, empty rather than omitted.
+
+  THE SPLIT POINT IS NOW MINUS 30 MINUTES, not now. A session that is running right now still reads as
+  `upcoming` while the user is in it.
+
+  A booking with no start time is filed under `upcoming` and sorts to the top. That is not a bug: a booking we
+  cannot date is not yet KNOWN to be past, and it needs attention.
+
+  Cancelled bookings never appear on either side.
+
+  ### 5.3 One row
+
+  ```json
+  {
+    "kind": "webinar",
+    "booking": {
+      "id": "b41e77a2-1cf9-4c02-9c6e-3a8d5e0f1b22",
+      "booking_type": null,
+      "booking_type_label": null,
+      "active_till": "2026-09-20T13:30:00Z",
+      "status": true,
+      "mf_log": true,
+      "created_at": "2026-09-17T09:14:20.004Z",
+      "attended_status": "1",
+      "poll_questions_answered": 3,
+      "total_poll_questions_available": 4,
+      "total_webinar_duration": 3600,
+      "attended_webinar_duration": 3240,
+      "force_override_by_leadership_team": false
+    },
+    "details": {
+      "id": "0f2b...",
+      "book_id": "MF-99812",
+      "datetime": "2026-09-20T13:00:00Z",
+      "booking_url": "https://us06web.zoom.us/w/8412...",
+      "registered_email": "learner@example.com",
+      "spoc_name": null,
+      "spoc_phone": null,
+      "gmeet_link": null,
+      "calendar_id": null
+    },
+    "webinar": { }
+  }
+  ```
+
+  `booking` object:
+
+  | Key | Type | Notes |
+  | --- | --- | --- |
+  | `id` | UUID string | |
+  | `booking_type` | string or null | `null` on a webinar booking. One of `career` / `office` / `resume` / `alumni` on a 1:1. |
+  | `booking_type_label` | string or null | The human label for the same value - `Career Counselling`, `Office Visit`, `Resume Review`, `Alumni Connect`. Carried so you never map a code to a label yourself; re-deriving it client-side is how two surfaces end up wording one workflow differently. |
+  | `active_till` | ISO-8601 or null | The booking's effective time. For a webinar this is its start time. This is the ONLY column the upcoming/past split reads. |
+  | `status` | boolean | Always `true` in this feed - cancelled bookings are filtered out. |
+  | `mf_log` | boolean or null | The registration was forwarded to MF / Salesforce. Pipeline bookkeeping. |
+  | `created_at` | ISO-8601 | |
+  | `attended_status` | string | One-character MF code. See 5.4. |
+  | `poll_questions_answered` | integer | Written by the poll ingest, so `0` on a fresh booking. |
+  | `total_poll_questions_available` | integer | |
+  | `total_webinar_duration` | integer | Seconds. |
+  | `attended_webinar_duration` | integer | Seconds. |
+  | `force_override_by_leadership_team` | boolean or null | Eligibility override. `null` when no details row exists, which reads as "no override". |
+
+  `details` object:
+
+  | Key | Type | Notes |
+  | --- | --- | --- |
+  | `id` | UUID string or null | Nullable in practice: a booking written before the pipeline became atomic can lack its companion row. |
+  | `book_id` | string or null | Booking id from the external source. |
+  | `datetime` | ISO-8601 or null | |
+  | `booking_url` | string or null | THE PER-USER ZOOM JOIN URL for a webinar booking - this is the field you want. `null` on a 1:1. See 8.3 on the key name. |
+  | `registered_email` | string or null | The address Zoom holds the registrant under. Surfaced because it is the attendance-matching key: when it disagrees with the user's current email, that IS the explanation for a missing attendance record. |
+  | `spoc_name` | string or null | 1:1 only. |
+  | `spoc_phone` | string or null | 1:1 only. |
+  | `gmeet_link` | string or null | 1:1 only. |
+  | `calendar_id` | string or null | 1:1 only. Google Calendar event id; a cancellation keys on it. |
+
+  `webinar` object - PRESENT ONLY WHEN `kind == "webinar"`. The key is omitted rather than null on a 1:1, so an
+  absent webinar cannot be mistaken for a broken one.
+
+  | Key | Type |
+  | --- | --- |
+  | `id` | UUID string |
+  | `webinar_id_as_per_mf_sf` | integer or null |
+  | `webinar_name` | string |
+  | `webinar_type` | string |
+  | `webinar_description` | string |
+  | `webinar_start_date_time` | ISO-8601 or null |
+  | `webinar_end_date_time` | ISO-8601 or null |
+  | `webinar_duration` | integer or null, MINUTES |
+  | `zoom_id` | string or null |
+  | `caira_check` | boolean |
+  | `non_caira_check` | boolean |
+  | `active` | boolean |
+  | `cancellation_status` | boolean |
+  | `horizontal_thumbnail` | URL string, `""` when unset |
+  | `vertical_thumbnail` | URL string, `""` when unset |
+  | `square_image` | URL string, `""` when unset |
+
+  Image keys resolve to full public URLs, or to an empty string. They are never null and never a bare storage
+  key.
+
+  ### 5.4 `attended_status` codes
+
+  | Value | Meaning |
+  | --- | --- |
+  | `"1"` | Attended |
+  | `"2"` | Not attended |
+  | `"3"` | Registered (MF never advanced the row past registration) |
+  | `"4"` | Cancelled |
+  | `""` | MF has not reported on this booking yet |
+
+  Only `"1"` grants CPE / badge eligibility.
+
+  ---
+
+  ### 9.5 No badge / feedback overlay on `all-bookings` yet
+
+  The legacy `v2/allbookings` feed decorated every webinar card with a CPE / badge / feedback overlay. The CPE
+  half has moved - a webinar's credit is now the sum of its active fields of study, which `webinar-main-page`
+  already returns as `total_cpe_credits`. The BADGE and FEEDBACK overlay is outstanding work on `all-bookings`. It is
+  unbuilt, not blocked.
+url: "{{base_url}}/app-api/v1/events/all-bookings/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: window
+    value: ""
+    disabled: true
+examples: ./.resources/APP GET events-all-bookings-v1.resources/examples
+order: 3000

@@ -36,7 +36,6 @@ import { Faq } from '@shared/components/faq/faq';
     Faq,
   ],
   templateUrl: './caira-landing.html',
-  styleUrl: './caira-landing.css',
 })
 export class CairaLanding {
   private readonly S3_BUCKET_URL = environment.S3_BUCKET_URL;

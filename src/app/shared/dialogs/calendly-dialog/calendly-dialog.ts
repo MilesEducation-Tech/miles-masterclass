@@ -1,9 +1,12 @@
 import { afterNextRender, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Logger } from '@core/services/logger/logger';
 import { Button } from '../../ui/button/button';
 
 export interface CalendlyDialogData {
+  /** Accessible name for the dialog, e.g. "Schedule a demo". */
+  ariaLabel?: string;
   /** Calendly scheduling URL, e.g. https://calendly.com/<user>/<event-type> */
   url: string;
   /** Show the close (X) button in the top-right corner. Defaults to true. */
@@ -45,13 +48,14 @@ const CALENDLY_SCRIPT_SRC = 'https://assets.calendly.com/assets/external/widget.
 
 @Component({
   selector: 'app-calendly-dialog',
-  imports: [Button],
+  imports: [Button, DialogShell],
   templateUrl: './calendly-dialog.html',
   styleUrl: './calendly-dialog.css',
+  host: { class: 'block' },
 })
 export class CalendlyDialog {
-  dialogRef!: DialogRef<CalendlyDialog, boolean | undefined>;
-  data!: CalendlyDialogData;
+  private readonly dialogRef = injectDialogRef<CalendlyDialogData, boolean | undefined>();
+  protected readonly data = this.dialogRef.data;
 
   readonly loadError = signal<string | null>(null);
 

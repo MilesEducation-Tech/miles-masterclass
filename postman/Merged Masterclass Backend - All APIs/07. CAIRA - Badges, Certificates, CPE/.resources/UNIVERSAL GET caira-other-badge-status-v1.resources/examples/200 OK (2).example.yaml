@@ -1,0 +1,21 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/caira/other-badge-status/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "success",
+        "data": {
+          "courses": "<self._build_courses(user, enrolled, templates, claimed_ids, lms_rows)>"
+        }
+      }
+order: 2000

@@ -1,3 +1,8 @@
+import {
+  NgpCollapsible,
+  NgpCollapsibleContent,
+  NgpCollapsibleTrigger,
+} from 'ng-primitives/collapsible';
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -21,10 +26,19 @@ const STATUS_STYLE: Record<LeadStatus, { bg: string; fg: string }> = {
 
 @Component({
   selector: 'app-leads-table',
-  imports: [DatePipe, Button, Spinner, NgIcon, AriaInput, AriaSelect],
+  imports: [
+    DatePipe,
+    Button,
+    Spinner,
+    NgIcon,
+    AriaInput,
+    AriaSelect,
+    NgpCollapsible,
+    NgpCollapsibleContent,
+    NgpCollapsibleTrigger,
+  ],
   providers: [provideIcons({ lucideChevronDown, lucideChevronRight })],
   templateUrl: './leads-table.html',
-  styleUrl: './leads-table.css',
   host: { class: 'block w-full' },
 })
 export class LeadsTable {

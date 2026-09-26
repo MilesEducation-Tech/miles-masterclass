@@ -1,0 +1,31 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/industry-unplugged/feed/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: page
+      value: ""
+      disabled: true
+    - key: page_size
+      value: ""
+      disabled: true
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "count": "<total>",
+        "page": "<page>",
+        "page_size": "<page_size>",
+        "next": "<self._page_link(request, page + 1, page_size)>",
+        "previous": "<self._page_link(request, page - 1, page_size)>",
+        "results": "<[shape_video(row, liked=overlay['liked'] or set(), watched=overlay['watched'] or set(), saved=overlay['saved'] or set()) for row in rows]>"
+      }
+order: 1000

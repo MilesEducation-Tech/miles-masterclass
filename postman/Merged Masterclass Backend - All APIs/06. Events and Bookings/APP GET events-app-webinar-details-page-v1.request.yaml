@@ -1,0 +1,23 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `WebinarDetailsPageAppViewV1`  
+  **Module:** `EventsPage.views`  
+  **Route name:** `events-app-webinar-details-page-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** AllowAny
+
+  ``GET app-api/v1/events/webinar-details-page/?webinar_id=<uuid>``
+
+  Query parameters (disabled by default): `webinar_id`
+url: "{{base_url}}/app-api/v1/events/webinar-details-page/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: webinar_id
+    value: ""
+    disabled: true
+examples: ./.resources/APP GET events-app-webinar-details-page-v1.resources/examples
+order: 4000

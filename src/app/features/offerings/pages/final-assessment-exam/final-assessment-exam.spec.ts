@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FinalAssessmentExam } from './final-assessment-exam';
 import { FinalAssessmentFacade } from '../../services/final-assessment-facade';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { of, Subject } from 'rxjs';
 import { UtilsDialog } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { signal } from '@angular/core';
@@ -23,7 +23,7 @@ describe('FinalAssessmentExam', () => {
   let component: FinalAssessmentExam;
   let fixture: ComponentFixture<FinalAssessmentExam>;
   let mockFacade: any;
-  let mockDialog: any;
+  let mockDialogs: { open: ReturnType<typeof vi.fn> };
   let mockUtils: any;
   let mockRouter: any;
   let mockActivatedRoute: any;
@@ -36,16 +36,16 @@ describe('FinalAssessmentExam', () => {
       courseId: signal<string>(''),
       sessionId: signal<string>(''),
       isAssessmentPassed: signal<boolean>(false),
-      loadAssessmentData: vi.fn(),
+      courseDetails: signal<any>(null),
+      questions: signal<any[]>([]),
+      isLoading: signal<boolean>(false),
       updateQuestion: vi.fn(),
       submitAssessment: vi.fn(),
       clearAssessmentData: vi.fn(),
     };
 
-    mockDialog = {
-      open: vi.fn().mockReturnValue({
-        afterClosed$: dialogAfterClosedSubject.asObservable(),
-      }),
+    mockDialogs = {
+      open: vi.fn().mockReturnValue({ afterClosed: dialogAfterClosedSubject.asObservable() }),
     };
 
     mockUtils = {
@@ -62,7 +62,7 @@ describe('FinalAssessmentExam', () => {
       imports: [FinalAssessmentExam, CommonModule],
       providers: [
         { provide: FinalAssessmentFacade, useValue: mockFacade },
-        { provide: Dialog, useValue: mockDialog },
+        { provide: NgpDialogManager, useValue: mockDialogs },
         { provide: Utils, useValue: mockUtils },
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
@@ -90,9 +90,6 @@ describe('FinalAssessmentExam', () => {
     // Set inputs
     fixture.componentRef.setInput('courseId', '123');
     fixture.componentRef.setInput('sessionId', '456');
-
-    // Default load success
-    mockFacade.loadAssessmentData.mockReturnValue(of({ questions: [], details: {} }));
   });
 
   it('should create', () => {
@@ -128,30 +125,32 @@ describe('FinalAssessmentExam', () => {
     expect(result).toBe(true);
   });
 
-  it('should prompt confirmation if not submitted and navigating away', () => {
+  it('should prompt confirmation if not submitted and navigating away', async () => {
     component.isSubmitted.set(false);
     mockFacade.isAssessmentPassed.set(false);
 
     const obs = component.canDeactivate();
-    expect(mockDialog.open).toHaveBeenCalledWith(UtilsDialog, expect.anything());
 
     // Simulate confirm
     let allowed = false;
     if (typeof obs !== 'boolean') {
       obs.subscribe((res) => (allowed = res));
     }
+    // The dialog class arrives through a dynamic import().
+    await vi.waitFor(() =>
+      expect(mockDialogs.open).toHaveBeenCalledWith(UtilsDialog, expect.anything()),
+    );
     dialogAfterClosedSubject.next({ action: 'confirm' });
 
     expect(allowed).toBe(true);
     expect(mockFacade.clearAssessmentData).toHaveBeenCalled();
   });
 
-  it('should submit successfully and open result dialog (passed)', () => {
+  it('should submit successfully and open result dialog (passed)', async () => {
     // Setup questions
     const questions = [{ id: 1, question: 'Q1', user_selected_option: 'a', option_a: 'A' } as any];
-    // Re-mock loadAssessmentData and trigger load
-    mockFacade.loadAssessmentData.mockReturnValue(of({ questions, details: {} }));
-    component['loadQuestions']();
+    // The facade loads the attempt; the page's working copy follows it
+    mockFacade.questions.set(questions);
     fixture.detectChanges();
 
     // Submit
@@ -165,15 +164,16 @@ describe('FinalAssessmentExam', () => {
 
     expect(mockFacade.submitAssessment).toHaveBeenCalled();
     expect(component.isSubmitted()).toBe(true);
-    expect(mockDialog.open).toHaveBeenCalledWith(AssessmentResultDialog, expect.anything());
+    await vi.waitFor(() =>
+      expect(mockDialogs.open).toHaveBeenCalledWith(AssessmentResultDialog, expect.anything()),
+    );
     expect(mockFacade.clearAssessmentData).toHaveBeenCalled();
   });
 
   it('should handle retake action from dialog', () => {
     // Setup
     const details = { id: 123, title: 'Course', course_type: 'masterclass', exam_rules: [] };
-    mockFacade.loadAssessmentData.mockReturnValue(of({ questions: [], details }));
-    component['loadQuestions'](); // Ensure details set
+    mockFacade.courseDetails.set(details);
     fixture.detectChanges();
 
     // Trigger dialog action handling manually

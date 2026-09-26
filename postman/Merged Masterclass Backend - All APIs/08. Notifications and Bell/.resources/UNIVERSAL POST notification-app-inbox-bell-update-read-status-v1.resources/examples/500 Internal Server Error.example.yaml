@@ -1,0 +1,28 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/notification/app-inbox-bell/update-read-status/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "notification_id": "00000000-0000-0000-0000-000000000000",
+        "is_read": false
+      }
+response:
+  statusCode: 500
+  statusText: Internal Server Error
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "Failed",
+        "message": "An error occurred while updating the notification status.",
+        "error": "<str(exc)>"
+      }
+order: 5000

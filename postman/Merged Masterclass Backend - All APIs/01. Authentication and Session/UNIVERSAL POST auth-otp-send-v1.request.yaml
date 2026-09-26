@@ -1,0 +1,61 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `AuthOtpSendViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `auth-otp-send-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** none  
+  **Permission:** AllowAny
+
+  POST - send a one-time code.
+
+  Body template generated from `AuthOtpSendRequestSerializerV1`. Values are placeholders, not fixtures.
+
+  Some values are ENVIRONMENT VARIABLES rather than placeholders - set `login_identifier` once and the three sign-in requests all read it. `refresh_token` is written by a script; do not type it.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 2.2 `POST auth-otp-send/` - send a one-time code
+
+  ```json
+  { "identifier": "learner@example.com" }
+  ```
+
+  The response carries `channel` and `cooldownSeconds`.
+
+  **Write UI copy from the returned `channel`, never from what you sent.** It is `email`, `sms` or `whatsapp`,
+  and phone routing is a table at the SSO that changes with no deploy on either side. **As of 2026-09-08 every
+  country resolves to `sms`, India included** - WhatsApp routing is off until delivery is proved end to end.
+
+  `cooldownSeconds` is how long the resend button stays disabled. Read it; do not hardcode one.
+
+  `channel` is **not accepted as an input** yet. The SSO takes it as an optional override, but this route does not
+  declare it, so sending it is a 400.
+
+  **A `503` means nothing was sent and nothing will be.** The identity store accepted the request and then
+  refused to deliver. Advance the user to a retry, never to a code-entry screen. It says our mailer is broken -
+  it never says anything about the account. Every identifier-specific outcome is a 200.
+
+  One caveat on phone identifiers: they are proxied faithfully rather than refused, so a **well-formed Indian
+  phone number can reach a silent failure** - the provider accepts the SMS and the carrier drops it, so a 200 does
+  not prove a message arrived. The client is currently the only thing preventing that. A *malformed* number is
+  not your problem: the SSO answers 400 with copy written for a learner, and that message reaches the phone field
+  unaltered - render it.
+url: "{{base_url}}/api/v1/account/auth-otp-send/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "identifier": "{{login_identifier}}"
+    }
+examples: ./.resources/UNIVERSAL POST auth-otp-send-v1.resources/examples
+order: 3000

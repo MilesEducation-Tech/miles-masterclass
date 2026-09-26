@@ -1,3 +1,8 @@
+import {
+  NgpCollapsible,
+  NgpCollapsibleContent,
+  NgpCollapsibleTrigger,
+} from 'ng-primitives/collapsible';
 import { DatePipe, isPlatformBrowser } from '@angular/common';
 import {
   Component,
@@ -63,7 +68,17 @@ function fmt(value: unknown): string {
  */
 @Component({
   selector: 'app-admin-audit-log',
-  imports: [DatePipe, AriaInput, Button, Spinner, TabStrip, NgIcon],
+  imports: [
+    DatePipe,
+    AriaInput,
+    Button,
+    Spinner,
+    TabStrip,
+    NgIcon,
+    NgpCollapsible,
+    NgpCollapsibleContent,
+    NgpCollapsibleTrigger,
+  ],
   providers: [provideIcons({ lucideChevronDown, lucideChevronRight })],
   templateUrl: './audit-log.html',
   host: { class: 'block w-full' },

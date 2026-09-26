@@ -20,10 +20,9 @@ import { NgpRating, NgpRatingItem } from 'ng-primitives/rating';
   selector: 'app-rating-star',
   imports: [NgIcon, NgpRating, NgpRatingItem],
   templateUrl: './rating-star.html',
-  styleUrl: './rating-star.css',
   viewProviders: [provideIcons({ heroStar, heroStarSolid })],
   host: {
-    class: 'w-full',
+    class: 'inline-block w-full',
   },
 })
 export class RatingStar {

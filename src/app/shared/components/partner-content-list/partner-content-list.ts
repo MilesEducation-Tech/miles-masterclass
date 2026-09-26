@@ -51,7 +51,6 @@ export interface PartnerContentItem {
   selector: 'app-partner-content-list',
   imports: [NgIcon, NgTemplateOutlet],
   templateUrl: './partner-content-list.html',
-  styleUrl: './partner-content-list.css',
 })
 export class PartnerContentList {
   content = input<PartnerContentItem[]>([]);

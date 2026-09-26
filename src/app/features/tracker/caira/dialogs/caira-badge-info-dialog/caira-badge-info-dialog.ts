@@ -1,17 +1,9 @@
 import { NgOptimizedImage } from '@angular/common';
-import { HttpContext } from '@angular/common/http';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  linkedSignal,
-  resource,
-  signal,
-} from '@angular/core';
+import { HttpContext, httpResource } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, computed, linkedSignal, signal } from '@angular/core';
 import { NgpTabButton, NgpTabList, NgpTabPanel, NgpTabset } from 'ng-primitives/tabs';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import {
   BadgeV2Response,
   CAIRA_STATUS_LABEL,
@@ -20,7 +12,7 @@ import {
   CairaLadderItem,
 } from '@core/models/caira-badge.model';
 import { SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 
@@ -58,20 +50,26 @@ const EMPTY_DETAIL: BadgeV2Response<CairaLadderItem | null> = { data: null };
  */
 @Component({
   selector: 'app-caira-badge-info-dialog',
-  imports: [Button, NgOptimizedImage, Spinner, NgpTabset, NgpTabList, NgpTabButton, NgpTabPanel],
+  imports: [
+    Button,
+    DialogShell,
+    NgOptimizedImage,
+    Spinner,
+    NgpTabset,
+    NgpTabList,
+    NgpTabButton,
+    NgpTabPanel,
+  ],
   templateUrl: './caira-badge-info-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CairaBadgeInfoDialog {
-  private readonly api = inject(ApiClient);
+  private readonly dialogRef = injectDialogRef<
+    CairaBadgeInfoDialogData,
+    CairaBadgeInfoDialogResult
+  >();
 
-  dialogRef!: DialogRef<CairaBadgeInfoDialog, CairaBadgeInfoDialogResult>;
-
-  private readonly _data = signal<CairaBadgeInfoDialogData | null>(null);
-
-  set data(value: CairaBadgeInfoDialogData) {
-    this._data.set(value);
-  }
+  private readonly _data = signal<CairaBadgeInfoDialogData | null>(this.dialogRef.data ?? null);
 
   protected readonly tabs = TABS;
   protected readonly selectedTab = linkedSignal<TabKey>(() => TABS[0].key);
@@ -79,28 +77,25 @@ export class CairaBadgeInfoDialog {
   protected readonly level = computed(() => this._data()?.level ?? null);
 
   /**
-   * `undefined` params keep the resource idle until `Dialog.open` assigns
-   * `data`. No SSR guard is needed — `Dialog.open` is a no-op on the server, so
-   * this component never constructs there.
+   * `undefined` params keep the resource idle when there is no badge id. No SSR
+   * guard is needed — the dialog is only ever opened from a click, so it never
+   * constructs on the server.
    *
    * Errors are silenced: the header has already rendered and the tabs fall back
    * to their empty copy, so a toast stacked over an open dialog adds nothing.
    */
-  private readonly detailResource = resource({
-    params: () => {
+  private readonly detailResource = httpResource<BadgeV2Response<CairaLadderItem | null>>(
+    () => {
       const id = this._data()?.level.badge.id;
-      return id ? { id } : undefined;
-    },
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<BadgeV2Response<CairaLadderItem | null>>(`v2/caira-badges/${params.id}/`, {
+      return id
+        ? {
+            url: apiUrl(`v2/caira-badges/${id}/`),
             context: new HttpContext().set(SKIP_ERROR_NOTIFICATION, true),
-          })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: EMPTY_DETAIL },
-      ),
-  });
+          }
+        : undefined;
+    },
+    { defaultValue: EMPTY_DETAIL },
+  );
 
   protected readonly isLoading = computed(() => this.detailResource.isLoading());
 

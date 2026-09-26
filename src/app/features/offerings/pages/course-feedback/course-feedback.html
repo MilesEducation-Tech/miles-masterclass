@@ -27,12 +27,12 @@
 
     <!-- Feedback Card -->
     <form
-      class="w-full max-w-5xl bg-[#161E26] border border-[#3E4552] rounded-xl p-8 shadow-2xl"
+      class="w-full max-w-5xl bg-quiz-panel border border-quiz-line rounded-xl p-8 shadow-2xl"
       novalidate
       (submit)="$event.preventDefault(); submit()"
     >
       <!-- Form Header -->
-      <div class="flex items-start gap-4 mb-8 border-b border-[#3E4552] padding-b-6 pb-6">
+      <div class="flex items-start gap-4 mb-8 border-b border-quiz-line padding-b-6 pb-6">
         <div class="p-2 bg-gray-700/50 rounded text-gray-400">
           <!-- Book Icon Placeholder -->
           <svg
@@ -82,7 +82,7 @@
         <div class="space-y-6">
           @for (category of categories(); track category.id) {
             <div
-              class="md:grid md:grid-cols-2 gap-4 items-center px-4 py-3 border-b border-[#3E4552]/50 last:border-0 hover:bg-[#1C2530]/50 transition-colors"
+              class="md:grid md:grid-cols-2 gap-4 items-center px-4 py-3 border-b border-quiz-line/50 last:border-0 hover:bg-quiz-panel-hover/50 transition-colors"
             >
               <p class="text-gray-200 text-sm mb-2 md:mb-0 pr-4">
                 {{ category.feedback_category }}

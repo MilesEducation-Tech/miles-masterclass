@@ -6,7 +6,8 @@ import { phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
 import { Button } from '../../ui/button/button';
 import { CategoriesList } from '../../components/categories-list/categories-list';
 import { CourseAbout } from '../../components/course-about/course-about';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { MilesSlug } from '../../components/miles-slug/miles-slug';
 import { ContentAbout } from '@core/models/course.model';
 import { UpcomingPremiere, WebinarCta, WebinarTag } from '@core/models/feature.model';
@@ -32,14 +33,24 @@ type DialogResult = 'closed' | 'book' | 'submit-feedback' | 'download-certificat
  */
 @Component({
   selector: 'app-webinar-details-dialog',
-  imports: [Button, CategoriesList, CourseAbout, DatePipe, MilesSlug, NgIcon, LocalTimeZonePipe],
+  imports: [
+    Button,
+    CategoriesList,
+    CourseAbout,
+    DatePipe,
+    DialogShell,
+    MilesSlug,
+    NgIcon,
+    LocalTimeZonePipe,
+  ],
   templateUrl: './webinar-details-dialog.html',
   styleUrl: './webinar-details-dialog.css',
+  host: { class: 'block' },
   providers: [provideIcons({ matCalendarMonthRound, phosphorShareFatFill })],
 })
 export class WebinarDetailsDialog {
-  dialogRef!: DialogRef<WebinarDetailsDialog, DialogResult>;
-  data!: WebinarDetailsDialogData;
+  private readonly dialogRef = injectDialogRef<WebinarDetailsDialogData, DialogResult>();
+  protected readonly data = this.dialogRef.data;
 
   private readonly utils = inject(Utils);
 

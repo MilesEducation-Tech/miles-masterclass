@@ -15,9 +15,12 @@ import { EMPTY, Observable } from 'rxjs';
 import { filter, tap } from 'rxjs/operators';
 import { DynamicRouteParams, ProfessionType, CountryCode } from '@core/models/route-params.model';
 import { PROFESSIONS } from '@core/constants/profession';
-import { Dialog } from '@core/services/dialog/dialog';
-import { UtilsDialog, DialogButton } from '@shared/dialogs/utils-dialog/utils-dialog';
-import { ShareDialog, ShareDialogData } from '@shared/dialogs/share-dialog/share-dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
+// The dialogs below are imported as types only and loaded with `import()` where
+// they open: this service is in the initial bundle (header/footer chrome), so a
+// value import would put every one of them there too (PROMPT.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
+import type { ShareDialogData } from '@shared/dialogs/share-dialog/share-dialog';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Analytics } from '@core/services/analytics/analytics';
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
@@ -34,11 +37,8 @@ import {
   QuizQuestion,
 } from '@core/models/course.model';
 import { Storage } from '@core/services/storage/storage';
-import {
-  CertificateDialogData,
-  CertificateDownloadDialog,
-} from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
-import { VideoDialog, VideoDialogData } from '@shared/dialogs/video-dialog/video-dialog';
+import type { CertificateDialogData } from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
+import type { VideoDialogData } from '@shared/dialogs/video-dialog/video-dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import { Viewport, ScreenInfo } from '@core/services/viewport/viewport';
 // CartDrawerDialog is loaded lazily in openCartDrawer() — this service is
@@ -53,7 +53,6 @@ import {
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Logger } from '@core/services/logger/logger';
 import { canAccessCpeMode, CpeModeGateContent } from '@shared/utils/cpe-mode-access';
-import { UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
 
 type StartFinalAssessmentParams = RouteParams<typeof MASTERCLASS_ROUTES.startFinalAssessment>;
 
@@ -114,7 +113,7 @@ export type CourseInfoInput = Content | ContentDetails;
 @Service()
 export class Utils {
   private readonly router = inject(Router);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly http = inject(ApiClient);
   private readonly storage = inject(Storage);
   private readonly injector = inject(Injector);
@@ -298,7 +297,7 @@ export class Utils {
         : 'masterclass_id';
   }
 
-  startFinalAssessment(
+  async startFinalAssessment(
     courseId: string,
     courseTitle: string,
     courseType: string,
@@ -328,13 +327,8 @@ export class Utils {
     const titleSlug = this.slugify(courseTitle);
 
     const examRulesArray: string[] = examRules ? examRules.split(/\r?\n/) : [];
-    const dialogRef = this.dialog.open<
-      UtilsDialog,
-      { action?: DialogButton['action']; result: boolean }
-    >(UtilsDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+    const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title: 'Final Assessment',
         containerClass: 'flex flex-col space-y-4 text-left',
@@ -343,10 +337,11 @@ export class Utils {
           { type: 'list', items: examRulesArray, ordered: true },
         ],
         buttons: [{ label: 'Start Exam', variant: 'default', action: 'confirm' }],
+        maxWidth: '100%',
       },
     });
 
-    dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!(result?.result && result?.action === 'confirm')) return;
 
       const cached: QuizQuestion[] =
@@ -436,15 +431,12 @@ export class Utils {
 
     // ponytail: the guest branch (redirect to login) went with the auth layer.
     void this.subscriptionDialog().then((SubscriptionDialog) =>
-      this.dialog.open<unknown, void>(SubscriptionDialog, {
-        maxWidth: '95vw',
-        ariaLabel: 'Subscribe to a plan',
-      }),
+      this.dialogs.open(SubscriptionDialog),
     );
     return false;
   }
 
-  openCertificateDownloadDialog(content: ContentDetails) {
+  async openCertificateDownloadDialog(content: ContentDetails) {
     // ponytail: was `auth.currentPlan()`; no session layer, so the
     // subscription branch below falls back to the content's own flags.
     const userPlan = null;
@@ -536,12 +528,9 @@ export class Utils {
       courseTitle: content.title,
       badge,
     };
-    this.dialog.open<CertificateDownloadDialog, CertificateDialogData>(CertificateDownloadDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      data,
-    });
+    const { CertificateDownloadDialog } =
+      await import('@shared/dialogs/certificate-download-dialog/certificate-download-dialog');
+    this.dialogs.open(CertificateDownloadDialog, { data });
   }
 
   /**
@@ -566,13 +555,13 @@ export class Utils {
    * Open a purchase/subscription confirmation dialog. Centralises the three
    * near-identical gating dialogs used by `openCertificateDownloadDialog`.
    */
-  private openPurchaseGateDialog(config: {
+  private async openPurchaseGateDialog(config: {
     title: string;
     message: string;
     buttons: UtilsDialogData['buttons'];
     onConfirm: () => void;
     onCancel?: () => void;
-  }): void {
+  }): Promise<void> {
     const data: UtilsDialogData = {
       title: config.title,
       containerClass: 'max-w-lg text-left!',
@@ -580,27 +569,21 @@ export class Utils {
       buttons: config.buttons,
     };
 
-    const ref = this.dialog.open<UtilsDialog, { action?: string; result: boolean }>(UtilsDialog, {
-      data,
-      width: 'auto',
-      maxWidth: '32rem',
-      disableClose: false,
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+    const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: { ...data, maxWidth: '32rem' },
     });
 
-    ref.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!result?.result) return;
       if (result.action === 'confirm') config.onConfirm();
       else if (result.action === 'cancel') config.onCancel?.();
     });
   }
 
-  openShareDialog(data?: ShareDialogData) {
-    this.dialog.open(ShareDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      data: data || {},
-    });
+  async openShareDialog(data?: ShareDialogData) {
+    const { ShareDialog } = await import('@shared/dialogs/share-dialog/share-dialog');
+    this.dialogs.open(ShareDialog, { data: data || {} });
   }
 
   navigateToCourse(type: string, id: number, title: string, state?: Record<string, unknown>) {
@@ -657,40 +640,23 @@ export class Utils {
     if (webinar) {
       const { WebinarDetailsDialog } =
         await import('@shared/dialogs/webinar-details-dialog/webinar-details-dialog');
-      this.dialog.open(WebinarDetailsDialog, {
-        maxWidth: '100%',
-        enterAnimationDuration: '300ms',
-        exitAnimationDuration: '300ms',
-        data: { webinar },
-        environmentInjector,
-      });
+      this.dialogs.open(WebinarDetailsDialog, { data: { webinar }, injector: environmentInjector });
       return;
     }
     const { CourseInfo } = await import('@shared/dialogs/course-info/course-info');
-    this.dialog.open(CourseInfo, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      disableClose: true,
-      ariaLabel: 'Confirmation dialog',
-      ariaDescribedBy: 'dialog-description',
-      data: card,
-    });
+    this.dialogs.open(CourseInfo, { data: card });
   }
 
-  openVideoDialog(trailerLink: string | null | undefined, title: string) {
+  async openVideoDialog(trailerLink: string | null | undefined, title: string) {
     if (!trailerLink) {
       this.notification.info('Trailer Not Found', 'No trailer is available for this course.');
       return;
     }
 
     const type = detectVideoMimeType(trailerLink);
+    const { VideoDialog } = await import('@shared/dialogs/video-dialog/video-dialog');
 
-    this.dialog.open<VideoDialog, VideoDialogData>(VideoDialog, {
-      maxWidth: '100%',
-      panelClass: 'video-dialog-panel',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
+    this.dialogs.open<VideoDialogData>(VideoDialog, {
       data: {
         videoSource: {
           src: trailerLink,
@@ -772,15 +738,7 @@ export class Utils {
   async openCartDrawer(): Promise<void> {
     this.cart.loadMyBucket({ force: true });
     const CartDrawerDialog = await this.cartDrawerDialog();
-    this.dialog.open(CartDrawerDialog, {
-      width: '500px',
-      maxWidth: '90vw',
-      height: '100vh',
-      position: 'right',
-      ariaLabel: 'Cart',
-      data: {},
-      injector: this.injector,
-    });
+    this.dialogs.open(CartDrawerDialog, { injector: this.injector });
   }
 
   openAdditionalResources(courseId: number): void {
@@ -792,7 +750,7 @@ export class Utils {
       .get<RouteResponse<typeof MASTERCLASS_ROUTES.additionalResources>>(path)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
+        next: async (response) => {
           // Map each resource to its openable URL (hosted file first, else the
           // external link). Resources with neither are dropped — there'd be
           // nothing to open.
@@ -805,15 +763,14 @@ export class Utils {
             .filter((link) => !!link.href);
 
           if (links.length) {
-            this.dialog.open(UtilsDialog, {
-              maxWidth: '100%',
-              enterAnimationDuration: '300ms',
-              exitAnimationDuration: '300ms',
+            const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+            this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
               data: {
                 title: 'Additional Resources',
                 containerClass: 'max-w-lg text-left!',
                 content: [{ type: 'links', items: links }],
                 buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
+                maxWidth: '100%',
               },
             });
           } else {

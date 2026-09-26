@@ -1,5 +1,10 @@
 import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
+import {
+  NgpCollapsible,
+  NgpCollapsibleContent,
+  NgpCollapsibleTrigger,
+} from 'ng-primitives/collapsible';
 import { matKeyboardArrowDownRound } from '@ng-icons/material-icons/round';
 import { FaqContent } from '@shared/components/faq-content/faq-content';
 import { FAQ } from '@core/models/faq.model';
@@ -8,7 +13,7 @@ export type AccordionMode = 'single' | 'multi';
 
 @Component({
   selector: 'app-faq-item',
-  imports: [FaqContent, NgIcon],
+  imports: [FaqContent, NgIcon, NgpCollapsible, NgpCollapsibleContent, NgpCollapsibleTrigger],
   templateUrl: './faq-item.html',
   styleUrl: './faq-item.css',
 })

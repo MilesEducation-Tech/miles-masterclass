@@ -8,11 +8,9 @@ import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
 import { Button } from '@shared/ui/button/button';
 import { CheckboxList, CheckboxListOption } from '@shared/ui/checkbox-list/checkbox-list';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import {
-  EditAdminRolesDialog,
-  EditAdminRolesDialogData,
-} from '@admin/admin-users/dialogs/edit-admin-roles-dialog/edit-admin-roles-dialog';
-import { Dialog } from '@core/services/dialog/dialog';
+// Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { EditAdminRolesDialogData } from '@admin/admin-users/dialogs/edit-admin-roles-dialog/edit-admin-roles-dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import { AdminAuth } from '@admin/core/services/admin-auth';
 import { AriaSelectOption } from '@core/models/aria.model';
@@ -47,7 +45,7 @@ export class AdminUsers {
   private readonly partnerFacade = inject(PartnerSuperAdminFacade);
   private readonly provisioning = inject(AdminProvisioning);
   private readonly route = inject(ActivatedRoute);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
@@ -104,19 +102,22 @@ export class AdminUsers {
   }
 
   /** Replace an existing admin's role set (the `set_admin_user_roles` RPC). */
-  protected editRoles(admin: AdminUserListRow): void {
-    const ref = this.dialog.open<EditAdminRolesDialog, string[] | undefined>(EditAdminRolesDialog, {
-      data: {
-        email: admin.email,
-        roles: this.facade.roles(),
-        selected: admin.roles.map((r) => r.slug),
-        isSelf: admin.user_id === this.currentUserId(),
-        callerIsSuper: this.auth.isSuperAdmin(),
-      } satisfies EditAdminRolesDialogData,
-      maxWidth: '480px',
-      ariaLabel: `Edit roles for ${admin.email}`,
-    });
-    ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((slugs) => {
+  protected async editRoles(admin: AdminUserListRow): Promise<void> {
+    const { EditAdminRolesDialog } =
+      await import('@admin/admin-users/dialogs/edit-admin-roles-dialog/edit-admin-roles-dialog');
+    const ref = this.dialogs.open<EditAdminRolesDialogData, string[] | undefined>(
+      EditAdminRolesDialog,
+      {
+        data: {
+          email: admin.email,
+          roles: this.facade.roles(),
+          selected: admin.roles.map((r) => r.slug),
+          isSelf: admin.user_id === this.currentUserId(),
+          callerIsSuper: this.auth.isSuperAdmin(),
+        } satisfies EditAdminRolesDialogData,
+      },
+    );
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((slugs) => {
       if (slugs) void this.facade.setRoles(admin.user_id, slugs);
     });
   }

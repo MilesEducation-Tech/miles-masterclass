@@ -1,7 +1,8 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
 import { Button } from '@shared/ui/button/button';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { CreditsSummary, StudyModeBreakdown } from '@core/models/cpe-tracker.model';
 
 export interface ComplianceDialogData {
@@ -28,19 +29,13 @@ const FIELD_CARD_COLORS: Record<string, string> = {
 
 @Component({
   selector: 'app-cpe-compliance-dialog',
-  imports: [DecimalPipe, Button],
+  imports: [DecimalPipe, Button, DialogShell],
   templateUrl: './cpe-compliance-dialog.html',
-  styleUrl: './cpe-compliance-dialog.css',
 })
 export class CpeComplianceDialog {
-  dialogRef!: DialogRef<CpeComplianceDialog>;
+  private readonly dialogRef = injectDialogRef<ComplianceDialogData>();
 
-  private readonly _data = signal<ComplianceDialogData | null>(null);
-
-  /** `data` is assigned by the `Dialog` service via `(componentRef.instance as any).data = …`. */
-  set data(value: ComplianceDialogData) {
-    this._data.set(value);
-  }
+  private readonly _data = signal<ComplianceDialogData | null>(this.dialogRef.data ?? null);
 
   protected readonly credits = computed(() => this._data()?.credits ?? null);
   protected readonly year = computed(() => this._data()?.year ?? new Date().getFullYear());
@@ -67,6 +62,6 @@ export class CpeComplianceDialog {
   });
 
   protected close(): void {
-    this.dialogRef?.close();
+    this.dialogRef.close();
   }
 }

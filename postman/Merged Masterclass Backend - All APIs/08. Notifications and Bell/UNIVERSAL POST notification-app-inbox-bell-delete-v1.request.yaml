@@ -1,0 +1,26 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `DeleteBellNotificationViewV1`  
+  **Module:** `Notification.views`  
+  **Route name:** `notification-app-inbox-bell-delete-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  POST to soft-delete one of the caller's bell rows.
+
+  Body template generated from `BellDeleteRequestSerializerV1`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/notification/app-inbox-bell/delete/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "notification_id": "00000000-0000-0000-0000-000000000000"
+    }
+examples: ./.resources/UNIVERSAL POST notification-app-inbox-bell-delete-v1.resources/examples
+order: 2000

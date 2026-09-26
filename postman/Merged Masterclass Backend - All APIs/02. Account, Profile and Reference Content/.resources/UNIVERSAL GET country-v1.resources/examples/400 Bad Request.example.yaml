@@ -1,0 +1,19 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/account/country/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "message": "Invalid request.",
+        "details": "<params.errors>"
+      }
+order: 2000

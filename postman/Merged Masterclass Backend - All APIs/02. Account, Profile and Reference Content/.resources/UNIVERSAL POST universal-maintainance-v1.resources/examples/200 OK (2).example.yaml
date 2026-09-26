@@ -1,0 +1,36 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/account/universal/maintainance-status/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "value": false,
+        "ttl_seconds": 0
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "override_active": true,
+        "override_value": "<body['value']>",
+        "ttl_seconds": "<body.get('ttl_seconds', self._DEFAULT_TTL_SECONDS)>",
+        "app": {
+          "is_maintenance": false,
+          "source": "env"
+        },
+        "web": {
+          "is_maintenance": false,
+          "source": "env"
+        }
+      }
+order: 2000

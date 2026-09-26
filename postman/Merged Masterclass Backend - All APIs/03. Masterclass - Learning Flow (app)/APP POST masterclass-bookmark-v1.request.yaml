@@ -1,0 +1,19 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassCourseBookmarkViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-bookmark-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  6.15 POST /caira/masterclass/<course_id>/bookmark/ - Toggle bookmark.
+
+  **No request body by design.** Toggle; the id is in the path.
+url: "{{base_url}}/api/v1/masterclass/{{course_id}}/bookmark/"
+method: POST
+headers:
+  Accept: application/json
+examples: ./.resources/APP POST masterclass-bookmark-v1.resources/examples
+order: 4000

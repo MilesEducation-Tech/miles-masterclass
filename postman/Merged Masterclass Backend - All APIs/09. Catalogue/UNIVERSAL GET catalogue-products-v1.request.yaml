@@ -1,0 +1,32 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CatalogueProductsViewV1`  
+  **Module:** `Catalogue.views`  
+  **Route name:** `catalogue-products-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Return one page of active products.
+
+  Query parameters (disabled by default): `is_book`, `page`, `page_size`, `search`
+url: "{{base_url}}/api/v1/catalogue/products/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: is_book
+    value: ""
+    disabled: true
+  - key: page
+    value: ""
+    disabled: true
+  - key: page_size
+    value: ""
+    disabled: true
+  - key: search
+    value: ""
+    disabled: true
+examples: ./.resources/UNIVERSAL GET catalogue-products-v1.resources/examples
+order: 4000

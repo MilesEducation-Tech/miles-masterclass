@@ -2,7 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, finalize, map, of, startWith, switchMap } from 'rxjs';
 import { form, required, FormField as AngularFormField, validate } from '@angular/forms/signals';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '@shared/ui/button/button';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { AriaAutocomplete } from '@shared/ui/aria/aria-autocomplete/aria-autocomplete';
@@ -36,13 +37,16 @@ interface SponsorshipFormState {
 
 @Component({
   selector: 'app-firm-sponsorship-dialog',
-  imports: [Button, AriaInput, AriaAutocomplete, Forms, AngularFormField],
+  imports: [Button, AriaInput, AriaAutocomplete, DialogShell, Forms, AngularFormField],
   templateUrl: './firm-sponsorship-dialog.html',
-  styleUrl: './firm-sponsorship-dialog.css',
+  host: { class: 'block' },
 })
 export class FirmSponsorshipDialog {
-  dialogRef!: DialogRef<FirmSponsorshipDialog, FirmSponsorshipResult | undefined>;
-  data!: FirmSponsorshipDialogData;
+  private readonly dialogRef = injectDialogRef<
+    FirmSponsorshipDialogData,
+    FirmSponsorshipResult | undefined
+  >();
+  protected readonly data = this.dialogRef.data;
 
   private readonly http = inject(ApiClient);
   private readonly logger = inject(Logger);

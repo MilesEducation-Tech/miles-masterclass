@@ -351,16 +351,20 @@
     </ul>
   </aside>
 
-  <!-- Create Page Modal -->
-  @if (showCreateModal()) {
-    <div
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
+  <!-- Create Page dialog, opened through NgpDialogManager: the shell supplies role, aria-modal,
+       the focus trap and focus return, and Escape/backdrop close (not while a create is in
+       flight). The manager attaches to <body>, outside the admin layout, so the panel carries
+       `admin-theme` itself to keep the admin colour variables its inputs read. -->
+  <ng-template #createPageDialog>
+    <app-dialog-shell
+      width="28rem"
+      maxWidth="calc(100vw - 2rem)"
+      ariaLabel="Create New Page"
+      panelClass="bg-transparent shadow-none rounded-3xl"
+      [dismissible]="!creatingPage()"
     >
       <div
-        class="bg-slate-800 border border-slate-700 rounded-3xl p-8 max-w-md w-full shadow-2xl relative animate-in zoom-in-95 duration-200"
+        class="admin-theme bg-slate-800 border border-slate-700 rounded-3xl p-8 w-full shadow-2xl relative"
       >
         <app-button
           variant="close"
@@ -369,7 +373,7 @@
           (clicked)="closeCreateModal()"
         />
 
-        <h3 id="modal-title" class="text-2xl font-bold text-slate-100 mb-2">Create New Page</h3>
+        <h3 class="text-2xl font-bold text-slate-100 mb-2">Create New Page</h3>
         <p class="text-slate-400 text-sm mb-6">Add SEO settings for a new route.</p>
 
         <div class="flex flex-col gap-4">
@@ -432,6 +436,6 @@
           </app-button>
         </div>
       </div>
-    </div>
-  }
+    </app-dialog-shell>
+  </ng-template>
 </section>

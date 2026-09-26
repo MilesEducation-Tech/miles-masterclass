@@ -76,29 +76,28 @@
             @for (step of report.flow.checks; track step.id; let i = $index) {
               @let key = 'flow-' + step.id;
               <div
+                ngpCollapsible
+                [ngpCollapsibleOpen]="isExpanded(key)"
+                (ngpCollapsibleOpenChange)="toggleExpand(key)"
                 class="overflow-hidden rounded-lg border border-border bg-muted transition-all duration-200"
                 [class.border-l-4]="!step.passed"
                 [class.border-l-destructive]="!step.passed"
               >
-                <div
-                  class="flex cursor-pointer items-center justify-between gap-4 p-4 hover:bg-white/5"
-                  role="button"
-                  tabindex="0"
-                  [attr.aria-expanded]="isExpanded(key)"
-                  (click)="toggleExpand(key)"
-                  (keydown.enter)="toggleExpand(key)"
-                  (keydown.space)="toggleExpand(key); $event.preventDefault()"
+                <button
+                  type="button"
+                  ngpCollapsibleTrigger
+                  class="flex w-full cursor-pointer items-center justify-between gap-4 p-4 text-left hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
-                  <div class="flex flex-1 items-center gap-4 pr-2">
+                  <span class="flex flex-1 items-center gap-4 pr-2">
                     <span class="w-6 shrink-0 text-gray-400">{{ i + 1 }}.</span>
                     <span
                       class="line-clamp-2 font-medium text-gray-200 select-none md:line-clamp-1"
                     >
                       {{ step.title }}
                     </span>
-                  </div>
+                  </span>
 
-                  <div class="flex shrink-0 items-center gap-3">
+                  <span class="flex shrink-0 items-center gap-3">
                     @if (step.passed) {
                       <span
                         class="rounded-full bg-green-500/15 px-3 py-1 text-xs font-bold text-green-400 md:min-w-[100px] md:text-center md:text-sm"
@@ -117,11 +116,14 @@
                       class="text-gray-400 transition-transform duration-200"
                       [class.rotate-90]="isExpanded(key)"
                     />
-                  </div>
-                </div>
+                  </span>
+                </button>
 
+                <!-- `data-[closed]:grid!` beats the global display:none on closed collapsibles
+                     (styles.css) so the 0fr/1fr animation survives, as in `faq-item`. -->
                 <div
-                  class="grid transition-[grid-template-rows] duration-300 ease-out"
+                  ngpCollapsibleContent
+                  class="grid data-[closed]:grid! transition-[grid-template-rows] duration-300 ease-out"
                   [class.grid-rows-[1fr]]="isExpanded(key)"
                   [class.grid-rows-[0fr]]="!isExpanded(key)"
                 >
@@ -153,19 +155,15 @@
             <div class="flex items-center gap-3">
               <span class="text-xs text-gray-400 md:text-sm">Show all</span>
               <button
-                type="button"
-                role="switch"
-                [attr.aria-checked]="showWrongOnly()"
+                ngpSwitch
+                [ngpSwitchChecked]="showWrongOnly()"
+                (ngpSwitchCheckedChange)="toggleWrongOnly()"
                 aria-label="Show incorrect answers only"
-                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                [class.bg-accent]="showWrongOnly()"
-                [class.bg-secondary]="!showWrongOnly()"
-                (click)="toggleWrongOnly()"
+                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full bg-secondary transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[checked]:bg-accent"
               >
                 <span
-                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
-                  [class.translate-x-6]="showWrongOnly()"
-                  [class.translate-x-1]="!showWrongOnly()"
+                  ngpSwitchThumb
+                  class="inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white transition-transform data-[checked]:translate-x-6"
                 ></span>
               </button>
               <span class="text-xs text-gray-400 md:text-sm">Wrong only</span>
@@ -176,29 +174,28 @@
             @for (item of visibleQuestions(); track item.id; let i = $index) {
               @let key = 'mcq-' + item.id;
               <div
+                ngpCollapsible
+                [ngpCollapsibleOpen]="isExpanded(key)"
+                (ngpCollapsibleOpenChange)="toggleExpand(key)"
                 class="overflow-hidden rounded-lg border border-border bg-muted transition-all duration-200"
                 [class.border-l-4]="!item.isCorrect"
                 [class.border-l-destructive]="!item.isCorrect"
               >
-                <div
-                  class="flex cursor-pointer items-center justify-between gap-4 p-4 hover:bg-white/5"
-                  role="button"
-                  tabindex="0"
-                  [attr.aria-expanded]="isExpanded(key)"
-                  (click)="toggleExpand(key)"
-                  (keydown.enter)="toggleExpand(key)"
-                  (keydown.space)="toggleExpand(key); $event.preventDefault()"
+                <button
+                  type="button"
+                  ngpCollapsibleTrigger
+                  class="flex w-full cursor-pointer items-center justify-between gap-4 p-4 text-left hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
-                  <div class="flex flex-1 items-center gap-4 pr-2">
+                  <span class="flex flex-1 items-center gap-4 pr-2">
                     <span class="w-6 shrink-0 text-gray-400">{{ i + 1 }}.</span>
                     <span
                       class="line-clamp-2 font-medium text-gray-200 select-none md:line-clamp-1"
                     >
                       {{ item.question }}
                     </span>
-                  </div>
+                  </span>
 
-                  <div class="flex shrink-0 items-center gap-3">
+                  <span class="flex shrink-0 items-center gap-3">
                     <!-- Two literal spans rather than class bindings: an opacity-suffixed
                        utility can't go in `[class.bg-destructive/15]` — the slash
                        isn't valid in a class-binding name. -->
@@ -220,12 +217,15 @@
                       class="text-gray-400 transition-transform duration-200"
                       [class.rotate-90]="isExpanded(key)"
                     />
-                  </div>
-                </div>
+                  </span>
+                </button>
 
                 <!-- Expanded details. The 0fr/1fr grid trick animates to auto height. -->
+                <!-- `data-[closed]:grid!` beats the global display:none on closed collapsibles
+                     (styles.css) so the 0fr/1fr animation survives, as in `faq-item`. -->
                 <div
-                  class="grid transition-[grid-template-rows] duration-300 ease-out"
+                  ngpCollapsibleContent
+                  class="grid data-[closed]:grid! transition-[grid-template-rows] duration-300 ease-out"
                   [class.grid-rows-[1fr]]="isExpanded(key)"
                   [class.grid-rows-[0fr]]="!isExpanded(key)"
                 >

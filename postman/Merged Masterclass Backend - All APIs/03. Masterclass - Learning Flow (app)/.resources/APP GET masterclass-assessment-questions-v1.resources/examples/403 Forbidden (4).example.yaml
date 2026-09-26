@@ -1,0 +1,21 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/{{course_id}}/assessment/questions/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "cool_off_active",
+        "cool_off_minutes_remaining": "<max(1, remaining)>",
+        "cool_off_ends_at": "<last_failed_attempt.attempted_at + timedelta(minutes=cool_off_minutes)>"
+      }
+order: 5000

@@ -1,0 +1,40 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/commerce/order/{{order_id}}/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "result": {
+          "id": "<str(row['id'])>",
+          "status": "<row['status']>",
+          "currency": "<row['currency']>",
+          "money": {
+            "price_before_discount": "<_money(row['price_before_discount'])>",
+            "discount_amount": "<_money(row['discount_amount'])>",
+            "price_after_discount": "<_money(row['price_after_discount'])>",
+            "gst_amount": "<_money(row['gst_amount'])>",
+            "price_after_gst": "<_money(row['price_after_gst'])>",
+            "amount_paid": "<_money(row['amount_paid'])>",
+            "pending_amount": "<_money(row['pending_amount'])>"
+          },
+          "coupon_code": "<row['coupon__code']>",
+          "total_items": "<row['total_items']>",
+          "shipping_address_id": "<_uuid(row['shipping_address_id'])>",
+          "billing_address_id": "<_uuid(row['billing_address_id'])>",
+          "created_at": "<row['created_at']>",
+          "updated_at": "<row['updated_at']>",
+          "lines": [],
+          "payments": []
+        }
+      }
+order: 1000

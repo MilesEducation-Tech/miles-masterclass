@@ -1,4 +1,15 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  linkedSignal,
+  resource,
+  signal,
+  TemplateRef,
+  viewChild,
+  ViewContainerRef,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
@@ -16,9 +27,11 @@ import {
   heroTrash,
   heroXMark,
 } from '@ng-icons/heroicons/outline';
-import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
+// Type-only: UtilsDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { computeSeoScore, createDefaultSeoPage, SeoPage } from '@core/models/seo.models';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogContext, NgpDialogManager, NgpDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Logger } from '@core/services/logger/logger';
 import { SupabaseSeo } from '@core/services/seo/supabase-seo';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
@@ -30,7 +43,15 @@ import { HasPermissionDirective } from '@admin/core/directives/has-permission';
 
 @Component({
   selector: 'app-seo-dashboard',
-  imports: [NgIconComponent, RouterLink, HasPermissionDirective, AriaInput, AriaSelect, Button],
+  imports: [
+    NgIconComponent,
+    RouterLink,
+    HasPermissionDirective,
+    AriaInput,
+    AriaSelect,
+    Button,
+    DialogShell,
+  ],
   providers: [
     provideIcons({
       heroMagnifyingGlass,
@@ -49,18 +70,46 @@ import { HasPermissionDirective } from '@admin/core/directives/has-permission';
   ],
   templateUrl: './seo-dashboard.html',
 })
-export class SeoDashboard implements OnInit {
+export class SeoDashboard {
   protected readonly PERM = PERM;
   private readonly supabaseSeo = inject(SupabaseSeo);
   private readonly router = inject(Router);
   private readonly logger = inject(Logger);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly pages = signal<SeoPage[]>([]);
-  readonly loading = signal(true);
+  /**
+   * Every SEO page (`resource()`: supabase-js, not HttpClient). A write sits inside
+   * this read, as it always did: an EMPTY table is seeded with the defaults and
+   * re-read. `seedDefaults()` re-checks for rows first, so a repeat seeds nothing.
+   */
+  private readonly pagesResource = resource({
+    loader: async (): Promise<SeoPage[]> => {
+      let data = await this.supabaseSeo.getAll();
+      if (data.length === 0) {
+        const seeded = await this.supabaseSeo.seedDefaults();
+        if (seeded === null) {
+          throw new Error(
+            'Could not load SEO pages. Check your Supabase configuration and try again.',
+          );
+        }
+        data = await this.supabaseSeo.getAll();
+      }
+      this.logger.info(`[SeoDashboard] Loaded ${data.length} SEO pages`);
+      return data;
+    },
+  });
+
+  /** Delete and the active toggle patch this in place; a reload replaces it. */
+  readonly pages = linkedSignal<SeoPage[]>(() =>
+    this.pagesResource.hasValue() ? this.pagesResource.value() : [],
+  );
+  readonly loading = computed(() => this.pagesResource.isLoading());
   /** Surfaced to the template so misconfig/network errors aren't silent. */
-  readonly loadError = signal<string | null>(null);
+  readonly loadError = computed(() => {
+    const err = this.pagesResource.error();
+    return err ? (err.message ?? 'Could not load SEO pages.') : null;
+  });
   readonly searchQuery = signal('');
   readonly filterType = signal<'all' | 'static' | 'dynamic'>('all');
   protected readonly filterOptions: AriaSelectOption<'all' | 'static' | 'dynamic'>[] = [
@@ -99,7 +148,10 @@ export class SeoDashboard implements OnInit {
 
   readonly computeSeoScore = computeSeoScore;
 
-  readonly showCreateModal = signal(false);
+  private readonly createPageDialog =
+    viewChild.required<TemplateRef<NgpDialogContext>>('createPageDialog');
+  private createPageRef: NgpDialogRef | null = null;
+  private readonly viewContainerRef = inject(ViewContainerRef);
   readonly newPageName = signal('');
   readonly newPageSlug = signal('');
   readonly newPageType = signal<'static' | 'dynamic'>('static');
@@ -111,11 +163,15 @@ export class SeoDashboard implements OnInit {
     this.newPageSlug.set('');
     this.newPageType.set('static');
     this.createError.set(null);
-    this.showCreateModal.set(true);
+    // This page's container, so the template resolves from this component's injector.
+    this.createPageRef = this.dialogs.open(this.createPageDialog(), {
+      viewContainerRef: this.viewContainerRef,
+    });
   }
 
   closeCreateModal(): void {
-    this.showCreateModal.set(false);
+    this.createPageRef?.close();
+    this.createPageRef = null;
   }
 
   async createNewPage(): Promise<void> {
@@ -143,32 +199,9 @@ export class SeoDashboard implements OnInit {
     }
   }
 
-  ngOnInit(): void {
-    this.loadPages();
-  }
-
-  async loadPages(): Promise<void> {
-    this.loading.set(true);
-    this.loadError.set(null);
-
-    let data = await this.supabaseSeo.getAll();
-
-    // Seed defaults only if table is completely empty.
-    if (data.length === 0) {
-      const seeded = await this.supabaseSeo.seedDefaults();
-      if (seeded === null) {
-        this.loadError.set(
-          'Could not load SEO pages. Check your Supabase configuration and try again.',
-        );
-        this.loading.set(false);
-        return;
-      }
-      data = await this.supabaseSeo.getAll();
-    }
-
-    this.logger.info(`[SeoDashboard] Loaded ${data.length} SEO pages`);
-    this.pages.set(data);
-    this.loading.set(false);
+  /** The error banner's Retry. */
+  loadPages(): void {
+    this.pagesResource.reload();
   }
 
   editPage(page: SeoPage): void {
@@ -192,7 +225,7 @@ export class SeoDashboard implements OnInit {
     }
   }
 
-  private confirmDelete(page: SeoPage): Promise<boolean> {
+  private async confirmDelete(page: SeoPage): Promise<boolean> {
     const data: UtilsDialogData = {
       title: `Delete "${page.page_name}"?`,
       containerClass: 'max-w-md',
@@ -207,12 +240,12 @@ export class SeoDashboard implements OnInit {
         { label: 'Delete', variant: 'destructive', action: 'confirm' },
       ],
     };
-    const ref = this.dialog.open<UtilsDialog, { action?: string; result: boolean }>(UtilsDialog, {
-      data,
-      maxWidth: '32rem',
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+    const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: { ...data, maxWidth: '32rem' },
     });
     return new Promise<boolean>((resolve) => {
-      ref.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((res) => {
+      ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((res) => {
         resolve(res?.action === 'confirm' && res?.result === true);
       });
     });

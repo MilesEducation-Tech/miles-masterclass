@@ -30,7 +30,6 @@ import { PartnerContentList } from '@shared/components/partner-content-list/part
   selector: 'app-micro-learning',
   imports: [Carousel, Vertical, ComingSoon, MicroLearningHero, Faq, PartnerContentList],
   templateUrl: './micro-learning.html',
-  styleUrl: './micro-learning.css',
 })
 export class MicroLearning {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

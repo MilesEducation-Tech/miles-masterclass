@@ -1,0 +1,24 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass-web/course-progress/{{course_id}}/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "success",
+        "badge_url": null,
+        "badge_image_url": null,
+        "badge_allocated": false,
+        "badge_status": null,
+        "badge_claimed": false,
+        "certificate_url": null
+      }
+order: 1000

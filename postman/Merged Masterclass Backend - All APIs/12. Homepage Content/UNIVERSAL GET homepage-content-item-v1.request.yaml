@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `ContentItemDetailViewV1`  
+  **Module:** `Homepage.views`  
+  **Route name:** `homepage-content-item-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  One content item in full, including its long-form description.
+url: "{{base_url}}/api/v1/homepage-content/item/{{item_id}}/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET homepage-content-item-v1.resources/examples
+order: 3000

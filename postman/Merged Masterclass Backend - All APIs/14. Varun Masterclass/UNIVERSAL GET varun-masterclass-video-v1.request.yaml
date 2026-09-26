@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `VarunMasterclassVideoViewV1`  
+  **Module:** `VarunMasterclass.views`  
+  **Route name:** `varun-masterclass-video-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  One subject with its lessons, addressed by one of its clip ids.
+url: "{{base_url}}/api/v1/varun-masterclass/video/{{video_id}}/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET varun-masterclass-video-v1.resources/examples
+order: 5000

@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { VideoPoster } from '../../components/video-poster/video-poster';
 import { ContentAbout } from '@core/models/course.model';
 import { Button } from '../../ui/button/button';
@@ -17,9 +18,8 @@ import { Utils } from '@shared/services/utils';
 
 @Component({
   selector: 'app-course-info',
-  imports: [VideoPoster, Button, MilesSlug, NgIcon, CourseAbout],
+  imports: [VideoPoster, Button, MilesSlug, NgIcon, CourseAbout, DialogShell],
   templateUrl: './course-info.html',
-  styleUrl: './course-info.css',
   providers: [
     provideIcons({
       matPlayArrowRound,
@@ -33,8 +33,8 @@ export class CourseInfo implements OnInit {
   private readonly utils = inject(Utils);
   private readonly destroyRef = inject(DestroyRef);
 
-  dialogRef!: DialogRef<CourseInfo>;
-  data!: ContentAbout;
+  private readonly dialogRef = injectDialogRef<ContentAbout>();
+  protected readonly data = this.dialogRef.data;
 
   /**
    * Local signal that mirrors `data.added_bookmark`. We can't react to a plain

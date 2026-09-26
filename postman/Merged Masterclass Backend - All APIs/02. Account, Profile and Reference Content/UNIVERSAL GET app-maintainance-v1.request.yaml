@@ -1,0 +1,53 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `AppUnderMaintainanceV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `app-maintainance-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** none  
+  **Permission:** AllowAny
+
+  Mobile maintenance probe. ``GET account/app/maintainance-status/``.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 6.1 `GET app/maintainance-status/` - public
+
+  ```json
+  { "is_maintenance": false, "force_logout_all_user": false }
+  ```
+
+  Is the **mobile** surface down. No `Authorization` header is inspected at all, so a stale token can
+  never stop a client reading the maintenance flag - which is exactly the client most likely to be
+  asking. Deliberately trivial, so it is safe to poll on every cold start.
+
+  `force_logout_all_user` **mirrors `is_maintenance` exactly** today: maintenance on means clear the
+  session and go to login, off means do not. It is a separate key because the two answer different
+  questions - "show the maintenance screen" and "discard this session" - and they are only equal for
+  now. Read both; do not infer one from the other, or the day a maintenance window is declared that
+  does not invalidate sessions, your build will be wrong and this endpoint will not.
+
+  ### 6.4 Where the values come from, and why a secret edit is not enough
+
+  Both fall-back values load through AWS Secrets Manager (`APP_UNDER_MAINTENANCE`,
+  `WEB_APP_UNDER_MAINTENANCE`) and are read **once at process boot**. Editing a secret therefore changes
+  nothing until the service restarts. The override on 6.3 is the only live switch.
+
+  ```
+  GET app|web/maintainance-status/
+    -> Redis override live?  yes -> that value           source: cache
+                              no -> this surface's secret source: env
+  ```
+
+  ---
+url: "{{base_url}}/api/v1/account/app/maintainance-status/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET app-maintainance-v1.resources/examples
+order: 1000

@@ -1,5 +1,5 @@
 import { CartSteps } from '@core/models/payment.model';
-import { UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
+import type { UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
 
 export const SIGNUP_DIALOG_DATA: UtilsDialogData = {
   containerClass: 'py-12 px-6',

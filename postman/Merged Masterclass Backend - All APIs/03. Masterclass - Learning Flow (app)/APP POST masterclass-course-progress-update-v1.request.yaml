@@ -1,0 +1,35 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassUnifiedCourseProgressUpdateViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-course-progress-update-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  POST /caira/masterclass/course-progress/<course_id>/update/
+
+  Body template generated from `UnifiedCourseProgressUpdateRequest`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/masterclass/course-progress/{{course_id}}/update/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "chapter_id": "00000000-0000-0000-0000-000000000000",
+      "last_watched_position_seconds": 0,
+      "max_watched_duration_seconds": 0,
+      "updates": [
+        {
+          "chapter_id": "00000000-0000-0000-0000-000000000000",
+          "last_watched_position_seconds": 0,
+          "max_watched_duration_seconds": 0
+        }
+      ]
+    }
+examples: ./.resources/APP POST masterclass-course-progress-update-v1.resources/examples
+order: 12000

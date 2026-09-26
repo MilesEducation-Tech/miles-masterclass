@@ -1,7 +1,18 @@
-import { Component, DestroyRef, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  DestroyRef,
+  DOCUMENT,
+  effect,
+  inject,
+  Injector,
+  PLATFORM_ID,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { NgpFocusTrap } from 'ng-primitives/focus-trap';
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs';
 import { AdminSidebar } from '../admin-sidebar/admin-sidebar';
 import { AdminTopbar } from '../admin-topbar/admin-topbar';
@@ -12,9 +23,9 @@ const SIDEBAR_COLLAPSED_KEY = 'mc_admin_sidebar_collapsed';
 
 @Component({
   selector: 'app-admin-layout',
-  imports: [RouterOutlet, AdminSidebar, AdminTopbar],
+  imports: [RouterOutlet, AdminSidebar, AdminTopbar, NgpFocusTrap],
   templateUrl: './admin-layout.html',
-  styleUrl: './admin-layout.css',
+  host: { class: 'block' },
 })
 export class AdminLayout {
   private readonly platformId = inject(PLATFORM_ID);
@@ -22,6 +33,10 @@ export class AdminLayout {
   private readonly router = inject(Router);
   private readonly audit = inject(AuditLog);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
+  private readonly injector = inject(Injector);
+  /** What had focus when the drawer opened (the topbar toggle), to hand it back on close. */
+  private drawerOpener: HTMLElement | null = null;
 
   readonly desktopCollapsed = signal(this.readInitialCollapsed());
   readonly mobileNavOpen = signal(false);
@@ -71,14 +86,25 @@ export class AdminLayout {
     // Mobile (<768): toggle the off-canvas drawer; otherwise collapse the
     // persistent desktop sidebar. Breakpoint via the shared Viewport service.
     if (this.viewport.isMobile()) {
-      this.mobileNavOpen.update((v) => !v);
+      if (this.mobileNavOpen()) {
+        this.closeMobileNav();
+      } else {
+        this.drawerOpener = this.document.activeElement as HTMLElement | null;
+        this.mobileNavOpen.set(true);
+      }
     } else {
       this.desktopCollapsed.update((v) => !v);
     }
   }
 
   closeMobileNav(): void {
+    if (!this.mobileNavOpen()) return;
     this.mobileNavOpen.set(false);
+    // `ngpFocusTrap` moves focus into the drawer but does not hand it back on close
+    // (the same parity fix as `layout/header`), so return it to the opener.
+    const opener = this.drawerOpener;
+    this.drawerOpener = null;
+    afterNextRender({ write: () => opener?.focus() }, { injector: this.injector });
   }
 
   private readInitialCollapsed(): boolean {

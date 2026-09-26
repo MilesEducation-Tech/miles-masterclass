@@ -1,0 +1,53 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/courses/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: cpe_credit
+      value: ""
+      disabled: true
+    - key: field_of_study
+      value: ""
+      disabled: true
+    - key: instructor
+      value: ""
+      disabled: true
+    - key: level
+      value: ""
+      disabled: true
+    - key: page
+      value: ""
+      disabled: true
+    - key: page_size
+      value: ""
+      disabled: true
+    - key: skill
+      value: ""
+      disabled: true
+    - key: tag
+      value: ""
+      disabled: true
+    - key: tool
+      value: ""
+      disabled: true
+    - key: topic
+      value: ""
+      disabled: true
+    - key: track
+      value: ""
+      disabled: true
+response:
+  statusCode: 500
+  statusText: Internal Server Error
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "message": "Unable to fetch the catalogue."
+      }
+order: 3000

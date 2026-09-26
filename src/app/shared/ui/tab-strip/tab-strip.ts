@@ -6,7 +6,6 @@ import { cn } from '../../utils/cn';
   selector: 'app-tab-strip',
   imports: [NgpTabset, NgpTabList, NgpTabButton],
   templateUrl: './tab-strip.html',
-  styleUrl: './tab-strip.css',
 })
 export class TabStrip {
   readonly options = input.required<readonly string[]>();

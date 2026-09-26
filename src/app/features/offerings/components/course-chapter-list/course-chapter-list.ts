@@ -18,7 +18,6 @@ import { Utils } from '@shared/services/utils';
   selector: 'app-course-chapter-list',
   imports: [NgOptimizedImage, NgIcon, DurationPipe, Progress, RecordDisk],
   templateUrl: './course-chapter-list.html',
-  styleUrl: './course-chapter-list.css',
   providers: [
     provideIcons({
       matPlayArrowRound,

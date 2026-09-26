@@ -1,0 +1,36 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CommerceAddressViewV1`  
+  **Module:** `Commerce.views`  
+  **Route name:** `commerce-address-v1`  
+  **Methods on this view:** GET, PATCH, DELETE  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Read, edit or remove one of the learner's addresses.
+
+  Body template generated from `AddressPatchBodyV1`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/commerce/address/{{address_id}}/"
+method: PATCH
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "line1": "",
+      "city": "",
+      "state": "",
+      "postal_code": "",
+      "country": "",
+      "label": "",
+      "name": "",
+      "phone": "",
+      "line2": "",
+      "landmark": "",
+      "is_default": false
+    }
+examples: ./.resources/UNIVERSAL PATCH commerce-address-v1.resources/examples
+order: 2000

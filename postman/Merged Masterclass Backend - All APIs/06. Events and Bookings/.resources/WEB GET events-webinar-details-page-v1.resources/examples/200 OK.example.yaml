@@ -1,0 +1,26 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/web-api/v1/events/webinar-details-page/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: webinar_id
+      value: ""
+      disabled: true
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "message": "Webinar details retrieved successfully.",
+        "data": {
+          "login_type": "post_login",
+          "webinar": "<self._fetch(params.webinar_id, login_state, include_test=include_test)>"
+        }
+      }
+order: 1000

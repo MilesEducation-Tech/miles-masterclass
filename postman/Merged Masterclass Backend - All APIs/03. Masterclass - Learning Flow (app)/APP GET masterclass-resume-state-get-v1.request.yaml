@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassResumePlayStateGetViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-resume-state-get-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  GET /caira/masterclass/resume-state/<course_id>/
+url: "{{base_url}}/api/v1/masterclass/resume-state/{{course_id}}/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/APP GET masterclass-resume-state-get-v1.resources/examples
+order: 25000

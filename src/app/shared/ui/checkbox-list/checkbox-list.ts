@@ -19,7 +19,6 @@ export interface CheckboxListOption {
   selector: 'app-checkbox-list',
   imports: [NgpListbox, NgpListboxOption],
   templateUrl: './checkbox-list.html',
-  styleUrl: './checkbox-list.css',
 })
 export class CheckboxList {
   readonly options = input.required<readonly CheckboxListOption[]>();

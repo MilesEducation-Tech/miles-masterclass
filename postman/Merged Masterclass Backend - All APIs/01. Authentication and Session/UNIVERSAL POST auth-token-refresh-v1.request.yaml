@@ -1,0 +1,89 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `AuthTokenRefreshViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `auth-token-refresh-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** none  
+  **Permission:** AllowAny
+
+  POST - exchange a refresh token for a new session.
+
+  Body template generated from `AuthTokenRefreshRequestSerializerV1`. Values are placeholders, not fixtures.
+
+  Some values are ENVIRONMENT VARIABLES rather than placeholders - set `login_identifier` once and the three sign-in requests all read it. `refresh_token` is written by a script; do not type it.
+
+  **This request carries its own test script** on top of the collection-level one - open the Scripts tab to read what it writes into the environment.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 2.4 `POST auth-token-refresh/` - rotate the session
+
+  Serves both client shapes:
+
+  ```json
+  { "refreshToken": "..." }   // app clients
+  {}                          // web clients - the httpOnly cookie is forwarded upstream
+  ```
+
+  `refreshToken` is optional for exactly that reason; requiring it would lock every browser out of refresh.
+
+  The same two local flags (`profile_status`, `is_test_user`) are merged into a 200 here, and **they matter more
+  on this route than on verify.**
+
+  **THE ONBOARDING SEQUENCE, which is the single most common integration bug on this surface:**
+
+  1. A first-time user verifies and comes back `profile_status: "new_user"`.
+  2. They complete the profile (section 4).
+  3. **You must refresh the token.** The claim is minted with the token, so skipping the refresh re-reads a stale
+     value and bounces the user straight back into onboarding they just finished.
+
+  Two more rules:
+
+  - **Refresh before expiry, not after a 401.** The access token is deliberately short - it is the window in
+    which a suspended user keeps access, and it cannot be revoked once issued.
+  - **Never run two refreshes concurrently.** Refresh tokens rotate and the old one dies about ten seconds after
+    use, so parallel refreshes invalidate the caller's own session. Serialise them behind one in-flight request.
+
+  A `401` from this route (`"Session could not be refreshed. Please sign in again."`) means the refreshed token
+  would not resolve to a local row - the account is gone or deactivated. Send them to sign-in.
+url: "{{base_url}}/api/v1/account/auth-token-refresh/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "refreshToken": "{{refresh_token}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      /* Store the ROTATED pair.
+       *
+       * Both halves are written, not just the access token. The refresh token rotates
+       * on every use and the previous one dies about ten seconds later, so a run that
+       * keeps the old one works exactly once and then fails against a value that
+       * still looks like a valid token.
+       */
+      pm.test("Refresh returned a new access token", function () {
+          pm.response.to.have.status(200);
+          pm.expect(pm.response.json()).to.have.property("accessToken");
+      });
+
+      if (pm.response.code === 200) {
+          var body = pm.response.json();
+          if (body.accessToken) { pm.environment.set("token", body.accessToken); }
+          if (body.refreshToken) { pm.environment.set("refresh_token", body.refreshToken); }
+          console.log("[auth] session rotated. profile_status=" + body.profile_status);
+      }
+    language: text/javascript
+examples: ./.resources/UNIVERSAL POST auth-token-refresh-v1.resources/examples
+order: 5000

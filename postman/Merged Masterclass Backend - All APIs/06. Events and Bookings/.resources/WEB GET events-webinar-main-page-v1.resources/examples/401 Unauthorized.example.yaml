@@ -1,0 +1,24 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/web-api/v1/events/webinar-main-page/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: login_type
+      value: ""
+      disabled: true
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "code": "authentication_required",
+        "message": "login_type=post_login requires an authenticated request. Send a bearer token, or ask for login_type=pre_login."
+      }
+order: 3000

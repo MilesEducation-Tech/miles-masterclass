@@ -5,22 +5,17 @@ import { Button } from '@shared/ui/button/button';
 import { environment } from '@env/environment';
 import { VideoPoster } from '@shared/components/video-poster/video-poster';
 import { MilesSlug } from '@shared/components/miles-slug/miles-slug';
-import {
-  AppDownloadDialog,
-  MASTERCLASS_APP_STORE_URL,
-  MASTERCLASS_PLAY_STORE_URL,
-} from '@shared/dialogs/app-download-dialog/app-download-dialog';
-import { Dialog } from '@core/services/dialog/dialog';
+import { MASTERCLASS_APP_STORE_URL, MASTERCLASS_PLAY_STORE_URL } from '@core/constants/app-store';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 
 @Component({
   selector: 'app-home-hero',
   imports: [Button, VideoPoster, MilesSlug],
   templateUrl: './home-hero.html',
-  styleUrl: './home-hero.css',
 })
 export class HomeHero {
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   readonly S3_BUCKET_URL = environment.S3_BUCKET_URL;
 
   readonly icons = signal({
@@ -52,7 +47,10 @@ export class HomeHero {
         : null;
 
     if (!storeUrl) {
-      this.dialog.open(AppDownloadDialog, { maxWidth: '360px' });
+      // Desktop only: load the QR dialog on demand (§4.4). Phones never reach it.
+      void import('@shared/dialogs/app-download-dialog/app-download-dialog').then(
+        ({ AppDownloadDialog }) => this.dialogs.open(AppDownloadDialog),
+      );
       return;
     }
 

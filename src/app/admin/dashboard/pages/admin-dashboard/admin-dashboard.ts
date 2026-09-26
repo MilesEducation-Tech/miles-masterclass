@@ -8,7 +8,7 @@ import { AdminAuth } from '@admin/core/services/admin-auth';
   imports: [NgIcon],
   providers: [provideIcons({ lucideLayoutDashboard, lucideSparkles })],
   templateUrl: './admin-dashboard.html',
-  styleUrl: './admin-dashboard.css',
+  host: { class: 'block' },
 })
 export class AdminDashboard {
   protected readonly auth = inject(AdminAuth);

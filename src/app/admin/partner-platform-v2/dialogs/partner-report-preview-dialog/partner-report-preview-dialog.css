@@ -1,7 +1,3 @@
-:host {
-  display: block;
-}
-
 /*
  * The printable document, in the learner-facing Masterclass theme (the `:root`
  * tokens in styles.css — dark ground, brand blue, Inter Tight), NOT the admin

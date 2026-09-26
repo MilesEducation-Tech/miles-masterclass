@@ -12,7 +12,7 @@ import { debounceTime, distinctUntilChanged, take } from 'rxjs';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
 import { DeprecationBanner } from '@shared/components/deprecation-banner/deprecation-banner';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import {
   ApplyPartnerCodeDialog,
   ApplyPartnerCodeDialogData,
@@ -36,7 +36,7 @@ import { InternalUser } from '@admin/user-onboarding/models/user-onboarding.mode
 })
 export class UserOnboarding {
   protected readonly facade = inject(UserOnboardingFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -68,19 +68,17 @@ export class UserOnboarding {
   }
 
   protected onRecordPayment(user: InternalUser): void {
-    const ref = this.dialog.open<RecordPaymentDialog, RecordPaymentDialogResult>(
+    const ref = this.dialogs.open<RecordPaymentDialogData, RecordPaymentDialogResult>(
       RecordPaymentDialog,
       {
         data: {
           userEmail: user.email,
           isSubscribed: user.is_subscribed,
         } satisfies RecordPaymentDialogData,
-        maxWidth: '480px',
-        ariaLabel: 'Record offline payment',
       },
     );
 
-    ref.afterClosed$.pipe(take(1)).subscribe(async (result) => {
+    ref.afterClosed.pipe(take(1)).subscribe(async (result) => {
       // Cancelled. A resolved result always carries a file or a comment — the
       // dialog cannot submit without one.
       if (!result) return;
@@ -91,19 +89,17 @@ export class UserOnboarding {
   protected onApplyPartnerCode(user: InternalUser): void {
     // Open on a fresh list — codes are added outside this screen.
     this.facade.reloadPartnerCodes();
-    const ref = this.dialog.open<ApplyPartnerCodeDialog, ApplyPartnerCodeDialogResult>(
+    const ref = this.dialogs.open<ApplyPartnerCodeDialogData, ApplyPartnerCodeDialogResult>(
       ApplyPartnerCodeDialog,
       {
         data: {
           userEmail: user.email,
           options: this.facade.partnerCodeOptions,
         } satisfies ApplyPartnerCodeDialogData,
-        maxWidth: '480px',
-        ariaLabel: 'Apply partner code',
       },
     );
 
-    ref.afterClosed$.pipe(take(1)).subscribe(async (result) => {
+    ref.afterClosed.pipe(take(1)).subscribe(async (result) => {
       if (!result?.code) return;
       await this.facade.applyPartnerCode(user, result.code);
     });

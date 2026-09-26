@@ -1,7 +1,8 @@
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField as AngularFormField, disabled, form, validate } from '@angular/forms/signals';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
@@ -25,12 +26,12 @@ interface ProfileCompletionFormState {
 
 @Component({
   selector: 'app-profile-completion-dialog',
-  imports: [AriaAutocomplete, Button, Forms, AngularFormField],
+  imports: [AriaAutocomplete, Button, DialogShell, Forms, AngularFormField],
   templateUrl: './profile-completion-dialog.html',
-  styleUrl: './profile-completion-dialog.css',
+  host: { class: 'block' },
 })
 export class ProfileCompletionDialog {
-  dialogRef!: DialogRef<ProfileCompletionDialog, ProfileCompletionDialogResult>;
+  protected readonly dialogRef = injectDialogRef<void, ProfileCompletionDialogResult>();
 
   private readonly http = inject(ApiClient);
   private readonly logger = inject(Logger);

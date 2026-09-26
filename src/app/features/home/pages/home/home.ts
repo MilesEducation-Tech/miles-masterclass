@@ -42,7 +42,6 @@ import { SurroundCarousel } from '@shared/components/surround-carousel/surround-
     SurroundCarousel,
   ],
   templateUrl: './home.html',
-  styleUrl: './home.css',
 })
 export class Home {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

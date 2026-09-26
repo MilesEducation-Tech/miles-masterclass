@@ -24,7 +24,6 @@ import { CairaCredlyBadge } from '../caira-credly-badge/caira-credly-badge';
   selector: 'app-vertical',
   imports: [NgOptimizedImage, Button, NgIcon, CategoriesList, CairaCredlyBadge],
   templateUrl: './vertical.html',
-  styleUrl: './vertical.css',
 })
 export class Vertical {
   private readonly utils = inject(Utils);

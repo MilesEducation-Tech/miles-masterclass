@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
+import { injectDialogRef } from 'ng-primitives/dialog';
 import { environment } from '@env/environment';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '../../ui/button/button';
 import { ButtonVariant } from '@core/models/button.model';
 import { appStoreIcon, googlePlayIcon } from '@core/constants/icon';
@@ -14,7 +15,7 @@ export interface DialogButton {
 
 export interface UtilsDialogData {
   title?: string;
-  containerClass: string;
+  containerClass?: string;
   content: HTMLContent[];
   buttons?: DialogButton[];
   /**
@@ -26,6 +27,23 @@ export interface UtilsDialogData {
   subtitle?: string;
   /** Bottom-of-card caption shown below the phone mockup. */
   footer?: string;
+  /**
+   * Presentation — the per-call `width` / `maxWidth` / `ariaLabel` / `disableClose` config
+   * the old `Dialog` service took. This one dialog serves every caller, so unlike the
+   * others it can't own a single size; the caller passes it here.
+   */
+  width?: string;
+  maxWidth?: string;
+  /** Falls back to `title`, which the panel used to be labelled by. */
+  ariaLabel?: string;
+  /** `true` ignores Escape and backdrop clicks. */
+  disableClose?: boolean;
+}
+
+export interface UtilsDialogResult {
+  action?: DialogButton['action'];
+  result: boolean;
+  data?: any;
 }
 
 export type HTMLContent =
@@ -53,16 +71,12 @@ const APP_STORE_URL = 'https://apps.apple.com/us/app/miles-one/id6504799221';
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.miles.one';
 @Component({
   selector: 'app-utils-dialog',
-  imports: [Button, NgIcon],
+  imports: [Button, NgIcon, DialogShell],
   templateUrl: './utils-dialog.html',
-  styleUrl: './utils-dialog.css',
 })
 export class UtilsDialog {
-  dialogRef!: DialogRef<
-    UtilsDialog,
-    { action?: DialogButton['action']; result: boolean; data?: any }
-  >;
-  data!: UtilsDialogData;
+  private readonly dialogRef = injectDialogRef<UtilsDialogData, UtilsDialogResult>();
+  protected readonly data = this.dialogRef.data;
 
   protected readonly APP_STORE_URL = APP_STORE_URL;
   protected readonly PLAY_STORE_URL = PLAY_STORE_URL;
@@ -74,13 +88,9 @@ export class UtilsDialog {
   /**
    * Renders the Miles One app-download layout when either `subtitle` or
    * `footer` is set on the data. Existing callers that only set `content[]`
-   * keep the original typed layout untouched. Plain getter — `data` is
-   * assigned post-construction by the dialog service, so a signal/computed
-   * wrapping it would capture the pre-assignment `undefined`.
+   * keep the original typed layout untouched.
    */
-  protected get showAppDownload(): boolean {
-    return !!(this.data?.subtitle || this.data?.footer);
-  }
+  protected readonly showAppDownload = !!(this.data.subtitle || this.data.footer);
 
   close(): void {
     this.dialogRef.close();

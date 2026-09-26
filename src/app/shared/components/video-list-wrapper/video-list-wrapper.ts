@@ -19,7 +19,6 @@ export interface VideoListItem {
   selector: 'app-video-list-wrapper',
   imports: [VideoPoster, NgOptimizedImage],
   templateUrl: './video-list-wrapper.html',
-  styleUrl: './video-list-wrapper.css',
 })
 export class VideoListWrapper {
   readonly videoList = input<VideoListItem[]>([]);

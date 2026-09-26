@@ -12,15 +12,14 @@ import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
-import {
-  ApplyPartnerCodeDialog,
+// Type-only: dialog components below load with `import()` when opened (PROMPT.md §4.4).
+import type {
   ApplyPartnerCodeDialogData,
   ApplyPartnerCodeDialogResult,
 } from '@shared/dialogs/apply-partner-code-dialog/apply-partner-code-dialog';
-import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
-import { Dialog } from '@core/services/dialog/dialog';
-import {
-  RecordPaymentDialog,
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
+import type {
   RecordPaymentDialogData,
   RecordPaymentDialogResult,
 } from '@admin/user-onboarding/dialogs/record-payment-dialog/record-payment-dialog';
@@ -46,7 +45,7 @@ import { UserOnboardingFacade } from '@admin/user-onboarding/services/user-onboa
 })
 export class OnboardingV2 {
   protected readonly facade = inject(UserOnboardingFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -75,11 +74,12 @@ export class OnboardingV2 {
   }
 
   /** Every field the list returns that the row can't fit — read-only, so UtilsDialog. */
-  protected onView(user: InternalUser): void {
+  protected async onView(user: InternalUser): Promise<void> {
     const yesNo = (v: boolean | null | undefined) => (v == null ? '—' : v ? 'Yes' : 'No');
     const date = (v: string | null) => (v ? formatDate(v, 'MMM d, y, h:mm a', 'en-US') : '—');
     const text = (v: string | null | undefined) => (v && v.trim() ? v : '—');
-    this.dialog.open<UtilsDialog>(UtilsDialog, {
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+    this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title: `${user.first_name} ${user.last_name}`.trim() || user.email,
         containerClass: 'max-w-lg text-left!',
@@ -114,9 +114,9 @@ export class OnboardingV2 {
           },
         ],
         buttons: [{ label: 'Close', action: 'close' }],
+        maxWidth: '560px',
+        ariaLabel: `Details for ${user.email}`,
       } satisfies UtilsDialogData,
-      maxWidth: '560px',
-      ariaLabel: `Details for ${user.email}`,
     });
   }
 
@@ -127,31 +127,30 @@ export class OnboardingV2 {
     });
   }
 
-  protected onRecordPayment(user: InternalUser): void {
-    const ref = this.dialog.open<RecordPaymentDialog, RecordPaymentDialogResult>(
+  protected async onRecordPayment(user: InternalUser): Promise<void> {
+    const { RecordPaymentDialog } =
+      await import('@admin/user-onboarding/dialogs/record-payment-dialog/record-payment-dialog');
+    const ref = this.dialogs.open<RecordPaymentDialogData, RecordPaymentDialogResult>(
       RecordPaymentDialog,
       {
         data: {
           userEmail: user.email,
           isSubscribed: user.is_subscribed,
         } satisfies RecordPaymentDialogData,
-        maxWidth: '480px',
-        ariaLabel: 'Record offline payment',
       },
     );
 
-    ref.afterClosed$
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (result) => {
-        if (!result) return;
-        const paid = await this.facade.recordOfflinePayment(user.id, result.file, result.comment);
-        if (paid) this.showPaymentResult(user, paid);
-      });
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(async (result) => {
+      if (!result) return;
+      const paid = await this.facade.recordOfflinePayment(user.id, result.file, result.comment);
+      if (paid) void this.showPaymentResult(user, paid);
+    });
   }
 
   /** The receipt link and ids the toast can't hold — read-only, so UtilsDialog. */
-  private showPaymentResult(user: InternalUser, paid: OfflinePaymentResult): void {
-    this.dialog.open<UtilsDialog>(UtilsDialog, {
+  private async showPaymentResult(user: InternalUser, paid: OfflinePaymentResult): Promise<void> {
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+    this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title: `Payment recorded — ${user.email}`,
         containerClass: 'max-w-lg text-left!',
@@ -178,33 +177,31 @@ export class OnboardingV2 {
             : []),
         ],
         buttons: [{ label: 'Close', action: 'close' }],
+        maxWidth: '560px',
+        ariaLabel: 'Payment recorded',
       } satisfies UtilsDialogData,
-      maxWidth: '560px',
-      ariaLabel: 'Payment recorded',
     });
   }
 
-  protected onApplyPartnerCode(user: InternalUser): void {
+  protected async onApplyPartnerCode(user: InternalUser): Promise<void> {
     // Open on a fresh list — codes are added outside this screen.
     this.facade.reloadPartnerCodes();
-    const ref = this.dialog.open<ApplyPartnerCodeDialog, ApplyPartnerCodeDialogResult>(
+    const { ApplyPartnerCodeDialog } =
+      await import('@shared/dialogs/apply-partner-code-dialog/apply-partner-code-dialog');
+    const ref = this.dialogs.open<ApplyPartnerCodeDialogData, ApplyPartnerCodeDialogResult>(
       ApplyPartnerCodeDialog,
       {
         data: {
           userEmail: user.email,
           options: this.facade.partnerCodeOptions,
         } satisfies ApplyPartnerCodeDialogData,
-        maxWidth: '480px',
-        ariaLabel: 'Apply partner code',
       },
     );
 
-    ref.afterClosed$
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (result) => {
-        if (!result?.code) return;
-        await this.facade.applyPartnerCode(user, result.code);
-      });
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(async (result) => {
+      if (!result?.code) return;
+      await this.facade.applyPartnerCode(user, result.code);
+    });
   }
 
   protected goPrev(): void {

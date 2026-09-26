@@ -6,6 +6,5 @@ import { RouterOutlet } from '@angular/router';
   selector: 'app-overview-wrapper',
   imports: [RouterOutlet, PriceOverview],
   templateUrl: './overview-wrapper.html',
-  styleUrl: './overview-wrapper.css',
 })
 export class OverviewWrapper {}

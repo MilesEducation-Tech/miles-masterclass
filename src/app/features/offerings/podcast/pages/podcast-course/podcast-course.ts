@@ -25,7 +25,6 @@ import { PodcastCourseHero } from '../../components/podcast-course-hero/podcast-
     PodcastCourseHero,
   ],
   templateUrl: './podcast-course.html',
-  styleUrl: './podcast-course.css',
 })
 export class PodcastCourse {
   readonly courseId = input<string>();

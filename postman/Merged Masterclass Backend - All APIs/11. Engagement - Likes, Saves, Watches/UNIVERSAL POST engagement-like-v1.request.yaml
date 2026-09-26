@@ -1,0 +1,28 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `LikedByMeV1`  
+  **Module:** `Engagement.views`  
+  **Route name:** `engagement-like-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Like or un-like one target as the calling learner.
+
+  Body template generated from `LikeRequestV1`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/engagement/like/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "target_kind": "homepage_content_item",
+      "target_id": "00000000-0000-0000-0000-000000000000",
+      "liked": false
+    }
+examples: ./.resources/UNIVERSAL POST engagement-like-v1.resources/examples
+order: 2000

@@ -1,27 +1,27 @@
-<section
-  class="relative w-[calc(100vw-2rem)] max-w-6xl min-w-2xs rounded-3xl bg-[#0E0E10] p-6 text-white shadow-2xl md:p-10"
-  role="dialog"
-  aria-labelledby="badge-info-dialog-title"
->
-  <header class="mb-6 flex items-center justify-between">
-    <h2 id="badge-info-dialog-title" class="text-2xl font-bold md:text-3xl">Your Badges</h2>
-    <app-button variant="close" (clicked)="onClose()"></app-button>
-  </header>
+<app-dialog-shell ariaLabel="Your Badges">
+  <section
+    class="relative w-[calc(100vw-2rem)] max-w-6xl min-w-2xs rounded-3xl bg-[#0E0E10] p-6 text-white shadow-2xl md:p-10"
+  >
+    <header class="mb-6 flex items-center justify-between">
+      <h2 id="badge-info-dialog-title" class="text-2xl font-bold md:text-3xl">Your Badges</h2>
+      <app-button variant="close" (clicked)="onClose()"></app-button>
+    </header>
 
-  @if (badges().length) {
-    <div class="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-      @for (badge of badges(); track badge.id) {
-        <app-badge-hero-card
-          layout="grid"
-          [badge]="badge"
-          (claim)="onClaim($event)"
-          (share)="onShare($event)"
-        />
-      }
-    </div>
-  } @else {
-    <p class="py-12 text-center text-sm text-gray-400">
-      No badges yet — complete a course to earn your first.
-    </p>
-  }
-</section>
+    @if (badges().length) {
+      <div class="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+        @for (badge of badges(); track badge.id) {
+          <app-badge-hero-card
+            layout="grid"
+            [badge]="badge"
+            (claim)="onClaim($event)"
+            (share)="onShare($event)"
+          />
+        }
+      </div>
+    } @else {
+      <p class="py-12 text-center text-sm text-gray-400">
+        No badges yet — complete a course to earn your first.
+      </p>
+    }
+  </section>
+</app-dialog-shell>

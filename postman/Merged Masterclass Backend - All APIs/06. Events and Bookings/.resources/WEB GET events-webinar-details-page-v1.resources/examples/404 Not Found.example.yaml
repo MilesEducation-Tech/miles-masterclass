@@ -1,0 +1,24 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/web-api/v1/events/webinar-details-page/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: webinar_id
+      value: ""
+      disabled: true
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "code": "webinar_not_found",
+        "message": "No webinar with that id is available on this surface."
+      }
+order: 3000

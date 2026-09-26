@@ -16,7 +16,6 @@ import { logo } from '@core/constants/icon';
   selector: 'app-auth',
   imports: [RouterOutlet, NgOptimizedImage, NgIcon],
   templateUrl: './auth.html',
-  styleUrl: './auth.css',
 })
 export class Auth {
   private readonly router = inject(Router);

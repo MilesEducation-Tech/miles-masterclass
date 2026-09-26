@@ -1,0 +1,27 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CatalogueVideoProgressViewV1`  
+  **Module:** `Catalogue.views`  
+  **Route name:** `catalogue-progress-video-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Record that a learner watched a video.
+
+  Body template generated from `VideoProgressBodyV1`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/catalogue/progress/video/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "youtube_video_id": "",
+      "watched": false
+    }
+examples: ./.resources/UNIVERSAL POST catalogue-progress-video-v1.resources/examples
+order: 8000

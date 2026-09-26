@@ -1,0 +1,23 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/app-api/v1/events/all-bookings/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: window
+      value: ""
+      disabled: true
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "message": "Bookings retrieved successfully.",
+        "data": "<data>"
+      }
+order: 1000

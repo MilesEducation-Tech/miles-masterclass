@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { HttpContext } from '@angular/common/http';
+import { HttpContext, httpResource } from '@angular/common/http';
 import {
   computed,
   effect,
@@ -7,14 +7,13 @@ import {
   Service,
   linkedSignal,
   PLATFORM_ID,
-  resource,
   signal,
   untracked,
 } from '@angular/core';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { FeatureApiResponse } from '@core/models/feature.model';
 import { SKIP_AUTH_TOKEN } from '@core/models/http.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { parseNextPage } from '@core/utils/parse-next-page';
@@ -53,7 +52,7 @@ interface CourseDetailResponse {
 /**
  * Owns state for the admin Reports → User report page.
  *
- * Mirrors `PartnerUsersFacade`: signals + `resource` + stale-while-revalidate
+ * Mirrors `PartnerUsersFacade`: signals + `httpResource` + stale-while-revalidate
  * (`withPreviousValue`), paginating one page at a time. Ported from the
  * CPE-Masterclass `user-reports` feature — adds server CSV export and a
  * per-bucket course-detail drill-down on top of the listing.
@@ -76,37 +75,29 @@ export class UserReportFacade {
 
   // ---- Listing resource ----------------------------------------------------
 
-  private readonly rawResource = resource({
-    params: () => {
+  private readonly rawResource = httpResource<UserReportPage>(
+    () => {
       if (!this.isBrowser) return undefined;
-      return { page: this.pageNumber(), search: this.searchTerm() };
+      const params: Record<string, string | number> = { page: this.pageNumber() };
+      const search = this.searchTerm();
+      if (search) params['search'] = search;
+      return { url: apiUrl(USER_REPORT_ENDPOINTS.list), params, context: noAuthContext() };
     },
-    loader: async ({ params, abortSignal }): Promise<UserReportPage> => {
-      const httpParams: Record<string, string | number> = { page: params.page };
-      if (params.search) httpParams['search'] = params.search;
-
-      const res = await firstValueFrom(
-        this.api
-          .get<FeatureApiResponse<UserReportRow[]>>(USER_REPORT_ENDPOINTS.list, {
-            params: httpParams,
-            context: noAuthContext(),
-          })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        {
-          defaultValue: { data: [] as UserReportRow[] } as FeatureApiResponse<UserReportRow[]>,
-        },
-      );
-
-      const pagination = res.pagination_data;
-      return {
-        rows: res.data ?? [],
-        total: pagination?.total_count ?? res.count ?? res.data?.length ?? 0,
-        currentPage: pagination?.current_page ?? params.page,
-        nextPage: parseNextPage(pagination?.next_page ?? res.next),
-        prevPage: parseNextPage(pagination?.prev_page ?? res.previous),
-      };
+    {
+      parse: (raw) => {
+        const res = raw as FeatureApiResponse<UserReportRow[]>;
+        const pagination = res.pagination_data;
+        return {
+          rows: res.data ?? [],
+          total: pagination?.total_count ?? res.count ?? res.data?.length ?? 0,
+          // Parsed as the response lands, so this is still the page that was asked for.
+          currentPage: pagination?.current_page ?? untracked(this.pageNumber),
+          nextPage: parseNextPage(pagination?.next_page ?? res.next),
+          prevPage: parseNextPage(pagination?.prev_page ?? res.previous),
+        };
+      },
     },
-  });
+  );
 
   private readonly listResource = withPreviousValue(this.rawResource);
 
@@ -119,20 +110,26 @@ export class UserReportFacade {
     },
   });
 
-  readonly totalCount = computed(() => this.listResource.value()?.total ?? 0);
-  readonly currentPage = computed(
-    () => this.listResource.value()?.currentPage ?? this.pageNumber(),
+  /**
+   * The loaded page, or `undefined`. Every read below goes through this:
+   * `value()` throws on an errored resource.
+   */
+  private readonly page = computed(() =>
+    this.listResource.hasValue() ? this.listResource.value() : undefined,
   );
+
+  readonly totalCount = computed(() => this.page()?.total ?? 0);
+  readonly currentPage = computed(() => this.page()?.currentPage ?? this.pageNumber());
   readonly isLoading = computed(() => this.listResource.isLoading());
   readonly error = computed(() => this.listResource.error());
 
   readonly hasPrev = computed(() => {
-    const page = this.listResource.value();
+    const page = this.page();
     if (page) return page.prevPage !== null || page.currentPage > 1;
     return this.pageNumber() > 1;
   });
   readonly hasNext = computed(() => {
-    const page = this.listResource.value();
+    const page = this.page();
     if (page) return page.nextPage !== null || page.currentPage * PAGE_SIZE < page.total;
     return false;
   });

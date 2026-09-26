@@ -14,7 +14,8 @@ import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideSearch, lucideX } from '@ng-icons/lucide';
 import { debounceTime, distinctUntilChanged, switchMap, startWith, tap } from 'rxjs/operators';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Utils } from '@shared/services/utils';
 import { GlobalSearch } from '@core/services/global-search/global-search';
 import { Analytics } from '@core/services/analytics/analytics';
@@ -48,13 +49,13 @@ const TYPE_ORDER: SearchCourseType[] = [
 
 @Component({
   selector: 'app-global-search-dialog',
-  imports: [ReactiveFormsModule, NgIcon],
+  imports: [ReactiveFormsModule, NgIcon, DialogShell],
   providers: [provideIcons({ lucideSearch, lucideX })],
   templateUrl: './global-search-dialog.html',
-  styleUrl: './global-search-dialog.css',
+  host: { class: 'block' },
 })
 export class GlobalSearchDialog implements AfterViewInit {
-  dialogRef!: DialogRef<GlobalSearchDialog>;
+  private readonly dialogRef = injectDialogRef();
 
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);

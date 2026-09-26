@@ -1,0 +1,26 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/levels-page/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: id
+      value: ""
+      disabled: true
+    - key: type
+      value: ""
+      disabled: true
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "errors": "<pydantic_error_list(exc)>"
+      }
+order: 3000

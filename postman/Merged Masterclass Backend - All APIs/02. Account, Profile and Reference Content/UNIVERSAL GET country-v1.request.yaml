@@ -1,0 +1,33 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `GetCountryDetailsViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `country-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** none  
+  **Permission:** AllowAny
+
+  Retrieve country details, optionally filtered by a name prefix.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 7.1 `GET country/` - public
+
+  Optional `?country=Ind` filters on a **case-sensitive** prefix of the country name. An empty `?country=` means
+  no filter, not "match the empty string".
+
+  `200` -> `{"data": [...]}`. A bad parameter is `400` -> `{"message": "Invalid request.", "details": {...}}`.
+
+  A typo'd parameter name is a 400, deliberately: it used to be ignored in silence, which returned the full
+  country list and looked like a successful filtered call.
+url: "{{base_url}}/api/v1/account/country/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET country-v1.resources/examples
+order: 3000

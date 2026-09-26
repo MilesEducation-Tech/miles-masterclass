@@ -27,7 +27,6 @@ import { cn } from '../../utils/cn';
   selector: 'app-otp',
   imports: [NgpInputOtp, NgpInputOtpInput, NgpInputOtpSlot],
   templateUrl: './otp.html',
-  styleUrl: './otp.css',
   host: {
     '[class]': '"block w-full"',
   },

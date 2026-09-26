@@ -1,0 +1,53 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassCatalogViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-catalog-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  6.1 GET /caira/masterclass/ - Paginated course catalog with filters.
+
+  Query parameters (disabled by default): `cpe_credit`, `field_of_study`, `instructor`, `level`, `page`, `page_size`, `skill`, `tag`, `tool`, `topic`, `track`
+url: "{{base_url}}/api/v1/masterclass/courses/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: cpe_credit
+    value: ""
+    disabled: true
+  - key: field_of_study
+    value: ""
+    disabled: true
+  - key: instructor
+    value: ""
+    disabled: true
+  - key: level
+    value: ""
+    disabled: true
+  - key: page
+    value: ""
+    disabled: true
+  - key: page_size
+    value: ""
+    disabled: true
+  - key: skill
+    value: ""
+    disabled: true
+  - key: tag
+    value: ""
+    disabled: true
+  - key: tool
+    value: ""
+    disabled: true
+  - key: topic
+    value: ""
+    disabled: true
+  - key: track
+    value: ""
+    disabled: true
+examples: ./.resources/APP GET masterclass-catalog-v1.resources/examples
+order: 14000

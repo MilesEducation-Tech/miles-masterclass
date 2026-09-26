@@ -1,0 +1,26 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `IndustryUnpluggedFeedViewV1`  
+  **Module:** `IndustryUnplugged.views`  
+  **Route name:** `industry-unplugged-feed-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Return one page of the Industry Unplugged catalogue.
+
+  Query parameters (disabled by default): `page`, `page_size`
+url: "{{base_url}}/api/v1/industry-unplugged/feed/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: page
+    value: ""
+    disabled: true
+  - key: page_size
+    value: ""
+    disabled: true
+examples: ./.resources/UNIVERSAL GET industry-unplugged-feed-v1.resources/examples
+order: 1000

@@ -32,18 +32,26 @@
       </p>
     </header>
 
-    <div class="mt-10 divide-y divide-border border-t border-b border-border md:mt-12">
+    <!-- ngpAccordion supplies the trigger/panel ids, aria-expanded/aria-controls, the
+         panels' region role and label, arrow-key movement between triggers, and
+         find-in-page reveal. The open ids stay owned here, so the "a new category closes
+         the open question" rule is still this component's. -->
+    <div
+      ngpAccordion
+      ngpAccordionType="single"
+      ngpAccordionCollapsible
+      [ngpAccordionValue]="open"
+      (ngpAccordionValueChange)="openCategory($event)"
+      class="mt-10 divide-y divide-border border-t border-b border-border md:mt-12"
+    >
       @for (faq of faqs; track faq.id) {
         @let isOpen = open === faq.id;
-        <div>
+        <div ngpAccordionItem [ngpAccordionItemValue]="faq.id">
           <h3>
             <button
               type="button"
+              ngpAccordionTrigger
               class="flex w-full cursor-pointer items-center justify-between gap-4 py-5 text-left transition-colors hover:text-accent"
-              [attr.aria-expanded]="isOpen"
-              [attr.aria-controls]="'faq-panel-' + faq.id"
-              [id]="'faq-trigger-' + faq.id"
-              (click)="toggle(faq.id)"
             >
               <span class="text-sm font-bold text-pretty sm:text-base">{{ faq.question }}</span>
               <ng-icon
@@ -56,13 +64,13 @@
           </h3>
 
           <!-- Collapsed with a 0fr→1fr grid row rather than max-height, so the
-               panel animates to its natural height without a magic number. -->
+               panel animates to its natural height without a magic number.
+               `data-[closed]:grid!` beats the global `[ngpAccordionContent][data-closed]
+               { display: none }`, which would otherwise cut the close animation. -->
           <div
-            class="grid transition-[grid-template-rows] duration-300 ease-out"
+            ngpAccordionContent
+            class="grid data-[closed]:grid! transition-[grid-template-rows] duration-300 ease-out"
             [class]="isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'"
-            [id]="'faq-panel-' + faq.id"
-            role="region"
-            [attr.aria-labelledby]="'faq-trigger-' + faq.id"
             [attr.inert]="isOpen ? null : ''"
           >
             <div class="overflow-hidden">
@@ -76,19 +84,21 @@
 
                 @if (faq.children?.length) {
                   <div
+                    ngpAccordion
+                    ngpAccordionType="single"
+                    ngpAccordionCollapsible
+                    [ngpAccordionValue]="openChild"
+                    (ngpAccordionValueChange)="openQuestion($event)"
                     class="mb-2 divide-y divide-border/60 border-t border-border/60 pl-3 sm:pl-4"
                   >
                     @for (child of faq.children ?? []; track child.id) {
                       @let isChildOpen = openChild === child.id;
-                      <div>
+                      <div ngpAccordionItem [ngpAccordionItemValue]="child.id">
                         <h4>
                           <button
                             type="button"
+                            ngpAccordionTrigger
                             class="flex w-full cursor-pointer items-start justify-between gap-4 py-4 text-left transition-colors hover:text-accent"
-                            [attr.aria-expanded]="isChildOpen"
-                            [attr.aria-controls]="'faq-panel-' + child.id"
-                            [id]="'faq-trigger-' + child.id"
-                            (click)="toggleChild(child.id)"
                           >
                             <span class="text-sm font-medium text-pretty text-muted-foreground">
                               {{ child.question }}
@@ -103,11 +113,9 @@
                         </h4>
 
                         <div
-                          class="grid transition-[grid-template-rows] duration-300 ease-out"
+                          ngpAccordionContent
+                          class="grid data-[closed]:grid! transition-[grid-template-rows] duration-300 ease-out"
                           [class]="isChildOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'"
-                          [id]="'faq-panel-' + child.id"
-                          role="region"
-                          [attr.aria-labelledby]="'faq-trigger-' + child.id"
                           [attr.inert]="isChildOpen ? null : ''"
                         >
                           <div class="overflow-hidden">

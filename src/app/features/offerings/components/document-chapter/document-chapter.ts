@@ -4,6 +4,5 @@ import { Component } from '@angular/core';
   selector: 'app-document-chapter',
   imports: [],
   templateUrl: './document-chapter.html',
-  styleUrl: './document-chapter.css',
 })
 export class DocumentChapter {}

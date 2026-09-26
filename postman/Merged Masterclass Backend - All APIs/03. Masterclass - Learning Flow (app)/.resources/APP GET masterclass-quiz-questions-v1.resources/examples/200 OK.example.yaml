@@ -1,0 +1,23 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/quiz/{{chapter_id}}/questions/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "chapter_id": "<str(chapter.id)>",
+        "questions_to_show": "<quiz_config.questions_to_show>",
+        "previously_completed": false,
+        "resumed": false,
+        "answered_count": 0,
+        "questions": "<sync_to_async(lambda: serializer.data)()>"
+      }
+order: 1000

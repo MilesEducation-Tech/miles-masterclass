@@ -17,7 +17,7 @@
   @if (!me.isPartnerAdmin() && !me.isLoading()) {
     <div class="rounded-xl border border-white/10 bg-card p-8 text-center max-w-lg mx-auto">
       <h2 class="text-lg font-bold mb-2">Not a partner admin</h2>
-      <p class="text-sm" style="color: var(--mm-fg-3)">
+      <p class="text-sm text-fg-3">
         Your account isn't provisioned as a partner admin yet. Contact a super admin.
       </p>
     </div>
@@ -25,7 +25,7 @@
     <!-- Provisioned, but without a report-read capability (what the endpoint gates on). -->
     <div class="rounded-xl border border-white/10 bg-card p-8 text-center max-w-lg mx-auto">
       <h2 class="text-lg font-bold mb-2">Reporting not enabled</h2>
-      <p class="text-sm" style="color: var(--mm-fg-3)">
+      <p class="text-sm text-fg-3">
         Your partner-admin account doesn't have a report-read capability, so users can't be listed.
         Ask a super admin to grant it.
       </p>
@@ -53,11 +53,7 @@
 
     <!-- Error banner -->
     @if (facade.error()) {
-      <div
-        class="px-3 py-2 text-sm rounded-md"
-        style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
-        role="alert"
-      >
+      <div class="px-3 py-2 text-sm rounded-md bg-danger-bg text-danger-foreground" role="alert">
         {{ facade.error() }}
       </div>
     }

@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
-import { computed, inject, Service, PLATFORM_ID, resource } from '@angular/core';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { httpResource } from '@angular/common/http';
+import { computed, inject, Service, PLATFORM_ID } from '@angular/core';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { AdminAuth } from '@admin/core/services/admin-auth';
 import {
   adminContext,
@@ -30,30 +30,30 @@ const PARTNER_ME_ENDPOINT = 'partners/panel/me/';
 // aborts in-flight resource() loads and stops this page's calls firing elsewhere.
 @Service({ autoProvided: false })
 export class PartnerAdminMe {
-  private readonly api = inject(ApiClient);
   private readonly auth = inject(AdminAuth);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  private readonly meResource = resource({
-    // Keyed on WHO is signed in (a primitive, so a profile refresh that rebuilds
-    // the same user is a no-op). Keying on the access token refetched /me/ on
-    // every hourly rotation, from whatever page the admin happened to be on.
-    params: () => {
-      if (!this.isBrowser || !this.auth.isAuthenticated()) return undefined;
-      return this.auth.adminUser()?.user_id;
-    },
-    loader: ({ abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<PartnerAdminMeResponse>(PARTNER_ME_ENDPOINT, { context: adminContext() })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { is_partner_admin: false } as PartnerAdminMeResponse },
-      ).catch(() => ({ is_partner_admin: false }) as PartnerAdminMeResponse),
-  });
+  /**
+   * WHO is signed in, as a primitive. A `computed` only notifies when the value
+   * changes, so a profile refresh that rebuilds the same user, or an hourly token
+   * rotation, does not re-run the request below: keying on the token used to refetch
+   * /me/ on every rotation, from whatever page the admin happened to be on.
+   */
+  private readonly userId = computed(() =>
+    this.isBrowser && this.auth.isAuthenticated() ? this.auth.adminUser()?.user_id : undefined,
+  );
 
-  /** The resolved profile, or null when the user isn't a verified partner admin. */
+  private readonly meResource = httpResource<PartnerAdminMeResponse>(() =>
+    this.userId() ? { url: apiUrl(PARTNER_ME_ENDPOINT), context: adminContext() } : undefined,
+  );
+
+  /**
+   * The resolved profile, or null when the user isn't a verified partner admin.
+   * Fail-closed: a failed fetch has no value (`hasValue()` is false), so it reads as
+   * "not a partner admin", exactly as the old `.catch()` fallback did.
+   */
   private readonly profile = computed(() => {
-    const value = this.meResource.value();
+    const value = this.meResource.hasValue() ? this.meResource.value() : undefined;
     // Both shapes now carry `is_partner_admin`; the literal `true`/`false` is
     // what discriminates them, not the key's presence.
     if (!value || !value.is_partner_admin) return null;

@@ -15,11 +15,13 @@ import {
   withViewTransitions,
 } from '@angular/router';
 
+import { provideDialogConfig } from 'ng-primitives/dialog';
 import { routes } from './app.routes';
 import {
   provideClientHydration,
   withEventReplay,
   withHttpTransferCacheOptions,
+  withIncrementalHydration,
 } from '@angular/platform-browser';
 import { provideIconsProvider } from './configuration/ng-icon';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -88,6 +90,9 @@ export const appConfig: ApplicationConfig = {
     ),
     provideClientHydration(
       withEventReplay(),
+      // Lets a `@defer (hydrate on …)` block render its content on the server and
+      // hydrate later. A plain `@defer` still serves only its placeholder.
+      withIncrementalHydration(),
       withHttpTransferCacheOptions({
         includePostRequests: false,
       }),
@@ -100,6 +105,10 @@ export const appConfig: ApplicationConfig = {
       withNavigationErrorHandler(recoverFromStaleChunk),
     ),
     provideIconsProvider(),
+    // ng-primitives closes open dialogs on every navigation by default; the hand-rolled
+    // Dialog service never did, and several dialogs change the route or query params
+    // themselves. Kept as it was (Phase 10 decision, STATE.md).
+    provideDialogConfig({ closeOnNavigation: false }),
     // Binds the core NotificationService to the shared toast component. Only the
     // composition root may name both sides — see TOAST_COMPONENT.
     { provide: TOAST_COMPONENT, useValue: ToastComponent },

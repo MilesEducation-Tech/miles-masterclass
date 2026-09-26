@@ -4,13 +4,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take } from 'rxjs';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { CreatePartnerCodeRequest, PartnerCode } from '@admin/core/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
-import {
-  CreatePartnerCodeDialog,
-  CreatePartnerCodeDialogData,
-} from '@admin/partner-platform-v2/dialogs/create-partner-code-dialog/create-partner-code-dialog';
+// Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { CreatePartnerCodeDialogData } from '@admin/partner-platform-v2/dialogs/create-partner-code-dialog/create-partner-code-dialog';
 
 /**
  * Partner Platform v2 — Partner Codes (`/admin/partner-v2/codes`). The
@@ -25,7 +23,7 @@ import {
 })
 export class CodesV2 {
   protected readonly facade = inject(PartnerSuperAdminFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
 
   /** The API embeds the scope's name, so no id → name lookup is needed. */
@@ -35,19 +33,19 @@ export class CodesV2 {
     return 'Global';
   }
 
-  protected openCreate(): void {
-    const ref = this.dialog.open<CreatePartnerCodeDialog, CreatePartnerCodeRequest | undefined>(
-      CreatePartnerCodeDialog,
-      {
-        data: {
-          networks: this.facade.activeNetworks(),
-          firms: this.facade.firms().filter((f) => f.is_active),
-        } satisfies CreatePartnerCodeDialogData,
-        maxWidth: '520px',
-        ariaLabel: 'Create partner code',
-      },
-    );
-    ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+  protected async openCreate(): Promise<void> {
+    const { CreatePartnerCodeDialog } =
+      await import('@admin/partner-platform-v2/dialogs/create-partner-code-dialog/create-partner-code-dialog');
+    const ref = this.dialogs.open<
+      CreatePartnerCodeDialogData,
+      CreatePartnerCodeRequest | undefined
+    >(CreatePartnerCodeDialog, {
+      data: {
+        networks: this.facade.activeNetworks(),
+        firms: this.facade.firms().filter((f) => f.is_active),
+      } satisfies CreatePartnerCodeDialogData,
+    });
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (result) void this.facade.createPartnerCode(result);
     });
   }

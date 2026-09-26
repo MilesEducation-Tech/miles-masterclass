@@ -1,9 +1,10 @@
-import { inject, Service, signal } from '@angular/core';
+import { httpResource } from '@angular/common/http';
+import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
 import { Storage } from '@core/services/storage/storage';
 import { QuizQuestion, ContentDetails } from '@core/models/course.model';
-import { Observable, of } from 'rxjs';
-import { map, tap, switchMap } from 'rxjs/operators';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { Observable } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
+import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Utils } from '@shared/services/utils';
 import { Analytics } from '@core/services/analytics/analytics';
 import { ASSESSMENT_ROUTES } from '@features/offerings/models/assessment.model';
@@ -25,6 +26,10 @@ type SubmitFinalAssessmentRequest = RouteRequest<typeof ASSESSMENT_ROUTES.submit
 type AssessmentReportResponse = RouteResponse<typeof ASSESSMENT_ROUTES.finalAssessmentReport>;
 type AssessmentReportRequest = RouteRequest<typeof ASSESSMENT_ROUTES.finalAssessmentReport>;
 
+/**
+ * The final assessment for one course and session. Provided per route (exam and
+ * report); the pages set `courseId`/`sessionId` and every read follows them.
+ */
 @Service({ autoProvided: false })
 export class FinalAssessmentFacade {
   private readonly storage = inject(Storage);
@@ -33,75 +38,102 @@ export class FinalAssessmentFacade {
   private readonly analytics = inject(Analytics);
   readonly sessionId = signal<string>('');
   readonly courseId = signal<string>('');
-  readonly isAssessmentPassed = signal<boolean>(false);
 
-  loadAssessmentData(): Observable<{ questions: QuizQuestion[]; details: ContentDetails }> {
-    const courseId = +this.courseId();
-    const sessionId = +this.sessionId();
-
-    const courseDetailsParams: CourseDetailsParams = { id: courseId };
-    return this.apiClient
-      .get<CourseDetailsResponse>(
-        ASSESSMENT_ROUTES.getCourseDetails.path.replace(
-          ':course_type',
-          this.utils.getCourseDetailsSegment(),
+  private readonly detailsResource = httpResource<ContentDetails>(
+    () => {
+      const id = +this.courseId();
+      if (!id) return undefined;
+      const params: CourseDetailsParams = { id };
+      return {
+        url: apiUrl(
+          ASSESSMENT_ROUTES.getCourseDetails.path.replace(
+            ':course_type',
+            this.utils.getCourseDetailsSegment(),
+          ),
         ),
-        {
-          params: courseDetailsParams,
-        },
+        params,
+      };
+    },
+    { parse: (raw) => (raw as CourseDetailsResponse).data },
+  );
+
+  /** The course, or `null` while loading and on failure. */
+  readonly courseDetails = computed<ContentDetails | null>(() =>
+    this.detailsResource.hasValue() ? (this.detailsResource.value() ?? null) : null,
+  );
+
+  readonly isAssessmentPassed = computed(
+    () => this.courseDetails()?.user_assessment_details?.status === 'Exam_Passed',
+  );
+
+  private readonly questionsKey = computed(() => `final_assessment_questions_${this.courseId()}`);
+
+  /**
+   * Questions answered so far are cached in localStorage, so a reload resumes the
+   * attempt. Not reactive — it is read when the course's details land, which is
+   * when the old chain read it too.
+   */
+  private cachedQuestions(): QuizQuestion[] | null {
+    const local = this.storage.getLocal<QuizQuestion[]>(this.questionsKey());
+    return local && local.length > 0 ? local : null;
+  }
+
+  private readonly questionsResource = httpResource<QuizQuestion[]>(
+    () => {
+      const details = this.courseDetails();
+      // No exam to fetch for a passed course, or when the attempt is cached.
+      if (!details || this.isAssessmentPassed() || untracked(() => this.cachedQuestions())) {
+        return undefined;
+      }
+      const courseId = +this.courseId();
+      const params: FinalAssessmentQuestionsParams = { session_id: +this.sessionId() };
+      if (details.course_type === 'masterclass') params.masterclass_id = courseId;
+      else if (details.course_type === 'podcast') params.podcast_id = courseId;
+      // Response-driven: AI Lab courses are nano-learning rows, so they
+      // share the id key with both spellings of micro-learning.
+      else if (
+        details.course_type === 'nano_learning' ||
+        details.course_type === 'micro_learning' ||
+        details.course_type === 'ai_lab'
       )
-      .pipe(
-        map((res) => res.data),
-        switchMap((details) => {
-          if (details.user_assessment_details?.status === 'Exam_Passed') {
-            this.isAssessmentPassed.set(true);
-            return of({ questions: [], details });
-          }
+        params.nano_learning_id = courseId;
+      return { url: apiUrl(ASSESSMENT_ROUTES.getFinalAssessmentQuestions.path), params };
+    },
+    {
+      defaultValue: [],
+      parse: (raw) => {
+        const questions = (raw as FinalAssessmentQuestionsResponse).data;
+        // Cache the fresh attempt, as the old `tap` did.
+        this.storage.setLocal(untracked(this.questionsKey), questions);
+        return questions;
+      },
+    },
+  );
 
-          this.isAssessmentPassed.set(false);
-          this.analytics.trackEvent('assessment_start', {
-            course_id: courseId,
-            session_id: sessionId,
-            course_type: details.course_type,
-          });
+  /** The exam's questions: none once passed, else the cached attempt or a fresh one. */
+  readonly questions = computed<QuizQuestion[]>(() => {
+    if (!this.courseDetails() || this.isAssessmentPassed()) return [];
+    const fetched = this.questionsResource.hasValue() ? this.questionsResource.value() : [];
+    return fetched.length ? fetched : (untracked(() => this.cachedQuestions()) ?? []);
+  });
 
-          let innerQuestions$: Observable<QuizQuestion[]>;
-          const localQuestions = this.storage.getLocal<QuizQuestion[]>(
-            `final_assessment_questions_${courseId}`,
-          );
+  readonly isLoading = computed(
+    () => this.detailsResource.isLoading() || this.questionsResource.isLoading(),
+  );
 
-          if (localQuestions && localQuestions.length > 0) {
-            innerQuestions$ = of(localQuestions);
-          } else {
-            const params: FinalAssessmentQuestionsParams = {
-              session_id: sessionId,
-            };
-            if (details.course_type === 'masterclass') params.masterclass_id = +courseId;
-            else if (details.course_type === 'podcast') params.podcast_id = +courseId;
-            // Response-driven: AI Lab courses are nano-learning rows, so they
-            // share the id key with both spellings of micro-learning.
-            else if (
-              details.course_type === 'nano_learning' ||
-              details.course_type === 'micro_learning' ||
-              details.course_type === 'ai_lab'
-            )
-              params.nano_learning_id = +courseId;
-            innerQuestions$ = this.apiClient
-              .get<FinalAssessmentQuestionsResponse>(
-                ASSESSMENT_ROUTES.getFinalAssessmentQuestions.path,
-                { params },
-              )
-              .pipe(
-                map((res) => res.data),
-                tap((questions) => {
-                  this.storage.setLocal(`final_assessment_questions_${courseId}`, questions);
-                }),
-              );
-          }
-
-          return innerQuestions$.pipe(map((questions) => ({ questions, details })));
+  constructor() {
+    // Once per course the learner is about to sit (the old chain fired it per load).
+    effect(() => {
+      const details = this.courseDetails();
+      if (!details || this.isAssessmentPassed()) return;
+      untracked(() =>
+        this.analytics.trackEvent('assessment_start', {
+          course_id: +this.courseId(),
+          session_id: +this.sessionId(),
+          course_type: details.course_type,
         }),
       );
+    });
   }
 
   getQuestions(): QuizQuestion[] {
@@ -158,21 +190,6 @@ export class FinalAssessmentFacade {
     const body: AssessmentReportRequest = { userassessment_id: userAssessmentId };
     return this.apiClient
       .post<AssessmentReportResponse>(ASSESSMENT_ROUTES.finalAssessmentReport.path, body)
-      .pipe(map((res) => res.data));
-  }
-
-  getCourseDetails(courseId: number): Observable<ContentDetails> {
-    const params: CourseDetailsParams = { id: courseId };
-    return this.apiClient
-      .get<CourseDetailsResponse>(
-        ASSESSMENT_ROUTES.getCourseDetails.path.replace(
-          ':course_type',
-          this.utils.getCourseDetailsSegment(),
-        ),
-        {
-          params,
-        },
-      )
       .pipe(map((res) => res.data));
   }
 

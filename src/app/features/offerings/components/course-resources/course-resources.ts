@@ -4,26 +4,24 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideVideo, lucideFileText, lucideDownload, lucideBot } from '@ng-icons/lucide';
 import { MasterclassFacade } from '../../services/masterclass-facade';
-import { VideoDialog, VideoDialogData } from '@shared/dialogs/video-dialog/video-dialog';
-import { Dialog } from '@core/services/dialog/dialog';
-import {
-  HtmlContentDialog,
-  HtmlContentDialogData,
-} from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
+// Type-only: VideoDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { VideoDialogData } from '@shared/dialogs/video-dialog/video-dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
+// Type-only: HtmlContentDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 
 @Component({
   selector: 'app-course-resources',
   standalone: true,
   imports: [CommonModule, NgIcon],
   templateUrl: './course-resources.html',
-  styleUrl: './course-resources.css',
   providers: [provideIcons({ lucideVideo, lucideFileText, lucideDownload, lucideBot })],
 })
 export class CourseResources {
   readonly courseType = input<string>('masterclass');
 
   protected readonly masterclassFacade = inject(MasterclassFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
 
   private glossaryCache: string | null = null;
@@ -83,7 +81,7 @@ export class CourseResources {
 
   handleResourceClick(resource: any) {
     if (resource.action === 'navigate') {
-      this.openVideoDialog();
+      void this.openVideoDialog();
     } else if (resource.action === 'glossary') {
       this.openGlossary();
     } else if (resource.action === 'exercise') {
@@ -97,7 +95,7 @@ export class CourseResources {
 
   openGlossary() {
     if (this.glossaryCache) {
-      this.openGlossaryDialog(this.glossaryCache);
+      void this.openGlossaryDialog(this.glossaryCache);
       return;
     }
 
@@ -110,15 +108,16 @@ export class CourseResources {
       .subscribe((response) => {
         if (response?.data?.glossary_transcript_text) {
           this.glossaryCache = response.data.glossary_transcript_text;
-          this.openGlossaryDialog(this.glossaryCache);
+          void this.openGlossaryDialog(this.glossaryCache);
         }
       });
   }
 
-  private openGlossaryDialog(html: string) {
+  private async openGlossaryDialog(html: string): Promise<void> {
+    const { HtmlContentDialog } =
+      await import('@features/offerings/dialogs/html-content-dialog/html-content-dialog');
     const courseTitle = this.masterclassFacade.courseDetails()?.title ?? '';
-    this.dialog.open<HtmlContentDialog, HtmlContentDialogData>(HtmlContentDialog, {
-      maxWidth: '100%',
+    this.dialogs.open<HtmlContentDialogData>(HtmlContentDialog, {
       data: {
         title: courseTitle ? `${courseTitle} - Glossary` : 'Glossary',
         htmlContent: html,
@@ -126,7 +125,7 @@ export class CourseResources {
     });
   }
 
-  openVideoDialog() {
+  async openVideoDialog(): Promise<void> {
     const courseDetails = this.masterclassFacade.courseDetails();
     if (!courseDetails) return;
     if (!courseDetails.navigation_link) return;
@@ -141,11 +140,8 @@ export class CourseResources {
       videoType = 'application/x-mpegURL';
     }
 
-    this.dialog.open<VideoDialog, VideoDialogData>(VideoDialog, {
-      maxWidth: '100%',
-      panelClass: 'video-dialog-panel',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
+    const { VideoDialog } = await import('@shared/dialogs/video-dialog/video-dialog');
+    this.dialogs.open<VideoDialogData>(VideoDialog, {
       data: {
         videoSource: {
           src: courseDetails.navigation_link,

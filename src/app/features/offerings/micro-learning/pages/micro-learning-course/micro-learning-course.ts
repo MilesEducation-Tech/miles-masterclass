@@ -11,24 +11,20 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { AppDownloadPrompt } from '@features/offerings/services/app-download-prompt';
 import { NotificationService } from '@core/services/notification/notification';
 import { MicroLearningCourseFacade } from '../../../services/micro-learning-course-facade';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
-import {
-  HtmlContentDialog,
-  HtmlContentDialogData,
-} from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
+// Type-only: the three dialogs below load with `import()` when opened (PROMPT.md §4.4).
+import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 import { MicroLearningTopBar } from '../../components/micro-learning-top-bar/micro-learning-top-bar';
 import { MicroLearningReelCard } from '../../components/micro-learning-reel-card/micro-learning-reel-card';
 import { MicroLearningReelNav } from '../../components/micro-learning-reel-nav/micro-learning-reel-nav';
-import {
-  MicroLearningFilterSheet,
+import type {
   MicroLearningFilterSheetData,
   MicroLearningFilterSheetResult,
 } from '../../components/micro-learning-filter-sheet/micro-learning-filter-sheet';
-import { MicroLearningAboutPanel } from '../../components/micro-learning-about-panel/micro-learning-about-panel';
 import {
   MicroLearningFilterOption,
   MicroLearningOptionId,
@@ -41,12 +37,12 @@ import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
   selector: 'app-micro-learning-course',
   imports: [MicroLearningTopBar, MicroLearningReelCard, MicroLearningReelNav],
   templateUrl: './micro-learning-course.html',
-  styleUrl: './micro-learning-course.css',
+  host: { class: 'block h-screen overflow-hidden' },
 })
 export class MicroLearningCourse {
   readonly facade = inject(MicroLearningCourseFacade);
   private readonly feature = inject(FeatureFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly reelScroller = viewChild<ElementRef<HTMLElement>>('reelScroller');
@@ -201,19 +197,14 @@ export class MicroLearningCourse {
     this.muted.update((value) => !value);
   }
 
-  openFilters(): void {
-    const ref = this.dialog.open<MicroLearningFilterSheet, MicroLearningFilterSheetResult>(
+  async openFilters(): Promise<void> {
+    const { MicroLearningFilterSheet } =
+      await import('../../components/micro-learning-filter-sheet/micro-learning-filter-sheet');
+    const ref = this.dialogs.open<MicroLearningFilterSheetData, MicroLearningFilterSheetResult>(
       MicroLearningFilterSheet,
-      {
-        data: {
-          title: 'Field of study',
-          options: this.filters(),
-          visibleCount: 5,
-        } as MicroLearningFilterSheetData,
-        ariaLabel: 'Filter by field of study',
-      },
+      { data: { title: 'Field of study', options: this.filters(), visibleCount: 5 } },
     );
-    ref.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (result) this.filters.set(result);
     });
   }
@@ -243,7 +234,7 @@ export class MicroLearningCourse {
     if (!reel) return;
     const cached = this.transcriptCache.get(reel.id);
     if (cached) {
-      this.showHtmlDialog(`Transcript - ${reel.title}`, cached);
+      void this.showHtmlDialog(`Transcript - ${reel.title}`, cached);
       return;
     }
     this.facade
@@ -259,7 +250,7 @@ export class MicroLearningCourse {
           return;
         }
         this.transcriptCache.set(reel.id, html);
-        this.showHtmlDialog(`Transcript - ${reel.title}`, html);
+        void this.showHtmlDialog(`Transcript - ${reel.title}`, html);
       });
   }
 
@@ -273,7 +264,7 @@ export class MicroLearningCourse {
     if (!reel) return;
     const cached = this.glossaryCache.get(reel.id);
     if (cached) {
-      this.showHtmlDialog(`${reel.title} - Glossary`, cached);
+      void this.showHtmlDialog(`${reel.title} - Glossary`, cached);
       return;
     }
     this.facade
@@ -286,15 +277,14 @@ export class MicroLearningCourse {
           return;
         }
         this.glossaryCache.set(reel.id, html);
-        this.showHtmlDialog(`${reel.title} - Glossary`, html);
+        void this.showHtmlDialog(`${reel.title} - Glossary`, html);
       });
   }
 
-  private showHtmlDialog(title: string, htmlContent: string): void {
-    this.dialog.open<HtmlContentDialog, HtmlContentDialogData>(HtmlContentDialog, {
-      maxWidth: '100%',
-      data: { title, htmlContent },
-    });
+  private async showHtmlDialog(title: string, htmlContent: string): Promise<void> {
+    const { HtmlContentDialog } =
+      await import('@features/offerings/dialogs/html-content-dialog/html-content-dialog');
+    this.dialogs.open<HtmlContentDialogData>(HtmlContentDialog, { data: { title, htmlContent } });
   }
 
   openAbout(): void {
@@ -302,7 +292,7 @@ export class MicroLearningCourse {
     if (!reel) return;
     const cached = this.aboutCache.get(reel.id);
     if (cached) {
-      this.showAboutPanel(cached);
+      void this.showAboutPanel(cached);
       return;
     }
     this.feature
@@ -325,15 +315,13 @@ export class MicroLearningCourse {
             .filter(Boolean),
         };
         this.aboutCache.set(reel.id, enriched);
-        this.showAboutPanel(enriched);
+        void this.showAboutPanel(enriched);
       });
   }
 
-  private showAboutPanel(data: ContentAbout): void {
-    this.dialog.open(MicroLearningAboutPanel, {
-      data,
-      position: 'right',
-      ariaLabel: 'About this course',
-    });
+  private async showAboutPanel(data: ContentAbout): Promise<void> {
+    const { MicroLearningAboutPanel } =
+      await import('../../components/micro-learning-about-panel/micro-learning-about-panel');
+    this.dialogs.open(MicroLearningAboutPanel, { data });
   }
 }

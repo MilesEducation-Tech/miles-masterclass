@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, Signal, signal } from '@angular/cor
 import { AriaSelectOption } from '@core/models/aria.model';
 import { AriaAutocomplete } from '../../ui/aria/aria-autocomplete/aria-autocomplete';
 import { Button } from '../../ui/button/button';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 
 export interface ApplyPartnerCodeDialogData {
   userEmail: string;
@@ -16,18 +17,21 @@ export interface ApplyPartnerCodeDialogResult {
 
 /**
  * Picks a partner code for a user. Pure UI — returns the chosen code; the
- * caller performs the update. `data` / `dialogRef` are property-injected by
- * the Dialog service.
+ * caller performs the update. `data` comes from `injectDialogRef()`, i.e. the
+ * `data` the caller passed to `NgpDialogManager.open()`.
  */
 @Component({
   selector: 'app-apply-partner-code-dialog',
-  imports: [AriaAutocomplete, Button],
+  imports: [AriaAutocomplete, Button, DialogShell],
   templateUrl: './apply-partner-code-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ApplyPartnerCodeDialog {
-  dialogRef!: DialogRef<ApplyPartnerCodeDialog, ApplyPartnerCodeDialogResult | undefined>;
-  data!: ApplyPartnerCodeDialogData;
+  private readonly dialogRef = injectDialogRef<
+    ApplyPartnerCodeDialogData,
+    ApplyPartnerCodeDialogResult | undefined
+  >();
+  protected readonly data = this.dialogRef.data;
 
   protected readonly selected = signal<string | null>(null);
 

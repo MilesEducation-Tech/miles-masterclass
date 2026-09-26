@@ -17,7 +17,7 @@
       } @else {
         <div
           id="video"
-          class="flex w-full aspect-video rounded-lg overflow-hidden justify-center bg-[#161E25]"
+          class="flex w-full aspect-video rounded-lg overflow-hidden justify-center bg-player-panel"
         >
           <app-video-js
             [class.invisible]="!videoSource().length"
@@ -59,7 +59,7 @@
             (keydown.space)="navigate.emit(prev.id); $event.preventDefault()"
           >
             <div class="w-[90px] m-2 overflow-hidden flex items-center">
-              <div class="w-full h-14 bg-[#38424C] rounded-md overflow-hidden">
+              <div class="w-full h-14 bg-card rounded-md overflow-hidden">
                 @if (prev.chapter_thumbnail) {
                   <img
                     [src]="prev.chapter_thumbnail"
@@ -105,7 +105,7 @@
             "
           >
             <div class="w-[90px] m-2 overflow-hidden flex items-center">
-              <div class="w-full h-14 bg-[#4a5560] rounded-md overflow-hidden">
+              <div class="w-full h-14 bg-player-thumb rounded-md overflow-hidden">
                 @if (nextChapter.chapter_thumbnail) {
                   <img
                     [src]="nextChapter.chapter_thumbnail"
@@ -140,7 +140,7 @@
               (keydown.space)="viewFinalAssessmentReport.emit(); $event.preventDefault()"
             >
               <div
-                class="w-[90px] m-2 overflow-hidden flex items-center justify-center bg-[#4a5560] rounded-md h-14"
+                class="w-[90px] m-2 overflow-hidden flex items-center justify-center bg-player-thumb rounded-md h-14"
               >
                 <ng-icon name="faClipboard" size="24" class="text-white" />
               </div>
@@ -172,7 +172,7 @@
               "
             >
               <div
-                class="w-[90px] m-2 overflow-hidden flex items-center justify-center bg-[#4a5560] rounded-md h-14"
+                class="w-[90px] m-2 overflow-hidden flex items-center justify-center bg-player-thumb rounded-md h-14"
               >
                 <ng-icon name="faClipboard" size="24" class="text-white" />
               </div>
@@ -204,7 +204,7 @@
               "
             >
               <div
-                class="w-[90px] m-2 overflow-hidden flex items-center justify-center bg-[#4a5560] rounded-md h-14"
+                class="w-[90px] m-2 overflow-hidden flex items-center justify-center bg-player-thumb rounded-md h-14"
               >
                 <ng-icon name="faClipboard" size="24" class="text-white" />
               </div>
@@ -238,7 +238,7 @@
         <!-- Transcript Button -->
         <!-- @if (current()?.transcript) { -->
         <div
-          class="bg-[#161E25] p-2 rounded-lg flex items-center w-full cursor-pointer"
+          class="bg-player-panel p-2 rounded-lg flex items-center w-full cursor-pointer"
           role="button"
           tabindex="0"
           aria-label="Open transcript"
@@ -253,7 +253,7 @@
         <!-- Track Quiz Button -->
         @if (current()?.quiz_details?.overall_chapter_questions && cpeMode()) {
           <div
-            class="bg-[#161E25] p-2 rounded-lg flex flex-col w-full"
+            class="bg-player-panel p-2 rounded-lg flex flex-col w-full"
             role="button"
             tabindex="0"
             aria-label="Track quiz"

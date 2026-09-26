@@ -1,0 +1,50 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `WebUnderMaintainanceV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `web-maintainance-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** none  
+  **Permission:** AllowAny
+
+  Web maintenance probe. ``GET account/web/maintainance-status/``.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 6.2 `GET web/maintainance-status/` - public
+
+  ```json
+  { "is_maintenance": false, "force_logout_all_user": false }
+  ```
+
+  Is the **web** surface down. Identical shape and identical key names to 6.1 - the surface is the URL,
+  not a key name, so one parser serves both.
+
+  **It used to need a token and return five keys.** `is_web_maintenance` is now `is_maintenance`, and
+  `is_pathway` / `is_onboarding_completed` are gone from this route entirely: `GET user-details/` (3.1)
+  already answers both, as `Pathway` and `onboarding_fully_completed`.
+
+  ### 6.4 Where the values come from, and why a secret edit is not enough
+
+  Both fall-back values load through AWS Secrets Manager (`APP_UNDER_MAINTENANCE`,
+  `WEB_APP_UNDER_MAINTENANCE`) and are read **once at process boot**. Editing a secret therefore changes
+  nothing until the service restarts. The override on 6.3 is the only live switch.
+
+  ```
+  GET app|web/maintainance-status/
+    -> Redis override live?  yes -> that value           source: cache
+                              no -> this surface's secret source: env
+  ```
+
+  ---
+url: "{{base_url}}/api/v1/account/web/maintainance-status/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET web-maintainance-v1.resources/examples
+order: 17000

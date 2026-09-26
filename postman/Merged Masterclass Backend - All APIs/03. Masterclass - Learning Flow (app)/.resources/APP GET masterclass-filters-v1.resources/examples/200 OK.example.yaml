@@ -1,0 +1,18 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/filters/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "<body>": "<async_cache_get_or_set(FILTERS_CACHE_KEY, _build_filter_metadata, timeout=MC_CACHE_TTL, stale_seconds=60, lock_timeout=10, request=request)>"
+      }
+order: 1000

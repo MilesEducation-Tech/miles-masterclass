@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassCourseEnrollmentViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-enrollment-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  6.13 GET /caira/masterclass/<course_id>/enrollment/ - Read-only countdown.
+url: "{{base_url}}/api/v1/masterclass/{{course_id}}/enrollment/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/APP GET masterclass-enrollment-v1.resources/examples
+order: 5000

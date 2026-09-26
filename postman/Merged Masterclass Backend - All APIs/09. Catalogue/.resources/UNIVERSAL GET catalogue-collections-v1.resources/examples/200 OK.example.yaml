@@ -1,0 +1,20 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/catalogue/collections/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "count": 0,
+        "results": "<async_cache_get(CATALOGUE_COLLECTIONS_CACHE_KEY, request=request)>"
+      }
+order: 1000

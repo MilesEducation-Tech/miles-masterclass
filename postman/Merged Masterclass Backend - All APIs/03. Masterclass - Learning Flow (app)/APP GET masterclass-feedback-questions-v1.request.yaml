@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassFeedbackQuestionsViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-feedback-questions-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  6.10 GET /caira/masterclass/<course_id>/feedback/questions/
+url: "{{base_url}}/api/v1/masterclass/{{course_id}}/feedback/questions/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/APP GET masterclass-feedback-questions-v1.resources/examples
+order: 6000

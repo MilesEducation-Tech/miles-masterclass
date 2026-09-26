@@ -9,13 +9,12 @@ import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-c
 import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
 import { Utils } from '@shared/services/utils';
 import { Router } from '@angular/router';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 
 @Component({
   selector: 'app-course-about',
   imports: [NgIcon, DatePipe, NgOptimizedImage, CategoriesList, TotalCpeCreditsPipe, DurationPipe],
   templateUrl: './course-about.html',
-  styleUrl: './course-about.css',
 })
 export class CourseAbout {
   card = input.required<ContentAbout | ContentDetails>();
@@ -23,7 +22,7 @@ export class CourseAbout {
 
   private readonly utils = inject(Utils);
   private readonly router = inject(Router);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
 
   icons = signal({
     faSolidArrowUpRightFromSquare,
@@ -72,7 +71,7 @@ export class CourseAbout {
   onInstructorClick(i: { id: number; first_name: string; last_name: string }) {
     const slug = this.utils.slugify(`${i?.first_name} ${i?.last_name}`);
     const basePath = `/${this.utils.getRouteParams().country}/${this.utils.getRouteParams().profession}`;
-    this.dialog.closeAll();
+    this.dialogs.closeAll();
     this.router.navigate([`${basePath}/instructor`, i.id, slug]);
   }
 }

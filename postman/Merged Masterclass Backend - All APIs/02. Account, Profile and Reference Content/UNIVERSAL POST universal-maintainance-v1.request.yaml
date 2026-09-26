@@ -1,0 +1,71 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `UniversalUnderMaintainanceV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `universal-maintainance-v1`  
+  **Methods on this view:** GET, POST  
+  **Authentication:** resolved PER METHOD by the view - read its description below, not this header  
+  **Permission:** resolved PER METHOD by the view
+
+  The maintenance override: read it, set it, clear it. STAFF WRITE.
+
+  Body template generated from `UniversalMaintenanceOverrideRequestSerializer`. Values are placeholders, not fixtures.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 6.3 `account/universal/maintainance-status/` - the override
+
+  **GET is public** and reports the override plus what each surface is consequently serving:
+
+  ```json
+  {
+    "override_active": true,
+    "override_value": true,
+    "app": { "is_maintenance": true, "source": "cache" },
+    "web": { "is_maintenance": true, "source": "cache" }
+  }
+  ```
+
+  `source` is `cache` when a live override decided it and `env` when the surface fell back to its own
+  secret. It reports per surface because with no override live there is no single answer: the two
+  surfaces read two different secrets and can legitimately differ.
+
+  **POST requires a STAFF token.** It sets a cache override that outranks BOTH secrets for up to 7 days,
+  so it is gated on `is_staff` rather than on merely being signed in - there are far more learners than
+  there are people who should be able to take the platform down. A signed-in non-staff caller gets 403.
+
+  ```json
+  { "value": true, "ttl_seconds": 3600 }
+  ```
+
+  - `value` is **required and nullable**, and those are different things. `null` CLEARS the override so
+    each surface falls back to its own secret; omitting the key is a 400.
+  - `ttl_seconds` is optional. Default 86400 (24h), clamped to [60, 604800].
+  - Any undeclared key is a 400 naming the field.
+
+  The response is the GET body plus `ttl_seconds` on a set, or `"cleared": true` on a clear.
+
+  **ONE OVERRIDE COVERS BOTH SURFACES** - that is what "universal" names. A single POST puts app and web
+  into maintenance together; there is no per-surface override and a flip cannot be aimed at one client.
+
+  Every set and clear is audit-logged with the acting staff account's id at WARNING severity. This is an
+  operations tool - do not build a learner-facing UI onto it.
+url: "{{base_url}}/api/v1/account/universal/maintainance-status/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "value": false,
+      "ttl_seconds": 0
+    }
+examples: ./.resources/UNIVERSAL POST universal-maintainance-v1.resources/examples
+order: 15000

@@ -41,7 +41,7 @@
             <!-- Transcript Button -->
             @if (current()?.transcript) {
               <div
-                class="bg-[#161E25] md:py-3 py-1.5 px-4 rounded-lg flex items-center md:w-2/3 w-full cursor-pointer gap-2"
+                class="bg-player-panel md:py-3 py-1.5 px-4 rounded-lg flex items-center md:w-2/3 w-full cursor-pointer gap-2"
               >
                 <ng-icon name="faClipboard" size="16" class="text-white" />
                 <span>Transcript</span>
@@ -52,7 +52,7 @@
             @if (current()?.quiz_details?.overall_chapter_questions && cpeMode()) {
               <button
                 type="button"
-                class="bg-[#161E25] md:py-3 py-1.5 px-4 rounded-lg flex flex-col md:w-2/3 w-full text-left"
+                class="bg-player-panel md:py-3 py-1.5 px-4 rounded-lg flex flex-col md:w-2/3 w-full text-left"
                 [class]="isQuizEnabled() ? 'cursor-pointer' : 'cursor-not-allowed'"
                 [disabled]="!isQuizEnabled()"
                 (click)="handleTrackQuiz()"
@@ -99,7 +99,7 @@
                 (click)="navigate.emit(nextChapter.id)"
               >
                 <div class="w-[90px] m-2 overflow-hidden flex items-center">
-                  <div class="w-full h-14 bg-[#4a5560] rounded-md overflow-hidden">
+                  <div class="w-full h-14 bg-player-thumb rounded-md overflow-hidden">
                     @if (nextChapter.chapter_thumbnail) {
                       <img
                         [src]="nextChapter.chapter_thumbnail"
@@ -197,7 +197,7 @@
             (click)="navigate.emit(nextChapter.id)"
           >
             <div class="w-[90px] m-2 overflow-hidden flex items-center">
-              <div class="w-full h-14 bg-[#4a5560] rounded-md overflow-hidden">
+              <div class="w-full h-14 bg-player-thumb rounded-md overflow-hidden">
                 @if (nextChapter.chapter_thumbnail) {
                   <img
                     [src]="nextChapter.chapter_thumbnail"

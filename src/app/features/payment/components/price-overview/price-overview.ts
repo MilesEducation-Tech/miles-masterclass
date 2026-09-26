@@ -16,7 +16,6 @@ import { CouponList } from '@core/models/payment.model';
   providers: [CurrencyPipe],
   viewProviders: [provideIcons({ heroChevronLeft, heroChevronRight, heroXMark, svglStripe })],
   templateUrl: './price-overview.html',
-  styleUrl: './price-overview.css',
 })
 export class PriceOverview {
   readonly facade = inject(PaymentFacade);

@@ -1,0 +1,20 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/resume-state/{{course_id}}/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "success",
+        "course_id": "<str(course_id)>",
+        "chapters": []
+      }
+order: 1000

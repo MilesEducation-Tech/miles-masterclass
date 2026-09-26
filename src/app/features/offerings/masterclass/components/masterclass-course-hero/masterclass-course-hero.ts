@@ -37,7 +37,6 @@ import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/ca
     CairaCredlyBadge,
   ],
   templateUrl: './masterclass-course-hero.html',
-  styleUrl: './masterclass-course-hero.css',
   providers: [
     provideIcons({
       matPlayArrowRound,

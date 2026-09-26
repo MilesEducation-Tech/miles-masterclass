@@ -6,7 +6,6 @@ import { logoIcon } from '@core/constants/icon';
   selector: 'app-miles-slug',
   imports: [NgIcon],
   templateUrl: './miles-slug.html',
-  styleUrl: './miles-slug.css',
 })
 export class MilesSlug {
   slug = input<string>('masterclass');

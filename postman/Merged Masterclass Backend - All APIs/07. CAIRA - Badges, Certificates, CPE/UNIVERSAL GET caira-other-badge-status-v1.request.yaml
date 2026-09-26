@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `OtherBadgeStatusViewV1`  
+  **Module:** `BadgeCertificateCPE.views`  
+  **Route name:** `caira-other-badge-status-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Per-learner alumni-badge and LMS-login status for CPA, CMA, USP and CAIRA.
+url: "{{base_url}}/api/v1/caira/other-badge-status/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET caira-other-badge-status-v1.resources/examples
+order: 3000

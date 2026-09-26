@@ -5,7 +5,7 @@ import { Backward } from '@shared/components/backward/backward';
   selector: 'app-micro-learning-top-bar',
   imports: [Backward],
   templateUrl: './micro-learning-top-bar.html',
-  styleUrl: './micro-learning-top-bar.css',
+  host: { class: 'block' },
 })
 export class MicroLearningTopBar {
   readonly placeholder = input<string>('Shows, Episodes, and More');

@@ -1,0 +1,77 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `ProfileViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `account-profile-v1`  
+  **Methods on this view:** GET, PATCH  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  GET the caller's own answers, keyed by question code.
+
+  **No request body by design.** PATCH body is keyed by QUESTION CODE, so it has no fixed shape.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 4.1 READ THIS FIRST: `profile/` changed meaning on 2026-09-09
+
+  Until 2026-09-09, `api/v1/account/profile/` served the **user row**. It does not any more - that is
+  `user_details/` (section 3). `profile/` now reads **questionnaire answers and nothing else**.
+
+  The rename was done deliberately while there was only one claimant, so the two never shared a name. If you have
+  code written against the old `profile/`, it is now pointing at a different resource that will return a
+  completely different shape.
+
+  ### 4.4 `PATCH profile/` - write them back
+
+  Query: `?form=onboarding` (default) or `?form=profile` - it names which milestone is in scope.
+
+  Body: the **same flat map** the GET returns, so you read, edit and send back without reshaping.
+
+  ```json
+  { "highest_qualification": "CA", "years_experience": 3 }
+  ```
+
+  - **Partial by definition.** A code you omit is left exactly as it was, so a user can fill half a form, leave,
+    and come back. This is why it is PATCH and not PUT.
+  - **`null` is refused**, not read as "clear". There is no clearing requirement yet and inventing one would fix
+    that meaning forever.
+  - **Idempotent.** The same body twice yields the same rows and the same milestone. A retry after a mobile
+    timeout is safe.
+
+  Response:
+
+  ```json
+  {
+    "answers": { },
+    "profile_status": "onboard_completed",
+    "is_onboarding_completed": true,
+    "is_profile_completed": false,
+    "missing": []
+  }
+  ```
+
+  `answers` is the same flat map, nested rather than top-level because a bare map keyed by question code has
+  nowhere safe to carry metadata - a `profile_status` key would collide with a question coded `profile_status`.
+
+  **The write always succeeds; the milestone advances only when every required, shown question of that form has
+  an answer.** A partial save comes back with `missing` naming what is still outstanding rather than failing. Do
+  not treat a non-empty `missing` as an error.
+
+  A 400 is keyed by question code, one message per bad answer. Validation runs before the transaction opens, so a
+  rejected submission never partially applies.
+
+  **After this advances the milestone, refresh the token** - see 2.4.
+
+  ---
+url: "{{base_url}}/api/v1/account/profile/"
+method: PATCH
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL PATCH account-profile-v1.resources/examples
+order: 10000

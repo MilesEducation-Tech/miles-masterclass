@@ -4,13 +4,11 @@ import {
   Service,
   signal,
   computed,
+  effect,
   linkedSignal,
   Injector,
-  PLATFORM_ID,
-  TransferState,
-  makeStateKey,
 } from '@angular/core';
-import { isPlatformBrowser, isPlatformServer } from '@angular/common';
+import { httpResource } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, catchError, switchMap, tap } from 'rxjs';
 import { RouteResponse } from '@core/models/http.model';
@@ -28,24 +26,21 @@ import {
 import { PROFILE_ROUTES, ProfileFormState } from '@core/models/profile.model';
 import { User } from '@core/models/profile.model';
 import { NotificationService } from '@core/services/notification/notification';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { CartStore } from '@core/services/cart/cart-store';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 // Dialog components are loaded lazily (dynamic import in the open* methods below)
 // so they — and their `@angular/forms` dependency — stay out of the initial
 // bundle. This facade is eagerly instantiated via the root `Utils` service, so a
 // static import would drag every dialog into the initial chunk. Types are
 // import-only (erased at build time); the runtime class comes from `import()`.
-import type { CouponDialog } from '@features/payment/dialogs/coupon-dialog/coupon-dialog';
+import type { CouponDialogData } from '@features/payment/dialogs/coupon-dialog/coupon-dialog';
 import type {
-  FirmSponsorshipDialog,
+  FirmSponsorshipDialogData,
   FirmSponsorshipResult,
 } from '@features/payment/dialogs/firm-sponsorship-dialog/firm-sponsorship-dialog';
-import type {
-  PartnerCodePromptDialog,
-  PartnerCodePromptResult,
-} from '@features/payment/dialogs/partner-code-prompt-dialog/partner-code-prompt-dialog';
+import type { PartnerCodePromptResult } from '@features/payment/dialogs/partner-code-prompt-dialog/partner-code-prompt-dialog';
 import { Analytics } from '@core/services/analytics/analytics';
 
 type MyBucketResponse = RouteResponse<typeof PAYMENT_ROUTES.myBucket>;
@@ -59,21 +54,13 @@ type ReactivateAutoRenewalResponse = RouteResponse<typeof PAYMENT_ROUTES.reactiv
 type StripePortalResponse = RouteResponse<typeof PAYMENT_ROUTES.navigateToStripeCustomerDashboard>;
 type SubscriptionPlansResponse = RouteResponse<typeof PAYMENT_ROUTES.getSubscriptionPlans>;
 
-// SSR → client handoff for the plan lists. Without this the client re-fetches
-// into an empty signal and its first render doesn't match the server DOM,
-// causing hydration duplication / NG0501 on the SSR'd plan page.
-const PLANS_STATE_KEY = makeStateKey<SubscriptionPlan[]>('payment.subscriptionPlans');
-const RECOMMENDED_PLANS_STATE_KEY = makeStateKey<SubscriptionPlan[]>('payment.recommendedPlans');
-
 @Service()
 export class PaymentFacade {
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly http = inject(ApiClient);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly injector = inject(Injector);
-  private readonly transferState = inject(TransferState);
-  private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly analytics = inject(Analytics);
 
@@ -86,10 +73,44 @@ export class PaymentFacade {
   private readonly cart = inject(CartStore);
   readonly cartItemRemoved = this.cart.cartItemRemoved;
   readonly cartData = this.cart.cartData;
-  orderData = signal<OrderByIdResponseData | null>(null);
-  ordersData = signal<OrderByIdResponseData[]>([]);
-  ordersLoading = signal<boolean>(false);
-  ordersError = signal<string | null>(null);
+
+  /** The order the invoice page shows; `null` idles the read. Set through `loadOrderById()`. */
+  private readonly orderId = signal<string | null>(null);
+  private readonly orderResource = httpResource<OrderByIdResponse>(() => {
+    const id = this.orderId();
+    return id
+      ? { url: apiUrl(PAYMENT_ROUTES.getOrderById.path), params: { order_id: id } }
+      : undefined;
+  });
+  /** Guarded: `value()` throws on an errored resource. */
+  readonly orderData = computed<OrderByIdResponseData | null>(() =>
+    this.orderResource.hasValue() ? (this.orderResource.value()?.data ?? null) : null,
+  );
+  private readonly orderErrorLog = effect(() => {
+    const err = this.orderResource.error();
+    if (err) this.logger.error('Failed to load order details', err);
+  });
+
+  /**
+   * Order history. OPT-IN, because this facade is root-provided and built on every
+   * page (via `Utils`): nothing is fetched until the orders page calls `loadOrders()`.
+   */
+  private readonly ordersWanted = signal(false);
+  private readonly ordersResource = httpResource<OrdersResponse>(() =>
+    this.ordersWanted() ? apiUrl(PAYMENT_ROUTES.getOrders.path) : undefined,
+  );
+  /** Guarded: `value()` throws on an errored resource. */
+  readonly ordersData = computed<OrderByIdResponseData[]>(() =>
+    this.ordersResource.hasValue() ? (this.ordersResource.value()?.data ?? []) : [],
+  );
+  readonly ordersLoading = computed(() => this.ordersResource.isLoading());
+  readonly ordersError = computed(() =>
+    this.ordersResource.error() ? 'Failed to load order history' : null,
+  );
+  private readonly ordersErrorLog = effect(() => {
+    const err = this.ordersResource.error();
+    if (err) this.logger.error('Failed to load orders', err);
+  });
   readonly cartFetched = this.cart.cartFetched;
 
   /**
@@ -98,9 +119,10 @@ export class PaymentFacade {
    *
    * They used to be plain writable signals owned by `CartStore`, and this facade
    * wrote them for things that have nothing to do with the cart bucket:
-   * `proceedToPayment()` and `loadOrderById()` both drive them. `CartStore`'s half
+   * `proceedToPayment()` and the order-detail read both drive them. `CartStore`'s half
    * is now derived from its resource and therefore read-only, so this facade keeps
-   * its own writable pair for its own operations and ORs the two together.
+   * its own writable pair for the checkout POST, and the order read (now a resource
+   * too) joins the OR below.
    *
    * The OR is what preserves existing behaviour rather than quietly narrowing it:
    * `paymentGuard` and `cartResolver` wait on `loading`, so today they also wait
@@ -110,9 +132,37 @@ export class PaymentFacade {
    */
   private readonly opLoading = signal(false);
   private readonly opError = signal<string | null>(null);
-  readonly loading = computed(() => this.cart.loading() || this.opLoading());
-  readonly error = computed(() => this.cart.error() ?? this.opError());
-  billingAddress = signal<UserAddress[]>([]);
+  // The order read joins the OR too: it used to drive `opLoading`/`opError` by hand,
+  // and the invoice skeleton, `cartResolver` and `paymentGuard` all read these.
+  readonly loading = computed(
+    () => this.cart.loading() || this.opLoading() || this.orderResource.isLoading(),
+  );
+  readonly error = computed(
+    () =>
+      this.cart.error() ??
+      this.opError() ??
+      (this.orderResource.error() ? 'Failed to load order details' : null),
+  );
+  /**
+   * Billing addresses. OPT-IN like the orders read: the billing page calls
+   * `loadBillingAddress()`, so the guard only ever sees addresses once that page asked.
+   */
+  private readonly addressesWanted = signal(false);
+  private readonly addressResource = httpResource<ListAddressResponse>(() =>
+    this.addressesWanted() ? apiUrl(PAYMENT_ROUTES.listAddress.path) : undefined,
+  );
+  /**
+   * `linkedSignal`, not `computed`: saving, editing and deleting an address patch this
+   * list in place with the server's answer; a reload replaces it. Guarded, since
+   * `value()` throws on an errored resource.
+   */
+  readonly billingAddress = linkedSignal<UserAddress[]>(() =>
+    this.addressResource.hasValue() ? (this.addressResource.value()?.data ?? []) : [],
+  );
+  private readonly addressErrorLog = effect(() => {
+    const err = this.addressResource.error();
+    if (err) this.logger.error('Failed to load billing address', err);
+  });
   /**
    * User's selected address, linked to `billingAddress`: the selection is kept
    * while that address is still in the list, otherwise it falls back to the
@@ -127,16 +177,53 @@ export class PaymentFacade {
     },
   });
   isEditingAddress = signal<boolean>(false);
-  subscriptionPlans = signal<SubscriptionPlan[]>([]);
-  plansLoading = signal<boolean>(false);
-  plansError = signal<string | null>(null);
 
-  // Recommended-only slice — kept separate so the subscription dialog's
-  // `recommendedOnly` fetch doesn't clobber the plan page's full list (which
-  // includes the Enterprise plan) that shares `subscriptionPlans`.
-  recommendedPlans = signal<SubscriptionPlan[]>([]);
-  recommendedPlansLoading = signal<boolean>(false);
-  recommendedPlansError = signal<string | null>(null);
+  /**
+   * Subscription plans: the plan page's full list and the subscription dialog's
+   * recommended-only slice, as two OPT-IN resources so neither clobbers the other.
+   *
+   * SSR: the plan page renders on the server. Angular's HTTP transfer cache hands
+   * an anonymous server fetch to the browser; a signed-in one carries
+   * `Authorization`, which that cache skips, so the browser fetches the plans once
+   * more. That replaced a hand-rolled TransferState handoff, a trade-off accepted
+   * in docs/refactor/STATE.md "Decisions" (Phase 9 payment).
+   */
+  private readonly plansWanted = signal(false);
+  private readonly recommendedWanted = signal(false);
+  private readonly plansResource = httpResource<SubscriptionPlansResponse>(() =>
+    this.plansWanted() ? apiUrl(PAYMENT_ROUTES.getSubscriptionPlans.path) : undefined,
+  );
+  private readonly recommendedResource = httpResource<SubscriptionPlansResponse>(() =>
+    this.recommendedWanted()
+      ? {
+          url: apiUrl(PAYMENT_ROUTES.getSubscriptionPlans.path),
+          params: { is_recommended: 'true' },
+        }
+      : undefined,
+  );
+  /**
+   * `linkedSignal`, not `computed`: adding a plan to the cart and removing it patch
+   * `is_added_to_cart` in place; a reload replaces the list. Guarded, since `value()`
+   * throws on an errored resource.
+   */
+  readonly subscriptionPlans = linkedSignal<SubscriptionPlan[]>(() =>
+    this.plansResource.hasValue() ? (this.plansResource.value()?.data ?? []) : [],
+  );
+  readonly plansLoading = computed(() => this.plansResource.isLoading());
+  readonly plansError = computed(() =>
+    this.plansResource.error() ? 'Failed to load subscription plans' : null,
+  );
+  readonly recommendedPlans = computed<SubscriptionPlan[]>(() =>
+    this.recommendedResource.hasValue() ? (this.recommendedResource.value()?.data ?? []) : [],
+  );
+  readonly recommendedPlansLoading = computed(() => this.recommendedResource.isLoading());
+  readonly recommendedPlansError = computed(() =>
+    this.recommendedResource.error() ? 'Failed to load subscription plans' : null,
+  );
+  private readonly plansErrorLog = effect(() => {
+    const err = this.plansResource.error() ?? this.recommendedResource.error();
+    if (err) this.logger.error('Failed to load subscription plans', err);
+  });
 
   hasCartItems = computed(() => {
     const data = this.cartData();
@@ -237,14 +324,8 @@ export class PaymentFacade {
       );
       return;
     }
-    this.http.get<ListAddressResponse>(PAYMENT_ROUTES.listAddress.path).subscribe({
-      next: (res) => {
-        this.billingAddress.set(res?.data ?? []);
-      },
-      error: (err) => {
-        this.logger.error('Failed to load billing address', err);
-      },
-    });
+    if (this.addressesWanted()) this.addressResource.reload();
+    else this.addressesWanted.set(true);
   }
 
   saveBillingAddress(payload: BillingAddressPayload) {
@@ -377,15 +458,12 @@ export class PaymentFacade {
     if (!cartData) return;
 
     const { CouponDialog } = await import('@features/payment/dialogs/coupon-dialog/coupon-dialog');
-    const dialogRef = this.dialog.open<CouponDialog, CartDetails>(CouponDialog, {
-      width: '460px',
-      maxWidth: '95vw',
-      ariaLabel: 'All Coupons',
+    const dialogRef = this.dialogs.open<CouponDialogData, CartDetails | undefined>(CouponDialog, {
       data: { cartData },
       injector: this.injector,
     });
 
-    dialogRef.afterClosed$.subscribe((updatedCart) => {
+    dialogRef.afterClosed.subscribe((updatedCart) => {
       if (updatedCart) {
         this.setCartData(updatedCart);
       }
@@ -398,17 +476,15 @@ export class PaymentFacade {
   ): Promise<void> {
     const { FirmSponsorshipDialog } =
       await import('@features/payment/dialogs/firm-sponsorship-dialog/firm-sponsorship-dialog');
-    const dialogRef = this.dialog.open<FirmSponsorshipDialog, FirmSponsorshipResult>(
-      FirmSponsorshipDialog,
-      {
-        maxWidth: '95vw',
-        ariaLabel: 'Firm Sponsorship',
-        data: { planId: plan.id, planName: plan.subscription_name },
-        injector: this.injector,
-      },
-    );
+    const dialogRef = this.dialogs.open<
+      FirmSponsorshipDialogData,
+      FirmSponsorshipResult | undefined
+    >(FirmSponsorshipDialog, {
+      data: { planId: plan.id, planName: plan.subscription_name },
+      injector: this.injector,
+    });
 
-    dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!result) return;
 
       if (result.skipped) {
@@ -593,15 +669,7 @@ export class PaymentFacade {
   async openCartDrawer(): Promise<void> {
     const { CartDrawerDialog } =
       await import('@features/payment/dialogs/cart-drawer-dialog/cart-drawer-dialog');
-    this.dialog.open(CartDrawerDialog, {
-      width: '500px',
-      maxWidth: '90vw',
-      height: '100vh',
-      position: 'right',
-      ariaLabel: 'Cart',
-      data: {},
-      injector: this.injector,
-    });
+    this.dialogs.open(CartDrawerDialog, { injector: this.injector });
   }
 
   /**
@@ -652,16 +720,11 @@ export class PaymentFacade {
 
     const { PartnerCodePromptDialog } =
       await import('@features/payment/dialogs/partner-code-prompt-dialog/partner-code-prompt-dialog');
-    const ref = this.dialog.open<PartnerCodePromptDialog, PartnerCodePromptResult>(
-      PartnerCodePromptDialog,
-      {
-        maxWidth: '95vw',
-        ariaLabel: 'Continue to subscribe or apply a partner code',
-        injector: this.injector,
-      },
-    );
+    const ref = this.dialogs.open<undefined, PartnerCodePromptResult>(PartnerCodePromptDialog, {
+      injector: this.injector,
+    });
 
-    ref.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (result?.action === 'subscribe') {
         this.addToCart(plan.id, 'subscription', plan.price_detail, paymentType, options.onAdded);
       } else if (result?.action === 'partner-code-applied' && options.refreshPlansOnApply) {
@@ -670,82 +733,27 @@ export class PaymentFacade {
     });
   }
 
+  /** First call opts a list in; later calls (retry, partner code applied) refetch it. */
   loadSubscriptionPlans(options: { recommendedOnly?: boolean } = {}) {
-    const recommendedOnly = !!options.recommendedOnly;
-    // Route to the recommended-only signals so the dialog and the full plan-page
-    // list don't overwrite each other.
-    const data = recommendedOnly ? this.recommendedPlans : this.subscriptionPlans;
-    const loading = recommendedOnly ? this.recommendedPlansLoading : this.plansLoading;
-    const error = recommendedOnly ? this.recommendedPlansError : this.plansError;
-    const stateKey = recommendedOnly ? RECOMMENDED_PLANS_STATE_KEY : PLANS_STATE_KEY;
-
-    // On the browser, hydrate from the server-rendered snapshot and skip the
-    // duplicate fetch so the first client render matches the SSR DOM (prevents
-    // hydration duplication / NG0501 on the plan page).
-    if (isPlatformBrowser(this.platformId) && this.transferState.hasKey(stateKey)) {
-      data.set(this.transferState.get(stateKey, []));
-      this.transferState.remove(stateKey);
-      return;
-    }
-
-    loading.set(true);
-    error.set(null);
-    const params = recommendedOnly ? { is_recommended: 'true' } : undefined;
-    this.http
-      .get<SubscriptionPlansResponse>(PAYMENT_ROUTES.getSubscriptionPlans.path, { params })
-      .subscribe({
-        next: (res) => {
-          const plans = res?.data ?? [];
-          data.set(plans);
-          loading.set(false);
-          // Hand the SSR result to the client so it doesn't re-fetch.
-          if (isPlatformServer(this.platformId)) this.transferState.set(stateKey, plans);
-        },
-        error: (err) => {
-          this.logger.error('Failed to load subscription plans', err);
-          data.set([]);
-          error.set('Failed to load subscription plans');
-          loading.set(false);
-        },
-      });
+    const [wanted, resource] = options.recommendedOnly
+      ? [this.recommendedWanted, this.recommendedResource]
+      : [this.plansWanted, this.plansResource];
+    if (wanted()) resource.reload();
+    else wanted.set(true);
   }
 
   readonly ordersCount = computed(() => this.ordersData().length);
 
+  /** First call opts the orders page in; later calls (retry, after a mutation) refetch. */
   loadOrders() {
-    this.ordersLoading.set(true);
-    this.ordersError.set(null);
-    this.http.get<OrdersResponse>(PAYMENT_ROUTES.getOrders.path).subscribe({
-      next: (res) => {
-        this.ordersData.set(res?.data ?? []);
-        this.ordersLoading.set(false);
-      },
-      error: (err) => {
-        this.logger.error('Failed to load orders', err);
-        this.ordersData.set([]);
-        this.ordersError.set('Failed to load order history');
-        this.ordersLoading.set(false);
-      },
-    });
+    if (this.ordersWanted()) this.ordersResource.reload();
+    else this.ordersWanted.set(true);
   }
 
+  /** Point the order read at `orderId`; the same id again refetches, as the old call did. */
   loadOrderById(orderId: string) {
-    this.opLoading.set(true);
-    this.opError.set(null);
-
-    const path = `${PAYMENT_ROUTES.getOrderById.path}?order_id=${orderId}`;
-    this.http.get<OrderByIdResponse>(path).subscribe({
-      next: (res) => {
-        this.orderData.set(res?.data ?? null);
-        this.opLoading.set(false);
-      },
-      error: (err) => {
-        this.logger.error('Failed to load order details', err);
-        this.orderData.set(null);
-        this.opError.set('Failed to load order details');
-        this.opLoading.set(false);
-      },
-    });
+    if (this.orderId() === orderId) this.orderResource.reload();
+    else this.orderId.set(orderId);
   }
 
   cancelAutoRenewal(orderId: number) {

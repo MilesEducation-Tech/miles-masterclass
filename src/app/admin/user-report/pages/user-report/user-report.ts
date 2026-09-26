@@ -14,7 +14,7 @@ import { lucideDownload, lucideEye, lucideUsers } from '@ng-icons/lucide';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import {
   CourseDetailCategory,
@@ -24,24 +24,21 @@ import {
   mergeCourseIds,
 } from '@admin/user-report/models/user-report.model';
 import { UserReportFacade } from '@admin/user-report/services/user-report-facade';
-import {
-  UserCourseDetailDialog,
-  UserCourseDetailDialogData,
-} from '@admin/user-report/dialogs/user-course-detail-dialog/user-course-detail-dialog';
+// Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { UserCourseDetailDialogData } from '@admin/user-report/dialogs/user-course-detail-dialog/user-course-detail-dialog';
 
 @Component({
   selector: 'app-user-report',
   imports: [DatePipe, DecimalPipe, NgIcon, AriaInput, Button, Spinner],
   providers: [provideIcons({ lucideDownload, lucideEye, lucideUsers })],
   templateUrl: './user-report.html',
-  styleUrl: './user-report.css',
   host: { class: 'block w-full' },
 })
 export class UserReport {
   protected readonly facade = inject(UserReportFacade);
-  private readonly dialog = inject(Dialog);
-  // Dialogs are built by the root Dialog service; hand it this page's injector
-  // so the route-scoped facade resolves instead of a NullInjectorError.
+  private readonly dialogs = inject(NgpDialogManager);
+  // Dialogs are created under the root injector; pass this page's injector as the
+  // dialog's `injector` so the route-scoped facade resolves instead of a NullInjectorError.
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -81,25 +78,25 @@ export class UserReport {
   }
 
   /** Open the drill-down for one metric bucket. No-op with a toast when empty. */
-  protected openCourseDetail(
+  protected async openCourseDetail(
     row: UserReportRow,
     category: CourseDetailCategory,
     courseIds: CourseIds,
-  ): void {
+  ): Promise<void> {
     if (!hasCourseIds(courseIds)) {
       this.notification.info('No course data', 'There are no courses for this field.');
       return;
     }
 
-    this.dialog.open<UserCourseDetailDialog>(UserCourseDetailDialog, {
+    const { UserCourseDetailDialog } =
+      await import('@admin/user-report/dialogs/user-course-detail-dialog/user-course-detail-dialog');
+    this.dialogs.open<UserCourseDetailDialogData>(UserCourseDetailDialog, {
       data: {
         userName: row.name,
         category,
         courseIds,
       } satisfies UserCourseDetailDialogData,
-      environmentInjector: this.envInjector,
-      maxWidth: '560px',
-      ariaLabel: `${category} for ${row.name}`,
+      injector: this.envInjector,
     });
   }
 
@@ -113,6 +110,6 @@ export class UserReport {
       row.courses_completed_preview_ids,
       row.courses_in_progress_preview_ids,
     ]);
-    this.openCourseDetail(row, 'All Courses', merged);
+    void this.openCourseDetail(row, 'All Courses', merged);
   }
 }

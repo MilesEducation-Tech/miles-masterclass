@@ -17,7 +17,7 @@ import { adminLandingPath } from '@admin/core/utils/admin-landing';
   imports: [AriaInput, Button, Spinner, NgIcon, NgOptimizedImage, RouterLink],
   providers: [provideIcons({ heroExclamationCircle })],
   templateUrl: './admin-login.html',
-  styleUrl: './admin-login.css',
+  host: { class: 'block' },
 })
 export class AdminLogin {
   private readonly router = inject(Router);

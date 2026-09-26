@@ -5,7 +5,6 @@ import { Button } from '../button/button';
   selector: 'app-error-state',
   imports: [Button],
   templateUrl: './error-state.html',
-  styles: ``,
   host: {
     class: 'flex items-center justify-center w-full',
     '[class]': 'fullScreen() ? "min-h-screen" : "min-h-64"',

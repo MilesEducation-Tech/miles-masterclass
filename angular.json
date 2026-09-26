@@ -32,11 +32,7 @@
               "src/.well-known/assetlinks.json",
               "src/.well-known/apple-app-site-association"
             ],
-            "styles": [
-              "src/styles/styles.css",
-              "src/styles/animation.css",
-              "src/styles/dialog.css"
-            ],
+            "styles": ["src/styles/styles.css", "src/styles/animation.css"],
             "server": "src/main.server.ts",
             "outputMode": "server",
             "ssr": {
@@ -175,7 +171,7 @@
             "browserTarget": "miles-masterclass-v3:build",
             "compodoc": false,
             "port": 6006,
-            "styles": ["src/styles/styles.css", "src/styles/animation.css", "src/styles/dialog.css"]
+            "styles": ["src/styles/styles.css", "src/styles/animation.css"]
           }
         },
         "build-storybook": {
@@ -185,7 +181,7 @@
             "browserTarget": "miles-masterclass-v3:build",
             "compodoc": false,
             "outputDir": "storybook-static",
-            "styles": ["src/styles/styles.css", "src/styles/animation.css", "src/styles/dialog.css"]
+            "styles": ["src/styles/styles.css", "src/styles/animation.css"]
           }
         }
       }

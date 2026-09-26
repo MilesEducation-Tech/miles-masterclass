@@ -2,7 +2,7 @@ import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { Service, PLATFORM_ID, inject } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { APP_VERSION } from '@core/version/app-version';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 
 /**
  * Detects when a newer build has been deployed while the user is on an older
@@ -20,7 +20,7 @@ import { Dialog } from '@core/services/dialog/dialog';
 export class UpdateChecker {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly document = inject(DOCUMENT);
 
   private readonly runningVersion = APP_VERSION;
@@ -87,12 +87,6 @@ export class UpdateChecker {
   private async openDialog(): Promise<void> {
     const { VersionUpdateDialog } =
       await import('@shared/dialogs/version-update-dialog/version-update-dialog');
-    this.dialog.open(VersionUpdateDialog, {
-      disableClose: true,
-      hasBackdrop: true,
-      ariaLabel: 'A new version is available',
-      width: 'min(92vw, 420px)',
-      panelClass: 'version-update-dialog',
-    });
+    this.dialogs.open(VersionUpdateDialog);
   }
 }

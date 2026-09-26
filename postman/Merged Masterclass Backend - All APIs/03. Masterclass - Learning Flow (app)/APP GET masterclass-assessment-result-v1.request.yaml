@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassFinalAssessmentResultViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-assessment-result-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  6.9b GET /caira/masterclass/<course_id>/assessment/result/
+url: "{{base_url}}/api/v1/masterclass/{{course_id}}/assessment/result/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/APP GET masterclass-assessment-result-v1.resources/examples
+order: 2000

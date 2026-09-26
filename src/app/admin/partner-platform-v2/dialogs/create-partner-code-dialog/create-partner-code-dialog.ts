@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormField as AngularFormField, form, required, validate } from '@angular/forms/signals';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '@shared/ui/button/button';
 import { Forms } from '@shared/ui/forms/forms';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
@@ -51,12 +52,15 @@ interface PartnerCodeFormModel {
  */
 @Component({
   selector: 'app-create-partner-code-dialog',
-  imports: [AngularFormField, Forms, AriaInput, AriaSelect, Button],
+  imports: [AngularFormField, Forms, AriaInput, AriaSelect, Button, DialogShell],
   templateUrl: './create-partner-code-dialog.html',
 })
 export class CreatePartnerCodeDialog implements OnInit {
-  dialogRef!: DialogRef<CreatePartnerCodeDialog, CreatePartnerCodeRequest | undefined>;
-  data!: CreatePartnerCodeDialogData;
+  private readonly dialogRef = injectDialogRef<
+    CreatePartnerCodeDialogData,
+    CreatePartnerCodeRequest | undefined
+  >();
+  protected readonly data = this.dialogRef.data;
 
   protected readonly scopeOptions = signal<AriaSelectOption<ScopeValue>[]>([]);
 

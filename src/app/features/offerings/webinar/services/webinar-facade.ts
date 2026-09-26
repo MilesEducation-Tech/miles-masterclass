@@ -1,24 +1,26 @@
 import { isPlatformBrowser } from '@angular/common';
+import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import {
   computed,
   DestroyRef,
+  effect,
   inject,
   Service,
   linkedSignal,
   PLATFORM_ID,
-  resource,
+  ResourceSnapshot,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '@env/environment';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import { AuthSession } from '@core/services/auth-session/auth-session';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { NotificationService } from '@core/services/notification/notification';
-import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
+// Type-only: UtilsDialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
   LoginType,
@@ -40,7 +42,7 @@ import { WebinarRegistration } from './webinar-registration';
  * Route-scoped (provided on the webinar route, not `providedIn: 'root'`) so the
  * feed dies with the feature rather than outliving it in memory.
  *
- * Follows the repo's list-facade shape: `resource()` whose `params` return
+ * Follows the repo's list-facade shape: `httpResource` whose request returns
  * `undefined` on the server, `withPreviousValue` for stale-while-revalidate so
  * the rails hold their rows through a refetch, and `linkedSignal` mirrors.
  */
@@ -72,10 +74,9 @@ const PREVIEW_ENABLED = !environment.production;
 
 @Service({ autoProvided: false })
 export class WebinarFacade {
-  private readonly api = inject(ApiClient);
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(AuthSession);
@@ -93,13 +94,10 @@ export class WebinarFacade {
     this.auth.isAuthenticated() ? 'post_login' : 'pre_login',
   );
 
-  /** Surfaced for the error state; a feed failure is not a silent condition. */
-  private readonly feedError = signal<WebinarError | null>(null);
-
   // ---- The five-bucket feed ------------------------------------------------
 
-  private readonly feedResource = resource({
-    params: () => {
+  private readonly feedResource = httpResource<WebinarMainPageData>(
+    () => {
       const loginType = this.loginType();
 
       // The `pre_login` feed is served anonymously by design, so the SERVER
@@ -112,29 +110,41 @@ export class WebinarFacade {
       // browser, and asking for the signed-in page without one is a 401.
       if (!this.isBrowser && loginType !== 'pre_login') return undefined;
 
-      return { loginType };
+      return {
+        url: apiUrl(WEBINAR_ENDPOINTS.mainPage),
+        // Required, with no default. Omitting it is a 400 naming it —
+        // deliberately, so a signed-in client that forgot cannot silently
+        // receive the anonymous page as a valid 200.
+        params: { login_type: loginType },
+      };
     },
-    loader: async ({ params, abortSignal }): Promise<WebinarMainPageData> => {
-      try {
-        const res = await firstValueFrom(
-          this.api
-            .get<WebinarMainPageResponse>(WEBINAR_ENDPOINTS.mainPage, {
-              // Required, with no default. Omitting it is a 400 naming it —
-              // deliberately, so a signed-in client that forgot cannot silently
-              // receive the anonymous page as a valid 200.
-              params: { login_type: params.loginType },
-            })
-            .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        );
-        this.feedError.set(null);
+    {
+      defaultValue: EMPTY_FEED,
+      // `parse` runs once per response, which is where the clock sync has to
+      // happen — including the browser's replay of the server's transfer-cached
+      // response, exactly as the old loader did.
+      parse: (raw) => {
+        const res = raw as WebinarMainPageResponse;
         this.clock.syncFrom(res.data?.server_time);
         return res.data ?? EMPTY_FEED;
-      } catch (err) {
-        const error = toWebinarError(err);
-        this.logger.error('[WebinarFacade] feed load failed', error.code, err);
-        this.feedError.set(error);
-        throw err;
-      }
+      },
+    },
+  );
+
+  /**
+   * Surfaced for the error state; a feed failure is not a silent condition.
+   * Held through a refetch (like the old flag, cleared only by a success), so a
+   * retry does not blank the banner before it has an answer.
+   */
+  private readonly feedError = linkedSignal<
+    ResourceSnapshot<WebinarMainPageData>,
+    WebinarError | null
+  >({
+    source: this.feedResource.snapshot,
+    computation: (snap, previous) => {
+      if (snap.status === 'error') return toWebinarError(snap.error);
+      if (snap.status === 'resolved' || snap.status === 'local') return null;
+      return previous?.value ?? null;
     },
   });
 
@@ -264,32 +274,25 @@ export class WebinarFacade {
    * is `AllowAny` and serves the `pre_login` surface to an anonymous caller, so
    * a crawler gets the real page rather than an empty shell.
    */
-  private readonly detailResource = resource({
-    params: () => {
+  private readonly detailResource = httpResource<WebinarDetail | null>(
+    () => {
       const id = this.detailId();
-      return id ? { id } : undefined;
+      return id
+        ? { url: apiUrl(WEBINAR_ENDPOINTS.detailsPage), params: { webinar_id: id } }
+        : undefined;
     },
-    loader: async ({ params, abortSignal }): Promise<WebinarDetail | null> => {
-      try {
-        const res = await firstValueFrom(
-          this.api
-            .get<WebinarDetailsResponse>(WEBINAR_ENDPOINTS.detailsPage, {
-              params: { webinar_id: params.id },
-            })
-            .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        );
-        return res.data?.webinar ?? null;
-      } catch (err) {
-        const error = toWebinarError(err);
-        // A 404 is a real answer here, not a failure: the contract makes it
-        // deliberately ambiguous between "no such id" and "an id you may not
-        // see". Either way the page renders its not-found state, so this
-        // resolves to `null` rather than throwing into the error branch.
-        if (error.status === 404) return null;
-        this.logger.error('[WebinarFacade] detail load failed', error.code, err);
-        throw err;
-      }
-    },
+    { parse: (raw) => (raw as WebinarDetailsResponse).data?.webinar ?? null },
+  );
+
+  /**
+   * A 404 is a real answer here, not a failure: the contract makes it
+   * deliberately ambiguous between "no such id" and "an id you may not see".
+   * Either way the page renders its not-found state, so a 404 counts as
+   * "missing" rather than as an error.
+   */
+  private readonly isDetail404 = computed(() => {
+    const error = this.detailResource.error();
+    return error instanceof HttpErrorResponse && error.status === 404;
   });
 
   /** `true` while the detail request is in flight. */
@@ -313,9 +316,25 @@ export class WebinarFacade {
     () =>
       this.detailId() !== null &&
       !this.isDetailLoading() &&
-      this.detailResource.hasValue() &&
-      this.detailResource.value() === null,
+      (this.isDetail404() ||
+        (this.detailResource.hasValue() && this.detailResource.value() === null)),
   );
+
+  constructor() {
+    // The old loaders logged from their catch blocks; a resource has none.
+    effect(() => {
+      const error = this.feedResource.error();
+      if (error) {
+        this.logger.error('[WebinarFacade] feed load failed', toWebinarError(error).code, error);
+      }
+    });
+    effect(() => {
+      const error = this.detailResource.error();
+      if (error && !this.isDetail404()) {
+        this.logger.error('[WebinarFacade] detail load failed', toWebinarError(error).code, error);
+      }
+    });
+  }
 
   // ---- Lookup --------------------------------------------------------------
 
@@ -358,7 +377,7 @@ export class WebinarFacade {
    */
   async register(webinarId: string): Promise<void> {
     if (!this.auth.isAuthenticated()) {
-      this.promptSignIn();
+      await this.promptSignIn();
       return;
     }
 
@@ -411,7 +430,7 @@ export class WebinarFacade {
    * The dialog is `UtilsDialog` rather than a webinar-specific component —
    * a title, a line of copy and two buttons is exactly what it is for.
    */
-  private promptSignIn(): void {
+  private async promptSignIn(): Promise<void> {
     const data: UtilsDialogData = {
       title: 'Sign in to register',
       containerClass: 'max-w-md text-left!',
@@ -428,13 +447,12 @@ export class WebinarFacade {
       ],
     };
 
-    const ref = this.dialog.open<UtilsDialog, { action?: string; result: boolean }>(UtilsDialog, {
-      data,
-      width: 'auto',
-      maxWidth: '28rem',
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+    const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: { ...data, maxWidth: '28rem' },
     });
 
-    ref.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (result?.action !== 'confirm') return;
       void this.router.navigate(['/auth/login'], {
         queryParams: { redirect: this.router.url },

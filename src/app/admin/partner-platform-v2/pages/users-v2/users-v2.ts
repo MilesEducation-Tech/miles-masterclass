@@ -3,12 +3,12 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
-import {
-  BlockStatusDialog,
+// Type-only: dialog components below load with `import()` when opened (PROMPT.md §4.4).
+import type {
   BlockStatusDialogData,
   BlockStatusDialogResult,
 } from '@shared/dialogs/block-status-dialog/block-status-dialog';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { BlockedStatusFilter, PartnerPanelUser } from '@admin/core/models/partner-platform.model';
 import { PartnerAdminMe } from '@admin/core/services/partner-admin-me';
 import { PartnerUsersFacade } from '@admin/users/services/partner-users-facade';
@@ -36,7 +36,7 @@ const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
 export class UsersV2 {
   protected readonly facade = inject(PartnerUsersFacade);
   protected readonly me = inject(PartnerAdminMe);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly statusTabs = STATUS_TABS;
@@ -88,24 +88,25 @@ export class UsersV2 {
     this.facade.setPage(this.facade.pagination().next_page ?? this.currentPage() + 1);
   }
 
-  protected onBlockToggle(user: PartnerPanelUser): void {
+  protected async onBlockToggle(user: PartnerPanelUser): Promise<void> {
     const action: BlockStatusDialogData['action'] = user.is_blocked ? 'unblock' : 'block';
 
-    const ref = this.dialog.open<BlockStatusDialog, BlockStatusDialogResult>(BlockStatusDialog, {
-      data: {
-        action,
-        userName: user.name,
-        userEmail: user.email,
-      } satisfies BlockStatusDialogData,
-      maxWidth: '480px',
-      ariaLabel: action === 'block' ? 'Block user' : 'Unblock user',
-    });
+    const { BlockStatusDialog } =
+      await import('@shared/dialogs/block-status-dialog/block-status-dialog');
+    const ref = this.dialogs.open<BlockStatusDialogData, BlockStatusDialogResult>(
+      BlockStatusDialog,
+      {
+        data: {
+          action,
+          userName: user.name,
+          userEmail: user.email,
+        } satisfies BlockStatusDialogData,
+      },
+    );
 
-    ref.afterClosed$
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (result) => {
-        if (!result?.confirmed) return;
-        await this.facade.setBlockStatus(user, action === 'block', result.reason);
-      });
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(async (result) => {
+      if (!result?.confirmed) return;
+      await this.facade.setBlockStatus(user, action === 'block', result.reason);
+    });
   }
 }

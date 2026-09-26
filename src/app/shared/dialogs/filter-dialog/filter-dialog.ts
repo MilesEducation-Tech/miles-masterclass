@@ -1,16 +1,16 @@
 import { Component, computed, OnInit, signal } from '@angular/core';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '../../ui/button/button';
 
 @Component({
   selector: 'app-filter-dialog',
-  imports: [Button],
+  imports: [Button, DialogShell],
   templateUrl: './filter-dialog.html',
-  styleUrl: './filter-dialog.css',
 })
 export class FilterDialog implements OnInit {
-  dialogRef!: DialogRef<FilterDialog>;
-  data!: Record<string, any[]>;
+  private readonly dialogRef = injectDialogRef<Record<string, any[]>, Record<string, any[]>>();
+  protected readonly data = this.dialogRef.data;
 
   // Mapping for display labels. Covers both client-side keys (topics, experts,
   // cpe_credits, completion_date) and server-driven keys returned by

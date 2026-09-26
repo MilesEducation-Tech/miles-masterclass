@@ -1,0 +1,28 @@
+$kind: http-example
+name: 500 Internal Server Error (2) - Shared envelope from `utils/view_errors
+request:
+  url: "{{base_url}}/api/v1/commerce/cart/line/{{line_id}}/"
+  method: PATCH
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "quantity": 0,
+        "token_amount_selected": false
+      }
+response:
+  statusCode: 500
+  statusText: Internal Server Error
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "message": "Could not update the cart line."
+      }
+order: 9000

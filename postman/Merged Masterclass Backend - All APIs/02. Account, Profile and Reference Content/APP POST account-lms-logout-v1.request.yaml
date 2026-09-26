@@ -1,0 +1,19 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `LMSLogoutViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `account-lms-logout-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Revoke the caller's LMS credential for one course.
+
+  **No request body by design.** Course is in the path; bearer only.
+url: "{{base_url}}/app-api/v1/account/lms-logout/{{course}}/"
+method: POST
+headers:
+  Accept: application/json
+examples: ./.resources/APP POST account-lms-logout-v1.resources/examples
+order: 19000

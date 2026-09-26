@@ -1,0 +1,108 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `AuthOtpVerifyViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `auth-otp-verify-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** none  
+  **Permission:** AllowAny
+
+  POST - exchange a one-time code for a session.
+
+  Body template generated from `AuthOtpVerifyRequestSerializerV1`. Values are placeholders, not fixtures.
+
+  Some values are ENVIRONMENT VARIABLES rather than placeholders - set `login_identifier` once and the three sign-in requests all read it. `refresh_token` is written by a script; do not type it.
+
+  **This request carries its own test script** on top of the collection-level one - open the Scripts tab to read what it writes into the environment.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 2.3 `POST auth-otp-verify/` - exchange the code for a session
+
+  ```json
+  { "identifier": "learner@example.com", "code": "123456" }
+  ```
+
+  `code` is a **string, and its length is not validated here**. The code length is set server-side at the SSO -
+  read it rather than hardcoding six boxes.
+
+  On success the body carries `accessToken` and `refreshToken`. For a web client the SSO **also** sets the
+  httpOnly `miles_sso_refresh` cookie, which is forwarded verbatim.
+
+  Two **local** flags are merged into the success body, and they are the reason this route is worth reading
+  carefully. Neither is in the token, and the SSO knows nothing about either:
+
+  | Key | Values | Meaning |
+  | --- | --- | --- |
+  | `profile_status` | `new_user`, `onboard_completed`, `profile_completed` | This platform's onboarding milestone. |
+  | `is_test_user` | boolean | Gates `#TestCourse` visibility. Always `false` on a fresh account - set by an admin. |
+
+  **`profile_status` IS NOT the token's `miles.onboarding_required`.** That claim describes the identity store -
+  whether the SSO still needs a name before it considers the account known - and it is a boolean of the
+  **opposite polarity**. A user can be fully known to the SSO and still be `new_user` here. Reading one for the
+  other is how a sign-up gate ends up inverted.
+
+  Failure modes, and each wants different UI:
+
+  | HTTP | Body | Meaning | What to do |
+  | --- | --- | --- | --- |
+  | 401 | SSO's | Wrong or expired code. | Let them retype. |
+  | 429 | SSO's | Too many failures; the identifier is locked. | Show the lockout, do not retry. |
+  | 403 | `code: "account_blocked"` | Partner-imposed block. | **Terminal.** Show a permission message, not a login screen. Point at Miles support. |
+  | 403 | `code: "account_deactivated"` | Miles deactivation. | **Terminal.** Same, different team. |
+  | 502 | `{"message": "Sign-in could not be completed. Please request a new code."}` | Provisioning failed after a valid token. | **Retryable.** The code they used is spent - send them for a new one. |
+  | 503 | `{"message": "Sign-in is not configured on this environment."}` | Our configuration fault. | Not the user's problem. |
+
+  The two 403s are deliberately distinct: `active` and `is_blocked` are separate columns set by different people
+  for different reasons, and telling a blocked learner their account is "deactivated" sends them to the wrong
+  team. Neither carries a token or a cookie.
+url: "{{base_url}}/api/v1/account/auth-otp-verify/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "identifier": "{{login_identifier}}",
+      "code": "{{otp_code}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      /* Capture the session this call mints.
+       *
+       * The response carries `accessToken` and `refreshToken` from the SSO, plus the
+       * two LOCAL flags `AuthOtpVerifyViewV1._augment` adds - `profile_status` and
+       * `is_test_user` - which are not in the token and cannot be obtained by
+       * decoding it.
+       */
+      pm.test("Sign-in returned a session", function () {
+          pm.response.to.have.status(200);
+          pm.expect(pm.response.json()).to.have.property("accessToken");
+      });
+
+      if (pm.response.code === 200) {
+          var body = pm.response.json();
+          pm.environment.set("token", body.accessToken || "");
+          pm.environment.set("refresh_token", body.refreshToken || "");
+          console.log("[auth] signed in. profile_status=" + body.profile_status +
+                      " is_test_user=" + body.is_test_user);
+          if (body.profile_status === "new_user") {
+              // Stated because the ordering is a real trap, documented on the view:
+              // `miles.onboarding_required` is minted INTO the token, so completing
+              // the profile and not refreshing re-reads a stale `true` and bounces
+              // the user back into onboarding they just finished.
+              console.log("[auth] profile_status is new_user - after completing the " +
+                          "profile, run POST auth-token-refresh-v1 before anything else.");
+          }
+      }
+    language: text/javascript
+examples: ./.resources/UNIVERSAL POST auth-otp-verify-v1.resources/examples
+order: 4000

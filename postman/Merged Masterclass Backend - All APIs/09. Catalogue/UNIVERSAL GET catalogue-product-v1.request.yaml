@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CatalogueProductViewV1`  
+  **Module:** `Catalogue.views`  
+  **Route name:** `catalogue-product-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Return one product with its active variants.
+url: "{{base_url}}/api/v1/catalogue/product/{{product_id}}/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET catalogue-product-v1.resources/examples
+order: 3000

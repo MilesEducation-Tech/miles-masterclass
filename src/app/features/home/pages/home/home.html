@@ -111,7 +111,15 @@
 
   <!-- App Download Section -->
   <section id="app-download" class="w-11/12 mx-auto scroll-mt-20">
-    <app-app-download />
+    <!-- §4.4 always-defer. `hydrate on viewport` keeps it in the SSR HTML (SEO, and no
+         shift on a server-rendered load); the placeholder only shows on client-side
+         navigation, sized to the section's measured height (773 / 715 / 493 px at
+         375 / 768 / 1440). -->
+    @defer (on viewport; prefetch on idle; hydrate on viewport) {
+      <app-app-download />
+    } @placeholder {
+      <div class="h-[773px] md:h-[715px] lg:h-[493px]"></div>
+    }
   </section>
 
   <!-- Coming Soon Section -->

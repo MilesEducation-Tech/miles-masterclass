@@ -1,0 +1,35 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass-web/course-progress-update/{{course_id}}/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "chapter_id": "00000000-0000-0000-0000-000000000000",
+        "last_watched_position_seconds": 0,
+        "max_watched_duration_seconds": 0,
+        "updates": [
+          {
+            "chapter_id": "00000000-0000-0000-0000-000000000000",
+            "last_watched_position_seconds": 0,
+            "max_watched_duration_seconds": 0
+          }
+        ]
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "reset_required": true,
+        "message": "Your 365-day window has expired. All progress has been reset. A new window has started."
+      }
+order: 1000

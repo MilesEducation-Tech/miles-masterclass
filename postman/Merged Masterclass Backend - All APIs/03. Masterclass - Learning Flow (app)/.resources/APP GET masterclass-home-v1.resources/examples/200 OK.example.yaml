@@ -1,0 +1,26 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/home/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "success",
+        "message": "Masterclass home fetched successfully.",
+        "data": {
+          "continue_watching": "<[dict(c) for c in home_base['all_courses'] if _status(c['id']) == 'in_progress']>",
+          "tracks": "<[{**track, 'courses': [dict(c) for c in track['courses']]} for track in home_base['tracks']]>",
+          "bookmarks": "<[dict(c) for c in home_base['all_courses'] if c['id'] in bookmark_set]>",
+          "completed": "<[dict(c) for c in home_base['all_courses'] if _status(c['id']) == 'completed']>",
+          "coming_soon": "<[dict(c) for c in home_base['coming_soon']]>"
+        }
+      }
+order: 1000

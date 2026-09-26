@@ -1,4 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
+import { httpResource } from '@angular/common/http';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -9,14 +10,12 @@ import {
   inject,
   linkedSignal,
   PLATFORM_ID,
-  resource,
   untracked,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft } from '@ng-icons/lucide';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import {
   badgeNextPage,
   badgeTotalCount,
@@ -27,7 +26,7 @@ import {
   WEBINAR_BADGE_FILTERS,
   WebinarBadgeItem,
 } from '@core/models/caira-badge.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { Button } from '@shared/ui/button/button';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
@@ -54,7 +53,6 @@ const EMPTY: BadgeV2Response<WebinarBadgeItem[]> = { data: [] };
   host: { class: 'block' },
 })
 export class WebinarBadges {
-  private readonly api = inject(ApiClient);
   private readonly actions = inject(BadgeActions);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -66,18 +64,13 @@ export class WebinarBadges {
 
   private readonly page = linkedSignal<number>(() => 1);
 
-  private readonly listResource = resource({
-    params: () => (this.isBrowser ? { page: this.page() } : undefined),
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<BadgeV2Response<WebinarBadgeItem[]>>('v2/webinar-badges/', {
-            params: { page: params.page },
-          })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: EMPTY },
-      ),
-  });
+  private readonly listResource = httpResource<BadgeV2Response<WebinarBadgeItem[]>>(
+    () =>
+      this.isBrowser
+        ? { url: apiUrl('v2/webinar-badges/'), params: { page: this.page() } }
+        : undefined,
+    { defaultValue: EMPTY },
+  );
 
   /** Stale-while-revalidate, so loading page 2 never blanks page 1. */
   private readonly list = withPreviousValue(this.listResource);
@@ -101,9 +94,15 @@ export class WebinarBadges {
     () => this.items().filter((b) => isEarnedState(b.action_state)).length,
   );
 
-  protected readonly totalCount = computed(() =>
-    badgeTotalCount(this.list.value()?.pagination_data),
+  /**
+   * Guarded: `value()` throws on an errored resource, which would take the page down
+   * before its own `hasError` state could render.
+   */
+  private readonly pagination = computed(() =>
+    this.list.hasValue() ? this.list.value()?.pagination_data : undefined,
   );
+
+  protected readonly totalCount = computed(() => badgeTotalCount(this.pagination()));
   protected readonly isLoading = computed(() => this.list.isLoading());
   protected readonly hasError = computed(() => !!this.list.error());
   protected readonly isFirstPage = computed(() => this.isLoading() && !this.items().length);
@@ -128,7 +127,7 @@ export class WebinarBadges {
 
   private loadNext(): void {
     if (this.list.isLoading()) return;
-    const next = badgeNextPage(this.list.value()?.pagination_data);
+    const next = badgeNextPage(this.pagination());
     if (next !== null && next !== this.page()) this.page.set(next);
   }
 

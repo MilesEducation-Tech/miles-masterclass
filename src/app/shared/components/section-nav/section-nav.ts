@@ -37,6 +37,24 @@ export type { SectionNavItem };
 
 type SectionNavMode = 'inline' | 'header' | 'sidenav';
 
+/*
+ * Button classes, one complete set per state. Complete rather than base +
+ * modifier: two utilities at the same variant level (e.g. `after:w-0` and
+ * `after:w-full`, or a base `hover:bg-*` and the active `bg-*`) would tie, and
+ * the old stylesheet's winner came from rule order, which utilities don't have.
+ */
+const NAV_BUTTON =
+  "relative flex cursor-pointer items-center gap-1.5 border-0 bg-transparent px-2 py-2 text-sm font-medium transition-all duration-300 ease-out after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:-translate-x-1/2 after:bg-white after:transition-all after:duration-300 after:ease-out after:content-['']";
+// Underline grows to full width when active, to half (grey) on hover otherwise.
+const NAV_BUTTON_ACTIVE = `${NAV_BUTTON} active text-white after:w-full`;
+const NAV_BUTTON_IDLE = `${NAV_BUTTON} text-gray-400 hover:text-gray-200 after:w-0 hover:after:w-1/2 hover:after:bg-gray-400`;
+
+const SIDENAV_BUTTON =
+  'flex cursor-pointer items-center gap-3 overflow-hidden whitespace-nowrap rounded-lg border-0 px-3 py-2.5 transition-all duration-300 ease-out';
+// The active fill wins over hover, as the old `.active` rule (declared later) did.
+const SIDENAV_BUTTON_ACTIVE = `${SIDENAV_BUTTON} active bg-primary/20 text-white`;
+const SIDENAV_BUTTON_IDLE = `${SIDENAV_BUTTON} bg-transparent text-gray-200 hover:bg-gray-800`;
+
 @Component({
   selector: 'app-section-nav',
   imports: [NgIcon],
@@ -66,7 +84,11 @@ type SectionNavMode = 'inline' | 'header' | 'sidenav';
       @case ('inline') {
         <!-- Inline mode: horizontal nav, hides when shown in header -->
         @if (!shareWithHeader() || !sectionNavService.showInHeader()) {
-          <nav class="inline-nav" role="navigation" aria-label="Page sections">
+          <nav
+            class="inline-nav flex flex-wrap items-center justify-center gap-8 py-3"
+            role="navigation"
+            aria-label="Page sections"
+          >
             @for (item of visibleItems(); track item.id) {
               <button
                 type="button"
@@ -75,7 +97,7 @@ type SectionNavMode = 'inline' | 'header' | 'sidenav';
                 [attr.aria-current]="sectionNavService.activeSection() === item.id ? 'true' : null"
               >
                 @if (item.icon) {
-                  <ng-icon [name]="item.icon" class="nav-icon" aria-hidden="true" />
+                  <ng-icon [name]="item.icon" class="text-base" aria-hidden="true" />
                 }
                 {{ item.label }}
               </button>
@@ -87,7 +109,11 @@ type SectionNavMode = 'inline' | 'header' | 'sidenav';
         <!-- Header mode: shows when nav is registered and scrolled into header -->
         @if (sectionNavService.showInHeader() && sectionNavService.isRegistered()) {
           <div class="w-full">
-            <nav class="header-nav" role="navigation" aria-label="Page sections">
+            <nav
+              class="mx-auto flex w-full items-center justify-center gap-8 sm:max-w-(--breakpoint-sm) md:max-w-(--breakpoint-md) lg:max-w-(--breakpoint-lg) xl:max-w-(--breakpoint-xl) 2xl:max-w-(--breakpoint-2xl)"
+              role="navigation"
+              aria-label="Page sections"
+            >
               @for (item of sectionNavService.navItems(); track item.id) {
                 @if (item.visible) {
                   <button
@@ -99,7 +125,7 @@ type SectionNavMode = 'inline' | 'header' | 'sidenav';
                     "
                   >
                     @if (item.icon) {
-                      <ng-icon [name]="item.icon" class="nav-icon" aria-hidden="true" />
+                      <ng-icon [name]="item.icon" class="text-base" aria-hidden="true" />
                     }
                     {{ item.label }}
                   </button>
@@ -111,7 +137,11 @@ type SectionNavMode = 'inline' | 'header' | 'sidenav';
       }
       @case ('sidenav') {
         <!-- Sidenav mode: vertical nav with icon-only, expands on hover -->
-        <nav class="sidenav" role="navigation" aria-label="Page sections">
+        <nav
+          class="sidenav group fixed top-0 left-0 z-50 hidden h-full w-14 justify-center gap-2 rounded-r-xl bg-linear-to-r from-background to-transparent px-2 py-4 transition-all duration-600 ease-out hover:w-auto md:flex md:flex-col"
+          role="navigation"
+          aria-label="Page sections"
+        >
           @for (item of visibleItems(); track item.id) {
             <button
               type="button"
@@ -121,108 +151,20 @@ type SectionNavMode = 'inline' | 'header' | 'sidenav';
               [attr.aria-label]="item.label"
             >
               @if (item.icon) {
-                <ng-icon [name]="item.icon" class="sidenav-icon" aria-hidden="true" />
+                <ng-icon
+                  [name]="item.icon"
+                  class="sidenav-icon shrink-0 text-xl"
+                  aria-hidden="true"
+                />
               }
-              <span class="sidenav-label">{{ item.label }}</span>
+              <span
+                class="sidenav-label max-w-0 overflow-hidden text-sm font-medium opacity-0 transition-all duration-300 ease-out group-hover:max-w-48 group-hover:opacity-100"
+                >{{ item.label }}</span
+              >
             </button>
           }
         </nav>
       }
-    }
-  `,
-  styles: `
-    @reference '../../../../styles/styles.css';
-
-    /* Shared button styles */
-    .inline-nav button,
-    .header-nav button {
-      @apply relative px-2 py-2 text-sm font-medium transition-all duration-300 ease-out;
-      @apply bg-transparent border-0 cursor-pointer flex items-center gap-1.5;
-    }
-
-    /* Underline indicator */
-    .inline-nav button::after,
-    .header-nav button::after {
-      content: '';
-      @apply absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-white transition-all duration-300 ease-out;
-    }
-
-    .inline-nav button.active::after,
-    .header-nav button.active::after {
-      @apply w-full;
-    }
-
-    .inline-nav button.active,
-    .header-nav button.active {
-      @apply text-white;
-    }
-
-    .inline-nav button:not(.active),
-    .header-nav button:not(.active) {
-      @apply text-gray-400 hover:text-gray-200;
-    }
-
-    .inline-nav button:not(.active):hover::after,
-    .header-nav button:not(.active):hover::after {
-      @apply w-1/2 bg-gray-400;
-    }
-
-    .nav-icon {
-      @apply text-base;
-    }
-
-    /* Inline nav layout */
-    .inline-nav {
-      @apply flex items-center justify-center gap-8 flex-wrap py-3;
-    }
-
-    /* Header nav layout */
-    .header-nav {
-      @apply container mx-auto flex items-center justify-center gap-8;
-    }
-
-    /* Sidenav styles */
-    .sidenav {
-      @apply fixed left-0 top-0 h-full z-50;
-      /* Hidden on mobile (<md/768) and shown from md+ — a fixed left rail
-         overlaps page content on small screens. Only the home + masterclass
-         pages use sidenav mode, so this scopes the hide to exactly those. */
-      @apply hidden md:flex md:flex-col justify-center gap-2 py-4 px-2;
-      @apply rounded-r-xl;
-      @apply transition-all duration-600 ease-out bg-linear-to-r from-background to-transparent;
-      width: 56px;
-    }
-
-    .sidenav:hover {
-      width: auto;
-    }
-
-    .sidenav button {
-      @apply flex items-center gap-3 px-3 py-2.5 rounded-lg;
-      @apply bg-transparent border-0 cursor-pointer;
-      @apply text-gray-200 transition-all duration-300 ease-out;
-      @apply whitespace-nowrap overflow-hidden;
-    }
-
-    .sidenav button:hover {
-      @apply bg-gray-800;
-    }
-
-    .sidenav button.active {
-      @apply bg-primary/20 text-white;
-    }
-
-    .sidenav-icon {
-      @apply text-xl shrink-0;
-    }
-
-    .sidenav-label {
-      @apply text-sm font-medium opacity-0 max-w-0 overflow-hidden;
-      @apply transition-all duration-300 ease-out;
-    }
-
-    .sidenav:hover .sidenav-label {
-      @apply opacity-100 max-w-48;
     }
   `,
 })
@@ -321,14 +263,18 @@ export class SectionNav {
    * Returns button classes for inline/header modes
    */
   getButtonClass(sectionId: string): string {
-    return this.sectionNavService.activeSection() === sectionId ? 'active' : '';
+    return this.sectionNavService.activeSection() === sectionId
+      ? NAV_BUTTON_ACTIVE
+      : NAV_BUTTON_IDLE;
   }
 
   /**
    * Returns button classes for sidenav mode
    */
   getSidenavButtonClass(sectionId: string): string {
-    return this.sectionNavService.activeSection() === sectionId ? 'active' : '';
+    return this.sectionNavService.activeSection() === sectionId
+      ? SIDENAV_BUTTON_ACTIVE
+      : SIDENAV_BUTTON_IDLE;
   }
 
   /**

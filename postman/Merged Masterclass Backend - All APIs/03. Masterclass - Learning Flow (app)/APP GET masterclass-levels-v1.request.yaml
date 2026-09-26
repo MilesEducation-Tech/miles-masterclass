@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassLevelCoursesViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-levels-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  6.16 GET /caira/masterclass/levels/ - Courses grouped by level.
+url: "{{base_url}}/api/v1/masterclass/levels/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/APP GET masterclass-levels-v1.resources/examples
+order: 19000

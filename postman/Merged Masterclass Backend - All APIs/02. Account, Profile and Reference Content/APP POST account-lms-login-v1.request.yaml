@@ -1,0 +1,27 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `LMSAccessViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `account-lms-login-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Bind an LMS session to the caller, or return the one they already have.
+
+  Body template generated from `LMSAccessRequestSerializerV1`. Values are placeholders, not fixtures.
+url: "{{base_url}}/app-api/v1/account/lms-login/{{course}}/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "access_token": "",
+      "uid": ""
+    }
+examples: ./.resources/APP POST account-lms-login-v1.resources/examples
+order: 18000

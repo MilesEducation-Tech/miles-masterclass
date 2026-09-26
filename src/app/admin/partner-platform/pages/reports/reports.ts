@@ -2,7 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { DeprecationBanner } from '@shared/components/deprecation-banner/deprecation-banner';
 import { StatCard } from '@admin/partner-platform-v2/components/stat-card/stat-card';
 import { PartnerAdminMe } from '@admin/core/services/partner-admin-me';
@@ -46,7 +46,7 @@ export class Reports {
   protected readonly facade = inject(PartnerReportFacade);
   protected readonly me = inject(PartnerAdminMe);
   private readonly superFacade = inject(PartnerSuperAdminFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly route = inject(ActivatedRoute);
 
   protected readonly subjectTabs = SUBJECT_TABS;
@@ -191,14 +191,12 @@ export class Reports {
   }
 
   protected openItems(row: ReportUserRow): void {
-    this.dialog.open<ReportItemsDialog>(ReportItemsDialog, {
+    this.dialogs.open<ReportItemsDialogData>(ReportItemsDialog, {
       data: {
         userId: row.user_id,
         userName: row.name,
         subject: this.facade.subject(),
       } satisfies ReportItemsDialogData,
-      maxWidth: '720px',
-      ariaLabel: `Report details for ${row.name}`,
     });
   }
 }

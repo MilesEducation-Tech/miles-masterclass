@@ -1,5 +1,6 @@
 import { Component, computed, OnInit, signal } from '@angular/core';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '@shared/ui/button/button';
 import { cn } from '@shared/utils/cn';
 import { MicroLearningFilterOption } from '@features/offerings/models/micro-learning-course.model';
@@ -16,13 +17,16 @@ const DEFAULT_VISIBLE_COUNT = 5;
 
 @Component({
   selector: 'app-micro-learning-filter-sheet',
-  imports: [Button],
+  imports: [Button, DialogShell],
   templateUrl: './micro-learning-filter-sheet.html',
-  styleUrl: './micro-learning-filter-sheet.css',
+  host: { class: 'block' },
 })
 export class MicroLearningFilterSheet implements OnInit {
-  dialogRef!: DialogRef<MicroLearningFilterSheet, MicroLearningFilterSheetResult>;
-  data!: MicroLearningFilterSheetData;
+  private readonly dialogRef = injectDialogRef<
+    MicroLearningFilterSheetData,
+    MicroLearningFilterSheetResult
+  >();
+  protected readonly data = this.dialogRef.data;
 
   readonly cn = cn;
   readonly options = signal<MicroLearningFilterOption[]>([]);

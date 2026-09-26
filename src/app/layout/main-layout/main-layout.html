@@ -1,4 +1,11 @@
 <app-header />
 <router-outlet />
-<app-footer-overlay />
+<!-- The overlay is a fixed-position floating bar (§4.4 always-defer), so it takes no
+     layout space: an empty placeholder causes no shift, and it stays out of the
+     initial bundle. -->
+@defer (on idle) {
+  <app-footer-overlay />
+} @placeholder {
+  <span class="hidden"></span>
+}
 <app-footer />

@@ -20,13 +20,11 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take } from 'rxjs/operators';
 import { SwiperOptions } from 'swiper/types';
-import { FreeMode, Mousewheel, Pagination } from 'swiper/modules';
 import { ensureSwiperElement } from '../../utils/swiper/ensure-swiper-element';
 import { NgIcon } from '@ng-icons/core';
 import { Heading } from '../heading/heading';
 import { filterIcon } from '@core/constants/icon';
-import { Dialog } from '@core/services/dialog/dialog';
-import { FilterDialog } from '../../dialogs/filter-dialog/filter-dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Hover } from '../cards/hover/hover';
 import {
   apiDataToDialogShape,
@@ -101,7 +99,7 @@ export class Carousel {
 
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly injector = inject(Injector);
   private readonly sectionFilters = inject(SectionFiltersFacade);
 
@@ -267,7 +265,11 @@ export class Carousel {
 
     // Register swiper's custom elements on demand, then bail if the component
     // was destroyed while the (one-time) import was in flight.
-    await ensureSwiperElement();
+    // swiper/modules loads alongside swiper/element, not with this component.
+    const [, { FreeMode, Mousewheel, Pagination }] = await Promise.all([
+      ensureSwiperElement(),
+      import('swiper/modules'),
+    ]);
     if (this.isDestroyed || !this.swiperEl?.nativeElement) {
       return;
     }
@@ -408,15 +410,15 @@ export class Carousel {
       });
   }
 
-  private openDialog(data: Record<string, any[]>, mode: FilterMode): void {
-    const dialogRef = this.dialog.open(FilterDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      data,
-    });
+  private async openDialog(data: Record<string, any[]>, mode: FilterMode): Promise<void> {
+    // Loaded on open, so the dialog is not part of this component's chunk (§4.4).
+    const { FilterDialog } = await import('../../dialogs/filter-dialog/filter-dialog');
+    const dialogRef = this.dialogs.open<Record<string, any[]>, Record<string, any[]>>(
+      FilterDialog,
+      { data },
+    );
 
-    dialogRef.afterClosed$
+    dialogRef.afterClosed
       .pipe(take(1), takeUntilDestroyed(this.destroyRef))
       .subscribe((result: any) => {
         if (!result) return;

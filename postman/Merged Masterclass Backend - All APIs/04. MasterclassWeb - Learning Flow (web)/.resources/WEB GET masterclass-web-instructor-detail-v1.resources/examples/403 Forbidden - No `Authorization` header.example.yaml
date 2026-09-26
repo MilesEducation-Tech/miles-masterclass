@@ -1,0 +1,18 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass-web/instructor-detail/{{instructor_id}}/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "detail": "Authentication credentials were not provided."
+      }
+order: 2000

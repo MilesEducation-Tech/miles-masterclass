@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { of } from 'rxjs';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { CertificateDownloadDialog } from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
 import { CertificateTarget } from '@features/tracker/cpe/models/cpe-credit.model';
 import { TrackerDialogOrchestrator } from './tracker-dialog-orchestrator';
@@ -11,9 +11,9 @@ describe('TrackerDialogOrchestrator', () => {
   let openSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    openSpy = vi.fn().mockReturnValue({ afterClosed$: of(undefined) });
+    openSpy = vi.fn().mockReturnValue({ afterClosed: of(undefined) });
     TestBed.configureTestingModule({
-      providers: [{ provide: Dialog, useValue: { open: openSpy } }],
+      providers: [{ provide: NgpDialogManager, useValue: { open: openSpy } }],
     });
     service = TestBed.inject(TrackerDialogOrchestrator);
   });
@@ -22,7 +22,7 @@ describe('TrackerDialogOrchestrator', () => {
     expect(service).toBeTruthy();
   });
 
-  it('passes the certificate target straight through to the dialog', () => {
+  it('passes the certificate target straight through to the dialog', async () => {
     const target: CertificateTarget = {
       courseId: 44,
       courseType: 'masterclass',
@@ -32,7 +32,8 @@ describe('TrackerDialogOrchestrator', () => {
 
     service.openCertificateDownloadDialog(target);
 
-    expect(openSpy).toHaveBeenCalledTimes(1);
+    // The dialog loads with import() first, then opens without a subscriber.
+    await vi.waitFor(() => expect(openSpy).toHaveBeenCalledTimes(1));
     const [component, config] = openSpy.mock.calls[0];
     expect(component).toBe(CertificateDownloadDialog);
     expect(config.data).toEqual({

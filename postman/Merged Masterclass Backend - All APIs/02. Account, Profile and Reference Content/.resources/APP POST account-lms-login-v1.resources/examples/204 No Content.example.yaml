@@ -1,0 +1,23 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/app-api/v1/account/lms-login/{{course}}/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "access_token": "",
+        "uid": ""
+      }
+response:
+  statusCode: 204
+  statusText: No Content
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: ""
+order: 3000

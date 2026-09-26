@@ -1,0 +1,27 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `UpdateBellNotificationStatusViewV1`  
+  **Module:** `Notification.views`  
+  **Route name:** `notification-app-inbox-bell-update-read-status-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  POST to set one bell row's read flag, either direction.
+
+  Body template generated from `BellUpdateReadStatusRequestSerializerV1`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/notification/app-inbox-bell/update-read-status/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "notification_id": "00000000-0000-0000-0000-000000000000",
+      "is_read": false
+    }
+examples: ./.resources/UNIVERSAL POST notification-app-inbox-bell-update-read-status-v1.resources/examples
+order: 5000

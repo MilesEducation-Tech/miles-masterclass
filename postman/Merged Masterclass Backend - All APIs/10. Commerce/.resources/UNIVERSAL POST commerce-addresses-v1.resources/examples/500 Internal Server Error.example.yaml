@@ -1,0 +1,36 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/commerce/addresses/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "line1": "",
+        "city": "",
+        "state": "",
+        "postal_code": "",
+        "country": "",
+        "label": "",
+        "name": "",
+        "phone": "",
+        "line2": "",
+        "landmark": "",
+        "is_default": false
+      }
+response:
+  statusCode: 500
+  statusText: Internal Server Error
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "message": "<message>"
+      }
+order: 6000

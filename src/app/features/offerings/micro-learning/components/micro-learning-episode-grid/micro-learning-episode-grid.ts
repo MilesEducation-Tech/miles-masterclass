@@ -6,7 +6,7 @@ import { MicroLearningReel } from '@features/offerings/models/micro-learning-cou
   selector: 'app-micro-learning-episode-grid',
   imports: [Vertical],
   templateUrl: './micro-learning-episode-grid.html',
-  styleUrl: './micro-learning-episode-grid.css',
+  host: { class: 'block' },
 })
 export class MicroLearningEpisodeGrid {
   readonly episodes = input.required<MicroLearningReel[]>();

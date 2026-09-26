@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormField as AngularFormField, form, required, validate } from '@angular/forms/signals';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '@shared/ui/button/button';
 import { Forms } from '@shared/ui/forms/forms';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
@@ -32,13 +33,13 @@ const EMPTY_FIRM: FirmFormModel = { name: '', email_domain: '', partner_code_id:
  */
 @Component({
   selector: 'app-network-firms-dialog',
-  imports: [AngularFormField, Forms, AriaInput, AriaSelect, Button],
+  imports: [AngularFormField, Forms, AriaInput, AriaSelect, Button, DialogShell],
   templateUrl: './network-firms-dialog.html',
 })
 export class NetworkFirmsDialog implements OnInit {
   /** Resolves with the created firm's id, so the caller can deep-link to admin provisioning. */
-  dialogRef!: DialogRef<NetworkFirmsDialog, number | undefined>;
-  data!: NetworkFirmsDialogData;
+  private readonly dialogRef = injectDialogRef<NetworkFirmsDialogData, number | undefined>();
+  protected readonly data = this.dialogRef.data;
 
   protected readonly facade = inject(PartnerSuperAdminFacade);
 

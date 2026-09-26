@@ -16,15 +16,13 @@ import { auditTime, filter, map } from 'rxjs/operators';
 
 import { Consent } from '@core/services/consent/consent';
 import { Analytics } from '@core/services/analytics/analytics';
-import { Dialog } from '@core/services/dialog/dialog';
+import { AuthSession } from '@core/services/auth-session/auth-session';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Utils } from '@shared/services/utils';
 import { FeatureFacade, FeatureResource } from '@core/services/feature-facade/feature-facade';
 import { CartStore } from '@core/services/cart/cart-store';
-import { GlobalSearchDialog } from '@layout/dialogs/global-search-dialog/global-search-dialog';
-import {
-  CalendlyDialog,
-  CalendlyDialogData,
-} from '@shared/dialogs/calendly-dialog/calendly-dialog';
+// Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { Content } from '@core/models/course.model';
 
 import { SubscribeCard } from './components/subscribe-card/subscribe-card';
@@ -48,15 +46,14 @@ type InProgressType = 'masterclass' | 'podcast' | 'micro_learning';
   selector: 'app-footer-overlay',
   imports: [SubscribeCard, ContinueLearningCard, UtilsIconCluster],
   templateUrl: './footer-overlay.html',
-  styleUrl: './footer-overlay.css',
   host: {
-    class: 'z-50',
+    class: 'contents z-50',
   },
 })
 export class FooterOverlay {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
   // Suppress the overlay while the cookie-consent banner is open so the two
   // fixed bottom UIs don't overlap (no-op unless consent is active in prod).
@@ -94,10 +91,11 @@ export class FooterOverlay {
     () => this.isScrolled() && this.routeAllowed() && !this.consent.bannerOpen(),
   );
 
-  // ── ponytail: inert session + subscription state ───────────────────────
-  // Both read the removed `Auth` service. Signed-out with no plan is the
-  // design the overlay now always shows.
-  protected readonly isLoggedIn = signal(false);
+  // ── Session + subscription state ────────────────────────────────────────
+  // The boolean, never the token: a rotation must not re-fire the effects below.
+  protected readonly isLoggedIn = inject(AuthSession).isAuthenticated;
+  // ponytail: nothing in the app holds the user's plan (see `utils.ts`), so
+  // "no plan" stays the answer and the subscribe upsell shows to everyone.
   protected readonly subscribed = signal<boolean | null>(false);
 
   // ── In-progress data (auth-gated; reuses FeatureFacade cache) ──────────
@@ -210,11 +208,11 @@ export class FooterOverlay {
     }
   }
 
-  protected onScheduleDiscoveryCall(): void {
-    this.dialog.open<CalendlyDialog, boolean>(CalendlyDialog, {
-      width: 'min(95vw, 760px)',
-      ariaLabel: 'Schedule a discovery call',
+  protected async onScheduleDiscoveryCall(): Promise<void> {
+    const { CalendlyDialog } = await import('@shared/dialogs/calendly-dialog/calendly-dialog');
+    this.dialogs.open(CalendlyDialog, {
       data: {
+        ariaLabel: 'Schedule a discovery call',
         url: 'https://calendly.com/rohan-singhai-milesmasterclass/30min',
         closeAction: true,
       } satisfies CalendlyDialogData,
@@ -241,13 +239,9 @@ export class FooterOverlay {
     this.router.navigate(['/', this.utils.country(), this.utils.profession(), 'payment', 'cart']);
   }
 
-  protected openSearch(): void {
-    this.dialog.open(GlobalSearchDialog, {
-      width: 'min(95vw, 720px)',
-      maxWidth: '95vw',
-      ariaLabel: 'Global search',
-      enterAnimationDuration: '200ms',
-      exitAnimationDuration: '180ms',
-    });
+  protected async openSearch(): Promise<void> {
+    const { GlobalSearchDialog } =
+      await import('@layout/dialogs/global-search-dialog/global-search-dialog');
+    this.dialogs.open(GlobalSearchDialog);
   }
 }

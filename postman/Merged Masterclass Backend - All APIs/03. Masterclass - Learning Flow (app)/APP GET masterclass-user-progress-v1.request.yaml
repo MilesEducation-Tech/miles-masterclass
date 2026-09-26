@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassUserProgressViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-user-progress-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  6.5 GET /caira/masterclass/progress/ - Per-course progress.
+url: "{{base_url}}/api/v1/masterclass/progress/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/APP GET masterclass-user-progress-v1.resources/examples
+order: 20000

@@ -4,7 +4,8 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideBookOpen, lucideDownload } from '@ng-icons/lucide';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import {
   ReportCertificate,
   ReportItemRow,
@@ -22,21 +23,24 @@ export interface ReportItemsDialogData {
 
 /**
  * Report drill-down: every course or webinar behind one user's roll-up row.
- *
- * `data` and `dialogRef` are property-injected by the `Dialog` service after
- * construction, so the fetch is kicked off in `ngOnInit` — they aren't readable
- * in a field initializer.
  */
 @Component({
   selector: 'app-report-items-dialog',
-  imports: [DecimalPipe, NgIcon, Button, Spinner, TabStrip, CertificateDownloadProgress],
+  imports: [
+    DecimalPipe,
+    NgIcon,
+    Button,
+    Spinner,
+    TabStrip,
+    CertificateDownloadProgress,
+    DialogShell,
+  ],
   providers: [provideIcons({ lucideBookOpen, lucideDownload })],
   templateUrl: './report-items-dialog.html',
 })
 export class ReportItemsDialog implements OnInit {
-  /** Set by the Dialog service immediately after construction. */
-  dialogRef!: DialogRef<ReportItemsDialog>;
-  data!: ReportItemsDialogData;
+  private readonly dialogRef = injectDialogRef<ReportItemsDialogData>();
+  protected readonly data = this.dialogRef.data;
 
   protected readonly facade = inject(PartnerReportFacade);
 

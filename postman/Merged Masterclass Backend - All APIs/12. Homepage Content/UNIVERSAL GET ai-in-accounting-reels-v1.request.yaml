@@ -1,0 +1,26 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `AIInAccountingReelsViewV1`  
+  **Module:** `Homepage.views`  
+  **Route name:** `ai-in-accounting-reels-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Paginated AI-in-Accounting reels, with per-caller like and watch flags.
+
+  Query parameters (disabled by default): `page`, `page_size`
+url: "{{base_url}}/api/v1/homepage-content/ai-in-accounting-reels/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: page
+    value: ""
+    disabled: true
+  - key: page_size
+    value: ""
+    disabled: true
+examples: ./.resources/UNIVERSAL GET ai-in-accounting-reels-v1.resources/examples
+order: 1000

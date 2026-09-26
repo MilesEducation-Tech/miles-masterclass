@@ -9,7 +9,7 @@ import { Content } from '@core/models/course.model';
   imports: [Button, NgIcon],
   providers: [provideIcons({ faSolidPlay })],
   templateUrl: './continue-learning-card.html',
-  styleUrl: './continue-learning-card.css',
+  host: { class: 'block w-full' },
 })
 export class ContinueLearningCard {
   readonly course = input.required<Content>();

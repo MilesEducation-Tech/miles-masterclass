@@ -1,0 +1,36 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/resume-state/save/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "course_id": "00000000-0000-0000-0000-000000000000",
+        "chapters": [
+          {
+            "chapter_id": "00000000-0000-0000-0000-000000000000",
+            "current_progress_seconds": 0,
+            "show_quiz": false,
+            "show_final_assessment": false
+          }
+        ]
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "invalid_show_quiz",
+        "message": "show_quiz=true rejected: video not completed for this chapter.",
+        "chapter_id": "<str(ch_id)>"
+      }
+order: 5000

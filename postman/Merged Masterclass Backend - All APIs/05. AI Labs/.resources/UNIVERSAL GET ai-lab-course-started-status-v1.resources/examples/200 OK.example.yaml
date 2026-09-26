@@ -1,0 +1,22 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/ai-labs/course-started/{{ai_lab_course_id}}/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "ai_lab_course_id": "<str(ai_lab_course_id)>",
+        "started": false,
+        "can_start": false,
+        "enrollment": "<dict(enrollment)>",
+        "lock_state": "<lock_state>"
+      }
+order: 1000

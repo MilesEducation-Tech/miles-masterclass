@@ -1,14 +1,17 @@
 import { isPlatformBrowser } from '@angular/common';
 import {
+  afterNextRender,
   Component,
   computed,
   DestroyRef,
   effect,
   ElementRef,
   inject,
+  Injector,
   PLATFORM_ID,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -34,7 +37,7 @@ import {
   NgpCollapsibleContent,
   NgpCollapsibleTrigger,
 } from 'ng-primitives/collapsible';
-import { CdkTrapFocus } from '@angular/cdk/a11y';
+import { NgpFocusTrap } from 'ng-primitives/focus-trap';
 import { crownIcon, logo } from '@core/constants/icon';
 import { NavActionKind, NavItem } from '@core/models/nav.model';
 import { Button } from '@shared/ui/button/button';
@@ -45,11 +48,9 @@ import { NavMenuItem } from '@shared/components/nav-menu-item/nav-menu-item';
 import { GUEST_NAV, LOGGED_IN_NAV } from './nav.config';
 import { Utils } from '@shared/services/utils';
 import { Viewport } from '@core/services/viewport/viewport';
-import {
-  CalendlyDialog,
-  CalendlyDialogData,
-} from '@shared/dialogs/calendly-dialog/calendly-dialog';
-import { Dialog } from '@core/services/dialog/dialog';
+// Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { User } from '@core/models/profile.model';
 
 const SCROLL_THRESHOLD_PX = 150;
@@ -79,7 +80,7 @@ const ROUTE_MATCH_OPTIONS: IsActiveMatchOptions = {
     NgpCollapsible,
     NgpCollapsibleTrigger,
     NgpCollapsibleContent,
-    CdkTrapFocus,
+    NgpFocusTrap,
   ],
   providers: [provideIcons({ lucideChevronDown, lucideChevronRight, lucideMenu, lucideX })],
   templateUrl: './header.html',
@@ -92,8 +93,10 @@ export class Header {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+  private readonly mobileToggler = viewChild<ElementRef<HTMLButtonElement>>('mobileToggler');
 
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   protected readonly utils = inject(Utils);
   private readonly viewport = inject(Viewport);
 
@@ -174,7 +177,7 @@ export class Header {
     // Close the mobile drawer on every navigation completion.
     effect(() => {
       void this.currentUrl();
-      untracked(() => this.isMobileMenuOpen.set(false));
+      untracked(() => this.closeMobileMenu());
     });
   }
 
@@ -249,7 +252,15 @@ export class Header {
   }
 
   closeMobileMenu(): void {
+    if (!this.isMobileMenuOpen()) return;
     this.isMobileMenuOpen.set(false);
+    // `ngpFocusTrap`, unlike `cdkTrapFocusAutoCapture`, does not hand focus back when the
+    // drawer closes, so return it to the toggler as CDK did. Unconditional on purpose: while
+    // the drawer is open the trap pulls focus back inside, so it always goes down with it.
+    afterNextRender(
+      { write: () => this.mobileToggler()?.nativeElement.focus() },
+      { injector: this.injector },
+    );
   }
 
   /**
@@ -289,11 +300,11 @@ export class Header {
     this.closeMobileMenu();
   }
 
-  openScheduler(): void {
-    this.dialog.open<CalendlyDialog, boolean>(CalendlyDialog, {
-      width: 'min(95vw, 760px)',
-      ariaLabel: 'Schedule a demo',
+  async openScheduler(): Promise<void> {
+    const { CalendlyDialog } = await import('@shared/dialogs/calendly-dialog/calendly-dialog');
+    this.dialogs.open(CalendlyDialog, {
       data: {
+        ariaLabel: 'Schedule a demo',
         url: 'https://calendly.com/rohan-singhai-milesmasterclass/30min',
         closeAction: true,
       } satisfies CalendlyDialogData,

@@ -1,0 +1,19 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/{{course_id}}/bookmark/"
+  method: POST
+  headers:
+    Accept: application/json
+response:
+  statusCode: 500
+  statusText: Internal Server Error
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "message": "Unable to update the bookmark."
+      }
+order: 4000

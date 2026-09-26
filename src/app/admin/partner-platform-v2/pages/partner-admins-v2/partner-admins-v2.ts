@@ -3,8 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take } from 'rxjs';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { CreatePartnerAdminDialog } from '@admin/partner-platform-v2/dialogs/create-partner-admin-dialog/create-partner-admin-dialog';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { PartnerAdmin } from '@admin/core/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
 
@@ -22,7 +21,7 @@ import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin
 })
 export class PartnerAdminsV2 {
   protected readonly facade = inject(PartnerSuperAdminFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   // The dialog injects the route-scoped facade — hand it this page's injector.
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly destroyRef = inject(DestroyRef);
@@ -33,16 +32,13 @@ export class PartnerAdminsV2 {
     return admin.role === 'super' ? 'Everything' : '—';
   }
 
-  protected openCreate(): void {
-    const ref = this.dialog.open<CreatePartnerAdminDialog, PartnerAdmin | undefined>(
-      CreatePartnerAdminDialog,
-      {
-        environmentInjector: this.envInjector,
-        maxWidth: '560px',
-        ariaLabel: 'Create partner admin',
-      },
-    );
+  protected async openCreate(): Promise<void> {
+    const { CreatePartnerAdminDialog } =
+      await import('@admin/partner-platform-v2/dialogs/create-partner-admin-dialog/create-partner-admin-dialog');
+    const ref = this.dialogs.open<void, PartnerAdmin | undefined>(CreatePartnerAdminDialog, {
+      injector: this.envInjector,
+    });
     // createPartnerAdmin() already reloads the list; nothing else to do on success.
-    ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe();
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 }

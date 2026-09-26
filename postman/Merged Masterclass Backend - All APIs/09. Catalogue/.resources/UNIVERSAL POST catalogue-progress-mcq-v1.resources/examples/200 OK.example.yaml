@@ -1,0 +1,32 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/catalogue/progress/mcq/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "lms_subject_id": 0,
+        "completed": false
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "created": "<created>",
+        "result": {
+          "lms_subject_id": "<row.lms_subject_id>",
+          "completed_mcqs": "<row.completed_mcqs>",
+          "completed_ebooks": "<row.completed_ebooks>"
+        }
+      }
+order: 1000

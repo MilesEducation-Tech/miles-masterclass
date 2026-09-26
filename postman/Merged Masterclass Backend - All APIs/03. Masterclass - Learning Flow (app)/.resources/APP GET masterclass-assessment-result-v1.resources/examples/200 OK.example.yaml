@@ -1,0 +1,25 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/{{course_id}}/assessment/result/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "attempt_id": "<str(attempt.id)>",
+        "passed": "<attempt.assessment_is_passed>",
+        "score_percent": "<attempt.assessment_score_percent>",
+        "total_questions": 0,
+        "correct_count": 0,
+        "skipped_count": 0,
+        "attempted_at": "<attempt.attempted_at>",
+        "answers": []
+      }
+order: 1000

@@ -4,6 +4,5 @@ import { Component } from '@angular/core';
   selector: 'app-ascpa',
   imports: [],
   templateUrl: './ascpa.html',
-  styleUrl: './ascpa.css',
 })
 export class Ascpa {}

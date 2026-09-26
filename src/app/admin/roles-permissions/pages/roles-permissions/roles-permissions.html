@@ -8,18 +8,14 @@
   </header>
 
   @if (facade.error()) {
-    <div
-      class="px-3 py-2 text-sm rounded-md"
-      style="background: var(--mm-danger-bg); color: var(--mm-danger-fg)"
-      role="alert"
-    >
+    <div class="px-3 py-2 text-sm rounded-md bg-danger-bg text-danger-foreground" role="alert">
       Failed to load the RBAC catalog. Refresh the page or check your connection.
     </div>
   }
 
   <!-- ===================== ROLES ===================== -->
   <ng-container *hasPermission="PERM.ADMIN_ROLES_MANAGE">
-    <div class="rounded-md border border-white/10" style="background: var(--mm-surface-2)">
+    <div class="rounded-md border border-white/10 bg-surface-2">
       <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-2">
         <div class="flex items-center gap-2">
           <h2 class="text-sm font-semibold">Roles</h2>
@@ -182,7 +178,7 @@
 
   <!-- ===================== PERMISSIONS ===================== -->
   <ng-container *hasPermission="PERM.ADMIN_PERMISSIONS_MANAGE">
-    <div class="rounded-md border border-white/10" style="background: var(--mm-surface-2)">
+    <div class="rounded-md border border-white/10 bg-surface-2">
       <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-2">
         <h2 class="text-sm font-semibold">Permission catalog</h2>
         @if (!showPermForm()) {

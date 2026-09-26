@@ -4,13 +4,16 @@
     <app-admin-sidebar [collapsed]="desktopCollapsed()" />
   </div>
 
-  <!-- Mobile drawer -->
+  <!-- Mobile drawer. `ngpFocusTrap` keeps Tab inside it while open, as `aria-modal`
+       promises; Escape and the backdrop close it, and focus goes back to the opener. -->
   @if (mobileNavOpen()) {
     <div
       class="fixed inset-0 z-40 md:hidden"
       role="dialog"
       aria-modal="true"
       aria-label="Mobile navigation"
+      ngpFocusTrap
+      (keydown.escape)="closeMobileNav()"
     >
       <button
         type="button"

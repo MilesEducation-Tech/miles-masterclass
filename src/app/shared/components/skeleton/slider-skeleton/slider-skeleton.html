@@ -1,39 +1,82 @@
-<ul class="slider" aria-label="Loading slider" aria-busy="true">
+<ul
+  class="relative m-0 aspect-9/16 w-full list-none p-0 sm:aspect-video"
+  aria-label="Loading slider"
+  aria-busy="true"
+>
   <!-- Hero slide (full screen) -->
-  <li class="item item--hero">
-    <div class="absolute inset-0 w-full h-full skeleton-bg"></div>
+  <li
+    class="absolute bottom-8 aspect-video overflow-hidden sm:bottom-32 md:aspect-9/16 left-0 top-0 z-1 h-full w-full translate-y-0 rounded-none"
+  >
+    <div
+      class="absolute inset-0 h-full w-full bg-linear-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-size-[200%_100%] shimmer"
+    ></div>
 
-    <div class="content content--visible">
+    <div
+      class="absolute bottom-8 left-6 z-2 mx-auto flex w-10/12 flex-col gap-2 opacity-100 sm:bottom-32 sm:left-12 sm:w-2/5 sm:gap-4"
+    >
       <!-- Slug skeleton -->
-      <div class="skeleton-slug"></div>
+      <div
+        class="h-5 w-28 rounded-full bg-linear-to-r from-neutral-700 via-neutral-600 to-neutral-700 bg-size-[200%_100%] shimmer"
+      ></div>
       <!-- Title skeleton -->
-      <div class="skeleton-title"></div>
+      <div
+        class="h-8 w-3/4 rounded-lg md:h-10 bg-linear-to-r from-neutral-700 via-neutral-600 to-neutral-700 bg-size-[200%_100%] shimmer shimmer-delay-1"
+      ></div>
       <!-- Subtitle skeleton -->
-      <div class="skeleton-subtitle"></div>
+      <div
+        class="h-6 w-1/2 rounded-lg md:h-8 bg-linear-to-r from-neutral-700 via-neutral-600 to-neutral-700 bg-size-[200%_100%] shimmer shimmer-delay-2"
+      ></div>
       <!-- Description skeleton (2 lines) -->
-      <div class="skeleton-description"></div>
-      <div class="skeleton-description skeleton-description--short"></div>
+      <div
+        class="h-3.5 w-full rounded bg-linear-to-r from-neutral-600 via-neutral-500 to-neutral-600 bg-size-[200%_100%] md:h-4 shimmer shimmer-delay-3"
+      ></div>
+      <div
+        class="h-3.5 w-2/3 rounded bg-linear-to-r from-neutral-600 via-neutral-500 to-neutral-600 bg-size-[200%_100%] md:h-4 shimmer shimmer-delay-4"
+      ></div>
       <!-- Button skeletons -->
       <div class="flex space-x-4 items-center">
-        <div class="skeleton-button"></div>
-        <div class="skeleton-button"></div>
+        <div
+          class="h-10 w-32 rounded-lg bg-linear-to-r from-neutral-700 via-neutral-600 to-neutral-700 bg-size-[200%_100%] shimmer shimmer-delay-5"
+        ></div>
+        <div
+          class="h-10 w-32 rounded-lg bg-linear-to-r from-neutral-700 via-neutral-600 to-neutral-700 bg-size-[200%_100%] shimmer shimmer-delay-5"
+        ></div>
       </div>
     </div>
   </li>
 
   <!-- Thumbnail skeletons -->
-  <li class="item item--thumb-1">
-    <div class="absolute inset-0 w-full h-full skeleton-bg"></div>
+  <li
+    class="absolute bottom-8 aspect-video overflow-hidden sm:bottom-32 md:aspect-9/16 w-[150px] rounded-xl xl:w-[200px] z-2 left-1/2"
+  >
+    <div
+      class="absolute inset-0 h-full w-full bg-linear-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-size-[200%_100%] shimmer"
+    ></div>
   </li>
-  <li class="item item--thumb-2">
-    <div class="absolute inset-0 w-full h-full skeleton-bg"></div>
+  <li
+    class="absolute bottom-8 aspect-video overflow-hidden sm:bottom-32 md:aspect-9/16 w-[150px] rounded-xl xl:w-[200px] z-2 left-[calc(50%+170px)] xl:left-[calc(50%+220px)]"
+  >
+    <div
+      class="absolute inset-0 h-full w-full bg-linear-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-size-[200%_100%] shimmer"
+    ></div>
   </li>
-  <li class="item item--thumb-3">
-    <div class="absolute inset-0 w-full h-full skeleton-bg"></div>
+  <li
+    class="absolute bottom-8 aspect-video overflow-hidden sm:bottom-32 md:aspect-9/16 w-[150px] rounded-xl xl:w-[200px] z-2 left-[calc(50%+340px)] xl:left-[calc(50%+440px)]"
+  >
+    <div
+      class="absolute inset-0 h-full w-full bg-linear-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-size-[200%_100%] shimmer"
+    ></div>
   </li>
 </ul>
 
-<nav class="nav" aria-label="Slider navigation">
-  <div class="skeleton-nav-btn"></div>
-  <div class="skeleton-nav-btn"></div>
+<nav
+  class="absolute bottom-8 left-6 z-10 flex gap-2 sm:left-1/2 sm:-translate-x-1/2"
+  aria-label="Slider navigation"
+>
+  <div
+    class="h-12 w-12 rounded-full bg-linear-to-r from-neutral-700 via-neutral-600 to-neutral-700 bg-size-[200%_100%] shimmer"
+  ></div>
+  <div
+    class="h-12 w-12 rounded-full bg-linear-to-r from-neutral-700 via-neutral-600 to-neutral-700 bg-size-[200%_100%] shimmer"
+  ></div>
 </nav>
