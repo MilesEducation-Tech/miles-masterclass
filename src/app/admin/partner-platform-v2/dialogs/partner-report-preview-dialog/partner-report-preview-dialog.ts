@@ -40,6 +40,7 @@ export interface PartnerReportPreviewDialogData {
   imports: [Button, Spinner, DialogShell],
   templateUrl: './partner-report-preview-dialog.html',
   styleUrl: './partner-report-preview-dialog.css',
+  host: { class: 'block' },
 })
 export class PartnerReportPreviewDialog implements OnInit {
   private readonly dialogRef = injectDialogRef<PartnerReportPreviewDialogData>();

@@ -19,7 +19,6 @@ import {
   imports: [DecimalPipe, NgIcon, Button, Spinner],
   providers: [provideIcons({ lucideDownload, lucideEye })],
   templateUrl: './report-users-table.html',
-  styleUrl: './report-users-table.css',
   host: { class: 'block w-full' },
 })
 export class ReportUsersTable {
