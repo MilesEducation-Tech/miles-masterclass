@@ -12,19 +12,14 @@ import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
-import {
-  ApplyPartnerCodeDialog,
+// Type-only: dialog components below load with `import()` when opened (PROMPT.md §4.4).
+import type {
   ApplyPartnerCodeDialogData,
   ApplyPartnerCodeDialogResult,
 } from '@shared/dialogs/apply-partner-code-dialog/apply-partner-code-dialog';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-  UtilsDialogResult,
-} from '@shared/dialogs/utils-dialog/utils-dialog';
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import {
-  RecordPaymentDialog,
+import type {
   RecordPaymentDialogData,
   RecordPaymentDialogResult,
 } from '@admin/user-onboarding/dialogs/record-payment-dialog/record-payment-dialog';
@@ -79,10 +74,11 @@ export class OnboardingV2 {
   }
 
   /** Every field the list returns that the row can't fit — read-only, so UtilsDialog. */
-  protected onView(user: InternalUser): void {
+  protected async onView(user: InternalUser): Promise<void> {
     const yesNo = (v: boolean | null | undefined) => (v == null ? '—' : v ? 'Yes' : 'No');
     const date = (v: string | null) => (v ? formatDate(v, 'MMM d, y, h:mm a', 'en-US') : '—');
     const text = (v: string | null | undefined) => (v && v.trim() ? v : '—');
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
     this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title: `${user.first_name} ${user.last_name}`.trim() || user.email,
@@ -131,7 +127,9 @@ export class OnboardingV2 {
     });
   }
 
-  protected onRecordPayment(user: InternalUser): void {
+  protected async onRecordPayment(user: InternalUser): Promise<void> {
+    const { RecordPaymentDialog } =
+      await import('@admin/user-onboarding/dialogs/record-payment-dialog/record-payment-dialog');
     const ref = this.dialogs.open<RecordPaymentDialogData, RecordPaymentDialogResult>(
       RecordPaymentDialog,
       {
@@ -145,12 +143,13 @@ export class OnboardingV2 {
     ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(async (result) => {
       if (!result) return;
       const paid = await this.facade.recordOfflinePayment(user.id, result.file, result.comment);
-      if (paid) this.showPaymentResult(user, paid);
+      if (paid) void this.showPaymentResult(user, paid);
     });
   }
 
   /** The receipt link and ids the toast can't hold — read-only, so UtilsDialog. */
-  private showPaymentResult(user: InternalUser, paid: OfflinePaymentResult): void {
+  private async showPaymentResult(user: InternalUser, paid: OfflinePaymentResult): Promise<void> {
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
     this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title: `Payment recorded — ${user.email}`,
@@ -184,9 +183,11 @@ export class OnboardingV2 {
     });
   }
 
-  protected onApplyPartnerCode(user: InternalUser): void {
+  protected async onApplyPartnerCode(user: InternalUser): Promise<void> {
     // Open on a fresh list — codes are added outside this screen.
     this.facade.reloadPartnerCodes();
+    const { ApplyPartnerCodeDialog } =
+      await import('@shared/dialogs/apply-partner-code-dialog/apply-partner-code-dialog');
     const ref = this.dialogs.open<ApplyPartnerCodeDialogData, ApplyPartnerCodeDialogResult>(
       ApplyPartnerCodeDialog,
       {

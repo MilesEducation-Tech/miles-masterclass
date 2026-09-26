@@ -3,8 +3,8 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
-import {
-  BlockStatusDialog,
+// Type-only: dialog components below load with `import()` when opened (PROMPT.md §4.4).
+import type {
   BlockStatusDialogData,
   BlockStatusDialogResult,
 } from '@shared/dialogs/block-status-dialog/block-status-dialog';
@@ -88,9 +88,11 @@ export class UsersV2 {
     this.facade.setPage(this.facade.pagination().next_page ?? this.currentPage() + 1);
   }
 
-  protected onBlockToggle(user: PartnerPanelUser): void {
+  protected async onBlockToggle(user: PartnerPanelUser): Promise<void> {
     const action: BlockStatusDialogData['action'] = user.is_blocked ? 'unblock' : 'block';
 
+    const { BlockStatusDialog } =
+      await import('@shared/dialogs/block-status-dialog/block-status-dialog');
     const ref = this.dialogs.open<BlockStatusDialogData, BlockStatusDialogResult>(
       BlockStatusDialog,
       {

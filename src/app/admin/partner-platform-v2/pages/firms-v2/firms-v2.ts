@@ -20,14 +20,9 @@ import {
   partnerLoadError,
 } from '@admin/core/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
-import {
-  AllocateSeatsDialog,
-  AllocateSeatsDialogData,
-} from '@admin/partner-platform-v2/dialogs/allocate-seats-dialog/allocate-seats-dialog';
-import {
-  FirmFormDialog,
-  FirmFormDialogData,
-} from '@admin/partner-platform-v2/dialogs/firm-form-dialog/firm-form-dialog';
+// Type-only: dialog components below load with `import()` when opened (PROMPT.md §4.4).
+import type { AllocateSeatsDialogData } from '@admin/partner-platform-v2/dialogs/allocate-seats-dialog/allocate-seats-dialog';
+import type { FirmFormDialogData } from '@admin/partner-platform-v2/dialogs/firm-form-dialog/firm-form-dialog';
 import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
 import { AriaSelectOption } from '@core/models/aria.model';
 import { AdminAuth } from '@admin/core/services/admin-auth';
@@ -109,7 +104,9 @@ export class FirmsV2 {
     });
   }
 
-  protected openAllocate(firm: Firm): void {
+  protected async openAllocate(firm: Firm): Promise<void> {
+    const { AllocateSeatsDialog } =
+      await import('@admin/partner-platform-v2/dialogs/allocate-seats-dialog/allocate-seats-dialog');
     const ref = this.dialogs.open<AllocateSeatsDialogData, number | undefined>(
       AllocateSeatsDialog,
       { data: { firm } satisfies AllocateSeatsDialogData, injector: this.envInjector },
@@ -120,7 +117,9 @@ export class FirmsV2 {
   }
 
   /** Edit name, email domains and status — `PATCH /superadmin/firms/<id>/`. */
-  protected openEdit(firm: Firm): void {
+  protected async openEdit(firm: Firm): Promise<void> {
+    const { FirmFormDialog } =
+      await import('@admin/partner-platform-v2/dialogs/firm-form-dialog/firm-form-dialog');
     const ref = this.dialogs.open<FirmFormDialogData, Firm | undefined>(FirmFormDialog, {
       data: { firm } satisfies FirmFormDialogData,
       injector: this.envInjector,
@@ -131,7 +130,9 @@ export class FirmsV2 {
   }
 
   /** Create a firm (member or standalone), optionally with seats + admin, atomically. */
-  protected openCreate(): void {
+  protected async openCreate(): Promise<void> {
+    const { FirmFormDialog } =
+      await import('@admin/partner-platform-v2/dialogs/firm-form-dialog/firm-form-dialog');
     const ref = this.dialogs.open<void, CreateFirmResponse | undefined>(FirmFormDialog, {
       injector: this.envInjector,
     });

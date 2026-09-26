@@ -8,8 +8,8 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Network } from '@admin/core/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
 import { AdminAuth } from '@admin/core/services/admin-auth';
-import {
-  NetworkFormDialog,
+// Type-only: dialog components below load with `import()` when opened (PROMPT.md §4.4).
+import type {
   NetworkFormDialogData,
   NetworkFormResult,
 } from '@admin/partner-platform-v2/dialogs/network-form-dialog/network-form-dialog';
@@ -37,18 +37,20 @@ export class NetworksV2 {
   protected readonly canEdit = inject(AdminAuth).isSuperAdmin;
 
   protected openCreate(): void {
-    this.openDialog();
+    void this.openDialog();
   }
 
   protected openEdit(network: Network): void {
-    this.openDialog(network);
+    void this.openDialog(network);
   }
 
   protected openDetail(network: Network): void {
     void this.router.navigate(['/admin/partner-v2/superadmin/networks', network.id]);
   }
 
-  private openDialog(network?: Network): void {
+  private async openDialog(network?: Network): Promise<void> {
+    const { NetworkFormDialog } =
+      await import('@admin/partner-platform-v2/dialogs/network-form-dialog/network-form-dialog');
     const ref = this.dialogs.open<NetworkFormDialogData, NetworkFormResult | undefined>(
       NetworkFormDialog,
       { data: { network } satisfies NetworkFormDialogData, injector: this.envInjector },

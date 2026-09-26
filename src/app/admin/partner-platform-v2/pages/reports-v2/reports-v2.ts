@@ -7,14 +7,9 @@ import { StatCard } from '@admin/partner-platform-v2/components/stat-card/stat-c
 import { PartnerAdminMe } from '@admin/core/services/partner-admin-me';
 import { PartnerNetworkFacade } from '@admin/core/services/partner-network-facade';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
-import {
-  PartnerReportPreviewDialog,
-  PartnerReportPreviewDialogData,
-} from '@admin/partner-platform-v2/dialogs/partner-report-preview-dialog/partner-report-preview-dialog';
-import {
-  ReportItemsDialog,
-  ReportItemsDialogData,
-} from '@admin/partner-platform-v2/dialogs/report-items-dialog/report-items-dialog';
+// Type-only: dialog components below load with `import()` when opened (PROMPT.md §4.4).
+import type { PartnerReportPreviewDialogData } from '@admin/partner-platform-v2/dialogs/partner-report-preview-dialog/partner-report-preview-dialog';
+import type { ReportItemsDialogData } from '@admin/partner-platform-v2/dialogs/report-items-dialog/report-items-dialog';
 import { CertificateDownloadProgress } from '@admin/partner-platform-v2/components/certificate-download-progress/certificate-download-progress';
 import { ReportUsersTable } from '@admin/partner-platform-v2/components/report-users-table/report-users-table';
 import {
@@ -125,7 +120,9 @@ export class ReportsV2 {
   });
 
   /** The printable "Partner Learning Report" for the current scope + dates. */
-  protected openPreview(): void {
+  protected async openPreview(): Promise<void> {
+    const { PartnerReportPreviewDialog } =
+      await import('@admin/partner-platform-v2/dialogs/partner-report-preview-dialog/partner-report-preview-dialog');
     this.dialogs.open<PartnerReportPreviewDialogData>(PartnerReportPreviewDialog, {
       data: {
         partnerName: this.title(),
@@ -286,7 +283,9 @@ export class ReportsV2 {
     void this.facade.downloadAllCertificates(this.title());
   }
 
-  protected openItems(row: ReportUserRow): void {
+  protected async openItems(row: ReportUserRow): Promise<void> {
+    const { ReportItemsDialog } =
+      await import('@admin/partner-platform-v2/dialogs/report-items-dialog/report-items-dialog');
     this.dialogs.open<ReportItemsDialogData>(ReportItemsDialog, {
       data: {
         userId: row.user_id,

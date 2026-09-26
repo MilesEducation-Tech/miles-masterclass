@@ -22,24 +22,17 @@ import {
   CreateFirmResponse,
 } from '@admin/core/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
-import {
-  AllocateSeatsDialog,
-  AllocateSeatsDialogData,
-} from '@admin/partner-platform-v2/dialogs/allocate-seats-dialog/allocate-seats-dialog';
-import {
-  NetworkFormDialog,
+// Type-only: dialog components below load with `import()` when opened (PROMPT.md §4.4).
+import type { AllocateSeatsDialogData } from '@admin/partner-platform-v2/dialogs/allocate-seats-dialog/allocate-seats-dialog';
+import type {
   NetworkFormDialogData,
   NetworkFormResult,
 } from '@admin/partner-platform-v2/dialogs/network-form-dialog/network-form-dialog';
-import {
-  AssignSeatDialog,
+import type {
   AssignSeatDialogData,
   AssignSeatResult,
 } from '@admin/partner-platform-v2/dialogs/assign-seat-dialog/assign-seat-dialog';
-import {
-  FirmFormDialog,
-  FirmFormDialogData,
-} from '@admin/partner-platform-v2/dialogs/firm-form-dialog/firm-form-dialog';
+import type { FirmFormDialogData } from '@admin/partner-platform-v2/dialogs/firm-form-dialog/firm-form-dialog';
 import { AdminAuth } from '@admin/core/services/admin-auth';
 
 /**
@@ -101,9 +94,11 @@ export class NetworkDetailV2 {
   });
 
   /** Edit fields and/or mint seats into the pool — `PATCH /superadmin/networks/<id>/`. */
-  protected openEdit(): void {
+  protected async openEdit(): Promise<void> {
     const network = this.network();
     if (!network) return;
+    const { NetworkFormDialog } =
+      await import('@admin/partner-platform-v2/dialogs/network-form-dialog/network-form-dialog');
     const ref = this.dialogs.open<NetworkFormDialogData, NetworkFormResult | undefined>(
       NetworkFormDialog,
       { data: { network } satisfies NetworkFormDialogData, injector: this.envInjector },
@@ -121,7 +116,9 @@ export class NetworkDetailV2 {
   }
 
   /** Top up one firm's seats — `POST /superadmin/firms/<id>/allocate/`. */
-  protected openAllocate(firm: Firm): void {
+  protected async openAllocate(firm: Firm): Promise<void> {
+    const { AllocateSeatsDialog } =
+      await import('@admin/partner-platform-v2/dialogs/allocate-seats-dialog/allocate-seats-dialog');
     const ref = this.dialogs.open<AllocateSeatsDialogData, number | undefined>(
       AllocateSeatsDialog,
       { data: { firm } satisfies AllocateSeatsDialogData, injector: this.envInjector },
@@ -132,7 +129,9 @@ export class NetworkDetailV2 {
   }
 
   /** Move a pool seat onto a member firm — `POST /superadmin/seats/<id>/assign-firm/`. */
-  protected openAssignSeat(): void {
+  protected async openAssignSeat(): Promise<void> {
+    const { AssignSeatDialog } =
+      await import('@admin/partner-platform-v2/dialogs/assign-seat-dialog/assign-seat-dialog');
     const ref = this.dialogs.open<AssignSeatDialogData, AssignSeatResult | undefined>(
       AssignSeatDialog,
       { data: { firms: this.firms() } satisfies AssignSeatDialogData, injector: this.envInjector },
@@ -145,7 +144,9 @@ export class NetworkDetailV2 {
   }
 
   /** Add a member firm here — `POST /superadmin/firms/` with this network pre-selected. */
-  protected openCreateFirm(): void {
+  protected async openCreateFirm(): Promise<void> {
+    const { FirmFormDialog } =
+      await import('@admin/partner-platform-v2/dialogs/firm-form-dialog/firm-form-dialog');
     const ref = this.dialogs.open<FirmFormDialogData, CreateFirmResponse | undefined>(
       FirmFormDialog,
       {
@@ -159,7 +160,9 @@ export class NetworkDetailV2 {
   }
 
   /** Edit one member firm — `PATCH /superadmin/firms/<id>/`. */
-  protected openEditFirm(firm: Firm): void {
+  protected async openEditFirm(firm: Firm): Promise<void> {
+    const { FirmFormDialog } =
+      await import('@admin/partner-platform-v2/dialogs/firm-form-dialog/firm-form-dialog');
     const ref = this.dialogs.open<FirmFormDialogData, Firm | undefined>(FirmFormDialog, {
       data: { firm } satisfies FirmFormDialogData,
       injector: this.envInjector,

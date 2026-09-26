@@ -3,7 +3,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take } from 'rxjs';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { CreatePartnerAdminDialog } from '@admin/partner-platform-v2/dialogs/create-partner-admin-dialog/create-partner-admin-dialog';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { PartnerAdmin } from '@admin/core/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
@@ -33,7 +32,9 @@ export class PartnerAdminsV2 {
     return admin.role === 'super' ? 'Everything' : '—';
   }
 
-  protected openCreate(): void {
+  protected async openCreate(): Promise<void> {
+    const { CreatePartnerAdminDialog } =
+      await import('@admin/partner-platform-v2/dialogs/create-partner-admin-dialog/create-partner-admin-dialog');
     const ref = this.dialogs.open<void, PartnerAdmin | undefined>(CreatePartnerAdminDialog, {
       injector: this.envInjector,
     });

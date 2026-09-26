@@ -7,10 +7,8 @@ import { Spinner } from '@shared/ui/spinner/spinner';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { CreatePartnerCodeRequest, PartnerCode } from '@admin/core/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
-import {
-  CreatePartnerCodeDialog,
-  CreatePartnerCodeDialogData,
-} from '@admin/partner-platform-v2/dialogs/create-partner-code-dialog/create-partner-code-dialog';
+// Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type { CreatePartnerCodeDialogData } from '@admin/partner-platform-v2/dialogs/create-partner-code-dialog/create-partner-code-dialog';
 
 /**
  * Partner Platform v2 — Partner Codes (`/admin/partner-v2/codes`). The
@@ -35,7 +33,9 @@ export class CodesV2 {
     return 'Global';
   }
 
-  protected openCreate(): void {
+  protected async openCreate(): Promise<void> {
+    const { CreatePartnerCodeDialog } =
+      await import('@admin/partner-platform-v2/dialogs/create-partner-code-dialog/create-partner-code-dialog');
     const ref = this.dialogs.open<
       CreatePartnerCodeDialogData,
       CreatePartnerCodeRequest | undefined
