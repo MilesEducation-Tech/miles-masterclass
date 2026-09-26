@@ -1,4 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
+import { httpResource } from '@angular/common/http';
 import {
   Component,
   computed,
@@ -7,10 +8,8 @@ import {
   input,
   numberAttribute,
   PLATFORM_ID,
-  resource,
   signal,
 } from '@angular/core';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import { Backward } from '@shared/components/backward/backward';
 import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
 import { Hover } from '@shared/components/cards/hover/hover';
@@ -22,7 +21,7 @@ import { VideoJs, VideoSource } from '@shared/components/video-js/video-js';
 import { Content } from '@core/models/course.model';
 import { FeatureApiResponse } from '@core/models/feature.model';
 import { InstructorListItem } from '@core/models/library.model';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { apiUrl } from '@core/services/api-client/api-client';
 import { Analytics } from '@core/services/analytics/analytics';
 import { InstructorHero } from '../../components/instructor-hero/instructor-hero';
 import { Square } from '@shared/components/cards/square/square';
@@ -78,27 +77,20 @@ export class InstructorDetails {
     'micro-learning': 'Micro Learning',
   };
 
-  private readonly api = inject(ApiClient);
   private readonly analytics = inject(Analytics);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly activeTab = signal<TabId>('masterclass');
 
-  private readonly instructorResource = resource({
-    params: () => {
-      const id = this.instructorId();
-      if (!this.isBrowser || !id) return undefined;
-      return { id };
-    },
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<FeatureApiResponse<InstructorListItem>>(`instructor/${params.id}/`)
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-      ),
+  private readonly instructorResource = httpResource<FeatureApiResponse<InstructorListItem>>(() => {
+    const id = this.instructorId();
+    return this.isBrowser && id ? apiUrl(`instructor/${id}/`) : undefined;
   });
 
-  protected readonly instructor = computed(() => this.instructorResource.value()?.data ?? null);
+  /** Guarded: `value()` throws on an errored resource. */
+  protected readonly instructor = computed(() =>
+    this.instructorResource.hasValue() ? (this.instructorResource.value()?.data ?? null) : null,
+  );
   protected readonly isInstructorLoading = computed(() => this.instructorResource.isLoading());
   protected readonly instructorError = computed(() => this.instructorResource.error());
 
@@ -106,21 +98,16 @@ export class InstructorDetails {
   // `masterclass` bucket further mixes Masterclass and Podcast items, told
   // apart by each item's `course_type` field ("Audio"/"podcast" → Podcast,
   // everything else → Masterclass). Tab switching is a client-side filter.
-  private readonly relatedCoursesResource = resource({
-    params: () => {
-      const id = this.instructorId();
-      if (!this.isBrowser || !id) return undefined;
-      return { id };
-    },
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<InstructorCoursesResponse>(`instructor/${params.id}/courses/`, {
-            params: { page: 1 },
-          })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-      ),
+  private readonly relatedCoursesResource = httpResource<InstructorCoursesResponse>(() => {
+    const id = this.instructorId();
+    if (!this.isBrowser || !id) return undefined;
+    return { url: apiUrl(`instructor/${id}/courses/`), params: { page: 1 } };
   });
+
+  /** The grouped courses, or `undefined`. Guarded: `value()` throws on an errored resource. */
+  private readonly relatedGroups = computed(() =>
+    this.relatedCoursesResource.hasValue() ? this.relatedCoursesResource.value()?.data : undefined,
+  );
 
   private readonly isPodcast = (c: Content): boolean => {
     const ct = (c.course_type ?? '').toLowerCase();
@@ -128,18 +115,16 @@ export class InstructorDetails {
   };
 
   private readonly masterclassItems = computed<Content[]>(() => {
-    const items = this.relatedCoursesResource.value()?.data?.masterclass ?? [];
+    const items = this.relatedGroups()?.masterclass ?? [];
     return items.filter((c) => c.course_type.toLowerCase() === 'video');
   });
 
   private readonly podcastItems = computed<Content[]>(() => {
-    const items = this.relatedCoursesResource.value()?.data?.masterclass ?? [];
+    const items = this.relatedGroups()?.masterclass ?? [];
     return items.filter((c) => this.isPodcast(c));
   });
 
-  private readonly microLearningItems = computed<Content[]>(
-    () => this.relatedCoursesResource.value()?.data?.nano ?? [],
-  );
+  private readonly microLearningItems = computed<Content[]>(() => this.relatedGroups()?.nano ?? []);
 
   protected readonly relatedCourses = computed<Content[]>(() => {
     switch (this.activeTab()) {
