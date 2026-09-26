@@ -22,7 +22,7 @@ describe('TrackerDialogOrchestrator', () => {
     expect(service).toBeTruthy();
   });
 
-  it('passes the certificate target straight through to the dialog', () => {
+  it('passes the certificate target straight through to the dialog', async () => {
     const target: CertificateTarget = {
       courseId: 44,
       courseType: 'masterclass',
@@ -32,7 +32,8 @@ describe('TrackerDialogOrchestrator', () => {
 
     service.openCertificateDownloadDialog(target);
 
-    expect(openSpy).toHaveBeenCalledTimes(1);
+    // The dialog loads with import() first, then opens without a subscriber.
+    await vi.waitFor(() => expect(openSpy).toHaveBeenCalledTimes(1));
     const [component, config] = openSpy.mock.calls[0];
     expect(component).toBe(CertificateDownloadDialog);
     expect(config.data).toEqual({

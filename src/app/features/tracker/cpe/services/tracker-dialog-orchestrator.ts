@@ -1,20 +1,14 @@
 import { Service, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, from, switchMap } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import {
-  UtilsDialog,
+// Types only: each dialog loads with `import()` when opened (PROMPT.md §4.4).
+import type {
   UtilsDialogData,
   DialogButton,
   UtilsDialogResult,
 } from '@shared/dialogs/utils-dialog/utils-dialog';
-import {
-  ComplianceDialogData,
-  CpeComplianceDialog,
-} from '@features/tracker/cpe/dialogs/cpe-compliance-dialog/cpe-compliance-dialog';
-import {
-  CertificateDialogData,
-  CertificateDownloadDialog,
-} from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
+import type { ComplianceDialogData } from '@features/tracker/cpe/dialogs/cpe-compliance-dialog/cpe-compliance-dialog';
+import type { CertificateDialogData } from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
 import { CertificateTarget } from '@features/tracker/cpe/models/cpe-credit.model';
 
 export interface DialogResult<T = unknown> {
@@ -27,6 +21,10 @@ export interface DialogResult<T = unknown> {
  * Thin wrapper over `NgpDialogManager` that encapsulates every dialog the tracker opens.
  * Keeps all dialog copy + config in one place. Callers only know the
  * intent ("open the certificate dialog"), not the shared dialog behind it.
+ *
+ * Each dialog opens as soon as its chunk arrives, whether or not the caller
+ * subscribes (the open sits in the promise, not in the stream), so fire-and-forget
+ * callers behave as they did with the static import.
  */
 @Service()
 export class TrackerDialogOrchestrator {
@@ -49,7 +47,11 @@ export class TrackerDialogOrchestrator {
       badge: target.badge,
     };
 
-    return this.dialogs.open(CertificateDownloadDialog, { data }).afterClosed;
+    return from(
+      import('@shared/dialogs/certificate-download-dialog/certificate-download-dialog').then(
+        ({ CertificateDownloadDialog }) => this.dialogs.open(CertificateDownloadDialog, { data }),
+      ),
+    ).pipe(switchMap((ref) => ref.afterClosed));
   }
 
   openDownloadRestricted(message: string): Observable<DialogResult | undefined> {
@@ -62,12 +64,20 @@ export class TrackerDialogOrchestrator {
         { label: 'Upgrade', variant: 'default', action: 'confirm' },
       ],
     };
-    return this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
-      data: { ...data, maxWidth: '100%' },
-    }).afterClosed;
+    return from(
+      import('@shared/dialogs/utils-dialog/utils-dialog').then(({ UtilsDialog }) =>
+        this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+          data: { ...data, maxWidth: '100%' },
+        }),
+      ),
+    ).pipe(switchMap((ref) => ref.afterClosed));
   }
 
   openCompliance(data: ComplianceDialogData): Observable<unknown> {
-    return this.dialogs.open(CpeComplianceDialog, { data }).afterClosed;
+    return from(
+      import('@features/tracker/cpe/dialogs/cpe-compliance-dialog/cpe-compliance-dialog').then(
+        ({ CpeComplianceDialog }) => this.dialogs.open(CpeComplianceDialog, { data }),
+      ),
+    ).pipe(switchMap((ref) => ref.afterClosed));
   }
 }

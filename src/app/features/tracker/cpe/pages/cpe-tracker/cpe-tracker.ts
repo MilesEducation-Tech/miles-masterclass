@@ -5,7 +5,9 @@ import {
   Component,
   computed,
   inject,
+  injectAsync,
   linkedSignal,
+  onIdle,
   PLATFORM_ID,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
@@ -33,7 +35,8 @@ import { localeLink } from '../../../utils/tracker-links';
 import { BadgeFilterChips } from '../../../components/badge-filter-chips/badge-filter-chips';
 import { PortfolioSummary } from '../../components/portfolio-summary/portfolio-summary';
 import { TrackerTable } from '../../components/tracker-table/tracker-table';
-import { CertificateDownload } from '../../services/certificate-download';
+import type { CertificateDownload } from '../../services/certificate-download';
+import { NotificationService } from '@core/services/notification/notification';
 import { TrackerDialogOrchestrator } from '../../services/tracker-dialog-orchestrator';
 import { DEFAULT_CPE_REQUIREMENT } from '../../constants/cpe-tracker.constants';
 import { courseCommands, feedbackCommands } from '../../utils/credit-row';
@@ -73,7 +76,13 @@ type CourseTypeChoice = CpeCourseType | 'all';
 export class CpeTracker {
   private readonly utils = inject(Utils);
   private readonly router = inject(Router);
-  private readonly certificates = inject(CertificateDownload);
+  // Lazy (PROMPT.md §4.5): only used after a download click. Prefetched on idle
+  // because downloading is this page's main action.
+  private readonly certificates = injectAsync(
+    () => import('../../services/certificate-download').then((m) => m.CertificateDownload),
+    { prefetch: onIdle },
+  );
+  private readonly notification = inject(NotificationService);
   private readonly dialogs = inject(TrackerDialogOrchestrator);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -226,7 +235,7 @@ export class CpeTracker {
   protected onRowAction({ row, action }: { row: CpeCreditWire; action: CpeRowAction }): void {
     switch (action) {
       case 'download':
-        this.certificates.downloadForRow(toCertificateTarget(row));
+        void this.withCertificates((c) => c.downloadForRow(toCertificateTarget(row)));
         return;
       case 'feedback':
         this.router.navigate(feedbackCommands(row, this.localePrefix), {
@@ -240,11 +249,25 @@ export class CpeTracker {
   }
 
   protected downloadNasba(): void {
-    this.certificates.downloadNasba();
+    void this.withCertificates((c) => c.downloadNasba());
   }
 
   protected downloadAll(): void {
-    this.certificates.downloadAllCertificates(this.year());
+    void this.withCertificates((c) => c.downloadAllCertificates(this.year()));
+  }
+
+  private async withCertificates(run: (service: CertificateDownload) => void): Promise<void> {
+    let service: CertificateDownload;
+    try {
+      service = await this.certificates();
+    } catch {
+      this.notification.error(
+        'Download unavailable',
+        'Please check your connection and try again.',
+      );
+      return;
+    }
+    run(service);
   }
 
   /**
