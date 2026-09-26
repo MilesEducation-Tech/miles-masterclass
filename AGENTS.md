@@ -52,73 +52,294 @@ Do not overbuild. If a request implies a feature nobody asked for, say so in one
 
 ---
 
-## 3. Architecture
+## 3. Structure
 
-Where each kind of logic lives. Stay consistent with this across every feature, not just the one in front of you.
+Where code lives. This is the only allowed structure. `eslint-plugin-boundaries` in `eslint.config.mjs` enforces the
+import rules below, so a violation fails `pnpm lint` rather than a review.
 
-| Layer                          | Lives in                                        | Rule                                                                                  |
-| ------------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Presentation                   | `*.ts` / `*.html` / `*.css` components          | Renders state. No HTTP, no business rules, no `HttpClient`.                           |
-| Feature state + business logic | **Facades** (`shared/services/<name>-facade/`)  | Signals for state, methods for actions. This is where HTTP, dialogs and routing live. |
-| HTTP                           | `ApiClient` (`shared/core/services/api-client`) | Prepends `BASE_API_URL`. Never inject `HttpClient` in a feature.                      |
-| Cross-cutting singletons       | `shared/core/services/`                         | Auth, Storage, Dialog, Notification, Logger, Utils, SeoManager, Analytics.            |
-| Route protection               | `shared/core/guards/` + `admin/shared/guards/`  | Guards decide access; components never check auth inline.                             |
-| Domain types                   | `shared/core/models/`                           | Canonical location. Feature-local models only when nothing else uses them.            |
-| Reusable UI                    | `shared/components/`                            | `ui/` primitives, `cards/`, `dialog/`, players, carousel.                             |
+```
+src/app/
+  core/          App-wide singletons and infrastructure. No UI components.
+                 config/ constants/ guards/ interceptors/ models/ services/ utils/ version/
+  shared/        Generic, feature-agnostic building blocks only.
+    ui/            Primitives built on ng-primitives: button, input, select, menu, tabs, otp, toast…
+    components/    Generic composites: cards/, carousel, slider, skeleton/, players, partner-content-list…
+    dialogs/       Only dialogs that 2+ features open
+    pipes/ services/ utils/
+  layout/        header, footer, footer-overlay, main / plain / blog / dynamic layouts
+  features/
+    <feature>/
+      <feature>.routes.ts
+      pages/<page>/               Routed containers. They inject facades.
+      components/<name>/          Presentational: inputs and outputs only
+      dialogs/<name>-dialog/
+      services/<name>-facade.ts   Flat files
+      models/<name>.model.ts
+      guards/ utils/ constants/ data/
+      <sub-feature>/              Same shape, only when a feature genuinely has sub-areas
+  admin/         Same shape as a feature, plus:
+    core/          Admin guards, auth, interceptors, models (incl. PERM), services
+    layout/        admin-layout, admin-sidebar, admin-topbar
+    <admin-feature>/
+  testing/       Mocks and test helpers. Importable from specs and stories only.
+```
+
+**Placement: code lives at the lowest level that uses it.**
+
+- If siblings share something, promote it to their nearest common parent.
+- If 2+ top-level features use it, promote it to `shared/` (UI) or `core/` (non-UI).
+- There is no `shared/` folder inside a feature, and routed components always live in `pages/`.
+
+**Import boundaries (enforced):**
+
+| Folder     | May import from                                                                         |
+| ---------- | --------------------------------------------------------------------------------------- |
+| `core`     | nothing in `shared`, `layout`, `features` or `admin`                                    |
+| `shared`   | `core` only (plus itself)                                                               |
+| `layout`   | `core`, `shared`                                                                        |
+| `features` | `core`, `shared`, **itself**; `layout` only in route configs; **never another feature** |
+| `admin`    | `core`, `shared`, itself                                                                |
+| `testing`  | only from `*.spec.ts` and `*.stories.ts`                                                |
+
+**Aliases:** `@core/*`, `@shared/*`, `@layout/*`, `@features/*`, `@admin/*`, `@testing/*`, `@env/*`.
+
+- Any import that crosses a top-level folder uses an alias.
+- Relative imports are allowed only inside the same feature.
+
+**Naming:**
+
+- One component per folder: `name/name.ts|html|css|spec.ts|stories.ts`.
+- v20+ file names, with no `.component`/`.service` suffixes.
+- Services and models are flat files.
+- Folder names are plural.
+- No `.scss`, and no `-v2` names after a cutover. `admin/partner-platform-v2` keeps its name until the v1 → v2
+  cutover decision is made.
+
+**Where each kind of logic lives:**
+
+| Layer                          | Lives in                                                                             | Rule                                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Presentation                   | components (`*.ts` / `*.html`)                                                       | Renders state. No HTTP, no business rules, no `HttpClient`.                                          |
+| Feature state + business logic | **Facades**: `features/<f>/services/<name>-facade.ts` (admin: `admin/<a>/services/`) | Signals and resources for state, methods for actions. This is where HTTP, dialogs and routing live.  |
+| HTTP                           | `ApiClient` (`core/services/api-client/`)                                            | Prepends `BASE_API_URL`. Reads use `httpResource` with `apiUrl()`; mutations use `ApiClient.call()`. |
+| Cross-cutting singletons       | `core/services/`                                                                     | Auth session, Storage, Dialog, Notification, Logger, Analytics, SEO, Viewport, Network…              |
+| Route protection               | `core/guards/` + `admin/core/guards/`                                                | Guards decide access. Components never check auth inline.                                            |
+| Domain types                   | `core/models/` when shared; `features/<f>/models/` when one feature owns them        | Move a model up only when a second feature needs it.                                                 |
+| Reusable UI                    | `shared/ui/`, `shared/components/`, `shared/dialogs/`                                | Generic only. A dialog one feature opens lives in that feature's `dialogs/`.                         |
 
 Three hard boundaries:
 
-- **Components display, facades decide.** If a component grows an `if` about business rules, that `if` belongs in a facade.
-- **Facades are route-scoped by default.** Most are provided in the route config, not `providedIn: 'root'`, so two feature trees get independent instances. `FeatureFacade` and the core singletons are the deliberate exceptions.
+- **Components display, facades decide.** If a component grows an `if` about business rules, that `if` belongs in a
+  facade.
+- **Facades are route-scoped by default.** Most are `@Service({ autoProvided: false })` and listed in the route's
+  `providers`, so two feature trees get independent instances. Root facades such as `PaymentFacade` and
+  `FeatureFacade`, and the core singletons, are the deliberate exceptions.
 - **The browser is untrusted.** Secrets, service-role keys and privileged operations never reach client code (see §7).
+
+**Reference examples. Copy their shape.**
+
+- **`features/payment/`, a full feature:**
+  - `payment.routes.ts`, plus `pages/` (plan, cart, billing, orders, invoice), `components/`, `dialogs/`, `guards/`
+    and `constants/`.
+  - `services/payment-facade.ts` is a root `@Service()`. Its reads are opt-in `httpResource` fields: each request
+    function returns `undefined` until a page asks for the data, and results are exposed through `hasValue()`-guarded
+    `computed`s. Its mutations are `ApiClient` methods followed by `.reload()`.
+  - The 855 KB-gzip `constants/location-min.ts` loads through `import()` only when the address form opens.
+  - Dialogs are opened with a dynamic `import()`.
+- **`admin/leads/`, the smallest complete admin slice:**
+  - `pages/leads/`, `components/leads-table/`, `models/firm-inquiry.model.ts` and `services/leads-facade.ts`.
+  - The facade is an `@Service({ autoProvided: false })` listed in `providers` on its route in `admin.routes.ts`, and
+    that route is gated by `permissionGuard(PERM.*)`.
+- **`features/partners/`, config-driven pages:**
+  - Two pages, `partner-landing` and `partner-showcase`, render all partner routes.
+  - Each partner's content is a typed config in `data/<partner>.ts`, loaded per route by
+    `resolve: { partner: () => import('./data/…') }`.
+  - To add a partner, add a config file and a route, not a page.
 
 ---
 
-## 4. Tech stack
+## 4. Tech stack & standards
 
-Full detail — versions, scripts, build configs, environments — lives in the **`tech-stack`** skill. The short version:
+Full detail — versions, scripts, build configs, environments — lives in the **`tech-stack`** skill.
 
-**Use**
+**Use:**
 
-- **Angular 22** (standalone, signals, `@if`/`@for`) — the framework. No NgModules in new code.
-- **`@angular/ssr` + Express** — SSR/SSG/CSR hybrid. Render mode is per-route in `app.routes.server.ts`.
-- **Signals + RxJS 7** — state. Facades expose `signal`/`computed`; RxJS for HTTP streams.
-- **Tailwind CSS v4** — styling. Component CSS only for what Tailwind genuinely can't express.
-- **`@angular/aria` + `@angular/cdk`** — accessible primitives (listbox, overlay, a11y).
-- **Supabase** — SEO rows, admin auth, lead capture. Two separate clients (see the `supabase` skill).
-- **Django REST API** (`BASE_API_URL`) — courses, users, payment, CPE, everything learner-facing.
-- **Video.js 8** (+ HLS, YouTube plugin) — video and audio playback.
-- **`@ng-icons`** — icons. **Swiper 12** — carousels. **jsPDF + html2canvas-pro** — certificates.
-- **Vitest 4** — tests. **ESLint 10 + Prettier 3** — lint/format. **Storybook 10** — component docs.
-- **pnpm 10** — package manager.
+- **Angular 22:** standalone, signals, `@if`/`@for`, OnPush by default. No NgModules.
+- **`@angular/ssr` + Express 5:** an SSR/SSG/CSR hybrid.
+  - Render mode is per-route in `app.routes.server.ts`.
+  - Hydration uses `provideClientHydration(withEventReplay(), withIncrementalHydration())`.
+- **Signals + RxJS 7:** state. Facades expose resources and `signal`/`computed`.
+- **Tailwind CSS v4** via `@tailwindcss/postcss`. Design tokens live in `@theme` in `src/styles/styles.css`, and `cn()`
+  lives in `shared/utils/cn.ts`.
+- **ng-primitives:** every headless, accessible primitive, including dialog, select, menu, tabs, tooltip, popover,
+  accordion, switch, radio and OTP. `@angular/cdk` stays only where it is already used and ng-primitives has no
+  equivalent (`BreakpointObserver`).
+- **Supabase:** SEO rows, admin auth and lead capture, through two separate clients (see the `supabase` skill).
+- **Django REST API** (`BASE_API_URL`): courses, users, payment, CPE, and everything else learner-facing.
+- **Video.js 8** (+ HLS, YouTube plugin) for video and audio. **`@ng-icons`** for icons. **Swiper 12** for carousels.
+  **jsPDF + html2canvas-pro** for certificates and reports.
+- **Tooling:** **Vitest 4** via `ng test`; **ESLint 10** + angular-eslint 22 + typescript-eslint 8; **Prettier 3**;
+  **Storybook 10**; **pnpm 10**.
 
-**Do not use**
+**Do not use:**
 
-- NgRx, Akita, or any external store. `@ngrx/*` must not enter `package.json`.
-- `HttpClient` directly inside a feature — go through `ApiClient`.
-- NgModules, `*ngIf`/`*ngFor` structural directives, or `OnDestroy` (use `DestroyRef`).
-- `npm` or `yarn` — the lockfile is `pnpm-lock.yaml`. Run `pnpm install --frozen-lockfile` after any branch switch.
-- A second date, HTTP, form, icon, or carousel library. What's installed covers it.
-- `document` / `window` / `localStorage` directly — use `Storage`, or guard with `isPlatformBrowser`.
-- `DOCUMENT` from `@angular/common` — import it from `@angular/core` (the `common` re-export is deprecated in v22).
+- NgRx, Akita or any external store. `@ngrx/*` must not enter `package.json`.
+- `@angular/aria`, which is lint-banned. Don't hand-roll accessible widgets either.
+- `HttpClient` injected in a feature. Go through `ApiClient`, or `httpResource` + `apiUrl()`.
+- NgModules, `*ngIf`/`*ngFor`, `OnDestroy` (use `DestroyRef`), or `NgClass`/`NgStyle` (lint-banned; use `[class]` or
+  `cn()`).
+- `npm` or `yarn`. The lockfile is `pnpm-lock.yaml`, so run `pnpm install --frozen-lockfile` after any branch switch.
+- A second date, HTTP, form, icon or carousel library. What's installed covers it.
+- `document`, `window` or `localStorage` directly. Use `Storage`, or guard with `isPlatformBrowser`.
+- `DOCUMENT` from `@angular/common`. Import it from `@angular/core`, because the `common` re-export is deprecated in
+  v22.
+
+### 4.1 Services
+
+- **Decorators:**
+  - A root singleton is `@Service()`.
+  - A route- or component-scoped service is `@Service({ autoProvided: false })`, listed in that route's or
+    component's `providers`.
+- **Dependencies:** always `inject()`, never constructor parameters.
+- **`@Injectable`** is lint-banned. Keep it only for a provider shape `@Service` can't express (`useClass`,
+  `useValue`, `useExisting`, `useFactory`, or `providedIn` other than root), with a one-line `// why:` comment and a
+  scoped lint override.
+- **Interceptors, guards and resolvers** are functional.
+
+### 4.2 Data layer
+
+- **Reads (GET)** are `httpResource` fields in facades. Supabase reads use `resource({ params, loader })`.
+  - Drive the request function from signals, and return `undefined` to skip a request until its inputs are ready.
+  - Gate authenticated reads on the **boolean** `isAuthenticated()`, never on the token.
+  - Give lists a `defaultValue`, and keep `transferCache` for SSR.
+- **Mutations** (POST/PUT/PATCH/DELETE) are facade methods on `ApiClient`. After success, call `.reload()` or update
+  the affected resource. Never use `httpResource` for a mutation.
+- **Stay on HttpClient/RxJS** for blob and file downloads with progress, for polling, and for debounced search (use
+  `rxResource` or an RxJS pipeline).
+- **Templates:**
+  - Guard every `.value()` with `.hasValue()`.
+  - Render `.isLoading()` and `.error()` explicitly.
+  - Don't keep manual loading/error flags alongside a resource.
+- **Tests** use `provideHttpClientTesting` + `HttpTestingController`, and let resources settle before asserting.
+
+### 4.3 Headless UI
+
+- **Build on ng-primitives:** interactive primitives are built on ng-primitives and styled with Tailwind through its
+  `data-*` state attributes.
+- **Keep APIs stable:** `shared/ui` keeps stable selectors, inputs and outputs, so call sites don't change when
+  internals do.
+- **`@floating-ui/dom`:** use it only through ng-primitives.
+
+### 4.4 `@defer` and hydration
+
+- **Never defer** above-the-fold or LCP content: the header, hero, first viewport, or anything that must be in the SSR
+  HTML without hydration.
+- **Always defer** below-the-fold heavy work:
+  - three.js scenes and video.js/audio players
+  - below-the-fold Swiper carousels
+  - gsap/lenis/motion sections
+  - footer overlay, related content, testimonials/marquee and app-download sections
+- **Triggers:**
+  - `on viewport` below the fold.
+  - `on interaction` / `on hover` for user-initiated UI.
+  - `on idle` for non-critical widgets.
+  - Add `prefetch on idle` / `prefetch on viewport` when the next interaction is likely.
+- **Placeholders:**
+  - Every `@defer` has a `@placeholder` with fixed dimensions (explicit height or `aspect-*`), so there is no layout
+    shift.
+  - Add `@loading (after 100ms; minimum 300ms)` where loading is visible, and `@error` where failure is possible.
+- **Hydration:**
+  - Content that must be in the server HTML for SEO but can hydrate late uses `@defer (hydrate on viewport | hydrate on
+interaction)`. A plain `@defer` renders only its placeholder on the server.
+  - Use `hydrate never` for static content.
+- **Code splitting:**
+  - A deferred component must not be referenced elsewhere in the same file, or it won't be split out.
+  - Dialogs opened from code load their component with a dynamic `import()`, keeping only an `import type` static
+    import.
+
+### 4.5 Lazy services: `injectAsync`
+
+**When to use it:** for a service that isn't needed to render the page and serves only a user action or a subset of
+pages. It is **required** when the service pulls in a heavy library: three, video.js, swiper, gsap, lenis, motion,
+jspdf, html2canvas-pro, jszip, canvas-confetti, `@milesverse/sdk`.
+
+**It fits only when all of these hold:**
+
+- The service is used only in async paths: event handlers, submit, download, export, share.
+- It is never read synchronously in a template, `computed()`, `effect()`, resource request function, guard, resolver,
+  interceptor, or initial-render constructor path.
+- It is auto-provided (`@Service()`). `autoProvided: false` services are not eligible.
+
+**Never use it for:** auth and session, analytics, consent, UTM, logger, storage, viewport, network, notifications,
+anything in the header or layout, facades that own page-load resources, or small utilities.
+
+**How to write it:**
+
+- Declare it as a field:
+  `private readonly pdf = injectAsync(() => import('@core/services/html-to-pdf/html-to-pdf').then((m) => m.HtmlToPdf));`
+- Call it only in async code: `const pdf = await this.pdf();`.
+  - Disable the trigger while it resolves.
+  - Toast on load failure.
+- The heavy library is imported statically **only** inside the lazy service's file. No other production file may
+  import that service statically; `import type` is fine.
+- **Prefetch:**
+  - Use `{ prefetch: onIdle }` when most users on the page will trigger it.
+  - Use `{ prefetch: () => onIdle({ timeout: 2000 }) }` on pages that never go idle.
+  - Use none for rare or admin-only actions.
+  - Hover/focus prefetching goes through one shared helper, `core/utils/prefetch-triggers.ts`. Create that helper the
+    first time it is needed; never hand-roll triggers.
+- **SSR and tests:** never call it during SSR. In tests, override the token with a mock.
+- **Verify:** confirm the service and its library sit in their own lazy chunk (`pnpm build:prod` bundle output).
+
+### 4.6 Tailwind first
+
+- **Styling lives in templates as Tailwind utilities.** A component `.css` file is allowed only for what Tailwind
+  can't express:
+  - `@keyframes` (Angular scopes keyframe names, so a global `animate-[name…]` can't reach them)
+  - third-party DOM overrides (video.js, Swiper internals, CMS `innerHTML`)
+  - complex `:host`, `::part` or pseudo-element rules
+  - DOM that html2canvas-pro captures, since it can't parse `color-mix()`/`oklch`
+- **Housekeeping:** delete an emptied stylesheet and its `styleUrl`. A plain `:host { display: block }` becomes
+  `host: { class: 'block' }`.
+- **Tokens:**
+  - Colours, fonts, radii, shadows and animations live in `@theme` in `src/styles/styles.css`.
+  - Don't hardcode a hex or rgb value when a token matches it **exactly**.
+  - Add a token, named by role, when a value repeats across 2+ files. Arbitrary values are for true one-offs.
+- **`@apply`:** component CSS that uses `@apply` or theme functions starts with `@reference`. Prefer utilities, and
+  never use `@apply` just to shorten a template.
+- **Classes and variants:**
+  - Conditional classes use `[class]` / `[class.x]` or `cn()`.
+  - Shared UI variants are class maps merged with `cn()`, so consumers can override them through `class`.
+  - States, breakpoints and dark mode use variants (`hover:`, `md:`, `dark:`, `data-[state=open]:`, ng-primitives
+    `data-*`), not custom CSS.
+- **Static `style="…"` attributes:** use the equivalent utility.
+  - Keep an inline style only where a utility would lose the cascade to unlayered component CSS (for example an
+    `animation-delay` against a component `animation` shorthand), or for a third-party embed container.
+  - Bound `[style.x]` for computed values is fine.
+- **Cascade caveat:**
+  - Unlayered component CSS beats every utility, because utilities live in `@layer utilities`.
+  - When a utility replaces a rule or inline style, check nothing unlayered on that element sets the same property.
+  - Gradients: Tailwind v4 interpolates in oklab, so add `/srgb` (`bg-linear-135/srgb`) to match a plain CSS
+    gradient.
+- **Visual parity** at 375 / 768 / 1440 px is required for any styling change. List every intentional difference.
 
 ---
 
 ## 5. Data model
 
-Domain types live in `src/app/shared/core/models/`. The ones that carry rules:
+Domain types live in `src/app/core/models/`, or in `features/<f>/models/` when one feature owns them. The ones that carry rules:
 
 | Model                                                                                                  | Required before anything downstream works                                                                                                                                                                                        |
 | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `masterclass.model.ts` — `ContentDetails`, `CourseChapter`, `QuizDetails`                              | A chapter needs `chapterId` + a playable source. Course pages key off `courseId` + a `courseTitle` slug.                                                                                                                         |
-| `micro-learning-course.model.ts` — `MicroLearningReel`                                                 | A reel has **both** `id` and `chapter_id`. Activity tracking (`myclassactivity`) uses **`chapter_id`**. Completion is derived: 95% watched → `isReelCompleted()`. Never add a second completion flag.                            |
+| `features/offerings/models/micro-learning-course.model.ts` — `MicroLearningReel`                       | A reel has **both** `id` and `chapter_id`. Activity tracking (`myclassactivity`) uses **`chapter_id`**. Completion is derived: 95% watched → `isReelCompleted()`. Never add a second completion flag.                            |
 | `nano-learning.model.ts`                                                                               | API path segment is `nano_learning` (snake_case); frontend URL segment is `micro-learning` (kebab-case). Never conflate the two.                                                                                                 |
 | `course.model.ts` — `InstructorDetails`, `FieldOfStudy`, `PriceDetails`, `PlayHistory`, `QuizQuestion` | Credits render from `FieldOfStudy`; never sum credits by hand — use `TotalCpeCreditsPipe`.                                                                                                                                       |
 | `auth.model.ts` — `AUTH_ROUTES`, `SessionResponse`, `AuthFailure`                                      | Sign-in is OTP-only against MilesCAIRA Accounts v1. A bad token answers **403, not 401**; refresh **before** expiry, never as a retry; refresh tokens **rotate** and two refreshes must never overlap. See `docs/AUTH_API.md`.   |
 | `account.model.ts` — `UserDetails`, `AnswerMap`, `Question`                                            | `profile/` is questionnaire answers **only** (changed 2026-09-09); the user row is `user_details/`. `profile_status` is the onboarding milestone and is **not** the token claim `miles.onboarding_required` — opposite polarity. |
-| `assessment.model.ts`                                                                                  | An exam session needs a session id. Masterclass uses `:sessionId`, podcast/micro-learning use `:session_id` — both are live, do not "normalise" without fixing every consumer.                                                   |
+| `features/offerings/models/assessment.model.ts`                                                        | An exam session needs a session id. Masterclass uses `:sessionId`, podcast/micro-learning use `:session_id` — both are live, do not "normalise" without fixing every consumer.                                                   |
 | `seo.models.ts` / `seo.constants.ts`                                                                   | A Supabase `seo_pages` slug excludes the locale prefix. `DYNAMIC_SLUG_PREFIXES` decides who owns a route's SEO.                                                                                                                  |
-| `admin/admin-rbac.model.ts` — `PERM`                                                                   | Every admin route is gated by a `PERM` constant. Never hardcode a permission string.                                                                                                                                             |
+| `admin/core/models/admin-rbac.model.ts` — `PERM`                                                       | Every admin route is gated by a `PERM` constant. Never hardcode a permission string.                                                                                                                                             |
 | `http.model.ts` — `CommonResponse<T>`                                                                  | Django responses are wrapped. Unwrap in the facade, not the component.                                                                                                                                                           |
 
 ---
