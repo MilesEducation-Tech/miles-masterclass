@@ -1,6 +1,8 @@
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideLinkedin, lucideLock } from '@ng-icons/lucide';
+import { lucideLock } from '@ng-icons/lucide';
+// why: Lucide 1.x dropped brand logos; Phosphor's outline mark keeps the monochrome stroke look.
+import { phosphorLinkedinLogo } from '@ng-icons/phosphor-icons/regular';
 import { BadgeItem } from '@core/models/cpe-tracker.model';
 import { Button } from '../../../ui/button/button';
 import {
@@ -23,7 +25,7 @@ export type BadgeState = 'coming_soon' | 'claimable' | 'claimed' | 'unlocked' | 
 @Component({
   selector: 'app-badge-hero-card',
   imports: [Button, NgIcon],
-  providers: [provideIcons({ lucideLinkedin, lucideLock })],
+  providers: [provideIcons({ phosphorLinkedinLogo, lucideLock })],
   templateUrl: './badge-hero-card.html',
   host: { class: 'block w-full' },
 })
