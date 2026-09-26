@@ -39,7 +39,6 @@ const STATUS_STYLE: Record<LeadStatus, { bg: string; fg: string }> = {
   ],
   providers: [provideIcons({ lucideChevronDown, lucideChevronRight })],
   templateUrl: './leads-table.html',
-  styleUrl: './leads-table.css',
   host: { class: 'block w-full' },
 })
 export class LeadsTable {

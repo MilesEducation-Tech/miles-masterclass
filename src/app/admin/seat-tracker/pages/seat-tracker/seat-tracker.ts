@@ -31,7 +31,6 @@ const STATUS_TABS: { value: SeatStatusFilter; label: string }[] = [
   selector: 'app-seat-tracker',
   imports: [AriaInput, SeatTrackerTable, DeprecationBanner],
   templateUrl: './seat-tracker.html',
-  styleUrl: './seat-tracker.css',
   host: { class: 'block w-full' },
 })
 export class SeatTracker {

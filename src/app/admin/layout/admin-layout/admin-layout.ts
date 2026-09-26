@@ -25,7 +25,7 @@ const SIDEBAR_COLLAPSED_KEY = 'mc_admin_sidebar_collapsed';
   selector: 'app-admin-layout',
   imports: [RouterOutlet, AdminSidebar, AdminTopbar, NgpFocusTrap],
   templateUrl: './admin-layout.html',
-  styleUrl: './admin-layout.css',
+  host: { class: 'block' },
 })
 export class AdminLayout {
   private readonly platformId = inject(PLATFORM_ID);

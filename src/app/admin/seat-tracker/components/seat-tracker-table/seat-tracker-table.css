@@ -1,7 +1,3 @@
-:host {
-  display: block;
-}
-
 /* Eye / resend affordances shown next to emails (same look as Domain users). */
 .drill-btn {
   display: inline-flex;

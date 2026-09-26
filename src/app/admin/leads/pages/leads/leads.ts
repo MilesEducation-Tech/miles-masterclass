@@ -22,7 +22,6 @@ const STATUS_TABS: { value: LeadStatusFilter; label: string }[] = [
   selector: 'app-admin-leads',
   imports: [AriaInput, Button, LeadsTable, HasPermissionDirective, TabStrip],
   templateUrl: './leads.html',
-  styleUrl: './leads.css',
   host: { class: 'block w-full' },
 })
 export class Leads {

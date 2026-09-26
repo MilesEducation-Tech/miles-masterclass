@@ -32,7 +32,6 @@ import type { UserCourseDetailDialogData } from '@admin/user-report/dialogs/user
   imports: [DatePipe, DecimalPipe, NgIcon, AriaInput, Button, Spinner],
   providers: [provideIcons({ lucideDownload, lucideEye, lucideUsers })],
   templateUrl: './user-report.html',
-  styleUrl: './user-report.css',
   host: { class: 'block w-full' },
 })
 export class UserReport {

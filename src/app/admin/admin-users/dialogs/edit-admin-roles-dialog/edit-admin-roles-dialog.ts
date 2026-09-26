@@ -32,7 +32,7 @@ export interface EditAdminRolesDialogData {
   selector: 'app-edit-admin-roles-dialog',
   imports: [Button, AriaInput, DialogShell],
   templateUrl: './edit-admin-roles-dialog.html',
-  styleUrl: './edit-admin-roles-dialog.css',
+  host: { class: 'block' },
 })
 export class EditAdminRolesDialog implements OnInit {
   private readonly dialogRef = injectDialogRef<EditAdminRolesDialogData, string[] | undefined>();

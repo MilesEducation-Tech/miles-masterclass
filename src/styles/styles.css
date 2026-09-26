@@ -70,6 +70,9 @@
   --mm-quiz-selected: #2c3442;
   --mm-quiz-panel: #161e26;
   --mm-quiz-panel-hover: #1c2530;
+  /* auth-backdrop — the near-black page behind the admin login, forgot- and
+     reset-password screens */
+  --mm-auth-backdrop: #04081a;
   --mm-outline: #32353b;
   /* Status green. Lived only in `.admin-theme` until the AI Lab course page
      needed it on the public site (step ticks, CPE-recording pill, completed
@@ -241,6 +244,7 @@
   --color-quiz-selected: var(--mm-quiz-selected);
   --color-quiz-panel: var(--mm-quiz-panel);
   --color-quiz-panel-hover: var(--mm-quiz-panel-hover);
+  --color-auth-backdrop: var(--mm-auth-backdrop);
   /* Admin palette. Defined only under `.admin-theme` (see above), so these
      utilities resolve to nothing on the public site — the same as the
      `var(--mm-*)` inline styles they replace in the admin rows. */

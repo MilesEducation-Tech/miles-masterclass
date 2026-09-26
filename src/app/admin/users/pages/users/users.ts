@@ -25,7 +25,6 @@ const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
   selector: 'app-admin-users',
   imports: [AriaInput, Button, UsersTable, DeprecationBanner],
   templateUrl: './users.html',
-  styleUrl: './users.css',
   host: { class: 'block w-full' },
 })
 export class Users {

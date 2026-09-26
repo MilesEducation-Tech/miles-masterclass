@@ -61,6 +61,7 @@ interface SidebarSection {
   ],
   templateUrl: './admin-sidebar.html',
   styleUrl: './admin-sidebar.css',
+  host: { class: 'contents' },
 })
 export class AdminSidebar {
   protected readonly auth = inject(AdminAuth);
