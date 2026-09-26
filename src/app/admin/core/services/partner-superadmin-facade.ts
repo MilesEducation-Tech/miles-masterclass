@@ -1,9 +1,10 @@
 import { isPlatformBrowser } from '@angular/common';
-import { computed, inject, Service, PLATFORM_ID, resource } from '@angular/core';
-import { firstValueFrom, fromEvent, Observable, takeUntil } from 'rxjs';
+import { httpResource } from '@angular/common/http';
+import { computed, inject, Service, PLATFORM_ID } from '@angular/core';
+import { firstValueFrom, Observable } from 'rxjs';
 import { PERM } from '@admin/core/models/admin-rbac.model';
 import { AdminAuth } from '@admin/core/services/admin-auth';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import {
@@ -71,18 +72,16 @@ export class PartnerSuperAdminFacade {
 
   // ---- Networks ------------------------------------------------------------
 
-  private readonly networksResource = resource({
-    params: () => (this.canLoad() ? true : undefined),
-    loader: ({ abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<NetworksResponse>(SUPERADMIN_NETWORKS, { context: adminContext() })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { networks: [] } as NetworksResponse },
-      ),
-  });
+  private readonly networksResource = httpResource<NetworksResponse>(
+    () =>
+      this.canLoad() ? { url: apiUrl(SUPERADMIN_NETWORKS), context: adminContext() } : undefined,
+    { defaultValue: { networks: [] } as NetworksResponse },
+  );
 
-  readonly networks = computed<Network[]>(() => this.networksResource.value()?.networks ?? []);
+  /** Guarded, like every list below: `value()` throws on an errored resource. */
+  readonly networks = computed<Network[]>(() =>
+    this.networksResource.hasValue() ? (this.networksResource.value()?.networks ?? []) : [],
+  );
   readonly networksLoading = computed(() => this.networksResource.isLoading());
   readonly networksError = computed(() =>
     partnerLoadError(this.networksResource.error(), 'Failed to load networks.'),
@@ -127,7 +126,23 @@ export class PartnerSuperAdminFacade {
     }
   }
 
-  /** `GET /superadmin/networks/<id>/` — the network plus its member firms. */
+  /**
+   * `GET /superadmin/networks/<id>/` as a resource keyed on `networkId`: the network plus
+   * its member firms. Call it from a field initializer (it creates an `httpResource`).
+   */
+  networkDetailResource(networkId: () => number) {
+    return httpResource<NetworkDetailResponse>(() => {
+      const id = networkId();
+      return this.isBrowser && id > 0
+        ? { url: apiUrl(`${SUPERADMIN_NETWORKS}${id}/`), context: adminContext() }
+        : undefined;
+    });
+  }
+
+  /**
+   * Observable form of the same read, kept for the unrouted v1 `network-tracker`
+   * (the v1/v2 cutover is an open Phase 6 decision).
+   */
   networkDetail(networkId: number): Observable<NetworkDetailResponse> {
     return this.api.get<NetworkDetailResponse>(`${SUPERADMIN_NETWORKS}${networkId}/`, {
       context: adminContext(),
@@ -136,19 +151,18 @@ export class PartnerSuperAdminFacade {
 
   // ---- Partner codes -------------------------------------------------------
 
-  private readonly partnerCodesResource = resource({
-    params: () => (this.canLoad() ? true : undefined),
-    loader: ({ abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<PartnerCodesResponse>(SUPERADMIN_PARTNER_CODES, { context: adminContext() })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { partner_codes: [] } as PartnerCodesResponse },
-      ),
-  });
+  private readonly partnerCodesResource = httpResource<PartnerCodesResponse>(
+    () =>
+      this.canLoad()
+        ? { url: apiUrl(SUPERADMIN_PARTNER_CODES), context: adminContext() }
+        : undefined,
+    { defaultValue: { partner_codes: [] } as PartnerCodesResponse },
+  );
 
-  readonly partnerCodes = computed<PartnerCode[]>(
-    () => this.partnerCodesResource.value()?.partner_codes ?? [],
+  readonly partnerCodes = computed<PartnerCode[]>(() =>
+    this.partnerCodesResource.hasValue()
+      ? (this.partnerCodesResource.value()?.partner_codes ?? [])
+      : [],
   );
   readonly partnerCodesLoading = computed(() => this.partnerCodesResource.isLoading());
   readonly partnerCodesError = computed(() =>
@@ -176,18 +190,14 @@ export class PartnerSuperAdminFacade {
 
   // ---- Firms ---------------------------------------------------------------
 
-  private readonly firmsResource = resource({
-    params: () => (this.canLoad() ? true : undefined),
-    loader: ({ abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<FirmsResponse>(SUPERADMIN_FIRMS, { context: adminContext() })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { firms: [] } as FirmsResponse },
-      ),
-  });
+  private readonly firmsResource = httpResource<FirmsResponse>(
+    () => (this.canLoad() ? { url: apiUrl(SUPERADMIN_FIRMS), context: adminContext() } : undefined),
+    { defaultValue: { firms: [] } as FirmsResponse },
+  );
 
-  readonly firms = computed<Firm[]>(() => this.firmsResource.value()?.firms ?? []);
+  readonly firms = computed<Firm[]>(() =>
+    this.firmsResource.hasValue() ? (this.firmsResource.value()?.firms ?? []) : [],
+  );
   readonly firmsLoading = computed(() => this.firmsResource.isLoading());
 
   firmsForNetwork(networkId: number): Firm[] {
@@ -200,13 +210,21 @@ export class PartnerSuperAdminFacade {
   /**
    * Server-side filtered firm list — `?network_id=` for one network's firms,
    * `?standalone=1` for firms with no network. The unfiltered root resource
-   * above stays for callers that want everything cached once.
+   * above stays for callers that want everything cached once. A resource keyed on
+   * `filter`; call it from a field initializer.
    */
-  listFirms(filter?: { networkId?: number; standalone?: boolean }): Observable<FirmsResponse> {
-    const params: Record<string, string | number> = {};
-    if (filter?.networkId != null) params['network_id'] = filter.networkId;
-    if (filter?.standalone) params['standalone'] = 1;
-    return this.api.get<FirmsResponse>(SUPERADMIN_FIRMS, { params, context: adminContext() });
+  listFirmsResource(filter: () => { networkId?: number; standalone?: boolean } | undefined) {
+    return httpResource<FirmsResponse>(
+      () => {
+        if (!this.isBrowser) return undefined;
+        const f = filter();
+        const params: Record<string, string | number> = {};
+        if (f?.networkId != null) params['network_id'] = f.networkId;
+        if (f?.standalone) params['standalone'] = 1;
+        return { url: apiUrl(SUPERADMIN_FIRMS), params, context: adminContext() };
+      },
+      { defaultValue: { firms: [] } as FirmsResponse },
+    );
   }
 
   /**
@@ -305,19 +323,18 @@ export class PartnerSuperAdminFacade {
 
   // ---- Partner admins ------------------------------------------------------
 
-  private readonly partnerAdminsResource = resource({
-    params: () => (this.canLoad() ? true : undefined),
-    loader: ({ abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<PartnerAdminsResponse>(SUPERADMIN_PARTNER_ADMINS, { context: adminContext() })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { partner_admins: [] } as PartnerAdminsResponse },
-      ),
-  });
+  private readonly partnerAdminsResource = httpResource<PartnerAdminsResponse>(
+    () =>
+      this.canLoad()
+        ? { url: apiUrl(SUPERADMIN_PARTNER_ADMINS), context: adminContext() }
+        : undefined,
+    { defaultValue: { partner_admins: [] } as PartnerAdminsResponse },
+  );
 
-  readonly partnerAdmins = computed<PartnerAdmin[]>(
-    () => this.partnerAdminsResource.value()?.partner_admins ?? [],
+  readonly partnerAdmins = computed<PartnerAdmin[]>(() =>
+    this.partnerAdminsResource.hasValue()
+      ? (this.partnerAdminsResource.value()?.partner_admins ?? [])
+      : [],
   );
   readonly partnerAdminsLoading = computed(() => this.partnerAdminsResource.isLoading());
   readonly partnerAdminsError = computed(() =>

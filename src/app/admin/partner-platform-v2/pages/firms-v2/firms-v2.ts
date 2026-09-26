@@ -1,18 +1,15 @@
-import { isPlatformBrowser } from '@angular/common';
 import {
   Component,
   DestroyRef,
   EnvironmentInjector,
-  PLATFORM_ID,
   computed,
   inject,
   linkedSignal,
-  resource,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { firstValueFrom, fromEvent, take, takeUntil } from 'rxjs';
+import { take } from 'rxjs';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { NgpDialogManager } from 'ng-primitives/dialog';
@@ -20,7 +17,6 @@ import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
   CreateFirmResponse,
   Firm,
-  FirmsResponse,
   partnerLoadError,
 } from '@admin/core/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
@@ -59,28 +55,19 @@ export class FirmsV2 {
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /** Editing a firm is super-admin only — everyone else gets the read/seat actions. */
   protected readonly canEdit = inject(AdminAuth).isSuperAdmin;
 
   protected readonly scope = signal<FirmScopeFilter>('all');
 
-  private readonly rawFirmsResource = resource({
-    params: () => (this.isBrowser ? { scope: this.scope() } : undefined),
-    loader: ({ params, abortSignal }) => {
-      const [kind, id] = params.scope.split(':');
-      const filter =
-        kind === 'standalone'
-          ? { standalone: true }
-          : kind === 'network'
-            ? { networkId: Number(id) }
-            : undefined;
-      return firstValueFrom(
-        this.facade.listFirms(filter).pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { firms: [] } as FirmsResponse },
-      );
-    },
+  private readonly rawFirmsResource = this.facade.listFirmsResource(() => {
+    const [kind, id] = this.scope().split(':');
+    return kind === 'standalone'
+      ? { standalone: true }
+      : kind === 'network'
+        ? { networkId: Number(id) }
+        : undefined;
   });
 
   private readonly firmsResource = withPreviousValue(this.rawFirmsResource);

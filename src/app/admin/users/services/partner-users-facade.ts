@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { HttpResponse } from '@angular/common/http';
+import { HttpResponse, httpResource } from '@angular/common/http';
 import {
   computed,
   effect,
@@ -7,12 +7,11 @@ import {
   Service,
   linkedSignal,
   PLATFORM_ID,
-  resource,
   signal,
   untracked,
 } from '@angular/core';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { firstValueFrom } from 'rxjs';
+import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { fileNameFromContentDisposition, saveBlob } from '@shared/utils/blob-download';
@@ -75,32 +74,15 @@ export class PartnerUsersFacade {
     return params;
   }
 
-  private readonly rawUsersResource = resource({
-    params: () => {
-      // The endpoint needs report:network:read / report:firm:read — don't fire
-      // a guaranteed 403 for an admin without either (or one not provisioned).
-      if (!this.isBrowser || this.me.isLoading() || !this.me.canReadReports()) return undefined;
-      return {
-        page: this.pageNumber(),
-        search: this.searchTerm().trim(),
-        blockedStatus: this.blockedStatus(),
-      };
-    },
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<PartnerPanelUsersResponse>(PANEL_USERS, {
-            params: { ...this.httpParams(), page: params.page, page_size: PAGE_SIZE },
-            context: adminContext(),
-          })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        {
-          defaultValue: {
-            data: [],
-            pagination_data: EMPTY_PAGINATION,
-          } as PartnerPanelUsersResponse,
-        },
-      ),
+  private readonly rawUsersResource = httpResource<PartnerPanelUsersResponse>(() => {
+    // The endpoint needs report:network:read / report:firm:read — don't fire
+    // a guaranteed 403 for an admin without either (or one not provisioned).
+    if (!this.isBrowser || this.me.isLoading() || !this.me.canReadReports()) return undefined;
+    return {
+      url: apiUrl(PANEL_USERS),
+      params: { ...this.httpParams(), page: this.pageNumber(), page_size: PAGE_SIZE },
+      context: adminContext(),
+    };
   });
 
   private readonly listResource = withPreviousValue(this.rawUsersResource);
@@ -114,8 +96,11 @@ export class PartnerUsersFacade {
     },
   });
 
-  readonly pagination = computed<PartnerPagination>(
-    () => this.listResource.value()?.pagination_data ?? EMPTY_PAGINATION,
+  /** Guarded: `value()` throws on an errored resource. */
+  readonly pagination = computed<PartnerPagination>(() =>
+    this.listResource.hasValue()
+      ? (this.listResource.value()?.pagination_data ?? EMPTY_PAGINATION)
+      : EMPTY_PAGINATION,
   );
   readonly isLoading = computed(() => this.listResource.isLoading());
   /** Backend `message` when the load failed, else null — the banner renders it verbatim. */

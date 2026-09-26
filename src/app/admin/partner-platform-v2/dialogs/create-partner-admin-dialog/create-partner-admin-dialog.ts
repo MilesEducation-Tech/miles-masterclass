@@ -84,6 +84,13 @@ export class CreatePartnerAdminDialog {
     loader: () => this.provisioning.listAdminUsers(),
   });
 
+  /**
+   * The logins, or `[]`. Guarded: `value()` throws on an errored resource, which took the
+   * dialog down before its own `adminUsersError` message could render.
+   */
+  private readonly adminUsers = computed(() =>
+    this.adminUsersResource.hasValue() ? (this.adminUsersResource.value() ?? []) : [],
+  );
   protected readonly adminUsersLoading = computed(() => this.adminUsersResource.isLoading());
   protected readonly adminUsersError = computed(() =>
     this.adminUsersResource.error()
@@ -93,7 +100,7 @@ export class CreatePartnerAdminDialog {
 
   protected readonly adminUserOptions = computed<AriaSelectOption<string>[]>(() => {
     const taken = new Set(this.facade.partnerAdmins().map((a) => a.supabase_uid));
-    return (this.adminUsersResource.value() ?? []).map((u) => ({
+    return this.adminUsers().map((u) => ({
       value: u.user_id,
       label: [u.email, u.full_name, u.roles.join(', ')].filter(Boolean).join(' — '),
       disabled: taken.has(u.user_id),
@@ -170,7 +177,7 @@ export class CreatePartnerAdminDialog {
       //    in 20260908000000_multi_role_admins.sql), so it stays untouched and
       //    only the Django PartnerAdmin below is created.
       const existing = this.isExisting()
-        ? (this.adminUsersResource.value() ?? []).find((u) => u.user_id === this.adminUserId())
+        ? this.adminUsers().find((u) => u.user_id === this.adminUserId())
         : undefined;
       const email = existing?.email ?? this.email().trim().toLowerCase();
       const uid =

@@ -1,17 +1,14 @@
-import { isPlatformBrowser } from '@angular/common';
 import {
   Component,
   DestroyRef,
   EnvironmentInjector,
-  PLATFORM_ID,
   computed,
   inject,
-  resource,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom, fromEvent, take, takeUntil } from 'rxjs';
+import { take } from 'rxjs';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { NgpDialogManager } from 'ng-primitives/dialog';
@@ -71,23 +68,17 @@ export class NetworkDetailV2 {
   // dialog's `injector` so the route-scoped facade resolves instead of a NullInjectorError.
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /** Editing a network or firm is super-admin only. */
   protected readonly canEdit = inject(AdminAuth).isSuperAdmin;
 
   protected readonly networkId = signal<number>(Number(this.route.snapshot.paramMap.get('id')));
 
-  private readonly detailResource = resource({
-    params: () => (this.isBrowser && this.networkId() > 0 ? { id: this.networkId() } : undefined),
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.facade.networkDetail(params.id).pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-      ),
-  });
+  private readonly detailResource = this.facade.networkDetailResource(this.networkId);
 
+  /** Guarded: `value()` throws on an errored resource, before the page's error banner could show. */
   private readonly detail = computed<NetworkDetailResponse | undefined>(() =>
-    this.detailResource.value(),
+    this.detailResource.hasValue() ? this.detailResource.value() : undefined,
   );
 
   protected readonly isLoading = computed(() => this.detailResource.isLoading());

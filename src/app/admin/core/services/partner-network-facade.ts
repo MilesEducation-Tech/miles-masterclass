@@ -1,4 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
+import { httpResource } from '@angular/common/http';
 import {
   computed,
   effect,
@@ -6,12 +7,11 @@ import {
   Service,
   linkedSignal,
   PLATFORM_ID,
-  resource,
   signal,
   untracked,
 } from '@angular/core';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { firstValueFrom } from 'rxjs';
+import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import {
@@ -65,20 +65,18 @@ export class PartnerNetworkFacade {
 
   // ---- Dashboard -----------------------------------------------------------
 
-  private readonly dashboardResource = resource({
+  private readonly dashboardResource = httpResource<DashboardStats>(() =>
     // The endpoint requires report:network:read / report:firm:read — don't
     // fire a doomed 403 for an admin without either.
-    params: () =>
-      this.isBrowser && !this.me.isLoading() && this.me.canReadReports() ? true : undefined,
-    loader: ({ abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<DashboardStats>(PANEL_DASHBOARD, { context: adminContext() })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-      ),
-  });
+    this.isBrowser && !this.me.isLoading() && this.me.canReadReports()
+      ? { url: apiUrl(PANEL_DASHBOARD), context: adminContext() }
+      : undefined,
+  );
 
-  readonly dashboard = computed<DashboardStats | undefined>(() => this.dashboardResource.value());
+  /** Guarded, like every read below: `value()` throws on an errored resource. */
+  readonly dashboard = computed<DashboardStats | undefined>(() =>
+    this.dashboardResource.hasValue() ? this.dashboardResource.value() : undefined,
+  );
   readonly dashboardLoading = computed(() => this.dashboardResource.isLoading());
   /** Backend `message` when the load failed, else null — the banner renders it verbatim. */
   readonly dashboardError = computed(() =>
@@ -87,39 +85,35 @@ export class PartnerNetworkFacade {
 
   // ---- Member firms — network admins only ----------------------------------
 
-  private readonly firmsResource = resource({
+  private readonly firmsResource = httpResource<FirmsResponse>(
     // Always empty for a firm admin (no sibling firms to see).
-    params: () =>
-      this.isBrowser && !this.me.isLoading() && this.me.isNetworkAdmin() ? true : undefined,
-    loader: ({ abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<FirmsResponse>(PANEL_FIRMS, { context: adminContext() })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { firms: [] } as FirmsResponse },
-      ),
-  });
+    () =>
+      this.isBrowser && !this.me.isLoading() && this.me.isNetworkAdmin()
+        ? { url: apiUrl(PANEL_FIRMS), context: adminContext() }
+        : undefined,
+    { defaultValue: { firms: [] } as FirmsResponse },
+  );
 
-  readonly firms = computed<Firm[]>(() => this.firmsResource.value()?.firms ?? []);
+  readonly firms = computed<Firm[]>(() =>
+    this.firmsResource.hasValue() ? (this.firmsResource.value()?.firms ?? []) : [],
+  );
   readonly firmsLoading = computed(() => this.firmsResource.isLoading());
 
   // ---- Panel partner codes — the plans this admin can mint seats from ------
 
-  private readonly panelCodesResource = resource({
+  private readonly panelCodesResource = httpResource<PartnerCodesResponse>(
     // Same report:*:read gate the endpoint enforces server-side.
-    params: () =>
-      this.isBrowser && !this.me.isLoading() && this.me.canReadReports() ? true : undefined,
-    loader: ({ abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<PartnerCodesResponse>(PANEL_PARTNER_CODES, { context: adminContext() })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { partner_codes: [] } as PartnerCodesResponse },
-      ),
-  });
+    () =>
+      this.isBrowser && !this.me.isLoading() && this.me.canReadReports()
+        ? { url: apiUrl(PANEL_PARTNER_CODES), context: adminContext() }
+        : undefined,
+    { defaultValue: { partner_codes: [] } as PartnerCodesResponse },
+  );
 
-  readonly panelPartnerCodes = computed<PartnerCode[]>(
-    () => this.panelCodesResource.value()?.partner_codes ?? [],
+  readonly panelPartnerCodes = computed<PartnerCode[]>(() =>
+    this.panelCodesResource.hasValue()
+      ? (this.panelCodesResource.value()?.partner_codes ?? [])
+      : [],
   );
   readonly panelCodesLoading = computed(() => this.panelCodesResource.isLoading());
   readonly panelCodesError = computed(() =>
@@ -143,43 +137,39 @@ export class PartnerNetworkFacade {
   readonly statusFilter = signal<SeatStatusFilter>('all');
   readonly pageNumber = signal(1);
 
-  private readonly seatsResource = resource({
-    params: () => {
+  private readonly seatsResource = httpResource<SeatsResponse>(
+    () => {
       if (!this.isBrowser || this.me.isLoading()) return undefined;
       // This facade serves network + firm admins; supers use the superadmin path.
       if (!this.me.isNetworkAdmin() && !this.me.isFirmAdmin()) return undefined;
       // The endpoint requires this capability — don't fire a doomed 403.
       if (!this.me.can('seat:usage:read')) return undefined;
-      return {
-        // Firm admins are pinned server-side — never send firm_id.
-        firmId: this.me.isFirmAdmin() ? null : this.selectedFirmId(),
-        status: this.statusFilter(),
-        search: this.searchTerm().trim(),
+      const params: Record<string, string | number> = {
         page: this.pageNumber(),
-      };
-    },
-    loader: ({ params, abortSignal }) => {
-      const httpParams: Record<string, string | number> = {
-        page: params.page,
         page_size: PAGE_SIZE,
       };
-      if (params.firmId != null) httpParams['firm_id'] = params.firmId;
-      if (params.status !== 'all') httpParams['status'] = params.status;
-      if (params.search) httpParams['search'] = params.search;
-      return firstValueFrom(
-        this.api
-          .get<SeatsResponse>(PANEL_SEATS, { params: httpParams, context: adminContext() })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { seats: [], pagination_data: EMPTY_PAGINATION } as SeatsResponse },
-      );
+      // Firm admins are pinned server-side — never send firm_id.
+      const firmId = this.me.isFirmAdmin() ? null : this.selectedFirmId();
+      if (firmId != null) params['firm_id'] = firmId;
+      const status = this.statusFilter();
+      if (status !== 'all') params['status'] = status;
+      const search = this.searchTerm().trim();
+      if (search) params['search'] = search;
+      return { url: apiUrl(PANEL_SEATS), params, context: adminContext() };
     },
-  });
+    { defaultValue: { seats: [], pagination_data: EMPTY_PAGINATION } as SeatsResponse },
+  );
+
+  /** The loaded page, or `undefined`: guarded, since `value()` throws on an errored resource. */
+  private readonly seatsPage = computed(() =>
+    this.seatsResource.hasValue() ? this.seatsResource.value() : undefined,
+  );
 
   /** Local mirror of the current page so optimistic send patches survive a re-render. */
-  private readonly pageSeats = linkedSignal<Seat[]>(() => this.seatsResource.value()?.seats ?? []);
+  private readonly pageSeats = linkedSignal<Seat[]>(() => this.seatsPage()?.seats ?? []);
 
   private readonly pagination = computed<PartnerPagination>(
-    () => this.seatsResource.value()?.pagination_data ?? EMPTY_PAGINATION,
+    () => this.seatsPage()?.pagination_data ?? EMPTY_PAGINATION,
   );
 
   readonly isLoading = computed(() => this.seatsResource.isLoading());

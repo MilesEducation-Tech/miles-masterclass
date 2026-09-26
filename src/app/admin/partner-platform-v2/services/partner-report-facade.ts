@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { HttpResponse } from '@angular/common/http';
+import { HttpResponse, httpResource } from '@angular/common/http';
 import {
   computed,
   DestroyRef,
@@ -7,12 +7,11 @@ import {
   inject,
   Service,
   PLATFORM_ID,
-  resource,
   signal,
   untracked,
 } from '@angular/core';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import {
@@ -195,20 +194,21 @@ export class PartnerReportFacade {
 
   // ---- Summary (stat cards) ------------------------------------------------
 
-  private readonly summaryResource = resource({
-    params: () => this.reportParams() ?? undefined,
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<ReportSummary>(reportUrl(params.base, 'summary/'), {
-            params: this.buildHttpParams(params),
-            context: adminContext(),
-          })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-      ),
+  private readonly summaryResource = httpResource<ReportSummary>(() => {
+    const p = this.reportParams();
+    return p
+      ? {
+          url: apiUrl(reportUrl(p.base, 'summary/')),
+          params: this.buildHttpParams(p),
+          context: adminContext(),
+        }
+      : undefined;
   });
 
-  readonly summary = computed<ReportSummary | undefined>(() => this.summaryResource.value());
+  /** Guarded, like every read below: `value()` throws on an errored resource. */
+  readonly summary = computed<ReportSummary | undefined>(() =>
+    this.summaryResource.hasValue() ? this.summaryResource.value() : undefined,
+  );
   readonly summaryLoading = computed(() => this.summaryResource.isLoading());
   readonly summaryError = computed(() =>
     partnerLoadError(this.summaryResource.error(), 'Failed to load the report summary.'),
@@ -216,40 +216,32 @@ export class PartnerReportFacade {
 
   // ---- Per-user roll-up ----------------------------------------------------
 
-  private readonly usersResource = resource({
-    params: () => {
+  private readonly usersResource = httpResource<ReportUsersResponse>(
+    () => {
       const p = this.reportParams();
-      return p ? { ...p, page: this.pageNumber(), pageSize: this.pageSize() } : undefined;
+      if (!p) return undefined;
+      return {
+        url: apiUrl(reportUrl(p.base, 'users/')),
+        params: { ...this.buildHttpParams(p), page: this.pageNumber(), page_size: this.pageSize() },
+        context: adminContext(),
+      };
     },
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<ReportUsersResponse>(reportUrl(params.base, 'users/'), {
-            params: {
-              ...this.buildHttpParams(params),
-              page: params.page,
-              page_size: params.pageSize,
-            },
-            context: adminContext(),
-          })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        {
-          defaultValue: {
-            users: [],
-            pagination_data: EMPTY_PAGINATION,
-          } as ReportUsersResponse,
-        },
-      ),
-  });
+    { defaultValue: { users: [], pagination_data: EMPTY_PAGINATION } as ReportUsersResponse },
+  );
 
-  readonly users = computed<ReportUserRow[]>(() => this.usersResource.value()?.users ?? []);
+  /** The loaded page, or `undefined`. */
+  private readonly usersPage = computed(() =>
+    this.usersResource.hasValue() ? this.usersResource.value() : undefined,
+  );
+
+  readonly users = computed<ReportUserRow[]>(() => this.usersPage()?.users ?? []);
   readonly usersLoading = computed(() => this.usersResource.isLoading());
   readonly usersError = computed(() =>
     partnerLoadError(this.usersResource.error(), 'Failed to load the user report.'),
   );
 
   private readonly pagination = computed<PartnerPagination>(
-    () => this.usersResource.value()?.pagination_data ?? EMPTY_PAGINATION,
+    () => this.usersPage()?.pagination_data ?? EMPTY_PAGINATION,
   );
   readonly totalCount = computed(() => this.pagination().total_count);
   readonly hasPrevPage = computed(() => this.pagination().previous_page != null);
@@ -336,25 +328,31 @@ export class PartnerReportFacade {
 
   // ---- Filters (static reference data) -------------------------------------
 
-  private readonly filtersResource = resource({
-    // No subject/scope params — only fetch once the caller may read reports.
-    params: () => (this.reportParams() ? { base: this.reportParams()!.base } : undefined),
-    loader: ({ params, abortSignal }) =>
-      firstValueFrom(
-        this.api
-          .get<ReportFilters>(reportUrl(params.base, 'filters/'), { context: adminContext() })
-          .pipe(takeUntil(fromEvent(abortSignal, 'abort'))),
-        { defaultValue: { delivery_types: [], fields_of_study: [] } as ReportFilters },
-      ),
-  });
+  /**
+   * The report base (panel vs superadmin), as a primitive: a `computed` only notifies
+   * when it changes, so the filters are fetched once per base. The old `resource()`
+   * params rebuilt `{ base }` on every filter change and refetched each time.
+   */
+  private readonly filtersBase = computed(() => this.reportParams()?.base);
+
+  // No subject/scope params — only fetch once the caller may read reports.
+  private readonly filtersResource = httpResource<ReportFilters>(
+    () => {
+      const base = this.filtersBase();
+      return base
+        ? { url: apiUrl(reportUrl(base, 'filters/')), context: adminContext() }
+        : undefined;
+    },
+    { defaultValue: { delivery_types: [], fields_of_study: [] } as ReportFilters },
+  );
 
   /**
    * Delivery types (`masterclass`, `nano_learning`, `webinar`) — powers the
    * client-side `course_type` filter chips on the drill-down. No list endpoint
-   * accepts these as query params, so filtering stays client-side.
+   * accepts these as query params, so filtering stays client-side. Guarded.
    */
-  readonly deliveryTypes = computed<string[]>(
-    () => this.filtersResource.value()?.delivery_types ?? [],
+  readonly deliveryTypes = computed<string[]>(() =>
+    this.filtersResource.hasValue() ? (this.filtersResource.value()?.delivery_types ?? []) : [],
   );
 
   // ---- Certificates --------------------------------------------------------
