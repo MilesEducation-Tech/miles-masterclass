@@ -166,36 +166,10 @@ entitled to ask you to split.
 
 ### Description template
 
-`.github/pull_request_template.md`, which GitHub pre-fills for you:
-
-```markdown
-## What
-
-One or two sentences on what this changes.
-
-## Why
-
-Ticket: MIL-\_\_\_
-The problem this solves.
-
-## How to test
-
-1. Open the preview URL at /…
-2. …
-
-## Screenshots / recordings
-
-(Required for any UI change: mobile 375px + desktop.)
-
-## Checklist
-
-- [ ] `pnpm lint`, `pnpm ng test --watch=false`, `pnpm build:prod` pass locally
-- [ ] No new `eslint-disable`, `@ts-ignore`, or skipped tests
-- [ ] Follows the structure rules in AGENTS.md (placement, boundaries, naming)
-- [ ] Tailwind utilities used; no new component CSS unless unavoidable
-- [ ] Tested on the preview URL, mobile + desktop
-- [ ] Branch is `type/TICKET-description` and the PR title is a Conventional Commit
-```
+`.github/pull_request_template.md`, which GitHub pre-fills for you: What, Why (with the `MIL-` ticket),
+How to test, Screenshots (375 px + desktop for any UI change), and a checklist of the AGENTS.md rules a
+reviewer has to hold you to — the ones CI can't check. Edit the file itself, not a copy here, so the two
+never drift.
 
 ### Review rules
 
