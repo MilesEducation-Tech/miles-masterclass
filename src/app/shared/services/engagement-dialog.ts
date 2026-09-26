@@ -16,12 +16,10 @@ import { Storage } from '@core/services/storage/storage';
 import { CurrentPlanData } from '@core/models/payment.model';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { offeringTypeFromUrl } from '@core/utils/offering-type';
-import {
-  ProfileCompletionDialog,
-  ProfileCompletionDialogResult,
-} from '@shared/dialogs/profile-completion-dialog/profile-completion-dialog';
+// Type-only: both dialogs load with `import()` when opened. This service is
+// built by `app.ts`, so a value import would put them in the initial bundle.
+import type { ProfileCompletionDialogResult } from '@shared/dialogs/profile-completion-dialog/profile-completion-dialog';
 import { SUBSCRIPTION_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
-import { AiLabDialog } from '@shared/dialogs/ai-lab-dialog/ai-lab-dialog';
 
 type DialogKind = 'aiLab' | 'profile' | 'subscription';
 
@@ -192,8 +190,12 @@ export class EngagementDialog {
       // mark dismissed at open-time like `profile`. Freely dismissible: the CTA
       // navigates, and every other exit is a no-op for this session.
       this.markDismissed('aiLab');
-      const ref = this.dialogs.open<void, void>(AiLabDialog, { injector: this.injector });
-      return from(this.afterClosed(ref, ref.afterClosed)).pipe(switchMap(() => EMPTY));
+      return from(
+        import('@shared/dialogs/ai-lab-dialog/ai-lab-dialog').then(({ AiLabDialog }) => {
+          const ref = this.dialogs.open<void, void>(AiLabDialog, { injector: this.injector });
+          return this.afterClosed(ref, ref.afterClosed);
+        }),
+      ).pipe(switchMap(() => EMPTY));
     }
 
     if (kind === 'profile') {
@@ -204,10 +206,17 @@ export class EngagementDialog {
       this.markDismissed('profile');
       // Sector + job_role are not skippable: the dialog's shell is not dismissible, so
       // the only way out is a successful Save (it also omits the close + skip buttons).
-      const ref = this.dialogs.open<void, ProfileCompletionDialogResult>(ProfileCompletionDialog, {
-        injector: this.injector,
-      });
-      return from(this.afterClosed(ref, ref.afterClosed)).pipe(
+      return from(
+        import('@shared/dialogs/profile-completion-dialog/profile-completion-dialog').then(
+          ({ ProfileCompletionDialog }) => {
+            const ref = this.dialogs.open<void, ProfileCompletionDialogResult>(
+              ProfileCompletionDialog,
+              { injector: this.injector },
+            );
+            return this.afterClosed(ref, ref.afterClosed);
+          },
+        ),
+      ).pipe(
         switchMap((result) => {
           if (result?.saved) {
             this.feature.refreshPersonalized(offeringTypeFromUrl(this.router.url));

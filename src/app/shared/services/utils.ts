@@ -16,12 +16,11 @@ import { filter, tap } from 'rxjs/operators';
 import { DynamicRouteParams, ProfessionType, CountryCode } from '@core/models/route-params.model';
 import { PROFESSIONS } from '@core/constants/profession';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import {
-  UtilsDialog,
-  UtilsDialogData,
-  UtilsDialogResult,
-} from '@shared/dialogs/utils-dialog/utils-dialog';
-import { ShareDialog, ShareDialogData } from '@shared/dialogs/share-dialog/share-dialog';
+// The dialogs below are imported as types only and loaded with `import()` where
+// they open: this service is in the initial bundle (header/footer chrome), so a
+// value import would put every one of them there too (PROMPT.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
+import type { ShareDialogData } from '@shared/dialogs/share-dialog/share-dialog';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Analytics } from '@core/services/analytics/analytics';
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
@@ -38,11 +37,8 @@ import {
   QuizQuestion,
 } from '@core/models/course.model';
 import { Storage } from '@core/services/storage/storage';
-import {
-  CertificateDialogData,
-  CertificateDownloadDialog,
-} from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
-import { VideoDialog, VideoDialogData } from '@shared/dialogs/video-dialog/video-dialog';
+import type { CertificateDialogData } from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
+import type { VideoDialogData } from '@shared/dialogs/video-dialog/video-dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import { Viewport, ScreenInfo } from '@core/services/viewport/viewport';
 // CartDrawerDialog is loaded lazily in openCartDrawer() — this service is
@@ -301,7 +297,7 @@ export class Utils {
         : 'masterclass_id';
   }
 
-  startFinalAssessment(
+  async startFinalAssessment(
     courseId: string,
     courseTitle: string,
     courseType: string,
@@ -331,6 +327,7 @@ export class Utils {
     const titleSlug = this.slugify(courseTitle);
 
     const examRulesArray: string[] = examRules ? examRules.split(/\r?\n/) : [];
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
     const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title: 'Final Assessment',
@@ -439,7 +436,7 @@ export class Utils {
     return false;
   }
 
-  openCertificateDownloadDialog(content: ContentDetails) {
+  async openCertificateDownloadDialog(content: ContentDetails) {
     // ponytail: was `auth.currentPlan()`; no session layer, so the
     // subscription branch below falls back to the content's own flags.
     const userPlan = null;
@@ -531,6 +528,8 @@ export class Utils {
       courseTitle: content.title,
       badge,
     };
+    const { CertificateDownloadDialog } =
+      await import('@shared/dialogs/certificate-download-dialog/certificate-download-dialog');
     this.dialogs.open(CertificateDownloadDialog, { data });
   }
 
@@ -556,13 +555,13 @@ export class Utils {
    * Open a purchase/subscription confirmation dialog. Centralises the three
    * near-identical gating dialogs used by `openCertificateDownloadDialog`.
    */
-  private openPurchaseGateDialog(config: {
+  private async openPurchaseGateDialog(config: {
     title: string;
     message: string;
     buttons: UtilsDialogData['buttons'];
     onConfirm: () => void;
     onCancel?: () => void;
-  }): void {
+  }): Promise<void> {
     const data: UtilsDialogData = {
       title: config.title,
       containerClass: 'max-w-lg text-left!',
@@ -570,6 +569,7 @@ export class Utils {
       buttons: config.buttons,
     };
 
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
     const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: { ...data, maxWidth: '32rem' },
     });
@@ -581,7 +581,8 @@ export class Utils {
     });
   }
 
-  openShareDialog(data?: ShareDialogData) {
+  async openShareDialog(data?: ShareDialogData) {
+    const { ShareDialog } = await import('@shared/dialogs/share-dialog/share-dialog');
     this.dialogs.open(ShareDialog, { data: data || {} });
   }
 
@@ -646,13 +647,14 @@ export class Utils {
     this.dialogs.open(CourseInfo, { data: card });
   }
 
-  openVideoDialog(trailerLink: string | null | undefined, title: string) {
+  async openVideoDialog(trailerLink: string | null | undefined, title: string) {
     if (!trailerLink) {
       this.notification.info('Trailer Not Found', 'No trailer is available for this course.');
       return;
     }
 
     const type = detectVideoMimeType(trailerLink);
+    const { VideoDialog } = await import('@shared/dialogs/video-dialog/video-dialog');
 
     this.dialogs.open<VideoDialogData>(VideoDialog, {
       data: {
@@ -748,7 +750,7 @@ export class Utils {
       .get<RouteResponse<typeof MASTERCLASS_ROUTES.additionalResources>>(path)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
+        next: async (response) => {
           // Map each resource to its openable URL (hosted file first, else the
           // external link). Resources with neither are dropped — there'd be
           // nothing to open.
@@ -761,6 +763,7 @@ export class Utils {
             .filter((link) => !!link.href);
 
           if (links.length) {
+            const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
             this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
               data: {
                 title: 'Additional Resources',
