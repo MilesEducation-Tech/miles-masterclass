@@ -4,7 +4,8 @@ import { HttpContext } from '@angular/common/http';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matPlayArrowRound } from '@ng-icons/material-icons/round';
 import { NgpRadioGroup, NgpRadioIndicator, NgpRadioItem } from 'ng-primitives/radio';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { ContentDetails } from '@core/models/course.model';
@@ -74,14 +75,15 @@ export type AiLabAgentDialogResult = 'launch';
     NgpRadioGroup,
     NgpRadioIndicator,
     NgpRadioItem,
+    DialogShell,
   ],
   templateUrl: './ai-lab-agent-dialog.html',
   styleUrl: './ai-lab-agent-dialog.css',
   providers: [provideIcons({ matPlayArrowRound })],
 })
 export class AiLabAgentDialog implements OnInit {
-  dialogRef!: DialogRef<AiLabAgentDialog, AiLabAgentDialogResult>;
-  data!: AiLabAgentCard;
+  private readonly dialogRef = injectDialogRef<AiLabAgentCard, AiLabAgentDialogResult>();
+  protected readonly data = this.dialogRef.data;
 
   private readonly apiClient = inject(ApiClient);
   private readonly submission = inject(AiLabSubmission);
@@ -107,9 +109,6 @@ export class AiLabAgentDialog implements OnInit {
    * Fetched here rather than on the page: the "about" block is only ever seen
    * inside this dialog, so loading it on demand keeps two extra requests off
    * every AI Labs page load — including SSR, where nothing would consume them.
-   *
-   * `data` is assigned by the dialog service after construction, so this has to
-   * wait for `ngOnInit` rather than run in the constructor.
    */
   ngOnInit(): void {
     this.initSubmission();

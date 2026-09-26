@@ -28,7 +28,7 @@ import {
   PartnerContentList,
 } from '@shared/components/partner-content-list/partner-content-list';
 import { environment } from '@env/environment';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { ScrollService } from '@core/services/scroll/scroll';
 import { VideoListWrapper } from '@shared/components/video-list-wrapper/video-list-wrapper';
 import { EnquiryForm } from '@shared/components/enquiry-form/enquiry-form';
@@ -50,7 +50,7 @@ import { Button } from '@shared/ui/button/button';
 export class Corporate {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
 
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly scrollService = inject(ScrollService);
 
   readonly complianceContent: PartnerContentItem[] = [
@@ -251,10 +251,9 @@ export class Corporate {
   }
 
   openScheduler(): void {
-    this.dialog.open<CalendlyDialog, boolean>(CalendlyDialog, {
-      width: 'min(95vw, 760px)',
-      ariaLabel: 'Schedule a demo',
+    this.dialogs.open(CalendlyDialog, {
       data: {
+        ariaLabel: 'Schedule a demo',
         url: 'https://calendly.com/rohan-singhai-milesmasterclass/30min',
         closeAction: true,
       } satisfies CalendlyDialogData,

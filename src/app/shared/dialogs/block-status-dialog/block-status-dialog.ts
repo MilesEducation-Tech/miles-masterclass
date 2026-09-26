@@ -1,7 +1,8 @@
 import { Component, computed, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroShieldExclamation, heroShieldCheck } from '@ng-icons/heroicons/outline';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '../../ui/button/button';
 import { AriaInput } from '../../ui/aria/aria-input/aria-input';
 
@@ -20,14 +21,14 @@ export interface BlockStatusDialogResult {
 
 @Component({
   selector: 'app-block-status-dialog',
-  imports: [Button, AriaInput, NgIcon],
+  imports: [Button, AriaInput, NgIcon, DialogShell],
   providers: [provideIcons({ heroShieldExclamation, heroShieldCheck })],
   templateUrl: './block-status-dialog.html',
   styleUrl: './block-status-dialog.css',
 })
 export class BlockStatusDialog {
-  dialogRef!: DialogRef<BlockStatusDialog, BlockStatusDialogResult>;
-  data!: BlockStatusDialogData;
+  private readonly dialogRef = injectDialogRef<BlockStatusDialogData, BlockStatusDialogResult>();
+  protected readonly data = this.dialogRef.data;
 
   protected readonly reason = signal('');
   protected readonly submitting = signal(false);

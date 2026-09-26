@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { NavigationEnd, Router } from '@angular/router';
 
 import { APP_VERSION } from '@core/version/app-version';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { UpdateChecker } from './update-checker';
 
 /**
@@ -50,7 +50,7 @@ describe('UpdateChecker', () => {
       providers: [
         UpdateChecker,
         { provide: Router, useValue: { events } },
-        { provide: Dialog, useValue: { open } },
+        { provide: NgpDialogManager, useValue: { open } },
         {
           provide: DOCUMENT,
           useValue: { addEventListener: vi.fn(), visibilityState: 'visible' },

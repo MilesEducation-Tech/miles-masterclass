@@ -25,7 +25,7 @@ import { ensureSwiperElement } from '../../utils/swiper/ensure-swiper-element';
 import { NgIcon } from '@ng-icons/core';
 import { Heading } from '../heading/heading';
 import { filterIcon } from '@core/constants/icon';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { FilterDialog } from '../../dialogs/filter-dialog/filter-dialog';
 import { Hover } from '../cards/hover/hover';
 import {
@@ -101,7 +101,7 @@ export class Carousel {
 
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly injector = inject(Injector);
   private readonly sectionFilters = inject(SectionFiltersFacade);
 
@@ -409,14 +409,12 @@ export class Carousel {
   }
 
   private openDialog(data: Record<string, any[]>, mode: FilterMode): void {
-    const dialogRef = this.dialog.open(FilterDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      data,
-    });
+    const dialogRef = this.dialogs.open<Record<string, any[]>, Record<string, any[]>>(
+      FilterDialog,
+      { data },
+    );
 
-    dialogRef.afterClosed$
+    dialogRef.afterClosed
       .pipe(take(1), takeUntilDestroyed(this.destroyRef))
       .subscribe((result: any) => {
         if (!result) return;

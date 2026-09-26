@@ -18,6 +18,7 @@ import {
   ApplyPartnerCodeDialogResult,
 } from '@shared/dialogs/apply-partner-code-dialog/apply-partner-code-dialog';
 import { UtilsDialog, UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import {
   RecordPaymentDialog,
@@ -47,6 +48,7 @@ import { UserOnboardingFacade } from '@admin/user-onboarding/services/user-onboa
 export class OnboardingV2 {
   protected readonly facade = inject(UserOnboardingFacade);
   private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -187,24 +189,20 @@ export class OnboardingV2 {
   protected onApplyPartnerCode(user: InternalUser): void {
     // Open on a fresh list — codes are added outside this screen.
     this.facade.reloadPartnerCodes();
-    const ref = this.dialog.open<ApplyPartnerCodeDialog, ApplyPartnerCodeDialogResult>(
+    const ref = this.dialogs.open<ApplyPartnerCodeDialogData, ApplyPartnerCodeDialogResult>(
       ApplyPartnerCodeDialog,
       {
         data: {
           userEmail: user.email,
           options: this.facade.partnerCodeOptions,
         } satisfies ApplyPartnerCodeDialogData,
-        maxWidth: '480px',
-        ariaLabel: 'Apply partner code',
       },
     );
 
-    ref.afterClosed$
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (result) => {
-        if (!result?.code) return;
-        await this.facade.applyPartnerCode(user, result.code);
-      });
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(async (result) => {
+      if (!result?.code) return;
+      await this.facade.applyPartnerCode(user, result.code);
+    });
   }
 
   protected goPrev(): void {

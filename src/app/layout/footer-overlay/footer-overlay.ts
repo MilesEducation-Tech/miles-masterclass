@@ -18,7 +18,6 @@ import { Consent } from '@core/services/consent/consent';
 import { Analytics } from '@core/services/analytics/analytics';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Dialog } from '@core/services/dialog/dialog';
 import { Utils } from '@shared/services/utils';
 import { FeatureFacade, FeatureResource } from '@core/services/feature-facade/feature-facade';
 import { CartStore } from '@core/services/cart/cart-store';
@@ -58,7 +57,6 @@ type InProgressType = 'masterclass' | 'podcast' | 'micro_learning';
 export class FooterOverlay {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
-  private readonly dialog = inject(Dialog);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
   // Suppress the overlay while the cookie-consent banner is open so the two
@@ -215,10 +213,9 @@ export class FooterOverlay {
   }
 
   protected onScheduleDiscoveryCall(): void {
-    this.dialog.open<CalendlyDialog, boolean>(CalendlyDialog, {
-      width: 'min(95vw, 760px)',
-      ariaLabel: 'Schedule a discovery call',
+    this.dialogs.open(CalendlyDialog, {
       data: {
+        ariaLabel: 'Schedule a discovery call',
         url: 'https://calendly.com/rohan-singhai-milesmasterclass/30min',
         closeAction: true,
       } satisfies CalendlyDialogData,

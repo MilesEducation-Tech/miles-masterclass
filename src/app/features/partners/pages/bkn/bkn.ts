@@ -33,7 +33,7 @@ import {
   CalendlyDialog,
   CalendlyDialogData,
 } from '@shared/dialogs/calendly-dialog/calendly-dialog';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { ScrollService } from '@core/services/scroll/scroll';
 
 @Component({
@@ -52,7 +52,7 @@ import { ScrollService } from '@core/services/scroll/scroll';
 export class Bkn {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
 
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly scrollService = inject(ScrollService);
 
   readonly heroContent: PartnerContentItem[] = [
@@ -303,10 +303,9 @@ export class Bkn {
   }
 
   openScheduler(): void {
-    this.dialog.open<CalendlyDialog, boolean>(CalendlyDialog, {
-      width: 'min(95vw, 760px)',
-      ariaLabel: 'Schedule a demo',
+    this.dialogs.open(CalendlyDialog, {
       data: {
+        ariaLabel: 'Schedule a demo',
         url: 'https://calendly.com/rohan-singhai-milesmasterclass/30min',
         closeAction: true,
       } satisfies CalendlyDialogData,

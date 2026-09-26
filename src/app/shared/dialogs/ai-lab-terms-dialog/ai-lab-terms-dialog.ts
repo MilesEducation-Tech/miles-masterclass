@@ -1,5 +1,6 @@
 import { Component, ElementRef, afterNextRender, signal, viewChild } from '@angular/core';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { AriaInput } from '../../ui/aria/aria-input/aria-input';
 import { Button } from '../../ui/button/button';
 import { AI_LAB_AGREEMENT } from './ai-lab-terms-dialog.model';
@@ -17,12 +18,12 @@ import { AI_LAB_AGREEMENT } from './ai-lab-terms-dialog.model';
  */
 @Component({
   selector: 'app-ai-lab-terms-dialog',
-  imports: [AriaInput, Button],
+  imports: [AriaInput, Button, DialogShell],
   templateUrl: './ai-lab-terms-dialog.html',
 })
 export class AiLabTermsDialog {
   /** Resolves `true` only when the user accepted; every other exit is undefined. */
-  dialogRef!: DialogRef<AiLabTermsDialog, boolean>;
+  protected readonly dialogRef = injectDialogRef<void, boolean>();
 
   protected readonly blocks = AI_LAB_AGREEMENT;
 

@@ -1,66 +1,68 @@
-<div class="flex flex-col space-y-4 md:w-[60vw] w-full relative bg-background">
-  <!-- Header -->
-  <div class="flex items-center justify-between p-4 border-b border-gray-100 w-full">
-    <h2 id="filter-dialog-title" class="text-xl font-bold text-white">Filters</h2>
-    <app-button variant="close" (clicked)="close()"></app-button>
-  </div>
+<app-dialog-shell maxWidth="100%" ariaLabel="Filters">
+  <div class="flex flex-col space-y-4 md:w-[60vw] w-full relative bg-background">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-4 border-b border-gray-100 w-full">
+      <h2 id="filter-dialog-title" class="text-xl font-bold text-white">Filters</h2>
+      <app-button variant="close" (clicked)="close()"></app-button>
+    </div>
 
-  <!-- Scrollable Content -->
-  <div class="w-full overflow-y-auto p-4 space-y-6">
-    @for (key of filterKeys(); track key) {
-      <div class="space-y-2">
-        <h3 class="font-semibold text-white text-sm uppercase tracking-wider">
-          {{ getLabel(key) }}
-        </h3>
-        <div class="gap-2 grid sm:grid-cols-3 grid-cols-1 items-center">
-          @for (option of filters()[key]; track option.id) {
-            <label
-              class="flex items-center space-x-3 cursor-pointer group p-2 hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              <div class="relative flex items-center">
-                <input
-                  type="checkbox"
-                  [checked]="option.selected"
-                  (change)="toggleOption(key, option.id)"
-                  class="peer relative h-5 w-5 cursor-pointer appearance-none rounded border border-gray-300 transition-all checked:border-blue-600 checked:bg-blue-600 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                />
-                <div
-                  class="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-3.5 w-3.5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
+    <!-- Scrollable Content -->
+    <div class="w-full overflow-y-auto p-4 space-y-6">
+      @for (key of filterKeys(); track key) {
+        <div class="space-y-2">
+          <h3 class="font-semibold text-white text-sm uppercase tracking-wider">
+            {{ getLabel(key) }}
+          </h3>
+          <div class="gap-2 grid sm:grid-cols-3 grid-cols-1 items-center">
+            @for (option of filters()[key]; track option.id) {
+              <label
+                class="flex items-center space-x-3 cursor-pointer group p-2 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <div class="relative flex items-center">
+                  <input
+                    type="checkbox"
+                    [checked]="option.selected"
+                    (change)="toggleOption(key, option.id)"
+                    class="peer relative h-5 w-5 cursor-pointer appearance-none rounded border border-gray-300 transition-all checked:border-blue-600 checked:bg-blue-600 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                  <div
+                    class="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"
                   >
-                    <path
-                      fill-rule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-3.5 w-3.5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </div>
                 </div>
-              </div>
-              <span class="text-sm font-medium select-none group-hover:text-gray-700">
-                {{
-                  option.course_name ||
-                    option.name ||
-                    option.credits_range ||
-                    option.label ||
-                    option.completion_date_range ||
-                    option.first_name + ' ' + option.last_name
-                }}
-              </span>
-            </label>
-          }
+                <span class="text-sm font-medium select-none group-hover:text-gray-700">
+                  {{
+                    option.course_name ||
+                      option.name ||
+                      option.credits_range ||
+                      option.label ||
+                      option.completion_date_range ||
+                      option.first_name + ' ' + option.last_name
+                  }}
+                </span>
+              </label>
+            }
+          </div>
         </div>
-      </div>
-    }
-  </div>
+      }
+    </div>
 
-  <!-- Footer -->
-  <div class="p-4 border-t border-gray-100 flex justify-between gap-3">
-    <app-button variant="outline" (clicked)="clearFilters()">Clear All</app-button>
-    <app-button (clicked)="apply()">Apply Filters</app-button>
+    <!-- Footer -->
+    <div class="p-4 border-t border-gray-100 flex justify-between gap-3">
+      <app-button variant="outline" (clicked)="clearFilters()">Clear All</app-button>
+      <app-button (clicked)="apply()">Apply Filters</app-button>
+    </div>
   </div>
-</div>
+</app-dialog-shell>

@@ -64,6 +64,7 @@ import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
 import { CommonResponse, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
 import { ApiClient } from '@core/services/api-client/api-client';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import { Storage } from '@core/services/storage/storage';
@@ -215,6 +216,7 @@ export class AiLabs {
     isLoadingProfile: signal(false),
   };
   private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
   private readonly destroyRef = inject(DestroyRef);
@@ -533,15 +535,9 @@ export class AiLabs {
    * `activate()` so the login / plan / agreement gate stays in one place.
    */
   protected openAgent(card: AiLabAgentCard): void {
-    this.dialog
-      .open<AiLabAgentDialog, AiLabAgentDialogResult>(AiLabAgentDialog, {
-        maxWidth: '100%',
-        ariaLabel: card.name,
-        enterAnimationDuration: '300ms',
-        exitAnimationDuration: '300ms',
-        data: card,
-      })
-      .afterClosed$.pipe(takeUntilDestroyed(this.destroyRef))
+    this.dialogs
+      .open<AiLabAgentCard, AiLabAgentDialogResult>(AiLabAgentDialog, { data: card })
+      .afterClosed.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         if (result === 'launch') this.activate();
       });
@@ -572,14 +568,9 @@ export class AiLabs {
 
   /** Participant agreement; the POST only happens if the user accepted. */
   private openTerms(): void {
-    this.dialog
-      .open<AiLabTermsDialog, boolean>(AiLabTermsDialog, {
-        maxWidth: '100%',
-        ariaLabel: 'Miles AI Labs participant agreement',
-        enterAnimationDuration: '300ms',
-        exitAnimationDuration: '300ms',
-      })
-      .afterClosed$.pipe(takeUntilDestroyed(this.destroyRef))
+    this.dialogs
+      .open<void, boolean>(AiLabTermsDialog)
+      .afterClosed.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((accepted) => {
         if (accepted === true) this.createAccount();
       });

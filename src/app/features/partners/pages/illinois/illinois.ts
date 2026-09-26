@@ -8,7 +8,7 @@ import {
   PartnerContentList,
 } from '@shared/components/partner-content-list/partner-content-list';
 import { environment } from '@env/environment';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { ScrollService } from '@core/services/scroll/scroll';
 import { logo } from '@core/constants/icon';
 import {
@@ -59,7 +59,7 @@ import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan
 export class Illinois {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;
 
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly scrollService = inject(ScrollService);
 
   readonly heroContent: PartnerContentItem[] = [
@@ -342,10 +342,9 @@ export class Illinois {
   }
 
   openScheduler(): void {
-    this.dialog.open<CalendlyDialog, boolean>(CalendlyDialog, {
-      width: 'min(95vw, 760px)',
-      ariaLabel: 'Schedule a demo',
+    this.dialogs.open(CalendlyDialog, {
       data: {
+        ariaLabel: 'Schedule a demo',
         url: 'https://calendly.com/rohan-singhai-milesmasterclass/30min',
         closeAction: true,
       } satisfies CalendlyDialogData,

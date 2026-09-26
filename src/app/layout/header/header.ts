@@ -52,7 +52,7 @@ import {
   CalendlyDialog,
   CalendlyDialogData,
 } from '@shared/dialogs/calendly-dialog/calendly-dialog';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { User } from '@core/models/profile.model';
 
 const SCROLL_THRESHOLD_PX = 150;
@@ -98,7 +98,7 @@ export class Header {
   private readonly injector = inject(Injector);
   private readonly mobileToggler = viewChild<ElementRef<HTMLButtonElement>>('mobileToggler');
 
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   protected readonly utils = inject(Utils);
   private readonly viewport = inject(Viewport);
 
@@ -303,10 +303,9 @@ export class Header {
   }
 
   openScheduler(): void {
-    this.dialog.open<CalendlyDialog, boolean>(CalendlyDialog, {
-      width: 'min(95vw, 760px)',
-      ariaLabel: 'Schedule a demo',
+    this.dialogs.open(CalendlyDialog, {
       data: {
+        ariaLabel: 'Schedule a demo',
         url: 'https://calendly.com/rohan-singhai-milesmasterclass/30min',
         closeAction: true,
       } satisfies CalendlyDialogData,
