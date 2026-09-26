@@ -1,0 +1,28 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass-web/course-section/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: limit
+      value: ""
+      disabled: true
+    - key: offset
+      value: ""
+      disabled: true
+    - key: page
+      value: ""
+      disabled: true
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "<body>": "<self._build_course_section(limit=limit, offset=offset, user=user)>"
+      }
+order: 1000

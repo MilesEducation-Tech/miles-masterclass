@@ -1,0 +1,32 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `VarunMasterclassPlaylistsViewV1`  
+  **Module:** `VarunMasterclass.views`  
+  **Route name:** `varun-masterclass-playlists-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Paginated rails, optionally narrowed to one program code.
+
+  Query parameters (disabled by default): `category`, `page`, `page_key`, `page_size`
+url: "{{base_url}}/api/v1/varun-masterclass/playlists/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: category
+    value: ""
+    disabled: true
+  - key: page
+    value: ""
+    disabled: true
+  - key: page_key
+    value: ""
+    disabled: true
+  - key: page_size
+    value: ""
+    disabled: true
+examples: ./.resources/UNIVERSAL GET varun-masterclass-playlists-v1.resources/examples
+order: 3000

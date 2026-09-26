@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { Subject } from 'rxjs';
 import { BadgeItem } from '@core/models/cpe-tracker.model';
-import { DialogRef } from '@core/services/dialog/dialog';
-import { BadgeInfoDialog, BadgeInfoDialogResult } from './badge-info-dialog';
+import { NgpDialogRef } from 'ng-primitives/dialog';
+import { stubDialogShell } from '@testing/mocks/dialog-ref.mock';
+import { BadgeInfoDialog } from './badge-info-dialog';
 
 function makeBadge(overrides: Partial<BadgeItem> = {}): BadgeItem {
   return {
@@ -25,17 +25,12 @@ function makeBadge(overrides: Partial<BadgeItem> = {}): BadgeItem {
 }
 
 function setupFixture(badges: BadgeItem[]) {
-  const fixture = TestBed.createComponent(BadgeInfoDialog);
-  const closes = new Subject<BadgeInfoDialogResult | undefined>();
   const close = vi.fn();
-  fixture.componentInstance.dialogRef = {
-    close: (result?: BadgeInfoDialogResult) => {
-      close(result);
-      closes.next(result);
-    },
-    afterClosed$: closes.asObservable(),
-  } as unknown as DialogRef<BadgeInfoDialog, BadgeInfoDialogResult>;
-  fixture.componentInstance.data = { badges };
+  stubDialogShell(BadgeInfoDialog);
+  TestBed.configureTestingModule({
+    providers: [{ provide: NgpDialogRef, useValue: { close, data: { badges } } }],
+  });
+  const fixture = TestBed.createComponent(BadgeInfoDialog);
   fixture.detectChanges();
   return { fixture, close };
 }

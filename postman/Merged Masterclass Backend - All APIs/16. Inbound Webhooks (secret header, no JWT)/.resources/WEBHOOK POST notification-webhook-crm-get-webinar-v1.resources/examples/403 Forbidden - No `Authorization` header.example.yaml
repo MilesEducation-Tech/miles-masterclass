@@ -1,0 +1,43 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/notification/webhook/crm-get-webinar/"
+  method: POST
+  headers:
+    Accept: application/json
+    X-Webhook-Secret: "{{miles_one_webhook_secret}}"
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "event_id": 1505,
+        "document_id": "re1ymei2i1ckja9o6g1q27yu",
+        "name": "Kaun Banega CMA, with Varun Jain",
+        "event_type": "Online",
+        "date": "2026-09-20T08:30:00.000Z",
+        "sf_event_id": "2486",
+        "zoom_webinar_id": "97911874008",
+        "course_id": 1,
+        "course_name": "CPA",
+        "zoom_account": "events@mileseducation.com",
+        "webinar_type": "webinar",
+        "is_offline": false,
+        "is_active": true,
+        "cancellation_status": false,
+        "caira_check": false,
+        "non_caira_check": false,
+        "end_date": null,
+        "caira_masterclass_level": null
+      }
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "detail": "Authentication credentials were not provided."
+      }
+order: 4000

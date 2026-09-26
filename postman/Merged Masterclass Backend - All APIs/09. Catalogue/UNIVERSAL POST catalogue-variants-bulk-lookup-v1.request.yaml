@@ -1,0 +1,28 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CatalogueVariantBulkLookupViewV1`  
+  **Module:** `Catalogue.views`  
+  **Route name:** `catalogue-variants-bulk-lookup-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Resolve up to 100 variant ids to their minimal shape.
+
+  Body template generated from `VariantBulkLookupBodyV1`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/catalogue/variants/bulk-lookup/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "variant_ids": [
+        "00000000-0000-0000-0000-000000000000"
+      ]
+    }
+examples: ./.resources/UNIVERSAL POST catalogue-variants-bulk-lookup-v1.resources/examples
+order: 11000

@@ -1,138 +1,140 @@
-<div
-  class="bg-[#1C1F26] text-white rounded-xl overflow-hidden w-full max-w-2xl max-sm:w-[90vw] border border-gray-800 shadow-2xl"
->
-  <!-- Header -->
-  <div class="bg-[#2B3240] p-6 flex justify-between items-start relative overflow-hidden">
-    <div class="z-10 relative">
-      <h2 class="text-xl font-bold mb-1 text-white">Get certificate & Session material</h2>
-      <p class="text-gray-400 text-sm">Click on the download icon.</p>
+<app-dialog-shell maxWidth="100%" ariaLabel="Download certificate">
+  <div
+    class="bg-[#1C1F26] text-white rounded-xl overflow-hidden w-full max-w-2xl max-sm:w-[90vw] border border-gray-800 shadow-2xl"
+  >
+    <!-- Header -->
+    <div class="bg-[#2B3240] p-6 flex justify-between items-start relative overflow-hidden">
+      <div class="z-10 relative">
+        <h2 class="text-xl font-bold mb-1 text-white">Get certificate & Session material</h2>
+        <p class="text-gray-400 text-sm">Click on the download icon.</p>
+      </div>
+      <!-- Decorative Icon (Placeholder) -->
+      <div class="text-4xl">🎓</div>
     </div>
-    <!-- Decorative Icon (Placeholder) -->
-    <div class="text-4xl">🎓</div>
-  </div>
 
-  <div class="p-6 space-y-6">
-    <!--
+    <div class="p-6 space-y-6">
+      <!--
       Section 1: NASBA Certificate (API hit on download click). Webinars opt
       between Miles / NASBA / both via `certificateType`; everyone else
       defaults to NASBA-only.
     -->
-    @if (showNasba) {
-      <div class="flex gap-4 items-start">
-        <div class="mt-1">
-          <ng-icon name="heroAcademicCap" size="1.5rem" class="text-gray-300"></ng-icon>
+      @if (showNasba) {
+        <div class="flex gap-4 items-start">
+          <div class="mt-1">
+            <ng-icon name="heroAcademicCap" size="1.5rem" class="text-gray-300"></ng-icon>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-white font-medium mb-1">NASBA-Approved CPE Certificate</h3>
+            <p class="text-gray-400 text-sm mb-2 leading-relaxed">
+              These certificates can be shared with your State Board of Accountancy for compliance
+              or uploaded to the CPE Audit Service portal (if your state board participates).
+            </p>
+            <p class="text-gray-500 text-xs italic">
+              Note: State boards of accountancy have final authority on the acceptance of individual
+              courses for CPE credit.
+            </p>
+          </div>
+          <div>
+            <app-button
+              variant="default"
+              class="flex items-center justify-center rounded-lg"
+              aria-label="Download NASBA certificate"
+              [disabled]="downloadingNasba()"
+              (clicked)="download('nasba')"
+            >
+              <ng-icon name="phosphorDownloadSimpleFill" size="1.2rem"></ng-icon>
+            </app-button>
+          </div>
         </div>
-        <div class="flex-1">
-          <h3 class="text-white font-medium mb-1">NASBA-Approved CPE Certificate</h3>
-          <p class="text-gray-400 text-sm mb-2 leading-relaxed">
-            These certificates can be shared with your State Board of Accountancy for compliance or
-            uploaded to the CPE Audit Service portal (if your state board participates).
-          </p>
-          <p class="text-gray-500 text-xs italic">
-            Note: State boards of accountancy have final authority on the acceptance of individual
-            courses for CPE credit.
-          </p>
-        </div>
-        <div>
-          <app-button
-            variant="default"
-            class="flex items-center justify-center rounded-lg"
-            aria-label="Download NASBA certificate"
-            [disabled]="downloadingNasba()"
-            (clicked)="download('nasba')"
-          >
-            <ng-icon name="phosphorDownloadSimpleFill" size="1.2rem"></ng-icon>
-          </app-button>
-        </div>
-      </div>
-    }
+      }
 
-    <!--
+      <!--
       Section 1b: Miles Certificate. Only surfaces for webinar callers whose
       `certificateType` is `'miles'` or `'both'`.
     -->
-    @if (showMiles) {
-      <div class="flex gap-4 items-start">
-        <div class="mt-1">
-          <ng-icon name="heroAcademicCap" size="1.5rem" class="text-gray-300"></ng-icon>
+      @if (showMiles) {
+        <div class="flex gap-4 items-start">
+          <div class="mt-1">
+            <ng-icon name="heroAcademicCap" size="1.5rem" class="text-gray-300"></ng-icon>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-white font-medium mb-1">Miles Certificate of Completion</h3>
+            <p class="text-gray-400 text-sm leading-relaxed">
+              A Miles-issued certificate confirming completion of this session. Share it on your
+              profile or with your employer as proof of participation.
+            </p>
+          </div>
+          <div>
+            <app-button
+              variant="default"
+              class="flex items-center justify-center rounded-lg"
+              aria-label="Download Miles certificate"
+              [disabled]="downloadingMiles()"
+              (clicked)="download('miles')"
+            >
+              <ng-icon name="phosphorDownloadSimpleFill" size="1.2rem"></ng-icon>
+            </app-button>
+          </div>
         </div>
-        <div class="flex-1">
-          <h3 class="text-white font-medium mb-1">Miles Certificate of Completion</h3>
-          <p class="text-gray-400 text-sm leading-relaxed">
-            A Miles-issued certificate confirming completion of this session. Share it on your
-            profile or with your employer as proof of participation.
-          </p>
-        </div>
-        <div>
-          <app-button
-            variant="default"
-            class="flex items-center justify-center rounded-lg"
-            aria-label="Download Miles certificate"
-            [disabled]="downloadingMiles()"
-            (clicked)="download('miles')"
-          >
-            <ng-icon name="phosphorDownloadSimpleFill" size="1.2rem"></ng-icon>
-          </app-button>
-        </div>
-      </div>
-    }
+      }
 
-    <!--
+      <!--
       Section 2: Credly/LinkedIn shareable badge. Renders whenever the
       caller passes a `badge` payload — either an already-resolved
       `acceptUrl` (one click → opens Credly) or a bare `id` (one click →
       claims via API then opens the returned share URL). Both `null` ⇒
       caller skips `badge` entirely and this row stays hidden.
     -->
-    @if (data.badge) {
-      <div class="flex gap-4 items-start">
-        <div class="mt-1 shrink-0">
-          @if (data.badge.image) {
-            <img
-              [src]="data.badge.image"
-              [alt]="data.badge.name || 'Achievement badge'"
-              class="size-12 object-contain rounded-md"
-              loading="lazy"
-              draggable="false"
-            />
-          } @else {
-            <ng-icon name="heroCheckBadge" size="1.5rem" class="text-gray-300"></ng-icon>
-          }
+      @if (data.badge) {
+        <div class="flex gap-4 items-start">
+          <div class="mt-1 shrink-0">
+            @if (data.badge.image) {
+              <img
+                [src]="data.badge.image"
+                [alt]="data.badge.name || 'Achievement badge'"
+                class="size-12 object-contain rounded-md"
+                loading="lazy"
+                draggable="false"
+              />
+            } @else {
+              <ng-icon name="heroCheckBadge" size="1.5rem" class="text-gray-300"></ng-icon>
+            }
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="text-white font-medium mb-1">
+              {{ data.badge.name || 'Shareable Digital Badge on LinkedIn' }}
+            </h3>
+            <p class="text-gray-400 text-sm leading-relaxed">
+              {{
+                data.badge.description ||
+                  'Show off your achievement with a Credly-verified digital badge, instantly shareable on LinkedIn for maximum credibility and visibility.'
+              }}
+            </p>
+          </div>
+          <div>
+            <app-button
+              variant="default"
+              class="flex items-center justify-center rounded-lg"
+              aria-label="Share badge"
+              [disabled]="sharing()"
+              (clicked)="share()"
+            >
+              <ng-icon name="phosphorShareFatFill" size="1.2rem"></ng-icon>
+            </app-button>
+          </div>
         </div>
-        <div class="flex-1 min-w-0">
-          <h3 class="text-white font-medium mb-1">
-            {{ data.badge.name || 'Shareable Digital Badge on LinkedIn' }}
-          </h3>
-          <p class="text-gray-400 text-sm leading-relaxed">
-            {{
-              data.badge.description ||
-                'Show off your achievement with a Credly-verified digital badge, instantly shareable on LinkedIn for maximum credibility and visibility.'
-            }}
-          </p>
-        </div>
-        <div>
-          <app-button
-            variant="default"
-            class="flex items-center justify-center rounded-lg"
-            aria-label="Share badge"
-            [disabled]="sharing()"
-            (clicked)="share()"
-          >
-            <ng-icon name="phosphorShareFatFill" size="1.2rem"></ng-icon>
-          </app-button>
-        </div>
-      </div>
-    }
-  </div>
+      }
+    </div>
 
-  <!-- Footer -->
-  <div class="p-6 pt-2 flex justify-center">
-    <app-button
-      variant="secondary"
-      class="w-full max-w-[200px] bg-white text-black hover:bg-gray-200 font-semibold rounded-lg"
-      (clicked)="close()"
-    >
-      Close
-    </app-button>
+    <!-- Footer -->
+    <div class="p-6 pt-2 flex justify-center">
+      <app-button
+        variant="secondary"
+        class="w-full max-w-[200px] bg-white text-black hover:bg-gray-200 font-semibold rounded-lg"
+        (clicked)="close()"
+      >
+        Close
+      </app-button>
+    </div>
   </div>
-</div>
+</app-dialog-shell>

@@ -1,0 +1,24 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/catalogue/progress/variant/{{variant_id}}/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "result": {
+          "variant_id": "<str(variant_id)>",
+          "variant_rollup": "<Variant_Progress.objects.filter(user_id=request.user.pk, product_variant_id=variant_id).values('completed_mcqs', 'completed_ebooks').afirst()>",
+          "subjects": "<[s async for s in Subject_Progress.objects.filter(user_id=request.user.pk).order_by('lms_subject_id').values('lms_subject_id', 'completed_mcqs', 'completed_ebooks')]>",
+          "watched_video_ids": "<[vid async for vid in Video_Progress.objects.filter(user_id=request.user.pk, watched=True).values_list('youtube_video_id', flat=True)]>"
+        }
+      }
+order: 1000

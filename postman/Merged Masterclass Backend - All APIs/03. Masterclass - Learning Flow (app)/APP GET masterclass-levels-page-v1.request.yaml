@@ -1,0 +1,26 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassLevelsPageViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-levels-page-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  GET /caira/masterclass/levels-page/ - Levels page (tabs + sections + items).
+
+  Query parameters (disabled by default): `id`, `type`
+url: "{{base_url}}/api/v1/masterclass/levels-page/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: id
+    value: ""
+    disabled: true
+  - key: type
+    value: ""
+    disabled: true
+examples: ./.resources/APP GET masterclass-levels-page-v1.resources/examples
+order: 18000

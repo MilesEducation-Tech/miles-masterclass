@@ -1,0 +1,19 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `AILabCourseStartViewV1`  
+  **Module:** `AILabs.views`  
+  **Route name:** `ai-lab-course-start-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Start an AI Lab. Idempotent, and the enforcement point for the gate.
+
+  **No request body by design.** Marks the course started; the id is in the path.
+url: "{{base_url}}/api/v1/ai-labs/course-start/{{ai_lab_course_id}}/"
+method: POST
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL POST ai-lab-course-start-v1.resources/examples
+order: 2000

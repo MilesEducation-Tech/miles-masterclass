@@ -1,0 +1,29 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `LikedStatusV1`  
+  **Module:** `Engagement.views`  
+  **Route name:** `engagement-like-status-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Return stored like counts and the caller's own likes for many targets.
+
+  Body template generated from `LikeStatusQueryV1`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/engagement/like-status/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "target_kind": "homepage_content_item",
+      "target_ids": [
+        "00000000-0000-0000-0000-000000000000"
+      ]
+    }
+examples: ./.resources/UNIVERSAL POST engagement-like-status-v1.resources/examples
+order: 1000

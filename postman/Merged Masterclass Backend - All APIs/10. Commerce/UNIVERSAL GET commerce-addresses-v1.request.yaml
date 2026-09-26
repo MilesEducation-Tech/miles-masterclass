@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CommerceAddressesViewV1`  
+  **Module:** `Commerce.views`  
+  **Route name:** `commerce-addresses-v1`  
+  **Methods on this view:** GET, POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  List the learner's addresses, or add one.
+url: "{{base_url}}/api/v1/commerce/addresses/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET commerce-addresses-v1.resources/examples
+order: 4000

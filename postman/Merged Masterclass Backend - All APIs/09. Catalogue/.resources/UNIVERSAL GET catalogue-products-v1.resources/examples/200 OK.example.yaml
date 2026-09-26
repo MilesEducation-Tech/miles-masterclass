@@ -1,0 +1,37 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/catalogue/products/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: is_book
+      value: ""
+      disabled: true
+    - key: page
+      value: ""
+      disabled: true
+    - key: page_size
+      value: ""
+      disabled: true
+    - key: search
+      value: ""
+      disabled: true
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "count": "<async_cache_get(total_key, request=request)>",
+        "page": "<page>",
+        "page_size": "<page_size>",
+        "next": "<_page_link(request, page + 1, page_size)>",
+        "previous": "<_page_link(request, page - 1, page_size)>",
+        "results": "<async_cache_get(f'{CATALOGUE_PRODUCTS_CACHE_PREFIX}{cache_suffix}', request=request)>"
+      }
+order: 1000

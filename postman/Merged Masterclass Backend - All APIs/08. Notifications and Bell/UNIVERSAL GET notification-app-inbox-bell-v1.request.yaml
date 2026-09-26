@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `InAppBellNotificationsViewV1`  
+  **Module:** `Notification.views`  
+  **Route name:** `notification-app-inbox-bell-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  GET the caller's paginated bell inbox, newest first.
+url: "{{base_url}}/api/v1/notification/app-inbox-bell/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET notification-app-inbox-bell-v1.resources/examples
+order: 1000

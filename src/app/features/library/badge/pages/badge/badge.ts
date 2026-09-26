@@ -25,7 +25,7 @@ import {
 } from '@core/models/badge.model';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import {
   CertificateDialogData,
   CertificateDownloadDialog,
@@ -61,7 +61,7 @@ const COURSE_TYPE_ROUTE: Record<string, string> = {
 export class Badge {
   readonly facade = inject(BadgeFacade);
   private readonly utils = inject(Utils);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -212,12 +212,7 @@ export class Badge {
           }
         : undefined,
     };
-    this.dialog.open<CertificateDownloadDialog, CertificateDialogData>(CertificateDownloadDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      data,
-    });
+    this.dialogs.open(CertificateDownloadDialog, { data });
   }
 
   /**

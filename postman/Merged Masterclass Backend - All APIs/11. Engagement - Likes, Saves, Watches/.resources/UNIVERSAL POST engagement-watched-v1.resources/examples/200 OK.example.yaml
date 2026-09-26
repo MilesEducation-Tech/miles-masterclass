@@ -1,0 +1,30 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/engagement/watched/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "target_kind": "homepage_content_item",
+        "target_id": "00000000-0000-0000-0000-000000000000",
+        "value": false
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "target_kind": "<payload.target_kind>",
+        "target_id": "<str(payload.target_id)>",
+        "found": false
+      }
+order: 1000

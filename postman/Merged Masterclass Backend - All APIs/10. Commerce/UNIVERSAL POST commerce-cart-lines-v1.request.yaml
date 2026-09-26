@@ -1,0 +1,28 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CommerceCartLinesViewV1`  
+  **Module:** `Commerce.views`  
+  **Route name:** `commerce-cart-lines-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Add a variant to the learner's cart.
+
+  Body template generated from `CartLineBodyV1`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/commerce/cart/lines/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "product_variant_id": "00000000-0000-0000-0000-000000000000",
+      "quantity": 0,
+      "token_amount_selected": false
+    }
+examples: ./.resources/UNIVERSAL POST commerce-cart-lines-v1.resources/examples
+order: 9000

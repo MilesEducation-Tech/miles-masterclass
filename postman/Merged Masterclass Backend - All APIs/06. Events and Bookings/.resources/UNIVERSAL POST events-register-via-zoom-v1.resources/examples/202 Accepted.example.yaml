@@ -1,0 +1,29 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/events/register-via-zoom/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "webinar_id": "00000000-0000-0000-0000-000000000000"
+      }
+response:
+  statusCode: 202
+  statusText: Accepted
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "accepted",
+        "registration_status": "<fe_registration_status(attempt_status)>",
+        "message": "<message>",
+        "attempt_id": "<str(attempt_id)>",
+        "status_url": "<reverse('events-register-via-zoom-status-v1', kwargs={'attempt_id': str(attempt_id)})>"
+      }
+order: 2000

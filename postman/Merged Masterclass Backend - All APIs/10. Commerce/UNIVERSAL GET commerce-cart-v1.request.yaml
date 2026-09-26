@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CommerceCartViewV1`  
+  **Module:** `Commerce.views`  
+  **Route name:** `commerce-cart-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Return the learner's live cart, creating an empty one if they have none.
+url: "{{base_url}}/api/v1/commerce/cart/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET commerce-cart-v1.resources/examples
+order: 6000

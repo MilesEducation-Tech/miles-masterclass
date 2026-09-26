@@ -1,0 +1,37 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/quiz/{{chapter_id}}/submit/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "question_id": "00000000-0000-0000-0000-000000000000",
+        "selected_option_ids": [
+          "00000000-0000-0000-0000-000000000000"
+        ]
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "question_id": "<str(question.id)>",
+        "is_correct": false,
+        "correct_option_ids": "<[str(opt.id) for opt in all_options if opt.option_is_correct]>",
+        "explanation": "<question.question_explanation>",
+        "options_feedback": "<[{'id': str(opt.id), 'text': opt.option_text, 'is_correct': opt.option_is_correct, 'explanation': opt.option_explanation} for opt in all_options]>",
+        "answers_submitted": "<answers_submitted>",
+        "total_questions": "<quiz_config.questions_to_show>",
+        "is_mcq_completed": false,
+        "is_chapter_completed": false,
+        "score_percent": "<score_percent>"
+      }
+order: 1000

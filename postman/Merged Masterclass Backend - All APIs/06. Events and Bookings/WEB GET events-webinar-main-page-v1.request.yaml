@@ -1,0 +1,285 @@
+$kind: http-request
+description: |-
+  **Surface:** WEB  
+  **View:** `WebinarMainPageViewV1`  
+  **Module:** `EventsPage.views`  
+  **Route name:** `events-webinar-main-page-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** AllowAny
+
+  ``GET web-api/v1/events/webinar-main-page/?login_type=pre_login|post_login``
+
+  Query parameters (disabled by default): `login_type`
+
+  ---
+
+  > From `EVENTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ## 6. `GET web-api/v1/events/webinar-main-page/`
+
+  The webinar landing feed, in five buckets, for both sides of login. Web only.
+
+  This is a rudimentary first pass by request. The shape is the part that is settled; the bucket rules are
+  deliberately simple and each is a single filter, so a product correction is a one-line change.
+
+  ### 6.1 Query parameters
+
+  | Param | Type | Required | Values |
+  | --- | --- | --- | --- |
+  | `login_type` | string | yes | `pre_login`, `post_login` |
+
+  DELIBERATELY REQUIRED, WITH NO DEFAULT. Defaulting to `pre_login` would mean a signed-in client that forgot the
+  parameter silently receives the anonymous page - a valid 200 that is wrong, with the two booking buckets empty
+  rather than absent. Omitting it is a 400 naming the parameter.
+
+  The vocabulary is `pre_login` / `post_login`, with underscores. Those two literals are the stored values in the
+  database columns this endpoint filters on, so there is one vocabulary end to end and no translation map.
+
+  ### 6.2 Authentication is conditional
+
+  | `login_type` | Anonymous request | Request with a valid token | Request with a BAD token |
+  | --- | --- | --- | --- |
+  | `pre_login` | `200` | `200`, token resolved and ignored | `403` |
+  | `post_login` | `401 authentication_required` | `200` | `403` |
+
+  This is the only route in the app that is reachable anonymously and also serves per-user data. The branch
+  cannot live in a permission class - DRF resolves permissions during dispatch, before any view has read a query
+  parameter - so the view carries `AllowAny` and enforces the rule itself. It is a design, not a missing
+  `IsAuthenticated`.
+
+  A malformed or expired token is rejected on BOTH branches, including `pre_login`, rather than silently
+  downgraded to the anonymous page: a client sending a broken token has a problem it needs to see. That rejection
+  is the `403` from 1.2. The `401` here is the different case - a well-formed anonymous request asking for the
+  signed-in page - and it carries `message`, not `detail`:
+
+  ```json
+  {
+    "status": "error",
+    "code": "authentication_required",
+    "message": "login_type=post_login requires an authenticated request. Send a bearer token, or ask for login_type=pre_login."
+  }
+  ```
+
+  ### 6.3 Response
+
+  ```json
+  {
+    "message": "Webinar main page retrieved successfully.",
+    "data": {
+      "login_type": "post_login",
+      "highlight_webinars": [],
+      "upcoming_webinars": [],
+      "completed_webinar": [],
+      "absent_webinar": [],
+      "missed_webinar": []
+    }
+  }
+  ```
+
+  EVERY KEY IS ALWAYS PRESENT, EMPTY RATHER THAN OMITTED. Fixed shape, varying contents - a rendering loop treats
+  an absent key and an empty list the same way, but a null check does not.
+
+  `pre_login` POPULATES THREE OF THE FIVE (amended 2026-09-18): `highlight_webinars`, `upcoming_webinars` and
+  `missed_webinar`. The two that stay empty are `completed_webinar` and `absent_webinar`, which are statements
+  about a BOOKING that an anonymous caller does not have. `post_login` populates all five, the three
+  backward-looking ones from the caller's own attendance.
+
+  The two plural keys and the three singular keys are inconsistent, and that is preserved deliberately: they
+  match the requested contract, and renaming a client contract to tidy it is a breaking change for cosmetic gain.
+
+  ### 6.4 The five buckets
+
+  | Bucket | Per-user? | What is in it |
+  | --- | --- | --- |
+  | `highlight_webinars` | no | Editorial. Driven by priority rows for THIS login state, lowest priority first. The absence of a row is the signal - an unranked webinar is not last, it is simply not here. Upcoming only. |
+  | `upcoming_webinars` | no | Everything visible in this login state that has not started, soonest first. |
+  | `completed_webinar` | yes | Past webinars the user ATTENDED. Each carries `eligible`. Post-login only. |
+  | `absent_webinar` | yes | Past webinars the user booked and did not attend. Post-login only. |
+  | `missed_webinar` | partly | Past webinars the caller is not committed to. BOTH login states - see below. |
+
+  `highlight_webinars` is a curated rail over the same webinars as `upcoming_webinars`, so the two lists overlap
+  by design. De-duplicate on `id` if your layout needs to.
+
+  Every bucket is capped at 20 rows. There is no pagination - this is a landing page, not a catalogue. The three
+  backward-looking buckets look back 90 days.
+
+  `absent` and `missed` are disjoint and the split is a product decision, not a schema fact: ABSENT is a live
+  booking the user did not honour, MISSED is a webinar they are not committed to.
+
+  THE ROUTING IS BY `attended_status`, AMENDED 2026-09-18. A booking the user CANCELLED now lands in
+  `missed_webinar`; it previously appeared in no bucket at all, so a cancelled webinar vanished from the page.
+
+  | `attended_status` | Bucket |
+  | --- | --- |
+  | `1` attended | `completed_webinar` |
+  | `2` not attended | `absent_webinar` |
+  | `3` registered | `absent_webinar` |
+  | `""` MF has not reported yet | `absent_webinar` |
+  | `4` cancelled | `missed_webinar` |
+  | no booking row at all | `missed_webinar` |
+
+  Cancellation reaches this endpoint on two independent columns - `status = false` (this system cancelled the
+  booking) and `attended_status = "4"` (MF reported it cancelled) - and BOTH route to `missed_webinar`, so the
+  same user action does not land in different buckets depending on which side recorded it.
+
+  ATTENDANCE OUTRANKS CANCELLATION. `attended_status = "1"` is `completed_webinar` even on a cancelled booking:
+  attendance is a fact about a session that already happened, a cancellation is a statement of intent about it,
+  and `completed_webinar` is the only bucket carrying `eligible` - so routing an attended row elsewhere would
+  withdraw the CPE / badge affordance from someone who earned it.
+
+  ---
+
+  ## 8. The webinar card, shared by all five main-page buckets
+
+  All five buckets carry identical objects, so one view model reads `highlight_webinars[0]` and
+  `missed_webinar[0]` alike.
+
+  ```json
+  {
+    "id": "3f1a9c7e-5b42-4d9a-8f10-2c6be7d41a55",
+    "slug": "caira-level-1-orientation",
+    "name": "CAIRA Level 1",
+    "type": "webinar",
+    "short_description": "...",
+    "start_date_time": "2026-09-20T13:00:00+00:00",
+    "end_date_time": "2026-09-20T14:00:00+00:00",
+    "duration_minutes": 60,
+    "webinar_zoom_id": "84123456789",
+    "is_test_webinar": false,
+    "webinar_why_attend_points": [],
+    "webinar_what_will_you_learn_points": [],
+    "subject": "CAIRA",
+    "subject_details": {
+      "id": "b2c4e1a8-7f39-4c52-9d61-08ab3e7f4d12",
+      "subject": "CAIRA"
+    },
+    "level_details": {
+      "level_id": "d57e0b93-1a46-4f88-ae20-6c91f2b7e034",
+      "level_number": 1,
+      "level_name": "Level 1",
+      "level_actual_name": "Foundations of AI for Accountants"
+    },
+    "horizontal_thumbnail": "https://.../h.png",
+    "vertical_thumbnail": "https://.../v.png",
+    "square_image": "https://.../s.png",
+    "fields_of_study": [{ "id": "...", "name": "Information Technology", "cpe_credit": 1.0 }],
+    "total_cpe_credits": 1.0
+  }
+  ```
+
+  | Key | Type | Notes |
+  | --- | --- | --- |
+  | `id` | UUID string | This is what you send to `register-via-zoom`. |
+  | `slug` | string or null | |
+  | `name` | string | |
+  | `type` | string | `webinar`, `offline`, `orientation`, `premier`. Only the first two are registrable here. |
+  | `short_description` | string | |
+  | `start_date_time` | ISO-8601 or null | |
+  | `end_date_time` | ISO-8601 or null | |
+  | `duration_minutes` | integer or null | Minutes. One hour is `60`. |
+  | `webinar_zoom_id` | string or null | The id Zoom keys the session on. Distinct from the MF/SF ingest anchor. |
+  | `is_test_webinar` | boolean | Visible only to an internal test user, in either login state. An ordinary user never receives one. |
+  | `webinar_why_attend_points` | array of strings, or null | Editorial copy. `null` when the operator never authored any - not an empty array. |
+  | `webinar_what_will_you_learn_points` | array of strings, or null | Same. |
+  | `subject` | string or null | THE CAIRA / CAIBA ANSWER. See below. `null` when the webinar carries no level. |
+  | `subject_details` | object or null | `{id, subject}`. Null together with `subject`. |
+  | `level_details` | object or null | `{level_id, level_number, level_name, level_actual_name}`, or null. |
+
+  `subject` plus `level_details.level_number` is what renders "CAIRA L1". `level_details` is NULL AS A WHOLE
+  when the webinar has no level, so you test one key rather than four - and "no level" stays distinct from "a
+  level whose name happens to be blank", which four flat nulls cannot express. `subject_details` is null
+  together with `subject`, for the same reason.
+
+  **`subject_details` AND `level_details.level_id` WERE ADDED ON 2026-09-17.** Both are additive - nothing was
+  removed or renamed, and `subject` stays exactly where it was because shipped clients read it. They exist
+  because **a name is not an address**: `Subject.name` is not unique, and a level's generated `level_name`
+  ("Level 1") repeats across every subject, so neither could be used to link anywhere. The subject name is
+  REPEATED inside `subject_details` on purpose - a client rendering from that object should not have to reach
+  back out to a sibling key for its label.
+  | `horizontal_thumbnail` | URL string, `""` when unset | |
+  | `vertical_thumbnail` | URL string, `""` when unset | |
+  | `square_image` | URL string, `""` when unset | |
+  | `fields_of_study` | array | `{id, name, cpe_credit}` per active field of study. Empty array when nothing is tagged. |
+  | `total_cpe_credits` | float or null | The SUM of the above. `null`, not `0`, when nothing is tagged. |
+
+  **`total_cpe_credits` WAS `cpe_credits` UNTIL 2026-09-18** - a rename, with no alias kept. It is the sum over
+  `fields_of_study`, each of which carries its own `cpe_credit` (singular), and the old plural read as the same
+  quantity as the per-entry one. The rename is scoped to this payload: `Masterclass` course payloads and the
+  Netcore activity params still send `cpe_credits`, deliberately.
+
+  `caira_check` and `non_caira_check` are DELIBERATELY NOT EMITTED on this endpoint (they are on `all-bookings`).
+  They are two booleans describing the same thing `subject` describes properly, and a client given both would
+  have to decide which wins. Use `subject`.
+
+  ### 8.1 `registration` - on `highlight_webinars` and `upcoming_webinars`, `post_login` only
+
+  ```json
+  "registration": {
+    "status": "SUCCESS",
+    "registration_status": "REGISTERED",
+    "attempt_id": "9c2f...",
+    "join_url": "https://us06web.zoom.us/w/8412...",
+    "error_code": null,
+    "error_message": null,
+    "zoom_attempts": 1,
+    "completed_at": "2026-09-17T09:14:22.118+00:00",
+    "route_to_web_lms": false
+  }
+  ```
+
+  Same three-state contract as section 3.2 - branch on `registration_status`, not on `status`.
+
+  The key is ABSENT on the `pre_login` branch (anonymous callers have no registration to report) and on the three
+  past buckets (registration is an affordance - register vs join - and a webinar that already happened offers
+  neither; `completed_webinar` answers the question those rows raise with `eligible` instead).
+
+  A user who registered before the attempt-row pipeline existed has a booking and no attempt. That case comes
+  back as `registration_status: "REGISTERED"` with `status`, `attempt_id`, `join_url` and `completed_at` all
+  `null` and `zoom_attempts: 0`. Do not read "no attempt id" as "not registered" - registering again would spend
+  another Zoom registrant slot on a seat they already hold.
+
+  `route_to_web_lms` is `true` only for an internal test user on a CAIRA webinar today. When `true`, open the
+  session in the web-LMS surface instead of `join_url`.
+
+  ### 8.2 `eligible` - on `completed_webinar` only
+
+  Boolean. `true` when the booking's `attended_status` is `"1"` (attended), or when leadership force-overrode it.
+
+  It is deliberately NOT recomputed from `attended_webinar_duration` against `total_webinar_duration`: the
+  thresholds live in the attendance ingest, and a second implementation of a rule that already exists elsewhere
+  is a rule that will disagree with itself.
+
+  ---
+
+  ### 9.1 `one_on_one` is always empty today
+
+  Reading 1:1 bookings works. Nothing in this repository CREATES one yet - the career-counselling write path is
+  not ported. So the `one_on_one` list is empty until that lands or historical rows are migrated in. An empty
+  list is not a fault. Build the card anyway; the shape is final.
+
+  Of the four `booking_type` values, only `career` can be newly booked. `office`, `resume` and `alumni` remain
+  legal to READ so historical rows keep resolving, so a reader must accept all four.
+
+  ### 9.2 `webinar-main-page` does not filter by enrolment
+
+  `show_webinar_as_per_enrollment` (CPA / CMA / CAIRA / USP) is NOT applied, so the `post_login` upcoming list is
+  wider than a finished implementation's would be. Applying it needs the caller's enrolment set, which this pass
+  does not read.
+
+  ### 9.6 No caching, no pagination on `webinar-main-page`
+
+  Every call hits Postgres, and the buckets are hard-capped rather than paginated. Expect that to change behind
+  the same response shape.
+url: "{{base_url}}/web-api/v1/events/webinar-main-page/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: login_type
+    value: ""
+    disabled: true
+examples: ./.resources/WEB GET events-webinar-main-page-v1.resources/examples
+order: 6000

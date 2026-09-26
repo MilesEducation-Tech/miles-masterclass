@@ -1,0 +1,18 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/account/universal/maintainance-status/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "detail": "You do not have permission to perform this action."
+      }
+order: 3000

@@ -1,0 +1,29 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/commerce/cart/lines/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "product_variant_id": "00000000-0000-0000-0000-000000000000",
+        "quantity": 0,
+        "token_amount_selected": false
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "invalid_query",
+        "errors": "<pydantic_error_list(exc)>"
+      }
+order: 2000

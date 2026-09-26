@@ -1,0 +1,29 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `TermsAndConditionsViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `terms-and-conditions-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** none  
+  **Permission:** AllowAny
+
+  Retrieve all terms-and-conditions entries in display order.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 7.3 `GET privacy-policy/` and `GET terms-and-conditions/`
+
+  JWT, enforced in the handler. Both return their items ordered by `order`. Only active items.
+
+  ---
+url: "{{base_url}}/api/v1/account/terms-and-conditions/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET terms-and-conditions-v1.resources/examples
+order: 13000

@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CityAutocompleteViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `account-city-autocomplete-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** none  
+  **Permission:** none
+
+  Suggest city names for what the learner has typed so far.
+url: "{{base_url}}/api/v1/account/city-autocomplete/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET account-city-autocomplete-v1.resources/examples
+order: 2000

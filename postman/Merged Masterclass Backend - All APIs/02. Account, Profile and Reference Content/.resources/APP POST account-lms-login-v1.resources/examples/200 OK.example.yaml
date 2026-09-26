@@ -1,0 +1,26 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/app-api/v1/account/lms-login/{{course}}/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "access_token": "",
+        "uid": ""
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "access_token": "<Account_LMS_User_Login.objects.filter(user_id=user.pk, lms_course=course_key).values_list('access_token', flat=True).afirst()>"
+      }
+order: 1000

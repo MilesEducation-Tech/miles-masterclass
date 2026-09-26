@@ -1,7 +1,8 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Utils } from '@shared/services/utils';
 import { Button } from '../../ui/button/button';
 import { logo } from '@core/constants/icon';
@@ -15,12 +16,12 @@ import { environment } from '@env/environment';
  */
 @Component({
   selector: 'app-ai-lab-dialog',
-  imports: [Button, NgIcon],
+  imports: [Button, DialogShell, NgIcon],
   templateUrl: './ai-lab-dialog.html',
   styleUrl: './ai-lab-dialog.css',
 })
 export class AiLabDialog {
-  dialogRef!: DialogRef<AiLabDialog, void>;
+  protected readonly dialogRef = injectDialogRef<void, void>();
 
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);

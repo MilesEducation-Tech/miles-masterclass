@@ -1,0 +1,18 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/account/profile/"
+  method: PATCH
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "<body>": "<sync_to_async(apply_submission, thread_sensitive=True)(request.user, form, payload)>"
+      }
+order: 1000

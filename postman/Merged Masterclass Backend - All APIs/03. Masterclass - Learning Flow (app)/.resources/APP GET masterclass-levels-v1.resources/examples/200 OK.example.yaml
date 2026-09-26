@@ -1,0 +1,20 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/levels/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "success",
+        "message": "Masterclass levels fetched successfully.",
+        "data": "<async_cache_get_or_set(COURSES_BY_LEVEL_CACHE_KEY, _build_levels_base, timeout=MC_CACHE_TTL, stale_seconds=60, lock_timeout=10, request=request)>"
+      }
+order: 1000

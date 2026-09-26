@@ -18,7 +18,7 @@ import { CourseInfo } from '../../dialogs/course-info/course-info';
 import { Utils } from '@shared/services/utils';
 import { Router } from '@angular/router';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Viewport } from '@core/services/viewport/viewport';
 
 /**
@@ -68,7 +68,7 @@ export class Slider {
   private readonly utils = inject(Utils);
   private readonly router = inject(Router);
   private readonly feature = inject(FeatureFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
   private readonly viewport = inject(Viewport);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
@@ -197,16 +197,8 @@ export class Slider {
   }
 
   openCourseInfoDialog(card: Content) {
-    const dialogRef = this.dialog.open(CourseInfo, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      disableClose: true,
-      ariaLabel: 'Confirmation dialog',
-      ariaDescribedBy: 'dialog-description',
-      data: card,
-    });
+    const dialogRef = this.dialogs.open(CourseInfo, { data: card });
 
-    dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 }

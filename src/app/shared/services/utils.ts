@@ -15,6 +15,7 @@ import { EMPTY, Observable } from 'rxjs';
 import { filter, tap } from 'rxjs/operators';
 import { DynamicRouteParams, ProfessionType, CountryCode } from '@core/models/route-params.model';
 import { PROFESSIONS } from '@core/constants/profession';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import { UtilsDialog, DialogButton } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { ShareDialog, ShareDialogData } from '@shared/dialogs/share-dialog/share-dialog';
@@ -115,6 +116,7 @@ export type CourseInfoInput = Content | ContentDetails;
 export class Utils {
   private readonly router = inject(Router);
   private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly http = inject(ApiClient);
   private readonly storage = inject(Storage);
   private readonly injector = inject(Injector);
@@ -536,12 +538,7 @@ export class Utils {
       courseTitle: content.title,
       badge,
     };
-    this.dialog.open<CertificateDownloadDialog, CertificateDialogData>(CertificateDownloadDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      data,
-    });
+    this.dialogs.open(CertificateDownloadDialog, { data });
   }
 
   /**
@@ -595,12 +592,7 @@ export class Utils {
   }
 
   openShareDialog(data?: ShareDialogData) {
-    this.dialog.open(ShareDialog, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      data: data || {},
-    });
+    this.dialogs.open(ShareDialog, { data: data || {} });
   }
 
   navigateToCourse(type: string, id: number, title: string, state?: Record<string, unknown>) {
@@ -657,25 +649,11 @@ export class Utils {
     if (webinar) {
       const { WebinarDetailsDialog } =
         await import('@shared/dialogs/webinar-details-dialog/webinar-details-dialog');
-      this.dialog.open(WebinarDetailsDialog, {
-        maxWidth: '100%',
-        enterAnimationDuration: '300ms',
-        exitAnimationDuration: '300ms',
-        data: { webinar },
-        environmentInjector,
-      });
+      this.dialogs.open(WebinarDetailsDialog, { data: { webinar }, injector: environmentInjector });
       return;
     }
     const { CourseInfo } = await import('@shared/dialogs/course-info/course-info');
-    this.dialog.open(CourseInfo, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      disableClose: true,
-      ariaLabel: 'Confirmation dialog',
-      ariaDescribedBy: 'dialog-description',
-      data: card,
-    });
+    this.dialogs.open(CourseInfo, { data: card });
   }
 
   openVideoDialog(trailerLink: string | null | undefined, title: string) {
@@ -686,11 +664,7 @@ export class Utils {
 
     const type = detectVideoMimeType(trailerLink);
 
-    this.dialog.open<VideoDialog, VideoDialogData>(VideoDialog, {
-      maxWidth: '100%',
-      panelClass: 'video-dialog-panel',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
+    this.dialogs.open<VideoDialogData>(VideoDialog, {
       data: {
         videoSource: {
           src: trailerLink,

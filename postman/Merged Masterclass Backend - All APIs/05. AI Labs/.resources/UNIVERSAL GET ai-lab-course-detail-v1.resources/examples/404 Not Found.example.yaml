@@ -1,0 +1,20 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/ai-labs/course/{{ai_lab_course_id}}/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "ai_lab_not_found",
+        "message": "<f\"ai_lab_course_id '{ai_lab_course_id}' does not match any active, non-test AI Lab.\">"
+      }
+order: 3000

@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `IndustryUnpluggedVideoViewV1`  
+  **Module:** `IndustryUnplugged.views`  
+  **Route name:** `industry-unplugged-video-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Return one Industry Unplugged video, including its long description.
+url: "{{base_url}}/api/v1/industry-unplugged/video/{{video_id}}/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET industry-unplugged-video-v1.resources/examples
+order: 2000

@@ -1,0 +1,29 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/ai-labs/course-release/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "ai_lab_course_id": "00000000-0000-0000-0000-000000000000",
+        "reason": "abandoned",
+        "external_ref": ""
+      }
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "enrollment_not_found",
+        "message": "<f\"The authenticated user holds no AI Lab enrollment for ai_lab_course_id '{payload.ai_lab_course_id}'.\">"
+      }
+order: 5000

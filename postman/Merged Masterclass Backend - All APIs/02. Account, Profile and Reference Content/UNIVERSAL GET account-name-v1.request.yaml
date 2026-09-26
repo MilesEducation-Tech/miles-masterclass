@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `UserNameViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `account-name-v1`  
+  **Methods on this view:** GET, POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Read or correct the name that goes on the caller's certificate.
+url: "{{base_url}}/api/v1/account/name/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET account-name-v1.resources/examples
+order: 6000

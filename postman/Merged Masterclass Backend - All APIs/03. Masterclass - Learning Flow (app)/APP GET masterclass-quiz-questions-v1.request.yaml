@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassChapterQuizQuestionsViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-quiz-questions-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  6.6 GET /caira/masterclass/quiz/<chapter_id>/questions/
+url: "{{base_url}}/api/v1/masterclass/quiz/{{chapter_id}}/questions/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/APP GET masterclass-quiz-questions-v1.resources/examples
+order: 22000

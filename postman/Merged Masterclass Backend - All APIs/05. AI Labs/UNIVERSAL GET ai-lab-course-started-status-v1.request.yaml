@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `AILabCourseStartedStatusViewV1`  
+  **Module:** `AILabs.views`  
+  **Route name:** `ai-lab-course-started-status-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Report whether the learner has started this AI Lab, plus lock state.
+url: "{{base_url}}/api/v1/ai-labs/course-started/{{ai_lab_course_id}}/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET ai-lab-course-started-status-v1.resources/examples
+order: 3000

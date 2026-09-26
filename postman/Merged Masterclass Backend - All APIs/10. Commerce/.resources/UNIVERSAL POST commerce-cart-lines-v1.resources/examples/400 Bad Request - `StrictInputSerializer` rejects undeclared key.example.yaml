@@ -1,0 +1,28 @@
+$kind: http-example
+name: 400 Bad Request - `StrictInputSerializer` rejects undeclared keys instead of dropping them silently
+request:
+  url: "{{base_url}}/api/v1/commerce/cart/lines/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "product_variant_id": "00000000-0000-0000-0000-000000000000",
+        "quantity": 0,
+        "token_amount_selected": false
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "<field you did not declare>": "Unrecognised field for this endpoint. Each endpoint declares its own fields; a field accepted elsewhere is not accepted here."
+      }
+order: 1000

@@ -1,0 +1,18 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/varun-masterclass/feed/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "<body>": "<async_cache_get_or_set(VARUN_FEED_CACHE_KEY, self._build_feed, _CACHE_TTL, request=request)>"
+      }
+order: 1000

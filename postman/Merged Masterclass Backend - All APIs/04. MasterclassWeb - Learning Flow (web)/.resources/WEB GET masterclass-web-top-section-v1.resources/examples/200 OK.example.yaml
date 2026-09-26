@@ -1,0 +1,30 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass-web/top-section/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: limit
+      value: ""
+      disabled: true
+    - key: offset
+      value: ""
+      disabled: true
+    - key: page
+      value: ""
+      disabled: true
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": true,
+        "total_count": 0,
+        "data": "<all_courses[offset:offset + limit]>"
+      }
+order: 1000

@@ -5,7 +5,8 @@ import { Observable, catchError, map, of } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroAcademicCap, heroCheckBadge, heroXMark } from '@ng-icons/heroicons/outline';
 import { Button } from '../../ui/button/button';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
@@ -76,7 +77,7 @@ type CertificateVariant = 'nasba' | 'miles';
 @Component({
   selector: 'app-certificate-download-dialog',
   standalone: true,
-  imports: [CommonModule, NgIcon, Button],
+  imports: [CommonModule, NgIcon, Button, DialogShell],
   templateUrl: './certificate-download-dialog.html',
   styleUrl: './certificate-download-dialog.css',
   viewProviders: [
@@ -90,8 +91,8 @@ type CertificateVariant = 'nasba' | 'miles';
   ],
 })
 export class CertificateDownloadDialog implements OnInit {
-  dialogRef!: DialogRef<CertificateDownloadDialog>;
-  data!: CertificateDialogData;
+  private readonly dialogRef = injectDialogRef<CertificateDialogData>();
+  protected readonly data = this.dialogRef.data;
 
   private readonly api = inject(ApiClient);
   private readonly logger = inject(Logger);

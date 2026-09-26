@@ -1,0 +1,23 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassComplimentaryCourseViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-complimentary-course-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** AllowAny
+
+  GET /masterclass/complimentary-course/?course_type=masterclass|podcast|reels
+
+  Query parameters (disabled by default): `course_type`
+url: "{{base_url}}/api/v1/masterclass/complimentary-course/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: course_type
+    value: ""
+    disabled: true
+examples: ./.resources/APP GET masterclass-complimentary-course-v1.resources/examples
+order: 9000

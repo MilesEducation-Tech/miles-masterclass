@@ -1,0 +1,39 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `QuestionsViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `account-questions-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Return one questionnaire's questions, ordered for rendering.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 4.2 `GET questions/` - what to render
+
+  Query: `?form=onboarding` (default) or `?form=profile`. An unrecognised value is a **400 naming the accepted
+  set**, never a silent fallback that would serve the wrong screen.
+
+  Response: `{"Questions": [...]}` - a **flat list** sorted by `display_order`, each question carrying its
+  `options`. `section` is a label you may group by; it does **not** affect ordering, and there are no screen
+  buckets. (Legacy keyed this by `Screen1` / `Screen2`. That is gone.)
+
+  A question whose `visibility` is `both` appears under **either** `form` value - that is why membership is one
+  column rather than two booleans.
+
+  **This route now requires authentication.** It did not before 2026-09-09: it declared an authentication class
+  but no permission class, which only *attempts* authentication, so it answered 200 to anyone. If you were
+  calling it pre-login, that no longer works.
+url: "{{base_url}}/api/v1/account/questions/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET account-questions-v1.resources/examples
+order: 11000

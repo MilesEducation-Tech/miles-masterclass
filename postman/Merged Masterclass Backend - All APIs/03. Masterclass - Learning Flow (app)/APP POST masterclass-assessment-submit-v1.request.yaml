@@ -1,0 +1,33 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassFinalAssessmentSubmitViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-assessment-submit-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  6.9 POST /caira/masterclass/<course_id>/assessment/submit/
+
+  Body template generated from `FinalAssessmentSubmitRequest`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/masterclass/{{course_id}}/assessment/submit/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "answers": [
+        {
+          "question_id": "00000000-0000-0000-0000-000000000000",
+          "selected_option_ids": [
+            "00000000-0000-0000-0000-000000000000"
+          ]
+        }
+      ]
+    }
+examples: ./.resources/APP POST masterclass-assessment-submit-v1.resources/examples
+order: 3000

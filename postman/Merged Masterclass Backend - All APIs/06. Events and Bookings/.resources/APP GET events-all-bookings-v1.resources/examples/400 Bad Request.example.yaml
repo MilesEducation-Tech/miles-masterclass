@@ -1,0 +1,24 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/app-api/v1/events/all-bookings/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: window
+      value: ""
+      disabled: true
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "code": "invalid_request",
+        "errors": "<pydantic_error_list(exc)>"
+      }
+order: 2000

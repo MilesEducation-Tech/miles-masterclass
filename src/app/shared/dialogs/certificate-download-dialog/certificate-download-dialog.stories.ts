@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular';
 import { CertificateDownloadDialog } from './certificate-download-dialog';
-import { MockDialogRef } from '@testing/mocks/dialog.mock';
+import { provideStoryDialogRef } from '@testing/mocks/dialog.mock';
 
 const meta: Meta<CertificateDownloadDialog> = {
   title: 'Dialog/CertificateDownload',
@@ -23,11 +23,10 @@ type Story = StoryObj<CertificateDownloadDialog>;
 // The badge section still renders from `data.badge.acceptUrl`.
 
 export const WithBadge: Story = {
-  render: () => ({
-    props: {
-      init(component: CertificateDownloadDialog) {
-        component.dialogRef = new MockDialogRef() as any;
-        component.data = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        provideStoryDialogRef({
           courseId: 190,
           courseType: 'masterclass',
           badge: {
@@ -36,34 +35,27 @@ export const WithBadge: Story = {
             image: 'https://example.com/badge.png',
             description: 'Earned by completing AI in Accounting 101.',
           },
-        };
-      },
-    },
-    template: `
-      <div style="width: 500px;">
-        <app-certificate-download-dialog #comp />
-        {{ init(comp) }}
-      </div>
-    `,
+        }),
+      ],
+    }),
+  ],
+  render: () => ({
+    template: `<div style="width: 500px;"><app-certificate-download-dialog /></div>`,
   }),
 };
 
 export const NoBadge: Story = {
-  render: () => ({
-    props: {
-      init(component: CertificateDownloadDialog) {
-        component.dialogRef = new MockDialogRef() as any;
-        component.data = {
+  decorators: [
+    moduleMetadata({
+      providers: [
+        provideStoryDialogRef({
           courseId: 190,
           courseType: 'masterclass',
-        };
-      },
-    },
-    template: `
-      <div style="width: 500px;">
-        <app-certificate-download-dialog #comp />
-        {{ init(comp) }}
-      </div>
-    `,
+        }),
+      ],
+    }),
+  ],
+  render: () => ({
+    template: `<div style="width: 500px;"><app-certificate-download-dialog /></div>`,
   }),
 };

@@ -1,0 +1,60 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `AuthIdentifyViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `auth-identify-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** none  
+  **Permission:** AllowAny
+
+  POST - how does this person authenticate?
+
+  Body template generated from `AuthIdentifyRequestSerializerV1`. Values are placeholders, not fixtures.
+
+  Some values are ENVIRONMENT VARIABLES rather than placeholders - set `login_identifier` once and the three sign-in requests all read it. `refresh_token` is written by a script; do not type it.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ### 2.1 `POST auth-identify/` - how does this person authenticate?
+
+  The first call of any login, always.
+
+  ```json
+  { "identifier": "learner@example.com" }
+  ```
+
+  `identifier` is an email, phone number or username - the SSO works out which. `appCode` is **not accepted from
+  the client**; it is added server-side, because it names which application is asking and a caller must not be
+  able to claim to be another one.
+
+  The response is the SSO's, and carries `methods`, `defaultMethod`, masked destinations and `communicationId`.
+
+  **Render `methods` rather than assuming a form.** When enterprise SSO ships, this same endpoint starts
+  answering `saml` with a redirect. A client that renders the list needs no change; one that hardcoded an OTP box
+  needs a rewrite.
+
+  **Do not build a "no such account" message from this response.** An identifier the SSO has never seen returns
+  the same `methods`, `defaultMethod` and masks as a known one - the masks are built from what was typed, not
+  from anything stored. There is no negative signal here to render, by design.
+
+  This route discloses account existence through `communicationId` (null for an unknown identifier), which is why
+  it is **first-party only** and the most tightly throttled of the five at 20/min. Do not expose it to an
+  untrusted origin.
+url: "{{base_url}}/api/v1/account/auth-identify/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "identifier": "{{login_identifier}}"
+    }
+examples: ./.resources/UNIVERSAL POST auth-identify-v1.resources/examples
+order: 1000

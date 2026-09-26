@@ -1,5 +1,6 @@
 import { Component, computed, signal } from '@angular/core';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { BadgeItem } from '@core/models/cpe-tracker.model';
 import { BadgeHeroCard } from '../../components/cards/badge-hero-card/badge-hero-card';
 import { Button } from '../../ui/button/button';
@@ -18,18 +19,14 @@ export interface BadgeInfoDialogResult {
 
 @Component({
   selector: 'app-badge-info-dialog',
-  imports: [BadgeHeroCard, Button],
+  imports: [BadgeHeroCard, Button, DialogShell],
   templateUrl: './badge-info-dialog.html',
   styleUrl: './badge-info-dialog.css',
 })
 export class BadgeInfoDialog {
-  dialogRef!: DialogRef<BadgeInfoDialog, BadgeInfoDialogResult>;
+  private readonly dialogRef = injectDialogRef<BadgeInfoDialogData, BadgeInfoDialogResult>();
 
-  private readonly _data = signal<BadgeInfoDialogData | null>(null);
-
-  set data(value: BadgeInfoDialogData) {
-    this._data.set(value);
-  }
+  private readonly _data = signal<BadgeInfoDialogData | null>(this.dialogRef.data ?? null);
 
   protected readonly badges = computed(() => this._data()?.badges ?? []);
 

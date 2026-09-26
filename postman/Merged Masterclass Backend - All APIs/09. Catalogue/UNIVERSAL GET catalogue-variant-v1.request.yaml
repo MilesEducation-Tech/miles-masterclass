@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CatalogueVariantViewV1`  
+  **Module:** `Catalogue.views`  
+  **Route name:** `catalogue-variant-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Return one variant with its content blocks, media and watch flags.
+url: "{{base_url}}/api/v1/catalogue/variant/{{variant_id}}/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET catalogue-variant-v1.resources/examples
+order: 9000

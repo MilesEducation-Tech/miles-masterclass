@@ -1,0 +1,28 @@
+$kind: http-request
+description: |-
+  **Surface:** WEBHOOK  
+  **View:** `MasterclassCertificateWebhookViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-certificate-webhook-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication, SessionAuthentication, BasicAuthentication  
+  **Permission:** AllowAny
+
+  Open webhook called by Masterclass with certificate events.
+
+  Body template generated from `MasterclassCertificateWebhookSerializer`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/masterclass/webhooks/certificate/{{id}}/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "event": "certificate.created",
+      "certificate": {},
+      "timestamp": ""
+    }
+examples: ./.resources/WEBHOOK POST masterclass-certificate-webhook-v1.resources/examples
+order: 27000

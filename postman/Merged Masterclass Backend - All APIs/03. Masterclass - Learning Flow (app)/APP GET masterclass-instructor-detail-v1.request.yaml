@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassInstructorDetailViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-instructor-detail-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  GET /caira/masterclass/instructor/<uuid:instructor_id>/
+url: "{{base_url}}/api/v1/masterclass/instructor/{{instructor_id}}/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/APP GET masterclass-instructor-detail-v1.resources/examples
+order: 17000

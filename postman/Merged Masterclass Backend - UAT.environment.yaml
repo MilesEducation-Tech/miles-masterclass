@@ -1,0 +1,54 @@
+name: Merged Masterclass Backend - UAT
+values:
+  - key: base_url
+    value: 'https://uat-api.milescaira.com'
+  - key: token
+    value: ''
+  - key: refresh_token
+    value: ''
+  - key: lms_notification_webhook_key
+    value: ''
+  - key: miles_one_webhook_secret
+    value: ''
+  - key: login_identifier
+    value: ''
+  - key: otp_code
+    value: ''
+  - key: auto_refresh
+    value: 'on'
+  - key: auto_capture
+    value: 'on'
+  - key: token_refresh_skew_seconds
+    value: '120'
+  - key: address_id
+    value: ''
+  - key: ai_lab_course_id
+    value: ''
+  - key: attempt_id
+    value: ''
+  - key: chapter_id
+    value: ''
+  - key: collection_id
+    value: ''
+  - key: course
+    value: ''
+  - key: course_id
+    value: ''
+  - key: id
+    value: ''
+  - key: instructor_id
+    value: ''
+  - key: item_id
+    value: ''
+  - key: line_id
+    value: ''
+  - key: order_id
+    value: ''
+  - key: product_id
+    value: ''
+  - key: subject_id
+    value: ''
+  - key: variant_id
+    value: ''
+  - key: video_id
+    value: ''

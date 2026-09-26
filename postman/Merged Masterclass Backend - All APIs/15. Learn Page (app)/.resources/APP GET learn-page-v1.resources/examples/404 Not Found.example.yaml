@@ -1,0 +1,27 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/app-api/v1/learn/page/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "message": "Learn page not found",
+        "status": "Failed",
+        "status_code": "<status.HTTP_404_NOT_FOUND>",
+        "lms_enrollment_details": [
+          "<lms_tokens>"
+        ],
+        "user_enrollment_details": [
+          "<self._user_enrolment_details(enrolled)>"
+        ],
+        "enrollment_data": []
+      }
+order: 3000

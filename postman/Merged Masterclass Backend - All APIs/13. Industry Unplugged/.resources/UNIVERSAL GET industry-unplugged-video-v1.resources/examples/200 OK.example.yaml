@@ -1,0 +1,19 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/industry-unplugged/video/{{video_id}}/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "video": "<shape_video(row, liked=overlay['liked'] or set(), watched=overlay['watched'] or set(), saved=overlay['saved'] or set())>"
+      }
+order: 1000

@@ -1,0 +1,19 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/app-api/v1/account/lms-logout/{{course}}/"
+  method: POST
+  headers:
+    Accept: application/json
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "message": "No LMS access found for this course.",
+        "status": "Failed"
+      }
+order: 3000

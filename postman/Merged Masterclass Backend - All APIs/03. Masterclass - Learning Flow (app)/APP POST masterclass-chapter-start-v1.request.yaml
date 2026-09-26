@@ -1,0 +1,19 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `MasterclassChapterStartViewV1`  
+  **Module:** `Masterclass.views`  
+  **Route name:** `masterclass-chapter-start-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  6.3 POST /caira/masterclass/chapter/<chapter_id>/start/
+
+  **No request body by design.** Marks the chapter started; the id is in the path.
+url: "{{base_url}}/api/v1/masterclass/chapter/{{chapter_id}}/start/"
+method: POST
+headers:
+  Accept: application/json
+examples: ./.resources/APP POST masterclass-chapter-start-v1.resources/examples
+order: 8000

@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** APP  
+  **View:** `LearnPageViewV1`  
+  **Module:** `LearnPage.views`  
+  **Route name:** `learn-page-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Return the Learn page: LMS tokens first, then every section with its cards.
+url: "{{base_url}}/app-api/v1/learn/page/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/APP GET learn-page-v1.resources/examples
+order: 1000

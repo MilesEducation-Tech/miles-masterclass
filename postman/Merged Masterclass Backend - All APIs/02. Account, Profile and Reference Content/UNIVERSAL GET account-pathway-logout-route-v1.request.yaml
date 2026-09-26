@@ -1,0 +1,80 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `PathwayLogoutRouteViewV1`  
+  **Module:** `Accounts.views`  
+  **Route name:** `account-pathway-logout-route-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Everything the app needs to decide where to send the caller after logout.
+
+  ---
+
+  > From `ACCOUNTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ## 3. `api/v1/account/user-details/` - post-logout routing
+
+  REWRITTEN 2026-09-24. This section used to document `UserDetailsViewV1` and its 28-field user row on
+  `api/v1/account/user_details/` (underscore), **with a PATCH writing 16 of them**. That endpoint and that
+  view were DELETED. The hyphen spelling is now the only one, it is served by
+  `PathwayLogoutRouteViewV1`, and **there is no PATCH on it** - a client still sending one gets 405.
+
+  To write profile fields, use `PATCH account/profile/` (4.4).
+
+  ### 3.1 `GET user-details/` - JWT
+
+  Answers, in one call, every independent question the app needs to pick a destination after login or
+  logout, so it does not make five round trips to decide one thing.
+
+  ```json
+  {
+    "first_name": "Sohan",
+    "full_name": "Sohan Biswas",
+    "is_onboarding_completed": true,
+    "is_profile_completed": true,
+    "Pathway": "Yes",
+    "Enrolled_status": "Yes",
+    "Enrolled_course": ["US CPA"],
+    "onboarding_fully_completed": true
+  }
+  ```
+
+  | Key | Meaning |
+  | --- | --- |
+  | `first_name` | Display name. Falls back to the first token of `full_name`. |
+  | `full_name` | Stored full name, whitespace-stripped. |
+  | `is_onboarding_completed` | The stored column. |
+  | `is_profile_completed` | The stored column. |
+  | `Pathway` | `"Yes"` / `"No"` - **a string, not a boolean**, and capitalised. Legacy's shape. |
+  | `Enrolled_status` | `"Yes"` / `"No"`, same caveat. |
+  | `Enrolled_course` | List of programme names. Empty list when not enrolled. |
+  | `onboarding_fully_completed` | DERIVED - every always-asked onboarding field is filled. Not the same as `is_onboarding_completed`, which is a stored flag. See 8.4. |
+
+  **`show_referral_code` MOVED TO `GET account/profile/` on 2026-09-24.** It is a property of the learner,
+  not of where to route them, and no routing decision read it. CLIENT VISIBLE.
+
+  **`career_counselling_booked`, `office_visit_booked` and `show_seven_day_challenge` were REMOVED** on the
+  same day. If you read any of the four, move or drop the read before deploying.
+
+  **A read failure degrades rather than fails.** If the enrolment lookup cannot be completed the endpoint
+  answers 200 with the conservative payload - `"Pathway": "No"`, `"Enrolled_status": "No"`,
+  `"Enrolled_course": []` - because a routing endpoint that 500s leaves the app with nowhere to send the
+  learner. Treat "No" as "we could not confirm", not as proof of absence.
+
+  ### 8.4 `profile_status` has three values, and two booleans say the same thing
+
+  `profile_status`, `is_onboarding_completed` and `is_profile_completed` all encode the same two milestones and
+  all three are returned. They are consistent; the booleans exist because they are cheaper to branch on. None is
+  writable.
+
+  ---
+url: "{{base_url}}/api/v1/account/user-details/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET account-pathway-logout-route-v1.resources/examples
+order: 16000

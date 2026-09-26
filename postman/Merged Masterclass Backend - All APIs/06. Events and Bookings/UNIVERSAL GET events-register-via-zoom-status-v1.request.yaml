@@ -1,0 +1,154 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `RegisterViaZoomStatusViewV1`  
+  **Module:** `EventsPage.views`  
+  **Route name:** `events-register-via-zoom-status-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  ``GET events/register-via-zoom-status-v1/<uuid:attempt_id>/``.
+
+  ---
+
+  > From `EVENTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ## 3. `GET api/v1/events/register-via-zoom-status/<uuid:attempt_id>/`
+
+  The polling half of the handshake. Authenticated. Shared web + app. Takes NO query parameters - any query
+  string at all is a 400.
+
+  Scoped to the calling user, so one user cannot read another's attempt. A foreign or unknown id is
+  `404 attempt_not_found` rather than 403, which avoids confirming the id exists.
+
+  ### 3.1 `200 OK`
+
+  ```json
+  {
+    "attempt_id": "9c2f1b70-8e4d-4a11-93cc-0d5a6f2e8b31",
+    "status": "SUCCESS",
+    "registration_status": "REGISTERED",
+    "zoom_attempts": 1,
+    "last_status_code": 201,
+    "error_message": null,
+    "error_code": null,
+    "mf_retry_count": 0,
+    "join_url": "https://us06web.zoom.us/w/8412...",
+    "registered_email": "learner@example.com",
+    "booking_id": "b41e77a2-1cf9-4c02-9c6e-3a8d5e0f1b22",
+    "completed_at": "2026-09-17T09:14:22.118Z"
+  }
+  ```
+
+  | Field | Type | Notes |
+  | --- | --- | --- |
+  | `attempt_id` | UUID string | Echo of the path parameter. |
+  | `status` | string | The TEN-state internal status. Diagnostic, for Ops and support. Do not branch on it. |
+  | `registration_status` | string | The THREE-state client contract. Branch on this. |
+  | `zoom_attempts` | integer | How many times the Zoom leg has been tried. |
+  | `last_status_code` | integer or null | Last HTTP status seen from the external leg. |
+  | `error_message` | string or null | Human-readable reason. Safe to surface. |
+  | `error_code` | string or null | Machine-readable reason. |
+  | `mf_retry_count` | integer | Salesforce/MF forward retries. |
+  | `join_url` | string or null | The learner's own Zoom join URL. Populated once Zoom has issued it. |
+  | `registered_email` | string or null | The address this attempt actually sent to Zoom. On a FAILED attempt this is the only record of it, because the pipeline reads the profile live and the learner may have edited it since. This is the attendance-matching key. |
+  | `booking_id` | UUID string or null | Set once the `Booking` row exists. |
+  | `completed_at` | ISO-8601 string or null | Set when the attempt reached a terminal state. |
+
+  ### 3.2 The three-state contract
+
+  `registration_status` is always one of:
+
+  | Value | Meaning | What the UI should do |
+  | --- | --- | --- |
+  | `PENDING` | Still working, or waiting on the Zoom host to approve the registrant. | Keep the spinner. Keep polling. |
+  | `REGISTERED` | The user IS registered on Zoom and holds a join URL. | Show the join affordance. Stop polling. |
+  | `REGISTER` | The pipeline stopped before a usable registration existed. | Show the retry CTA. Stop polling. |
+
+  The internal `status` collapses onto it like this:
+
+  | Internal `status` | `registration_status` |
+  | --- | --- |
+  | `SUCCESS` | `REGISTERED` |
+  | `MF_FAILED` | `REGISTERED` |
+  | `MF_PERMANENTLY_FAILED` | `REGISTERED` |
+  | `MF_SKIPPED` | `REGISTERED` |
+  | `ZOOM_FAILED` | `REGISTER` |
+  | `BOOKING_FAILED` | `REGISTER` |
+  | `INTERRUPTED` | `REGISTER` |
+  | `PENDING` | `PENDING` |
+  | `ZOOM_RETRYING` | `PENDING` |
+  | `ZOOM_PENDING_APPROVAL` | `PENDING` |
+
+  Two of these are worth understanding rather than just mapping:
+
+  - THE FOUR `MF_*` STATES ARE `REGISTERED`, not failures the user can act on. The Salesforce forward is an audit
+    hand-off downstream of the fact that Zoom accepted the registrant. Telling the user to register again would
+    be wrong AND would spend another Zoom registrant slot.
+  - `ZOOM_PENDING_APPROVAL` IS TERMINAL BUT MAPS TO `PENDING`. The Zoom host has to approve the registrant before
+    a join URL is issued, and there is no action the user can take. A retry CTA there would invite a duplicate
+    registration that Zoom answers with the same 409. The reason for the wait travels in `error_message` - show
+    it. Note that polling this one will never resolve on its own timescale; see 4.2.
+
+  An unrecognised internal status collapses to `PENDING`, which is the safe default: a spinner rather than an
+  invitation to register twice.
+
+  ### 3.3 Self-healing poll
+
+  If the worker handling an attempt died mid-pipeline (deploy, restart, crash), the row would otherwise sit
+  non-terminal forever and this endpoint would answer `PENDING` indefinitely - a spinner with nothing behind it.
+  Polling is exactly where that becomes observable, so it is where it is resolved: a stale attempt is reaped on
+  read and comes back as `INTERRUPTED` -> `REGISTER`, with
+
+  ```
+  error_code: "stuck"
+  error_message: "The registration worker stopped before finishing (deploy, restart or crash).
+                  No Zoom registration was completed - please try again."
+  ```
+
+  No cron has to have run for the client to get an actionable answer. Treat `REGISTER` as a genuine retry
+  affordance in this case - no Zoom registration was completed.
+
+  ### 3.4 Refusals
+
+  | HTTP | `code` | When |
+  | --- | --- | --- |
+  | 400 | `invalid_request` | Any query parameter at all was sent. |
+  | 404 | `attempt_not_found` | No such attempt for this user. |
+
+  ---
+
+  ## 4. Driving the pair
+
+  ### 4.1 The loop
+
+  1. `POST register-via-zoom/`.
+  2. `200` -> already registered, done. `202` -> take `attempt_id` and `status_url`.
+  3. Poll `status_url` until `registration_status` leaves `PENDING`.
+  4. `REGISTERED` -> show join, using `join_url`. `REGISTER` -> show retry, using `error_message`.
+
+  A sensible cadence is roughly every 2 seconds for the first 15 seconds, then back off. The happy path usually
+  resolves in a second or two; the pathological path is around 8 seconds of backoff.
+
+  ### 4.2 Bound the poll
+
+  `ZOOM_PENDING_APPROVAL` is terminal but reads as `PENDING`, so a loop with no ceiling will spin on it forever.
+  Cap the poll (30-45 seconds is comfortable), and on timeout fall back to reading `status` and `error_message`
+  from the last response rather than continuing. That is the one place the internal `status` is worth reading on
+  the client, and it is for display, not for branching.
+
+  ### 4.3 Do not re-POST to check state
+
+  A re-POST is safe - it will answer `200 already_registered` or `202` with the existing attempt - but it takes
+  the lock and writes a log line for nothing. Poll the status route.
+
+  ---
+url: "{{base_url}}/api/v1/events/register-via-zoom-status/{{attempt_id}}/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET events-register-via-zoom-status-v1.resources/examples
+order: 1000

@@ -1,0 +1,28 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/events/register-via-zoom/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "webinar_id": "00000000-0000-0000-0000-000000000000"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "already_registered",
+        "code": "already_registered",
+        "message": "You are already registered for this webinar.",
+        "booking_id": "<str(existing_booking_id)>"
+      }
+order: 1000

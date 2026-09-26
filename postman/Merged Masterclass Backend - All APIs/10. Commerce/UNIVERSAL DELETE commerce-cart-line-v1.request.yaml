@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CommerceCartLineViewV1`  
+  **Module:** `Commerce.views`  
+  **Route name:** `commerce-cart-line-v1`  
+  **Methods on this view:** PATCH, DELETE  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Change or remove one line of the learner's cart.
+url: "{{base_url}}/api/v1/commerce/cart/line/{{line_id}}/"
+method: DELETE
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL DELETE commerce-cart-line-v1.resources/examples
+order: 8000

@@ -1,0 +1,36 @@
+$kind: http-example
+name: 400 Bad Request (2) - Shared envelope from `utils/view_errors
+request:
+  url: "{{base_url}}/api/v1/catalogue/products/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: is_book
+      value: ""
+      disabled: true
+    - key: page
+      value: ""
+      disabled: true
+    - key: page_size
+      value: ""
+      disabled: true
+    - key: search
+      value: ""
+      disabled: true
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "invalid_query",
+        "errors": [
+          "<one entry per rejected query parameter>"
+        ]
+      }
+order: 3000

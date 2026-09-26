@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CommerceOrderViewV1`  
+  **Module:** `Commerce.views`  
+  **Route name:** `commerce-order-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Return one of the learner's orders, with lines and payment attempts.
+url: "{{base_url}}/api/v1/commerce/order/{{order_id}}/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET commerce-order-v1.resources/examples
+order: 10000

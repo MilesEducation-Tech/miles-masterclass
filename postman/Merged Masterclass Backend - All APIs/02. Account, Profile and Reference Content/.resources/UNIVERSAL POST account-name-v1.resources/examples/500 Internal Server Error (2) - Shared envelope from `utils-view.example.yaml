@@ -1,0 +1,28 @@
+$kind: http-example
+name: 500 Internal Server Error (2) - Shared envelope from `utils/view_errors
+request:
+  url: "{{base_url}}/api/v1/account/name/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "firstName": "",
+        "lastName": ""
+      }
+response:
+  statusCode: 500
+  statusText: Internal Server Error
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "message": "Could not update your name."
+      }
+order: 6000

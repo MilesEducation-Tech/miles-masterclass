@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { Subject } from 'rxjs';
 import { BadgeItem } from '@core/models/cpe-tracker.model';
-import { DialogRef } from '@core/services/dialog/dialog';
-import { BadgeClaimUpsellDialog, BadgeClaimUpsellDialogResult } from './badge-claim-upsell-dialog';
+import { NgpDialogRef } from 'ng-primitives/dialog';
+import { stubDialogShell } from '@testing/mocks/dialog-ref.mock';
+import { BadgeClaimUpsellDialog } from './badge-claim-upsell-dialog';
 
 function makeBadge(): BadgeItem {
   return {
@@ -24,17 +24,12 @@ function makeBadge(): BadgeItem {
 }
 
 function setupFixture() {
-  const fixture = TestBed.createComponent(BadgeClaimUpsellDialog);
-  const closes = new Subject<BadgeClaimUpsellDialogResult | undefined>();
   const close = vi.fn();
-  fixture.componentInstance.dialogRef = {
-    close: (result?: BadgeClaimUpsellDialogResult) => {
-      close(result);
-      closes.next(result);
-    },
-    afterClosed$: closes.asObservable(),
-  } as unknown as DialogRef<BadgeClaimUpsellDialog, BadgeClaimUpsellDialogResult>;
-  fixture.componentInstance.data = { badge: makeBadge() };
+  stubDialogShell(BadgeClaimUpsellDialog);
+  TestBed.configureTestingModule({
+    providers: [{ provide: NgpDialogRef, useValue: { close, data: { badge: makeBadge() } } }],
+  });
+  const fixture = TestBed.createComponent(BadgeClaimUpsellDialog);
   fixture.detectChanges();
   return { fixture, close };
 }

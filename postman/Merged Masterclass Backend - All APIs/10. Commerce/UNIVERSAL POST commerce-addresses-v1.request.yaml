@@ -1,0 +1,36 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CommerceAddressesViewV1`  
+  **Module:** `Commerce.views`  
+  **Route name:** `commerce-addresses-v1`  
+  **Methods on this view:** GET, POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  List the learner's addresses, or add one.
+
+  Body template generated from `AddressBodyV1`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/commerce/addresses/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "line1": "",
+      "city": "",
+      "state": "",
+      "postal_code": "",
+      "country": "",
+      "label": "",
+      "name": "",
+      "phone": "",
+      "line2": "",
+      "landmark": "",
+      "is_default": false
+    }
+examples: ./.resources/UNIVERSAL POST commerce-addresses-v1.resources/examples
+order: 5000

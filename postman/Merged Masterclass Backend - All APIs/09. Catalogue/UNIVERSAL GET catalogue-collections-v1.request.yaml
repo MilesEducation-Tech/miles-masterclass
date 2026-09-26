@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CatalogueCollectionsViewV1`  
+  **Module:** `Catalogue.views`  
+  **Route name:** `catalogue-collections-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Return every active collection with its variants.
+url: "{{base_url}}/api/v1/catalogue/collections/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET catalogue-collections-v1.resources/examples
+order: 2000

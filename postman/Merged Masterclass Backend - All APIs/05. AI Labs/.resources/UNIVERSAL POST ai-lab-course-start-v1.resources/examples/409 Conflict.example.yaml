@@ -1,0 +1,21 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/ai-labs/course-start/{{ai_lab_course_id}}/"
+  method: POST
+  headers:
+    Accept: application/json
+response:
+  statusCode: 409
+  statusText: Conflict
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "<lock_state['lock_reason']>",
+        "message": "<lock_state['lock_remark']>",
+        "blocking_course_ids": "<lock_state['blocking_course_ids']>"
+      }
+order: 6000

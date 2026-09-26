@@ -1,0 +1,28 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/events/register-via-zoom/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "webinar_id": "00000000-0000-0000-0000-000000000000"
+      }
+response:
+  statusCode: 409
+  statusText: Conflict
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "code": "registration_in_progress",
+        "detail": "A registration for this webinar is already being processed. Retry in a moment to get its status.",
+        "retry_after_seconds": "<REGISTER_LOCK_TTL_SECONDS>"
+      }
+order: 8000

@@ -1,0 +1,33 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/commerce/address/{{address_id}}/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "result": {
+          "id": "<str(row['id'])>",
+          "label": "<row['label']>",
+          "name": "<row['name']>",
+          "phone": "<row['phone']>",
+          "line1": "<row['line1']>",
+          "line2": "<row['line2']>",
+          "landmark": "<row['landmark']>",
+          "city": "<row['city']>",
+          "state": "<row['state']>",
+          "postal_code": "<row['postal_code']>",
+          "country": "<row['country']>",
+          "is_default": false,
+          "updated_at": "<row['updated_at']>"
+        }
+      }
+order: 1000

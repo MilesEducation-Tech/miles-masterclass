@@ -1,0 +1,69 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/notification/webhook/lms-notification/"
+  method: POST
+  headers:
+    Accept: application/json
+    X-API-KEY: "{{lms_notification_webhook_key}}"
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "int_notification_id": 0,
+        "mf_uuid": "",
+        "milesone_uuid": "",
+        "notification_id": 0,
+        "int_student_id": 0,
+        "int_post_id": 0,
+        "post_student_id": 0,
+        "int_subject_id": 0,
+        "int_topic_id": 0,
+        "int_subtopic_id": 0,
+        "notification_type": 0,
+        "uniq_type": "",
+        "int_status": 0,
+        "is_post_r_reply": false,
+        "is_post_closed": false,
+        "is_forum_admin": false,
+        "is_marked_all_as_read": false,
+        "date_created": "",
+        "updated_date": "",
+        "zoom_webinar_id": "",
+        "live_webinar_id": "",
+        "webinar_topic": "",
+        "live_topic": "",
+        "study_lounge_id": "",
+        "study_planner_id": "",
+        "int_slot_booked_id": 0,
+        "int_appointment_cat_id": 0,
+        "slot_date": "",
+        "slot_time": "",
+        "booking_date": "",
+        "helpdesk_id": 0,
+        "ticket_status": 0,
+        "helpdesk": "",
+        "int_thread_type_id": 0,
+        "txt_question_id": "",
+        "int_video_id": 0,
+        "notification_name": "",
+        "notification_title": "",
+        "notification_text": "",
+        "app_title": "",
+        "app_text": "",
+        "txt_name": "",
+        "profile_img": ""
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "Failed",
+        "errors": "<errors>"
+      }
+order: 3000

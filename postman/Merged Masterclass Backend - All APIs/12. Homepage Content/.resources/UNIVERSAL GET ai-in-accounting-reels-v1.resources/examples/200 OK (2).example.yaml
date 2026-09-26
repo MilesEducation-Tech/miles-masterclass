@@ -1,0 +1,27 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/homepage-content/ai-in-accounting-reels/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: page
+      value: ""
+      disabled: true
+    - key: page_size
+      value: ""
+      disabled: true
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "next": null,
+        "previous": null,
+        "<REELS_PAYLOAD_KEY>": []
+      }
+order: 2000

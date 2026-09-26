@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `HomepageViewV1`  
+  **Module:** `Homepage.views`  
+  **Route name:** `homepage-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  The homepage: an ordered list of blocks for the calling learner.
+url: "{{base_url}}/api/v1/homepage-content/homepage/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET homepage-v1.resources/examples
+order: 2000

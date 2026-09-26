@@ -1,0 +1,20 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/industry-unplugged/video/{{video_id}}/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "reason": "video_not_found",
+        "message": "<f\"No servable Industry Unplugged video with id '{video_id}'.\">"
+      }
+order: 3000

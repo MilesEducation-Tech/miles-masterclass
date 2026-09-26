@@ -1,0 +1,28 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `AILabCourseReleaseViewV1`  
+  **Module:** `AILabs.views`  
+  **Route name:** `ai-lab-course-release-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Release the learner's AI Lab enrollment, unlocking the child courses.
+
+  Body template generated from `AILabReleaseRequestV1`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/ai-labs/course-release/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "ai_lab_course_id": "00000000-0000-0000-0000-000000000000",
+      "reason": "abandoned",
+      "external_ref": ""
+    }
+examples: ./.resources/UNIVERSAL POST ai-lab-course-release-v1.resources/examples
+order: 1000

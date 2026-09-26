@@ -1,0 +1,29 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/account/name/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "firstName": "",
+        "lastName": ""
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "first_name": "<serializer.validated_data['firstName']>",
+        "last_name": "<serializer.validated_data['lastName']>",
+        "full_name": "<f'{first_name} {last_name}'>",
+        "status": "Success"
+      }
+order: 1000

@@ -1,5 +1,6 @@
 import { Service, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import {
   UtilsDialog,
@@ -30,6 +31,7 @@ export interface DialogResult<T = unknown> {
 @Service()
 export class TrackerDialogOrchestrator {
   private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
 
   /**
    * Per-row certificate dialog — the same one the masterclass / podcast /
@@ -48,15 +50,7 @@ export class TrackerDialogOrchestrator {
       badge: target.badge,
     };
 
-    return this.dialog.open<CertificateDownloadDialog, CertificateDialogData>(
-      CertificateDownloadDialog,
-      {
-        maxWidth: '100%',
-        enterAnimationDuration: '300ms',
-        exitAnimationDuration: '300ms',
-        data,
-      },
-    ).afterClosed$;
+    return this.dialogs.open(CertificateDownloadDialog, { data }).afterClosed;
   }
 
   openDownloadRestricted(message: string): Observable<DialogResult | undefined> {

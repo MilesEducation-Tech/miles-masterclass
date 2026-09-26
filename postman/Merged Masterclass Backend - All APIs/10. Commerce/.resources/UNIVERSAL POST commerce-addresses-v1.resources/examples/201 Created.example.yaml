@@ -1,0 +1,50 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/commerce/addresses/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "line1": "",
+        "city": "",
+        "state": "",
+        "postal_code": "",
+        "country": "",
+        "label": "",
+        "name": "",
+        "phone": "",
+        "line2": "",
+        "landmark": "",
+        "is_default": false
+      }
+response:
+  statusCode: 201
+  statusText: Created
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "result": {
+          "id": "<str(row['id'])>",
+          "label": "<row['label']>",
+          "name": "<row['name']>",
+          "phone": "<row['phone']>",
+          "line1": "<row['line1']>",
+          "line2": "<row['line2']>",
+          "landmark": "<row['landmark']>",
+          "city": "<row['city']>",
+          "state": "<row['state']>",
+          "postal_code": "<row['postal_code']>",
+          "country": "<row['country']>",
+          "is_default": false,
+          "updated_at": "<row['updated_at']>"
+        }
+      }
+order: 1000

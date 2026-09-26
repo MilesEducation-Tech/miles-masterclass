@@ -1,0 +1,12 @@
+# Use this workspace to collaborate
+workspace:
+  id: ""
+
+localResources:
+  collections:
+    - ../Merged_Masterclass_Backend_All_APIs.postman_collection.json
+    - ../Merged Masterclass Backend - All APIs
+  environments:
+    - ../Merged Masterclass Backend - LOCAL.environment.yaml
+    - ../Merged Masterclass Backend - PROD.environment.yaml
+    - ../Merged Masterclass Backend - UAT.environment.yaml

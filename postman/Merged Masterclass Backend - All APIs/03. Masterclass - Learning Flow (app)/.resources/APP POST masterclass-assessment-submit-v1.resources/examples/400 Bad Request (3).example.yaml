@@ -1,0 +1,33 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/{{course_id}}/assessment/submit/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "answers": [
+          {
+            "question_id": "00000000-0000-0000-0000-000000000000",
+            "selected_option_ids": [
+              "00000000-0000-0000-0000-000000000000"
+            ]
+          }
+        ]
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "error",
+        "message": "<f'Expected {config.questions_to_show} answers, got {len(schema.answers)}.'>"
+      }
+order: 6000

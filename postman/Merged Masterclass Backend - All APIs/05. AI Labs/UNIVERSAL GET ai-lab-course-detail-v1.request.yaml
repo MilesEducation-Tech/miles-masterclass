@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `AILabCourseDetailViewV1`  
+  **Module:** `AILabs.views`  
+  **Route name:** `ai-lab-course-detail-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  One AI Lab with full taxonomy, its child courses, and lock state.
+url: "{{base_url}}/api/v1/ai-labs/course/{{ai_lab_course_id}}/"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/UNIVERSAL GET ai-lab-course-detail-v1.resources/examples
+order: 4000

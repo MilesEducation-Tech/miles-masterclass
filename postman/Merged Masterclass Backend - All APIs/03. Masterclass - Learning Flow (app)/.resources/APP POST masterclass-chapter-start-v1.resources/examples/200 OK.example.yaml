@@ -1,0 +1,34 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/chapter/{{chapter_id}}/start/"
+  method: POST
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "reset_required": false,
+        "chapter_id": "<str(chapter.id)>",
+        "is_locked": false,
+        "enrollment": {
+          "started_at": "<enrollment.started_at>",
+          "expires_at": "<enrollment.expires_at>",
+          "days_remaining": "<max(0, (enrollment.expires_at - timezone.now()).days)>"
+        },
+        "user_chapter_progress": {
+          "is_video_completed": false,
+          "is_video_seekable": false,
+          "is_mcq_completed": false,
+          "is_chapter_completed": false,
+          "last_watched_position_seconds": "<progress.last_watched_position_seconds>",
+          "current_watched_duration_seconds": "<progress.current_watched_duration_seconds>",
+          "max_watched_duration_seconds": "<progress.max_watched_duration_seconds>"
+        }
+      }
+order: 1000

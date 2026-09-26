@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { of } from 'rxjs';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import { CertificateDownloadDialog } from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
 import { CertificateTarget } from '@features/tracker/cpe/models/cpe-credit.model';
@@ -11,9 +12,13 @@ describe('TrackerDialogOrchestrator', () => {
   let openSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    openSpy = vi.fn().mockReturnValue({ afterClosed$: of(undefined) });
+    openSpy = vi.fn().mockReturnValue({ afterClosed: of(undefined) });
     TestBed.configureTestingModule({
-      providers: [{ provide: Dialog, useValue: { open: openSpy } }],
+      providers: [
+        { provide: NgpDialogManager, useValue: { open: openSpy } },
+        // CpeComplianceDialog is still on the hand-rolled service until its batch.
+        { provide: Dialog, useValue: { open: vi.fn() } },
+      ],
     });
     service = TestBed.inject(TrackerDialogOrchestrator);
   });

@@ -1,0 +1,25 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/account/user-details/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "first_name": "<self._display_name(user)>",
+        "full_name": "<(user.full_name or '').strip()>",
+        "is_onboarding_completed": false,
+        "is_profile_completed": false,
+        "Pathway": "Yes",
+        "Enrolled_status": "Yes",
+        "Enrolled_course": "<enrolled_courses>",
+        "onboarding_fully_completed": false
+      }
+order: 3000

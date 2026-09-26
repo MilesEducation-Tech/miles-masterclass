@@ -1,0 +1,31 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/ai-labs/course-release/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "ai_lab_course_id": "00000000-0000-0000-0000-000000000000",
+        "reason": "abandoned",
+        "external_ref": ""
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "ai_lab_course_id": "<str(payload.ai_lab_course_id)>",
+        "enrollment_id": "<str(enrollment_id)>",
+        "already_released": "<already_released>",
+        "released_masterclass_course_ids": "<lock_state['child_course_ids']>"
+      }
+order: 1000

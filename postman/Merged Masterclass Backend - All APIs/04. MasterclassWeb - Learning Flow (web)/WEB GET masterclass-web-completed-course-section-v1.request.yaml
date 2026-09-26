@@ -1,0 +1,29 @@
+$kind: http-request
+description: |-
+  **Surface:** WEB  
+  **View:** `MasterclassWebCompletedCourseSectionViewV1`  
+  **Module:** `MasterclassWeb.views`  
+  **Route name:** `masterclass-web-completed-course-section-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  ``GET /masterclass-web/Completed_Masterclass_Course_Section/``
+
+  Query parameters (disabled by default): `limit`, `offset`, `page`
+url: "{{base_url}}/api/v1/masterclass-web/completed-course-section/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: limit
+    value: ""
+    disabled: true
+  - key: offset
+    value: ""
+    disabled: true
+  - key: page
+    value: ""
+    disabled: true
+examples: ./.resources/WEB GET masterclass-web-completed-course-section-v1.resources/examples
+order: 6000

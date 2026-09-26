@@ -1,0 +1,19 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/masterclass/{{course_id}}/feedback/questions/"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "course_id": "<str(course.id)>",
+        "questions": "<sync_to_async(lambda: serializer.data)()>"
+      }
+order: 1000

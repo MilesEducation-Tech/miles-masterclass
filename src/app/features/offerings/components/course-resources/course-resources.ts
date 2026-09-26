@@ -5,6 +5,7 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideVideo, lucideFileText, lucideDownload, lucideBot } from '@ng-icons/lucide';
 import { MasterclassFacade } from '../../services/masterclass-facade';
 import { VideoDialog, VideoDialogData } from '@shared/dialogs/video-dialog/video-dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import {
   HtmlContentDialog,
@@ -24,6 +25,7 @@ export class CourseResources {
 
   protected readonly masterclassFacade = inject(MasterclassFacade);
   private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
 
   private glossaryCache: string | null = null;
@@ -141,11 +143,7 @@ export class CourseResources {
       videoType = 'application/x-mpegURL';
     }
 
-    this.dialog.open<VideoDialog, VideoDialogData>(VideoDialog, {
-      maxWidth: '100%',
-      panelClass: 'video-dialog-panel',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
+    this.dialogs.open<VideoDialogData>(VideoDialog, {
       data: {
         videoSource: {
           src: courseDetails.navigation_link,

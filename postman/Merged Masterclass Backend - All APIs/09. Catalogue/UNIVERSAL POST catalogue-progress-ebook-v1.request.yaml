@@ -1,0 +1,27 @@
+$kind: http-request
+description: |-
+  **Surface:** UNIVERSAL  
+  **View:** `CatalogueEbookProgressViewV1`  
+  **Module:** `Catalogue.views`  
+  **Route name:** `catalogue-progress-ebook-v1`  
+  **Methods on this view:** POST  
+  **Authentication:** JWTAuthentication  
+  **Permission:** IsAuthenticated
+
+  Record that a learner finished a subject's ebooks.
+
+  Body template generated from `SubjectProgressBodyV1`. Values are placeholders, not fixtures.
+url: "{{base_url}}/api/v1/catalogue/progress/ebook/"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "lms_subject_id": 0,
+      "completed": false
+    }
+examples: ./.resources/UNIVERSAL POST catalogue-progress-ebook-v1.resources/examples
+order: 5000

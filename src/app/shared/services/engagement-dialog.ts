@@ -11,6 +11,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { EMPTY, Observable, filter, firstValueFrom, from, map, switchMap } from 'rxjs';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Dialog, DialogRef } from '@core/services/dialog/dialog';
 import { Storage } from '@core/services/storage/storage';
 import { CurrentPlanData } from '@core/models/payment.model';
@@ -91,6 +92,7 @@ const DISMISSAL_KEYS: Record<DialogKind, string> = {
 @Service()
 export class EngagementDialog {
   private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly feature = inject(FeatureFacade);
   private readonly storage = inject(Storage);
@@ -115,7 +117,7 @@ export class EngagementDialog {
    * navigation into a suppressed route can close it without touching dialogs
    * opened by anything else (`Dialog.closeAll()` would).
    */
-  private openRef: DialogRef<unknown, unknown> | null = null;
+  private openRef: { close(): unknown } | null = null;
 
   private started = false;
 
@@ -192,17 +194,8 @@ export class EngagementDialog {
       // mark dismissed at open-time like `profile`. Freely dismissible: the CTA
       // navigates, and every other exit is a no-op for this session.
       this.markDismissed('aiLab');
-      const ref = this.dialog.open<AiLabDialog, void>(AiLabDialog, {
-        maxWidth: '95vw',
-        ariaLabel: 'Miles AI Labs is here',
-        injector: this.injector,
-        // The container is `rounded-lg ... overflow-auto` with a `bg-dialog`
-        // fill, which squares off the card's 24px corners. `panelClass` is
-        // concatenated onto that string with no tailwind-merge, so these need
-        // `!` to beat the base utilities rather than lose on emission order.
-        panelClass: 'rounded-[24px]! overflow-hidden!',
-      });
-      return from(this.afterClosed(ref)).pipe(switchMap(() => EMPTY));
+      const ref = this.dialogs.open<void, void>(AiLabDialog, { injector: this.injector });
+      return from(this.afterClosed(ref, ref.afterClosed)).pipe(switchMap(() => EMPTY));
     }
 
     if (kind === 'profile') {
@@ -211,19 +204,12 @@ export class EngagementDialog {
       // `fetchMyProfile` (or a save that doesn't reflect immediately) from
       // re-triggering the dialog on the next 20s tick.
       this.markDismissed('profile');
-      const ref = this.dialog.open<ProfileCompletionDialog, ProfileCompletionDialogResult>(
-        ProfileCompletionDialog,
-        {
-          maxWidth: '95vw',
-          ariaLabel: 'Complete your profile',
-          injector: this.injector,
-          // Sector + job_role are not skippable — block Escape and backdrop
-          // clicks so the only way out is a successful Save (the dialog itself
-          // omits the close + skip buttons).
-          disableClose: true,
-        },
-      );
-      return from(this.afterClosed(ref)).pipe(
+      // Sector + job_role are not skippable: the dialog's shell is not dismissible, so
+      // the only way out is a successful Save (it also omits the close + skip buttons).
+      const ref = this.dialogs.open<void, ProfileCompletionDialogResult>(ProfileCompletionDialog, {
+        injector: this.injector,
+      });
+      return from(this.afterClosed(ref, ref.afterClosed)).pipe(
         switchMap((result) => {
           if (result?.saved) {
             this.feature.refreshPersonalized(offeringTypeFromUrl(this.router.url));
@@ -248,7 +234,7 @@ export class EngagementDialog {
     // unchanged — it still completes when the dialog closes.
     return from(
       this.subscriptionDialog().then((SubscriptionDialog) =>
-        this.afterClosed(
+        this.afterClosedOld(
           this.dialog.open<unknown, void>(SubscriptionDialog, {
             maxWidth: '95vw',
             ariaLabel: 'Subscribe to a plan',
@@ -277,17 +263,27 @@ export class EngagementDialog {
   }
 
   /**
-   * `DialogRef.afterClosed$` is a Subject that emits once and completes (see
-   * `Dialog.close()`). `firstValueFrom` resolves to the emitted value or to
-   * `undefined` if it completes without one — and tears down the underlying
-   * subscription either way.
+   * Resolves when the dialog closes, with its result. The closed stream emits once and
+   * completes; `firstValueFrom` resolves to the emitted value, or to `undefined` if it
+   * completes without one, and tears down the subscription either way.
+   *
+   * Takes the ref and its stream separately because dialogs are mid-migration from the
+   * hand-rolled service (`afterClosed$`) to ng-primitives (`afterClosed`).
    */
-  private afterClosed<R>(ref: DialogRef<unknown, R>): Promise<R | undefined> {
+  private afterClosed<R>(
+    ref: { close(): unknown },
+    closed$: Observable<R | undefined>,
+  ): Promise<R | undefined> {
     // Track it while it's up so a navigation into a suppressed route can close
     // it, and clear the handle once it's gone.
-    this.openRef = ref as DialogRef<unknown, unknown>;
-    return firstValueFrom(ref.afterClosed$, { defaultValue: undefined }).finally(() => {
+    this.openRef = ref;
+    return firstValueFrom(closed$, { defaultValue: undefined }).finally(() => {
       this.openRef = null;
     });
+  }
+
+  /** `SubscriptionDialog` is still on the hand-rolled service until its batch migrates. */
+  private afterClosedOld<R>(ref: DialogRef<unknown, R>): Promise<R | undefined> {
+    return this.afterClosed(ref, ref.afterClosed$);
   }
 }

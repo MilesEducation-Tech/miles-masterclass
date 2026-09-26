@@ -1,0 +1,30 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/engagement/like-status/"
+  method: POST
+  headers:
+    Accept: application/json
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "target_kind": "homepage_content_item",
+        "target_ids": [
+          "00000000-0000-0000-0000-000000000000"
+        ]
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "target_kind": "<query.target_kind>",
+        "targets": "<{str(target): {'like_count': counts.get(str(target), 0), 'liked_by_me': str(target) in liked} for target in query.target_ids}>"
+      }
+order: 1000

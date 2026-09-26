@@ -1,0 +1,37 @@
+$kind: http-example
+request:
+  url: "{{base_url}}/api/v1/ai-labs/courses/"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    - key: level
+      value: ""
+      disabled: true
+    - key: page
+      value: ""
+      disabled: true
+    - key: page_size
+      value: ""
+      disabled: true
+    - key: search
+      value: ""
+      disabled: true
+    - key: track
+      value: ""
+      disabled: true
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "count": "<cached['count']>",
+        "page": "<page>",
+        "page_size": "<page_size>",
+        "results": "<[dict(row) for row in cached['results']]>"
+      }
+order: 1000

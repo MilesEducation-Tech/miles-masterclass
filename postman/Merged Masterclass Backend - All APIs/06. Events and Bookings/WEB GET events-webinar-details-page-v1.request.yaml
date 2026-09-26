@@ -1,0 +1,148 @@
+$kind: http-request
+description: |-
+  **Surface:** WEB  
+  **View:** `WebinarDetailsPageViewV1`  
+  **Module:** `EventsPage.views`  
+  **Route name:** `events-webinar-details-page-v1`  
+  **Methods on this view:** GET  
+  **Authentication:** JWTAuthentication  
+  **Permission:** AllowAny
+
+  ``GET web-api/v1/events/webinar-details-page/?webinar_id=<uuid>``
+
+  Query parameters (disabled by default): `webinar_id`
+
+  ---
+
+  > From `EVENTS_API_CONTRACT_V1.md` - the contract the frontend web team works to.
+
+
+
+  ## 7. `GET web-api/v1/events/webinar-details-page/`
+
+  One webinar, in full - the page behind a card on `webinar-main-page`. **The surface follows your request**:
+  authenticated gets post-login, anonymous gets pre-login. There is no `login_type` parameter.
+
+  ### 7.1 Query parameters
+
+  | Param | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `webinar_id` | uuid | yes | the `id` a main-page card carries |
+
+  There is deliberately no `login_type`, and sending one is a 400 (`extra_forbidden`) like any undeclared
+  parameter. `webinar-main-page` takes it because a signed-in visitor may legitimately want to preview the
+  signed-out page, so there the surface is a real choice. Here your token already answers it, and a parameter
+  that could contradict the token would be a second source of truth for one fact.
+
+  The id is the UUID, never `webinar_id_as_per_mf_sf` - that integer is unique only when paired with
+  `webinar_type`, and nothing in this backend hands it to a client.
+
+  ### 7.2 Response
+
+  ```json
+  {
+    "message": "Webinar details retrieved successfully.",
+    "data": { "login_type": "post_login", "webinar": { } }
+  }
+  ```
+
+  The webinar object carries `subject_details` and `level_details.level_id` exactly as the card does - they are
+  produced by the same function, so the two screens cannot disagree.
+
+  `login_type` is echoed and is `pre_login` or `post_login`. It is more useful here than on the feed: there you
+  chose it, here it was DERIVED, so the echo is how you confirm which surface you got - and therefore whether
+  `registration` is present - without inspecting your own token.
+
+  ### 7.3 The webinar object
+
+  **It is exactly the card object from section 8, plus four keys.** Render this page from the card type you
+  already have; the extras are additive. The shared keys are produced by the same function that shapes the
+  feed, so they cannot drift.
+
+  | Key | Type | Notes |
+  | --- | --- | --- |
+  | `description` | string \| null | The long-form page body; `short_description` is the one-liner. |
+  | `trailer_url` | string \| null | |
+  | `trailer_thumbnail_url` | string \| null | |
+  | `product` | object \| null | See below. Null as a whole when the webinar is tagged to no product. |
+
+  `product`:
+
+  | Key | Type |
+  | --- | --- |
+  | `id` | UUID string |
+  | `name` | string |
+  | `mini_description` | string \| null |
+  | `description` | string \| null |
+  | `horizontal_image` | string (url, `""` when unset) |
+  | `vertical_image` | string (url, `""` when unset) |
+  | `square_image` | string (url, `""` when unset) |
+
+  `registration` (section 8.1) is present **only on an authenticated request**, exactly as on the feed. An
+  anonymous caller has no registration to report, so the key is absent rather than null.
+
+  `eligible` (section 8.2) is deliberately NOT emitted. It is a property of a BOOKING, the feed attaches it
+  only on `completed_webinar`, and computing it here would be a second definition of eligibility.
+
+  ### 7.4 `product` and `subject` are two different columns and may disagree
+
+  Both name a row of `Masterclass.Subject`, reached by two different paths, and this endpoint reports both
+  rather than picking a winner:
+
+  - **`subject`** (a string, on the card) is the subject reached THROUGH `caira_masterclass_level`. The feed has
+    emitted it since 2026-09-09 and it is untouched, so the two screens agree.
+  - **`product`** (an object, detail page only) is `Webinar.subject`, the direct FK, whose help text calls it
+    "the Miles product this webinar is sold under" and says it SUPERSEDES the `caira_check` /
+    `non_caira_check` pair.
+
+  They are independent columns, so a webinar tagged to a level of one subject and sold under another reports
+  both, honestly, under two names. **Which one wins is an open maintainer decision** - see section 9.8. Until
+  it is taken, prefer `product` where you need the commercial programme and `subject` where you need to match
+  what the feed showed.
+
+  ### 7.5 Refusals
+
+  | Status | When |
+  | --- | --- |
+  | `400` | `webinar_id` missing, not a uuid, or any undeclared parameter |
+  | `403` | a bad or expired token. A request with NO token is served the pre-login surface, not refused |
+  | `404` | no webinar with that id is visible on this surface |
+
+  **The 404 is deliberately ambiguous.** "No such id" and "an id you may not see" are the same answer, so the
+  endpoint cannot be used to discover which ids exist. Visibility is the feed's own filter - soft-deleted,
+  cancelled, wrong login state and test webinars are all excluded before the id is matched, so a row the feed
+  hides cannot be opened by guessing.
+
+  ---
+
+  ### 9.3 `details.booking_url` is the response key; the column is named something else
+
+  The column was renamed to `zoom_booking_url` on 2026-09-15 and moved to the `Booking` table. THE RESPONSE KEY
+  IS UNCHANGED AND WILL STAY `booking_url` in v1 - renaming it is a client-visible break and belongs in a
+  versioned change, not in a column rename. If you see `zoom_booking_url` in a schema document or a backend
+  discussion, it is the same value.
+
+  The same applies to `details.calendar_id`, whose column is now `google_calender_id`.
+
+  ### 9.8 `product` and `subject` can disagree, and neither has been declared the winner
+
+  Described in full in section 7.4. `Webinar.subject` (emitted as `product`) and
+  `caira_masterclass_level.subject` (emitted as `subject`) are independent columns pointing at the same table.
+  The model's help text says the direct FK supersedes the `caira_check` / `non_caira_check` pair, which implies
+  it is the authoritative one - but the feed has emitted the level's subject since 2026-09-09 and changing that
+  is a breaking change for a shipped contract.
+
+  Both are therefore emitted, under two names, on the detail page only. Collapsing them into one key is a
+  maintainer decision that has not been taken.
+
+  ---
+url: "{{base_url}}/web-api/v1/events/webinar-details-page/"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  - key: webinar_id
+    value: ""
+    disabled: true
+examples: ./.resources/WEB GET events-webinar-details-page-v1.resources/examples
+order: 5000
