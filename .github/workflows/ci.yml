@@ -30,7 +30,7 @@ jobs:
       # `packageManager` from package.json instead of drifting from it.
       - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           # Matches `engines.node` (22.x), which exists because Angular CLI 22
           # aborts below ^24.15.0 on the 24.x line and Vercel's 24 image is 24.14.1.
