@@ -24,7 +24,6 @@ import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-d
   selector: 'app-masterclass-chapter',
   imports: [VideoChapter, Backward],
   templateUrl: './masterclass-chapter.html',
-  styleUrl: './masterclass-chapter.css',
 })
 export class MasterclassChapter {
   courseId = input<string>();

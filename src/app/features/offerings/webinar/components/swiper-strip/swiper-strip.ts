@@ -53,7 +53,6 @@ import { ensureSwiperElement } from '@shared/utils/swiper/ensure-swiper-element'
   selector: 'app-swiper-strip',
   imports: [NgTemplateOutlet],
   templateUrl: './swiper-strip.html',
-  styleUrl: './swiper-strip.css',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   host: { class: 'block w-full' },
   changeDetection: ChangeDetectionStrategy.OnPush,

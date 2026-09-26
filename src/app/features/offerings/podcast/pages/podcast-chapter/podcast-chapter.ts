@@ -12,7 +12,6 @@ import { exitChapterToCourse } from '@shared/utils/exit-chapter';
   selector: 'app-podcast-chapter',
   imports: [VideoChapter, AudioChapter, Backward],
   templateUrl: './podcast-chapter.html',
-  styleUrl: './podcast-chapter.css',
 })
 export class PodcastChapter {
   courseId = input<string>();

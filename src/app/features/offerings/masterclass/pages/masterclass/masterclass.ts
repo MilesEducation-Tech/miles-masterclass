@@ -30,7 +30,6 @@ import { SectionNav, SectionNavItem } from '@shared/components/section-nav/secti
     SectionNav,
   ],
   templateUrl: './masterclass.html',
-  styleUrl: './masterclass.css',
 })
 export class Masterclass {
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

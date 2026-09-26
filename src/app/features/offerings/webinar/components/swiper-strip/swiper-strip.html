@@ -14,8 +14,17 @@
     [direction]="config()?.direction ?? 'horizontal'"
     [rewind]="config()?.rewind ?? false"
   >
+    <!--
+      Equal-height slides. Swiper's shadow CSS puts `height: 100%` on the slot,
+      which resolves against the rail's own `auto` height and so collapses to
+      `auto` — every card ends up as tall as its own copy, and a row of them
+      steps up and down. Making the slide a flex container with `height: auto`
+      lets the wrapper's default `align-items: stretch` take over: each slide
+      gets the tallest card's height and the card fills it. Document styles beat
+      the shadow root's `::slotted` rules, so these utilities win.
+    -->
     @for (item of cards; track $index) {
-      <swiper-slide>
+      <swiper-slide class="flex h-auto *:flex-auto">
         @if (tpl) {
           <ng-container *ngTemplateOutlet="tpl; context: { $implicit: item, $index }" />
         }

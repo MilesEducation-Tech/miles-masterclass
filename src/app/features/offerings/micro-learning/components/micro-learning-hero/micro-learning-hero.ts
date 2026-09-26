@@ -7,7 +7,7 @@ import { HERO_FALLBACK_FEED, HeroReelItem } from '@core/models/hero-reel-item.mo
   selector: 'app-micro-learning-hero',
   imports: [Button, MicroLearningHeroPhoneMockup],
   templateUrl: './micro-learning-hero.html',
-  styleUrl: './micro-learning-hero.css',
+  host: { class: 'block' },
 })
 export class MicroLearningHero {
   readonly startWatching = output<void>();

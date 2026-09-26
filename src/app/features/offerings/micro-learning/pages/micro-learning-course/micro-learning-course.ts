@@ -37,7 +37,7 @@ import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
   selector: 'app-micro-learning-course',
   imports: [MicroLearningTopBar, MicroLearningReelCard, MicroLearningReelNav],
   templateUrl: './micro-learning-course.html',
-  styleUrl: './micro-learning-course.css',
+  host: { class: 'block h-screen overflow-hidden' },
 })
 export class MicroLearningCourse {
   readonly facade = inject(MicroLearningCourseFacade);

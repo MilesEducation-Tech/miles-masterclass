@@ -33,7 +33,6 @@ import { PageLoading } from '@shared/ui/page-loading/page-loading';
     NgpCollapsibleTrigger,
   ],
   templateUrl: './final-assessment-report.html',
-  styleUrl: './final-assessment-report.css',
   viewProviders: [
     provideIcons({
       heroChevronRight,

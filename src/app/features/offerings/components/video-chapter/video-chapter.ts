@@ -34,7 +34,6 @@ import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-con
   selector: 'app-video-chapter',
   imports: [VideoJs, ChapterSkeleton, ChapterQuiz, NgIcon],
   templateUrl: './video-chapter.html',
-  styleUrl: './video-chapter.css',
   providers: [provideIcons({ faClipboard })],
   host: {
     class: 'flex w-full h-full max-md:overflow-auto flex-col md:overflow-hidden',

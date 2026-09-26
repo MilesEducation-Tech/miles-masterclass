@@ -13,7 +13,7 @@ export interface HtmlContentDialogData {
   selector: 'app-html-content-dialog',
   imports: [Button, DialogShell],
   templateUrl: './html-content-dialog.html',
-  styleUrl: './html-content-dialog.css',
+  host: { class: 'block' },
 })
 export class HtmlContentDialog {
   private readonly dialogRef = injectDialogRef<HtmlContentDialogData>();

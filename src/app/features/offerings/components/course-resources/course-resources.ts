@@ -15,7 +15,6 @@ import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-con
   standalone: true,
   imports: [CommonModule, NgIcon],
   templateUrl: './course-resources.html',
-  styleUrl: './course-resources.css',
   providers: [provideIcons({ lucideVideo, lucideFileText, lucideDownload, lucideBot })],
 })
 export class CourseResources {

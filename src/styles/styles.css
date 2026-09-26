@@ -55,6 +55,21 @@
   --mm-plan-3: #34495f;
   --mm-plan-4: #507192;
   --mm-plan-5: #6297e3;
+  /* Course-player and assessment palette, each hex repeated across 2+
+     offerings components.
+       player-panel — the chapter player frame and chapter-list rows
+       player-thumb — the chapter thumbnail placeholder
+       quiz-line / quiz-line-hover — assessment borders and the neutral button
+       quiz-selected — the selected answer option
+       quiz-panel / quiz-panel-hover — the report and feedback panels and their
+         row hover (1 unit off player-panel; kept exact) */
+  --mm-player-panel: #161e25;
+  --mm-player-thumb: #4a5560;
+  --mm-quiz-line: #3e4552;
+  --mm-quiz-line-hover: #4b5563;
+  --mm-quiz-selected: #2c3442;
+  --mm-quiz-panel: #161e26;
+  --mm-quiz-panel-hover: #1c2530;
   --mm-outline: #32353b;
   /* Status green. Lived only in `.admin-theme` until the AI Lab course page
      needed it on the public site (step ticks, CPE-recording pill, completed
@@ -219,6 +234,13 @@
   --color-plan-3: var(--mm-plan-3);
   --color-plan-4: var(--mm-plan-4);
   --color-plan-5: var(--mm-plan-5);
+  --color-player-panel: var(--mm-player-panel);
+  --color-player-thumb: var(--mm-player-thumb);
+  --color-quiz-line: var(--mm-quiz-line);
+  --color-quiz-line-hover: var(--mm-quiz-line-hover);
+  --color-quiz-selected: var(--mm-quiz-selected);
+  --color-quiz-panel: var(--mm-quiz-panel);
+  --color-quiz-panel-hover: var(--mm-quiz-panel-hover);
   /* Admin palette. Defined only under `.admin-theme` (see above), so these
      utilities resolve to nothing on the public site — the same as the
      `var(--mm-*)` inline styles they replace in the admin rows. */

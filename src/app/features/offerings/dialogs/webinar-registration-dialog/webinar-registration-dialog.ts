@@ -34,7 +34,7 @@ export interface WebinarRegistrationDialogData {
   selector: 'app-webinar-registration-dialog',
   imports: [Button, WebinarRegistrationForm, DialogShell],
   templateUrl: './webinar-registration-dialog.html',
-  styleUrl: './webinar-registration-dialog.css',
+  host: { class: 'block' },
 })
 export class WebinarRegistrationDialog {
   private readonly dialogRef = injectDialogRef<

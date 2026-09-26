@@ -18,7 +18,7 @@ import { Button } from '@shared/ui/button/button';
   selector: 'app-chapter-quiz',
   imports: [CommonModule, FormsModule, ReactiveFormsModule, NgOptimizedImage, Button],
   templateUrl: './chapter-quiz.html',
-  styleUrl: './chapter-quiz.css',
+  host: { class: 'block h-full w-full' },
 })
 export class ChapterQuiz {
   readonly questions = input.required<QuizQuestion[]>();

@@ -11,7 +11,7 @@ import { ContentAbout } from '@core/models/course.model';
   selector: 'app-micro-learning-about-panel',
   imports: [NgIcon, Button, CourseAbout, DialogShell],
   templateUrl: './micro-learning-about-panel.html',
-  styleUrl: './micro-learning-about-panel.css',
+  host: { class: 'block h-full' },
   viewProviders: [provideIcons({ matInfoRound })],
 })
 export class MicroLearningAboutPanel {

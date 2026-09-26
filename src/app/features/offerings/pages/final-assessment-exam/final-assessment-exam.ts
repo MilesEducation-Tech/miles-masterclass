@@ -39,7 +39,6 @@ import {
   selector: 'app-final-assessment-exam',
   imports: [Backward, NgIconComponent, Button, PageLoading],
   templateUrl: './final-assessment-exam.html',
-  styleUrl: './final-assessment-exam.css',
   viewProviders: [provideIcons({ heroCheckCircle, heroXCircle, heroArrowRight, heroArrowPath })],
   host: {
     '(window:beforeunload)': 'onBeforeUnload($event)',

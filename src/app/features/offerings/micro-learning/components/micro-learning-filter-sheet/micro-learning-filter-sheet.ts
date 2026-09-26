@@ -19,7 +19,7 @@ const DEFAULT_VISIBLE_COUNT = 5;
   selector: 'app-micro-learning-filter-sheet',
   imports: [Button, DialogShell],
   templateUrl: './micro-learning-filter-sheet.html',
-  styleUrl: './micro-learning-filter-sheet.css',
+  host: { class: 'block' },
 })
 export class MicroLearningFilterSheet implements OnInit {
   private readonly dialogRef = injectDialogRef<

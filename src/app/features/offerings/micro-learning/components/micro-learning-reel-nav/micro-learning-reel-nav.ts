@@ -28,11 +28,7 @@ import { Button } from '@shared/ui/button/button';
       </app-button>
     </div>
   `,
-  styles: `
-    :host {
-      display: block;
-    }
-  `,
+  host: { class: 'block' },
   viewProviders: [provideIcons({ matKeyboardArrowUpRound, matKeyboardArrowDownRound })],
 })
 export class MicroLearningReelNav {

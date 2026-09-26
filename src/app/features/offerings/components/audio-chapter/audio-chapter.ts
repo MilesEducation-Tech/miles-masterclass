@@ -30,7 +30,6 @@ import { faClipboard } from '@ng-icons/font-awesome/regular';
   selector: 'app-audio-chapter',
   imports: [AudioJs, ChapterSkeleton, ChapterQuiz, NgIcon, RecordDisk],
   templateUrl: './audio-chapter.html',
-  styleUrl: './audio-chapter.css',
   providers: [provideIcons({ faClipboard })],
   host: {
     class: 'block w-full h-full',

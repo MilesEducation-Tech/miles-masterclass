@@ -13,7 +13,6 @@ import { PartnerContentList } from '@shared/components/partner-content-list/part
   selector: 'app-podcast',
   imports: [Carousel, Square, ComingSoon, PodcastHero, Faq, PartnerContentList],
   templateUrl: './podcast.html',
-  styleUrl: './podcast.css',
   host: {
     class: '',
   },

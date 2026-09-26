@@ -21,7 +21,6 @@ export interface SelectCpeModeResult {
   selector: 'app-select-cpe-mode',
   imports: [Button, DialogShell, NgpRadioGroup, NgpRadioIndicator, NgpRadioItem],
   templateUrl: './select-cpe-mode.html',
-  styleUrl: './select-cpe-mode.css',
   host: {
     class: 'block',
   },

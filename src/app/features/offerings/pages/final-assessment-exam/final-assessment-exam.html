@@ -56,10 +56,10 @@
             @if (getOptionText(currentQuestion(), option)) {
               <button
                 class="flex items-start gap-4 p-3 rounded-lg border text-left transition-all"
-                [class.border-[#3E4552]]="selectedOption() !== option"
+                [class.border-quiz-line]="selectedOption() !== option"
                 [class.bg-transparent]="selectedOption() !== option"
                 [class.border-blue-500]="selectedOption() === option"
-                [class.bg-[#2C3442]]="selectedOption() === option"
+                [class.bg-quiz-selected]="selectedOption() === option"
                 [disabled]="isSubmitted()"
                 (click)="selectOption(option)"
               >
@@ -87,10 +87,10 @@
         </div>
 
         <!-- Footer Actions -->
-        <div class="mt-auto flex justify-between items-center pt-6 border-t border-[#3E4552]">
+        <div class="mt-auto flex justify-between items-center pt-6 border-t border-quiz-line">
           <app-button
             variant="default"
-            class="bg-[#3E4552] hover:bg-[#4B5563]"
+            class="bg-quiz-line hover:bg-quiz-line-hover"
             [disabled]="currentQuestionIndex() === 0"
             (clicked)="prevQuestion()"
           >
@@ -102,7 +102,7 @@
             @if (!selectedOption() && !isLastQuestion()) {
               <app-button
                 variant="outline"
-                class="border-[#3E4552] text-white hover:bg-[#3E4552]"
+                class="border-quiz-line text-white hover:bg-quiz-line"
                 (clicked)="skipQuestion()"
               >
                 SKIP

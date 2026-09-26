@@ -24,7 +24,6 @@ import { MasterclassCourseHero } from '../../components/masterclass-course-hero/
     CourseResources,
   ],
   templateUrl: './masterclass-course.html',
-  styleUrl: './masterclass-course.css',
 })
 export class MasterclassCourse {
   readonly courseId = input<string>();
