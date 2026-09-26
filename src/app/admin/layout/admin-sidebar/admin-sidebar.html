@@ -62,13 +62,19 @@
     }
   </nav>
 
-  <!-- Account card -->
-  <div class="m-4 relative">
-    <app-button
-      variant="ghost"
-      class="h-auto w-full justify-start gap-[10px] p-3 rounded-[10px] text-left bg-(--mm-surface-2) hover:opacity-90"
-      [attr.aria-expanded]="userMenuOpen()"
-      (clicked)="toggleUserMenu()"
+  <!-- Account card. The menu is an ngpMenu: role="menu", arrow keys, Escape, outside-click
+       and focus return come from the primitive. It is attached INSIDE this card rather than
+       portalled to <body>, because its colours are `.admin-theme` variables that only exist
+       inside the admin layout. The trigger is a native <button> (was <app-button>, whose
+       host is not the focusable element) with app-button's resolved ghost classes. -->
+  <div #accountCard class="m-4 relative">
+    <button
+      type="button"
+      [ngpMenuTrigger]="userMenu"
+      ngpMenuTriggerPlacement="top-start"
+      [ngpMenuTriggerOffset]="8"
+      [ngpMenuTriggerContainer]="accountCard"
+      class="inline-flex items-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer h-auto w-full justify-start gap-[10px] p-3 rounded-[10px] text-left bg-(--mm-surface-2) hover:opacity-90"
     >
       <span
         class="w-9 h-9 rounded-full inline-flex items-center justify-center font-bold text-[13px] text-white shrink-0"
@@ -93,19 +99,12 @@
           aria-hidden="true"
         />
       }
-    </app-button>
+    </button>
 
-    @if (userMenuOpen()) {
-      <button
-        type="button"
-        class="fixed inset-0 z-40 cursor-default"
-        (click)="closeUserMenu()"
-        aria-label="Close menu"
-      ></button>
-
+    <ng-template #userMenu>
       <div
-        class="absolute z-50 left-0 right-0 bottom-full mb-2 rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1"
-        role="menu"
+        ngpMenu
+        class="z-50 w-(--ngp-menu-trigger-width) rounded-md border border-border bg-popover text-popover-foreground shadow-lg p-1"
       >
         <div class="px-2 py-2">
           <div class="font-medium text-sm truncate text-white">{{ displayName() }}</div>
@@ -118,29 +117,27 @@
             </div>
           }
         </div>
-        <div class="my-1 h-px bg-border"></div>
-        <app-button
-          variant="ghost"
-          size="sm"
-          class="w-full justify-start gap-2 px-2 hover:bg-accent hover:text-accent-foreground"
-          role="menuitem"
-          (clicked)="closeUserMenu()"
+        <div class="my-1 h-px bg-border" role="separator"></div>
+        <!-- ngpMenuItem closes the menu on select. -->
+        <button
+          type="button"
+          ngpMenuItem
+          class="inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium transition-colors cursor-pointer outline-none h-9 w-full justify-start gap-2 px-2 data-[hover]:bg-accent data-[hover]:text-accent-foreground data-[focus-visible]:bg-accent data-[focus-visible]:text-accent-foreground"
         >
           <ng-icon name="lucideSettings" class="text-base" aria-hidden="true" />
           Settings
-        </app-button>
-        <div class="my-1 h-px bg-border"></div>
-        <app-button
-          variant="ghost"
-          size="sm"
-          class="w-full justify-start gap-2 px-2 text-(--mm-danger-fg) hover:bg-(--mm-danger-bg)"
-          role="menuitem"
-          (clicked)="logout()"
+        </button>
+        <div class="my-1 h-px bg-border" role="separator"></div>
+        <button
+          type="button"
+          ngpMenuItem
+          class="inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium transition-colors cursor-pointer outline-none h-9 w-full justify-start gap-2 px-2 text-(--mm-danger-fg) data-[hover]:bg-(--mm-danger-bg) data-[focus-visible]:bg-(--mm-danger-bg)"
+          (click)="logout()"
         >
           <ng-icon name="lucideClock" class="text-base" aria-hidden="true" />
           Log out
-        </app-button>
+        </button>
       </div>
-    }
+    </ng-template>
   </div>
 </aside>

@@ -6,6 +6,9 @@ import {
   linkedSignal,
   resource,
   signal,
+  TemplateRef,
+  viewChild,
+  ViewContainerRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
@@ -30,7 +33,8 @@ import {
   UtilsDialogResult,
 } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { computeSeoScore, createDefaultSeoPage, SeoPage } from '@core/models/seo.models';
-import { NgpDialogManager } from 'ng-primitives/dialog';
+import { NgpDialogContext, NgpDialogManager, NgpDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Logger } from '@core/services/logger/logger';
 import { SupabaseSeo } from '@core/services/seo/supabase-seo';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
@@ -42,7 +46,15 @@ import { HasPermissionDirective } from '@admin/core/directives/has-permission';
 
 @Component({
   selector: 'app-seo-dashboard',
-  imports: [NgIconComponent, RouterLink, HasPermissionDirective, AriaInput, AriaSelect, Button],
+  imports: [
+    NgIconComponent,
+    RouterLink,
+    HasPermissionDirective,
+    AriaInput,
+    AriaSelect,
+    Button,
+    DialogShell,
+  ],
   providers: [
     provideIcons({
       heroMagnifyingGlass,
@@ -139,7 +151,10 @@ export class SeoDashboard {
 
   readonly computeSeoScore = computeSeoScore;
 
-  readonly showCreateModal = signal(false);
+  private readonly createPageDialog =
+    viewChild.required<TemplateRef<NgpDialogContext>>('createPageDialog');
+  private createPageRef: NgpDialogRef | null = null;
+  private readonly viewContainerRef = inject(ViewContainerRef);
   readonly newPageName = signal('');
   readonly newPageSlug = signal('');
   readonly newPageType = signal<'static' | 'dynamic'>('static');
@@ -151,11 +166,15 @@ export class SeoDashboard {
     this.newPageSlug.set('');
     this.newPageType.set('static');
     this.createError.set(null);
-    this.showCreateModal.set(true);
+    // This page's container, so the template resolves from this component's injector.
+    this.createPageRef = this.dialogs.open(this.createPageDialog(), {
+      viewContainerRef: this.viewContainerRef,
+    });
   }
 
   closeCreateModal(): void {
-    this.showCreateModal.set(false);
+    this.createPageRef?.close();
+    this.createPageRef = null;
   }
 
   async createNewPage(): Promise<void> {

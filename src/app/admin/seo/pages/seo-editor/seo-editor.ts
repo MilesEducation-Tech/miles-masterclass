@@ -1,3 +1,5 @@
+import { NgpTabButton, NgpTabList, NgpTabPanel, NgpTabset } from 'ng-primitives/tabs';
+import { NgpTooltip, NgpTooltipTrigger } from 'ng-primitives/tooltip';
 import {
   Component,
   computed,
@@ -37,7 +39,16 @@ import {
 
 @Component({
   selector: 'app-seo-editor',
-  imports: [ReactiveFormsModule, NgIconComponent],
+  imports: [
+    ReactiveFormsModule,
+    NgIconComponent,
+    NgpTabset,
+    NgpTabList,
+    NgpTabButton,
+    NgpTabPanel,
+    NgpTooltip,
+    NgpTooltipTrigger,
+  ],
   providers: [
     provideIcons({
       heroArrowLeft,
@@ -331,6 +342,13 @@ export class SeoEditor implements OnInit {
 
   setSection(section: 'basic' | 'og' | 'twitter' | 'advanced'): void {
     this.activeSection.set(section);
+  }
+
+  /** The tabset reports the selected tab's value; only the four sections exist. */
+  protected onSectionChange(value: string | undefined): void {
+    if (value === 'basic' || value === 'og' || value === 'twitter' || value === 'advanced') {
+      this.setSection(value);
+    }
   }
 
   onOgImageSelected(event: Event): Promise<void> {

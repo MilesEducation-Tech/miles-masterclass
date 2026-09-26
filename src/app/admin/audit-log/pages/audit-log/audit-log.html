@@ -81,26 +81,33 @@
               <th class="px-4 py-3 font-semibold">Trust</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-white/5">
-            @for (row of rows(); track row.id) {
+          <!-- One <tbody ngpCollapsible> per row + its details row, so the trigger and the
+               panel share a collapsible (several tbodies are valid HTML). It supplies the
+               trigger's aria-expanded/aria-controls, which used to land on <app-button>'s host,
+               not the focusable button. -->
+          @for (row of rows(); track row.id) {
+            <tbody
+              ngpCollapsible
+              [ngpCollapsibleOpen]="isExpanded(row.id)"
+              (ngpCollapsibleOpenChange)="toggleExpand(row.id)"
+              class="border-b border-white/5 last:border-b-0"
+            >
               <tr class="hover:bg-white/3 transition-colors align-top">
                 <td class="px-2 py-3 align-middle">
-                  <app-button
-                    variant="ghost"
-                    size="icon"
-                    class="h-6 w-6 text-neutral-400 hover:bg-white/10 hover:text-white"
-                    [attr.aria-expanded]="isExpanded(row.id)"
-                    [ariaLabel]="
+                  <button
+                    type="button"
+                    ngpCollapsibleTrigger
+                    class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer h-6 w-6 text-neutral-400 hover:bg-white/10 hover:text-white"
+                    [attr.aria-label]="
                       (isExpanded(row.id) ? 'Hide' : 'Show') + ' detail for entry ' + row.id
                     "
-                    (clicked)="toggleExpand(row.id)"
                   >
                     <ng-icon
                       [name]="isExpanded(row.id) ? 'lucideChevronDown' : 'lucideChevronRight'"
                       class="text-base"
                       aria-hidden="true"
                     />
-                  </app-button>
+                  </button>
                 </td>
 
                 <td class="px-4 py-3 text-neutral-300 whitespace-nowrap">
@@ -144,7 +151,11 @@
               </tr>
 
               @if (isExpanded(row.id)) {
-                <tr style="background: var(--mm-surface-2)">
+                <tr
+                  ngpCollapsibleContent
+                  class="border-t border-white/5"
+                  style="background: var(--mm-surface-2)"
+                >
                   <td></td>
                   <td colspan="5" class="px-4 py-3">
                     @if (changeLines(row).length) {
@@ -180,8 +191,8 @@
                   </td>
                 </tr>
               }
-            }
-          </tbody>
+            </tbody>
+          }
         </table>
       </div>
 
