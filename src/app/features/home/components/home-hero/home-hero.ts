@@ -12,7 +12,6 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
   selector: 'app-home-hero',
   imports: [Button, VideoPoster, MilesSlug],
   templateUrl: './home-hero.html',
-  styleUrl: './home-hero.css',
 })
 export class HomeHero {
   private readonly platformId = inject(PLATFORM_ID);
