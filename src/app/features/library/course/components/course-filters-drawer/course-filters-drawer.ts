@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroXMark } from '@ng-icons/heroicons/outline';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { CourseFilterGroup, CourseFilterSelection } from '@core/models/library-filters.model';
 import { CourseFilters } from '../course-filters/course-filters';
 
@@ -19,15 +20,15 @@ export interface CourseFiltersDrawerData {
  */
 @Component({
   selector: 'app-course-filters-drawer',
-  imports: [CourseFilters, NgIcon],
+  imports: [CourseFilters, DialogShell, NgIcon],
   providers: [provideIcons({ heroXMark })],
   templateUrl: './course-filters-drawer.html',
   styleUrl: './course-filters-drawer.css',
 })
 export class CourseFiltersDrawer {
   // Assigned by the `Dialog` service after `createComponent` (see dialog.ts:227-229).
-  dialogRef!: DialogRef<CourseFiltersDrawer>;
-  data!: CourseFiltersDrawerData;
+  private readonly dialogRef = injectDialogRef<CourseFiltersDrawerData>();
+  protected readonly data = this.dialogRef.data;
 
   close() {
     this.dialogRef.close();

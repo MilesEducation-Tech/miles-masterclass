@@ -11,7 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { AppDownloadPrompt } from '@features/offerings/services/app-download-prompt';
 import { NotificationService } from '@core/services/notification/notification';
 import { MicroLearningCourseFacade } from '../../../services/micro-learning-course-facade';
@@ -46,7 +46,7 @@ import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
 export class MicroLearningCourse {
   readonly facade = inject(MicroLearningCourseFacade);
   private readonly feature = inject(FeatureFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly reelScroller = viewChild<ElementRef<HTMLElement>>('reelScroller');
@@ -202,18 +202,11 @@ export class MicroLearningCourse {
   }
 
   openFilters(): void {
-    const ref = this.dialog.open<MicroLearningFilterSheet, MicroLearningFilterSheetResult>(
+    const ref = this.dialogs.open<MicroLearningFilterSheetData, MicroLearningFilterSheetResult>(
       MicroLearningFilterSheet,
-      {
-        data: {
-          title: 'Field of study',
-          options: this.filters(),
-          visibleCount: 5,
-        } as MicroLearningFilterSheetData,
-        ariaLabel: 'Filter by field of study',
-      },
+      { data: { title: 'Field of study', options: this.filters(), visibleCount: 5 } },
     );
-    ref.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (result) this.filters.set(result);
     });
   }
@@ -291,10 +284,7 @@ export class MicroLearningCourse {
   }
 
   private showHtmlDialog(title: string, htmlContent: string): void {
-    this.dialog.open<HtmlContentDialog, HtmlContentDialogData>(HtmlContentDialog, {
-      maxWidth: '100%',
-      data: { title, htmlContent },
-    });
+    this.dialogs.open<HtmlContentDialogData>(HtmlContentDialog, { data: { title, htmlContent } });
   }
 
   openAbout(): void {
@@ -330,10 +320,6 @@ export class MicroLearningCourse {
   }
 
   private showAboutPanel(data: ContentAbout): void {
-    this.dialog.open(MicroLearningAboutPanel, {
-      data,
-      position: 'right',
-      ariaLabel: 'About this course',
-    });
+    this.dialogs.open(MicroLearningAboutPanel, { data });
   }
 }

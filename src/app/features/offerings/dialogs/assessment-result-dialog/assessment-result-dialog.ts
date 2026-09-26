@@ -9,7 +9,8 @@ import {
 } from '@ng-icons/heroicons/outline';
 import confetti from 'canvas-confetti';
 import { Button } from '@shared/ui/button/button';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 
 export interface AssessmentResultData {
   isPassed: boolean;
@@ -23,13 +24,13 @@ export type AssessmentResultAction = 'report' | 'course' | 'retake';
 @Component({
   selector: 'app-assessment-result-dialog',
   standalone: true,
-  imports: [CommonModule, NgIconComponent, Button],
+  imports: [CommonModule, NgIconComponent, Button, DialogShell],
   templateUrl: './assessment-result-dialog.html',
   viewProviders: [provideIcons({ heroCheckCircle, heroXCircle, heroArrowRight, heroArrowPath })],
 })
 export class AssessmentResultDialog implements OnInit {
-  dialogRef!: DialogRef<AssessmentResultDialog, AssessmentResultAction>;
-  data!: AssessmentResultData;
+  private readonly dialogRef = injectDialogRef<AssessmentResultData, AssessmentResultAction>();
+  protected readonly data = this.dialogRef.data;
 
   constructor(@Inject(PLATFORM_ID) private platformId: object) {}
 

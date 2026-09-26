@@ -11,7 +11,8 @@ import {
 } from '@angular/core';
 import { NgpTabButton, NgpTabList, NgpTabPanel, NgpTabset } from 'ng-primitives/tabs';
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import {
   BadgeV2Response,
   CAIRA_STATUS_LABEL,
@@ -58,20 +59,28 @@ const EMPTY_DETAIL: BadgeV2Response<CairaLadderItem | null> = { data: null };
  */
 @Component({
   selector: 'app-caira-badge-info-dialog',
-  imports: [Button, NgOptimizedImage, Spinner, NgpTabset, NgpTabList, NgpTabButton, NgpTabPanel],
+  imports: [
+    Button,
+    DialogShell,
+    NgOptimizedImage,
+    Spinner,
+    NgpTabset,
+    NgpTabList,
+    NgpTabButton,
+    NgpTabPanel,
+  ],
   templateUrl: './caira-badge-info-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CairaBadgeInfoDialog {
   private readonly api = inject(ApiClient);
 
-  dialogRef!: DialogRef<CairaBadgeInfoDialog, CairaBadgeInfoDialogResult>;
+  private readonly dialogRef = injectDialogRef<
+    CairaBadgeInfoDialogData,
+    CairaBadgeInfoDialogResult
+  >();
 
-  private readonly _data = signal<CairaBadgeInfoDialogData | null>(null);
-
-  set data(value: CairaBadgeInfoDialogData) {
-    this._data.set(value);
-  }
+  private readonly _data = signal<CairaBadgeInfoDialogData | null>(this.dialogRef.data ?? null);
 
   protected readonly tabs = TABS;
   protected readonly selectedTab = linkedSignal<TabKey>(() => TABS[0].key);
@@ -79,9 +88,9 @@ export class CairaBadgeInfoDialog {
   protected readonly level = computed(() => this._data()?.level ?? null);
 
   /**
-   * `undefined` params keep the resource idle until `Dialog.open` assigns
-   * `data`. No SSR guard is needed — `Dialog.open` is a no-op on the server, so
-   * this component never constructs there.
+   * `undefined` params keep the resource idle when there is no badge id. No SSR
+   * guard is needed — the dialog is only ever opened from a click, so it never
+   * constructs on the server.
    *
    * Errors are silenced: the header has already rendered and the tabs fall back
    * to their empty copy, so a toast stacked over an open dialog adds nothing.

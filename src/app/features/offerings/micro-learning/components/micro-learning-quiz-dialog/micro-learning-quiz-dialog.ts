@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { ChapterQuiz } from '../../../components/chapter-quiz/chapter-quiz';
 import {
   ActionStatus,
@@ -14,42 +15,44 @@ export interface MicroLearningQuizDialogData {
 }
 
 /**
- * Thin wrapper that hosts the shared `ChapterQuiz` component inside the
- * app Dialog service. Needed because `ChapterQuiz` uses signal-based
- * required inputs, which the Dialog service's `componentRef.instance.data = config.data`
- * pattern can't set directly. This wrapper adapts a `MicroLearningReel` into
- * the `CourseChapter` shape that `ChapterQuiz` expects.
+ * Thin wrapper that hosts the shared `ChapterQuiz` component in a dialog.
+ * `ChapterQuiz` takes signal-based required inputs, which a dialog opened by
+ * `NgpDialogManager.open()` can't be handed directly; this wrapper reads the
+ * reel from `injectDialogRef().data` and adapts it into the `CourseChapter`
+ * shape `ChapterQuiz` expects.
  */
 @Component({
   selector: 'app-micro-learning-quiz-dialog',
-  imports: [ChapterQuiz, Button],
+  imports: [ChapterQuiz, Button, DialogShell],
   template: `
-    <div class="w-[min(92vw,52rem)] min-h-[24rem]">
-      @if (reelRef.quiz_details?.questions?.length) {
-        <app-chapter-quiz
-          [questions]="reelRef.quiz_details!.questions"
-          [chapterId]="reelRef.chapter_id"
-          [current]="chapterLike"
-          [isLastChapter]="true"
-          (lastAnswerSubmitted)="onLastAnswerSubmitted()"
-          (navigateNext)="onNavigateNext()"
-          (togglePreviewMode)="close()"
-        />
-      } @else {
-        <div class="flex flex-col items-center gap-4 text-center py-12">
-          <h2 class="text-lg font-semibold">Chapter Quiz</h2>
-          <p class="text-sm text-muted-foreground">
-            No quiz questions are available for this reel yet.
-          </p>
-          <app-button variant="default" (clicked)="close()">Close</app-button>
-        </div>
-      }
-    </div>
+    <app-dialog-shell maxWidth="100%" ariaLabel="Chapter quiz">
+      <div class="w-[min(92vw,52rem)] min-h-[24rem]">
+        @if (reelRef.quiz_details?.questions?.length) {
+          <app-chapter-quiz
+            [questions]="reelRef.quiz_details!.questions"
+            [chapterId]="reelRef.chapter_id"
+            [current]="chapterLike"
+            [isLastChapter]="true"
+            (lastAnswerSubmitted)="onLastAnswerSubmitted()"
+            (navigateNext)="onNavigateNext()"
+            (togglePreviewMode)="close()"
+          />
+        } @else {
+          <div class="flex flex-col items-center gap-4 text-center py-12">
+            <h2 class="text-lg font-semibold">Chapter Quiz</h2>
+            <p class="text-sm text-muted-foreground">
+              No quiz questions are available for this reel yet.
+            </p>
+            <app-button variant="default" (clicked)="close()">Close</app-button>
+          </div>
+        }
+      </div>
+    </app-dialog-shell>
   `,
 })
 export class MicroLearningQuizDialog {
-  dialogRef!: DialogRef<MicroLearningQuizDialog>;
-  data!: MicroLearningQuizDialogData;
+  private readonly dialogRef = injectDialogRef<MicroLearningQuizDialogData>();
+  protected readonly data = this.dialogRef.data;
 
   private readonly facade = inject(MicroLearningCourseFacade);
 

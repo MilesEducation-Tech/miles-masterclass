@@ -24,7 +24,7 @@ import { ChapterSkeleton } from '@shared/components/skeleton/chapter-skeleton/ch
 import { ChapterQuiz } from '../chapter-quiz/chapter-quiz';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faClipboard } from '@ng-icons/font-awesome/regular';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { MasterclassFacade } from '../../services/masterclass-facade';
 import { Analytics } from '@core/services/analytics/analytics';
 import {
@@ -67,7 +67,7 @@ export class VideoChapter {
   private readonly videoPlayer = viewChild(VideoJs);
   private readonly destroyRef = inject(DestroyRef);
   private readonly masterclassFacade = inject(MasterclassFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly analytics = inject(Analytics);
 
   private transcriptCache = new Map<number, string>();
@@ -348,8 +348,7 @@ export class VideoChapter {
   }
 
   private openTranscriptDialog(html: string, chapterName: string) {
-    this.dialog.open<HtmlContentDialog, HtmlContentDialogData>(HtmlContentDialog, {
-      maxWidth: '100%',
+    this.dialogs.open<HtmlContentDialogData>(HtmlContentDialog, {
       data: {
         title: `Transcript - ${chapterName}`,
         htmlContent: html,

@@ -14,7 +14,7 @@ import { lucideChevronDown, lucideChevronUp, lucideInfo } from '@ng-icons/lucide
 import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
 import { BadgeV2Response, CairaLadderItem } from '@core/models/caira-badge.model';
 import { ApiClient } from '@core/services/api-client/api-client';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Button } from '@shared/ui/button/button';
 import { Progress } from '@shared/ui/progress/progress';
 import { badgeHaloHex } from '@shared/utils/badge-level';
@@ -48,7 +48,7 @@ const EMPTY_LADDER: BadgeV2Response<CairaLadderItem[]> = { data: [] };
 })
 export class CairaLevelHero {
   private readonly api = inject(ApiClient);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly cairaLogo = CAIRA_LOGO;
@@ -140,9 +140,6 @@ export class CairaLevelHero {
     if (!level) return;
     const { CairaBadgeInfoDialog } =
       await import('@features/tracker/caira/dialogs/caira-badge-info-dialog/caira-badge-info-dialog');
-    this.dialog.open(CairaBadgeInfoDialog, {
-      data: { level },
-      ariaLabel: 'CAIRA badge details',
-    });
+    this.dialogs.open(CairaBadgeInfoDialog, { data: { level } });
   }
 }

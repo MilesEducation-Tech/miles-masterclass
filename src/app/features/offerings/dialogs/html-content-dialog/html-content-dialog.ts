@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '@shared/ui/button/button';
 
 export interface HtmlContentDialogData {
@@ -10,13 +11,13 @@ export interface HtmlContentDialogData {
 
 @Component({
   selector: 'app-html-content-dialog',
-  imports: [Button],
+  imports: [Button, DialogShell],
   templateUrl: './html-content-dialog.html',
   styleUrl: './html-content-dialog.css',
 })
 export class HtmlContentDialog {
-  dialogRef!: DialogRef<HtmlContentDialog>;
-  data!: HtmlContentDialogData;
+  private readonly dialogRef = injectDialogRef<HtmlContentDialogData>();
+  protected readonly data = this.dialogRef.data;
 
   private readonly sanitizer = inject(DomSanitizer);
 

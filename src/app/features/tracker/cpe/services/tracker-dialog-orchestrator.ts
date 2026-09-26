@@ -68,10 +68,6 @@ export class TrackerDialogOrchestrator {
   }
 
   openCompliance(data: ComplianceDialogData): Observable<unknown> {
-    return this.dialog.open<CpeComplianceDialog, unknown>(CpeComplianceDialog, {
-      maxWidth: '100%',
-      panelClass: 'bg-transparent shadow-none',
-      data,
-    }).afterClosed$;
+    return this.dialogs.open(CpeComplianceDialog, { data }).afterClosed;
   }
 }

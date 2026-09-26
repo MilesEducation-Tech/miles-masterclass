@@ -16,12 +16,14 @@ import {
 } from '@core/models/http.model';
 import {
   SelectCpeMode,
+  SelectCpeModeData,
   SelectCpeModeResult,
 } from '@features/offerings/dialogs/select-cpe-mode/select-cpe-mode';
 import { UtilsDialog } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { ContentDetails, CourseChapter, normalizeBookmarkField } from '@core/models/course.model';
 import { CourseContentResponse, MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
 import { ApiClient } from '@core/services/api-client/api-client';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
@@ -50,6 +52,7 @@ export class MasterclassFacade {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
   // Only the cart-removal signal is needed here, and it lives in core so this
   // feature does not have to import the payment feature (PROMPT.md §3).
@@ -327,11 +330,7 @@ export class MasterclassFacade {
     // all reach the picker through this one method.
     if (!this.utils.requireCpeModeAccess(course)) return;
 
-    const dialogRef = this.dialog.open<SelectCpeMode, SelectCpeModeResult>(SelectCpeMode, {
-      maxWidth: '100%',
-      enterAnimationDuration: '300ms',
-      exitAnimationDuration: '300ms',
-      disableClose: true,
+    const dialogRef = this.dialogs.open<SelectCpeModeData, SelectCpeModeResult>(SelectCpeMode, {
       data: {
         type: 'Masterclass',
         format: 'video',
@@ -339,7 +338,7 @@ export class MasterclassFacade {
         activePlan: course.active_plan,
       },
     });
-    dialogRef.afterClosed$.subscribe((result) => {
+    dialogRef.afterClosed.subscribe((result) => {
       if (result) {
         this.selectCpeMode(result.cpe_mode_status);
       }

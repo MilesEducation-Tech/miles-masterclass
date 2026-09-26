@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '@shared/ui/button/button';
 
 /** Data passed to the SelectCpeMode dialog */
@@ -18,7 +19,7 @@ export interface SelectCpeModeResult {
 
 @Component({
   selector: 'app-select-cpe-mode',
-  imports: [Button, FormsModule],
+  imports: [Button, DialogShell, FormsModule],
   templateUrl: './select-cpe-mode.html',
   styleUrl: './select-cpe-mode.css',
   host: {
@@ -26,8 +27,8 @@ export interface SelectCpeModeResult {
   },
 })
 export class SelectCpeMode {
-  dialogRef!: DialogRef<SelectCpeMode, { cpe_mode_status: boolean }>;
-  data!: SelectCpeModeData;
+  private readonly dialogRef = injectDialogRef<SelectCpeModeData, SelectCpeModeResult>();
+  protected readonly data = this.dialogRef.data;
 
   readonly selectedMode = signal<boolean | null>(null);
 

@@ -16,6 +16,7 @@ import { Observable, catchError, finalize, of, tap } from 'rxjs';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Utils } from '@shared/services/utils';
 import { Analytics } from '@core/services/analytics/analytics';
@@ -129,6 +130,7 @@ export class MicroLearningCourseFacade {
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   private readonly utils = inject(Utils);
@@ -1074,11 +1076,9 @@ export class MicroLearningCourseFacade {
     // continue behind the dialog. Token-based — reel card pauses inside an
     // effect when the value flips.
     this.pauseRequest.set({ id: reel.id, token: ++this.tokenSeq });
-    this.dialog.open<MicroLearningQuizDialog>(MicroLearningQuizDialog, {
-      data: { reel } as MicroLearningQuizDialogData,
+    this.dialogs.open<MicroLearningQuizDialogData>(MicroLearningQuizDialog, {
+      data: { reel },
       injector: this.injector,
-      ariaLabel: 'Chapter quiz',
-      maxWidth: '100%',
     });
   }
 

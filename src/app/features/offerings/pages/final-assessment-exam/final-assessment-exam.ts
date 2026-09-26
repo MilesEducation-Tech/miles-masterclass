@@ -4,6 +4,7 @@ import { Backward } from '@shared/components/backward/backward';
 import { Button } from '@shared/ui/button/button';
 import { FinalAssessmentFacade } from '../../services/final-assessment-facade';
 import { ContentDetails, QuizQuestion } from '@core/models/course.model';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import { UtilsDialog, DialogButton } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { Observable } from 'rxjs';
@@ -42,6 +43,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
 
   private readonly facade = inject(FinalAssessmentFacade);
   private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
   private readonly logger = inject(Logger);
   private readonly router = inject(Router);
@@ -283,16 +285,12 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
   }
 
   private openResultDialog(data: AssessmentResultData) {
-    const dialogRef = this.dialog.open<AssessmentResultDialog, AssessmentResultAction>(
+    const dialogRef = this.dialogs.open<AssessmentResultData, AssessmentResultAction>(
       AssessmentResultDialog,
-      {
-        data,
-        disableClose: true,
-        maxWidth: '500px',
-      },
+      { data },
     );
 
-    dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((action) => {
+    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((action) => {
       this.handleDialogAction(action);
     });
   }

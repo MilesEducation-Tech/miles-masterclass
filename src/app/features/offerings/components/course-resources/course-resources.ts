@@ -6,7 +6,6 @@ import { lucideVideo, lucideFileText, lucideDownload, lucideBot } from '@ng-icon
 import { MasterclassFacade } from '../../services/masterclass-facade';
 import { VideoDialog, VideoDialogData } from '@shared/dialogs/video-dialog/video-dialog';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Dialog } from '@core/services/dialog/dialog';
 import {
   HtmlContentDialog,
   HtmlContentDialogData,
@@ -24,7 +23,6 @@ export class CourseResources {
   readonly courseType = input<string>('masterclass');
 
   protected readonly masterclassFacade = inject(MasterclassFacade);
-  private readonly dialog = inject(Dialog);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -119,8 +117,7 @@ export class CourseResources {
 
   private openGlossaryDialog(html: string) {
     const courseTitle = this.masterclassFacade.courseDetails()?.title ?? '';
-    this.dialog.open<HtmlContentDialog, HtmlContentDialogData>(HtmlContentDialog, {
-      maxWidth: '100%',
+    this.dialogs.open<HtmlContentDialogData>(HtmlContentDialog, {
       data: {
         title: courseTitle ? `${courseTitle} - Glossary` : 'Glossary',
         htmlContent: html,

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FinalAssessmentExam } from './final-assessment-exam';
 import { FinalAssessmentFacade } from '../../services/final-assessment-facade';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import { of, Subject } from 'rxjs';
 import { UtilsDialog } from '@shared/dialogs/utils-dialog/utils-dialog';
@@ -24,6 +25,8 @@ describe('FinalAssessmentExam', () => {
   let fixture: ComponentFixture<FinalAssessmentExam>;
   let mockFacade: any;
   let mockDialog: any;
+  // AssessmentResultDialog is on ng-primitives; UtilsDialog is still on the hand-rolled service.
+  let mockDialogs: { open: ReturnType<typeof vi.fn> };
   let mockUtils: any;
   let mockRouter: any;
   let mockActivatedRoute: any;
@@ -48,6 +51,10 @@ describe('FinalAssessmentExam', () => {
       }),
     };
 
+    mockDialogs = {
+      open: vi.fn().mockReturnValue({ afterClosed: dialogAfterClosedSubject.asObservable() }),
+    };
+
     mockUtils = {
       startFinalAssessment: vi.fn(),
     };
@@ -63,6 +70,7 @@ describe('FinalAssessmentExam', () => {
       providers: [
         { provide: FinalAssessmentFacade, useValue: mockFacade },
         { provide: Dialog, useValue: mockDialog },
+        { provide: NgpDialogManager, useValue: mockDialogs },
         { provide: Utils, useValue: mockUtils },
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
@@ -165,7 +173,7 @@ describe('FinalAssessmentExam', () => {
 
     expect(mockFacade.submitAssessment).toHaveBeenCalled();
     expect(component.isSubmitted()).toBe(true);
-    expect(mockDialog.open).toHaveBeenCalledWith(AssessmentResultDialog, expect.anything());
+    expect(mockDialogs.open).toHaveBeenCalledWith(AssessmentResultDialog, expect.anything());
     expect(mockFacade.clearAssessmentData).toHaveBeenCalled();
   });
 

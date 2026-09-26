@@ -10,7 +10,6 @@ import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
 import { Utils } from '@shared/services/utils';
 import { Router } from '@angular/router';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Dialog } from '@core/services/dialog/dialog';
 
 @Component({
   selector: 'app-course-about',
@@ -24,7 +23,6 @@ export class CourseAbout {
 
   private readonly utils = inject(Utils);
   private readonly router = inject(Router);
-  private readonly dialog = inject(Dialog);
   private readonly dialogs = inject(NgpDialogManager);
 
   icons = signal({
@@ -74,9 +72,6 @@ export class CourseAbout {
   onInstructorClick(i: { id: number; first_name: string; last_name: string }) {
     const slug = this.utils.slugify(`${i?.first_name} ${i?.last_name}`);
     const basePath = `/${this.utils.getRouteParams().country}/${this.utils.getRouteParams().profession}`;
-    // Both managers until the migration ends: this renders inside CourseInfo and
-    // WebinarDetailsDialog (ng-primitives) and MicroLearningAboutPanel (still hand-rolled).
-    this.dialog.closeAll();
     this.dialogs.closeAll();
     this.router.navigate([`${basePath}/instructor`, i.id, slug]);
   }
