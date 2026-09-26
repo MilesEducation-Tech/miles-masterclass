@@ -52,7 +52,7 @@ jobs:
       # Pinned to a commit SHA (the v4 annotated tag dereferences to this commit)
       # rather than the tag: this action receives a token. v5 exists; Dependabot's
       # github-actions ecosystem will propose it.
-      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7
         if: env.HAS_TOKEN == 'true'
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
