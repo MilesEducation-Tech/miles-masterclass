@@ -12,7 +12,8 @@ import {
 import { ReportPreviewBundle } from '@admin/partner-platform-v2/models/partner-report.model';
 import { PartnerReportFacade } from '@admin/partner-platform-v2/services/partner-report-facade';
 import { partnerErrorMessage, partnerLoadError } from '@admin/core/models/partner-platform.model';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { NotificationService } from '@core/services/notification/notification';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
@@ -32,20 +33,17 @@ export interface PartnerReportPreviewDialogData {
  * not the admin navy — the dialog is appended to <body>, outside
  * `.admin-theme`, so `var(--background)` etc. resolve to the public palette.
  * Reads through the route-scoped `PartnerReportFacade`, so open it with the
- * page's `environmentInjector`.
- *
- * `data` / `dialogRef` are property-injected by the Dialog service after
- * construction, so loading starts in `ngOnInit`.
+ * page's `EnvironmentInjector` as the dialog's `injector`.
  */
 @Component({
   selector: 'app-partner-report-preview-dialog',
-  imports: [Button, Spinner],
+  imports: [Button, Spinner, DialogShell],
   templateUrl: './partner-report-preview-dialog.html',
   styleUrl: './partner-report-preview-dialog.css',
 })
 export class PartnerReportPreviewDialog implements OnInit {
-  dialogRef!: DialogRef<PartnerReportPreviewDialog>;
-  data!: PartnerReportPreviewDialogData;
+  private readonly dialogRef = injectDialogRef<PartnerReportPreviewDialogData>();
+  protected readonly data = this.dialogRef.data;
 
   private readonly facade = inject(PartnerReportFacade);
   private readonly notification = inject(NotificationService);

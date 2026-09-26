@@ -5,7 +5,8 @@ import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
 import { Button } from '@shared/ui/button/button';
 import { Forms } from '@shared/ui/forms/forms';
 import { AriaSelectOption } from '@core/models/aria.model';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Firm } from '@admin/core/models/partner-platform.model';
 
 export interface AssignSeatDialogData {
@@ -34,12 +35,15 @@ interface AssignSeatFormModel {
  */
 @Component({
   selector: 'app-assign-seat-dialog',
-  imports: [AngularFormField, Forms, AriaInput, AriaSelect, Button],
+  imports: [AngularFormField, Forms, AriaInput, AriaSelect, Button, DialogShell],
   templateUrl: './assign-seat-dialog.html',
 })
 export class AssignSeatDialog implements OnInit {
-  dialogRef!: DialogRef<AssignSeatDialog, AssignSeatResult | undefined>;
-  data!: AssignSeatDialogData;
+  private readonly dialogRef = injectDialogRef<
+    AssignSeatDialogData,
+    AssignSeatResult | undefined
+  >();
+  protected readonly data = this.dialogRef.data;
 
   protected readonly firmOptions = signal<AriaSelectOption<number | null>[]>([]);
   private readonly model = signal<AssignSeatFormModel>({ seat_id: '', firm_id: null });

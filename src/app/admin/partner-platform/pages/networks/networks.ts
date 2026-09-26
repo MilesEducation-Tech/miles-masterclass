@@ -5,7 +5,7 @@ import { Observable, take } from 'rxjs';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { DeprecationBanner } from '@shared/components/deprecation-banner/deprecation-banner';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
 import { Network } from '@admin/core/models/partner-platform.model';
 import {
@@ -30,7 +30,7 @@ import {
 })
 export class Networks {
   protected readonly facade = inject(PartnerSuperAdminFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
 
@@ -44,12 +44,10 @@ export class Networks {
 
   /** Row action: manage / create member firms directly under this network. */
   protected openFirms(network: Network): void {
-    const ref = this.dialog.open<NetworkFirmsDialog, number | undefined>(NetworkFirmsDialog, {
+    const ref = this.dialogs.open<NetworkFirmsDialogData, number | undefined>(NetworkFirmsDialog, {
       data: { network } satisfies NetworkFirmsDialogData,
-      maxWidth: '600px',
-      ariaLabel: `Firms in ${network.name}`,
     });
-    this.handleFirmCreated(ref.afterClosed$);
+    this.handleFirmCreated(ref.afterClosed);
   }
 
   /** Row action: open the super-admin coupon tracker for this network. */
@@ -59,12 +57,10 @@ export class Networks {
 
   /** Header action: manage / create standalone companies (single company, no network). */
   protected openStandaloneFirms(): void {
-    const ref = this.dialog.open<NetworkFirmsDialog, number | undefined>(NetworkFirmsDialog, {
+    const ref = this.dialogs.open<NetworkFirmsDialogData, number | undefined>(NetworkFirmsDialog, {
       data: {} satisfies NetworkFirmsDialogData,
-      maxWidth: '600px',
-      ariaLabel: 'Standalone companies',
     });
-    this.handleFirmCreated(ref.afterClosed$);
+    this.handleFirmCreated(ref.afterClosed);
   }
 
   /** Deep-link to admin provisioning for the newly created firm (mirrors network creation). */
@@ -78,41 +74,35 @@ export class Networks {
   }
 
   private openDialog(network?: Network): void {
-    const ref = this.dialog.open<NetworkFormDialog, NetworkFormResult | undefined>(
+    const ref = this.dialogs.open<NetworkFormDialogData, NetworkFormResult | undefined>(
       NetworkFormDialog,
-      {
-        data: { network } satisfies NetworkFormDialogData,
-        maxWidth: '520px',
-        ariaLabel: network ? 'Edit network' : 'Create network',
-      },
+      { data: { network } satisfies NetworkFormDialogData },
     );
-    ref.afterClosed$
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (result) => {
-        if (!result) return;
-        if (network) {
-          void this.facade.updateNetwork(network.id, {
-            name: result.name,
-            total_seats: result.total_seats,
-            is_active: result.is_active,
-            // Only send `allocations` when seats were actually picked — an empty
-            // array would ask the backend to mint nothing.
-            ...(result.allocations.length ? { allocations: result.allocations } : {}),
-          });
-          return;
-        }
-        // Create, then hand off to admin provisioning with the new network
-        // pre-selected (the operator picks the role + creates the login there).
-        const created = await this.facade.createNetwork({
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(async (result) => {
+      if (!result) return;
+      if (network) {
+        void this.facade.updateNetwork(network.id, {
           name: result.name,
-          slug: result.slug,
           total_seats: result.total_seats,
+          is_active: result.is_active,
+          // Only send `allocations` when seats were actually picked — an empty
+          // array would ask the backend to mint nothing.
+          ...(result.allocations.length ? { allocations: result.allocations } : {}),
         });
-        if (created) {
-          void this.router.navigate(['/admin/admin-users'], {
-            queryParams: { network: created.id, provision: 1 },
-          });
-        }
+        return;
+      }
+      // Create, then hand off to admin provisioning with the new network
+      // pre-selected (the operator picks the role + creates the login there).
+      const created = await this.facade.createNetwork({
+        name: result.name,
+        slug: result.slug,
+        total_seats: result.total_seats,
       });
+      if (created) {
+        void this.router.navigate(['/admin/admin-users'], {
+          queryParams: { network: created.id, provision: 1 },
+        });
+      }
+    });
   }
 }

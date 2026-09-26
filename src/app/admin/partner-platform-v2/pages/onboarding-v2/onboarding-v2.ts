@@ -130,25 +130,21 @@ export class OnboardingV2 {
   }
 
   protected onRecordPayment(user: InternalUser): void {
-    const ref = this.dialog.open<RecordPaymentDialog, RecordPaymentDialogResult>(
+    const ref = this.dialogs.open<RecordPaymentDialogData, RecordPaymentDialogResult>(
       RecordPaymentDialog,
       {
         data: {
           userEmail: user.email,
           isSubscribed: user.is_subscribed,
         } satisfies RecordPaymentDialogData,
-        maxWidth: '480px',
-        ariaLabel: 'Record offline payment',
       },
     );
 
-    ref.afterClosed$
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (result) => {
-        if (!result) return;
-        const paid = await this.facade.recordOfflinePayment(user.id, result.file, result.comment);
-        if (paid) this.showPaymentResult(user, paid);
-      });
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(async (result) => {
+      if (!result) return;
+      const paid = await this.facade.recordOfflinePayment(user.id, result.file, result.comment);
+      if (paid) this.showPaymentResult(user, paid);
+    });
   }
 
   /** The receipt link and ids the toast can't hold — read-only, so UtilsDialog. */

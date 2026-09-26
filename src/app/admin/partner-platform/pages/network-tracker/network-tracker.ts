@@ -12,7 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, fromEvent, take, takeUntil } from 'rxjs';
 import { Button } from '@shared/ui/button/button';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { DeprecationBanner } from '@shared/components/deprecation-banner/deprecation-banner';
 import { StatCard } from '@admin/partner-platform-v2/components/stat-card/stat-card';
@@ -48,7 +48,7 @@ export class NetworkTracker {
   private readonly superFacade = inject(PartnerSuperAdminFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -91,12 +91,11 @@ export class NetworkTracker {
 
   /** Top up one firm's seats — `POST /superadmin/firms/<id>/allocate/`. */
   protected openAllocate(firm: Firm): void {
-    const ref = this.dialog.open<AllocateSeatsDialog, number | undefined>(AllocateSeatsDialog, {
-      data: { firm } satisfies AllocateSeatsDialogData,
-      maxWidth: '520px',
-      ariaLabel: `Add seats to ${firm.name}`,
-    });
-    ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((minted) => {
+    const ref = this.dialogs.open<AllocateSeatsDialogData, number | undefined>(
+      AllocateSeatsDialog,
+      { data: { firm } satisfies AllocateSeatsDialogData },
+    );
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((minted) => {
       // The firm's allocated count changed — refetch this page's own payload.
       if (minted != null) this.detailResource.reload();
     });

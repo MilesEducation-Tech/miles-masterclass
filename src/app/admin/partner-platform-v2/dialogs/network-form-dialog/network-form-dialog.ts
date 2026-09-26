@@ -6,7 +6,8 @@ import {
   required,
   validate,
 } from '@angular/forms/signals';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '@shared/ui/button/button';
 import { Forms } from '@shared/ui/forms/forms';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
@@ -43,17 +44,19 @@ interface NetworkFormModel {
 /**
  * Create / edit a partner network (always an alliance of member firms — a single
  * company with no members is a standalone firm, not a network). Resolves with a
- * `NetworkFormResult` on submit, or `undefined` on cancel. `data`/`dialogRef`
- * are property-injected by the Dialog service.
+ * `NetworkFormResult` on submit, or `undefined` on cancel.
  */
 @Component({
   selector: 'app-network-form-dialog',
-  imports: [AngularFormField, Forms, AriaInput, Button, AllocationPicker],
+  imports: [AngularFormField, Forms, AriaInput, Button, AllocationPicker, DialogShell],
   templateUrl: './network-form-dialog.html',
 })
 export class NetworkFormDialog implements OnInit {
-  dialogRef!: DialogRef<NetworkFormDialog, NetworkFormResult | undefined>;
-  data!: NetworkFormDialogData;
+  private readonly dialogRef = injectDialogRef<
+    NetworkFormDialogData,
+    NetworkFormResult | undefined
+  >();
+  protected readonly data = this.dialogRef.data;
 
   private readonly facade = inject(PartnerSuperAdminFacade);
 

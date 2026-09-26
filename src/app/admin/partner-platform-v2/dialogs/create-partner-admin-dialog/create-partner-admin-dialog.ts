@@ -1,5 +1,6 @@
 import { Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { NotificationService } from '@core/services/notification/notification';
 import { AriaSelectOption } from '@core/models/aria.model';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
@@ -44,11 +45,11 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
  */
 @Component({
   selector: 'app-create-partner-admin-dialog',
-  imports: [AriaInput, AriaSelect, Button, CheckboxList],
+  imports: [AriaInput, AriaSelect, Button, CheckboxList, DialogShell],
   templateUrl: './create-partner-admin-dialog.html',
 })
 export class CreatePartnerAdminDialog {
-  dialogRef!: DialogRef<CreatePartnerAdminDialog, PartnerAdmin | undefined>;
+  private readonly dialogRef = injectDialogRef<void, PartnerAdmin | undefined>();
 
   private readonly facade = inject(PartnerSuperAdminFacade);
   private readonly provisioning = inject(AdminProvisioning);

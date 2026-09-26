@@ -2,6 +2,8 @@
 // compiled injectables need the JIT compiler present in the test env.
 import '@angular/compiler';
 
+import { TestBed } from '@angular/core/testing';
+import { NgpDialogRef } from 'ng-primitives/dialog';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -16,21 +18,22 @@ import {
  * subscription leaving no record of why — which is exactly what the comment
  * field exists to prevent.
  *
- * No TestBed: the component injects nothing (`data` / `dialogRef` are
- * property-injected by the Dialog service), so a plain `new` is enough.
+ * No rendering: the only thing the component injects is its dialog ref, so it is
+ * constructed in an injection context with a stub ref rather than through a fixture.
  */
 function makeDialog() {
-  const dialog = new RecordPaymentDialog() as unknown as {
+  const dialogRef = {
+    close: vi.fn(),
+    data: { userEmail: 'someone@example.com', isSubscribed: false },
+  };
+  TestBed.configureTestingModule({ providers: [{ provide: NgpDialogRef, useValue: dialogRef }] });
+  return TestBed.runInInjectionContext(() => new RecordPaymentDialog()) as unknown as {
     file: { set(v: File | null): void };
     comment: { set(v: string): void };
     canSubmit(): boolean;
     submit(): void;
-    dialogRef: { close: ReturnType<typeof vi.fn> };
-    data: { userEmail: string; isSubscribed: boolean };
+    dialogRef: typeof dialogRef;
   };
-  dialog.dialogRef = { close: vi.fn() };
-  dialog.data = { userEmail: 'someone@example.com', isSubscribed: false };
-  return dialog;
 }
 
 const invoice = () => new File(['x'], 'invoice.pdf', { type: 'application/pdf' });

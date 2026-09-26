@@ -2,7 +2,8 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { DecimalPipe, formatDate } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideBookOpen } from '@ng-icons/lucide';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import {
@@ -22,20 +23,16 @@ export interface UserCourseDetailDialogData {
 /**
  * Drill-down dialog for the user report. Opened from a metric cell, it lists the
  * courses behind that bucket via `UserReportFacade.getCourseDetail`.
- *
- * `data` and `dialogRef` are property-injected by the `Dialog` service after
- * construction (see `Dialog.open`), so the fetch is kicked off in `ngOnInit`.
  */
 @Component({
   selector: 'app-user-course-detail-dialog',
-  imports: [DecimalPipe, NgIcon, Button, Spinner],
+  imports: [DecimalPipe, NgIcon, Button, Spinner, DialogShell],
   providers: [provideIcons({ lucideBookOpen })],
   templateUrl: './user-course-detail-dialog.html',
 })
 export class UserCourseDetailDialog implements OnInit {
-  /** Set by the Dialog service immediately after construction. */
-  dialogRef!: DialogRef<UserCourseDetailDialog>;
-  data!: UserCourseDetailDialogData;
+  private readonly dialogRef = injectDialogRef<UserCourseDetailDialogData>();
+  protected readonly data = this.dialogRef.data;
 
   private readonly facade = inject(UserReportFacade);
 

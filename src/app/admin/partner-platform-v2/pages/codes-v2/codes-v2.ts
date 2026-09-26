@@ -4,7 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take } from 'rxjs';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { CreatePartnerCodeRequest, PartnerCode } from '@admin/core/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
 import {
@@ -25,7 +25,7 @@ import {
 })
 export class CodesV2 {
   protected readonly facade = inject(PartnerSuperAdminFacade);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
 
   /** The API embeds the scope's name, so no id → name lookup is needed. */
@@ -36,18 +36,16 @@ export class CodesV2 {
   }
 
   protected openCreate(): void {
-    const ref = this.dialog.open<CreatePartnerCodeDialog, CreatePartnerCodeRequest | undefined>(
-      CreatePartnerCodeDialog,
-      {
-        data: {
-          networks: this.facade.activeNetworks(),
-          firms: this.facade.firms().filter((f) => f.is_active),
-        } satisfies CreatePartnerCodeDialogData,
-        maxWidth: '520px',
-        ariaLabel: 'Create partner code',
-      },
-    );
-    ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    const ref = this.dialogs.open<
+      CreatePartnerCodeDialogData,
+      CreatePartnerCodeRequest | undefined
+    >(CreatePartnerCodeDialog, {
+      data: {
+        networks: this.facade.activeNetworks(),
+        firms: this.facade.firms().filter((f) => f.is_active),
+      } satisfies CreatePartnerCodeDialogData,
+    });
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (result) void this.facade.createPartnerCode(result);
     });
   }

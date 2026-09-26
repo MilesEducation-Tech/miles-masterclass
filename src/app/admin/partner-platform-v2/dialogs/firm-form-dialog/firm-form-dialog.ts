@@ -13,7 +13,8 @@ import { CheckboxList, CheckboxListOption } from '@shared/ui/checkbox-list/check
 import { Forms } from '@shared/ui/forms/forms';
 import { AriaSelectOption } from '@core/models/aria.model';
 import { AllocationPicker } from '@admin/partner-platform-v2/components/allocation-picker/allocation-picker';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import {
   CAPABILITY_DEFAULTS,
   CAPABILITY_LABELS,
@@ -105,12 +106,24 @@ export function parseDomains(input: string): string[] {
  */
 @Component({
   selector: 'app-firm-form-dialog',
-  imports: [AngularFormField, Forms, AriaInput, AriaSelect, Button, CheckboxList, AllocationPicker],
+  imports: [
+    AngularFormField,
+    Forms,
+    AriaInput,
+    AriaSelect,
+    Button,
+    CheckboxList,
+    AllocationPicker,
+    DialogShell,
+  ],
   templateUrl: './firm-form-dialog.html',
 })
 export class FirmFormDialog implements OnInit {
-  dialogRef!: DialogRef<FirmFormDialog, CreateFirmResponse | Firm | undefined>;
-  data?: FirmFormDialogData;
+  private readonly dialogRef = injectDialogRef<
+    FirmFormDialogData | undefined,
+    CreateFirmResponse | Firm | undefined
+  >();
+  protected readonly data = this.dialogRef.data;
 
   protected readonly facade = inject(PartnerSuperAdminFacade);
   private readonly provisioning = inject(AdminProvisioning);

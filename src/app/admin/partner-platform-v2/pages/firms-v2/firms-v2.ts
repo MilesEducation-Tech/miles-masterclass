@@ -15,7 +15,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom, fromEvent, take, takeUntil } from 'rxjs';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
   CreateFirmResponse,
@@ -53,9 +53,9 @@ type FirmScopeFilter = string;
 })
 export class FirmsV2 {
   protected readonly facade = inject(PartnerSuperAdminFacade);
-  private readonly dialog = inject(Dialog);
-  // Dialogs are built by the root Dialog service; hand it this page's injector
-  // so the route-scoped facade resolves instead of a NullInjectorError.
+  private readonly dialogs = inject(NgpDialogManager);
+  // Dialogs are created under the root injector; pass this page's injector as the
+  // dialog's `injector` so the route-scoped facade resolves instead of a NullInjectorError.
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
@@ -123,38 +123,32 @@ export class FirmsV2 {
   }
 
   protected openAllocate(firm: Firm): void {
-    const ref = this.dialog.open<AllocateSeatsDialog, number | undefined>(AllocateSeatsDialog, {
-      data: { firm } satisfies AllocateSeatsDialogData,
-      environmentInjector: this.envInjector,
-      maxWidth: '520px',
-      ariaLabel: `Add seats to ${firm.name}`,
-    });
-    ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((minted) => {
+    const ref = this.dialogs.open<AllocateSeatsDialogData, number | undefined>(
+      AllocateSeatsDialog,
+      { data: { firm } satisfies AllocateSeatsDialogData, injector: this.envInjector },
+    );
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((minted) => {
       if (minted != null) this.rawFirmsResource.reload();
     });
   }
 
   /** Edit name, email domains and status — `PATCH /superadmin/firms/<id>/`. */
   protected openEdit(firm: Firm): void {
-    const ref = this.dialog.open<FirmFormDialog, Firm | undefined>(FirmFormDialog, {
+    const ref = this.dialogs.open<FirmFormDialogData, Firm | undefined>(FirmFormDialog, {
       data: { firm } satisfies FirmFormDialogData,
-      environmentInjector: this.envInjector,
-      maxWidth: '560px',
-      ariaLabel: `Edit ${firm.name}`,
+      injector: this.envInjector,
     });
-    ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((updated) => {
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((updated) => {
       if (updated) this.rawFirmsResource.reload();
     });
   }
 
   /** Create a firm (member or standalone), optionally with seats + admin, atomically. */
   protected openCreate(): void {
-    const ref = this.dialog.open<FirmFormDialog, CreateFirmResponse | undefined>(FirmFormDialog, {
-      environmentInjector: this.envInjector,
-      maxWidth: '560px',
-      ariaLabel: 'Create firm',
+    const ref = this.dialogs.open<void, CreateFirmResponse | undefined>(FirmFormDialog, {
+      injector: this.envInjector,
     });
-    ref.afterClosed$.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((created) => {
+    ref.afterClosed.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe((created) => {
       if (!created) return;
       this.rawFirmsResource.reload();
       // No admin created atomically → hand off to admin provisioning, like v1.

@@ -1,149 +1,148 @@
-<div
-  class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] md:w-[560px] mx-auto overflow-hidden relative rounded-xl"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="create-partner-admin-title"
->
-  <div class="flex items-start justify-between px-5 py-3 border-b border-white/10 shrink-0">
-    <div class="min-w-0">
-      <h2 id="create-partner-admin-title" class="text-base font-semibold text-white">
-        Create partner admin
-      </h2>
-      <p class="text-xs text-white/60">
-        Creates the Supabase login for the Partner v2 panel — or assigns one that already exists —
-        then registers the Django partner admin with its scope and capabilities.
-      </p>
-    </div>
-    <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
-  </div>
-
-  <form
-    novalidate
-    class="px-5 py-5 max-h-[80svh] overflow-y-auto flex flex-col gap-4"
-    (submit)="$event.preventDefault(); submit()"
+<app-dialog-shell maxWidth="560px" ariaLabel="Create partner admin">
+  <div
+    class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] md:w-[560px] mx-auto overflow-hidden relative rounded-xl"
   >
-    <app-aria-select
-      id="cpa-source"
-      label="Admin login"
-      [required]="true"
-      [options]="sourceOptions"
-      [(value)]="source"
-    />
-
-    @if (isExisting()) {
-      <app-aria-select
-        id="cpa-admin-user"
-        label="Existing login"
-        placeholder="Select a Supabase login"
-        [required]="true"
-        [options]="adminUserOptions()"
-        [(value)]="adminUserId"
-      />
-      @if (adminUsersError()) {
-        <p class="-mt-3 text-xs" style="color: var(--mm-danger-fg)" role="alert">
-          {{ adminUsersError() }}
-        </p>
-      } @else if (adminUsersLoading()) {
-        <p class="-mt-3 text-xs text-white/50">Loading logins…</p>
-      } @else if (!adminUserOptions().length) {
-        <p class="-mt-3 text-xs text-white/50">
-          No existing admin logins found — create a new one instead.
-        </p>
-      } @else {
-        <p class="-mt-3 text-xs text-white/50">
-          Registers this login as the partner admin on the backend. Its Supabase roles and email
-          domains are left as they are; logins already registered as a partner admin can't be
-          picked.
-        </p>
-      }
-    } @else {
-      <div class="grid gap-4 md:grid-cols-2">
-        <app-aria-input
-          id="cpa-email"
-          type="email"
-          label="Email"
-          [required]="true"
-          [(value)]="email"
-        />
-        <app-aria-input id="cpa-name" type="text" label="Full name" [(value)]="fullName" />
-      </div>
-      @if (emailInvalid()) {
-        <p class="-mt-3 text-xs" style="color: var(--mm-danger-fg)" role="alert">
-          Enter a valid email.
-        </p>
-      }
-    }
-
-    <app-aria-select
-      id="cpa-role"
-      label="Django role"
-      [required]="true"
-      [options]="roleOptions"
-      [(value)]="role"
-    />
-
-    @switch (role()) {
-      @case ('network') {
-        <app-aria-select
-          id="cpa-network"
-          label="Network"
-          placeholder="Select a network"
-          [required]="true"
-          [options]="networkOptions()"
-          [(value)]="networkId"
-        />
-      }
-      @case ('firm') {
-        <app-aria-select
-          id="cpa-firm"
-          label="Firm"
-          placeholder="Select a firm"
-          [required]="true"
-          [options]="firmOptions()"
-          [(value)]="firmId"
-        />
-        <app-aria-input
-          id="cpa-full-panel"
-          type="checkbox"
-          label="Seat Tracker access"
-          description="Off: Users page only (sub-company admin). On: Seat Tracker + Users, e.g. a standalone firm's admin."
-          [value]="fullPanel()"
-          (valueChange)="fullPanel.set($any($event) === true)"
-        />
-      }
-      @case ('super') {
+    <div class="flex items-start justify-between px-5 py-3 border-b border-white/10 shrink-0">
+      <div class="min-w-0">
+        <h2 id="create-partner-admin-title" class="text-base font-semibold text-white">
+          Create partner admin
+        </h2>
         <p class="text-xs text-white/60">
-          Unscoped Miles-ops login — sees every network, firm, code and admin. Gets the
-          <code>partner_platform_admin</code> Supabase role (the super-admin console).
+          Creates the Supabase login for the Partner v2 panel — or assigns one that already exists —
+          then registers the Django partner admin with its scope and capabilities.
         </p>
-      }
-    }
-
-    @if (role() !== 'super') {
-      <div class="flex flex-col gap-1.5">
-        <p class="text-xs uppercase tracking-wide text-white/50">Capabilities</p>
-        <p class="text-xs text-white/50">
-          Pre-set for a {{ role() }} admin; each one gates an action in the panel.
-        </p>
-        <app-checkbox-list
-          [options]="capabilityOptions"
-          [selected]="selectedCapabilities()"
-          (selectionChange)="onCapabilitiesChange($event)"
-        />
       </div>
-    }
-
-    <div class="flex items-center justify-end gap-3 pt-2">
-      <app-button type="button" variant="outline" class="text-white" (clicked)="close()">
-        Cancel
-      </app-button>
-      <app-button type="submit" variant="primary" [disabled]="!canSubmit()">
-        @if (submitting()) {
-          {{ isExisting() ? 'Assigning…' : 'Creating…' }}
-        } @else {
-          {{ isExisting() ? 'Assign partner admin' : 'Create partner admin' }}
-        }
-      </app-button>
+      <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
     </div>
-  </form>
-</div>
+
+    <form
+      novalidate
+      class="px-5 py-5 max-h-[80svh] overflow-y-auto flex flex-col gap-4"
+      (submit)="$event.preventDefault(); submit()"
+    >
+      <app-aria-select
+        id="cpa-source"
+        label="Admin login"
+        [required]="true"
+        [options]="sourceOptions"
+        [(value)]="source"
+      />
+
+      @if (isExisting()) {
+        <app-aria-select
+          id="cpa-admin-user"
+          label="Existing login"
+          placeholder="Select a Supabase login"
+          [required]="true"
+          [options]="adminUserOptions()"
+          [(value)]="adminUserId"
+        />
+        @if (adminUsersError()) {
+          <p class="-mt-3 text-xs" style="color: var(--mm-danger-fg)" role="alert">
+            {{ adminUsersError() }}
+          </p>
+        } @else if (adminUsersLoading()) {
+          <p class="-mt-3 text-xs text-white/50">Loading logins…</p>
+        } @else if (!adminUserOptions().length) {
+          <p class="-mt-3 text-xs text-white/50">
+            No existing admin logins found — create a new one instead.
+          </p>
+        } @else {
+          <p class="-mt-3 text-xs text-white/50">
+            Registers this login as the partner admin on the backend. Its Supabase roles and email
+            domains are left as they are; logins already registered as a partner admin can't be
+            picked.
+          </p>
+        }
+      } @else {
+        <div class="grid gap-4 md:grid-cols-2">
+          <app-aria-input
+            id="cpa-email"
+            type="email"
+            label="Email"
+            [required]="true"
+            [(value)]="email"
+          />
+          <app-aria-input id="cpa-name" type="text" label="Full name" [(value)]="fullName" />
+        </div>
+        @if (emailInvalid()) {
+          <p class="-mt-3 text-xs" style="color: var(--mm-danger-fg)" role="alert">
+            Enter a valid email.
+          </p>
+        }
+      }
+
+      <app-aria-select
+        id="cpa-role"
+        label="Django role"
+        [required]="true"
+        [options]="roleOptions"
+        [(value)]="role"
+      />
+
+      @switch (role()) {
+        @case ('network') {
+          <app-aria-select
+            id="cpa-network"
+            label="Network"
+            placeholder="Select a network"
+            [required]="true"
+            [options]="networkOptions()"
+            [(value)]="networkId"
+          />
+        }
+        @case ('firm') {
+          <app-aria-select
+            id="cpa-firm"
+            label="Firm"
+            placeholder="Select a firm"
+            [required]="true"
+            [options]="firmOptions()"
+            [(value)]="firmId"
+          />
+          <app-aria-input
+            id="cpa-full-panel"
+            type="checkbox"
+            label="Seat Tracker access"
+            description="Off: Users page only (sub-company admin). On: Seat Tracker + Users, e.g. a standalone firm's admin."
+            [value]="fullPanel()"
+            (valueChange)="fullPanel.set($any($event) === true)"
+          />
+        }
+        @case ('super') {
+          <p class="text-xs text-white/60">
+            Unscoped Miles-ops login — sees every network, firm, code and admin. Gets the
+            <code>partner_platform_admin</code> Supabase role (the super-admin console).
+          </p>
+        }
+      }
+
+      @if (role() !== 'super') {
+        <div class="flex flex-col gap-1.5">
+          <p class="text-xs uppercase tracking-wide text-white/50">Capabilities</p>
+          <p class="text-xs text-white/50">
+            Pre-set for a {{ role() }} admin; each one gates an action in the panel.
+          </p>
+          <app-checkbox-list
+            [options]="capabilityOptions"
+            [selected]="selectedCapabilities()"
+            (selectionChange)="onCapabilitiesChange($event)"
+          />
+        </div>
+      }
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <app-button type="button" variant="outline" class="text-white" (clicked)="close()">
+          Cancel
+        </app-button>
+        <app-button type="submit" variant="primary" [disabled]="!canSubmit()">
+          @if (submitting()) {
+            {{ isExisting() ? 'Assigning…' : 'Creating…' }}
+          } @else {
+            {{ isExisting() ? 'Assign partner admin' : 'Create partner admin' }}
+          }
+        </app-button>
+      </div>
+    </form>
+  </div>
+</app-dialog-shell>

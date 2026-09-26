@@ -14,7 +14,7 @@ import { lucideDownload, lucideEye, lucideUsers } from '@ng-icons/lucide';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import {
   CourseDetailCategory,
@@ -39,9 +39,9 @@ import {
 })
 export class UserReport {
   protected readonly facade = inject(UserReportFacade);
-  private readonly dialog = inject(Dialog);
-  // Dialogs are built by the root Dialog service; hand it this page's injector
-  // so the route-scoped facade resolves instead of a NullInjectorError.
+  private readonly dialogs = inject(NgpDialogManager);
+  // Dialogs are created under the root injector; pass this page's injector as the
+  // dialog's `injector` so the route-scoped facade resolves instead of a NullInjectorError.
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -91,15 +91,13 @@ export class UserReport {
       return;
     }
 
-    this.dialog.open<UserCourseDetailDialog>(UserCourseDetailDialog, {
+    this.dialogs.open<UserCourseDetailDialogData>(UserCourseDetailDialog, {
       data: {
         userName: row.name,
         category,
         courseIds,
       } satisfies UserCourseDetailDialogData,
-      environmentInjector: this.envInjector,
-      maxWidth: '560px',
-      ariaLabel: `${category} for ${row.name}`,
+      injector: this.envInjector,
     });
   }
 

@@ -2,7 +2,7 @@ import { Component, EnvironmentInjector, computed, inject } from '@angular/core'
 import { ActivatedRoute } from '@angular/router';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { StatCard } from '@admin/partner-platform-v2/components/stat-card/stat-card';
 import { PartnerAdminMe } from '@admin/core/services/partner-admin-me';
 import { PartnerNetworkFacade } from '@admin/core/services/partner-network-facade';
@@ -63,9 +63,9 @@ export class ReportsV2 {
   protected readonly me = inject(PartnerAdminMe);
   private readonly superFacade = inject(PartnerSuperAdminFacade);
   private readonly networkFacade = inject(PartnerNetworkFacade);
-  private readonly dialog = inject(Dialog);
-  // Dialogs are built by the root Dialog service; hand it this page's injector
-  // so the route-scoped facade resolves instead of a NullInjectorError.
+  private readonly dialogs = inject(NgpDialogManager);
+  // Dialogs are created under the root injector; pass this page's injector as the
+  // dialog's `injector` so the route-scoped facade resolves instead of a NullInjectorError.
   private readonly envInjector = inject(EnvironmentInjector);
   private readonly route = inject(ActivatedRoute);
 
@@ -126,15 +126,12 @@ export class ReportsV2 {
 
   /** The printable "Partner Learning Report" for the current scope + dates. */
   protected openPreview(): void {
-    this.dialog.open<PartnerReportPreviewDialog>(PartnerReportPreviewDialog, {
+    this.dialogs.open<PartnerReportPreviewDialogData>(PartnerReportPreviewDialog, {
       data: {
         partnerName: this.title(),
         domains: this.previewDomains(),
       } satisfies PartnerReportPreviewDialogData,
-      environmentInjector: this.envInjector,
-      width: '1040px',
-      maxWidth: '95vw',
-      ariaLabel: 'Partner learning report',
+      injector: this.envInjector,
     });
   }
 
@@ -290,15 +287,13 @@ export class ReportsV2 {
   }
 
   protected openItems(row: ReportUserRow): void {
-    this.dialog.open<ReportItemsDialog>(ReportItemsDialog, {
+    this.dialogs.open<ReportItemsDialogData>(ReportItemsDialog, {
       data: {
         userId: row.user_id,
         userName: row.name,
         subject: this.facade.subject(),
       } satisfies ReportItemsDialogData,
-      environmentInjector: this.envInjector,
-      maxWidth: '720px',
-      ariaLabel: `Report details for ${row.name}`,
+      injector: this.envInjector,
     });
   }
 }
