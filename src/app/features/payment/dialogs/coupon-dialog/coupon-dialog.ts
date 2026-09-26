@@ -3,7 +3,8 @@ import { CurrencyPipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroXMark, heroPlus, heroMinus } from '@ng-icons/heroicons/outline';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Button } from '@shared/ui/button/button';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { Logger } from '@core/services/logger/logger';
@@ -16,15 +17,15 @@ export interface CouponDialogData {
 
 @Component({
   selector: 'app-coupon-dialog',
-  imports: [Button, NgIcon, ReactiveFormsModule, PageLoading],
+  imports: [Button, DialogShell, NgIcon, ReactiveFormsModule, PageLoading],
   providers: [CurrencyPipe],
   viewProviders: [provideIcons({ heroXMark, heroPlus, heroMinus })],
   templateUrl: './coupon-dialog.html',
   styleUrl: './coupon-dialog.css',
 })
 export class CouponDialog implements OnInit {
-  dialogRef!: DialogRef<CouponDialog, CartDetails | undefined>;
-  data!: CouponDialogData;
+  private readonly dialogRef = injectDialogRef<CouponDialogData, CartDetails | undefined>();
+  protected readonly data = this.dialogRef.data;
 
   private readonly facade = inject(PaymentFacade);
   private readonly logger = inject(Logger);

@@ -1,7 +1,8 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField as AngularFormField, disabled, form, required } from '@angular/forms/signals';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { PartnerCode } from '@core/services/partner-code/partner-code';
 import { Button } from '@shared/ui/button/button';
 import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
@@ -33,14 +34,17 @@ export interface PartnerCodePromptData {
 
 @Component({
   selector: 'app-partner-code-prompt-dialog',
-  imports: [Button, AriaInput, Forms, AngularFormField],
+  imports: [Button, AriaInput, DialogShell, Forms, AngularFormField],
   templateUrl: './partner-code-prompt-dialog.html',
   styleUrl: './partner-code-prompt-dialog.css',
 })
 export class PartnerCodePromptDialog {
-  dialogRef!: DialogRef<PartnerCodePromptDialog, PartnerCodePromptResult>;
-  /** Optional — assigned post-construction by the dialog service. */
-  data?: PartnerCodePromptData;
+  private readonly dialogRef = injectDialogRef<
+    PartnerCodePromptData | undefined,
+    PartnerCodePromptResult
+  >();
+  /** Optional — the subscribe-flow caller opens it without data. */
+  protected readonly data = this.dialogRef.data;
 
   private readonly partnerCode = inject(PartnerCode);
   private readonly destroyRef = inject(DestroyRef);
@@ -58,10 +62,6 @@ export class PartnerCodePromptDialog {
     () => this.model().partner_code.trim().length > 0 && !this.loading(),
   );
 
-  /**
-   * Plain getter, not a computed: `data` is assigned after construction, so a
-   * computed would capture the pre-assignment `undefined`.
-   */
   protected get showSubscribe(): boolean {
     return !this.data?.codeOnly;
   }

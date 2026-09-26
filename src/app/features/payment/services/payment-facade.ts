@@ -31,21 +31,18 @@ import { NotificationService } from '@core/services/notification/notification';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { CartStore } from '@core/services/cart/cart-store';
-import { Dialog } from '@core/services/dialog/dialog';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 // Dialog components are loaded lazily (dynamic import in the open* methods below)
 // so they — and their `@angular/forms` dependency — stay out of the initial
 // bundle. This facade is eagerly instantiated via the root `Utils` service, so a
 // static import would drag every dialog into the initial chunk. Types are
 // import-only (erased at build time); the runtime class comes from `import()`.
-import type { CouponDialog } from '@features/payment/dialogs/coupon-dialog/coupon-dialog';
+import type { CouponDialogData } from '@features/payment/dialogs/coupon-dialog/coupon-dialog';
 import type {
-  FirmSponsorshipDialog,
+  FirmSponsorshipDialogData,
   FirmSponsorshipResult,
 } from '@features/payment/dialogs/firm-sponsorship-dialog/firm-sponsorship-dialog';
-import type {
-  PartnerCodePromptDialog,
-  PartnerCodePromptResult,
-} from '@features/payment/dialogs/partner-code-prompt-dialog/partner-code-prompt-dialog';
+import type { PartnerCodePromptResult } from '@features/payment/dialogs/partner-code-prompt-dialog/partner-code-prompt-dialog';
 import { Analytics } from '@core/services/analytics/analytics';
 
 type MyBucketResponse = RouteResponse<typeof PAYMENT_ROUTES.myBucket>;
@@ -70,7 +67,7 @@ export class PaymentFacade {
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly http = inject(ApiClient);
-  private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly injector = inject(Injector);
   private readonly transferState = inject(TransferState);
   private readonly platformId = inject(PLATFORM_ID);
@@ -377,15 +374,12 @@ export class PaymentFacade {
     if (!cartData) return;
 
     const { CouponDialog } = await import('@features/payment/dialogs/coupon-dialog/coupon-dialog');
-    const dialogRef = this.dialog.open<CouponDialog, CartDetails>(CouponDialog, {
-      width: '460px',
-      maxWidth: '95vw',
-      ariaLabel: 'All Coupons',
+    const dialogRef = this.dialogs.open<CouponDialogData, CartDetails | undefined>(CouponDialog, {
       data: { cartData },
       injector: this.injector,
     });
 
-    dialogRef.afterClosed$.subscribe((updatedCart) => {
+    dialogRef.afterClosed.subscribe((updatedCart) => {
       if (updatedCart) {
         this.setCartData(updatedCart);
       }
@@ -398,17 +392,15 @@ export class PaymentFacade {
   ): Promise<void> {
     const { FirmSponsorshipDialog } =
       await import('@features/payment/dialogs/firm-sponsorship-dialog/firm-sponsorship-dialog');
-    const dialogRef = this.dialog.open<FirmSponsorshipDialog, FirmSponsorshipResult>(
-      FirmSponsorshipDialog,
-      {
-        maxWidth: '95vw',
-        ariaLabel: 'Firm Sponsorship',
-        data: { planId: plan.id, planName: plan.subscription_name },
-        injector: this.injector,
-      },
-    );
+    const dialogRef = this.dialogs.open<
+      FirmSponsorshipDialogData,
+      FirmSponsorshipResult | undefined
+    >(FirmSponsorshipDialog, {
+      data: { planId: plan.id, planName: plan.subscription_name },
+      injector: this.injector,
+    });
 
-    dialogRef.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!result) return;
 
       if (result.skipped) {
@@ -593,15 +585,7 @@ export class PaymentFacade {
   async openCartDrawer(): Promise<void> {
     const { CartDrawerDialog } =
       await import('@features/payment/dialogs/cart-drawer-dialog/cart-drawer-dialog');
-    this.dialog.open(CartDrawerDialog, {
-      width: '500px',
-      maxWidth: '90vw',
-      height: '100vh',
-      position: 'right',
-      ariaLabel: 'Cart',
-      data: {},
-      injector: this.injector,
-    });
+    this.dialogs.open(CartDrawerDialog, { injector: this.injector });
   }
 
   /**
@@ -652,16 +636,11 @@ export class PaymentFacade {
 
     const { PartnerCodePromptDialog } =
       await import('@features/payment/dialogs/partner-code-prompt-dialog/partner-code-prompt-dialog');
-    const ref = this.dialog.open<PartnerCodePromptDialog, PartnerCodePromptResult>(
-      PartnerCodePromptDialog,
-      {
-        maxWidth: '95vw',
-        ariaLabel: 'Continue to subscribe or apply a partner code',
-        injector: this.injector,
-      },
-    );
+    const ref = this.dialogs.open<undefined, PartnerCodePromptResult>(PartnerCodePromptDialog, {
+      injector: this.injector,
+    });
 
-    ref.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (result?.action === 'subscribe') {
         this.addToCart(plan.id, 'subscription', plan.price_detail, paymentType, options.onAdded);
       } else if (result?.action === 'partner-code-applied' && options.refreshPlansOnApply) {

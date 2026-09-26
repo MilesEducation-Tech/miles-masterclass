@@ -11,13 +11,14 @@ import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { SubscriptionPlan } from '@core/models/payment.model';
 import { NotificationService } from '@core/services/notification/notification';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Dialog } from '@core/services/dialog/dialog';
 import { Utils } from '@shared/services/utils';
 import { UtilsDialog } from '@shared/dialogs/utils-dialog/utils-dialog';
 // Type-only (matches the facade's convention): the runtime class comes from the
 // `import()` inside `onApplyPartnerCode`, so the dialog stays out of this chunk.
 import type {
-  PartnerCodePromptDialog,
+  PartnerCodePromptData,
   PartnerCodePromptResult,
 } from '@features/payment/dialogs/partner-code-prompt-dialog/partner-code-prompt-dialog';
 import { SIGNUP_DIALOG_DATA } from '@features/payment/constants/payment';
@@ -46,6 +47,7 @@ export class Plan {
   private readonly router = inject(Router);
   private readonly notification = inject(NotificationService);
   private readonly dialog = inject(Dialog);
+  private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -254,12 +256,12 @@ export class Plan {
 
     const { PartnerCodePromptDialog } =
       await import('@features/payment/dialogs/partner-code-prompt-dialog/partner-code-prompt-dialog');
-    const ref = this.dialog.open<PartnerCodePromptDialog, PartnerCodePromptResult>(
+    // No `injector` needed — the dialog only injects root services.
+    const ref = this.dialogs.open<PartnerCodePromptData, PartnerCodePromptResult>(
       PartnerCodePromptDialog,
-      // No `injector` needed — the dialog only injects root services.
-      { maxWidth: '95vw', ariaLabel: 'Apply a partner code', data: { codeOnly: true } },
+      { data: { codeOnly: true } },
     );
-    ref.afterClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+    ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (result?.action === 'partner-code-applied') this.facade.loadSubscriptionPlans();
     });
   }

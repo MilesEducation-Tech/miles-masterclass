@@ -1,7 +1,8 @@
 import { Component, computed, inject } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { Utils } from '@shared/services/utils';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { CartItem } from '@features/payment/components/cart-item/cart-item';
@@ -9,12 +10,12 @@ import { Button } from '@shared/ui/button/button';
 
 @Component({
   selector: 'app-cart-drawer-dialog',
-  imports: [CartItem, Button, CurrencyPipe],
+  imports: [CartItem, Button, CurrencyPipe, DialogShell],
   templateUrl: './cart-drawer-dialog.html',
   styleUrl: './cart-drawer-dialog.css',
 })
 export class CartDrawerDialog {
-  dialogRef!: DialogRef<CartDrawerDialog>;
+  private readonly dialogRef = injectDialogRef();
 
   private readonly facade = inject(PaymentFacade);
   private readonly router = inject(Router);

@@ -1,193 +1,195 @@
-<div
-  class="bg-linear-to-l from-[#18222C] to-[#507192] flex flex-col md:max-w-[460px] w-[95svw] max-h-[85svh] mx-auto overflow-hidden relative rounded-xl"
-  role="dialog"
->
-  <!-- Header -->
-  <div class="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
-    <h2 class="text-lg font-bold text-white">All Coupons</h2>
-    <app-button variant="close" (clicked)="close()" aria-label="Close dialog" />
-  </div>
-
-  <!-- Scrollable Content -->
-  <div class="flex-1 overflow-y-auto p-5 space-y-5">
-    <!-- Coupon Code Input -->
-    <div class="relative flex items-center">
-      <input
-        [formControl]="couponCodeControl"
-        placeholder="Enter Coupon Code"
-        class="w-full rounded-lg bg-[#162230] pl-4 pr-20 py-3 text-sm text-white placeholder:text-gray-500 ring-1 ring-white/10 outline-none focus:ring-blue-500 transition-colors"
-        (keydown.enter)="applyCouponFromInput()"
-      />
-      <app-button
-        variant="ghost"
-        [class]="'absolute right-1.5 h-auto top-1/2 -translate-y-1/2 px-3 text-xs font-bold text-blue-500 hover:bg-transparent hover:text-blue-400'"
-        (clicked)="applyCouponFromInput()"
-        [disabled]="applying()"
-      >
-        APPLY
-      </app-button>
+<app-dialog-shell width="460px" maxWidth="95vw" ariaLabel="All Coupons">
+  <div
+    class="bg-linear-to-l from-[#18222C] to-[#507192] flex flex-col md:max-w-[460px] w-[95svw] max-h-[85svh] mx-auto overflow-hidden relative rounded-xl"
+  >
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+      <h2 class="text-lg font-bold text-white">All Coupons</h2>
+      <app-button variant="close" (clicked)="close()" aria-label="Close dialog" />
     </div>
 
-    @if (loading()) {
-      <app-page-loading message="Loading coupons..." size="lg" />
-    } @else if (coupons().length === 0) {
-      <!-- Empty State -->
-      <p class="text-center text-sm text-gray-400 py-8">No coupons available at the moment.</p>
-    } @else {
-      <!-- All Offers Section -->
-      <div class="space-y-4">
-        @for (coupon of coupons(); track coupon.id) {
-          <div class="flex min-h-[140px] rounded-2xl">
-            <!-- LEFT BADGE -->
-            <!-- The mask removes half-circles from the left edge revealing the dialog's background -->
-            <div
-              [class]="
-                'relative flex items-center justify-center w-[4.5rem] shrink-0 coupon-badge-mask rounded-l-2xl ' +
-                (appliedCouponCode() === coupon.coupon_code
-                  ? 'bg-linear-to-b from-[#062149] to-[#3B1964]'
-                  : !coupon.coupon_applicable
-                    ? 'bg-[#4F5C68]'
-                    : 'bg-[#0C1636]')
-              "
-            >
-              <span
-                class="text-white text-lg font-bold -rotate-90 whitespace-nowrap tracking-widest block transform origin-center"
-              >
-                {{ getDiscountLabel(coupon) }}
-              </span>
-            </div>
+    <!-- Scrollable Content -->
+    <div class="flex-1 overflow-y-auto p-5 space-y-5">
+      <!-- Coupon Code Input -->
+      <div class="relative flex items-center">
+        <input
+          [formControl]="couponCodeControl"
+          placeholder="Enter Coupon Code"
+          class="w-full rounded-lg bg-[#162230] pl-4 pr-20 py-3 text-sm text-white placeholder:text-gray-500 ring-1 ring-white/10 outline-none focus:ring-blue-500 transition-colors"
+          (keydown.enter)="applyCouponFromInput()"
+        />
+        <app-button
+          variant="ghost"
+          [class]="'absolute right-1.5 h-auto top-1/2 -translate-y-1/2 px-3 text-xs font-bold text-blue-500 hover:bg-transparent hover:text-blue-400'"
+          (clicked)="applyCouponFromInput()"
+          [disabled]="applying()"
+        >
+          APPLY
+        </app-button>
+      </div>
 
-            <!-- RIGHT BODY -->
-            <div
-              [class]="
-                'flex-1 p-5 rounded-r-2xl border border-l-0 ' +
-                (appliedCouponCode() === coupon.coupon_code
-                  ? 'bg-[#4B5563] border-[#4B5563] text-gray-100'
-                  : 'bg-white border-transparent text-gray-600')
-              "
-            >
-              <div class="flex items-start justify-between gap-3">
-                <div class="flex-1 min-w-0">
-                  <h3
-                    [class]="
-                      'text-xl font-extrabold uppercase truncate ' +
-                      (appliedCouponCode() === coupon.coupon_code ? 'text-white' : 'text-black')
-                    "
-                  >
-                    {{ coupon.coupon_name }}
-                  </h3>
-                  <p
-                    [class]="
-                      'text-[15px] font-medium mt-1 ' +
-                      (appliedCouponCode() === coupon.coupon_code
-                        ? 'text-[#60a5fa]'
-                        : 'text-[#3b82f6]')
-                    "
-                  >
-                    {{ getDiscountDescription(coupon) }}
-                  </p>
-                </div>
-
-                <!-- Action Button -->
-                @if (appliedCouponCode() === coupon.coupon_code) {
-                  <span class="shrink-0 text-base font-bold text-[#60a5fa] leading-none pt-0.5 px-1"
-                    >Applied</span
-                  >
-                } @else {
-                  <app-button
-                    variant="ghost"
-                    [class]="
-                      'shrink-0 h-auto p-0 text-base font-bold leading-none hover:bg-transparent ' +
-                      (coupon.coupon_applicable
-                        ? 'text-[#3b82f6] hover:text-blue-400'
-                        : 'text-gray-400 cursor-not-allowed')
-                    "
-                    (clicked)="applyCoupon(coupon.coupon_code)"
-                    [disabled]="applying() || !coupon.coupon_applicable"
-                  >
-                    APPLY
-                  </app-button>
-                }
-              </div>
-
-              <!-- Separator -->
+      @if (loading()) {
+        <app-page-loading message="Loading coupons..." size="lg" />
+      } @else if (coupons().length === 0) {
+        <!-- Empty State -->
+        <p class="text-center text-sm text-gray-400 py-8">No coupons available at the moment.</p>
+      } @else {
+        <!-- All Offers Section -->
+        <div class="space-y-4">
+          @for (coupon of coupons(); track coupon.id) {
+            <div class="flex min-h-[140px] rounded-2xl">
+              <!-- LEFT BADGE -->
+              <!-- The mask removes half-circles from the left edge revealing the dialog's background -->
               <div
                 [class]="
-                  'w-full border-b border-dashed my-4 ' +
+                  'relative flex items-center justify-center w-[4.5rem] shrink-0 coupon-badge-mask rounded-l-2xl ' +
                   (appliedCouponCode() === coupon.coupon_code
-                    ? 'border-[#374151]'
-                    : 'border-gray-300')
-                "
-              ></div>
-
-              <!-- Description -->
-              <p
-                [class]="
-                  'text-[14px] leading-relaxed font-medium ' +
-                  (appliedCouponCode() === coupon.coupon_code ? 'text-white' : 'text-gray-500')
+                    ? 'bg-linear-to-b from-[#062149] to-[#3B1964]'
+                    : !coupon.coupon_applicable
+                      ? 'bg-[#4F5C68]'
+                      : 'bg-[#0C1636]')
                 "
               >
-                {{ coupon.description }}
-              </p>
-
-              @if (!coupon.coupon_applicable) {
-                <p class="mt-2 text-xs text-red-500 font-semibold tracking-wide">
-                  This coupon is not applicable for your cart.
-                </p>
-              }
-
-              <!-- More / Less Toggle -->
-              @if (coupon.terms_and_conditions) {
-                <button
-                  type="button"
-                  [class]="
-                    'flex items-center gap-2 text-[15px] font-semibold mt-5 transition-colors ' +
-                    (appliedCouponCode() === coupon.coupon_code
-                      ? 'text-white hover:text-gray-200'
-                      : 'text-black hover:text-gray-700')
-                  "
-                  (click)="toggleTerms(coupon.id)"
+                <span
+                  class="text-white text-lg font-bold -rotate-90 whitespace-nowrap tracking-widest block transform origin-center"
                 >
-                  <ng-icon
-                    [name]="isExpanded(coupon.id) ? 'heroMinus' : 'heroPlus'"
-                    size="18"
-                    strokeWidth="2.5"
-                    aria-hidden="true"
-                  />
-                  {{ isExpanded(coupon.id) ? 'Less' : 'MORE' }}
-                </button>
-              }
+                  {{ getDiscountLabel(coupon) }}
+                </span>
+              </div>
 
-              <!-- Terms & Conditions (expanded) -->
-              @if (isExpanded(coupon.id) && coupon.terms_and_conditions) {
+              <!-- RIGHT BODY -->
+              <div
+                [class]="
+                  'flex-1 p-5 rounded-r-2xl border border-l-0 ' +
+                  (appliedCouponCode() === coupon.coupon_code
+                    ? 'bg-[#4B5563] border-[#4B5563] text-gray-100'
+                    : 'bg-white border-transparent text-gray-600')
+                "
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="flex-1 min-w-0">
+                    <h3
+                      [class]="
+                        'text-xl font-extrabold uppercase truncate ' +
+                        (appliedCouponCode() === coupon.coupon_code ? 'text-white' : 'text-black')
+                      "
+                    >
+                      {{ coupon.coupon_name }}
+                    </h3>
+                    <p
+                      [class]="
+                        'text-[15px] font-medium mt-1 ' +
+                        (appliedCouponCode() === coupon.coupon_code
+                          ? 'text-[#60a5fa]'
+                          : 'text-[#3b82f6]')
+                      "
+                    >
+                      {{ getDiscountDescription(coupon) }}
+                    </p>
+                  </div>
+
+                  <!-- Action Button -->
+                  @if (appliedCouponCode() === coupon.coupon_code) {
+                    <span
+                      class="shrink-0 text-base font-bold text-[#60a5fa] leading-none pt-0.5 px-1"
+                      >Applied</span
+                    >
+                  } @else {
+                    <app-button
+                      variant="ghost"
+                      [class]="
+                        'shrink-0 h-auto p-0 text-base font-bold leading-none hover:bg-transparent ' +
+                        (coupon.coupon_applicable
+                          ? 'text-[#3b82f6] hover:text-blue-400'
+                          : 'text-gray-400 cursor-not-allowed')
+                      "
+                      (clicked)="applyCoupon(coupon.coupon_code)"
+                      [disabled]="applying() || !coupon.coupon_applicable"
+                    >
+                      APPLY
+                    </app-button>
+                  }
+                </div>
+
+                <!-- Separator -->
                 <div
                   [class]="
-                    'mt-4 rounded-xl p-4 border ' +
+                    'w-full border-b border-dashed my-4 ' +
                     (appliedCouponCode() === coupon.coupon_code
-                      ? 'border-gray-500 bg-[#374151]'
-                      : 'border-gray-200 bg-white')
+                      ? 'border-[#374151]'
+                      : 'border-gray-300')
+                  "
+                ></div>
+
+                <!-- Description -->
+                <p
+                  [class]="
+                    'text-[14px] leading-relaxed font-medium ' +
+                    (appliedCouponCode() === coupon.coupon_code ? 'text-white' : 'text-gray-500')
                   "
                 >
-                  <ul
+                  {{ coupon.description }}
+                </p>
+
+                @if (!coupon.coupon_applicable) {
+                  <p class="mt-2 text-xs text-red-500 font-semibold tracking-wide">
+                    This coupon is not applicable for your cart.
+                  </p>
+                }
+
+                <!-- More / Less Toggle -->
+                @if (coupon.terms_and_conditions) {
+                  <button
+                    type="button"
                     [class]="
-                      'list-disc list-outside ml-4 space-y-1.5 text-[14px] font-medium ' +
+                      'flex items-center gap-2 text-[15px] font-semibold mt-5 transition-colors ' +
                       (appliedCouponCode() === coupon.coupon_code
-                        ? 'text-gray-300 marker:text-gray-400'
-                        : 'text-gray-400 marker:text-gray-300')
+                        ? 'text-white hover:text-gray-200'
+                        : 'text-black hover:text-gray-700')
+                    "
+                    (click)="toggleTerms(coupon.id)"
+                  >
+                    <ng-icon
+                      [name]="isExpanded(coupon.id) ? 'heroMinus' : 'heroPlus'"
+                      size="18"
+                      strokeWidth="2.5"
+                      aria-hidden="true"
+                    />
+                    {{ isExpanded(coupon.id) ? 'Less' : 'MORE' }}
+                  </button>
+                }
+
+                <!-- Terms & Conditions (expanded) -->
+                @if (isExpanded(coupon.id) && coupon.terms_and_conditions) {
+                  <div
+                    [class]="
+                      'mt-4 rounded-xl p-4 border ' +
+                      (appliedCouponCode() === coupon.coupon_code
+                        ? 'border-gray-500 bg-[#374151]'
+                        : 'border-gray-200 bg-white')
                     "
                   >
-                    @for (term of coupon.terms_and_conditions.split('\n'); track term) {
-                      @if (term.trim()) {
-                        <li>{{ term.trim() }}</li>
+                    <ul
+                      [class]="
+                        'list-disc list-outside ml-4 space-y-1.5 text-[14px] font-medium ' +
+                        (appliedCouponCode() === coupon.coupon_code
+                          ? 'text-gray-300 marker:text-gray-400'
+                          : 'text-gray-400 marker:text-gray-300')
+                      "
+                    >
+                      @for (term of coupon.terms_and_conditions.split('\n'); track term) {
+                        @if (term.trim()) {
+                          <li>{{ term.trim() }}</li>
+                        }
                       }
-                    }
-                  </ul>
-                </div>
-              }
+                    </ul>
+                  </div>
+                }
+              </div>
             </div>
-          </div>
-        }
-      </div>
-    }
+          }
+        </div>
+      }
+    </div>
   </div>
-</div>
+</app-dialog-shell>

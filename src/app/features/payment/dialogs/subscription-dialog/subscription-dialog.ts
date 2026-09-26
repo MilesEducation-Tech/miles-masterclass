@@ -1,7 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCheck } from '@ng-icons/lucide';
-import { DialogRef } from '@core/services/dialog/dialog';
+import { injectDialogRef } from 'ng-primitives/dialog';
+import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
 import { PaymentFacade } from '../../services/payment-facade';
 import { PlanSelectionCard } from '../../components/plan-selection-card/plan-selection-card';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
@@ -10,7 +11,7 @@ import { Button } from '@shared/ui/button/button';
 
 @Component({
   selector: 'app-subscription-dialog',
-  imports: [PlanSelectionCard, PageLoading, ErrorState, Button, NgIcon],
+  imports: [PlanSelectionCard, PageLoading, ErrorState, Button, DialogShell, NgIcon],
   providers: [provideIcons({ lucideCheck })],
   templateUrl: './subscription-dialog.html',
   styleUrl: './subscription-dialog.css',
@@ -19,7 +20,7 @@ export class SubscriptionDialog {
   // The orchestrator marks `dismissedSubscription` at open-time, so the close
   // payload is no-op — every exit path is "dismissed for this session". Typed
   // as `void` to avoid pretending the return value carries meaning.
-  dialogRef!: DialogRef<SubscriptionDialog, void>;
+  private readonly dialogRef = injectDialogRef<void, void>();
 
   private readonly facade = inject(PaymentFacade);
 

@@ -12,7 +12,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { EMPTY, Observable, filter, firstValueFrom, from, map, switchMap } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Dialog, DialogRef } from '@core/services/dialog/dialog';
 import { Storage } from '@core/services/storage/storage';
 import { CurrentPlanData } from '@core/models/payment.model';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
@@ -91,7 +90,6 @@ const DISMISSAL_KEYS: Record<DialogKind, string> = {
  */
 @Service()
 export class EngagementDialog {
-  private readonly dialog = inject(Dialog);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   private readonly feature = inject(FeatureFacade);
@@ -233,15 +231,10 @@ export class EngagementDialog {
     // `SUBSCRIPTION_DIALOG`, so opening it is now async; the returned stream is
     // unchanged — it still completes when the dialog closes.
     return from(
-      this.subscriptionDialog().then((SubscriptionDialog) =>
-        this.afterClosedOld(
-          this.dialog.open<unknown, void>(SubscriptionDialog, {
-            maxWidth: '95vw',
-            ariaLabel: 'Subscribe to a plan',
-            injector: this.injector,
-          }),
-        ),
-      ),
+      this.subscriptionDialog().then((SubscriptionDialog) => {
+        const ref = this.dialogs.open<void, void>(SubscriptionDialog, { injector: this.injector });
+        return this.afterClosed(ref, ref.afterClosed);
+      }),
     ).pipe(switchMap(() => EMPTY));
   }
 
@@ -266,9 +259,6 @@ export class EngagementDialog {
    * Resolves when the dialog closes, with its result. The closed stream emits once and
    * completes; `firstValueFrom` resolves to the emitted value, or to `undefined` if it
    * completes without one, and tears down the subscription either way.
-   *
-   * Takes the ref and its stream separately because dialogs are mid-migration from the
-   * hand-rolled service (`afterClosed$`) to ng-primitives (`afterClosed`).
    */
   private afterClosed<R>(
     ref: { close(): unknown },
@@ -280,10 +270,5 @@ export class EngagementDialog {
     return firstValueFrom(closed$, { defaultValue: undefined }).finally(() => {
       this.openRef = null;
     });
-  }
-
-  /** `SubscriptionDialog` is still on the hand-rolled service until its batch migrates. */
-  private afterClosedOld<R>(ref: DialogRef<unknown, R>): Promise<R | undefined> {
-    return this.afterClosed(ref, ref.afterClosed$);
   }
 }

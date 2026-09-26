@@ -438,10 +438,7 @@ export class Utils {
 
     // ponytail: the guest branch (redirect to login) went with the auth layer.
     void this.subscriptionDialog().then((SubscriptionDialog) =>
-      this.dialog.open<unknown, void>(SubscriptionDialog, {
-        maxWidth: '95vw',
-        ariaLabel: 'Subscribe to a plan',
-      }),
+      this.dialogs.open(SubscriptionDialog),
     );
     return false;
   }
@@ -746,15 +743,7 @@ export class Utils {
   async openCartDrawer(): Promise<void> {
     this.cart.loadMyBucket({ force: true });
     const CartDrawerDialog = await this.cartDrawerDialog();
-    this.dialog.open(CartDrawerDialog, {
-      width: '500px',
-      maxWidth: '90vw',
-      height: '100vh',
-      position: 'right',
-      ariaLabel: 'Cart',
-      data: {},
-      injector: this.injector,
-    });
+    this.dialogs.open(CartDrawerDialog, { injector: this.injector });
   }
 
   openAdditionalResources(courseId: number): void {
