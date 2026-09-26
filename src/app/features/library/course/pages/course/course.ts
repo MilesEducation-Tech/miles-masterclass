@@ -20,7 +20,6 @@ import {
 } from '@core/models/library-filters.model';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { CourseFilters } from '../../components/course-filters/course-filters';
-import { CourseFiltersDrawer } from '../../components/course-filters-drawer/course-filters-drawer';
 import { CourseFacade } from '../../services/course-facade';
 
 @Component({
@@ -148,7 +147,10 @@ export class Course {
   }
 
   /** Mobile button → opens the same `CourseFilters` body inside a right drawer. */
-  openMobileFilters() {
+  async openMobileFilters() {
+    // Loaded on open: the drawer is mobile-only and user-initiated (§4.4).
+    const { CourseFiltersDrawer } =
+      await import('../../components/course-filters-drawer/course-filters-drawer');
     this.dialogs.open(CourseFiltersDrawer, {
       data: {
         groups: () => this.groups(),

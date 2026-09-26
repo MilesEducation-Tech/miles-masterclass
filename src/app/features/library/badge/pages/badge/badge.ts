@@ -26,10 +26,7 @@ import {
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import {
-  CertificateDialogData,
-  CertificateDownloadDialog,
-} from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
+import type { CertificateDialogData } from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
 import { BadgeLibraryHero } from '../../components/badge-library-hero/badge-library-hero';
 import { BadgeFacade } from '../../services/badge-facade';
 
@@ -188,7 +185,7 @@ export class Badge {
       });
   }
 
-  private downloadCertificate(card: BadgeCardData) {
+  private async downloadCertificate(card: BadgeCardData) {
     if (!card.courseId) {
       this.notify.error('Unavailable', 'Course details not available for certificate.');
       return;
@@ -212,6 +209,9 @@ export class Badge {
           }
         : undefined,
     };
+    // Loaded on open, so the dialog is not part of this page's chunk (§4.4).
+    const { CertificateDownloadDialog } =
+      await import('@shared/dialogs/certificate-download-dialog/certificate-download-dialog');
     this.dialogs.open(CertificateDownloadDialog, { data });
   }
 
