@@ -13,7 +13,7 @@ import {
 import { SKIP_ERROR_NOTIFICATION } from '../../models/http.model';
 import { ApiClient } from '../api-client/api-client';
 import { Storage } from '../storage/storage';
-import { HttpContext } from '@angular/common/http';
+import { HttpContext, HttpErrorResponse } from '@angular/common/http';
 
 /**
  * Renew this many seconds BEFORE the access token expires.
@@ -126,19 +126,26 @@ export class AuthSession {
   }
 
   /**
-   * End the session at the SSO.
+   * End the session at the SSO. Resolves `true` once the session is gone.
    *
-   * Local state is cleared ONLY on success. A logout that failed leaves a
-   * session still live at the SSO, and blanking the tokens would hide that
-   * behind a UI that merely looks signed out.
+   * The bearer is attached by `appInterceptor` — logout is the one auth route
+   * that requires it.
+   *
+   * Local state is cleared on success, and on a 401: with the bearer attached,
+   * a 401 means our token no longer resolves upstream, so there is no live
+   * session left to protect and keeping the tokens would strand the user signed
+   * in. Anything else (502/503/network) leaves a session still live at the
+   * SSO, and blanking the tokens would hide that behind a UI that merely looks
+   * signed out — so it is kept, and the caller tells the user.
    */
-  async logout(): Promise<void> {
+  async logout(): Promise<boolean> {
     try {
       await firstValueFrom(this.api.call(AUTH_ROUTES.logout, undefined, { context: QUIET }));
-      this.clear();
-    } catch {
-      // Deliberately keeps the session. The caller decides what to show.
+    } catch (err) {
+      if (!(err instanceof HttpErrorResponse && err.status === 401)) return false;
     }
+    this.clear();
+    return true;
   }
 
   /**
@@ -201,12 +208,18 @@ export class AuthSession {
         ),
       );
       this.store(session);
-    } catch {
-      // A 401 here means the refreshed token would not resolve to a local row —
-      // the account is gone or deactivated. Clear ONCE and let the guards send
-      // them to sign-in; never retry, or this becomes a loop against a session
-      // that can no longer exist.
-      this.clear();
+    } catch (err) {
+      // Only a 401 ends the session: the refreshed token would not resolve to a
+      // local row — the account is gone or deactivated. Clear ONCE and let the
+      // guards send them to sign-in; never retry, or this becomes a loop against
+      // a session that can no longer exist.
+      //
+      // Everything else — 502/503 (documented as transient), a network blip —
+      // keeps the tokens, as the collection's own refresh script does. The
+      // request that triggered this goes out with the current token, and a 403
+      // from the server is the real signal if it has expired. A malformed 200
+      // never reaches here: `store()` clears before it throws.
+      if (err instanceof HttpErrorResponse && err.status === 401) this.clear();
     }
   }
 
