@@ -18,6 +18,43 @@ import { HttpErrorResponse } from '@angular/common/http';
  *    `detail` — hence `detail ?? message` below.
  */
 
+/**
+ * Every `code` this client knows. The Events contract's refusals, plus
+ * `authentication_failed` (our name for DRF's code-less 403) and
+ * `unknown_error` (nothing usable came back). The live-session codes belong to
+ * the embedded meeting path, which is not in the contract yet.
+ */
+export type KnownWebinarErrorCode =
+  | 'invalid_request'
+  | 'authentication_required'
+  | 'authentication_failed'
+  | 'webinar_not_found'
+  | 'attempt_not_found'
+  | 'missing_email'
+  | 'invalid_email'
+  | 'missing_first_name'
+  | 'invalid_first_name'
+  | 'registration_in_progress'
+  | 'unsupported_webinar_type'
+  | 'webinar_cancelled'
+  | 'webinar_inactive'
+  | 'webinar_start_time_missing'
+  // Live-session path (liveEnabled: false).
+  | 'not_registered'
+  | 'join_window_not_open'
+  | 'webinar_ended'
+  | 'session_active'
+  | 'session_superseded'
+  | 'poll_closed'
+  | 'unknown_error';
+
+/**
+ * Widened like `AuthMethod`: codes are ADDITIVE on the backend, so a new one is
+ * data that falls through to the generic copy — not a compile error, and never
+ * a crash. Switch on the known members; the widening keeps the rest honest.
+ */
+export type WebinarErrorCode = KnownWebinarErrorCode | (string & {});
+
 /** Per-field validation failure inside a 400 `invalid_request`. */
 export interface FieldError {
   /** Dot-joined, so a bad key in a list element reads `chapters.0.chapter_id`. */
@@ -27,7 +64,7 @@ export interface FieldError {
 
 export interface WebinarError {
   /** The stable contract value. `unknown_error` when nothing usable came back. */
-  code: string;
+  code: WebinarErrorCode;
   /** Safe to surface. Already written as user-facing copy for several codes. */
   message: string;
   status: number | null;
@@ -49,7 +86,7 @@ export interface WebinarError {
  * synchronously instead of polling to a terminal failure, and each `detail` is
  * already written as copy naming what to fix.
  */
-const PROFILE_CODES = new Set([
+const PROFILE_CODES = new Set<WebinarErrorCode>([
   'missing_email',
   'invalid_email',
   'missing_first_name',
@@ -61,14 +98,19 @@ const PROFILE_CODES = new Set([
  * is lock contention; `webinar_start_time_missing` is an ops data problem, not a
  * client error, so the user can come back later.
  */
-const RETRYABLE_CODES = new Set([
+const RETRYABLE_CODES = new Set<WebinarErrorCode>([
   'registration_in_progress',
   'webinar_start_time_missing',
   'unknown_error',
 ]);
 
+const UNKNOWN_COPY = 'Something went wrong. Please try again.';
+
 /** Fallback copy for codes whose `detail` we cannot rely on being present. */
-const FALLBACK_MESSAGES: Record<string, string> = {
+// The profile codes are absent on purpose: their `detail` is always the copy.
+// `satisfies` checks every key is a known code; the annotation lets a widened
+// (unknown) code index it and read `undefined` rather than fail to compile.
+const FALLBACK_MESSAGES: Readonly<Record<string, string | undefined>> = {
   invalid_request: 'Something in that request was not valid. Please try again.',
   webinar_not_found: 'We could not find that webinar.',
   unsupported_webinar_type: 'This session uses a different registration flow.',
@@ -85,24 +127,22 @@ const FALLBACK_MESSAGES: Record<string, string> = {
   session_active: 'You are already in a session on another device or window.',
   session_superseded: 'You joined this session from somewhere else.',
   poll_closed: 'That question has closed.',
-  unknown_error: 'Something went wrong. Please try again.',
-};
-
-/** The refusal body shape, as far as we are willing to assume it. */
-interface RefusalBody {
-  status?: string;
-  code?: string;
-  /** Every refusal carries this... */
-  detail?: string;
-  /** ...except `authentication_required`, which carries this instead. */
-  message?: string;
-  errors?: FieldError[];
-  retry_after_seconds?: number;
-  [key: string]: unknown;
-}
+  unknown_error: UNKNOWN_COPY,
+} satisfies Partial<Record<KnownWebinarErrorCode, string>>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+const stringOr = (v: unknown): string | undefined => (typeof v === 'string' && v ? v : undefined);
+
+function isFieldErrors(v: unknown): v is FieldError[] {
+  return (
+    Array.isArray(v) &&
+    v.every(
+      (e) => isRecord(e) && typeof e['field'] === 'string' && typeof e['message'] === 'string',
+    )
+  );
 }
 
 /**
@@ -115,36 +155,39 @@ export function toWebinarError(err: unknown): WebinarError {
   if (!(err instanceof HttpErrorResponse)) {
     return {
       code: 'unknown_error',
-      message: err instanceof Error ? err.message : FALLBACK_MESSAGES['unknown_error'],
+      message: err instanceof Error ? err.message : UNKNOWN_COPY,
       status: null,
       isProfileProblem: false,
       isRetryable: true,
     };
   }
 
-  const body: RefusalBody = isRecord(err.error) ? (err.error as RefusalBody) : {};
+  // Read key by key rather than cast to a body type: this is untrusted input,
+  // and a refusal that is not even an object still has to become a WebinarError.
+  const body: Record<string, unknown> = isRecord(err.error) ? err.error : {};
+  const bodyCode = stringOr(body['code']);
 
-  let code = typeof body.code === 'string' ? body.code : 'unknown_error';
+  let code: WebinarErrorCode = bodyCode ?? 'unknown_error';
   // `detail ?? message` — the one documented inconsistency in the envelope.
-  let serverText = body.detail ?? body.message;
+  let serverText = stringOr(body['detail']) ?? stringOr(body['message']);
 
   // The bad-token 403 is the one refusal that does NOT carry `code`. Verified
   // against UAT on 2026-09-18: a malformed bearer token answers
   // `403 {"detail": "Error decoding signature."}` — DRF's own envelope, not
   // this app's. Switching on `code` alone would file it under `unknown_error`
   // and show the user a JWT library's internal wording.
-  if (err.status === 403 && !body.code) {
+  if (err.status === 403 && !bodyCode) {
     code = 'authentication_failed';
     serverText = FALLBACK_MESSAGES['authentication_failed'];
   }
 
   return {
     code,
-    message: serverText || FALLBACK_MESSAGES[code] || FALLBACK_MESSAGES['unknown_error'],
+    message: serverText || FALLBACK_MESSAGES[code] || UNKNOWN_COPY,
     status: err.status,
-    errors: Array.isArray(body.errors) ? body.errors : undefined,
+    errors: isFieldErrors(body['errors']) ? body['errors'] : undefined,
     retryAfterSeconds:
-      typeof body.retry_after_seconds === 'number' ? body.retry_after_seconds : undefined,
+      typeof body['retry_after_seconds'] === 'number' ? body['retry_after_seconds'] : undefined,
     isProfileProblem: PROFILE_CODES.has(code),
     isRetryable: RETRYABLE_CODES.has(code),
   };

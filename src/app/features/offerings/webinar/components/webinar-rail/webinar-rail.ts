@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { SwiperStrip } from '../swiper-strip/swiper-strip';
 import { swiperConfigEven } from '@core/config/swiper.config';
-import { WebinarCard as WebinarCardModel } from '../../models/webinar.model';
+import { FeedCard } from '../../models/webinar.model';
 import { BRAND_MARKS } from '../../utils/brand-assets';
 import { WebinarBucket } from '../../utils/webinar-status';
 import { WebinarCard } from '../webinar-card/webinar-card';
@@ -49,7 +49,7 @@ export interface LevelTab {
 export class WebinarRail {
   readonly heading = input.required<string>();
   readonly description = input<string | null>(null);
-  readonly webinars = input.required<readonly WebinarCardModel[]>();
+  readonly webinars = input.required<readonly FeedCard[]>();
   readonly bucket = input.required<WebinarBucket>();
   readonly registeringIds = input<ReadonlySet<string>>(new Set());
   /** `rows` for the upcoming section, `strip` for the three past ones. */
@@ -124,7 +124,7 @@ export class WebinarRail {
    * How many rows are on screen. Re-seeded whenever the filter or the feed
    * changes, so switching to Level 2 does not inherit Level 1's expanded state.
    */
-  private readonly visibleCount = linkedSignal<readonly WebinarCardModel[], number>({
+  private readonly visibleCount = linkedSignal<readonly FeedCard[], number>({
     source: this.filtered,
     computation: () =>
       (this.isStrip() ? Number.MAX_SAFE_INTEGER : this.pageSize()) || Number.MAX_SAFE_INTEGER,

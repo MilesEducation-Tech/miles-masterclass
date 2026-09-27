@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { WebinarCard as WebinarCardModel } from '../../models/webinar.model';
+import { FeedCard } from '../../models/webinar.model';
 import { ServerClock } from '../../services/server-clock';
 import { formatSessionLabel } from '../../utils/session-time';
 import { TICKET_ICON } from '../../utils/brand-assets';
@@ -23,7 +23,7 @@ import { JoinCta } from '../join-cta/join-cta';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WebinarHero {
-  readonly webinar = input.required<WebinarCardModel>();
+  readonly webinar = input.required<FeedCard>();
   /**
    * Make the artwork a link into this webinar's detail page.
    *

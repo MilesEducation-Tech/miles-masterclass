@@ -1,19 +1,14 @@
+import { ctaFor, effectiveEndAt, isRegistered, joinOpensAt } from './webinar-status';
 import {
-  collapseRegistrationStatus,
-  ctaFor,
-  effectiveEndAt,
-  isRegistered,
-  joinOpensAt,
-} from './webinar-status';
-import {
-  InternalAttemptStatus,
-  WebinarCard,
+  CompletedWebinarCard,
+  UpcomingWebinarCard,
   WebinarRegistrationInfo,
 } from '../models/webinar.model';
 
 const NOW = Date.parse('2026-09-20T12:00:00Z');
 
-function card(overrides: Partial<WebinarCard> = {}): WebinarCard {
+/** An upcoming-bucket card; `registration` is its only bucket-specific key. */
+function card(overrides: Partial<UpcomingWebinarCard> = {}): UpcomingWebinarCard {
   return {
     id: 'w1',
     slug: null,
@@ -28,6 +23,7 @@ function card(overrides: Partial<WebinarCard> = {}): WebinarCard {
     webinar_why_attend_points: null,
     webinar_what_will_you_learn_points: null,
     subject: 'CAIRA',
+    subject_details: { id: 's1', subject: 'CAIRA' },
     level_details: null,
     horizontal_thumbnail: '',
     vertical_thumbnail: '',
@@ -52,40 +48,6 @@ function registration(overrides: Partial<WebinarRegistrationInfo> = {}): Webinar
     ...overrides,
   };
 }
-
-describe('collapseRegistrationStatus', () => {
-  it('treats all four MF_* states as REGISTERED', () => {
-    // The Salesforce forward is an audit hand-off downstream of Zoom accepting
-    // the registrant. Telling the user to register again would spend another
-    // Zoom registrant slot on a seat they already hold.
-    const mfStates: InternalAttemptStatus[] = ['MF_FAILED', 'MF_PERMANENTLY_FAILED', 'MF_SKIPPED'];
-    for (const status of mfStates) {
-      expect(collapseRegistrationStatus(status)).toBe('REGISTERED');
-    }
-  });
-
-  it('maps SUCCESS to REGISTERED', () => {
-    expect(collapseRegistrationStatus('SUCCESS')).toBe('REGISTERED');
-  });
-
-  it('maps the three terminal failures to REGISTER', () => {
-    expect(collapseRegistrationStatus('ZOOM_FAILED')).toBe('REGISTER');
-    expect(collapseRegistrationStatus('BOOKING_FAILED')).toBe('REGISTER');
-    expect(collapseRegistrationStatus('INTERRUPTED')).toBe('REGISTER');
-  });
-
-  it('maps ZOOM_PENDING_APPROVAL to PENDING even though it is terminal', () => {
-    // A retry CTA here would invite a duplicate registration that Zoom answers
-    // with a 409.
-    expect(collapseRegistrationStatus('ZOOM_PENDING_APPROVAL')).toBe('PENDING');
-  });
-
-  it('collapses an unrecognised status to PENDING', () => {
-    // The safe default: a spinner rather than an invitation to register twice.
-    expect(collapseRegistrationStatus('SOMETHING_NEW')).toBe('PENDING');
-    expect(collapseRegistrationStatus(null)).toBe('PENDING');
-  });
-});
 
 describe('isRegistered', () => {
   it('reads registration_status, not attempt_id', () => {
@@ -178,10 +140,9 @@ describe('ctaFor', () => {
   });
 
   it('reads eligible on the completed bucket and ignores the clock', () => {
-    expect(ctaFor(card({ eligible: true }), { now: NOW, bucket: 'completed' })).toBe('attended');
-    expect(ctaFor(card({ eligible: false }), { now: NOW, bucket: 'completed' })).toBe(
-      'not-eligible',
-    );
+    const completed = (eligible: boolean): CompletedWebinarCard => ({ ...card(), eligible });
+    expect(ctaFor(completed(true), { now: NOW, bucket: 'completed' })).toBe('attended');
+    expect(ctaFor(completed(false), { now: NOW, bucket: 'completed' })).toBe('not-eligible');
   });
 
   it('maps the two past buckets without consulting registration', () => {

@@ -23,13 +23,14 @@ import { NotificationService } from '@core/services/notification/notification';
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { withPreviousValue } from '@shared/utils/with-previous-value';
 import {
+  FeedCard,
   LoginType,
-  WebinarCard,
+  parseDetail,
+  parseMainPage,
+  UpcomingWebinarCard,
   WebinarMainPageData,
-  WebinarMainPageResponse,
   WEBINAR_ENDPOINTS,
   WebinarDetail,
-  WebinarDetailsResponse,
 } from '../models/webinar.model';
 import { toWebinarError, WebinarError } from '../utils/webinar-error';
 import type { WebinarBucket } from '../utils/webinar-status';
@@ -119,7 +120,9 @@ export class WebinarFacade {
     },
     {
       defaultValue: EMPTY_FEED,
-      parse: (raw) => (raw as WebinarMainPageResponse).data ?? EMPTY_FEED,
+      // The trust boundary: a body that drifted from the contract lands in
+      // `error()` here — and so in `loadError()` — instead of on screen.
+      parse: parseMainPage,
     },
   );
 
@@ -192,7 +195,7 @@ export class WebinarFacade {
    * webinar is not last, it is simply not curated. Falls back to the soonest
    * upcoming so the hero is never empty while anything is scheduled.
    */
-  readonly heroWebinar = computed<WebinarCard | null>(() => {
+  readonly heroWebinar = computed<UpcomingWebinarCard | null>(() => {
     const data = this.visibleFeed();
     return data.highlight_webinars[0] ?? data.upcoming_webinars[0] ?? null;
   });
@@ -202,7 +205,7 @@ export class WebinarFacade {
    * `upcoming_webinars`, so the two overlap by design. De-duplicate against
    * whatever the hero took, or it renders twice on one page.
    */
-  readonly upcomingWebinars = computed<WebinarCard[]>(() => {
+  readonly upcomingWebinars = computed<UpcomingWebinarCard[]>(() => {
     const heroId = this.heroWebinar()?.id;
     return this.visibleFeed().upcoming_webinars.filter((w) => w.id !== heroId);
   });
@@ -273,7 +276,7 @@ export class WebinarFacade {
         ? { url: apiUrl(WEBINAR_ENDPOINTS.detailsPage), params: { webinar_id: id } }
         : undefined;
     },
-    { parse: (raw) => (raw as WebinarDetailsResponse).data?.webinar ?? null },
+    { parse: parseDetail },
   );
 
   /**
@@ -337,7 +340,7 @@ export class WebinarFacade {
    * from a rail renders instantly instead of refetching what is already loaded.
    * Returns `null` on a cold load (deep link), which the detail page handles.
    */
-  findById(id: string): WebinarCard | null {
+  findById(id: string): FeedCard | null {
     return this.locate(id)?.card ?? null;
   }
 
@@ -353,9 +356,9 @@ export class WebinarFacade {
     return this.locate(id)?.bucket ?? null;
   }
 
-  private locate(id: string): { card: WebinarCard; bucket: WebinarBucket } | null {
+  private locate(id: string): { card: FeedCard; bucket: WebinarBucket } | null {
     const data = this.visibleFeed();
-    const buckets: [WebinarBucket, WebinarCard[]][] = [
+    const buckets: [WebinarBucket, readonly FeedCard[]][] = [
       ['highlight', data.highlight_webinars],
       ['upcoming', data.upcoming_webinars],
       ['completed', data.completed_webinar],

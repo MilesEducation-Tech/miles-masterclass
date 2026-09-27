@@ -3,7 +3,7 @@ import { NgIcon } from '@ng-icons/core';
 import { Button } from '@shared/ui/button/button';
 import { ButtonVariant } from '@core/models/button.model';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { WebinarCard } from '../../models/webinar.model';
+import { FeedCard, registrationOf } from '../../models/webinar.model';
 import { CTA_LABELS, needsCountdown, WebinarCta } from '../../utils/webinar-status';
 import { parseIso } from '../../utils/session-time';
 import { WebinarCountdown } from '../webinar-countdown/webinar-countdown';
@@ -22,7 +22,7 @@ import { WebinarCountdown } from '../webinar-countdown/webinar-countdown';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JoinCta {
-  readonly webinar = input.required<WebinarCard>();
+  readonly webinar = input.required<FeedCard>();
   readonly cta = input.required<WebinarCta>();
   /**
    * Full-width, larger button — used by the hero and the detail page, where the
@@ -98,7 +98,7 @@ export class JoinCta {
    * can do — so it gets an explanation and never a retry.
    */
   protected readonly note = computed<string | null>(() => {
-    const registration = this.webinar().registration;
+    const registration = registrationOf(this.webinar());
     switch (this.cta()) {
       case 'join-pending-approval':
         return registration?.error_message ?? 'The host is reviewing your registration.';
