@@ -11,7 +11,6 @@ import { AuthSession } from '@core/services/auth-session/auth-session';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
-import { ServerClock } from './server-clock';
 import { WebinarFacade } from './webinar-facade';
 import { WebinarRegistration } from './webinar-registration';
 import { WEBINAR_ENDPOINTS } from '../models/webinar.model';
@@ -41,7 +40,6 @@ describe('WebinarFacade.register — sign-in gate', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        ServerClock,
         WebinarFacade,
         { provide: AuthSession, useValue: { isAuthenticated } },
         {
@@ -124,7 +122,6 @@ describe('WebinarFacade reads', () => {
     logError = vi.fn();
     TestBed.configureTestingModule({
       providers: [
-        ServerClock,
         WebinarFacade,
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -155,16 +152,14 @@ describe('WebinarFacade reads', () => {
 
   afterEach(() => http.verify());
 
-  it('requests the pre_login feed and syncs the server clock from it', async () => {
+  it('requests the pre_login feed', async () => {
     void facade.heroWebinar();
     TestBed.tick();
     const req = http.expectOne((r) => r.url === FEED_URL);
     expect(req.request.params.get('login_type')).toBe('pre_login');
-    const serverTime = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     req.flush({
       data: {
         login_type: 'pre_login',
-        server_time: serverTime,
         highlight_webinars: [],
         upcoming_webinars: [{ id: 'w1' }],
         completed_webinar: [],
@@ -176,8 +171,6 @@ describe('WebinarFacade reads', () => {
 
     expect(facade.heroWebinar()?.id).toBe('w1');
     expect(facade.loadError()).toBeNull();
-    // An hour ahead, give or take the test's own runtime.
-    expect(TestBed.inject(ServerClock).now() - Date.now()).toBeGreaterThan(59 * 60 * 1000);
   });
 
   it('surfaces and logs a feed failure', async () => {
