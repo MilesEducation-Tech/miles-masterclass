@@ -212,7 +212,7 @@ function toCard(seed: Seed, index: number, baseTime: number, idPrefix: string): 
     square_image: SQUARE,
     badge_icon_url: BADGE,
     fields_of_study: FIELDS,
-    cpe_credits: 3.5,
+    total_cpe_credits: 3.5,
 
     // The NASBA disclosure block. Real values for a LIVE webinar — the design
     // mock shows "QAS Self Study", which is the self-paced method and wrong

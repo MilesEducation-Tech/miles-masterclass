@@ -33,6 +33,7 @@ import {
 } from '../models/webinar.model';
 import { ServerClock } from './server-clock';
 import { toWebinarError, WebinarError } from '../utils/webinar-error';
+import type { WebinarBucket } from '../utils/webinar-status';
 import { buildPreviewFeed, PREVIEW_ON, PREVIEW_PARAM } from '../utils/webinar-preview';
 import { WebinarRegistration } from './webinar-registration';
 
@@ -287,12 +288,14 @@ export class WebinarFacade {
   /**
    * A 404 is a real answer here, not a failure: the contract makes it
    * deliberately ambiguous between "no such id" and "an id you may not see".
-   * Either way the page renders its not-found state, so a 404 counts as
+   * A 400 is too — the only documented one is `invalid_request` for a
+   * `webinar_id` that is not a uuid, which is what an old integer-id link
+   * sends. Either way the page renders its not-found state, so both count as
    * "missing" rather than as an error.
    */
-  private readonly isDetail404 = computed(() => {
+  private readonly isDetailNotFound = computed(() => {
     const error = this.detailResource.error();
-    return error instanceof HttpErrorResponse && error.status === 404;
+    return error instanceof HttpErrorResponse && (error.status === 404 || error.status === 400);
   });
 
   /** `true` while the detail request is in flight. */
@@ -316,7 +319,7 @@ export class WebinarFacade {
     () =>
       this.detailId() !== null &&
       !this.isDetailLoading() &&
-      (this.isDetail404() ||
+      (this.isDetailNotFound() ||
         (this.detailResource.hasValue() && this.detailResource.value() === null)),
   );
 
@@ -330,7 +333,7 @@ export class WebinarFacade {
     });
     effect(() => {
       const error = this.detailResource.error();
-      if (error && !this.isDetail404()) {
+      if (error && !this.isDetailNotFound()) {
         this.logger.error('[WebinarFacade] detail load failed', toWebinarError(error).code, error);
       }
     });
@@ -344,17 +347,33 @@ export class WebinarFacade {
    * Returns `null` on a cold load (deep link), which the detail page handles.
    */
   findById(id: string): WebinarCard | null {
+    return this.locate(id)?.card ?? null;
+  }
+
+  /**
+   * Which bucket the feed placed this webinar in, or `null` when it is not in
+   * the feed (a deep link before the feed lands, or a webinar outside it).
+   *
+   * The detail page needs this because the details payload carries no bucket,
+   * and the CTA for a past webinar — attended, absent, missed — is decided by
+   * the bucket, not by anything on the card.
+   */
+  bucketOf(id: string): WebinarBucket | null {
+    return this.locate(id)?.bucket ?? null;
+  }
+
+  private locate(id: string): { card: WebinarCard; bucket: WebinarBucket } | null {
     const data = this.visibleFeed();
-    const buckets = [
-      data.highlight_webinars,
-      data.upcoming_webinars,
-      data.completed_webinar,
-      data.absent_webinar,
-      data.missed_webinar,
+    const buckets: [WebinarBucket, WebinarCard[]][] = [
+      ['highlight', data.highlight_webinars],
+      ['upcoming', data.upcoming_webinars],
+      ['completed', data.completed_webinar],
+      ['absent', data.absent_webinar],
+      ['missed', data.missed_webinar],
     ];
-    for (const bucket of buckets) {
-      const found = bucket.find((w) => w.id === id);
-      if (found) return found;
+    for (const [bucket, cards] of buckets) {
+      const card = cards.find((w) => w.id === id);
+      if (card) return { card, bucket };
     }
     return null;
   }
@@ -460,7 +479,14 @@ export class WebinarFacade {
     });
   }
 
+  /**
+   * Refresh everything that carries a `registration` block. The detail page
+   * prefers the detail row over the feed row, so reloading only the feed left
+   * its button on "Register Now" after a successful registration. On the
+   * landing page `detailId` is null and the detail reload is a no-op.
+   */
   reload(): void {
     this.feedResource.reload();
+    this.detailResource.reload();
   }
 }

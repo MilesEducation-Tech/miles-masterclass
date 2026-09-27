@@ -33,7 +33,7 @@ function card(overrides: Partial<WebinarCard> = {}): WebinarCard {
     vertical_thumbnail: '',
     square_image: '',
     fields_of_study: [],
-    cpe_credits: null,
+    total_cpe_credits: null,
     ...overrides,
   };
 }
@@ -214,10 +214,29 @@ describe('ctaFor', () => {
     expect(ctaFor(w, { now: NOW, bucket: 'upcoming' })).toBe('registered-waiting');
   });
 
-  it('does not offer registration for a non-registrable type', () => {
-    // Orientations and premiers have their own flows.
-    const w = card({ type: 'orientation' });
-    expect(ctaFor(w, { now: NOW, bucket: 'upcoming' })).toBe('ended');
+  it('does not offer registration for a non-registrable type — nor call it ended', () => {
+    // Orientations and premiers have their own flows; an upcoming one is not over.
+    expect(ctaFor(card({ type: 'orientation' }), { now: NOW, bucket: 'upcoming' })).toBe(
+      'not-registrable',
+    );
+    expect(ctaFor(card({ type: 'premier' }), { now: NOW, bucket: 'upcoming' })).toBe(
+      'not-registrable',
+    );
+  });
+
+  it('calls a past non-registrable session ended', () => {
+    const after = Date.parse('2026-09-20T15:00:00Z');
+    expect(ctaFor(card({ type: 'orientation' }), { now: after, bucket: 'highlight' })).toBe(
+      'ended',
+    );
+  });
+
+  // The detail page on a cold deep link: no bucket to consult, no registration.
+  it('never offers registration once an unregistered session is over', () => {
+    const after = Date.parse('2026-09-20T15:00:00Z');
+    expect(ctaFor(card(), { now: after, bucket: 'highlight' })).toBe('ended');
+    // …but an unfinished one still can be.
+    expect(ctaFor(card(), { now: NOW, bucket: 'highlight' })).toBe('register');
   });
 
   it('treats an offline event exactly like a webinar', () => {

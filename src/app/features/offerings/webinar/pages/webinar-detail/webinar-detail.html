@@ -5,6 +5,7 @@
   @if (w) {
     <app-webinar-hero
       [webinar]="w"
+      [bucket]="bucket()"
       [isRegistering]="isRegistering()"
       (register)="onRegister()"
       (join)="onJoin()"
