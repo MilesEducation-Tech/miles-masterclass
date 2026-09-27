@@ -55,9 +55,6 @@ export class WebinarCard {
 
   protected readonly cairaMark = BRAND_MARKS.caira;
 
-  /** The round credential badge, when the payload carries one. */
-  protected readonly badge = computed(() => this.webinar().badge_icon_url || null);
-
   protected readonly isRowLayout = computed(() => this.layout() === 'responsive');
 
   /**

@@ -5,14 +5,14 @@ import { SeoConfig } from '@core/models/seo.models';
 import { SeoManager } from '@core/services/seo/seo-manager';
 import { routeUrlToCanonicalUrl } from '@shared/utils/seo/seo-route-slug';
 import { environment } from '@env/environment';
-import { WebinarCard } from '../models/webinar.model';
+import { WebinarCard, WebinarDetail } from '../models/webinar.model';
 
 /** Trailing slash stripped, exactly as `app.ts` does before building a canonical. */
 const SITE_ORIGIN = environment.SITE_URL.replace(/\/+$/, '');
 
 export interface WebinarDetailSeoOptions {
   /** The webinar being shown, or `null` while loading / when missing. */
-  webinar: Signal<WebinarCard | null>;
+  webinar: Signal<WebinarCard | WebinarDetail | null>;
   /** The endpoint answered "no such webinar" — as opposed to "not yet". */
   isMissing: Signal<boolean>;
 }
@@ -80,10 +80,11 @@ function brandFallback(canonicalUrl: string): SeoConfig {
   };
 }
 
-function buildWebinarSeo(w: WebinarCard, canonicalUrl: string): SeoConfig {
+function buildWebinarSeo(w: WebinarCard | WebinarDetail, canonicalUrl: string): SeoConfig {
   const description =
     w.short_description ||
-    w.description ||
+    // Only the detail row carries `description`; a feed card never does.
+    ('description' in w ? w.description : null) ||
     `Join "${w.name}" — a live CPE session on ${SEO_BRAND_DEFAULTS.publisher}.`;
   const image = w.horizontal_thumbnail || w.square_image || w.vertical_thumbnail || undefined;
 

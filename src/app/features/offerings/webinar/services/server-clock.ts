@@ -1,21 +1,18 @@
 import { isPlatformBrowser } from '@angular/common';
 import { DestroyRef, inject, Service, PLATFORM_ID, signal } from '@angular/core';
-import { parseIso } from '../utils/session-time';
 
 /**
- * The webinar module's source of "now".
+ * The webinar module's source of "now", and its one ticker.
  *
- * Every countdown and the join-window gate read from here rather than calling
- * `Date.now()` directly. Two reasons:
+ * A page can render thirty cards, each with a countdown. One interval driving
+ * one signal, with every countdown a `computed()` off it, is the difference
+ * between one timer and thirty. This is the repo's first ticking code — keep it
+ * in this one place.
  *
- * 1. **Clock skew.** A device whose clock is ten minutes fast would show the
- *    Join button ten minutes early and then fail the server's own window check.
- *    The feed carries `server_time`; we capture the offset once per load and
- *    derive everything from it.
- * 2. **One ticker.** A page can render thirty cards, each with a countdown. One
- *    interval driving one signal, with every countdown a `computed()` off it,
- *    is the difference between one timer and thirty. This is the repo's first
- *    ticking code — keep it in this one place.
+ * ponytail: `now()` is the DEVICE clock. A device ten minutes fast shows Join
+ * ten minutes early and then fails the server's own window check. Correcting
+ * that needs a server timestamp the Events API does not send; once the feed
+ * carries one, capture `server − device` here and add it in `now()`.
  *
  * Provided at the webinar route so it dies with the feature, not at root.
  */
@@ -23,13 +20,6 @@ import { parseIso } from '../utils/session-time';
 export class ServerClock {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly destroyRef = inject(DestroyRef);
-
-  /**
-   * `serverTime − deviceTime`, in ms. Zero until a feed response supplies
-   * `server_time`, which is the correct fallback: trusting the device is
-   * strictly better than refusing to render a countdown at all.
-   */
-  private offsetMs = 0;
 
   /**
    * Ticks every second while at least one consumer is subscribed. Read this in
@@ -44,19 +34,9 @@ export class ServerClock {
     this.destroyRef.onDestroy(() => this.stop());
   }
 
-  /**
-   * Adopt the server's clock. Called once per feed load; a response without
-   * `server_time` is ignored rather than resetting a good offset to zero.
-   */
-  syncFrom(serverTime: string | null | undefined): void {
-    const parsed = parseIso(serverTime);
-    if (parsed === null) return;
-    this.offsetMs = parsed - Date.now();
-  }
-
-  /** Server-aligned epoch milliseconds. */
+  /** Epoch milliseconds. Read through here so the skew fix lands in one place. */
   now(): number {
-    return Date.now() + this.offsetMs;
+    return Date.now();
   }
 
   /**

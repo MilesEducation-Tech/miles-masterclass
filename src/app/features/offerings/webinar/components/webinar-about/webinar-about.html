@@ -83,37 +83,11 @@
                 </li>
               }
 
-              @for (row of disclosures(); track row.label) {
-                <li class="text-sm md:text-base">
-                  {{ row.label }}:
-                  <span class="font-medium text-foreground">{{ row.value }}</span>
-                </li>
-              }
+              <li class="text-sm md:text-base">
+                Sponsor Identification number:
+                <span class="font-medium text-foreground">{{ sponsorId }}</span>
+              </li>
             </ul>
-
-            @if (revisionDates().length > 0) {
-              <ul class="flex flex-col gap-2 text-muted-foreground">
-                @for (row of revisionDates(); track row.label) {
-                  <li class="text-sm md:text-base">
-                    {{ row.label }}:
-                    <span class="text-foreground">{{ row.value }}</span>
-                  </li>
-                }
-              </ul>
-            }
-
-            @if (earningRules().length > 0) {
-              <div class="flex flex-col gap-3">
-                <h4 class="text-base font-medium md:text-lg">
-                  To earn CPE credits, the learner is expected to:
-                </h4>
-                <ul class="flex list-disc flex-col gap-2 pl-5 text-muted-foreground">
-                  @for (rule of earningRules(); track rule) {
-                    <li class="text-sm md:text-base">{{ rule }}</li>
-                  }
-                </ul>
-              </div>
-            }
 
             <div class="text-sm leading-relaxed text-muted-foreground md:text-base">
               <p>

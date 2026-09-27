@@ -108,13 +108,7 @@ describe('isRegistered', () => {
 });
 
 describe('joinOpensAt', () => {
-  it('prefers the server value over the local computation', () => {
-    const serverValue = '2026-09-20T12:30:00Z';
-    const w = card({ registration: registration({ join_opens_at: serverValue }) });
-    expect(joinOpensAt(w)).toBe(Date.parse(serverValue));
-  });
-
-  it('falls back to start minus the configured window', () => {
+  it('is start minus the configured window', () => {
     const w = card();
     // 13:00 start, 15-minute window → 12:45
     expect(joinOpensAt(w)).toBe(Date.parse('2026-09-20T12:45:00Z'));
