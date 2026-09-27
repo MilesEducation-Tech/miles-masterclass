@@ -1,5 +1,5 @@
-import { Question } from '@core/models/account.model';
-import { controlOf, keysToValues, optionKey, valuesToKeys } from './profile';
+import { Question, UserDetails } from '@core/models/account.model';
+import { controlOf, keysToValues, optionKey, rowDefaults, valuesToKeys } from './profile';
 
 /**
  * The payload→control→payload mapping, which is the part of this page that can
@@ -85,5 +85,40 @@ describe('profile question mapping', () => {
   it('falls back on an unrecognised format', () => {
     expect(controlOf(question({ answer_format: 'rating' }))).toBe('single');
     expect(controlOf(question({ answer_format: 'rating', options: [] }))).toBe('text');
+  });
+});
+
+/**
+ * `user-details/` carries only `first_name` and `full_name`, so these are the
+ * only blanks it can seed — and `last_name` only when the split is unambiguous.
+ */
+describe('profile rowDefaults', () => {
+  const user = (full_name: string, first_name = full_name.split(' ')[0] ?? ''): UserDetails => ({
+    first_name,
+    full_name,
+    is_onboarding_completed: true,
+    is_profile_completed: false,
+    Pathway: 'No',
+    Enrolled_status: 'No',
+    Enrolled_course: [],
+    onboarding_fully_completed: false,
+  });
+
+  it('seeds nothing before the record loads', () => {
+    expect(rowDefaults(null)).toEqual({});
+  });
+
+  it('splits a two-word full name', () => {
+    expect(rowDefaults(user('Sohan Biswas'))).toEqual({ first_name: 'Sohan', last_name: 'Biswas' });
+  });
+
+  it('leaves last_name blank when the split would be a guess', () => {
+    expect(rowDefaults(user('Ana Maria de Souza'))['last_name']).toBe('');
+    expect(rowDefaults(user('Sohan'))['last_name']).toBe('');
+    expect(rowDefaults(user('', 'Sohan'))).toEqual({ first_name: 'Sohan', last_name: '' });
+  });
+
+  it('never seeds codes the record no longer carries', () => {
+    expect(Object.keys(rowDefaults(user('Sohan Biswas')))).toEqual(['first_name', 'last_name']);
   });
 });

@@ -35,12 +35,12 @@ a caller must not be able to claim to be another one.
 
 ### Account — JWT, `IsAuthenticated`
 
-| Route                                     | Notes                                                                       |
-| ----------------------------------------- | --------------------------------------------------------------------------- |
-| `GET/PATCH user_details/`                 | The user row, 28 fields. **No id in the path** — always the caller's.       |
-| `GET questions/?form=onboarding\|profile` | `{Questions: [...]}`, flat, sorted by `display_order`.                      |
-| `GET/PATCH profile/?form=…`               | Questionnaire answers **only**. See §4.                                     |
-| `GET web/app-status/`                     | `{is_maintenance, is_web_maintenance, is_pathway, is_onboarding_completed}` |
+| Route                                     | Notes                                                                                                                                         |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET user-details/`                       | 8 routing fields (names, milestones, `Pathway`, enrolment). **GET only** — the old `user_details/` row and its PATCH were deleted 2026-09-24. |
+| `GET questions/?form=onboarding\|profile` | `{Questions: [...]}`, flat, sorted by `display_order`.                                                                                        |
+| `GET/PATCH profile/?form=…`               | Questionnaire answers **only**. See §4.                                                                                                       |
+| `GET web/maintainance-status/`            | Public. `{is_maintenance, force_logout_all_user}`. Not bound yet — the old `web/app-status/` had no reader and was removed.                   |
 
 ---
 
@@ -57,8 +57,8 @@ not allowed — is **exactly inverted** on this API.
 Genuine 401s exist but only from routes that check the caller inside the handler:
 `privacy-policy/`, `terms-and-conditions/`, the QR routes, and the `auth-*` routes themselves.
 
-_Verified live against UAT on 2026-09-22: `user_details/`, `questions/`, `profile/` and
-`web/app-status/` all answer 403 with no token._
+_Verified live against UAT on 2026-09-22 (before the 2026-09-24 rename): `user_details/`, `questions/`,
+`profile/` and `web/app-status/` all answered 403 with no token._
 
 ### Rule 2 — refresh **before** expiry, never as a retry after a 401/403
 
@@ -160,7 +160,7 @@ keys and nothing else.
 ## 4. Onboarding and profile
 
 `api/v1/account/profile/` **changed meaning on 2026-09-09.** It used to serve the user row; it now
-serves questionnaire answers and nothing else. The user row is `user_details/`.
+serves questionnaire answers and nothing else, and `PATCH profile/` is the only profile write. The user record is the read-only `user-details/`.
 
 - `GET profile/` is a **bare flat map keyed by question code** — the value is the answer itself, not
   an object describing it. `{}` is a normal empty state, not a 404. Key order is display order.
@@ -187,7 +187,7 @@ buckets (the legacy `Screen1`/`Screen2` keying is gone). `visibility: "both"` ap
 | Concern                                      | Where                                      | Pattern                                         |
 | -------------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
 | The five sign-in POSTs, token state, refresh | `core/services/auth-session/`              | `@Service()` + `ApiClient.call`                 |
-| `user_details/`, `web/app-status/`           | `core/services/account-api/`               | `@Service()` + `httpResource`                   |
+| `user-details/`                              | `core/services/account-api/`               | `@Service()` + `httpResource`                   |
 | `questions/`, `profile/`                     | `core/services/onboarding-api/`            | `@Service()` + `httpResource` (+ PATCH methods) |
 | Login screen state                           | `auth/shared/services/auth-facade.ts`      | `@Service({autoProvided: false})`, route-scoped |
 | Bearer + rotation                            | `core/interceptors/app/app-interceptor.ts` |                                                 |

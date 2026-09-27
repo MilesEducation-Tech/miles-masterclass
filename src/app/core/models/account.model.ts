@@ -1,13 +1,19 @@
+import { HttpErrorResponse } from '@angular/common/http';
+
 import { ProfileStatus } from './auth.model';
 import { RouteConfig } from './http.model';
 
 /**
  * MilesCAIRA Accounts v1 — the user record and the questionnaire.
  *
- * READ THIS FIRST: `api/v1/account/profile/` changed meaning on 2026-09-09.
- * It used to serve the user row; it now serves QUESTIONNAIRE ANSWERS AND
- * NOTHING ELSE. The user row is `user_details/`. Code written against the old
- * `profile/` is pointing at a different resource with a different shape.
+ * READ THIS FIRST — two renames, both load-bearing:
+ *
+ *  - `api/v1/account/profile/` changed meaning on 2026-09-09. It used to serve
+ *    the user row; it now serves QUESTIONNAIRE ANSWERS AND NOTHING ELSE, and
+ *    `PATCH profile/` is the only way to write profile fields.
+ *  - `api/v1/account/user_details/` (underscore) — the 28-field row and its
+ *    PATCH — was DELETED on 2026-09-24. `user-details/` (hyphen) replaces the
+ *    read with an 8-field routing summary and has NO write (a PATCH is 405).
  */
 
 /** Which questionnaire is in scope. An unrecognised value is a 400 naming the
@@ -16,75 +22,69 @@ export type ProfileForm = 'onboarding' | 'profile';
 
 // ── The user record ─────────────────────────────────────────────────────────
 
+/** Legacy's shape: a capitalised STRING, not a boolean. */
+export type YesNo = 'Yes' | 'No';
+
 /**
- * `GET user_details/` — 28 fields. There is NO user id in the path: the row is
- * always the caller's, so one client can never address another's profile.
+ * `GET user-details/` — everything the app needs to route the caller, in one
+ * call. No user id in the path: the row is always the caller's.
  *
- * Six columns are absent from the serializer entirely, not merely read-only:
- * `password`, `is_superuser`, `is_staff`, `is_blocked`, `active`,
- * `is_internal_test_user`. The last reaches the client as `is_test_user` on the
- * auth responses instead.
+ * Every key is always present. There is deliberately no email, last name,
+ * phone or city here any more — those are questionnaire answers now.
  */
 export interface UserDetails {
-  /** A UUID, not a number — never arithmetic, never a sort key. */
-  id: string;
-  sso_user_id: string;
-  email: string;
-  username: string;
-  phone_number: string | null;
-  country_code: string | null;
+  /** Display name. Falls back server-side to the first token of `full_name`. */
   first_name: string;
-  middle_name: string | null;
-  last_name: string;
+  /** Stored full name, whitespace-stripped. May be `''`. */
   full_name: string;
-  profile_picture: string | null;
-  city: string | null;
-  location: string | null;
-  pathway: string | null;
-  professional_qualification: string | null;
-  work_experience: string | null;
-  education: string | null;
-  career_path: string | null;
-  ai_readiness: string | null;
-  learning_pathway: string | null;
-  voluntary_enrollment_disclosure: boolean;
-  /** `profile_status`, `is_onboarding_completed` and `is_profile_completed`
-   *  all encode the same two milestones and all three are returned. They are
-   *  consistent; the booleans exist because they are cheaper to branch on.
-   *  None is writable. */
-  profile_status: ProfileStatus;
+  /** The stored milestone column — the onboarding gate reads THIS one. */
   is_onboarding_completed: boolean;
   is_profile_completed: boolean;
-  /** `null` on a fresh account, not `[]`. */
-  tags: string[] | null;
-  created_at: string;
-  updated_at: string;
-  last_login: string | null;
+  /**
+   * `'No'` means "could not confirm", not proof of absence: an enrolment lookup
+   * failure answers 200 with the conservative `'No'` payload rather than 500.
+   */
+  Pathway: YesNo;
+  Enrolled_status: YesNo;
+  /** Programme names; `[]` when not enrolled. */
+  Enrolled_course: string[];
+  /** DERIVED — every always-asked onboarding field is filled. Not the stored
+   *  `is_onboarding_completed`, and not the gate. */
+  onboarding_fully_completed: boolean;
 }
 
-/** Every field is optional — this is a PATCH. An empty body is a 400
- *  ("Send at least one field to update."). */
-export type UserDetailsPatch = Partial<
-  Pick<
-    UserDetails,
-    | 'first_name'
-    | 'middle_name'
-    | 'last_name'
-    | 'full_name'
-    | 'country_code'
-    | 'profile_picture'
-    | 'city'
-    | 'location'
-    | 'pathway'
-    | 'professional_qualification'
-    | 'work_experience'
-    | 'education'
-    | 'career_path'
-    | 'ai_readiness'
-    | 'learning_pathway'
-    | 'voluntary_enrollment_disclosure'
-  >
->;
+const isYesNo = (v: unknown): v is YesNo => v === 'Yes' || v === 'No';
+
+/**
+ * The trust boundary for the user record. Hand-written for the same reason as
+ * `isSessionResponse`: a renamed key would otherwise render as `undefined`
+ * everywhere with no signal. Extra keys are allowed — the contract adds keys
+ * without notice; it is a rename or removal that must fail loudly.
+ */
+export function isUserDetails(body: unknown): body is UserDetails {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) return false;
+  const b = body as Record<string, unknown>;
+  return (
+    typeof b['first_name'] === 'string' &&
+    typeof b['full_name'] === 'string' &&
+    typeof b['is_onboarding_completed'] === 'boolean' &&
+    typeof b['is_profile_completed'] === 'boolean' &&
+    isYesNo(b['Pathway']) &&
+    isYesNo(b['Enrolled_status']) &&
+    Array.isArray(b['Enrolled_course']) &&
+    b['Enrolled_course'].every((c) => typeof c === 'string') &&
+    typeof b['onboarding_fully_completed'] === 'boolean'
+  );
+}
+
+/** `httpResource` `parse` for `user-details/`: a drifted body becomes the
+ *  resource's `error()`, in one place, rather than a half-typed value. */
+export function parseUserDetails(body: unknown): UserDetails {
+  if (!isUserDetails(body)) {
+    throw new Error('user-details/ response does not match the contract.');
+  }
+  return body;
+}
 
 // ── The questionnaire ───────────────────────────────────────────────────────
 
@@ -172,29 +172,63 @@ export interface SaveAnswersResponse {
   missing: string[];
 }
 
-// ── Startup probe ───────────────────────────────────────────────────────────
+// ── Errors ──────────────────────────────────────────────────────────────────
 
-export interface AppStatus {
-  /** Global mobile maintenance flag. Honours the runtime override. */
-  is_maintenance: boolean;
-  /** Web maintenance flag, env-only — nothing writes a web override. */
-  is_web_maintenance: boolean;
-  is_pathway: boolean;
-  is_onboarding_completed: boolean;
+/**
+ * The error bodies this app's account routes answer with. There is no shared
+ * envelope; these four are all live:
+ *
+ * - `{ [questionCode]: message }` — `PATCH profile/` 400, one line per answer.
+ * - `{ [undeclaredKey]: message }` — the strict-input 400 on every strict route.
+ * - `{ status: 'error', message, details? }` — the shared 500 from `utils/view_errors`.
+ * - `{ message, status: 'Failed' }` — legacy 404 / 502.
+ * - `{ detail }` — DRF's own 403 for a missing or expired token.
+ *
+ * Normalised into the two things a screen can do with one: put messages under
+ * fields, or show one message.
+ */
+export type AccountError =
+  { kind: 'fields'; fields: Record<string, string> } | { kind: 'message'; message: string | null };
+
+/** Keys that mark an envelope rather than a field-keyed 400. */
+const ENVELOPE_KEYS = new Set(['status', 'message', 'detail', 'details', 'code', 'error']);
+
+export function readAccountError(err: unknown): AccountError {
+  const body: unknown = err instanceof HttpErrorResponse ? err.error : null;
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return { kind: 'message', message: typeof body === 'string' && body ? body : null };
+  }
+
+  const entries = Object.entries(body);
+  const message = ['message', 'detail']
+    .map((key) => entries.find(([k]) => k === key)?.[1])
+    .find((v): v is string => typeof v === 'string' && v.length > 0);
+
+  // An envelope says so with its keys; only a body made purely of other keys is
+  // field-keyed. Checking the keys — not merely "has string values" — is what
+  // stops `{status: 'error', message}` rendering as two "field" errors nobody sees.
+  if (entries.some(([key]) => ENVELOPE_KEYS.has(key))) {
+    return { kind: 'message', message: message ?? null };
+  }
+  const fields: Record<string, string> = {};
+  for (const [key, value] of entries) {
+    if (typeof value === 'string' && value) fields[key] = value;
+    // DRF-native 400s send a list of messages per field.
+    else if (Array.isArray(value) && typeof value[0] === 'string') fields[key] = value[0];
+  }
+  return Object.keys(fields).length
+    ? { kind: 'fields', fields }
+    : { kind: 'message', message: null };
 }
 
 // ── Route registry ──────────────────────────────────────────────────────────
 
 export const ACCOUNT_ROUTES = {
+  /** GET only — the old underscore route and its PATCH were deleted. */
   userDetails: {
-    path: 'api/v1/account/user_details/',
+    path: 'api/v1/account/user-details/',
     method: 'GET',
   } as RouteConfig<void, UserDetails>,
-
-  updateUserDetails: {
-    path: 'api/v1/account/user_details/',
-    method: 'PATCH',
-  } as RouteConfig<UserDetailsPatch, UserDetails>,
 
   questions: {
     path: 'api/v1/account/questions/',
@@ -210,9 +244,4 @@ export const ACCOUNT_ROUTES = {
     path: 'api/v1/account/profile/',
     method: 'PATCH',
   } as RouteConfig<AnswerMap, SaveAnswersResponse, Record<string, never>, { form: ProfileForm }>,
-
-  appStatus: {
-    path: 'api/v1/account/web/app-status/',
-    method: 'GET',
-  } as RouteConfig<void, AppStatus>,
 } as const;

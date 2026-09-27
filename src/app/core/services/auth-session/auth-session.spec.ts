@@ -214,7 +214,7 @@ describe('AuthSession', () => {
   });
 
   /**
-   * `is_onboarding_completed` from `user_details/` is the ONLY access
+   * `is_onboarding_completed` from `user-details/` is the ONLY access
    * restriction taken off that row, and the gate must distinguish "not
    * completed" from "nobody has said yet" — an unknown that redirected would
    * bounce every learner whose `userData` cookie went missing back into an

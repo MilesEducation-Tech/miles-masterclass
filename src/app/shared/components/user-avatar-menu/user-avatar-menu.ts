@@ -38,24 +38,21 @@ export class UserAvatarMenu {
    */
   readonly user = computed(() => (this.account.user.hasValue() ? this.account.user.value() : null));
 
+  /**
+   * `user-details/` carries `full_name` and `first_name` and nothing else about
+   * identity — no email, no separate last name — so the menu shows the name
+   * alone.
+   */
   readonly displayName = computed(() => {
     const u = this.user();
-    if (!u) return '';
-    const full = `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim();
-    return full || u.email || '';
+    return u ? u.full_name || u.first_name : '';
   });
 
-  readonly displayEmail = computed(() => this.user()?.email ?? '');
-
   readonly initials = computed(() => {
-    const u = this.user();
-    if (!u) return 'U';
-    const first = (u.first_name ?? '').trim();
-    const last = (u.last_name ?? '').trim();
-    const fromName = `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
-    if (fromName) return fromName;
-    const email = (u.email ?? '').trim();
-    return email[0]?.toUpperCase() || 'U';
+    const words = this.displayName().split(/\s+/).filter(Boolean);
+    const first = words[0]?.[0] ?? '';
+    const last = words.length > 1 ? (words[words.length - 1][0] ?? '') : '';
+    return `${first}${last}`.toUpperCase() || 'U';
   });
 
   readonly currentUrl = toSignal(

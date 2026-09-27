@@ -87,7 +87,7 @@ export const environment = {
     refreshToken: 'REFRESH_TOKEN',
     /**
      * Caches `profile_status` so `onboardingGuard` can answer synchronously on
-     * a hard refresh, and during SSR, without waiting on `user_details/`.
+     * a hard refresh, and during SSR, without waiting on `user-details/`.
      * Named `USER_DATA` for continuity with the pre-strip cookie.
      */
     userData: 'USER_DATA',

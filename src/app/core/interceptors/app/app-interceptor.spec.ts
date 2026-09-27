@@ -46,7 +46,7 @@ describe('appInterceptor', () => {
   }
 
   it('attaches the bearer and rotates first', async () => {
-    const req = await send('/api/v1/account/user_details/');
+    const req = await send('/api/v1/account/user-details/');
     expect(req.request.headers.get('Authorization')).toBe('Bearer token-123');
     // Rule 2: rotate BEFORE the request, never as a retry after a 401/403.
     expect(ensureFreshToken).toHaveBeenCalledTimes(1);
@@ -55,7 +55,7 @@ describe('appInterceptor', () => {
   // Verified live: MilesCAIRA's Access-Control-Allow-Headers lists none of
   // these three, so sending any of them fails every preflighted request.
   it('sends none of the retired x-* app headers', async () => {
-    const req = await send('/api/v1/account/user_details/');
+    const req = await send('/api/v1/account/user-details/');
     expect(req.request.headers.get('x-app-type')).toBeNull();
     expect(req.request.headers.get('x-platform')).toBeNull();
     expect(req.request.headers.get('x-country-code')).toBeNull();
