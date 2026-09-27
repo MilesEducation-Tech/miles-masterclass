@@ -21,13 +21,13 @@ All under `{BASE_API_URL}api/v1/account/`. Every path has a trailing slash; omit
 
 ### Sign-in — no auth, `AllowAny`
 
-| Route                      | Body                          | 200                                                         |
-| -------------------------- | ----------------------------- | ----------------------------------------------------------- |
-| `POST auth-identify/`      | `{identifier}`                | `{methods, defaultMethod, communicationId, …masks}`         |
-| `POST auth-otp-send/`      | `{identifier}`                | `{channel, cooldownSeconds}`                                |
-| `POST auth-otp-verify/`    | `{identifier, code}`          | `{accessToken, refreshToken, profile_status, is_test_user}` |
-| `POST auth-token-refresh/` | `{refreshToken}` _or_ `{}`    | same four keys, **rotated**                                 |
-| `POST auth-logout/`        | _(none — bearer header only)_ | 2xx                                                         |
+| Route                      | Body                           | 200                                                         |
+| -------------------------- | ------------------------------ | ----------------------------------------------------------- |
+| `POST auth-identify/`      | `{identifier}`                 | `{methods, defaultMethod, communicationId, …masks}`         |
+| `POST auth-otp-send/`      | `{identifier}`                 | `{channel, cooldownSeconds}`                                |
+| `POST auth-otp-verify/`    | `{identifier, code}`           | `{accessToken, refreshToken, profile_status, is_test_user}` |
+| `POST auth-token-refresh/` | `{refreshToken}` _or_ `{}`     | same four keys, **rotated**                                 |
+| `POST auth-logout/`        | _(none — bearer **required**)_ | 2xx; 401 without a bearer                                   |
 
 `identifier` is an email, phone number or username — the SSO works out which. `appCode` is **not**
 accepted from the client; it is added server-side, because it names which application is asking and
@@ -35,12 +35,12 @@ a caller must not be able to claim to be another one.
 
 ### Account — JWT, `IsAuthenticated`
 
-| Route                                     | Notes                                                                       |
-| ----------------------------------------- | --------------------------------------------------------------------------- |
-| `GET/PATCH user_details/`                 | The user row, 28 fields. **No id in the path** — always the caller's.       |
-| `GET questions/?form=onboarding\|profile` | `{Questions: [...]}`, flat, sorted by `display_order`.                      |
-| `GET/PATCH profile/?form=…`               | Questionnaire answers **only**. See §4.                                     |
-| `GET web/app-status/`                     | `{is_maintenance, is_web_maintenance, is_pathway, is_onboarding_completed}` |
+| Route                                     | Notes                                                                                                                                         |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET user-details/`                       | 8 routing fields (names, milestones, `Pathway`, enrolment). **GET only** — the old `user_details/` row and its PATCH were deleted 2026-09-24. |
+| `GET questions/?form=onboarding\|profile` | `{Questions: [...]}`, flat, sorted by `display_order`.                                                                                        |
+| `GET/PATCH profile/?form=…`               | Questionnaire answers **only**. See §4.                                                                                                       |
+| `GET web/maintainance-status/`            | Public. `{is_maintenance, force_logout_all_user}`. Not bound yet — the old `web/app-status/` had no reader and was removed.                   |
 
 ---
 
@@ -57,8 +57,8 @@ not allowed — is **exactly inverted** on this API.
 Genuine 401s exist but only from routes that check the caller inside the handler:
 `privacy-policy/`, `terms-and-conditions/`, the QR routes, and the `auth-*` routes themselves.
 
-_Verified live against UAT on 2026-09-22: `user_details/`, `questions/`, `profile/` and
-`web/app-status/` all answer 403 with no token._
+_Verified live against UAT on 2026-09-22 (before the 2026-09-24 rename): `user_details/`, `questions/`,
+`profile/` and `web/app-status/` all answered 403 with no token._
 
 ### Rule 2 — refresh **before** expiry, never as a retry after a 401/403
 
@@ -130,20 +130,26 @@ The sequence is: verify → `profile_status: "new_user"` → complete the profil
 
 ### Failure modes, and the UI each one wants
 
-| HTTP | Body                            | Meaning                                           | Do                                                       |
-| ---- | ------------------------------- | ------------------------------------------------- | -------------------------------------------------------- |
-| 400  | field-keyed map                 | Malformed input; the SSO's copy is learner-facing | Render it verbatim, against the field                    |
-| 401  | SSO's                           | Wrong or expired code                             | Let them retype                                          |
-| 429  | SSO's                           | Identifier locked                                 | Show the lockout, **do not retry**                       |
-| 403  | `{code: "account_blocked"}`     | Partner-imposed block                             | **Terminal.** Permission message, point at Miles support |
-| 403  | `{code: "account_deactivated"}` | Miles deactivation                                | **Terminal.** Same, different team                       |
-| 502  | `{message: …}`                  | Provisioning failed after a valid token           | **Retryable** — the code is spent, send for a new one    |
-| 503  | `{message: …}`                  | Our configuration fault                           | Not the user's problem                                   |
+| HTTP | Body                                     | Meaning                                           | Do                                                       |
+| ---- | ---------------------------------------- | ------------------------------------------------- | -------------------------------------------------------- |
+| 400  | field-keyed map                          | Malformed input; the SSO's copy is learner-facing | Render it verbatim, against the field                    |
+| 401  | SSO's                                    | Wrong or expired code                             | Let them retype                                          |
+| 429  | SSO's                                    | Identifier locked                                 | Show the lockout, **do not retry**                       |
+| 403  | `{code: "account_blocked"}`              | Partner-imposed block                             | **Terminal.** Permission message, point at Miles support |
+| 403  | `{code: "account_deactivated"}`          | Miles deactivation                                | **Terminal.** Same, different team                       |
+| 502  | `{message: "…request a new code."}`      | Provisioning failed after a valid token (verify)  | **Retryable** — the code is spent, send for a new one    |
+| 502  | `{message: "…temporarily unavailable…"}` | Transient, any auth route                         | Retry the same step; nothing was consumed                |
+| 503  | `{message: …}`                           | Our configuration fault                           | Not the user's problem                                   |
 
 The two 403s are deliberately distinct: `active` and `is_blocked` are separate columns set by
 different people for different reasons, and telling a blocked learner their account is "deactivated"
-sends them to the wrong team. `toAuthFailure()` in `auth.model.ts` is the only place that knows this
-mapping.
+sends them to the wrong team. A 403 with any other body is **not** terminal. The two 502s carry no
+`code`, so `toAuthFailure()` tells them apart by copy. `toAuthFailure()` in `auth.model.ts` is the only
+place that knows this mapping.
+
+Logout is the one auth route that needs `Authorization: Bearer`, so the interceptor's skip list
+(`SESSION_MINTING_PATHS`) holds only the other four. Refresh clears the session **only on 401**;
+502/503 keep the tokens.
 
 **Unknown fields are rejected.** Verified live: posting an undeclared field returns 400 with a
 field-keyed body (`{"code": "Unrecognised field for this endpoint. …"}`). Send exactly the declared
@@ -154,7 +160,7 @@ keys and nothing else.
 ## 4. Onboarding and profile
 
 `api/v1/account/profile/` **changed meaning on 2026-09-09.** It used to serve the user row; it now
-serves questionnaire answers and nothing else. The user row is `user_details/`.
+serves questionnaire answers and nothing else, and `PATCH profile/` is the only profile write. The user record is the read-only `user-details/`.
 
 - `GET profile/` is a **bare flat map keyed by question code** — the value is the answer itself, not
   an object describing it. `{}` is a normal empty state, not a 404. Key order is display order.
@@ -181,7 +187,7 @@ buckets (the legacy `Screen1`/`Screen2` keying is gone). `visibility: "both"` ap
 | Concern                                      | Where                                      | Pattern                                         |
 | -------------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
 | The five sign-in POSTs, token state, refresh | `core/services/auth-session/`              | `@Service()` + `ApiClient.call`                 |
-| `user_details/`, `web/app-status/`           | `core/services/account-api/`               | `@Service()` + `httpResource`                   |
+| `user-details/`                              | `core/services/account-api/`               | `@Service()` + `httpResource`                   |
 | `questions/`, `profile/`                     | `core/services/onboarding-api/`            | `@Service()` + `httpResource` (+ PATCH methods) |
 | Login screen state                           | `auth/shared/services/auth-facade.ts`      | `@Service({autoProvided: false})`, route-scoped |
 | Bearer + rotation                            | `core/interceptors/app/app-interceptor.ts` |                                                 |

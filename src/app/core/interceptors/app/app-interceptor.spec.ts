@@ -2,7 +2,7 @@ import { HttpClient, HttpContext, provideHttpClient, withInterceptors } from '@a
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { AUTH_ROUTES } from '../../models/auth.model';
+import { AUTH_ROUTES, SESSION_MINTING_PATHS } from '../../models/auth.model';
 import { IS_ADMIN_REQUEST, IS_EXTERNAL_REQUEST, SKIP_AUTH_TOKEN } from '../../models/http.model';
 import { AuthSession } from '../../services/auth-session/auth-session';
 import { appInterceptor } from './app-interceptor';
@@ -46,7 +46,7 @@ describe('appInterceptor', () => {
   }
 
   it('attaches the bearer and rotates first', async () => {
-    const req = await send('/api/v1/account/user_details/');
+    const req = await send('/api/v1/account/user-details/');
     expect(req.request.headers.get('Authorization')).toBe('Bearer token-123');
     // Rule 2: rotate BEFORE the request, never as a retry after a 401/403.
     expect(ensureFreshToken).toHaveBeenCalledTimes(1);
@@ -55,16 +55,23 @@ describe('appInterceptor', () => {
   // Verified live: MilesCAIRA's Access-Control-Allow-Headers lists none of
   // these three, so sending any of them fails every preflighted request.
   it('sends none of the retired x-* app headers', async () => {
-    const req = await send('/api/v1/account/user_details/');
+    const req = await send('/api/v1/account/user-details/');
     expect(req.request.headers.get('x-app-type')).toBeNull();
     expect(req.request.headers.get('x-platform')).toBeNull();
     expect(req.request.headers.get('x-country-code')).toBeNull();
   });
 
+  // The collection: logout without a bearer answers 401 "Authorization header
+  // with a Bearer token is required." — and the learner is never signed out.
+  it('attaches the bearer to logout, which requires it', async () => {
+    const req = await send(`https://api.example.com/${AUTH_ROUTES.logout.path}`);
+    expect(req.request.headers.get('Authorization')).toBe('Bearer token-123');
+  });
+
   describe('skips', () => {
-    it('every auth route — refreshing before the call that mints the session is nonsense', async () => {
-      for (const route of Object.values(AUTH_ROUTES)) {
-        const sent = await send(`https://api.example.com/${route.path}`);
+    it('every session-minting route — refreshing before the call that mints the session is nonsense', async () => {
+      for (const path of SESSION_MINTING_PATHS) {
+        const sent = await send(`https://api.example.com/${path}`);
         expect(sent.request.headers.has('Authorization')).toBe(false);
       }
       expect(ensureFreshToken).not.toHaveBeenCalled();

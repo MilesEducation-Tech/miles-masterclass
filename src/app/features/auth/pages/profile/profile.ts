@@ -16,7 +16,7 @@ import {
   Question,
   QuestionOption,
   UserDetails,
-  UserDetailsPatch,
+  readAccountError,
 } from '@core/models/account.model';
 import { AccountApi } from '@core/services/account-api/account-api';
 import { AuthSession } from '@core/services/auth-session/auth-session';
@@ -117,28 +117,25 @@ export function controlOf(question: Question): Control {
 }
 
 /**
- * Codes the user row can answer on the learner's behalf.
+ * Codes the user record can answer on the learner's behalf.
  *
- * The questionnaire OWNS the form — `first_name` and `email` are questions like
- * any other and render from `questions/` alone. This only decides what a blank
- * one starts out showing, so a learner whose name the SSO already knows is not
+ * The questionnaire OWNS the form — `first_name` and `last_name` are questions
+ * like any other and render from `questions/` alone. This only decides what a
+ * blank one starts out showing, so a learner whose name is already known is not
  * asked to type it again.
+ *
+ * `user-details/` carries only `first_name` and `full_name`. `last_name` is
+ * taken from `full_name` only when it is exactly two words — a longer name has
+ * no safe split, and a blank the learner fills beats a wrong guess.
  */
-function rowDefaults(user: UserDetails | null): Record<string, string> {
+export function rowDefaults(user: UserDetails | null): Record<string, string> {
   if (!user) return {};
+  const words = user.full_name.split(/\s+/).filter(Boolean);
   return {
-    first_name: user.first_name ?? '',
-    last_name: user.last_name ?? '',
-    middle_name: user.middle_name ?? '',
-    email: user.email ?? '',
-    phone_number: user.phone_number ?? '',
-    city: user.city ?? '',
-    location: user.location ?? '',
+    first_name: user.first_name,
+    last_name: words.length === 2 ? words[1] : '',
   };
 }
-
-/** Answer codes that are also columns on the user row, and writable there. */
-const ROW_WRITABLE = ['first_name', 'last_name', 'city', 'location'] as const;
 
 /**
  * Profile and onboarding.
@@ -150,8 +147,9 @@ const ROW_WRITABLE = ['first_name', 'last_name', 'city', 'location'] as const;
  *
  *   - `questions/` says what to render.
  *   - `profile/` says what has been answered. The two join on `code`.
- *   - `user_details/` is not a second form; it only seeds blanks (see
- *     `rowDefaults`) and takes back the four codes that are also columns on it.
+ *   - `user-details/` is not a second form and cannot be written; it only
+ *     seeds blank name fields (see `rowDefaults`). Every write is `PATCH
+ *     profile/`.
  *
  * Built on signal forms: the model is one row per question, the schema is
  * applied per item by `applyEach`, and `required` / `hidden` are driven by the
@@ -205,12 +203,14 @@ export class Profile {
       this.account.user.isLoading(),
   );
 
-  /** `hasValue()` first: reading `value()` on a resource in its error state throws. */
+  /**
+   * `hasValue()` first: reading `value()` on a resource in its error state throws.
+   *
+   * The user record is NOT here: it only seeds blank name fields, so the
+   * questionnaire must still load and save when that one read fails.
+   */
   readonly loadError = computed(
-    () =>
-      this.onboarding.questions.error() ??
-      this.onboarding.answers.error() ??
-      this.account.user.error(),
+    () => this.onboarding.questions.error() ?? this.onboarding.answers.error(),
   );
 
   readonly isOnboarding = computed(() => this.onboarding.form() === 'onboarding');
@@ -431,23 +431,6 @@ export class Profile {
     return out;
   }
 
-  /**
-   * The four answers that are also columns on the user row, mirrored back so
-   * the name the app renders everywhere else follows the form. Idempotent: an
-   * unchanged value is not sent, and an empty patch is refused before it can
-   * become a 400.
-   */
-  private identityPatch(answers: AnswerMap): UserDetailsPatch {
-    const user = this.user();
-    if (!user) return {};
-    const patch: UserDetailsPatch = {};
-    for (const key of ROW_WRITABLE) {
-      const next = answers[key];
-      if (typeof next === 'string' && next !== (user[key] ?? '')) patch[key] = next;
-    }
-    return patch;
-  }
-
   onSubmit(event: Event): void {
     event.preventDefault();
     void this.save();
@@ -467,14 +450,15 @@ export class Profile {
     try {
       const answers = this.toAnswerMap();
 
-      // The user row and the answers are two different resources, so this is
-      // two writes.
-      await this.account.updateUser(this.identityPatch(answers));
-
+      // The ONLY write. The user record's PATCH was deleted; name and every
+      // other profile field are answers in this map.
+      //
       // `null` is REFUSED by this endpoint rather than read as "clear", so no
       // code is ever sent as null. PATCH is partial by definition: a code left
       // out keeps whatever it had.
       const result = await this.onboarding.saveAnswers(answers);
+      // Name answers may have changed what `user-details/` reports.
+      this.account.user.reload();
 
       // The write always succeeds; the milestone advances only when every
       // required, shown question has an answer. A non-empty `missing` is NOT an
@@ -552,21 +536,30 @@ export class Profile {
     );
   }
 
-  /** A 400 here is keyed by question code, one message per bad answer. */
+  /**
+   * A 400 here is keyed by question code, one message per bad answer. Every
+   * other body is an envelope (`{status, message}`, `{message, status}`,
+   * `{detail}`) and gets a toast — reading those as field errors put them under
+   * questions named `status` and `message` that do not exist, so the learner
+   * saw nothing at all.
+   */
   private applyFieldErrors(err: unknown): void {
-    const body = (err as { error?: unknown })?.error;
-    if (typeof body === 'object' && body !== null) {
-      const fields = Object.fromEntries(
-        Object.entries(body as Record<string, unknown>).filter(
-          (e): e is [string, string] => typeof e[1] === 'string',
-        ),
-      );
-      if (Object.keys(fields).length) {
-        this.fieldErrors.set(fields);
-        return;
-      }
+    const parsed = readAccountError(err);
+    if (parsed.kind === 'fields') {
+      this.fieldErrors.set(parsed.fields);
+      // A key no rendered question owns (e.g. a strict-input refusal) has
+      // nowhere to show — say it rather than fail silently.
+      const shown = new Set(this.entries().map((e) => e.question.code));
+      const orphan = Object.entries(parsed.fields).find(([code]) => !shown.has(code));
+      if (!orphan) return;
+      this.logger.error('Profile save failed', err);
+      this.notify.error('Save failed', orphan[1]);
+      return;
     }
     this.logger.error('Profile save failed', err);
-    this.notify.error('Save failed', 'Could not save your profile. Please try again.');
+    this.notify.error(
+      'Save failed',
+      parsed.message ?? 'Could not save your profile. Please try again.',
+    );
   }
 }

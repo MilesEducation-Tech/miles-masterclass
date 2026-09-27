@@ -11,6 +11,7 @@ import { Utils } from '@shared/services/utils';
 import { Analytics } from '@core/services/analytics/analytics';
 import { AccountApi } from '@core/services/account-api/account-api';
 import { AuthSession } from '@core/services/auth-session/auth-session';
+import { NotificationService } from '@core/services/notification/notification';
 
 @Component({
   selector: 'app-user-avatar-menu',
@@ -26,6 +27,7 @@ export class UserAvatarMenu {
   private readonly analytics = inject(Analytics);
   private readonly account = inject(AccountApi);
   private readonly auth = inject(AuthSession);
+  private readonly notify = inject(NotificationService);
 
   readonly cn = cn;
 
@@ -36,24 +38,21 @@ export class UserAvatarMenu {
    */
   readonly user = computed(() => (this.account.user.hasValue() ? this.account.user.value() : null));
 
+  /**
+   * `user-details/` carries `full_name` and `first_name` and nothing else about
+   * identity — no email, no separate last name — so the menu shows the name
+   * alone.
+   */
   readonly displayName = computed(() => {
     const u = this.user();
-    if (!u) return '';
-    const full = `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim();
-    return full || u.email || '';
+    return u ? u.full_name || u.first_name : '';
   });
 
-  readonly displayEmail = computed(() => this.user()?.email ?? '');
-
   readonly initials = computed(() => {
-    const u = this.user();
-    if (!u) return 'U';
-    const first = (u.first_name ?? '').trim();
-    const last = (u.last_name ?? '').trim();
-    const fromName = `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
-    if (fromName) return fromName;
-    const email = (u.email ?? '').trim();
-    return email[0]?.toUpperCase() || 'U';
+    const words = this.displayName().split(/\s+/).filter(Boolean);
+    const first = words[0]?.[0] ?? '';
+    const last = words.length > 1 ? (words[words.length - 1][0] ?? '') : '';
+    return `${first}${last}`.toUpperCase() || 'U';
   });
 
   readonly currentUrl = toSignal(
@@ -68,14 +67,18 @@ export class UserAvatarMenu {
    * Sign out from the avatar dropdown.
    *
    * `AuthSession.logout()` ends the session at the SSO and clears the cookies
-   * only if that succeeded — a failed logout deliberately keeps the session, so
-   * a UI that merely looked signed out could not hide one still live upstream.
-   * The hard navigation stays regardless: it bypasses `canDeactivate` guards on
-   * the current route and flushes route-scoped state.
+   * only once it is really gone — a failed logout deliberately keeps the
+   * session. So a failure is SAID, and the page stays put: navigating anyway
+   * would put a signed-out-looking screen over a session still live upstream.
+   * On success the hard navigation bypasses `canDeactivate` guards on the
+   * current route and flushes route-scoped state.
    */
   async onLogout(): Promise<void> {
     this.analytics.trackEvent('logout');
-    await this.auth.logout();
+    if (!(await this.auth.logout())) {
+      this.notify.error('Sign out failed', 'We could not sign you out. Please try again.');
+      return;
+    }
     if (isPlatformBrowser(this.platformId)) {
       window.location.assign('/');
     } else {

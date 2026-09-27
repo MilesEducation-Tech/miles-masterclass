@@ -34,8 +34,11 @@ export type ProfileStatus = 'new_user' | 'onboard_completed' | 'profile_complete
  * changes with no deploy on either side. As of 2026-09-08 every country
  * resolves to `sms`, India included — WhatsApp routing is off until delivery is
  * proved end to end.
+ *
+ * Widened like `AuthMethod`: SSO fields are additive (collection §8.3), so a new
+ * channel is data to render generically, not a compile error.
  */
-export type OtpChannel = 'email' | 'sms' | 'whatsapp';
+export type OtpChannel = 'email' | 'sms' | 'whatsapp' | (string & {});
 
 // ── Request / response bodies ───────────────────────────────────────────────
 
@@ -58,8 +61,15 @@ export interface IdentifyRequest {
  */
 export type AuthMethod = 'email_otp' | 'phone_otp' | 'password' | 'saml' | (string & {});
 
+/**
+ * The collection documents this 200 in prose only — "`methods`, `defaultMethod`,
+ * masked destinations and `communicationId`" — with no saved example. The
+ * optional fields below are the names seen before the contract was written;
+ * nothing reads them, so they stay optional until an example confirms them.
+ */
 export interface IdentifyResponse {
-  accountType: string;
+  /** Unconfirmed by the collection. */
+  accountType?: string;
   /**
    * Render this list rather than assuming a form. `methods` follows the KIND of
    * identifier: an email gives `["email_otp", "password"]`, a phone gives
@@ -71,9 +81,9 @@ export interface IdentifyResponse {
   methods: AuthMethod[];
   /** The one to pre-select. Do not reorder `methods` to make it first. */
   defaultMethod: AuthMethod;
-  /** Built from what was TYPED, not from anything stored. */
-  maskedEmail: string | null;
-  maskedPhone: string | null;
+  /** Built from what was TYPED, not from anything stored. Field names unconfirmed. */
+  maskedEmail?: string | null;
+  maskedPhone?: string | null;
   /**
    * `null` for an identifier the SSO has never seen — and it is the ONLY
    * negative signal in this body. `methods`, `defaultMethod` and the masks are
@@ -144,6 +154,9 @@ export const AUTH_ROUTES = {
     method: 'POST',
   } as RouteConfig<RefreshRequest, SessionResponse>,
 
+  /** No body, and — unlike the other four — it REQUIRES `Authorization: Bearer`.
+   *  Without it the answer is 401 "Authorization header with a Bearer token is
+   *  required.", which is why it is not in `SESSION_MINTING_PATHS`. */
   logout: {
     path: 'api/v1/account/auth-logout/',
     method: 'POST',
@@ -151,13 +164,16 @@ export const AUTH_ROUTES = {
 } as const;
 
 /**
- * The five sign-in paths, for the interceptor's skip list. Derived from the
- * registry so a renamed path can never drift out of the exclusion.
+ * The four routes that MINT or rotate a session, for the interceptor's skip
+ * list: no bearer, no refresh first. Refreshing before the call that mints the
+ * session is nonsense, and refreshing before the refresh is recursion.
  *
- * They are excluded because refreshing before the call that MINTS the session
- * is nonsense, and refreshing before the refresh is recursion.
+ * Logout is deliberately absent — it needs the bearer (see `AUTH_ROUTES.logout`).
+ * Derived from the registry so a renamed path can never drift out of the list.
  */
-export const AUTH_ROUTE_PATHS: readonly string[] = Object.values(AUTH_ROUTES).map((r) => r.path);
+export const SESSION_MINTING_PATHS: readonly string[] = Object.entries(AUTH_ROUTES)
+  .filter(([key]) => key !== 'logout')
+  .map(([, route]) => route.path);
 
 // ── Trust boundary ──────────────────────────────────────────────────────────
 
@@ -180,7 +196,8 @@ export function isSessionResponse(body: unknown): body is SessionResponse {
     b['refreshToken'].length > 0 &&
     (b['profile_status'] === 'new_user' ||
       b['profile_status'] === 'onboard_completed' ||
-      b['profile_status'] === 'profile_completed')
+      b['profile_status'] === 'profile_completed') &&
+    typeof b['is_test_user'] === 'boolean'
   );
 }
 
@@ -204,86 +221,116 @@ export type AuthFailure =
   | { kind: 'blocked'; message: string }
   /** 403 `account_deactivated` — Miles deactivation. Terminal; different team. */
   | { kind: 'deactivated'; message: string }
-  /** 502 — provisioning failed after a valid token. The code is spent; send
-   *  them for a new one. Retryable. */
+  /** 502 "…Please request a new code." — provisioning failed after a valid
+   *  token (verify only). The code is spent; send them for a new one. */
   | { kind: 'retry_new_code'; message: string }
+  /** 502 "Sign-in is temporarily unavailable. Please try again." — every auth
+   *  route. Transient: nothing was consumed, so retry the same step. */
+  | { kind: 'unavailable'; message: string }
   /** 503 — our configuration fault, or the mailer refused to deliver. Not the
    *  user's problem, and on send it means nothing went out and nothing will. */
   | { kind: 'misconfigured'; message: string }
   /** 400 — the SSO's own learner-facing copy (e.g. a malformed phone number),
-   *  keyed by field. Render it unaltered. */
+   *  or the strict-input refusal of an undeclared key, keyed by field. Render
+   *  it unaltered. */
   | { kind: 'invalid_input'; message: string; fields: Record<string, string> }
   | { kind: 'unknown'; message: string };
 
+/**
+ * The error bodies the collection documents for the five auth routes. There is
+ * no shared envelope (collection §8.2) — each is the SSO's body or one of these:
+ *
+ * - `{ message }` — 401 / 502 / 503.
+ * - `{ code, message }` — 403 on verify; `code` is `account_blocked` or
+ *   `account_deactivated`.
+ * - `{ [field]: message }` — 400: the strict-input refusal of an undeclared key,
+ *   or the SSO's field-keyed copy.
+ *
+ * Normalised once by `readErrorBody`, so nothing downstream casts an `unknown`.
+ */
+interface AuthErrorBody {
+  message: string | null;
+  code: string | null;
+  /** Every string-valued key. A 400 is field → message; elsewhere this is
+   *  harmless and unused. */
+  fields: Record<string, string>;
+}
+
 const GENERIC = 'Something went wrong. Please try again.';
 
-/**
- * Pull the human-readable line out of a body that may be `{message}`, `{detail}`,
- * a bare string, or a field-keyed 400 map. All four shapes are live on this API.
- */
-function messageOf(body: unknown, fallback: string): string {
-  if (typeof body === 'string' && body.trim()) return body;
-  if (typeof body === 'object' && body !== null) {
-    const b = body as Record<string, unknown>;
-    for (const key of ['message', 'detail', 'error']) {
-      if (typeof b[key] === 'string' && b[key]) return b[key] as string;
-    }
-    // Field-keyed 400: surface the first message rather than a generic line.
-    const first = Object.values(b).find((v) => typeof v === 'string' && v);
-    if (typeof first === 'string') return first;
+/** `message` first, then the DRF/legacy spellings — all live on this API. */
+const MESSAGE_KEYS = ['message', 'detail', 'error'] as const;
+
+function readErrorBody(body: unknown): AuthErrorBody {
+  if (typeof body === 'string') {
+    return { message: body.trim() || null, code: null, fields: {} };
   }
-  return fallback;
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return { message: null, code: null, fields: {} };
+  }
+
+  const fields: Record<string, string> = {};
+  for (const [key, value] of Object.entries(body)) {
+    if (typeof value === 'string' && value) fields[key] = value;
+  }
+  const named = MESSAGE_KEYS.map((key) => fields[key]).find((value) => value !== undefined);
+  return {
+    // A field-keyed 400 has no `message`: surface its first line rather than a
+    // generic one.
+    message: named ?? Object.values(fields)[0] ?? null,
+    code: fields['code'] ?? null,
+    fields,
+  };
 }
 
-/** A 400 body on this API is a map of field name → learner-facing message. */
-function fieldsOf(body: unknown): Record<string, string> {
-  if (typeof body !== 'object' || body === null) return {};
-  return Object.fromEntries(
-    Object.entries(body as Record<string, unknown>).filter(
-      (entry): entry is [string, string] => typeof entry[1] === 'string',
-    ),
-  );
-}
+/**
+ * The one signal that separates the two 502s: there is no `code`, only copy.
+ * ponytail: text match — if the SSO rewords it, the miss lands on `unavailable`
+ * (retry the same step), which at worst costs a 401 and a resend. Ask the
+ * backend for a `code` on 502 if that ever bites.
+ */
+const SPENT_CODE_502 = /new code/i;
 
 export function toAuthFailure(err: HttpErrorResponse): AuthFailure {
-  const body: unknown = err.error;
-  const code =
-    typeof body === 'object' && body !== null
-      ? (body as Record<string, unknown>)['code']
-      : undefined;
+  const body = readErrorBody(err.error);
+  const message = (fallback: string): string => body.message ?? fallback;
 
   switch (err.status) {
     case 400:
       return {
         kind: 'invalid_input',
-        message: messageOf(body, 'Please check what you entered.'),
-        fields: fieldsOf(body),
+        message: message('Please check what you entered.'),
+        fields: body.fields,
       };
     case 401:
-      return { kind: 'bad_code', message: messageOf(body, 'That code is incorrect or expired.') };
+      return { kind: 'bad_code', message: message('That code is incorrect or expired.') };
     case 429:
-      return { kind: 'locked', message: messageOf(body, 'Too many attempts. Try again later.') };
+      return { kind: 'locked', message: message('Too many attempts. Try again later.') };
     case 403:
-      // Two distinct columns, two distinct teams. Never collapse them.
-      if (code === 'account_deactivated') {
-        return {
-          kind: 'deactivated',
-          message: messageOf(body, 'This account has been deactivated.'),
-        };
+      // Two distinct columns, two distinct teams. Never collapse them — and never
+      // show a terminal screen for a 403 the contract does not document.
+      if (body.code === 'account_deactivated') {
+        return { kind: 'deactivated', message: message('This account has been deactivated.') };
       }
-      return { kind: 'blocked', message: messageOf(body, 'This account cannot sign in.') };
+      if (body.code === 'account_blocked') {
+        return { kind: 'blocked', message: message('This account cannot sign in.') };
+      }
+      return { kind: 'unknown', message: message(GENERIC) };
     case 502:
+      if (body.message !== null && SPENT_CODE_502.test(body.message)) {
+        return { kind: 'retry_new_code', message: body.message };
+      }
       return {
-        kind: 'retry_new_code',
-        message: messageOf(body, 'Sign-in could not be completed. Please request a new code.'),
+        kind: 'unavailable',
+        message: message('Sign-in is temporarily unavailable. Please try again.'),
       };
     case 503:
       return {
         kind: 'misconfigured',
-        message: messageOf(body, 'Sign-in is unavailable right now. Please try again shortly.'),
+        message: message('Sign-in is unavailable right now. Please try again shortly.'),
       };
     default:
-      return { kind: 'unknown', message: messageOf(body, GENERIC) };
+      return { kind: 'unknown', message: message(GENERIC) };
   }
 }
 
