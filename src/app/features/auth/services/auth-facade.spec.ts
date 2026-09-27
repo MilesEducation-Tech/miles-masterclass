@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { effect } from '@angular/core';
@@ -165,5 +165,62 @@ describe('AuthFacade — identify on valid input', () => {
     expect(facade.error()).toBeNull();
     // ...and it must not block the send either.
     expect(facade.loginForm.identifier().invalid()).toBe(false);
+  });
+});
+
+/**
+ * `auth-otp-verify/` has two 502s (bodies verbatim from the collection). Only
+ * one means the code was spent; sending the learner back for a new code on the
+ * other throws away a code that would still have worked.
+ */
+describe('AuthFacade — verify failures', () => {
+  let facade: AuthFacade;
+  let verifyOtp: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    verifyOtp = vi.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthSession, useValue: { verifyOtp } },
+        AuthFacade,
+      ],
+    });
+    facade = TestBed.inject(AuthFacade);
+    facade.loginStep.set('OTP');
+    facade.otpModel.set({ identifier: '+15550100', otp: '123456' });
+  });
+
+  const failWith = (status: number, message: string) =>
+    verifyOtp.mockRejectedValue(new HttpErrorResponse({ status, error: { message } }));
+
+  it('stays on the OTP step, code intact, when sign-in is temporarily unavailable', async () => {
+    failWith(502, 'Sign-in is temporarily unavailable. Please try again.');
+    await facade.verifyOtp();
+
+    expect(facade.loginStep()).toBe('OTP');
+    expect(facade.otpModel().otp).toBe('123456');
+    expect(facade.error()).toBe('Sign-in is temporarily unavailable. Please try again.');
+  });
+
+  it('goes back for a new code when the code was spent', async () => {
+    failWith(502, 'Sign-in could not be completed. Please request a new code.');
+    await facade.verifyOtp();
+
+    expect(facade.loginStep()).toBe('LOGIN');
+    expect(facade.otpModel().otp).toBe('');
+    // The reason survives the step change, or the learner sees no explanation.
+    expect(facade.error()).toBe('Sign-in could not be completed. Please request a new code.');
+  });
+
+  it('does not close the form on a 403 the contract does not document', async () => {
+    verifyOtp.mockRejectedValue(
+      new HttpErrorResponse({ status: 403, error: { detail: 'Not allowed.' } }),
+    );
+    await facade.verifyOtp();
+
+    expect(facade.isTerminal()).toBe(false);
   });
 });

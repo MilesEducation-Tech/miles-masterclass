@@ -37,6 +37,12 @@ export interface OtpModel {
  */
 const MAX_ATTEMPTS = 5;
 
+/**
+ * How long the lockout countdown runs after a 429. The contract documents no
+ * duration; 30 minutes is an assumption, not a server value.
+ */
+const LOCKOUT_FALLBACK_MS = 30 * 60 * 1000;
+
 /** Used only until a send response tells us the real `cooldownSeconds`. */
 const FALLBACK_COOLDOWN_SECONDS = 60;
 
@@ -65,7 +71,15 @@ const IDENTIFY_DEBOUNCE_MS = 400;
  */
 @Service({ autoProvided: false })
 export class AuthFacade {
-  private static readonly OTP_LENGTH = 6;
+  /**
+   * How many boxes `<app-otp>` renders AND what the validator demands — one
+   * value for both, so they cannot disagree.
+   *
+   * ponytail: the contract says the length is set server-side at the SSO, but
+   * no route returns it. 6 is today's value; if `auth-otp-send/` ever reports a
+   * length, read it into this and nothing else changes.
+   */
+  readonly otpLength = 6;
 
   private readonly auth = inject(AuthSession);
   private readonly router = inject(Router);
@@ -337,8 +351,8 @@ export class AuthFacade {
       const code = value();
       if (!code) return null;
       if (!/^\d+$/.test(code)) return { kind: 'pattern', message: 'Digits only' };
-      if (code.length !== AuthFacade.OTP_LENGTH) {
-        return { kind: 'minlength', message: `OTP must be ${AuthFacade.OTP_LENGTH} digits` };
+      if (code.length !== this.otpLength) {
+        return { kind: 'minlength', message: `OTP must be ${this.otpLength} digits` };
       }
       return null;
     });
@@ -417,8 +431,10 @@ export class AuthFacade {
       }
       if (failure.kind === 'retry_new_code') {
         // The code they used is spent. Send them back for a fresh one rather
-        // than leaving them retyping one that can no longer work.
+        // than leaving them retyping one that can no longer work — and keep the
+        // reason on screen, which `goBackToLogin()` would otherwise wipe.
         this.goBackToLogin();
+        this.error.set(failure.message);
       }
     } finally {
       this.isLoading.set(false);
@@ -458,9 +474,10 @@ export class AuthFacade {
     );
 
     if (failure.kind === 'locked') {
-      // The server owns the lock; 30 minutes is what the contract documents.
+      // The server owns the lock and the contract gives no duration, so this
+      // countdown is OUR estimate — only a later 2xx proves the lock has lifted.
       this.now.set(Date.now());
-      this.lockedUntil.set(Date.now() + 30 * 60 * 1000);
+      this.lockedUntil.set(Date.now() + LOCKOUT_FALLBACK_MS);
     }
     if (isTerminalFailure(failure)) {
       // Not a login problem. Show a permission message, not a login screen.
