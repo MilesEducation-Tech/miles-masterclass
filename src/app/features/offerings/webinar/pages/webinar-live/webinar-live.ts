@@ -15,7 +15,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Viewport } from '@core/services/viewport/viewport';
 import { MeetingStage } from '../../components/meeting-stage/meeting-stage';
 import { EjectionReason } from '../../models/meeting-session.model';
-import { WebinarCard } from '../../models/webinar.model';
+import { FeedCard, registrationOf } from '../../models/webinar.model';
 import { MeetingSession } from '../../services/meeting-session';
 import { WebinarFacade } from '../../services/webinar-facade';
 import { toJoinParams, ZoomMeetingClient } from '../../services/zoom-meeting-client';
@@ -56,7 +56,7 @@ export class WebinarLive {
 
   private readonly stage = viewChild(MeetingStage);
 
-  protected readonly webinar = signal<WebinarCard | null>(null);
+  protected readonly webinar = signal<FeedCard | null>(null);
   protected readonly isPreparing = signal(false);
 
   protected readonly title = computed(() => this.webinar()?.name ?? 'Webinar');
@@ -164,5 +164,7 @@ export class WebinarLive {
   }
 
   /** Mobile fallback: the learner's own Zoom join URL. */
-  protected readonly mobileJoinUrl = computed(() => this.webinar()?.registration?.join_url ?? null);
+  protected readonly mobileJoinUrl = computed(
+    () => registrationOf(this.webinar())?.join_url ?? null,
+  );
 }

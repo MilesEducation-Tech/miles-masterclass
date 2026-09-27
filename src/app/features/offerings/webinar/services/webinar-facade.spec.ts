@@ -13,7 +13,63 @@ import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { WebinarFacade } from './webinar-facade';
 import { WebinarRegistration } from './webinar-registration';
-import { WEBINAR_ENDPOINTS } from '../models/webinar.model';
+import { eligibleOf, WEBINAR_ENDPOINTS, WebinarCard, WebinarDetail } from '../models/webinar.model';
+
+/** The contract's own §8 card example — every key, so it passes the parse. */
+function contractCard(id: string, overrides: Record<string, unknown> = {}): WebinarCard {
+  return {
+    id,
+    slug: 'caira-level-1-orientation',
+    name: 'CAIRA Level 1',
+    type: 'webinar',
+    short_description: '...',
+    start_date_time: '2026-09-20T13:00:00+00:00',
+    end_date_time: '2026-09-20T14:00:00+00:00',
+    duration_minutes: 60,
+    webinar_zoom_id: '84123456789',
+    is_test_webinar: false,
+    webinar_why_attend_points: [],
+    webinar_what_will_you_learn_points: [],
+    subject: 'CAIRA',
+    subject_details: { id: 'b2c4e1a8-7f39-4c52-9d61-08ab3e7f4d12', subject: 'CAIRA' },
+    level_details: {
+      level_id: 'd57e0b93-1a46-4f88-ae20-6c91f2b7e034',
+      level_number: 1,
+      level_name: 'Level 1',
+      level_actual_name: 'Foundations of AI for Accountants',
+    },
+    horizontal_thumbnail: 'https://example.test/h.png',
+    vertical_thumbnail: 'https://example.test/v.png',
+    square_image: 'https://example.test/s.png',
+    fields_of_study: [{ id: 'f1', name: 'Information Technology', cpe_credit: 1.0 }],
+    total_cpe_credits: 1.0,
+    ...overrides,
+  };
+}
+
+/** The details payload: the card plus its four detail-only keys. */
+function contractDetail(id: string): WebinarDetail {
+  return {
+    ...contractCard(id),
+    description: null,
+    trailer_url: null,
+    trailer_thumbnail_url: null,
+    product: null,
+  };
+}
+
+/** An empty feed that passes the parse, for tests that only care about the detail. */
+const EMPTY_FEED_BODY = {
+  message: 'ok',
+  data: {
+    login_type: 'pre_login',
+    highlight_webinars: [],
+    upcoming_webinars: [],
+    completed_webinar: [],
+    absent_webinar: [],
+    missed_webinar: [],
+  },
+};
 
 /**
  * The sign-in gate on `register()`.
@@ -161,7 +217,7 @@ describe('WebinarFacade reads', () => {
       data: {
         login_type: 'pre_login',
         highlight_webinars: [],
-        upcoming_webinars: [{ id: 'w1' }],
+        upcoming_webinars: [contractCard('w1')],
         completed_webinar: [],
         absent_webinar: [],
         missed_webinar: [],
@@ -171,6 +227,41 @@ describe('WebinarFacade reads', () => {
 
     expect(facade.heroWebinar()?.id).toBe('w1');
     expect(facade.loadError()).toBeNull();
+  });
+
+  // The trust boundary. The old name `cpe_credits` is exactly the drift that
+  // hid every CPE pill before — it must now fail loudly, in one place.
+  it.each([
+    ['the pre-rename cpe_credits key', { total_cpe_credits: undefined, cpe_credits: 1 }],
+    ['credits sent as a string', { total_cpe_credits: '3' }],
+    ['an unknown type', { type: 'masterclass' }],
+  ])('puts a feed with %s into loadError()', async (_, overrides) => {
+    void facade.heroWebinar();
+    TestBed.tick();
+    http
+      .expectOne((r) => r.url === FEED_URL)
+      .flush({
+        ...EMPTY_FEED_BODY,
+        data: { ...EMPTY_FEED_BODY.data, upcoming_webinars: [contractCard('w1', overrides)] },
+      });
+    await settle();
+
+    expect(facade.loadError()).toBeTruthy();
+    expect(facade.heroWebinar()).toBeNull();
+  });
+
+  it('rejects a completed row without eligible', async () => {
+    void facade.heroWebinar();
+    TestBed.tick();
+    http
+      .expectOne((r) => r.url === FEED_URL)
+      .flush({
+        ...EMPTY_FEED_BODY,
+        data: { ...EMPTY_FEED_BODY.data, completed_webinar: [contractCard('done')] },
+      });
+    await settle();
+
+    expect(facade.loadError()).toBeTruthy();
   });
 
   it('surfaces and logs a feed failure', async () => {
@@ -192,7 +283,7 @@ describe('WebinarFacade reads', () => {
     void facade.heroWebinar();
     facade.showDetail('w9');
     TestBed.tick();
-    http.expectOne((r) => r.url === FEED_URL).flush({ data: null });
+    http.expectOne((r) => r.url === FEED_URL).flush(EMPTY_FEED_BODY);
     const req = http.expectOne((r) => r.url === DETAIL_URL);
     expect(req.request.params.get('webinar_id')).toBe('w9');
     req.flush(null, { status: 404, statusText: 'Not Found' });
@@ -213,7 +304,7 @@ describe('WebinarFacade reads', () => {
     facade.showDetail('123');
     void facade.detailWebinar();
     TestBed.tick();
-    http.match((r) => r.url === FEED_URL).forEach((r) => r.flush({ data: null }));
+    http.match((r) => r.url === FEED_URL).forEach((r) => r.flush(EMPTY_FEED_BODY));
     http
       .expectOne((r) => r.url === DETAIL_URL)
       .flush(
@@ -242,8 +333,10 @@ describe('WebinarFacade reads', () => {
     void facade.detailWebinar();
     void facade.heroWebinar();
     TestBed.tick();
-    http.match((r) => r.url === FEED_URL).forEach((r) => r.flush({ data: null }));
-    http.expectOne((r) => r.url === DETAIL_URL).flush({ data: { webinar: { id: 'w2' } } });
+    http.match((r) => r.url === FEED_URL).forEach((r) => r.flush(EMPTY_FEED_BODY));
+    http
+      .expectOne((r) => r.url === DETAIL_URL)
+      .flush({ data: { login_type: 'pre_login', webinar: contractDetail('w2') } });
     await settle();
 
     facade.reload();
@@ -262,10 +355,10 @@ describe('WebinarFacade reads', () => {
         data: {
           login_type: 'post_login',
           highlight_webinars: [],
-          upcoming_webinars: [{ id: 'up' }],
-          completed_webinar: [{ id: 'done', eligible: true }],
+          upcoming_webinars: [contractCard('up')],
+          completed_webinar: [contractCard('done', { eligible: true })],
           absent_webinar: [],
-          missed_webinar: [{ id: 'gone' }],
+          missed_webinar: [contractCard('gone')],
         },
       });
     await settle();
@@ -274,15 +367,17 @@ describe('WebinarFacade reads', () => {
     expect(facade.bucketOf('done')).toBe('completed');
     expect(facade.bucketOf('gone')).toBe('missed');
     expect(facade.bucketOf('nowhere')).toBeNull();
-    expect(facade.findById('done')?.eligible).toBe(true);
+    expect(eligibleOf(facade.findById('done'))).toBe(true);
   });
 
   it('returns the detail row when the endpoint answers', async () => {
     facade.showDetail('w2');
     void facade.detailWebinar();
     TestBed.tick();
-    http.match((r) => r.url === FEED_URL).forEach((r) => r.flush({ data: null }));
-    http.expectOne((r) => r.url === DETAIL_URL).flush({ data: { webinar: { id: 'w2' } } });
+    http.match((r) => r.url === FEED_URL).forEach((r) => r.flush(EMPTY_FEED_BODY));
+    http
+      .expectOne((r) => r.url === DETAIL_URL)
+      .flush({ data: { login_type: 'pre_login', webinar: contractDetail('w2') } });
     await settle();
 
     expect(facade.detailWebinar()?.id).toBe('w2');

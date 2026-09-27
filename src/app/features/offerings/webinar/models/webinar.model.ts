@@ -1,4 +1,5 @@
 import { environment } from '@env/environment';
+import type { WebinarErrorCode } from '../utils/webinar-error';
 
 /**
  * Types for the Events API v1 (`EVENTS_API_CONTRACT_V1`).
@@ -100,7 +101,7 @@ export type RegistrationStatus = 'PENDING' | 'REGISTERED' | 'REGISTER';
 /**
  * The ten-state internal status. Diagnostic — for Ops and support, and for the
  * one display-only case in `WebinarRegistration.pollTimedOut`. Never branch on
- * it; `collapseRegistrationStatus` in `webinar-status.ts` is the only mapper.
+ * it — branch on `registration_status`, which the server already collapses.
  */
 export type InternalAttemptStatus =
   | 'SUCCESS'
@@ -133,7 +134,7 @@ export interface WebinarRegistrationInfo {
    */
   attempt_id: string | null;
   join_url: string | null;
-  error_code: string | null;
+  error_code: WebinarErrorCode | null;
   error_message: string | null;
   zoom_attempts: number;
   completed_at: string | null;
@@ -163,15 +164,13 @@ export interface WebinarLevelDetails {
    * Render `level_name` when this is absent.
    */
   level_actual_name: string | null;
-  /**
-   * Present in the response but not in the contract. Not used for anything —
-   * `subject` plus `level_number` is what renders "CAIRA L2".
-   */
-  level_id?: string;
+  /** Added 2026-09-17: a level's `level_name` repeats across subjects, so this
+   *  is the only thing that can address one. Not rendered. */
+  level_id: string;
 }
 
 /**
- * Present in the response but NOT documented in the contract.
+ * Added 2026-09-17. `null` together with `subject`.
  *
  * It restates `subject` as `{id, subject}`. Prefer the flat `subject` field:
  * the contract names it as the CAIRA/CAIBA answer, and a client given two
@@ -184,8 +183,9 @@ export interface WebinarSubjectDetails {
 }
 
 /**
- * One card. All five main-page buckets carry identical objects, so a single
- * view model reads `highlight_webinars[0]` and `missed_webinar[0]` alike.
+ * One card — the keys every bucket carries. `registration` and `eligible` are
+ * NOT here: each exists on specific buckets only, so they live on the bucket
+ * types below and a reader has to prove which bucket it holds.
  */
 export interface WebinarCard {
   /** This is what `register-via-zoom` takes. */
@@ -211,8 +211,8 @@ export interface WebinarCard {
    * endpoint deliberately does not emit them.
    */
   subject: string | null;
-  /** Undocumented duplicate of `subject`. See `WebinarSubjectDetails`. */
-  subject_details?: WebinarSubjectDetails | null;
+  /** `subject` as an addressable object. See `WebinarSubjectDetails`. */
+  subject_details: WebinarSubjectDetails | null;
   level_details: WebinarLevelDetails | null;
   /** Full public URL, or `''`. Never null, never a bare storage key. */
   horizontal_thumbnail: string;
@@ -227,15 +227,40 @@ export interface WebinarCard {
    * so reading the old name silently hides every CPE pill.
    */
   total_cpe_credits: number | null;
+}
 
-  /** Present on `highlight_webinars` / `upcoming_webinars`, `post_login` only. */
-  registration?: WebinarRegistrationInfo;
+/** A `highlight_webinars` / `upcoming_webinars` row (and the details payload). */
+export interface UpcomingWebinarCard extends WebinarCard {
   /**
-   * Present on `completed_webinar` only. `true` when the booking attended, or
-   * when leadership force-overrode. Deliberately NOT recomputed client-side
-   * from durations — the thresholds live in the attendance ingest.
+   * `post_login` only — ABSENT on `pre_login`, which is why it stays optional:
+   * registration is an affordance, and an anonymous caller has none.
    */
-  eligible?: boolean;
+  registration?: WebinarRegistrationInfo;
+}
+
+/** A `completed_webinar` row — the only bucket that carries `eligible`. */
+export interface CompletedWebinarCard extends WebinarCard {
+  /**
+   * `true` when the booking attended, or when leadership force-overrode.
+   * Deliberately NOT recomputed client-side from durations — the thresholds
+   * live in the attendance ingest.
+   */
+  eligible: boolean;
+}
+
+/** Any card a surface may render, whichever bucket it came from. */
+export type FeedCard = WebinarCard | UpcomingWebinarCard | CompletedWebinarCard;
+
+/** The `registration` block, when this card's bucket carries one. */
+export function registrationOf(
+  card: FeedCard | null | undefined,
+): WebinarRegistrationInfo | undefined {
+  return card && 'registration' in card ? card.registration : undefined;
+}
+
+/** `eligible`, when this is a completed row; `undefined` for every other bucket. */
+export function eligibleOf(card: FeedCard | null | undefined): boolean | undefined {
+  return card && 'eligible' in card ? card.eligible : undefined;
 }
 
 // ---- The main-page feed ----------------------------------------------------
@@ -248,10 +273,10 @@ export interface WebinarCard {
 export interface WebinarMainPageData {
   login_type: LoginType;
   /** Editorial rail, upcoming only. Overlaps `upcoming_webinars` by design. */
-  highlight_webinars: WebinarCard[];
-  upcoming_webinars: WebinarCard[];
+  highlight_webinars: UpcomingWebinarCard[];
+  upcoming_webinars: UpcomingWebinarCard[];
   /** Per-user. Past webinars the user attended. Each carries `eligible`. */
-  completed_webinar: WebinarCard[];
+  completed_webinar: CompletedWebinarCard[];
   /** Per-user. Booked and did not honour. */
   absent_webinar: WebinarCard[];
   /** Per-user. Never booked at all. */
@@ -302,7 +327,7 @@ export interface AttemptStatusResponse {
   zoom_attempts: number;
   last_status_code: number | null;
   error_message: string | null;
-  error_code: string | null;
+  error_code: WebinarErrorCode | null;
   mf_retry_count: number;
   join_url: string | null;
   /**
@@ -340,13 +365,13 @@ export interface WebinarProduct {
  * feed attaches it only to `completed_webinar`, and computing it on this
  * endpoint would be a second definition of eligibility.
  */
-export interface WebinarDetail extends WebinarCard {
+export interface WebinarDetail extends UpcomingWebinarCard {
   /** Long-form page body. `short_description` remains the one-liner. Only this
    *  endpoint sends it — the feed card never does. */
-  description?: string | null;
-  trailer_url?: string | null;
-  trailer_thumbnail_url?: string | null;
-  product?: WebinarProduct | null;
+  description: string | null;
+  trailer_url: string | null;
+  trailer_thumbnail_url: string | null;
+  product: WebinarProduct | null;
 }
 
 /**
@@ -363,4 +388,175 @@ export interface WebinarDetailsData {
 export interface WebinarDetailsResponse {
   message: string;
   data: WebinarDetailsData;
+}
+
+// ---- Trust boundary --------------------------------------------------------
+//
+// Hand-written for the same reason as `isSessionResponse` / `isUserDetails`: a
+// renamed key would otherwise render as `undefined` with no signal — which is
+// exactly how `cpe_credits` → `total_cpe_credits` hid every CPE pill. Every
+// contract key is checked; EXTRA keys pass, because the contract adds keys
+// without notice. A missing or retyped key fails the whole response, once, in
+// the resource's `parse`, so it lands in `error()` rather than on screen.
+
+type Json = Record<string, unknown>;
+
+const isObject = (v: unknown): v is Json =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+const isStr = (v: unknown): v is string => typeof v === 'string';
+const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+const isStrOrNull = (v: unknown): v is string | null => v === null || isStr(v);
+const isNumOrNull = (v: unknown): v is number | null => v === null || isNum(v);
+const isStrList = (v: unknown): v is string[] => Array.isArray(v) && v.every(isStr);
+
+const WEBINAR_TYPES: readonly unknown[] = ['webinar', 'offline', 'orientation', 'premier'];
+const LOGIN_TYPES: readonly unknown[] = ['pre_login', 'post_login'];
+const REGISTRATION_STATUSES: readonly unknown[] = ['PENDING', 'REGISTERED', 'REGISTER'];
+
+function isFieldOfStudy(v: unknown): v is FieldOfStudy {
+  return isObject(v) && isStr(v['id']) && isStr(v['name']) && isNum(v['cpe_credit']);
+}
+
+function isLevelDetails(v: unknown): v is WebinarLevelDetails {
+  return (
+    isObject(v) &&
+    isStr(v['level_id']) &&
+    isNum(v['level_number']) &&
+    isStr(v['level_name']) &&
+    isStrOrNull(v['level_actual_name'])
+  );
+}
+
+function isSubjectDetails(v: unknown): v is WebinarSubjectDetails {
+  return isObject(v) && isStr(v['id']) && isStr(v['subject']);
+}
+
+/** Every key the contract (§8) puts on a card, in every bucket. */
+export function isWebinarCard(v: unknown): v is WebinarCard {
+  return (
+    isObject(v) &&
+    isStr(v['id']) &&
+    isStrOrNull(v['slug']) &&
+    isStr(v['name']) &&
+    WEBINAR_TYPES.includes(v['type']) &&
+    isStr(v['short_description']) &&
+    isStrOrNull(v['start_date_time']) &&
+    isStrOrNull(v['end_date_time']) &&
+    isNumOrNull(v['duration_minutes']) &&
+    isStrOrNull(v['webinar_zoom_id']) &&
+    typeof v['is_test_webinar'] === 'boolean' &&
+    (v['webinar_why_attend_points'] === null || isStrList(v['webinar_why_attend_points'])) &&
+    (v['webinar_what_will_you_learn_points'] === null ||
+      isStrList(v['webinar_what_will_you_learn_points'])) &&
+    isStrOrNull(v['subject']) &&
+    (v['subject_details'] === null || isSubjectDetails(v['subject_details'])) &&
+    (v['level_details'] === null || isLevelDetails(v['level_details'])) &&
+    isStr(v['horizontal_thumbnail']) &&
+    isStr(v['vertical_thumbnail']) &&
+    isStr(v['square_image']) &&
+    Array.isArray(v['fields_of_study']) &&
+    v['fields_of_study'].every(isFieldOfStudy) &&
+    isNumOrNull(v['total_cpe_credits'])
+  );
+}
+
+/** The block is optional (absent on `pre_login`), but when present it is whole. */
+function isRegistrationInfo(v: unknown): v is WebinarRegistrationInfo {
+  return (
+    isObject(v) &&
+    REGISTRATION_STATUSES.includes(v['registration_status']) &&
+    isStrOrNull(v['status']) &&
+    isStrOrNull(v['attempt_id']) &&
+    isStrOrNull(v['join_url']) &&
+    isStrOrNull(v['error_code']) &&
+    isStrOrNull(v['error_message']) &&
+    isNum(v['zoom_attempts']) &&
+    isStrOrNull(v['completed_at']) &&
+    typeof v['route_to_web_lms'] === 'boolean'
+  );
+}
+
+function isUpcomingCard(v: unknown): v is UpcomingWebinarCard {
+  return isWebinarCard(v) && (!('registration' in v) || isRegistrationInfo(v.registration));
+}
+
+function isCompletedCard(v: unknown): v is CompletedWebinarCard {
+  return isWebinarCard(v) && 'eligible' in v && typeof v.eligible === 'boolean';
+}
+
+const listOf =
+  <T>(guard: (v: unknown) => v is T) =>
+  (v: unknown): v is T[] =>
+    Array.isArray(v) && v.every(guard);
+
+/** Thrown from `parse`; the message names the resource so the log says where. */
+function contractError(resource: string): Error {
+  return new Error(`[webinar] ${resource} response does not match the Events contract.`);
+}
+
+const isLoginType = (v: unknown): v is LoginType => LOGIN_TYPES.includes(v);
+
+/** `parse` for `webinar-main-page/`: the `{message, data}` envelope, unwrapped. */
+export function parseMainPage(raw: unknown): WebinarMainPageData {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  if (!isObject(data)) throw contractError('webinar-main-page');
+
+  // Pulled into locals so each guard narrows its own value — no cast needed.
+  const login_type = data['login_type'];
+  const highlight_webinars = data['highlight_webinars'];
+  const upcoming_webinars = data['upcoming_webinars'];
+  const completed_webinar = data['completed_webinar'];
+  const absent_webinar = data['absent_webinar'];
+  const missed_webinar = data['missed_webinar'];
+
+  if (
+    isLoginType(login_type) &&
+    listOf(isUpcomingCard)(highlight_webinars) &&
+    listOf(isUpcomingCard)(upcoming_webinars) &&
+    listOf(isCompletedCard)(completed_webinar) &&
+    listOf(isWebinarCard)(absent_webinar) &&
+    listOf(isWebinarCard)(missed_webinar)
+  ) {
+    return {
+      login_type,
+      highlight_webinars,
+      upcoming_webinars,
+      completed_webinar,
+      absent_webinar,
+      missed_webinar,
+    };
+  }
+  throw contractError('webinar-main-page');
+}
+
+function isWebinarDetail(v: unknown): v is WebinarDetail {
+  return (
+    isObject(v) &&
+    isStrOrNull(v['description']) &&
+    isStrOrNull(v['trailer_url']) &&
+    isStrOrNull(v['trailer_thumbnail_url']) &&
+    (v['product'] === null || isProduct(v['product'])) &&
+    isUpcomingCard(v)
+  );
+}
+
+/** `parse` for `webinar-details-page/`: the card plus its four detail keys. */
+export function parseDetail(raw: unknown): WebinarDetail {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  const webinar = isObject(data) ? data['webinar'] : undefined;
+  if (isWebinarDetail(webinar)) return webinar;
+  throw contractError('webinar-details-page');
+}
+
+function isProduct(v: unknown): v is WebinarProduct {
+  return (
+    isObject(v) &&
+    isStr(v['id']) &&
+    isStr(v['name']) &&
+    isStrOrNull(v['mini_description']) &&
+    isStrOrNull(v['description']) &&
+    isStr(v['horizontal_image']) &&
+    isStr(v['vertical_image']) &&
+    isStr(v['square_image'])
+  );
 }

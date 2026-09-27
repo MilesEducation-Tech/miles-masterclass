@@ -14,6 +14,7 @@ import { Spinner } from '@shared/ui/spinner/spinner';
 import { WebinarAbout } from '../../components/webinar-about/webinar-about';
 import { WebinarFaq } from '../../components/webinar-faq/webinar-faq';
 import { WebinarHero } from '../../components/webinar-hero/webinar-hero';
+import { eligibleOf } from '../../models/webinar.model';
 import { WebinarFacade } from '../../services/webinar-facade';
 import { WebinarRegistration } from '../../services/webinar-registration';
 import { resolveJoinTarget } from '../../utils/join-target';
@@ -75,7 +76,8 @@ export class WebinarDetail {
     if (!detail) return fromFeed;
     // `eligible` exists only on `completed_webinar` rows and never on the
     // details payload — without it, an attended session reads "Not eligible".
-    return fromFeed?.eligible === undefined ? detail : { ...detail, eligible: fromFeed.eligible };
+    const eligible = eligibleOf(fromFeed);
+    return eligible === undefined ? detail : { ...detail, eligible };
   });
 
   /** The feed's bucket, or `highlight` until the feed places it. */

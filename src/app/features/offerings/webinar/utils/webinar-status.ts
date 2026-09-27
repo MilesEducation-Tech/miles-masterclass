@@ -1,7 +1,8 @@
 import { environment } from '@env/environment';
 import {
-  InternalAttemptStatus,
-  RegistrationStatus,
+  eligibleOf,
+  FeedCard,
+  registrationOf,
   WebinarCard,
   WebinarRegistrationInfo,
 } from '../models/webinar.model';
@@ -75,42 +76,6 @@ export interface CtaContext {
 }
 
 /**
- * Collapse the TEN-state internal status onto the THREE-state client contract.
- *
- * Two of these mappings are the whole reason this function exists rather than a
- * lookup at each call site:
- *
- * - **The four `MF_*` states are `REGISTERED`, not failures.** The Salesforce
- *   forward is an audit hand-off that happens downstream of Zoom accepting the
- *   registrant. Telling the user to register again would be wrong AND would
- *   spend another Zoom registrant slot.
- * - **`ZOOM_PENDING_APPROVAL` is terminal but maps to `PENDING`.** The reason
- *   for the wait travels in `error_message` — show it, and never a retry CTA.
- *
- * An unrecognised status collapses to `PENDING`, which is the safe default: a
- * spinner rather than an invitation to register twice.
- */
-export function collapseRegistrationStatus(status: string | null): RegistrationStatus {
-  switch (status as InternalAttemptStatus) {
-    case 'SUCCESS':
-    case 'MF_FAILED':
-    case 'MF_PERMANENTLY_FAILED':
-    case 'MF_SKIPPED':
-      return 'REGISTERED';
-    case 'ZOOM_FAILED':
-    case 'BOOKING_FAILED':
-    case 'INTERRUPTED':
-      return 'REGISTER';
-    case 'PENDING':
-    case 'ZOOM_RETRYING':
-    case 'ZOOM_PENDING_APPROVAL':
-      return 'PENDING';
-    default:
-      return 'PENDING';
-  }
-}
-
-/**
  * Is this user registered?
  *
  * Reads `registration_status`, which is the contract — NOT `attempt_id`. A user
@@ -181,7 +146,7 @@ export function isRegistrable(card: WebinarCard): boolean {
 /**
  * The single answer for what a webinar card should offer right now.
  */
-export function ctaFor(card: WebinarCard, ctx: CtaContext): WebinarCta {
+export function ctaFor(card: FeedCard, ctx: CtaContext): WebinarCta {
   // Past buckets first — they carry no `registration` block at all, because
   // registration is an affordance and a webinar that already happened offers
   // neither register nor join.
@@ -190,7 +155,7 @@ export function ctaFor(card: WebinarCard, ctx: CtaContext): WebinarCta {
       // `eligible` is authoritative and deliberately NOT recomputed from
       // durations: the thresholds live in the attendance ingest, and a second
       // implementation of that rule is a rule that will disagree with itself.
-      return card.eligible ? 'attended' : 'not-eligible';
+      return eligibleOf(card) ? 'attended' : 'not-eligible';
     case 'absent':
       return 'absent';
     case 'missed':
@@ -199,7 +164,7 @@ export function ctaFor(card: WebinarCard, ctx: CtaContext): WebinarCta {
       break;
   }
 
-  const registration = card.registration;
+  const registration = registrationOf(card);
 
   if (ctx.isRegistering) return 'registering';
 

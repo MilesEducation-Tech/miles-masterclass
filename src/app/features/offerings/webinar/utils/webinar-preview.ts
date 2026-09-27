@@ -200,10 +200,17 @@ function toCard(seed: Seed, index: number, baseTime: number, idPrefix: string): 
     webinar_why_attend_points: null,
     webinar_what_will_you_learn_points: OBJECTIVES,
     subject: seed.subject,
+    subject_details:
+      seed.subject === null ? null : { id: `preview-subject`, subject: seed.subject },
     level_details:
       seed.level === null
         ? null
-        : { level_number: seed.level, level_name: `Level ${seed.level}`, level_actual_name: null },
+        : {
+            level_id: `preview-level-${seed.level}`,
+            level_number: seed.level,
+            level_name: `Level ${seed.level}`,
+            level_actual_name: null,
+          },
     horizontal_thumbnail: ART,
     vertical_thumbnail: ART,
     square_image: SQUARE,

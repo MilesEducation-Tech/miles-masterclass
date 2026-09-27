@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faSolidInfo } from '@ng-icons/font-awesome/solid';
 import { RouterLink } from '@angular/router';
-import { WebinarCard as WebinarCardModel } from '../../models/webinar.model';
+import { eligibleOf, FeedCard } from '../../models/webinar.model';
 import { BRAND_MARKS } from '../../utils/brand-assets';
 import { ServerClock } from '../../services/server-clock';
 import { formatSessionLabel, sessionParts } from '../../utils/session-time';
@@ -42,7 +42,7 @@ export type WebinarCardLayout =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WebinarCard {
-  readonly webinar = input.required<WebinarCardModel>();
+  readonly webinar = input.required<FeedCard>();
   readonly bucket = input.required<WebinarBucket>();
   readonly layout = input<WebinarCardLayout>('responsive');
   readonly isRegistering = input(false);
@@ -96,7 +96,7 @@ export class WebinarCard {
   protected readonly statusTag = computed<{ label: string; classes: string } | null>(() => {
     switch (this.bucket()) {
       case 'completed':
-        return this.webinar().eligible
+        return eligibleOf(this.webinar())
           ? { label: 'Eligible', classes: 'bg-success text-white' }
           : { label: 'Not Eligible', classes: 'bg-accent-premium text-black' };
       case 'absent':

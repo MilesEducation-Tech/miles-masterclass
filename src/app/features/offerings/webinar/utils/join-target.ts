@@ -1,5 +1,5 @@
 import { environment } from '@env/environment';
-import { WebinarCard } from '../models/webinar.model';
+import { FeedCard, registrationOf } from '../models/webinar.model';
 
 /**
  * Where "Join Now" actually sends the learner.
@@ -28,8 +28,8 @@ import { WebinarCard } from '../models/webinar.model';
 export type JoinTarget =
   { kind: 'embedded' } | { kind: 'external'; url: string } | { kind: 'unavailable' };
 
-export function resolveJoinTarget(card: WebinarCard | null | undefined): JoinTarget {
-  const registration = card?.registration;
+export function resolveJoinTarget(card: FeedCard | null | undefined): JoinTarget {
+  const registration = registrationOf(card);
   if (!registration) return { kind: 'unavailable' };
 
   if (environment.WEBINAR.liveEnabled && registration.route_to_web_lms) {
