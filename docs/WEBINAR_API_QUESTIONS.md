@@ -1,11 +1,24 @@
 # Webinar (Events v1) — open questions for the backend
 
 **From:** Masterclass web (Angular SSR)
-**Against:** `EVENTS_API_CONTRACT_V1`, as published in `postman/Merged_Masterclass_Backend_All_APIs.postman_collection.json`
-**Date raised:** 2026-09-23
+**Against:** `EVENTS_API_CONTRACT_V1`, as published in the Postman collection at
+`postman/Merged Masterclass Backend - All APIs/` (folder `06. Events and Bookings`)
+**Date raised:** 2026-09-23 · **Re-checked:** 2026-09-27 against the new YAML collection (130 requests)
 
-Every claim below is checkable against that collection — 118 requests. Where we say a field or route
-does not exist, we mean it returns zero matches across the whole file, not that we could not find it.
+Every claim below is checkable against that collection. Where we say a field or route does not
+exist, we mean it returns zero matches across the whole collection, not that we could not find it.
+
+**Status on 2026-09-27: none of Q1–Q8 is answered by the new collection.** Q7 has interim guidance
+(see below). Two asks are new (Q9, Q10), because the client stopped declaring fields the contract
+never sends (MIL-8).
+
+### Already fixed on our side
+
+- `cpe_credits` → `total_cpe_credits` (renamed 2026-09-18, no alias) — the client reads the new name
+  (MIL-7). Every CPE pill was hidden until then.
+- The feed and detail responses are now checked against the contract at the resource boundary
+  (MIL-9): a missing or retyped key surfaces as a load error instead of rendering `undefined`.
+  Verified against the live UAT `webinar-main-page` feed on 2026-09-27.
 
 ## Context: one rule that shapes all of this
 
@@ -116,34 +129,53 @@ to the registrant's `join_url` in Zoom instead. Flipping one boolean turns it on
 
 ## Non-blocking — correctness and robustness
 
-### Q5. `join_opens_at` is documented client-side but never sent
+### Q5. `join_opens_at` and `server_time` are never sent
 
-The card type carries `join_opens_at` as optional and our code prefers it — but it appears **0
-times** in the contract. So the join window is computed in the browser as
-`start_date_time − 15 minutes`, which means a learner with a skewed clock can be shown **Join** before
-the server will honour it. We mitigate with `server_time` from the feed, but the window is a business
-rule and belongs on your side.
+Both appear **0 times** in the contract, so the client no longer declares either (MIL-8). The join
+window is computed in the browser as `start_date_time − 15 minutes` against the **device clock** — a
+learner whose clock is ten minutes fast is shown **Join** ten minutes before the server will honour
+it. The window is a business rule and belongs on your side.
 
-**Ask:** emit `join_opens_at` per registration.
+**Ask:** emit `join_opens_at` per registration, and `server_time` on the main-page response (so the
+client can correct for clock skew). Either one alone helps; both is best.
 
 ### Q6. `registrant_token` is likewise absent
 
-0 matches. We currently parse the `tk` query parameter out of `join_url`, which breaks the moment
-Zoom changes that URL shape and gives no signal when it silently finds nothing. Needed by the SDK
-path in Q3.
+0 matches. The SDK path (Q3, disabled) needs it as the Zoom `tk`; without it that path has no
+token at all. Parsing it out of `join_url` would break silently the moment Zoom changes that URL
+shape, so we do not.
 
 **Ask:** emit `registrant_token` alongside `join_url`.
 
 ### Q7. `product` vs `subject` — the open maintainer decision (contract §9.8)
 
-`webinar-details-page` reports both, and the contract says which one wins has not been decided. The
-detail page renders one of them. **Ask:** which is authoritative for display?
+`webinar-details-page` reports both, and the contract says which one wins has not been decided.
+**Interim guidance (contract §7.4):** use `product` for the commercial programme and `subject` to
+match the feed. The detail page renders `subject` today. **Ask:** which is authoritative for display?
 
 ### Q8. `webinar-main-page` does not filter by enrolment (contract §9.2)
 
 `show_webinar_as_per_enrollment` is not applied, so the signed-in upcoming list is wider than it
 should be. Flagging that we are aware, and asking whether it is scheduled — a learner seeing a
 webinar they cannot attend is a support ticket.
+
+### Q9. The NASBA disclosure fields are not on the Events serializer
+
+The detail page's NASBA block needs, per webinar: instructional delivery method, program level,
+prerequisite education, advance preparation, created/reviewed/updated dates, the number of poll
+questions to answer and the attendance threshold. They exist on the v2 **course** model
+(`int_delivery_method`, `program_level`, …) but on no Events route. These are regulatory statements,
+so the client cannot default them — it renders only the CPE credit, fields of study and the Miles
+sponsor id until they arrive.
+
+**Ask:** add those fields to the webinar card or the details payload.
+
+### Q10. `badge_icon_url` on the card
+
+The design overlaps each row's artwork with the webinar's credential badge. No Events route carries a
+badge URL (the v2 `UpcomingPremiere` did). The space is reserved in the layout; nothing renders.
+
+**Ask:** emit `badge_icon_url` (or equivalent) on the card.
 
 ---
 
@@ -159,6 +191,8 @@ webinar they cannot attend is a support ticket.
 | Q6  | `registrant_token`                            | SDK join without URL parsing         |
 | Q7  | `product` vs `subject`                        | detail page display only             |
 | Q8  | Enrolment filtering                           | list relevance                       |
+| Q9  | NASBA disclosure fields                       | compliance block on the detail page  |
+| Q10 | `badge_icon_url`                              | credential badge on the row artwork  |
 
 **Q1–Q4 are the ones that block shipping the flow as specified.** Everything else in the module is
 built and working against the contract as it stands.

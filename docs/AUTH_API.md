@@ -2,11 +2,14 @@
 
 How this app signs a learner in, and the rules the backend imposes on it.
 
-**Contract source:** the request descriptions inside
-`postman/Merged_Masterclass_Backend_All_APIs.postman_collection.json`, which quote
-`ACCOUNTS_API_CONTRACT_V1.md` verbatim. That collection is generated
-(`Miscellaneous/Scripts/generate_postman_collection.py`) and marked do-not-hand-edit — treat it as
-the source of truth and this file as the frontend's reading of it.
+**Contract source:** the Postman collection in `postman/Merged Masterclass Backend - All APIs/`
+(a YAML tree, one file per request), folders `01. Authentication and Session` and
+`02. Account, Profile and Reference Content`. Each request's description quotes
+`ACCOUNTS_API_CONTRACT_V1.md` verbatim, and its `.resources/<request>.resources/examples/` holds one
+saved response per documented status. The collection is generated backend-side and marked
+do-not-hand-edit — treat it as the source of truth and this file as the frontend's reading of it.
+
+Re-audited against the collection on 2026-09-27 (MIL-5 auth fixes, MIL-6 profile rebind).
 
 | Environment | `BASE_API_URL`                    |
 | ----------- | --------------------------------- |
@@ -85,7 +88,7 @@ They describe different facts and have **opposite polarity**. The claim describe
 user can be fully known to the SSO and still be `new_user` here. Reading one for the other inverts
 the sign-up gate silently.
 
-`onboardingGuard` branches on `profile_status`, and `onboarding.guard.spec.ts` asserts that exactly
+`onboardingGuard` branches on the milestone, and `onboarding-guard.spec.ts` asserts that exactly
 one status redirects.
 
 ### Rule 5 — after `PATCH profile/` advances the milestone, **refresh the token before anything else**
@@ -124,8 +127,10 @@ The sequence is: verify → `profile_status: "new_user"` → complete the profil
    - `channel` is **not an accepted input** — sending it is a 400.
    - A **503 means nothing was sent and nothing will be.** Advance the user to a retry, never to a
      code-entry screen. It says our mailer is broken; it never says anything about the account.
-3. **`auth-otp-verify/`** — exchanges the code for a session. `code` is a string and its length is
-   **not** validated client-side; the length is set server-side at the SSO.
+3. **`auth-otp-verify/`** — exchanges the code for a session. `code` is a string; the contract
+   says its length is set server-side at the SSO — but **no route returns that length**, so the
+   OTP boxes and the validator share one constant (`AuthFacade.otpLength`, today `6`). If the
+   backend ever reports it (see §6), read it into that one field.
 4. Route on `profile_status`: `new_user` → `/auth/profile`, otherwise the `redirect` param or `/`.
 
 ### Failure modes, and the UI each one wants
@@ -151,9 +156,14 @@ Logout is the one auth route that needs `Authorization: Bearer`, so the intercep
 (`SESSION_MINTING_PATHS`) holds only the other four. Refresh clears the session **only on 401**;
 502/503 keep the tokens.
 
-**Unknown fields are rejected.** Verified live: posting an undeclared field returns 400 with a
-field-keyed body (`{"code": "Unrecognised field for this endpoint. …"}`). Send exactly the declared
-keys and nothing else.
+**Unknown fields are rejected.** Every auth route uses a strict serializer: posting an undeclared
+field returns 400 keyed by **that field's own name**, with a string (not a list) value —
+`{"appCode": "Unrecognised field for this endpoint. Each endpoint declares its own fields; …"}`.
+Send exactly the declared keys and nothing else.
+
+**There is no shared envelope on auth routes.** Success bodies are the SSO's own, bare. Errors are
+`{message}` (401/502/503), `{code, message}` (403), or the field-keyed 400 above. No
+`success`/`fail`/`warning` status field exists anywhere in the collection.
 
 ---
 
@@ -175,6 +185,56 @@ serves questionnaire answers and nothing else, and `PATCH profile/` is the only 
   opens, so a rejected submission never partially applies.
 - Then **rule 5**.
 
+### The user record — `GET user-details/` (hyphen)
+
+Rewritten 2026-09-24. The old `user_details/` (underscore) — a 28-field row with a PATCH writing 16
+of them — was **deleted**; a client still calling it gets 404, and a PATCH on the new route is 405.
+
+```json
+{
+  "first_name": "Sohan",
+  "full_name": "Sohan Biswas",
+  "is_onboarding_completed": true,
+  "is_profile_completed": true,
+  "Pathway": "Yes",
+  "Enrolled_status": "Yes",
+  "Enrolled_course": ["US CPA"],
+  "onboarding_fully_completed": true
+}
+```
+
+- `Pathway` / `Enrolled_status` are **capitalised strings**, not booleans. `"No"` means "could not
+  confirm": an enrolment lookup failure answers 200 with the conservative `"No"` payload, never 500.
+- The onboarding gate reads the **stored** `is_onboarding_completed`, not the derived
+  `onboarding_fully_completed`.
+- There is **no email, last name, phone or city** here — those are questionnaire answers now. The
+  avatar menu shows `full_name` and its initials only.
+- `parseUserDetails` in `account.model.ts` checks every key at the `httpResource` boundary; a drifted
+  body becomes the resource's `error()` rather than `undefined` on screen.
+- `show_referral_code` **moved to `GET profile/`** on 2026-09-24. The profile page only sends codes
+  of questions it rendered, so a non-answer key there is never written back.
+
+### Other account routes (not bound yet)
+
+| Route                                    | Shape                                                          | Why unbound                                                |
+| ---------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------- |
+| `GET/POST name/`                         | POST body is **camelCase** and strict: `{firstName, lastName}` | No screen edits the certificate name separately yet        |
+| `GET web/maintainance-status/` (public)  | `{is_maintenance, force_logout_all_user}` (backend's spelling) | Needs a UX decision on the maintenance page / force-logout |
+| `GET country/`, `GET city-autocomplete/` | `{data: [...]}` / `{suggestions: ...}`                         | Nothing calls them                                         |
+
+### Account error envelopes
+
+Four shapes are live; `readAccountError()` in `account.model.ts` normalises them into
+"messages under fields" or "one message":
+
+| Status     | Body                                   | Rendered as                      |
+| ---------- | -------------------------------------- | -------------------------------- |
+| 400        | `{<question_code>: message}`           | Under that question              |
+| 400 strict | `{<undeclared_key>: message}`          | Toast (no question owns the key) |
+| 403        | `{detail}` (DRF, bad/expired token)    | Toast                            |
+| 404 / 502  | `{message, status: "Failed"}`          | Toast                            |
+| 500        | `{status: "error", message, details?}` | Toast                            |
+
 `questions/` is server-driven: the backend decides which questions exist, in what order and with what
 options. `section` is a label to group by — it does not affect ordering, and there are no screen
 buckets (the legacy `Screen1`/`Screen2` keying is gone). `visibility: "both"` appears under either
@@ -189,7 +249,7 @@ buckets (the legacy `Screen1`/`Screen2` keying is gone). `visibility: "both"` ap
 | The five sign-in POSTs, token state, refresh | `core/services/auth-session/`              | `@Service()` + `ApiClient.call`                 |
 | `user-details/`                              | `core/services/account-api/`               | `@Service()` + `httpResource`                   |
 | `questions/`, `profile/`                     | `core/services/onboarding-api/`            | `@Service()` + `httpResource` (+ PATCH methods) |
-| Login screen state                           | `auth/shared/services/auth-facade.ts`      | `@Service({autoProvided: false})`, route-scoped |
+| Login screen state                           | `features/auth/services/auth-facade.ts`    | `@Service({autoProvided: false})`, route-scoped |
 | Bearer + rotation                            | `core/interceptors/app/app-interceptor.ts` |                                                 |
 | Route gating                                 | `core/guards/auth/`                        | functional `CanMatchFn`                         |
 
@@ -237,20 +297,25 @@ X_VENDOR_TOKEN, x_vendor_token, skip
 
 ## 6. Open items
 
-Three things could not be verified because **every `auth-*` route on UAT answers
-`503 {"message": "Sign-in is not configured on this environment."}` as of 2026-09-22**, and
-production 404s the whole `/api/v1/account/*` surface (not deployed there yet).
+As of **2026-09-27**, every `auth-*` route and `user-details/` on UAT answer a gateway
+`503 Service Temporarily Unavailable`, so sign-in cannot be exercised live; the Events surface
+(`web-api/v1/events/`) does answer. Production 404s the whole `/api/v1/account/*` surface (not
+deployed there yet).
 
-| #   | Item                                  | Current assumption                                                       | Where to change it                    |
-| --- | ------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------- |
-| 1   | Phone identifier format               | E.164 — `country_code + phone`, e.g. `+919876543210`                     | `AuthFacade.toIdentifier()`, one line |
-| 2   | `miles_sso_refresh` cookie attributes | Not used; body-token path instead                                        | `AuthSession.store()` / `doRefresh()` |
-| 3   | The `Question.type` vocabulary        | Control chosen from `options.length` first, `type` string only to refine | `Profile.controlOf()`                 |
+The auth folder saves 19 example responses, **none of them a 200** — every success shape in this
+document is contract prose, not a captured payload.
 
-The collection ships **zero saved example responses**, so every response shape in this document is
-documentation prose rather than a captured payload. When a real token is obtainable, capture
-`identify`, `otp-send`, `otp-verify` and `questions/` into `docs/contracts/` and tighten the three
-items above.
+| #   | Item                                   | Current assumption                                                  | Where to change it                    |
+| --- | -------------------------------------- | ------------------------------------------------------------------- | ------------------------------------- |
+| 1   | Phone identifier format                | E.164 — `country_code + phone`, e.g. `+919876543210`                | `AuthFacade.toIdentifier()`, one line |
+| 2   | `miles_sso_refresh` cookie attributes  | Not used; body-token path instead                                   | `AuthSession.store()` / `doRefresh()` |
+| 3   | OTP code length                        | 6; no route returns it. **Backend ask:** `codeLength` on otp-send   | `AuthFacade.otpLength`                |
+| 4   | The two 502s                           | Told apart by copy (`/new code/i`). **Backend ask:** a `code` field | `toAuthFailure()` in `auth.model.ts`  |
+| 5   | Email for the account menu             | Not shown. **Backend ask:** `email` on `user-details/`              | `UserAvatarMenu`                      |
+| 6   | Does a name answer update `full_name`? | Assumed yes (`PATCH profile/` is the only write)                    | Add `POST name/` if not               |
+
+When a real token is obtainable, capture `identify`, `otp-send`, `otp-verify`, `user-details/` and
+`questions/` into `docs/contracts/` and tighten the items above.
 
 ---
 
@@ -265,13 +330,13 @@ otp-verify, token-refresh, logout — and password login is not among them. The 
 backend's own settings: `DEFAULT_THROTTLE_RATES` reserves a `web_login_password` scope at 10/min
 which the contract records as declared on _"nothing in this repository"_.
 
-So this client filters `password` out of `methods` (`PASSWORD_LOGIN_ENABLED = false` in
-`auth-facade.ts`). That degrades safely: every documented identifier kind also carries an OTP method
-— email → `email_otp`, phone → `phone_otp`, username → `email_otp` — so sign-in works in all of
-them.
+So this client offers **OTP only**: it sends a code whenever `methods` contains any `*_otp` method,
+and treats an account with none as enterprise SSO. That degrades safely: every documented identifier
+kind also carries an OTP method — email → `email_otp`, phone → `phone_otp`, username → `email_otp` —
+so sign-in works in all of them.
 
 **The backend ask is one route:** `POST api/v1/account/auth-password-login/` proxying
 `POST /auth/password/login` and returning the same session body as `auth-otp-verify/` (including the
-merged `profile_status` and `is_test_user`). When it lands, add it to `AUTH_ROUTES`, flip
-`PASSWORD_LOGIN_ENABLED`, and render the password field for accounts whose `defaultMethod` is
-`password`.
+merged `profile_status` and `is_test_user`). When it lands, add it to `AUTH_ROUTES` (it mints a
+session, so it belongs in `SESSION_MINTING_PATHS` too) and render the password field for accounts
+whose `defaultMethod` is `password`.
