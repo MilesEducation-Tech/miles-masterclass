@@ -34,7 +34,7 @@ export interface RegistrationOutcome {
   attemptId: string | null;
   bookingId: string | null;
   joinUrl: string | null;
-  registrantToken: string | null;
+
   /** Safe to surface. On `timed-out`, this is the reason the wait continues. */
   message: string | null;
   /**
@@ -89,7 +89,6 @@ export class WebinarRegistration {
         attemptId: null,
         bookingId: null,
         joinUrl: null,
-        registrantToken: null,
         message: 'Registration already in progress.',
         internalStatus: null,
       };
@@ -105,7 +104,6 @@ export class WebinarRegistration {
           attemptId: null,
           bookingId: started.booking_id,
           joinUrl: null,
-          registrantToken: null,
           message: started.message,
           internalStatus: null,
         };
@@ -187,7 +185,6 @@ export class WebinarRegistration {
           attemptId: last.attempt_id,
           bookingId: last.booking_id,
           joinUrl: last.join_url,
-          registrantToken: last.registrant_token ?? null,
           message: null,
           internalStatus: last.status,
         };
@@ -203,7 +200,6 @@ export class WebinarRegistration {
           attemptId: last.attempt_id,
           bookingId: last.booking_id,
           joinUrl: null,
-          registrantToken: null,
           message: last.error_message,
           internalStatus: last.status,
         };
@@ -215,7 +211,6 @@ export class WebinarRegistration {
       attemptId,
       bookingId: last?.booking_id ?? null,
       joinUrl: last?.join_url ?? null,
-      registrantToken: last?.registrant_token ?? null,
       message: last?.error_message ?? null,
       internalStatus: last?.status ?? null,
     };

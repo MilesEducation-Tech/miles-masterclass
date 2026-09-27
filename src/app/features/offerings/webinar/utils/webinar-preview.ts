@@ -30,9 +30,6 @@ const ART =
   'https://milesone-backend-assets.s3.ap-south-1.amazonaws.com/MilesOne/Files/Documents/Homepage_Upcoming_Events-_296_x_1703x_jtOsQSO_XVR6kim_N3cJz2n_SpHHJQ4_1_xHwDPDZ.png';
 const SQUARE =
   'https://milesone-backend-assets.s3.ap-south-1.amazonaws.com/MilesOne/Files/Documents/Square-dont_put_any_title_in_banner3x_1_MbfiNfW_bVAOoex_e9qhWb4_1.png';
-/** A real Credly badge, so the round overlap on the row is reviewable. */
-const BADGE =
-  'https://milesmasterclass-assets.s3.us-west-1.amazonaws.com/static-assests/credly-badges/AI+Prompting+Essentials+for+Accountants.png';
 
 /** Stands in for `webinar_what_will_you_learn_points` on every seeded row. */
 const OBJECTIVES = [
@@ -210,24 +207,8 @@ function toCard(seed: Seed, index: number, baseTime: number, idPrefix: string): 
     horizontal_thumbnail: ART,
     vertical_thumbnail: ART,
     square_image: SQUARE,
-    badge_icon_url: BADGE,
     fields_of_study: FIELDS,
     total_cpe_credits: 3.5,
-
-    // The NASBA disclosure block. Real values for a LIVE webinar — the design
-    // mock shows "QAS Self Study", which is the self-paced method and wrong
-    // for a scheduled session; NASBA's term for a live online course is
-    // "Group Internet Based".
-    description: seed.description,
-    int_delivery_method: 'Group Internet Based',
-    program_level: 'Basic',
-    prerequisite_education: 'There are no prerequisites for this course.',
-    advance_preparation: 'There is no advance preparation required for this course.',
-    course_created_date: new Date(baseTime - 120 * DAY).toISOString(),
-    course_reviewed_date: new Date(baseTime - 60 * DAY).toISOString(),
-    course_updated_date: new Date(baseTime - 14 * DAY).toISOString(),
-    no_question_answered: 3,
-    attendance_threshold: 75,
   };
 }
 
@@ -251,6 +232,5 @@ export function buildPreviewFeed(baseTime: number): WebinarMainPageData {
     completed_webinar: past.slice(0, 3).map((card, i) => ({ ...card, eligible: i !== 1 })),
     absent_webinar: past.slice(3, 4),
     missed_webinar: past.slice(4),
-    server_time: new Date(baseTime).toISOString(),
   };
 }

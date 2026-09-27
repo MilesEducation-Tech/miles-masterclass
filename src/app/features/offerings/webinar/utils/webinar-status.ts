@@ -64,7 +64,7 @@ export type WebinarCta =
 export type WebinarBucket = 'highlight' | 'upcoming' | 'completed' | 'absent' | 'missed';
 
 export interface CtaContext {
-  /** Server-aligned epoch ms — from `ServerClock.now()`. */
+  /** Epoch ms — from `ServerClock.now()`. */
   now: number;
   /** Which bucket this card was rendered from. */
   bucket: WebinarBucket;
@@ -129,16 +129,14 @@ export function isPendingHostApproval(registration: WebinarRegistrationInfo | un
 }
 
 /**
- * When the Join button appears, as epoch ms, or `null` when unknowable.
+ * When the Join button appears, as epoch ms, or `null` when unknowable:
+ * `start − WEBINAR.joinWindowMinutes`.
  *
- * Prefers the server's `join_opens_at`: the 50-minute policy is a business rule
- * and belongs on one side of the wire. The local computation is a fallback for
- * feeds that predate the field.
+ * ponytail: computed client-side because the Events API sends no join time.
+ * The window is a business rule and belongs on the server — take the server's
+ * value instead once it sends one (WEBINAR_API_QUESTIONS Q5).
  */
 export function joinOpensAt(card: WebinarCard): number | null {
-  const fromServer = parseIso(card.registration?.join_opens_at);
-  if (fromServer !== null) return fromServer;
-
   const start = parseIso(card.start_date_time);
   if (start === null) return null;
   return start - environment.WEBINAR.joinWindowMinutes * 60_000;

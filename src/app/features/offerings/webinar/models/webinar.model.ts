@@ -139,24 +139,6 @@ export interface WebinarRegistrationInfo {
   completed_at: string | null;
   /** `true` → open the session in the web-LMS surface instead of `join_url`. */
   route_to_web_lms: boolean;
-
-  // ---- Added for the embedded Meeting SDK (plan A1) ------------------------
-
-  /**
-   * The Zoom registrant token — the `tk` query parameter in `join_url`.
-   *
-   * Optional because it appears NOWHERE in `EVENTS_API_CONTRACT_V1` (see
-   * `docs/WEBINAR_API_QUESTIONS.md`, Q6). A `join_url`-parsing fallback used to
-   * live in `zoom-join-params.ts`; it was deleted because nothing ever called
-   * it — `toJoinParams` reads this field straight off the signature response,
-   * so until the backend sends it the SDK path has no token at all.
-   */
-  registrant_token?: string | null;
-  /**
-   * `start_date_time − 50 minutes`, computed server-side. Optional for the same
-   * reason; `webinar-status.ts` falls back to the local computation.
-   */
-  join_opens_at?: string | null;
 }
 
 // ---- The webinar card ------------------------------------------------------
@@ -238,16 +220,6 @@ export interface WebinarCard {
   square_image: string;
   fields_of_study: FieldOfStudy[];
   /**
-   * The round credential badge the design overlaps the row artwork with.
-   *
-   * NOT in the v1 contract — declared optional here the same way
-   * `registrant_token` and `join_opens_at` are, because the design calls for it
-   * and the field already exists on the v2 `UpcomingPremiere`. Until the
-   * backend adds it the slot renders empty. URLs look like
-   * `…/static-assests/credly-badges/<Badge+Name>.png`.
-   */
-  badge_icon_url?: string | null;
-  /**
    * The SUM of `fields_of_study[].cpe_credit`. `null` — not `0` — when nothing
    * is tagged, which is a different fact from zero credits.
    *
@@ -255,36 +227,6 @@ export interface WebinarCard {
    * so reading the old name silently hides every CPE pill.
    */
   total_cpe_credits: number | null;
-
-  // ---- NASBA disclosure block, for the detail page -------------------------
-  //
-  // None of these are in the v1 contract. They are what the "Certifying
-  // Organisations" section of the design lists, and every one of them is a
-  // COMPLIANCE statement — NASBA requires a sponsor to disclose delivery
-  // method, program level, prerequisites and advance preparation for each
-  // course. So they are declared optional and each line renders only when its
-  // field arrives: a wrong value here is worse than a missing one, and none of
-  // them can be guessed from what v1 does send.
-  //
-  // They already exist on the v2 course model (`int_delivery_method`,
-  // `program_level`, …), so this is a matter of adding them to the events
-  // serializer rather than new columns.
-
-  /** Long-form copy for "About the Webinar"; falls back to `short_description`. */
-  description?: string | null;
-  /** NASBA delivery method. For a live webinar this is "Group Internet Based". */
-  int_delivery_method?: string | null;
-  /** `Basic` / `Intermediate` / `Advanced`. */
-  program_level?: string | null;
-  prerequisite_education?: string | null;
-  advance_preparation?: string | null;
-  course_created_date?: string | null;
-  course_reviewed_date?: string | null;
-  course_updated_date?: string | null;
-  /** Poll questions a learner must answer to earn credit. */
-  no_question_answered?: number | null;
-  /** Percentage of `duration_minutes` that must be attended. */
-  attendance_threshold?: number | null;
 
   /** Present on `highlight_webinars` / `upcoming_webinars`, `post_login` only. */
   registration?: WebinarRegistrationInfo;
@@ -314,13 +256,6 @@ export interface WebinarMainPageData {
   absent_webinar: WebinarCard[];
   /** Per-user. Never booked at all. */
   missed_webinar: WebinarCard[];
-
-  /**
-   * Server clock at response time (plan A1). The countdown and the join window
-   * derive "now" from this rather than the device clock — see `server-clock.ts`.
-   * Optional until the backend field lands; absent means a zero offset.
-   */
-  server_time?: string;
 }
 
 export interface WebinarMainPageResponse {
@@ -378,8 +313,6 @@ export interface AttemptStatusResponse {
   registered_email: string | null;
   booking_id: string | null;
   completed_at: string | null;
-  /** Added for the SDK (plan A1); falls back to parsing `join_url`. */
-  registrant_token?: string | null;
 }
 
 // ---- The detail page -------------------------------------------------------
@@ -408,7 +341,8 @@ export interface WebinarProduct {
  * endpoint would be a second definition of eligibility.
  */
 export interface WebinarDetail extends WebinarCard {
-  /** Long-form page body. `short_description` remains the one-liner. */
+  /** Long-form page body. `short_description` remains the one-liner. Only this
+   *  endpoint sends it — the feed card never does. */
   description?: string | null;
   trailer_url?: string | null;
   trailer_thumbnail_url?: string | null;

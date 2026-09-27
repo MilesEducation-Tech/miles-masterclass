@@ -31,7 +31,6 @@ import {
   WebinarDetail,
   WebinarDetailsResponse,
 } from '../models/webinar.model';
-import { ServerClock } from './server-clock';
 import { toWebinarError, WebinarError } from '../utils/webinar-error';
 import type { WebinarBucket } from '../utils/webinar-status';
 import { buildPreviewFeed, PREVIEW_ON, PREVIEW_PARAM } from '../utils/webinar-preview';
@@ -81,7 +80,6 @@ export class WebinarFacade {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(AuthSession);
-  private readonly clock = inject(ServerClock);
   private readonly registration = inject(WebinarRegistration);
   private readonly route = inject(ActivatedRoute);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -121,14 +119,7 @@ export class WebinarFacade {
     },
     {
       defaultValue: EMPTY_FEED,
-      // `parse` runs once per response, which is where the clock sync has to
-      // happen — including the browser's replay of the server's transfer-cached
-      // response, exactly as the old loader did.
-      parse: (raw) => {
-        const res = raw as WebinarMainPageResponse;
-        this.clock.syncFrom(res.data?.server_time);
-        return res.data ?? EMPTY_FEED;
-      },
+      parse: (raw) => (raw as WebinarMainPageResponse).data ?? EMPTY_FEED,
     },
   );
 
