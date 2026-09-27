@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 import {
   AUTH_ROUTES,
-  AUTH_ROUTE_PATHS,
+  SESSION_MINTING_PATHS,
   isOtpMethod,
   isSessionResponse,
   toAuthFailure,
@@ -32,11 +32,51 @@ describe('auth.model', () => {
       expect(at(403, { code: 'account_deactivated' }).kind).toBe('deactivated');
     });
 
-    it('maps a spent code to retry_new_code and a config fault to misconfigured', () => {
-      expect(at(502, { message: 'Please request a new code.' }).kind).toBe('retry_new_code');
+    // A terminal screen tells the learner no retry can help and points them at
+    // a support team — wrong for a 403 the contract does not document.
+    it('never treats an undocumented 403 as terminal', () => {
+      expect(at(403, { detail: 'Authentication credentials were not provided.' })).toEqual({
+        kind: 'unknown',
+        message: 'Authentication credentials were not provided.',
+      });
+      expect(at(403, { code: 'something_new', message: 'Nope.' }).kind).toBe('unknown');
+    });
+
+    // Both 502 bodies below are verbatim from the collection. Only the first
+    // means the code was spent; the second is transient on every auth route.
+    it('splits the two 502s by what they ask the learner to do', () => {
+      expect(
+        at(502, { message: 'Sign-in could not be completed. Please request a new code.' }),
+      ).toEqual({
+        kind: 'retry_new_code',
+        message: 'Sign-in could not be completed. Please request a new code.',
+      });
+      expect(at(502, { message: 'Sign-in is temporarily unavailable. Please try again.' })).toEqual(
+        {
+          kind: 'unavailable',
+          message: 'Sign-in is temporarily unavailable. Please try again.',
+        },
+      );
+      // No copy to read → the transient reading, which never spends a code.
+      expect(at(502, null).kind).toBe('unavailable');
+    });
+
+    it('maps a config fault to misconfigured', () => {
       expect(at(503, { message: 'Sign-in is not configured on this environment.' })).toEqual({
         kind: 'misconfigured',
         message: 'Sign-in is not configured on this environment.',
+      });
+    });
+
+    // Verbatim strict-input refusal from the collection: the undeclared key is
+    // the field, and its value is a string, not a list.
+    it('surfaces the strict-input 400 for an undeclared key', () => {
+      const refusal =
+        'Unrecognised field for this endpoint. Each endpoint declares its own fields; a field accepted elsewhere is not accepted here.';
+      expect(at(400, { appCode: refusal })).toEqual({
+        kind: 'invalid_input',
+        message: refusal,
+        fields: { appCode: refusal },
       });
     });
 
@@ -80,6 +120,11 @@ describe('auth.model', () => {
       expect(isSessionResponse({ ...valid, refreshToken: '' })).toBe(false);
     });
 
+    it('rejects a body without the is_test_user boolean', () => {
+      expect(isSessionResponse({ ...valid, is_test_user: undefined })).toBe(false);
+      expect(isSessionResponse({ ...valid, is_test_user: 'false' })).toBe(false);
+    });
+
     it('rejects an unknown profile_status', () => {
       expect(isSessionResponse({ ...valid, profile_status: 'onboarding' })).toBe(false);
     });
@@ -93,9 +138,18 @@ describe('auth.model', () => {
   it('derives the interceptor skip list from the registry', () => {
     // Derived, never retyped — a renamed path must not be able to drift out of
     // the interceptor's exclusion.
-    expect(AUTH_ROUTE_PATHS).toHaveLength(5);
-    expect(AUTH_ROUTE_PATHS).toContain(AUTH_ROUTES.refresh.path);
-    expect(AUTH_ROUTE_PATHS).toContain(AUTH_ROUTES.logout.path);
+    expect(SESSION_MINTING_PATHS).toEqual([
+      AUTH_ROUTES.identify.path,
+      AUTH_ROUTES.sendOtp.path,
+      AUTH_ROUTES.verifyOtp.path,
+      AUTH_ROUTES.refresh.path,
+    ]);
+  });
+
+  // Logout REQUIRES the bearer; skipping it answers 401 and the learner is
+  // never signed out.
+  it('leaves logout out of the skip list', () => {
+    expect(SESSION_MINTING_PATHS).not.toContain(AUTH_ROUTES.logout.path);
   });
 
   /**

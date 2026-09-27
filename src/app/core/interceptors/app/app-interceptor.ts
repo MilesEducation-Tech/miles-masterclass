@@ -4,16 +4,19 @@ import { finalize, from, switchMap } from 'rxjs';
 import { LoadingService } from '../../services/loading/loading';
 import { AuthSession } from '../../services/auth-session/auth-session';
 import { IS_ADMIN_REQUEST, IS_EXTERNAL_REQUEST, SKIP_AUTH_TOKEN } from '../../models/http.model';
-import { AUTH_ROUTE_PATHS } from '../../models/auth.model';
+import { SESSION_MINTING_PATHS } from '../../models/auth.model';
 
 /**
- * The five sign-in routes must never be preceded by a refresh: refreshing
- * before the call that MINTS the session is nonsense, and refreshing before the
- * refresh is recursion. Derived from `AUTH_ROUTES` so a renamed path cannot
- * drift out of this exclusion.
+ * The four session-minting routes must never be preceded by a refresh:
+ * refreshing before the call that MINTS the session is nonsense, and refreshing
+ * before the refresh is recursion. Derived from `AUTH_ROUTES` so a renamed path
+ * cannot drift out of this exclusion.
+ *
+ * Logout is NOT one of them: it requires the bearer, so it takes the normal
+ * path below (refresh only if inside the skew, then attach the token).
  */
-function isAuthRoute(url: string): boolean {
-  return AUTH_ROUTE_PATHS.some((path) => url.includes(path));
+function isSessionMintingRoute(url: string): boolean {
+  return SESSION_MINTING_PATHS.some((path) => url.includes(path));
 }
 
 export const appInterceptor: HttpInterceptorFn = (req, next) => {
@@ -36,7 +39,9 @@ export const appInterceptor: HttpInterceptorFn = (req, next) => {
   // The admin panel authenticates against a different identity provider
   // entirely; `adminTokenInterceptor` owns those requests.
   const skipToken =
-    req.context.get(SKIP_AUTH_TOKEN) || req.context.get(IS_ADMIN_REQUEST) || isAuthRoute(req.url);
+    req.context.get(SKIP_AUTH_TOKEN) ||
+    req.context.get(IS_ADMIN_REQUEST) ||
+    isSessionMintingRoute(req.url);
 
   const send = skipToken
     ? next(req)

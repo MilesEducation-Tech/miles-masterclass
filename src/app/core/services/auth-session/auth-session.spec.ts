@@ -123,6 +123,23 @@ describe('AuthSession', () => {
       http.expectNone(() => true);
     });
 
+    // The collection documents 502/503 as transient and keeps the tokens on
+    // any non-200 but 401. Clearing here signed learners out on a blip.
+    it.each([
+      [502, { message: 'Sign-in is temporarily unavailable. Please try again.' }],
+      [503, { message: 'Sign-in is not configured on this environment.' }],
+    ])('keeps the session when the refresh answers a transient %s', async (status, body) => {
+      signedInWith(jwt(10));
+      const pending = auth.ensureFreshToken();
+      http
+        .expectOne((r) => r.url.includes(AUTH_ROUTES.refresh.path))
+        .flush(body, { status, statusText: 'x' });
+      await pending;
+
+      expect(auth.isAuthenticated()).toBe(true);
+      expect(cookies[environment.AUTH.refreshToken]).toBe('refresh-1');
+    });
+
     it('refuses a malformed session rather than storing garbage', async () => {
       signedInWith(jwt(10));
       const pending = auth.ensureFreshToken();
@@ -139,25 +156,48 @@ describe('AuthSession', () => {
   });
 
   describe('logout', () => {
-    it('clears the session when the SSO confirms it', async () => {
+    it('clears the session and resolves true when the SSO confirms it', async () => {
       signedInWith(jwt(3600));
       const pending = auth.logout();
       http.expectOne((r) => r.url.includes(AUTH_ROUTES.logout.path)).flush({});
-      await pending;
 
+      expect(await pending).toBe(true);
+      expect(auth.isAuthenticated()).toBe(false);
+    });
+
+    // With the bearer attached, a 401 means our token no longer resolves
+    // upstream: there is no live session left to protect, and keeping the
+    // tokens would strand the learner signed in.
+    it('clears the session on a 401', async () => {
+      signedInWith(jwt(3600));
+      const pending = auth.logout();
+      http
+        .expectOne((r) => r.url.includes(AUTH_ROUTES.logout.path))
+        .flush(
+          { message: 'Authorization header with a Bearer token is required.' },
+          { status: 401, statusText: 'Unauthorized' },
+        );
+
+      expect(await pending).toBe(true);
       expect(auth.isAuthenticated()).toBe(false);
     });
 
     // A logout that failed leaves a session still live at the SSO. Blanking the
     // tokens would hide that behind a UI that merely looks signed out.
-    it('KEEPS the session when logout fails', async () => {
+    it.each([502, 503, 500])('KEEPS the session and resolves false on a %s', async (status) => {
       signedInWith(jwt(3600));
       const pending = auth.logout();
       http
         .expectOne((r) => r.url.includes(AUTH_ROUTES.logout.path))
-        .flush({}, { status: 500, statusText: 'err' });
-      await pending;
+        .flush(
+          { message: 'Sign-in is temporarily unavailable. Please try again.' },
+          {
+            status,
+            statusText: 'err',
+          },
+        );
 
+      expect(await pending).toBe(false);
       expect(auth.isAuthenticated()).toBe(true);
     });
   });

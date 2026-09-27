@@ -134,7 +134,7 @@
       <app-otp
         id="otp"
         label="OTP"
-        [length]="6"
+        [length]="authFacade.otpLength"
         [autoFocus]="true"
         [formField]="authFacade.otpForm.otp"
         placeholder="000000"
@@ -147,13 +147,13 @@
     @if (authFacade.error()) {
       <p class="text-sm text-destructive" role="alert">{{ authFacade.error() }}</p>
     }
-    <!-- Five wrong codes lock the identifier for 30 minutes and nothing in the
-         401 body reports the tally, so this is counted client-side. It warns; it
-         never blocks — the server owns the lock. -->
+    <!-- Five wrong codes lock the identifier and nothing in the 401 body reports
+         the tally, so this is counted client-side. It warns; it never blocks — the
+         server owns the lock, and the contract gives no duration to promise. -->
     @if (authFacade.loginStep() === 'OTP' && authFacade.attemptsRemaining(); as remaining) {
       <p class="text-sm text-destructive" role="alert">
         {{ remaining }} {{ remaining === 1 ? 'attempt' : 'attempts' }} remaining before sign-in is
-        locked for 30 minutes.
+        locked.
       </p>
     }
     <!-- The cooldown gates *sending* a code, never redeeming one: on the OTP step
