@@ -55,7 +55,7 @@ export class WebinarAbout {
    * v2 gated on credits being greater than zero, for the same reason: a
    * zero-credit session has no certifying organisation to name.
    */
-  protected readonly hasCpe = computed(() => (this.webinar().cpe_credits ?? 0) > 0);
+  protected readonly hasCpe = computed(() => (this.webinar().total_cpe_credits ?? 0) > 0);
 
   /** `Finance 1 CPE | Auditing 2.3 CPE`, as the design renders the strip. */
   protected readonly fieldsOfStudy = computed(() =>

@@ -214,6 +214,76 @@ describe('WebinarFacade reads', () => {
     );
   });
 
+  // The contract's 400 `invalid_request` for a non-uuid `webinar_id` — what an
+  // old integer-id link sends. To the learner that is "no such webinar".
+  it('treats a 400 detail (non-uuid id) as missing, not as a failure', async () => {
+    facade.showDetail('123');
+    void facade.detailWebinar();
+    TestBed.tick();
+    http.match((r) => r.url === FEED_URL).forEach((r) => r.flush({ data: null }));
+    http
+      .expectOne((r) => r.url === DETAIL_URL)
+      .flush(
+        {
+          status: 'error',
+          code: 'invalid_request',
+          message: 'Invalid request.',
+          errors: [{ field: 'webinar_id', message: 'Input should be a valid UUID' }],
+        },
+        { status: 400, statusText: 'Bad Request' },
+      );
+    await settle();
+
+    expect(facade.isDetailMissing()).toBe(true);
+    expect(logError).not.toHaveBeenCalledWith(
+      '[WebinarFacade] detail load failed',
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  // Registering changes the card's `registration` block; the detail page reads
+  // the detail row first, so it must be refetched too, not only the feed.
+  it('reloads the detail row as well as the feed', async () => {
+    facade.showDetail('w2');
+    void facade.detailWebinar();
+    void facade.heroWebinar();
+    TestBed.tick();
+    http.match((r) => r.url === FEED_URL).forEach((r) => r.flush({ data: null }));
+    http.expectOne((r) => r.url === DETAIL_URL).flush({ data: { webinar: { id: 'w2' } } });
+    await settle();
+
+    facade.reload();
+    TestBed.tick();
+
+    expect(http.match((r) => r.url === FEED_URL)).toHaveLength(1);
+    expect(http.match((r) => r.url === DETAIL_URL)).toHaveLength(1);
+  });
+
+  it('reports which bucket the feed placed a webinar in', async () => {
+    void facade.heroWebinar();
+    TestBed.tick();
+    http
+      .expectOne((r) => r.url === FEED_URL)
+      .flush({
+        data: {
+          login_type: 'post_login',
+          highlight_webinars: [],
+          upcoming_webinars: [{ id: 'up' }],
+          completed_webinar: [{ id: 'done', eligible: true }],
+          absent_webinar: [],
+          missed_webinar: [{ id: 'gone' }],
+        },
+      });
+    await settle();
+
+    expect(facade.bucketOf('up')).toBe('upcoming');
+    expect(facade.bucketOf('done')).toBe('completed');
+    expect(facade.bucketOf('gone')).toBe('missed');
+    expect(facade.bucketOf('nowhere')).toBeNull();
+    expect(facade.findById('done')?.eligible).toBe(true);
+  });
+
   it('returns the detail row when the endpoint answers', async () => {
     facade.showDetail('w2');
     void facade.detailWebinar();

@@ -4,7 +4,7 @@ import { WebinarCard as WebinarCardModel } from '../../models/webinar.model';
 import { ServerClock } from '../../services/server-clock';
 import { formatSessionLabel } from '../../utils/session-time';
 import { TICKET_ICON } from '../../utils/brand-assets';
-import { ctaFor, isLive } from '../../utils/webinar-status';
+import { ctaFor, isLive, WebinarBucket } from '../../utils/webinar-status';
 import { JoinCta } from '../join-cta/join-cta';
 
 /**
@@ -32,6 +32,12 @@ export class WebinarHero {
    * Only the landing page, which sits at the feature root, turns it on.
    */
   readonly linkToDetail = input(false);
+  /**
+   * Which feed bucket this webinar sits in. The landing page's banner is the
+   * highlight by definition; the detail page passes the real one, because a
+   * past webinar's CTA (attended / absent / missed) is decided by its bucket.
+   */
+  readonly bucket = input<WebinarBucket>('highlight');
   readonly isRegistering = input(false);
   readonly isLockedElsewhere = input(false);
 
@@ -45,7 +51,7 @@ export class WebinarHero {
   protected readonly cta = computed(() =>
     ctaFor(this.webinar(), {
       now: (this.clock.tick(), this.clock.now()),
-      bucket: 'highlight',
+      bucket: this.bucket(),
       isRegistering: this.isRegistering(),
       isLockedElsewhere: this.isLockedElsewhere(),
     }),

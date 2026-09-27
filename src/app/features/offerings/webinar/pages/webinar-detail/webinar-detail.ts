@@ -28,9 +28,10 @@ import { setupWebinarDetailSeo } from '../../utils/webinar-seo';
  * renders is on the card. On a cold deep link the facade's own resource
  * populates it a moment later.
  *
- * The banner is `app-webinar-hero`, unchanged. It already resolves its own CTA
- * through the state machine, so a past webinar reached at this URL shows the
- * right affordance without this page deciding anything.
+ * The banner is `app-webinar-hero`, which resolves its own CTA through the state
+ * machine. The details payload carries no bucket and no `eligible`, so this page
+ * hands it both from the feed; with no feed row (a cold deep link) the state
+ * machine still never offers registration for a session that is over.
  */
 @Component({
   selector: 'app-webinar-detail',
@@ -68,9 +69,17 @@ export class WebinarDetail {
    * detail endpoint, which is the only source on a deep link or for a crawler.
    * The detail row wins once it lands: it carries four keys the card does not.
    */
-  protected readonly webinar = computed(
-    () => this.facade.detailWebinar() ?? this.facade.findById(this.id()),
-  );
+  protected readonly webinar = computed(() => {
+    const fromFeed = this.facade.findById(this.id());
+    const detail = this.facade.detailWebinar();
+    if (!detail) return fromFeed;
+    // `eligible` exists only on `completed_webinar` rows and never on the
+    // details payload — without it, an attended session reads "Not eligible".
+    return fromFeed?.eligible === undefined ? detail : { ...detail, eligible: fromFeed.eligible };
+  });
+
+  /** The feed's bucket, or `highlight` until the feed places it. */
+  protected readonly bucket = computed(() => this.facade.bucketOf(this.id()) ?? 'highlight');
 
   protected readonly isLoading = computed(
     () => (this.facade.isLoading() || this.facade.isDetailLoading()) && !this.webinar(),

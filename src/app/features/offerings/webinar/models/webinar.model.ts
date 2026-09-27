@@ -250,8 +250,11 @@ export interface WebinarCard {
   /**
    * The SUM of `fields_of_study[].cpe_credit`. `null` — not `0` — when nothing
    * is tagged, which is a different fact from zero credits.
+   *
+   * Renamed from `cpe_credits` on 2026-09-18 with NO alias kept (contract §8),
+   * so reading the old name silently hides every CPE pill.
    */
-  cpe_credits: number | null;
+  total_cpe_credits: number | null;
 
   // ---- NASBA disclosure block, for the detail page -------------------------
   //

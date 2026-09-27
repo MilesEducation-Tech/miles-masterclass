@@ -43,6 +43,12 @@ export type WebinarCta =
   | 'register-retry'
   /** This user is in a session on another surface right now. */
   | 'live-elsewhere'
+  /**
+   * Upcoming, but a type this page cannot register (`orientation`, `premier`).
+   * The contract says those have their own flows and names none, so this is an
+   * honest statement with no action — never "Ended", which it is not.
+   */
+  | 'not-registrable'
   /** Session is over and this user has no booking outcome to show. */
   | 'ended'
   /** Past, attended, CPE earned. */
@@ -209,7 +215,14 @@ export function ctaFor(card: WebinarCard, ctx: CtaContext): WebinarCta {
       return isPendingHostApproval(registration) ? 'join-pending-approval' : 'registering';
     }
 
-    if (!isRegistrable(card)) return 'ended';
+    // A session that is over offers nothing, whatever the bucket says. This is
+    // the net under the detail page: a deep link to a past webinar the feed has
+    // not placed arrives with no bucket to consult, and must never be offered
+    // registration.
+    const end = effectiveEndAt(card);
+    if (end !== null && ctx.now >= end) return 'ended';
+
+    if (!isRegistrable(card)) return 'not-registrable';
 
     // An attempt that reached a terminal failure earns a retry; a card that was
     // never attempted earns a first attempt. Both render a button, but the copy
@@ -251,6 +264,7 @@ export const CTA_LABELS: Record<WebinarCta, string> = {
   'join-pending-approval': 'Awaiting approval',
   'register-retry': 'Try again',
   'live-elsewhere': 'In session elsewhere',
+  'not-registrable': 'Registration not open here',
   ended: 'Ended',
   attended: 'CPE earned',
   'not-eligible': 'Not eligible',
