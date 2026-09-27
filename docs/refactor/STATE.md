@@ -7,6 +7,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **POSTMAN REBIND (2026-09-27).** Audit of the new Postman collection (auth / profile / webinar); PR order: auth → profile → webinar fixes → webinar typing → docs. Auth is committed on `fix/MIL-5-auth-contract-fixes` (6944aff). Profile rebind (`prompts/profile-rebind.md`, approved) is done on `fix/MIL-6-profile-rebind`: `user-details/` read with a strict parse, the deleted row PATCH and `appStatus` removed, one `PATCH profile/` write, `readAccountError` for the error envelopes, and the avatar shows full name + initials (no email). Lint 0 errors, tests 183/713 (+1 skipped), build:prod green (macOS, Node 24.15). UAT answers 503, so it wasn't verified live. **UNCOMMITTED — you commit.** **Next:** webinar bug-fix prompt (W1–W5).
+
 - 🟡 **MIL-241 dependency upgrade (2026-09-26), plan `prompts/dependency-upgrade.md`, approved by you.** Node 24 (your choice; Vercel doesn't list 26). PR A (non-Angular minor versions + Node 24) is done on `chore/MIL-241-deps-minor`, and every gate is green locally. **UNCOMMITTED — you commit.** Confirm the Vercel preview runs Node ≥ 24.15. Angular 22.2.0 is on the same branch too (bumped with pnpm; there are no migrations after 22.0.0). PR A, B and C committed. PR D (swiper 14) is done on `chore/MIL-241-deps-swiper`, all green, **UNCOMMITTED** — the last PR in the plan. TypeScript 7 and motion 13 are blocked by peer dependencies.
 
 - 🟡 **POST-REFACTOR: MIL-240 permanent structure harness (2026-09-26), plan `prompts/structure-harness.md`, approved by you.** Refactor PR opened: MilesEducation-Tech/miles-masterclass#26 (`refactor/structure-10` → `master`).
@@ -2372,6 +2374,9 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-09-27 · Postman rebind · profile rebind on `fix/MIL-6-profile-rebind`: user-details/ + parseUserDetails, readAccountError, rowDefaults, avatar name/initials, AUTH_API rows; lint/test/build:prod green; UAT 503 · uncommitted
+- 2026-09-27 · Postman rebind · auth contract fixes on `fix/MIL-XXX-auth-contract-fixes` (11 files, +370/−118): logout bearer, refresh clears only on 401, 502 split, 403 fallback, strict error-body parsing, is_test_user guard, otpLength constant, spent-code message kept; Jira template added; lint/test/build:prod green; UAT 503, not verified live · uncommitted
 
 - 2026-09-27 · MIL-241 · PR C committed (c367558). PR D swiper 12.2 → 14.2.0 on `chore/MIL-241-deps-swiper`; copied pagination CSS re-synced (18 rules unchanged, `.swiper-pagination-lock` added); ai-labs carousels checked in browser at 375/768/1440 (init, breakpoints, drag, pagination); lint/test/format/build:prod/storybook green · uncommitted. MIL-241 plan complete
 - 2026-09-27 · MIL-241 · PR B committed (0c3d0fe). PR C ng-icons 33 → 36.1.0 on `chore/MIL-241-deps-ng-icons`; only break: `lucideLinkedin` removed (Lucide 1.x has no brand icons) → `phosphorLinkedinLogo` in badge-hero-card; every @ng-icons import checked against v36; lint/test/format/build:prod/storybook green · uncommitted

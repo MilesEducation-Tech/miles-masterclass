@@ -51,7 +51,7 @@ export class AuthSession {
   private readonly _isTestUser = signal<boolean>(false);
 
   /**
-   * The two milestones as `user_details/` reports them — `null` until something
+   * The two milestones as `user-details/` reports them — `null` until something
    * has said, which is NOT the same as `false`.
    *
    * Seeded from the session's `profile_status` so a reload can gate before any
@@ -85,7 +85,7 @@ export class AuthSession {
   readonly isAuthenticated = computed(() => this._accessToken().length > 0);
 
   /**
-   * The onboarding gate, and the only thing `user_details/` restricts access
+   * The onboarding gate, and the only thing `user-details/` restricts access
    * on: onboarding completed → the rest of the app is reachable.
    *
    * Rule 4 still holds — this is the MILESTONE, never the token's
@@ -101,7 +101,7 @@ export class AuthSession {
   );
 
   /**
-   * The authoritative milestones, from `GET user_details/` or from the
+   * The authoritative milestones, from `GET user-details/` or from the
    * `PATCH profile/` response. Pushed in by the caller that holds them.
    */
   setMilestones(onboardingCompleted: boolean, profileCompleted: boolean): void {
@@ -285,7 +285,7 @@ export class AuthSession {
 }
 
 /**
- * The milestone booleans `user_details/` reports, derived from the session's
+ * The milestone booleans `user-details/` reports, derived from the session's
  * `profile_status` — the same two facts, which is why the row's own booleans
  * can overwrite these without a contradiction. `null` in, `null` out: an
  * unknown status must not read as "not completed".
