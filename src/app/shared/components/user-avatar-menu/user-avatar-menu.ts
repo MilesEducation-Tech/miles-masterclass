@@ -10,6 +10,7 @@ import { cn } from '../../utils/cn';
 import { Utils } from '@shared/services/utils';
 import { Analytics } from '@core/services/analytics/analytics';
 import { AccountApi } from '@core/services/account-api/account-api';
+import { displayNameOf, initialsOf } from '@core/models/account.model';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { NotificationService } from '@core/services/notification/notification';
 
@@ -38,22 +39,8 @@ export class UserAvatarMenu {
    */
   readonly user = computed(() => (this.account.user.hasValue() ? this.account.user.value() : null));
 
-  /**
-   * `user-details/` carries `full_name` and `first_name` and nothing else about
-   * identity — no email, no separate last name — so the menu shows the name
-   * alone.
-   */
-  readonly displayName = computed(() => {
-    const u = this.user();
-    return u ? u.full_name || u.first_name : '';
-  });
-
-  readonly initials = computed(() => {
-    const words = this.displayName().split(/\s+/).filter(Boolean);
-    const first = words[0]?.[0] ?? '';
-    const last = words.length > 1 ? (words[words.length - 1][0] ?? '') : '';
-    return `${first}${last}`.toUpperCase() || 'U';
-  });
+  readonly displayName = computed(() => displayNameOf(this.user()));
+  readonly initials = computed(() => initialsOf(this.displayName()));
 
   readonly currentUrl = toSignal(
     this.router.events.pipe(

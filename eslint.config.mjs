@@ -299,7 +299,6 @@ export default [
         'src/app/shared/ui/aria/aria-input/aria-input.ts',
         'src/app/shared/ui/aria/aria-multiselect/aria-multiselect.ts',
         'src/app/shared/ui/aria/aria-select/aria-select.ts',
-        'src/app/shared/ui/otp/otp.ts',
         'src/app/testing/mocks/services.mock.ts',
       ],
       rules: { '@typescript-eslint/no-explicit-any': 'warn' },

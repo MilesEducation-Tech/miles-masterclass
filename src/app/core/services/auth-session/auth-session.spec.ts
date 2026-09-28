@@ -155,6 +155,42 @@ describe('AuthSession', () => {
     });
   });
 
+  // The status cookie was renamed from USER_DATA, which read as if the user
+  // record lived there. An older build's copy must not outlive the rename.
+  describe('profile status cookie', () => {
+    it('writes PROFILE_STATUS and removes a legacy USER_DATA on store', async () => {
+      cookies['USER_DATA'] = 'new_user';
+      signedInWith(jwt(10));
+      const pending = auth.ensureFreshToken();
+      http.expectOne((r) => r.url.includes(AUTH_ROUTES.refresh.path)).flush(session(jwt(3600)));
+      await pending;
+
+      expect(cookies['PROFILE_STATUS']).toBe('profile_completed');
+      expect(cookies['USER_DATA']).toBeUndefined();
+    });
+
+    it('ignores a legacy USER_DATA and deletes it on load', () => {
+      cookies['USER_DATA'] = 'profile_completed';
+      signedInWith(jwt(3600));
+      expect(auth.profileStatus()).toBeNull();
+      expect(cookies['USER_DATA']).toBeUndefined();
+    });
+
+    it('removes both names on logout', async () => {
+      cookies['PROFILE_STATUS'] = 'new_user';
+      cookies['USER_DATA'] = 'new_user';
+      signedInWith(jwt(3600));
+      expect(auth.profileStatus()).toBe('new_user');
+
+      const pending = auth.logout();
+      http.expectOne((r) => r.url.includes(AUTH_ROUTES.logout.path)).flush({});
+      await pending;
+
+      expect(cookies['PROFILE_STATUS']).toBeUndefined();
+      expect(cookies['USER_DATA']).toBeUndefined();
+    });
+  });
+
   describe('logout', () => {
     it('clears the session and resolves true when the SSO confirms it', async () => {
       signedInWith(jwt(3600));
@@ -217,12 +253,12 @@ describe('AuthSession', () => {
    * `is_onboarding_completed` from `user-details/` is the ONLY access
    * restriction taken off that row, and the gate must distinguish "not
    * completed" from "nobody has said yet" — an unknown that redirected would
-   * bounce every learner whose `userData` cookie went missing back into an
+   * bounce every learner whose `PROFILE_STATUS` cookie went missing back into an
    * onboarding they finished long ago.
    */
   describe('the onboarding gate', () => {
     it('does not redirect while the milestone is unknown', () => {
-      signedInWith(jwt(3600)); // no userData cookie: status is null
+      signedInWith(jwt(3600)); // no PROFILE_STATUS cookie: status is null
       expect(auth.isOnboardingCompleted()).toBeNull();
       expect(auth.needsOnboarding()).toBe(false);
     });

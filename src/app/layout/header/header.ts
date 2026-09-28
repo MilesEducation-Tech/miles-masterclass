@@ -51,7 +51,11 @@ import { Viewport } from '@core/services/viewport/viewport';
 // Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { User } from '@core/models/profile.model';
+import { AccountApi } from '@core/services/account-api/account-api';
+import { AuthSession } from '@core/services/auth-session/auth-session';
+import { NotificationService } from '@core/services/notification/notification';
+import { Analytics } from '@core/services/analytics/analytics';
+import { displayNameOf, initialsOf } from '@core/models/account.model';
 
 const SCROLL_THRESHOLD_PX = 150;
 
@@ -99,6 +103,10 @@ export class Header {
   private readonly dialogs = inject(NgpDialogManager);
   protected readonly utils = inject(Utils);
   private readonly viewport = inject(Viewport);
+  private readonly auth = inject(AuthSession);
+  private readonly account = inject(AccountApi);
+  private readonly notify = inject(NotificationService);
+  private readonly analytics = inject(Analytics);
 
   protected readonly logoIcon = logo;
   protected readonly crownIcon = crownIcon;
@@ -111,11 +119,20 @@ export class Header {
   readonly isScrolled = signal<boolean>(false);
   readonly isMobileMenuOpen = signal<boolean>(false);
 
-  // ── ponytail: inert session state ─────────────────────────────────────
-  // These were live signals off the removed `Auth` service. The header now
-  // always renders its signed-out design: guest nav, no plan-gated items.
-  readonly isLoggedIn = signal(false);
-  readonly userData = signal<User | null>(null);
+  // ── Session ───────────────────────────────────────────────────────────
+  /**
+   * The boolean, not the user record: it comes from the token cookie, so the
+   * server HTML already renders the signed-in nav and there is no guest flash
+   * while `user-details/` loads.
+   */
+  readonly isLoggedIn = this.auth.isAuthenticated;
+  /** `hasValue()` first — reading an errored `httpResource` throws. */
+  private readonly user = computed(() =>
+    this.account.user.hasValue() ? this.account.user.value() : null,
+  );
+  protected readonly displayName = computed(() => displayNameOf(this.user()));
+  protected readonly initials = computed(() => initialsOf(this.displayName()));
+  // ponytail: no contract source for an active plan yet; plan-gated items stay hidden.
   protected readonly hasActivePlan = signal(false);
 
   // Latest navigated URL — used as `redirect` query param on profile/login links.
@@ -234,8 +251,17 @@ export class Header {
    * there is no session to clear. Still hard-navigates to `/` so any stale
    * in-memory state is flushed and `canDeactivate` prompts are bypassed.
    */
-  signOut(): void {
+  /**
+   * Same flow as `user-avatar-menu`'s logout: the cookies are cleared only once
+   * the SSO confirms, so a failure is said and the page stays put.
+   */
+  async signOut(): Promise<void> {
     this.closeMobileMenu();
+    this.analytics.trackEvent('logout');
+    if (!(await this.auth.logout())) {
+      this.notify.error('Sign out failed', 'We could not sign you out. Please try again.');
+      return;
+    }
     if (isPlatformBrowser(this.platformId)) {
       window.location.assign('/');
     } else {

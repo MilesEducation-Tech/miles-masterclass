@@ -1,3 +1,4 @@
+import { environment } from '@env/environment';
 import { Component, DestroyRef, computed, inject, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
@@ -377,9 +378,12 @@ export class Faculty {
     disabled(s.sms_consent, { when: () => this.locked() });
   });
 
+  /** Boxes rendered and length validated — one value, from the environment. */
+  protected readonly otpLength = environment.AUTH.otpLength;
+
   protected readonly otpForm = form<{ otp: string }>(this.otpModel, (s) => {
     required(s.otp, { message: 'Please enter the OTP' });
-    minLength(s.otp, 6, { message: 'OTP must be 6 digits' });
+    minLength(s.otp, this.otpLength, { message: `OTP must be ${this.otpLength} digits` });
   });
 
   /** FORM step — register, then either verify by OTP or finish. */

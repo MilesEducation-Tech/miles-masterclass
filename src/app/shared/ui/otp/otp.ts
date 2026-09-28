@@ -5,45 +5,54 @@ import {
   ElementRef,
   input,
   model,
+  output,
   viewChild,
 } from '@angular/core';
-import type { FormValueControl } from '@angular/forms/signals';
+import type {
+  DisabledReason,
+  FormValueControl,
+  ValidationError,
+  WithOptionalFieldTree,
+} from '@angular/forms/signals';
+import { environment } from '@env/environment';
 import { NgpInputOtp, NgpInputOtpInput, NgpInputOtpSlot } from 'ng-primitives/input-otp';
 import { cn } from '../../utils/cn';
 
 /**
  * OTP entry built on `ngpInputOtp`.
  *
- * The primitive replaces what used to be one `<input>` per digit plus ~180
- * lines of input/keydown/paste/focus juggling: it renders a single hidden
- * input (`autocomplete="one-time-code"`, so browser autofill and screen
- * readers work) and drives presentational slots that expose `data-filled`,
- * `data-active`, `data-caret` and `data-placeholder`.
+ * The primitive renders a single visually hidden input
+ * (`autocomplete="one-time-code"`, so browser autofill and screen readers work)
+ * and drives presentational slots that expose `data-filled`, `data-active`,
+ * `data-caret` and `data-placeholder`. Because the real input is invisible,
+ * those attributes ARE the focus indicator — the slot styling below is what
+ * keeps keyboard users oriented, not decoration.
  *
- * The public API is unchanged, so the login, webinar-registration and faculty
- * forms keep binding `[formField]`, `[length]`, `[autoFocus]` as before.
+ * Paste needs no handling here: the primitive trims, filters by pattern (so
+ * "123 456" / "123-456" become "123456") and clamps to the slot count.
  */
 @Component({
   selector: 'app-otp',
   imports: [NgpInputOtp, NgpInputOtpInput, NgpInputOtpSlot],
   templateUrl: './otp.html',
-  host: {
-    '[class]': '"block w-full"',
-  },
+  host: { class: 'block w-full space-y-2' },
 })
 export class Otp implements FormValueControl<string> {
   readonly id = input.required<string>();
-  readonly length = input(6);
+  readonly length = input(environment.AUTH.otpLength);
   readonly type = input<'number' | 'text' | 'alphanumeric'>('number');
   readonly label = input('');
   readonly hint = input('');
   readonly description = input('');
-  readonly required = input(false);
   readonly autoFocus = input(false);
   /** Character shown in an empty slot. */
   readonly placeholder = input('');
-  // eslint-disable-next-line @angular-eslint/no-input-rename -- intentional class merging
-  readonly userClass = input('', { alias: 'class' });
+
+  /**
+   * Fires once every slot is filled (typed or pasted). The primitive emits it
+   * after `valueChange`, so the bound form field already holds the full code.
+   */
+  readonly completed = output<string>();
 
   /** The single hidden input the primitive drives; target for `autoFocus`. */
   private readonly otpInput = viewChild<ElementRef<HTMLInputElement>>('otpInput');
@@ -56,20 +65,22 @@ export class Otp implements FormValueControl<string> {
     });
   }
 
-  // FormValueControl Implementation
+  // FormValueControl — `[formField]` binds all of these from the field state.
   readonly value = model<string>('');
   readonly touched = model<boolean>(false);
-
-  readonly disabled = input<boolean>(false);
-  readonly disabledReasons = input<readonly any[]>([]);
-  readonly readonly = input<boolean>(false);
-  readonly hidden = input<boolean>(false);
-  readonly invalid = input<boolean>(false);
-  readonly errors = input<readonly any[]>([]);
+  readonly name = input('');
+  readonly required = input(false);
+  readonly disabled = input(false);
+  readonly disabledReasons = input<readonly WithOptionalFieldTree<DisabledReason>[]>([]);
+  readonly readonly = input(false);
+  readonly hidden = input(false);
+  readonly invalid = input(false);
+  readonly errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
 
   /**
-   * `NgpInputOtp` has no readonly mode, so a readonly control is disabled —
-   * both refuse input, they only differ in styling.
+   * `NgpInputOtp` has no readonly mode, and native `readonly` on the hidden
+   * input wouldn't hold — the primitive's paste handler writes the value
+   * itself. So a readonly control is disabled; both refuse input.
    */
   readonly isDisabled = computed(() => this.disabled() || this.readonly());
 
@@ -90,23 +101,42 @@ export class Otp implements FormValueControl<string> {
 
   readonly inputMode = computed<'tel' | 'text'>(() => (this.type() === 'number' ? 'tel' : 'text'));
 
-  protected onBlur(): void {
-    this.touched.set(true);
-  }
-
-  // Classes
-  readonly wrapperClasses = computed(() => cn('space-y-2', this.userClass()));
-
-  readonly labelClasses = computed(() => 'label');
-
-  readonly slotClasses = computed(() => {
-    const baseClasses =
-      'flex items-center justify-center w-12 h-12 text-center text-lg font-semibold rounded-md border border-input bg-background transition-colors cursor-pointer relative';
-    const errorClass = this.invalid() && this.touched() ? 'border-destructive' : '';
-    return cn(baseClasses, errorClass);
-  });
-
   readonly displayError = computed(
     () => this.invalid() && this.touched() && this.errors().length > 0,
   );
+
+  protected readonly descriptionId = computed(() => `${this.id()}-description`);
+  protected readonly hintId = computed(() => `${this.id()}-hint`);
+  protected readonly errorId = computed(() => `${this.id()}-error`);
+
+  /** Same rule as `aria-input`: the error replaces the hint while it shows. */
+  protected readonly describedBy = computed(() => {
+    const ids: string[] = [];
+    if (this.description()) ids.push(this.descriptionId());
+    if (this.hint() && !this.displayError()) ids.push(this.hintId());
+    if (this.displayError()) ids.push(this.errorId());
+    return ids.length ? ids.join(' ') : null;
+  });
+
+  protected readonly slotClasses = computed(() =>
+    cn(
+      // w-12 keeps the intrinsic width (shrink-wrapped cards size to it);
+      // shrink + min-w-0 let the row fit a 320 px screen instead of wrapping.
+      'relative flex aspect-square w-12 min-w-0 shrink items-center justify-center',
+      'rounded-md border border-input bg-background text-lg font-semibold cursor-text',
+      'transition-[border-color,box-shadow] motion-reduce:transition-none',
+      'data-[placeholder]:text-muted-foreground',
+      'data-[active]:border-ring data-[active]:ring-2 data-[active]:ring-ring/30',
+      'data-[caret]:after:absolute data-[caret]:after:h-5 data-[caret]:after:w-px',
+      'data-[caret]:after:bg-foreground data-[caret]:after:animate-caret-blink',
+      'motion-reduce:after:animate-none',
+      'group-data-[disabled]:cursor-not-allowed group-data-[disabled]:opacity-50',
+      this.displayError() &&
+        'border-destructive data-[active]:border-destructive data-[active]:ring-destructive/30',
+    ),
+  );
+
+  protected onBlur(): void {
+    this.touched.set(true);
+  }
 }

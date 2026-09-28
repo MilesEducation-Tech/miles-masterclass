@@ -82,6 +82,19 @@ export const Disabled: Story = {
   },
 };
 
+export const Invalid: Story = {
+  args: {
+    id: 'otp-invalid',
+    length: 6,
+    type: 'number',
+    label: 'Enter OTP',
+    required: true,
+    invalid: true,
+    touched: true,
+    errors: [{ kind: 'required', message: 'Please enter the OTP' }],
+  },
+};
+
 export const Readonly: Story = {
   args: {
     id: 'otp-readonly',

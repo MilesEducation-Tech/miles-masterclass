@@ -73,9 +73,10 @@
                 <app-otp
                   id="faculty_otp"
                   label="Enter OTP"
-                  [length]="6"
+                  [length]="otpLength"
                   [autoFocus]="true"
                   [formField]="otpForm.otp"
+                  (completed)="verifyOtp()"
                 />
 
                 @if (error()) {

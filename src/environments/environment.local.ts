@@ -84,9 +84,21 @@ export const environment = {
     /**
      * Caches `profile_status` so `onboardingGuard` can answer synchronously on
      * a hard refresh, and during SSR, without waiting on `user-details/`.
-     * Named `USER_DATA` for continuity with the pre-strip cookie.
+     * Only the status string — never the user record.
      */
-    userData: 'USER_DATA',
+    profileStatus: 'PROFILE_STATUS',
+    /**
+     * The pre-rename name of the `profileStatus` cookie. Never read; deleted on
+     * load, write and sign-out so an older build's copy can't linger.
+     * ponytail: drop once the longest-lived pre-rename session has expired.
+     */
+    legacyProfileStatus: 'USER_DATA',
+    /**
+     * Digits in a one-time code. The SSO sets it server-side and no route
+     * reports it, so it lives here — per environment — rather than in each
+     * form. Drives both the `<app-otp>` boxes and the length validator.
+     */
+    otpLength: 6,
     browserSessionId: 'BROWSER_SESSION_ID',
   },
 
