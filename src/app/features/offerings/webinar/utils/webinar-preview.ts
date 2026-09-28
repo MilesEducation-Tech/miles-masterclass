@@ -194,7 +194,7 @@ function toCard(seed: Seed, index: number, baseTime: number, idPrefix: string): 
     short_description: seed.description,
     start_date_time: new Date(start).toISOString(),
     end_date_time: new Date(start + durationMinutes * MINUTE).toISOString(),
-    duration_minutes: durationMinutes,
+    duration_seconds: durationMinutes * 60,
     webinar_zoom_id: null,
     is_test_webinar: false,
     webinar_why_attend_points: null,

@@ -105,7 +105,14 @@ export class WebinarCard {
         // "Missed", not "Not registered": the CTA underneath already reads
         // "Not registered", and a card that says the same thing twice wastes
         // the one glance a strip gets.
-        return { label: 'Missed', classes: 'bg-black/70 text-foreground' };
+        //
+        // A SOLID surface, not the `bg-black/70` this used to be. The pill sits
+        // on the artwork, and a translucent near-black over a dark frame let the
+        // image through and read as no background at all. The other three
+        // buckets were always solid; this was the only one that vanished — and
+        // it is the only past bucket the live feed populates, so it was the only
+        // one anyone saw.
+        return { label: 'Missed', classes: 'bg-surface-control text-foreground' };
       default:
         return null;
     }

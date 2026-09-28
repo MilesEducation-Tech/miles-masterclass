@@ -33,7 +33,7 @@ import { Utils } from '@shared/services/utils';
  */
 @Component({
   selector: 'app-webinar-faq',
-  host: { class: 'block' },
+  host: { '[class]': "items().length > 0 ? 'block' : 'hidden'" },
   imports: [
     NgIcon,
     FaqContent,

@@ -17,7 +17,7 @@ function card(overrides: Partial<UpcomingWebinarCard> = {}): UpcomingWebinarCard
     short_description: '',
     start_date_time: '2026-09-20T13:00:00Z',
     end_date_time: '2026-09-20T14:00:00Z',
-    duration_minutes: 60,
+    duration_seconds: 3600,
     webinar_zoom_id: '84123456789',
     is_test_webinar: false,
     webinar_why_attend_points: null,
@@ -85,12 +85,12 @@ describe('effectiveEndAt', () => {
   it('takes the earlier of end_date_time and start + duration', () => {
     // Rows exist whose end_date_time sits well after the start; trusting it
     // would keep a one-hour webinar joinable for days.
-    const w = card({ end_date_time: '2026-10-20T14:00:00Z', duration_minutes: 60 });
+    const w = card({ end_date_time: '2026-10-20T14:00:00Z', duration_seconds: 3600 });
     expect(effectiveEndAt(w)).toBe(Date.parse('2026-09-20T14:00:00Z'));
   });
 
   it('falls back to whichever one is available', () => {
-    expect(effectiveEndAt(card({ duration_minutes: null }))).toBe(
+    expect(effectiveEndAt(card({ duration_seconds: null }))).toBe(
       Date.parse('2026-09-20T14:00:00Z'),
     );
     expect(effectiveEndAt(card({ end_date_time: null }))).toBe(Date.parse('2026-09-20T14:00:00Z'));
@@ -126,6 +126,19 @@ describe('ctaFor', () => {
       }),
     });
     expect(ctaFor(w, { now: NOW, bucket: 'upcoming' })).toBe('join-pending-approval');
+  });
+
+  it('treats a server-side pending attempt as still registering', () => {
+    // A PENDING attempt the server is still working on is deliberately the SAME
+    // state as a request in flight from this surface: both say "registering",
+    // and the spinner keeps running until the attempt resolves one way or the
+    // other. Splitting them was tried and rejected.
+    const w = card({
+      registration: registration({ status: 'ZOOM_RETRYING', registration_status: 'PENDING' }),
+    });
+
+    expect(ctaFor(w, { now: NOW, bucket: 'upcoming' })).toBe('registering');
+    expect(ctaFor(w, { now: NOW, bucket: 'upcoming', isRegistering: true })).toBe('registering');
   });
 
   it('offers a retry after a terminal pipeline failure', () => {

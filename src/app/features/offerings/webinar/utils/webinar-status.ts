@@ -118,7 +118,7 @@ export function effectiveEndAt(card: WebinarCard): number | null {
   const end = parseIso(card.end_date_time);
   const start = parseIso(card.start_date_time);
   const derived =
-    start !== null && card.duration_minutes ? start + card.duration_minutes * 60_000 : null;
+    start !== null && card.duration_seconds ? start + card.duration_seconds * 1_000 : null;
 
   if (end !== null && derived !== null) return Math.min(end, derived);
   return end ?? derived;

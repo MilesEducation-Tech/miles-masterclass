@@ -1,12 +1,12 @@
 @let hero = facade.heroWebinar();
 
 <!-- Section rhythm lives HERE and nowhere else. It used to be the sum of
-     three things — the hero's own bottom padding, this wrapper's `space-y`,
+     three things — the hero's own bottom padding, this wrapper's gap,
      and the rails wrapper's — so no two gaps on the page matched. Both
-     `space-y` values below are the same scale, and the hero contributes no
+     `gap` values below are the same scale, and the hero contributes no
      bottom padding, so every gap between sections is one number.
      ~160px at `lg` is what the design measures. -->
-<div class="flex flex-col space-y-16 overflow-hidden md:space-y-28 lg:space-y-40">
+<div class="flex flex-col gap-16 overflow-hidden md:gap-28 lg:gap-40">
   <!-- Section 1: the highlighted webinar -->
   @if (hero) {
     <app-webinar-hero
@@ -37,8 +37,17 @@
       <span class="sr-only">Loading featured webinar…</span>
     </div>
   } @else {
-    <!-- Nothing scheduled: the standing banner, rather than an empty hero. -->
-    <div class="container mx-auto px-4 pt-10 md:pt-16 lg:pt-20">
+    <!-- Nothing scheduled. Full-bleed, unlike the real hero: there is no title,
+         no session line and no CTA to sit beneath it, so the banner is the whole
+         section and may as well use the width. No container, no `max-w`, no
+         rounded corners — those exist to frame artwork that sits ABOVE copy.
+
+         Art-directed rather than one asset scaled: the two files are different
+         crops, 2400×1300 landscape and 720×1394 portrait, so the phone gets a
+         composition built for it instead of a letterboxed slice of the desktop
+         one. `max-h` + `object-cover` stops an ultra-wide screen turning a
+         1.85:1 image into a 1,400px-tall wall. -->
+    <div class="w-full pt-10 md:pt-16 lg:pt-20">
       <picture>
         <source
           media="(max-width: 767px)"
@@ -54,14 +63,18 @@
         />
         <img
           src="https://d1pp0977rsxmiq.cloudfront.net/static-assests/web-app/commons/webinar-hero-bg-lg.webp"
-          alt="No webinars are scheduled right now."
-          class="mx-auto aspect-video w-full max-w-4xl rounded-2xl object-cover ring-1 ring-white/10 md:aspect-21/10 md:rounded-3xl"
+          alt="No webinars are scheduled right now. Check back soon."
+          class="aspect-[720/1394] w-full object-cover md:aspect-[2400/1300] md:max-h-[85vh]"
+          width="2400"
+          height="1300"
+          fetchpriority="high"
+          decoding="async"
         />
       </picture>
     </div>
   }
 
-  <div class="mx-auto flex w-11/12 flex-col space-y-16 md:space-y-28 lg:space-y-40">
+  <div class="mx-auto flex w-11/12 flex-col gap-16 md:gap-28 lg:gap-40">
     @if (facade.loadError(); as error) {
       <div
         class="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-6 text-center"

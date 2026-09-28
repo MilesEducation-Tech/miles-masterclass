@@ -41,7 +41,7 @@ export interface LevelTab {
  */
 @Component({
   selector: 'app-webinar-rail',
-  host: { class: 'block' },
+  host: { '[class]': "hasContent() ? 'block' : 'hidden'" },
   imports: [SwiperStrip, WebinarCard],
   templateUrl: './webinar-rail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -66,6 +66,18 @@ export class WebinarRail {
 
   readonly register = output<string>();
   readonly join = output<string>();
+
+  /**
+   * Whether this section draws anything at all.
+   *
+   * Mirrors the template's own guard, and drives the host's display so an
+   * empty rail is not a flex item — otherwise the page's `gap` still spaces
+   * around a zero-height box, which is what left a ~320px hole between the
+   * booking band and "Webinars Missed" for a learner with no attendance.
+   */
+  protected readonly hasContent = computed(
+    () => this.webinars().length > 0 || this.showWhenEmpty(),
+  );
 
   protected readonly cairaMark = BRAND_MARKS.caira;
   /** The v2 preset these rails used, unchanged. */

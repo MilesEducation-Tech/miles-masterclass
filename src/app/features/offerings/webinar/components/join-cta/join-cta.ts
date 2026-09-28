@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { NgIcon } from '@ng-icons/core';
 import { Button } from '@shared/ui/button/button';
 import { ButtonVariant } from '@core/models/button.model';
-import { Spinner } from '@shared/ui/spinner/spinner';
 import { FeedCard, registrationOf } from '../../models/webinar.model';
 import { CTA_LABELS, needsCountdown, WebinarCta } from '../../utils/webinar-status';
 import { parseIso } from '../../utils/session-time';
@@ -17,7 +16,7 @@ import { WebinarCountdown } from '../webinar-countdown/webinar-countdown';
  */
 @Component({
   selector: 'app-join-cta',
-  imports: [Button, NgIcon, Spinner, WebinarCountdown],
+  imports: [Button, NgIcon, WebinarCountdown],
   templateUrl: './join-cta.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
