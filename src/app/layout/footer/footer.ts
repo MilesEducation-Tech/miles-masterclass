@@ -10,7 +10,7 @@ import { Consent } from '@core/services/consent/consent';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 // Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
-import { User } from '@core/models/profile.model';
+import { AuthSession } from '@core/services/auth-session/auth-session';
 
 @Component({
   selector: 'app-footer',
@@ -24,13 +24,11 @@ export class Footer {
   // Exposed for the footer "Cookie settings" link (reopens the consent panel).
   protected readonly consent = inject(Consent);
 
-  // ponytail: inert — was `auth.currentUser()`. The footer always renders its
-  // signed-out design.
-  readonly userData = signal<User | null>(null);
-
-  // Computed properties for user state
-  readonly isLoggedIn = computed(() => !!this.userData());
-  readonly hasTrailAccess = computed(() => this.userData()?.is_beta_access ?? false);
+  // The token-cookie boolean, so SSR renders the right links (same as the header).
+  readonly isLoggedIn = inject(AuthSession).isAuthenticated;
+  // ponytail: `user-details/` has no `is_beta_access`; trial-gated links stay
+  // hidden until the web API reports it (open backend question).
+  readonly hasTrailAccess = signal(false);
 
   // Base path for routes
   readonly basePath = computed(() => {

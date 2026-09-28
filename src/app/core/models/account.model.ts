@@ -53,6 +53,24 @@ export interface UserDetails {
   onboarding_fully_completed: boolean;
 }
 
+/**
+ * The name the shell shows for the signed-in user. `user-details/` carries
+ * `full_name` and `first_name` and nothing else about identity (no email, no
+ * separate last name), so this is the whole rule. Shared by the header drawer
+ * and `user-avatar-menu`, so the two can't disagree.
+ */
+export function displayNameOf(user: UserDetails | null): string {
+  return user ? user.full_name || user.first_name : '';
+}
+
+/** First and last initials of a display name; `'U'` when there is no name. */
+export function initialsOf(name: string): string {
+  const words = name.split(/\s+/).filter(Boolean);
+  const first = words[0]?.[0] ?? '';
+  const last = words.length > 1 ? (words[words.length - 1][0] ?? '') : '';
+  return `${first}${last}`.toUpperCase() || 'U';
+}
+
 const isYesNo = (v: unknown): v is YesNo => v === 'Yes' || v === 'No';
 
 /**

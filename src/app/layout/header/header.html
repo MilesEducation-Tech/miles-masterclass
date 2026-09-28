@@ -218,23 +218,16 @@
                 class="absolute top-[calc(100%+12px)] right-0 min-w-[280px] max-w-[90vw] max-h-[calc(100vh-120px)] overflow-y-auto bg-popover/98 backdrop-blur-2xl rounded-2xl p-3 shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.1)] z-1000 animate-[mobileMenuSlideIn_0.3s_cubic-bezier(0.4,0,0.2,1)] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-[10px]"
               >
                 <!-- Logged-in user info + profile actions -->
-                @if (isLoggedIn() && userData(); as u) {
-                  @let initials =
-                    ((u.first_name[0] || '') + (u.last_name[0] || '')).trim().toUpperCase() ||
-                    (u.email[0] || '').toUpperCase() ||
-                    'U';
+                @if (isLoggedIn()) {
                   <div class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-muted mb-2">
                     <span
                       class="w-10 h-10 shrink-0 rounded-full bg-accent flex items-center justify-center text-primary-foreground text-sm font-semibold select-none"
                       aria-hidden="true"
                     >
-                      {{ initials }}
+                      {{ initials() }}
                     </span>
-                    <div class="flex flex-col min-w-0">
-                      <div class="text-sm font-semibold text-foreground truncate">
-                        {{ u.first_name }} {{ u.last_name }}
-                      </div>
-                      <div class="text-xs text-muted-foreground truncate">{{ u.email }}</div>
+                    <div class="text-sm font-semibold text-foreground truncate min-w-0">
+                      {{ displayName() }}
                     </div>
                   </div>
 

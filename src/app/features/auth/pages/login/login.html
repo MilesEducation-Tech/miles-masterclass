@@ -137,7 +137,8 @@
         [length]="authFacade.otpLength"
         [autoFocus]="true"
         [formField]="authFacade.otpForm.otp"
-        placeholder="000000"
+        (completed)="onSubmit()"
+        placeholder=""
       />
     }
     <!-- Send and verify opt out of the interceptor's error toast so this facade can

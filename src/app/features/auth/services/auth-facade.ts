@@ -1,3 +1,4 @@
+import { environment } from '@env/environment';
 import { DestroyRef, Service, computed, inject, signal } from '@angular/core';
 import { email, form, required, validate, validateHttp } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -76,10 +77,11 @@ export class AuthFacade {
    * value for both, so they cannot disagree.
    *
    * ponytail: the contract says the length is set server-side at the SSO, but
-   * no route returns it. 6 is today's value; if `auth-otp-send/` ever reports a
-   * length, read it into this and nothing else changes.
+   * no route returns it, so it comes from `environment.AUTH.otpLength`. If
+   * `auth-otp-send/` ever reports a length, read it into this and nothing else
+   * changes.
    */
-  readonly otpLength = 6;
+  readonly otpLength = environment.AUTH.otpLength;
 
   private readonly auth = inject(AuthSession);
   private readonly router = inject(Router);

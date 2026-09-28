@@ -1,3 +1,4 @@
+import { environment } from '@env/environment';
 import { Component, computed, input, output, signal } from '@angular/core';
 import {
   form,
@@ -179,9 +180,12 @@ export class WebinarRegistrationForm {
     });
   });
 
+  /** Boxes rendered and length validated — one value, from the environment. */
+  protected readonly otpLength = environment.AUTH.otpLength;
+
   protected readonly otpForm = form<OtpFormState>(this.otpModel, (s) => {
     required(s.otp, { message: 'Please enter the OTP' });
-    minLength(s.otp, 6, { message: 'OTP must be 6 digits' });
+    minLength(s.otp, this.otpLength, { message: `OTP must be ${this.otpLength} digits` });
   });
 
   protected readonly step1Invalid = computed(
