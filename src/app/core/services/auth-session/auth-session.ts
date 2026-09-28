@@ -84,6 +84,11 @@ export class AuthSession {
    */
   readonly isAuthenticated = computed(() => this._accessToken().length > 0);
 
+  constructor() {
+    // An older build's copy goes on the first load, not at the next rotation.
+    if (this.isBrowser) this.storage.deleteCookie(environment.AUTH.legacyProfileStatus);
+  }
+
   /**
    * The onboarding gate, and the only thing `user-details/` restricts access
    * on: onboarding completed → the rest of the app is reachable.
@@ -259,7 +264,8 @@ export class AuthSession {
 
     this.writeCookie(environment.AUTH.accessToken, session.accessToken);
     this.writeCookie(environment.AUTH.refreshToken, session.refreshToken);
-    this.writeCookie(environment.AUTH.userData, session.profile_status);
+    this.writeCookie(environment.AUTH.profileStatus, session.profile_status);
+    if (this.isBrowser) this.storage.deleteCookie(environment.AUTH.legacyProfileStatus);
   }
 
   clear(): void {
@@ -273,7 +279,8 @@ export class AuthSession {
     if (!this.isBrowser) return;
     this.storage.deleteCookie(environment.AUTH.accessToken);
     this.storage.deleteCookie(environment.AUTH.refreshToken);
-    this.storage.deleteCookie(environment.AUTH.userData);
+    this.storage.deleteCookie(environment.AUTH.profileStatus);
+    this.storage.deleteCookie(environment.AUTH.legacyProfileStatus);
   }
 
   private readCookie(key: string): string {
@@ -281,7 +288,7 @@ export class AuthSession {
   }
 
   private readProfileStatus(): ProfileStatus | null {
-    const raw = this.readCookie(environment.AUTH.userData);
+    const raw = this.readCookie(environment.AUTH.profileStatus);
     return raw === 'new_user' || raw === 'onboard_completed' || raw === 'profile_completed'
       ? raw
       : null;
