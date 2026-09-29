@@ -1,4 +1,4 @@
-<app-dialog-shell maxWidth="720px" [ariaLabel]="'Report details for ' + data.userName">
+<app-dialog [ariaLabel]="'Report details for ' + data.userName" panelClass="p-0 max-w-[720px]">
   <div
     class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] md:w-[720px] mx-auto overflow-hidden relative rounded-xl"
   >
@@ -10,7 +10,18 @@
         </h2>
         <p class="text-xs text-white/60 truncate">{{ data.userName }}</p>
       </div>
-      <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        size="sm"
+        aria-label="Close dialog"
+        variant="ghost"
+        size="icon"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <!-- Body -->
@@ -34,13 +45,16 @@
         </div>
       } @else {
         @if (typeOptions().length) {
-          <app-tab-strip
+          <app-tabs
             class="mb-4"
-            [options]="tabLabels()"
-            [selected]="activeTabLabel()"
-            (selectionChange)="onTabChange($event)"
             aria-label="Delivery type filter"
-          />
+            [value]="activeTabLabel() ?? ''"
+            (valueChange)="onTabChange($event)"
+          >
+            @for (tab of tabLabels(); track tab) {
+              <app-tab [value]="tab" [label]="tab" />
+            }
+          </app-tabs>
         }
         @if (!visibleItems().length) {
           <p class="py-6 text-center text-sm text-neutral-400">
@@ -129,20 +143,22 @@
                 @if (certificateFor(item)) {
                   <!-- Direct PDF save — the zip lives in the footer -->
                   <div class="flex items-end justify-end col-span-2 sm:col-span-1">
-                    <app-button
+                    <button
+                      app-button
+                      type="button"
+                      class="h-7 text-xs text-white"
                       variant="outline"
                       size="sm"
-                      class="h-7 text-xs text-white"
                       [disabled]="facade.isDownloading()"
-                      [ariaLabel]="
+                      [attr.aria-label]="
                         'Download certificate for ' +
                         (isCourses() ? item.course_name : item.webinar_name)
                       "
-                      (clicked)="downloadCertificate(item)"
+                      (click)="downloadCertificate(item)"
                     >
                       <ng-icon name="lucideDownload" class="mr-1 text-sm" aria-hidden="true" />
                       Certificate
-                    </app-button>
+                    </button>
                   </div>
                 }
               </dl>
@@ -171,30 +187,34 @@
           <span class="mr-auto text-xs text-fg-3">Checking certificates…</span>
         }
         @if (certificates().length) {
-          <app-button
+          <button
+            app-button
+            type="button"
+            class="text-white"
             variant="outline"
             size="sm"
-            class="text-white"
             [disabled]="facade.isDownloading() || isLoading()"
-            (clicked)="downloadAllCertificates()"
+            (click)="downloadAllCertificates()"
           >
             {{
               facade.isDownloading()
                 ? 'Downloading…'
                 : 'Download all certificates (' + certificates().length + ')'
             }}
-          </app-button>
+          </button>
         }
-        <app-button
+        <button
+          app-button
+          type="button"
+          class="text-white"
           variant="outline"
           size="sm"
-          class="text-white"
           [disabled]="facade.isExporting() || isLoading() || !items().length"
-          (clicked)="exportItems()"
+          (click)="exportItems()"
         >
           Export CSV
-        </app-button>
+        </button>
       </div>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

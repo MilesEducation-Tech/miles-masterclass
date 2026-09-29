@@ -8,9 +8,16 @@
       </p>
     </div>
     @if (canExport()) {
-      <app-button variant="outline" size="sm" class="text-white" (clicked)="exportCsv()">
+      <button
+        app-button
+        type="button"
+        class="text-white"
+        variant="outline"
+        size="sm"
+        (click)="exportCsv()"
+      >
         Export CSV
-      </app-button>
+      </button>
     }
   </header>
 
@@ -34,21 +41,28 @@
     <!-- Filters bar -->
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div class="flex w-full max-w-md items-center">
-        <app-aria-input
-          id="user-search-v2"
-          type="search"
-          label="Search name or email"
-          class="w-full"
-          [(value)]="searchInput"
-        />
+        <app-field class="w-full">
+          <label ngpLabel for="user-search-v2">Search name or email</label>
+
+          <input
+            app-input
+            id="user-search-v2"
+            type="search"
+            [value]="searchInput()"
+            (input)="searchInput.set($any($event.target).value)"
+          />
+        </app-field>
       </div>
 
-      <app-tab-strip
-        [options]="tabLabels"
-        [selected]="activeTabLabel()"
-        (selectionChange)="onTabChange($event)"
+      <app-tabs
         aria-label="Blocked status filter"
-      />
+        [value]="activeTabLabel() ?? ''"
+        (valueChange)="onTabChange($event)"
+      >
+        @for (tab of tabLabels; track tab) {
+          <app-tab [value]="tab" [label]="tab" />
+        }
+      </app-tabs>
     </div>
 
     <!-- Error banner -->

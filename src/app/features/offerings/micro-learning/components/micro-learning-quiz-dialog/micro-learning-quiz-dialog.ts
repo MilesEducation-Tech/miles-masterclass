@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { ChapterQuiz } from '../../../components/chapter-quiz/chapter-quiz';
 import {
   ActionStatus,
@@ -9,6 +9,7 @@ import {
 import { CourseChapter } from '@core/models/course.model';
 import { Button } from '@shared/ui/button/button';
 import { MicroLearningCourseFacade } from '../../../services/micro-learning-course-facade';
+import { Dialog } from '@shared/ui/dialog/dialog';
 
 export interface MicroLearningQuizDialogData {
   reel: MicroLearningReel;
@@ -23,9 +24,9 @@ export interface MicroLearningQuizDialogData {
  */
 @Component({
   selector: 'app-micro-learning-quiz-dialog',
-  imports: [ChapterQuiz, Button, DialogShell],
+  imports: [ChapterQuiz, Button, Dialog],
   template: `
-    <app-dialog-shell maxWidth="100%" ariaLabel="Chapter quiz">
+    <app-dialog ariaLabel="Chapter quiz" panelClass="p-0 max-w-full">
       <div class="w-[min(92vw,52rem)] min-h-[24rem]">
         @if (reelRef.quiz_details?.questions?.length) {
           <app-chapter-quiz
@@ -43,11 +44,11 @@ export interface MicroLearningQuizDialogData {
             <p class="text-sm text-muted-foreground">
               No quiz questions are available for this reel yet.
             </p>
-            <app-button variant="default" (clicked)="close()">Close</app-button>
+            <button app-button type="button" variant="default" (click)="close()">Close</button>
           </div>
         }
       </div>
-    </app-dialog-shell>
+    </app-dialog>
   `,
 })
 export class MicroLearningQuizDialog {

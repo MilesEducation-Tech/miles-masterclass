@@ -34,6 +34,11 @@ test('folders: singular category folders fail unless inside their plural; no sha
     'src/app/features/x/component',
   ]);
   assert.deepEqual(singularFolders(['src/app/core/services/dialog/dialog.ts']), []);
+  // a component folder named after its own file is the v20 shape, not a category slip
+  assert.deepEqual(singularFolders(['src/app/shared/ui/dialog/dialog.ts']), []);
+  assert.deepEqual(singularFolders(['src/app/shared/ui/dialog/frame.ts']), [
+    'src/app/shared/ui/dialog',
+  ]);
   assert.deepEqual(nestedShared(['src/app/features/x/shared/y.ts', 'src/app/shared/ui/b.ts']), [
     'src/app/features/x/shared',
   ]);

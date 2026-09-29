@@ -1,9 +1,12 @@
 import { Component, computed, signal } from '@angular/core';
 import { Button } from '../../ui/button/button';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { BadgeItem } from '@core/models/cpe-tracker.model';
 import { badgeHaloHex } from '../../utils/badge-level';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface BadgeClaimUpsellDialogData {
   badge: BadgeItem;
@@ -18,7 +21,8 @@ export interface BadgeClaimUpsellDialogResult {
 
 @Component({
   selector: 'app-badge-claim-upsell-dialog',
-  imports: [Button, DialogShell],
+  imports: [Button, Dialog, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './badge-claim-upsell-dialog.html',
 })
 export class BadgeClaimUpsellDialog {

@@ -17,13 +17,15 @@
   <p class="mt-1 line-clamp-1 text-sm text-muted-foreground">Course: {{ badge().course.title }}</p>
 
   <div class="mt-auto pt-4">
-    <app-button
+    <button
+      app-button
+      type="button"
       [class]="buttonClass()"
       [variant]="ui().variant"
       [disabled]="ui().disabled"
-      (clicked)="activate.emit(badge())"
+      (click)="activate.emit(badge())"
     >
       {{ ui().label }}
-    </app-button>
+    </button>
   </div>
 </article>

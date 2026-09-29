@@ -6,7 +6,7 @@ import { apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { PAYMENT_ROUTES } from '@core/models/payment.model';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
-import { provideMockDialogRef, stubDialogShell } from '@testing/mocks/dialog-ref.mock';
+import { provideMockDialogRef, stubDialog } from '@testing/mocks/dialog-ref.mock';
 import { CouponDialog } from './coupon-dialog';
 
 const URL = apiUrl(PAYMENT_ROUTES.listCoupon.path);
@@ -18,7 +18,7 @@ describe('CouponDialog', () => {
 
   beforeEach(() => {
     logError = vi.fn();
-    stubDialogShell(CouponDialog);
+    stubDialog(CouponDialog);
     TestBed.configureTestingModule({
       imports: [CouponDialog],
       providers: [

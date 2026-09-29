@@ -6,9 +6,16 @@
       <p class="text-base font-semibold" style="color: var(--mm-fg-3)">Network</p>
       <h1 class="text-3xl font-extrabold leading-tight">{{ networkName() }}</h1>
     </div>
-    <app-button variant="outline" size="sm" class="text-white" (clicked)="openReports()">
+    <button
+      app-button
+      type="button"
+      class="text-white"
+      variant="outline"
+      size="sm"
+      (click)="openReports()"
+    >
       View reports
-    </app-button>
+    </button>
   </header>
 
   @if (error()) {
@@ -77,14 +84,16 @@
                   </span>
                 </td>
                 <td class="px-4 py-3 text-right">
-                  <app-button
+                  <button
+                    app-button
+                    type="button"
+                    class="border-white/15 text-white hover:bg-white/5"
                     variant="outline"
                     size="sm"
-                    class="border-white/15 text-white hover:bg-white/5"
-                    (clicked)="openAllocate(firm)"
+                    (click)="openAllocate(firm)"
                   >
                     Add seats
-                  </app-button>
+                  </button>
                 </td>
               </tr>
             }

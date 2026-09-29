@@ -73,7 +73,7 @@ const IDENTIFY_DEBOUNCE_MS = 400;
 @Service({ autoProvided: false })
 export class AuthFacade {
   /**
-   * How many boxes `<app-otp>` renders AND what the validator demands — one
+   * How many boxes `<app-input-otp>` renders AND what the validator demands — one
    * value for both, so they cannot disagree.
    *
    * ponytail: the contract says the length is set server-side at the SSO, but
@@ -346,7 +346,7 @@ export class AuthFacade {
 
   readonly otpForm = form<OtpModel>(this.otpModel, (otpSchema) => {
     required(otpSchema.otp, { message: 'Please enter the OTP' });
-    // Must match `[length]` on `<app-otp>` in login.html — the input renders
+    // Must match `[length]` on `<app-input-otp>` in login.html — the input renders
     // that many boxes, and a shorter minimum here would enable Verify on a
     // half-typed code.
     validate(otpSchema.otp, ({ value }) => {

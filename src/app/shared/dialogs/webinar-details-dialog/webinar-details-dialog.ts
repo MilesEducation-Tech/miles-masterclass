@@ -7,13 +7,15 @@ import { Button } from '../../ui/button/button';
 import { CategoriesList } from '../../components/categories-list/categories-list';
 import { CourseAbout } from '../../components/course-about/course-about';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { MilesSlug } from '../../components/miles-slug/miles-slug';
 import { ContentAbout } from '@core/models/course.model';
 import { UpcomingPremiere, WebinarCta, WebinarTag } from '@core/models/feature.model';
 import { Utils } from '@shared/services/utils';
 import { DatePipe } from '@angular/common';
 import { LocalTimeZonePipe } from '@shared/pipes/local-time-zone/local-time-zone-pipe';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface WebinarDetailsDialogData {
   webinar: UpcomingPremiere;
@@ -38,15 +40,15 @@ type DialogResult = 'closed' | 'book' | 'submit-feedback' | 'download-certificat
     CategoriesList,
     CourseAbout,
     DatePipe,
-    DialogShell,
     MilesSlug,
     NgIcon,
     LocalTimeZonePipe,
+    Dialog,
   ],
   templateUrl: './webinar-details-dialog.html',
   styleUrl: './webinar-details-dialog.css',
   host: { class: 'block' },
-  providers: [provideIcons({ matCalendarMonthRound, phosphorShareFatFill })],
+  providers: [provideIcons({ matCalendarMonthRound, phosphorShareFatFill, heroXMark })],
 })
 export class WebinarDetailsDialog {
   private readonly dialogRef = injectDialogRef<WebinarDetailsDialogData, DialogResult>();

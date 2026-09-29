@@ -8,14 +8,17 @@ import {
   validate,
 } from '@angular/forms/signals';
 
-import { AriaAutocomplete } from '@shared/ui/aria/aria-autocomplete/aria-autocomplete';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
 import { Button } from '@shared/ui/button/button';
-import { Forms } from '@shared/ui/forms/forms';
-import { Otp } from '@shared/ui/otp/otp';
+
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { CountryCodeOption, dialCodeWithLength } from '@core/constants/dial-code';
 import { AutoCompleteOption } from '@core/models/form.model';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
+import { Combobox } from '@shared/ui/combobox/combobox';
+import { InputOtp } from '@shared/ui/input-otp/input-otp';
 
 interface FormState {
   first_name: string;
@@ -56,7 +59,17 @@ export interface WebinarRegistrationFormValue {
  */
 @Component({
   selector: 'app-webinar-registration-form',
-  imports: [AngularFormField, AriaAutocomplete, AriaInput, Button, Forms, Otp, Spinner],
+  imports: [
+    AngularFormField,
+    Button,
+    Spinner,
+    Field,
+    NgpLabel,
+    Input,
+    Checkbox,
+    Combobox,
+    InputOtp,
+  ],
   templateUrl: './webinar-registration-form.html',
   host: { class: 'block' },
 })

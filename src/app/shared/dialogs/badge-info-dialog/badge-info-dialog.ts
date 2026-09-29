@@ -1,9 +1,12 @@
 import { Component, computed, signal } from '@angular/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { BadgeItem } from '@core/models/cpe-tracker.model';
 import { BadgeHeroCard } from '../../components/cards/badge-hero-card/badge-hero-card';
 import { Button } from '../../ui/button/button';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface BadgeInfoDialogData {
   badges: BadgeItem[];
@@ -19,7 +22,8 @@ export interface BadgeInfoDialogResult {
 
 @Component({
   selector: 'app-badge-info-dialog',
-  imports: [BadgeHeroCard, Button, DialogShell],
+  imports: [BadgeHeroCard, Button, Dialog, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './badge-info-dialog.html',
 })
 export class BadgeInfoDialog {

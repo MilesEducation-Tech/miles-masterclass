@@ -59,10 +59,15 @@
         and press Start — the report builds itself from your conversation.
       </p>
       <a [routerLink]="cataloguePath" class="mt-8 inline-block">
-        <app-button variant="primary" class="gap-2 rounded-xl bg-accent px-6 hover:bg-accent/90">
+        <button
+          app-button
+          type="button"
+          class="gap-2 rounded-xl bg-accent px-6 hover:bg-accent/90"
+          variant="primary"
+        >
           Choose a scenario
           <ng-icon name="lucideArrowRight" class="text-base" aria-hidden="true" />
-        </app-button>
+        </button>
       </a>
     </div>
   </section>
@@ -486,15 +491,20 @@
       <!-- actions -->
       <div class="mt-8 flex flex-wrap gap-3">
         <a [routerLink]="tryAgainPath()">
-          <app-button variant="primary" class="gap-2 bg-accent hover:bg-accent/90">
+          <button
+            app-button
+            type="button"
+            class="gap-2 bg-accent hover:bg-accent/90"
+            variant="primary"
+          >
             <ng-icon name="lucideRotateCcw" class="text-base" aria-hidden="true" /> Try again
-          </app-button>
+          </button>
         </a>
         <a [routerLink]="cataloguePath">
-          <app-button variant="outline" class="gap-2"
-            >Choose another scenario
-            <ng-icon name="lucideArrowRight" class="text-base" aria-hidden="true"
-          /></app-button>
+          <button app-button type="button" class="gap-2" variant="outline">
+            Choose another scenario
+            <ng-icon name="lucideArrowRight" class="text-base" aria-hidden="true" />
+          </button>
         </a>
       </div>
     }

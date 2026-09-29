@@ -6,7 +6,7 @@ import { of } from 'rxjs';
 import { CopilotWorkflow } from '@core/models/ai-lab.model';
 import { AiLabSubmission } from '@core/services/ai-lab-submission/ai-lab-submission';
 import { environment } from '@env/environment';
-import { provideMockDialogRef, stubDialogShell } from '@testing/mocks/dialog-ref.mock';
+import { provideMockDialogRef, stubDialog } from '@testing/mocks/dialog-ref.mock';
 
 import { AiLabAgentDialog } from './ai-lab-agent-dialog';
 
@@ -31,7 +31,7 @@ describe('AiLabAgentDialog workflow picker', () => {
     // Read once at construction, so it has to be on before the component exists.
     environment.AI_LABS.assessmentEnabled = true;
     submit.mockClear();
-    stubDialogShell(AiLabAgentDialog);
+    stubDialog(AiLabAgentDialog);
     await TestBed.configureTestingModule({
       imports: [AiLabAgentDialog],
       providers: [

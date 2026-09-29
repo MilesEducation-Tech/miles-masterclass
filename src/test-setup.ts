@@ -1,11 +1,12 @@
 import { beforeEach } from 'vitest';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TOAST_COMPONENT } from '@core/services/notification/notification';
 import {
   CART_DRAWER_DIALOG,
   SUBSCRIPTION_DIALOG,
 } from '@core/services/dialog/feature-dialog-tokens';
-import { ToastComponent } from '@shared/ui/toast/toast';
+import { Toast } from '@shared/ui/toast/toast';
 
 /**
  * Global unit-test setup, wired via `setupFiles` on the `test` target in
@@ -101,26 +102,24 @@ globalThis.fetch = (input: RequestInfo | URL) => {
  * real path. `configureTestingModule` merges across calls, so suites that
  * configure their own module still get this.
  */
+/**
+ * Stands in for the cart drawer and the subscription dialog. `Utils` and
+ * `EngagementDialog` inject their tokens, so every suite needs them bound; but
+ * binding the real components here made this setup file a compilation root for
+ * the entire payment feature (their templates import `CartItem`,
+ * `PlanSelectionCard` and, through `PaymentFacade`, every other payment dialog)
+ * on every `ng test` run. No spec asserts on either dialog's content — one that
+ * does should bind the real component itself.
+ */
+@Component({ template: '' })
+class FeatureDialogStub {}
+
 beforeEach(() => {
   TestBed.configureTestingModule({
     providers: [
-      { provide: TOAST_COMPONENT, useValue: ToastComponent },
-      // The loader is only invoked when something actually opens the drawer, so
-      // binding the real one here costs nothing at setup and keeps the path faithful.
-      {
-        provide: CART_DRAWER_DIALOG,
-        useValue: () =>
-          import('@features/payment/dialogs/cart-drawer-dialog/cart-drawer-dialog').then(
-            (m) => m.CartDrawerDialog,
-          ),
-      },
-      {
-        provide: SUBSCRIPTION_DIALOG,
-        useValue: () =>
-          import('@features/payment/dialogs/subscription-dialog/subscription-dialog').then(
-            (m) => m.SubscriptionDialog,
-          ),
-      },
+      { provide: TOAST_COMPONENT, useValue: Toast },
+      { provide: CART_DRAWER_DIALOG, useValue: () => Promise.resolve(FeatureDialogStub) },
+      { provide: SUBSCRIPTION_DIALOG, useValue: () => Promise.resolve(FeatureDialogStub) },
     ],
   });
 });

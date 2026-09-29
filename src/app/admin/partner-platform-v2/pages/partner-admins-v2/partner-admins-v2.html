@@ -7,7 +7,9 @@
         capabilities decide what they can do.
       </p>
     </div>
-    <app-button variant="primary" (clicked)="openCreate()">Create partner admin</app-button>
+    <button app-button type="button" variant="primary" (click)="openCreate()">
+      Create partner admin
+    </button>
   </header>
 
   @if (facade.partnerAdminsError()) {

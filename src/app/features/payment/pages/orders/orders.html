@@ -13,10 +13,17 @@
         <span class="bg-muted text-white text-sm font-medium px-2.5 py-0.5 rounded-md">
           {{ ordersCount() }}
         </span>
-        <app-button variant="default" size="sm" class="ml-auto" (clicked)="openStripeDashboard()">
+        <button
+          app-button
+          type="button"
+          class="ml-auto"
+          variant="default"
+          size="sm"
+          (click)="openStripeDashboard()"
+        >
           <ng-icon name="matReceiptLongOutline" size="18" class="mr-1" />
           Access Stripe Dashboard
-        </app-button>
+        </button>
       </div>
       <!-- <p class="text-xl text-white font-semibold">
         All Orders<span class="bg-muted text-white text-sm font-medium px-2.5 py-0.5 rounded-md">
@@ -74,7 +81,9 @@
                    the menus that are already instantiated, so indexing it by row
                    left every row but the first with no menu at all. -->
               <div class="ml-auto relative">
-                <app-button
+                <button
+                  app-button
+                  type="button"
                   [ngpMenuTrigger]="orderMenu"
                   ngpMenuTriggerPlacement="bottom-end"
                   variant="outline"
@@ -82,7 +91,7 @@
                 >
                   <ng-icon name="matMoreVertOutline" size="18" class="mr-1" />
                   Actions
-                </app-button>
+                </button>
 
                 <!-- Portalled and positioned by the primitive, so the absolute
                      positioning and the visible() toggle are gone. -->
@@ -92,53 +101,61 @@
                     class="z-30 rounded-lg border border-border bg-[#1C2A37] shadow-xl py-1 flex flex-col"
                   >
                     <!-- Payment Confirmation - always visible -->
-                    <app-button
+                    <button
+                      app-button
+                      type="button"
+                      class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
                       ngpMenuItem
                       variant="ghost"
-                      class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
-                      (clicked)="paymentConfirmation(order.id, order.payment_status)"
+                      (click)="paymentConfirmation(order.id, order.payment_status)"
                     >
                       <ng-icon name="matFileDownloadOutline" size="18" />
                       Payment Confirmation
-                    </app-button>
+                    </button>
 
                     <!-- Stripe Receipt - only for stripe orders -->
                     @if (orderActionsMap().get(order.id)?.hasStripeReceipt) {
-                      <app-button
+                      <button
+                        app-button
+                        type="button"
+                        class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
                         ngpMenuItem
                         variant="ghost"
-                        class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
-                        (clicked)="downloadStripeReceipt(order.id)"
+                        (click)="downloadStripeReceipt(order.id)"
                       >
                         <ng-icon name="matReceiptLongOutline" size="18" />
                         Stripe Receipt
-                      </app-button>
+                      </button>
                     }
 
                     <!-- Cancel Auto Renewal - stripe subscription with Active/ReSubscribe status -->
                     @if (orderActionsMap().get(order.id)?.showCancelAutoRenewal) {
-                      <app-button
+                      <button
+                        app-button
+                        type="button"
+                        class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
                         ngpMenuItem
                         variant="ghost"
-                        class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
-                        (clicked)="cancelAutoRenewal(order.id)"
+                        (click)="cancelAutoRenewal(order.id)"
                       >
                         <ng-icon name="matBlockOutline" size="18" />
                         Cancel Auto Renewal
-                      </app-button>
+                      </button>
                     }
 
                     <!-- Reactivate Auto Renewal - stripe subscription with Deactivate status -->
                     @if (orderActionsMap().get(order.id)?.showReactivateAutoRenewal) {
-                      <app-button
+                      <button
+                        app-button
+                        type="button"
+                        class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
                         ngpMenuItem
                         variant="ghost"
-                        class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
-                        (clicked)="reactivateAutoRenewal(order.id)"
+                        (click)="reactivateAutoRenewal(order.id)"
                       >
                         <ng-icon name="matAutorenewOutline" size="18" />
                         Reactivate Auto Renewal
-                      </app-button>
+                      </button>
                     }
                   </div>
                 </ng-template>

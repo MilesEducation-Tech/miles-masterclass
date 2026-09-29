@@ -18,16 +18,19 @@ import {
   minLength,
   maxLength,
 } from '@angular/forms/signals';
-import { Forms } from '@shared/ui/forms/forms';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Button } from '@shared/ui/button/button';
-import { AriaAutocomplete } from '@shared/ui/aria/aria-autocomplete/aria-autocomplete';
+
 import { BillingAddressPayload, UserAddress } from '@core/models/payment.model';
 import { Address } from '../../components/address/address';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel, NgpDescription } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Combobox } from '@shared/ui/combobox/combobox';
 
 @Component({
   selector: 'app-billing',
-  imports: [Forms, AriaInput, Button, AriaAutocomplete, AngularFormField, Address],
+  imports: [Button, AngularFormField, Address, Field, NgpLabel, NgpDescription, Input, Combobox],
   templateUrl: './billing.html',
   host: {
     class: 'space-y-4 flex flex-col',

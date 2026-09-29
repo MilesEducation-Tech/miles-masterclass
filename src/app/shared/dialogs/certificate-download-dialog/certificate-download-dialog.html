@@ -1,4 +1,4 @@
-<app-dialog-shell maxWidth="100%" ariaLabel="Download certificate">
+<app-dialog ariaLabel="Download certificate" panelClass="p-0 max-w-full">
   <div
     class="bg-[#1C1F26] text-white rounded-xl overflow-hidden w-full max-w-2xl max-sm:w-[90vw] border border-gray-800 shadow-2xl"
   >
@@ -35,15 +35,17 @@
             </p>
           </div>
           <div>
-            <app-button
-              variant="default"
+            <button
+              app-button
+              type="button"
               class="flex items-center justify-center rounded-lg"
+              variant="default"
               aria-label="Download NASBA certificate"
               [disabled]="downloadingNasba()"
-              (clicked)="download('nasba')"
+              (click)="download('nasba')"
             >
               <ng-icon name="phosphorDownloadSimpleFill" size="1.2rem"></ng-icon>
-            </app-button>
+            </button>
           </div>
         </div>
       }
@@ -65,15 +67,17 @@
             </p>
           </div>
           <div>
-            <app-button
-              variant="default"
+            <button
+              app-button
+              type="button"
               class="flex items-center justify-center rounded-lg"
+              variant="default"
               aria-label="Download Miles certificate"
               [disabled]="downloadingMiles()"
-              (clicked)="download('miles')"
+              (click)="download('miles')"
             >
               <ng-icon name="phosphorDownloadSimpleFill" size="1.2rem"></ng-icon>
-            </app-button>
+            </button>
           </div>
         </div>
       }
@@ -112,15 +116,17 @@
             </p>
           </div>
           <div>
-            <app-button
-              variant="default"
+            <button
+              app-button
+              type="button"
               class="flex items-center justify-center rounded-lg"
+              variant="default"
               aria-label="Share badge"
               [disabled]="sharing()"
-              (clicked)="share()"
+              (click)="share()"
             >
               <ng-icon name="phosphorShareFatFill" size="1.2rem"></ng-icon>
-            </app-button>
+            </button>
           </div>
         </div>
       }
@@ -128,13 +134,15 @@
 
     <!-- Footer -->
     <div class="p-6 pt-2 flex justify-center">
-      <app-button
-        variant="secondary"
+      <button
+        app-button
+        type="button"
         class="w-full max-w-[200px] bg-white text-black hover:bg-gray-200 font-semibold rounded-lg"
-        (clicked)="close()"
+        variant="secondary"
+        (click)="close()"
       >
         Close
-      </app-button>
+      </button>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

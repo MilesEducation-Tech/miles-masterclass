@@ -1,4 +1,4 @@
-<app-dialog-shell maxWidth="560px" ariaLabel="Create partner admin">
+<app-dialog ariaLabel="Create partner admin" panelClass="p-0 max-w-[560px]">
   <div
     class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] md:w-[560px] mx-auto overflow-hidden relative rounded-xl"
   >
@@ -12,7 +12,18 @@
           then registers the Django partner admin with its scope and capabilities.
         </p>
       </div>
-      <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        size="sm"
+        aria-label="Close dialog"
+        variant="ghost"
+        size="icon"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <form
@@ -20,23 +31,23 @@
       class="px-5 py-5 max-h-[80svh] overflow-y-auto flex flex-col gap-4"
       (submit)="$event.preventDefault(); submit()"
     >
-      <app-aria-select
-        id="cpa-source"
-        label="Admin login"
-        [required]="true"
-        [options]="sourceOptions"
-        [(value)]="source"
-      />
+      <app-field>
+        <label ngpLabel for="cpa-source">Admin login</label>
+
+        <app-select id="cpa-source" [options]="sourceOptions" [(value)]="source" />
+      </app-field>
 
       @if (isExisting()) {
-        <app-aria-select
-          id="cpa-admin-user"
-          label="Existing login"
-          placeholder="Select a Supabase login"
-          [required]="true"
-          [options]="adminUserOptions()"
-          [(value)]="adminUserId"
-        />
+        <app-field>
+          <label ngpLabel for="cpa-admin-user">Existing login</label>
+
+          <app-select
+            id="cpa-admin-user"
+            placeholder="Select a Supabase login"
+            [options]="adminUserOptions()"
+            [(value)]="adminUserId"
+          />
+        </app-field>
         @if (adminUsersError()) {
           <p class="-mt-3 text-xs text-danger-foreground" role="alert">
             {{ adminUsersError() }}
@@ -56,56 +67,79 @@
         }
       } @else {
         <div class="grid gap-4 md:grid-cols-2">
-          <app-aria-input
-            id="cpa-email"
-            type="email"
-            label="Email"
-            [required]="true"
-            [(value)]="email"
-          />
-          <app-aria-input id="cpa-name" type="text" label="Full name" [(value)]="fullName" />
+          <app-field>
+            <label ngpLabel for="cpa-email">Email</label>
+
+            <input
+              app-input
+              id="cpa-email"
+              type="email"
+              [required]="true"
+              [value]="email()"
+              (input)="email.set($any($event.target).value)"
+            />
+          </app-field>
+          <app-field>
+            <label ngpLabel for="cpa-name">Full name</label>
+
+            <input
+              app-input
+              id="cpa-name"
+              type="text"
+              [value]="fullName()"
+              (input)="fullName.set($any($event.target).value)"
+            />
+          </app-field>
         </div>
         @if (emailInvalid()) {
           <p class="-mt-3 text-xs text-danger-foreground" role="alert">Enter a valid email.</p>
         }
       }
 
-      <app-aria-select
-        id="cpa-role"
-        label="Django role"
-        [required]="true"
-        [options]="roleOptions"
-        [(value)]="role"
-      />
+      <app-field>
+        <label ngpLabel for="cpa-role">Django role</label>
+
+        <app-select id="cpa-role" [options]="roleOptions" [(value)]="role" />
+      </app-field>
 
       @switch (role()) {
         @case ('network') {
-          <app-aria-select
-            id="cpa-network"
-            label="Network"
-            placeholder="Select a network"
-            [required]="true"
-            [options]="networkOptions()"
-            [(value)]="networkId"
-          />
+          <app-field>
+            <label ngpLabel for="cpa-network">Network</label>
+
+            <app-select
+              id="cpa-network"
+              placeholder="Select a network"
+              [options]="networkOptions()"
+              [(value)]="networkId"
+            />
+          </app-field>
         }
         @case ('firm') {
-          <app-aria-select
-            id="cpa-firm"
-            label="Firm"
-            placeholder="Select a firm"
-            [required]="true"
-            [options]="firmOptions()"
-            [(value)]="firmId"
-          />
-          <app-aria-input
-            id="cpa-full-panel"
-            type="checkbox"
-            label="Seat Tracker access"
-            description="Off: Users page only (sub-company admin). On: Seat Tracker + Users, e.g. a standalone firm's admin."
-            [value]="fullPanel()"
-            (valueChange)="fullPanel.set($any($event) === true)"
-          />
+          <app-field>
+            <label ngpLabel for="cpa-firm">Firm</label>
+
+            <app-select
+              id="cpa-firm"
+              placeholder="Select a firm"
+              [options]="firmOptions()"
+              [(value)]="firmId"
+            />
+          </app-field>
+          <app-field class="flex-row items-start gap-3">
+            <app-checkbox
+              id="cpa-full-panel"
+              [checked]="fullPanel()"
+              (checkedChange)="fullPanel.set($event)"
+            />
+            <div class="flex flex-col gap-0.5">
+              <span ngpLabel>Seat Tracker access</span>
+              <p ngpDescription>
+                Off: Users page only (sub-company admin). On: Seat Tracker + Users, e.g. a
+                standalone firm's admin.
+              </p>
+            </div>
+          </app-field>
         }
         @case ('super') {
           <p class="text-xs text-white/60">
@@ -121,26 +155,32 @@
           <p class="text-xs text-white/50">
             Pre-set for a {{ role() }} admin; each one gates an action in the panel.
           </p>
-          <app-checkbox-list
-            [options]="capabilityOptions"
-            [selected]="selectedCapabilities()"
-            (selectionChange)="onCapabilitiesChange($event)"
-          />
+          <app-listbox
+            mode="multiple"
+            [value]="selectedCapabilities()"
+            (valueChange)="onCapabilitiesChange($event)"
+          >
+            @for (option of capabilityOptions; track option.value) {
+              <app-listbox-option [value]="option.value" [disabled]="option.disabled ?? false">{{
+                option.label
+              }}</app-listbox-option>
+            }
+          </app-listbox>
         </div>
       }
 
       <div class="flex items-center justify-end gap-3 pt-2">
-        <app-button type="button" variant="outline" class="text-white" (clicked)="close()">
+        <button app-button class="text-white" type="button" variant="outline" (click)="close()">
           Cancel
-        </app-button>
-        <app-button type="submit" variant="primary" [disabled]="!canSubmit()">
+        </button>
+        <button app-button type="submit" variant="primary" [disabled]="!canSubmit()">
           @if (submitting()) {
             {{ isExisting() ? 'Assigning…' : 'Creating…' }}
           } @else {
             {{ isExisting() ? 'Assign partner admin' : 'Create partner admin' }}
           }
-        </app-button>
+        </button>
       </div>
     </form>
   </div>
-</app-dialog-shell>
+</app-dialog>

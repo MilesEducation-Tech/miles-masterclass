@@ -2,16 +2,22 @@ import { Component, DestroyRef, computed, effect, inject, signal, untracked } fr
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField as AngularFormField, disabled, form, validate } from '@angular/forms/signals';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { JobSectors } from '@core/services/job-sectors/job-sectors';
 import { PROFILE_ROUTES } from '@core/models/profile.model';
 import { RouteResponse } from '@core/models/http.model';
-import { AriaAutocomplete } from '../../ui/aria/aria-autocomplete/aria-autocomplete';
+
 import { Button } from '../../ui/button/button';
-import { Forms } from '../../ui/forms/forms';
+
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Combobox } from '@shared/ui/combobox/combobox';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface ProfileCompletionDialogResult {
   saved: boolean;
@@ -26,7 +32,8 @@ interface ProfileCompletionFormState {
 
 @Component({
   selector: 'app-profile-completion-dialog',
-  imports: [AriaAutocomplete, Button, DialogShell, Forms, AngularFormField],
+  imports: [Button, AngularFormField, Dialog, Field, NgpLabel, Combobox, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './profile-completion-dialog.html',
   host: { class: 'block' },
 })

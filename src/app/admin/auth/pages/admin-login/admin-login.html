@@ -37,21 +37,31 @@
         </div>
 
         <form (submit)="onSubmit($event)" class="flex flex-col space-y-4" novalidate>
-          <app-aria-input
-            id="admin-email"
-            type="email"
-            label="Email"
-            [required]="true"
-            [(value)]="email"
-          />
+          <app-field>
+            <label ngpLabel for="admin-email">Email</label>
 
-          <app-aria-input
-            id="admin-password"
-            type="password"
-            label="Password"
-            [required]="true"
-            [(value)]="password"
-          />
+            <input
+              app-input
+              id="admin-email"
+              type="email"
+              [required]="true"
+              [value]="email()"
+              (input)="email.set($any($event.target).value)"
+            />
+          </app-field>
+
+          <app-field>
+            <label ngpLabel for="admin-password">Password</label>
+
+            <input
+              app-input
+              id="admin-password"
+              type="password"
+              [required]="true"
+              [value]="password()"
+              (input)="password.set($any($event.target).value)"
+            />
+          </app-field>
 
           <a
             class="text-sm text-white/70 hover:text-white w-max"
@@ -73,22 +83,29 @@
             </p>
           }
 
-          <app-button type="submit" variant="default" class="w-full" [disabled]="!canSubmit()">
+          <button
+            app-button
+            class="w-full"
+            type="submit"
+            variant="default"
+            [disabled]="!canSubmit()"
+          >
             @if (auth.isLoading()) {
               <app-spinner size="sm" />
             }
             {{ auth.isLoading() ? 'Signing in…' : 'Sign in' }}
-          </app-button>
+          </button>
 
-          <app-button
+          <button
+            app-button
+            class="w-full text-white"
             type="button"
             variant="outline"
-            class="w-full text-white"
             [disabled]="auth.isLoading() || !emailValid()"
-            (clicked)="onMagicLink()"
+            (click)="onMagicLink()"
           >
             Email me a magic link
-          </app-button>
+          </button>
         </form>
       </div>
     </div>

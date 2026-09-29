@@ -45,7 +45,9 @@
           </div>
           @if (!!!!courseDetails.cpe_mode_details) {
             <div class="flex items-center space-x-4">
-              <app-button
+              <button
+                app-button
+                type="button"
                 variant="ghost"
                 [class]="
                   cn(
@@ -55,17 +57,19 @@
                       : 'bg-accent/20 text-accent border border-accent'
                   )
                 "
-                >{{
-                  !!courseDetails.cpe_mode_details.cpe_mode ? 'CPE Mode' : 'Preview Mode'
-                }}</app-button
               >
+                {{ !!courseDetails.cpe_mode_details.cpe_mode ? 'CPE Mode' : 'Preview Mode' }}
+              </button>
               @if (masterclass.courseDetails()?.user_assessment_details?.status !== 'Exam_Passed') {
-                <app-button
-                  variant="secondary"
+                <button
+                  app-button
+                  type="button"
                   class="rounded-full overflow-hidden"
-                  (clicked)="masterclass.toggleCpeMode(!courseDetails.cpe_mode_details.cpe_mode)"
-                  ><ng-icon name="matRestartAltRound" aria-hidden="true" size="24"
-                /></app-button>
+                  variant="secondary"
+                  (click)="masterclass.toggleCpeMode(!courseDetails.cpe_mode_details.cpe_mode)"
+                >
+                  <ng-icon name="matRestartAltRound" aria-hidden="true" size="24" />
+                </button>
               }
             </div>
           }
@@ -134,7 +138,6 @@
               [value]="masterclass.currentProgress()"
               variant="success"
               size="sm"
-              label="none"
               ariaLabel="Course completion progress"
             />
             <div class="flex w-full justify-end">
@@ -157,33 +160,43 @@
             !masterclass.courseDetails()?.user_feedback_details?.user_feedback_submitted &&
             masterclass.courseDetails()?.user_assessment_details?.status === 'Exam_Passed'
           ) {
-            <app-button
-              variant="ghost"
+            <button
+              app-button
+              type="button"
               class="text-black rounded-lg bg-amber-400"
-              (clicked)="masterclass.submitFeedback()"
-              >Submit Feedback
-            </app-button>
+              variant="ghost"
+              (click)="masterclass.submitFeedback()"
+            >
+              Submit Feedback
+            </button>
           } @else if (
             masterclass.courseDetails()?.cpe_mode_details?.cpe_mode &&
             masterclass.courseDetails()?.all_classes_completed
           ) {
-            <app-button
-              variant="default"
+            <button
+              app-button
+              type="button"
               class="rounded-lg"
-              (clicked)="
-                masterclass.startFinalAssessment(courseId()!, courseTitle()!, 'masterclass')
-              "
-              >{{
+              variant="default"
+              (click)="masterclass.startFinalAssessment(courseId()!, courseTitle()!, 'masterclass')"
+            >
+              {{
                 masterclass.courseDetails()?.user_assessment_details?.status === 'Retake'
                   ? 'Retake'
                   : 'Take'
               }}
               Final Assessment
-            </app-button>
+            </button>
           } @else {
-            <app-button variant="default" class="rounded-lg" (clicked)="masterclass.launchCourse()"
-              >Watch Now
-            </app-button>
+            <button
+              app-button
+              type="button"
+              class="rounded-lg"
+              variant="default"
+              (click)="masterclass.launchCourse()"
+            >
+              Watch Now
+            </button>
           }
         </div>
         <div class="flex space-x-4">
@@ -198,39 +211,51 @@
           }
         </div>
         <div class="flex space-x-4">
-          <app-button
-            variant="ghost"
+          <button
+            app-button
+            type="button"
             class="text-white rounded-lg flex gap-1 h-auto flex-col justify-end items-center p-1"
-            (clicked)="openVideoDialog('trailer')"
-            ><ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" /> <span>Trailer</span>
-          </app-button>
-          <app-button
             variant="ghost"
+            (click)="openVideoDialog('trailer')"
+          >
+            <ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" /> <span>Trailer</span>
+          </button>
+          <button
+            app-button
+            type="button"
             class="text-white rounded-lg flex gap-1 h-auto flex-col justify-end items-center p-1"
-            (clicked)="openVideoDialog('sample')"
-            ><ng-icon name="phosphorCards" size="24" aria-hidden="true" />
+            variant="ghost"
+            (click)="openVideoDialog('sample')"
+          >
+            <ng-icon name="phosphorCards" size="24" aria-hidden="true" />
             <span>Sample</span>
-          </app-button>
-          <app-button
-            (clicked)="toggleBookmark()"
-            variant="ghost"
+          </button>
+          <button
+            app-button
+            type="button"
             class="text-white rounded-lg flex gap-1 h-auto flex-col justify-end items-center p-1"
-            ><ng-icon
+            variant="ghost"
+            (click)="toggleBookmark()"
+          >
+            <ng-icon
               [name]="courseDetails.added_bookmark ? 'matBookmarkRound' : 'matBookmarkBorderRound'"
               size="24"
               aria-hidden="true"
             />
             <span>Bookmark</span>
-          </app-button>
+          </button>
           @if (
             !courseDetails.active_plan &&
             (courseDetails.is_subscription_excluded || courseDetails.can_purchase_individually)
           ) {
-            <app-button
-              (clicked)="addToCart(courseDetails.id, courseDetails.is_added_to_cart)"
-              variant="ghost"
+            <button
+              app-button
+              type="button"
               class="text-white rounded-lg flex gap-1 h-auto flex-col justify-end items-center p-1"
-              ><ng-icon
+              variant="ghost"
+              (click)="addToCart(courseDetails.id, courseDetails.is_added_to_cart)"
+            >
+              <ng-icon
                 [name]="
                   courseDetails.is_added_to_cart
                     ? 'matShoppingCartRound'
@@ -240,23 +265,29 @@
                 aria-hidden="true"
               />
               <span>Add To Cart</span>
-            </app-button>
+            </button>
           }
-          <app-button
-            variant="ghost"
+          <button
+            app-button
+            type="button"
             class="text-white rounded-lg flex gap-1 h-auto flex-col justify-end items-center p-1"
-            (clicked)="masterclass.openShareDialog()"
-            ><ng-icon name="phosphorShareFatFill" size="24" aria-hidden="true" />
+            variant="ghost"
+            (click)="masterclass.openShareDialog()"
+          >
+            <ng-icon name="phosphorShareFatFill" size="24" aria-hidden="true" />
             <span>Share</span>
-          </app-button>
-          <app-button
+          </button>
+          <button
+            app-button
+            type="button"
+            class="text-white rounded-lg flex gap-1 h-auto flex-col justify-end items-center p-1"
             variant="ghost"
             [disabled]="!!!courseDetails.user_feedback_details.user_feedback_submitted"
-            class="text-white rounded-lg flex gap-1 h-auto flex-col justify-end items-center p-1"
-            (clicked)="masterclass.openCertificateDownloadDialog()"
-            ><ng-icon name="phosphorDownloadSimpleFill" size="24" aria-hidden="true" />
+            (click)="masterclass.openCertificateDownloadDialog()"
+          >
+            <ng-icon name="phosphorDownloadSimpleFill" size="24" aria-hidden="true" />
             <span>Download</span>
-          </app-button>
+          </button>
         </div>
       </div>
     </div>

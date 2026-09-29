@@ -1,13 +1,6 @@
 @if (loading.isLoading()) {
   <div class="fixed top-0 left-0 right-0 z-9999">
-    <app-progress
-      [value]="100"
-      variant="default"
-      size="xs"
-      [striped]="true"
-      [indeterminate]="true"
-      [animated]="true"
-    />
+    <app-progress [value]="null" variant="primary" size="sm" />
   </div>
 }
 <router-outlet />

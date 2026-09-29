@@ -1,7 +1,6 @@
-<app-dialog-shell
-  maxWidth="95vw"
+<app-dialog
   ariaLabel="Miles AI Labs is here"
-  panelClass="rounded-[24px] overflow-hidden"
+  panelClass="p-0 max-w-[95vw] rounded-[24px] overflow-hidden"
 >
   <div
     class="relative w-[95vw] max-w-3xl overflow-hidden rounded-[24px] border border-[#8b5cf6] bg-[#04101c] shadow-[0px_24px_48px_-12px_rgba(0,0,0,0.4)] backdrop-blur-[12px]"
@@ -161,22 +160,33 @@
       </div>
 
       <div class="flex w-full max-w-[348px] flex-col items-center gap-[14px]">
-        <app-button class="h-[52px] w-full rounded-[14px] bg-linear-to-r" (clicked)="exploreLab()">
+        <button
+          app-button
+          type="button"
+          class="h-[52px] w-full rounded-[14px] bg-linear-to-r"
+          (click)="exploreLab()"
+        >
           Explore the Lab
-        </app-button>
+        </button>
 
-        <!-- <app-button
-        variant="ghost"
-        class="h-auto py-[13px] text-[13px] leading-[normal] font-semibold text-[#94a3b8] opacity-90 hover:opacity-100"
-        (clicked)="dialogRef.close()"
-      >
+        <!-- <button app-button type="button" class="h-auto py-[13px] text-[13px] leading-[normal] font-semibold text-[#94a3b8] opacity-90 hover:opacity-100" variant="ghost" (click)="dialogRef.close()">
         Maybe Later
-      </app-button> -->
+      </button> -->
       </div>
     </div>
 
     <div class="absolute right-[15px] top-[15px]">
-      <app-button variant="close" (clicked)="dialogRef.close()" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="dialogRef.close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

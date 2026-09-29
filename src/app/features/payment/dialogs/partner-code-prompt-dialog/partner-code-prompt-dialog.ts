@@ -2,11 +2,16 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormField as AngularFormField, disabled, form, required } from '@angular/forms/signals';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { PartnerCode } from '@core/services/partner-code/partner-code';
 import { Button } from '@shared/ui/button/button';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
-import { Forms } from '@shared/ui/forms/forms';
+
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 /**
  * Result emitted on dialog close:
@@ -34,7 +39,8 @@ export interface PartnerCodePromptData {
 
 @Component({
   selector: 'app-partner-code-prompt-dialog',
-  imports: [Button, AriaInput, DialogShell, Forms, AngularFormField],
+  imports: [Button, AngularFormField, Dialog, Field, NgpLabel, Input, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './partner-code-prompt-dialog.html',
   host: { class: 'block' },
 })

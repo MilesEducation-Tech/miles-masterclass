@@ -1,6 +1,6 @@
-<app-dialog-shell
-  maxWidth="560px"
+<app-dialog
   [ariaLabel]="data?.firm ? 'Edit ' + data.firm.name : 'Create firm'"
+  panelClass="p-0 max-w-[560px]"
 >
   <div
     class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] md:w-[560px] mx-auto overflow-hidden relative rounded-xl"
@@ -18,40 +18,59 @@
           }}
         </p>
       </div>
-      <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        size="sm"
+        aria-label="Close dialog"
+        variant="ghost"
+        size="icon"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <div class="px-5 py-5 max-h-[80svh] overflow-y-auto">
-      <app-forms type="signal" class="space-y-0 flex flex-col gap-4" (submitted)="submit()">
-        <app-aria-input id="cf-name" label="Firm name" [formField]="form.name" />
-        <app-aria-select
-          id="cf-network"
-          label="Network"
-          [options]="networkOptions()"
-          [formField]="form.network_id"
-        />
+      <form class="space-y-0 flex flex-col gap-4" (submit)="$event.preventDefault(); submit()">
+        <app-field [errors]="form.name().errors()">
+          <label ngpLabel for="cf-name">Firm name</label>
+
+          <input app-input id="cf-name" type="text" [formField]="form.name" />
+        </app-field>
+        <app-field [errors]="form.network_id().errors()">
+          <label ngpLabel for="cf-network">Network</label>
+
+          <app-select id="cf-network" [options]="networkOptions()" [formField]="form.network_id" />
+        </app-field>
         @if (isEdit()) {
           <p class="-mt-1 text-xs text-fg-3">
             A firm's network can't be changed here — its seat pool follows it.
           </p>
         }
-        <app-aria-input
-          id="cf-domains"
-          label="Email domains (optional)"
-          placeholder="acme.com, acme.co.uk"
-          [formField]="form.email_domains"
-        />
+        <app-field [errors]="form.email_domains().errors()">
+          <label ngpLabel for="cf-domains">Email domains (optional)</label>
+
+          <input
+            app-input
+            id="cf-domains"
+            type="text"
+            placeholder="acme.com, acme.co.uk"
+            [formField]="form.email_domains"
+          />
+        </app-field>
         <p class="-mt-1 text-xs text-fg-3">
           Comma-separated. Gates who can redeem this firm's seats — leave blank to allow any email.
         </p>
 
         @if (isEdit()) {
-          <app-aria-input
-            id="cf-active"
-            type="checkbox"
-            label="Active"
-            [formField]="form.is_active"
-          />
+          <app-field class="flex-row items-start gap-3" [errors]="form.is_active().errors()">
+            <app-checkbox id="cf-active" [formField]="form.is_active" />
+            <div class="flex flex-col gap-0.5">
+              <span ngpLabel>Active</span>
+            </div>
+          </app-field>
         } @else {
           <!-- Optional first mint — any number of codes, each with a count + optional expiry -->
           <fieldset class="flex flex-col gap-2">
@@ -66,43 +85,48 @@
           </fieldset>
 
           <!-- Optional atomic admin -->
-          <app-aria-input
-            id="cf-create-admin"
-            type="checkbox"
-            label="Create the firm's admin login now"
-            [formField]="form.create_admin"
-          />
+          <app-field class="flex-row items-start gap-3" [errors]="form.create_admin().errors()">
+            <app-checkbox id="cf-create-admin" [formField]="form.create_admin" />
+            <div class="flex flex-col gap-0.5">
+              <span ngpLabel>Create the firm's admin login now</span>
+            </div>
+          </app-field>
           @if (createAdmin()) {
-            <app-aria-select
-              id="cf-admin-source"
-              label="Admin login"
-              [options]="adminSourceOptions"
-              [formField]="form.admin_source"
-            />
+            <app-field [errors]="form.admin_source().errors()">
+              <label ngpLabel for="cf-admin-source">Admin login</label>
+
+              <app-select
+                id="cf-admin-source"
+                [options]="adminSourceOptions"
+                [formField]="form.admin_source"
+              />
+            </app-field>
             @if (newAdmin()) {
-              <app-aria-input
-                id="cf-admin-name"
-                label="Admin full name"
-                [formField]="form.admin_name"
-              />
-              <app-aria-input
-                id="cf-admin-email"
-                type="email"
-                label="Admin email"
-                [formField]="form.admin_email"
-              />
+              <app-field [errors]="form.admin_name().errors()">
+                <label ngpLabel for="cf-admin-name">Admin full name</label>
+
+                <input app-input id="cf-admin-name" type="text" [formField]="form.admin_name" />
+              </app-field>
+              <app-field [errors]="form.admin_email().errors()">
+                <label ngpLabel for="cf-admin-email">Admin email</label>
+
+                <input app-input id="cf-admin-email" type="email" [formField]="form.admin_email" />
+              </app-field>
               <p class="-mt-1 text-xs text-fg-3">
                 Creates the login and registers it as this firm's admin in the same call, so a
                 failure never leaves the firm half set up.
               </p>
             } @else {
-              <app-aria-select
-                id="cf-admin-user"
-                label="Existing login"
-                placeholder="Select a Supabase login"
-                [options]="adminUserOptions()"
-                [formField]="form.admin_user_id"
-              />
+              <app-field [errors]="form.admin_user_id().errors()">
+                <label ngpLabel for="cf-admin-user">Existing login</label>
+
+                <app-select
+                  id="cf-admin-user"
+                  placeholder="Select a Supabase login"
+                  [options]="adminUserOptions()"
+                  [formField]="form.admin_user_id"
+                />
+              </app-field>
               @if (adminUsersError()) {
                 <p class="-mt-1 text-xs text-danger-foreground" role="alert">
                   {{ adminUsersError() }}
@@ -123,28 +147,36 @@
             }
             <div class="flex flex-col gap-1.5">
               <p class="text-xs uppercase tracking-wide text-fg-3">Admin capabilities</p>
-              <app-checkbox-list
-                [options]="capabilityOptions"
-                [selected]="adminCapabilities()"
-                (selectionChange)="onCapabilitiesChange($event)"
-              />
+              <app-listbox
+                mode="multiple"
+                [value]="adminCapabilities()"
+                (valueChange)="onCapabilitiesChange($event)"
+              >
+                @for (option of capabilityOptions; track option.value) {
+                  <app-listbox-option
+                    [value]="option.value"
+                    [disabled]="option.disabled ?? false"
+                    >{{ option.label }}</app-listbox-option
+                  >
+                }
+              </app-listbox>
             </div>
           }
         }
 
         <div class="flex items-center justify-end gap-3">
-          <app-button variant="outline" size="default" class="text-white" (clicked)="close()">
+          <button app-button type="button" class="text-white" variant="outline" (click)="close()">
             Cancel
-          </app-button>
-          <app-button variant="primary" size="default" type="submit" [disabled]="submitting()">
+          </button>
+          <button app-button variant="primary" type="submit" [disabled]="submitting()">
             @if (submitting()) {
               {{ isEdit() ? 'Saving…' : 'Creating…' }}
             } @else {
               {{ isEdit() ? 'Save changes' : 'Create firm' }}
             }
-          </app-button>
+          </button>
         </div>
-      </app-forms>
+      </form>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

@@ -22,7 +22,7 @@ interface LocationAutocompleteResponse {
 }
 
 /**
- * Debounced place predictions for an `<app-aria-autocomplete>`. Call from a
+ * Debounced place predictions for an `<app-combobox>`. Call from a
  * component field initializer (needs an injection context).
  *
  * Backed by our own `v2/locations/autocomplete/`, which proxies Google Places

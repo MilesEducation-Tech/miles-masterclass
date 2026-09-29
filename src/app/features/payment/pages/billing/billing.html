@@ -60,17 +60,19 @@
 }
 
 <div class="pt-4 border-t border-gray-800 flex">
-  <app-button
-    variant="ghost"
-    (clicked)="showForm() ? cancelEditing() : showForm.set(true)"
+  <button
+    app-button
+    type="button"
     class="w-auto text-action hover:bg-transparent"
+    variant="ghost"
+    (click)="showForm() ? cancelEditing() : showForm.set(true)"
   >
     {{
       showForm() && !editingAddressId()
         ? '- Cancel Adding Billing Address'
         : '+ Add new billing address'
     }}
-  </app-button>
+  </button>
 </div>
 
 @if (showForm()) {
@@ -78,88 +80,108 @@
     @if (editingAddressId()) {
       <p class="text-sm text-action font-medium mb-2">✏️ Editing address</p>
     }
-    <app-forms type="signal" class="space-y-4 flex flex-col rounded-lg" (submitted)="save()">
-      <app-aria-input id="name" label="Name" [formField]="billingForm.name" />
-      <app-aria-input id="email" label="Email" type="email" [formField]="billingForm.email_id" />
-      <app-aria-input
-        id="phone"
-        label="Phone Number"
-        type="tel"
-        [formField]="billingForm.phone_no"
-      />
+    <form class="space-y-4 flex flex-col rounded-lg" (submit)="$event.preventDefault(); save()">
+      <app-field [errors]="billingForm.name().errors()">
+        <label ngpLabel for="name">Name</label>
+
+        <input app-input id="name" type="text" [formField]="billingForm.name" />
+      </app-field>
+      <app-field [errors]="billingForm.email_id().errors()">
+        <label ngpLabel for="email">Email</label>
+
+        <input app-input id="email" type="email" [formField]="billingForm.email_id" />
+      </app-field>
+      <app-field [errors]="billingForm.phone_no().errors()">
+        <label ngpLabel for="phone">Phone Number</label>
+
+        <input app-input id="phone" type="tel" [formField]="billingForm.phone_no" />
+      </app-field>
 
       <!-- Standard two-line postal layout. The payload has no `address2`
            field, so line 2 maps onto `locality` — same meaning (street / area),
            no backend change. Line 2 and landmark stay optional, which is why
            only line 1 carries a `required` rule. -->
-      <app-aria-input
-        id="address1"
-        label="Address line 1"
-        hint="Flat / house no, floor, building"
-        [formField]="billingForm.address1"
-      />
+      <app-field [errors]="billingForm.address1().errors()">
+        <label ngpLabel for="address1">Address line 1</label>
+        <p ngpDescription>Flat / house no, floor, building</p>
+        <input app-input id="address1" type="text" [formField]="billingForm.address1" />
+      </app-field>
 
-      <app-aria-input
-        id="locality"
-        label="Address line 2 (optional)"
-        hint="Street, area or locality"
-        [formField]="billingForm.locality"
-      />
+      <app-field [errors]="billingForm.locality().errors()">
+        <label ngpLabel for="locality">Address line 2 (optional)</label>
+        <p ngpDescription>Street, area or locality</p>
+        <input app-input id="locality" type="text" [formField]="billingForm.locality" />
+      </app-field>
 
-      <app-aria-input
-        id="landmark"
-        label="Nearby landmark (optional)"
-        [formField]="billingForm.landmark"
-      />
+      <app-field [errors]="billingForm.landmark().errors()">
+        <label ngpLabel for="landmark">Nearby landmark (optional)</label>
+
+        <input app-input id="landmark" type="text" [formField]="billingForm.landmark" />
+      </app-field>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <app-aria-autocomplete
-          id="country"
-          label="Country"
-          [placeholder]="countryPlaceholder()"
-          [options]="countryOptions()"
-          [formField]="billingForm.country"
-        />
-        <app-aria-autocomplete
-          id="state"
-          label="State"
-          placeholder="Select State"
-          [options]="stateOptions()"
-          [formField]="billingForm.state"
-        />
+        <app-field [errors]="billingForm.country().errors()">
+          <label ngpLabel for="country">Country</label>
+
+          <app-combobox
+            id="country"
+            [placeholder]="countryPlaceholder()"
+            [options]="countryOptions()"
+            [formField]="billingForm.country"
+          />
+        </app-field>
+        <app-field [errors]="billingForm.state().errors()">
+          <label ngpLabel for="state">State</label>
+
+          <app-combobox
+            id="state"
+            placeholder="Select State"
+            [options]="stateOptions()"
+            [formField]="billingForm.state"
+          />
+        </app-field>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <app-aria-autocomplete
-          id="city"
-          label="City"
-          placeholder="Select City"
-          [options]="cityOptions()"
-          [formField]="billingForm.city"
-        />
-        <app-aria-input
-          id="postal_code"
-          label="Pin Code/ Zip code"
-          type="text"
-          [formField]="billingForm.zipcode"
-        />
+        <app-field [errors]="billingForm.city().errors()">
+          <label ngpLabel for="city">City</label>
+
+          <app-combobox
+            id="city"
+            placeholder="Select City"
+            [options]="cityOptions()"
+            [formField]="billingForm.city"
+          />
+        </app-field>
+        <app-field [errors]="billingForm.zipcode().errors()">
+          <label ngpLabel for="postal_code">Pin Code/ Zip code</label>
+
+          <input app-input id="postal_code" type="text" [formField]="billingForm.zipcode" />
+        </app-field>
       </div>
 
       <div class="flex gap-3 mt-4 w-full">
         @if (editingAddressId()) {
-          <app-button class="w-full" variant="destructive" (clicked)="cancelEditing()">
+          <button
+            app-button
+            type="button"
+            class="w-full"
+            variant="destructive"
+            (click)="cancelEditing()"
+          >
             Cancel
-          </app-button>
+          </button>
         }
-        <app-button
+        <button
+          app-button
           class="w-full"
           type="submit"
           variant="default"
           [disabled]="billingForm().invalid()"
         >
           Save Address
-        </app-button>
+        </button>
       </div>
-    </app-forms>
+    </form>
   </div>
 }

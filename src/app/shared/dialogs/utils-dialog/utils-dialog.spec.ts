@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NgpDialogRef } from 'ng-primitives/dialog';
 
 import { UtilsDialog, UtilsDialogData } from './utils-dialog';
-import { provideMockDialogRef, stubDialogShell } from '@testing/mocks/dialog-ref.mock';
+import { provideMockDialogRef, stubDialog } from '@testing/mocks/dialog-ref.mock';
 
 const DATA: UtilsDialogData = {
   title: 'Remove from cart',
@@ -19,7 +19,7 @@ describe('UtilsDialog', () => {
   let fixture: ComponentFixture<UtilsDialog>;
 
   beforeEach(async () => {
-    stubDialogShell(UtilsDialog);
+    stubDialog(UtilsDialog);
     await TestBed.configureTestingModule({
       imports: [UtilsDialog],
       providers: [provideMockDialogRef(DATA)],

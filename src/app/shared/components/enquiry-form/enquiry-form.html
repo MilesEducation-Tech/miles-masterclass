@@ -1,43 +1,65 @@
-<app-forms type="signal" class="space-y-4!" (submitted)="handleSubmit()">
+<form class="space-y-4!" (submit)="$event.preventDefault(); handleSubmit()">
   <div class="grid grid-cols-2 gap-4">
-    <app-aria-input
-      id="full_name"
-      label="Full Name"
-      placeholder="Enter your full name"
-      [formField]="enquiryForm.full_name"
-    />
-    <app-aria-input
-      id="email"
-      type="email"
-      label="Email"
-      placeholder="Enter your email"
-      [formField]="enquiryForm.email"
-    />
-    <app-aria-input
-      id="firm_name"
-      label="Firm Name"
-      placeholder="Enter your firm name"
-      [formField]="enquiryForm.firm_name"
-    />
-    <app-aria-input
-      id="job_role"
-      label="Job Role"
-      placeholder="Enter your job role"
-      [formField]="enquiryForm.job_role"
-    />
-    <app-aria-multiselect
-      id="help_type"
-      class="col-span-2"
-      label="How can we help you?"
-      [options]="helpTypeOptions"
-      [formField]="enquiryForm.help_type"
-    />
-    <app-aria-input
-      id="keep_updated"
-      type="checkbox"
-      [label]="keepUpdatedLabel()"
-      [formField]="enquiryForm.keep_updated"
-    />
+    <app-field [errors]="enquiryForm.full_name().errors()">
+      <label ngpLabel for="full_name">Full Name</label>
+
+      <input
+        app-input
+        id="full_name"
+        type="text"
+        placeholder="Enter your full name"
+        [formField]="enquiryForm.full_name"
+      />
+    </app-field>
+    <app-field [errors]="enquiryForm.email().errors()">
+      <label ngpLabel for="email">Email</label>
+
+      <input
+        app-input
+        id="email"
+        type="email"
+        placeholder="Enter your email"
+        [formField]="enquiryForm.email"
+      />
+    </app-field>
+    <app-field [errors]="enquiryForm.firm_name().errors()">
+      <label ngpLabel for="firm_name">Firm Name</label>
+
+      <input
+        app-input
+        id="firm_name"
+        type="text"
+        placeholder="Enter your firm name"
+        [formField]="enquiryForm.firm_name"
+      />
+    </app-field>
+    <app-field [errors]="enquiryForm.job_role().errors()">
+      <label ngpLabel for="job_role">Job Role</label>
+
+      <input
+        app-input
+        id="job_role"
+        type="text"
+        placeholder="Enter your job role"
+        [formField]="enquiryForm.job_role"
+      />
+    </app-field>
+    <app-field class="col-span-2" [errors]="enquiryForm.help_type().errors()">
+      <label ngpLabel for="help_type">How can we help you?</label>
+
+      <app-select
+        id="help_type"
+        [options]="helpTypeOptions"
+        [formField]="enquiryForm.help_type"
+        [multiple]="true"
+      />
+    </app-field>
+    <app-field class="flex-row items-start gap-3" [errors]="enquiryForm.keep_updated().errors()">
+      <app-checkbox id="keep_updated" [formField]="enquiryForm.keep_updated" />
+      <div class="flex flex-col gap-0.5">
+        <span ngpLabel>{{ keepUpdatedLabel() }}</span>
+      </div>
+    </app-field>
   </div>
   <p class="text-sm text-muted-foreground">
     Your information will be handled in accordance with our
@@ -50,7 +72,8 @@
     >.
   </p>
 
-  <app-button
+  <button
+    app-button
     class="w-full col-span-2"
     type="submit"
     variant="default"
@@ -60,5 +83,5 @@
       <app-spinner />
     }
     Submit
-  </app-button>
-</app-forms>
+  </button>
+</form>

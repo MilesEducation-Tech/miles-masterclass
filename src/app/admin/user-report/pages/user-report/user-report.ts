@@ -11,7 +11,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideDownload, lucideEye, lucideUsers } from '@ng-icons/lucide';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { NgpDialogManager } from 'ng-primitives/dialog';
@@ -26,10 +26,13 @@ import {
 import { UserReportFacade } from '@admin/user-report/services/user-report-facade';
 // Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { UserCourseDetailDialogData } from '@admin/user-report/dialogs/user-course-detail-dialog/user-course-detail-dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
 
 @Component({
   selector: 'app-user-report',
-  imports: [DatePipe, DecimalPipe, NgIcon, AriaInput, Button, Spinner],
+  imports: [DatePipe, DecimalPipe, NgIcon, Button, Spinner, Field, NgpLabel, Input],
   providers: [provideIcons({ lucideDownload, lucideEye, lucideUsers })],
   templateUrl: './user-report.html',
   host: { class: 'block w-full' },

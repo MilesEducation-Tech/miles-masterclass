@@ -59,13 +59,14 @@
               <td class="px-4 py-3 text-neutral-300">{{ row.enquiry_type }}</td>
               <td class="px-4 py-3">
                 @if (canWrite()) {
-                  <app-aria-select
-                    [id]="'lead-status-' + row.id"
-                    class="w-36"
-                    [options]="statusOptions"
-                    [value]="row.status"
-                    (valueChange)="onStatusChange(row.id, $any($event))"
-                  />
+                  <app-field class="w-36">
+                    <app-select
+                      [id]="'lead-status-' + row.id"
+                      [options]="statusOptions"
+                      [value]="row.status"
+                      (valueChange)="onStatusChange(row.id, $any($event))"
+                    />
+                  </app-field>
                 } @else {
                   <span
                     class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium capitalize"
@@ -85,24 +86,29 @@
                 <td></td>
                 <td colspan="8" class="px-4 py-3">
                   @if (canWrite()) {
-                    <app-aria-input
-                      #notes
-                      [id]="'lead-notes-' + row.id"
-                      type="textarea"
-                      label="Notes"
-                      placeholder="Internal notes — never shown to the lead"
-                      [rows]="3"
-                      [value]="row.notes"
-                    />
-                    <app-button
+                    <app-field>
+                      <label ngpLabel [for]="'lead-notes-' + row.id">Notes</label>
+
+                      <textarea
+                        app-textarea
+                        [id]="'lead-notes-' + row.id"
+                        placeholder="Internal notes — never shown to the lead"
+                        [value]="draft(row.id, row.notes)"
+                        [rows]="3"
+                        (input)="onNotesInput(row.id, $any($event.target).value)"
+                      ></textarea>
+                    </app-field>
+                    <button
+                      app-button
+                      type="button"
+                      class="mt-2 h-9 rounded-md border-white/15 bg-transparent w-32 text-xs text-white hover:bg-white/5"
                       variant="outline"
                       size="sm"
-                      class="mt-2 h-9 rounded-md border-white/15 bg-transparent w-32 text-xs text-white hover:bg-white/5"
-                      [disabled]="notes.value() === row.notes"
-                      (clicked)="onNotesSave(row.id, notes.value())"
+                      [disabled]="draft(row.id, row.notes) === (row.notes ?? '')"
+                      (click)="onNotesSave(row.id, draft(row.id, row.notes))"
                     >
                       Save notes
-                    </app-button>
+                    </button>
                   } @else {
                     <div class="text-[11px] uppercase tracking-wider mb-1 text-fg-3">Notes</div>
                     <p class="text-sm text-neutral-200 whitespace-pre-wrap">{{ row.notes }}</p>
@@ -124,25 +130,29 @@
         of {{ pageWindow().total }}
       </span>
       <div class="flex items-center gap-3">
-        <app-button
+        <button
+          app-button
+          type="button"
+          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
           variant="outline"
           size="sm"
-          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
           [disabled]="!canPrev()"
-          (clicked)="prevPage.emit()"
+          (click)="prevPage.emit()"
         >
           Prev
-        </app-button>
+        </button>
         <span class="text-white/70 tabular-nums">Page {{ currentPage() }}</span>
-        <app-button
+        <button
+          app-button
+          type="button"
+          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
           variant="outline"
           size="sm"
-          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
           [disabled]="!canNext()"
-          (clicked)="nextPage.emit()"
+          (click)="nextPage.emit()"
         >
           Next
-        </app-button>
+        </button>
       </div>
     </div>
   } @else if (!isLoading()) {

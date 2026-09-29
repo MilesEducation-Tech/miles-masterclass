@@ -13,8 +13,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { BadgeCard, BadgeCardActionEvent } from '@shared/components/cards/badge-card/badge-card';
-import { SelectMenu } from '@shared/ui/select-menu/select-menu';
-import { TabStrip } from '@shared/ui/tab-strip/tab-strip';
+
 import {
   badgeClaimCourse,
   BadgeCardData,
@@ -29,6 +28,9 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 import type { CertificateDialogData } from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
 import { BadgeLibraryHero } from '../../components/badge-library-hero/badge-library-hero';
 import { BadgeFacade } from '../../services/badge-facade';
+import { Select } from '@shared/ui/select/select';
+import { Tabs } from '@shared/ui/tabs/tabs';
+import { Tab } from '@shared/ui/tabs/tab';
 
 /**
  * Maps the badge API's `course_type` token to the URL segment under
@@ -51,7 +53,7 @@ const COURSE_TYPE_ROUTE: Record<string, string> = {
 
 @Component({
   selector: 'app-badge',
-  imports: [BadgeLibraryHero, TabStrip, SelectMenu, BadgeCard],
+  imports: [BadgeLibraryHero, BadgeCard, Select, Tabs, Tab],
   templateUrl: './badge.html',
 })
 export class Badge {

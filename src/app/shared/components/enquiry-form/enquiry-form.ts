@@ -12,11 +12,14 @@ import { EnquiryService } from '@core/services/enquiry/enquiry';
 import { Utils } from '@shared/services/utils';
 import { NotificationService } from '@core/services/notification/notification';
 import { Button } from '../../ui/button/button';
-import { AriaInput } from '../../ui/aria/aria-input/aria-input';
-import { AriaMultiselect } from '../../ui/aria/aria-multiselect/aria-multiselect';
-import { Forms } from '../../ui/forms/forms';
+
 import { Spinner } from '../../ui/spinner/spinner';
 import { RouterLink } from '@angular/router';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
+import { Select } from '@shared/ui/select/select';
 
 export interface EnquiryModel {
   full_name: string;
@@ -42,7 +45,7 @@ const emptyModel = (enquiry_type: string): EnquiryModel => ({
 
 @Component({
   selector: 'app-enquiry-form',
-  imports: [Forms, AriaInput, AriaMultiselect, FormFieldSignal, Button, Spinner, RouterLink],
+  imports: [FormFieldSignal, Button, Spinner, RouterLink, Field, NgpLabel, Input, Checkbox, Select],
   templateUrl: './enquiry-form.html',
   host: { ngSkipHydration: 'true' },
 })

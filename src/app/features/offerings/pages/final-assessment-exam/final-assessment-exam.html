@@ -21,20 +21,22 @@
       </p>
 
       <div class="flex flex-col justify-center items-center sm:flex-row gap-4 w-full max-w-md pt-4">
-        <app-button variant="default" (clicked)="handleDialogAction('report')">
+        <button app-button type="button" variant="default" (click)="handleDialogAction('report')">
           <div class="flex items-center justify-center gap-2">
             View Detailed Report
             <ng-icon name="heroArrowRight"></ng-icon>
           </div>
-        </app-button>
+        </button>
 
-        <app-button
-          variant="outline"
+        <button
+          app-button
+          type="button"
           class="border-gray-500 text-white"
-          (clicked)="handleDialogAction('course')"
+          variant="outline"
+          (click)="handleDialogAction('course')"
         >
           Back to Course
-        </app-button>
+        </button>
       </div>
     </div>
   } @else {
@@ -88,39 +90,55 @@
 
         <!-- Footer Actions -->
         <div class="mt-auto flex justify-between items-center pt-6 border-t border-quiz-line">
-          <app-button
-            variant="default"
+          <button
+            app-button
+            type="button"
             class="bg-quiz-line hover:bg-quiz-line-hover"
+            variant="default"
             [disabled]="currentQuestionIndex() === 0"
-            (clicked)="prevQuestion()"
+            (click)="prevQuestion()"
           >
             BACK
-          </app-button>
+          </button>
 
           <div class="flex gap-2">
             <!-- Skip Button (Visible if no option selected) -->
             @if (!selectedOption() && !isLastQuestion()) {
-              <app-button
-                variant="outline"
+              <button
+                app-button
+                type="button"
                 class="border-quiz-line text-white hover:bg-quiz-line"
-                (clicked)="skipQuestion()"
+                variant="outline"
+                (click)="skipQuestion()"
               >
                 SKIP
-              </app-button>
+              </button>
             }
 
             <!-- Next Button (Visible if option selected AND not last question) -->
             @if (selectedOption() && !isLastQuestion()) {
-              <app-button variant="default" class="min-w-44" (clicked)="nextQuestion()">
+              <button
+                app-button
+                type="button"
+                class="min-w-44"
+                variant="default"
+                (click)="nextQuestion()"
+              >
                 NEXT
-              </app-button>
+              </button>
             }
 
             <!-- Final Submit (Visible on last question) -->
             @if (isLastQuestion()) {
-              <app-button variant="default" class="min-w-44" (clicked)="submit()">
+              <button
+                app-button
+                type="button"
+                class="min-w-44"
+                variant="default"
+                (click)="submit()"
+              >
                 <div class="flex items-center justify-center gap-2">SUBMIT</div>
-              </app-button>
+              </button>
             }
           </div>
         </div>

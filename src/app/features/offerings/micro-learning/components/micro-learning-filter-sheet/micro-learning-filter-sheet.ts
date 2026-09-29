@@ -1,9 +1,10 @@
 import { Component, computed, OnInit, signal } from '@angular/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Button } from '@shared/ui/button/button';
 import { cn } from '@shared/utils/cn';
 import { MicroLearningFilterOption } from '@features/offerings/models/micro-learning-course.model';
+import { Dialog } from '@shared/ui/dialog/dialog';
 
 export interface MicroLearningFilterSheetData {
   title: string;
@@ -17,7 +18,7 @@ const DEFAULT_VISIBLE_COUNT = 5;
 
 @Component({
   selector: 'app-micro-learning-filter-sheet',
-  imports: [Button, DialogShell],
+  imports: [Button, Dialog],
   templateUrl: './micro-learning-filter-sheet.html',
   host: { class: 'block' },
 })

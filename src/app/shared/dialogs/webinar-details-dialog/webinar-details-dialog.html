@@ -1,7 +1,18 @@
-<app-dialog-shell maxWidth="100%" [ariaLabel]="data.webinar.webinar_title">
+<app-dialog [ariaLabel]="data.webinar.webinar_title" panelClass="p-0 max-w-full">
   <div class="flex flex-col sm:w-[70vw] w-10/12 relative bg-background">
     <div class="absolute top-4 right-4 w-full flex justify-end px-4 z-30">
-      <app-button variant="close" size="sm" (clicked)="close()" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        size="sm"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <!-- Hero: image + gradient + title/instructor/CTAs (mirrors CourseInfo layout) -->
@@ -74,49 +85,52 @@
         <div class="flex flex-wrap gap-3 items-center mt-3">
           @switch (cta()) {
             @case ('book') {
-              <app-button variant="default" size="default" (clicked)="book()">Book Now</app-button>
+              <button app-button type="button" variant="default" (click)="book()">Book Now</button>
             }
             @case ('joined') {
-              <app-button variant="secondary" size="default" [disabled]="true">Booked</app-button>
+              <button app-button type="button" variant="secondary" [disabled]="true">Booked</button>
             }
             @case ('join-live') {
-              <app-button variant="default" size="default" (clicked)="joinLive()"
-                >Join Live</app-button
-              >
+              <button app-button type="button" variant="default" (click)="joinLive()">
+                Join Live
+              </button>
             }
             @case ('submit-feedback') {
-              <app-button
-                variant="default"
-                size="default"
+              <button
+                app-button
+                type="button"
                 class="bg-amber-400 text-black hover:bg-amber-400 hover:text-black"
-                (clicked)="submitFeedback()"
-                >Submit Feedback</app-button
+                variant="default"
+                (click)="submitFeedback()"
               >
+                Submit Feedback
+              </button>
             }
             @case ('download-certificate') {
-              <app-button variant="default" size="default" (clicked)="downloadCertificate()"
-                >Download Certificate</app-button
-              >
+              <button app-button type="button" variant="default" (click)="downloadCertificate()">
+                Download Certificate
+              </button>
             }
             @case ('watch-recording') {
-              <app-button variant="default" size="default" (clicked)="watchRecording()"
-                >Watch Recording</app-button
-              >
+              <button app-button type="button" variant="default" (click)="watchRecording()">
+                Watch Recording
+              </button>
             }
             @case ('ended') {
-              <app-button variant="secondary" size="default" [disabled]="true">Ended</app-button>
+              <button app-button type="button" variant="secondary" [disabled]="true">Ended</button>
             }
           }
-          <app-button
-            variant="outline"
-            size="default"
+          <button
+            app-button
+            type="button"
             class="gap-2 text-white"
+            variant="outline"
             aria-label="Share webinar"
-            (clicked)="share()"
+            (click)="share()"
           >
             <ng-icon name="phosphorShareFatFill" size="18" aria-hidden="true" />
             Share
-          </app-button>
+          </button>
         </div>
       </div>
     </div>
@@ -128,4 +142,4 @@
       }
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

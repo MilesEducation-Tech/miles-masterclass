@@ -21,10 +21,16 @@
     }
   </div>
 
-  <app-button variant="default" class="shrink-0 self-stretch sm:self-auto" (click)="onResume()">
+  <button
+    app-button
+    type="button"
+    class="shrink-0 self-stretch sm:self-auto"
+    variant="default"
+    (click)="onResume()"
+  >
     <span class="inline-flex items-center gap-2">
       <ng-icon name="faSolidPlay" class="text-xs" />
       Resume
     </span>
-  </app-button>
+  </button>
 </div>

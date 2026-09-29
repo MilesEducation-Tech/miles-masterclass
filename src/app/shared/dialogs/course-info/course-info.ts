@@ -1,7 +1,7 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { VideoPoster } from '../../components/video-poster/video-poster';
 import { ContentAbout } from '@core/models/course.model';
 import { Button } from '../../ui/button/button';
@@ -15,10 +15,12 @@ import {
 import { phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
 import { CourseAbout } from '../../components/course-about/course-about';
 import { Utils } from '@shared/services/utils';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 @Component({
   selector: 'app-course-info',
-  imports: [VideoPoster, Button, MilesSlug, NgIcon, CourseAbout, DialogShell],
+  imports: [VideoPoster, Button, MilesSlug, NgIcon, CourseAbout, Dialog],
   templateUrl: './course-info.html',
   providers: [
     provideIcons({
@@ -26,6 +28,7 @@ import { Utils } from '@shared/services/utils';
       matBookmarkBorderRound,
       matBookmarkRound,
       phosphorShareFatFill,
+      heroXMark,
     }),
   ],
 })

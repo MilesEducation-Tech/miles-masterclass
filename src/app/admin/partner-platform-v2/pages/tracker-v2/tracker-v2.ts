@@ -1,14 +1,19 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Seat, SeatStatusFilter } from '@admin/core/models/partner-platform.model';
 import { PartnerAdminMe } from '@admin/core/services/partner-admin-me';
 import { PartnerNetworkFacade } from '@admin/core/services/partner-network-facade';
 import { SeatTrackerTable } from '@admin/seat-tracker/components/seat-tracker-table/seat-tracker-table';
-import { TabStrip } from '@shared/ui/tab-strip/tab-strip';
-import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+
 import { AriaSelectOption } from '@core/models/aria.model';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Select } from '@shared/ui/select/select';
+import { Tabs } from '@shared/ui/tabs/tabs';
+import { Tab } from '@shared/ui/tabs/tab';
 
 const STATUS_TABS: { value: SeatStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -26,7 +31,7 @@ const STATUS_TABS: { value: SeatStatusFilter; label: string }[] = [
  */
 @Component({
   selector: 'app-tracker-v2',
-  imports: [AriaInput, SeatTrackerTable, TabStrip, AriaSelect],
+  imports: [SeatTrackerTable, Field, NgpLabel, Input, Select, Tabs, Tab],
   templateUrl: './tracker-v2.html',
   host: { class: 'block w-full' },
 })

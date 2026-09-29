@@ -36,7 +36,7 @@ import {
   CART_DRAWER_DIALOG,
   SUBSCRIPTION_DIALOG,
 } from '@core/services/dialog/feature-dialog-tokens';
-import { ToastComponent } from '@shared/ui/toast/toast';
+import { Toast } from '@shared/ui/toast/toast';
 
 /**
  * Last-resort recovery from version skew, the third layer in
@@ -111,7 +111,7 @@ export const appConfig: ApplicationConfig = {
     provideDialogConfig({ closeOnNavigation: false }),
     // Binds the core NotificationService to the shared toast component. Only the
     // composition root may name both sides — see TOAST_COMPONENT.
-    { provide: TOAST_COMPONENT, useValue: ToastComponent },
+    { provide: TOAST_COMPONENT, useValue: Toast },
     // Lets shared/core code open the payment cart drawer without importing the
     // payment feature. The import() stays here, so the dialog stays lazy.
     {

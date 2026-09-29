@@ -16,7 +16,7 @@ import { Hover } from '@shared/components/cards/hover/hover';
 import { Vertical } from '@shared/components/cards/vertical/vertical';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
-import { TabStrip } from '@shared/ui/tab-strip/tab-strip';
+
 import { VideoJs } from '@shared/components/video-js/video-js';
 import type { VideoSource } from '@core/models/video-player.model';
 import { Content } from '@core/models/course.model';
@@ -26,6 +26,8 @@ import { apiUrl } from '@core/services/api-client/api-client';
 import { Analytics } from '@core/services/analytics/analytics';
 import { InstructorHero } from '../../components/instructor-hero/instructor-hero';
 import { Square } from '@shared/components/cards/square/square';
+import { Tabs } from '@shared/ui/tabs/tabs';
+import { Tab } from '@shared/ui/tabs/tab';
 
 type ResponseBucket = 'masterclass' | 'nano';
 type TabId = 'masterclass' | 'podcast' | 'micro-learning';
@@ -53,10 +55,11 @@ interface InstructorCoursesResponse {
     Vertical,
     ErrorState,
     PageLoading,
-    TabStrip,
     VideoJs,
     InstructorHero,
     Square,
+    Tabs,
+    Tab,
   ],
   templateUrl: './instructor-details.html',
 })

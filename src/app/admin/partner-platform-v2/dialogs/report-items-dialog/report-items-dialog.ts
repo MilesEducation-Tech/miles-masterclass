@@ -5,15 +5,19 @@ import { lucideBookOpen, lucideDownload } from '@ng-icons/lucide';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import {
   ReportCertificate,
   ReportItemRow,
   ReportSubject,
 } from '@admin/partner-platform-v2/models/partner-report.model';
 import { PartnerReportFacade } from '@admin/partner-platform-v2/services/partner-report-facade';
-import { TabStrip } from '@shared/ui/tab-strip/tab-strip';
+
 import { CertificateDownloadProgress } from '@admin/partner-platform-v2/components/certificate-download-progress/certificate-download-progress';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Tabs } from '@shared/ui/tabs/tabs';
+import { Tab } from '@shared/ui/tabs/tab';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface ReportItemsDialogData {
   userId: number;
@@ -26,16 +30,8 @@ export interface ReportItemsDialogData {
  */
 @Component({
   selector: 'app-report-items-dialog',
-  imports: [
-    DecimalPipe,
-    NgIcon,
-    Button,
-    Spinner,
-    TabStrip,
-    CertificateDownloadProgress,
-    DialogShell,
-  ],
-  providers: [provideIcons({ lucideBookOpen, lucideDownload })],
+  imports: [DecimalPipe, NgIcon, Button, Spinner, CertificateDownloadProgress, Dialog, Tabs, Tab],
+  providers: [provideIcons({ lucideBookOpen, lucideDownload, heroXMark })],
   templateUrl: './report-items-dialog.html',
 })
 export class ReportItemsDialog implements OnInit {

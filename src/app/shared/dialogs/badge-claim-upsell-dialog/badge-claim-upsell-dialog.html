@@ -1,9 +1,19 @@
 @let b = badge();
-<app-dialog-shell [ariaLabel]="'Subscribe to claim ' + badgeName()">
+<app-dialog [ariaLabel]="'Subscribe to claim ' + badgeName()" panelClass="p-0">
   <section
     class="relative w-[calc(100vw-2rem)] max-w-lg min-w-2xs rounded-3xl bg-[#0E0E10] p-6 text-center text-white shadow-2xl md:p-10"
   >
-    <app-button variant="close" class="absolute top-4 right-4" (clicked)="onClose()"></app-button>
+    <button
+      app-button
+      type="button"
+      class="absolute top-4 right-4 rounded-full"
+      variant="ghost"
+      size="icon"
+      aria-label="Close"
+      (click)="onClose()"
+    >
+      <ng-icon name="heroXMark" aria-hidden="true" />
+    </button>
 
     @if (b) {
       <div class="relative mx-auto mb-6 h-40 w-40">
@@ -32,10 +42,18 @@
     }
 
     <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-      <app-button variant="outline" class="w-full sm:w-auto" (clicked)="onClose()">
+      <button
+        app-button
+        type="button"
+        class="w-full sm:w-auto"
+        variant="outline"
+        (click)="onClose()"
+      >
         Not now
-      </app-button>
-      <app-button class="w-full sm:w-auto" (clicked)="onConfirm()">Subscribe Now</app-button>
+      </button>
+      <button app-button type="button" class="w-full sm:w-auto" (click)="onConfirm()">
+        Subscribe Now
+      </button>
     </div>
   </section>
-</app-dialog-shell>
+</app-dialog>
