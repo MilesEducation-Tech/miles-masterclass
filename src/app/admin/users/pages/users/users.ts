@@ -1,7 +1,7 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Button } from '@shared/ui/button/button';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import {
@@ -14,6 +14,9 @@ import { UsersTable } from '@admin/users/components/users-table/users-table';
 import { PartnerAdminMe } from '@admin/core/services/partner-admin-me';
 import { PartnerUsersFacade } from '@admin/users/services/partner-users-facade';
 import { BlockedStatusFilter, PartnerPanelUser } from '@admin/core/models/partner-platform.model';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
 
 const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -23,7 +26,7 @@ const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
 
 @Component({
   selector: 'app-admin-users',
-  imports: [AriaInput, Button, UsersTable, DeprecationBanner],
+  imports: [Button, UsersTable, DeprecationBanner, Field, NgpLabel, Input],
   templateUrl: './users.html',
   host: { class: 'block w-full' },
 })

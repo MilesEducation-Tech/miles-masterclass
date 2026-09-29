@@ -7,15 +7,17 @@
       <h1 class="text-3xl font-extrabold leading-tight">{{ title() }}</h1>
     </div>
     @if (facade.isSuper()) {
-      <app-button
+      <button
+        app-button
+        type="button"
+        class="text-white"
         variant="outline"
         size="sm"
-        class="text-white"
         [disabled]="facade.isExporting() || facade.needsScope()"
-        (clicked)="exportSummary()"
+        (click)="exportSummary()"
       >
         {{ facade.isExporting() ? 'Exporting…' : 'Export CSV' }}
-      </app-button>
+      </button>
     }
   </header>
 
@@ -75,20 +77,28 @@
           </select>
         </div>
 
-        <app-aria-input
-          id="report-date-from"
-          type="date"
-          label="From"
-          class="w-44"
-          [(value)]="facade.dateFrom"
-        />
-        <app-aria-input
-          id="report-date-to"
-          type="date"
-          label="To"
-          class="w-44"
-          [(value)]="facade.dateTo"
-        />
+        <app-field class="w-44">
+          <label ngpLabel for="report-date-from">From</label>
+
+          <input
+            app-input
+            id="report-date-from"
+            type="date"
+            [value]="facade.dateFrom()"
+            (input)="facade.dateFrom.set($any($event.target).value)"
+          />
+        </app-field>
+        <app-field class="w-44">
+          <label ngpLabel for="report-date-to">To</label>
+
+          <input
+            app-input
+            id="report-date-to"
+            type="date"
+            [value]="facade.dateTo()"
+            (input)="facade.dateTo.set($any($event.target).value)"
+          />
+        </app-field>
       </div>
     </div>
 

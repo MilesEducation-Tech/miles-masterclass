@@ -6,7 +6,7 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroAcademicCap, heroCheckBadge, heroXMark } from '@ng-icons/heroicons/outline';
 import { Button } from '../../ui/button/button';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
@@ -16,6 +16,7 @@ import { phosphorDownloadSimpleFill, phosphorShareFatFill } from '@ng-icons/phos
 import { BlobDownloadItem, buildPdfFileName, downloadFiles } from '../../utils/blob-download';
 import { Analytics } from '@core/services/analytics/analytics';
 import { Utils } from '@shared/services/utils';
+import { Dialog } from '@shared/ui/dialog/dialog';
 
 /**
  * Rich badge payload sourced from `user_badge` on the course / webinar /
@@ -77,7 +78,7 @@ type CertificateVariant = 'nasba' | 'miles';
 @Component({
   selector: 'app-certificate-download-dialog',
   standalone: true,
-  imports: [CommonModule, NgIcon, Button, DialogShell],
+  imports: [CommonModule, NgIcon, Button, Dialog],
   templateUrl: './certificate-download-dialog.html',
   host: { class: 'block' },
   viewProviders: [

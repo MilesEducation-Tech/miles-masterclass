@@ -1,7 +1,11 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, computed, input, model, signal } from '@angular/core';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { PartnerCode, SeatAllocation } from '@admin/core/models/partner-platform.model';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
 
 interface AllocationRow {
   count: number;
@@ -17,7 +21,7 @@ interface AllocationRow {
  */
 @Component({
   selector: 'app-allocation-picker',
-  imports: [CurrencyPipe, AriaInput],
+  imports: [CurrencyPipe, Field, NgpLabel, Input, Checkbox],
   templateUrl: './allocation-picker.html',
 })
 export class AllocationPicker {

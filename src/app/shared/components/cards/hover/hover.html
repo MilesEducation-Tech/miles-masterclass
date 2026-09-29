@@ -76,41 +76,51 @@
 
       <div class="flex items-center justify-between space-x-2">
         <div class="flex items-center space-x-2">
-          <app-button
-            variant="default"
+          <button
+            app-button
+            type="button"
             class="bg-white text-black hover:bg-white hover:text-black rounded-md gap-2"
-            (clicked)="openVideoDialog()"
+            variant="default"
+            (click)="openVideoDialog()"
           >
             <ng-icon [svg]="icons().faSolidPlay" class="size-4" />
             Trailer
-          </app-button>
+          </button>
           @if (card().has_additional_resources) {
             <div
               class="flex rounded-full justify-center items-center bg-linear-to-r from-white to-transparent to-70% p-px overflow-hidden max-md:hidden"
               role="button"
             >
-              <app-button variant="ghost" class="bg-background rounded-full! gap-2">
+              <button
+                app-button
+                type="button"
+                class="bg-background rounded-full! gap-2"
+                variant="ghost"
+              >
                 <ng-icon [svg]="icons().faSolidRobot" class="size-4" />
                 AI Kit
-              </app-button>
+              </button>
             </div>
           }
-          <app-button
-            variant="ghost"
+          <button
+            app-button
+            type="button"
             class="flex items-center justify-center size-10 aspect-square bg-secondary rounded-full outline outline-white/40 cursor-pointer p-0"
-            role="button"
+            variant="ghost"
             [disabled]="loading()"
             (click)="openCourseInfo(); loading.set(true)"
           >
             <ng-icon [svg]="icons().faSolidInfo" class="size-8" />
-          </app-button>
+          </button>
         </div>
-        <app-button
-          variant="outline"
+        <button
+          app-button
+          type="button"
           class="text-accent hover:bg-transparent border-accent rounded-md cursor-default"
+          variant="outline"
         >
           {{ card().fields_of_study | totalCpeCredits: card().class_credits }} CPE
-        </app-button>
+        </button>
       </div>
     </div>
   </div>

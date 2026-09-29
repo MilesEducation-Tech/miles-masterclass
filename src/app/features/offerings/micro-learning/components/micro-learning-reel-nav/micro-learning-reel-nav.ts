@@ -8,24 +8,28 @@ import { Button } from '@shared/ui/button/button';
   imports: [NgIcon, Button],
   template: `
     <div class="flex items-center flex-col gap-3" role="group" aria-label="Reel navigation">
-      <app-button
+      <button
+        app-button
+        type="button"
+        class="rounded-full bg-secondary/60 border border-border/40 hover:bg-secondary"
         variant="ghost"
         size="icon"
-        class="rounded-full bg-secondary/60 border border-border/40 hover:bg-secondary"
         [disabled]="!canGoPrev()"
-        (clicked)="prev.emit()"
+        (click)="prev.emit()"
       >
         <ng-icon name="matKeyboardArrowUpRound" size="22" aria-label="Previous episode" />
-      </app-button>
-      <app-button
+      </button>
+      <button
+        app-button
+        type="button"
+        class="rounded-full bg-secondary/60 border border-border/40 hover:bg-secondary"
         variant="ghost"
         size="icon"
-        class="rounded-full bg-secondary/60 border border-border/40 hover:bg-secondary"
         [disabled]="!canGoNext()"
-        (clicked)="next.emit()"
+        (click)="next.emit()"
       >
         <ng-icon name="matKeyboardArrowDownRound" size="22" aria-label="Next episode" />
-      </app-button>
+      </button>
     </div>
   `,
   host: { class: 'block' },

@@ -7,7 +7,9 @@
         reports.
       </p>
     </div>
-    <app-button variant="primary" (clicked)="openCreate()">Create network</app-button>
+    <button app-button type="button" variant="primary" (click)="openCreate()">
+      Create network
+    </button>
   </header>
 
   @if (facade.networksError()) {
@@ -58,18 +60,26 @@
             </td>
             <td class="px-4 py-4 text-right">
               <span class="inline-flex items-center justify-end gap-2">
-                <app-button variant="primary" size="sm" (clicked)="openDetail(network)">
+                <button
+                  app-button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  (click)="openDetail(network)"
+                >
                   Open
-                </app-button>
+                </button>
                 @if (canEdit()) {
-                  <app-button
+                  <button
+                    app-button
+                    type="button"
+                    class="text-white"
                     variant="outline"
                     size="sm"
-                    class="text-white"
-                    (clicked)="openEdit(network)"
+                    (click)="openEdit(network)"
                   >
                     Edit
-                  </app-button>
+                  </button>
                 }
               </span>
             </td>

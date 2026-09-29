@@ -3,7 +3,7 @@ import { DecimalPipe, formatDate } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideBookOpen } from '@ng-icons/lucide';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import {
@@ -13,6 +13,8 @@ import {
   hasCourseIds,
 } from '@admin/user-report/models/user-report.model';
 import { UserReportFacade } from '@admin/user-report/services/user-report-facade';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface UserCourseDetailDialogData {
   userName: string;
@@ -26,8 +28,8 @@ export interface UserCourseDetailDialogData {
  */
 @Component({
   selector: 'app-user-course-detail-dialog',
-  imports: [DecimalPipe, NgIcon, Button, Spinner, DialogShell],
-  providers: [provideIcons({ lucideBookOpen })],
+  imports: [DecimalPipe, NgIcon, Button, Spinner, Dialog],
+  providers: [provideIcons({ lucideBookOpen, heroXMark })],
   templateUrl: './user-course-detail-dialog.html',
 })
 export class UserCourseDetailDialog implements OnInit {

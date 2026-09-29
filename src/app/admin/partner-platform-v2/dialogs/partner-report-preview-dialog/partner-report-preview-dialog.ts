@@ -13,11 +13,14 @@ import { ReportPreviewBundle } from '@admin/partner-platform-v2/models/partner-r
 import { PartnerReportFacade } from '@admin/partner-platform-v2/services/partner-report-facade';
 import { partnerErrorMessage, partnerLoadError } from '@admin/core/models/partner-platform.model';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { NotificationService } from '@core/services/notification/notification';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { dash, executiveLede, reportingPeriodLabel } from './report-preview.format';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface PartnerReportPreviewDialogData {
   /** Network / firm name for the title. */
@@ -37,7 +40,8 @@ export interface PartnerReportPreviewDialogData {
  */
 @Component({
   selector: 'app-partner-report-preview-dialog',
-  imports: [Button, Spinner, DialogShell],
+  imports: [Button, Spinner, Dialog, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './partner-report-preview-dialog.html',
   styleUrl: './partner-report-preview-dialog.css',
   host: { class: 'block' },

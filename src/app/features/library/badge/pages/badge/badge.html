@@ -1,12 +1,15 @@
 <app-badge-library-hero />
 
 <div #listSection class="flex items-center justify-between gap-4 mb-6 flex-wrap scroll-mt-24">
-  <app-tab-strip
-    [options]="facade.badgeCategories()"
-    [selected]="facade.badgeCategory()"
-    (selectionChange)="facade.selectBadgeCategory($event)"
-  />
-  <app-select-menu
+  <app-tabs
+    [value]="facade.badgeCategory() ?? ''"
+    (valueChange)="facade.selectBadgeCategory($event)"
+  >
+    @for (tab of facade.badgeCategories(); track tab) {
+      <app-tab [value]="tab" [label]="tab" />
+    }
+  </app-tabs>
+  <app-select
     [options]="statusOptions"
     [value]="facade.badgeStatus()"
     placeholder="All Badges"

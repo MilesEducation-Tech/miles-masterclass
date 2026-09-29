@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideMockDialogRef, stubDialogShell } from '@testing/mocks/dialog-ref.mock';
+import { provideMockDialogRef, stubDialog } from '@testing/mocks/dialog-ref.mock';
 
 import { HtmlContentDialog } from './html-content-dialog';
 
@@ -8,7 +8,7 @@ describe('HtmlContentDialog', () => {
   let fixture: ComponentFixture<HtmlContentDialog>;
 
   beforeEach(async () => {
-    stubDialogShell(HtmlContentDialog);
+    stubDialog(HtmlContentDialog);
     await TestBed.configureTestingModule({
       imports: [HtmlContentDialog],
       providers: [

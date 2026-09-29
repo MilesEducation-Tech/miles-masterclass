@@ -1,10 +1,14 @@
 import { Component, computed, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroShieldExclamation, heroShieldCheck } from '@ng-icons/heroicons/outline';
+import { heroShieldExclamation, heroShieldCheck, heroXMark } from '@ng-icons/heroicons/outline';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Button } from '../../ui/button/button';
-import { AriaInput } from '../../ui/aria/aria-input/aria-input';
+
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Textarea } from '@shared/ui/textarea/textarea';
 
 export interface BlockStatusDialogData {
   /** What action the admin is about to take. */
@@ -21,8 +25,8 @@ export interface BlockStatusDialogResult {
 
 @Component({
   selector: 'app-block-status-dialog',
-  imports: [Button, AriaInput, NgIcon, DialogShell],
-  providers: [provideIcons({ heroShieldExclamation, heroShieldCheck })],
+  imports: [Button, NgIcon, Dialog, Field, NgpLabel, Textarea],
+  providers: [provideIcons({ heroShieldExclamation, heroShieldCheck, heroXMark })],
   templateUrl: './block-status-dialog.html',
   host: { class: 'block' },
 })

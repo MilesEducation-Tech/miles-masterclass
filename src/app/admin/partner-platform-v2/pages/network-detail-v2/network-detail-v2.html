@@ -6,20 +6,41 @@
       <h1 class="text-3xl font-extrabold leading-tight">{{ networkName() }}</h1>
     </div>
     <div class="flex items-center gap-2">
-      <app-button variant="outline" size="sm" class="text-white" (clicked)="openReports()">
+      <button
+        app-button
+        type="button"
+        class="text-white"
+        variant="outline"
+        size="sm"
+        (click)="openReports()"
+      >
         View reports
-      </app-button>
+      </button>
       <ng-container *hasPermission="PERM.PARTNER_PLATFORM_MANAGE">
-        <app-button variant="outline" size="sm" class="text-white" (clicked)="openCreateFirm()">
+        <button
+          app-button
+          type="button"
+          class="text-white"
+          variant="outline"
+          size="sm"
+          (click)="openCreateFirm()"
+        >
           Create firm
-        </app-button>
-        <app-button variant="outline" size="sm" class="text-white" (clicked)="openAssignSeat()">
+        </button>
+        <button
+          app-button
+          type="button"
+          class="text-white"
+          variant="outline"
+          size="sm"
+          (click)="openAssignSeat()"
+        >
           Assign pool seat
-        </app-button>
+        </button>
         @if (canEdit()) {
-          <app-button variant="primary" size="sm" (clicked)="openEdit()">
+          <button app-button type="button" variant="primary" size="sm" (click)="openEdit()">
             Edit / mint seats
-          </app-button>
+          </button>
         }
       </ng-container>
     </div>
@@ -85,27 +106,37 @@
                 </td>
                 <td class="px-4 py-3 text-right">
                   <div class="inline-flex items-center gap-2">
-                    <app-button
+                    <button
+                      app-button
+                      type="button"
+                      class="border-white/15 text-white hover:bg-white/5"
                       variant="outline"
                       size="sm"
-                      class="border-white/15 text-white hover:bg-white/5"
-                      (clicked)="openFirmReports(firm)"
+                      (click)="openFirmReports(firm)"
                     >
                       Reports
-                    </app-button>
+                    </button>
                     <ng-container *hasPermission="PERM.PARTNER_PLATFORM_MANAGE">
-                      <app-button
+                      <button
+                        app-button
+                        type="button"
+                        class="border-white/15 text-white hover:bg-white/5"
                         variant="outline"
                         size="sm"
-                        class="border-white/15 text-white hover:bg-white/5"
-                        (clicked)="openAllocate(firm)"
+                        (click)="openAllocate(firm)"
                       >
                         Add seats
-                      </app-button>
+                      </button>
                       @if (canEdit()) {
-                        <app-button variant="primary" size="sm" (clicked)="openEditFirm(firm)">
+                        <button
+                          app-button
+                          type="button"
+                          variant="primary"
+                          size="sm"
+                          (click)="openEditFirm(firm)"
+                        >
                           Edit
-                        </app-button>
+                        </button>
                       }
                     </ng-container>
                   </div>

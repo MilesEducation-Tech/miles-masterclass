@@ -1,6 +1,6 @@
 import { Component, EnvironmentInjector, computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Button } from '@shared/ui/button/button';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { StatCard } from '@admin/partner-platform-v2/components/stat-card/stat-card';
@@ -17,9 +17,14 @@ import {
   ReportUserRow,
 } from '@admin/partner-platform-v2/models/partner-report.model';
 import { PartnerReportFacade } from '@admin/partner-platform-v2/services/partner-report-facade';
-import { TabStrip } from '@shared/ui/tab-strip/tab-strip';
-import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+
 import { AriaSelectOption } from '@core/models/aria.model';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Select } from '@shared/ui/select/select';
+import { Tabs } from '@shared/ui/tabs/tabs';
+import { Tab } from '@shared/ui/tabs/tab';
 
 const SUBJECT_TABS: { value: ReportSubject; label: string }[] = [
   { value: 'courses', label: 'Courses' },
@@ -42,13 +47,16 @@ const round2 = (value: number | undefined): number => Math.round((value ?? 0) * 
 @Component({
   selector: 'app-reports-v2',
   imports: [
-    AriaInput,
     Button,
     StatCard,
     ReportUsersTable,
-    TabStrip,
-    AriaSelect,
     CertificateDownloadProgress,
+    Field,
+    NgpLabel,
+    Input,
+    Select,
+    Tabs,
+    Tab,
   ],
   templateUrl: './reports-v2.html',
   host: { class: 'block w-full' },

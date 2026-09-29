@@ -1,12 +1,11 @@
 import { Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { NotificationService } from '@core/services/notification/notification';
 import { AriaSelectOption } from '@core/models/aria.model';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+
 import { Button } from '@shared/ui/button/button';
-import { CheckboxList, CheckboxListOption } from '@shared/ui/checkbox-list/checkbox-list';
+
 import {
   CAPABILITY_DEFAULTS,
   CAPABILITY_LABELS,
@@ -17,6 +16,16 @@ import {
 } from '@admin/core/models/partner-platform.model';
 import { AdminProvisioning, INITIAL_ADMIN_PASSWORD } from '@admin/core/services/admin-provisioning';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel, NgpDescription } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
+import { Select, SelectOption } from '@shared/ui/select/select';
+import { Listbox } from '@shared/ui/listbox/listbox';
+import { ListboxOption } from '@shared/ui/listbox/listbox-option';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 const ROLE_OPTIONS: AriaSelectOption<PartnerRole>[] = [
   { value: 'network', label: 'Network admin' },
@@ -45,7 +54,20 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
  */
 @Component({
   selector: 'app-create-partner-admin-dialog',
-  imports: [AriaInput, AriaSelect, Button, CheckboxList, DialogShell],
+  imports: [
+    Button,
+    Dialog,
+    Field,
+    NgpLabel,
+    NgpDescription,
+    Input,
+    Checkbox,
+    Select,
+    Listbox,
+    ListboxOption,
+    NgIcon,
+  ],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './create-partner-admin-dialog.html',
 })
 export class CreatePartnerAdminDialog {
@@ -106,7 +128,7 @@ export class CreatePartnerAdminDialog {
       disabled: taken.has(u.user_id),
     }));
   });
-  protected readonly capabilityOptions: CheckboxListOption[] = PARTNER_CAPABILITIES.map((c) => ({
+  protected readonly capabilityOptions: SelectOption[] = PARTNER_CAPABILITIES.map((c) => ({
     value: c,
     label: CAPABILITY_LABELS[c],
   }));

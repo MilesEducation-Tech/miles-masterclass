@@ -21,10 +21,12 @@
     </ul>
 
     <div class="mt-8 flex flex-wrap gap-3">
-      <app-button (clicked)="router.navigate(exploreLink())">Explore CAIRA</app-button>
-      <app-button variant="secondary" (clicked)="router.navigate(badgesLink())">
+      <button app-button type="button" (click)="router.navigate(exploreLink())">
+        Explore CAIRA
+      </button>
+      <button app-button type="button" variant="secondary" (click)="router.navigate(badgesLink())">
         How the badges work
-      </app-button>
+      </button>
     </div>
   </div>
 

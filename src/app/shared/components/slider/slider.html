@@ -86,18 +86,24 @@
           />
         </div>
         <div class="flex space-x-4 items-center">
-          <app-button
-            variant="ghost"
+          <button
+            app-button
+            type="button"
             class="bg-white text-black rounded-lg gap-1"
-            (clicked)="navigateToCourse(item.id, item.title)"
-            ><ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />Watch Now</app-button
-          >
-          <app-button
             variant="ghost"
-            class="bg-input text-white rounded-lg gap-1"
-            (clicked)="openCourseInfo(item)"
-            ><ng-icon name="matInfoOutline" size="24" aria-hidden="true" />Learn More</app-button
+            (click)="navigateToCourse(item.id, item.title)"
           >
+            <ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />Watch Now
+          </button>
+          <button
+            app-button
+            type="button"
+            class="bg-input text-white rounded-lg gap-1"
+            variant="ghost"
+            (click)="openCourseInfo(item)"
+          >
+            <ng-icon name="matInfoOutline" size="24" aria-hidden="true" />Learn More
+          </button>
         </div>
       </div>
     </li>
@@ -108,24 +114,26 @@
   class="absolute bottom-8 left-6 z-10 flex gap-2 select-none sm:left-1/2 sm:-translate-x-1/2"
   aria-label="Slider navigation"
 >
-  <app-button
+  <button
+    app-button
+    class="nav-btn"
     variant="ghost"
     type="button"
-    class="nav-btn"
-    (click)="prev()"
     [disabled]="isAnimating()"
     aria-label="Previous slide"
+    (click)="prev()"
   >
     <ng-icon name="matArrowBackIosRound" size="24" aria-hidden="true" />
-  </app-button>
-  <app-button
+  </button>
+  <button
+    app-button
+    class="nav-btn"
     variant="ghost"
     type="button"
-    class="nav-btn"
-    (click)="next()"
     [disabled]="isAnimating()"
     aria-label="Next slide"
+    (click)="next()"
   >
     <ng-icon name="matArrowForwardIosRound" size="24" aria-hidden="true" />
-  </app-button>
+  </button>
 </nav>

@@ -11,16 +11,18 @@
     <h1 class="mt-5 font-serif text-2xl font-bold text-foreground">Couldn't open this scenario</h1>
     <p class="mt-2 text-sm text-muted-foreground">{{ message }}</p>
     <div class="mt-6 flex items-center gap-3">
-      <app-button
+      <button
+        app-button
+        type="button"
+        class="bg-accent hover:bg-accent/90"
         variant="primary"
         size="sm"
-        class="bg-accent hover:bg-accent/90"
-        (clicked)="load()"
+        (click)="load()"
       >
         Try again
-      </app-button>
+      </button>
       <a [routerLink]="backPath()">
-        <app-button variant="outline" size="sm">All scenarios</app-button>
+        <button app-button type="button" variant="outline" size="sm">All scenarios</button>
       </a>
     </div>
   </div>
@@ -334,18 +336,20 @@
           @if (launchError(); as message) {
             <p class="mb-3 text-sm text-destructive" role="alert">{{ message }}</p>
           }
-          <app-button
-            variant="primary"
+          <button
+            app-button
+            type="button"
             class="h-12 w-full gap-2 rounded-xl bg-accent text-base hover:bg-accent/90"
+            variant="primary"
             [disabled]="starting()"
-            (clicked)="start()"
+            (click)="start()"
           >
             <ng-icon name="lucideSparkles" class="text-lg" aria-hidden="true" />
             <span>{{ starting() ? 'Starting…' : 'Start simulation' }}</span>
             @if (!starting()) {
               <ng-icon name="lucideArrowRight" class="text-base" aria-hidden="true" />
             }
-          </app-button>
+          </button>
           <p class="mt-3 text-center text-caption text-muted-foreground">
             5-minute session · you'll get a scored debrief right after
           </p>
@@ -375,17 +379,25 @@
             <p class="mv-call-msg">{{ sessionMessage() }}</p>
             @if (sessionPhase() === 'error') {
               <div class="mt-4 flex items-center gap-2">
-                <app-button variant="outline" size="sm" (clicked)="closeSession()"
-                  >Close</app-button
+                <button
+                  app-button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  (click)="closeSession()"
                 >
-                <app-button
+                  Close
+                </button>
+                <button
+                  app-button
+                  type="button"
+                  class="gap-1.5 bg-accent hover:bg-accent/90"
                   variant="primary"
                   size="sm"
-                  class="gap-1.5 bg-accent hover:bg-accent/90"
-                  (clicked)="retryFromError()"
+                  (click)="retryFromError()"
                 >
                   <ng-icon name="lucideRotateCcw" class="text-sm" aria-hidden="true" /> Try again
-                </app-button>
+                </button>
               </div>
             }
           </div>
@@ -506,14 +518,16 @@
                 This session will end automatically in about a minute. Wrap up your final thoughts.
               </p>
               <div class="mv-idle-actions">
-                <app-button
+                <button
+                  app-button
+                  type="button"
+                  class="bg-accent hover:bg-accent/90"
                   variant="primary"
                   size="sm"
-                  class="bg-accent hover:bg-accent/90"
-                  (clicked)="acknowledgeDurationWarning()"
+                  (click)="acknowledgeDurationWarning()"
                 >
                   Got it
-                </app-button>
+                </button>
               </div>
             </div>
           </div>
@@ -534,17 +548,25 @@
                 report.
               </p>
               <div class="mv-idle-actions">
-                <app-button variant="outline" size="sm" (clicked)="endFromIdlePrompt()"
-                  >End session</app-button
+                <button
+                  app-button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  (click)="endFromIdlePrompt()"
                 >
-                <app-button
+                  End session
+                </button>
+                <button
+                  app-button
+                  type="button"
+                  class="bg-accent hover:bg-accent/90"
                   variant="primary"
                   size="sm"
-                  class="bg-accent hover:bg-accent/90"
-                  (clicked)="continueSession()"
+                  (click)="continueSession()"
                 >
                   I'm still here
-                </app-button>
+                </button>
               </div>
             </div>
           </div>

@@ -1,9 +1,15 @@
 import { ChangeDetectionStrategy, Component, Signal, signal } from '@angular/core';
 import { AriaSelectOption } from '@core/models/aria.model';
-import { AriaAutocomplete } from '../../ui/aria/aria-autocomplete/aria-autocomplete';
+
 import { Button } from '../../ui/button/button';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Combobox } from '@shared/ui/combobox/combobox';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface ApplyPartnerCodeDialogData {
   userEmail: string;
@@ -22,7 +28,8 @@ export interface ApplyPartnerCodeDialogResult {
  */
 @Component({
   selector: 'app-apply-partner-code-dialog',
-  imports: [AriaAutocomplete, Button, DialogShell],
+  imports: [Button, Dialog, Field, NgpLabel, Combobox, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './apply-partner-code-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

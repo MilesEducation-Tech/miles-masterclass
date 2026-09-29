@@ -1,14 +1,20 @@
-<app-dialog-shell maxWidth="95vw" ariaLabel="Firm Sponsorship">
+<app-dialog ariaLabel="Firm Sponsorship" panelClass="p-0 max-w-[95vw]">
   <div
     class="bg-linear-to-b from-sheet-top to-sheet-bottom flex flex-col md:max-w-[760px] w-[95svw] max-h-[85svh] mx-auto overflow-hidden relative rounded-xl"
   >
     <!-- Close Button -->
-    <app-button
-      variant="close"
+    <button
+      app-button
+      type="button"
+      class="rounded-full"
       [class]="'absolute top-3 right-3 z-10'"
-      (clicked)="close()"
       aria-label="Close dialog"
-    />
+      variant="ghost"
+      size="icon"
+      (click)="close()"
+    >
+      <ng-icon name="heroXMark" aria-hidden="true" />
+    </button>
 
     <!-- Content -->
     <div class="flex-1 overflow-y-auto px-6 py-8 sm:px-10 sm:py-10">
@@ -25,53 +31,73 @@
       </p>
 
       <!-- Form -->
-      <app-forms type="signal" class="mt-8" (submitted)="submit()">
+      <form class="mt-8" (submit)="$event.preventDefault(); submit()">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- Company Select -->
-          <app-aria-autocomplete
-            id="company"
-            label="Select Company"
-            placeholder="Select Company"
-            [options]="companyOptions()"
-            [formField]="sponsorshipForm.company"
-            (queryChange)="onCompanySearch($event)"
-          />
+          <app-field [errors]="sponsorshipForm.company().errors()">
+            <label ngpLabel for="company">Select Company</label>
+
+            <app-combobox
+              id="company"
+              placeholder="Select Company"
+              [options]="companyOptions()"
+              [formField]="sponsorshipForm.company"
+              (queryChange)="onCompanySearch($event)"
+            />
+          </app-field>
 
           <!-- SPOC Email -->
-          <app-aria-input
-            id="spocEmail"
-            type="email"
-            label="L&D SPOC Email"
-            placeholder="Enter Email of your L&D"
-            [formField]="sponsorshipForm.spocEmail"
-          />
+          <app-field [errors]="sponsorshipForm.spocEmail().errors()">
+            <label ngpLabel for="spocEmail">L&D SPOC Email</label>
+
+            <input
+              app-input
+              id="spocEmail"
+              type="email"
+              placeholder="Enter Email of your L&D"
+              [formField]="sponsorshipForm.spocEmail"
+            />
+          </app-field>
         </div>
 
         <!-- Consent Checkbox -->
         <div class="mt-6">
-          <app-aria-input
-            id="firm-sponsorship-consent"
-            type="checkbox"
-            label="I consent to Miles referencing my name while connecting with my firm's learning team."
-            [formField]="sponsorshipForm.consent"
-          />
+          <app-field
+            class="flex-row items-start gap-3"
+            [errors]="sponsorshipForm.consent().errors()"
+          >
+            <app-checkbox id="firm-sponsorship-consent" [formField]="sponsorshipForm.consent" />
+            <div class="flex flex-col gap-0.5">
+              <span ngpLabel
+                >I consent to Miles referencing my name while connecting with my firm's learning
+                team.</span
+              >
+            </div>
+          </app-field>
         </div>
 
         <!-- Buttons -->
         <div class="flex flex-col sm:flex-row gap-3 mt-8 justify-center">
-          <app-button variant="secondary" size="lg" (clicked)="subscribeAnyway()">
+          <button
+            app-button
+            type="button"
+            variant="secondary"
+            size="lg"
+            (click)="subscribeAnyway()"
+          >
             Subscribe Anyway
-          </app-button>
-          <app-button
+          </button>
+          <button
+            app-button
             variant="default"
             size="lg"
             type="submit"
             [disabled]="sponsorshipForm().invalid()"
           >
             Submit
-          </app-button>
+          </button>
         </div>
-      </app-forms>
+      </form>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

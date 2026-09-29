@@ -1,8 +1,11 @@
 import { Component, inject } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Button } from '@shared/ui/button/button';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface HtmlContentDialogData {
   title: string;
@@ -11,7 +14,8 @@ export interface HtmlContentDialogData {
 
 @Component({
   selector: 'app-html-content-dialog',
-  imports: [Button, DialogShell],
+  imports: [Button, Dialog, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './html-content-dialog.html',
   host: { class: 'block' },
 })

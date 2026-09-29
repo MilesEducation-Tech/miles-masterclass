@@ -3,16 +3,22 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, finalize, map, of, startWith, switchMap } from 'rxjs';
 import { form, required, FormField as AngularFormField, validate } from '@angular/forms/signals';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Button } from '@shared/ui/button/button';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
-import { AriaAutocomplete } from '@shared/ui/aria/aria-autocomplete/aria-autocomplete';
-import { Forms } from '@shared/ui/forms/forms';
+
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { CompanyList, PROFILE_ROUTES } from '@core/models/profile.model';
 import { CommonResponse, RouteParams } from '@core/models/http.model';
 import { AutoCompleteOption } from '@core/models/form.model';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
+import { Combobox } from '@shared/ui/combobox/combobox';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface FirmSponsorshipDialogData {
   planId: number;
@@ -37,7 +43,8 @@ interface SponsorshipFormState {
 
 @Component({
   selector: 'app-firm-sponsorship-dialog',
-  imports: [Button, AriaInput, AriaAutocomplete, DialogShell, Forms, AngularFormField],
+  imports: [Button, AngularFormField, Dialog, Field, NgpLabel, Input, Checkbox, Combobox, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './firm-sponsorship-dialog.html',
   host: { class: 'block' },
 })

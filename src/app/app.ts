@@ -73,7 +73,7 @@ export class App {
   };
 
   constructor() {
-    this.engagement.start();
+    // this.engagement.start();
 
     // Capture the `?dXRt=` campaign token on first browser paint (browser-only
     // via afterNextRender) → cookie + backend report + URL cleanup.

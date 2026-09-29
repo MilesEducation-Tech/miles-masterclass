@@ -1,9 +1,15 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { toggleRoleSlug } from '@admin/core/models/admin-rbac.model';
 import { Button } from '@shared/ui/button/button';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel, NgpDescription } from 'ng-primitives/form-field';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface EditAdminRolesRole {
   slug: string;
@@ -30,7 +36,8 @@ export interface EditAdminRolesDialogData {
  */
 @Component({
   selector: 'app-edit-admin-roles-dialog',
-  imports: [Button, AriaInput, DialogShell],
+  imports: [Button, Dialog, Field, NgpLabel, NgpDescription, Checkbox, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './edit-admin-roles-dialog.html',
   host: { class: 'block' },
 })

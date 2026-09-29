@@ -6,15 +6,13 @@ import {
   required,
   validate,
 } from '@angular/forms/signals';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+
 import { Button } from '@shared/ui/button/button';
-import { CheckboxList, CheckboxListOption } from '@shared/ui/checkbox-list/checkbox-list';
-import { Forms } from '@shared/ui/forms/forms';
+
 import { AriaSelectOption } from '@core/models/aria.model';
 import { AllocationPicker } from '@admin/partner-platform-v2/components/allocation-picker/allocation-picker';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import {
   CAPABILITY_DEFAULTS,
   CAPABILITY_LABELS,
@@ -29,6 +27,16 @@ import {
 } from '@admin/core/models/partner-platform.model';
 import { AdminProvisioning } from '@admin/core/services/admin-provisioning';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
+import { Select, SelectOption } from '@shared/ui/select/select';
+import { Listbox } from '@shared/ui/listbox/listbox';
+import { ListboxOption } from '@shared/ui/listbox/listbox-option';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 /** Mirrors `PARTNER_ROLE_MAP.partner_subcompany_admin` in admin-users/utils/role-selection.ts. */
 const FIRM_ADMIN_ROLE_SLUG = 'partner_subcompany_admin';
@@ -108,14 +116,19 @@ export function parseDomains(input: string): string[] {
   selector: 'app-firm-form-dialog',
   imports: [
     AngularFormField,
-    Forms,
-    AriaInput,
-    AriaSelect,
     Button,
-    CheckboxList,
     AllocationPicker,
-    DialogShell,
+    Dialog,
+    Field,
+    NgpLabel,
+    Input,
+    Checkbox,
+    Select,
+    Listbox,
+    ListboxOption,
+    NgIcon,
   ],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './firm-form-dialog.html',
 })
 export class FirmFormDialog implements OnInit {
@@ -210,7 +223,7 @@ export class FirmFormDialog implements OnInit {
 
   /** Capabilities for the atomic firm admin — seeded from the firm defaults, editable. */
   protected readonly adminCapabilities = signal<PartnerCapability[]>([...CAPABILITY_DEFAULTS.firm]);
-  protected readonly capabilityOptions: CheckboxListOption[] = PARTNER_CAPABILITIES.map((c) => ({
+  protected readonly capabilityOptions: SelectOption[] = PARTNER_CAPABILITIES.map((c) => ({
     value: c,
     label: CAPABILITY_LABELS[c],
   }));

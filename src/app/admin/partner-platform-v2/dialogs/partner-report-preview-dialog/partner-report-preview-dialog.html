@@ -1,4 +1,4 @@
-<app-dialog-shell width="1040px" maxWidth="95vw" ariaLabel="Partner learning report">
+<app-dialog ariaLabel="Partner learning report" panelClass="p-0 w-[1040px] max-w-[95vw]">
   <div class="flex flex-col w-full">
     <!-- Toolbar — excluded from the PDF capture via `no-print` -->
     <div
@@ -8,15 +8,28 @@
         Partner learning report — {{ data.partnerName }}
       </h2>
       <div class="flex items-center gap-2">
-        <app-button
+        <button
+          app-button
+          type="button"
           variant="primary"
           size="sm"
           [disabled]="exporting() || loading() || !bundle()"
-          (clicked)="downloadPdf()"
+          (click)="downloadPdf()"
         >
           {{ exporting() ? 'Preparing PDF…' : 'Download PDF' }}
-        </app-button>
-        <app-button variant="close" size="sm" (clicked)="close()" aria-label="Close dialog" />
+        </button>
+        <button
+          app-button
+          type="button"
+          class="rounded-full"
+          size="sm"
+          aria-label="Close dialog"
+          variant="ghost"
+          size="icon"
+          (click)="close()"
+        >
+          <ng-icon name="heroXMark" aria-hidden="true" />
+        </button>
       </div>
     </div>
 
@@ -222,4 +235,4 @@
       </div>
     }
   </div>
-</app-dialog-shell>
+</app-dialog>

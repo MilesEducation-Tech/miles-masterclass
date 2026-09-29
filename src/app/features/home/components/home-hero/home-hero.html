@@ -29,13 +29,15 @@
           <p class="text-[1vw] leading-none font-normal text-neutral-400">
             Real-world AI applications. Immersive Master Classes by experts.
           </p>
-          <app-button
+          <button
+            app-button
+            type="button"
             class="bg-white text-black font-semibold rounded-md"
             variant="ghost"
-            (clicked)="openAppOrStore()"
+            (click)="openAppOrStore()"
           >
             Download App
-          </app-button>
+          </button>
         </div>
       </div>
     </div>
@@ -50,13 +52,15 @@
       <p class="text-sm text-center leading-none font-normal text-neutral-400">
         Real-world AI applications. Immersive Master Classes by experts.
       </p>
-      <app-button
-        variant="ghost"
+      <button
+        app-button
+        type="button"
         class="bg-white text-black font-semibold rounded-md"
-        (clicked)="openAppOrStore()"
+        variant="ghost"
+        (click)="openAppOrStore()"
       >
         Download App
-      </app-button>
+      </button>
     </div>
   </div>
   <div class="flex w-full h-full relative">

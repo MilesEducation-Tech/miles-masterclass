@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { clearCachesAndReload } from '@core/version/cache-buster';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
+import { Dialog } from '@shared/ui/dialog/dialog';
 
 /**
  * Non-closeable "a new version is available" dialog. Opened by UpdateChecker;
@@ -10,7 +11,7 @@ import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
  */
 @Component({
   selector: 'app-version-update-dialog',
-  imports: [DialogShell],
+  imports: [Dialog],
   templateUrl: './version-update-dialog.html',
   host: { class: 'block' },
 })

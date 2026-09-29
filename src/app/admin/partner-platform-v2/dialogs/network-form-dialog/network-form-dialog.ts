@@ -7,13 +7,19 @@ import {
   validate,
 } from '@angular/forms/signals';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Button } from '@shared/ui/button/button';
-import { Forms } from '@shared/ui/forms/forms';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { AllocationPicker } from '@admin/partner-platform-v2/components/allocation-picker/allocation-picker';
 import { Network, PartnerCode, SeatAllocation } from '@admin/core/models/partner-platform.model';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel, NgpDescription } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 /** Result emitted on submit — the parent maps it to create vs update. */
 export interface NetworkFormResult {
@@ -48,7 +54,19 @@ interface NetworkFormModel {
  */
 @Component({
   selector: 'app-network-form-dialog',
-  imports: [AngularFormField, Forms, AriaInput, Button, AllocationPicker, DialogShell],
+  imports: [
+    AngularFormField,
+    Button,
+    AllocationPicker,
+    Dialog,
+    Field,
+    NgpLabel,
+    NgpDescription,
+    Input,
+    Checkbox,
+    NgIcon,
+  ],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './network-form-dialog.html',
 })
 export class NetworkFormDialog implements OnInit {

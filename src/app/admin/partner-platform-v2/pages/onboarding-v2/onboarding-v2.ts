@@ -10,7 +10,7 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Button } from '@shared/ui/button/button';
 // Type-only: dialog components below load with `import()` when opened (PROMPT.md §4.4).
 import type {
@@ -29,6 +29,9 @@ import {
   OfflinePaymentResult,
 } from '@admin/user-onboarding/models/user-onboarding.model';
 import { UserOnboardingFacade } from '@admin/user-onboarding/services/user-onboarding-facade';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
 
 /**
  * Partner Platform v2 — User Onboarding (`/admin/partner-v2/onboarding`).
@@ -38,7 +41,7 @@ import { UserOnboardingFacade } from '@admin/user-onboarding/services/user-onboa
  */
 @Component({
   selector: 'app-onboarding-v2',
-  imports: [AriaInput, Button, UserOnboardingTable],
+  imports: [Button, UserOnboardingTable, Field, NgpLabel, Input],
   templateUrl: './onboarding-v2.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block w-full' },

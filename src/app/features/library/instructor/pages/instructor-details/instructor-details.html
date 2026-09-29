@@ -47,11 +47,11 @@
     <section class="space-y-4">
       <h2 class="text-2xl font-semibold text-foreground">Courses by {{ i.first_name }}</h2>
 
-      <app-tab-strip
-        [options]="courseTypeTabs"
-        [selected]="currentTabLabel()"
-        (selectionChange)="onTabChange($event)"
-      />
+      <app-tabs [value]="currentTabLabel() ?? ''" (valueChange)="onTabChange($event)">
+        @for (tab of courseTypeTabs; track tab) {
+          <app-tab [value]="tab" [label]="tab" />
+        }
+      </app-tabs>
 
       @switch (activeTab()) {
         @case ('masterclass') {

@@ -1,4 +1,4 @@
 export type ButtonVariant =
-  'default' | 'primary' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link' | 'close';
+  'default' | 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link';
 
-export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'link';
+export type ButtonSize = 'sm' | 'md' | 'lg' | 'xl' | 'icon';

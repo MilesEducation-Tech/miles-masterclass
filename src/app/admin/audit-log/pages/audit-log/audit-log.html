@@ -14,36 +14,65 @@
   <div class="flex flex-col gap-3">
     <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
       <div class="flex w-full max-w-md items-center">
-        <app-aria-input
-          id="audit-search"
-          type="search"
-          label="Search person, action or record"
-          class="w-full"
-          [(value)]="searchInput"
-        />
+        <app-field class="w-full">
+          <label ngpLabel for="audit-search">Search person, action or record</label>
+
+          <input
+            app-input
+            id="audit-search"
+            type="search"
+            [value]="searchInput()"
+            (input)="searchInput.set($any($event.target).value)"
+          />
+        </app-field>
       </div>
 
       <div class="flex items-end gap-3">
-        <app-aria-input id="audit-from" type="date" label="From" [(value)]="fromDate" />
-        <app-aria-input id="audit-to" type="date" label="To" [(value)]="toDate" />
-        <app-button
+        <app-field>
+          <label ngpLabel for="audit-from">From</label>
+
+          <input
+            app-input
+            id="audit-from"
+            type="date"
+            [value]="fromDate()"
+            (input)="fromDate.set($any($event.target).value)"
+          />
+        </app-field>
+        <app-field>
+          <label ngpLabel for="audit-to">To</label>
+
+          <input
+            app-input
+            id="audit-to"
+            type="date"
+            [value]="toDate()"
+            (input)="toDate.set($any($event.target).value)"
+          />
+        </app-field>
+        <button
+          app-button
+          type="button"
+          class="h-9 rounded-md border-white/15 bg-transparent text-xs text-white hover:bg-white/5"
           variant="outline"
           size="sm"
-          class="h-9 rounded-md border-white/15 bg-transparent text-xs text-white hover:bg-white/5"
           [disabled]="isLoading()"
-          (clicked)="reload()"
+          (click)="reload()"
         >
           Refresh
-        </app-button>
+        </button>
       </div>
     </div>
 
-    <app-tab-strip
-      [options]="tabLabels"
-      [selected]="activeTabLabel()"
-      (selectionChange)="onTabChange($event)"
+    <app-tabs
       aria-label="Audit category filter"
-    />
+      [value]="activeTabLabel() ?? ''"
+      (valueChange)="onTabChange($event)"
+    >
+      @for (tab of tabLabels; track tab) {
+        <app-tab [value]="tab" [label]="tab" />
+      }
+    </app-tabs>
   </div>
 
   <!-- Error -->
@@ -184,24 +213,28 @@
       <div class="mt-6 flex items-center justify-between text-sm text-neutral-400">
         <span>Showing {{ rows().length }} entries, newest first</span>
         <div class="flex items-center gap-3">
-          <app-button
+          <button
+            app-button
+            type="button"
+            class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
             variant="outline"
             size="sm"
-            class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
             [disabled]="!hasNewer() || isLoading()"
-            (clicked)="goNewer()"
+            (click)="goNewer()"
           >
             Newer
-          </app-button>
-          <app-button
+          </button>
+          <button
+            app-button
+            type="button"
+            class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
             variant="outline"
             size="sm"
-            class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
             [disabled]="!hasOlder() || isLoading()"
-            (clicked)="goOlder()"
+            (click)="goOlder()"
           >
             Older
-          </app-button>
+          </button>
         </div>
       </div>
     } @else if (!isLoading()) {

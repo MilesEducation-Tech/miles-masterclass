@@ -7,12 +7,14 @@ import {
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronDown } from '@ng-icons/heroicons/outline';
-import { CheckboxList } from '@shared/ui/checkbox-list/checkbox-list';
+
 import {
   CourseFilterGroup,
   CourseFilterKey,
   CourseFilterSelection,
 } from '@core/models/library-filters.model';
+import { Listbox } from '@shared/ui/listbox/listbox';
+import { ListboxOption } from '@shared/ui/listbox/listbox-option';
 
 @Component({
   selector: 'app-course-filters',
@@ -21,8 +23,9 @@ import {
     NgpAccordionItem,
     NgpAccordionTrigger,
     NgpAccordionContent,
-    CheckboxList,
     NgIcon,
+    Listbox,
+    ListboxOption,
   ],
   providers: [provideIcons({ heroChevronDown })],
   templateUrl: './course-filters.html',

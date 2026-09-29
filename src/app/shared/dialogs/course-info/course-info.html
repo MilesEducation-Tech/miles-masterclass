@@ -1,7 +1,18 @@
-<app-dialog-shell maxWidth="100%" [ariaLabel]="data.title" [dismissible]="false">
+<app-dialog [ariaLabel]="data.title" [dismissible]="false" panelClass="p-0 max-w-full">
   <div class="flex flex-col space-y-4 sm:w-[70vw] w-10/12 relative bg-background">
     <div class="absolute top-4 right-4 w-full flex justify-end px-4 z-10">
-      <app-button variant="close" size="sm" (clicked)="close()" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        size="sm"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
     <div class="flex w-full aspect-video relative overflow-hidden">
       <div
@@ -22,31 +33,41 @@
         </h2>
         <p class="text-sm text-neutral-400 md:text-base">{{ data.course_short_overview }}</p>
         <div class="flex space-x-3 items-center mt-4">
-          <app-button
-            variant="ghost"
+          <button
+            app-button
+            type="button"
             class="bg-white text-black rounded-lg gap-1"
-            (clicked)="watchNow()"
-            ><ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />{{
-              data.course_type.toLowerCase() === 'podcast' ? 'Listen Now' : 'Watch Now'
-            }}</app-button
-          >
-          <app-button
             variant="ghost"
+            (click)="watchNow()"
+          >
+            <ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />{{
+              data.course_type.toLowerCase() === 'podcast' ? 'Listen Now' : 'Watch Now'
+            }}
+          </button>
+          <button
+            app-button
+            type="button"
             class="bg-card text-white rounded-lg w-10 flex justify-center items-center p-0"
+            variant="ghost"
             [attr.aria-label]="bookmarked() ? 'Remove bookmark' : 'Add bookmark'"
-            (clicked)="toggleBookmark()"
-            ><ng-icon
+            (click)="toggleBookmark()"
+          >
+            <ng-icon
               [name]="bookmarked() ? 'matBookmarkRound' : 'matBookmarkBorderRound'"
               size="24"
               aria-hidden="true"
-          /></app-button>
-          <app-button
-            variant="ghost"
+            />
+          </button>
+          <button
+            app-button
+            type="button"
             class="bg-card text-white rounded-lg w-10 flex justify-center items-center p-0"
+            variant="ghost"
             aria-label="Share course"
-            (clicked)="openShare()"
-            ><ng-icon name="phosphorShareFatFill" size="24" aria-hidden="true"
-          /></app-button>
+            (click)="openShare()"
+          >
+            <ng-icon name="phosphorShareFatFill" size="24" aria-hidden="true" />
+          </button>
         </div>
       </div>
     </div>
@@ -54,4 +75,4 @@
       <app-course-about [card]="data" />
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

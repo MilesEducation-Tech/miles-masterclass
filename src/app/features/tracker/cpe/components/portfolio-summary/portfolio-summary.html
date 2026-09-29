@@ -18,19 +18,37 @@
   </div>
 
   <div class="flex shrink-0 flex-col gap-3 md:items-end">
-    <app-button class="md:w-72" variant="primary" (clicked)="viewCompliance.emit()">
+    <button
+      app-button
+      type="button"
+      class="md:w-72"
+      variant="primary"
+      (click)="viewCompliance.emit()"
+    >
       View Compliance
-    </app-button>
+    </button>
 
     <div class="flex flex-wrap gap-3">
-      <app-button variant="outline" class="gap-2 text-white" (clicked)="downloadAll.emit()">
+      <button
+        app-button
+        type="button"
+        class="gap-2 text-white"
+        variant="outline"
+        (click)="downloadAll.emit()"
+      >
         <ng-icon name="lucideDownload" size="16" aria-hidden="true" />
         All Certificate
-      </app-button>
-      <app-button variant="outline" class="gap-2 text-white" (clicked)="downloadNasba.emit()">
+      </button>
+      <button
+        app-button
+        type="button"
+        class="gap-2 text-white"
+        variant="outline"
+        (click)="downloadNasba.emit()"
+      >
         <ng-icon name="lucideDownload" size="16" aria-hidden="true" />
         Nasba Template
-      </app-button>
+      </button>
     </div>
   </div>
 </section>

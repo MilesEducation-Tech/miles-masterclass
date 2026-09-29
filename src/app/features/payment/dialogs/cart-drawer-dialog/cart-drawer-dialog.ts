@@ -2,15 +2,19 @@ import { Component, computed, inject } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Utils } from '@shared/services/utils';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { CartItem } from '@features/payment/components/cart-item/cart-item';
 import { Button } from '@shared/ui/button/button';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 @Component({
   selector: 'app-cart-drawer-dialog',
-  imports: [CartItem, Button, CurrencyPipe, DialogShell],
+  imports: [CartItem, Button, CurrencyPipe, Dialog, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './cart-drawer-dialog.html',
 })
 export class CartDrawerDialog {

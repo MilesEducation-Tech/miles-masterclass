@@ -2,12 +2,15 @@ import { Component, computed } from '@angular/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
 import { Button } from '@shared/ui/button/button';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { UpcomingPremiere } from '@core/models/feature.model';
 import {
   WebinarRegistrationForm,
   WebinarRegistrationFormValue,
 } from '@shared/components/webinar-registration-form/webinar-registration-form';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface WebinarRegistrationDialogData {
   webinar: UpcomingPremiere;
@@ -32,7 +35,8 @@ export interface WebinarRegistrationDialogData {
  */
 @Component({
   selector: 'app-webinar-registration-dialog',
-  imports: [Button, WebinarRegistrationForm, DialogShell],
+  imports: [Button, WebinarRegistrationForm, Dialog, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './webinar-registration-dialog.html',
   host: { class: 'block' },
 })

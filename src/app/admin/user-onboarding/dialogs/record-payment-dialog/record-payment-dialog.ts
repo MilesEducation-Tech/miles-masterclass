@@ -1,8 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Button } from '@shared/ui/button/button';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Textarea } from '@shared/ui/textarea/textarea';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface RecordPaymentDialogData {
   userEmail: string;
@@ -36,7 +42,8 @@ export interface RecordPaymentDialogResult {
  */
 @Component({
   selector: 'app-record-payment-dialog',
-  imports: [Button, AriaInput, DialogShell],
+  imports: [Button, Dialog, Field, NgpLabel, Textarea, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './record-payment-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

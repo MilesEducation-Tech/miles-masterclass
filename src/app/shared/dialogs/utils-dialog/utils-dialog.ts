@@ -1,11 +1,13 @@
 import { Component } from '@angular/core';
-import { NgIcon } from '@ng-icons/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
 import { environment } from '@env/environment';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Button } from '../../ui/button/button';
 import { ButtonVariant } from '@core/models/button.model';
 import { appStoreIcon, googlePlayIcon } from '@core/constants/icon';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface DialogButton {
   label: string;
@@ -71,7 +73,8 @@ const APP_STORE_URL = 'https://apps.apple.com/us/app/miles-one/id6504799221';
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.miles.one';
 @Component({
   selector: 'app-utils-dialog',
-  imports: [Button, NgIcon, DialogShell],
+  imports: [Button, NgIcon, Dialog],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './utils-dialog.html',
 })
 export class UtilsDialog {

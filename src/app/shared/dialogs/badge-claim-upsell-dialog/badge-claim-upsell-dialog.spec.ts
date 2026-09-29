@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { BadgeItem } from '@core/models/cpe-tracker.model';
 import { NgpDialogRef } from 'ng-primitives/dialog';
-import { stubDialogShell } from '@testing/mocks/dialog-ref.mock';
+import { stubDialog } from '@testing/mocks/dialog-ref.mock';
 import { BadgeClaimUpsellDialog } from './badge-claim-upsell-dialog';
 
 function makeBadge(): BadgeItem {
@@ -25,7 +25,7 @@ function makeBadge(): BadgeItem {
 
 function setupFixture() {
   const close = vi.fn();
-  stubDialogShell(BadgeClaimUpsellDialog);
+  stubDialog(BadgeClaimUpsellDialog);
   TestBed.configureTestingModule({
     providers: [{ provide: NgpDialogRef, useValue: { close, data: { badge: makeBadge() } } }],
   });

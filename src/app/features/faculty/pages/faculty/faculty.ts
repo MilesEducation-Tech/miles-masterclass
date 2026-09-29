@@ -15,11 +15,9 @@ import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 
 import { PlanScrollingGallery } from '@shared/components/plan-scrolling-gallery/plan-scrolling-gallery';
-import { AriaAutocomplete } from '@shared/ui/aria/aria-autocomplete/aria-autocomplete';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Button } from '@shared/ui/button/button';
-import { Forms } from '@shared/ui/forms/forms';
-import { Otp } from '@shared/ui/otp/otp';
+
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { dialCodeWithLength } from '@core/constants/dial-code';
 import { placeSuggestions } from '@core/services/location-autocomplete/location-autocomplete';
@@ -32,6 +30,12 @@ import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { SalesforceLead } from '@core/services/salesforce-lead/salesforce-lead';
 import { Utils } from '@shared/services/utils';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
+import { Combobox } from '@shared/ui/combobox/combobox';
+import { InputOtp } from '@shared/ui/input-otp/input-otp';
 
 const FACULTY_REGISTER_URL = 'v2/faculty/register/';
 const FACULTY_VERIFY_URL = 'v2/faculty/verify/';
@@ -168,15 +172,17 @@ interface FacultyRegisterResponse {
   selector: 'app-faculty',
   imports: [
     AngularFormField,
-    AriaAutocomplete,
-    AriaInput,
     Button,
-    Forms,
     NgIcon,
-    Otp,
     PlanScrollingGallery,
     RouterLink,
     Spinner,
+    Field,
+    NgpLabel,
+    Input,
+    Checkbox,
+    Combobox,
+    InputOtp,
   ],
   templateUrl: './faculty.html',
   styleUrl: './faculty.css',

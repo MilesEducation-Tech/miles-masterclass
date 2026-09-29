@@ -1,134 +1,119 @@
-import { Component, booleanAttribute, computed, input, model } from '@angular/core';
-import type { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { injectFormFieldState } from 'ng-primitives/form-field';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroCheck, heroChevronDown } from '@ng-icons/heroicons/outline';
 import {
+  injectSelectState,
   NgpSelect,
   NgpSelectDropdown,
   NgpSelectOption,
   NgpSelectPortal,
 } from 'ng-primitives/select';
 
-export interface SelectOption {
-  value: string;
+/** One choice of an `app-select`, `app-combobox` or `app-listbox`. */
+export interface SelectOption<V = unknown> {
+  value: V;
   label: string;
   disabled?: boolean;
 }
 
+const DROPDOWN =
+  'absolute z-1001 mt-1 max-h-60 w-(--ngp-select-width) origin-(--ngp-select-transform-origin) overflow-y-auto rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none data-enter:animate-in data-enter:fade-in-0 data-enter:zoom-in-95 data-exit:animate-out data-exit:fade-out-0 data-exit:zoom-out-95 motion-reduce:animate-none';
+
+const OPTION =
+  'group flex h-9 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm text-foreground outline-none data-hover:bg-muted data-active:bg-muted data-press:bg-secondary data-selected:font-medium data-disabled:cursor-not-allowed data-disabled:text-muted-foreground';
+
 /**
- * A select, built on `ngpSelect`, that binds straight to a signal form.
- *
- * The primitive owns the dropdown, positioning, keyboard navigation and ARIA;
- * this adds the value contract and the label wiring — no floating label, no
- * chips, no icon set. Style it from the call site if a screen needs more.
- *
- * **Why the label wiring is here:** `ngpInput`, `ngpTextarea` and `ngpCheckbox`
- * all call `ngpFormControl` internally, so inside an `ngpFormField` they pick
- * up `aria-labelledby` / `aria-describedby` for free. `ngpSelect` is the one
- * that does NOT — checked in the installed source — so a select dropped into a
- * form field would announce with no name at all. It reads the field state here
- * instead. The trigger is a `div`, so a `<label for>` could never have done it:
- * only a labelable element answers to `for`.
- *
- * **The value is ALWAYS a list**, single-select included (0 or 1 entries).
- * That is not a quirk of this component: `questions/` gives every option's
- * value as a list and `profile/` stores it back the same way, so a scalar here
- * would mean converting at every call site instead of none. `multiple` only
- * decides whether the primitive lets the learner pick more than one.
- *
- * ```html
- * <app-select [options]="countries()" [formField]="form.country" />
- * <app-select multiple [options]="topics()" [formField]="form.topics" />
- * ```
+ * A custom select bound to signal forms through `value` / `valueChange` (one option value, or a
+ * `V[]` with `multiple`; start the model at `null` / `[]`). Options are `{ value, label }`
+ * objects, so the trigger shows labels. The dropdown is portalled to the body. Name it with a
+ * `ngpLabel` in an `app-field`, or pass `ariaLabel`.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-select',
-  imports: [NgpSelect, NgpSelectDropdown, NgpSelectOption, NgpSelectPortal],
-  templateUrl: './select.html',
+  hostDirectives: [
+    {
+      directive: NgpSelect,
+      inputs: [
+        'id',
+        'ngpSelectValue:value',
+        'ngpSelectMultiple:multiple',
+        'ngpSelectDisabled:disabled',
+        'ngpSelectCompareWith:compareWith',
+      ],
+      outputs: ['ngpSelectValueChange:valueChange'],
+    },
+  ],
+  providers: [provideIcons({ heroChevronDown, heroCheck })],
+  imports: [NgpSelectDropdown, NgpSelectOption, NgpSelectPortal, NgIcon],
+  host: {
+    class:
+      'flex h-10 w-full cursor-pointer items-center justify-between rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-open:border-ring data-disabled:cursor-not-allowed data-disabled:opacity-50 data-invalid:data-touched:border-destructive',
+    '[attr.aria-label]': 'ariaLabel() || null',
+    // The primitive reflects disabled as `data-disabled` only; assistive technology needs this.
+    '[attr.aria-disabled]': 'state().disabled() || null',
+    '(focusout)': 'touch.emit()',
+  },
+  template: `
+    @if (display(); as value) {
+      <span class="truncate">{{ value }}</span>
+    } @else {
+      <span class="truncate text-muted-foreground">{{ placeholder() }}</span>
+    }
+
+    <ng-icon
+      name="heroChevronDown"
+      class="ml-2 shrink-0 text-muted-foreground"
+      aria-hidden="true"
+    />
+
+    <div *ngpSelectPortal ngpSelectDropdown [class]="dropdownClass">
+      @for (option of options(); track option.value) {
+        <div
+          ngpSelectOption
+          [ngpSelectOptionValue]="option.value"
+          [ngpSelectOptionDisabled]="option.disabled ?? false"
+          [class]="optionClass"
+        >
+          <span class="flex-1 truncate">{{ option.label }}</span>
+          <ng-icon
+            name="heroCheck"
+            class="shrink-0 opacity-0 group-data-selected:opacity-100"
+            aria-hidden="true"
+          />
+        </div>
+      } @empty {
+        <div class="px-3 py-2 text-center text-sm text-muted-foreground">No options found</div>
+      }
+    </div>
+  `,
 })
-export class Select implements FormValueControl<string[]> {
-  readonly options = input<readonly SelectOption[]>([]);
-  readonly placeholder = input('Select an option');
-  readonly multiple = input(false, { transform: booleanAttribute });
-  readonly emptyMessage = input('No options available');
-  /** Required, like every other control in this repo: the id is what the
-   *  label and the ARIA wiring hang off, and an auto-generated one would
-   *  differ between the server and client renders. */
-  readonly id = input.required<string>();
+export class Select<V = unknown> {
+  /** Access the underlying select primitive state. */
+  protected readonly state = injectSelectState<V | V[]>();
 
-  // FormValueControl — what `[formField]` reads and writes.
-  readonly value = model<string[]>([]);
-  readonly touched = model<boolean>(false);
-  readonly disabled = input<boolean>(false);
-  readonly readonly = input<boolean>(false);
-  readonly required = input<boolean>(false);
-  readonly invalid = input<boolean>(false);
-  readonly hidden = input<boolean>(false);
-  readonly errors = input<readonly ValidationError[]>([]);
+  /** The options for the select. */
+  readonly options = input<readonly SelectOption<V>[]>([]);
 
-  /**
-   * The surrounding `ngpFormField`, when there is one. Optional by design: this
-   * control is just as usable on its own, and then it is the caller's job to
-   * name it.
-   */
-  private readonly formField = injectFormFieldState({ optional: true });
+  /** Shown while nothing is selected. */
+  readonly placeholder = input<string>('');
 
-  /** Ids of the field's `ngpLabel` elements — the select's accessible name. */
-  protected readonly labelledBy = computed(() => {
-    const labels = this.formField?.()?.labels() ?? [];
-    return labels.length ? labels.join(' ') : null;
-  });
+  /** The accessible name of the trigger when it is not inside an `app-field`. */
+  readonly ariaLabel = input<string>('');
 
-  /** Ids of the field's `ngpDescription` elements. */
-  protected readonly describedBy = computed(() => {
-    const descriptions = this.formField?.()?.descriptions() ?? [];
-    return descriptions.length ? descriptions.join(' ') : null;
-  });
+  /** Signal forms mark the field touched on this. */
+  readonly touch = output<void>();
 
-  /**
-   * Options with duplicate values dropped, first occurrence winning.
-   *
-   * Not defensive padding: `@for (… track option.value)` THROWS NG0955 on a
-   * repeated key, so one duplicated value from the server takes the whole
-   * dropdown down. A server-driven list is exactly where that happens.
-   */
-  protected readonly renderOptions = computed(() => {
-    const seen = new Set<string>();
-    return this.options().filter((o) => (seen.has(o.value) ? false : (seen.add(o.value), true)));
-  });
+  protected readonly dropdownClass = DROPDOWN;
+  protected readonly optionClass = OPTION;
 
-  /** What the trigger shows: the chosen options' labels, in option order. */
+  /** The selected option labels, in option order. */
   protected readonly display = computed(() => {
-    const chosen = new Set(this.value() ?? []);
+    const value = this.state().value();
+    const selected = Array.isArray(value) ? value : value == null ? [] : [value];
     return this.options()
-      .filter((o) => chosen.has(o.value))
-      .map((o) => o.label)
+      .filter((option) => selected.includes(option.value))
+      .map((option) => option.label)
       .join(', ');
   });
-
-  /** `ngpSelect` holds a list in multiple mode and a bare value otherwise. */
-  protected readonly selection = computed<string | string[] | null>(() =>
-    this.multiple() ? (this.value() ?? []) : ((this.value() ?? [])[0] ?? null),
-  );
-
-  /**
-   * `ngpSelect` PRUNES any value it cannot find among the rendered options and
-   * emits the pruned result — so a seeded answer whose options have not arrived
-   * yet (here they come from a different resource than the answers) emits back
-   * as `null` / `[]` and would silently wipe itself. A pruned value was never
-   * user-toggled, so it is carried over rather than lost.
-   *
-   * Deselecting still works: that value IS rendered, so it is not carried.
-   */
-  protected onValueChange(next: string | string[] | null): void {
-    const incoming = next == null ? [] : Array.isArray(next) ? next : [next];
-    const rendered = new Set(this.options().map((o) => o.value));
-    const carried = (this.value() ?? []).filter((v) => !rendered.has(v) && !incoming.includes(v));
-    this.value.set([...incoming, ...carried]);
-  }
-
-  /** Closing the dropdown is this control's "blur" — it is what makes a
-   *  required error appear after the learner has actually been here. */
-  protected onOpenChange(open: boolean): void {
-    if (!open) this.touched.set(true);
-  }
 }

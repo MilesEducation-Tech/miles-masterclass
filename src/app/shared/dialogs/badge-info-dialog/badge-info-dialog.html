@@ -1,10 +1,20 @@
-<app-dialog-shell ariaLabel="Your Badges">
+<app-dialog ariaLabel="Your Badges" panelClass="p-0">
   <section
     class="relative w-[calc(100vw-2rem)] max-w-6xl min-w-2xs rounded-3xl bg-[#0E0E10] p-6 text-white shadow-2xl md:p-10"
   >
     <header class="mb-6 flex items-center justify-between">
       <h2 id="badge-info-dialog-title" class="text-2xl font-bold md:text-3xl">Your Badges</h2>
-      <app-button variant="close" (clicked)="onClose()"></app-button>
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="onClose()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </header>
 
     @if (badges().length) {
@@ -24,4 +34,4 @@
       </p>
     }
   </section>
-</app-dialog-shell>
+</app-dialog>

@@ -85,29 +85,36 @@
           </div>
 
           <app-progress
-            class="mt-2 block"
-            variant="info"
-            size="sm"
-            label="none"
             [value]="percentage()"
+            class="mt-2 block"
+            variant="primary"
+            size="sm"
             [ariaLabel]="'Level ' + level.badge.level_rank + ' progress'"
           />
 
           <p class="mt-2 text-sm text-muted-foreground">{{ progressHint() }}</p>
 
           <div class="mt-5 flex items-center gap-3">
-            <app-button variant="outline" [routerLink]="cpeTrackerLink()" class="text-white">
+            <button
+              app-button
+              type="button"
+              class="text-white"
+              variant="outline"
+              [routerLink]="cpeTrackerLink()"
+            >
               CPE Tracker
-            </app-button>
-            <app-button
+            </button>
+            <button
+              app-button
+              type="button"
+              class="text-white"
               variant="outline"
               size="icon"
-              class="text-white"
-              ariaLabel="About this CAIRA badge"
-              (clicked)="openInfo()"
+              aria-label="About this CAIRA badge"
+              (click)="openInfo()"
             >
               <ng-icon name="lucideInfo" size="18" aria-hidden="true" />
-            </app-button>
+            </button>
           </div>
         </div>
       </div>
