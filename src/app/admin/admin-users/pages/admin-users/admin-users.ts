@@ -3,10 +3,9 @@ import { Component, DestroyRef, computed, inject, linkedSignal, signal } from '@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { take } from 'rxjs';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+
 import { Button } from '@shared/ui/button/button';
-import { CheckboxList, CheckboxListOption } from '@shared/ui/checkbox-list/checkbox-list';
+
 import { Spinner } from '@shared/ui/spinner/spinner';
 // Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { EditAdminRolesDialogData } from '@admin/admin-users/dialogs/edit-admin-roles-dialog/edit-admin-roles-dialog';
@@ -30,10 +29,29 @@ import {
   PartnerCapability,
   PartnerRole,
 } from '@admin/core/models/partner-platform.model';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel, NgpDescription } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
+import { Select, SelectOption } from '@shared/ui/select/select';
+import { Listbox } from '@shared/ui/listbox/listbox';
+import { ListboxOption } from '@shared/ui/listbox/listbox-option';
 
 @Component({
   selector: 'app-admin-admin-users',
-  imports: [AriaInput, AriaSelect, Button, CheckboxList, Spinner, DatePipe],
+  imports: [
+    Button,
+    Spinner,
+    DatePipe,
+    Field,
+    NgpLabel,
+    NgpDescription,
+    Input,
+    Checkbox,
+    Select,
+    Listbox,
+    ListboxOption,
+  ],
   providers: [AdminUsersFacade],
   templateUrl: './admin-users.html',
   host: { class: 'block w-full' },
@@ -229,7 +247,7 @@ export class AdminUsers {
     () => new Set(CAPABILITY_DEFAULTS[this.effectiveRole() ?? 'super']),
   );
 
-  protected readonly capabilityOptions: CheckboxListOption[] = PARTNER_CAPABILITIES.map((c) => ({
+  protected readonly capabilityOptions: SelectOption[] = PARTNER_CAPABILITIES.map((c) => ({
     value: c,
     label: CAPABILITY_LABELS[c],
   }));

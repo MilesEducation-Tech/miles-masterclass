@@ -63,7 +63,7 @@
   <!-- Account card. The menu is an ngpMenu: role="menu", arrow keys, Escape, outside-click
        and focus return come from the primitive. It is attached INSIDE this card rather than
        portalled to <body>, because its colours are `.admin-theme` variables that only exist
-       inside the admin layout. The trigger is a native <button> (was <app-button>, whose
+       inside the admin layout. The trigger is a native <button> (was <button app-button type="button"></button>, whose
        host is not the focusable element) with app-button's resolved ghost classes. -->
   <div #accountCard class="m-4 relative">
     <button

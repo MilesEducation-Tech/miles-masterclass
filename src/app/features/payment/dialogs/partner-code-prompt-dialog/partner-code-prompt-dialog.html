@@ -1,18 +1,24 @@
-<app-dialog-shell
-  maxWidth="95vw"
+<app-dialog
   [ariaLabel]="
     data?.codeOnly ? 'Apply a partner code' : 'Continue to subscribe or apply a partner code'
   "
+  panelClass="p-0 max-w-[95vw]"
 >
   <div
     class="bg-linear-to-b from-sheet-top to-sheet-bottom flex flex-col md:max-w-[640px] w-[95svw] max-h-[85svh] mx-auto overflow-hidden relative rounded-xl"
   >
-    <app-button
-      variant="close"
+    <button
+      app-button
+      type="button"
+      class="rounded-full"
       [class]="'absolute top-3 right-3 z-10'"
-      (clicked)="close()"
       aria-label="Close dialog"
-    />
+      variant="ghost"
+      size="icon"
+      (click)="close()"
+    >
+      <ng-icon name="heroXMark" aria-hidden="true" />
+    </button>
 
     <div class="flex-1 overflow-y-auto px-6 py-10 sm:px-12">
       <p class="text-base sm:text-lg text-white text-center leading-relaxed">
@@ -26,14 +32,16 @@
         </p>
 
         <div class="flex justify-center mt-6">
-          <app-button
+          <button
+            app-button
+            type="button"
+            class="w-full sm:w-auto"
             variant="default"
             size="lg"
-            class="w-full sm:w-auto"
-            (clicked)="continueToSubscribe()"
+            (click)="continueToSubscribe()"
           >
             Continue to subscribe
-          </app-button>
+          </button>
         </div>
 
         <p class="text-center text-white mt-6 mb-4">OR</p>
@@ -43,25 +51,30 @@
         </p>
       }
 
-      <app-forms type="signal" (submitted)="applyCode()">
+      <form (submit)="$event.preventDefault(); applyCode()">
         <div class="flex items-stretch gap-0 rounded-lg overflow-hidden max-w-md mx-auto relative">
-          <app-aria-input
-            class="flex-1"
-            id="partner_code"
-            label="Enter Partner Code"
-            placeholder="Enter Partner Code"
-            [formField]="partnerCodeForm.partner_code"
-          />
-          <app-button
+          <app-field class="flex-1" [errors]="partnerCodeForm.partner_code().errors()">
+            <label ngpLabel for="partner_code">Enter Partner Code</label>
+
+            <input
+              app-input
+              id="partner_code"
+              type="text"
+              placeholder="Enter Partner Code"
+              [formField]="partnerCodeForm.partner_code"
+            />
+          </app-field>
+          <button
+            app-button
+            class="absolute top-1 right-1"
             variant="secondary"
             type="submit"
-            class="absolute top-1 right-1"
             [disabled]="!canSubmit()"
           >
             {{ loading() ? 'Applying…' : 'Submit' }}
-          </app-button>
+          </button>
         </div>
-      </app-forms>
+      </form>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

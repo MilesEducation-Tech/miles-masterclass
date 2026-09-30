@@ -50,7 +50,9 @@
           <p class="text-white/70 text-xs">
             Subscribe to keep watching and unlock CPE credit, quizzes and your certificate.
           </p>
-          <app-button variant="default" size="sm" (clicked)="unlock()">View Plans</app-button>
+          <button app-button type="button" variant="default" size="sm" (click)="unlock()">
+            View Plans
+          </button>
         </div>
       }
 
@@ -77,50 +79,58 @@
 
     <!-- Action rail: all buttons live outside the video screen -->
     <div class="flex flex-col items-center justify-end gap-4 pb-4">
-      <app-button
+      <button
+        app-button
+        type="button"
+        class="rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
         variant="ghost"
         size="icon"
-        class="rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
-        (clicked)="muteToggled.emit()"
+        (click)="muteToggled.emit()"
       >
         <ng-icon [name]="volumeIcon()" size="20" [attr.aria-label]="muted() ? 'Unmute' : 'Mute'" />
-      </app-button>
+      </button>
 
-      <app-button
+      <button
+        app-button
+        type="button"
+        class="rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
         variant="ghost"
         size="icon"
-        class="rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
-        (clicked)="bookmarkToggled.emit()"
+        (click)="bookmarkToggled.emit()"
       >
         <ng-icon
           [name]="bookmarkIcon()"
           size="20"
           [attr.aria-label]="data.added_bookmark ? 'Unlike' : 'Like'"
         />
-      </app-button>
+      </button>
 
-      <app-button
+      <button
+        app-button
+        type="button"
+        class="rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
         variant="ghost"
         size="icon"
-        class="rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
-        (clicked)="shared.emit()"
+        (click)="shared.emit()"
       >
         <ng-icon name="matSendRound" size="20" aria-label="Share episode" />
-      </app-button>
+      </button>
 
       @if (canShowCart()) {
-        <app-button
+        <button
+          app-button
+          type="button"
+          class="rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
           variant="ghost"
           size="icon"
-          class="rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
-          (clicked)="cartToggled.emit()"
+          (click)="cartToggled.emit()"
         >
           <ng-icon
             [name]="cartIcon()"
             size="20"
             [attr.aria-label]="data.is_added_to_cart ? 'In cart' : 'Add to cart'"
           />
-        </app-button>
+        </button>
       }
 
       @let totalCpe = data.fields_of_study | totalCpeCredits: data.class_credits;
@@ -136,14 +146,16 @@
 
 <!-- Bottom bar: CTA + more -->
 <div class="shrink-0 flex items-center gap-3 relative">
-  <app-button
+  <button
+    app-button
+    type="button"
     class="flex-1 w-full rounded-lg"
     variant="default"
     [disabled]="ctaDisabled()"
-    (clicked)="onCtaClick()"
+    (click)="onCtaClick()"
   >
     {{ ctaLabel() }}
-  </app-button>
+  </button>
 
   @if (active()) {
     <button

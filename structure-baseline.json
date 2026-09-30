@@ -45,8 +45,7 @@
     "src/app/shared/dialogs/ai-lab-dialog/ai-lab-dialog.css": "Angular-scoped @keyframes (+ the classes that use them)",
     "src/app/shared/dialogs/calendly-dialog/calendly-dialog.css": "third-party DOM: the iframe Calendly's embed script injects",
     "src/app/shared/dialogs/webinar-details-dialog/webinar-details-dialog.css": "Angular-scoped @keyframes (+ the classes that use them)",
-    "src/app/shared/ui/button/button.css": ":host rules the slider nav buttons depend on (restored in Phase 12)",
-    "src/app/shared/ui/dialog-shell/dialog-shell.css": "Angular-scoped @keyframes (+ the classes that use them)"
+    "src/app/shared/ui/toast/toast.css": ":host[data-*] stacking maths (Sonner model driven by ng-primitives --ngp-toast-* vars) and the enter/leave @keyframes"
   },
   "inlineStyles": {
     "src/app/admin/partner-platform/dialogs/network-firms-dialog/network-firms-dialog.html": {

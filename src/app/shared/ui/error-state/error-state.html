@@ -21,8 +21,8 @@
   <p class="text-sm text-gray-400">{{ message() }}</p>
 
   @if (showRetry()) {
-    <app-button variant="default" (clicked)="retry.emit()">
+    <button app-button type="button" variant="default" (click)="retry.emit()">
       {{ retryLabel() }}
-    </app-button>
+    </button>
   }
 </div>

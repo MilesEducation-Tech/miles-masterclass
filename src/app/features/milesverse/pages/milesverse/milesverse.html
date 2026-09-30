@@ -31,10 +31,10 @@
       <div class="mt-9">
         @if (available) {
           <div class="flex flex-wrap items-center gap-3 mt-6">
-            <app-button variant="primary" class="h-13 gap-2 rounded-xl">
+            <button app-button type="button" class="h-13 gap-2 rounded-xl" variant="primary">
               <ng-icon name="lucideSparkles" class="text-xl" aria-hidden="true" />
               <span>Browse scenarios</span>
-            </app-button>
+            </button>
           </div>
         } @else {
           <p
@@ -148,7 +148,7 @@
         </h2>
         <p class="mt-2 text-sm text-muted-foreground">{{ message }}</p>
         <div class="mt-6">
-          <app-button variant="primary" (clicked)="load()"> Try again </app-button>
+          <button app-button type="button" variant="primary" (click)="load()">Try again</button>
         </div>
       </div>
     } @else {

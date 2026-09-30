@@ -5,7 +5,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroXMark, heroPlus, heroMinus } from '@ng-icons/heroicons/outline';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Button } from '@shared/ui/button/button';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { Logger } from '@core/services/logger/logger';
@@ -17,6 +17,7 @@ import {
   PAYMENT_ROUTES,
 } from '@core/models/payment.model';
 import { apiUrl } from '@core/services/api-client/api-client';
+import { Dialog } from '@shared/ui/dialog/dialog';
 
 export interface CouponDialogData {
   cartData: CartDetails;
@@ -24,7 +25,7 @@ export interface CouponDialogData {
 
 @Component({
   selector: 'app-coupon-dialog',
-  imports: [Button, DialogShell, NgIcon, ReactiveFormsModule, PageLoading],
+  imports: [Button, NgIcon, ReactiveFormsModule, PageLoading, Dialog],
   providers: [CurrencyPipe],
   viewProviders: [provideIcons({ heroXMark, heroPlus, heroMinus })],
   templateUrl: './coupon-dialog.html',

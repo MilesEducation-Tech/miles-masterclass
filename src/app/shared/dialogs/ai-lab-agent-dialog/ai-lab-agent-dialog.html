@@ -1,4 +1,4 @@
-<app-dialog-shell maxWidth="100%" [ariaLabel]="data.name">
+<app-dialog [ariaLabel]="data.name" panelClass="p-0 max-w-full">
   <!-- Structure cloned from course-info.html: full-bleed hero with a bottom fade,
      content block overlaid bottom-left, details below. -->
   <!-- Width in viewport units, not a percentage: the dialog container is
@@ -6,7 +6,18 @@
      and collapses the whole dialog to a ~150px strip on a phone. -->
   <div class="relative flex w-[92vw] flex-col space-y-4 bg-background sm:w-[70vw]">
     <div class="absolute top-4 right-4 z-10 flex w-full justify-end px-4">
-      <app-button variant="close" size="sm" (clicked)="close()" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        size="sm"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <!--
@@ -71,14 +82,16 @@
         <p class="text-sm text-neutral-400 md:text-base">{{ data.description }}</p>
 
         <div class="mt-4 flex items-center space-x-3">
-          <app-button
-            variant="ghost"
+          <button
+            app-button
+            type="button"
             class="gap-1 rounded-lg bg-white text-black"
-            (clicked)="launch()"
+            variant="ghost"
+            (click)="launch()"
           >
             <ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />
             Launch AI Lab
-          </app-button>
+          </button>
         </div>
       </div>
     </div>
@@ -102,9 +115,9 @@
             </div>
             <div class="flex items-center gap-4">
               <span class="text-3xl font-bold text-accent">{{ report.scorePercent }}%</span>
-              <app-button variant="outline" size="sm" (clicked)="resubmit()">
+              <button app-button type="button" variant="outline" size="sm" (click)="resubmit()">
                 Submit another
-              </app-button>
+              </button>
             </div>
           </div>
         } @else {
@@ -162,28 +175,32 @@
                   </button>
                 }
               </div>
-              <app-button
-                variant="ghost"
+              <button
+                app-button
+                type="button"
                 class="mt-4 h-12 w-full rounded-xl bg-accent text-base"
+                variant="ghost"
                 [disabled]="!selectedWorkflowId() || submittingWorkflow()"
-                (clicked)="submitWorkflow()"
+                (click)="submitWorkflow()"
               >
                 {{ submittingWorkflow() ? 'Scoring your workflow…' : 'Submit for scoring' }}
-              </app-button>
+              </button>
             } @else {
               <div class="mt-4 rounded-xl border border-border bg-background/40 p-5 text-center">
                 <p class="text-sm text-muted-foreground">
                   No published workflows found. Build and publish one in Copilot Studio first, then
                   come back to submit it.
                 </p>
-                <app-button
-                  variant="ghost"
+                <button
+                  app-button
+                  type="button"
                   class="mt-4 gap-1 rounded-lg bg-white text-black"
-                  (clicked)="launch()"
+                  variant="ghost"
+                  (click)="launch()"
                 >
                   <ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />
                   Launch AI Lab
-                </app-button>
+                </button>
               </div>
             }
           </div>
@@ -206,4 +223,4 @@
       </div>
     }
   </div>
-</app-dialog-shell>
+</app-dialog>

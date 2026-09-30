@@ -1,12 +1,15 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { DeprecationBanner } from '@shared/components/deprecation-banner/deprecation-banner';
 import { PartnerNetworkFacade } from '@admin/core/services/partner-network-facade';
 import { PartnerAdminMe } from '@admin/core/services/partner-admin-me';
 import { Seat, SeatStatusFilter } from '@admin/core/models/partner-platform.model';
 import { SeatTrackerTable } from '@admin/seat-tracker/components/seat-tracker-table/seat-tracker-table';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
 
 const STATUS_TABS: { value: SeatStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -29,7 +32,7 @@ const STATUS_TABS: { value: SeatStatusFilter; label: string }[] = [
  */
 @Component({
   selector: 'app-seat-tracker',
-  imports: [AriaInput, SeatTrackerTable, DeprecationBanner],
+  imports: [SeatTrackerTable, DeprecationBanner, Field, NgpLabel, Input],
   templateUrl: './seat-tracker.html',
   host: { class: 'block w-full' },
 })

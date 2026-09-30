@@ -9,12 +9,15 @@
       <h2 class="title">{{ current().chapter_name }}</h2>
     </div>
     <div class="ml-auto flex items-center gap-2">
-      <app-button
-        variant="link"
+      <button
+        app-button
+        type="button"
         class="underline text-accent"
-        (clicked)="togglePreviewMode.emit('video')"
-        >Watch Again</app-button
+        variant="link"
+        (click)="togglePreviewMode.emit('video')"
       >
+        Watch Again
+      </button>
     </div>
   </div>
   <!-- Progress -->

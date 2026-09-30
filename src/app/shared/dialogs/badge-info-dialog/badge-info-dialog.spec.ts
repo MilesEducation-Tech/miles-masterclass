@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { BadgeItem } from '@core/models/cpe-tracker.model';
 import { NgpDialogRef } from 'ng-primitives/dialog';
-import { stubDialogShell } from '@testing/mocks/dialog-ref.mock';
+import { stubDialog } from '@testing/mocks/dialog-ref.mock';
 import { BadgeInfoDialog } from './badge-info-dialog';
 
 function makeBadge(overrides: Partial<BadgeItem> = {}): BadgeItem {
@@ -26,7 +26,7 @@ function makeBadge(overrides: Partial<BadgeItem> = {}): BadgeItem {
 
 function setupFixture(badges: BadgeItem[]) {
   const close = vi.fn();
-  stubDialogShell(BadgeInfoDialog);
+  stubDialog(BadgeInfoDialog);
   TestBed.configureTestingModule({
     providers: [{ provide: NgpDialogRef, useValue: { close, data: { badges } } }],
   });

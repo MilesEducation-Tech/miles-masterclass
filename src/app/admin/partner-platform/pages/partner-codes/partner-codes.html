@@ -8,7 +8,9 @@
         admins mint coupons from these into their firms.
       </p>
     </div>
-    <app-button variant="primary" (clicked)="openCreate()">Create partner code</app-button>
+    <button app-button type="button" variant="primary" (click)="openCreate()">
+      Create partner code
+    </button>
   </header>
 
   @if (facade.partnerCodesError()) {

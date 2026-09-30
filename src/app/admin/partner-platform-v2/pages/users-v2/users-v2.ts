@@ -1,7 +1,7 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Button } from '@shared/ui/button/button';
 // Type-only: dialog components below load with `import()` when opened (PROMPT.md §4.4).
 import type {
@@ -13,7 +13,12 @@ import { BlockedStatusFilter, PartnerPanelUser } from '@admin/core/models/partne
 import { PartnerAdminMe } from '@admin/core/services/partner-admin-me';
 import { PartnerUsersFacade } from '@admin/users/services/partner-users-facade';
 import { UsersTable } from '@admin/users/components/users-table/users-table';
-import { TabStrip } from '@shared/ui/tab-strip/tab-strip';
+
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Tabs } from '@shared/ui/tabs/tabs';
+import { Tab } from '@shared/ui/tabs/tab';
 
 const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -29,7 +34,7 @@ const STATUS_TABS: { value: BlockedStatusFilter; label: string }[] = [
  */
 @Component({
   selector: 'app-users-v2',
-  imports: [AriaInput, Button, UsersTable, TabStrip],
+  imports: [Button, UsersTable, Field, NgpLabel, Input, Tabs, Tab],
   templateUrl: './users-v2.html',
   host: { class: 'block w-full' },
 })

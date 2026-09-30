@@ -12,7 +12,7 @@ import {
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroFunnel } from '@ng-icons/heroicons/outline';
 import { Vertical } from '@shared/components/cards/vertical/vertical';
-import { TabStrip } from '@shared/ui/tab-strip/tab-strip';
+
 import {
   COURSE_TYPE_TABS,
   CourseFilterGroup,
@@ -21,10 +21,12 @@ import {
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { CourseFilters } from '../../components/course-filters/course-filters';
 import { CourseFacade } from '../../services/course-facade';
+import { Tabs } from '@shared/ui/tabs/tabs';
+import { Tab } from '@shared/ui/tabs/tab';
 
 @Component({
   selector: 'app-course',
-  imports: [TabStrip, Vertical, CourseFilters, NgIcon],
+  imports: [Vertical, CourseFilters, NgIcon, Tabs, Tab],
   providers: [provideIcons({ heroFunnel })],
   templateUrl: './course.html',
   host: {

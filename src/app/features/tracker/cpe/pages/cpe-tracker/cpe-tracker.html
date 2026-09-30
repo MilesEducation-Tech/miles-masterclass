@@ -19,22 +19,26 @@
       </div>
 
       <div class="flex flex-wrap items-end gap-3">
-        <app-aria-select
-          id="cpe-course-type"
-          class="w-44"
-          label="Course Type"
-          [options]="courseTypeOptions"
-          [value]="courseType()"
-          (valueChange)="onCourseType($event)"
-        />
-        <app-aria-select
-          id="cpe-year"
-          class="w-36"
-          label="Year"
-          [options]="yearOptions"
-          [value]="year()"
-          (valueChange)="onYear($event)"
-        />
+        <app-field class="w-44">
+          <label ngpLabel for="cpe-course-type">Course Type</label>
+
+          <app-select
+            id="cpe-course-type"
+            [options]="courseTypeOptions"
+            [value]="courseType()"
+            (valueChange)="onCourseType($event)"
+          />
+        </app-field>
+        <app-field class="w-36">
+          <label ngpLabel for="cpe-year">Year</label>
+
+          <app-select
+            id="cpe-year"
+            [options]="yearOptions"
+            [value]="year()"
+            (valueChange)="onYear($event)"
+          />
+        </app-field>
       </div>
     </header>
 

@@ -20,11 +20,11 @@
     <div
       class="sticky top-24 z-10 -mx-4 px-4 py-2 bg-background/95 backdrop-blur-sm flex items-center justify-between gap-4 flex-wrap"
     >
-      <app-tab-strip
-        [options]="tabLabels()"
-        [selected]="currentLabel()"
-        (selectionChange)="onTabChange($event)"
-      />
+      <app-tabs [value]="currentLabel() ?? ''" (valueChange)="onTabChange($event)">
+        @for (tab of tabLabels(); track tab) {
+          <app-tab [value]="tab" [label]="tab" />
+        }
+      </app-tabs>
       <button
         type="button"
         class="md:hidden inline-flex items-center gap-2 h-10 px-4 rounded-full bg-secondary/60 border border-border/40 text-sm font-medium hover:bg-secondary/80 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent"

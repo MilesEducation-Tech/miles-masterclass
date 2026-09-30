@@ -38,19 +38,28 @@
       </p>
 
       <div class="mt-8 flex flex-wrap gap-3.5">
-        <app-button variant="default" size="lg" class="gap-2" (clicked)="onStartWatching()">
+        <button
+          app-button
+          type="button"
+          class="gap-2"
+          variant="default"
+          size="lg"
+          (click)="onStartWatching()"
+        >
           <span class="inline-block h-2 w-2 rounded-full bg-primary-foreground"></span>
           Start watching
           <span aria-hidden="true">→</span>
-        </app-button>
-        <app-button
+        </button>
+        <button
+          app-button
+          type="button"
+          class="border-foreground/40 text-foreground hover:bg-foreground hover:text-background"
           variant="outline"
           size="lg"
-          class="border-foreground/40 text-foreground hover:bg-foreground hover:text-background"
-          (clicked)="onBrowseLibrary()"
+          (click)="onBrowseLibrary()"
         >
           Browse library
-        </app-button>
+        </button>
       </div>
     </div>
 

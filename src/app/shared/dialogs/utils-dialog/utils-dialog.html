@@ -1,8 +1,9 @@
-<app-dialog-shell
+<app-dialog
   [width]="data.width"
   [maxWidth]="data.maxWidth"
   [ariaLabel]="data.ariaLabel ?? data.title ?? 'Dialog'"
   [dismissible]="!data.disableClose"
+  panelClass="p-0"
 >
   <div
     class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] mx-auto overflow-hidden relative"
@@ -10,7 +11,18 @@
   >
     <!-- Close Button -->
     <div class="absolute top-4 right-4 z-30">
-      <app-button variant="close" size="sm" (clicked)="close()" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        size="sm"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <!-- Miles One app-download layout: title + subtitle + store badges + QR + phone mockup + footer -->
@@ -295,16 +307,18 @@
         @if (data.buttons && data.buttons.length > 0) {
           <div class="mt-6 flex justify-center gap-3">
             @for (button of data.buttons; track $index) {
-              <app-button
+              <button
+                app-button
+                type="button"
                 [variant]="button.variant ?? 'default'"
-                (clicked)="handleButtonClick(button.action)"
+                (click)="handleButtonClick(button.action)"
               >
                 {{ button.label }}
-              </app-button>
+              </button>
             }
           </div>
         }
       </div>
     }
   </div>
-</app-dialog-shell>
+</app-dialog>

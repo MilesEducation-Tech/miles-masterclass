@@ -4,7 +4,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 
 import { CourseInfo } from './course-info';
-import { provideMockDialogRef, stubDialogShell } from '@testing/mocks/dialog-ref.mock';
+import { provideMockDialogRef, stubDialog } from '@testing/mocks/dialog-ref.mock';
 import { MOCK_CONTENT_ABOUT } from '@testing/mocks/content.mock';
 
 describe('CourseInfo', () => {
@@ -12,7 +12,7 @@ describe('CourseInfo', () => {
   let fixture: ComponentFixture<CourseInfo>;
 
   beforeEach(async () => {
-    stubDialogShell(CourseInfo);
+    stubDialog(CourseInfo);
     await TestBed.configureTestingModule({
       imports: [CourseInfo],
       providers: [

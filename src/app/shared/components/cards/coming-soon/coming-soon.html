@@ -40,27 +40,31 @@
       >
         <div class="flex items-center justify-center gap-2 w-full">
           @if (card().trailer_link) {
-            <app-button
+            <button
+              app-button
+              type="button"
               class="bg-white text-black rounded-md hover:bg-white hover:text-black gap-2"
-              (clicked)="openVideoDialog()"
+              (click)="openVideoDialog()"
             >
               <ng-icon [svg]="icons().faSolidPlay" class="size-4" />
               Trailer
-            </app-button>
+            </button>
           }
           @let reminded = !!card().added_bookmark;
-          <app-button
-            variant="ghost"
+          <button
+            app-button
+            type="button"
             class="rounded-md gap-2 bg-white text-black"
+            variant="ghost"
             [disabled]="reminded"
-            (clicked)="remindMe()"
+            (click)="remindMe()"
           >
             <ng-icon
               [svg]="reminded ? icons().matBookmarkRound : icons().faSolidBell"
               class="size-4"
             />
             {{ reminded ? 'Reminded' : 'Remind Me' }}
-          </app-button>
+          </button>
         </div>
       </div>
     </div>

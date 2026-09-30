@@ -33,16 +33,18 @@
     <h1 class="mt-5 font-serif text-2xl font-bold text-foreground">Couldn't open this subject</h1>
     <p class="mt-2 text-sm text-muted-foreground">{{ message }}</p>
     <div class="mt-6 flex items-center gap-3">
-      <app-button
+      <button
+        app-button
+        type="button"
+        class="bg-accent hover:bg-accent/90"
         variant="primary"
         size="sm"
-        class="bg-accent hover:bg-accent/90"
-        (clicked)="load()"
+        (click)="load()"
       >
         Try again
-      </app-button>
+      </button>
       <a [routerLink]="backPath()">
-        <app-button variant="outline" size="sm">All subjects</app-button>
+        <button app-button type="button" variant="outline" size="sm">All subjects</button>
       </a>
     </div>
   </div>

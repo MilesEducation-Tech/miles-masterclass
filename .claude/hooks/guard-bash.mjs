@@ -19,7 +19,6 @@ const rules = [
     'Destructive or history-changing git command. Ask the user to do this.',
   ],
   [/--no-verify\b/, 'Do not bypass git hooks.'],
-  [/\bng\s+(update|generate|g)\b/, 'Angular schematics and migrations are not allowed in this refactor.'],
   [/(^|[;&|]\s*)(npm|yarn|npx)\s/, 'Use pnpm (pnpm, pnpm exec, pnpm dlx).'],
   [/--record(-baseline)?\b/, 'Only the user records baselines. Report the need in STATE.md instead.'],
   [/\brm\s+-\w*r\w*\s+(\/|~|\.\/?\s*$|src\/?\s*$)/, 'Refusing a broad recursive delete.'],

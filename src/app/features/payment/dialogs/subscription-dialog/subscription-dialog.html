@@ -1,13 +1,19 @@
-<app-dialog-shell maxWidth="95vw" ariaLabel="Subscribe to a plan">
+<app-dialog ariaLabel="Subscribe to a plan" panelClass="p-0 max-w-[95vw]">
   <div
     class="relative mx-auto flex max-h-[90svh] w-[95svw] max-w-[560px] flex-col overflow-hidden rounded-xl bg-linear-to-b from-sheet-top to-sheet-bottom"
   >
-    <app-button
-      variant="close"
+    <button
+      app-button
+      type="button"
+      class="rounded-full"
       [class]="'absolute top-3 right-3 z-10'"
-      (clicked)="close()"
       aria-label="Close dialog"
-    />
+      variant="ghost"
+      size="icon"
+      (click)="close()"
+    >
+      <ng-icon name="heroXMark" aria-hidden="true" />
+    </button>
 
     <div class="flex-1 overflow-y-auto px-6 py-8 sm:px-10 sm:py-10">
       <div class="mb-8 px-2 text-center">
@@ -96,4 +102,4 @@
       }
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

@@ -2,17 +2,19 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCheck } from '@ng-icons/lucide';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { PaymentFacade } from '../../services/payment-facade';
 import { PlanSelectionCard } from '../../components/plan-selection-card/plan-selection-card';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { Button } from '@shared/ui/button/button';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 @Component({
   selector: 'app-subscription-dialog',
-  imports: [PlanSelectionCard, PageLoading, ErrorState, Button, DialogShell, NgIcon],
-  providers: [provideIcons({ lucideCheck })],
+  imports: [PlanSelectionCard, PageLoading, ErrorState, Button, NgIcon, Dialog],
+  providers: [provideIcons({ lucideCheck, heroXMark })],
   templateUrl: './subscription-dialog.html',
   host: { class: 'block' },
 })

@@ -3,14 +3,14 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { CertificateDownloadDialog } from './certificate-download-dialog';
-import { provideMockDialogRef, stubDialogShell } from '@testing/mocks/dialog-ref.mock';
+import { provideMockDialogRef, stubDialog } from '@testing/mocks/dialog-ref.mock';
 
 describe('CertificateDownloadDialog', () => {
   let component: CertificateDownloadDialog;
   let fixture: ComponentFixture<CertificateDownloadDialog>;
 
   beforeEach(async () => {
-    stubDialogShell(CertificateDownloadDialog);
+    stubDialog(CertificateDownloadDialog);
     await TestBed.configureTestingModule({
       imports: [CertificateDownloadDialog],
       providers: [

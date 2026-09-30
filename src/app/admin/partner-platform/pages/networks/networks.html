@@ -9,10 +9,18 @@
       </p>
     </div>
     <div class="flex items-center gap-2">
-      <app-button variant="outline" class="text-white" (clicked)="openStandaloneFirms()">
+      <button
+        app-button
+        type="button"
+        class="text-white"
+        variant="outline"
+        (click)="openStandaloneFirms()"
+      >
         Standalone companies
-      </app-button>
-      <app-button variant="primary" (clicked)="openCreate()">Create network</app-button>
+      </button>
+      <button app-button type="button" variant="primary" (click)="openCreate()">
+        Create network
+      </button>
     </div>
   </header>
 
@@ -70,30 +78,36 @@
             </td>
             <td class="px-4 py-4 text-right">
               <span class="inline-flex items-center justify-end gap-2">
-                <app-button
+                <button
+                  app-button
+                  type="button"
+                  class="text-white"
                   variant="outline"
                   size="sm"
-                  class="text-white"
-                  (clicked)="openTracker(network)"
+                  (click)="openTracker(network)"
                 >
                   Tracker
-                </app-button>
-                <app-button
+                </button>
+                <button
+                  app-button
+                  type="button"
+                  class="text-white"
                   variant="outline"
                   size="sm"
-                  class="text-white"
-                  (clicked)="openFirms(network)"
+                  (click)="openFirms(network)"
                 >
                   Firms
-                </app-button>
-                <app-button
+                </button>
+                <button
+                  app-button
+                  type="button"
+                  class="text-white"
                   variant="outline"
                   size="sm"
-                  class="text-white"
-                  (clicked)="openEdit(network)"
+                  (click)="openEdit(network)"
                 >
                   Edit
-                </app-button>
+                </button>
               </span>
             </td>
           </tr>

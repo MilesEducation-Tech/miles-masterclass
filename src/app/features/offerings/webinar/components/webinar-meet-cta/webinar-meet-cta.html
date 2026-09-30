@@ -10,9 +10,15 @@
       <p class="text-sm leading-relaxed text-pretty text-muted-foreground lg:text-base">
         {{ description() }}
       </p>
-      <app-button class="mt-2 w-full rounded-xl sm:w-auto" size="lg" (clicked)="onBook()">
+      <button
+        app-button
+        type="button"
+        class="mt-2 w-full rounded-xl sm:w-auto"
+        size="lg"
+        (click)="onBook()"
+      >
         {{ ctaLabel() }}
-      </app-button>
+      </button>
     </div>
 
     <!-- Hidden below `lg`: the design drops the artwork entirely on phones

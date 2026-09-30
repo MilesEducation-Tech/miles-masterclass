@@ -1,10 +1,20 @@
-<app-dialog-shell maxWidth="360px" ariaLabel="Get the Miles Masterclass app">
+<app-dialog ariaLabel="Get the Miles Masterclass app" panelClass="p-0 max-w-[360px]">
   <div
     class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[90svw] max-w-[360px] mx-auto overflow-hidden relative rounded-xl"
   >
     <div class="flex items-center justify-between px-4 py-2 z-10 relative shrink-0">
       <span></span>
-      <app-button variant="close" (clicked)="close()" aria-label="Close dialog" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        aria-label="Close dialog"
+        variant="ghost"
+        size="icon"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <div class="px-6 pb-8 pt-2 text-center flex flex-col items-center gap-2">
@@ -42,4 +52,4 @@
       </button>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

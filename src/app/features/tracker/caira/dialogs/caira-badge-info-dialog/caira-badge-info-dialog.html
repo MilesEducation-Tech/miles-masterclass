@@ -1,10 +1,20 @@
-<app-dialog-shell ariaLabel="CAIRA badge details">
+<app-dialog ariaLabel="CAIRA badge details" panelClass="p-0">
   <section
     class="relative max-h-[85vh] w-[calc(100vw-2rem)] max-w-3xl overflow-y-auto bg-background p-6 text-white shadow-2xl md:p-8"
   >
     <header class="flex items-start justify-between gap-4">
       <p class="text-sm font-semibold text-white">CAIRA Badge</p>
-      <app-button variant="close" (clicked)="onClose()"></app-button>
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="onClose()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </header>
 
     @if (level(); as level) {
@@ -59,4 +69,4 @@
       <p class="py-12 text-center text-sm text-muted-foreground">Badge details unavailable.</p>
     }
   </section>
-</app-dialog-shell>
+</app-dialog>

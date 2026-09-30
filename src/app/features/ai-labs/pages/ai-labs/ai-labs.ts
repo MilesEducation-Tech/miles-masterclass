@@ -163,12 +163,10 @@ const FAN_SWIPE_THRESHOLD = 40;
     NgIcon,
     NgTemplateOutlet,
     DurationPipe,
-    Carousel,
-    // Micro-interactions (motion.dev) — SSR-safe, reduced-motion aware.
+    Carousel, // Micro-interactions (motion.dev) — SSR-safe, reduced-motion aware.
     InViewDirective,
     HoverSpringDirective,
-    PressDirective,
-    // Scroll showpieces (GSAP) — marquee, count-up, pinned scrub.
+    PressDirective, // Scroll showpieces (GSAP) — marquee, count-up, pinned scrub.
     MarqueeDirective,
     CountUpDirective,
     ScrubTimelineDirective,

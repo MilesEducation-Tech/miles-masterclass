@@ -67,9 +67,16 @@
         @if (isLoading()) {
           <p class="text-sm text-muted-foreground" role="status">Loading…</p>
         } @else if (hasError()) {
-          <app-button variant="outline" size="sm" class="text-white" (clicked)="retry()">
+          <button
+            app-button
+            type="button"
+            class="text-white"
+            variant="outline"
+            size="sm"
+            (click)="retry()"
+          >
             Retry
-          </app-button>
+          </button>
         }
       </div>
     }

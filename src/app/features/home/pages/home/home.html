@@ -164,13 +164,18 @@
         and LinkedIn-ready digital badges.
       </p>
       <div class="flex gap-3">
-        <app-button
-          variant="ghost"
+        <button
+          app-button
+          type="button"
           class="bg-white text-black rounded-md"
-          (clicked)="router.navigate(['/auth/login'])"
-          >Get Started</app-button
+          variant="ghost"
+          (click)="router.navigate(['/auth/login'])"
         >
-        <app-button variant="secondary" (clicked)="goToPlan()">Subscribe Now</app-button>
+          Get Started
+        </button>
+        <button app-button type="button" variant="secondary" (click)="goToPlan()">
+          Subscribe Now
+        </button>
       </div>
     </app-plan-benefits>
   </section>

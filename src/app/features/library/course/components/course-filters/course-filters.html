@@ -41,11 +41,15 @@
       </button>
 
       <div ngpAccordionContent class="mt-1">
-        <app-checkbox-list
-          [options]="group.options"
-          [selected]="selectedFor(group.key)"
-          (selectionChange)="update(group.key, $event)"
-        />
+        <app-listbox
+          mode="multiple"
+          [value]="selectedFor(group.key)"
+          (valueChange)="update(group.key, $event)"
+        >
+          @for (option of group.options; track option.value) {
+            <app-listbox-option [value]="option.value">{{ option.label }}</app-listbox-option>
+          }
+        </app-listbox>
       </div>
     </section>
   }

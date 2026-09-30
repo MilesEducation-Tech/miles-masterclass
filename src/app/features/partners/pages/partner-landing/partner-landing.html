@@ -19,12 +19,15 @@
           {{ p.pill.brand }} Members Access
         }
       </span>
-      <app-button
+      <button
+        app-button
+        type="button"
         class="bg-pill-cta hover:bg-pill-cta/90 text-white rounded-full font-semibold px-5 max-sm:px-3 max-sm:h-8 max-sm:text-xs"
         variant="ghost"
-        (clicked)="scrollTo(p.sectionId)"
-        >Activate</app-button
+        (click)="scrollTo(p.sectionId)"
       >
+        Activate
+      </button>
     </div>
   </div>
 </app-video-list-wrapper>
@@ -96,11 +99,13 @@
       This isn't just more content to consume. This is how you stay relevant in an AI-driven market.
     </p>
   }
-  <app-button
-    variant="ghost"
+  <button
+    app-button
+    type="button"
     class="text-black bg-white rounded-full px-5 w-fit min-w-56 md:text-base text-sm"
-    (clicked)="scrollTo(p.sectionId)"
+    variant="ghost"
+    (click)="scrollTo(p.sectionId)"
   >
     {{ p.audience === 'firm' ? "Activate Your Firm's Access" : 'Schedule Discovery Call' }}
-  </app-button>
+  </button>
 </ng-template>

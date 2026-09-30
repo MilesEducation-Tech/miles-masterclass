@@ -89,11 +89,11 @@
                   }
                   @case ('multi') {
                     <app-select
-                      multiple
                       [id]="question.code"
                       [options]="entry.options"
                       [placeholder]="question.placeholder || 'Select any that apply'"
                       [formField]="field.choices"
+                      [multiple]="true"
                     />
                   }
                   @case ('boolean') {
@@ -147,12 +147,12 @@
         </div>
       }
 
-      <app-button class="w-full" type="submit" variant="default" [disabled]="isSaving()">
+      <button app-button class="w-full" type="submit" variant="default" [disabled]="isSaving()">
         @if (isSaving()) {
           <app-spinner />
         }
         {{ isOnboarding() ? 'Continue' : 'Save Changes' }}
-      </app-button>
+      </button>
     </form>
   }
 </div>

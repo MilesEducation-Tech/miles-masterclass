@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { AdminAuth } from '@admin/core/services/admin-auth';
@@ -10,12 +10,25 @@ import {
   RbacPermission,
   RbacRole,
 } from '@admin/roles-permissions/services/rbac-facade';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel, NgpDescription } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
 
 type PendingDelete = { type: 'role' | 'permission'; id: string } | null;
 
 @Component({
   selector: 'app-roles-permissions',
-  imports: [AriaInput, Button, Spinner, HasPermissionDirective],
+  imports: [
+    Button,
+    Spinner,
+    HasPermissionDirective,
+    Field,
+    NgpLabel,
+    NgpDescription,
+    Input,
+    Checkbox,
+  ],
   templateUrl: './roles-permissions.html',
   host: { class: 'block w-full' },
 })

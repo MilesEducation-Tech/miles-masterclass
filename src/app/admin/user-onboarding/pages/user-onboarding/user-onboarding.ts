@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Button } from '@shared/ui/button/button';
 import { DeprecationBanner } from '@shared/components/deprecation-banner/deprecation-banner';
 import { NgpDialogManager } from 'ng-primitives/dialog';
@@ -26,10 +26,13 @@ import {
 import { UserOnboardingTable } from '@admin/user-onboarding/components/user-onboarding-table/user-onboarding-table';
 import { UserOnboardingFacade } from '@admin/user-onboarding/services/user-onboarding-facade';
 import { InternalUser } from '@admin/user-onboarding/models/user-onboarding.model';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
 
 @Component({
   selector: 'app-user-onboarding',
-  imports: [AriaInput, Button, UserOnboardingTable, DeprecationBanner],
+  imports: [Button, UserOnboardingTable, DeprecationBanner, Field, NgpLabel, Input],
   templateUrl: './user-onboarding.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block w-full' },

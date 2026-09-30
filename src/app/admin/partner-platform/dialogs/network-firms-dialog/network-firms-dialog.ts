@@ -1,14 +1,19 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormField as AngularFormField, form, required, validate } from '@angular/forms/signals';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Button } from '@shared/ui/button/button';
-import { Forms } from '@shared/ui/forms/forms';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+
 import { AriaSelectOption } from '@core/models/aria.model';
 import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin-facade';
 import { CreateFirmRequest, Network, Firm } from '@admin/core/models/partner-platform.model';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Select } from '@shared/ui/select/select';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface NetworkFirmsDialogData {
   /** Present = member firms under a network; absent = standalone companies (no network). */
@@ -33,7 +38,8 @@ const EMPTY_FIRM: FirmFormModel = { name: '', email_domain: '', partner_code_id:
  */
 @Component({
   selector: 'app-network-firms-dialog',
-  imports: [AngularFormField, Forms, AriaInput, AriaSelect, Button, DialogShell],
+  imports: [AngularFormField, Button, Dialog, Field, NgpLabel, Input, Select, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './network-firms-dialog.html',
 })
 export class NetworkFirmsDialog implements OnInit {

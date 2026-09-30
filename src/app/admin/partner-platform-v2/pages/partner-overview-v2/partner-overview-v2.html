@@ -163,15 +163,17 @@
                       </span>
                     </td>
                     <td class="px-4 py-4 text-right">
-                      <app-button
+                      <button
+                        app-button
+                        type="button"
+                        class="text-white"
                         variant="outline"
                         size="sm"
-                        class="text-white"
-                        [ariaLabel]="'View seats for ' + firm.name"
-                        (clicked)="openSeats(firm)"
+                        [attr.aria-label]="'View seats for ' + firm.name"
+                        (click)="openSeats(firm)"
                       >
                         Seats
-                      </app-button>
+                      </button>
                     </td>
                   </tr>
                 } @empty {

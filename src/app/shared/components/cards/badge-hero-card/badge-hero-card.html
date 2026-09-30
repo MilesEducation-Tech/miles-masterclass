@@ -116,22 +116,31 @@
         </span>
       }
       @case ('claimable') {
-        <app-button
+        <button
+          app-button
+          type="button"
           variant="default"
           size="lg"
-          ariaLabel="Share badge on LinkedIn"
+          aria-label="Share badge on LinkedIn"
           [class]="progressGradient()"
-          (clicked)="onClaim()"
+          (click)="onClaim()"
         >
           Share Badge on &nbsp;
           <ng-icon name="phosphorLinkedinLogo" aria-hidden="true" />
-        </app-button>
+        </button>
       }
       @case ('claimed') {
-        <app-button variant="primary" size="lg" ariaLabel="Share on LinkedIn" (clicked)="onShare()">
+        <button
+          app-button
+          type="button"
+          variant="primary"
+          size="lg"
+          aria-label="Share on LinkedIn"
+          (click)="onShare()"
+        >
           Share on &nbsp;
           <ng-icon name="phosphorLinkedinLogo" aria-hidden="true" />
-        </app-button>
+        </button>
       }
       @case ('locked') {
         @if (b.is_coming_soon) {

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { provideMockDialogRef, stubDialogShell } from '@testing/mocks/dialog-ref.mock';
+import { provideMockDialogRef, stubDialog } from '@testing/mocks/dialog-ref.mock';
 
 import { ShareDialog } from './share-dialog';
 
@@ -9,7 +9,7 @@ describe('ShareDialog', () => {
   let fixture: ComponentFixture<ShareDialog>;
 
   beforeEach(async () => {
-    stubDialogShell(ShareDialog);
+    stubDialog(ShareDialog);
     await TestBed.configureTestingModule({
       imports: [ShareDialog],
       providers: [provideMockDialogRef({ url: 'https://example.com/course' })],

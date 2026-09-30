@@ -1,11 +1,21 @@
-<app-dialog-shell maxWidth="100%" ariaLabel="Miles AI Labs participant agreement">
+<app-dialog ariaLabel="Miles AI Labs participant agreement" panelClass="p-0 max-w-full">
   <!-- Dark card matching the AI Labs page, built from site tokens rather than a
      second palette — same reasoning as the page itself. -->
   <div
     class="relative flex max-h-[85vh] w-[min(640px,92vw)] flex-col overflow-hidden rounded-2xl border border-border bg-muted"
   >
     <div class="absolute top-3 right-3 z-10">
-      <app-button variant="close" (clicked)="dialogRef.close()" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="dialogRef.close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <div class="shrink-0 px-6 pt-6 pb-4">
@@ -95,14 +105,20 @@
         </p>
       }
 
-      <app-aria-input
-        id="ai-lab-terms-consent"
-        type="checkbox"
-        [required]="true"
-        [disabled]="!atBottom()"
-        label="I have read and agree to these terms, and consent to registration with the University and to the processing of my personal data as described."
-        [(value)]="accepted"
-      />
+      <app-field class="flex-row items-start gap-3">
+        <app-checkbox
+          id="ai-lab-terms-consent"
+          [required]="true"
+          [disabled]="!atBottom()"
+          [(checked)]="accepted"
+        />
+        <div class="flex flex-col gap-0.5">
+          <span ngpLabel
+            >I have read and agree to these terms, and consent to registration with the University
+            and to the processing of my personal data as described.</span
+          >
+        </div>
+      </app-field>
 
       <!-- Spacing goes on the wrapper, never on `app-button`: its `class` is both a
          host attribute and an input merged into the inner <button>, so a margin
@@ -111,15 +127,17 @@
          lands on the host, so the button's own `disabled:opacity-50` is painted
          over by an undimmed host and the button reads as enabled. -->
       <div class="mt-5" [class.opacity-50]="accepted() !== true">
-        <app-button
+        <button
+          app-button
+          type="button"
           class="h-12 w-full rounded-xl bg-accent text-base hover:bg-accent/90"
           variant="primary"
           [disabled]="accepted() !== true"
-          (clicked)="launch()"
+          (click)="launch()"
         >
           Launch the Lab
-        </app-button>
+        </button>
       </div>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

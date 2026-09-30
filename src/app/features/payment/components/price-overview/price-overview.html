@@ -90,25 +90,29 @@
             </p>
             <div class="flex space-x-1">
               <span class="shrink-0 text-sm font-semibold text-blue-400">Applied</span>
-              <app-button
+              <button
+                app-button
+                type="button"
                 variant="ghost"
                 size="icon"
                 [class]="'shrink-0 size-6 rounded-full text-gray-400 hover:bg-white/10 hover:text-white'"
                 aria-label="Remove coupon"
-                (clicked)="facade.removeCoupon(coupon.coupon_code)"
+                (click)="facade.removeCoupon(coupon.coupon_code)"
               >
                 <ng-icon name="heroXMark" size="16" aria-hidden="true" />
-              </app-button>
+              </button>
             </div>
           </div>
-          <app-button
+          <button
+            app-button
+            type="button"
             variant="ghost"
             [class]="'mt-2 h-auto p-0 flex items-center gap-1 text-sm font-medium text-gray-400 hover:bg-transparent hover:text-white'"
-            (clicked)="facade.openCouponDialog()"
+            (click)="facade.openCouponDialog()"
           >
             View all Coupons
             <span class="text-blue-400">&#9654;</span>
-          </app-button>
+          </button>
         } @else if (firstCoupon(); as coupon) {
           <!-- Inline first coupon: apply directly, no dialog -->
           <div class="flex items-start justify-between gap-3">
@@ -127,32 +131,38 @@
                 <p class="mt-0.5 text-xs text-neutral-400 truncate">{{ coupon.description }}</p>
               }
             </div>
-            <app-button
+            <button
+              app-button
+              type="button"
               variant="ghost"
               [class]="'shrink-0 h-auto p-0 text-sm font-bold text-blue-400 hover:bg-transparent hover:text-blue-300'"
               [disabled]="applyingCoupon()"
-              (clicked)="applyFirst(coupon.coupon_code)"
+              (click)="applyFirst(coupon.coupon_code)"
             >
               APPLY
-            </app-button>
+            </button>
           </div>
-          <app-button
+          <button
+            app-button
+            type="button"
             variant="ghost"
             [class]="'mt-3 h-auto p-0 flex items-center gap-1 text-sm font-medium text-gray-400 hover:bg-transparent hover:text-white'"
-            (clicked)="facade.openCouponDialog()"
+            (click)="facade.openCouponDialog()"
           >
             Show more
             <span class="text-blue-400">&#9654;</span>
-          </app-button>
+          </button>
         } @else {
-          <app-button
+          <button
+            app-button
+            type="button"
             variant="ghost"
             [class]="'flex w-full h-auto p-0 items-center justify-between text-base font-light text-gray-300 hover:bg-transparent hover:text-white'"
-            (clicked)="facade.openCouponDialog()"
+            (click)="facade.openCouponDialog()"
           >
             Apply Coupon
             <ng-icon name="heroChevronRight" size="20" aria-hidden="true" />
-          </app-button>
+          </button>
         }
       </div>
     </div>
@@ -160,25 +170,29 @@
     <!-- Back Chevron -->
     <div class="flex justify-center flex-col space-y-2 pt-2">
       @if (isBilling()) {
-        <app-button
+        <button
+          app-button
+          type="button"
           variant="ghost"
           [class]="' hover:bg-transparent text-white p-0'"
           aria-label="Go back"
           [disabled]="facade.isEditingAddress()"
-          (clicked)="goBack()"
+          (click)="goBack()"
         >
           <ng-icon name="heroChevronLeft" size="20" aria-hidden="true" /> Back to Cart
-        </app-button>
+        </button>
       }
 
       <!-- Proceed Button -->
-      <app-button
+      <button
+        app-button
+        type="button"
         [class]="'w-full rounded-xl py-3.5 px-6 text-base font-semibold shadow-lg shadow-blue-900/40 transition-all'"
         [disabled]="facade.isEditingAddress()"
-        (clicked)="onProceed()"
+        (click)="onProceed()"
       >
         Proceed
-      </app-button>
+      </button>
 
       <!-- Stripe Logo -->
       <div class="flex w-full justify-center">

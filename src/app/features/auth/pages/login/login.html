@@ -13,9 +13,15 @@
            is a typo, and a corrected number is a different identifier, so it is
            under no cooldown and no lock. Making people wait 90s to fix a typo is
            the one thing guaranteed not to help. -->
-      <app-button class="w-max" variant="link" size="link" (clicked)="authFacade.goBackToLogin()">
+      <button
+        app-button
+        type="button"
+        class="w-max h-auto p-0"
+        variant="link"
+        (click)="authFacade.goBackToLogin()"
+      >
         {{ authFacade.loginMethod() === 'PHONE' ? 'Wrong number? Edit' : 'Wrong email? Edit' }}
-      </app-button>
+      </button>
     </div>
   } @else {
     <div class="flex flex-col space-y-3">
@@ -26,44 +32,54 @@
       </p>
     </div>
   }
-  <app-forms type="signal" class="space-y-4! flex flex-col mt-2" (submitted)="onSubmit()">
+  <form class="space-y-4! flex flex-col mt-2" (submit)="$event.preventDefault(); onSubmit()">
     @if (authFacade.loginStep() === 'LOGIN') {
-      <app-tab-strip
-        tabClass="px-8"
-        [options]="authFacade.loginMethodTabs"
-        [selected]="authFacade.selectedTabLabel()"
-        (selectionChange)="authFacade.selectLoginMethod($event)"
-      />
+      <app-tabs
+        [value]="authFacade.selectedTabLabel() ?? ''"
+        (valueChange)="authFacade.selectLoginMethod($event)"
+      >
+        @for (tab of authFacade.loginMethodTabs; track tab) {
+          <app-tab [value]="tab" [label]="tab" />
+        }
+      </app-tabs>
       <div class="flex space-x-2">
         @if (authFacade.loginMethod() === 'PHONE') {
           <div class="w-[140px]">
-            <app-aria-autocomplete
-              id="country_code"
-              label="Code"
-              placeholder="Search..."
-              [showClear]="false"
-              [options]="authFacade.countryCodes()"
-              [formField]="authFacade.loginForm.country_code"
-            />
+            <app-field [errors]="authFacade.loginForm.country_code().errors()">
+              <label ngpLabel for="country_code">Code</label>
+
+              <app-combobox
+                id="country_code"
+                placeholder="Search..."
+                [options]="authFacade.countryCodes()"
+                [formField]="authFacade.loginForm.country_code"
+              />
+            </app-field>
           </div>
-          <app-aria-input
-            class="w-full"
-            id="identifier"
-            label="Phone"
-            type="tel"
-            [numericOnly]="true"
-            [formField]="authFacade.loginForm.identifier"
-            placeholder="Enter phone number"
-          />
+          <app-field class="w-full" [errors]="authFacade.loginForm.identifier().errors()">
+            <label ngpLabel for="identifier">Phone</label>
+
+            <input
+              app-input
+              id="identifier"
+              type="tel"
+              [formField]="authFacade.loginForm.identifier"
+              placeholder="Enter phone number"
+              inputmode="numeric"
+            />
+          </app-field>
         } @else {
-          <app-aria-input
-            class="w-full"
-            id="identifier"
-            label="Email"
-            type="email"
-            [formField]="authFacade.loginForm.identifier"
-            placeholder="Enter email"
-          />
+          <app-field class="w-full" [errors]="authFacade.loginForm.identifier().errors()">
+            <label ngpLabel for="identifier">Email</label>
+
+            <input
+              app-input
+              id="identifier"
+              type="email"
+              [formField]="authFacade.loginForm.identifier"
+              placeholder="Enter email"
+            />
+          </app-field>
         }
       </div>
       <!-- The mandatory terms checkbox is deliberately not rendered on either tab.
@@ -73,42 +89,45 @@
       <!-- `text-justify` flushes both edges of this dense consent paragraph, so the
            line before the long support address fills the width instead of leaving a
            gap. Keeps the address unbroken on one line. -->
-      <app-aria-input
-        id="consent"
-        type="checkbox"
-        class="font-normal text-sm! leading-tight! description"
-        [label]="authFacade.consentLabel()"
-        [formField]="authFacade.loginForm.consent"
+      <app-field
+        class="flex-row items-start gap-3 font-normal text-sm! leading-tight! description"
+        [errors]="authFacade.loginForm.consent().errors()"
       >
-        <!--  class="font-normal text-sm! leading-tight! description" -->
-        <span labelLink>
-          @if (authFacade.loginMethod() === 'PHONE') {
-            <!-- Kept on one line: the address wraps whole to the next line, and the
+        <app-checkbox id="consent" [formField]="authFacade.loginForm.consent" />
+        <div class="flex flex-col gap-0.5">
+          <span ngpLabel
+            >{{ authFacade.consentLabel() }}
+            <!--  class="font-normal text-sm! leading-tight! description" -->
+            <span labelLink>
+              @if (authFacade.loginMethod() === 'PHONE') {
+                <!-- Kept on one line: the address wraps whole to the next line, and the
                  label's `text-justify` spreads the short line before it so no gap is
                  left after "contact". -->
-            <a
-              [href]="'mailto:' + authFacade.supportEmail"
-              class="text-accent underline whitespace-nowrap"
-              >{{ authFacade.supportEmail }}</a
-            >. Consent is not a condition of purchase. See our
-            <a
-              [routerLink]="legalLinks().privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-accent underline"
-              >Privacy Policy</a
-            >
-            and
-            <a
-              [routerLink]="legalLinks().terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-accent underline"
-              >Terms of Service</a
-            >.
-          }
-        </span>
-      </app-aria-input>
+                <a
+                  [href]="'mailto:' + authFacade.supportEmail"
+                  class="text-accent underline whitespace-nowrap"
+                  >{{ authFacade.supportEmail }}</a
+                >. Consent is not a condition of purchase. See our
+                <a
+                  [routerLink]="legalLinks().privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-accent underline"
+                  >Privacy Policy</a
+                >
+                and
+                <a
+                  [routerLink]="legalLinks().terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-accent underline"
+                  >Terms of Service</a
+                >.
+              }
+            </span>
+          </span>
+        </div>
+      </app-field>
       <hr class="border-white/10" />
       <p class="description text-sm! text-center font-normal leading-tight!">
         By signing up or logging in, you agree to the Miles Masterclass
@@ -131,15 +150,18 @@
         >.
       </p>
     } @else {
-      <app-otp
-        id="otp"
-        label="OTP"
-        [length]="authFacade.otpLength"
-        [autoFocus]="true"
-        [formField]="authFacade.otpForm.otp"
-        (completed)="onSubmit()"
-        placeholder=""
-      />
+      <app-field [errors]="authFacade.otpForm.otp().errors()">
+        <span ngpLabel>OTP</span>
+
+        <app-input-otp
+          id="otp"
+          [length]="authFacade.otpLength"
+          [autoFocus]="true"
+          [formField]="authFacade.otpForm.otp"
+          placeholder=""
+          (complete)="onSubmit()"
+        />
+      </app-field>
     }
     <!-- Send and verify opt out of the interceptor's error toast so this facade can
          render each failure specifically — but nothing rendered `error()`, so a
@@ -160,7 +182,8 @@
     <!-- The cooldown gates *sending* a code, never redeeming one: on the OTP step
          this button is Verify, and a user holding a valid code must be able to
          submit it immediately. Only Resend waits out the minute. -->
-    <app-button
+    <button
+      app-button
       class="w-full mt-2"
       type="submit"
       variant="default"
@@ -175,7 +198,7 @@
         <app-spinner></app-spinner>
       }
       {{ authFacade.loginStep() === 'OTP' ? 'Verify OTP' : 'Send OTP' }}
-    </app-button>
+    </button>
     @if (authFacade.loginStep() === 'LOGIN' && !authFacade.canSendOtp()) {
       <!-- The cooldown is per identifier and survives "Change Mobile", so it can
            be active on this step too. Without this the button is simply dead with
@@ -201,9 +224,15 @@
             <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
           </span>
           @if (authFacade.loginMethod() === 'PHONE') {
-            <app-button variant="link" size="link" (clicked)="authFacade.signInWithEmailInstead()">
+            <button
+              app-button
+              type="button"
+              class="h-auto p-0"
+              variant="link"
+              (click)="authFacade.signInWithEmailInstead()"
+            >
               Sign in with email instead
-            </app-button>
+            </button>
           }
         } @else if (!authFacade.canSendOtp()) {
           <span>
@@ -215,35 +244,39 @@
             @case ('resend') {
               <div class="flex items-center">
                 <span>Didn't receive the OTP?&nbsp;</span>
-                <app-button
+                <button
+                  app-button
+                  type="button"
+                  class="h-auto p-0"
                   variant="link"
-                  size="link"
                   [disabled]="authFacade.isLoading()"
-                  (clicked)="authFacade.resendOtp()"
+                  (click)="authFacade.resendOtp()"
                 >
                   Resend OTP
-                </app-button>
+                </button>
               </div>
             }
             <!-- There is no 'sms' case: `auth-otp-send/` does not declare a
                  `channel` field, so asking for a specific channel is a 400. A
                  plain resend is the whole of what the API offers. -->
             @case ('email') {
-              <app-button
+              <button
+                app-button
+                type="button"
+                class="h-auto p-0"
                 variant="link"
-                size="link"
-                (clicked)="authFacade.signInWithEmailInstead()"
+                (click)="authFacade.signInWithEmailInstead()"
               >
                 Sign in with email instead
-              </app-button>
+              </button>
             }
           }
         }
       </div>
     }
-  </app-forms>
+  </form>
   <!-- <div class="hidden">
-    <app-button class="w-full" variant="default">Signup with password</app-button>
-    <app-button class="w-full" variant="secondary">Signup with OTP</app-button>
+    <button app-button type="button" class="w-full" variant="primary">Signup with password</button>
+    <button app-button type="button" class="w-full" variant="secondary">Signup with OTP</button>
   </div> -->
 </div>

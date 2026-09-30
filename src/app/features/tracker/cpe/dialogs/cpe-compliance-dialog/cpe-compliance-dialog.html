@@ -1,10 +1,16 @@
-<app-dialog-shell
-  maxWidth="100%"
-  ariaLabel="CPE compliance"
-  panelClass="bg-transparent shadow-none"
->
+<app-dialog ariaLabel="CPE compliance" panelClass="p-0 max-w-full bg-transparent shadow-none">
   <div class="relative w-[min(94vw,560px)] rounded-2xl bg-[#0B1838] p-8 text-white">
-    <app-button variant="close" class="absolute top-4 right-4" (clicked)="close()" />
+    <button
+      app-button
+      type="button"
+      class="absolute top-4 right-4 rounded-full"
+      variant="ghost"
+      size="icon"
+      aria-label="Close"
+      (click)="close()"
+    >
+      <ng-icon name="heroXMark" aria-hidden="true" />
+    </button>
 
     <header class="flex flex-col gap-1">
       <h2 class="text-3xl font-extrabold">
@@ -81,4 +87,4 @@
       </div>
     }
   </div>
-</app-dialog-shell>
+</app-dialog>

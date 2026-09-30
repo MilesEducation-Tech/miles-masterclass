@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Button } from '@shared/ui/button/button';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { DeprecationBanner } from '@shared/components/deprecation-banner/deprecation-banner';
@@ -17,6 +17,9 @@ import {
   ReportUserRow,
 } from '@admin/partner-platform-v2/models/partner-report.model';
 import { PartnerReportFacade } from '@admin/partner-platform-v2/services/partner-report-facade';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
 
 const SUBJECT_TABS: { value: ReportSubject; label: string }[] = [
   { value: 'courses', label: 'Courses' },
@@ -38,7 +41,7 @@ const round2 = (value: number | undefined): number => Math.round((value ?? 0) * 
  */
 @Component({
   selector: 'app-partner-reports',
-  imports: [AriaInput, Button, StatCard, ReportUsersTable, DeprecationBanner],
+  imports: [Button, StatCard, ReportUsersTable, DeprecationBanner, Field, NgpLabel, Input],
   templateUrl: './reports.html',
   host: { class: 'block w-full' },
 })

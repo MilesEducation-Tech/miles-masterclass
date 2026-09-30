@@ -4,12 +4,14 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { FeedbackFacade } from '../../services/feedback-facade';
 import { RatingStar } from '@shared/components/rating-star/rating-star';
 import { Button } from '@shared/ui/button/button';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Utils } from '@shared/services/utils';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { User } from '@core/models/profile.model';
 // Type-only: UtilsDialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
+import { Field } from '@shared/ui/field/field';
+import { Textarea } from '@shared/ui/textarea/textarea';
 
 const PROFILE_INCOMPLETE_DIALOG_DATA: UtilsDialogData = {
   containerClass: 'py-12 px-6',
@@ -26,7 +28,7 @@ const PROFILE_INCOMPLETE_DIALOG_DATA: UtilsDialogData = {
 
 @Component({
   selector: 'app-course-feedback',
-  imports: [RatingStar, Button, AriaInput],
+  imports: [RatingStar, Button, Field, Textarea],
   templateUrl: './course-feedback.html',
   providers: [FeedbackFacade],
 })

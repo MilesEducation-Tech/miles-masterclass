@@ -9,11 +9,13 @@
       {{ subtitle() }}
     </p>
   </div>
-  <app-button
-    variant="ghost"
+  <button
+    app-button
+    type="button"
     class="shrink-0 self-stretch sm:self-auto bg-white text-black rounded-md font-semibold"
+    variant="ghost"
     (click)="onCta()"
   >
     {{ ctaLabel() }}
-  </app-button>
+  </button>
 </div>
