@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { ApplicationRef, signal } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, of } from 'rxjs';
+import { Router } from '@angular/router';
+import { Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiUrl } from '@core/services/api-client/api-client';
@@ -25,7 +25,7 @@ function contractCard(id: string, overrides: Record<string, unknown> = {}): Webi
     short_description: '...',
     start_date_time: '2026-09-20T13:00:00+00:00',
     end_date_time: '2026-09-20T14:00:00+00:00',
-    duration_minutes: 60,
+    duration_seconds: 3600,
     webinar_zoom_id: '84123456789',
     is_test_webinar: false,
     webinar_why_attend_points: [],
@@ -108,13 +108,6 @@ describe('WebinarFacade.register — sign-in gate', () => {
         },
         { provide: NgpDialogManager, useValue: { open: dialogOpen } },
         { provide: Router, useValue: { navigate, url: '/us/cpa/webinar/w1' } },
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            queryParamMap: of(new Map()),
-            snapshot: { queryParamMap: new Map([['get', null]]) },
-          },
-        },
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: Logger, useValue: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } },
@@ -188,13 +181,6 @@ describe('WebinarFacade reads', () => {
         },
         { provide: NgpDialogManager, useValue: { open: vi.fn() } },
         { provide: Router, useValue: { navigate: vi.fn(), url: '/' } },
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            queryParamMap: of(new Map()),
-            snapshot: { queryParamMap: new Map([['get', null]]) },
-          },
-        },
         { provide: Logger, useValue: { error: logError, warn: vi.fn(), info: vi.fn() } },
         {
           provide: NotificationService,

@@ -28,6 +28,10 @@ export interface LevelTab {
  * "no absences" and "not signed in" both arrive as `[]`, and a heading over an
  * empty grid reads as a fault rather than good news.
  *
+ * "Nothing" is the CONTENT, though: the host element is still created, and in a
+ * flex or grid parent it still takes a `gap`. A page that lays rails out that
+ * way wraps each one in `@if`, so an empty rail is never created at all.
+ *
  * Two presentations, picked with `layout`:
  * - `rows` — full-width rows, what the upcoming section uses.
  * - `strip` — a horizontally scrolling Swiper rail of cards, which is how the
@@ -41,7 +45,6 @@ export interface LevelTab {
  */
 @Component({
   selector: 'app-webinar-rail',
-  host: { class: 'block' },
   imports: [SwiperStrip, WebinarCard],
   templateUrl: './webinar-rail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

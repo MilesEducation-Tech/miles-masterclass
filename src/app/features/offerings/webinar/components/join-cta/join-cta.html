@@ -27,7 +27,22 @@
       [class]="buttonClass()"
       [disabled]="true"
     >
-      <app-spinner size="xs" />
+      <!-- Not `app-spinner`. That component builds its colours by string
+           interpolation (`text-${trackColor} fill-${color}`), so Tailwind never
+           sees the class names: its default `text-neutral-tertiary` is not
+           emitted AT ALL — and `neutral-tertiary` is not a token — leaving the
+           track at `currentColor` and the arc at `fill-primary`, a deep navy.
+           Two dark tones on a greyed-out white button is the faint ring this
+           used to draw.
+
+           A bordered circle instead: `border-current` takes the button's own
+           text colour, so it reads on the white variant and the primary one
+           alike, and `border-t-transparent` is the gap that makes the spin
+           visible. Every class here is a literal, so Tailwind emits them. -->
+      <span
+        class="size-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+        aria-hidden="true"
+      ></span>
       <span>{{ label() }}</span>
     </button>
   } @else if (dense()) {

@@ -196,8 +196,19 @@ export interface WebinarCard {
   short_description: string;
   start_date_time: string | null;
   end_date_time: string | null;
-  /** Minutes. One hour is `60`. */
-  duration_minutes: number | null;
+  /**
+   * SECONDS. One hour is `3600`.
+   *
+   * Renamed from `duration_minutes` AND re-based from minutes on 2026-09-28,
+   * with no alias kept — exactly like `cpe_credits` → `total_cpe_credits`
+   * before it. The unit change is the dangerous half: a stale `* 60_000` still
+   * compiles and still produces a number, just a 60x wrong one.
+   *
+   * Observed `null` on every card in the live `post_login` feed, so nothing
+   * may depend on it being present — `effectiveEndAt` falls back to
+   * `end_date_time`.
+   */
+  duration_seconds: number | null;
   /** The id Zoom keys the session on — what the SDK needs as `meetingNumber`. */
   webinar_zoom_id: string | null;
   is_test_webinar: boolean;
@@ -442,7 +453,7 @@ export function isWebinarCard(v: unknown): v is WebinarCard {
     isStr(v['short_description']) &&
     isStrOrNull(v['start_date_time']) &&
     isStrOrNull(v['end_date_time']) &&
-    isNumOrNull(v['duration_minutes']) &&
+    isNumOrNull(v['duration_seconds']) &&
     isStrOrNull(v['webinar_zoom_id']) &&
     typeof v['is_test_webinar'] === 'boolean' &&
     (v['webinar_why_attend_points'] === null || isStrList(v['webinar_why_attend_points'])) &&

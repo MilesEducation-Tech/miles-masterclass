@@ -7,9 +7,177 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-09-30, NON-REFACTOR — PR #43 review comments fixed, and this file restored after the
+  master merge. UNCOMMITTED, you commit. No refactor phase moved.** Four inline comments from
+  me-sachin-singh on MilesEducation-Tech/miles-masterclass#43.
+  **(1) "Remove webinar previews" — done.** Deleted `utils/webinar-preview.ts` (243 lines) and
+  everything that hung off it: `PREVIEW_ENABLED`, `queryParams` / `previewBaseTime` / `isPreview` and the
+  `visibleFeed` indirection in `webinar-facade.ts` (its readers now read `feedData` directly, and
+  `feedError` became the public `loadError`), and `!facade.isPreview()` in `webinar-list.ts`.
+  `ActivatedRoute` and `toSignal` left the facade with it, and the facade spec's two `ActivatedRoute`
+  mocks, which existed only to feed the preview, went too.
+  ⚠️ **`?preview=design` no longer works**, so the hero and the upcoming rail can only be seen with real
+  UAT data. The historical mentions in `prompts/webinar-fixes.md`, `prompts/webinar-typing.md` and
+  `reports/phase-09-offerings.md` are left as records.
+  **(2)+(3) host `[class]` bindings on `webinar-rail` and `webinar-faq` — removed, but NOT a plain
+  deletion.** They were the second half of the 2026-09-28 layout-hole fix below: a component's host is
+  created even when its template draws nothing, and as a flex item it still takes a `gap`. So the `@if`
+  had to move to where the element is CREATED. **Rail:** `webinar-list.html` now wraps each of the four
+  rails in `@if (<bucket>.length > 0)` (via `@let`), so an empty rail never exists; `hasContent` is gone
+  and the rail's docblock says why a page should do this. **FAQ:** binding removed with no parent guard.
+  The page cannot see emptiness (the list is resolved inside the component) and `FAQ_DATA` is a constant
+  that is never empty (the per-market override map is empty), so the component's own
+  `@if (faqs.length > 0)` is the guard. If an override ever returned `[]` the FAQ host would take one
+  trailing gap; a test now pins the empty case.
+  **(4) "Check for the aliases" on `join-cta.ts` — done, read literally:** its three `../../` imports
+  (`models/webinar.model`, `utils/webinar-status`, `utils/session-time`) now use
+  `@features/offerings/webinar/…`. ⚠️ Relative was already legal (PROMPT §3 requires an alias only across
+  a top-level folder) and lint accepts either; **about 40 more `../../` imports in this feature's other
+  files are untouched**. Say if the reviewer wants them swept, as its own change.
+  **STATE.md restore:** the `master` merge (`a8487a6`) resolved the one conflict in "Now" (both sides had
+  inserted at the top) to master's side and dropped the six 2026-09-28 webinar entries below (125 lines);
+  only their step-log lines survived. Rebuilt with a three-way merge against the fork point `59b38c4` and
+  put back verbatim under master's two 2026-09-29 bullets. Verified: 0 lines removed, every line of both
+  parents present.
+  **Verified in the browser** (dev server, signed out, live UAT): hero and FAQ render, the sign-in block
+  shows, and there are **zero** `app-webinar-rail` hosts in the DOM (before this change they existed with a
+  `hidden` class). Feeding the running page a synthetic feed created the rail with 2 rows and removed it
+  again when the hero de-duplication left nothing. Not verified: the three signed-in rails, since there is
+  no OTP session to sign in with; they use the identical `@if`. The console shows a View Transitions
+  `InvalidStateError` that also appears on an unrelated route, so it is not from this change.
+  Gates (local macOS, Node 24.18, **not CI**): lint 0 errors (124 pre-existing `any` warnings, none in a
+  webinar file), tests **194 files / 825 passed + 1 skipped**, `build:prod` green (two CSS budget
+  warnings, `briefing-session.css` +131 B and `ai-labs.css` +3.6 kB, in files this change does not
+  touch), `check:structure` passed.
+
 - 🟡 **Callers migrated to the kit (2026-09-29, same session), UNCOMMITTED — all gates green again.** 150 files rewritten by a one-off codemod (not committed) plus hand fixes: `button[app-button]` (375), `app-dialog` (47), `app-field` + `input[app-input]` / `textarea` / `app-checkbox` (119), `app-select` (30+36), `app-combobox` (17), native `<form (submit)>` (17), `app-tabs` (10), `app-progress` (7), `app-input-otp` (3), `app-listbox` (4). Kit fixes from your review: overlays now carry `absolute`/`fixed` (select, combobox, popover, tooltip, menu), accordion `overflow-hidden`, tab panels hide when inactive (`not-data-active:hidden`; the primitive only sets `aria-hidden`); extensions the callers needed: object options `{ value, label }` for select/combobox/listbox, `app-dialog` `closable` / `width` / `maxWidth`, `app-field [errors]` rendering the schema messages, indeterminate `app-progress`, `autoFocus` on the OTP, `icon` button size, and both button and field merge their own `class` through `cn()`. Buttons keep both looks: `default` (white, the input's default, restored on every original call site from git) and `primary` (blue). `pnpm build:prod` green (2 pre-existing CSS-budget warnings), `pnpm ng test` 194 files / 823 tests green (+1 skipped), lint 0 errors (124 legacy `any` warnings), Prettier clean, `pnpm build-storybook` green, `.storybook` narrowing removed again; the `shared/ui/dialog` finding is resolved: `scripts/check-structure.mjs` now recognises a component folder named after its own file (`dialog/dialog.ts`) as the v20 shape, with a test; the pre-commit hook passes. Browser-checked: login page on the dev server (tabs, combobox anchored under its input, email error after blur) and the Storybook overlays (select, menu, popover, tooltip, accordion hover). Commit as one PR per area: `src/app/shared/ui` + kit tooling, then `src/app/shared` + `layout` + `core`, `src/app/features`, `src/app/admin`.
 
 - 🟡 **shared/ui regenerated as an ng-primitives kit (2026-09-29), plan `prompts/ngp-ui-kit.md`, approved by you, UNCOMMITTED on `refactor/MIL-XXX-ngp-ui-regenerate` — you commit, as six stacked PRs (file lists in the session summary).** All 32 CLI primitives generated with `ng g ng-primitives:primitive … --prefix app --styles unstyled`, styled with the Tailwind tokens, bound to Signal Forms only (a scoped `no-restricted-imports` block in `eslint.config.mjs` bans `@angular/forms` and CVA helpers in `shared/ui`). Gates (macOS, Node 24.15): `pnpm ng test --include 'src/app/shared/ui/**'` 19 files / 112 tests green, `pnpm lint` 0 errors, `pnpm format` clean, Storybook a11y panel clean on every story except the button's destructive variant (token pair, see below). **⛔ Known blocker, by your decision ("new API only, migrate later"): `pnpm build:prod` and `tsc -p tsconfig.app.json` are red** (778 errors, every one an unmigrated caller importing a deleted `@shared/ui/{dialog-shell,forms,otp,aria/*,…}` path or using `<app-button>`; none inside `shared/ui` or `testing`). They stay red until the per-feature migration PRs land. **Decisions for you:** (1) `scripts/check-structure.mjs` flags `shared/ui/dialog` as a singular category folder — refine the rule (a folder named after its own `<name>.ts` is a component folder) or rename; (2) `--destructive` rgb(239,68,68) with white text is 3.76:1, below AA — a darker fill token for solid destructive surfaces is the fix. **Next:** per-feature migration PRs to the new selectors (`button[app-button]`, `app-dialog`, `app-field` + `input[app-input]`, `app-select`, …), then delete `.storybook/tsconfig.ui.json` + the `STORIES` env in `.storybook/main.ts`.
+
+- ⏸ **2026-09-28, STOPPED MID-CHANGE ON USER INSTRUCTION ("leave it, its okay") — the `join-cta`
+  spinner swap is IN THE TREE BUT UNVERIFIED. User to keep or drop.** The "Registering…" button drew a
+  faint, barely visible ring. **Root cause is a real bug in the SHARED `shared/ui/spinner`:** it builds
+  its colours by string interpolation — `text-${trackColor} fill-${color}` — and **Tailwind cannot see
+  runtime-built class names.** Its default `trackColor` is `neutral-tertiary`, which is **not a token in
+  this project and is NOT emitted at all** (`text-neutral-tertiary` count = 0 in the built CSS), so the
+  track falls back to `currentColor` while the arc uses `fill-primary` (rgb 4,72,170 navy). Two dark
+  tones on a greyed-out white button.
+  ⚠️ **This affects EVERY `app-spinner` in the app — 20+ call sites**, and several admin tables pass
+  `color="white" trackColor="neutral-600"`, which are equally invisible to the scanner. Fixing the
+  shared component would ripple app-wide and, per the Team Guide, needs 2 approvals for `shared/`.
+  **Worth its own ticket; deliberately NOT done here.**
+  What IS in the tree, scoped to `join-cta` only: `<app-spinner size="xs" />` replaced by an inline
+  bordered circle (`animate-spin rounded-full border-2 border-current border-t-transparent` — all
+  literals, so Tailwind emits them, and `border-current` takes the button's own text colour so it reads
+  on both the white and primary variants), and the now-unused `Spinner` import dropped.
+  **Lint passed (0 errors); tests and `build:prod` were NOT run before stopping.** Revert with
+  `git checkout -- src/app/features/offerings/webinar/components/join-cta/`, which leaves the rest of
+  the change set intact.
+  ❓ **Never resolved:** the user also said "spinner is before the registering word", which may have
+  been about ORDER rather than contrast. Position is unchanged (spinner leads, as loading buttons
+  conventionally do). Ask before moving it.
+
+- ↩️ **2026-09-28, REVERTED ON USER DECISION — `'registration-pending'` is gone; `'registering'` again
+  covers both cases.** The entry below proposed splitting a server-reported `PENDING` out from an
+  in-flight request, because the two shared a state and rendered a spinner with nothing running behind
+  it. **The user decided against it**, so `ctaFor` returns `'registering'` for both and the spinner runs
+  until the attempt resolves, as before. `join-cta.ts` is back to untouched; `webinar-status.ts` now
+  carries ONLY the `duration_seconds` change.
+  The test added for that path was **kept, rewritten to assert the chosen behaviour** — it covers a
+  branch that had no coverage at all, and its comment records that the split was tried and rejected so
+  nobody re-derives it later.
+  ⚠️ **Consequence, stated plainly and accepted:** a webinar whose attempt the backend leaves at
+  `PENDING` shows "Registering…" with a spinner indefinitely, with no explanation and no retry. That is
+  a deliberate product choice now, not an oversight. **Why the server reports PENDING forever is STILL
+  undiagnosed** and needs a token — see the entry below.
+
+- 🔧 **2026-09-28, NON-REFACTOR — "coming soon" banner now full-bleed. UNCOMMITTED, you commit. No
+  refactor phase moved.** When nothing is scheduled the standing banner was rendered inside the real
+  hero's frame — `container mx-auto px-4`, `max-w-4xl`, rounded corners, `ring` — which exist to frame
+  artwork sitting ABOVE a title, session line and CTA. In this state there is nothing beneath it, so the
+  banner is the whole section and takes the full width. **Found while measuring the assets: the two are
+  DIFFERENT CROPS, not one image scaled** — desktop `2400×1300` (1.85:1 landscape, matching the Figma
+  frame exactly) and mobile `720×1394` (0.52:1 **portrait**). `<picture>` was already swapping them, but
+  the old markup forced both into the same `aspect-video`/`aspect-21/10` box, so a phone got a portrait
+  composition squashed into a landscape frame. Each now renders at its own ratio.
+  `md:max-h-[85vh]` + `object-cover` so an ultra-wide screen crops rather than growing a 1.85:1 image
+  into a ~1,400px-tall wall. Verified emitted: `aspect-ratio:720/1394`, `aspect-ratio:2400/1300`,
+  `max-height:85vh`.
+  ⏸ **One judgement call left open:** kept `pt-10 md:pt-16 lg:pt-20`. The header is `fixed` and floats
+  over content, so zero top padding puts the banner's top edge under it. The Figma frame shows the
+  banner in isolation and does not settle this. Removing one class makes it edge-to-edge if the user
+  prefers the header floating over the dark curtain area.
+  Gates: lint 0 errors (133 pre-existing warnings), tests 184 files / 755 passed + 1 skipped,
+  `build:prod` green, `check:structure` passed.
+
+- 🔧 **2026-09-28, NON-REFACTOR — unreadable "Missed" tag + an endless "Registering…" spinner.
+  UNCOMMITTED, you commit. No refactor phase moved.** Two unrelated reports, both in the webinar cards.
+  **(1) The status tag looked like it had no background.** The binding was NOT at fault — verified by
+  rendering the card and reading the element: Angular DOES merge a static `class` with a `[class]`
+  binding (`… uppercase bg-success text-white`), and all four colours emit in the CSS. The real cause is
+  WHICH tag is visible: three buckets use solid colours (`bg-success`, `bg-accent-premium`,
+  `bg-destructive`) but `missed` used **`bg-black/70` — translucent** — and `missed_webinar` is the ONLY
+  past bucket the live feed populates (completed 0, absent 0, missed 4), so the single pill anyone could
+  see was the one letting dark artwork through. Now `bg-surface-control`, a solid neutral.
+  **(2) Registration showed "Registering…" forever.** Real frontend defect: `ctaFor` returned
+  `'registering'` BOTH for this surface's in-flight request AND for a server-reported `PENDING`, and
+  `JoinCta` renders that as a **disabled spinner** — so once the request finished and the feed still
+  said PENDING, the spinner ran with nothing behind it, no explanation and no way forward. Split out
+  `'registration-pending'` ("Setting up your seat", no spinner, note saying the pipeline continues
+  server-side); the in-flight state still wins while genuinely running. **That path had NO test at all,
+  which is why changing it broke nothing** — added one covering both directions.
+  ⚠️ **NOT DIAGNOSED — needs a token.** Why the server still reports PENDING is a backend question: the
+  facade already calls `reload()` after every registration outcome, so this is a fresh feed, not stale
+  UI. `register-via-zoom-status/<attempt_id>/` would say whether it is `ZOOM_RETRYING` or stuck at
+  `PENDING`. The user's bearer token had expired, so this was inferred from the state machine, not
+  observed. **Ask for a fresh token before claiming a cause.**
+  Gates: lint 0 errors (133 pre-existing warnings), **tests 184 files / 755 passed + 1 skipped** (+1
+  new), `build:prod` green, `check:structure` passed.
+
+- 🔧 **2026-09-28, NON-REFACTOR LAYOUT FIX — empty webinar sections left a ~320px hole. UNCOMMITTED,
+  you commit. No refactor phase moved.** Reported with a screenshot: signed in with no attendance, a
+  huge blank band sat between the "1:1 Google Meet" band and "Webinars Missed". Cause: **a component's
+  host element is always created even when its template renders nothing**, so the `completed` and
+  `absent` rails were still zero-height boxes — and `space-y-*` margins every child but the last
+  whether or not it draws anything. Two of them × 160px = the hole.
+  **Two changes, and the second is the general fix:** (1) both page wrappers `space-y-*` → `gap-*` —
+  they were ALREADY `flex flex-col`, and the two differ exactly here: `gap` applies only BETWEEN
+  laid-out flex items, and a `display:none` child is not a flex item at all; (2) `webinar-rail` and
+  `webinar-faq` now bind their host display to the same condition their template already guards on, so
+  a section that renders nothing removes itself from layout. Together the page adapts to whichever
+  sections a given learner has, rather than reserving space for all of them.
+  Used `[class]` with a ternary, NOT `[class.hidden]` beside a static `block` — with both classes
+  present, which wins depends on stylesheet order, which is not a coin worth flipping on a layout rule.
+  Verified per state: `empty="hidden"`, `emptyShown="block"` (so `showWhenEmpty` still works),
+  `populated="block"`.
+  ⚠️ **Process note worth keeping:** three verification specs produced NO output and nearly passed as
+  "fine" — they failed to COMPILE because `ServerClock` moved to `services/` in the restructure, and a
+  build failure prints nothing through a grep filter. After the refactor, check a quiet spec's import
+  paths before believing it.
+  Gates: lint 0 errors (133 pre-existing warnings, untouched files), **tests 184 files / 754 passed +
+  1 skipped**, `build:prod` green, `check:structure` passed.
+
+- 🔧 **2026-09-28, NON-REFACTOR API FIX — `duration_minutes` → `duration_seconds`. UNCOMMITTED, you
+  commit. No refactor phase moved.** Symptom the user reported: signed in, auth working, Postman shows
+  3 upcoming + 3 missed webinars, **the page renders nothing**. Cause is NOT the login — `loginType`
+  already derives from a real `auth.isAuthenticated()` and `post_login` was being sent correctly. The
+  feed renamed `duration_minutes` to `duration_seconds`, and `isWebinarCard` checks every contract key,
+  so ONE missing key failed the WHOLE response into `error()` and emptied every rail. **Proved against
+  the user's exact card, not inferred:** `accepted: false` raw, `acceptedIfRenamed: true` — that one key
+  was sufficient and necessary. The guard behaved correctly; this is the second time it has caught a
+  silent rename (`cpe_credits` → `total_cpe_credits` was the first, and is why it exists).
+  🚨 **THE UNIT CHANGED TOO, AND THAT WAS THE DANGEROUS HALF.** `effectiveEndAt` did `duration * 60_000`.
+  Left alone it still compiles and still returns a number — a **60× wrong** one. Measured on the live
+  card (start 06:30Z, 2 h): new `* 1_000` → 08:30Z, matching `end_date_time` exactly; old `* 60_000` →
+  **2026-10-06, five days late**, which would have kept finished webinars showing a live Join button.
+  Changed: the model field + its guard entry, the one arithmetic site in `webinar-status.ts`,
+  `webinar-preview.ts`, and 4 fixtures (`60` minutes → `3600` seconds — leaving `60` would have turned an
+  hour-long fixture into a one-minute one and stopped the "earlier of" assertion testing anything).
+  ⚠️ `duration_seconds` is **`null` on every card** in both live feeds, so nothing may depend on it
+  being present; `effectiveEndAt` falls back to `end_date_time`. Anonymous feed now also has content
+  (1 upcoming, 4 missed), so SSR and signed-out visitors get the hero + rail too, not the fallback banner.
+  Gates: lint 0 errors (warnings are pre-existing `no-explicit-any` in `core/models/{feature,http}.model.ts`,
+  untouched), **tests 184 files / 754 passed + 1 skipped**, `build:prod` green, `check:structure` passed.
 
 - 🟡 **MIL-10 PR ready to commit (2026-09-28).** OTP a11y + signed-in shell + `PROFILE_STATUS` cookie are all on `fix/MIL-10-auth-minor-fixes`, with the placeholder change included (your call). The OTP length and the legacy cookie name moved to `environment.AUTH` (`otpLength`, `legacyProfileStatus`). Everything is staged; the guard hook blocked Claude's commit. **You run** the commit, push and `gh pr create` from the session summary. Gates green (macOS, Node 24.15): lint 0 errors, tests 184/754 (+1 skipped), build:prod, check:structure.
 
@@ -2384,6 +2552,20 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-09-30 · NON-REFACTOR · **PR #43 review fixes + STATE.md restored after the master merge** (uncommitted) — deleted `webinar-preview.ts` and its facade/page wiring (`?preview=design` is gone) · host `[class]` bindings on `webinar-rail` / `webinar-faq` removed; the rails' `@if` moved to `webinar-list.html` because the bindings were the layout-hole fix's second half (FAQ relies on its own template guard, empty case now tested) · `join-cta` imports → `@features/offerings/webinar/…` · restored the six 09-28 "Now" entries the merge dropped (125 lines, three-way against `59b38c4`, 0 lines removed) · dev-verified signed out + a synthetic feed, signed-in rails not verifiable · lint 0 errors, tests 194 files / 825 passed + 1 skipped, build:prod + check:structure green (local, Node 24.18)
+
+- 2026-09-28 · NON-REFACTOR · **STOPPED MID-CHANGE on "leave it, its okay" — `join-cta` spinner swap is in the tree, UNVERIFIED, user to keep or drop** · the "Registering…" button drew a faint barely-visible ring; root cause is a REAL BUG IN THE SHARED `shared/ui/spinner`: it builds colours by string interpolation (`text-${trackColor} fill-${color}`) and **Tailwind cannot see runtime-built class names** — its default `neutral-tertiary` is not a token here and `text-neutral-tertiary` is emitted 0 times, so the track falls back to `currentColor` while the arc is `fill-primary` navy: two dark tones on a greyed-out white button · ⚠️ affects EVERY `app-spinner`, 20+ call sites, and several admin tables pass `color="white" trackColor="neutral-600"` which are equally invisible to the scanner — fixing the shared component ripples app-wide and needs 2 approvals per the Team Guide, so it is DELIBERATELY NOT DONE here and wants its own ticket · in the tree, scoped to `join-cta`: `<app-spinner size="xs" />` → inline bordered circle (`animate-spin rounded-full border-2 border-current border-t-transparent`, all literals so Tailwind emits them, `border-current` reads on both button variants), unused `Spinner` import dropped · **lint 0 errors; tests and build:prod NOT run before stopping** · revert: `git checkout -- src/app/features/offerings/webinar/components/join-cta/` · ❓ unresolved: the user also said "spinner is before the registering word" which may have meant ORDER not contrast — position left unchanged, ask before moving it
+
+- 2026-09-28 · NON-REFACTOR · **REVERTED `'registration-pending'` on user decision** (uncommitted) — the split of a server-reported `PENDING` from an in-flight request is undone; `ctaFor` returns `'registering'` for both again and the spinner runs until the attempt resolves · `join-cta.ts` back to untouched, `webinar-status.ts` now carries ONLY the `duration_seconds` change · the test for that path was KEPT and rewritten to assert the chosen behaviour — it covers a branch that previously had NO coverage, and its comment records that the split was tried and rejected so it is not re-derived later · ⚠️ consequence stated and accepted: an attempt the backend leaves at `PENDING` shows "Registering…" with a spinner indefinitely, no explanation, no retry — a product choice now, not an oversight · WHY the server reports PENDING forever remains UNDIAGNOSED and needs a token (`register-via-zoom-status/<attempt_id>/`) · lint 0 errors (133 pre-existing warnings), tests **184 files / 755 passed + 1 skipped**, build:prod + check:structure green
+
+- 2026-09-28 · NON-REFACTOR · **"coming soon" banner full-bleed** (uncommitted) — with nothing scheduled the standing banner was rendered inside the REAL hero's frame (`container mx-auto px-4`, `max-w-4xl`, rounded, `ring`), which exists to frame artwork sitting ABOVE a title/session line/CTA; in this state there is nothing beneath it, so it is the whole section and takes the full width · **measured the assets and found they are DIFFERENT CROPS, not one image scaled** — desktop `2400×1300` (1.85:1 landscape, exactly the Figma frame) vs mobile `720×1394` (0.52:1 PORTRAIT); `<picture>` was already swapping them but the old markup forced both into the same `aspect-video`/`aspect-21/10` box, so a phone got a portrait composition squashed into a landscape frame — each now renders at its own ratio · `md:max-h-[85vh]` + `object-cover` so an ultra-wide screen crops instead of growing a 1.85:1 image into a ~1,400px-tall wall · verified emitted: `aspect-ratio:720/1394`, `aspect-ratio:2400/1300`, `max-height:85vh` · ⏸ kept `pt-10 md:pt-16 lg:pt-20` — the header is `fixed` and floats over content, so zero top padding puts the banner's top edge under it; the Figma frame shows the banner in isolation and does not settle it, one class removes it if edge-to-edge is wanted · lint 0 errors (133 pre-existing warnings), tests **184 files / 755 passed + 1 skipped**, build:prod + check:structure green
+
+- 2026-09-28 · NON-REFACTOR · **unreadable "Missed" tag + endless "Registering…" spinner** (uncommitted) — two unrelated card reports · (1) tag "had no background": the BINDING was innocent — rendered the card and read the element, Angular DOES merge static `class` with `[class]` (`… uppercase bg-success text-white`) and all four colours emit in the CSS; the cause was WHICH tag is visible — three buckets are solid (`bg-success`/`bg-accent-premium`/`bg-destructive`) but `missed` was **`bg-black/70`, translucent**, and `missed_webinar` is the ONLY past bucket the live feed fills (completed 0, absent 0, missed 4), so the one pill anyone saw was the one letting dark artwork through → now `bg-surface-control` · (2) `ctaFor` returned `'registering'` for BOTH this surface's in-flight request AND a server-reported `PENDING`, and `JoinCta` renders that as a DISABLED SPINNER — so after the request finished with the feed still PENDING, the spinner ran with nothing behind it, no explanation, no way out → split `'registration-pending'` ("Setting up your seat", no spinner, note that the pipeline continues server-side), in-flight still wins while genuinely running · **that path had NO test, which is why the change broke nothing** — added one asserting both directions · ⚠️ WHY the server still says PENDING is UNDIAGNOSED and needs a token: the facade already `reload()`s after every outcome so the feed is fresh, not stale; `register-via-zoom-status/<attempt_id>/` would say `ZOOM_RETRYING` vs stuck `PENDING`. Inferred from the state machine, NOT observed — the user's token had expired · lint 0 errors (133 pre-existing warnings), tests **184 files / 755 passed + 1 skipped**, build:prod + check:structure green
+
+- 2026-09-28 · NON-REFACTOR · **empty webinar sections collapse instead of reserving space** (uncommitted) — signed-in learner with no attendance saw a ~320px blank band between the 1:1 booking band and "Webinars Missed" · cause: a component HOST element is always created even when its template renders nothing, so the `completed` + `absent` rails were zero-height boxes, and `space-y-*` margins every child but the last regardless of whether it draws · fix (1) both page wrappers `space-y-*` → `gap-*`, which they could take because they were ALREADY `flex flex-col` and `gap` applies only BETWEEN laid-out flex items — a `display:none` child is not a flex item at all; fix (2) `webinar-rail` + `webinar-faq` bind host display to the same condition their template already guards on, so the page now adapts to whichever sections a learner actually has · used `[class]` ternary NOT `[class.hidden]` beside a static `block` (both present → winner decided by stylesheet order) · verified per state: `empty="hidden"`, `emptyShown="block"`, `populated="block"` · ⚠️ THREE verification specs printed NOTHING and nearly passed as fine — they failed to COMPILE because `ServerClock` moved to `services/` in the restructure and a build error prints nothing through a grep filter; after the refactor, check a quiet spec's import paths before trusting it · lint 0 errors (133 pre-existing warnings), tests **184 files / 754 passed + 1 skipped**, build:prod + check:structure green
+
+- 2026-09-28 · NON-REFACTOR · **`duration_minutes` → `duration_seconds` on the webinar feed** (uncommitted) — user signed in, Postman showed 3 upcoming + 3 missed, page rendered NOTHING · cause was NOT auth (`loginType` already reads a real `auth.isAuthenticated()`, `post_login` was sent correctly): the feed renamed the key, and `isWebinarCard` checks every contract key, so ONE missing key failed the WHOLE response into `error()` and emptied every rail · PROVED on the user's exact card — `accepted: false` raw, `acceptedIfRenamed: true`, so that key was necessary and sufficient · second silent rename this guard has caught (`cpe_credits` → `total_cpe_credits` was the first, and is why it exists) · 🚨 **THE UNIT CHANGED TOO — the dangerous half**: `effectiveEndAt`'s `* 60_000` still compiles and still returns a number, just 60× wrong; measured on the live card (start 06:30Z, 2 h) new `* 1_000` → 08:30Z matching `end_date_time`, old `* 60_000` → **2026-10-06, five days late**, i.e. a live Join button long after the session ended · changed model field + guard entry, the one arithmetic site, `webinar-preview.ts`, and 4 fixtures (60 min → 3600 s; leaving `60` would have made an hour-long fixture one minute and neutered the "earlier of" assertion) · ⚠️ `duration_seconds` is `null` on every card in both live feeds so nothing may depend on it; anonymous feed now has 1 upcoming + 4 missed, so SSR/signed-out get the hero + rail too · lint 0 errors (warnings pre-existing in `core/models/{feature,http}.model.ts`, untouched), tests **184 files / 754 passed + 1 skipped**, build:prod + check:structure green
 
 - 2026-09-28 · MIL-10 · OTP length + legacy cookie name → environment.AUTH; all session work staged on fix/MIL-10; commit blocked by guard → handed to user
 - 2026-09-28 · Signed-in shell + PROFILE_STATUS cookie implemented; gates green; browser-checked with a seeded session · uncommitted

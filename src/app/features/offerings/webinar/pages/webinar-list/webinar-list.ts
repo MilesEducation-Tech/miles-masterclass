@@ -42,12 +42,9 @@ export class WebinarList {
    * It has to be the SESSION that decides this, not whether those buckets have
    * rows: `missed_webinar` comes back populated for an anonymous caller too,
    * and a visitor with no account has not "missed" anything — every past
-   * session would qualify. `isPreview` is always false outside a development
-   * build, and the branch is stripped from production bundles.
+   * session would qualify.
    */
-  protected readonly isSignedOut = computed(
-    () => !this.auth.isAuthenticated() && !this.facade.isPreview(),
-  );
+  protected readonly isSignedOut = computed(() => !this.auth.isAuthenticated());
 
   protected onRegister(webinarId: string): void {
     void this.facade.register(webinarId);
