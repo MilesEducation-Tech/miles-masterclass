@@ -28,6 +28,10 @@ export interface LevelTab {
  * "no absences" and "not signed in" both arrive as `[]`, and a heading over an
  * empty grid reads as a fault rather than good news.
  *
+ * "Nothing" is the CONTENT, though: the host element is still created, and in a
+ * flex or grid parent it still takes a `gap`. A page that lays rails out that
+ * way wraps each one in `@if`, so an empty rail is never created at all.
+ *
  * Two presentations, picked with `layout`:
  * - `rows` — full-width rows, what the upcoming section uses.
  * - `strip` — a horizontally scrolling Swiper rail of cards, which is how the
@@ -41,7 +45,6 @@ export interface LevelTab {
  */
 @Component({
   selector: 'app-webinar-rail',
-  host: { '[class]': "hasContent() ? 'block' : 'hidden'" },
   imports: [SwiperStrip, WebinarCard],
   templateUrl: './webinar-rail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -66,18 +69,6 @@ export class WebinarRail {
 
   readonly register = output<string>();
   readonly join = output<string>();
-
-  /**
-   * Whether this section draws anything at all.
-   *
-   * Mirrors the template's own guard, and drives the host's display so an
-   * empty rail is not a flex item — otherwise the page's `gap` still spaces
-   * around a zero-height box, which is what left a ~320px hole between the
-   * booking band and "Webinars Missed" for a learner with no attendance.
-   */
-  protected readonly hasContent = computed(
-    () => this.webinars().length > 0 || this.showWhenEmpty(),
-  );
 
   protected readonly cairaMark = BRAND_MARKS.caira;
   /** The v2 preset these rails used, unchanged. */

@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { ApplicationRef, signal } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, of } from 'rxjs';
+import { Router } from '@angular/router';
+import { Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiUrl } from '@core/services/api-client/api-client';
@@ -108,13 +108,6 @@ describe('WebinarFacade.register — sign-in gate', () => {
         },
         { provide: NgpDialogManager, useValue: { open: dialogOpen } },
         { provide: Router, useValue: { navigate, url: '/us/cpa/webinar/w1' } },
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            queryParamMap: of(new Map()),
-            snapshot: { queryParamMap: new Map([['get', null]]) },
-          },
-        },
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: Logger, useValue: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } },
@@ -188,13 +181,6 @@ describe('WebinarFacade reads', () => {
         },
         { provide: NgpDialogManager, useValue: { open: vi.fn() } },
         { provide: Router, useValue: { navigate: vi.fn(), url: '/' } },
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            queryParamMap: of(new Map()),
-            snapshot: { queryParamMap: new Map([['get', null]]) },
-          },
-        },
         { provide: Logger, useValue: { error: logError, warn: vi.fn(), info: vi.fn() } },
         {
           provide: NotificationService,

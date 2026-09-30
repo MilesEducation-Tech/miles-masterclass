@@ -2,9 +2,13 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { NgIcon } from '@ng-icons/core';
 import { Button } from '@shared/ui/button/button';
 import { ButtonVariant } from '@core/models/button.model';
-import { FeedCard, registrationOf } from '../../models/webinar.model';
-import { CTA_LABELS, needsCountdown, WebinarCta } from '../../utils/webinar-status';
-import { parseIso } from '../../utils/session-time';
+import { FeedCard, registrationOf } from '@features/offerings/webinar/models/webinar.model';
+import {
+  CTA_LABELS,
+  needsCountdown,
+  WebinarCta,
+} from '@features/offerings/webinar/utils/webinar-status';
+import { parseIso } from '@features/offerings/webinar/utils/session-time';
 import { WebinarCountdown } from '../webinar-countdown/webinar-countdown';
 
 /**

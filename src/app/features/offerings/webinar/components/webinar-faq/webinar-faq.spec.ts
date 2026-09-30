@@ -43,6 +43,14 @@ describe('WebinarFaq', () => {
     await fixture.whenStable();
   });
 
+  it('draws nothing when there are no questions', async () => {
+    fixture.componentRef.setInput('faqs', []);
+    await fixture.whenStable();
+
+    expect(el.querySelector('section')).toBeNull();
+    expect(el.querySelector('button')).toBeNull();
+  });
+
   it('renders every category collapsed, each panel a region labelled by its trigger', () => {
     expect(expanded('Billing')).toBe('false');
     expect(expanded('Certificates')).toBe('false');

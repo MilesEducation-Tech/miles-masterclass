@@ -1,4 +1,8 @@
 @let hero = facade.heroWebinar();
+@let upcoming = facade.upcomingWebinars();
+@let attended = facade.attendedWebinars();
+@let absent = facade.absentWebinars();
+@let missed = facade.missedWebinars();
 
 <!-- Section rhythm lives HERE and nowhere else. It used to be the sum of
      three things — the hero's own bottom padding, this wrapper's gap,
@@ -92,19 +96,26 @@
       </div>
     }
 
+    <!-- Every rail below sits in an `@if` on its own data. A component's host
+         element exists even when its template draws nothing, and as a flex item
+         it would still take a `gap` — that is the ~320px hole a learner with no
+         attendance used to see. `@if` means the empty rail is never created. -->
+
     <!-- Section 2: everything upcoming -->
-    <app-webinar-rail
-      heading="WEBINARS"
-      description="Join our expert-led sessions to master the latest tools and strategies in data visualization and automation."
-      [withCairaMark]="true"
-      [withLevelTabs]="true"
-      [pageSize]="3"
-      [webinars]="facade.upcomingWebinars()"
-      bucket="upcoming"
-      [registeringIds]="registeringIds()"
-      (register)="onRegister($event)"
-      (join)="onJoin($event)"
-    />
+    @if (upcoming.length > 0) {
+      <app-webinar-rail
+        heading="WEBINARS"
+        description="Join our expert-led sessions to master the latest tools and strategies in data visualization and automation."
+        [withCairaMark]="true"
+        [withLevelTabs]="true"
+        [pageSize]="3"
+        [webinars]="upcoming"
+        bucket="upcoming"
+        [registeringIds]="registeringIds()"
+        (register)="onRegister($event)"
+        (join)="onJoin($event)"
+      />
+    }
 
     <!-- Section 3: the 1:1 booking band -->
     <app-webinar-meet-cta />
@@ -119,28 +130,34 @@
       </section>
     } @else {
       <!-- Section 4: attended -->
-      <app-webinar-rail
-        heading="Webinars Attended"
-        layout="strip"
-        [webinars]="facade.attendedWebinars()"
-        bucket="completed"
-      />
+      @if (attended.length > 0) {
+        <app-webinar-rail
+          heading="Webinars Attended"
+          layout="strip"
+          [webinars]="attended"
+          bucket="completed"
+        />
+      }
 
       <!-- Section 5: booked but did not join -->
-      <app-webinar-rail
-        heading="Webinars Absent"
-        layout="strip"
-        [webinars]="facade.absentWebinars()"
-        bucket="absent"
-      />
+      @if (absent.length > 0) {
+        <app-webinar-rail
+          heading="Webinars Absent"
+          layout="strip"
+          [webinars]="absent"
+          bucket="absent"
+        />
+      }
 
       <!-- Section 6: already ran, never booked -->
-      <app-webinar-rail
-        heading="Webinars Missed"
-        layout="strip"
-        [webinars]="facade.missedWebinars()"
-        bucket="missed"
-      />
+      @if (missed.length > 0) {
+        <app-webinar-rail
+          heading="Webinars Missed"
+          layout="strip"
+          [webinars]="missed"
+          bucket="missed"
+        />
+      }
     }
 
     <!-- Section 7: the page FAQ -->
