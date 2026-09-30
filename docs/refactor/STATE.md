@@ -7,6 +7,50 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-09-30 (evening), MIL-13 PRE-COMMIT FAILURE FIXED, AND A BLOCKER STILL OPEN. UNCOMMITTED,
+  you commit.** The commit from Git Desktop stopped in `check-structure`: the new
+  `webinar-hero/webinar-hero.css` is a component stylesheet with no §4.6 reason. Its header said
+  Tailwind cannot express the two rules in it; **Tailwind 4.3 can**, so it is converted, not baselined
+  (a baseline entry would have weakened the check). The guest ticket's punched notches are now the
+  utilities `mask-subtract` + an arbitrary `mask-image` on the `<article>`; the member artwork's glow is
+  the `before:` layer on its wrapper (`before:inset-[-12%_-14%] before:rounded-[50%]
+before:bg-[radial-gradient(…)] before:blur-[40px]`). `styleUrl` removed and the `.css` deleted; the
+  template comments say what each utility is for.
+  **Verified in the running app** (real UAT feed loaded into the page): ticket mask image, size (420×562
+  at 1024px) and appearance identical before and after; all 14 computed `::before` properties identical
+  between the old rules and the utilities on the same box; at 375px the ticket is 343 wide, notch
+  present, no horizontal scroll. One computed string differs, `mask-composite` now reads `subtract` where
+  it read `source-out`: the legacy `-webkit-` spelling of the same operation, same rendering. Not checked:
+  768px and 1440px, and the member glow inside the real member hero (no signed-in session).
+  Gates (local macOS, Node 24.18, **not CI**): `check:structure` passed, lint 0 errors (124 pre-existing
+  `any` warnings, none in the hero), Prettier clean, `build:prod` green (the same two CSS budget
+  warnings), webinar specs 7 files / 91 passed.
+  🚨 **BLOCKER, NOT FIXED — needs your call: the tree still renames `duration_seconds` back to
+  `duration_minutes`** (model + its response check + `effectiveEndAt` + three specs). UAT sends
+  `duration_seconds` on **all 29 cards and `duration_minutes` on none** (fetched today), so the response
+  check rejects the feed and **the live page shows "We could not load the webinars. … response does not
+  match the Events contract"**. Reproduced in the running app and in the dev-server log. The specs still
+  pass because their fixtures use minutes. `prompts/webinar-v3-parity.md` §3.7 #1 says the same thing:
+  confirm what UAT emits, and if it is seconds, fix Postman, not the client. The staged commit message
+  says "Keep duration_seconds", which the code does not do. Fix = revert those five places to the
+  committed `duration_seconds` form; not done here because it is another session's work.
+
+- 🔧 **2026-09-30 (evening), HANDOFF NOTE — the only source change from this session since the #43
+  work is the `webinar-hero` stylesheet conversion in the entry above.**
+  #43 was squash-merged as `bc3385f` (12:48) and its entry below is already on this branch
+  (`feat/MIL-13-webinar-v3-design-parity`). **The uncommitted tree is NOT from this session:** 22
+  modified + 3 new files under `offerings/webinar` (`seat-form/`, `guest-registration.ts` and
+  `webinar-hero.css`, the last since converted and deleted), newest 17:06, are the MIL-13
+  design-parity work of another session or tool
+  (plan: `prompts/`, commit `16372fa`). The refactor stop gate compares file times and reads those as
+  this session's, which is why this note exists. **Stray files:** 48 empty `_tmp_<pid>_*` entries (pids 16, 29
+  and 31) at the repo root, created 17:03:19–24 (42 files + 6 folders each holding one empty file), untracked and not
+  in `.gitignore`. Not from a pnpm install (its records and the store were last touched 11:27) and not
+  from this session; the creator is unidentified. Safe to delete (`rm -rf _tmp_*` from the root);
+  do not commit them. **Environment, outside the repo:** `~/.config/husky/init.sh` now loads nvm so
+  GitHub Desktop's commit hooks can find `pnpm`. Never run `husky --version` here: Husky 9 takes the
+  argument as the hooks folder and rewrites `core.hooksPath` (fix: `git config core.hooksPath .husky/_`).
+
 - 🔧 **2026-09-30, NON-REFACTOR — PR #43 review comments fixed, and this file restored after the
   master merge. UNCOMMITTED, you commit. No refactor phase moved.** Four inline comments from
   me-sachin-singh on MilesEducation-Tech/miles-masterclass#43.
@@ -2552,6 +2596,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-09-30 · MIL-13 · **`webinar-hero.css` converted to Tailwind utilities so the pre-commit structure check passes** (uncommitted) — the ticket mask is `mask-subtract` + an arbitrary `mask-image`, the artwork glow is a `before:` layer, the stylesheet and its `styleUrl` are gone, and no baseline entry was added · parity checked in the running app (mask + size identical, 14/14 `::before` properties identical, 375px ok; 768/1440 not checked) · 🚨 still open: the tree renames `duration_seconds` to `duration_minutes`, UAT sends seconds on 29/29 cards, and the live page shows "We could not load the webinars" · check:structure, lint 0 errors, build:prod, webinar specs 91 passed (local, Node 24.18)
+
+- 2026-09-30 · HANDOFF · **source changes from this session: only the `webinar-hero` stylesheet conversion above** (uncommitted) — the 22 modified + 3 new `offerings/webinar` files in the tree are another session's MIL-13 work · 48 empty `_tmp_<pid>_*` files (pids 16, 29, 31) at the repo root (17:03, creator unidentified, not pnpm) are safe to delete and must not be committed · Git Desktop hooks need `~/.config/husky/init.sh` (nvm) and must never be probed with `husky --version` · #43 merged as `bc3385f`
 
 - 2026-09-30 · NON-REFACTOR · **PR #43 review fixes + STATE.md restored after the master merge** (uncommitted) — deleted `webinar-preview.ts` and its facade/page wiring (`?preview=design` is gone) · host `[class]` bindings on `webinar-rail` / `webinar-faq` removed; the rails' `@if` moved to `webinar-list.html` because the bindings were the layout-hole fix's second half (FAQ relies on its own template guard, empty case now tested) · `join-cta` imports → `@features/offerings/webinar/…` · restored the six 09-28 "Now" entries the merge dropped (125 lines, three-way against `59b38c4`, 0 lines removed) · dev-verified signed out + a synthetic feed, signed-in rails not verifiable · lint 0 errors, tests 194 files / 825 passed + 1 skipped, build:prod + check:structure green (local, Node 24.18)
 

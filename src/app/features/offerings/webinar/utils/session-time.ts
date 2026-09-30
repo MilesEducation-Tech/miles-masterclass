@@ -176,3 +176,16 @@ export function formatSessionLabel(iso: string | null | undefined): string | nul
   const month = parts.month.charAt(0) + parts.month.slice(1).toLowerCase();
   return `${parts.day}${parts.ordinal} ${month} ${parts.year} | ${parts.time} (${parts.zone})`;
 }
+
+/**
+ * `5 min` / `2 hrs` / `3 days` — the v3 "Webinar starts in …" chip, one unit,
+ * rounded down. `null` once the moment has passed, so the chip disappears
+ * rather than reading "starts in 0 min".
+ */
+export function formatStartsIn(remainingMs: number): string | null {
+  if (remainingMs <= 0) return null;
+  const { days, hours, minutes } = splitDuration(remainingMs);
+  if (days > 0) return `${days} day${days === 1 ? '' : 's'}`;
+  if (hours > 0) return `${hours} hr${hours === 1 ? '' : 's'}`;
+  return `${Math.max(1, minutes)} min`;
+}

@@ -101,34 +101,43 @@
          it would still take a `gap` — that is the ~320px hole a learner with no
          attendance used to see. `@if` means the empty rail is never created. -->
 
-    <!-- Section 2: everything upcoming -->
+    <!-- Section 2: everything upcoming — v3 draws it twice, by session -->
     @if (upcoming.length > 0) {
-      <app-webinar-rail
-        heading="WEBINARS"
-        description="Join our expert-led sessions to master the latest tools and strategies in data visualization and automation."
-        [withCairaMark]="true"
-        [withLevelTabs]="true"
-        [pageSize]="3"
-        [webinars]="upcoming"
-        bucket="upcoming"
-        [registeringIds]="registeringIds()"
-        (register)="onRegister($event)"
-        (join)="onJoin($event)"
-      />
+      @if (isSignedOut()) {
+        <app-webinar-rail
+          variant="guest"
+          heading="Webinar's This Month"
+          description="Get ready for an exclusive Friday night experience! Join our expert-led sessions to master the latest tools and strategies in data visualization and automation."
+          [pageSize]="6"
+          [webinars]="upcoming"
+          bucket="upcoming"
+          [registeringIds]="registeringIds()"
+          (register)="onRegister($event)"
+          (join)="onJoin($event)"
+        />
+      } @else {
+        <app-webinar-rail
+          heading="WEBINARS"
+          description="Join our expert-led sessions to master the latest tools and strategies in data visualization and automation."
+          [withCairaMark]="true"
+          [withLevelTabs]="true"
+          [pageSize]="3"
+          [webinars]="upcoming"
+          bucket="upcoming"
+          [registeringIds]="registeringIds()"
+          (register)="onRegister($event)"
+          (join)="onJoin($event)"
+        />
+      }
     }
 
     <!-- Section 3: the 1:1 booking band -->
     <app-webinar-meet-cta />
 
-    @if (isSignedOut()) {
-      <section class="rounded-xl border border-dashed border-border px-6 py-10 text-center">
-        <h2 class="text-lg font-medium">Sign in to see your webinars</h2>
-        <p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-          Once you are signed in, this page also shows the sessions you attended, the ones you
-          booked but missed, and what you have earned CPE credit for.
-        </p>
-      </section>
-    } @else {
+    <!-- The three per-user rails are a member's alone: `missed_webinar` comes
+         back populated for an anonymous caller too, and a visitor with no
+         account has not "missed" anything. v3 renders nothing here for a guest. -->
+    @if (!isSignedOut()) {
       <!-- Section 4: attended -->
       @if (attended.length > 0) {
         <app-webinar-rail

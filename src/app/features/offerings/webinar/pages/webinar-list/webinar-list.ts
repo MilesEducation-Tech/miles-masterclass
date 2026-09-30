@@ -47,7 +47,20 @@ export class WebinarList {
   protected readonly isSignedOut = computed(() => !this.auth.isAuthenticated());
 
   protected onRegister(webinarId: string): void {
+    // A guest's seat is booked from the hero card (sign in + register), so
+    // "Book Now" on a row takes them there rather than to a dialog. With no
+    // hero on the page the facade's sign-in prompt is still the fallback.
+    if (this.isSignedOut() && this.facade.heroWebinar() && this.focusSeatForm()) return;
     void this.facade.register(webinarId);
+  }
+
+  /** Scroll the guest hero's seat form into view and focus it. */
+  private focusSeatForm(): boolean {
+    const field = this.window.document.getElementById('seat-identifier');
+    if (!field) return false;
+    field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    field.focus({ preventScroll: true });
+    return true;
   }
 
   protected onJoin(webinarId: string): void {

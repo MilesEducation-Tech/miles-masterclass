@@ -46,9 +46,22 @@ export class WebinarCountdown {
 
   /**
    * `compact` for a card strip (`4d 03h`), `long` for a headline
-   * ("4 hours and 30 minutes"). Same data, different room to say it in.
+   * ("4 hours and 30 minutes"), `cells` for the hero's four boxes
+   * (Days / Hours / Mins / Secs). Same data, different room to say it in.
    */
-  readonly format = input<'compact' | 'long'>('compact');
+  readonly format = input<'compact' | 'long' | 'cells'>('compact');
+
+  /** The four boxes, in display order, for the `cells` format. */
+  protected readonly cells = computed(() => {
+    const p = this.parts();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return [
+      { label: 'Days', value: pad(p.days) },
+      { label: 'Hours', value: pad(p.hours) },
+      { label: 'Mins', value: pad(p.minutes) },
+      { label: 'Secs', value: pad(p.seconds) },
+    ];
+  });
 
   protected readonly display = computed(() =>
     this.format() === 'long' ? formatCountdownLong(this.parts()) : formatCountdown(this.parts()),

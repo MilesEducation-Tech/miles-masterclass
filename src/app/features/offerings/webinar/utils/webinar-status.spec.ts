@@ -1,4 +1,10 @@
-import { ctaFor, effectiveEndAt, isRegistered, joinOpensAt } from './webinar-status';
+import {
+  ctaFor,
+  effectiveEndAt,
+  isRegistered,
+  joinOpensAt,
+  sessionPhaseOf,
+} from './webinar-status';
 import {
   CompletedWebinarCard,
   UpcomingWebinarCard,
@@ -17,7 +23,7 @@ function card(overrides: Partial<UpcomingWebinarCard> = {}): UpcomingWebinarCard
     short_description: '',
     start_date_time: '2026-09-20T13:00:00Z',
     end_date_time: '2026-09-20T14:00:00Z',
-    duration_seconds: 3600,
+    duration_minutes: 60,
     webinar_zoom_id: '84123456789',
     is_test_webinar: false,
     webinar_why_attend_points: null,
@@ -85,12 +91,12 @@ describe('effectiveEndAt', () => {
   it('takes the earlier of end_date_time and start + duration', () => {
     // Rows exist whose end_date_time sits well after the start; trusting it
     // would keep a one-hour webinar joinable for days.
-    const w = card({ end_date_time: '2026-10-20T14:00:00Z', duration_seconds: 3600 });
+    const w = card({ end_date_time: '2026-10-20T14:00:00Z', duration_minutes: 60 });
     expect(effectiveEndAt(w)).toBe(Date.parse('2026-09-20T14:00:00Z'));
   });
 
   it('falls back to whichever one is available', () => {
-    expect(effectiveEndAt(card({ duration_seconds: null }))).toBe(
+    expect(effectiveEndAt(card({ duration_minutes: null }))).toBe(
       Date.parse('2026-09-20T14:00:00Z'),
     );
     expect(effectiveEndAt(card({ end_date_time: null }))).toBe(Date.parse('2026-09-20T14:00:00Z'));
@@ -210,5 +216,29 @@ describe('ctaFor', () => {
   it('treats an offline event exactly like a webinar', () => {
     const w = card({ type: 'offline' });
     expect(ctaFor(w, { now: NOW, bucket: 'upcoming' })).toBe('register');
+  });
+});
+
+describe('sessionPhaseOf', () => {
+  it('is upcoming before the join window opens', () => {
+    expect(sessionPhaseOf(card(), NOW)).toBe('upcoming');
+  });
+
+  it('turns live with the join window, not the start time', () => {
+    const start = Date.parse('2026-09-20T13:00:00Z');
+    expect(sessionPhaseOf(card(), start - 15 * 60_000)).toBe('live');
+    expect(sessionPhaseOf(card(), start + 60_000)).toBe('live');
+  });
+
+  it('is ended from the effective end, which the duration can shorten', () => {
+    const start = Date.parse('2026-09-20T13:00:00Z');
+    const w = card({ end_date_time: '2026-09-25T14:00:00Z', duration_minutes: 60 });
+    expect(sessionPhaseOf(w, start + 61 * 60_000)).toBe('ended');
+  });
+
+  it('reads no start time as upcoming rather than guessing', () => {
+    expect(sessionPhaseOf(card({ start_date_time: null, end_date_time: null }), NOW)).toBe(
+      'upcoming',
+    );
   });
 });

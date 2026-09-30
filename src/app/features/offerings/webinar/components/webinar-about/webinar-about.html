@@ -6,7 +6,7 @@
   @if (aboutCopy) {
     <section class="flex w-full gap-8 max-md:flex-col">
       <div class="w-full md:w-1/4">
-        <h2 class="text-xl font-semibold md:text-3xl">About the Webinar</h2>
+        <h2 class="text-xl font-semibold md:text-3xl">Course Description</h2>
       </div>
       <div
         class="w-full text-sm leading-relaxed font-medium text-muted-foreground md:w-3/4 md:text-base"
@@ -24,7 +24,7 @@
       <div class="w-full md:w-3/4">
         <ul class="flex flex-col gap-2">
           @for (item of objectiveList; track $index) {
-            <li class="rounded-full bg-surface-panel px-6 py-3 text-sm font-medium md:text-base">
+            <li class="rounded-lg bg-surface-panel p-3 text-sm font-medium md:text-base">
               {{ item }}
             </li>
           }
@@ -87,6 +87,13 @@
                 Sponsor Identification number:
                 <span class="font-medium text-foreground">{{ sponsorId }}</span>
               </li>
+
+              @if (w.duration_minutes; as minutes) {
+                <li class="text-sm md:text-base">
+                  Webinar Duration:
+                  <span class="font-medium text-foreground">{{ minutes }} minutes</span>
+                </li>
+              }
             </ul>
 
             <div class="text-sm leading-relaxed text-muted-foreground md:text-base">

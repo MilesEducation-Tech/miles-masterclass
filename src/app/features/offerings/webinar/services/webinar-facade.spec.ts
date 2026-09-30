@@ -25,7 +25,7 @@ function contractCard(id: string, overrides: Record<string, unknown> = {}): Webi
     short_description: '...',
     start_date_time: '2026-09-20T13:00:00+00:00',
     end_date_time: '2026-09-20T14:00:00+00:00',
-    duration_seconds: 3600,
+    duration_minutes: 60,
     webinar_zoom_id: '84123456789',
     is_test_webinar: false,
     webinar_why_attend_points: [],

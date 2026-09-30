@@ -1,4 +1,9 @@
-import { formatCountdown, formatCountdownLong, splitDuration } from './session-time';
+import {
+  formatCountdown,
+  formatCountdownLong,
+  formatStartsIn,
+  splitDuration,
+} from './session-time';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -33,5 +38,24 @@ describe('formatCountdownLong', () => {
   it('leaves the compact form alone, which cards still use', () => {
     expect(formatCountdown(splitDuration(4 * DAY + 3 * HOUR))).toBe('4d 03h');
     expect(formatCountdown(splitDuration(4 * HOUR + 30 * MIN))).toBe('4h 30m');
+  });
+});
+
+describe('formatStartsIn', () => {
+  it('names one unit, rounded down', () => {
+    expect(formatStartsIn(3 * 86_400_000 + 3_600_000)).toBe('3 days');
+    expect(formatStartsIn(2 * 3_600_000 + 60_000)).toBe('2 hrs');
+    expect(formatStartsIn(5 * 60_000 + 30_000)).toBe('5 min');
+  });
+
+  it('singularises and never says 0 min', () => {
+    expect(formatStartsIn(86_400_000)).toBe('1 day');
+    expect(formatStartsIn(3_600_000)).toBe('1 hr');
+    expect(formatStartsIn(20_000)).toBe('1 min');
+  });
+
+  it('is null once the moment has passed, so the chip disappears', () => {
+    expect(formatStartsIn(0)).toBeNull();
+    expect(formatStartsIn(-1)).toBeNull();
   });
 });

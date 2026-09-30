@@ -4,37 +4,95 @@
 @let level = cairaLevel();
 
 <article [class]="articleClass()">
-  @if (isRowLayout()) {
-    <!-- ==================================================================
-         Row form. One DOM that is a stacked card below `md` and a three-column
-         row above it — date pill | copy | artwork — by way of `order` on the
-         artwork, since grid auto-placement follows order-modified document
-         order.
-         ================================================================== -->
+  @if (isRowLayout() && isGuest()) {
+    <!-- Guest row: v3's "Webinar's This Month" list item -->
     @if (parts) {
       <div
-        class="hidden h-[161px] w-[152px] flex-col items-center justify-between rounded-[16px] border border-hairline bg-surface-raised py-4 text-center md:flex"
+        class="flex w-20 flex-col items-center rounded-md bg-muted px-2 py-3 text-center sm:w-24"
       >
-        <span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+        <span class="text-[11px] font-medium text-muted-foreground uppercase">{{
+          monthLong()
+        }}</span>
+        <span class="text-3xl leading-none font-bold">
+          {{ parts.day }}<sup class="text-xs font-medium">{{ parts.ordinal }}</sup>
+        </span>
+        <span class="text-xs text-muted-foreground">{{ parts.year }}</span>
+      </div>
+    } @else {
+      <div class="w-20 sm:w-24" aria-hidden="true"></div>
+    }
+
+    <div class="flex min-w-0 flex-col gap-2">
+      @if (categories(); as cats) {
+        <p class="truncate text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          {{ cats }}
+          @if (w.total_cpe_credits; as cpe) {
+            <span class="text-accent">· {{ cpe }} CPE</span>
+          }
+        </p>
+      }
+      <a
+        [routerLink]="[w.id]"
+        queryParamsHandling="preserve"
+        class="truncate text-base font-semibold transition-colors hover:text-accent sm:text-lg"
+      >
+        {{ w.name }}
+      </a>
+      @if (level) {
+        <div class="flex items-center gap-2">
+          <img [src]="cairaMark" alt="CAIRA" class="h-4 w-auto" loading="lazy" decoding="async" />
+          <span class="text-sm font-semibold">{{ level }}</span>
+        </div>
+      }
+      <div class="mt-1 flex flex-wrap items-center gap-3">
+        <app-join-cta
+          [webinar]="w"
+          [cta]="cta()"
+          [guest]="true"
+          (register)="register.emit(w.id)"
+          (join)="join.emit(w.id)"
+        />
+        <a
+          [routerLink]="[w.id]"
+          queryParamsHandling="preserve"
+          class="inline-flex items-center justify-center rounded-[8px] border border-outline px-6 py-3.5 text-sm font-medium whitespace-nowrap transition-colors hover:border-accent/50"
+        >
+          More Info
+        </a>
+      </div>
+    </div>
+
+    <div class="hidden aspect-video h-34 overflow-hidden rounded-md bg-muted sm:block">
+      @if (thumb) {
+        <img
+          [src]="thumb"
+          [alt]="w.name"
+          class="h-full w-full object-cover"
+          loading="lazy"
+          decoding="async"
+        />
+      }
+    </div>
+  } @else if (isRowLayout()) {
+    @if (parts) {
+      <div
+        class="hidden w-24 flex-col items-center justify-between gap-2 rounded-2xl border border-hairline bg-surface-raised px-2 py-4 text-center md:flex md:w-38"
+      >
+        <span class="text-sm font-medium tracking-wide text-muted-foreground uppercase">
           {{ parts.month }}
         </span>
-        <span class="text-5xl leading-none font-bold">{{ parts.day }}</span>
+        <span class="text-3xl leading-none font-extrabold md:text-[44px]">{{ parts.day }}</span>
         <span class="text-xs font-medium text-accent-premium">
           {{ parts.time }} ({{ parts.zone }})
         </span>
       </div>
     } @else {
-      <!-- Hold the column so the copy does not slide left on a row whose start
-           time never made it into the feed. -->
       <div class="hidden md:block" aria-hidden="true"></div>
     }
 
     <div
       class="order-first aspect-video w-full md:relative md:order-last md:aspect-auto md:h-[180px] md:w-[378px]"
     >
-      <!-- The banner sits at the right of the box; the 58px it leaves on the
-           left is where the design's round credential badge overhangs. The
-           Events API sends no badge yet, so the space is kept, not filled. -->
       <div
         class="h-full w-full overflow-hidden rounded-[16px] bg-muted md:absolute md:top-0 md:right-0 md:h-[180px] md:w-[320px]"
       >
@@ -54,7 +112,7 @@
       <a
         [routerLink]="[w.id]"
         queryParamsHandling="preserve"
-        class="text-lg leading-snug font-semibold text-balance transition-colors hover:text-accent md:text-xl md:uppercase lg:text-2xl"
+        class="text-lg leading-snug font-medium text-balance uppercase transition-colors hover:text-accent md:text-2xl"
       >
         {{ w.name }}
       </a>
