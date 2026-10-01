@@ -24,6 +24,7 @@ import {
   withIncrementalHydration,
 } from '@angular/platform-browser';
 import { provideIconsProvider } from './configuration/ng-icon';
+import { provideLanguage } from './configuration/language';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { appInterceptor } from '@core/interceptors/app/app-interceptor';
 import { adminTokenInterceptor } from '@admin/core/interceptors/admin-token-interceptor';
@@ -105,6 +106,8 @@ export const appConfig: ApplicationConfig = {
       withNavigationErrorHandler(recoverFromStaleChunk),
     ),
     provideIconsProvider(),
+    // The visitor's language: LOCALE_ID, its locale data, and <html lang dir>.
+    provideLanguage(),
     // ng-primitives closes open dialogs on every navigation by default; the hand-rolled
     // Dialog service never did, and several dialogs change the route or query params
     // themselves. Kept as it was (Phase 10 decision, STATE.md).

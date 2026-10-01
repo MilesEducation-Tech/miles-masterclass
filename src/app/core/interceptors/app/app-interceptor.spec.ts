@@ -5,6 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { AUTH_ROUTES, SESSION_MINTING_PATHS } from '../../models/auth.model';
 import { IS_ADMIN_REQUEST, IS_EXTERNAL_REQUEST, SKIP_AUTH_TOKEN } from '../../models/http.model';
 import { AuthSession } from '../../services/auth-session/auth-session';
+import { LanguageContext } from '../../services/language-context/language-context';
 import { appInterceptor } from './app-interceptor';
 
 describe('appInterceptor', () => {
@@ -23,6 +24,7 @@ describe('appInterceptor', () => {
           provide: AuthSession,
           useValue: { accessToken: () => 'token-123', ensureFreshToken },
         },
+        { provide: LanguageContext, useValue: { current: 'fr' } },
       ],
     });
     http = TestBed.inject(HttpClient);
@@ -59,6 +61,16 @@ describe('appInterceptor', () => {
     expect(req.request.headers.get('x-app-type')).toBeNull();
     expect(req.request.headers.get('x-platform')).toBeNull();
     expect(req.request.headers.get('x-country-code')).toBeNull();
+  });
+
+  it('asks Django for the visitor’s language', async () => {
+    const req = await send('/api/v1/account/user-details/');
+    expect(req.request.headers.get('Accept-Language')).toBe('fr');
+  });
+
+  it('sends the language on routes that skip the bearer too', async () => {
+    const req = await send('/api/v1/x/', new HttpContext().set(SKIP_AUTH_TOKEN, true));
+    expect(req.request.headers.get('Accept-Language')).toBe('fr');
   });
 
   // The collection: logout without a bearer answers 401 "Authorization header
@@ -99,6 +111,7 @@ describe('appInterceptor', () => {
       );
       const req = backend.expectOne('https://third-party.example.com/x');
       expect(req.request.headers.has('Authorization')).toBe(false);
+      expect(req.request.headers.has('Accept-Language')).toBe(false);
       req.flush({});
       await done;
       expect(ensureFreshToken).not.toHaveBeenCalled();

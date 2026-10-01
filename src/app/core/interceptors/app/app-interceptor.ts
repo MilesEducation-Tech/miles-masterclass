@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { finalize, from, switchMap } from 'rxjs';
 import { LoadingService } from '../../services/loading/loading';
 import { AuthSession } from '../../services/auth-session/auth-session';
+import { LanguageContext } from '../../services/language-context/language-context';
 import { IS_ADMIN_REQUEST, IS_EXTERNAL_REQUEST, SKIP_AUTH_TOKEN } from '../../models/http.model';
 import { SESSION_MINTING_PATHS } from '../../models/auth.model';
 
@@ -19,11 +20,18 @@ function isSessionMintingRoute(url: string): boolean {
   return SESSION_MINTING_PATHS.some((path) => url.includes(path));
 }
 
-export const appInterceptor: HttpInterceptorFn = (req, next) => {
+export const appInterceptor: HttpInterceptorFn = (original, next) => {
   // Third-party origins get the request untouched: a bearer for this platform
   // must never leak off-platform, and a background call shouldn't drive the
   // global loading spinner either.
-  if (req.context.get(IS_EXTERNAL_REQUEST)) return next(req);
+  if (original.context.get(IS_EXTERNAL_REQUEST)) return next(original);
+
+  // Django answers in the visitor's language (`LanguageContext`): the browser's own header would
+  // ignore the switcher's choice, and SSR calls from Node would send none at all. For a bare
+  // language like `fr` this is a CORS-safelisted header, so it never costs a preflight.
+  const req = original.clone({
+    setHeaders: { 'Accept-Language': inject(LanguageContext).current },
+  });
 
   const loading = inject(LoadingService);
   const auth = inject(AuthSession);

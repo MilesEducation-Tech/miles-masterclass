@@ -202,4 +202,13 @@ export const environment = {
       },
     },
   },
+
+  /**
+   * Languages this build may resolve a visitor to (`LanguageContext`). Anything else in a cookie or
+   * `Accept-Language` is skipped, so a half-translated language never reaches real users.
+   * Local: every language, including the ones still being translated.
+   */
+  I18N: {
+    languages: ['en', 'ar', 'fr', 'de', 'es'],
+  },
 };
