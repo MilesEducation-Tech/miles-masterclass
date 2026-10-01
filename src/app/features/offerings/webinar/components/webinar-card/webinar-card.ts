@@ -1,13 +1,15 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faSolidInfo } from '@ng-icons/font-awesome/solid';
 import { RouterLink } from '@angular/router';
-import { eligibleOf, FeedCard } from '../../models/webinar.model';
-import { BRAND_MARKS } from '../../utils/brand-assets';
-import { ServerClock } from '../../services/server-clock';
-import { formatSessionLabel, sessionParts } from '../../utils/session-time';
-import { ctaFor, WebinarBucket } from '../../utils/webinar-status';
-import { JoinCta } from '../join-cta/join-cta';
+import { eligibleOf, FeedCard } from '@features/offerings/webinar/models/webinar.model';
+import { BRAND_MARKS } from '@features/offerings/webinar/utils/brand-assets';
+import { ServerClock } from '@features/offerings/webinar/services/server-clock';
+import { WebinarFacade } from '@features/offerings/webinar/services/webinar-facade';
+import { formatSessionLabel, sessionParts } from '@features/offerings/webinar/utils/session-time';
+import { ctaFor, WebinarBucket } from '@features/offerings/webinar/utils/webinar-status';
+import { JoinCta } from '@features/offerings/webinar/components/join-cta/join-cta';
 
 /** How a card presents itself. */
 export type WebinarCardLayout =
@@ -36,7 +38,7 @@ export type WebinarCardLayout =
  */
 @Component({
   selector: 'app-webinar-card',
-  imports: [NgIcon, RouterLink, JoinCta],
+  imports: [DatePipe, NgIcon, RouterLink, JoinCta],
   templateUrl: './webinar-card.html',
   providers: [provideIcons({ faSolidInfo })],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,6 +54,15 @@ export class WebinarCard {
   readonly join = output<string>();
 
   private readonly clock = inject(ServerClock);
+  private readonly facade = inject(WebinarFacade);
+
+  /**
+   * v3 draws the upcoming row twice: a compact "Webinar's This Month" row for a
+   * guest (month / day / year pill, categories, Book Now) and the fuller member
+   * row (big date badge, uppercase title, CAIRA level, Register Now). Which one
+   * follows the session, exactly as the hero does.
+   */
+  protected readonly isGuest = computed(() => this.facade.loginType() === 'pre_login');
 
   protected readonly cairaMark = BRAND_MARKS.caira;
 
@@ -64,14 +75,18 @@ export class WebinarCard {
    * cannot conditionally un-apply a `md:grid`. The card form is one fixed
    * presentation, so it is written inline.
    */
-  protected readonly articleClass = computed(() =>
-    this.isRowLayout()
-      ? // Columns are the design's own widths: a 152px date box, the copy, and
-        // a 378px artwork box (320px banner + the 58px the round badge hangs
-        // off its left edge).
-        'flex h-full flex-col gap-4 rounded-2xl border border-border/60 bg-muted/40 p-4 md:grid md:h-auto md:grid-cols-[152px_minmax(0,1fr)_378px] md:items-center md:gap-6 md:rounded-none md:border-0 md:bg-transparent md:p-0 lg:gap-8'
-      : 'group/card flex flex-col space-y-2',
-  );
+  protected readonly articleClass = computed(() => {
+    if (!this.isRowLayout()) return 'group/card flex flex-col space-y-2';
+    // Guest row: v3's `grid-cols-[auto_1fr_auto]` under a hairline, date pill
+    // left, thumbnail right from `sm`.
+    if (this.isGuest()) {
+      return 'grid grid-cols-[auto_1fr] items-start gap-4 border-b border-border py-4 sm:grid-cols-[auto_1fr_auto] sm:gap-6';
+    }
+    // Member row. Columns are the design's own widths: the date badge, the
+    // copy, and a 378px artwork box (320px banner + the 58px the round badge
+    // hangs off its left edge).
+    return 'flex h-full flex-col gap-4 rounded-2xl border border-border/60 bg-muted/40 p-4 md:grid md:h-auto md:grid-cols-[152px_minmax(0,1fr)_378px] md:items-center md:gap-6 md:rounded-none md:border-0 md:bg-transparent md:p-0 lg:gap-8';
+  });
 
   /** Field-of-study names, pipe-separated — the `categories-list` strip. */
   protected readonly categories = computed(() =>

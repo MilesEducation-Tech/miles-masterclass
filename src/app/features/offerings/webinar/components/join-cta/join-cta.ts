@@ -5,6 +5,7 @@ import { ButtonVariant } from '@core/models/button.model';
 import { FeedCard, registrationOf } from '@features/offerings/webinar/models/webinar.model';
 import {
   CTA_LABELS,
+  GUEST_REGISTER_LABEL,
   needsCountdown,
   WebinarCta,
 } from '@features/offerings/webinar/utils/webinar-status';
@@ -45,11 +46,18 @@ export class JoinCta {
    * but oversized on a ~300px card.
    */
   readonly dense = input(false);
+  /**
+   * Signed-out wording: v3 says "Book Now" to a guest and "Register Now" to a
+   * member. Only the `register` state differs; every other label is shared.
+   */
+  readonly guest = input(false);
 
   readonly register = output<void>();
   readonly join = output<void>();
 
-  protected readonly label = computed(() => CTA_LABELS[this.cta()]);
+  protected readonly label = computed(() =>
+    this.guest() && this.cta() === 'register' ? GUEST_REGISTER_LABEL : CTA_LABELS[this.cta()],
+  );
 
   /** States where pressing the button does something. */
   protected readonly isActionable = computed(() => {

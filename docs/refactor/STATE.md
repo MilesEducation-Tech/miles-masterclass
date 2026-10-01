@@ -7,6 +7,108 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-01, NON-REFACTOR — third batch of MIL-13 review comments, both on
+  `webinar-card.ts`. UNCOMMITTED, you commit. No refactor phase moved.**
+  **(1) "use @alias import" — already covered** by the alias entry below: every relative import in
+  `webinar-card.ts` is now `@features/offerings/webinar/…`, and the new spec uses aliases too.
+  **(2) "remove this and use Date Pipe in html direct" on `monthLong` — done.** The `monthLong`
+  computed and the now-unused `SESSION_TIMEZONE` import are gone; the guest pill's month is
+  `{{ w.start_date_time | date: 'MMMM' : parts.zone }}` and `DatePipe` is in the component's `imports`.
+  ⚠️ **The pipe's zone argument cannot be `SESSION_TIMEZONE`.** Angular 22.2's `timezoneToOffset` runs
+  `Date.parse('Jan 01, 1970 00:00:00 ' + tz)`, and an IANA name such as `America/New_York` parses to
+  `NaN`, so the pipe **silently falls back to the viewer's (or the SSR server's) zone**. Verified:
+  `Date.parse` gives NaN for the IANA name, 300 for `EST`, 240 for `EDT`. That would put a session
+  at 7 PM ET on 31 Oct in "November" for a viewer in India or UTC, next to a day of "31" (the day and
+  year come from `sessionParts`, which does resolve in ET). So the template passes `parts.zone`, the
+  `EST`/`EDT` abbreviation `sessionParts` already computes **for that very date**: DST-correct, one
+  source for the whole pill, no new TS. If `SESSION_TIMEZONE` ever stops being a US zone, `parts.zone`
+  will not be an abbreviation the pipe can parse and this needs revisiting.
+  **New spec `webinar-card/webinar-card.spec.ts`** (there was none): 3 tests on the guest pill, full
+  month name plus the two boundary cases, 03:30Z on 1 Nov (EDT, still 31 Oct) and 1 Dec (EST, still 30
+  Nov). **Mutation-checked under `TZ=UTC`:** passes with `parts.zone`; with the IANA name in its place
+  2 of 3 fail ("November" for "October", "December" for "November"), so the spec does catch the
+  fallback. Its fixture carries `duration_minutes: 60` like the other three specs, so **the
+  `duration_seconds` revert in the blocker below now also touches this file**.
+  Gates (local macOS, Node 24.18, **not CI**): lint 0 errors on the touched files, `check:structure`
+  passed, Prettier clean, webinar specs 8 files / 94 passed. Not run: `build:prod` (template and
+  import change only), and **not looked at in a browser**: the guest row needs the upcoming feed, which
+  the `duration_minutes` blocker still rejects.
+  Note: a spec run narrowed to ONLY `webinar-card/**` fails to build (`TS2591 Buffer` in
+  `core/services/auth-session/auth-session.ts:339`, not touched here); use the whole `webinar/**` glob
+  with `--filter`.
+
+- 🔧 **2026-10-01, NON-REFACTOR — second MIL-13 review comment: "Use @alias import" on
+  `seat-form.ts`. UNCOMMITTED, you commit. No refactor phase moved.** The flagged line was
+  `import { GuestRegistration } from '../../services/guest-registration'`. It is the same ask as the
+  `join-cta.ts` comment on #43, so I did not fix one line and wait for the next. Converted **every
+  relative import in the three files where this PR adds one** — `seat-form.ts` (1),
+  `webinar-card.ts` (7) and `webinar-hero.ts` (9) — to `@features/offerings/webinar/…`, so each file
+  is uniform and not half aliased. Prettier re-wrapped the long lines in the card and the hero; no
+  logic changed. Lint clean on the three files, `check:structure` passed, webinar specs 7 files / 91
+  passed (local, Node 24.18, **not CI**); `build:prod` not re-run for an import-path-only change.
+  ⚠️ **Same-folder `./x` imports are untouched (they are not cross-folder).** 44 `../` imports
+  remain across the feature's non-spec files, 14 of them in files this PR modifies but whose imports
+  it did not add (`webinar-list.ts` 7, `webinar-rail.ts` 5, `webinar-countdown.ts` 2). Relative
+  is still legal (PROMPT §3 requires an alias only across a top-level folder), so lint does not
+  catch it. If the reviewer wants the whole feature swept, do it as its own change.
+
+- 🔧 **2026-10-01, NON-REFACTOR — one review comment on the MIL-13 PR, fixed. UNCOMMITTED, you
+  commit. No refactor phase moved.** me-sachin-singh on `webinar-about.html`: the section heading
+  "Course Description" should read **"Webinar Description"**. Changed the `<h2>` in
+  `webinar/components/webinar-about/webinar-about.html` (one string; the page is a webinar, not a
+  course). The plan `prompts/webinar-v3-parity.md` quoted v3's "Course Description" in two places
+  (§ webinar-about, and the expected-behaviour line); both now say "Webinar Description" so the plan
+  does not contradict the code. **Left alone on purpose:** `shared/components/course-about` and the
+  AI-lab dialog also say "Course Description", but they are real courses and not part of this branch.
+  No spec asserts the heading (grep: 0 hits in the webinar feature), so no test changed. Prettier
+  clean on both files. **Not verified in a browser:** the detail page needs a feed card, and the UAT
+  feed is still rejected by the `duration_minutes` blocker below, so the about section cannot render
+  until that is fixed. The change is a literal string in a template.
+
+- 🔧 **2026-09-30 (evening), MIL-13 PRE-COMMIT FAILURE FIXED, AND A BLOCKER STILL OPEN. UNCOMMITTED,
+  you commit.** The commit from Git Desktop stopped in `check-structure`: the new
+  `webinar-hero/webinar-hero.css` is a component stylesheet with no §4.6 reason. Its header said
+  Tailwind cannot express the two rules in it; **Tailwind 4.3 can**, so it is converted, not baselined
+  (a baseline entry would have weakened the check). The guest ticket's punched notches are now the
+  utilities `mask-subtract` + an arbitrary `mask-image` on the `<article>`; the member artwork's glow is
+  the `before:` layer on its wrapper (`before:inset-[-12%_-14%] before:rounded-[50%]
+before:bg-[radial-gradient(…)] before:blur-[40px]`). `styleUrl` removed and the `.css` deleted; the
+  template comments say what each utility is for.
+  **Verified in the running app** (real UAT feed loaded into the page): ticket mask image, size (420×562
+  at 1024px) and appearance identical before and after; all 14 computed `::before` properties identical
+  between the old rules and the utilities on the same box; at 375px the ticket is 343 wide, notch
+  present, no horizontal scroll. One computed string differs, `mask-composite` now reads `subtract` where
+  it read `source-out`: the legacy `-webkit-` spelling of the same operation, same rendering. Not checked:
+  768px and 1440px, and the member glow inside the real member hero (no signed-in session).
+  Gates (local macOS, Node 24.18, **not CI**): `check:structure` passed, lint 0 errors (124 pre-existing
+  `any` warnings, none in the hero), Prettier clean, `build:prod` green (the same two CSS budget
+  warnings), webinar specs 7 files / 91 passed.
+  🚨 **BLOCKER, NOT FIXED — needs your call: the tree still renames `duration_seconds` back to
+  `duration_minutes`** (model + its response check + `effectiveEndAt` + three specs). UAT sends
+  `duration_seconds` on **all 29 cards and `duration_minutes` on none** (fetched today), so the response
+  check rejects the feed and **the live page shows "We could not load the webinars. … response does not
+  match the Events contract"**. Reproduced in the running app and in the dev-server log. The specs still
+  pass because their fixtures use minutes. `prompts/webinar-v3-parity.md` §3.7 #1 says the same thing:
+  confirm what UAT emits, and if it is seconds, fix Postman, not the client. The staged commit message
+  says "Keep duration_seconds", which the code does not do. Fix = revert those five places to the
+  committed `duration_seconds` form; not done here because it is another session's work.
+
+- 🔧 **2026-09-30 (evening), HANDOFF NOTE — the only source change from this session since the #43
+  work is the `webinar-hero` stylesheet conversion in the entry above.**
+  #43 was squash-merged as `bc3385f` (12:48) and its entry below is already on this branch
+  (`feat/MIL-13-webinar-v3-design-parity`). **The uncommitted tree is NOT from this session:** 22
+  modified + 3 new files under `offerings/webinar` (`seat-form/`, `guest-registration.ts` and
+  `webinar-hero.css`, the last since converted and deleted), newest 17:06, are the MIL-13
+  design-parity work of another session or tool
+  (plan: `prompts/`, commit `16372fa`). The refactor stop gate compares file times and reads those as
+  this session's, which is why this note exists. **Stray files:** 48 empty `_tmp_<pid>_*` entries (pids 16, 29
+  and 31) at the repo root, created 17:03:19–24 (42 files + 6 folders each holding one empty file), untracked and not
+  in `.gitignore`. Not from a pnpm install (its records and the store were last touched 11:27) and not
+  from this session; the creator is unidentified. Safe to delete (`rm -rf _tmp_*` from the root);
+  do not commit them. **Environment, outside the repo:** `~/.config/husky/init.sh` now loads nvm so
+  GitHub Desktop's commit hooks can find `pnpm`. Never run `husky --version` here: Husky 9 takes the
+  argument as the hooks folder and rewrites `core.hooksPath` (fix: `git config core.hooksPath .husky/_`).
+
 - 🔧 **2026-09-30, NON-REFACTOR — PR #43 review comments fixed, and this file restored after the
   master merge. UNCOMMITTED, you commit. No refactor phase moved.** Four inline comments from
   me-sachin-singh on MilesEducation-Tech/miles-masterclass#43.
@@ -2552,6 +2654,16 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-01 · MIL-13 · **review comment: "remove this and use Date Pipe in html direct" on `webinar-card` `monthLong`** (uncommitted) — `monthLong` computed deleted; the guest pill uses `date: 'MMMM' : parts.zone` (an IANA name makes the pipe fall back to the viewer's zone, `parts.zone` is the date's own EST/EDT) · new `webinar-card.spec.ts`, 3 tests, mutation-checked under `TZ=UTC` · lint + check:structure + webinar specs 94 passed (local, Node 24.18) · not checked in a browser
+
+- 2026-10-01 · MIL-13 · **review comment: "Use @alias import" on `seat-form.ts`** (uncommitted) — all relative imports in `seat-form.ts`, `webinar-card.ts` and `webinar-hero.ts` now use `@features/offerings/webinar/…` (the three files where this PR adds relative imports) · other files' `../../` imports left for a separate sweep · lint + check:structure + webinar specs 91 passed (local, Node 24.18)
+
+- 2026-10-01 · MIL-13 · **review comment: `webinar-about` heading "Course Description" → "Webinar Description"** (uncommitted) — one template string, plus the two matching lines in `prompts/webinar-v3-parity.md` · no spec covers the heading · Prettier clean · not checked in a browser (the UAT feed is still rejected by the `duration_minutes` blocker, so the about section cannot render)
+
+- 2026-09-30 · MIL-13 · **`webinar-hero.css` converted to Tailwind utilities so the pre-commit structure check passes** (uncommitted) — the ticket mask is `mask-subtract` + an arbitrary `mask-image`, the artwork glow is a `before:` layer, the stylesheet and its `styleUrl` are gone, and no baseline entry was added · parity checked in the running app (mask + size identical, 14/14 `::before` properties identical, 375px ok; 768/1440 not checked) · 🚨 still open: the tree renames `duration_seconds` to `duration_minutes`, UAT sends seconds on 29/29 cards, and the live page shows "We could not load the webinars" · check:structure, lint 0 errors, build:prod, webinar specs 91 passed (local, Node 24.18)
+
+- 2026-09-30 · HANDOFF · **source changes from this session: only the `webinar-hero` stylesheet conversion above** (uncommitted) — the 22 modified + 3 new `offerings/webinar` files in the tree are another session's MIL-13 work · 48 empty `_tmp_<pid>_*` files (pids 16, 29, 31) at the repo root (17:03, creator unidentified, not pnpm) are safe to delete and must not be committed · Git Desktop hooks need `~/.config/husky/init.sh` (nvm) and must never be probed with `husky --version` · #43 merged as `bc3385f`
 
 - 2026-09-30 · NON-REFACTOR · **PR #43 review fixes + STATE.md restored after the master merge** (uncommitted) — deleted `webinar-preview.ts` and its facade/page wiring (`?preview=design` is gone) · host `[class]` bindings on `webinar-rail` / `webinar-faq` removed; the rails' `@if` moved to `webinar-list.html` because the bindings were the layout-hole fix's second half (FAQ relies on its own template guard, empty case now tested) · `join-cta` imports → `@features/offerings/webinar/…` · restored the six 09-28 "Now" entries the merge dropped (125 lines, three-way against `59b38c4`, 0 lines removed) · dev-verified signed out + a synthetic feed, signed-in rails not verifiable · lint 0 errors, tests 194 files / 825 passed + 1 skipped, build:prod + check:structure green (local, Node 24.18)
 

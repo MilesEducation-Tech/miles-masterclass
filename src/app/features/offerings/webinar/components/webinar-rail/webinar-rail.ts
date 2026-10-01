@@ -62,6 +62,13 @@ export class WebinarRail {
 
   /** Lead the heading with the CAIRA wordmark, as the upcoming section does. */
   readonly withCairaMark = input(false);
+  /**
+   * `member` (default): the v3 CAIRA header — line ornaments, wordmark, big
+   * uppercase heading, optional level tabs. `guest`: v3's plainer
+   * "Webinar's This Month" header — heading and sub-copy only, no ornaments
+   * and no tabs (a guest is not filtering a CAIRA pathway).
+   */
+  readonly variant = input<'member' | 'guest'>('member');
   /** Offer the Level 1/2/3 filter, built from whatever levels the feed carries. */
   readonly withLevelTabs = input(false);
   /** Rows to show before "Show more". `0` shows everything and hides the button. */
@@ -84,7 +91,7 @@ export class WebinarRail {
    * an empty month.
    */
   protected readonly levels = computed<LevelTab[]>(() => {
-    if (!this.withLevelTabs()) return [];
+    if (!this.withLevelTabs() || this.variant() === 'guest') return [];
 
     const byNumber = new Map<number, string>();
     for (const webinar of this.webinars()) {

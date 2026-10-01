@@ -1,0 +1,75 @@
+<form class="flex flex-col gap-4" (submit)="$event.preventDefault(); onSubmit()">
+  @if (isOtpStep()) {
+    <p class="text-sm text-muted-foreground">
+      Enter the {{ flow.otpLength }}-digit code we sent {{ flow.deliveryNote() }} to
+      <strong class="text-foreground">{{ flow.identifier() }}</strong> to confirm your seat.
+    </p>
+    <button app-button type="button" class="h-auto w-max p-0" variant="link" (click)="onEdit()">
+      Change email or phone
+    </button>
+
+    <app-field [errors]="otpForm.otp().errors()">
+      <span ngpLabel>OTP</span>
+      <app-input-otp
+        id="seat-otp"
+        [length]="flow.otpLength"
+        [autoFocus]="true"
+        [formField]="otpForm.otp"
+        placeholder=""
+        (complete)="onSubmit()"
+      />
+    </app-field>
+  } @else {
+    <app-field [errors]="identifyForm.identifier().errors()">
+      <label ngpLabel for="seat-identifier">Email or phone</label>
+      <input
+        app-input
+        id="seat-identifier"
+        type="text"
+        autocomplete="username"
+        inputmode="email"
+        placeholder="you@example.com or +1 555 000 0000"
+        [formField]="identifyForm.identifier"
+      />
+    </app-field>
+  }
+
+  @if (flow.error(); as error) {
+    <p class="text-sm text-destructive" role="alert">{{ error }}</p>
+  }
+
+  <!-- The cooldown gates SENDING a code, never redeeming one: on the OTP step
+       this is Verify, and a user holding a valid code must be able to submit it
+       at once. Only Resend waits out the cooldown. -->
+  <button
+    app-button
+    type="submit"
+    variant="default"
+    class="mt-1 h-auto w-full gap-2 rounded-[8px] px-6 py-3.5 text-base"
+    [disabled]="submitDisabled()"
+  >
+    @if (flow.isLoading()) {
+      <app-spinner />
+    }
+    {{ isOtpStep() ? 'Verify & Book' : 'Reserve My Seat' }}
+  </button>
+
+  @if (isOtpStep()) {
+    <p class="text-center text-sm text-muted-foreground">
+      @if (flow.canResend()) {
+        Didn't receive the OTP?
+        <button
+          app-button
+          type="button"
+          class="h-auto p-0 align-baseline"
+          variant="link"
+          (click)="flow.resend()"
+        >
+          Resend OTP
+        </button>
+      } @else {
+        Resend OTP in <span class="font-numeric tabular-nums">{{ flow.cooldownDisplay() }}</span>
+      }
+    </p>
+  }
+</form>

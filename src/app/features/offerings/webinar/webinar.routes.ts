@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from '@core/guards/auth/auth-guard';
 import { environment } from '@env/environment';
 import { FeedbackFacade } from '../services/feedback-facade';
+import { GuestRegistration } from './services/guest-registration';
 import { MeetingSession } from './services/meeting-session';
 import { WebinarFacade } from './services/webinar-facade';
 import { WebinarRegistration } from './services/webinar-registration';
@@ -28,7 +29,7 @@ import { ServerClock } from './services/server-clock';
 export const webinarRoutes: Routes = [
   {
     path: '',
-    providers: [ServerClock, WebinarRegistration, WebinarFacade],
+    providers: [ServerClock, WebinarRegistration, WebinarFacade, GuestRegistration],
     children: [
       {
         path: '',

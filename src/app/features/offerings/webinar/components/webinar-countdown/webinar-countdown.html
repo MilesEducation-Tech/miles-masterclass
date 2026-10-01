@@ -1,8 +1,31 @@
-<span
-  class="inline-flex items-center gap-1.5 text-sm"
-  [class]="isImminent() ? 'text-accent font-medium' : 'text-muted-foreground'"
->
-  <span>{{ label() }}</span>
-  <!-- tabular-nums stops the label reflowing as digits change width -->
-  <span class="font-numeric tabular-nums">{{ display() }}</span>
-</span>
+@if (format() === 'cells') {
+  <div class="flex flex-col items-center gap-3">
+    <span class="text-[13px] font-medium tracking-[1px] text-muted-foreground uppercase">
+      {{ label() }}
+    </span>
+    <div class="flex items-center gap-2 md:gap-3" role="timer" aria-live="off">
+      @for (cell of cells(); track cell.label) {
+        <div
+          class="flex min-w-16 flex-col items-center gap-1 rounded-xl border border-hairline bg-surface-raised px-3 py-2.5 md:min-w-20"
+        >
+          <!-- tabular-nums stops the box reflowing as digits change width -->
+          <span class="font-numeric text-2xl font-extrabold tabular-nums md:text-3xl">
+            {{ cell.value }}
+          </span>
+          <span class="text-[11px] font-medium text-muted-foreground uppercase">
+            {{ cell.label }}
+          </span>
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+  <span
+    class="inline-flex items-center gap-1.5 text-sm"
+    [class]="isImminent() ? 'text-accent font-medium' : 'text-muted-foreground'"
+  >
+    <span>{{ label() }}</span>
+    <!-- tabular-nums stops the label reflowing as digits change width -->
+    <span class="font-numeric tabular-nums">{{ display() }}</span>
+  </span>
+}

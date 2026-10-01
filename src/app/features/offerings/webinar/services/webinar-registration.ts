@@ -6,6 +6,7 @@ import { Logger } from '@core/services/logger/logger';
 import {
   AttemptStatusResponse,
   isAlreadyRegistered,
+  normaliseAttemptStatus,
   RegisterRequest,
   RegisterResponse,
   resolveStatusUrl,
@@ -177,7 +178,9 @@ export class WebinarRegistration {
       if (this.destroyed) break;
 
       // The status route takes NO query parameters — any query string is a 400.
-      last = await firstValueFrom(this.api.get<AttemptStatusResponse>(statusUrl));
+      last = normaliseAttemptStatus(
+        await firstValueFrom(this.api.get<AttemptStatusResponse>(statusUrl)),
+      );
 
       if (last.registration_status === 'REGISTERED') {
         return {

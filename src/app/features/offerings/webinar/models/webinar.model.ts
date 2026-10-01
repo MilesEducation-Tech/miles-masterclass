@@ -197,18 +197,14 @@ export interface WebinarCard {
   start_date_time: string | null;
   end_date_time: string | null;
   /**
-   * SECONDS. One hour is `3600`.
-   *
-   * Renamed from `duration_minutes` AND re-based from minutes on 2026-09-28,
-   * with no alias kept — exactly like `cpe_credits` → `total_cpe_credits`
-   * before it. The unit change is the dangerous half: a stale `* 60_000` still
-   * compiles and still produces a number, just a 60x wrong one.
+   * MINUTES. One hour is `60` — Postman `06 → webinar-main-page` §8:
+   * `duration_minutes | integer or null | Minutes`.
    *
    * Observed `null` on every card in the live `post_login` feed, so nothing
    * may depend on it being present — `effectiveEndAt` falls back to
    * `end_date_time`.
    */
-  duration_seconds: number | null;
+  duration_minutes: number | null;
   /** The id Zoom keys the session on — what the SDK needs as `meetingNumber`. */
   webinar_zoom_id: string | null;
   is_test_webinar: boolean;
@@ -309,7 +305,9 @@ export interface RegisterRequest {
 /** `202` — the pipeline started, or an in-flight attempt was joined. */
 export interface RegisterAcceptedResponse {
   status: 'accepted';
-  registration_status: 'PENDING';
+  /** `fe_registration_status(attempt_status)` — `PENDING` in practice, but the
+   *  contract types it as the three-state value, so it is not narrowed here. */
+  registration_status: RegistrationStatus;
   message: string;
   attempt_id: string;
   /** Built server-side off the URLconf. Prefer following it. */
@@ -333,6 +331,7 @@ export function isAlreadyRegistered(res: RegisterResponse): res is AlreadyRegist
 /** `GET register-via-zoom-status/<attempt_id>/`. Takes NO query parameters. */
 export interface AttemptStatusResponse {
   attempt_id: string;
+  /** Ten known values; anything unknown is read as `PENDING` (`isInternalAttemptStatus`). */
   status: InternalAttemptStatus;
   registration_status: RegistrationStatus;
   zoom_attempts: number;
@@ -349,6 +348,39 @@ export interface AttemptStatusResponse {
   registered_email: string | null;
   booking_id: string | null;
   completed_at: string | null;
+}
+
+const INTERNAL_ATTEMPT_STATUSES: readonly string[] = [
+  'SUCCESS',
+  'MF_FAILED',
+  'MF_PERMANENTLY_FAILED',
+  'MF_SKIPPED',
+  'ZOOM_FAILED',
+  'BOOKING_FAILED',
+  'INTERRUPTED',
+  'PENDING',
+  'ZOOM_RETRYING',
+  'ZOOM_PENDING_APPROVAL',
+];
+
+export function isInternalAttemptStatus(v: unknown): v is InternalAttemptStatus {
+  return typeof v === 'string' && INTERNAL_ATTEMPT_STATUSES.includes(v);
+}
+
+/**
+ * Normalise a status-route body at the trust boundary.
+ *
+ * Two things the contract warns about: an internal `status` outside the ten
+ * documented values collapses to `PENDING` (the server does the same for
+ * `registration_status`), and `booking_id` is built with Python's `str()`, so
+ * an unset booking can arrive as the literal string `"None"` rather than null.
+ */
+export function normaliseAttemptStatus(raw: AttemptStatusResponse): AttemptStatusResponse {
+  return {
+    ...raw,
+    status: isInternalAttemptStatus(raw.status) ? raw.status : 'PENDING',
+    booking_id: raw.booking_id === 'None' ? null : raw.booking_id,
+  };
 }
 
 // ---- The detail page -------------------------------------------------------
@@ -453,7 +485,7 @@ export function isWebinarCard(v: unknown): v is WebinarCard {
     isStr(v['short_description']) &&
     isStrOrNull(v['start_date_time']) &&
     isStrOrNull(v['end_date_time']) &&
-    isNumOrNull(v['duration_seconds']) &&
+    isNumOrNull(v['duration_minutes']) &&
     isStrOrNull(v['webinar_zoom_id']) &&
     typeof v['is_test_webinar'] === 'boolean' &&
     (v['webinar_why_attend_points'] === null || isStrList(v['webinar_why_attend_points'])) &&

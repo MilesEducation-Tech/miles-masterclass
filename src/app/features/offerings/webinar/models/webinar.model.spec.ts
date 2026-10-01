@@ -1,5 +1,12 @@
 import { environment } from '@env/environment';
-import { isWebinarCard, parseDetail, resolveStatusUrl, WEBINAR_ENDPOINTS } from './webinar.model';
+import {
+  AttemptStatusResponse,
+  isWebinarCard,
+  normaliseAttemptStatus,
+  parseDetail,
+  resolveStatusUrl,
+  WEBINAR_ENDPOINTS,
+} from './webinar.model';
 
 const ROOT = environment.BASE_API_URL;
 
@@ -44,7 +51,7 @@ const CARD = {
   short_description: '...',
   start_date_time: '2026-09-20T13:00:00+00:00',
   end_date_time: '2026-09-20T14:00:00+00:00',
-  duration_seconds: 3600,
+  duration_minutes: 60,
   webinar_zoom_id: '84123456789',
   is_test_webinar: false,
   webinar_why_attend_points: [],
@@ -81,7 +88,7 @@ describe('isWebinarCard', () => {
         slug: null,
         start_date_time: null,
         end_date_time: null,
-        duration_seconds: null,
+        duration_minutes: null,
         webinar_zoom_id: null,
         webinar_why_attend_points: null,
         webinar_what_will_you_learn_points: null,
@@ -133,5 +140,35 @@ describe('parseDetail', () => {
 
   it('throws on a body with no data', () => {
     expect(() => parseDetail({ message: 'ok' })).toThrow();
+  });
+});
+
+describe('normaliseAttemptStatus', () => {
+  const body: AttemptStatusResponse = {
+    attempt_id: 'a1',
+    status: 'SUCCESS',
+    registration_status: 'REGISTERED',
+    zoom_attempts: 1,
+    last_status_code: 201,
+    error_message: null,
+    error_code: null,
+    mf_retry_count: 0,
+    join_url: 'https://zoom.us/w/1',
+    registered_email: 'l@example.com',
+    booking_id: 'b1',
+    completed_at: '2026-09-17T09:14:22.118Z',
+  };
+
+  it('passes a documented body through untouched', () => {
+    expect(normaliseAttemptStatus(body)).toEqual(body);
+  });
+
+  it('collapses an unknown internal status to PENDING, as the server does', () => {
+    const raw = { ...body, status: 'SOMETHING_NEW' as AttemptStatusResponse['status'] };
+    expect(normaliseAttemptStatus(raw).status).toBe('PENDING');
+  });
+
+  it('reads the Python "None" booking id as null', () => {
+    expect(normaliseAttemptStatus({ ...body, booking_id: 'None' }).booking_id).toBeNull();
   });
 });
