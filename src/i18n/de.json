@@ -1,5 +1,72 @@
 {
   "language": {
     "label": "Sprache"
+  },
+  "common": {
+    "scheduleDemo": "Demo vereinbaren"
+  },
+  "nav": {
+    "masterClass": "Master Class",
+    "masterClassSub": "(Kurse im Netflix-Stil)",
+    "webinar": "Webinare",
+    "webinarSub": "(Premiere)",
+    "reels": "Reels",
+    "reelsSub": "(Microlearning)",
+    "podcast": "Podcast",
+    "podcastSub": "(Audiokurse)",
+    "simulation": "Simulation",
+    "simulationSub": "(KI-Rollenspiel)",
+    "resources": "Ressourcen",
+    "cairaBadges": "CAIRA-Abzeichen",
+    "cpeTracker": "CPE-Tracker",
+    "plan": "Tarife",
+    "library": "Bibliothek",
+    "courseLibrary": "Kursbibliothek",
+    "instructorLibrary": "Dozentenverzeichnis",
+    "aiLabs": "Miles AI Labs",
+    "beta": "Beta",
+    "cpeSolutions": "CPE-Lösungen",
+    "individualLearners": "Einzelne Lernende",
+    "enterpriseSolutions": "Unternehmenslösungen",
+    "learningModes": "Lernformate",
+    "signUp": "Registrieren"
+  },
+  "header": {
+    "home": "Zur Startseite",
+    "primaryNav": "Hauptmenü",
+    "toggleMenu": "Navigationsmenü ein- oder ausblenden",
+    "siteNav": "Seitennavigation",
+    "profile": "Profil",
+    "orderHistory": "Bestellverlauf",
+    "signOut": "Abmelden",
+    "signOutFailed": "Abmeldung fehlgeschlagen",
+    "signOutFailedDetail": "Wir konnten Sie nicht abmelden. Bitte versuchen Sie es erneut."
+  },
+  "footer": {
+    "explore": "Entdecken",
+    "policies": "Richtlinien",
+    "partnerships": "Partnerschaften",
+    "downloadApp": "App herunterladen",
+    "home": "Startseite",
+    "microLearning": "Microlearning",
+    "badgeLibrary": "Abzeichen-Bibliothek",
+    "becomeInstructor": "Dozent werden",
+    "paymentPolicy": "Zahlungs-, Kündigungs- und Erstattungsrichtlinie",
+    "creditsPolicy": "Richtlinie zu Credits und Berichterstattung",
+    "credlyBadge": "So erhalten Sie Ihr Credly-Abzeichen",
+    "privacyPolicy": "Datenschutzerklärung",
+    "compliance": "Compliance",
+    "termsOfService": "Nutzungsbedingungen",
+    "downloadOnThe": "Erhältlich bei",
+    "scanToDownload": "Scannen, um die App herunterzuladen",
+    "scanMe": "Scan mich",
+    "ourLocation": "Unsere Standorte",
+    "usa": "USA",
+    "uae": "VAE",
+    "india": "Indien",
+    "social": "Social Media",
+    "sponsorId": "Sponsor-ID - {{ id }}",
+    "copyright": "© {{ year }} Miles Masterclass Inc. Alle Rechte vorbehalten.",
+    "cookieSettings": "Cookie-Einstellungen"
   }
 }

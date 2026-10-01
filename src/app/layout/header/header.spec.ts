@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideTranslocoTesting } from '@testing/transloco';
 
 import { AccountApi } from '@core/services/account-api/account-api';
 import { AuthSession } from '@core/services/auth-session/auth-session';
@@ -17,7 +18,7 @@ describe('Header', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Header],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideTranslocoTesting()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Header);
@@ -43,6 +44,7 @@ describe('Header mobile drawer focus', () => {
       imports: [Header],
       providers: [
         provideRouter([]),
+        provideTranslocoTesting(),
         { provide: Viewport, useValue: { isHandheld: signal(true), screen: signal('mobile') } },
       ],
     }).compileComponents();
@@ -109,6 +111,7 @@ describe('Header session', () => {
       imports: [Header],
       providers: [
         provideRouter([]),
+        provideTranslocoTesting(),
         {
           provide: AuthSession,
           useValue: { isAuthenticated: signal(opts.signedIn), logout },

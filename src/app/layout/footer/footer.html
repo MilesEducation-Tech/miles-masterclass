@@ -32,7 +32,9 @@
                             class="w-8! h-auto!"
                           />
                           <div class="flex flex-col justify-center">
-                            <p class="text-[10px] leading-none">Download on the</p>
+                            <p class="text-[10px] leading-none">
+                              {{ 'footer.downloadOnThe' | transloco }}
+                            </p>
                             <p class="text-base font-bold">{{ link.label }}</p>
                           </div>
                         </div>
@@ -43,9 +45,14 @@
               </ul>
               <div class="w-auto md:mx-auto footer-top-grid flex flex-col gap-4">
                 <div class="w-44 aspect-square relative">
-                  <img [ngSrc]="section.qrCodeUrl!" alt="Scan Me" [fill]="true" draggable="false" />
+                  <img
+                    [ngSrc]="section.qrCodeUrl!"
+                    [alt]="'footer.scanMe' | transloco"
+                    [fill]="true"
+                    draggable="false"
+                  />
                 </div>
-                <p class="text-sm ml-1 font-light">Scan to Download App</p>
+                <p class="text-sm ml-1 font-light">{{ 'footer.scanToDownload' | transloco }}</p>
               </div>
             </div>
           }
@@ -81,7 +88,7 @@
   </div>
   <div class="footer-middle flex flex-col gap-8">
     <div class="w-auto md:mx-auto footer-top-grid flex flex-col gap-4 items-center">
-      <p class="md:text-2xl text-xl font-bold">Our Location</p>
+      <p class="md:text-2xl text-xl font-bold">{{ 'footer.ourLocation' | transloco }}</p>
       <ul class="flex gap-4">
         <li class="md:text-base text-sm text-gray-300 hover:underline">
           <a
@@ -89,7 +96,7 @@
             href="https://www.mileseducation.com/contact-us"
             target="_blank"
             rel="noopener noreferrer"
-            >USA</a
+            >{{ 'footer.usa' | transloco }}</a
           >
         </li>
         <li class="md:text-base text-sm text-gray-300 hover:underline">
@@ -98,7 +105,7 @@
             href="https://www.mileseducation.com/contact-us"
             target="_blank"
             rel="noopener noreferrer"
-            >UAE</a
+            >{{ 'footer.uae' | transloco }}</a
           >
         </li>
         <li class="md:text-base text-sm text-gray-300 hover:underline">
@@ -107,14 +114,14 @@
             href="https://www.mileseducation.com/contact-us"
             target="_blank"
             rel="noopener noreferrer"
-            >India</a
+            >{{ 'footer.india' | transloco }}</a
           >
         </li>
       </ul>
     </div>
     <hr class="border-t border-white/50" />
     <div class="w-auto md:mx-auto footer-top-grid flex flex-col gap-4 items-center">
-      <p class="md:text-2xl text-xl font-bold">Social</p>
+      <p class="md:text-2xl text-xl font-bold">{{ 'footer.social' | transloco }}</p>
       <ul class="flex gap-4">
         @for (social of socialLinks; track $index) {
           <li class="md:text-base text-sm text-gray-300">
@@ -145,7 +152,8 @@
           width="105"
           height="138"
         />
-        <p class="text-base text-gray-300">Sponsor ID - 149174</p>
+        <p class="text-base text-gray-300">{{ 'footer.sponsorId' | transloco: { id: 149174 } }}</p>
+        <!-- NASBA prescribes this sponsor statement's wording: English in every language until compliance decides otherwise. -->
         <p class="text-sm text-gray-300 text-center">
           Miles Masterclass Inc. is registered with the National Association of State Boards of
           Accountancy (NASBA) as a sponsor of continuing professional education on the National
@@ -167,7 +175,7 @@
       </div>
     </div>
     <div class="flex justify-between max-md:flex-col max-md:gap-4 max-md:items-center">
-      <p class="text-gray-300">&copy; 2026 Copyright Miles Masterclass Inc.</p>
+      <p class="text-gray-300">{{ 'footer.copyright' | transloco: { year: 2026 } }}</p>
       <ul class="flex gap-4 max-md:flex-col max-md:gap-2">
         @for (legal of legalLinks(); track $index) {
           <li>
@@ -187,7 +195,7 @@
               (click)="consent.openPreferences()"
               class="cursor-pointer bg-transparent p-0 text-gray-300 hover:underline"
             >
-              Cookie settings
+              {{ 'footer.cookieSettings' | transloco }}
             </button>
           </li>
         }

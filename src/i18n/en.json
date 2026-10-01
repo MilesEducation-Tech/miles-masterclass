@@ -1,5 +1,72 @@
 {
   "language": {
     "label": "Language"
+  },
+  "common": {
+    "scheduleDemo": "Schedule a demo"
+  },
+  "nav": {
+    "masterClass": "Master Class",
+    "masterClassSub": "(Netflix style Courses)",
+    "webinar": "Webinar",
+    "webinarSub": "(Premiere)",
+    "reels": "Reels",
+    "reelsSub": "(Micro Learning)",
+    "podcast": "Podcast",
+    "podcastSub": "(Audio Courses)",
+    "simulation": "Simulation",
+    "simulationSub": "(AI Role-play)",
+    "resources": "Resources",
+    "cairaBadges": "CAIRA Badges",
+    "cpeTracker": "CPE Tracker",
+    "plan": "Plan",
+    "library": "Library",
+    "courseLibrary": "Course Library",
+    "instructorLibrary": "Instructor Library",
+    "aiLabs": "Miles AI Labs",
+    "beta": "Beta",
+    "cpeSolutions": "CPE Solutions",
+    "individualLearners": "Individual Learners",
+    "enterpriseSolutions": "Enterprise Solutions",
+    "learningModes": "Learning Modes",
+    "signUp": "Sign Up"
+  },
+  "header": {
+    "home": "Go to homepage",
+    "primaryNav": "Primary",
+    "toggleMenu": "Toggle navigation menu",
+    "siteNav": "Site navigation",
+    "profile": "Profile",
+    "orderHistory": "Order History",
+    "signOut": "Sign out",
+    "signOutFailed": "Sign out failed",
+    "signOutFailedDetail": "We could not sign you out. Please try again."
+  },
+  "footer": {
+    "explore": "Explore",
+    "policies": "Policies",
+    "partnerships": "Partnerships",
+    "downloadApp": "Download App",
+    "home": "Home",
+    "microLearning": "Micro Learning",
+    "badgeLibrary": "Badge Library",
+    "becomeInstructor": "Become an Instructor",
+    "paymentPolicy": "Payment, Cancellation & Refund Policy",
+    "creditsPolicy": "Credits & Reporting Policy",
+    "credlyBadge": "How to Claim Credly Badge",
+    "privacyPolicy": "Privacy Policy",
+    "compliance": "Compliance",
+    "termsOfService": "Terms of Service",
+    "downloadOnThe": "Download on the",
+    "scanToDownload": "Scan to Download App",
+    "scanMe": "Scan Me",
+    "ourLocation": "Our Location",
+    "usa": "USA",
+    "uae": "UAE",
+    "india": "India",
+    "social": "Social",
+    "sponsorId": "Sponsor ID - {{ id }}",
+    "copyright": "© {{ year }} Copyright Miles Masterclass Inc.",
+    "cookieSettings": "Cookie settings"
   }
 }

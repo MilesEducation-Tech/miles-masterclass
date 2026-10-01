@@ -12,11 +12,12 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { LanguageContext } from '@core/services/language-context/language-context';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { LanguageSwitcher } from '../components/language-switcher/language-switcher';
 
 @Component({
   selector: 'app-footer',
-  imports: [RouterLink, NgIcon, NgOptimizedImage, LanguageSwitcher],
+  imports: [RouterLink, NgIcon, NgOptimizedImage, LanguageSwitcher, TranslocoPipe],
   templateUrl: './footer.html',
 })
 export class Footer {
@@ -27,6 +28,12 @@ export class Footer {
   protected readonly consent = inject(Consent);
   // The switcher only exists when this build offers more than one language (not production yet).
   protected readonly canSwitchLanguage = inject(LanguageContext).canSwitch;
+  private readonly transloco = inject(TranslocoService);
+  /**
+   * Translates a key into the visitor's language. Brand and partner names (social, app stores,
+   * partnerships) are deliberately NOT passed through it: they read the same in every language.
+   */
+  private readonly t = (key: string): string => this.transloco.translate(key);
 
   // The token-cookie boolean, so SSR renders the right links (same as the header).
   readonly isLoggedIn = inject(AuthSession).isAuthenticated;
@@ -51,20 +58,31 @@ export class Footer {
 
   // All links configuration
   readonly exploreLinks = computed<FooterLink[]>(() => [
-    { label: 'Home', route: `${this.basePath()}/home`, showWhen: 'not-authenticated' },
-    { label: 'Master Class', route: `${this.basePath()}/masterclass` },
-    { label: 'Webinar', route: `${this.basePath()}/webinar` },
     {
-      label: 'Micro Learning',
+      label: this.t('footer.home'),
+      route: `${this.basePath()}/home`,
+      showWhen: 'not-authenticated',
+    },
+    { label: this.t('nav.masterClass'), route: `${this.basePath()}/masterclass` },
+    { label: this.t('nav.webinar'), route: `${this.basePath()}/webinar` },
+    {
+      label: this.t('footer.microLearning'),
       route: `${this.basePath()}/micro-learning`,
     },
-    { label: 'Podcast', route: `${this.basePath()}/podcast` },
-    { label: 'Course Library', route: `${this.basePath()}/library/course-library` },
-    { label: 'Instructor Library', route: `${this.basePath()}/library/instructor-library` },
-    { label: 'Badge Library', route: `${this.basePath()}/library/badge-library` },
-    { label: 'Become an Instructor', action: 'bookDemo' },
-    { label: 'CPE Tracker', route: `${this.basePath()}/cpe-tracker`, showWhen: 'authenticated' },
-    { label: 'Plan', route: `${this.basePath()}/payment/plan` },
+    { label: this.t('nav.podcast'), route: `${this.basePath()}/podcast` },
+    { label: this.t('nav.courseLibrary'), route: `${this.basePath()}/library/course-library` },
+    {
+      label: this.t('nav.instructorLibrary'),
+      route: `${this.basePath()}/library/instructor-library`,
+    },
+    { label: this.t('footer.badgeLibrary'), route: `${this.basePath()}/library/badge-library` },
+    { label: this.t('footer.becomeInstructor'), action: 'bookDemo' },
+    {
+      label: this.t('nav.cpeTracker'),
+      route: `${this.basePath()}/cpe-tracker`,
+      showWhen: 'authenticated',
+    },
+    { label: this.t('nav.plan'), route: `${this.basePath()}/payment/plan` },
     // Blog lives at the top level (matches WordPress permalinks), so it is not
     // scoped under basePath like the rest.
     // { label: 'Blog', route: '/blog' },
@@ -72,17 +90,17 @@ export class Footer {
 
   readonly policyLinks = computed<FooterLink[]>(() => [
     {
-      label: 'Payment, Cancellation & Refund Policy',
+      label: this.t('footer.paymentPolicy'),
       route: `${this.basePath()}/faq`,
       queryParams: { faq: '3' },
     },
     {
-      label: 'Credits & Reporting Policy',
+      label: this.t('footer.creditsPolicy'),
       route: `${this.basePath()}/faq`,
       queryParams: { faq: '2' },
     },
     {
-      label: 'How to Claim Credly Badge',
+      label: this.t('footer.credlyBadge'),
       route: `${this.basePath()}/how-to-claim-credly-badge`,
     },
   ]);
@@ -159,15 +177,15 @@ export class Footer {
 
   readonly legalLinks = computed<FooterLink[]>(() => [
     {
-      label: 'Privacy Policy',
+      label: this.t('footer.privacyPolicy'),
       route: `${this.basePath()}/privacy-policy`,
     },
     {
-      label: 'Compliance',
+      label: this.t('footer.compliance'),
       route: `/compliance`,
     },
     {
-      label: 'Terms of Service',
+      label: this.t('footer.termsOfService'),
       route: `${this.basePath()}/terms-of-service`,
     },
   ]);
@@ -179,11 +197,11 @@ export class Footer {
 
   // Dynamic footer sections for grid
   readonly footerSections = computed<FooterSection[]>(() => [
-    { title: 'Explore', links: this.visibleExploreLinks(), type: 'links' },
-    { title: 'Policies', links: this.policyLinks(), type: 'links' },
-    { title: 'Partnerships', links: this.partnershipLinks(), type: 'links' },
+    { title: this.t('footer.explore'), links: this.visibleExploreLinks(), type: 'links' },
+    { title: this.t('footer.policies'), links: this.policyLinks(), type: 'links' },
+    { title: this.t('footer.partnerships'), links: this.partnershipLinks(), type: 'links' },
     {
-      title: 'Download App',
+      title: this.t('footer.downloadApp'),
       links: this.appStoreLinks,
       type: 'download-app',
       qrCodeUrl: 'https://asset.milesmasterclass.com/media/web-app/home/qr-code-styling.png',
@@ -226,7 +244,7 @@ export class Footer {
     const { CalendlyDialog } = await import('@shared/dialogs/calendly-dialog/calendly-dialog');
     this.dialogs.open(CalendlyDialog, {
       data: {
-        ariaLabel: 'Schedule a demo',
+        ariaLabel: this.t('common.scheduleDemo'),
         url: 'https://calendly.com/rohan-singhai-milesmasterclass/30min',
         closeAction: true,
       } satisfies CalendlyDialogData,
