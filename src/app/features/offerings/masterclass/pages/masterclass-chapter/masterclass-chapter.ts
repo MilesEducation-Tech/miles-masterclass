@@ -190,7 +190,7 @@ export class MasterclassChapter {
 
     const dialogData: UtilsDialogData = {
       title: 'Switch to CPE Mode?',
-      containerClass: 'max-w-lg text-left!',
+      containerClass: 'max-w-lg text-start!',
       content: [
         {
           type: 'text',

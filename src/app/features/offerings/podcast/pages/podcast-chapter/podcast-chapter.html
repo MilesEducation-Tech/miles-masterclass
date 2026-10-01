@@ -1,7 +1,7 @@
 @if (podcastFormat() === 'Audio') {
   <!-- Audio: full-screen immersive layout with back button overlay -->
   <div class="relative w-full min-h-svh">
-    <div class="absolute top-4 left-4 md:top-8 md:left-11 z-40">
+    <div class="absolute top-4 start-4 md:top-8 md:start-11 z-40">
       <app-backward label="Back to Course" fallback="/" [routePath]="courseNavigation()" />
     </div>
     <app-audio-chapter

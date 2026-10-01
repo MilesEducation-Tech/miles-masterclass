@@ -98,7 +98,7 @@
       class="order-first aspect-video w-full md:relative md:order-last md:aspect-auto md:h-[180px] md:w-[378px]"
     >
       <div
-        class="h-full w-full overflow-hidden rounded-[16px] bg-muted md:absolute md:top-0 md:right-0 md:h-[180px] md:w-[320px]"
+        class="h-full w-full overflow-hidden rounded-[16px] bg-muted md:absolute md:top-0 md:end-0 md:h-[180px] md:w-[320px]"
       >
         @if (thumb) {
           <img
@@ -203,7 +203,7 @@
 
       @if (statusTag(); as tag) {
         <span
-          class="absolute top-3 left-3 z-20 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase"
+          class="absolute top-3 start-3 z-20 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase"
           [class]="tag.classes"
         >
           {{ tag.label }}

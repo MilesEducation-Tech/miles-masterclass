@@ -17,7 +17,7 @@
         @let chapterProgress = rawProgress > 100 ? 100 : rawProgress;
         @if (courseType() === 'masterclass') {
           @if (chapterProgress > 0 && chapterProgress < 100 && !chapterCompleted) {
-            <div class="absolute bottom-0 left-0 w-full z-10">
+            <div class="absolute bottom-0 start-0 w-full z-10">
               <app-progress
                 [value]="chapterProgress"
                 variant="primary"
@@ -30,7 +30,7 @@
 
           @if (chapterCompleted) {
             <div
-              class="absolute top-2 left-2 px-3 py-1 rounded-full z-10 bg-green-600/90 flex items-center justify-center space-x-1.5"
+              class="absolute top-2 start-2 px-3 py-1 rounded-full z-10 bg-green-600/90 flex items-center justify-center space-x-1.5"
             >
               <ng-icon name="matDownloadDoneRound" size="18" aria-hidden="true" />
               <p class="text-sm">Completed</p>
@@ -38,14 +38,14 @@
           }
           @if (chapterProgress > 0 && chapterProgress < 100 && !chapterCompleted) {
             <div
-              class="absolute top-2 left-2 px-3 py-1 rounded-full z-10 bg-blue-600/90 flex items-center justify-center space-x-1.5"
+              class="absolute top-2 start-2 px-3 py-1 rounded-full z-10 bg-blue-600/90 flex items-center justify-center space-x-1.5"
             >
               <ng-icon name="matTimelapseRound" size="18" aria-hidden="true" />
               <p class="text-sm">In Progress</p>
             </div>
           }
           <div
-            class="absolute bottom-2 right-2 px-3 py-1 rounded-full z-10 bg-background/90 flex items-center justify-center space-x-1.5"
+            class="absolute bottom-2 end-2 px-3 py-1 rounded-full z-10 bg-background/90 flex items-center justify-center space-x-1.5"
           >
             <ng-icon name="matAccessTimeRound" size="18" aria-hidden="true" />
             <p class="text-sm">{{ chapter.video_duration | duration: 'hh:mm:ss' }}</p>
@@ -72,7 +72,7 @@
 
             @if (chapterProgress > 0 && chapterProgress < 100 && !chapterCompleted) {
               <div
-                class="absolute bottom-0 left-0 w-full z-20 rounded-b-sm overflow-hidden pointer-events-none"
+                class="absolute bottom-0 start-0 w-full z-20 rounded-b-sm overflow-hidden pointer-events-none"
               >
                 <app-progress
                   [value]="chapterProgress"
@@ -84,14 +84,14 @@
             }
             @if (chapterCompleted) {
               <div
-                class="absolute top-2 left-2 px-2 py-0.5 rounded-full z-20 bg-green-600/90 flex items-center justify-center space-x-1 pointer-events-none"
+                class="absolute top-2 start-2 px-2 py-0.5 rounded-full z-20 bg-green-600/90 flex items-center justify-center space-x-1 pointer-events-none"
               >
                 <ng-icon name="matDownloadDoneRound" size="14" aria-hidden="true" />
                 <p class="text-xs">Completed</p>
               </div>
             }
             <div
-              class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full z-20 bg-background/90 flex items-center justify-center space-x-1 pointer-events-none"
+              class="absolute bottom-2 end-2 px-2 py-0.5 rounded-full z-20 bg-background/90 flex items-center justify-center space-x-1 pointer-events-none"
             >
               <ng-icon name="matAccessTimeRound" size="14" aria-hidden="true" />
               <p class="text-xs">{{ chapter.video_duration | duration: 'hh:mm:ss' }}</p>

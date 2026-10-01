@@ -51,7 +51,7 @@
             <button
               type="button"
               ngpAccordionTrigger
-              class="flex w-full cursor-pointer items-center justify-between gap-4 py-5 text-left transition-colors hover:text-accent"
+              class="flex w-full cursor-pointer items-center justify-between gap-4 py-5 text-start transition-colors hover:text-accent"
             >
               <span class="text-sm font-bold text-pretty sm:text-base">{{ faq.question }}</span>
               <ng-icon
@@ -74,7 +74,7 @@
             [attr.inert]="isOpen ? null : ''"
           >
             <div class="overflow-hidden">
-              <div class="pr-8 pb-1 text-sm">
+              <div class="pe-8 pb-1 text-sm">
                 <!-- A category carries no content of its own, only children;
                      a leaf is the other way round. Both are rendered, so an
                      entry that has each still works. -->
@@ -89,7 +89,7 @@
                     ngpAccordionCollapsible
                     [ngpAccordionValue]="openChild"
                     (ngpAccordionValueChange)="openQuestion($event)"
-                    class="mb-2 divide-y divide-border/60 border-t border-border/60 pl-3 sm:pl-4"
+                    class="mb-2 divide-y divide-border/60 border-t border-border/60 ps-3 sm:ps-4"
                   >
                     @for (child of faq.children ?? []; track child.id) {
                       @let isChildOpen = openChild === child.id;
@@ -98,7 +98,7 @@
                           <button
                             type="button"
                             ngpAccordionTrigger
-                            class="flex w-full cursor-pointer items-start justify-between gap-4 py-4 text-left transition-colors hover:text-accent"
+                            class="flex w-full cursor-pointer items-start justify-between gap-4 py-4 text-start transition-colors hover:text-accent"
                           >
                             <span class="text-sm font-medium text-pretty text-muted-foreground">
                               {{ child.question }}

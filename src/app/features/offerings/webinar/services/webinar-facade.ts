@@ -395,7 +395,7 @@ export class WebinarFacade {
   private async promptSignIn(): Promise<void> {
     const data: UtilsDialogData = {
       title: 'Sign in to register',
-      containerClass: 'max-w-md text-left!',
+      containerClass: 'max-w-md text-start!',
       content: [
         {
           type: 'text',

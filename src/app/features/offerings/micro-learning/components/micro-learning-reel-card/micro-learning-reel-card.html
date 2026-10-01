@@ -58,7 +58,7 @@
 
       @if (cpeModeTag(); as tag) {
         <span
-          class="absolute top-3 left-3 z-20 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide pointer-events-none"
+          class="absolute top-3 start-3 z-20 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide pointer-events-none"
           [class]="tag.classes"
         >
           {{ tag.label }}
@@ -180,7 +180,7 @@
           type="button"
           ngpMenuItem
           (click)="onMenuItemSelected('about')"
-          class="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-background/40 transition-colors cursor-pointer text-left"
+          class="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-background/40 transition-colors cursor-pointer text-start"
         >
           <ng-icon name="matInfoRound" size="18" aria-hidden="true" />
           <span>About</span>
@@ -189,7 +189,7 @@
           type="button"
           ngpMenuItem
           (click)="onMenuItemSelected('transcript')"
-          class="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-background/40 transition-colors cursor-pointer text-left"
+          class="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-background/40 transition-colors cursor-pointer text-start"
         >
           <ng-icon name="matLinkRound" size="18" aria-hidden="true" />
           <span>Transcript</span>
@@ -198,7 +198,7 @@
           type="button"
           ngpMenuItem
           (click)="onMenuItemSelected('glossary')"
-          class="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-background/40 transition-colors cursor-pointer text-left"
+          class="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-background/40 transition-colors cursor-pointer text-start"
         >
           <ng-icon name="matMenuBookRound" size="18" aria-hidden="true" />
           <span>Glossary</span>

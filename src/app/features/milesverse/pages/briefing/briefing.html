@@ -91,7 +91,7 @@
         <div class="mt-10">
           <p class="mv-sec"><span class="mv-sec-n">02</span> Your objective</p>
           <div class="mv-objective">
-            <span class="absolute inset-y-0 left-0 w-[3px] bg-accent" aria-hidden="true"></span>
+            <span class="absolute inset-y-0 start-0 w-[3px] bg-accent" aria-hidden="true"></span>
             @if (objectiveGoals().length) {
               <!-- semicolon-authored objectives become a scannable goal list -->
               <ol class="mv-goals">
@@ -113,7 +113,7 @@
                 class="mt-[1.1rem] flex flex-wrap items-center gap-2 border-t border-border pt-[1.1rem]"
               >
                 <span
-                  class="mr-1 text-[0.64rem] font-bold tracking-[0.14em] text-muted-foreground uppercase"
+                  class="me-1 text-[0.64rem] font-bold tracking-[0.14em] text-muted-foreground uppercase"
                   >Concepts in play</span
                 >
                 @for (c of concepts(); track c) {
@@ -228,7 +228,7 @@
           <blockquote class="mv-opening">
             <ng-icon
               name="lucideQuote"
-              class="absolute top-[1.3rem] left-[1.25rem] text-[1.4rem] text-accent/75"
+              class="absolute top-[1.3rem] start-[1.25rem] text-[1.4rem] text-accent/75"
               aria-hidden="true"
             />
             <p class="font-serif text-[1.2rem] leading-[1.5] text-foreground">{{ line }}</p>
@@ -674,7 +674,7 @@
                   (click)="toggleCaseFileArtifact($index)"
                 >
                   <ng-icon [name]="artifactIcon(a)" [class]="artifactClass(a)" aria-hidden="true" />
-                  <span class="min-w-0 flex-1 text-left">
+                  <span class="min-w-0 flex-1 text-start">
                     <span class="block truncate">{{ artifactTitle(a) }}</span>
                     <span class="mv-call-casefile-artifact-kind">
                       {{ artifactKind(a) }}

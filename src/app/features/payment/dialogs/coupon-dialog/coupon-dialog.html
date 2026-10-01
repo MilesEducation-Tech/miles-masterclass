@@ -25,14 +25,14 @@
         <input
           [formControl]="couponCodeControl"
           placeholder="Enter Coupon Code"
-          class="w-full rounded-lg bg-surface-inset pl-4 pr-20 py-3 text-sm text-white placeholder:text-gray-500 ring-1 ring-white/10 outline-none focus:ring-blue-500 transition-colors"
+          class="w-full rounded-lg bg-surface-inset ps-4 pe-20 py-3 text-sm text-white placeholder:text-gray-500 ring-1 ring-white/10 outline-none focus:ring-blue-500 transition-colors"
           (keydown.enter)="applyCouponFromInput()"
         />
         <button
           app-button
           type="button"
           variant="ghost"
-          [class]="'absolute right-1.5 h-auto top-1/2 -translate-y-1/2 px-3 text-xs font-bold text-blue-500 hover:bg-transparent hover:text-blue-400'"
+          [class]="'absolute end-1.5 h-auto top-1/2 -translate-y-1/2 px-3 text-xs font-bold text-blue-500 hover:bg-transparent hover:text-blue-400'"
           [disabled]="applying()"
           (click)="applyCouponFromInput()"
         >
@@ -54,7 +54,7 @@
               <!-- The mask removes half-circles from the left edge revealing the dialog's background -->
               <div
                 [class]="
-                  'relative flex items-center justify-center w-[4.5rem] shrink-0 [mask-image:radial-gradient(circle_at_-5px_16px,transparent_10px,black_10.5px)] [mask-size:100%_32px] [mask-repeat:repeat-y] rounded-l-2xl ' +
+                  'relative flex items-center justify-center w-[4.5rem] shrink-0 [mask-image:radial-gradient(circle_at_-5px_16px,transparent_10px,black_10.5px)] [mask-size:100%_32px] [mask-repeat:repeat-y] rounded-s-2xl ' +
                   (appliedCouponCode() === coupon.coupon_code
                     ? 'bg-linear-to-b from-[#062149] to-[#3B1964]'
                     : !coupon.coupon_applicable
@@ -72,7 +72,7 @@
               <!-- RIGHT BODY -->
               <div
                 [class]="
-                  'flex-1 p-5 rounded-r-2xl border border-l-0 ' +
+                  'flex-1 p-5 rounded-e-2xl border border-s-0 ' +
                   (appliedCouponCode() === coupon.coupon_code
                     ? 'bg-[#4B5563] border-[#4B5563] text-gray-100'
                     : 'bg-white border-transparent text-gray-600')
@@ -185,7 +185,7 @@
                   >
                     <ul
                       [class]="
-                        'list-disc list-outside ml-4 space-y-1.5 text-[14px] font-medium ' +
+                        'list-disc list-outside ms-4 space-y-1.5 text-[14px] font-medium ' +
                         (appliedCouponCode() === coupon.coupon_code
                           ? 'text-gray-300 marker:text-gray-400'
                           : 'text-gray-400 marker:text-gray-300')

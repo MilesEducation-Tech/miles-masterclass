@@ -38,12 +38,12 @@
     <!-- Desktop sidebar: vertical title rail -->
     <aside class="hidden lg:block lg:sticky lg:top-24 lg:self-start">
       <nav role="navigation" aria-label="Security documents">
-        <ul class="space-y-1 border-l border-white/10">
+        <ul class="space-y-1 border-s border-white/10">
           @for (doc of documents; track doc.url) {
             <li>
               <button
                 type="button"
-                class="block w-full text-left px-4 py-3 text-sm transition-colors border-l-2 -ml-px"
+                class="block w-full text-start px-4 py-3 text-sm transition-colors border-s-2 -ms-px"
                 [class.border-accent]="activeUrl() === doc.url"
                 [class.text-white]="activeUrl() === doc.url"
                 [class.bg-accent]="activeUrl() === doc.url"

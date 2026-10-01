@@ -57,7 +57,7 @@ export class TrackerDialogOrchestrator {
   openDownloadRestricted(message: string): Observable<DialogResult | undefined> {
     const data: UtilsDialogData = {
       title: 'Download Restricted',
-      containerClass: 'flex flex-col space-y-4 text-left',
+      containerClass: 'flex flex-col space-y-4 text-start',
       content: [{ type: 'text', value: message }],
       buttons: [
         { label: 'Close', variant: 'outline', action: 'close' },
