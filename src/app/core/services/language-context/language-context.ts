@@ -53,7 +53,8 @@ const LANGUAGE_KEY = makeStateKey<string>('language');
  */
 @Service()
 export class LanguageContext {
-  private readonly enabled = inject(ENABLED_LANGUAGES);
+  /** The languages this build offers, in switcher order. */
+  readonly enabled = inject(ENABLED_LANGUAGES);
   private readonly request = inject(REQUEST, { optional: true });
   private readonly storage = inject(Storage);
   private readonly transferState = inject(TransferState);
@@ -63,6 +64,20 @@ export class LanguageContext {
   readonly current: Language = this.resolve();
 
   readonly dir: TextDirection = RTL_LANGUAGES.includes(this.current) ? 'rtl' : 'ltr';
+
+  /** Whether a switcher has anything to offer. False in a single-language build (production today). */
+  readonly canSwitch = this.enabled.length > 1;
+
+  /**
+   * Switch to `language`: remember it in the `lang` cookie (the only place that cookie is written)
+   * and reload, so `LOCALE_ID`, the translations, `<html lang dir>` and every Django response all
+   * change together. A language this build doesn't offer is ignored.
+   */
+  use(language: Language): void {
+    if (language === this.current || !this.enabled.includes(language)) return;
+    this.storage.setCookie(LANGUAGE_COOKIE, language, { expires: 365 });
+    this.document.defaultView?.location.reload();
+  }
 
   private resolve(): Language {
     const cookie = toLanguage(this.storage.getCookie(LANGUAGE_COOKIE), this.enabled);

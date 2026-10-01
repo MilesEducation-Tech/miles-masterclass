@@ -4,11 +4,16 @@ import {
   EnvironmentProviders,
   LOCALE_ID,
   inject,
+  isDevMode,
   makeEnvironmentProviders,
   provideAppInitializer,
 } from '@angular/core';
+import { TranslocoService, provideTransloco } from '@jsverse/transloco';
+import { firstValueFrom } from 'rxjs';
+import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } from '@core/constants/languages';
 import type { Language } from '@core/models/language.model';
 import { LanguageContext } from '@core/services/language-context/language-context';
+import { TranslationLoader } from '@core/services/translation-loader/translation-loader';
 
 /**
  * Angular locale data per non-English language, as a FIXED map of literal imports: each becomes its
@@ -32,9 +37,21 @@ const LOCALE_DATA: Partial<Record<Language, () => Promise<{ default: unknown }>>
  * - `<html lang>` (screen readers, hyphenation, search engines) and, for right-to-left languages,
  *   `<html dir="rtl">`. `dir` is left off for left-to-right, its default, so the English document
  *   is unchanged.
+ * - Transloco, active in that language with its dictionary loaded before the first render, so no
+ *   text ever renders as a raw key or flashes in English first. `reRenderOnLangChange` is off: the
+ *   language only changes through a reload (`LanguageContext.use`), so nothing needs watching.
  */
 export function provideLanguage(): EnvironmentProviders {
   return makeEnvironmentProviders([
+    provideTransloco({
+      config: {
+        availableLangs: [...SUPPORTED_LANGUAGES],
+        defaultLang: DEFAULT_LANGUAGE,
+        reRenderOnLangChange: false,
+        prodMode: !isDevMode(),
+      },
+      loader: TranslationLoader,
+    }),
     {
       provide: LOCALE_ID,
       useFactory: () => {
@@ -44,12 +61,18 @@ export function provideLanguage(): EnvironmentProviders {
     },
     provideAppInitializer(async () => {
       const { current, dir } = inject(LanguageContext);
+      const transloco = inject(TranslocoService);
       const html = inject(DOCUMENT).documentElement;
       html.lang = current;
       if (dir === 'rtl') html.dir = dir;
 
+      transloco.setActiveLang(current);
       const load = LOCALE_DATA[current];
-      if (load) registerLocaleData((await load()).default);
+      // In parallel: neither waits on the other, and the first render waits on both.
+      await Promise.all([
+        firstValueFrom(transloco.load(current)),
+        load?.().then((data) => registerLocaleData(data.default)),
+      ]);
     }),
   ]);
 }

@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideTranslocoTesting } from '@testing/transloco';
 
 import { AuthSession } from '@core/services/auth-session/auth-session';
 
@@ -13,7 +14,7 @@ describe('Footer', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Footer],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideTranslocoTesting()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Footer);
@@ -32,6 +33,7 @@ describe('Footer session', () => {
       imports: [Footer],
       providers: [
         provideRouter([]),
+        provideTranslocoTesting(),
         { provide: AuthSession, useValue: { isAuthenticated: signal(signedIn) } },
       ],
     }).compileComponents();

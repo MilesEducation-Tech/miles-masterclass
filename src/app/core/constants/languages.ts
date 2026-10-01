@@ -7,6 +7,18 @@
  */
 export const SUPPORTED_LANGUAGES = ['en', 'ar', 'fr', 'de', 'es'] as const;
 
+/**
+ * Each language's name IN ITSELF, for the switcher. Never translated: someone who landed in a
+ * language they can't read must still be able to find their own.
+ */
+export const LANGUAGE_NAMES = {
+  en: 'English',
+  ar: 'العربية',
+  fr: 'Français',
+  de: 'Deutsch',
+  es: 'Español',
+} as const satisfies Record<(typeof SUPPORTED_LANGUAGES)[number], string>;
+
 /** Every visitor without a usable cookie or browser preference, and every crawler. */
 export const DEFAULT_LANGUAGE = 'en';
 

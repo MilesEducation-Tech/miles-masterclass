@@ -11,10 +11,12 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 // Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { AuthSession } from '@core/services/auth-session/auth-session';
+import { LanguageContext } from '@core/services/language-context/language-context';
+import { LanguageSwitcher } from '../components/language-switcher/language-switcher';
 
 @Component({
   selector: 'app-footer',
-  imports: [RouterLink, NgIcon, NgOptimizedImage],
+  imports: [RouterLink, NgIcon, NgOptimizedImage, LanguageSwitcher],
   templateUrl: './footer.html',
 })
 export class Footer {
@@ -23,6 +25,8 @@ export class Footer {
   private readonly dialogs = inject(NgpDialogManager);
   // Exposed for the footer "Cookie settings" link (reopens the consent panel).
   protected readonly consent = inject(Consent);
+  // The switcher only exists when this build offers more than one language (not production yet).
+  protected readonly canSwitchLanguage = inject(LanguageContext).canSwitch;
 
   // The token-cookie boolean, so SSR renders the right links (same as the header).
   readonly isLoggedIn = inject(AuthSession).isAuthenticated;
