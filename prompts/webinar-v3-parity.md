@@ -144,7 +144,7 @@ Feature root `src/app/features/offerings/webinar/`. Existing files are **edited*
 - `components/webinar-card/*`: `variant: 'guest' | 'member'` for row layout. Guest row = v3 grid with the `LLLL` / ordinal / year pill and "Book Now"; member row = the existing row brought to v3's exact measures (`w-24 md:w-38` date badge, `text-3xl md:text-[44px]`, `text-[#ffba08]` → `text-accent-premium`, uppercase title, CAIRA `L{n}`, 378×180 media). Card layout (strips) keeps the platform's status chips (Eligible / Not Eligible / Absent / Missed) since v3's attendance chip has no data on web.
 - `components/webinar-rail/*`: `variant` passthrough; guest header copy; "Show more" styling `bg-surface-control` (already), keep `pageSize`.
 - `components/join-cta/*`: labels to v3 — `register` → "Register Now" (member) / "Book Now" (guest), `registered-waiting` → "Booked", `join-open` → "Join Live", `ended` → "Ended". Everything else unchanged.
-- `components/webinar-about/*`: match v3 `CourseAbout(webinar)` — heading "Course Description", objectives as `rounded-lg bg-surface-panel p-3` items (v3 `bg-slate-800`), "Certifying Organizations" block already present; add the "Webinar Duration" line from `duration_minutes` (v3 shows it). Instructor list is **skipped** (no data — §7).
+- `components/webinar-about/*`: match v3 `CourseAbout(webinar)` — heading "Webinar Description" (v3 says "Course Description"; changed on PR review, because this page is not a course), objectives as `rounded-lg bg-surface-panel p-3` items (v3 `bg-slate-800`), "Certifying Organizations" block already present; add the "Webinar Duration" line from `duration_minutes` (v3 shows it). Instructor list is **skipped** (no data — §7).
 
 ### 4.6 Design-token substitutions (v3 raw value → platform token)
 
@@ -203,7 +203,7 @@ MIL-14 and MIL-15 depend on MIL-13; MIL-15 can run in parallel with MIL-14.
 >
 > **Current behaviour:** One centred hero for everyone; guests get a "Sign in to register" dialog; upcoming list uses one row style; no 4-cell countdown; "Registered"/"Join Now" labels; `duration_seconds` in the model while Postman documents `duration_minutes`.
 >
-> **Expected behaviour:** Guest: blurred-backdrop hero with the white ticket and a "Secure Your Seat" card that signs in by OTP and registers; "Webinar's This Month" rows with Book Now. Signed in: artwork hero with LIVE pill, chips, amber date line, 4-cell countdown, Register Now → Booked (+countdown) → Join Live → Ended; CAIRA header with level tabs; attended/absent/missed rails. Detail page = same hero + Course Description / Learning Objectives / Certifying Organizations. All API shapes typed exactly as the Postman collection.
+> **Expected behaviour:** Guest: blurred-backdrop hero with the white ticket and a "Secure Your Seat" card that signs in by OTP and registers; "Webinar's This Month" rows with Book Now. Signed in: artwork hero with LIVE pill, chips, amber date line, 4-cell countdown, Register Now → Booked (+countdown) → Join Live → Ended; CAIRA header with level tabs; attended/absent/missed rails. Detail page = same hero + Webinar Description / Learning Objectives / Certifying Organizations. All API shapes typed exactly as the Postman collection.
 >
 > **Scope:** In — §4 of the prompt. Out — instructor data, badges, feedback, certificate, recording, attendance chips, 1:1 booking card, legacy dialog deletion (each with its home in §5).
 >

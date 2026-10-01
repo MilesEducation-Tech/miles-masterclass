@@ -7,6 +7,19 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-01, NON-REFACTOR — one review comment on the MIL-13 PR, fixed. UNCOMMITTED, you
+  commit. No refactor phase moved.** me-sachin-singh on `webinar-about.html`: the section heading
+  "Course Description" should read **"Webinar Description"**. Changed the `<h2>` in
+  `webinar/components/webinar-about/webinar-about.html` (one string; the page is a webinar, not a
+  course). The plan `prompts/webinar-v3-parity.md` quoted v3's "Course Description" in two places
+  (§ webinar-about, and the expected-behaviour line); both now say "Webinar Description" so the plan
+  does not contradict the code. **Left alone on purpose:** `shared/components/course-about` and the
+  AI-lab dialog also say "Course Description", but they are real courses and not part of this branch.
+  No spec asserts the heading (grep: 0 hits in the webinar feature), so no test changed. Prettier
+  clean on both files. **Not verified in a browser:** the detail page needs a feed card, and the UAT
+  feed is still rejected by the `duration_minutes` blocker below, so the about section cannot render
+  until that is fixed. The change is a literal string in a template.
+
 - 🔧 **2026-09-30 (evening), MIL-13 PRE-COMMIT FAILURE FIXED, AND A BLOCKER STILL OPEN. UNCOMMITTED,
   you commit.** The commit from Git Desktop stopped in `check-structure`: the new
   `webinar-hero/webinar-hero.css` is a component stylesheet with no §4.6 reason. Its header said
@@ -2596,6 +2609,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-01 · MIL-13 · **review comment: `webinar-about` heading "Course Description" → "Webinar Description"** (uncommitted) — one template string, plus the two matching lines in `prompts/webinar-v3-parity.md` · no spec covers the heading · Prettier clean · not checked in a browser (the UAT feed is still rejected by the `duration_minutes` blocker, so the about section cannot render)
 
 - 2026-09-30 · MIL-13 · **`webinar-hero.css` converted to Tailwind utilities so the pre-commit structure check passes** (uncommitted) — the ticket mask is `mask-subtract` + an arbitrary `mask-image`, the artwork glow is a `before:` layer, the stylesheet and its `styleUrl` are gone, and no baseline entry was added · parity checked in the running app (mask + size identical, 14/14 `::before` properties identical, 375px ok; 768/1440 not checked) · 🚨 still open: the tree renames `duration_seconds` to `duration_minutes`, UAT sends seconds on 29/29 cards, and the live page shows "We could not load the webinars" · check:structure, lint 0 errors, build:prod, webinar specs 91 passed (local, Node 24.18)
 
