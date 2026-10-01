@@ -7,6 +7,27 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-01, NON-REFACTOR — country resolution rebuilt from scratch (Ticket 1 of
+  `prompts/country-resolution.md`). UNCOMMITTED, you commit. No refactor phase moved.** Plan approved in
+  plan mode. Timezone-based detection is REMOVED: the URL country always wins, otherwise Vercel's
+  `x-vercel-ip-country`, then `us`. One list + one validator (`core/constants/countries.ts`,
+  `core/utils/country.ts` `toCountry`) shared by Angular and Express: `us in ae ca au` + UN M49 Europe + `cy`.
+  `CountryContext` (`core/services/country-context/`) replaces `LocationService`; `Utils.country` delegates
+  to it. `src/geo-country.ts`: Express answers `/` in ONE hop to `/<cc>/accounting/home` (`private,
+no-store`, query kept) and sets the `geo_country` cookie on HTML only, only when it changes. Guard swaps
+  only an unsupported/upper-case country segment, keeping the deep link. Legacy redirects keep their
+  status codes; geo-filled ones get `private, max-age=86400`. Deleted `location.ts` (service),
+  `timezone.ts` (93 KB), `constants/country.ts`, and the `location.ts` entry in `LEGACY_ANY_FILES`.
+  **Measured against a `master` build of the same commit:** SEO output (title/OG/Twitter/canonical/
+  robots/sitemap) byte-identical; initial bundle 1.08 MB / 241.28 kB → 1.02 MB / 235.24 kB. The first
+  probe showed `/` costing an extra hop (`/in/accounting` → `/home`) — fixed by targeting `/home`.
+  Browser-checked on the dev server: logo on `/ae/...` stays `ae`; `/auth/login` with `geo_country=in`
+  links to `/in/...`; no NG0500. Three 404s logged on the UAE page were NOT traced.
+  Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy `any` warnings), tests
+  **198 files / 857 passed + 1 skipped**, `build:prod` green (two pre-existing CSS budget warnings),
+  `check:structure` passed. **Open for you:** RU/BY in the Europe list need a sanctions check.
+  **Ticket 2** (`X-Country-Code` from `appInterceptor`) is BLOCKED on backend CORS +
+  `Access-Control-Max-Age: 7200` + checkout re-derivation of country; not started.
 - 🔧 **2026-10-01, NON-REFACTOR — third batch of MIL-13 review comments, both on
   `webinar-card.ts`. UNCOMMITTED, you commit. No refactor phase moved.**
   **(1) "use @alias import" — already covered** by the alias entry below: every relative import in
@@ -2655,6 +2676,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-10-01 · NON-REFACTOR · **country resolution rebuilt** (uncommitted, plan `prompts/country-resolution.md`) — timezone detection removed; URL country → `x-vercel-ip-country` → `us`; one `SUPPORTED_COUNTRIES` list + `toCountry` shared by Angular and Express; `CountryContext` replaces `LocationService`; Express `/` one-hop redirect + `geo_country` cookie; deep links survive an unsupported country; legacy redirect statuses unchanged, geo ones cache-bounded · SEO output byte-identical to master, initial bundle −60 kB raw / −6 kB transfer · lint 0 errors, tests 198 files / 857 passed + 1 skipped, build:prod + check:structure green (local, Node 24) · Ticket 2 (API header) blocked on backend CORS
 - 2026-10-01 · MIL-13 · **review comment: "remove this and use Date Pipe in html direct" on `webinar-card` `monthLong`** (uncommitted) — `monthLong` computed deleted; the guest pill uses `date: 'MMMM' : parts.zone` (an IANA name makes the pipe fall back to the viewer's zone, `parts.zone` is the date's own EST/EDT) · new `webinar-card.spec.ts`, 3 tests, mutation-checked under `TZ=UTC` · lint + check:structure + webinar specs 94 passed (local, Node 24.18) · not checked in a browser
 
 - 2026-10-01 · MIL-13 · **review comment: "Use @alias import" on `seat-form.ts`** (uncommitted) — all relative imports in `seat-form.ts`, `webinar-card.ts` and `webinar-hero.ts` now use `@features/offerings/webinar/…` (the three files where this PR adds relative imports) · other files' `../../` imports left for a separate sweep · lint + check:structure + webinar specs 91 passed (local, Node 24.18)

@@ -209,23 +209,44 @@ describe('mapLegacyPath', () => {
   it('never rewrites an already-correct v3 URL', () => {
     expect(mapLegacyPath('/in/accounting/masterclass', 'in')).toBeNull();
   });
+
+  it('falls back to us for a country outside SUPPORTED_COUNTRIES', () => {
+    expect(mapLegacyPath('/accounting/home', 'KE')!.target).toBe('/us/accounting/home');
+  });
+
+  it('flags a target as geo only when the country did not come from the URL', () => {
+    expect(mapLegacyPath('/accounting/home', 'IN')!.geo).toBe(true); // generic prefix rule
+    expect(mapLegacyPath('/accounting/plan', 'IN')!.geo).toBe(true); // `{c}` rule
+    expect(mapLegacyPath('/accounting/premiere/9', 'IN')!.geo).toBe(true); // no URL country
+    expect(mapLegacyPath('/in/accounting/premiere/9', 'US')!.geo).toBe(false); // URL country kept
+    expect(mapLegacyPath('/auth/signup', 'IN')!.geo).toBe(false); // no country at all
+  });
 });
 
 describe('legacyRedirectHandler (Express middleware)', () => {
   interface Captured {
     status?: number;
     location?: string;
+    cacheControl?: string;
     nexted?: boolean;
   }
-  function run(path: string, originalUrl = path, method = 'GET'): Captured {
+  function run(
+    path: string,
+    originalUrl = path,
+    method = 'GET',
+    headers: Record<string, string> = {},
+  ): Captured {
     const cap: Captured = {};
-    const req = { method, path, originalUrl, headers: {} } as never as Parameters<
+    const req = { method, path, originalUrl, headers } as never as Parameters<
       typeof legacyRedirectHandler
     >[0];
     const res = {
       redirect: (s: number, l: string) => {
         cap.status = s;
         cap.location = l;
+      },
+      setHeader: (name: string, value: string) => {
+        if (name === 'Cache-Control') cap.cacheControl = value;
       },
     } as never as Parameters<typeof legacyRedirectHandler>[1];
     const next = (() => {
@@ -257,6 +278,24 @@ describe('legacyRedirectHandler (Express middleware)', () => {
     expect(run('/accounting/masterclass', '/accounting/masterclass?utm=x').location).toBe(
       '/us/accounting/masterclass?utm=x',
     );
+  });
+
+  // The status stays permanent for SEO, but a geo-filled target differs per visitor: a browser
+  // must not cache it forever, and a shared cache must never store it at all.
+  it('bounds the cache of a redirect whose country came from geo', () => {
+    expect(
+      run('/accounting/masterclass', '/accounting/masterclass', 'GET', {
+        'x-vercel-ip-country': 'IN',
+      }),
+    ).toEqual({
+      status: 308,
+      location: '/in/accounting/masterclass',
+      cacheControl: 'private, max-age=86400',
+    });
+  });
+
+  it('leaves the cache alone when the URL carried the country', () => {
+    expect(run('/in/accounting/premiere/143/ai-101').cacheControl).toBeUndefined();
   });
 
   it('does not redirect non-GET/HEAD requests', () => {

@@ -25,7 +25,8 @@ We use **GitHub Flow**: one permanent branch (`master`), and short-lived branche
 - `master` is always deployable. Whatever is on `master` is what's in production.
 - You never commit directly to `master`. Everything goes through a Pull Request (PR).
 - A branch lives **1–3 days**, not weeks. Small PRs get reviewed fast, and big ones rot.
-- Every PR gets a Vercel preview URL. Test there before asking for review.
+- Vercel previews are **disabled**. Test locally before asking for review; a change that must be seen
+  deployed goes on the shared UAT environment first (`git-playbook.md` §5).
 
 ```mermaid
 gitGraph
@@ -34,15 +35,16 @@ gitGraph
   commit id: "feat: seat picker"
   commit id: "test: seat picker"
   checkout master
-  merge feat/MIL-231-seat-allocation tag: "preview → prod"
+  merge feat/MIL-231-seat-allocation tag: "→ prod"
   branch fix/MIL-240-invoice-total
   commit id: "fix: invoice total"
   checkout master
   merge fix/MIL-240-invoice-total
 ```
 
-**Why not a `develop` branch?** Because we deploy from `master` and every PR already gets its own preview
-environment. A second long-lived branch would only add a merge step and a place for work to get stuck.
+**Why not a `develop` branch?** Because we deploy from `master`, and the UAT environment is fed from a
+disposable `uat` branch that only ever shows PRs still waiting to merge. A second long-lived branch would
+only add a merge step and a place for work to get stuck.
 
 ---
 
@@ -405,4 +407,5 @@ and the two will disagree at the worst moment.
 - **Merge conflict** — two people changed the same lines. Git can't choose, so you decide and commit the fix.
 - **Squash** — collapse all the commits on your branch into one commit on `master`.
 - **CI** — the automated checks (lint, tests, build) that run on your PR.
-- **Preview URL** — the temporary Vercel deployment of your branch, for testing before merge.
+- **UAT** — the shared Vercel environment for testing deployed code before merge. The release owner puts
+  PRs on it through the `uat` branch.

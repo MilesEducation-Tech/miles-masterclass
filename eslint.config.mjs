@@ -275,7 +275,6 @@ export default [
         'src/app/core/models/http.model.ts',
         'src/app/core/models/library-filters.model.ts',
         'src/app/core/services/feature-facade/feature-facade.ts',
-        'src/app/core/services/location/location.ts',
         'src/app/core/services/logger/logger.ts',
         'src/app/core/services/section-filters-facade/section-filters-facade.spec.ts',
         'src/app/features/offerings/components/chapter-quiz/chapter-quiz.ts',
