@@ -1,14 +1,15 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faSolidInfo } from '@ng-icons/font-awesome/solid';
 import { RouterLink } from '@angular/router';
-import { eligibleOf, FeedCard } from '../../models/webinar.model';
-import { BRAND_MARKS } from '../../utils/brand-assets';
-import { ServerClock } from '../../services/server-clock';
-import { WebinarFacade } from '../../services/webinar-facade';
-import { formatSessionLabel, SESSION_TIMEZONE, sessionParts } from '../../utils/session-time';
-import { ctaFor, WebinarBucket } from '../../utils/webinar-status';
-import { JoinCta } from '../join-cta/join-cta';
+import { eligibleOf, FeedCard } from '@features/offerings/webinar/models/webinar.model';
+import { BRAND_MARKS } from '@features/offerings/webinar/utils/brand-assets';
+import { ServerClock } from '@features/offerings/webinar/services/server-clock';
+import { WebinarFacade } from '@features/offerings/webinar/services/webinar-facade';
+import { formatSessionLabel, sessionParts } from '@features/offerings/webinar/utils/session-time';
+import { ctaFor, WebinarBucket } from '@features/offerings/webinar/utils/webinar-status';
+import { JoinCta } from '@features/offerings/webinar/components/join-cta/join-cta';
 
 /** How a card presents itself. */
 export type WebinarCardLayout =
@@ -37,7 +38,7 @@ export type WebinarCardLayout =
  */
 @Component({
   selector: 'app-webinar-card',
-  imports: [NgIcon, RouterLink, JoinCta],
+  imports: [DatePipe, NgIcon, RouterLink, JoinCta],
   templateUrl: './webinar-card.html',
   providers: [provideIcons({ faSolidInfo })],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -85,17 +86,6 @@ export class WebinarCard {
     // copy, and a 378px artwork box (320px banner + the 58px the round badge
     // hangs off its left edge).
     return 'flex h-full flex-col gap-4 rounded-2xl border border-border/60 bg-muted/40 p-4 md:grid md:h-auto md:grid-cols-[152px_minmax(0,1fr)_378px] md:items-center md:gap-6 md:rounded-none md:border-0 md:bg-transparent md:p-0 lg:gap-8';
-  });
-
-  /** `November`, for the guest pill — v3 renders the full month there. */
-  protected readonly monthLong = computed(() => {
-    const iso = this.webinar().start_date_time;
-    if (!iso) return null;
-    const parsed = Date.parse(iso);
-    if (Number.isNaN(parsed)) return null;
-    return new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: SESSION_TIMEZONE }).format(
-      new Date(parsed),
-    );
   });
 
   /** Field-of-study names, pipe-separated — the `categories-list` strip. */

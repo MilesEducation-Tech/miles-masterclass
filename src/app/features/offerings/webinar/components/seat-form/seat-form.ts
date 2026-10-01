@@ -12,7 +12,7 @@ import { Field } from '@shared/ui/field/field';
 import { Input } from '@shared/ui/input/input';
 import { InputOtp } from '@shared/ui/input-otp/input-otp';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { GuestRegistration } from '../../services/guest-registration';
+import { GuestRegistration } from '@features/offerings/webinar/services/guest-registration';
 
 interface IdentifyModel {
   identifier: string;

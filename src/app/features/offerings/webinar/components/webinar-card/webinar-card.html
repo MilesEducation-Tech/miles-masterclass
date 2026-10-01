@@ -10,8 +10,12 @@
       <div
         class="flex w-20 flex-col items-center rounded-md bg-muted px-2 py-3 text-center sm:w-24"
       >
+        <!-- The pipe's zone argument takes an abbreviation, not `America/New_York`
+             (an IANA name silently falls back to the viewer's zone). `parts.zone`
+             is `EST` / `EDT` for THIS date, so the month cannot disagree with the
+             day and year beside it, which `sessionParts` resolves in ET. -->
         <span class="text-[11px] font-medium text-muted-foreground uppercase">{{
-          monthLong()
+          w.start_date_time | date: 'MMMM' : parts.zone
         }}</span>
         <span class="text-3xl leading-none font-bold">
           {{ parts.day }}<sup class="text-xs font-medium">{{ parts.ordinal }}</sup>

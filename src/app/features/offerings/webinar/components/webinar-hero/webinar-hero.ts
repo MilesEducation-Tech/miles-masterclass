@@ -1,19 +1,23 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { FeedCard } from '../../models/webinar.model';
-import { ServerClock } from '../../services/server-clock';
-import { WebinarFacade } from '../../services/webinar-facade';
+import { FeedCard } from '@features/offerings/webinar/models/webinar.model';
+import { ServerClock } from '@features/offerings/webinar/services/server-clock';
+import { WebinarFacade } from '@features/offerings/webinar/services/webinar-facade';
 import {
   formatSessionLabel,
   formatStartsIn,
   parseIso,
   sessionParts,
-} from '../../utils/session-time';
-import { TICKET_ICON } from '../../utils/brand-assets';
-import { ctaFor, sessionPhaseOf, WebinarBucket } from '../../utils/webinar-status';
-import { JoinCta } from '../join-cta/join-cta';
-import { SeatForm } from '../seat-form/seat-form';
-import { WebinarCountdown } from '../webinar-countdown/webinar-countdown';
+} from '@features/offerings/webinar/utils/session-time';
+import { TICKET_ICON } from '@features/offerings/webinar/utils/brand-assets';
+import {
+  ctaFor,
+  sessionPhaseOf,
+  WebinarBucket,
+} from '@features/offerings/webinar/utils/webinar-status';
+import { JoinCta } from '@features/offerings/webinar/components/join-cta/join-cta';
+import { SeatForm } from '@features/offerings/webinar/components/seat-form/seat-form';
+import { WebinarCountdown } from '@features/offerings/webinar/components/webinar-countdown/webinar-countdown';
 
 /**
  * The banner, in the two layouts the v3 design draws.

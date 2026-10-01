@@ -7,6 +7,51 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-01, NON-REFACTOR — third batch of MIL-13 review comments, both on
+  `webinar-card.ts`. UNCOMMITTED, you commit. No refactor phase moved.**
+  **(1) "use @alias import" — already covered** by the alias entry below: every relative import in
+  `webinar-card.ts` is now `@features/offerings/webinar/…`, and the new spec uses aliases too.
+  **(2) "remove this and use Date Pipe in html direct" on `monthLong` — done.** The `monthLong`
+  computed and the now-unused `SESSION_TIMEZONE` import are gone; the guest pill's month is
+  `{{ w.start_date_time | date: 'MMMM' : parts.zone }}` and `DatePipe` is in the component's `imports`.
+  ⚠️ **The pipe's zone argument cannot be `SESSION_TIMEZONE`.** Angular 22.2's `timezoneToOffset` runs
+  `Date.parse('Jan 01, 1970 00:00:00 ' + tz)`, and an IANA name such as `America/New_York` parses to
+  `NaN`, so the pipe **silently falls back to the viewer's (or the SSR server's) zone**. Verified:
+  `Date.parse` gives NaN for the IANA name, 300 for `EST`, 240 for `EDT`. That would put a session
+  at 7 PM ET on 31 Oct in "November" for a viewer in India or UTC, next to a day of "31" (the day and
+  year come from `sessionParts`, which does resolve in ET). So the template passes `parts.zone`, the
+  `EST`/`EDT` abbreviation `sessionParts` already computes **for that very date**: DST-correct, one
+  source for the whole pill, no new TS. If `SESSION_TIMEZONE` ever stops being a US zone, `parts.zone`
+  will not be an abbreviation the pipe can parse and this needs revisiting.
+  **New spec `webinar-card/webinar-card.spec.ts`** (there was none): 3 tests on the guest pill, full
+  month name plus the two boundary cases, 03:30Z on 1 Nov (EDT, still 31 Oct) and 1 Dec (EST, still 30
+  Nov). **Mutation-checked under `TZ=UTC`:** passes with `parts.zone`; with the IANA name in its place
+  2 of 3 fail ("November" for "October", "December" for "November"), so the spec does catch the
+  fallback. Its fixture carries `duration_minutes: 60` like the other three specs, so **the
+  `duration_seconds` revert in the blocker below now also touches this file**.
+  Gates (local macOS, Node 24.18, **not CI**): lint 0 errors on the touched files, `check:structure`
+  passed, Prettier clean, webinar specs 8 files / 94 passed. Not run: `build:prod` (template and
+  import change only), and **not looked at in a browser**: the guest row needs the upcoming feed, which
+  the `duration_minutes` blocker still rejects.
+  Note: a spec run narrowed to ONLY `webinar-card/**` fails to build (`TS2591 Buffer` in
+  `core/services/auth-session/auth-session.ts:339`, not touched here); use the whole `webinar/**` glob
+  with `--filter`.
+
+- 🔧 **2026-10-01, NON-REFACTOR — second MIL-13 review comment: "Use @alias import" on
+  `seat-form.ts`. UNCOMMITTED, you commit. No refactor phase moved.** The flagged line was
+  `import { GuestRegistration } from '../../services/guest-registration'`. It is the same ask as the
+  `join-cta.ts` comment on #43, so I did not fix one line and wait for the next. Converted **every
+  relative import in the three files where this PR adds one** — `seat-form.ts` (1),
+  `webinar-card.ts` (7) and `webinar-hero.ts` (9) — to `@features/offerings/webinar/…`, so each file
+  is uniform and not half aliased. Prettier re-wrapped the long lines in the card and the hero; no
+  logic changed. Lint clean on the three files, `check:structure` passed, webinar specs 7 files / 91
+  passed (local, Node 24.18, **not CI**); `build:prod` not re-run for an import-path-only change.
+  ⚠️ **Same-folder `./x` imports are untouched (they are not cross-folder).** 44 `../` imports
+  remain across the feature's non-spec files, 14 of them in files this PR modifies but whose imports
+  it did not add (`webinar-list.ts` 7, `webinar-rail.ts` 5, `webinar-countdown.ts` 2). Relative
+  is still legal (PROMPT §3 requires an alias only across a top-level folder), so lint does not
+  catch it. If the reviewer wants the whole feature swept, do it as its own change.
+
 - 🔧 **2026-10-01, NON-REFACTOR — one review comment on the MIL-13 PR, fixed. UNCOMMITTED, you
   commit. No refactor phase moved.** me-sachin-singh on `webinar-about.html`: the section heading
   "Course Description" should read **"Webinar Description"**. Changed the `<h2>` in
@@ -2609,6 +2654,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-01 · MIL-13 · **review comment: "remove this and use Date Pipe in html direct" on `webinar-card` `monthLong`** (uncommitted) — `monthLong` computed deleted; the guest pill uses `date: 'MMMM' : parts.zone` (an IANA name makes the pipe fall back to the viewer's zone, `parts.zone` is the date's own EST/EDT) · new `webinar-card.spec.ts`, 3 tests, mutation-checked under `TZ=UTC` · lint + check:structure + webinar specs 94 passed (local, Node 24.18) · not checked in a browser
+
+- 2026-10-01 · MIL-13 · **review comment: "Use @alias import" on `seat-form.ts`** (uncommitted) — all relative imports in `seat-form.ts`, `webinar-card.ts` and `webinar-hero.ts` now use `@features/offerings/webinar/…` (the three files where this PR adds relative imports) · other files' `../../` imports left for a separate sweep · lint + check:structure + webinar specs 91 passed (local, Node 24.18)
 
 - 2026-10-01 · MIL-13 · **review comment: `webinar-about` heading "Course Description" → "Webinar Description"** (uncommitted) — one template string, plus the two matching lines in `prompts/webinar-v3-parity.md` · no spec covers the heading · Prettier clean · not checked in a browser (the UAT feed is still rejected by the `duration_minutes` blocker, so the about section cannot render)
 
