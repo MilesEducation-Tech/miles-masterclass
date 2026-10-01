@@ -3,7 +3,7 @@
 >
   <div class="flex justify-end h-full relative">
     <div
-      class="flex items-end justify-start text-[16rem] leading-[280px] font-medium [-webkit-text-fill-color:transparent]! [-webkit-text-stroke:10px_#ffffff47]! tracking-tighter self-end m-0 absolute bottom-[-22px] left-0 w-2/5 h-full"
+      class="flex items-end justify-start text-[16rem] leading-[280px] font-medium [-webkit-text-fill-color:transparent]! [-webkit-text-stroke:10px_#ffffff47]! tracking-tighter self-end m-0 absolute bottom-[-22px] start-0 w-2/5 h-full"
     >
       {{ index() + 1 }}
     </div>
@@ -14,7 +14,7 @@
     >
       <div class="flex-col gap-2 items-center hidden duration-300 z-20">
         <div
-          class="absolute top-3 left-3 w-auto h-8 bg-background rounded-lg flex justify-center items-center px-2 text-xs"
+          class="absolute top-3 start-3 w-auto h-8 bg-background rounded-lg flex justify-center items-center px-2 text-xs"
         >
           {{ 2 }}&nbsp; CPE
           {{ 2 > 1 ? 'Credits' : 'Credit' }}
@@ -30,7 +30,7 @@
         <p class="text-white text-[16px] md:text-center text-center font-bold line-clamp-2">
           {{ card().title }}
         </p>
-        <p class="text-white text-sm line-clamp-1 font-semibold md:text-center text-left">
+        <p class="text-white text-sm line-clamp-1 font-semibold md:text-center text-start">
           By {{ card().instructor_details.first_name }}
           {{ card().instructor_details.last_name }}
         </p>

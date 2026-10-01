@@ -17,7 +17,7 @@
   }
   @if (hiddenCount() > 0) {
     <span
-      class="shrink-0 ml-1 cursor-help underline decoration-dotted underline-offset-2 pointer-events-auto"
+      class="shrink-0 ms-1 cursor-help underline decoration-dotted underline-offset-2 pointer-events-auto"
       tabindex="0"
       [ngpTooltipTrigger]="tooltipTemplate"
       [ngpTooltipTriggerOffset]="8"
@@ -32,7 +32,7 @@
 
 <div
   aria-hidden="true"
-  class="flex items-baseline whitespace-nowrap invisible pointer-events-none fixed top-0 left-[-99999px]"
+  class="flex items-baseline whitespace-nowrap invisible pointer-events-none fixed top-0 start-[-99999px]"
 >
   @for (item of items(); track item.id) {
     <span #measureItem class="inline-flex items-center shrink-0 gap-1 mx-1">
@@ -69,7 +69,7 @@
     <div
       ngpTooltipArrow
       aria-hidden="true"
-      class="absolute size-2 rotate-45 bg-popover border-border data-[placement=top]:top-full data-[placement=top]:-mt-1 data-[placement=top]:border-r data-[placement=top]:border-b data-[placement=bottom]:bottom-full data-[placement=bottom]:-mb-1 data-[placement=bottom]:border-l data-[placement=bottom]:border-t"
+      class="absolute size-2 rotate-45 bg-popover border-border data-[placement=top]:top-full data-[placement=top]:-mt-1 data-[placement=top]:border-e data-[placement=top]:border-b data-[placement=bottom]:bottom-full data-[placement=bottom]:-mb-1 data-[placement=bottom]:border-s data-[placement=bottom]:border-t"
     ></div>
   </div>
 </ng-template>

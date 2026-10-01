@@ -63,7 +63,7 @@ const OPTION =
 
     <ng-icon
       name="heroChevronDown"
-      class="ml-2 shrink-0 text-muted-foreground"
+      class="ms-2 shrink-0 text-muted-foreground"
       aria-hidden="true"
     />
 

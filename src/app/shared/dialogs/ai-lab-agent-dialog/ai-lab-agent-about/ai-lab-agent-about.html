@@ -80,15 +80,15 @@
                 [ngpCollapsibleOpen]="isExpanded(key)"
                 (ngpCollapsibleOpenChange)="toggleExpand(key)"
                 class="overflow-hidden rounded-lg border border-border bg-muted transition-all duration-200"
-                [class.border-l-4]="!step.passed"
-                [class.border-l-destructive]="!step.passed"
+                [class.border-s-4]="!step.passed"
+                [class.border-s-destructive]="!step.passed"
               >
                 <button
                   type="button"
                   ngpCollapsibleTrigger
-                  class="flex w-full cursor-pointer items-center justify-between gap-4 p-4 text-left hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  class="flex w-full cursor-pointer items-center justify-between gap-4 p-4 text-start hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
-                  <span class="flex flex-1 items-center gap-4 pr-2">
+                  <span class="flex flex-1 items-center gap-4 pe-2">
                     <span class="w-6 shrink-0 text-gray-400">{{ i + 1 }}.</span>
                     <span
                       class="line-clamp-2 font-medium text-gray-200 select-none md:line-clamp-1"
@@ -178,15 +178,15 @@
                 [ngpCollapsibleOpen]="isExpanded(key)"
                 (ngpCollapsibleOpenChange)="toggleExpand(key)"
                 class="overflow-hidden rounded-lg border border-border bg-muted transition-all duration-200"
-                [class.border-l-4]="!item.isCorrect"
-                [class.border-l-destructive]="!item.isCorrect"
+                [class.border-s-4]="!item.isCorrect"
+                [class.border-s-destructive]="!item.isCorrect"
               >
                 <button
                   type="button"
                   ngpCollapsibleTrigger
-                  class="flex w-full cursor-pointer items-center justify-between gap-4 p-4 text-left hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  class="flex w-full cursor-pointer items-center justify-between gap-4 p-4 text-start hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
-                  <span class="flex flex-1 items-center gap-4 pr-2">
+                  <span class="flex flex-1 items-center gap-4 pe-2">
                     <span class="w-6 shrink-0 text-gray-400">{{ i + 1 }}.</span>
                     <span
                       class="line-clamp-2 font-medium text-gray-200 select-none md:line-clamp-1"
@@ -322,20 +322,20 @@
             </li>
             <li class="md:text-base text-sm">
               Instructional Delivery Method:
-              <span class="text-white font-medium ml-2">{{ card().int_delivery_method }}</span>
+              <span class="text-white font-medium ms-2">{{ card().int_delivery_method }}</span>
             </li>
             <li class="md:text-base text-sm">
               Program Level:
-              <span class="text-white font-medium ml-2">{{ card().program_level }}</span>
+              <span class="text-white font-medium ms-2">{{ card().program_level }}</span>
             </li>
             <li class="md:text-base text-sm">
               Prerequisite Education:
-              <span class="text-white font-medium ml-2">{{ card().prerequisite_education }}</span>
+              <span class="text-white font-medium ms-2">{{ card().prerequisite_education }}</span>
             </li>
             @if (card().advance_preparation) {
               <li class="md:text-base text-sm">
                 Advanced Preparation:
-                <span class="text-white font-medium ml-2">{{ card().advance_preparation }}</span>
+                <span class="text-white font-medium ms-2">{{ card().advance_preparation }}</span>
               </li>
             }
           </ul>
@@ -377,7 +377,7 @@
             <h4 class="text-white md:text-lg text-base font-medium">
               To earn CPE credits, the learner is expected to:
             </h4>
-            <ul class="flex flex-col gap-2 text-gray-400 list-disc pl-5">
+            <ul class="flex flex-col gap-2 text-gray-400 list-disc ps-5">
               <li class="md:text-base text-sm">Complete all videos and chapter quizzes</li>
               <li class="md:text-base text-sm">
                 Complete the final exam within one year from completing the course

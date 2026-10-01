@@ -25,7 +25,7 @@
     ></div>
     @if (attendanceTag(); as tag) {
       <span
-        class="absolute top-3 left-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide z-20"
+        class="absolute top-3 start-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide z-20"
         [class]="tag.classes"
       >
         {{ tag.label }}
@@ -34,7 +34,7 @@
     @if (type() !== 'webinar') {
       <button
         type="button"
-        class="absolute top-3 right-3 z-30 size-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center pointer-events-auto cursor-pointer transition-colors"
+        class="absolute top-3 end-3 z-30 size-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center pointer-events-auto cursor-pointer transition-colors"
         [attr.aria-label]="card().added_bookmark ? 'Remove bookmark' : 'Add bookmark'"
         (click)="toggleBookmark($event)"
       >

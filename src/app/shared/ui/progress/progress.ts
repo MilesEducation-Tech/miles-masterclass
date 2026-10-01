@@ -33,7 +33,7 @@ const VARIANTS = { primary: 'bg-primary', success: 'bg-success' } as const;
   template: `
     @if (label(); as label) {
       <span ngpProgressLabel class="text-sm font-medium text-foreground">{{ label }}</span>
-      <span ngpProgressValue class="ml-auto text-xs text-muted-foreground">{{ value() }}%</span>
+      <span ngpProgressValue class="ms-auto text-xs text-muted-foreground">{{ value() }}%</span>
     }
 
     <div ngpProgressTrack [class]="trackClass()">

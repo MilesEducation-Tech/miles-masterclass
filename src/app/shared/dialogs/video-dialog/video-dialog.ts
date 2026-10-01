@@ -25,7 +25,7 @@ export interface VideoDialogData {
           class="flex items-center justify-between p-4 border-b border-border z-10 bg-background relative shrink-0"
         >
           @if (data.title) {
-            <h2 class="text-lg font-semibold truncate pr-4">{{ data.title }}</h2>
+            <h2 class="text-lg font-semibold truncate pe-4">{{ data.title }}</h2>
           } @else {
             <!-- Spacer to ensure close button alignment if needed -->
             <span></span>
