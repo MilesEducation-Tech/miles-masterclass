@@ -77,7 +77,7 @@ const OPTION =
         <ng-icon name="heroChevronDown" aria-hidden="true" />
       </button>
 
-      <div *ngpComboboxPortal ngpComboboxDropdown [class]="dropdownClass">
+      <div *ngpComboboxPortal ngpComboboxDropdown [attr.dir]="dir()" [class]="dropdownClass">
         @for (option of filteredOptions(); track option.value) {
           <div
             ngpComboboxOption
@@ -116,6 +116,13 @@ export class Combobox<V = unknown> {
 
   /** Shown when no option matches the filter. */
   readonly emptyMessage = input('No options found');
+
+  /**
+   * Text direction for the field AND its option list. Set `dir="ltr"` for values that read
+   * left-to-right in every language (dial codes: "+91" would otherwise show as "91+" on an Arabic
+   * page). The host attribute covers the field; the list is portaled to <body>, so it gets it here.
+   */
+  readonly dir = input<'ltr' | 'rtl' | 'auto'>();
 
   /** The disabled state; `[formField]` writes it too. */
   readonly disabled = input<boolean, BooleanInput>(false, {

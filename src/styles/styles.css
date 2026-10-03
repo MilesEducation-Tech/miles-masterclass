@@ -454,6 +454,24 @@ swiper-container {
 }
 
 /*
+ * Typed values read left-to-right in every language: an email, a phone number, a URL, a password.
+ * On an Arabic page they keep LTR direction, so "a@b.com" and "98765 43210" don't reorder, but align
+ * right, in line with the right-to-left labels around them. The PARENT's `:dir(rtl)` is tested: HTML
+ * gives these input types left-to-right directionality of their own, so the input itself never
+ * matches `:dir(rtl)`; and unlike `[dir=rtl] input`, an input inside a dir="ltr" island isn't
+ * right-aligned. In @layer base so a utility can still override.
+ */
+@layer base {
+  input:is([type='email'], [type='tel'], [type='url'], [type='number'], [type='password']) {
+    direction: ltr;
+  }
+  :dir(rtl)
+    > input:is([type='email'], [type='tel'], [type='url'], [type='number'], [type='password']) {
+    text-align: right;
+  }
+}
+
+/*
  * Ticket-card mask utilities. Registered via Tailwind v4's `@utility` so the
  * usual variants (`md:`, `hover:`, etc.) attach naturally — e.g.
  * `class="md:x-ticket y-ticket"` swaps the silhouette at the `md` breakpoint,

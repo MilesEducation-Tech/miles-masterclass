@@ -64,7 +64,8 @@ export { VideoState, PlayerMode } from '@core/models/video-player.model';
     }),
   ],
   template: `
-    <div class="overflow-visible w-full flex flex-col gap-4 relative">
+    <!-- dir="ltr": a timeline runs left-to-right in every language, as on the video player. -->
+    <div class="overflow-visible w-full flex flex-col gap-4 relative" dir="ltr">
       <!-- Hidden video.js audio element -->
       <audio
         #audioPlayer
