@@ -35,7 +35,7 @@ import { NgpRating, NgpRatingItem } from 'ng-primitives/rating';
     <span *ngpRatingItem="let star" class="relative inline-flex cursor-pointer">
       <ng-icon name="heroStarSolid" class="text-muted-foreground/40" aria-hidden="true" />
       <span
-        class="absolute inset-y-0 left-0 overflow-hidden text-accent-premium"
+        class="absolute inset-y-0 start-0 overflow-hidden text-accent-premium"
         [style.width.%]="star.fraction * 100"
       >
         <ng-icon name="heroStarSolid" aria-hidden="true" />

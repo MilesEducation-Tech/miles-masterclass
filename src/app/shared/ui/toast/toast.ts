@@ -7,9 +7,9 @@ import { ToastContext, ToastType } from '@core/models/notification.model';
 import { cn } from '../../utils/cn';
 
 const TYPES: Record<ToastType, string> = {
-  success: 'border-l-success',
-  error: 'border-l-destructive',
-  info: 'border-l-accent',
+  success: 'border-s-success',
+  error: 'border-s-destructive',
+  info: 'border-s-accent',
 };
 
 /**
@@ -57,7 +57,7 @@ export class Toast {
 
   protected readonly classes = computed(() =>
     cn(
-      'absolute z-(--ngp-toast-z-index) inline-grid w-[350px] max-w-[calc(100vw-2rem)] grid-cols-[1fr_auto] grid-rows-[min-content_min-content] items-center gap-x-3 gap-y-1 rounded-lg border border-border border-l-4 bg-popover px-4 py-3 text-popover-foreground shadow-lg',
+      'absolute z-(--ngp-toast-z-index) inline-grid w-[350px] max-w-[calc(100vw-2rem)] grid-cols-[1fr_auto] grid-rows-[min-content_min-content] items-center gap-x-3 gap-y-1 rounded-lg border border-border border-s-4 bg-popover px-4 py-3 text-popover-foreground shadow-lg',
       TYPES[this.context.type],
     ),
   );

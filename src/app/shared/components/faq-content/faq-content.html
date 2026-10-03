@@ -16,14 +16,14 @@
     }
     @case ('description') {
       <p
-        class="text-gray-300 mb-4 leading-relaxed bg-gray-800 p-4 rounded-lg border-l-4 border-blue-500"
+        class="text-gray-300 mb-4 leading-relaxed bg-gray-800 p-4 rounded-lg border-s-4 border-blue-500"
       >
         {{ item.value }}
       </p>
     }
     @case ('note') {
       <div
-        class="mb-4 p-4 rounded-lg border-l-4"
+        class="mb-4 p-4 rounded-lg border-s-4"
         [class.bg-blue-900]="item.variant === 'info' || !item.variant"
         [class.border-blue-500]="item.variant === 'info' || !item.variant"
         [class.bg-yellow-900]="item.variant === 'warning'"
@@ -32,7 +32,7 @@
         [class.border-green-500]="item.variant === 'success'"
       >
         <p class="text-gray-200 text-sm leading-relaxed">
-          <span class="font-semibold mr-2">
+          <span class="font-semibold me-2">
             @if (item.variant === 'warning') {
               ⚠️ Warning:
             }
@@ -49,13 +49,13 @@
     }
     @case ('list') {
       @if (item.ordered) {
-        <ol class="list-decimal list-inside mb-4 space-y-2 text-gray-300 ml-4">
+        <ol class="list-decimal list-inside mb-4 space-y-2 text-gray-300 ms-4">
           @for (listItem of item.items; track $index) {
             <li class="leading-relaxed">{{ listItem }}</li>
           }
         </ol>
       } @else {
-        <ul class="list-disc list-inside mb-4 space-y-2 text-gray-300 ml-4">
+        <ul class="list-disc list-inside mb-4 space-y-2 text-gray-300 ms-4">
           @for (listItem of item.items; track $index) {
             <li class="leading-relaxed">{{ listItem }}</li>
           }
@@ -64,11 +64,11 @@
     }
     @case ('table') {
       <div class="mb-6 overflow-x-auto rounded-lg border border-gray-700">
-        <table class="w-full text-left text-sm">
+        <table class="w-full text-start text-sm">
           <thead class="bg-gray-800 text-gray-200">
             <tr>
               @for (header of item.headers; track $index) {
-                <th class="px-4 py-3 font-semibold">{{ header }}</th>
+                <th class="px-4 py-3 text-start font-semibold">{{ header }}</th>
               }
             </tr>
           </thead>

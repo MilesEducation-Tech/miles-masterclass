@@ -19,7 +19,7 @@ import {
   host: { class: 'flex w-full flex-wrap items-center gap-x-2 gap-y-1' },
   template: `
     <span ngpMeterLabel class="text-sm font-medium text-foreground">{{ label() }}</span>
-    <span ngpMeterValue class="ml-auto text-xs text-muted-foreground">{{ value() }}%</span>
+    <span ngpMeterValue class="ms-auto text-xs text-muted-foreground">{{ value() }}%</span>
 
     <div ngpMeterTrack class="h-2 w-full basis-full overflow-hidden rounded-full bg-secondary">
       <div

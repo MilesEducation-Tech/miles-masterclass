@@ -157,7 +157,7 @@ export { VideoState, PlayerMode } from '@core/models/video-player.model';
                 </button>
                 @if (showPlaybackMenu()) {
                   <div
-                    class="absolute bottom-full right-0 mb-1 bg-gray-800 rounded-lg shadow-xl border border-white/10 overflow-hidden z-50"
+                    class="absolute bottom-full end-0 mb-1 bg-gray-800 rounded-lg shadow-xl border border-white/10 overflow-hidden z-50"
                   >
                     @for (rate of playbackRates; track rate) {
                       <button

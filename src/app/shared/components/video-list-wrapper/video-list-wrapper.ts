@@ -47,9 +47,9 @@ export class VideoListWrapper {
     const common = 'absolute z-20 from-background to-transparent flex pointer-events-none pb-10';
     const mobile = 'inset-x-0 bottom-0 h-2/3 bg-linear-to-t';
     const desktopMap: Record<VideoListSide, string> = {
-      left: 'md:inset-y-0 md:left-0 md:right-auto md:bottom-auto md:w-1/2 md:h-full md:bg-linear-to-r md:from-30% md:via-background/60 md:via-60%',
+      left: 'md:inset-y-0 md:start-0 md:end-auto md:bottom-auto md:w-1/2 md:h-full md:bg-linear-to-r md:from-30% md:via-background/60 md:via-60%',
       right:
-        'md:inset-y-0 md:right-0 md:left-auto md:bottom-auto md:w-1/2 md:h-full md:bg-linear-to-l md:from-30% md:via-background/60 md:via-60%',
+        'md:inset-y-0 md:end-0 md:start-auto md:bottom-auto md:w-1/2 md:h-full md:bg-linear-to-l md:from-30% md:via-background/60 md:via-60%',
       top: 'md:inset-x-0 md:top-0 md:bottom-auto md:h-1/2 md:w-full md:bg-linear-to-b',
       bottom: 'md:inset-x-0 md:bottom-0 md:top-auto md:h-1/2 md:w-full md:bg-linear-to-t',
     };

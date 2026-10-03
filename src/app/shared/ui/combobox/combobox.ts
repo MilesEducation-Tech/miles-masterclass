@@ -53,7 +53,7 @@ const OPTION =
   template: `
     <div
       ngpCombobox
-      class="flex h-10 w-full items-center rounded-lg border border-input bg-background pr-1 pl-3 text-sm text-foreground data-focus:border-ring data-disabled:cursor-not-allowed data-disabled:opacity-50 data-invalid:data-touched:border-destructive"
+      class="flex h-10 w-full items-center rounded-lg border border-input bg-background pe-1 ps-3 text-sm text-foreground data-focus:border-ring data-disabled:cursor-not-allowed data-disabled:opacity-50 data-invalid:data-touched:border-destructive"
       [(ngpComboboxValue)]="value"
       [ngpComboboxDisabled]="disabled()"
       (ngpComboboxOpenChange)="resetOnClose($event)"

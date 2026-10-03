@@ -331,7 +331,7 @@ export class Utils {
     const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title: 'Final Assessment',
-        containerClass: 'flex flex-col space-y-4 text-left',
+        containerClass: 'flex flex-col space-y-4 text-start',
         content: [
           { type: 'text', value: 'QAS Self-Study Qualified Assessment Rules:' },
           { type: 'list', items: examRulesArray, ordered: true },
@@ -564,7 +564,7 @@ export class Utils {
   }): Promise<void> {
     const data: UtilsDialogData = {
       title: config.title,
-      containerClass: 'max-w-lg text-left!',
+      containerClass: 'max-w-lg text-start!',
       content: [{ type: 'text', value: config.message }],
       buttons: config.buttons,
     };
@@ -767,7 +767,7 @@ export class Utils {
             this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
               data: {
                 title: 'Additional Resources',
-                containerClass: 'max-w-lg text-left!',
+                containerClass: 'max-w-lg text-start!',
                 content: [{ type: 'links', items: links }],
                 buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
                 maxWidth: '100%',

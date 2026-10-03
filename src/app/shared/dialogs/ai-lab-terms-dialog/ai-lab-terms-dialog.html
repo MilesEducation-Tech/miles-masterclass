@@ -4,7 +4,7 @@
   <div
     class="relative flex max-h-[85vh] w-[min(640px,92vw)] flex-col overflow-hidden rounded-2xl border border-border bg-muted"
   >
-    <div class="absolute top-3 right-3 z-10">
+    <div class="absolute top-3 end-3 z-10">
       <button
         app-button
         type="button"
@@ -19,7 +19,7 @@
     </div>
 
     <div class="shrink-0 px-6 pt-6 pb-4">
-      <h2 id="ai-lab-terms-title" class="pr-10 text-lg font-semibold text-foreground">
+      <h2 id="ai-lab-terms-title" class="pe-10 text-lg font-semibold text-foreground">
         Miles AI Labs — Participant Agreement
       </h2>
       <p class="mt-2 text-sm text-muted-foreground">
@@ -69,11 +69,13 @@
             </ul>
           }
           @case ('table') {
-            <table class="w-full border-collapse text-left text-sm">
+            <table class="w-full border-collapse text-start text-sm">
               <thead>
                 <tr>
                   @for (cell of block.head; track cell) {
-                    <th class="border-b border-border py-2 pr-4 font-medium text-foreground">
+                    <th
+                      class="border-b border-border py-2 pe-4 text-start font-medium text-foreground"
+                    >
                       {{ cell }}
                     </th>
                   }
@@ -83,7 +85,7 @@
                 @for (row of block.rows; track $index) {
                   <tr>
                     @for (cell of row; track $index) {
-                      <td class="border-b border-border py-2 pr-4 align-top text-muted-foreground">
+                      <td class="border-b border-border py-2 pe-4 align-top text-muted-foreground">
                         {{ cell }}
                       </td>
                     }

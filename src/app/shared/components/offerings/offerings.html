@@ -42,7 +42,7 @@
                 {{ offering.title }}
                 @if (offering.comingSoon) {
                   <span
-                    class="text-accent bg-primary/20 rounded-full md:px-2 px-1 md:py-1 py-0.5 md:text-xs text-[8px]! ml-2"
+                    class="text-accent bg-primary/20 rounded-full md:px-2 px-1 md:py-1 py-0.5 md:text-xs text-[8px]! ms-2"
                   >
                     Coming Soon
                   </span>
@@ -50,7 +50,7 @@
               </h3>
             </div>
             @if (i === selectedOfferingIndex()) {
-              <p class="md:text-xs text-[10px] text-white/50 md:ml-14 ml-8 px-4">
+              <p class="md:text-xs text-[10px] text-white/50 md:ms-14 ms-8 px-4">
                 {{ offering.description }}
               </p>
               <div class="lg:hidden mt-4 flex justify-center">

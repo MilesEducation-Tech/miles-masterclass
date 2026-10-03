@@ -19,13 +19,13 @@ import { NgpSearch, NgpSearchClear } from 'ng-primitives/search';
   template: `
     <ng-icon
       name="heroMagnifyingGlass"
-      class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
+      class="pointer-events-none absolute top-1/2 start-3 -translate-y-1/2 text-muted-foreground"
       aria-hidden="true"
     />
     <input
       ngpInput
       type="search"
-      class="h-10 w-full rounded-lg border border-input bg-background pr-10 pl-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 data-invalid:data-touched:border-destructive [&::-webkit-search-cancel-button]:hidden"
+      class="h-10 w-full rounded-lg border border-input bg-background pe-10 ps-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 data-invalid:data-touched:border-destructive [&::-webkit-search-cancel-button]:hidden"
       [value]="value()"
       [placeholder]="placeholder()"
       [disabled]="disabled()"
@@ -36,7 +36,7 @@ import { NgpSearch, NgpSearchClear } from 'ng-primitives/search';
       ngpSearchClear
       ngpButton
       type="button"
-      class="absolute top-1/2 right-1 inline-flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none data-hover:bg-muted data-hover:text-foreground data-focus-visible:outline-2 data-focus-visible:outline-ring group-data-empty:hidden"
+      class="absolute top-1/2 end-1 inline-flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none data-hover:bg-muted data-hover:text-foreground data-focus-visible:outline-2 data-focus-visible:outline-ring group-data-empty:hidden"
       aria-label="Clear search"
     >
       <ng-icon name="heroXMark" aria-hidden="true" />

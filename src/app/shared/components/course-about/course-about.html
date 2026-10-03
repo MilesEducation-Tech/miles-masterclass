@@ -137,10 +137,10 @@
               class="object-cover"
             />
             <div class="absolute inset-0 bg-linear-to-t from-black/80 to-transparent z-10"></div>
-            <div class="absolute right-4 bottom-4 z-20">
+            <div class="absolute end-4 bottom-4 z-20">
               <ng-icon [svg]="icons().faSolidArrowUpRightFromSquare" class="text-white" />
             </div>
-            <div class="absolute bottom-0 left-0 z-20 p-4 w-full">
+            <div class="absolute bottom-0 start-0 z-20 p-4 w-full">
               <p class="md:text-2xl text-lg font-bold text-white">
                 {{ card().instructor_details.first_name }}
                 {{ card().instructor_details.last_name }}
@@ -215,7 +215,7 @@
               Key concepts and skills you'll master throughout this Masterclass
             </p>
           </div>
-          <div class="xl:flex-1 xl:min-h-0 xl:overflow-y-auto xl:pr-1">
+          <div class="xl:flex-1 xl:min-h-0 xl:overflow-y-auto xl:pe-1">
             <div class="flex flex-wrap gap-2 content-start">
               @for (item of card().topics; track $index) {
                 <span
@@ -237,7 +237,7 @@
           class="xl:flex-1 xl:min-h-0 xl:basis-1/2 bg-radial-[at_100%_25%] from-primary to-slate-800 to-65% rounded-lg p-4 relative overflow-hidden flex flex-col"
         >
           <div
-            class="relative z-10 flex flex-col gap-3 xl:flex-1 xl:min-h-0 xl:overflow-y-auto xl:pr-1"
+            class="relative z-10 flex flex-col gap-3 xl:flex-1 xl:min-h-0 xl:overflow-y-auto xl:pe-1"
           >
             @if (card().learning_pathway_info?.length) {
               @for (pathway of card().learning_pathway_info; track pathway.pathway_id) {
@@ -310,20 +310,20 @@
               </li>
               <li class="md:text-base text-sm">
                 Instructional Delivery Method:
-                <span class="text-white font-medium ml-2">{{ card().int_delivery_method }}</span>
+                <span class="text-white font-medium ms-2">{{ card().int_delivery_method }}</span>
               </li>
               <li class="md:text-base text-sm">
                 Program Level:
-                <span class="text-white font-medium ml-2">{{ card().program_level }}</span>
+                <span class="text-white font-medium ms-2">{{ card().program_level }}</span>
               </li>
               <li class="md:text-base text-sm">
                 Prerequisite Education:
-                <span class="text-white font-medium ml-2">{{ card().prerequisite_education }}</span>
+                <span class="text-white font-medium ms-2">{{ card().prerequisite_education }}</span>
               </li>
               @if (card().advance_preparation) {
                 <li class="md:text-base text-sm">
                   Advanced Preparation:
-                  <span class="text-white font-medium ml-2">{{ card().advance_preparation }}</span>
+                  <span class="text-white font-medium ms-2">{{ card().advance_preparation }}</span>
                 </li>
               }
             </ul>
@@ -368,7 +368,7 @@
                 To earn CPE credits, the learner is expected to:
               </h4>
               @if (type() === 'webinar') {
-                <ul class="flex flex-col gap-2 text-gray-400 list-disc pl-5">
+                <ul class="flex flex-col gap-2 text-gray-400 list-disc ps-5">
                   <li class="md:text-base text-sm">
                     Answer {{ card().no_question_answered }} poll questions during the webinar
                   </li>
@@ -378,7 +378,7 @@
                   </li>
                 </ul>
               } @else {
-                <ul class="flex flex-col gap-2 text-gray-400 list-disc pl-5">
+                <ul class="flex flex-col gap-2 text-gray-400 list-disc ps-5">
                   <li class="md:text-base text-sm">Complete all videos and chapter quizzes</li>
                   <li class="md:text-base text-sm">
                     Complete the final exam within one year from completing the course
