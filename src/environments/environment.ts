@@ -257,8 +257,11 @@ export const environment = {
    * Languages this build may resolve a visitor to (`LanguageContext`). Anything else in a cookie or
    * `Accept-Language` is skipped, so a half-translated language never reaches real users.
    * Production lists a language only once it is fully translated (prompts/language-i18n.md).
+   * `enabled: false` turns the feature off without editing the list: every visitor gets English
+   * and no switcher renders, exactly as with `languages: ['en']`.
    */
   I18N: {
+    enabled: false, // master switch for this environment
     languages: ['en'],
   },
 };
