@@ -51,7 +51,7 @@
         }
       </div>
       <div class="font-bold">
-        <span class="text-gray-400 text-lg mr-2">{{ passedCount() }}/{{ totalCount() }}</span>
+        <span class="text-gray-400 text-lg me-2">{{ passedCount() }}/{{ totalCount() }}</span>
         <span class="text-blue-500 text-xl">{{ scorePercentage() }}%</span>
       </div>
     </div>
@@ -91,16 +91,16 @@
           [ngpCollapsibleOpen]="isExpanded(item.id)"
           (ngpCollapsibleOpenChange)="toggleExpand(item.id)"
           class="rounded-lg border border-quiz-line bg-quiz-panel overflow-hidden transition-all duration-200"
-          [class.border-l-4]="!item.is_correct"
-          [class.border-l-red-500]="!item.is_correct"
+          [class.border-s-4]="!item.is_correct"
+          [class.border-s-red-500]="!item.is_correct"
         >
           <!-- Header / Summary -->
           <button
             type="button"
             ngpCollapsibleTrigger
-            class="p-4 flex w-full items-center justify-between text-left cursor-pointer hover:bg-quiz-panel-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            class="p-4 flex w-full items-center justify-between text-start cursor-pointer hover:bg-quiz-panel-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
-            <span class="flex gap-4 items-center flex-1 pr-4">
+            <span class="flex gap-4 items-center flex-1 pe-4">
               <span class="text-gray-400 w-6 shrink-0">{{ i + 1 }}.</span>
               <span class="text-gray-200 font-medium line-clamp-2 md:line-clamp-1 select-none">{{
                 item.question_object.question

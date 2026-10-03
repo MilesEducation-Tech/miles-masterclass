@@ -27,7 +27,7 @@ import { LegalDoc as LegalDocModel } from '../../models/legal-doc.model';
  * and the section list.
  *
  * Why a local IntersectionObserver rather than reusing <app-section-nav>?
- * SectionNav ships a sidenav mode but it's `fixed left-0 top-0 h-full` —
+ * SectionNav ships a sidenav mode but it's `fixed start-0 top-0 h-full` —
  * meant to overlay the viewport, not live inside a grid. Embedding the
  * observer here keeps the rail inline with the content column without
  * mounting SectionNav off-screen just for its side effects.

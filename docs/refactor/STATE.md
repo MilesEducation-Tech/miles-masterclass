@@ -7,19 +7,19 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🔧 **2026-10-01, NON-REFACTOR — language L2a + L2b (`prompts/language-l2-transloco.md`) DONE and
-  verified, UNCOMMITTED; you commit as two PRs.** (L1 was committed by you as `868a46b` on
-  `feat/MIL-15-language-resolution`.) L2a: Transloco 8.4, `TranslationLoader` (English bundled, other
-  languages lazy ~2 KB JSON chunks handed over via TransferState), `LanguageContext.use()` (cookie + reload),
-  footer `LanguageSwitcher` (native select, only when >1 language enabled), `src/i18n/i18n.spec.ts` parity
-  check. L2b: header + footer translated, 60 keys × en/ar/fr/de/es drafted by Claude for native review; brand,
-  partner names and the NASBA statement untranslated. Production vs HEAD `5d21d72`: header/footer text
-  identical (76 lines) even for a French browser, SEO identical, no switcher; initial bundle 235.96 → 241.06 kB.
-  UAT French probe, dev-browser switch to German, request counts (SSR page 0 dictionary downloads, `/auth/login`
-  exactly 1), 1440/375 checked. Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy warnings),
-  tests **203 files / 906 passed + 1 skipped**, build:prod + build:dev + build-storybook + check:structure green.
-  Flagged: German copyright wraps left-aligned at 375. Split helper: `split-l2.sh` in the session scratchpad
-  (L2a snapshot alongside). **Next:** L3 (logical start/end utilities) or L5 (feature translations).
+- 🔧 **2026-10-01, NON-REFACTOR — language L3 (`prompts/language-l3-logical-utilities.md`): logical
+  start/end utilities, DONE and verified, UNCOMMITTED; you commit as two PRs.** (L2a/L2b were committed by you
+  as `505428e` / `97b126d`.) One-off codemod (not committed): L3a shared+layout+app.html 220 tokens / 66 files,
+  L3b features 150 tokens / 58 files; admin and the PDF templates (invoice, payment-status) excluded; 28 centring/
+  translate strings kept physical. Tailwind 4.3.3 emits logical before physical and tailwind-merge doesn't dedupe
+  the pair, so shared converts first (L3a merges before L3b). **Parity proven by a computed-style diff**: 27
+  captures (8 pages × 375/768/1440 + nav dropdown, search dialog, mobile drawer), ~30,000 elements, zero diffs
+  after two fixes: (1) `<th>` centres when its parent's text-align is the initial `start`, so `text-start` was
+  added to the th cells in faq-content / utils-dialog / ai-lab-terms-dialog; (2) two `start-1/2 -translate-1/2`
+  reverted to `left-1/2`. CSS +0.23 kB transfer (admin still physical). Gates (local macOS, Node 24, **not CI**):
+  lint 0 errors, tests 203 files / 906 passed + 1 skipped, build:prod + build-storybook + check:structure green.
+  Arabic header/dropdown mirror correctly. **Next (L4):** Swiper `dir` (home hero blank under RTL), icon
+  mirroring, nav-menu-item flip logic, kept-physical strings, pin admin + PDFs LTR, enable `ar` on UAT.
 
 - 🔧 **2026-10-01, NON-REFACTOR — language L1 (`prompts/language-i18n.md`): resolve the visitor's language
   and send it to Django. UNCOMMITTED, you commit. No refactor phase moved.** Approved by the user. Locked: en
@@ -2704,6 +2704,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-01 · NON-REFACTOR · **language L3 done** (uncommitted) — logical start/end utilities via one-off codemod, 370 tokens / 124 files; computed-style diff 27 captures, zero diffs after fixing the `<th>` text-start quirk and two centring idioms; CSS +0.23 kB · lint 0 errors, tests 203 files / 906 passed + 1 skipped, build:prod + build-storybook + check:structure green (local, Node 24)
 
 - 2026-10-01 · NON-REFACTOR · **language L2a + L2b done** (uncommitted) — Transloco + switcher + translated header/footer (5 languages); prod output identical to HEAD, +5.1 kB initial for L1+L2, dictionaries lazy · lint 0 errors, tests 203 files / 906 passed + 1 skipped, build:prod/dev + build-storybook + check:structure green (local, Node 24)
 

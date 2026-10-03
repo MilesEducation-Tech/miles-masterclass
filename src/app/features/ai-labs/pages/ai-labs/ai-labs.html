@@ -91,7 +91,7 @@
          from the original; every path still runs through activate(). -->
         <div class="mt-4 w-full max-w-md sm:mt-10">
           @if (!hasLabAccount() && accountRequested()) {
-            <div class="rounded-xl border border-border bg-muted p-5 text-left">
+            <div class="rounded-xl border border-border bg-muted p-5 text-start">
               <p class="text-sm text-foreground">Check your email</p>
               <p class="mt-2 text-sm text-muted-foreground">
                 We've sent you a link to set your Miles AI Lab password. It can take up to a minute
@@ -346,7 +346,7 @@
                 <ng-icon [name]="step.icon" />
               </div>
               <!-- <span
-                class="absolute top-5 right-6 text-[2rem] leading-none font-bold text-accent/25 [text-shadow:0_0_18px_rgb(var(--accent-rgb)/0.25)]"
+                class="absolute top-5 end-6 text-[2rem] leading-none font-bold text-accent/25 [text-shadow:0_0_18px_rgb(var(--accent-rgb)/0.25)]"
                 >{{ i + 1 }}</span
               > -->
               <h3 class="mt-4 text-base font-semibold text-foreground text-center">
@@ -813,7 +813,7 @@
                   ></div> -->
                   @if (report) {
                     <span
-                      class="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full border border-accent/40 bg-background/70 px-2.5 py-1 text-xs font-semibold text-accent backdrop-blur-sm"
+                      class="absolute top-3 end-3 inline-flex items-center gap-1 rounded-full border border-accent/40 bg-background/70 px-2.5 py-1 text-xs font-semibold text-accent backdrop-blur-sm"
                     >
                       <ng-icon name="lucideCircleCheck" class="text-sm" />
                       {{ report.scorePercent }}%

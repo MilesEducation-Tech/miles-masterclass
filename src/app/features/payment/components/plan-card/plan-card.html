@@ -5,12 +5,12 @@
   <!-- FREE Ribbon -->
   @if (isFreePlan()) {
     <!-- <div class="ribbon">FREE</div> -->
-    <ng-icon [svg]="freeTrialIcon" class="absolute -top-6 -left-6 w-20! h-20!" />
+    <ng-icon [svg]="freeTrialIcon" class="absolute -top-6 -start-6 w-20! h-20!" />
   }
 
   <!-- Recommended Crown -->
   @if (isRecommended()) {
-    <ng-icon [svg]="proCrownIcon" class="absolute top-6 left-2 w-6! h-6! -rotate-12" />
+    <ng-icon [svg]="proCrownIcon" class="absolute top-6 start-2 w-6! h-6! -rotate-12" />
   }
 
   <!-- Card Body -->
@@ -28,7 +28,7 @@
       } @else {
         <p class="text-2xl font-bold text-white">
           @if (priceDisplay().basePrice) {
-            <span class="text-lg text-muted-foreground line-through font-normal mr-2">{{
+            <span class="text-lg text-muted-foreground line-through font-normal me-2">{{
               priceDisplay().basePrice | currency: priceDisplay().currency! : 'symbol' : '1.0-0'
             }}</span>
           }

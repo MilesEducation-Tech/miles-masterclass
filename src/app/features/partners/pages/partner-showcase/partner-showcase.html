@@ -2,10 +2,10 @@
 <div class="flex flex-col space-y-20 items-center relative w-full overflow-hidden z-0">
   @if (p.hero; as hero) {
     <div
-      class="absolute -z-10 top-0 -left-1/2 w-full md:aspect-video max-md:h-[80vh] bg-[radial-gradient(circle,var(--color-accent)_30%,transparent_80%)] blur-[200px]"
+      class="absolute -z-10 top-0 -start-1/2 w-full md:aspect-video max-md:h-[80vh] bg-[radial-gradient(circle,var(--color-accent)_30%,transparent_80%)] blur-[200px]"
     ></div>
     <div
-      class="absolute -z-10 top-0 left-1/2 w-full md:aspect-video max-md:h-[80vh] blur-[200px]"
+      class="absolute -z-10 top-0 start-1/2 w-full md:aspect-video max-md:h-[80vh] blur-[200px]"
       [class]="hero.glowClass"
     ></div>
     <section
@@ -83,7 +83,7 @@
       containerClass="w-full"
       tabListClass="flex justify-center items-center space-x-6 !mt-14"
       tabClass="relative md:text-xl leading-relaxed text-base font-semibold cursor-pointer transition-all duration-300 text-gray-400 aria-selected:text-accent
-                after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:bg-accent after:w-0 after:transition-all after:duration-500
+                after:content-[''] after:absolute after:bottom-0 after:start-0 after:h-[2px] after:bg-accent after:w-0 after:transition-all after:duration-500
                 hover:after:w-full aria-selected:after:w-full
                 focus-visible:outline-none"
       panelClass="animate-fade-in"
