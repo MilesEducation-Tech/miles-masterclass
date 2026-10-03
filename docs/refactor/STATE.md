@@ -7,6 +7,21 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-01, NON-REFACTOR — language L1 (`prompts/language-i18n.md`): resolve the visitor's language
+  and send it to Django. UNCOMMITTED, you commit. No refactor phase moved.** Approved by the user. Locked: en
+  (default) + ar fr de es; NOT in the URL; Transloco (L2); JSON in repo; switcher + auto default; any language
+  in any country; switching reloads (LOCALE_ID can't change after bootstrap). New `LanguageContext`
+  (server: `lang` cookie → `Accept-Language` → en, into TransferState; browser: TransferState → cookie →
+  `navigator.languages` → en), `provideLanguage()` (`LOCALE_ID`, lazy locale data, `<html lang dir>`),
+  `Accept-Language` from `appInterceptor`, `environment.I18N.languages` (prod `en`, UAT `en fr de es`, local
+  all five). Production unchanged and SEO identical to master; initial bundle +0.76 kB transfer; locale data
+  ~2 KB lazy per language. UAT build and the dev browser verified (fr/de/es resolve, Django gets the header,
+  ar → rtl). Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy warnings), tests **201 files /
+  880 passed + 1 skipped**, build:prod + build:dev + check:structure green. ⚠️ Pre-existing, chip raised:
+  `app-interceptor.spec.ts` alone fails to compile (`Buffer` in `auth-session.ts`). The country work was
+  committed by you as `5d21d72` on `feat/MIL-14-country-resolution`; L1 doesn't touch any of its files, so
+  it can go on its own branch from `master`. **Next:** L2 (Transloco + switcher) needs its own prompt.
+
 - 🔧 **2026-10-01, NON-REFACTOR — country resolution rebuilt from scratch (Ticket 1 of
   `prompts/country-resolution.md`). UNCOMMITTED, you commit. No refactor phase moved.** Plan approved in
   plan mode. Timezone-based detection is REMOVED: the URL country always wins, otherwise Vercel's
@@ -2675,6 +2690,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-01 · NON-REFACTOR · **language L1** (uncommitted, `prompts/language-i18n.md`) — `LanguageContext` + `provideLanguage()` + `Accept-Language` on Django calls + `environment.I18N.languages`; prod unchanged, SEO identical, +0.76 kB initial, locale data lazy · UAT + browser verified · lint 0 errors, tests 201 files / 880 passed + 1 skipped, build:prod/dev + check:structure green (local, Node 24)
 
 - 2026-10-01 · NON-REFACTOR · **country resolution rebuilt** (uncommitted, plan `prompts/country-resolution.md`) — timezone detection removed; URL country → `x-vercel-ip-country` → `us`; one `SUPPORTED_COUNTRIES` list + `toCountry` shared by Angular and Express; `CountryContext` replaces `LocationService`; Express `/` one-hop redirect + `geo_country` cookie; deep links survive an unsupported country; legacy redirect statuses unchanged, geo ones cache-bounded · SEO output byte-identical to master, initial bundle −60 kB raw / −6 kB transfer · lint 0 errors, tests 198 files / 857 passed + 1 skipped, build:prod + check:structure green (local, Node 24) · Ticket 2 (API header) blocked on backend CORS
 - 2026-10-01 · MIL-13 · **review comment: "remove this and use Date Pipe in html direct" on `webinar-card` `monthLong`** (uncommitted) — `monthLong` computed deleted; the guest pill uses `date: 'MMMM' : parts.zone` (an IANA name makes the pipe fall back to the viewer's zone, `parts.zone` is the date's own EST/EDT) · new `webinar-card.spec.ts`, 3 tests, mutation-checked under `TZ=UTC` · lint + check:structure + webinar specs 94 passed (local, Node 24.18) · not checked in a browser

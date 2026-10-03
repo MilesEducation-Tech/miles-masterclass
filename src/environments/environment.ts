@@ -252,4 +252,13 @@ export const environment = {
   },
 
   PAYMENT_TEST_SSN: '207646057',
+
+  /**
+   * Languages this build may resolve a visitor to (`LanguageContext`). Anything else in a cookie or
+   * `Accept-Language` is skipped, so a half-translated language never reaches real users.
+   * Production lists a language only once it is fully translated (prompts/language-i18n.md).
+   */
+  I18N: {
+    languages: ['en'],
+  },
 };
