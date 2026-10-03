@@ -7,6 +7,35 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-03, NON-REFACTOR — language L5a (`prompts/language-l5-features.md`): the login page in five
+  languages. DONE and verified, UNCOMMITTED; commit AFTER the language-flag entry below, on its own branch from
+  `origin/master`.** No refactor phase moved. `featureTranslations(feature, en, lazy)` in
+  `core/services/translation-loader/` is a route resolver that merges `src/i18n/<feature>/<lang>.json` under
+  `<feature>.*` before the route renders. English is static in the feature chunk; other languages are lazy
+  chunks handed over via TransferState (`i18n.<feature>.<lang>`). On `auth`'s parent route: the shell, both
+  login steps, and the facade's `otpSentTo` (one phrase per channel, unknown channel → `other`) and
+  `consentLabel`. Link sentences are fragments, with no `[innerHTML]`. Tab values stay English. The parity spec
+  now loops over sets (`root`, `auth`). Browser-verified on the dev server: fr (both steps, SMS/attempts/
+  cooldown/lockout/Email tab), ar (rtl; clicking the translated tab still switches the method), and en
+  word-for-word the old copy. No raw keys, no missing-key warnings. Each non-English auth dictionary is its own
+  2.5–3.2 KB chunk; none is initial. Initial bundle +0.19 kB transfer vs `origin/master` + flag
+  (242.51 → 242.70 kB). Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy warnings), tests
+  **206 files / 952 passed + 1 skipped**, build:prod (two pre-existing CSS budget warnings) + build:dev +
+  check:structure + format green. ⚠️ 628 changed lines (290 JSON, 134 spec). The drafts and the SMS consent
+  text need native and compliance review. **Next:** L5b (validation messages + profile).
+
+- 🔧 **2026-10-03, NON-REFACTOR — stack LANDED; language master switch added, UNCOMMITTED; L5 prompt drafted.
+  No refactor phase moved.** All nine PRs are merged: #48–#56 on `origin/master` (`3587bf1`), and the old
+  `fix/MIL-22` tip has the same tree, so the entry below is history. New: `environment.I18N.enabled` (like
+  `ANALYTICS.enabled`), checked only in the `ENABLED_LANGUAGES` factory; off = `['en']`, so no switcher,
+  `lang="en"`, `Accept-Language: en` whatever the cookie says. Production `false` (output unchanged), UAT +
+  local `true`. Browser-verified both positions on the dev server (cookie `fr`: off → English, no switcher;
+  on → French + switcher). Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy warnings),
+  tests 205 files / 933 passed + 1 skipped, build:prod green (two pre-existing CSS budget warnings).
+  **Next (you):** branch `feat/MIL-23-language-flag` from `origin/master`, commit the 4 flag files + this file
+  (not the staged L5 prompt), PR. Then approve `prompts/language-l5-features.md` (and say whether JSON counts toward
+  the ~400 lines). Still open: #47's `webinar-hero.html:38` `left-3` → `start-3`.
+
 - 🔧 **2026-10-03, NON-REFACTOR — landing the country + language stack (MIL-14 → MIL-22). No refactor phase
   moved.** The nine branches were restacked onto #47 and opened as #48–#56; #48 (MIL-14) and #49 (MIL-15) are
   merged, and master's tree equals the old MIL-15 tip. #50 showed DIRTY because nothing rebased the stack
@@ -2731,6 +2760,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-03 · NON-REFACTOR · **language L5a done** (uncommitted) — `featureTranslations` resolver + auth dictionary (40 keys × 5) + shell and login page; fr/ar/en browser-verified, initial +0.19 kB · lint 0 errors, tests 206 files / 952 passed + 1 skipped, build:prod/dev + check:structure + format green (local, Node 24)
 
 - 2026-10-03 · NON-REFACTOR · **stack landing** — #48 + #49 merged; #50 DIRTY (no restack between merges), `land` now handles several merged PRs; #56 Prettier failure in `webinar-rail.html` (resolver-added classes) re-wrapped, `pnpm format` green (local, Node 24)
 

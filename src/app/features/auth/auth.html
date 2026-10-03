@@ -5,7 +5,7 @@
   >
     <img
       [ngSrc]="S3_BUCKET_URL + 'static-assests/web-app/payment/plab-bg.webp'"
-      alt="Background"
+      [alt]="'auth.shell.background' | transloco"
       class="w-full h-full object-cover"
       fill
     />
@@ -19,7 +19,7 @@
       (click)="handleBackOrLogout()"
     >
       <ng-icon [svg]="icons().faSolidAngleLeft" class="w-5! h-5! rtl:-scale-x-100" />
-      <p class="text-white">{{ buttonLabel() }}</p>
+      <p class="text-white">{{ 'auth.shell.backToHome' | transloco }}</p>
     </button>
     <div class="auth-card max-h-[80vh] overflow-auto">
       <router-outlet />

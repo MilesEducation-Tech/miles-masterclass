@@ -1,5 +1,6 @@
 import { Component, DestroyRef, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { Button } from '@shared/ui/button/button';
 
 import { AuthFacade } from '../../services/auth-facade';
@@ -32,6 +33,7 @@ import { InputOtp } from '@shared/ui/input-otp/input-otp';
     Tabs,
     Tab,
     InputOtp,
+    TranslocoPipe,
   ],
   templateUrl: './login.html',
 })

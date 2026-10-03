@@ -1,0 +1,58 @@
+{
+  "shell": {
+    "backToHome": "Retour à l'accueil",
+    "background": "Arrière-plan"
+  },
+  "login": {
+    "titleLead": "Entrez dans le",
+    "titleStrong": "monde de Miles Masterclass",
+    "intro": "Connectez-vous pour découvrir les Master Classes, des parcours d'apprentissage en IA et des outils pratiques qui vous aident à garder une longueur d'avance et à obtenir de précieux crédits CPE.",
+    "tabs": {
+      "Mobile": "Mobile",
+      "Email": "E-mail"
+    },
+    "code": "Indicatif",
+    "searchCode": "Rechercher...",
+    "phone": "Téléphone",
+    "phonePlaceholder": "Saisissez votre numéro de téléphone",
+    "email": "E-mail",
+    "emailPlaceholder": "Saisissez votre e-mail",
+    "consent": {
+      "phone": "J'accepte de recevoir de Miles Masterclass des messages informatifs et promotionnels récurrents par SMS et WhatsApp, notamment des confirmations d'inscription aux webinaires, des rappels, des instructions de connexion, des actualités pédagogiques, des informations sur les cours et des offres, envoyés au moyen d'une technologie automatisée. La fréquence des messages peut varier. Des frais de messagerie et de données peuvent s'appliquer. Répondez STOP pour vous désabonner ou HELP pour obtenir de l'aide, ou contactez",
+      "email": "Je souhaite recevoir de Miles Masterclass des e-mails promotionnels et informatifs, notamment des invitations aux prochains événements, des actualités sur les programmes et des offres. Je peux me désabonner à tout moment grâce au lien présent dans chaque e-mail.",
+      "notCondition": "Le consentement n'est pas une condition d'achat. Consultez notre",
+      "and": "et nos"
+    },
+    "agree": {
+      "lead": "En vous inscrivant ou en vous connectant à Miles Masterclass, vous acceptez les",
+      "and": "et la"
+    },
+    "termsOfService": "Conditions d'utilisation",
+    "privacyPolicy": "Politique de confidentialité",
+    "sendOtp": "Envoyer le code",
+    "requestNewCodeIn": "Vous pourrez demander un nouveau code dans"
+  },
+  "otp": {
+    "title": "Vérification du code",
+    "sentTo": {
+      "email": "Code envoyé par e-mail à",
+      "whatsapp": "Code envoyé sur WhatsApp au",
+      "sms": "Code envoyé par SMS au",
+      "other": "Code envoyé à"
+    },
+    "editPhone": "Mauvais numéro ? Modifier",
+    "editEmail": "Mauvais e-mail ? Modifier",
+    "label": "Code",
+    "attemptsLeft": {
+      "one": "Il vous reste {{ count }} tentative avant le blocage de la connexion.",
+      "other": "Tentatives restantes avant le blocage de la connexion : {{ count }}."
+    },
+    "verify": "Vérifier le code",
+    "useLatest": "Utilisez le message le plus récent.",
+    "tryAgainIn": "Réessayez dans",
+    "emailInstead": "Se connecter plutôt par e-mail",
+    "resendIn": "Renvoyer le code dans",
+    "notReceived": "Vous n'avez pas reçu le code ?",
+    "resend": "Renvoyer le code"
+  }
+}
