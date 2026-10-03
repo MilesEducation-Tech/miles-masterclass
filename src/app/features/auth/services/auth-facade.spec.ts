@@ -6,6 +6,7 @@ import { provideRouter } from '@angular/router';
 
 import { AUTH_ROUTES } from '@core/models/auth.model';
 import { AuthSession } from '@core/services/auth-session/auth-session';
+import { provideTranslocoTesting } from '@testing/transloco';
 import { AuthFacade } from './auth-facade';
 
 /**
@@ -24,6 +25,7 @@ describe('AuthFacade — identify on valid input', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
+        provideTranslocoTesting(),
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: AuthSession, useValue: { identify: vi.fn(), verifyOtp: vi.fn() } },
@@ -182,6 +184,7 @@ describe('AuthFacade — verify failures', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
+        provideTranslocoTesting(),
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: AuthSession, useValue: { verifyOtp } },

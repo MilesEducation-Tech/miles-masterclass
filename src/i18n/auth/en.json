@@ -1,0 +1,58 @@
+{
+  "shell": {
+    "backToHome": "Back to Home",
+    "background": "Background"
+  },
+  "login": {
+    "titleLead": "Step Into the",
+    "titleStrong": "World of Miles Masterclass",
+    "intro": "Log in now to explore Master Classes, AI learning pathways, and practical tools that help you stay ahead and earn valuable CPE credits.",
+    "tabs": {
+      "Mobile": "Mobile",
+      "Email": "Email"
+    },
+    "code": "Code",
+    "searchCode": "Search...",
+    "phone": "Phone",
+    "phonePlaceholder": "Enter phone number",
+    "email": "Email",
+    "emailPlaceholder": "Enter email",
+    "consent": {
+      "phone": "I agree to receive recurring informational and promotional messages from Miles Masterclass via SMS and WhatsApp, including webinar registration confirmations, reminders, joining instructions, educational updates, course information and offers, sent using automated technology. Message frequency may vary. Message and data rates may apply. Reply STOP to opt out or HELP for assistance, or contact",
+      "email": "I'd like to receive promotional and informational emails from Miles Masterclass, including invitations to upcoming events, program updates, and offers. I can unsubscribe at any time using the link in any email.",
+      "notCondition": "Consent is not a condition of purchase. See our",
+      "and": "and"
+    },
+    "agree": {
+      "lead": "By signing up or logging in, you agree to the Miles Masterclass",
+      "and": "and"
+    },
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "sendOtp": "Send OTP",
+    "requestNewCodeIn": "You can request a new code in"
+  },
+  "otp": {
+    "title": "OTP Verification",
+    "sentTo": {
+      "email": "Code sent by email to",
+      "whatsapp": "Code sent on WhatsApp to",
+      "sms": "Code sent by SMS to",
+      "other": "Code sent to"
+    },
+    "editPhone": "Wrong number? Edit",
+    "editEmail": "Wrong email? Edit",
+    "label": "OTP",
+    "attemptsLeft": {
+      "one": "{{ count }} attempt remaining before sign-in is locked.",
+      "other": "{{ count }} attempts remaining before sign-in is locked."
+    },
+    "verify": "Verify OTP",
+    "useLatest": "Use the most recent message.",
+    "tryAgainIn": "Try again in",
+    "emailInstead": "Sign in with email instead",
+    "resendIn": "Resend OTP in",
+    "notReceived": "Didn't receive the OTP?",
+    "resend": "Resend OTP"
+  }
+}

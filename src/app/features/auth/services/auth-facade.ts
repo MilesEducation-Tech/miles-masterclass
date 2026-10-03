@@ -2,6 +2,7 @@ import { environment } from '@env/environment';
 import { DestroyRef, Service, computed, inject, signal } from '@angular/core';
 import { email, form, required, validate, validateHttp } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslocoService } from '@jsverse/transloco';
 
 import { CountryCodeOption, dialCodeWithLength } from '@core/constants/dial-code';
 import {
@@ -86,6 +87,8 @@ export class AuthFacade {
   private readonly auth = inject(AuthSession);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  // Synchronous: the route's resolver merged the `auth.*` dictionary before this facade was created.
+  private readonly transloco = inject(TranslocoService);
 
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
@@ -102,7 +105,10 @@ export class AuthFacade {
   /** Which login method the tab strip has selected. */
   readonly loginMethod = signal<'PHONE' | 'EMAIL'>('PHONE');
 
-  /** Tab labels rendered by `app-tab-strip` on the login form. */
+  /**
+   * Tab values for `app-tabs` on the login form. They stay English because `selectLoginMethod`
+   * keys off them; the template translates the visible label (`auth.login.tabs.<value>`).
+   */
   readonly loginMethodTabs = ['Mobile', 'Email'] as const;
 
   /** The tab label that maps to the current `loginMethod`. */
@@ -157,17 +163,15 @@ export class AuthFacade {
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
   });
 
-  readonly otpDeliveryNote = computed(() => {
-    switch (this.channel()) {
-      case 'email':
-        return 'by email';
-      case 'whatsapp':
-        return 'on WhatsApp';
-      case 'sms':
-        return 'by SMS';
-      default:
-        return '';
-    }
+  /**
+   * "Code sent by SMS to", ahead of the identifier. A whole phrase per channel, not a channel word
+   * dropped into one sentence, so each language can place it where its grammar wants. `channel` is
+   * open-ended (`OtpChannel`), so anything unknown gets the channel-free phrase, never a raw key.
+   */
+  readonly otpSentTo = computed(() => {
+    const channel = this.channel();
+    const known = channel === 'email' || channel === 'whatsapp' || channel === 'sms';
+    return this.transloco.translate(`auth.otp.sentTo.${known ? channel : 'other'}`);
   });
 
   readonly authModel = signal<AuthModel>({ identifier: '', country_code: '+1', consent: false });
@@ -220,9 +224,9 @@ export class AuthFacade {
    * template's `labelLink` slot, which sits immediately after this text.
    */
   readonly consentLabel = computed(() =>
-    this.loginMethod() === 'PHONE'
-      ? 'I agree to receive recurring informational and promotional messages from Miles Masterclass via SMS and WhatsApp, including webinar registration confirmations, reminders, joining instructions, educational updates, course information and offers, sent using automated technology. Message frequency may vary. Message and data rates may apply. Reply STOP to opt out or HELP for assistance, or contact'
-      : "I'd like to receive promotional and informational emails from Miles Masterclass, including invitations to upcoming events, program updates, and offers. I can unsubscribe at any time using the link in any email.",
+    this.transloco.translate(
+      this.loginMethod() === 'PHONE' ? 'auth.login.consent.phone' : 'auth.login.consent.email',
+    ),
   );
 
   /** Support address surfaced in the Mobile consent copy. */

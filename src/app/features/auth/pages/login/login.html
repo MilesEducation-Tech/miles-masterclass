@@ -1,12 +1,12 @@
 <div class="flex flex-col space-y-6">
   @if (authFacade.loginStep() === 'OTP') {
     <div class="flex flex-col space-y-3">
-      <p class="sub-title">OTP Verification</p>
+      <p class="sub-title">{{ 'auth.otp.title' | transloco }}</p>
       <!-- The channel comes from the send response, not from the country code:
            India routes over WhatsApp and everywhere else over SMS, but only the
            response knows which one actually happened. -->
       <p class="description text-sm!">
-        Code sent {{ authFacade.otpDeliveryNote() }} to
+        {{ authFacade.otpSentTo() }}
         <strong>{{ authFacade.maskedIdentifier() }}</strong>
       </p>
       <!-- Offered immediately and never gated on the countdown: most non-delivery
@@ -20,16 +20,19 @@
         variant="link"
         (click)="authFacade.goBackToLogin()"
       >
-        {{ authFacade.loginMethod() === 'PHONE' ? 'Wrong number? Edit' : 'Wrong email? Edit' }}
+        {{
+          (authFacade.loginMethod() === 'PHONE' ? 'auth.otp.editPhone' : 'auth.otp.editEmail')
+            | transloco
+        }}
       </button>
     </div>
   } @else {
     <div class="flex flex-col space-y-3">
-      <p class="sub-title">Step Into the <strong>World of Miles Masterclass</strong></p>
-      <p class="description text-sm!">
-        Log in now to explore Master Classes, AI learning pathways, and practical tools that help
-        you stay ahead and earn valuable CPE credits.
+      <p class="sub-title">
+        {{ 'auth.login.titleLead' | transloco }}
+        <strong>{{ 'auth.login.titleStrong' | transloco }}</strong>
       </p>
+      <p class="description text-sm!">{{ 'auth.login.intro' | transloco }}</p>
     </div>
   }
   <form class="space-y-4! flex flex-col mt-2" (submit)="$event.preventDefault(); onSubmit()">
@@ -39,46 +42,46 @@
         (valueChange)="authFacade.selectLoginMethod($event)"
       >
         @for (tab of authFacade.loginMethodTabs; track tab) {
-          <app-tab [value]="tab" [label]="tab" />
+          <app-tab [value]="tab" [label]="'auth.login.tabs.' + tab | transloco" />
         }
       </app-tabs>
       <div class="flex space-x-2">
         @if (authFacade.loginMethod() === 'PHONE') {
           <div class="w-[140px]">
             <app-field [errors]="authFacade.loginForm.country_code().errors()">
-              <label ngpLabel for="country_code">Code</label>
+              <label ngpLabel for="country_code">{{ 'auth.login.code' | transloco }}</label>
 
               <app-combobox
                 id="country_code"
                 dir="ltr"
-                placeholder="Search..."
+                [placeholder]="'auth.login.searchCode' | transloco"
                 [options]="authFacade.countryCodes()"
                 [formField]="authFacade.loginForm.country_code"
               />
             </app-field>
           </div>
           <app-field class="w-full" [errors]="authFacade.loginForm.identifier().errors()">
-            <label ngpLabel for="identifier">Phone</label>
+            <label ngpLabel for="identifier">{{ 'auth.login.phone' | transloco }}</label>
 
             <input
               app-input
               id="identifier"
               type="tel"
               [formField]="authFacade.loginForm.identifier"
-              placeholder="Enter phone number"
+              [placeholder]="'auth.login.phonePlaceholder' | transloco"
               inputmode="numeric"
             />
           </app-field>
         } @else {
           <app-field class="w-full" [errors]="authFacade.loginForm.identifier().errors()">
-            <label ngpLabel for="identifier">Email</label>
+            <label ngpLabel for="identifier">{{ 'auth.login.email' | transloco }}</label>
 
             <input
               app-input
               id="identifier"
               type="email"
               [formField]="authFacade.loginForm.identifier"
-              placeholder="Enter email"
+              [placeholder]="'auth.login.emailPlaceholder' | transloco"
             />
           </app-field>
         }
@@ -108,21 +111,21 @@
                   [href]="'mailto:' + authFacade.supportEmail"
                   class="text-accent underline whitespace-nowrap"
                   >{{ authFacade.supportEmail }}</a
-                >. Consent is not a condition of purchase. See our
+                >. {{ 'auth.login.consent.notCondition' | transloco }}
                 <a
                   [routerLink]="legalLinks().privacy"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="text-accent underline"
-                  >Privacy Policy</a
+                  >{{ 'auth.login.privacyPolicy' | transloco }}</a
                 >
-                and
+                {{ 'auth.login.consent.and' | transloco }}
                 <a
                   [routerLink]="legalLinks().terms"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="text-accent underline"
-                  >Terms of Service</a
+                  >{{ 'auth.login.termsOfService' | transloco }}</a
                 >.
               }
             </span>
@@ -131,7 +134,7 @@
       </app-field>
       <hr class="border-white/10" />
       <p class="description text-sm! text-center font-normal leading-tight!">
-        By signing up or logging in, you agree to the Miles Masterclass
+        {{ 'auth.login.agree.lead' | transloco }}
         <!-- `whitespace-nowrap` keeps each policy name intact — without it the line
              breaks mid-link, e.g. "Terms of" / "Service". -->
         <a
@@ -139,20 +142,20 @@
           target="_blank"
           rel="noopener noreferrer"
           class="text-accent underline whitespace-nowrap"
-          >Terms of Service</a
+          >{{ 'auth.login.termsOfService' | transloco }}</a
         >
-        and
+        {{ 'auth.login.agree.and' | transloco }}
         <a
           [routerLink]="legalLinks().privacy"
           target="_blank"
           rel="noopener noreferrer"
           class="text-accent underline whitespace-nowrap"
-          >Privacy Policy</a
+          >{{ 'auth.login.privacyPolicy' | transloco }}</a
         >.
       </p>
     } @else {
       <app-field [errors]="authFacade.otpForm.otp().errors()">
-        <span ngpLabel>OTP</span>
+        <span ngpLabel>{{ 'auth.otp.label' | transloco }}</span>
 
         <app-input-otp
           id="otp"
@@ -176,8 +179,10 @@
          server owns the lock, and the contract gives no duration to promise. -->
     @if (authFacade.loginStep() === 'OTP' && authFacade.attemptsRemaining(); as remaining) {
       <p class="text-sm text-destructive" role="alert">
-        {{ remaining }} {{ remaining === 1 ? 'attempt' : 'attempts' }} remaining before sign-in is
-        locked.
+        {{
+          (remaining === 1 ? 'auth.otp.attemptsLeft.one' : 'auth.otp.attemptsLeft.other')
+            | transloco: { count: remaining }
+        }}
       </p>
     }
     <!-- The cooldown gates *sending* a code, never redeeming one: on the OTP step
@@ -198,14 +203,16 @@
       @if (authFacade.isLoading()) {
         <app-spinner></app-spinner>
       }
-      {{ authFacade.loginStep() === 'OTP' ? 'Verify OTP' : 'Send OTP' }}
+      {{
+        (authFacade.loginStep() === 'OTP' ? 'auth.otp.verify' : 'auth.login.sendOtp') | transloco
+      }}
     </button>
     @if (authFacade.loginStep() === 'LOGIN' && !authFacade.canSendOtp()) {
       <!-- The cooldown is per identifier and survives "Change Mobile", so it can
            be active on this step too. Without this the button is simply dead with
            no explanation. -->
       <p class="text-sm text-muted-foreground text-center">
-        You can request a new code in
+        {{ 'auth.login.requestNewCodeIn' | transloco }}
         <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
       </p>
     }
@@ -214,14 +221,14 @@
         <!-- Every resend invalidates the code already in flight, so the moment a
              second one exists the user has to be told which to type. -->
         @if (authFacade.showUseLatestHint()) {
-          <span>Use the most recent message.</span>
+          <span>{{ 'auth.otp.useLatest' | transloco }}</span>
         }
         @if (authFacade.isLockedOut()) {
           <!-- Locked: no resend can help, and Verify is dead too. Email is the
                only way through, and it is a different identifier so it is not
                covered by this lock. -->
           <span>
-            Try again in
+            {{ 'auth.otp.tryAgainIn' | transloco }}
             <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
           </span>
           @if (authFacade.loginMethod() === 'PHONE') {
@@ -232,19 +239,19 @@
               variant="link"
               (click)="authFacade.signInWithEmailInstead()"
             >
-              Sign in with email instead
+              {{ 'auth.otp.emailInstead' | transloco }}
             </button>
           }
         } @else if (!authFacade.canSendOtp()) {
           <span>
-            Resend OTP in
+            {{ 'auth.otp.resendIn' | transloco }}
             <strong class="text-foreground">{{ authFacade.resendTimerDisplay() }}</strong>
           </span>
         } @else {
           @switch (authFacade.resendAction()) {
             @case ('resend') {
               <div class="flex items-center">
-                <span>Didn't receive the OTP?&nbsp;</span>
+                <span>{{ 'auth.otp.notReceived' | transloco }}&nbsp;</span>
                 <button
                   app-button
                   type="button"
@@ -253,7 +260,7 @@
                   [disabled]="authFacade.isLoading()"
                   (click)="authFacade.resendOtp()"
                 >
-                  Resend OTP
+                  {{ 'auth.otp.resend' | transloco }}
                 </button>
               </div>
             }
@@ -268,7 +275,7 @@
                 variant="link"
                 (click)="authFacade.signInWithEmailInstead()"
               >
-                Sign in with email instead
+                {{ 'auth.otp.emailInstead' | transloco }}
               </button>
             }
           }
