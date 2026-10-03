@@ -7,9 +7,28 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-03, NON-REFACTOR — language L5b (`prompts/language-l5-features.md`): sign-in messages and
+  the profile page in five languages. DONE and verified, UNCOMMITTED; stacked on L5a
+  (`feat/MIL-24-i18n-auth-login`, committed by you as `16fcb89`).** No refactor phase moved.
+  - Facade: the 11 login/OTP validation messages and the organisation-SSO message, translated with params
+    (`{{ min }}`, `{{ max }}`, `{{ length }}`).
+  - Profile: headings, load error, select placeholders, Continue/Save Changes, required/choose messages, the
+    save toasts ("Still to answer" as a `one`/`other` ternary) and the leave-without-saving dialog.
+  - Not translated: questionnaire text and options (from Django), server error messages, and `toAuthFailure`
+    fallbacks (assumption 3).
+  - 32 keys × 5 languages. A new facade spec asserts the messages resolve to the dictionary's English, and a
+    one-off scan found every `auth.*` key the code references in `en.json` with none unused.
+  - Browser-verified: French validation messages on real typing ("Chiffres uniquement", "Longueur minimale :
+    10"). **The profile page is NOT browser-verified:** it is behind `authGuard`, and I don't sign in to the
+    real SSO.
+  - Initial bundle unchanged by L5b (all lazy, 242.65 kB without the flag).
+  - Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy warnings), tests **206 files / 953
+    passed + 1 skipped**, build:prod (two pre-existing CSS budget warnings) + build:dev + check:structure +
+    format green. 387 changed lines (250 JSON).
+  - **Next:** the ⚑ shared home-page components (root dictionary, initial-bundle cost to measure).
+
 - 🔧 **2026-10-03, NON-REFACTOR — language L5a (`prompts/language-l5-features.md`): the login page in five
-  languages. DONE and verified, UNCOMMITTED; commit AFTER the language-flag entry below, on its own branch from
-  `origin/master`.** No refactor phase moved. `featureTranslations(feature, en, lazy)` in
+  languages. Committed by you as `16fcb89` on `feat/MIL-24-i18n-auth-login`.** No refactor phase moved. `featureTranslations(feature, en, lazy)` in
   `core/services/translation-loader/` is a route resolver that merges `src/i18n/<feature>/<lang>.json` under
   `<feature>.*` before the route renders. English is static in the feature chunk; other languages are lazy
   chunks handed over via TransferState (`i18n.<feature>.<lang>`). On `auth`'s parent route: the shell, both
@@ -2760,6 +2779,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-03 · NON-REFACTOR · **language L5b done** (uncommitted, stacked on L5a) — sign-in validation/SSO messages + profile page (32 keys × 5); French messages browser-verified, profile not (auth-gated) · lint 0 errors, tests 206 files / 953 passed + 1 skipped, build:prod/dev + check:structure + format green (local, Node 24)
 
 - 2026-10-03 · NON-REFACTOR · **language L5a done** (uncommitted) — `featureTranslations` resolver + auth dictionary (40 keys × 5) + shell and login page; fr/ar/en browser-verified, initial +0.19 kB · lint 0 errors, tests 206 files / 952 passed + 1 skipped, build:prod/dev + check:structure + format green (local, Node 24)
 
