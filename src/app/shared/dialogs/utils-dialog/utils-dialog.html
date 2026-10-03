@@ -235,7 +235,10 @@
                     (click)="handleItemClick(listItem.value)"
                   >
                     <span>{{ listItem.label }}</span>
-                    <span class="text-gray-500 group-hover:text-white transition-colors">→</span>
+                    <span
+                      class="inline-block text-gray-500 group-hover:text-white transition-colors rtl:-scale-x-100"
+                      >→</span
+                    >
                   </button>
                 }
               </div>

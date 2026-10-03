@@ -28,6 +28,28 @@ const LOCALE_DATA: Partial<Record<Language, () => Promise<{ default: unknown }>>
 };
 
 /**
+ * Arabic glyphs. None of the app's fonts (Inter, Inter Tight, Source Serif 4, JetBrains Mono) has an
+ * Arabic subset, so without this Arabic falls back to whatever each OS has. Loaded only on Arabic
+ * pages, so no other language's HTML or network changes.
+ */
+const ARABIC_FONT_HREF =
+  'https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap';
+
+function useArabicFont(doc: Document): void {
+  // The server-rendered page already carries the link; only client-rendered routes add it here.
+  if (!doc.getElementById('font-arabic')) {
+    const link = doc.createElement('link');
+    link.id = 'font-arabic';
+    link.rel = 'stylesheet';
+    link.href = ARABIC_FONT_HREF;
+    doc.head.appendChild(link);
+  }
+  // Inter first: Latin text and digits keep it, and the browser falls through to Noto Sans Arabic
+  // glyph by glyph for Arabic letters only.
+  doc.documentElement.style.setProperty('--font-sans', "Inter, 'Noto Sans Arabic', sans-serif");
+}
+
+/**
  * Applies the visitor's language (`LanguageContext`) to the whole app, on the server and in the
  * browser alike:
  * - `LOCALE_ID`, which every `currency` / `date` / `number` pipe formats with. English stays
@@ -37,6 +59,7 @@ const LOCALE_DATA: Partial<Record<Language, () => Promise<{ default: unknown }>>
  * - `<html lang>` (screen readers, hyphenation, search engines) and, for right-to-left languages,
  *   `<html dir="rtl">`. `dir` is left off for left-to-right, its default, so the English document
  *   is unchanged.
+ * - For Arabic, a font that has Arabic glyphs (`useArabicFont`).
  * - Transloco, active in that language with its dictionary loaded before the first render, so no
  *   text ever renders as a raw key or flashes in English first. `reRenderOnLangChange` is off: the
  *   language only changes through a reload (`LanguageContext.use`), so nothing needs watching.
@@ -62,9 +85,11 @@ export function provideLanguage(): EnvironmentProviders {
     provideAppInitializer(async () => {
       const { current, dir } = inject(LanguageContext);
       const transloco = inject(TranslocoService);
-      const html = inject(DOCUMENT).documentElement;
+      const document = inject(DOCUMENT);
+      const html = document.documentElement;
       html.lang = current;
       if (dir === 'rtl') html.dir = dir;
+      if (current === 'ar') useArabicFont(document);
 
       transloco.setActiveLang(current);
       const load = LOCALE_DATA[current];

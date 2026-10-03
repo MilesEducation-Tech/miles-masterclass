@@ -14,7 +14,7 @@ import { matArrowBackRound } from '@ng-icons/material-icons/round';
       (click)="goBack()"
       [attr.aria-label]="label()"
     >
-      <ng-icon name="matArrowBackRound" size="24" aria-hidden="true" />
+      <ng-icon name="matArrowBackRound" size="24" class="rtl:-scale-x-100" aria-hidden="true" />
       <span class="text-sm font-medium">{{ label() }}</span>
     </button>
   `,

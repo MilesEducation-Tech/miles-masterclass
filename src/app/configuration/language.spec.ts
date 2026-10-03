@@ -17,9 +17,12 @@ async function boot(current: Language, dir: TextDirection = 'ltr'): Promise<HTML
 
 describe('provideLanguage', () => {
   afterEach(() => {
-    const html = TestBed.inject(DOCUMENT).documentElement;
+    const document = TestBed.inject(DOCUMENT);
+    const html = document.documentElement;
     html.lang = 'en';
     html.removeAttribute('dir');
+    html.style.removeProperty('--font-sans');
+    document.getElementById('font-arabic')?.remove();
   });
 
   // English must be byte-for-byte what it was before: Angular's own default locale, no `dir`.
@@ -55,5 +58,19 @@ describe('provideLanguage', () => {
     const html = await boot('ar', 'rtl');
     expect(html.lang).toBe('ar');
     expect(html.dir).toBe('rtl');
+  });
+
+  // None of the app's fonts has Arabic glyphs; every other language must not pay for one.
+  it('loads an Arabic font for Arabic pages only', async () => {
+    const html = await boot('ar', 'rtl');
+    const link = TestBed.inject(DOCUMENT).getElementById('font-arabic') as HTMLLinkElement | null;
+    expect(link?.href).toContain('family=Noto+Sans+Arabic');
+    expect(html.style.getPropertyValue('--font-sans')).toContain('Noto Sans Arabic');
+  });
+
+  it('adds no font for any other language', async () => {
+    const html = await boot('fr');
+    expect(TestBed.inject(DOCUMENT).getElementById('font-arabic')).toBeNull();
+    expect(html.style.getPropertyValue('--font-sans')).toBe('');
   });
 });

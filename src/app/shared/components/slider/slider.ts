@@ -8,6 +8,7 @@ import {
   matPlayArrowRound,
 } from '@ng-icons/material-icons/round';
 import { Content } from '@core/models/course.model';
+import { LanguageContext } from '@core/services/language-context/language-context';
 import { VideoPoster } from '../video-poster/video-poster';
 import { MilesSlug } from '../miles-slug/miles-slug';
 import { Button } from '../../ui/button/button';
@@ -88,6 +89,7 @@ const CONTENT_HIDDEN = `${CONTENT_BASE} hidden`;
   },
 })
 export class Slider {
+  private readonly rtl = inject(LanguageContext).dir === 'rtl';
   private readonly platformId = inject(PLATFORM_ID);
   private readonly utils = inject(Utils);
   private readonly router = inject(Router);
@@ -177,9 +179,11 @@ export class Slider {
    * Handles keyboard navigation for accessibility.
    */
   protected onKeydown(event: KeyboardEvent): void {
-    if (event.key === 'ArrowLeft') {
+    // Upcoming slides sit along the reading direction: to the left on a right-to-left page.
+    const [back, forward] = this.rtl ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
+    if (event.key === back) {
       this.prev();
-    } else if (event.key === 'ArrowRight') {
+    } else if (event.key === forward) {
       this.next();
     }
   }
