@@ -115,6 +115,7 @@
                       [svg]="icons().chevron"
                       class="text-gray-400 transition-transform duration-200"
                       [class.rotate-90]="isExpanded(key)"
+                      [class.rtl:-rotate-90]="isExpanded(key)"
                     />
                   </span>
                 </button>
@@ -163,7 +164,7 @@
               >
                 <span
                   ngpSwitchThumb
-                  class="inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white transition-transform data-[checked]:translate-x-6"
+                  class="inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white transition-transform data-[checked]:translate-x-6 rtl:-translate-x-1 rtl:data-[checked]:-translate-x-6"
                 ></span>
               </button>
               <span class="text-xs text-gray-400 md:text-sm">Wrong only</span>
@@ -216,6 +217,7 @@
                       [svg]="icons().chevron"
                       class="text-gray-400 transition-transform duration-200"
                       [class.rotate-90]="isExpanded(key)"
+                      [class.rtl:-rotate-90]="isExpanded(key)"
                     />
                   </span>
                 </button>

@@ -27,7 +27,8 @@ const PANEL: Record<DialogPosition, string> = {
   center:
     'max-h-[90svh] w-full max-w-lg rounded-xl p-6 animate-in fade-in-0 zoom-in-95 data-exit:animate-out data-exit:fade-out-0 data-exit:zoom-out-95',
   right:
-    'h-full w-full max-w-[500px] animate-in slide-in-from-right data-exit:animate-out data-exit:slide-out-to-right',
+    // `justify-end` puts the drawer at the inline end, so under RTL it is on the left and slides from there.
+    'h-full w-full max-w-[500px] animate-in slide-in-from-right data-exit:animate-out data-exit:slide-out-to-right rtl:slide-in-from-left rtl:data-exit:slide-out-to-left',
 };
 
 /**

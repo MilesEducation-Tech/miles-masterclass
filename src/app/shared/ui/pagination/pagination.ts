@@ -58,7 +58,7 @@ const BUTTON =
     <ul class="flex items-center gap-1">
       <li>
         <button ngpPaginationFirst type="button" [class]="buttonClass" aria-label="First page">
-          <ng-icon name="heroChevronDoubleLeft" aria-hidden="true" />
+          <ng-icon name="heroChevronDoubleLeft" class="rtl:-scale-x-100" aria-hidden="true" />
         </button>
       </li>
 
@@ -69,7 +69,7 @@ const BUTTON =
           [class]="buttonClass"
           aria-label="Previous page"
         >
-          <ng-icon name="heroChevronLeft" aria-hidden="true" />
+          <ng-icon name="heroChevronLeft" class="rtl:-scale-x-100" aria-hidden="true" />
         </button>
       </li>
 
@@ -89,13 +89,13 @@ const BUTTON =
 
       <li>
         <button ngpPaginationNext type="button" [class]="buttonClass" aria-label="Next page">
-          <ng-icon name="heroChevronRight" aria-hidden="true" />
+          <ng-icon name="heroChevronRight" class="rtl:-scale-x-100" aria-hidden="true" />
         </button>
       </li>
 
       <li>
         <button ngpPaginationLast type="button" [class]="buttonClass" aria-label="Last page">
-          <ng-icon name="heroChevronDoubleRight" aria-hidden="true" />
+          <ng-icon name="heroChevronDoubleRight" class="rtl:-scale-x-100" aria-hidden="true" />
         </button>
       </li>
     </ul>

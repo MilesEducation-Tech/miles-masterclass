@@ -64,11 +64,11 @@ const DAY =
         [class]="navClass"
         aria-label="Previous month"
       >
-        <ng-icon name="heroChevronLeft" aria-hidden="true" />
+        <ng-icon name="heroChevronLeft" class="rtl:-scale-x-100" aria-hidden="true" />
       </button>
       <h2 ngpDatePickerLabel class="text-sm font-semibold">{{ label() }}</h2>
       <button ngpDatePickerNextMonth type="button" [class]="navClass" aria-label="Next month">
-        <ng-icon name="heroChevronRight" aria-hidden="true" />
+        <ng-icon name="heroChevronRight" class="rtl:-scale-x-100" aria-hidden="true" />
       </button>
     </div>
     <table ngpDatePickerGrid class="w-full border-collapse">

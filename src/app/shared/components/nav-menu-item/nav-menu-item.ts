@@ -113,8 +113,12 @@ export class NavMenuItem {
     const btn = this.triggerBtn()?.nativeElement;
     if (!btn) return;
     const rect = btn.getBoundingClientRect();
-    const overflowsRight = rect.right + PANEL_MAX_WIDTH + VIEWPORT_MARGIN > window.innerWidth;
-    const fitsLeft = rect.left - PANEL_MAX_WIDTH - VIEWPORT_MARGIN > 0;
-    this.flipped.set(overflowsRight && fitsLeft);
+    const roomRight = window.innerWidth - rect.right - PANEL_MAX_WIDTH - VIEWPORT_MARGIN;
+    const roomLeft = rect.left - PANEL_MAX_WIDTH - VIEWPORT_MARGIN;
+    // The panel opens toward the inline end (`start-full`): rightwards, or leftwards on an RTL page.
+    // Flip to the other side only when the opening side overflows and the other side has room.
+    const rtl = getComputedStyle(btn).direction === 'rtl';
+    const [openSide, otherSide] = rtl ? [roomLeft, roomRight] : [roomRight, roomLeft];
+    this.flipped.set(openSide < 0 && otherSide > 0);
   }
 }

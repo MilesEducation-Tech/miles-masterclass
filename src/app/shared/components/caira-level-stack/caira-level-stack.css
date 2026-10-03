@@ -24,7 +24,7 @@
 
 .stack__meta li + li::before {
   content: '•';
-  margin-right: 0.75rem;
+  margin-inline-end: 0.75rem;
   color: #6b6b6b;
 }
 
@@ -95,11 +95,11 @@
   background: linear-gradient(112deg, #6a5a20 0%, #9d8833 52%, #c9b25a 100%);
 }
 
-/* Oversized level numeral bleeding off the bottom-left corner. */
+/* Oversized level numeral bleeding off the bottom corner at the reading start. */
 .card__ghost {
   position: absolute;
   bottom: -0.28em;
-  left: 0.5rem;
+  inset-inline-start: 0.5rem;
   font-size: clamp(7rem, 14vw, 11rem);
   font-weight: 700;
   line-height: 1;
@@ -110,7 +110,7 @@
 
 .card__medal {
   position: absolute;
-  right: 1rem;
+  inset-inline-end: 1rem;
   bottom: 0.75rem;
   width: clamp(96px, 34%, 150px);
   height: auto;

@@ -25,7 +25,7 @@ import { NgpSwitch, NgpSwitchThumb } from 'ng-primitives/switch';
   template: `
     <span
       ngpSwitchThumb
-      class="block size-5 translate-x-0.5 rounded-full bg-foreground shadow transition-transform data-checked:translate-x-[22px] data-checked:bg-primary-foreground"
+      class="block size-5 translate-x-0.5 rounded-full bg-foreground shadow transition-transform data-checked:translate-x-[22px] rtl:-translate-x-0.5 rtl:data-checked:-translate-x-[22px] data-checked:bg-primary-foreground"
     ></span>
   `,
 })

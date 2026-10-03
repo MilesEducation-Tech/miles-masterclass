@@ -138,7 +138,7 @@ const SIDENAV_BUTTON_IDLE = `${SIDENAV_BUTTON} bg-transparent text-gray-200 hove
       @case ('sidenav') {
         <!-- Sidenav mode: vertical nav with icon-only, expands on hover -->
         <nav
-          class="sidenav group fixed top-0 start-0 z-50 hidden h-full w-14 justify-center gap-2 rounded-e-xl bg-linear-to-r from-background to-transparent px-2 py-4 transition-all duration-600 ease-out hover:w-auto md:flex md:flex-col"
+          class="sidenav group fixed top-0 start-0 z-50 hidden h-full w-14 justify-center gap-2 rounded-e-xl bg-linear-to-r rtl:bg-linear-to-l from-background to-transparent px-2 py-4 transition-all duration-600 ease-out hover:w-auto md:flex md:flex-col"
           role="navigation"
           aria-label="Page sections"
         >
