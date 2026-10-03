@@ -7,6 +7,16 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-03, NON-REFACTOR — landing the country + language stack (MIL-14 → MIL-22). No refactor phase
+  moved.** The nine branches were restacked onto #47 and opened as #48–#56; #48 (MIL-14) and #49 (MIL-15) are
+  merged, and master's tree equals the old MIL-15 tip. #50 showed DIRTY because nothing rebased the stack
+  between the two squash merges. `stack.sh land` (session scratchpad, copied to `~/stack`) now cuts above
+  every merged bottom PR, not just one. #56 `verify` failed on Prettier: the restack resolver added
+  `rtl:` gradients to `webinar-rail.html`, which made two lines too long. They are re-wrapped, and
+  `pnpm format` passes (local macOS, Node 24, **not CI**). **Next (you):** commit the format fix plus this file
+  on `fix/MIL-22`, `land`, then merge #50–#56 one at a time with a `land` after each. Follow-up: #47's
+  `webinar-hero.html:38` `left-3` → `start-3`.
+
 - 🔧 **2026-10-03, NON-REFACTOR — language L4 (`prompts/language-l4-rtl.md`): right-to-left done, Arabic on
   UAT. DONE and verified, UNCOMMITTED; you commit as three stacked PRs** (split helper `split-l4.sh` in the
   session scratchpad). L4a LTR islands (PDF host, players, invoice, typed inputs via `:dir(rtl) > input`,
@@ -2721,6 +2731,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-03 · NON-REFACTOR · **stack landing** — #48 + #49 merged; #50 DIRTY (no restack between merges), `land` now handles several merged PRs; #56 Prettier failure in `webinar-rail.html` (resolver-added classes) re-wrapped, `pnpm format` green (local, Node 24)
 
 - 2026-10-03 · NON-REFACTOR · **language L4 done** (uncommitted, 3 PRs) — LTR islands, mirrored shared + feature UI, Arabic font, `ar` on UAT; English parity across 30 views (only data/state diffs), Arabic browser-verified · lint 0 errors, tests 204 files / 920 passed + 1 skipped, build:prod/dev + build-storybook + check:structure green (local, Node 24)
 
