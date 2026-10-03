@@ -30,13 +30,16 @@
         class="flex items-center justify-between w-full rounded-[50px] px-2 py-2 transition-all duration-500! ease-in-out lg:px-4 lg:py-2.5 md:px-3 md:py-2 z-20 relative"
       >
         <!-- Logo -->
-        <a routerLink="/" class="flex items-center" aria-label="Go to homepage">
+        <a routerLink="/" class="flex items-center" [attr.aria-label]="'header.home' | transloco">
           <ng-icon [svg]="logoIcon" class="w-24! h-10!" />
         </a>
 
         <!-- Right Navigation - Desktop -->
         @if (!isMobile()) {
-          <nav class="flex justify-between items-center gap-2" aria-label="Primary">
+          <nav
+            class="flex justify-between items-center gap-2"
+            [attr.aria-label]="'header.primaryNav' | transloco"
+          >
             <ul
               class="flex items-center gap-2 list-none m-0 p-0"
               ngpAccordion
@@ -181,7 +184,7 @@
               class="toggler flex-col gap-y-1 flex cursor-pointer z-100 bg-transparent border-none p-1"
               [attr.aria-expanded]="isMobileMenuOpen()"
               aria-controls="mobile-nav-panel"
-              aria-label="Toggle navigation menu"
+              [attr.aria-label]="'header.toggleMenu' | transloco"
               (click)="toggleMobileMenu($event)"
             >
               <span
@@ -219,7 +222,7 @@
                 id="mobile-nav-panel"
                 role="dialog"
                 aria-modal="true"
-                aria-label="Site navigation"
+                [attr.aria-label]="'header.siteNav' | transloco"
                 ngpFocusTrap
                 class="absolute top-[calc(100%+12px)] right-0 min-w-[280px] max-w-[90vw] max-h-[calc(100vh-120px)] overflow-y-auto bg-popover/98 backdrop-blur-2xl rounded-2xl p-3 shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.1)] z-1000 animate-[mobileMenuSlideIn_0.3s_cubic-bezier(0.4,0,0.2,1)] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-[10px]"
               >
@@ -243,21 +246,21 @@
                     (click)="closeMobileMenu()"
                     class="block py-3 px-4 rounded-lg text-sm text-foreground/90 no-underline hover:bg-accent/12 hover:text-accent transition-all outline-none focus:outline-none focus:bg-accent/12 focus:text-accent"
                   >
-                    Profile
+                    {{ 'header.profile' | transloco }}
                   </a>
                   <a
                     [routerLink]="utils.localePath('payment/order-history')"
                     (click)="closeMobileMenu()"
                     class="block py-3 px-4 rounded-lg text-sm text-foreground/90 no-underline hover:bg-accent/12 hover:text-accent transition-all outline-none focus:outline-none focus:bg-accent/12 focus:text-accent"
                   >
-                    Order History
+                    {{ 'header.orderHistory' | transloco }}
                   </a>
                   <button
                     type="button"
                     (click)="signOut()"
                     class="w-full text-left py-3 px-4 rounded-lg text-sm text-destructive/90 bg-transparent border-0 hover:bg-destructive/10 transition-all cursor-pointer outline-none focus:outline-none focus:bg-destructive/10 focus:text-destructive"
                   >
-                    Sign out
+                    {{ 'header.signOut' | transloco }}
                   </button>
 
                   <div

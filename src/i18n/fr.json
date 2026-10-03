@@ -1,5 +1,72 @@
 {
   "language": {
     "label": "Langue"
+  },
+  "common": {
+    "scheduleDemo": "Planifier une démo"
+  },
+  "nav": {
+    "masterClass": "Master Class",
+    "masterClassSub": "(Cours façon Netflix)",
+    "webinar": "Webinaires",
+    "webinarSub": "(Premiere)",
+    "reels": "Reels",
+    "reelsSub": "(Micro-apprentissage)",
+    "podcast": "Podcast",
+    "podcastSub": "(Cours audio)",
+    "simulation": "Simulation",
+    "simulationSub": "(Jeux de rôle avec l'IA)",
+    "resources": "Ressources",
+    "cairaBadges": "Badges CAIRA",
+    "cpeTracker": "Suivi CPE",
+    "plan": "Formules",
+    "library": "Bibliothèque",
+    "courseLibrary": "Catalogue de cours",
+    "instructorLibrary": "Bibliothèque des formateurs",
+    "aiLabs": "Miles AI Labs",
+    "beta": "Bêta",
+    "cpeSolutions": "Solutions CPE",
+    "individualLearners": "Apprenants individuels",
+    "enterpriseSolutions": "Solutions entreprises",
+    "learningModes": "Modes d'apprentissage",
+    "signUp": "S'inscrire"
+  },
+  "header": {
+    "home": "Aller à l'accueil",
+    "primaryNav": "Principale",
+    "toggleMenu": "Ouvrir ou fermer le menu de navigation",
+    "siteNav": "Navigation du site",
+    "profile": "Profil",
+    "orderHistory": "Historique des commandes",
+    "signOut": "Se déconnecter",
+    "signOutFailed": "Échec de la déconnexion",
+    "signOutFailedDetail": "Nous n'avons pas pu vous déconnecter. Veuillez réessayer."
+  },
+  "footer": {
+    "explore": "Explorer",
+    "policies": "Politiques",
+    "partnerships": "Partenariats",
+    "downloadApp": "Télécharger l'application",
+    "home": "Accueil",
+    "microLearning": "Micro-apprentissage",
+    "badgeLibrary": "Bibliothèque de badges",
+    "becomeInstructor": "Devenir formateur",
+    "paymentPolicy": "Politique de paiement, d'annulation et de remboursement",
+    "creditsPolicy": "Politique de crédits et de déclaration",
+    "credlyBadge": "Comment obtenir votre badge Credly",
+    "privacyPolicy": "Politique de confidentialité",
+    "compliance": "Conformité",
+    "termsOfService": "Conditions d'utilisation",
+    "downloadOnThe": "Disponible sur",
+    "scanToDownload": "Scannez pour télécharger l'application",
+    "scanMe": "Scannez-moi",
+    "ourLocation": "Nos bureaux",
+    "usa": "États-Unis",
+    "uae": "Émirats arabes unis",
+    "india": "Inde",
+    "social": "Réseaux sociaux",
+    "sponsorId": "ID de sponsor - {{ id }}",
+    "copyright": "© {{ year }} Miles Masterclass Inc. Tous droits réservés.",
+    "cookieSettings": "Paramètres des cookies"
   }
 }

@@ -7,6 +7,20 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-01, NON-REFACTOR — language L2a + L2b (`prompts/language-l2-transloco.md`) DONE and
+  verified, UNCOMMITTED; you commit as two PRs.** (L1 was committed by you as `868a46b` on
+  `feat/MIL-15-language-resolution`.) L2a: Transloco 8.4, `TranslationLoader` (English bundled, other
+  languages lazy ~2 KB JSON chunks handed over via TransferState), `LanguageContext.use()` (cookie + reload),
+  footer `LanguageSwitcher` (native select, only when >1 language enabled), `src/i18n/i18n.spec.ts` parity
+  check. L2b: header + footer translated, 60 keys × en/ar/fr/de/es drafted by Claude for native review; brand,
+  partner names and the NASBA statement untranslated. Production vs HEAD `5d21d72`: header/footer text
+  identical (76 lines) even for a French browser, SEO identical, no switcher; initial bundle 235.96 → 241.06 kB.
+  UAT French probe, dev-browser switch to German, request counts (SSR page 0 dictionary downloads, `/auth/login`
+  exactly 1), 1440/375 checked. Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy warnings),
+  tests **203 files / 906 passed + 1 skipped**, build:prod + build:dev + build-storybook + check:structure green.
+  Flagged: German copyright wraps left-aligned at 375. Split helper: `split-l2.sh` in the session scratchpad
+  (L2a snapshot alongside). **Next:** L3 (logical start/end utilities) or L5 (feature translations).
+
 - 🔧 **2026-10-01, NON-REFACTOR — language L1 (`prompts/language-i18n.md`): resolve the visitor's language
   and send it to Django. UNCOMMITTED, you commit. No refactor phase moved.** Approved by the user. Locked: en
   (default) + ar fr de es; NOT in the URL; Transloco (L2); JSON in repo; switcher + auto default; any language
@@ -2690,6 +2704,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-01 · NON-REFACTOR · **language L2a + L2b done** (uncommitted) — Transloco + switcher + translated header/footer (5 languages); prod output identical to HEAD, +5.1 kB initial for L1+L2, dictionaries lazy · lint 0 errors, tests 203 files / 906 passed + 1 skipped, build:prod/dev + build-storybook + check:structure green (local, Node 24)
 
 - 2026-10-01 · NON-REFACTOR · **language L1** (uncommitted, `prompts/language-i18n.md`) — `LanguageContext` + `provideLanguage()` + `Accept-Language` on Django calls + `environment.I18N.languages`; prod unchanged, SEO identical, +0.76 kB initial, locale data lazy · UAT + browser verified · lint 0 errors, tests 201 files / 880 passed + 1 skipped, build:prod/dev + check:structure green (local, Node 24)
 

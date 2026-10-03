@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
+import { applicationConfig, moduleMetadata } from '@storybook/angular';
+import { provideTranslocoTesting } from '@testing/transloco';
 import { RouterModule } from '@angular/router';
 import { Footer } from './footer';
 import { Utils } from '@shared/services/utils';
@@ -16,6 +17,7 @@ const meta: Meta<Footer> = {
   tags: ['autodocs'],
   parameters: { layout: 'fullscreen' },
   decorators: [
+    applicationConfig({ providers: [provideTranslocoTesting()] }),
     moduleMetadata({
       imports: [RouterModule.forRoot([], { initialNavigation: 'disabled' as any })],
       providers: [{ provide: Utils, useClass: MockUtils }],

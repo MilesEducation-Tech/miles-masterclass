@@ -38,6 +38,7 @@ import {
   NgpCollapsibleTrigger,
 } from 'ng-primitives/collapsible';
 import { NgpFocusTrap } from 'ng-primitives/focus-trap';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { crownIcon, logo } from '@core/constants/icon';
 import { NavActionKind, NavItem } from '@core/models/nav.model';
 import { Button } from '@shared/ui/button/button';
@@ -85,6 +86,7 @@ const ROUTE_MATCH_OPTIONS: IsActiveMatchOptions = {
     NgpCollapsibleTrigger,
     NgpCollapsibleContent,
     NgpFocusTrap,
+    TranslocoPipe,
   ],
   providers: [provideIcons({ lucideChevronDown, lucideChevronRight, lucideMenu, lucideX })],
   templateUrl: './header.html',
@@ -107,6 +109,7 @@ export class Header {
   private readonly account = inject(AccountApi);
   private readonly notify = inject(NotificationService);
   private readonly analytics = inject(Analytics);
+  private readonly transloco = inject(TranslocoService);
 
   protected readonly logoIcon = logo;
   protected readonly crownIcon = crownIcon;
@@ -144,13 +147,18 @@ export class Header {
     { initialValue: this.router.url },
   );
 
+  // Both navs in the visitor's language, translated once: the language never changes without a
+  // reload (`LanguageContext.use`), and translating here keeps `nav-menu-item` language-agnostic.
+  private readonly loggedInNav = this.translateNav(LOGGED_IN_NAV);
+  private readonly guestNav = this.translateNav(GUEST_NAV);
+
   /**
    * Filter nav items by capability. The `requires: 'activePlan'` flag hides
    * an item until an active plan is reported. Recurses so gated children
    * inside menus are filtered too.
    */
   readonly navItems = computed<readonly NavItem[]>(() => {
-    const source = this.isLoggedIn() ? LOGGED_IN_NAV : GUEST_NAV;
+    const source = this.isLoggedIn() ? this.loggedInNav : this.guestNav;
     const hasActivePlan = this.hasActivePlan();
     return this.filterByCapabilities(source, hasActivePlan);
   });
@@ -166,6 +174,18 @@ export class Header {
           ? { ...item, children: this.filterByCapabilities(item.children, hasActivePlan) }
           : item,
       );
+  }
+
+  /** `label`, `subLabel` and `badge` in `nav.config.ts` are translation keys. */
+  private translateNav(items: readonly NavItem[]): readonly NavItem[] {
+    const t = (key: string) => this.transloco.translate(key);
+    return items.map((item) => ({
+      ...item,
+      label: t(item.label),
+      subLabel: item.subLabel && t(item.subLabel),
+      badge: item.badge && t(item.badge),
+      children: item.children && this.translateNav(item.children),
+    }));
   }
 
   private satisfiesRequirement(item: NavItem, hasActivePlan: boolean): boolean {
@@ -259,7 +279,10 @@ export class Header {
     this.closeMobileMenu();
     this.analytics.trackEvent('logout');
     if (!(await this.auth.logout())) {
-      this.notify.error('Sign out failed', 'We could not sign you out. Please try again.');
+      this.notify.error(
+        this.transloco.translate('header.signOutFailed'),
+        this.transloco.translate('header.signOutFailedDetail'),
+      );
       return;
     }
     if (isPlatformBrowser(this.platformId)) {
@@ -330,7 +353,7 @@ export class Header {
     const { CalendlyDialog } = await import('@shared/dialogs/calendly-dialog/calendly-dialog');
     this.dialogs.open(CalendlyDialog, {
       data: {
-        ariaLabel: 'Schedule a demo',
+        ariaLabel: this.transloco.translate('common.scheduleDemo'),
         url: 'https://calendly.com/rohan-singhai-milesmasterclass/30min',
         closeAction: true,
       } satisfies CalendlyDialogData,
