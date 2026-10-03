@@ -1,6 +1,6 @@
 # Language L5: translate the feature pages
 
-Status: **approved 2026-10-03 ("start L5"); L5a implemented, uncommitted.** Builds on L1–L4 (merged as
+Status: **approved 2026-10-03 ("start L5"); L5a committed (`16fcb89`), L5b implemented, uncommitted.** Builds on L1–L4 (merged as
 #49–#56). Assumption 4 was not answered, so the strict reading (JSON counts) stands.
 L5 is a series (`L5…n` in `prompts/language-i18n.md`). This prompt locks the mechanism every feature uses,
 plans the series, and details the first two PRs. Later PRs follow the same recipe without a new prompt unless

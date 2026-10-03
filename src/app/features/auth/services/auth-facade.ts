@@ -89,6 +89,8 @@ export class AuthFacade {
   private readonly route = inject(ActivatedRoute);
   // Synchronous: the route's resolver merged the `auth.*` dictionary before this facade was created.
   private readonly transloco = inject(TranslocoService);
+  private readonly t = (key: string, params?: Record<string, unknown>): string =>
+    this.transloco.translate(key, params);
 
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
@@ -171,7 +173,7 @@ export class AuthFacade {
   readonly otpSentTo = computed(() => {
     const channel = this.channel();
     const known = channel === 'email' || channel === 'whatsapp' || channel === 'sms';
-    return this.transloco.translate(`auth.otp.sentTo.${known ? channel : 'other'}`);
+    return this.t(`auth.otp.sentTo.${known ? channel : 'other'}`);
   });
 
   readonly authModel = signal<AuthModel>({ identifier: '', country_code: '+1', consent: false });
@@ -224,7 +226,7 @@ export class AuthFacade {
    * template's `labelLink` slot, which sits immediately after this text.
    */
   readonly consentLabel = computed(() =>
-    this.transloco.translate(
+    this.t(
       this.loginMethod() === 'PHONE' ? 'auth.login.consent.phone' : 'auth.login.consent.email',
     ),
   );
@@ -259,7 +261,7 @@ export class AuthFacade {
 
       if (this.loginMethod() === 'PHONE') {
         if (!/^\d+$/.test(value())) {
-          return { kind: 'pattern', message: 'Must be digits' };
+          return { kind: 'pattern', message: this.t('auth.login.errors.digitsOnly') };
         }
         const selectedCode = this.countryCodes().find(
           (c) => c.CountryCode === this.authModel().country_code,
@@ -268,10 +270,10 @@ export class AuthFacade {
           const min = selectedCode.phLengthMin ?? 7;
           const max = selectedCode.phLengthMax ?? 18;
           if (value().length < min) {
-            return { kind: 'minlength', message: `Minimum length is ${min}` };
+            return { kind: 'minlength', message: this.t('auth.login.errors.minLength', { min }) };
           }
           if (value().length > max) {
-            return { kind: 'maxlength', message: `Maximum length is ${max}` };
+            return { kind: 'maxlength', message: this.t('auth.login.errors.maxLength', { max }) };
           }
         }
       }
@@ -281,19 +283,23 @@ export class AuthFacade {
     // Built-in, and only while the Email tab is showing.
     email(loginSchema.identifier, {
       when: () => this.loginMethod() === 'EMAIL',
-      message: 'Invalid Email Address',
+      message: this.t('auth.login.errors.invalidEmail'),
     });
 
     validate(loginSchema.country_code, ({ value }) => {
       if (this.loginMethod() !== 'PHONE') return null;
-      if (!value()) return { kind: 'required', message: 'Country code is required' };
+      if (!value()) {
+        return { kind: 'required', message: this.t('auth.login.errors.countryCodeRequired') };
+      }
       const selectedCode = this.countryCodes().find(
         (c) => c.CountryCode === this.authModel().country_code,
       );
-      return selectedCode ? null : { kind: 'required', message: 'Invalid Country code' };
+      return selectedCode
+        ? null
+        : { kind: 'required', message: this.t('auth.login.errors.countryCodeInvalid') };
     });
 
-    required(loginSchema.identifier, { message: 'Please enter your email or phone number' });
+    required(loginSchema.identifier, { message: this.t('auth.login.errors.identifierRequired') });
 
     /**
      * `auth-identify/` — "how does this person authenticate?" — as an async
@@ -333,8 +339,7 @@ export class AuthFacade {
         if (methods.length && !methods.some(isOtpMethod)) {
           return {
             kind: 'sso_only',
-            message:
-              'This account signs in through your organisation. Please use your company sign-in page.',
+            message: this.t('auth.login.errors.ssoOnly'),
           };
         }
         // Nothing positive is reported: identify answers identically for a known
@@ -349,16 +354,21 @@ export class AuthFacade {
   });
 
   readonly otpForm = form<OtpModel>(this.otpModel, (otpSchema) => {
-    required(otpSchema.otp, { message: 'Please enter the OTP' });
+    required(otpSchema.otp, { message: this.t('auth.otp.errors.required') });
     // Must match `[length]` on `<app-input-otp>` in login.html — the input renders
     // that many boxes, and a shorter minimum here would enable Verify on a
     // half-typed code.
     validate(otpSchema.otp, ({ value }) => {
       const code = value();
       if (!code) return null;
-      if (!/^\d+$/.test(code)) return { kind: 'pattern', message: 'Digits only' };
+      if (!/^\d+$/.test(code)) {
+        return { kind: 'pattern', message: this.t('auth.otp.errors.digitsOnly') };
+      }
       if (code.length !== this.otpLength) {
-        return { kind: 'minlength', message: `OTP must be ${this.otpLength} digits` };
+        return {
+          kind: 'minlength',
+          message: this.t('auth.otp.errors.length', { length: this.otpLength }),
+        };
       }
       return null;
     });

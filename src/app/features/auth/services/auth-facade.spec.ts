@@ -138,6 +138,45 @@ describe('AuthFacade — identify on valid input', () => {
 
     expect(facade.loginForm.identifier().invalid()).toBe(true);
     expect(facade.loginForm().invalid()).toBe(true);
+    expect(
+      facade.loginForm
+        .identifier()
+        .errors()
+        .map((e) => e.message),
+    ).toContain(
+      'This account signs in through your organisation. Please use your company sign-in page.',
+    );
+  });
+
+  /** The messages come from the `auth` dictionary, where a mistyped key would render as the key. */
+  it('words its validation messages from the dictionary', () => {
+    const identifierMessages = () =>
+      facade.loginForm
+        .identifier()
+        .errors()
+        .map((e) => e.message);
+
+    type('');
+    expect(identifierMessages()).toEqual(['Please enter your email or phone number']);
+    type('sohan@');
+    expect(identifierMessages()).toEqual(['Invalid Email Address']);
+
+    facade.selectLoginMethod('Mobile');
+    facade.authModel.update((m) => ({ ...m, identifier: '12ab' }));
+    TestBed.tick();
+    expect(identifierMessages()).toEqual(['Must be digits']);
+    facade.authModel.update((m) => ({ ...m, identifier: '12' }));
+    TestBed.tick();
+    expect(identifierMessages()).toEqual([expect.stringMatching(/^Minimum length is \d+$/)]);
+
+    facade.otpModel.update((m) => ({ ...m, otp: '12' }));
+    TestBed.tick();
+    expect(
+      facade.otpForm
+        .otp()
+        .errors()
+        .map((e) => e.message),
+    ).toEqual([`OTP must be ${facade.otpLength} digits`]);
   });
 
   it('leaves the field usable for an account that does have one', async () => {

@@ -30,7 +30,17 @@
     "termsOfService": "Terms of Service",
     "privacyPolicy": "Privacy Policy",
     "sendOtp": "Send OTP",
-    "requestNewCodeIn": "You can request a new code in"
+    "requestNewCodeIn": "You can request a new code in",
+    "errors": {
+      "digitsOnly": "Must be digits",
+      "minLength": "Minimum length is {{ min }}",
+      "maxLength": "Maximum length is {{ max }}",
+      "invalidEmail": "Invalid Email Address",
+      "countryCodeRequired": "Country code is required",
+      "countryCodeInvalid": "Invalid Country code",
+      "identifierRequired": "Please enter your email or phone number",
+      "ssoOnly": "This account signs in through your organisation. Please use your company sign-in page."
+    }
   },
   "otp": {
     "title": "OTP Verification",
@@ -53,6 +63,42 @@
     "emailInstead": "Sign in with email instead",
     "resendIn": "Resend OTP in",
     "notReceived": "Didn't receive the OTP?",
-    "resend": "Resend OTP"
+    "resend": "Resend OTP",
+    "errors": {
+      "required": "Please enter the OTP",
+      "digitsOnly": "Digits only",
+      "length": "OTP must be {{ length }} digits"
+    }
+  },
+  "profile": {
+    "title": "Your Profile",
+    "titleOnboarding": "Tell us about yourself",
+    "intro": "Manage your personal information",
+    "introOnboarding": "A few questions so we can tailor what you see.",
+    "loadError": "We couldn't load your profile. Please refresh and try again.",
+    "selectOne": "Select an option",
+    "selectMany": "Select any that apply",
+    "continue": "Continue",
+    "saveChanges": "Save Changes",
+    "errors": {
+      "required": "This answer is required.",
+      "chooseOption": "Choose an option."
+    },
+    "toast": {
+      "saved": "Saved",
+      "stillToAnswer": {
+        "one": "Still to answer: {{ count }} question.",
+        "other": "Still to answer: {{ count }} questions."
+      },
+      "updated": "Your profile has been updated.",
+      "saveFailed": "Save failed",
+      "couldNotSave": "Could not save your profile. Please try again."
+    },
+    "leave": {
+      "title": "Leave without saving?",
+      "body": "Your answers have not been saved yet and will be lost if you leave now.",
+      "keepEditing": "Keep editing",
+      "confirm": "Leave"
+    }
   }
 }

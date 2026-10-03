@@ -30,7 +30,17 @@
     "termsOfService": "Conditions d'utilisation",
     "privacyPolicy": "Politique de confidentialité",
     "sendOtp": "Envoyer le code",
-    "requestNewCodeIn": "Vous pourrez demander un nouveau code dans"
+    "requestNewCodeIn": "Vous pourrez demander un nouveau code dans",
+    "errors": {
+      "digitsOnly": "Chiffres uniquement",
+      "minLength": "Longueur minimale : {{ min }}",
+      "maxLength": "Longueur maximale : {{ max }}",
+      "invalidEmail": "Adresse e-mail invalide",
+      "countryCodeRequired": "L'indicatif est obligatoire",
+      "countryCodeInvalid": "Indicatif invalide",
+      "identifierRequired": "Veuillez saisir votre e-mail ou votre numéro de téléphone",
+      "ssoOnly": "Ce compte se connecte via votre organisation. Veuillez utiliser la page de connexion de votre entreprise."
+    }
   },
   "otp": {
     "title": "Vérification du code",
@@ -53,6 +63,42 @@
     "emailInstead": "Se connecter plutôt par e-mail",
     "resendIn": "Renvoyer le code dans",
     "notReceived": "Vous n'avez pas reçu le code ?",
-    "resend": "Renvoyer le code"
+    "resend": "Renvoyer le code",
+    "errors": {
+      "required": "Veuillez saisir le code",
+      "digitsOnly": "Chiffres uniquement",
+      "length": "Le code doit comporter {{ length }} chiffres"
+    }
+  },
+  "profile": {
+    "title": "Votre profil",
+    "titleOnboarding": "Parlez-nous de vous",
+    "intro": "Gérez vos informations personnelles",
+    "introOnboarding": "Quelques questions pour adapter ce que vous voyez.",
+    "loadError": "Impossible de charger votre profil. Actualisez la page et réessayez.",
+    "selectOne": "Sélectionnez une option",
+    "selectMany": "Sélectionnez toutes les réponses qui s'appliquent",
+    "continue": "Continuer",
+    "saveChanges": "Enregistrer les modifications",
+    "errors": {
+      "required": "Cette réponse est obligatoire.",
+      "chooseOption": "Choisissez une option."
+    },
+    "toast": {
+      "saved": "Enregistré",
+      "stillToAnswer": {
+        "one": "Reste à répondre : {{ count }} question.",
+        "other": "Questions restant à répondre : {{ count }}."
+      },
+      "updated": "Votre profil a été mis à jour.",
+      "saveFailed": "Échec de l'enregistrement",
+      "couldNotSave": "Impossible d'enregistrer votre profil. Veuillez réessayer."
+    },
+    "leave": {
+      "title": "Quitter sans enregistrer ?",
+      "body": "Vos réponses n'ont pas encore été enregistrées et seront perdues si vous quittez maintenant.",
+      "keepEditing": "Continuer la modification",
+      "confirm": "Quitter"
+    }
   }
 }

@@ -30,7 +30,17 @@
     "termsOfService": "Nutzungsbedingungen",
     "privacyPolicy": "Datenschutzerklärung",
     "sendOtp": "Code senden",
-    "requestNewCodeIn": "Einen neuen Code können Sie anfordern in"
+    "requestNewCodeIn": "Einen neuen Code können Sie anfordern in",
+    "errors": {
+      "digitsOnly": "Nur Ziffern",
+      "minLength": "Mindestlänge: {{ min }}",
+      "maxLength": "Maximallänge: {{ max }}",
+      "invalidEmail": "Ungültige E-Mail-Adresse",
+      "countryCodeRequired": "Vorwahl ist erforderlich",
+      "countryCodeInvalid": "Ungültige Vorwahl",
+      "identifierRequired": "Bitte geben Sie Ihre E-Mail-Adresse oder Telefonnummer ein",
+      "ssoOnly": "Dieses Konto meldet sich über Ihre Organisation an. Bitte verwenden Sie die Anmeldeseite Ihres Unternehmens."
+    }
   },
   "otp": {
     "title": "Code-Bestätigung",
@@ -53,6 +63,42 @@
     "emailInstead": "Stattdessen mit E-Mail anmelden",
     "resendIn": "Code erneut senden in",
     "notReceived": "Keinen Code erhalten?",
-    "resend": "Code erneut senden"
+    "resend": "Code erneut senden",
+    "errors": {
+      "required": "Bitte geben Sie den Code ein",
+      "digitsOnly": "Nur Ziffern",
+      "length": "Der Code muss {{ length }} Ziffern haben"
+    }
+  },
+  "profile": {
+    "title": "Ihr Profil",
+    "titleOnboarding": "Erzählen Sie uns von sich",
+    "intro": "Verwalten Sie Ihre persönlichen Daten",
+    "introOnboarding": "Ein paar Fragen, damit wir Ihre Inhalte anpassen können.",
+    "loadError": "Ihr Profil konnte nicht geladen werden. Bitte laden Sie die Seite neu und versuchen Sie es erneut.",
+    "selectOne": "Option auswählen",
+    "selectMany": "Alle zutreffenden auswählen",
+    "continue": "Weiter",
+    "saveChanges": "Änderungen speichern",
+    "errors": {
+      "required": "Diese Antwort ist erforderlich.",
+      "chooseOption": "Wählen Sie eine Option."
+    },
+    "toast": {
+      "saved": "Gespeichert",
+      "stillToAnswer": {
+        "one": "Noch zu beantworten: {{ count }} Frage.",
+        "other": "Noch zu beantworten: {{ count }} Fragen."
+      },
+      "updated": "Ihr Profil wurde aktualisiert.",
+      "saveFailed": "Speichern fehlgeschlagen",
+      "couldNotSave": "Ihr Profil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
+    },
+    "leave": {
+      "title": "Ohne Speichern verlassen?",
+      "body": "Ihre Antworten wurden noch nicht gespeichert und gehen verloren, wenn Sie die Seite jetzt verlassen.",
+      "keepEditing": "Weiter bearbeiten",
+      "confirm": "Verlassen"
+    }
   }
 }
