@@ -7,6 +7,23 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-03, NON-REFACTOR — language L4 (`prompts/language-l4-rtl.md`): right-to-left done, Arabic on
+  UAT. DONE and verified, UNCOMMITTED; you commit as three stacked PRs** (split helper `split-l4.sh` in the
+  session scratchpad). L4a LTR islands (PDF host, players, invoice, typed inputs via `:dir(rtl) > input`,
+  OTP, coupon row, postal code, dial-code combobox `dir` input, marquee, surround controls, ai-labs fan,
+  milesverse row nav; `/admin` always English). L4b mirrors shared UI (icons `rtl:-scale-x-100`, disclosure
+  chevrons `rtl:-rotate-90`, switch knobs, drawer slide, start/end-anchored gradients, slider keys + dots,
+  nav flyout flip measures the inline end, toast start/end swap, RTL route transition, Noto Sans Arabic only
+  on Arabic pages, caira-level-stack CSS logical). L4c mirrors features (home hero disc `start-0` +
+  `rtl:translate-x-[55%]`, 22 icons + 3 text arrows, course-hero/webinar/audio gradients, hover underline,
+  final-assessment toggle + chevron, ai-labs + milesverse CSS logical, gsap direction) and adds `ar` to UAT.
+  English parity: 30 views × 3 widths, no property L4 sets differed (remaining diffs = UAT data 404s and
+  scroll-spy state). Arabic verified in the browser (hero, header/flyout, login inputs, mobile drawer, admin
+  stays English, rtl overrides win). Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy
+  warnings), tests **204 files / 920 passed + 1 skipped**, build:prod + build:dev + build-storybook +
+  check:structure green; L4a and L4a+L4b also checked standalone. CSS +0.34 kB, initial +0.55 kB. **Next:**
+  L5 (translate features); Arabic copy needs native review before production enables `ar`.
+
 - 🔧 **2026-10-01, NON-REFACTOR — language L3 (`prompts/language-l3-logical-utilities.md`): logical
   start/end utilities, DONE and verified, UNCOMMITTED; you commit as two PRs.** (L2a/L2b were committed by you
   as `505428e` / `97b126d`.) One-off codemod (not committed): L3a shared+layout+app.html 220 tokens / 66 files,
@@ -2704,6 +2721,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-03 · NON-REFACTOR · **language L4 done** (uncommitted, 3 PRs) — LTR islands, mirrored shared + feature UI, Arabic font, `ar` on UAT; English parity across 30 views (only data/state diffs), Arabic browser-verified · lint 0 errors, tests 204 files / 920 passed + 1 skipped, build:prod/dev + build-storybook + check:structure green (local, Node 24)
 
 - 2026-10-01 · NON-REFACTOR · **language L3 done** (uncommitted) — logical start/end utilities via one-off codemod, 370 tokens / 124 files; computed-style diff 27 captures, zero diffs after fixing the `<th>` text-start quirk and two centring idioms; CSS +0.23 kB · lint 0 errors, tests 203 files / 906 passed + 1 skipped, build:prod + build-storybook + check:structure green (local, Node 24)
 

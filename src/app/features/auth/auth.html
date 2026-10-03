@@ -18,7 +18,7 @@
       class="flex space-x-2 items-center cursor-pointer w-max bg-transparent border-0 p-0 text-start"
       (click)="handleBackOrLogout()"
     >
-      <ng-icon [svg]="icons().faSolidAngleLeft" class="w-5! h-5!" />
+      <ng-icon [svg]="icons().faSolidAngleLeft" class="w-5! h-5! rtl:-scale-x-100" />
       <p class="text-white">{{ buttonLabel() }}</p>
     </button>
     <div class="auth-card max-h-[80vh] overflow-auto">

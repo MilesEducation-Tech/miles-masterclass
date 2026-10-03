@@ -73,6 +73,8 @@
             class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
             [class.translate-x-6]="showWrongOnly()"
             [class.translate-x-1]="!showWrongOnly()"
+            [class.rtl:-translate-x-6]="showWrongOnly()"
+            [class.rtl:-translate-x-1]="!showWrongOnly()"
           ></span>
         </button>
 
@@ -126,8 +128,9 @@
               <!-- Chevron -->
               <ng-icon
                 name="heroChevronRight"
-                class="text-gray-400 transition-transform duration-200"
+                class="text-gray-400 transition-transform duration-200 rtl:-scale-x-100"
                 [class.rotate-90]="isExpanded(item.id)"
+                [class.rtl:-rotate-90]="isExpanded(item.id)"
                 size="1.2em"
                 aria-hidden="true"
               ></ng-icon>
