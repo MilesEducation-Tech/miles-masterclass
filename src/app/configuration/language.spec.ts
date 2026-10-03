@@ -1,6 +1,7 @@
 import { formatNumber } from '@angular/common';
 import { ApplicationInitStatus, DOCUMENT, LOCALE_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { TranslocoService } from '@jsverse/transloco';
 
 import type { Language, TextDirection } from '@core/models/language.model';
 import { LanguageContext } from '@core/services/language-context/language-context';
@@ -35,6 +36,19 @@ describe('provideLanguage', () => {
     expect(html.lang).toBe('fr');
     // Throws "Missing locale data" if the lazy registration didn't happen before first use.
     expect(formatNumber(1234.5, 'fr')).toMatch(/^1\s234,5$/);
+  });
+
+  // Loaded before the first render, so nothing renders as a raw key or flashes in English.
+  it('has the visitor’s translations ready before the app renders', async () => {
+    await boot('de');
+    const transloco = TestBed.inject(TranslocoService);
+    expect(transloco.getActiveLang()).toBe('de');
+    expect(transloco.translate('language.label')).toBe('Sprache');
+  });
+
+  it('serves English from the bundle', async () => {
+    await boot('en');
+    expect(TestBed.inject(TranslocoService).translate('language.label')).toBe('Language');
   });
 
   it('turns the page right to left for Arabic', async () => {

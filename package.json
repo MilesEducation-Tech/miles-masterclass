@@ -69,6 +69,7 @@
     "@code_with_sachin/ngx-gsap": "^0.1.0",
     "@code_with_sachin/ngx-motion": "^0.1.0",
     "@floating-ui/dom": "^1.8.0",
+    "@jsverse/transloco": "^8.4.0",
     "@milesverse/sdk": "^0.1.0",
     "@supabase/supabase-js": "^2.117.2",
     "@types/video.js": "^7.3.58",

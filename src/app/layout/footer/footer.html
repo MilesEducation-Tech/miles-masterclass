@@ -191,6 +191,11 @@
             </button>
           </li>
         }
+        @if (canSwitchLanguage) {
+          <li>
+            <app-language-switcher />
+          </li>
+        }
       </ul>
     </div>
   </div>

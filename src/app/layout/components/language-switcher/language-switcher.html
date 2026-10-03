@@ -1,0 +1,10 @@
+<label class="flex w-40 items-center">
+  <span class="sr-only">{{ 'language.label' | transloco }}</span>
+  <select app-select class="h-9" (change)="select($event)">
+    @for (option of options; track option.code) {
+      <option [value]="option.code" [attr.lang]="option.code" [selected]="option.code === current">
+        {{ option.name }}
+      </option>
+    }
+  </select>
+</label>

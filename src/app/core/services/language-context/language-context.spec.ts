@@ -1,4 +1,4 @@
-import { PLATFORM_ID, REQUEST, TransferState, makeStateKey } from '@angular/core';
+import { DOCUMENT, PLATFORM_ID, REQUEST, TransferState, makeStateKey } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import type { Language } from '../../models/language.model';
@@ -16,7 +16,11 @@ interface Setup {
   /** What the server handed over (browser). */
   transferred?: string;
   enabled?: readonly Language[];
+  /** Replaces `document` (only the switching cases need to observe `location.reload`). */
+  document?: unknown;
 }
+
+const setCookie = vi.fn();
 
 function setup({
   platform,
@@ -24,6 +28,7 @@ function setup({
   cookie = '',
   transferred,
   enabled = ['en', 'ar', 'fr', 'de', 'es'],
+  document,
 }: Setup): LanguageContext {
   // Several cases build more than one context in a single test.
   TestBed.resetTestingModule();
@@ -38,7 +43,11 @@ function setup({
             ? null
             : { headers: new Headers({ 'accept-language': acceptLanguage }) },
       },
-      { provide: Storage, useValue: { getCookie: (k: string) => (k === 'lang' ? cookie : '') } },
+      {
+        provide: Storage,
+        useValue: { getCookie: (k: string) => (k === 'lang' ? cookie : ''), setCookie },
+      },
+      ...(document ? [{ provide: DOCUMENT, useValue: document }] : []),
     ],
   });
   if (transferred) TestBed.inject(TransferState).set(LANGUAGE_KEY, transferred);
@@ -106,6 +115,46 @@ describe('LanguageContext', () => {
 
     it('ignores a transferred value this build no longer enables', () => {
       expect(browser({ transferred: 'ar', enabled: ['en', 'es'] }).current).toBe('es');
+    });
+  });
+
+  describe('switching', () => {
+    const reload = vi.fn();
+    const switching = (enabled: readonly Language[] = ['en', 'fr', 'de']) => {
+      setCookie.mockClear();
+      reload.mockClear();
+      // The real document (TestBed needs it), seen through a proxy whose window can be observed:
+      // jsdom's own `location.reload` can be neither spied on nor followed.
+      const view = { navigator: { languages: [] }, location: { reload } };
+      const document = new Proxy(window.document, {
+        get: (target, key) => {
+          if (key === 'defaultView') return view;
+          const value: unknown = Reflect.get(target, key, target);
+          return typeof value === 'function' ? value.bind(target) : value;
+        },
+      });
+      return setup({ platform: 'browser', cookie: 'fr', enabled, document });
+    };
+
+    it('offers a switcher only when the build has more than one language', () => {
+      expect(switching().canSwitch).toBe(true);
+      expect(switching(['en']).canSwitch).toBe(false);
+    });
+
+    // A reload is what changes LOCALE_ID, the translations, <html lang dir> and Django's
+    // responses together; the cookie is what the reloaded page resolves from.
+    it('remembers the choice for a year and reloads', () => {
+      switching().use('de');
+      expect(setCookie).toHaveBeenCalledWith('lang', 'de', { expires: 365 });
+      expect(reload).toHaveBeenCalledTimes(1);
+    });
+
+    it('does nothing for the current language or one this build does not offer', () => {
+      const context = switching();
+      context.use('fr');
+      context.use('ar');
+      expect(setCookie).not.toHaveBeenCalled();
+      expect(reload).not.toHaveBeenCalled();
     });
   });
 });
