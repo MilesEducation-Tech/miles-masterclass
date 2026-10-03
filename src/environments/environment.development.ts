@@ -215,8 +215,11 @@ export const environment = {
    * Languages this build may resolve a visitor to (`LanguageContext`). Anything else in a cookie or
    * `Accept-Language` is skipped, so a half-translated language never reaches real users.
    * UAT: every language. Production adds one only once its translations have been reviewed.
+   * `enabled: false` turns the feature off without editing the list: every visitor gets English
+   * and no switcher renders.
    */
   I18N: {
+    enabled: true, // master switch for this environment
     languages: ['en', 'ar', 'fr', 'de', 'es'],
   },
 };

@@ -24,13 +24,19 @@ import { Storage } from '../storage/storage';
  * The languages this build may resolve to (`environment.I18N.languages`). A token so specs can
  * enable languages the test environment doesn't. Filtering through `SUPPORTED_LANGUAGES` types the
  * list and drops a typo in an environment file instead of letting it through.
+ *
+ * `I18N.enabled: false` is the master switch: English only. Everything language-related (the
+ * resolution, `Accept-Language`, `LOCALE_ID`, the switcher) reads this one list, so this is the
+ * only place the switch needs checking.
  */
 export const ENABLED_LANGUAGES = new InjectionToken<readonly Language[]>('ENABLED_LANGUAGES', {
   providedIn: 'root',
   factory: () =>
-    SUPPORTED_LANGUAGES.filter((l) =>
-      (environment.I18N.languages as readonly string[]).includes(l),
-    ),
+    environment.I18N.enabled
+      ? SUPPORTED_LANGUAGES.filter((l) =>
+          (environment.I18N.languages as readonly string[]).includes(l),
+        )
+      : [DEFAULT_LANGUAGE],
 });
 
 /** The server's answer, handed to the browser so hydration renders the same language. */
