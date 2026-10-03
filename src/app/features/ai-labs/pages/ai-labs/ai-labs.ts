@@ -71,6 +71,7 @@ import { ApiClient } from '@core/services/api-client/api-client';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import { Storage } from '@core/services/storage/storage';
+import { LanguageContext } from '@core/services/language-context/language-context';
 import { Utils } from '@shared/services/utils';
 import {
   AI_LAB_FAQS,
@@ -218,6 +219,8 @@ export class AiLabs {
   };
   private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
+  // The showcase's log and progress bar move along the reading direction.
+  private readonly rtl = inject(LanguageContext).dir === 'rtl';
   private readonly utils = inject(Utils);
   private readonly destroyRef = inject(DestroyRef);
   // ponytail: two POSTs used by this page alone, so no facade. Extract one the
@@ -746,11 +749,20 @@ export class AiLabs {
         0.6,
       )
       // Run log types in line by line, tracking the steps.
-      .from('.js-log', { opacity: 0, x: -10, ease: 'none', stagger: 0.9, duration: 0.5 }, 0.4)
+      .from(
+        '.js-log',
+        { opacity: 0, x: this.rtl ? 10 : -10, ease: 'none', stagger: 0.9, duration: 0.5 },
+        0.4,
+      )
       // Progress bar fills across the entire run.
       .from(
         '.js-progress-fill',
-        { scaleX: 0, transformOrigin: 'left center', ease: 'none', duration: steps },
+        {
+          scaleX: 0,
+          transformOrigin: this.rtl ? 'right center' : 'left center',
+          ease: 'none',
+          duration: steps,
+        },
         0,
       )
       // Status: Ready → Running → Completed (stacked pills cross-fade).

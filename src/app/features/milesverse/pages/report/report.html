@@ -66,7 +66,7 @@
           variant="primary"
         >
           Choose a scenario
-          <ng-icon name="lucideArrowRight" class="text-base" aria-hidden="true" />
+          <ng-icon name="lucideArrowRight" class="text-base rtl:-scale-x-100" aria-hidden="true" />
         </button>
       </a>
     </div>
@@ -259,7 +259,11 @@
                       <span>{{ c.met }}/{{ c.total }} criteria met</span>
                       <span class="mv-see inline-flex items-center gap-1 font-semibold text-accent">
                         See evidence
-                        <ng-icon name="lucideArrowRight" class="text-[11px]" aria-hidden="true" />
+                        <ng-icon
+                          name="lucideArrowRight"
+                          class="text-[11px] rtl:-scale-x-100"
+                          aria-hidden="true"
+                        />
                       </span>
                     </span>
                   }
@@ -503,7 +507,11 @@
         <a [routerLink]="cataloguePath">
           <button app-button type="button" class="gap-2" variant="outline">
             Choose another scenario
-            <ng-icon name="lucideArrowRight" class="text-base" aria-hidden="true" />
+            <ng-icon
+              name="lucideArrowRight"
+              class="text-base rtl:-scale-x-100"
+              aria-hidden="true"
+            />
           </button>
         </a>
       </div>

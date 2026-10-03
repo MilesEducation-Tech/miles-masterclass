@@ -19,7 +19,7 @@
     <!-- Overlay layers -->
     <div class="absolute top-0 start-0 w-full h-full bg-[#0a1929]/60 z-0 max-md:hidden"></div>
     <div
-      class="absolute top-0 start-0 w-full h-full bg-linear-to-r from-background/80 to-backfrom-background/50 z-20"
+      class="absolute top-0 start-0 w-full h-full bg-linear-to-r rtl:bg-linear-to-l from-background/80 to-backfrom-background/50 z-20"
     ></div>
     <div
       class="absolute top-0 start-0 w-full h-full bg-linear-to-t from-background from-10% to-30% to-transparent z-10"
@@ -155,7 +155,7 @@
               class="rounded-full flex justify-center items-center px-4 py-2 bg-white/20 gap-2 mt-4 cursor-pointer backdrop-blur-sm hover:bg-white/30 transition-colors"
               (click)="navigate.emit(prev.id)"
             >
-              <span class="text-white text-lg">←</span>
+              <span class="inline-block text-white text-lg rtl:-scale-x-100">←</span>
               <p class="text-white text-sm">Back to Previous Chapter</p>
             </button>
           }
@@ -250,7 +250,7 @@
           class="rounded-full flex justify-center items-center px-4 py-2 bg-white/20 gap-2 mt-4 cursor-pointer backdrop-blur-sm"
           (click)="navigate.emit(prev.id)"
         >
-          <span class="text-white text-lg">←</span>
+          <span class="inline-block text-white text-lg rtl:-scale-x-100">←</span>
           <p class="text-white text-sm">Back to Previous Chapter</p>
         </button>
       }

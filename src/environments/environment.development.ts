@@ -214,9 +214,9 @@ export const environment = {
   /**
    * Languages this build may resolve a visitor to (`LanguageContext`). Anything else in a cookie or
    * `Accept-Language` is skipped, so a half-translated language never reaches real users.
-   * UAT: `ar` joins once the right-to-left work lands, or testers see a half-mirrored layout.
+   * UAT: every language. Production adds one only once its translations have been reviewed.
    */
   I18N: {
-    languages: ['en', 'fr', 'de', 'es'],
+    languages: ['en', 'ar', 'fr', 'de', 'es'],
   },
 };

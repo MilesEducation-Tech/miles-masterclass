@@ -111,7 +111,7 @@
 .ai-preloader-pct span {
   font-size: 0.38em;
   color: var(--muted-foreground);
-  margin-left: 0.1em;
+  margin-inline-start: 0.1em;
 }
 
 .ai-preloader-bar {
@@ -526,7 +526,7 @@
     content: '';
     position: absolute;
     top: 4.75rem;
-    left: -2rem;
+    inset-inline-start: -2rem;
     width: 1.5rem;
     height: 0;
     border-top: 2px dashed color-mix(in srgb, var(--accent) 40%, transparent);
@@ -580,7 +580,7 @@
 }
 
 .ai-mock-url {
-  margin-left: 0.75rem;
+  margin-inline-start: 0.75rem;
   font-size: 0.75rem;
   color: var(--muted-foreground);
 }
@@ -659,12 +659,12 @@
   position: absolute;
   top: 1.55rem;
   bottom: 1.55rem;
-  left: 1.6rem;
+  inset-inline-start: 1.6rem;
   width: 2px;
 }
 
 .ai-wf-spine {
-  border-left: 2px dashed color-mix(in srgb, var(--foreground) 18%, transparent);
+  border-inline-start: 2px dashed color-mix(in srgb, var(--foreground) 18%, transparent);
 }
 
 .ai-wf-spine-fill {
@@ -731,7 +731,7 @@
 }
 
 .ai-wf-check {
-  margin-left: auto;
+  margin-inline-start: auto;
   flex-shrink: 0;
   color: var(--accent);
   font-size: 1.2rem;
@@ -819,6 +819,16 @@
   transform-origin: left center;
 }
 
+/* Fills from the reading start: right-to-left on an Arabic page. */
+.ai-wf-progress-fill:dir(rtl) {
+  background-image: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--accent) 65%, transparent),
+    var(--accent)
+  );
+  transform-origin: right center;
+}
+
 .ai-wf-log {
   margin-top: 1rem;
   display: flex;
@@ -828,7 +838,7 @@
 
 .ai-wf-log-row {
   position: relative;
-  padding-left: 1rem;
+  padding-inline-start: 1rem;
   font-size: 0.78rem;
   color: var(--muted-foreground);
 }
@@ -836,7 +846,7 @@
 .ai-wf-log-row::before {
   content: '';
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 0.45rem;
   width: 0.45rem;
   height: 0.45rem;
@@ -1073,7 +1083,7 @@
   .ai-wf-spine-fill {
     top: 1.25rem;
     bottom: 1.25rem;
-    left: 1.3rem;
+    inset-inline-start: 1.3rem;
   }
 
   /* Standalone card below the window, not a column inside it. */

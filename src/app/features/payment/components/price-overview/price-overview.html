@@ -161,7 +161,12 @@
             (click)="facade.openCouponDialog()"
           >
             Apply Coupon
-            <ng-icon name="heroChevronRight" size="20" aria-hidden="true" />
+            <ng-icon
+              class="rtl:-scale-x-100"
+              name="heroChevronRight"
+              size="20"
+              aria-hidden="true"
+            />
           </button>
         }
       </div>
@@ -179,7 +184,8 @@
           [disabled]="facade.isEditingAddress()"
           (click)="goBack()"
         >
-          <ng-icon name="heroChevronLeft" size="20" aria-hidden="true" /> Back to Cart
+          <ng-icon class="rtl:-scale-x-100" name="heroChevronLeft" size="20" aria-hidden="true" />
+          Back to Cart
         </button>
       }
 

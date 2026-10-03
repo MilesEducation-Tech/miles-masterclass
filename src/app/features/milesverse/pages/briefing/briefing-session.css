@@ -16,7 +16,7 @@
   justify-content: space-between;
   gap: 1rem;
   width: 100%;
-  text-align: left;
+  text-align: start;
   margin-top: 1rem;
   padding: 1.1rem 1.35rem;
   border: 1px solid var(--border);
@@ -106,7 +106,7 @@
   align-items: center;
   gap: 0.8rem;
   width: 100%;
-  text-align: left;
+  text-align: start;
   padding: 0.65rem 0.85rem;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -472,7 +472,7 @@
   flex-direction: column;
   background: color-mix(in srgb, #05070c 82%, transparent);
   backdrop-filter: blur(18px);
-  border-left: 1px solid color-mix(in srgb, white 12%, transparent);
+  border-inline-start: 1px solid color-mix(in srgb, white 12%, transparent);
   box-shadow: -30px 0 80px -30px rgb(0 0 0 / 0.8);
 }
 /* Brief is text-only — a comfortably wide reading column is enough. */
@@ -628,8 +628,8 @@
   font-size: 0.9rem;
   line-height: 1.6;
   color: color-mix(in srgb, white 80%, transparent);
-  padding-left: 0.85rem;
-  border-left: 2px solid var(--accent);
+  padding-inline-start: 0.85rem;
+  border-inline-start: 2px solid var(--accent);
 }
 
 /* --- "Still there?" idle prompt --- */

@@ -76,7 +76,7 @@
   margin-top: 0.4rem;
   padding: 0.7rem 0.6rem;
   border-radius: 12px;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   transition: background 150ms ease;
 }
@@ -212,7 +212,7 @@
 }
 .mvs-role-chip {
   position: absolute;
-  left: 0.8rem;
+  inset-inline-start: 0.8rem;
   bottom: 0.7rem;
   max-width: calc(100% - 1.6rem);
   overflow: hidden;

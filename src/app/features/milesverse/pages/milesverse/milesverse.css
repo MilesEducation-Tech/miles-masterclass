@@ -214,7 +214,7 @@ a.mv-spotlight:hover {
 .mv-spot-overline {
   position: absolute;
   top: 1rem;
-  left: 1rem;
+  inset-inline-start: 1rem;
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -289,14 +289,14 @@ a.mv-spotlight:hover {
   font-size: 1.9rem;
   font-weight: 700;
   line-height: 1;
-  padding-left: 0.8rem;
-  border-left: 3px solid var(--accent);
+  padding-inline-start: 0.8rem;
+  border-inline-start: 3px solid var(--accent);
   color: var(--foreground);
   font-variant-numeric: tabular-nums;
 }
 .mv-stat-label {
   margin-top: 0.5rem;
-  padding-left: 0.8rem;
+  padding-inline-start: 0.8rem;
   font-size: 0.7rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -365,7 +365,7 @@ a.mv-card:hover .mv-card-img {
 .mv-card-count {
   position: absolute;
   top: 0.75rem;
-  right: 0.75rem;
+  inset-inline-end: 0.75rem;
   font-size: 0.68rem;
   font-weight: 600;
   padding: 0.24rem 0.6rem;

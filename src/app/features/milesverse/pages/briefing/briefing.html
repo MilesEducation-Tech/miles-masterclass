@@ -47,7 +47,7 @@
           [routerLink]="backPath()"
           class="inline-flex items-center gap-[0.4rem] text-[0.85rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ng-icon name="lucideArrowLeft" class="text-base" aria-hidden="true" />
+          <ng-icon name="lucideArrowLeft" class="text-base rtl:-scale-x-100" aria-hidden="true" />
           All scenarios
         </a>
         <p class="mt-4 text-caption font-bold tracking-[0.2em] text-accent uppercase">
@@ -160,7 +160,11 @@
                     }
                   </span>
                 </span>
-                <ng-icon name="lucideArrowRight" class="mv-rail-open shrink-0" aria-hidden="true" />
+                <ng-icon
+                  name="lucideArrowRight"
+                  class="mv-rail-open shrink-0 rtl:-scale-x-100"
+                  aria-hidden="true"
+                />
               </button>
             }
           </div>
@@ -347,7 +351,11 @@
             <ng-icon name="lucideSparkles" class="text-lg" aria-hidden="true" />
             <span>{{ starting() ? 'Starting…' : 'Start simulation' }}</span>
             @if (!starting()) {
-              <ng-icon name="lucideArrowRight" class="text-base" aria-hidden="true" />
+              <ng-icon
+                name="lucideArrowRight"
+                class="text-base rtl:-scale-x-100"
+                aria-hidden="true"
+              />
             }
           </button>
           <p class="mt-3 text-center text-caption text-muted-foreground">
@@ -773,7 +781,8 @@
           </span>
         </span>
         <span class="mv-sheet-launch-cta">
-          Open full view <ng-icon name="lucideArrowRight" aria-hidden="true" />
+          Open full view
+          <ng-icon class="rtl:-scale-x-100" name="lucideArrowRight" aria-hidden="true" />
         </span>
       </button>
       @if (sheetCaption(a); as cap) {
