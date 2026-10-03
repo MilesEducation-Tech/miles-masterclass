@@ -42,7 +42,7 @@ What should happen, citing the contract (Postman folder / request, `docs/*.md`) 
 
 ### How to verify
 
-Steps on local (`pnpm start`, port 4101) or the preview URL — routes, accounts, what to look for.
+Steps on local (`pnpm start`, port 4101) or the UAT environment (if the PR needs a deployed check) — routes, accounts, what to look for.
 
 ### Risks / assumptions / open questions
 

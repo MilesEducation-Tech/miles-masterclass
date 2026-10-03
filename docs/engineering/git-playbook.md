@@ -51,23 +51,28 @@ We use **GitHub Flow**: there is **one** permanent branch, `master`, and it is p
 flowchart LR
   M[(master<br/>= production)] -->|git checkout -b| B[your branch<br/>feat/MIL-231-…]
   B -->|git push + open PR| PR{{PR into master}}
-  PR -->|automatic| P[Vercel preview URL<br/>UAT backend]
+  B -->|pnpm start| L[Local test<br/>UAT backend]
   PR -->|automatic| CI[CI: verify, pr-title,<br/>commitlint, branch-name]
-  PR -->|optional, Flow B| U[uat branch<br/>uat.milesmasterclass.com]
+  PR -->|when it needs a deployed check<br/>Flow B| U[uat branch → Vercel UAT<br/>environment]
   CI --> R[Code-owner review]
-  P --> R
+  L --> R
   U --> R
   R -->|Squash and merge| M
   M -->|automatic| PROD[Production deploy]
 ```
 
-| Thing                   | What it is                                                                                             | Who touches it                              |
-| ----------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
-| `master`                | Production. Protected: no direct push, PR + approval + green CI required, squash-merge only.           | Nobody directly. PRs only.                  |
-| `feat/…`, `fix/…`, etc. | Your short-lived work branch. Lives 1–3 days, deleted after merge.                                     | You.                                        |
-| **Vercel preview URL**  | Every PR gets its own deployment, built against the **UAT** backend. This is your first staging.       | Automatic.                                  |
-| `uat`                   | A **disposable** branch behind the stable staging URL `uat.milesmasterclass.com`. Used only in Flow B. | Release owner only.                         |
-| Tags `v3.1.0`           | Release markers. Protected — can't be moved or deleted.                                                | release-please (a bot), via the Release PR. |
+| Thing                    | What it is                                                                                                                | Who touches it                              |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `master`                 | Production. Protected: no direct push, PR + approval + green CI required, squash-merge only.                              | Nobody directly. PRs only.                  |
+| `feat/…`, `fix/…`, etc.  | Your short-lived work branch. Lives 1–3 days, deleted after merge.                                                        | You.                                        |
+| **Local** (`pnpm start`) | Your machine, port 4101, talking to the **UAT** backend. Where every change is tested first.                              | You.                                        |
+| `uat`                    | A **disposable** branch. Vercel's **UAT environment** deploys it to `uat.milesmasterclass.us`. The only deployed staging. | Release owner only.                         |
+| Tags `v3.1.0`            | Release markers. Protected — can't be moved or deleted.                                                                   | release-please (a bot), via the Release PR. |
+
+> **There are no per-PR preview URLs.** Vercel previews are disabled for this project. A PR gets CI, not a
+> deployment. To see a change deployed before production, it goes on the UAT environment (Flow B).
+>
+> UAT environment: **https://uat.milesmasterclass.us**
 
 > **There is no `develop` branch and no `release/*` branch.** If you've used GitFlow elsewhere, forget
 > those. `uat` is **not** a develop branch — nothing ever flows _from_ `uat` into `master`.
@@ -116,8 +121,12 @@ reviewer will ask.
 
 ## 4. Flow A — normal work → production
 
-Use this for **every** feature, fix, chore, refactor, docs, test, style, perf, build and ci change that
-doesn't need a separate UAT sign-off. The steps are identical for all types — only the prefix changes.
+Use this for every feature, fix, chore, refactor, docs, test, style, perf, build and ci change that
+**can be fully tested on your machine**. The steps are identical for all types — only the prefix changes.
+
+Use **Flow B** instead when the change has to be seen **deployed** before production: QA or client
+sign-off, payments/checkout/auth, SSR or SEO behaviour, push notifications, anything that behaves
+differently on a real domain. If you're unsure, ask the reviewer — it's cheaper than a rollback.
 
 ```mermaid
 sequenceDiagram
@@ -126,10 +135,9 @@ sequenceDiagram
   participant V as Vercel
   actor Rev as Code owner
   Dev->>Dev: branch from fresh master, commit
+  Dev->>Dev: pnpm start — test locally (UAT backend)
   Dev->>GH: push + open PR (base: master)
-  GH->>V: build preview URL (UAT backend)
   GH->>GH: CI — 4 checks
-  Dev->>V: test on the preview URL
   Dev->>Rev: request review
   Rev->>GH: approve
   Dev->>GH: Squash and merge
@@ -186,16 +194,28 @@ GitHub prints a link — open it. Or on github.com: **Pull requests → New pull
 
 - **base: `master`** ← compare: `feat/MIL-231-seat-allocation`. Double-check the base.
 - Title and description: [§10](#10-how-to-write-the-pr).
-- Not ready yet? Choose **Create draft pull request**. You still get CI and a preview URL.
+- Not ready yet? Choose **Create draft pull request**. CI still runs.
 
 **Before you click create**, look at the **Files changed** tab. Every file there will go to production.
 If you see a file you didn't mean to change, fix it first ([§9](#9-ship-only-whats-needed--keeping-other-code-out-of-your-pr)).
 
-### Step 6 — test on the Vercel preview URL
+### Step 6 — test it locally
 
-The Vercel bot comments on the PR with a preview link (also under the PR's **Deployments** / checks list).
-It runs against the **UAT** backend. Test your change there, on mobile (375px) and desktop, and put
-screenshots in the PR.
+There is no preview deployment, so your machine is where the change gets proven:
+
+```bash
+pnpm start                      # http://localhost:4101, talks to the UAT backend
+```
+
+Test your change in the browser at 375 / 768 / 1440 px and put screenshots in the PR. For anything that
+touches server rendering, also run the production-like server:
+
+```bash
+pnpm build && pnpm serve:ssr:miles-masterclass-v3   # http://localhost:4000
+```
+
+Realised it needs a deployed check after all? Switch to [Flow B](#5-flow-b--needs-staging-uat-sign-off-before-production):
+make the PR a draft, add `needs-uat`, and ask the release owner.
 
 ### Step 7 — review
 
@@ -228,66 +248,141 @@ git branch -D feat/MIL-231-seat-allocation
 
 ## 5. Flow B — needs staging (UAT) sign-off before production
 
-Use this when a change must be seen by QA, product or a client on the **stable** staging URL
-**uat.milesmasterclass.com** before it goes live — usually big features, payment/checkout changes, or
-anything a stakeholder must approve.
+Use this when a change must be seen **deployed** before it goes live: QA, product or client sign-off,
+payments/checkout/auth, SSR/SEO behaviour, or anything that behaves differently on a real domain. Since
+there are no per-PR previews, **the Vercel UAT environment at `uat.milesmasterclass.us` is the only deployed place to
+test before production**.
 
-**The one idea to remember:** the PR still goes into **`master`**. `uat` is just a _preview slot_ we
-temporarily point at your branch. It is thrown away and rebuilt all the time. Code never travels
+**The one idea to remember:** the PR still goes into **`master`**. `uat` is just a _staging slot_ we
+temporarily point at your branch. It is thrown away and rebuilt all the time, and there is **only
+one** — so it's shared, and the release owner decides what's on it. Code never travels
 `uat → master`.
 
+Two facts make this work:
+
+- **A draft PR can't be merged.** That's exactly what you want while waiting for sign-off — it cannot
+  reach production by accident. But CI still runs on a draft, and its branch is on GitHub, so it can be
+  put on UAT like any other.
+- **`uat` points at one exact commit, not at a branch.** When the developer pushes a fix, UAT does
+  **not** change by itself. The release owner puts the new commit up.
+
 ```mermaid
-flowchart TD
-  A[Branch from master<br/>feat/MIL-231-…] --> B[Open PR into master<br/>as DRAFT + label needs-uat]
-  B --> C[Release owner puts your branch<br/>on uat]
-  C --> D{QA / client<br/>on uat.milesmasterclass.com}
-  D -->|changes requested| E[Commit fixes on YOUR branch]
-  E --> C
-  D -->|approved| F[Mark PR Ready for review<br/>→ code review → Squash and merge]
-  F --> G[(master → production)]
-  D -->|rejected / postponed| H[PR stays open or is closed<br/>— nothing reaches production]
+sequenceDiagram
+  actor Dev as Developer
+  participant PR as PR into master (draft)
+  actor RO as Release owner
+  participant UAT as uat branch
+  participant V as Vercel UAT environment
+  actor QA as QA / client
+  participant M as master → production
+
+  Dev->>PR: push branch, open DRAFT PR + label needs-uat
+  PR->>PR: CI (4 checks)
+  Dev->>RO: "PR #123 ready for UAT" (only once CI is green)
+  RO->>UAT: fetch pull/123/head, force-push onto uat
+  UAT->>V: Vercel builds + deploys to uat.milesmasterclass.us (build:dev, UAT backend)
+  RO->>PR: comment "On UAT at abc1234"
+  QA->>V: test
+  alt bug found
+    QA-->>Dev: report
+    Dev->>PR: fix on the SAME branch, push
+    Dev->>RO: "PR #123 updated"
+    RO->>UAT: force-push the new commit
+  else approved
+    QA-->>Dev: signed off
+    Dev->>PR: "UAT approved by …, commit abc1234", remove label, Ready for review
+    PR->>M: code-owner review → Squash and merge
+    RO->>UAT: reset uat to master (or rebuild with PRs still in QA)
+  end
 ```
+
+And the branches over time. Everything reaches `master` through its **own** PR; `uat` is rebuilt and
+thrown away, and nothing ever merges out of it:
+
+```mermaid
+gitGraph
+  commit id: "v3.0.1"
+  branch feat/A
+  commit id: "A1"
+  checkout master
+  branch feat/B
+  commit id: "B1"
+  checkout master
+  branch uat
+  merge feat/A
+  merge feat/B tag: "QA tests A + B"
+  checkout feat/B
+  commit id: "B2 (QA fix)"
+  checkout master
+  merge feat/A tag: "A approved → prod"
+```
+
+After `A` merges, the release owner rebuilds `uat` from `master` + `feat/B` (which now includes `B2`).
+The old `uat` commits are simply discarded.
 
 ### For the developer
 
-1. Do Flow A steps 1–5, but open the PR as a **draft**, and add the label `needs-uat`. Write
-   **"Needs UAT sign-off — do not merge"** at the top of the description.
-2. Ask the release owner to put your branch on UAT (Slack/ticket: branch name + PR link).
-3. QA finds a bug → fix it **on your branch**, push, and ask for a UAT refresh. Never commit to `uat`.
-4. UAT signed off → note it in the PR ("UAT approved by <name> on <date>"), remove `needs-uat`, click
-   **Ready for review**, then Flow A steps 7–9.
+1. Do Flow A steps 1–5, but open the PR as a **draft** and add the label `needs-uat`. Write
+   **"⚠️ Needs UAT sign-off — do not merge"** at the top of the description.
+2. Wait for CI to be green, and test it locally first (Flow A step 6). Don't ask for UAT while the PR
+   is red or untested — UAT is one shared slot, and a broken build blocks everyone queued behind you.
+3. Ask the release owner to put it on UAT. Send the **PR link**; that's all they need.
+4. QA finds a bug → fix it **on your branch**, push, and tell the release owner the PR is updated.
+   UAT does not pick up your push on its own. Never commit to `uat` (you can't — see the setup below).
+5. UAT signed off → comment on the PR: **"UAT approved by <name> on <date>, commit `abc1234`"**, remove
+   `needs-uat`, click **Ready for review**, then Flow A steps 7–9.
+6. Pushed anything after sign-off (other than a rebase)? It needs UAT again.
 
 ### For the release owner — putting branches on `uat`
 
-**One branch on UAT:**
+Before putting a PR up, check: CI is green, base is `master`, **Files changed** contains only that ticket.
+
+**One PR on UAT** (by PR number — no need to know the branch name):
 
 ```bash
-git fetch origin
-git push --force-with-lease=uat origin origin/feat/MIL-231-seat-allocation:refs/heads/uat
+git fetch origin pull/123/head:uat-candidate --force
+git push --force-with-lease=uat origin uat-candidate:refs/heads/uat
 ```
 
-**Several branches on UAT together** (QA wants to test A + B + C in one go):
+Then comment on the PR: **"On UAT at `<sha>`"** (`git rev-parse --short uat-candidate`).
+
+**Several PRs on UAT together** (QA wants to test #123 + #130 + #131 in one go):
 
 ```bash
 git fetch origin
 git checkout -B uat origin/master            # always rebuild from production
-git merge --no-ff origin/feat/MIL-231-seat-allocation
-git merge --no-ff origin/feat/MIL-245-promo-codes
-git merge --no-ff origin/fix/MIL-250-invoice-rounding
+git fetch origin pull/123/head:pr-123 pull/130/head:pr-130 pull/131/head:pr-131 --force
+git merge --no-ff pr-123
+git merge --no-ff pr-130
+git merge --no-ff pr-131
 git push --force-with-lease origin uat
 ```
 
-If two branches conflict here, that's an early warning that their PRs will conflict too — tell both authors.
+If two PRs conflict here, that's an early warning that they will conflict on `master` too — tell both
+authors rather than resolving it on `uat`.
 
-**Reset UAT to production** (after a release, after a hotfix, or when UAT is a mess):
+**A PR on UAT was updated:** run the same commands again. `uat` only moves when you push it.
+
+**Reset UAT to production** (after a merge, a release, a hotfix, or when UAT is a mess):
 
 ```bash
 git fetch origin
 git push --force-with-lease=uat origin origin/master:refs/heads/uat
 ```
 
-Vercel redeploys uat.milesmasterclass.com each time `uat` changes (it's a non-production build, so it
-uses `build:dev` and the UAT backend — same as a PR preview).
+`--force-with-lease=uat` means "overwrite `uat`, but only if nobody else moved it since my last fetch".
+Vercel's UAT environment redeploys `uat.milesmasterclass.us` each time `uat` changes, usually within a few minutes.
+It isn't the production environment, so `vercel.sh` runs `build:dev` against the UAT backend. Check the
+deployment finished (Vercel → Deployments, filter by the UAT environment) before telling QA it's up.
+
+**UAT is one slot — share it.** If PR #130 is mid sign-off and PR #140 asks for UAT, either wait, or
+put both on together (the "several PRs" commands) and tell both testers. Never silently replace a build
+someone is testing.
+
+> **What QA tested is not byte-for-byte what ships.** QA tested the branch on top of the `master` of
+> that day; the squash lands on today's `master`. The "branch must be up to date" rule plus CI cover
+> most of this. For risky changes (payments, auth, checkout), if `master` moved a lot since sign-off:
+> rebase, put it back on UAT, and get a quick re-check before merging.
 
 ### Staging permutations
 
@@ -298,8 +393,9 @@ uses `build:dev` and the UAT backend — same as a PR preview).
 | C was **rejected**                               | Rebuild `uat` without C. Close C's PR or leave it as draft.                                                                            |
 | QA found a bug in B                              | B's author fixes it on `feat/…B` and pushes; release owner rebuilds `uat`.                                                             |
 | A hotfix went to production while UAT had A + B  | Rebuild `uat` (starting from `origin/master` picks up the hotfix automatically).                                                       |
-| Feature needs UAT but it's tiny                  | The PR's **Vercel preview URL** already runs against the UAT backend. Send that link to QA — you may not need `uat` at all.            |
-| Stakeholder wants a frozen build for days        | Put the branch on `uat` and don't rebuild it until they sign off. Other features use preview URLs in the meantime.                     |
+| Two PRs want UAT at the same time                | Put both on together (several-PRs commands), or queue the second. Never replace a build someone is mid-way through testing.            |
+| Stakeholder wants a frozen build for days        | Put the branch on `uat` and don't rebuild it until they sign off. Every other PR queues — or is combined into that build — meanwhile.  |
+| Change is small but must be seen deployed        | Still Flow B — there is no other deployed environment. Combine it with whatever is already on UAT to avoid a queue.                    |
 | Someone opened a PR **from** `uat` into `master` | Close it. CI's `branch-name` check fails it anyway. Merging it would ship every unapproved feature on UAT.                             |
 | Someone created their branch **from** `uat`      | Their PR contains other people's work. Fix with [§9 recipe 6](#recipe-6--i-branched-from-the-wrong-branch-uat-or-someone-elses).       |
 
@@ -307,12 +403,38 @@ uses `build:dev` and the UAT backend — same as a PR preview).
 
 - ❌ Open a PR into `uat`, or from `uat`.
 - ❌ Branch from `uat`.
-- ❌ Commit directly on `uat` (fixes go on the feature branch).
+- ❌ Commit or push to `uat` yourself — only the release owner can, and the ruleset enforces it. Fixes go
+  on the feature branch.
 - ❌ Treat `uat` as history — it is force-reset regularly. Anything only on `uat` will be lost.
 
-> **Setup note (one time, release owner):** in Vercel → Project → Settings → Domains, assign
-> `uat.milesmasterclass.com` to the Git branch `uat`. If that isn't done, pushing `uat` still creates a
-> deployment, but at a generated URL instead of the stable domain.
+### One-time setup (release owner)
+
+1. **Create the branch** from production:
+
+   ```bash
+   git push origin origin/master:refs/heads/uat
+   ```
+
+2. **Protect it** with `.github/rulesets/uat.json`:
+
+   ```bash
+   gh api -X POST repos/MilesEducation-Tech/miles-masterclass/rulesets --input .github/rulesets/uat.json
+   ```
+
+   It blocks **creating, pushing to, and deleting** `uat` for everyone except repository admins (the
+   bypass list). It deliberately has **no** PR requirement, **no** force-push block, **no** linear
+   history and **no** status checks: `uat` is rebuilt by force-push, CI never runs on it, and requiring
+   PRs into it would turn it into a `develop` branch. A developer who tries to push to `uat` gets
+   `GH013: Repository rule violations` — that's the rule working. To let a non-admin run UAT, create a
+   `release-owners` team and make it the bypass actor instead of the admin role.
+
+   To change it later, find its id with `gh api repos/MilesEducation-Tech/miles-masterclass/rulesets`
+   and `PUT` to `…/rulesets/<id>`. Never `POST` a second copy.
+
+3. **Vercel — already done:** previews are disabled and a **UAT environment** exists. Make sure it
+   tracks the Git branch `uat` (Vercel → Project → Settings → Environments → UAT → Branch Tracking) and
+   that `uat.milesmasterclass.us` is its domain. If it tracks another branch, pushing `uat` deploys nothing.
+4. **Create the label** `needs-uat` in GitHub → Issues → Labels.
 
 ---
 
@@ -338,7 +460,8 @@ Then:
 
 1. Open the PR into `master`. Title: `fix(payment): stop checkout 500 when cart has a free item`
    (**`fix`, not `hotfix`**). Put **URGENT** in the description and ping the reviewer directly.
-2. Verify the fix on the Vercel preview URL.
+2. Verify the fix locally (`pnpm start`). If it can only be reproduced deployed, ask the release owner
+   to put the PR on UAT first — reset UAT for it if needed; a hotfix jumps the queue.
 3. Approval + green CI → **Squash and merge** → production deploys.
 4. Release owner: if `uat` is in use, reset or rebuild it so it contains the hotfix ([§5](#for-the-release-owner--putting-branches-on-uat)).
 5. Release owner: merge the open Release PR to tag the patch version ([§12](#12-releases-version-numbers)).
@@ -621,7 +744,7 @@ Admins currently ask support to change seat counts by hand.
 
 ## How to test
 
-1. Open the preview URL at /admin/partners/42
+1. `pnpm start`, open http://localhost:4101/admin/partners/42 (or `uat.milesmasterclass.us` if it was on UAT)
 2. Click "Allocate seats", set 10 for "Acme LLP", save
 3. Reload — the count stays 10; setting more than the licence total shows an error
 
@@ -635,7 +758,7 @@ Admins currently ask support to change seat counts by hand.
 - [x] No new `eslint-disable`, `@ts-ignore`, or skipped tests
 - [x] Follows the structure rules in AGENTS.md (placement, boundaries, naming)
 - [x] Tailwind utilities used; no new component CSS unless unavoidable
-- [x] Tested on the preview URL, mobile + desktop
+- [x] Tested locally (and on UAT if it needed sign-off), mobile + desktop
 - [x] Branch is `type/TICKET-description` and the PR title is a Conventional Commit
 ```
 
@@ -657,7 +780,7 @@ Never mix a refactor and a feature in one PR.
 ### Draft vs Ready
 
 - **Draft** = "not ready, don't review" — use it for work in progress, UAT waits, dependent PRs.
-- **Ready for review** = done, tested on the preview URL, checklist ticked.
+- **Ready for review** = done, tested locally (and signed off on UAT if it needed it), checklist ticked.
 
 ---
 
@@ -711,11 +834,11 @@ follows the manual steps in [`git-workflow.md` §7](git-workflow.md#7-releases-a
 
 ## 13. Bot PRs (Dependabot, release-please)
 
-| Bot PR                     | Branch looks like                  | Who handles it                                                                                                                    |
-| -------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Dependabot dependency bump | `dependabot/npm_and_yarn/…`        | Whoever is on dependency duty. Wait for green CI, check the preview, approve + squash. Title is already a valid `chore(deps): …`. |
-| Dependabot Actions bump    | `dependabot/github_actions/…`      | Release owner — it changes CI itself.                                                                                             |
-| release-please Release PR  | `release-please--branches--master` | Release owner only ([§12](#12-releases-version-numbers)).                                                                         |
+| Bot PR                     | Branch looks like                  | Who handles it                                                                                                                                            |
+| -------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dependabot dependency bump | `dependabot/npm_and_yarn/…`        | Whoever is on dependency duty. Wait for green CI, run it locally if it touches runtime deps, approve + squash. Title is already a valid `chore(deps): …`. |
+| Dependabot Actions bump    | `dependabot/github_actions/…`      | Release owner — it changes CI itself.                                                                                                                     |
+| release-please Release PR  | `release-please--branches--master` | Release owner only ([§12](#12-releases-version-numbers)).                                                                                                 |
 
 These branch names are allowed by the `branch-name` check on purpose. Don't rename them.
 Dependabot PR red because of the lockfile? Check it out, run `pnpm install`, commit the lockfile as
@@ -828,13 +951,13 @@ git fetch origin && git rebase origin/master && git push --force-with-lease
 git checkout master && git pull && git branch -D feat/MIL-231-seat-allocation
 ```
 
-| Question                                   | Answer                                                                                              |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| Which branch do I start from?              | `master`. Always.                                                                                   |
-| Where does my PR go?                       | `master`. Always.                                                                                   |
-| How does it reach staging?                 | Automatically — the PR's Vercel preview URL. Stable URL = ask the release owner to put it on `uat`. |
-| How does it reach production?              | Squash and merge the PR. That's it.                                                                 |
-| When does a hotfix differ?                 | Only in speed and the branch prefix. Title is still `fix(...)`.                                     |
-| Who merges?                                | The PR author, after approval + green CI.                                                           |
-| Who merges the Release PR / touches `uat`? | The release owner only.                                                                             |
-| Can I push to `master` or `uat`?           | No.                                                                                                 |
+| Question                                   | Answer                                                                                            |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| Which branch do I start from?              | `master`. Always.                                                                                 |
+| Where does my PR go?                       | `master`. Always.                                                                                 |
+| How does it reach staging?                 | It doesn't, automatically. Ask the release owner to put the PR on `uat` → Vercel UAT environment. |
+| How does it reach production?              | Squash and merge the PR. That's it.                                                               |
+| When does a hotfix differ?                 | Only in speed and the branch prefix. Title is still `fix(...)`.                                   |
+| Who merges?                                | The PR author, after approval + green CI.                                                         |
+| Who merges the Release PR / touches `uat`? | The release owner only.                                                                           |
+| Can I push to `master` or `uat`?           | No.                                                                                               |

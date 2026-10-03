@@ -1,10 +1,10 @@
 import { PROFESSIONS } from '../constants/profession';
+import type { SUPPORTED_COUNTRIES } from '../constants/countries';
 
 export type ProfessionType = (typeof PROFESSIONS)[number];
 
-// Extracting ISO2 codes from locationJson for strict typing if needed,
-// otherwise just alias to string for now since locationJson is large and might be inferred as general object array
-export type CountryCode = string;
+/** A supported country (lower-case ISO2). Validate untrusted input with `toCountry()`. */
+export type CountryCode = (typeof SUPPORTED_COUNTRIES)[number];
 
 export interface DynamicRouteParams {
   country: CountryCode;

@@ -111,7 +111,7 @@ What that means in practice:
 | @me-sachin-singh pushes to `master` | Allowed                                                           |
 
 The bypass exists so the owner is never blocked, not so the process gets skipped. Two habits keep it honest:
-still open a PR for your own work (you get CI, the preview URL and a reviewable diff), and don't merge red —
+still open a PR for your own work (you get CI and a reviewable diff), and don't merge red —
 if a required check is wrong, fix the check rather than bypassing it. When a second reliable reviewer exists,
 narrow the bypass to "Pull requests" mode or remove it, and turn "Require approval of the most recent push"
 back on.
@@ -358,12 +358,10 @@ browser, and steps. That closes the loop with the build-identity work in `versio
 
 ## 7. Vercel integration
 
-- Connect the repo through the Vercel GitHub app. Production deploys from `master`; every PR gets a preview.
-- Set env vars per environment in Vercel (Production / Preview / Development), not in the repo.
+- Connect the repo through the Vercel GitHub app. Production deploys from `master`. **Preview deployments are disabled**; a custom **UAT** environment
+  tracks the `uat` branch (protected by `.github/rulesets/uat.json`, flow in `git-playbook.md` §5).
+- Set env vars per environment in Vercel (Production / UAT / Development), not in the repo.
 - Enable **Skew Protection** (Settings → Advanced) and wire the deployment ID into requests — see `versioning.md`.
-- Consider adding Vercel's deployment status as a required check so a PR can't merge if its preview failed to
-  build. Verify it reports reliably on your plan first; a check that sometimes doesn't post will block every merge.
-- Use the Ignored Build Step to skip preview builds for docs-only branches if preview minutes become a concern.
 
 > If you ever rename the default branch, Vercel's production branch must be changed in the dashboard in the
 > same window, or production deploys stop silently.
@@ -469,4 +467,4 @@ What is left, in this order — step 1 before step 3 is the part that matters:
 - [ ] The head branch is deleted after merge
 - [ ] `git tag -d v3.0.1 && git push --delete origin v3.0.1` is rejected
 - [ ] A commit containing a fake token is blocked by push protection
-- [ ] A Vercel preview URL appears on every PR
+- [ ] A push to `uat` by a non-admin is rejected, and an admin's push deploys to the UAT environment

@@ -9,7 +9,7 @@ The problem this solves.
 
 ## How to test
 
-1. Open the preview URL at /…
+1. `pnpm start`, open http://localhost:4101/… (or the UAT URL, if this PR was on UAT)
 2. …
 
 ## Screenshots / recordings
@@ -31,5 +31,6 @@ reviewer has to hold you to — see AGENTS.md §3–§4:
       `injectAsync` (§4.4–§4.5)
 - [ ] Tailwind utilities and `@theme` tokens; new component CSS only for keyframes, third-party DOM, `:host`
       rules or PDF DOM (§4.6)
-- [ ] UI checked at 375 / 768 / 1440 px on the preview URL; intentional visual differences listed above
+- [ ] UI checked at 375 / 768 / 1440 px locally (and signed off on UAT if it needed a deployed check);
+      intentional visual differences listed above
 - [ ] Branch is `type/TICKET-description` and the PR title is a Conventional Commit

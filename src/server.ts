@@ -10,6 +10,7 @@ import { APP_BUILT_AT, APP_SEMVER, APP_SHA, APP_VERSION } from './app/core/versi
 import { registerSeoRoutes } from './seo';
 import { registerServiceWorkerRoute } from './service-worker';
 import { registerLegacyRedirects } from './legacy-redirects';
+import { geoCountryCookie, geoRootRedirect } from './geo-country';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -89,6 +90,12 @@ registerServiceWorkerRoute(app);
 registerLegacyRedirects(app);
 
 /**
+ * `/` → `/<geo country>/accounting`, answered before Angular so the bare domain costs no SSR
+ * render. See `src/geo-country.ts`.
+ */
+app.use(geoRootRedirect);
+
+/**
  * Reverse-proxy the headless WordPress blog REST API.
  *
  * The browser calls the same-origin `/blog-api/*` path (see
@@ -159,6 +166,12 @@ app.use(
     redirect: false,
   }),
 );
+
+/**
+ * Give the browser the edge's country (`geo_country` cookie). Registered after `express.static`
+ * so only rendered HTML can carry the `Set-Cookie`, never an asset.
+ */
+app.use(geoCountryCookie);
 
 /**
  * Handle all other requests by rendering the Angular application.
