@@ -156,7 +156,13 @@
         <app-field [errors]="billingForm.zipcode().errors()">
           <label ngpLabel for="postal_code">Pin Code/ Zip code</label>
 
-          <input app-input id="postal_code" type="text" [formField]="billingForm.zipcode" />
+          <input
+            app-input
+            id="postal_code"
+            type="text"
+            dir="ltr"
+            [formField]="billingForm.zipcode"
+          />
         </app-field>
       </div>
 

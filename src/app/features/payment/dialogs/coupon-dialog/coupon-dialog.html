@@ -20,8 +20,9 @@
 
     <!-- Scrollable Content -->
     <div class="flex-1 overflow-y-auto p-5 space-y-5">
-      <!-- Coupon Code Input -->
-      <div class="relative flex items-center">
+      <!-- Coupon Code Input. dir="ltr" on the row: a code reads left-to-right, and the input's end
+           padding is reserved for the Apply button beside it, so the two must flip together or not at all. -->
+      <div class="relative flex items-center" dir="ltr">
         <input
           [formControl]="couponCodeControl"
           placeholder="Enter Coupon Code"

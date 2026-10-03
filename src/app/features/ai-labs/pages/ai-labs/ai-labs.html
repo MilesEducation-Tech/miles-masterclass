@@ -264,7 +264,8 @@
 
       <!-- Row 1 — the Microsoft 365 tools. -->
       <div class="ai-marquee-mask mt-8 overflow-hidden">
-        <div ngxMarquee [speed]="55" class="flex items-center gap-4 whitespace-nowrap">
+        <!-- dir="ltr": ngxMarquee scrolls by xPercent, which assumes a left-to-right track. -->
+        <div ngxMarquee [speed]="55" dir="ltr" class="flex items-center gap-4 whitespace-nowrap">
           @for (tool of tools; track tool) {
             <span
               class="mx-2 inline-flex items-center rounded-xl border border-border bg-card/40 px-5 py-2.5 text-[0.9rem] font-semibold text-muted-foreground"
@@ -648,7 +649,8 @@
            than a different component. buildCardFan() writes the vars from scroll
            on desktop; stepFan() writes the same vars from a swipe on mobile. -->
       <ng-template #fanDeck>
-        <div class="ai-fan" #cardFan [style.--items]="fanCards().length || 1">
+        <!-- dir="ltr": the fan is drawn and stepped physically (left:50% + --x offsets, swipe, arrow keys). -->
+        <div class="ai-fan" #cardFan dir="ltr" [style.--items]="fanCards().length || 1">
           @for (entry of fanCards(); track entry.section + entry.card.name; let i = $index) {
             <article
               class="ai-fan-item"

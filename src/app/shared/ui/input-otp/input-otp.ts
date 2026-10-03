@@ -28,7 +28,8 @@ const SLOT =
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-input-otp',
   imports: [NgpInputOtp, NgpInputOtpInput, NgpInputOtpSlot, NgpFormControl],
-  host: { class: 'inline-flex max-w-full flex-col gap-3' },
+  // dir: a code is entered left-to-right in every language, so slot 1 is always on the left.
+  host: { class: 'inline-flex max-w-full flex-col gap-3', dir: 'ltr' },
   template: `
     <div
       ngpInputOtp

@@ -1,3 +1,5 @@
+import { PlatformLocation } from '@angular/common';
+import { MOCK_PLATFORM_LOCATION_CONFIG, MockPlatformLocation } from '@angular/common/testing';
 import { DOCUMENT, PLATFORM_ID, REQUEST, TransferState, makeStateKey } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
@@ -18,6 +20,8 @@ interface Setup {
   enabled?: readonly Language[];
   /** Replaces `document` (only the switching cases need to observe `location.reload`). */
   document?: unknown;
+  /** Path the app was opened at. */
+  url?: string;
 }
 
 const setCookie = vi.fn();
@@ -29,6 +33,7 @@ function setup({
   transferred,
   enabled = ['en', 'ar', 'fr', 'de', 'es'],
   document,
+  url = '/',
 }: Setup): LanguageContext {
   // Several cases build more than one context in a single test.
   TestBed.resetTestingModule();
@@ -48,6 +53,8 @@ function setup({
         useValue: { getCookie: (k: string) => (k === 'lang' ? cookie : ''), setCookie },
       },
       ...(document ? [{ provide: DOCUMENT, useValue: document }] : []),
+      { provide: MOCK_PLATFORM_LOCATION_CONFIG, useValue: { startUrl: `http://localhost${url}` } },
+      { provide: PlatformLocation, useClass: MockPlatformLocation },
     ],
   });
   if (transferred) TestBed.inject(TransferState).set(LANGUAGE_KEY, transferred);
@@ -156,5 +163,14 @@ describe('LanguageContext', () => {
       expect(setCookie).not.toHaveBeenCalled();
       expect(reload).not.toHaveBeenCalled();
     });
+  });
+
+  // Admin is internal and untranslated: an Arabic cookie or browser must not turn it right-to-left.
+  it('always resolves English under /admin', () => {
+    expect(setup({ platform: 'browser', url: '/admin/users', cookie: 'ar' }).current).toBe('en');
+    expect(setup({ platform: 'server', url: '/admin', acceptLanguage: 'fr' }).current).toBe('en');
+    expect(setup({ platform: 'server', url: '/us/accounting', acceptLanguage: 'fr' }).current).toBe(
+      'fr',
+    );
   });
 });
