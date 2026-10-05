@@ -8,8 +8,14 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 ## Now
 
 - 🔧 **2026-10-05, NON-REFACTOR — MIL-23 (`prompts/masterclass-tracks-rebind.md`): PR1 data layer + PR2
-  page DONE and verified, UNCOMMITTED; PR3 (about-course) and PR4 (bookmark) not started.** No refactor
-  phase moved. Plan approved with D1–D4 as recommended.
+  page DONE, committed by you as ONE commit `10a5b18` and pushed (with the Postman export swap, 841
+  files); PR3 (about-course) and PR4 (bookmark) not started.** No refactor phase moved. Plan approved
+  with D1–D4 as recommended. `verify.mjs` full run on that tree (local macOS, Node 24.18, **not CI**):
+  all 8 gates GREEN. Its bundle report warns initial gzip +174% vs `baseline/bundle.json` (2026-09-24):
+  the baseline is stale (it predates counting `styles-*.css`); the MIL-23 code is only in lazy chunks and
+  Angular's own initial transfer moved +0.04 kB. SSR smoke lists 9 routes "not in baseline", and the
+  masterclass DETAIL page's SSR title is a raw `{{title}}` (same in the baseline). Both are for you to
+  re-record or ticket.
   - PR1: `MASTERCLASS_ENDPOINTS` (`constants/masterclass.ts`), typed model + `parseHomePage` guard,
     route-scoped `MasterclassHomeFacade` (`httpResource`, `loginType` from `isAuthenticated()`, `post_login`
     skipped on the server, `withPreviousValue`, empty tracks dropped, `openTrailer`), a live-shaped mock in
@@ -2803,6 +2809,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-05 · NON-REFACTOR · **MIL-23 committed by you as `10a5b18`** (one commit, pushed, incl. Postman swap) · `verify.mjs` 8/8 GREEN (local, Node 24.18); bundle-baseline warning is a stale baseline
 
 - 2026-10-05 · NON-REFACTOR · **MIL-23 PR1 + PR2 done** (uncommitted) — masterclass page on `web-api/v1/masterclass/home-page/`: typed model + parse, route-scoped facade, course card, page rewrite (hero kept as-is); browser-verified on UAT · lint 0 errors, tests 209 files / 986 passed + 1 skipped, build:prod + format + structure green (local, Node 24)
 
