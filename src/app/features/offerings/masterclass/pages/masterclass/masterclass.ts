@@ -1,125 +1,48 @@
 import { Component, computed, inject } from '@angular/core';
-import { environment } from '@env/environment';
+import { swiperConfigEven, swiperConfigOdd } from '@core/config/swiper.config';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
-import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
-import { Vertical } from '@shared/components/cards/vertical/vertical';
 import { Carousel } from '@shared/components/carousel/carousel';
-import {
-  swiperConfigComingSoon,
-  swiperConfigEven,
-  swiperConfigOdd,
-} from '@core/config/swiper.config';
-import { Slider } from '@shared/components/slider/slider';
-import { SliderSkeleton } from '@shared/components/skeleton/slider-skeleton/slider-skeleton';
-import { ComingSoon } from '@shared/components/cards/coming-soon/coming-soon';
 import { Faq } from '@shared/components/faq/faq';
-import { PartnerContentList } from '@shared/components/partner-content-list/partner-content-list';
 import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
+import { SliderSkeleton } from '@shared/components/skeleton/slider-skeleton/slider-skeleton';
+import { Slider } from '@shared/components/slider/slider';
+import { Button } from '@shared/ui/button/button';
+import { MasterclassCourseCard } from '@features/offerings/masterclass/components/masterclass-course-card/masterclass-course-card';
+import {
+  MASTERCLASS_SECTION_NAV,
+  MASTERCLASS_TRACKS_SECTION_ID,
+} from '@features/offerings/masterclass/constants/masterclass-nav';
+import { MasterclassHomeFacade } from '@features/offerings/masterclass/services/masterclass-home-facade';
 
+/**
+ * The masterclass landing page: the hero, then one carousel per track from
+ * `home-page/`. The tracks' data, loading and error state, and the trailer
+ * action all live in `MasterclassHomeFacade`.
+ */
 @Component({
   selector: 'app-masterclass',
-  imports: [
-    Horizontal,
-    Vertical,
-    Carousel,
-    Slider,
-    SliderSkeleton,
-    ComingSoon,
-    Faq,
-    PartnerContentList,
-    SectionNav,
-  ],
+  imports: [Carousel, Faq, SectionNav, Slider, SliderSkeleton, Button, MasterclassCourseCard],
   templateUrl: './masterclass.html',
 })
 export class Masterclass {
-  S3_BUCKET_URL = environment.S3_BUCKET_URL;
-  readonly feature: FeatureFacade = inject(FeatureFacade);
-
-  // Swiper configurations for templates
-  readonly swiperConfigEven = swiperConfigEven;
-  readonly swiperConfigOdd = swiperConfigOdd;
-  readonly swiperConfigComingSoon = swiperConfigComingSoon;
-
-  filterConfig = {
-    filterEnabled: true,
-  };
-
-  readonly popular = this.feature.getResource('popular', 'masterclass');
-  readonly inprogress = this.feature.getResource('inprogress', 'masterclass', {
-    requiresAuth: true,
-  });
-  readonly recommended = this.feature.getResource('recommended', 'masterclass', {
-    requiresAuth: true,
-  });
-  readonly complimentary = this.feature.getResource('complimentary', 'masterclass', {
-    requiresAuth: true,
-  });
-  readonly becauseYouWatched = this.feature.getResource('becauseYouWatched', 'masterclass', {
-    requiresAuth: true,
-  });
-  readonly track = this.feature.getResource('track', 'masterclass');
-  readonly bookmark = this.feature.getResource('bookmark', 'masterclass', { requiresAuth: true });
-  readonly completed = this.feature.getResource('completed', 'masterclass', { requiresAuth: true });
-  readonly comingSoon = this.feature.getResource('comingSoon', 'masterclass');
-
-  readonly complimentaryHeading = computed(() => {
-    const meta = this.complimentary.metadata();
-    const details = meta?.['details'] as { company_name?: string } | undefined;
-    const companyName = details?.company_name;
-    return companyName
-      ? `Complimentary Courses for ${companyName} Employees`
-      : 'Complimentary Courses';
-  });
-
-  readonly becauseYouWatchedHeading = computed(() => {
-    const meta = this.becauseYouWatched.metadata();
-    const watchedCourse = meta?.['watched_course'] as { title?: string } | undefined;
-    const courseTitle = watchedCourse?.title;
-    return courseTitle ? `Because You Watched ${courseTitle}` : 'Because You Watched';
-  });
+  protected readonly facade = inject(MasterclassHomeFacade);
 
   /**
-   * Sidenav structure mirrors the legacy masterclass-page nav (status:true
-   * items always visible; status:false items show only when their feed has
-   * content). Section ids are kebab-case and match the anchors in
-   * `masterclass.html`; SectionNav resolves them via `getElementById`.
-   *
-   * Legacy entries `learningPathway` and `instructor` are intentionally
-   * omitted — they don't correspond to any section rendered on this page
-   * today; adding them would create dead anchors.
+   * The hero is deliberately left exactly as it was, on its legacy feed — it
+   * is out of this rebind's scope. Move it with its own ticket.
    */
-  readonly sectionNavItems = computed<SectionNavItem[]>(() => [
-    { id: 'masterclass-home', label: 'Home', visible: true, icon: 'lucideHome' },
-    {
-      id: 'continue-watching',
-      label: 'Continue Watching',
-      visible: this.inprogress.items().length > 0,
-      icon: 'lucideClock',
-    },
-    {
-      id: 'masterclass-tracks',
-      label: 'Tracker',
-      visible: this.track.items().length > 0,
-      icon: 'lucideLayers',
-    },
-    {
-      id: 'my-list',
-      label: 'My List',
-      visible: this.bookmark.items().length > 0,
-      icon: 'lucideBookmark',
-    },
-    {
-      id: 'completed-courses',
-      label: 'Completed Courses',
-      visible: this.completed.items().length > 0,
-      icon: 'lucideCheckCircle',
-    },
-    {
-      id: 'masterclass-coming-soon',
-      label: 'Coming Soon',
-      visible: this.comingSoon.items().length > 0,
-      icon: 'lucideRocket',
-    },
-    { id: 'masterclass-faq', label: 'FAQ', visible: true, icon: 'lucideHelpCircle' },
-  ]);
+  private readonly feature = inject(FeatureFacade);
+  protected readonly popular = this.feature.getResource('popular', 'masterclass');
+
+  // Even tracks render vertical cards (more per view), odd ones horizontal.
+  protected readonly swiperConfigEven = swiperConfigEven;
+  protected readonly swiperConfigOdd = swiperConfigOdd;
+
+  protected readonly sectionNavItems = computed<SectionNavItem[]>(() =>
+    MASTERCLASS_SECTION_NAV.map((item) =>
+      item.id === MASTERCLASS_TRACKS_SECTION_ID
+        ? { ...item, visible: this.facade.tracks().length > 0 }
+        : item,
+    ),
+  );
 }

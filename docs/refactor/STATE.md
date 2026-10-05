@@ -7,6 +7,30 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-05, NON-REFACTOR — MIL-23 (`prompts/masterclass-tracks-rebind.md`): PR1 data layer + PR2
+  page DONE and verified, UNCOMMITTED; PR3 (about-course) and PR4 (bookmark) not started.** No refactor
+  phase moved. Plan approved with D1–D4 as recommended.
+  - PR1: `MASTERCLASS_ENDPOINTS` (`constants/masterclass.ts`), typed model + `parseHomePage` guard,
+    route-scoped `MasterclassHomeFacade` (`httpResource`, `loginType` from `isAuthenticated()`, `post_login`
+    skipped on the server, `withPreviousValue`, empty tracks dropped, `openTrailer`), a live-shaped mock in
+    `testing/mocks/`.
+  - PR2: `masterclass-course-card` (vertical/horizontal, shared designs class-for-class, links by uuid +
+    slug, trailer output; bookmark / AI Kit / "i" held back), page rewritten onto the facade (the old
+    rails removed), `MASTERCLASS_SECTION_NAV`, route `providers`, `CategoriesList` input widened to the
+    structural `CategoryListItem` (type-only). Route file now aliased.
+  - **The hero is kept exactly as it was** (your instruction): same markup, still on
+    `FeatureFacade.getResource('popular', …)`, whose `v2/dashboard/` 404s on UAT, so it is empty there as on
+    `master`. All track rails stay deferred on viewport; no card takes image `priority`.
+  - Browser-verified on the dev server against UAT (`/us/accounting/masterclass`): 3 rails (21/34/13; the
+    0-course track skipped) under the hero, single `#masterclass-tracks`, no browser home-page call (transfer cache), Trailer
+    opens the video dialog, 375/768/1440 no horizontal scroll. **Backend:** 24 of 68 courses' thumbnails
+    are on GCS `miles-usp-bed`, which answers 403 — those cards show a broken image.
+  - Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy warnings) + structure check,
+    format, tests **209 files / 986 passed + 1 skipped**, build:prod (two pre-existing CSS budget
+    warnings; initial 242.68 kB transfer, unchanged).
+  - ⚠️ Size: PR1 610 lines (327 spec/mock) + the plan; PR2 +492 / −319.
+  - The Postman refresh (old YAML export deleted, JSON added) is yours and belongs in neither PR.
+
 - 🔧 **2026-10-03, NON-REFACTOR — language L5b (`prompts/language-l5-features.md`): sign-in messages and
   the profile page in five languages. DONE and verified, UNCOMMITTED; stacked on L5a
   (`feat/MIL-24-i18n-auth-login`, committed by you as `16fcb89`).** No refactor phase moved.
@@ -2779,6 +2803,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-05 · NON-REFACTOR · **MIL-23 PR1 + PR2 done** (uncommitted) — masterclass page on `web-api/v1/masterclass/home-page/`: typed model + parse, route-scoped facade, course card, page rewrite (hero kept as-is); browser-verified on UAT · lint 0 errors, tests 209 files / 986 passed + 1 skipped, build:prod + format + structure green (local, Node 24)
+
+- 2026-10-05 · NON-REFACTOR · **MIL-23 masterclass plan drafted** (`prompts/masterclass-tracks-rebind.md`) — home-page tracks + about-course rebind, 3 stacked PRs; no code, no gates run
 
 - 2026-10-03 · NON-REFACTOR · **language L5b done** (uncommitted, stacked on L5a) — sign-in validation/SSO messages + profile page (32 keys × 5); French messages browser-verified, profile not (auth-gated) · lint 0 errors, tests 206 files / 953 passed + 1 skipped, build:prod/dev + check:structure + format green (local, Node 24)
 

@@ -1,26 +1,30 @@
 import { Route } from '@angular/router';
-import { ChapterFacade } from '../services/chapter-facade';
-import { FinalAssessmentFacade } from '../services/final-assessment-facade';
+import { ChapterFacade } from '@features/offerings/services/chapter-facade';
+import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
-import { FeedbackFacade } from '../services/feedback-facade';
-import { Masterclass } from './pages/masterclass/masterclass';
+import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
+import { Masterclass } from '@features/offerings/masterclass/pages/masterclass/masterclass';
+import { MasterclassHomeFacade } from '@features/offerings/masterclass/services/masterclass-home-facade';
 
 export const masterclassRoutes: Route[] = [
-  { path: '', component: Masterclass },
+  // The page's data is route-scoped: it dies with the page.
+  { path: '', component: Masterclass, providers: [MasterclassHomeFacade] },
   {
     path: ':courseId/:courseTitle',
     children: [
       {
         path: '',
         loadComponent: () =>
-          import('./pages/masterclass-course/masterclass-course').then((m) => m.MasterclassCourse),
+          import('@features/offerings/masterclass/pages/masterclass-course/masterclass-course').then(
+            (m) => m.MasterclassCourse,
+          ),
       },
       {
         path: 'chapter/:chapterId/:chapterTitle',
         providers: [ChapterFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
-          import('./pages/masterclass-chapter/masterclass-chapter').then(
+          import('@features/offerings/masterclass/pages/masterclass-chapter/masterclass-chapter').then(
             (m) => m.MasterclassChapter,
           ),
       },
@@ -30,7 +34,7 @@ export const masterclassRoutes: Route[] = [
         canDeactivate: [canDeactivateExamGuard],
         data: { layout: 'plain' },
         loadComponent: () =>
-          import('../pages/final-assessment-exam/final-assessment-exam').then(
+          import('@features/offerings/pages/final-assessment-exam/final-assessment-exam').then(
             (m) => m.FinalAssessmentExam,
           ),
       },
@@ -39,7 +43,7 @@ export const masterclassRoutes: Route[] = [
         providers: [FinalAssessmentFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
-          import('../pages/final-assessment-report/final-assessment-report').then(
+          import('@features/offerings/pages/final-assessment-report/final-assessment-report').then(
             (m) => m.FinalAssessmentReport,
           ),
       },
@@ -47,7 +51,9 @@ export const masterclassRoutes: Route[] = [
         path: 'feedback',
         providers: [FeedbackFacade],
         loadComponent: () =>
-          import('../pages/course-feedback/course-feedback').then((m) => m.CourseFeedback),
+          import('@features/offerings/pages/course-feedback/course-feedback').then(
+            (m) => m.CourseFeedback,
+          ),
       },
     ],
   },
