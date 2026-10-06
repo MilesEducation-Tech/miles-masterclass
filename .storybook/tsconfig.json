@@ -24,7 +24,6 @@
       "@env/*": ["../src/environments/*"]
     }
   },
-  "exclude": ["../src/test.ts", "../src/**/*.spec.ts"],
   "include": ["../src/**/*.stories.*", "./preview.ts"],
   "files": ["./typings.d.ts"]
 }

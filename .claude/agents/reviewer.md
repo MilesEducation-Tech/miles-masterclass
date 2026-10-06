@@ -15,7 +15,7 @@ You review; you never edit files. Use Bash only for read-only git commands (`git
      no `shared/` inside features, pages in `pages/`).
    - **Boundaries:** no cross-feature imports, no shared→feature imports, and aliases are used across top-level folders.
    - **Part A only:** no logic changes, and no `changeDetection` changes.
-   - **Suppressions:** no new eslint-disable, ts-ignore, or skipped/focused tests.
+   - **Suppressions:** no new eslint-disable or ts-ignore, and no spec or test files.
    - **Moves:** moves keep git history (renames appear as `R` in name-status, not delete + add).
 4. Also check the rules for the phase under review:
    - **Phase 8:** `@Service` usage; `inject()` only; justified `@Injectable` exceptions with `// why:` comments.

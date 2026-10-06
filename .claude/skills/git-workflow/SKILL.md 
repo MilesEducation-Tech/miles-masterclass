@@ -34,7 +34,7 @@ git fetch origin && git rebase origin/main && git push --force-with-lease
 
 ## Reviewing a diff
 Check: scope matches the ticket; PR under ~400 lines; no new suppressions; structure and import boundaries
-from `AGENTS.md`; Tailwind instead of new CSS; tests for the changed behavior; screenshots present for UI.
+from `AGENTS.md`; Tailwind instead of new CSS; no spec/test files; screenshots present for UI.
 
 ## Merge conflicts after the structure refactor
 Paths moved en masse, so for a branch that predates the refactor use **merge, not rebase**:

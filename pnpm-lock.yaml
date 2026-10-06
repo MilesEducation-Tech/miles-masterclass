@@ -380,9 +380,6 @@ importers:
       husky:
         specifier: ^9.1.7
         version: 9.1.7
-      jsdom:
-        specifier: ^30.1.1
-        version: 30.1.1
       lint-staged:
         specifier: ^17.5.1
         version: 17.5.1
@@ -407,9 +404,6 @@ importers:
       typescript-eslint:
         specifier: 8.70.1
         version: 8.70.1(eslint@10.11.0(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
-      vitest:
-        specifier: ^5.0.2
-        version: 5.0.2(@types/node@24.13.6)(jsdom@30.1.1)(vite@8.3.0(@types/node@24.13.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@8.1.1))(sass-embedded@1.104.1)(sass@1.104.1)(terser@5.51.2)(yaml@2.9.0))
 
 packages:
 
@@ -432,6 +426,7 @@ packages:
   '@angular-devkit/build-angular@22.2.0':
     resolution: {integrity: sha512-syOm4RmTeFOwhBGJiDr8ZEAFyzXXXPMg7TcXFcBPuaz/Mu7xGMb4CPeEztbVpa6JsZFJU2SPOOI3ZEtidH7RJA==}
     engines: {node: ^22.22.3 || ^24.15.0 || >=26.0.0, npm: ^6.11.0 || ^7.5.6 || >=8.0.0, yarn: '>= 1.13.0'}
+    deprecated: Angular's Webpack support is deprecated. Use the esbuild and Vite-based "@angular/build" package instead.
     peerDependencies:
       '@angular/compiler-cli': ^22.0.0
       '@angular/core': ^22.0.0
@@ -7831,6 +7826,7 @@ snapshots:
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.2)
       '@csstools/css-tokenizer': 4.0.2
       lru-cache: 11.5.3
+    optional: true
 
   '@asamuzakjp/dom-selector@9.2.1':
     dependencies:
@@ -7838,6 +7834,7 @@ snapshots:
       css-tree: 3.2.1
       is-potential-custom-element-name: 1.0.1
       lru-cache: 11.5.3
+    optional: true
 
   '@babel/code-frame@7.29.7':
     dependencies:
@@ -8559,6 +8556,7 @@ snapshots:
   '@bramus/specificity@2.4.2':
     dependencies:
       css-tree: 3.2.1
+    optional: true
 
   '@bufbuild/protobuf@2.15.0': {}
 
@@ -8708,12 +8706,14 @@ snapshots:
 
   '@conventional-changelog/template@1.4.0': {}
 
-  '@csstools/color-helpers@6.1.2': {}
+  '@csstools/color-helpers@6.1.2':
+    optional: true
 
   '@csstools/css-calc@3.4.1(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.2))(@csstools/css-tokenizer@4.0.2)':
     dependencies:
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.2)
       '@csstools/css-tokenizer': 4.0.2
+    optional: true
 
   '@csstools/css-color-parser@4.2.4(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.2))(@csstools/css-tokenizer@4.0.2)':
     dependencies:
@@ -8721,16 +8721,20 @@ snapshots:
       '@csstools/css-calc': 3.4.1(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.2))(@csstools/css-tokenizer@4.0.2)
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.2)
       '@csstools/css-tokenizer': 4.0.2
+    optional: true
 
   '@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.2)':
     dependencies:
       '@csstools/css-tokenizer': 4.0.2
+    optional: true
 
   '@csstools/css-syntax-patches-for-csstree@1.1.14(css-tree@3.2.1)':
     optionalDependencies:
       css-tree: 3.2.1
+    optional: true
 
-  '@csstools/css-tokenizer@4.0.2': {}
+  '@csstools/css-tokenizer@4.0.2':
+    optional: true
 
   '@dimforge/rapier3d-compat@0.12.0': {}
 
@@ -8969,7 +8973,8 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@exodus/bytes@1.15.1': {}
+  '@exodus/bytes@1.15.1':
+    optional: true
 
   '@floating-ui/core@1.8.0':
     dependencies:
@@ -10704,6 +10709,7 @@ snapshots:
       magic-string: 1.4.2
     optionalDependencies:
       vite: 8.3.0(@types/node@24.13.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@8.1.1))(sass-embedded@1.104.1)(sass@1.104.1)(terser@5.51.2)(yaml@2.9.0)
+    optional: true
 
   '@vitest/pretty-format@3.2.4':
     dependencies:
@@ -10713,7 +10719,8 @@ snapshots:
     dependencies:
       tinyspy: 4.0.4
 
-  '@vitest/spy@5.0.2': {}
+  '@vitest/spy@5.0.2':
+    optional: true
 
   '@vitest/utils@3.2.4':
     dependencies:
@@ -10988,6 +10995,7 @@ snapshots:
   bidi-js@1.1.0:
     dependencies:
       require-from-string: 2.0.2
+    optional: true
 
   big.js@5.2.2: {}
 
@@ -11106,7 +11114,8 @@ snapshots:
       loupe: 3.2.1
       pathval: 2.0.1
 
-  chai@6.2.2: {}
+  chai@6.2.2:
+    optional: true
 
   chalk@4.1.2:
     dependencies:
@@ -11326,6 +11335,7 @@ snapshots:
     dependencies:
       mdn-data: 2.27.1
       source-map-js: 1.2.1
+    optional: true
 
   css-what@6.2.2: {}
 
@@ -11343,6 +11353,7 @@ snapshots:
       whatwg-url: 16.0.1
     transitivePeerDependencies:
       - '@noble/hashes'
+    optional: true
 
   debug@2.6.9(supports-color@8.1.1):
     dependencies:
@@ -11362,7 +11373,8 @@ snapshots:
     optionalDependencies:
       supports-color: 8.1.1
 
-  decimal.js@10.6.0: {}
+  decimal.js@10.6.0:
+    optional: true
 
   deep-eql@5.0.2: {}
 
@@ -11507,7 +11519,8 @@ snapshots:
 
   es-module-lexer@2.3.1: {}
 
-  es-module-lexer@2.3.2: {}
+  es-module-lexer@2.3.2:
+    optional: true
 
   es-object-atoms@1.1.2:
     dependencies:
@@ -11720,6 +11733,7 @@ snapshots:
   estree-walker@3.0.3:
     dependencies:
       '@types/estree': 1.0.9
+    optional: true
 
   esutils@2.0.3: {}
 
@@ -11727,7 +11741,8 @@ snapshots:
 
   events@3.3.0: {}
 
-  expect-type@1.4.0: {}
+  expect-type@1.4.0:
+    optional: true
 
   express@5.2.1(supports-color@8.1.1):
     dependencies:
@@ -11968,6 +11983,7 @@ snapshots:
       '@exodus/bytes': 1.15.1
     transitivePeerDependencies:
       - '@noble/hashes'
+    optional: true
 
   html-entities@2.6.0: {}
 
@@ -12153,7 +12169,8 @@ snapshots:
     dependencies:
       isobject: 3.0.1
 
-  is-potential-custom-element-name@1.0.1: {}
+  is-potential-custom-element-name@1.0.1:
+    optional: true
 
   is-promise@4.0.0: {}
 
@@ -12225,6 +12242,7 @@ snapshots:
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - '@noble/hashes'
+    optional: true
 
   jsesc@3.1.0: {}
 
@@ -12497,7 +12515,8 @@ snapshots:
 
   lru-cache@11.5.2: {}
 
-  lru-cache@11.5.3: {}
+  lru-cache@11.5.3:
+    optional: true
 
   lru-cache@5.1.1:
     dependencies:
@@ -12528,7 +12547,8 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-  mdn-data@2.27.1: {}
+  mdn-data@2.27.1:
+    optional: true
 
   media-typer@1.1.1: {}
 
@@ -13493,6 +13513,7 @@ snapshots:
   saxes@6.0.0:
     dependencies:
       xmlchars: 2.2.0
+    optional: true
 
   scheduler@0.23.2:
     dependencies:
@@ -13649,7 +13670,8 @@ snapshots:
 
   statuses@2.0.2: {}
 
-  std-env@4.2.0: {}
+  std-env@4.2.0:
+    optional: true
 
   stdin-discarder@0.3.2: {}
 
@@ -13807,7 +13829,8 @@ snapshots:
 
   tiny-invariant@1.3.3: {}
 
-  tinybench@6.2.0: {}
+  tinybench@6.2.0:
+    optional: true
 
   tinyexec@1.2.4: {}
 
@@ -13822,11 +13845,13 @@ snapshots:
 
   tinyspy@4.0.4: {}
 
-  tldts-core@7.4.9: {}
+  tldts-core@7.4.9:
+    optional: true
 
   tldts@7.4.9:
     dependencies:
       tldts-core: 7.4.9
+    optional: true
 
   to-regex-range@5.0.1:
     dependencies:
@@ -13837,10 +13862,12 @@ snapshots:
   tough-cookie@6.0.2:
     dependencies:
       tldts: 7.4.9
+    optional: true
 
   tr46@6.0.0:
     dependencies:
       punycode: 2.3.1
+    optional: true
 
   tree-dump@1.1.0(tslib@2.8.1):
     dependencies:
@@ -13905,7 +13932,8 @@ snapshots:
 
   undici-types@7.18.2: {}
 
-  undici@8.11.2: {}
+  undici@8.11.2:
+    optional: true
 
   unicode-canonical-property-names-ecmascript@2.0.1: {}
 
@@ -14061,10 +14089,12 @@ snapshots:
       jsdom: 30.1.1
     transitivePeerDependencies:
       - msw
+    optional: true
 
   w3c-xmlserializer@6.0.0:
     dependencies:
       xml-name-validator: 5.0.0
+    optional: true
 
   watchpack@2.5.2:
     dependencies:
@@ -14073,7 +14103,8 @@ snapshots:
   weak-lru-cache@1.2.2:
     optional: true
 
-  webidl-conversions@8.0.1: {}
+  webidl-conversions@8.0.1:
+    optional: true
 
   webpack-dev-middleware@6.1.3(webpack@5.109.0(clean-css@5.3.3)(esbuild@0.28.2)(html-minifier-terser@6.1.0)(lightningcss@1.33.0)(postcss@8.5.28)(uglify-js@3.19.3)):
     dependencies:
@@ -14238,7 +14269,8 @@ snapshots:
       - svgo
       - uglify-js
 
-  whatwg-mimetype@5.0.0: {}
+  whatwg-mimetype@5.0.0:
+    optional: true
 
   whatwg-url@16.0.1:
     dependencies:
@@ -14247,6 +14279,7 @@ snapshots:
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
       - '@noble/hashes'
+    optional: true
 
   whatwg-url@17.1.2:
     dependencies:
@@ -14255,12 +14288,14 @@ snapshots:
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
       - '@noble/hashes'
+    optional: true
 
   which@2.0.2:
     dependencies:
       isexe: 2.0.0
 
-  why-is-node-running@3.2.2: {}
+  why-is-node-running@3.2.2:
+    optional: true
 
   wildcard@2.0.1: {}
 
@@ -14305,9 +14340,11 @@ snapshots:
 
   xhr2@0.2.1: {}
 
-  xml-name-validator@5.0.0: {}
+  xml-name-validator@5.0.0:
+    optional: true
 
-  xmlchars@2.2.0: {}
+  xmlchars@2.2.0:
+    optional: true
 
   xxhash-wasm@1.1.0: {}
 

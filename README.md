@@ -17,14 +17,14 @@ docs/refactor/
   reports/                         One report per phase/feature
   .cache/                          Logs and last results (gitignore this)
 scripts/refactor/
-  verify.mjs                       All gates: lint, tests, builds, storybook, format, bundle, SSR
+  verify.mjs                       All gates: lint, builds, storybook, format, bundle, SSR
   bundle-report.mjs                Initial vs lazy bundle, baseline delta, must-not-contain checks
   ssr-smoke.mjs                    Boots the prod SSR server, compares status/title/meta/h1/JSON-LD/text
 .claude/
   settings.json                    Permissions + hook wiring
   hooks/guard-bash.mjs             Blocks commits, destructive git, schematics, npm/yarn, baseline re-record
   hooks/guard-edit.mjs             Protects harness/secret files; blocks NEW eslint-disable, ts-ignore,
-                                   skipped tests, NgClass/NgStyle, @angular/aria, raw localStorage
+                                   spec/test files, NgClass/NgStyle, @angular/aria, raw localStorage
   hooks/post-edit.mjs              Prettier + ESLint on every edited file; lint errors go straight back to Claude
   hooks/stop-gate.mjs              Claude can only stop with STATE.md updated and a green typecheck
   hooks/session-start.mjs          Injects STATE.md at startup, resume, /clear and after compaction
@@ -45,7 +45,7 @@ and can't move the goalposts.** The layers are:
 | ---------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | Spec       | `PROMPT.md`                        | What "correct" means. Read-only to Claude.                                                                                         |
 | State      | `STATE.md`, `PLAN.md`, `reports/`  | Memory between sessions. Every session starts from here, not from chat history.                                                    |
-| Gates      | `scripts/refactor/*`, `baseline/*` | Objective pass/fail: builds, tests, bundle, SSR output. Read-only to Claude. You record the baselines.                             |
+| Gates      | `scripts/refactor/*`, `baseline/*` | Objective pass/fail: builds, bundle, SSR output. Read-only to Claude. You record the baselines.                                    |
 | Guardrails | hooks + permissions                | Deterministic "never do X" rules that don't depend on the model remembering them.                                                  |
 | Workflow   | skills                             | The same protocol every session: load → preconditions → steps → verify → review → report → stop.                                   |
 | Delegation | subagents                          | Heavy output (build logs, grep results, diffs) is processed in a separate context and summarized, so the main session stays sharp. |
@@ -61,7 +61,7 @@ The feedback loops run at three speeds:
 
 ## One-time setup
 
-1. **Make sure `main` is green.** Run `pnpm lint`, `pnpm ng test --watch=false`, `pnpm build`, `pnpm build:prod`,
+1. **Make sure `main` is green.** Run `pnpm lint`, `pnpm build`, `pnpm build:prod`,
    `pnpm build-storybook` and `pnpm format` on untouched code. Fix anything red _before_ starting. Otherwise every
    phase will inherit failures it didn't cause.
 2. **Create the branch:** `git checkout -b refactor/structure`.

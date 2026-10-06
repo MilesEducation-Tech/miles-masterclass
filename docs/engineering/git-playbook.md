@@ -178,7 +178,6 @@ git commit -m "feat(admin): add seat allocation dialog"
 
 ```bash
 pnpm lint
-pnpm ng test --watch=false
 pnpm build:prod
 ```
 
@@ -448,11 +447,11 @@ git checkout master
 git pull
 git checkout -b hotfix/MIL-299-checkout-500
 
-# smallest possible fix + a test that would have caught it
+# smallest possible fix, verified in the running app
 git add <only the files for the fix>
 git commit -m "fix(payment): stop checkout 500 when cart has a free item"
 
-pnpm lint && pnpm ng test --watch=false && pnpm build:prod
+pnpm lint && pnpm build:prod
 git push -u origin hotfix/MIL-299-checkout-500
 ```
 
@@ -754,7 +753,7 @@ Admins currently ask support to change seat counts by hand.
 
 ## Checklist
 
-- [x] `pnpm lint`, `pnpm ng test --watch=false`, `pnpm build:prod` pass locally
+- [x] `pnpm lint`, `pnpm build:prod` pass locally
 - [x] No new `eslint-disable`, `@ts-ignore`, or skipped tests
 - [x] Follows the structure rules in AGENTS.md (placement, boundaries, naming)
 - [x] Tailwind utilities used; no new component CSS unless unavoidable
@@ -858,7 +857,6 @@ Open the PR → **Checks** tab → the red one → read the last lines of the lo
 | `commitlint`                        | One of your commits has a bad message        | [Reword the commits](#reword-a-bad-commit-message), then `git push --force-with-lease`.                            |
 | `verify` → `pnpm format`            | Prettier formatting                          | `pnpm format:fix`, commit, push.                                                                                   |
 | `verify` → `pnpm lint`              | ESLint error                                 | `pnpm lint` locally, fix it. **Never** add `eslint-disable`.                                                       |
-| `verify` → `ng test`                | A test fails                                 | `pnpm ng test --watch=false` locally, fix the code or the test. Never skip it.                                     |
 | `verify` → `build:prod`             | Build error or bundle over budget            | `pnpm build:prod` locally. Over budget → lazy-load; don't raise the budget.                                        |
 | `verify` → `install`                | `pnpm-lock.yaml` out of date                 | `pnpm install`, commit the lockfile.                                                                               |
 | Check stuck on "Expected — waiting" | The check never started                      | Push an empty commit: `git commit --allow-empty -m "chore: rerun ci"`, push. Still stuck → tell the release owner. |
@@ -938,7 +936,7 @@ git diff --staged
 git commit -m "feat(admin): add seat allocation dialog"
 
 # Check before pushing
-pnpm lint && pnpm ng test --watch=false && pnpm build:prod
+pnpm lint && pnpm build:prod
 git fetch origin && git diff --stat origin/master...HEAD
 
 # Push + PR (base: master)

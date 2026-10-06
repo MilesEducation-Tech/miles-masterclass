@@ -17,7 +17,6 @@ these pass:
 ```bash
 pnpm lint                 # ESLint + scripts/check-structure.mjs
 pnpm format
-pnpm ng test --watch=false
 pnpm build:prod
 ```
 

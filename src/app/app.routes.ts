@@ -33,12 +33,6 @@ export const routes: Routes = [
     loadComponent: () =>
       import('@features/legal/pages/compliance/compliance').then((m) => m.Compliance),
   },
-  // Headless WordPress blog, rendered natively via the WP REST API. Top-level
-  // `/blog` so the URL matches WordPress's permalinks (`/blog/<slug>`). Uses
-  // the standard BlogLayout so the site header + footer wrap the blog pages.
-  // Declared before `:country/:profession_type` so `/blog` and `/blog/<slug>`
-  // aren't captured as country/profession segments.
-
   {
     // `onboardingGuard` is the backstop for a first-time learner who navigates
     // away mid-onboarding: the login flow already sends `new_user` to

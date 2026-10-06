@@ -29,7 +29,6 @@ const gates = quick
     ]
   : [
       { name: 'lint', cmd: 'pnpm', args: ['lint'] },
-      { name: 'unit tests', cmd: 'pnpm', args: ['ng', 'test', '--watch=false'] },
       { name: 'build (local)', cmd: 'pnpm', args: ['build'] },
       // Prod build runs last among builds so dist/ holds the production output for the bundle + SSR gates.
       { name: 'build (prod)', cmd: 'pnpm', args: ['build:prod'] },

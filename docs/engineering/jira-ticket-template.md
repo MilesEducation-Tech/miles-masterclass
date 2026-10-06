@@ -38,7 +38,7 @@ What should happen, citing the contract (Postman folder / request, `docs/*.md`) 
 
 - [ ] Observable, testable outcome 1
 - [ ] Observable, testable outcome 2
-- [ ] `pnpm lint`, `pnpm ng test --watch=false`, `pnpm build:prod` green (state the environment)
+- [ ] `pnpm lint`, `pnpm build:prod` green (state the environment)
 
 ### How to verify
 

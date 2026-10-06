@@ -66,7 +66,7 @@ src/app/
     components/    Generic composites: cards/, carousel, slider, skeleton/, players, partner-content-list…
     dialogs/       Only dialogs that 2+ features open
     pipes/ services/ utils/
-  layout/        header, footer, footer-overlay, main / plain / blog / dynamic layouts
+  layout/        header, footer, footer-overlay, main / plain / dynamic layouts
   features/
     <feature>/
       <feature>.routes.ts
@@ -81,7 +81,7 @@ src/app/
     core/          Admin guards, auth, interceptors, models (incl. PERM), services
     layout/        admin-layout, admin-sidebar, admin-topbar
     <admin-feature>/
-  testing/       Mocks and test helpers. Importable from specs and stories only.
+  testing/       Story mocks and the dev-only partner mock. Importable from stories only.
 ```
 
 **Placement: code lives at the lowest level that uses it.**
@@ -99,7 +99,7 @@ src/app/
 | `layout`   | `core`, `shared`                                                                        |
 | `features` | `core`, `shared`, **itself**; `layout` only in route configs; **never another feature** |
 | `admin`    | `core`, `shared`, itself                                                                |
-| `testing`  | only from `*.spec.ts` and `*.stories.ts`                                                |
+| `testing`  | only from `*.stories.ts` (plus `angular.json` dev `fileReplacements`)                   |
 
 **Aliases:** `@core/*`, `@shared/*`, `@layout/*`, `@features/*`, `@admin/*`, `@testing/*`, `@env/*`.
 
@@ -108,7 +108,7 @@ src/app/
 
 **Naming:**
 
-- One component per folder: `name/name.ts|html|css|spec.ts|stories.ts`.
+- One component per folder: `name/name.ts|html|css|stories.ts`.
 - v20+ file names, with no `.component`/`.service` suffixes.
 - Services and models are flat files.
 - Folder names are plural.
@@ -178,7 +178,7 @@ Full detail — versions, scripts, build configs, environments — lives in the 
 - **Django REST API** (`BASE_API_URL`): courses, users, payment, CPE, and everything else learner-facing.
 - **Video.js 8** (+ HLS, YouTube plugin) for video and audio. **`@ng-icons`** for icons. **Swiper 12** for carousels.
   **jsPDF + html2canvas-pro** for certificates and reports.
-- **Tooling:** **Vitest 4** via `ng test`; **ESLint 10** + angular-eslint 22 + typescript-eslint 8; **Prettier 3**;
+- **Tooling:** **ESLint 10** + angular-eslint 22 + typescript-eslint 8; **Prettier 3**;
   **Storybook 10**; **pnpm 10**.
 
 **Do not use:**
@@ -220,7 +220,6 @@ Full detail — versions, scripts, build configs, environments — lives in the 
   - Guard every `.value()` with `.hasValue()`.
   - Render `.isLoading()` and `.error()` explicitly.
   - Don't keep manual loading/error flags alongside a resource.
-- **Tests** use `provideHttpClientTesting` + `HttpTestingController`, and let resources settle before asserting.
 
 ### 4.3 Headless UI
 
@@ -288,7 +287,7 @@ anything in the header or layout, facades that own page-load resources, or small
   - Use none for rare or admin-only actions.
   - Hover/focus prefetching goes through one shared helper, `core/utils/prefetch-triggers.ts`. Create that helper the
     first time it is needed; never hand-roll triggers.
-- **SSR and tests:** never call it during SSR. In tests, override the token with a mock.
+- **SSR:** never call it during SSR.
 - **Verify:** confirm the service and its library sit in their own lazy chunk (`pnpm build:prod` bundle output).
 
 ### 4.6 Tailwind first
@@ -411,7 +410,6 @@ Run these and report the real output — including failures.
 ```bash
 pnpm lint          # eslint
 pnpm format:fix    # prettier
-pnpm test          # vitest
 pnpm build:prod    # the real gate: AOT + bundle budget
 ```
 
@@ -428,10 +426,9 @@ Then, depending on what changed:
 
 Known baseline — **state the environment, because it changes the answer:**
 
-- **Locally (macOS, Node 24.15), re-measured 2026-09-26:** all green. `pnpm lint` 0 errors (135 legacy `any` warnings, see below), `pnpm ng test --watch=false` 182 files / 692 passed + 1 skipped, `pnpm format` 0, `pnpm build:prod` 0, `pnpm build-storybook` 0.
-- **In CI (ubuntu, Node 22.x):** was red on 3 `blob-download.spec.ts` failures — a Node `Blob` reaching jsdom's `FileReader`. **Fixed**; root cause and the proof in `docs/engineering/enforcement-verified.md` §4.
+- **Locally (macOS, Node 24.15), re-measured 2026-10-06:** all green. `pnpm lint` 0 errors (110 legacy `any` warnings, see below), `pnpm format` 0, `pnpm build:prod` 0 (two known component-CSS budget warnings), `pnpm build-storybook` 0. Unit tests were removed on 2026-10-06; there is no test gate.
 
-**A red gate means you broke it** — the old "lint and test are already red from pre-existing debt" note was stale and that debt is paid off, so don't reach for it as an excuse. But **say which environment you measured**: that `blob-download` bug passed locally and failed only in CI, and a local-green/CI-red split is the hardest kind to debug if nobody records which side they ran.
+**A red gate means you broke it** — the old "lint and test are already red from pre-existing debt" note was stale and that debt is paid off, so don't reach for it as an excuse. But **say which environment you measured**: a local-green/CI-red split is the hardest kind to debug if nobody records which side they ran.
 
 The gates run inside the required `verify` check on `master`, next to `pr-title`, `commitlint` and `branch-name` (see `docs/engineering/github-setup.md`). Respect the Husky hooks; bypassing them only delays the same failure in CI, where it cannot be skipped.
 
@@ -439,14 +436,14 @@ The gates run inside the required `verify` check on `master`, next to `pr-title`
 
 The rules in this file hold for every contributor and every tool (Claude Code, Cursor, Copilot, Codex, Gemini, or none), because they are checked where all of them pass through: git hooks locally, required CI checks on the PR, and branch rulesets on `master`. Agent instruction files (`CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`) only point here.
 
-| What                                                                                                                                                                             | Local (Husky)                                | CI (required on `master`)                      |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------- |
-| Branch name `type/TICKET-description`                                                                                                                                            | `pre-commit`                                 | `branch-name`                                  |
-| Conventional Commits                                                                                                                                                             | `commit-msg` → commitlint                    | `commitlint`, `pr-title` (the squash title)    |
-| Import boundaries, `inject()`, `@if`/`@for`, `DestroyRef`, no `any`, no `@angular/aria` / `Injectable` / `NgClass` / `NgStyle` / `app-api/`                                      | `lint-staged` → ESLint (staged files)        | `verify` → `pnpm lint`                         |
-| Naming, plural folders, no `shared/` in a feature, routed components in `pages/`, component CSS reasons, static styles, `@defer` placeholders, colours equal to a `@theme` token | `pre-commit` → `scripts/check-structure.mjs` | `verify` → `pnpm lint` (+ `pnpm test:scripts`) |
-| Formatting, tests, AOT build + bundle budget, Storybook                                                                                                                          | `lint-staged` → Prettier                     | `verify`                                       |
-| One reviewed, squash-merged PR per change; protected tags; releases                                                                                                              | —                                            | rulesets, `CODEOWNERS`, release-please         |
+| What                                                                                                                                                                                                 | Local (Husky)                                | CI (required on `master`)                   |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------- |
+| Branch name `type/TICKET-description`                                                                                                                                                                | `pre-commit`                                 | `branch-name`                               |
+| Conventional Commits                                                                                                                                                                                 | `commit-msg` → commitlint                    | `commitlint`, `pr-title` (the squash title) |
+| Import boundaries, `inject()`, `@if`/`@for`, `DestroyRef`, no `any`, no `@angular/aria` / `Injectable` / `NgClass` / `NgStyle` / `app-api/`                                                          | `lint-staged` → ESLint (staged files)        | `verify` → `pnpm lint`                      |
+| No spec/test files, naming, plural folders, no `shared/` in a feature, routed components in `pages/`, component CSS reasons, static styles, `@defer` placeholders, colours equal to a `@theme` token | `pre-commit` → `scripts/check-structure.mjs` | `verify` → `pnpm lint`                      |
+| Formatting, AOT build + bundle budget, Storybook                                                                                                                                                     | `lint-staged` → Prettier                     | `verify`                                    |
+| One reviewed, squash-merged PR per change; protected tags; releases                                                                                                                                  | —                                            | rulesets, `CODEOWNERS`, release-please      |
 
 **When a check fails:**
 
@@ -508,4 +505,4 @@ Tool and module knowledge lives in `.claude/skills/`, not here. Name the ones yo
 4. If a rule was missing and you had to invent one, say so in the prompt's **Assumptions** section — that's the section the reviewer reads first.
 5. If you'd have to repeat something in more than one prompt, it belongs in this file or in a skill. Say so.
 
-Save a prompt. Get approval. Implement. Run checks. Share test steps.
+Save a prompt. Get approval. Implement. Run checks. Share verification steps.

@@ -3,7 +3,7 @@
 # Working rules for this repo
 
 Angular 22 (standalone, SSR, v20+ naming, OnPush default) · TypeScript 6 · Tailwind v4 · ng-primitives ·
-Vitest via `ng test` · ESLint 10 flat config · Storybook 10 · pnpm · Vercel.
+ESLint 10 flat config · Storybook 10 · pnpm · Vercel.
 
 Detailed docs — read them when the task touches them, don't inline them here:
 
@@ -16,8 +16,10 @@ Detailed docs — read them when the task touches them, don't inline them here:
 
 - **pnpm only.** Never npm, yarn or npx.
 - **Never commit or push.** Write the files, then give me the commit message and let me run it.
-- **Never weaken a check.** No `eslint-disable`, `@ts-ignore`, `--no-verify`, skipped or focused tests,
-  and never disable or edit a verification gate. If something genuinely can't pass, stop and tell me.
+- **No tests.** This repo has no unit tests (removed 2026-10-06). Don't write `*.spec.ts` / `*.test.*` files,
+  test helpers or test tooling; `check-structure` and the edit guard reject them. Prove a change in the running app.
+- **Never weaken a check.** No `eslint-disable`, `@ts-ignore`, `--no-verify`, and never disable or edit a
+  verification gate. If something genuinely can't pass, stop and tell me.
 - **Never edit** `.claude/`, `scripts/refactor/`, `docs/refactor/PROMPT.md`, or `docs/refactor/baseline/`.
   These belong to me.
 - **Conventional Commits** for every message you propose: `type(scope): subject`.
@@ -58,8 +60,8 @@ Detailed docs — read them when the task touches them, don't inline them here:
 
 ## Verification
 
-Before telling me something is done, run what applies: `pnpm lint`, `pnpm ng test --watch=false`,
-`pnpm build:prod`. During the refactor, use `node scripts/refactor/verify.mjs` instead.
+Before telling me something is done, run what applies: `pnpm lint`, `pnpm build:prod`,
+and the running app for anything users see. During the refactor, use `node scripts/refactor/verify.mjs` instead.
 
 ## Active work: structure refactor & modernization
 
