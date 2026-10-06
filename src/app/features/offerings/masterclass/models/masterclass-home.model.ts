@@ -61,7 +61,10 @@ export interface MasterclassTrack {
   name: string;
   description: string | null;
   priority: number;
-  /** Every course inline — there is no per-track pagination. Can be empty. */
+  /**
+   * The track's courses, unwrapped from the API's paginated block. The page asks
+   * for all of them in one call (`HOME_PAGE_COURSES_PER_TRACK`). Can be empty.
+   */
   courses: MasterclassCourse[];
 }
 
@@ -70,6 +73,21 @@ export interface MasterclassHomePage {
   login_type: MasterclassLoginType;
   tracks: MasterclassTrack[];
 }
+
+// ---- Wire shapes -----------------------------------------------------------
+
+/**
+ * The paginated block the API wraps every list in (live UAT since 2026-10-06):
+ * the tracks, each track's courses, and `coming_soon`. It also carries `count`,
+ * `page`, `has_next`, `next`…; only `results` is read, because the page asks
+ * for every course up front instead of paging.
+ */
+interface ApiPage<T> {
+  results: T[];
+}
+
+/** A track as the API sends it, its courses still wrapped. */
+type ApiTrack = Omit<MasterclassTrack, 'courses'> & { courses: ApiPage<MasterclassCourse> };
 
 // ---- Trust boundary --------------------------------------------------------
 //
@@ -96,6 +114,12 @@ const listOf =
   <T>(guard: (v: unknown) => v is T) =>
   (v: unknown): v is T[] =>
     Array.isArray(v) && v.every(guard);
+
+/** A paginated block whose `results` all pass `guard`. A bare array is not one. */
+const pageOf =
+  <T>(guard: (v: unknown) => v is T) =>
+  (v: unknown): v is ApiPage<T> =>
+    isObject(v) && listOf(guard)(v['results']);
 
 function isThumbnails(v: unknown): v is MasterclassThumbnails {
   return (
@@ -126,7 +150,7 @@ function isCourse(v: unknown): v is MasterclassCourse {
   );
 }
 
-function isTrack(v: unknown): v is MasterclassTrack {
+function isApiTrack(v: unknown): v is ApiTrack {
   return (
     isObject(v) &&
     isStr(v['id']) &&
@@ -134,8 +158,13 @@ function isTrack(v: unknown): v is MasterclassTrack {
     isStr(v['name']) &&
     isStrOrNull(v['description']) &&
     isNum(v['priority']) &&
-    listOf(isCourse)(v['courses'])
+    pageOf(isCourse)(v['courses'])
   );
+}
+
+/** Rebuilt rather than spread, so the paging metadata stays at the boundary. */
+function toTrack({ id, slug, name, description, priority, courses }: ApiTrack): MasterclassTrack {
+  return { id, slug, name, description, priority, courses: courses.results };
 }
 
 /** Thrown from `parse`; the message names the route so the log says where. */
@@ -143,7 +172,10 @@ function contractError(route: string): Error {
   return new Error(`[masterclass] ${route} response does not match the contract.`);
 }
 
-/** `parse` for `home-page/`: the `{ success, message, data }` envelope, unwrapped. */
+/**
+ * `parse` for `home-page/`: the `{ success, message, data }` envelope and the
+ * paginated tracks and courses, unwrapped into plain lists.
+ */
 export function parseHomePage(raw: unknown): MasterclassHomePage {
   const data = isObject(raw) ? raw['data'] : undefined;
   if (!isObject(data)) throw contractError('home-page');
@@ -152,8 +184,8 @@ export function parseHomePage(raw: unknown): MasterclassHomePage {
   const login_type = data['login_type'];
   const tracks = data['tracks'];
 
-  if (isLoginType(login_type) && listOf(isTrack)(tracks)) {
-    return { login_type, tracks };
+  if (isLoginType(login_type) && pageOf(isApiTrack)(tracks)) {
+    return { login_type, tracks: tracks.results.map(toTrack) };
   }
   throw contractError('home-page');
 }

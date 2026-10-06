@@ -7,6 +7,33 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-06, NON-REFACTOR — MIL-23: facade folded into the page + trailer dialog fixed. DONE,
+  UNCOMMITTED (with the pagination fix below).** No refactor phase moved.
+  - Your instruction: the `MasterclassHomeFacade` logic now lives in `pages/masterclass/masterclass.ts`;
+    `services/masterclass-home-facade.{ts,spec.ts}` and the route `providers` are gone; `EMPTY_HOME_PAGE`
+    is in `constants/masterclass.ts`. Departs from AGENTS.md §3 (precedent: `instructor-details`,
+    `webinar-badges`). The facade's cases are page tests now (`app-carousel` stubbed: Swiper can't render
+    in jsdom).
+  - Trailer dialog: `VideoDialog` `panelClass` `p-0 max-w-full` → `p-0 w-auto max-w-none`. The panel was
+    viewport-wide with the 50vw player in its left half; now a centred 512 × 361 panel at 1024 px, the
+    same as production `/in/accounting/home` (measured both). Shared, so every trailer is fixed.
+  - Verified in headless Playwright on your `pnpm start` (4101): 68 cards, dialog matches production.
+    Masterclass specs 38/38, no unhandled errors. `verify.mjs` (local macOS, Node 24.18, **not CI**): 7/8 on the first run — format failed on `masterclass.html` (the `reload()` rename let Prettier collapse the Try again button); fixed with `prettier --write`, `pnpm format` + masterclass specs then green. Other gates: lint 0 errors, tests 208 files / 987 passed + 1 skipped, both builds, Storybook, bundle and SSR smoke all at the known baseline.
+
+- 🔧 **2026-10-06, NON-REFACTOR — MIL-23 fix: UAT `home-page/` turned paginated overnight. FIXED,
+  UNCOMMITTED.** No refactor phase moved.
+  - Symptom: the masterclass page showed its error state, and the SSR log printed `[masterclass]
+home-page response does not match the contract`; the parse guard worked as designed.
+  - Root cause: `data.tracks`, each track's `courses` and `coming_soon` are now `{ count, page,
+page_size, has_next, next, …, results[] }`, with 6 courses per track by default. Paging past page 1
+    needs `?track=<slug>`; the server's `next` link omits it (400) and is `http://` (backend bug).
+  - Fix (you chose one call, all courses): the facade sends `tracks.courses.page_size=100`
+    (`HOME_PAGE_COURSES_PER_TRACK`, the server cap); the parser unwraps `results` at both levels and
+    rejects the old flat arrays; the mock wraps the same way.
+  - Verified: the real parser accepts the live response (21/34/0/13). On `pnpm start` (4101): 3 rails of
+    21/34/13 cards, hero unchanged, no browser home-page call. The response is 216.6 KB (~54 KB gzip),
+    the same as 2026-10-05. Masterclass specs 40/40 green. `verify.mjs` full run (local macOS, Node 24.18, **not CI**): 8/8 GREEN, tests 209 files / 989 passed + 1 skipped, only the known baseline warnings.
+
 - 🔧 **2026-10-05, NON-REFACTOR — MIL-23 (`prompts/masterclass-tracks-rebind.md`): PR1 data layer + PR2
   page DONE, committed by you as ONE commit `10a5b18` and pushed (with the Postman export swap, 841
   files); PR3 (about-course) and PR4 (bookmark) not started.** No refactor phase moved. Plan approved
@@ -2809,6 +2836,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-06 · NON-REFACTOR · **MIL-23: facade folded into the page; trailer dialog sized like production** (uncommitted) — masterclass specs 38/38
+
+- 2026-10-06 · NON-REFACTOR · **MIL-23 fix: paginated `home-page/`** (uncommitted) — parser unwraps `results`, facade asks `tracks.courses.page_size=100`; browser-verified on 4101 · `verify.mjs` 8/8 GREEN (local, Node 24.18)
 
 - 2026-10-05 · NON-REFACTOR · **MIL-23 committed by you as `10a5b18`** (one commit, pushed, incl. Postman swap) · `verify.mjs` 8/8 GREEN (local, Node 24.18); bundle-baseline warning is a stale baseline
 

@@ -1,7 +1,47 @@
 # Masterclass page: tracks and course-about rebind (MIL-23)
 
-Status: **approved 2026-10-05 with D1–D4 as recommended. PR1 and PR2 are implemented (uncommitted);
+Status: **approved 2026-10-05 with D1–D4 as recommended. PR1 and PR2 are committed (`10a5b18`);
 PR3 (about-course) and PR4 (bookmark) are not started.**
+
+**Contract change, 2026-10-06.** Overnight the backend started paginating `home-page/`, and the parse
+guard rejected the new body (the page showed its error state). The changes:
+
+- `data.tracks`, each track's `courses` and `coming_soon` are now
+  `{ slug, count, page, page_size, total_pages, has_next, has_previous, next, previous, results[] }`.
+- Courses come 6 per track by default.
+- A later page needs `?track=<slug>&tracks.courses.page=N` and returns that one track. The server's own
+  `next` link leaves out `track` and is a 400 (and is `http://`); that is a backend bug to report.
+- `tracks.courses.page_size` is capped at 100.
+
+You chose **one call, all courses**:
+
+- The facade sends `tracks.courses.page_size=100` (`HOME_PAGE_COURSES_PER_TRACK` in
+  `constants/masterclass.ts`).
+- The parser unwraps `results` at both levels. The old flat arrays are now rejected.
+- The response is 216.6 KB, about 54 KB gzip, the same as the all-inline body on 2026-10-05.
+- A track past 100 courses would be cut off; the largest on UAT is 34.
+
+**Changes, 2026-10-06 (your instructions):**
+
+- **No facade.** The tracks logic moved from `MasterclassHomeFacade` into the page
+  (`pages/masterclass/masterclass.ts`), and the facade and its route `providers` entry were deleted:
+  - the `home-page/` `httpResource` with `parse`
+  - `loginType`, with `post_login` skipped on the server
+  - `withPreviousValue`, `tracks`, `isLoading`, `loadError` and its log
+  - `reload`, `openTrailer`
+
+  `EMPTY_HOME_PAGE` moved to `constants/masterclass.ts`. This departs from AGENTS.md §3 ("facades
+  decide"). Lint allows it, and `instructor-details` and `webinar-badges` already read with
+  `httpResource` in the page. The facade spec's cases now run as page tests, with `app-carousel`
+  stubbed because Swiper's element cannot render in jsdom.
+
+- **Trailer dialog.** It now matches production (`/in/accounting/home`): a centred 50vw panel
+  (512 × 361 at 1024 px, video 512 × 288).
+  - Before, `VideoDialog` passed `panelClass="p-0 max-w-full"` over the panel's default `w-full`, so
+    the gray panel spanned the viewport with the player in its left half.
+  - Now it passes `p-0 w-auto max-w-none`.
+  - This is the shared dialog, so every trailer (home, podcast and masterclass heroes, course
+    resources) is fixed.
 
 **Where the build differs from the plan below:**
 
@@ -140,6 +180,8 @@ type, model and API call the page uses.
 - **Anonymous `post_login`:** 401 `authentication_required`.
 - **Bad or expired token:** 403, as on every route of this backend.
 - **200 envelope:** `{ success: true, message: "Home page loaded.", data }`.
+- **Since 2026-10-06** every list in `data` is a paginated block (see the note at the top). The page
+  asks for `tracks.courses.page_size=100`.
 - **`data`, `pre_login`:** `{ login_type, tracks[], coming_soon[] }`.
 - **`data`, `post_login`** (Postman B capture) adds `highlight_courses`, `in_progress_courses` and
   `completed_courses`.

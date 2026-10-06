@@ -4,11 +4,9 @@ import { FinalAssessmentFacade } from '@features/offerings/services/final-assess
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
 import { Masterclass } from '@features/offerings/masterclass/pages/masterclass/masterclass';
-import { MasterclassHomeFacade } from '@features/offerings/masterclass/services/masterclass-home-facade';
 
 export const masterclassRoutes: Route[] = [
-  // The page's data is route-scoped: it dies with the page.
-  { path: '', component: Masterclass, providers: [MasterclassHomeFacade] },
+  { path: '', component: Masterclass },
   {
     path: ':courseId/:courseTitle',
     children: [

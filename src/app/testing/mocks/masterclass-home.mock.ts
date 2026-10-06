@@ -72,14 +72,46 @@ export function mockMasterclassTrack(
   };
 }
 
-/** The `home-page/` body, in the live `{ success, message, data }` envelope. */
+/**
+ * The paginated block the API wraps every list in (live UAT since 2026-10-06):
+ * the tracks, each track's courses, and `coming_soon`.
+ */
+export function mockPage<T>(results: T[], slug: string) {
+  return {
+    slug,
+    count: results.length,
+    page: 1,
+    page_size: 100,
+    total_pages: results.length ? 1 : 0,
+    has_next: false,
+    has_previous: false,
+    next: null,
+    previous: null,
+    results,
+  };
+}
+
+/**
+ * The `home-page/` body, in the live `{ success, message, data }` envelope,
+ * with the tracks and each track's courses wrapped the way the API sends them.
+ */
 export function mockHomePageBody(
-  tracks: unknown[],
+  tracks: MasterclassTrack[],
   loginType: 'pre_login' | 'post_login' = 'pre_login',
 ) {
   return {
     success: true,
     message: 'Home page loaded.',
-    data: { login_type: loginType, tracks, coming_soon: [] },
+    data: {
+      login_type: loginType,
+      tracks: mockPage(
+        tracks.map((track) => ({
+          ...track,
+          courses: mockPage(track.courses, 'home_track_courses_web'),
+        })),
+        'home_tracks_web',
+      ),
+      coming_soon: mockPage([], 'home_coming_soon_web'),
+    },
   };
 }

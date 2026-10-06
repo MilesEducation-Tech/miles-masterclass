@@ -12,15 +12,13 @@
     id="masterclass-tracks"
     class="flex flex-col w-11/12 mx-auto md:space-y-20 space-y-10 scroll-mt-20"
   >
-    @if (facade.loadError()) {
+    @if (loadError()) {
       <div role="alert" class="flex flex-col items-center gap-4 py-16 text-center">
         <p class="text-muted-foreground">We couldn't load the masterclasses. Please try again.</p>
-        <button app-button type="button" variant="outline" (click)="facade.reload()">
-          Try again
-        </button>
+        <button app-button type="button" variant="outline" (click)="reload()">Try again</button>
       </div>
     } @else {
-      @for (track of facade.tracks(); track track.id; let even = $even) {
+      @for (track of tracks(); track track.id; let even = $even) {
         @let layout = even ? 'vertical' : 'horizontal';
         @defer (on viewport; prefetch on idle) {
           <app-carousel
@@ -32,7 +30,7 @@
               <app-masterclass-course-card
                 [course]="course"
                 [layout]="layout"
-                (trailer)="facade.openTrailer($event)"
+                (trailer)="openTrailer($event)"
               />
             </ng-template>
           </app-carousel>
@@ -45,7 +43,7 @@
           </div>
         }
       } @empty {
-        @if (facade.isLoading()) {
+        @if (isLoading()) {
           <!-- The carousel's own placeholder row, so the first rail lands in place. -->
           <div class="flex gap-4 animate-pulse" aria-hidden="true">
             @for (i of [1, 2, 3, 4]; track i) {
