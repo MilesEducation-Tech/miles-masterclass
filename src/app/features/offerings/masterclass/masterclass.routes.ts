@@ -4,6 +4,7 @@ import { FinalAssessmentFacade } from '@features/offerings/services/final-assess
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
 import { Masterclass } from '@features/offerings/masterclass/pages/masterclass/masterclass';
+import { MasterclassCourseFacade } from '@features/offerings/masterclass/services/masterclass-course-facade';
 
 export const masterclassRoutes: Route[] = [
   { path: '', component: Masterclass },
@@ -12,6 +13,7 @@ export const masterclassRoutes: Route[] = [
     children: [
       {
         path: '',
+        providers: [MasterclassCourseFacade],
         loadComponent: () =>
           import('@features/offerings/masterclass/pages/masterclass-course/masterclass-course').then(
             (m) => m.MasterclassCourse,

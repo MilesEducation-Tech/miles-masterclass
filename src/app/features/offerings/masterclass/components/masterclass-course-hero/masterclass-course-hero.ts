@@ -1,103 +1,41 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
+import { Component, computed, input, output } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { matPlayArrowRound } from '@ng-icons/material-icons/round';
+import { phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
+import { phosphorCards } from '@ng-icons/phosphor-icons/regular';
+import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
+import { CategoriesList } from '@shared/components/categories-list/categories-list';
 import { VideoPoster } from '@shared/components/video-poster/video-poster';
 import { Button } from '@shared/ui/button/button';
-import { NgIcon, provideIcons } from '@ng-icons/core';
-import {
-  matAddShoppingCartRound,
-  matBookmarkBorderRound,
-  matBookmarkRound,
-  matPlayArrowRound,
-  matRestartAltRound,
-  matShoppingCartRound,
-} from '@ng-icons/material-icons/round';
-import { phosphorDownloadSimpleFill, phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
-import { phosphorCards } from '@ng-icons/phosphor-icons/regular';
-import { DatePipe } from '@angular/common';
+import { MasterclassAboutCourse } from '@features/offerings/masterclass/models/masterclass-course.model';
 
-import { Progress } from '@shared/ui/progress/progress';
-import { cn } from '@shared/utils/cn';
-import { MasterclassFacade } from '../../../services/masterclass-facade';
-import { RatingStar } from '@shared/components/rating-star/rating-star';
-import { Utils } from '@shared/services/utils';
-import { CategoriesList } from '@shared/components/categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits-pipe';
-import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
-
+/**
+ * The course page's hero. Presentational: it renders the course it is given and
+ * emits what the learner asked for; the page hands each event to the facade.
+ *
+ * Held back until the web API covers them (`docs/MASTERCLASS_API_QUESTIONS.md`):
+ * the CPE/Preview mode switch, price and Add To Cart, the created/updated dates,
+ * and Download. Bookmark and the signed-in progress, rating and final-assessment
+ * actions come with their own reads.
+ */
 @Component({
   selector: 'app-masterclass-course-hero',
-  imports: [
-    VideoPoster,
-    Button,
-    NgIcon,
-    DatePipe,
-    Progress,
-    RatingStar,
-    CategoriesList,
-    TotalCpeCreditsPipe,
-    CairaCredlyBadge,
-  ],
+  imports: [NgOptimizedImage, NgIcon, Button, VideoPoster, CategoriesList, CairaCredlyBadge],
   templateUrl: './masterclass-course-hero.html',
-  providers: [
-    provideIcons({
-      matPlayArrowRound,
-      matBookmarkBorderRound,
-      matBookmarkRound,
-      phosphorShareFatFill,
-      phosphorCards,
-      phosphorDownloadSimpleFill,
-      matRestartAltRound,
-      matAddShoppingCartRound,
-      matShoppingCartRound,
-    }),
-  ],
+  providers: [provideIcons({ matPlayArrowRound, phosphorCards, phosphorShareFatFill })],
 })
 export class MasterclassCourseHero {
-  readonly masterclass = inject(MasterclassFacade);
-  readonly utils = inject(Utils);
-  cn = cn;
+  readonly course = input.required<MasterclassAboutCourse>();
 
-  courseId = input<string>();
-  courseTitle = input<string>();
+  readonly watch = output();
+  readonly trailer = output();
+  readonly sample = output();
+  readonly share = output();
 
-  protected readonly instructor = computed(
-    () => this.masterclass.courseDetails()?.instructor_details,
+  protected readonly instructorNames = computed(() =>
+    this.course()
+      .instructors.map((instructor) => instructor.name)
+      .join(', '),
   );
-  protected readonly instructorNames = computed(() => {
-    const lead = this.instructor();
-    const others = lead?.other_instructors ?? [];
-    return [lead, ...others]
-      .filter((person) => person?.first_name || person?.last_name)
-      .map((person) => `${person?.first_name ?? ''} ${person?.last_name ?? ''}`.trim());
-  });
-
-  openVideoDialog(source: 'trailer' | 'sample') {
-    const courseDetails = this.masterclass.courseDetails();
-    if (!courseDetails) return;
-
-    const link = source === 'trailer' ? courseDetails.trailer_link : courseDetails.sample_link;
-    this.utils.openVideoDialog(link, courseDetails.title);
-  }
-
-  toggleBookmark() {
-    const id = this.courseId();
-    if (!id) return;
-
-    this.utils.toggleBookmarkCourse(+id).subscribe((response) => {
-      if (response.status) {
-        this.masterclass.courseDetails.update((course) =>
-          course ? { ...course, added_bookmark: response.is_bookmarked } : course,
-        );
-      }
-    });
-  }
-
-  addToCart(courseId: number, isAddedToCart: boolean) {
-    this.utils.addCourseToCart(courseId, isAddedToCart).subscribe((response) => {
-      if (response.status) {
-        this.masterclass.courseDetails.update((course) =>
-          course ? { ...course, is_added_to_cart: response.in_cart } : course,
-        );
-      }
-    });
-  }
 }
