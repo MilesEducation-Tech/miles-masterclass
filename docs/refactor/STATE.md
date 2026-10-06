@@ -7,16 +7,45 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign PR1 (#69, `refactor/MIL-27-promote-masterclass-home-read`)
+  rebased onto `master` after the MIL-37 fix (#78). Conflicts resolved in the replayed commit, awaiting
+  `git rebase --continue` and the force-push.** No refactor phase moved.
+  - `masterclass.ts` takes #69's side (the page no longer owns the read); `constants/masterclass.ts` stays
+    deleted; the two STATE entries are kept. The root `MasterclassHomeFacade` now calls `tracks-page/` with
+    `tracks.page_size=100` and `tracks.courses.page_size=100` (`HOME_PAGE_LIST_PAGE_SIZE`), so the whole
+    stack (#69 → #77) reads the live route; stale `home-page/` comment mentions updated.
+  - Gates on the rebased tree (local macOS, Node 24.15, **not CI**): lint 0 errors (110 legacy warnings),
+    structure check passed, `build:prod` 242.57 kB initial; the dev server's client-side navigation sent
+    `tracks-page/?login_type=pre_login&tracks.page_size=100&tracks.courses.page_size=100` → 200, three rails.
+  - **Next:** after #69 merges, `git rebase --onto origin/master <merged branch> <next branch>` for #70 → #77,
+    in order.
+
 - 🔧 **2026-10-07, NON-REFACTOR — masterclass tracks read moved to `web-api/v1/masterclass/tracks-page/`
-  (`prompts/masterclass-tracks-rebind.md`, contract change of 2026-10-07). DONE, UNCOMMITTED, on branch
-  `fix/MIL-37-masterclass-tracks-page` off `master`, together with the
-  regenerated Postman export.** No refactor phase moved.
+  (`prompts/masterclass-tracks-rebind.md`, contract change of 2026-10-07). DONE, MERGED as #78 from
+  `fix/MIL-37-masterclass-tracks-page`, together with the regenerated Postman export.** No refactor phase moved.
   - The backend retired `home-page/` (404 on UAT and production, so the merged masterclass page showed its
     error state on UAT). `tracks-page/` has the same envelope and keys; `tracks` is now a paginated block, so
     the page sends `tracks.page_size=100` next to `tracks.courses.page_size=100` (`HOME_PAGE_LIST_PAGE_SIZE`).
     Types and `parseHomePage` unchanged.
   - The home-redesign stack (#69 → #77) carries the same read in `core/services/masterclass-home-facade/`;
     #69 must take the route and parameter when it is rebased onto this fix.
+- 🔧 **2026-10-06, NON-REFACTOR — home redesign PR1 (`prompts/home-redesign.md`): the `home-page/` read
+  promoted for the home page. DONE, UNCOMMITTED, on branch `refactor/MIL-XXX-promote-masterclass-home-read`
+  (rename it once the Jira ticket exists).** No refactor phase moved.
+  - Moves: `masterclass-home.model.ts` → `core/models/`; `with-previous-value.ts` → `core/utils/` (14 imports
+    rewritten); the course card → `shared/components/cards/masterclass-course-card/` (+ a story) with absolute
+    links; `constants/masterclass.ts` folded into the new root `core/services/masterclass-home-facade/`. The
+    masterclass page injects the facade; its hero, nav and `openTrailer` stay in the page.
+  - Why: `features/home` may not import `features/offerings`, and home is now the second reader of the tracks.
+    The facade is root (precedent `FeatureFacade`) so home → masterclass reuses the parsed page: verified, no
+    `home-page/` request after a client round trip.
+  - Gates (local macOS, Node 24, **not CI**): lint 0 errors (110 legacy `any` warnings) + structure check,
+    tsc, `build:prod` initial 242.56 kB transfer (+0.03 kB vs 242.53), only the two known CSS budget warnings.
+    `verify.mjs` full run: **7/7 GREEN**, bundle 243.7 KB gzip (unchanged; the +173% warning is the stale
+    baseline), SSR smoke no drift (the known 9 "not in baseline" routes).
+    Browser on your `pnpm start` (4101): `/us/accounting/masterclass` 3 rails 21/34/13, card hrefs
+    `/us/accounting/masterclass/<uuid>/<slug>`, trailer dialog opens.
+  - Next: PR2–PR5 in the prompt; its API-flags table is the backend ask.
 
 - 🔧 **2026-10-06, NON-REFACTOR — unit tests removed (`prompts/remove-unit-tests.md`). DONE, UNCOMMITTED;
   you applied `harness-no-tests.patch`.** No refactor phase moved. `verify.mjs` full run (local macOS,

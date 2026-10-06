@@ -23,7 +23,7 @@ import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 
 import { Supabase } from '@core/services/supabase/supabase';
-import { withPreviousValue } from '@shared/utils/with-previous-value';
+import { withPreviousValue } from '@core/utils/with-previous-value';
 import {
   AUDIT_CATEGORY_LABELS,
   AuditCategory,

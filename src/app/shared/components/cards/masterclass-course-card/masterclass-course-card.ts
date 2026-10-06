@@ -1,19 +1,17 @@
 import { NgOptimizedImage } from '@angular/common';
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
 import { faSolidPlay } from '@ng-icons/font-awesome/solid';
+import { MasterclassCardLayout, MasterclassCourse } from '@core/models/masterclass-home.model';
 import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
 import { CategoriesList } from '@shared/components/categories-list/categories-list';
+import { Utils } from '@shared/services/utils';
 import { Button } from '@shared/ui/button/button';
-import {
-  MasterclassCardLayout,
-  MasterclassCourse,
-} from '@features/offerings/masterclass/models/masterclass-home.model';
 
 /**
- * A course card on the masterclass page, in the shared `app-vertical` /
- * `app-horizontal` designs class-for-class.
+ * A course card from `tracks-page/` (the home page and the masterclass page), in
+ * the shared `app-vertical` / `app-horizontal` designs class-for-class.
  *
  * Its own component rather than those two because they are bound to the legacy
  * `Content` shape and make their own HTTP calls (about, bookmark) — six other
@@ -29,12 +27,28 @@ import {
   templateUrl: './masterclass-course-card.html',
 })
 export class MasterclassCourseCard {
+  private readonly utils = inject(Utils);
+
   readonly course = input.required<MasterclassCourse>();
   readonly layout = input<MasterclassCardLayout>('vertical');
 
   readonly trailer = output<MasterclassCourse>();
 
   protected readonly icons = { faSolidPlay };
+
+  /**
+   * Absolute, so the card links to the course from any page: a relative
+   * `[id, slug]` resolves under whichever route renders the card, which is
+   * `/…/home/<id>/<slug>` on the home page.
+   */
+  protected readonly courseLink = computed(() => [
+    '/',
+    this.utils.country(),
+    this.utils.profession(),
+    'masterclass',
+    this.course().id,
+    this.course().slug,
+  ]);
 
   /**
    * Artwork for this layout, falling back the way the shared cards do. `null`

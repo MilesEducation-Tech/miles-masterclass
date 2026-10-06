@@ -14,7 +14,7 @@
     </div>
     <a
       class="absolute inset-0 w-full h-full z-0"
-      [routerLink]="[c.id, c.slug]"
+      [routerLink]="courseLink()"
       [attr.aria-label]="c.title"
     >
       @if (thumbnail(); as src) {
@@ -65,7 +65,7 @@
   <div class="flex flex-col space-y-2 group/card">
     <a
       class="w-full aspect-video overflow-hidden rounded-lg flex flex-col relative"
-      [routerLink]="[c.id, c.slug]"
+      [routerLink]="courseLink()"
       [attr.aria-label]="c.title"
     >
       <div class="relative inset-0 w-full h-full z-0">
@@ -85,7 +85,7 @@
     </a>
     <a
       class="flex flex-col space-y-1"
-      [routerLink]="[c.id, c.slug]"
+      [routerLink]="courseLink()"
       [attr.aria-label]="c.title + ' details'"
     >
       <h3 class="text-white text-sm font-medium line-clamp-2">
