@@ -21,8 +21,8 @@ The problem this solves.
 CI enforces the machine-checkable rules (`pnpm lint` also runs the structure check). These are the ones a
 reviewer has to hold you to — see AGENTS.md §3–§4:
 
-- [ ] `pnpm lint`, `pnpm format`, `pnpm ng test --watch=false`, `pnpm build:prod` pass locally
-- [ ] No new `eslint-disable`, `@ts-ignore`, skipped tests, or `structure-baseline.json` entries (or each new
+- [ ] `pnpm lint`, `pnpm format`, `pnpm build:prod` pass locally
+- [ ] No new `eslint-disable`, `@ts-ignore`, spec/test files, or `structure-baseline.json` entries (or each new
       entry has a reason and is called out here)
 - [ ] Code sits at the lowest level that uses it; no feature imports another feature (AGENTS.md §3)
 - [ ] Reads are `httpResource` / `resource()` in a facade, guarded with `hasValue()`, with loading and error

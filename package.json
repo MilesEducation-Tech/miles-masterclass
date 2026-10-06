@@ -19,14 +19,11 @@
     "watch": "ng build --watch --configuration local",
     "watch:dev": "ng build --watch --configuration development",
     "watch:prod": "ng build --watch --configuration production",
-    "test": "ng test",
-    "pretest": "pnpm run generate:version",
     "clean": "rm -rf .angular && rm -rf dist && rm -rf node_modules && pnpm i",
     "serve:ssr:miles-masterclass-v3": "node dist/miles-masterclass-v3/server/server.mjs",
     "prepare": "husky && pnpm run generate:version",
     "lint": "ng lint && node scripts/check-structure.mjs",
     "check:structure": "node scripts/check-structure.mjs",
-    "test:scripts": "node --test \"scripts/*.test.mjs\"",
     "prelint": "pnpm run generate:version",
     "lint:fix": "ng lint --fix",
     "format": "prettier --check \"src/**/*.{ts,html,css,scss,json,md}\"",
@@ -129,7 +126,6 @@
     "eslint-plugin-boundaries": "^7.2.0",
     "eslint-plugin-storybook": "^10.6.0",
     "husky": "^9.1.7",
-    "jsdom": "^30.1.1",
     "lint-staged": "^17.5.1",
     "postcss": "^8.5.28",
     "prettier": "^3.9.9",
@@ -137,7 +133,6 @@
     "tailwindcss": "^4.1.12",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "~6.0.3",
-    "typescript-eslint": "8.70.1",
-    "vitest": "^5.0.2"
+    "typescript-eslint": "8.70.1"
   }
 }

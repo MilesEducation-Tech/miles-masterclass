@@ -65,6 +65,11 @@ export function scssFiles(files) {
   return files.filter((f) => f.endsWith('.scss'));
 }
 
+/** No tests in this repo (decided 2026-10-06): no spec or test files. */
+export function testFiles(files) {
+  return files.filter((f) => /\.(spec|test)\.[cm]?[jt]s$/.test(f));
+}
+
 /**
  * A singular category folder (`component/`, `service/`…), unless it sits inside its plural
  * (e.g. `services/dialog/`) or is a component folder, i.e. holds a `<name>.ts` of its own name
@@ -235,6 +240,10 @@ export function check(root = ROOT, baseline = readBaseline(root)) {
       (f) => `Suffixed file name (use v20+ names, no .component/.service…): ${f}`,
     ),
     ...scssFiles(files).map((f) => `No .scss: ${f}`),
+    // Wider than APP: specs also lived under src/ root and scripts/.
+    ...testFiles(['src', 'scripts'].flatMap((d) => walk(root, d))).map(
+      (f) => `No test files (this repo has no unit tests): ${f}`,
+    ),
     ...singularFolders(files).map(
       (d) => `Singular category folder (folder names are plural): ${d}`,
     ),

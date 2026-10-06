@@ -1,7 +1,16 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "schematics": {
-    "@schematics/angular": {}
+    "@schematics/angular": {
+      "component": { "skipTests": true },
+      "directive": { "skipTests": true },
+      "pipe": { "skipTests": true },
+      "service": { "skipTests": true },
+      "guard": { "skipTests": true },
+      "interceptor": { "skipTests": true },
+      "resolver": { "skipTests": true },
+      "class": { "skipTests": true }
+    }
   },
   "version": 1,
   "cli": {
@@ -151,12 +160,6 @@
             }
           },
           "defaultConfiguration": "production"
-        },
-        "test": {
-          "builder": "@angular/build:unit-test",
-          "options": {
-            "setupFiles": ["src/test-setup.ts"]
-          }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",

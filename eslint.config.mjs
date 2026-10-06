@@ -87,7 +87,6 @@ export default [
           { type: 'bootstrap', pattern: 'src', partialMatch: false },
         ],
         'boundaries/files': [
-          { category: 'test', pattern: '**/*.spec.ts' },
           { category: 'story', pattern: '**/*.stories.ts' },
           // Load-bearing catch-all: an array query returns false against a null value, so
           // without a category on ordinary files the `noneOf` selector in the testing policy
@@ -173,8 +172,8 @@ export default [
               },
               {
                 to: { element: { type: 'testing' } },
-                disallow: { from: { file: { categories: { noneOf: ['test', 'story'] } } } },
-                message: '@testing/* is importable only from specs and stories',
+                disallow: { from: { file: { categories: { noneOf: ['story'] } } } },
+                message: '@testing/* is importable only from stories',
               },
             ],
           },
@@ -276,11 +275,9 @@ export default [
         'src/app/core/models/library-filters.model.ts',
         'src/app/core/services/feature-facade/feature-facade.ts',
         'src/app/core/services/logger/logger.ts',
-        'src/app/core/services/section-filters-facade/section-filters-facade.spec.ts',
         'src/app/features/offerings/components/chapter-quiz/chapter-quiz.ts',
         'src/app/features/offerings/components/course-resources/course-resources.ts',
         'src/app/features/offerings/pages/course-feedback/course-feedback.ts',
-        'src/app/features/offerings/pages/final-assessment-exam/final-assessment-exam.spec.ts',
         'src/app/features/offerings/pages/final-assessment-exam/final-assessment-exam.ts',
         'src/app/features/offerings/pages/final-assessment-report/final-assessment-report.ts',
         'src/app/features/offerings/services/chapter-facade.ts',

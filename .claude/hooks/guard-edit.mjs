@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// PreToolUse(Edit|Write|MultiEdit|NotebookEdit): protects harness-owned and secret files, and blocks
-// NEW suppressions (eslint-disable, ts-ignore, skipped/focused tests) and banned APIs in source files.
+// PreToolUse(Edit|Write|MultiEdit|NotebookEdit): protects harness-owned and secret files, blocks spec/test
+// files (this repo has no unit tests), and blocks NEW suppressions (eslint-disable, ts-ignore) and banned
+// APIs in source files.
 // Content checks compare counts against the existing content, so moving code that already has them is allowed.
 import { existsSync, readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
@@ -28,6 +29,9 @@ const protectedPaths = [
 ];
 for (const [re, msg] of protectedPaths) if (re.test(rel)) block(msg);
 
+// No unit tests in this repo (decided 2026-10-06); scripts/check-structure.mjs enforces the same in CI.
+if (/\.(spec|test)\.[cm]?[jt]s$/.test(rel)) block("This repo has no unit tests. Don't add spec/test files; verify in the running app.");
+
 // Content checks only apply to source code, not docs/reports/markdown.
 if (!/^src\/.*\.(ts|html|css|mjs|js)$/.test(rel) && !/^eslint\.config\.mjs$/.test(rel)) process.exit(0);
 
@@ -40,8 +44,6 @@ const count = (s, re) => (s.match(re) ?? []).length;
 const forbidden = [
   [/eslint-disable/g, 'Do not disable lint rules. Fix the code or report it as a decision.'],
   [/@ts-(ignore|nocheck|expect-error)/g, 'Do not suppress type errors.'],
-  [/\b(it|test|describe)\.(skip|only|todo)\s*\(/g, 'Do not skip or focus tests.'],
-  [/\b[xf](it|describe)\s*\(/g, 'Do not skip or focus tests.'],
   [/\[ngClass\]|\[ngStyle\]|\bNgClass\b|\bNgStyle\b/g, 'NgClass/NgStyle are banned. Use [class] bindings or cn().'],
   [/from\s+['"]@angular\/aria/g, '@angular/aria is not used. Build on ng-primitives.'],
   [/\blocalStorage\b|\bsessionStorage\b/g, 'New direct browser storage access is not allowed; use the storage service (SSR-safe).'],

@@ -122,7 +122,7 @@ The rest of this document works either way.
 
 ## 3. The build stamps identity into the bundle
 
-**Shipped.** `scripts/generate-version.mjs` runs in the `prebuild`, `prestart`, `pretest` and `prelint`
+**Shipped.** `scripts/generate-version.mjs` runs in the `prebuild`, `prestart` and `prelint`
 hooks — and once after install via `prepare` — and writes two files that must agree per deploy. Both are
 **gitignored**, precisely because every one of those paths regenerates them:
 

@@ -25,7 +25,7 @@ Never mix the two: don't modernize code while moving it. A file that is moved an
 - **Headless UI:** ng-primitives (Angular Primitives). Do not introduce @angular/aria or new CDK-based headless components.
 - **Styling:** Tailwind CSS v4 via @tailwindcss/postcss. `cn()` (clsx + tailwind-merge) lives in the shared utils.
 - **Tooling:**
-  - Unit tests: `ng test` using Vitest
+  - No unit tests (removed 2026-10-06; `check-structure` rejects spec/test files)
   - ESLint 10 (flat config) with angular-eslint 22 and typescript-eslint 8
   - Storybook 10, Prettier 3, husky + lint-staged
   - pnpm only
@@ -44,10 +44,10 @@ Never mix the two: don't modernize code while moving it. A file that is moved an
 3. **Verification** uses the project scripts only:
    - Per step: `node scripts/refactor/verify.mjs --quick` (typecheck + lint).
    - End of phase/feature: delegate to the `verifier` subagent, which runs `node scripts/refactor/verify.mjs`
-     (lint, unit tests, local + prod builds, Storybook build, format check, bundle report, SSR smoke test
+     (lint, local + prod builds, Storybook build, format check, bundle report, SSR smoke test
      against the recorded baseline).
    - A phase is not done until the full run is green.
-   - Never disable, skip, or weaken a test, lint rule, or gate.
+   - Never disable, skip, or weaken a lint rule or gate.
    - Never re-record baselines (the user does that).
 4. **Delegation:**
    - Use the `import-auditor` subagent to find every reference to a file before moving it.
@@ -68,8 +68,8 @@ Never mix the two: don't modernize code while moving it. A file that is moved an
 10. **Updating references after a move.** Every reference must be updated:
     - Imports, and `loadComponent`/`loadChildren` paths in all `*.routes.ts`
     - `app.routes.server.ts`, `server.ts`, `main.server.ts`, `seo.ts`, `legacy-redirects.ts`
-    - Specs and stories
-    - `angular.json` (styles, assets, fileReplacements, test options, storybook targets)
+    - Stories
+    - `angular.json` (styles, assets, fileReplacements, storybook targets)
     - `tsconfig*.json`
     - `.storybook/main.ts` globs
     - Tailwind `@source`/`@import` paths
@@ -101,7 +101,7 @@ src/app/
     <admin-feature>/
     core/                    Admin guards, auth, interceptors, admin models
     layout/                  admin-layout, admin-sidebar, admin-topbar
-  testing/                   Mocks and test helpers. Never imported by production code.
+  testing/                   Story mocks and the dev-only partner mock. Never imported by production code.
 ```
 
 ### Placement & boundary rules
@@ -115,11 +115,11 @@ src/app/
   - `shared` imports nothing from `features`, `admin` or `layout`.
   - Features import only from `core`, `shared`, and themselves (plus `layout` in route configs). Never from other features.
   - `admin` imports only from `core`, `shared`, and itself.
-  - `testing` is importable only from specs and stories.
+  - `testing` is importable only from stories.
 - **Aliases:** `@core/*`, `@shared/*`, `@layout/*`, `@features/*`, `@admin/*`, `@testing/*`, `@env/*`.
   Any import that crosses a top-level folder uses an alias. Relative imports are allowed only within the same feature.
 - **Naming and file conventions:**
-  - One component per folder: `name/name.ts|html|css|spec.ts|stories.ts`.
+  - One component per folder: `name/name.ts|html|css|stories.ts`.
   - Services and models are flat files.
   - Folder names are plural.
   - No `.scss`.
@@ -156,7 +156,6 @@ src/app/
   - Guard every `.value()` read with `.hasValue()`.
   - Render `.isLoading()` and `.error()` states explicitly.
   - Remove the manual loading/error flags the resource replaces.
-- **Tests** use `provideHttpClientTesting` + `HttpTestingController`, and wait for resources to settle before asserting.
 
 ### 4.3 Headless UI: ng-primitives
 
@@ -242,7 +241,6 @@ after a user action or on a subset of pages. Always use it when the service pull
   - No prefetch for rare or admin-only actions.
   - Hover/focus prefetching goes through ONE shared helper, `core/utils/prefetch-triggers.ts`. Don't hand-roll triggers.
 - **SSR:** these services must never be called during server rendering.
-- **Tests:** override the service token in TestBed with a mock.
 - **Verify:** the service and its library are in their own lazy chunk and absent from the initial bundle
   (check the bundle report).
 
@@ -275,7 +273,7 @@ after a user action or on a subset of pages. Always use it when the service pull
 **Phase 0 — Audit & plan (NO source changes; run in plan mode).** Write `docs/refactor/PLAN.md` with:
 
 - **Config baseline:**
-  - tsconfig and angular.json test/storybook options, `.storybook/main.ts` globs, Tailwind `@source` lines, `@theme` contents
+  - tsconfig and angular.json storybook options, `.storybook/main.ts` globs, Tailwind `@source` lines, `@theme` contents
   - Current hydration providers
   - Anything deprecated under TS 6
 - **Move map:**
@@ -323,7 +321,7 @@ Then stop. The user approves the plan in STATE.md "Decisions".
 **Phase 2 — Path aliases.**
 
 - Remove `baseUrl` and add `paths` with `./` targets for the aliases in section 3. Keep `moduleResolution: "bundler"`.
-- Verify the aliases resolve in the build, Vitest, Storybook and ESLint (add `eslint-import-resolver-typescript` if needed).
+- Verify the aliases resolve in the build, Storybook and ESLint (add `eslint-import-resolver-typescript` if needed).
 
 **Phase 3 — Core.**
 
@@ -383,7 +381,7 @@ Then stop. The user approves the plan in STATE.md "Decisions".
 
 - Migrate reads per section 4.2 and the HTTP inventory.
 - Mutations stay on HttpClient with `.reload()`.
-- Remove replaced boilerplate and update specs.
+- Remove replaced boilerplate.
 
 **Phase 10 — Headless UI (per primitive group).**
 

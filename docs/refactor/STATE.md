@@ -7,6 +7,31 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-06, NON-REFACTOR — unit tests removed (`prompts/remove-unit-tests.md`). DONE, UNCOMMITTED;
+  you applied `harness-no-tests.patch`.** No refactor phase moved. `verify.mjs` full run (local macOS,
+  Node 24.15, **not CI**): **7/7 GREEN**. The only warnings are the known stale-baseline ones: bundle +3%
+  vs `baseline/bundle.json`, and 9 SSR routes "not in baseline". Both are yours to re-record.
+  - Also deleted (your instruction): five components that only their specs imported. They are
+    `document-chapter`, `plan-card`, `layout/blog-layout`, `badge-claim-upsell-dialog` and
+    `badge-info-dialog`.
+    - The dangling `/blog` route comment in `app.routes.ts` is removed (the route went in `9208e60`).
+    - The `BadgeItem` doc comment and the AGENTS.md §3 layout list are updated.
+    - PROMPT.md:89 still lists `blog-layout`. That spec is yours.
+  - Your decision: the repo has no unit tests. All 208 specs, `src/test-setup.ts`,
+    `scripts/check-structure.test.mjs`, four spec-only `testing/` helpers and `.agents/skills/vitest/` are
+    deleted. `vitest` + `jsdom` are uninstalled. The `ng test` target, `tsconfig.spec.json`, the `test` /
+    `pretest` / `test:scripts` scripts and both CI test steps are gone. `ng generate` now skips specs.
+  - `check-structure.mjs` hard-fails on any `*.spec.*` / `*.test.*` under `src/` or `scripts/`, which covers
+    pre-commit and CI.
+  - **Apply the patch:** it drops `verify.mjs`'s `unit tests` gate, so full runs are **7 gates** from now on
+    and older "8/8" entries are historical. It also makes `guard-edit.mjs` block spec/test files and
+    updates the reviewer/import-auditor agents, the git-workflow skill and `docs/refactor/PROMPT.md`. The
+    root `PROMPT.md` copy is already edited to match.
+  - Gates (local macOS, Node 24.15, **not CI**): lint 0 errors (110 legacy `any` warnings), structure check,
+    tsc, format, build, build:prod (the two known CSS budget warnings; initial 242.53 kB transfer) and
+    build-storybook are all green. `pnpm install --frozen-lockfile` is OK.
+  - vitest/jsdom stay in the lockfile only as `@angular/build`'s optional peer and are not installed.
+
 - 🔧 **2026-10-06, NON-REFACTOR — MIL-23: facade folded into the page + trailer dialog fixed. DONE,
   UNCOMMITTED (with the pagination fix below).** No refactor phase moved.
   - Your instruction: the `MasterclassHomeFacade` logic now lives in `pages/masterclass/masterclass.ts`;

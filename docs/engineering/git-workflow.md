@@ -161,7 +161,7 @@ Practical notes:
 ### Size
 
 Aim for **under 400 changed lines**. If it's bigger, split it: one PR for the backend contract, one for
-the UI, one for the tests. A 2,000-line PR does not get reviewed; it gets rubber-stamped.
+the UI. A 2,000-line PR does not get reviewed; it gets rubber-stamped.
 
 This one is a review norm, not a bot. Nobody fails your build over a line count — but a reviewer is
 entitled to ask you to split.
@@ -231,12 +231,12 @@ on the ruleset, not suggestions.
 The workflows are `.github/workflows/ci.yml` and `.github/workflows/pr-title.yml`; read those for the
 exact steps rather than trusting a copy pasted into a doc. Four checks must be green:
 
-| Check         | What it does                                                                                                                                                                                         |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `verify`      | `pnpm format` → `pnpm lint` → `pnpm ng test --watch=false` → `pnpm build:prod` → `pnpm build-storybook`. Fast gates first, so a formatting slip fails in under a minute instead of after two builds. |
-| `pr-title`    | Your PR title is a Conventional Commit with a known type and scope                                                                                                                                   |
-| `commitlint`  | Every commit on the branch is a Conventional Commit, even if you used `--no-verify`                                                                                                                  |
-| `branch-name` | Your branch matches `type/description`                                                                                                                                                               |
+| Check         | What it does                                                                                                                                                          |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verify`      | `pnpm format` → `pnpm lint` → `pnpm build:prod` → `pnpm build-storybook`. Fast gates first, so a formatting slip fails in under a minute instead of after two builds. |
+| `pr-title`    | Your PR title is a Conventional Commit with a known type and scope                                                                                                    |
+| `commitlint`  | Every commit on the branch is a Conventional Commit, even if you used `--no-verify`                                                                                   |
+| `branch-name` | Your branch matches `type/description`                                                                                                                                |
 
 The job name is the check name, so don't rename a job without updating the ruleset — a check that never
 reports reads as "pending", which blocks the merge forever.
@@ -279,7 +279,7 @@ Production is broken and you can't wait for the queue:
 ```bash
 git checkout master && git pull
 git checkout -b hotfix/MIL-299-checkout-500
-# smallest possible fix + a test that would have caught it
+# smallest possible fix, verified in the running app
 git push -u origin hotfix/MIL-299-checkout-500
 ```
 
@@ -406,6 +406,6 @@ and the two will disagree at the worst moment.
 - **Rebase** — replay your commits on top of the latest `master`, so history stays a straight line.
 - **Merge conflict** — two people changed the same lines. Git can't choose, so you decide and commit the fix.
 - **Squash** — collapse all the commits on your branch into one commit on `master`.
-- **CI** — the automated checks (lint, tests, build) that run on your PR.
+- **CI** — the automated checks (lint, build) that run on your PR.
 - **UAT** — the shared Vercel environment for testing deployed code before merge. The release owner puts
   PRs on it through the `uat` branch.
