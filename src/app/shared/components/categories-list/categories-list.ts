@@ -15,7 +15,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import { NgpTooltip, NgpTooltipArrow, NgpTooltipTrigger } from 'ng-primitives/tooltip';
-import { FieldOfStudy } from '@core/models/course.model';
+import { CategoryListItem } from '@core/models/course.model';
 
 @Component({
   selector: 'app-categories-list',
@@ -31,7 +31,7 @@ export class CategoriesList {
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly injector = inject(Injector);
 
-  readonly items = input<FieldOfStudy[]>([]);
+  readonly items = input<readonly CategoryListItem[]>([]);
   readonly separator = input<string>(', ');
   readonly moreLabel = input<string>('more');
   readonly align = input<'start' | 'center' | 'end'>('start');

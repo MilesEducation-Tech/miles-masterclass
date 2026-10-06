@@ -59,3 +59,4 @@ docs/refactor/.cache/
 # Tracked previously, which meant every build dirtied the tree.
 /public/version.json
 /src/app/core/version/app-version.ts
+/postman

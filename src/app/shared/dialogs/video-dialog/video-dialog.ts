@@ -18,7 +18,9 @@ export interface VideoDialogData {
   imports: [VideoJs, Button, Dialog, NgIcon],
   providers: [provideIcons({ heroXMark })],
   template: `
-    <app-dialog [ariaLabel]="data.title || 'Video'" panelClass="p-0 max-w-full">
+    <!-- The panel shrinks to the 50vw player and centres. With the panel's default
+         w-full it spanned the viewport, leaving the player in its left half. -->
+    <app-dialog [ariaLabel]="data.title || 'Video'" panelClass="p-0 w-auto max-w-none">
       <div class="h-full w-[50vw] flex flex-col bg-background text-foreground overflow-hidden">
         <!-- Header -->
         <div

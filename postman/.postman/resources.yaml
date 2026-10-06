@@ -5,8 +5,7 @@ workspace:
 localResources:
   collections:
     - ../Merged_Masterclass_Backend_All_APIs.postman_collection.json
-    - ../Merged Masterclass Backend - All APIs
   environments:
-    - ../Merged Masterclass Backend - LOCAL.environment.yaml
-    - ../Merged Masterclass Backend - PROD.environment.yaml
-    - ../Merged Masterclass Backend - UAT.environment.yaml
+    - ../Merged_Masterclass_Backend_LOCAL.postman_environment.json
+    - ../Merged_Masterclass_Backend_UAT.postman_environment.json
+    - ../Merged_Masterclass_Backend_PROD.postman_environment.json
