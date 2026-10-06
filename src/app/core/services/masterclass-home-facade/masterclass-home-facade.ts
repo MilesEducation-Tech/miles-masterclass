@@ -1,6 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { httpResource } from '@angular/common/http';
-import { computed, effect, inject, PLATFORM_ID, Service } from '@angular/core';
+import { computed, effect, inject, PLATFORM_ID, Service, signal } from '@angular/core';
 import { environment } from '@env/environment';
 import {
   MasterclassHomePage,
@@ -72,16 +72,30 @@ export class MasterclassHomeFacade {
     this.auth.isAuthenticated() ? 'post_login' : 'pre_login',
   );
 
+  /**
+   * Whether the SERVER fetches the anonymous page too. Off by default: the
+   * body is ~54 KB gzip and rides in the HTML as transfer state, and its
+   * latency sits on TTFB — for three track headings, because the carousels
+   * render their cards only in the browser. Measured on the home page
+   * (2026-10-06, Lighthouse mobile, medians of 3): FCP 2.6 s → 4.8 s with the
+   * fetch on the server. The masterclass page opts in (MIL-23: a crawler gets
+   * the track list, and the browser reuses the response instead of
+   * refetching); the home page does not, and fetches after hydration.
+   */
+  readonly fetchOnServer = signal(false);
+
   private readonly homePageResource = httpResource<MasterclassHomePage>(
     () => {
       const loginType = this.loginType();
 
-      // `pre_login` is served anonymously, so the SERVER fetches it and a
-      // crawler gets the real tracks; the response lands in the HTTP transfer
-      // cache and the browser reuses it rather than refetching. `post_login` is
-      // skipped on the server: the learner token lives in the browser, and
-      // asking for the signed-in page without one is a 401.
-      if (!this.isBrowser && loginType === 'post_login') return undefined;
+      // On the server only a page that opted in fetches, and only `pre_login`:
+      // it is served anonymously, so the response can land in the HTTP transfer
+      // cache for the browser to reuse. `post_login` is never fetched there —
+      // the learner token lives in the browser, and asking for the signed-in
+      // page without one is a 401.
+      if (!this.isBrowser && (loginType === 'post_login' || !this.fetchOnServer())) {
+        return undefined;
+      }
 
       return {
         url: apiUrl(TRACKS_PAGE_URL),
@@ -117,6 +131,16 @@ export class MasterclassHomeFacade {
   );
 
   readonly isLoading = computed(() => this.homePage.isLoading());
+
+  /**
+   * `true` once the read has an answer (data or error). On the server a page
+   * that did not opt in is `idle`, which is neither — so a template can hold a
+   * skeleton through server render AND the browser fetch, and nothing shifts.
+   */
+  readonly isSettled = computed(() => {
+    const status = this.homePage.status();
+    return status === 'resolved' || status === 'error';
+  });
 
   /** A failed load or a contract mismatch; pages show it with a retry. */
   readonly loadError = computed(() => this.homePageResource.error() ?? null);

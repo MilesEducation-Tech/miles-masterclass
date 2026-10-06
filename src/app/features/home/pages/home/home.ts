@@ -1,124 +1,68 @@
-import { Component, inject, computed } from '@angular/core';
-import { environment } from '@env/environment';
-import { Carousel } from '@shared/components/carousel/carousel';
-import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
-import { Vertical } from '@shared/components/cards/vertical/vertical';
-import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
-import { ComingSoon } from '@shared/components/cards/coming-soon/coming-soon';
-import {
-  swiperConfigComingSoon,
-  swiperConfigEven,
-  swiperConfigOdd,
-} from '@core/config/swiper.config';
+import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { swiperConfigEven } from '@core/config/swiper.config';
+import { MasterclassCourse } from '@core/models/masterclass-home.model';
+import { MasterclassHomeFacade } from '@core/services/masterclass-home-facade/masterclass-home-facade';
 import { AppDownload } from '@shared/components/app-download/app-download';
-import { HomeHero } from '../../components/home-hero/home-hero';
-import { Offering } from '@shared/components/offerings/offerings';
-import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
-import { PartnerContentList } from '@shared/components/partner-content-list/partner-content-list';
+import { CairaLevelStack } from '@shared/components/caira-level-stack/caira-level-stack';
+import { MasterclassCourseCard } from '@shared/components/cards/masterclass-course-card/masterclass-course-card';
+import { Carousel } from '@shared/components/carousel/carousel';
 import { Faq } from '@shared/components/faq/faq';
 import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan-benefits';
-import { Button } from '@shared/ui/button/button';
-import { Router } from '@angular/router';
-import { Utils } from '@shared/services/utils';
-import { CairaLevelStack } from '@shared/components/caira-level-stack/caira-level-stack';
+import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
 import { SurroundCarousel } from '@shared/components/surround-carousel/surround-carousel';
+import { Utils } from '@shared/services/utils';
+import { Button } from '@shared/ui/button/button';
+import { HomeHero } from '../../components/home-hero/home-hero';
 
+/**
+ * The home page, in the v3 section order: hero, the masterclass track rails,
+ * the AI Labs ring, the CAIRA levels, the plan, the app download and the FAQ.
+ * The rails come from the root `MasterclassHomeFacade`, the same read `/masterclass`
+ * renders, so moving between the two pages never refetches.
+ *
+ * Not here yet (see prompts/home-redesign.md): the live-webinar ticket, which
+ * needs a web-api highlight endpoint, and the pricing card, which needs the
+ * plan-price source confirmed. Both are flagged, not wired to v2.
+ */
 @Component({
   selector: 'app-home',
   imports: [
-    Carousel,
-    Horizontal,
-    Vertical,
-    ComingSoon,
     AppDownload,
-    HomeHero,
-    Offering,
-    SectionNav,
-    PartnerContentList,
-    Faq,
-    PlanBenefits,
     Button,
     CairaLevelStack,
+    Carousel,
+    Faq,
+    HomeHero,
+    MasterclassCourseCard,
+    PlanBenefits,
+    SectionNav,
     SurroundCarousel,
   ],
   templateUrl: './home.html',
 })
 export class Home {
-  S3_BUCKET_URL = environment.S3_BUCKET_URL;
-  readonly feature: FeatureFacade = inject(FeatureFacade);
-  readonly router = inject(Router);
+  protected readonly router = inject(Router);
   private readonly utils = inject(Utils);
 
-  /**
-   * Navigate to the subscription-plan picker. Builds the absolute path from
-   * `Utils.country()` / `Utils.profession()` instead of relative `../..` since
-   * `router.navigate` without a `relativeTo: ActivatedRoute` resolves
-   * `..` against the route root, which produced a broken path.
-   */
-  goToPlan(): void {
-    this.router.navigate(['/', this.utils.country(), this.utils.profession(), 'payment', 'plan']);
-  }
+  protected readonly home = inject(MasterclassHomeFacade);
 
-  // Swiper configurations for templates
-  readonly swiperConfigEven = swiperConfigEven;
-  readonly swiperConfigOdd = swiperConfigOdd;
-  readonly swiperConfigComingSoon = swiperConfigComingSoon;
+  // Every rail is horizontal cards, so one swiper preset serves them all.
+  protected readonly swiperConfigEven = swiperConfigEven;
 
-  filterConfig = {
-    filterEnabled: true,
-  };
+  /** The sidenav. "Live Webinar" joins the list with its ticket (its own PR). */
+  protected readonly sectionNavItems: SectionNavItem[] = [
+    { id: 'home-hero', label: 'Home', visible: true, icon: 'lucideHome' },
+    { id: 'home-masterclasses', label: 'Master Classes', visible: true, icon: 'lucidePlay' },
+    { id: 'model-carousel', label: 'AI Labs', visible: true, icon: 'lucideLayers' },
+    { id: 'caira-levels', label: 'CAIRA', visible: true, icon: 'lucideGraduationCap' },
+    { id: 'plan', label: 'Pricing', visible: true, icon: 'lucideStar' },
+    { id: 'app-download', label: 'Download App', visible: true, icon: 'lucideLink' },
+    { id: 'faq', label: 'FAQ', visible: true, icon: 'lucideHelpCircle' },
+  ];
 
-  readonly track = this.feature.getResource('track', 'masterclass');
-  readonly premiere = this.feature.getResource('premiere', 'masterclass');
-  readonly comingSoon = this.feature.getResource('comingSoon', 'masterclass');
-
-  readonly sectionNavItems = computed<SectionNavItem[]>(() => {
-    return [
-      {
-        id: 'home-hero',
-        label: 'Home',
-        visible: true,
-        icon: 'lucideHome',
-      },
-      {
-        id: 'home-masterclasses',
-        label: 'Miles Masterclass',
-        visible: true,
-        icon: 'lucidePlay',
-      },
-      {
-        id: 'model-carousel',
-        label: 'AI Labs',
-        visible: true,
-        icon: 'lucideLayers',
-      },
-      {
-        id: 'offerings',
-        label: 'Offerings',
-        visible: true,
-        icon: 'lucideBookOpen',
-      },
-      {
-        id: 'app-download',
-        label: 'Download App',
-        visible: true,
-        icon: 'lucideLink',
-      },
-      {
-        id: 'plan',
-        label: 'Plans',
-        visible: true,
-        icon: 'lucideStar',
-      },
-      {
-        id: 'faq',
-        label: 'FAQ',
-        visible: true,
-        icon: 'lucideHelpCircle',
-      },
-    ];
-  });
-  planPointers: PlanPointer[] = [
+  /** The plan section's copy, until the pricing card replaces it. */
+  protected readonly planPointers: PlanPointer[] = [
     {
       id: 1,
       planfeature: {
@@ -184,4 +128,25 @@ export class Home {
       },
     },
   ];
+
+  /**
+   * Navigate to the subscription-plan picker. Builds the absolute path from
+   * `Utils.country()` / `Utils.profession()` instead of relative `../..` since
+   * `router.navigate` without a `relativeTo: ActivatedRoute` resolves
+   * `..` against the route root, which produced a broken path.
+   */
+  protected goToPlan(): void {
+    void this.router.navigate([
+      '/',
+      this.utils.country(),
+      this.utils.profession(),
+      'payment',
+      'plan',
+    ]);
+  }
+
+  /** The shared video dialog; it toasts "Trailer Not Found" for a course with none. */
+  protected openTrailer(course: MasterclassCourse): void {
+    void this.utils.openVideoDialog(course.trailer_url, course.title);
+  }
 }
