@@ -190,6 +190,58 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     `/us/accounting/masterclass/<uuid>/<slug>`, trailer dialog opens.
   - Next: PR2–PR5 in the prompt; its API-flags table is the backend ask.
 git push --force-with-lease origin feat/MIL-35-ai-labs-ring-v3
+
+- 🔧 **2026-10-06, NON-REFACTOR — MIL-25 masterclass course page rebind (`prompts/masterclass-course-rebind.md`):
+  PR1–PR3 DONE, BROWSER-VERIFIED, UNCOMMITTED.** No refactor phase moved. Plan approved with D1, D2,
+  D4, D5 and D6 as recommended.
+  - **`verify.mjs` full run** (local macOS, Node 24.18, **not CI**): **7/7 GREEN**. Lint has 0 errors and
+    110 legacy `any` warnings; the only warnings are the known baseline ones (two CSS budgets, the stale
+    bundle baseline, 9 SSR routes "not in baseline"). The SSR smoke course title `{{title}}` matches
+    `baseline/ssr.json`.
+  - **Commit 1 builds on its own:** the data layer alone passes `ng build` (production) in a temp worktree.
+  - **Verified on `pnpm start` (4101, after `pnpm clean`):**
+    - SSR renders the hero and About for the UUID link and for an old numeric link (`442/<slug>`, via slug)
+    - an unknown course shows not-found, linking to `/masterclass`
+    - the browser makes no API call (transfer cache), and none to legacy or `app-api/`
+    - Trailer and Share open; Watch Now goes to `chapter/<uuid>/<slug>`
+    - no horizontal scroll at 375 / 768 / 1440
+  - **Fixed during the check: a hydration mismatch.** The page set the lookup from an `effect()`, one CD pass
+    late, so the client's first render had no course and the section nav came out "FAQ, About". The facade
+    now derives the lookup from the page's inputs via `connect()`.
+  - **Not ours, logged:**
+    - the Supabase SEO pattern row's raw `{{title}}` title
+    - the SSR `<title>` falling back to the brand, because `setupCourseSeo` releases its gate when phase 1
+      is aborted
+    - a view-transition `InvalidStateError`, also on `/masterclass`
+    - a preconnect hint for the S3 thumbnail host
+  - **D3 is still open.** PR4 (chapters, signed-in state) is blocked until you send a signed-in
+    `course-detail/<uuid>/` capture; PR5 (bookmark) is not started.
+  - **PR1, data layer:**
+    - `about-course/` endpoint and a UUID pattern (`constants/masterclass.ts`)
+    - `models/masterclass-course.model.ts` with the `parseAboutCourse` guard, typed from a live survey of
+      all 64 UAT courses
+    - route-scoped `services/masterclass-course-facade.ts`, in the route's `providers`
+    - the guard primitives promoted to `utils/contract-guards.ts`, shared with the home model
+    - old numeric links resolve by slug
+  - **PR2, page + hero:**
+    - page and hero rewritten onto the facade; hero markup kept
+    - held back: CPE mode, price/cart, dates, bookmark, download, resources, related
+    - not-found and error states added
+    - `courseToSeoConfig` gained a structural web-API branch
+  - **PR3, About:**
+    - new `masterclass-course-about`, the masterclass branch of the shared `CourseAbout` copied class for
+      class
+    - `CategoriesList` reads `cpe_credit` as well as `cpe_credits`
+    - `docs/MASTERCLASS_API_QUESTIONS.md` lists the backend gaps
+  - **Gates (local macOS, not CI):**
+    - eslint on the touched files: 0
+    - structure check: passed
+    - `pnpm build:prod`: green, with the two known CSS budget warnings; initial transfer 242.50 kB
+    - `verify.mjs`: not yet run
+  - `MasterclassFacade` and the shared children are untouched; podcast and the chapter player still use
+    them.
+  - The `postman/` untracking is staged as its own commit.
+
 - 🔧 **2026-10-06, NON-REFACTOR — unit tests removed (`prompts/remove-unit-tests.md`). DONE, UNCOMMITTED;
   you applied `harness-no-tests.patch`.** No refactor phase moved. `verify.mjs` full run (local macOS,
   Node 24.15, **not CI**): **7/7 GREEN**. The only warnings are the known stale-baseline ones: bundle +3%
@@ -3044,6 +3096,12 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-06 · NON-REFACTOR · **MIL-25 `verify.mjs` 7/7 GREEN** (local, Node 24.18); split into 2 commits, the first builds alone
+
+- 2026-10-06 · NON-REFACTOR · **MIL-25 PR1–PR3 browser-verified** on 4101 (SSR, transfer cache, 3 widths); hydration mismatch fixed (`connect()` replaces the effect)
+
+- 2026-10-06 · NON-REFACTOR · **MIL-25 PR1–PR3 written** (uncommitted): `about-course/` facade, page, hero, About · eslint 0, structure ✔, build:prod green (local); PR4 blocked on the D3 capture
 
 - 2026-10-06 · NON-REFACTOR · **MIL-23: facade folded into the page; trailer dialog sized like production** (uncommitted) — masterclass specs 38/38
 

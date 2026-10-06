@@ -1,6 +1,26 @@
 <div class="w-full overflow-hidden">
-  @if (masterclassService.courseDetails() !== null) {
-    <app-masterclass-course-hero [courseId]="courseId()" [courseTitle]="courseTitle()" />
+  @if (facade.course(); as course) {
+    <app-masterclass-course-hero
+      [course]="course"
+      (watch)="facade.watch()"
+      (trailer)="facade.openTrailer()"
+      (sample)="facade.openSample()"
+      (share)="facade.share()"
+    />
+  } @else if (facade.notFound()) {
+    <div role="alert" class="container mx-auto flex flex-col items-center gap-4 py-24 text-center">
+      <p class="text-muted-foreground">We couldn't find this masterclass.</p>
+      <a routerLink="../.." class="text-accent underline underline-offset-4"
+        >Browse masterclasses</a
+      >
+    </div>
+  } @else if (facade.loadError()) {
+    <div role="alert" class="container mx-auto flex flex-col items-center gap-4 py-24 text-center">
+      <p class="text-muted-foreground">We couldn't load this masterclass. Please try again.</p>
+      <button app-button type="button" variant="outline" (click)="facade.reload()">
+        Try again
+      </button>
+    </div>
   } @else {
     <app-masterclass-course-hero-skeleton />
   }
@@ -12,33 +32,10 @@
     </div>
   </div>
 
-  <!-- Masterclass Section (Chapters) -->
-  @if (masterclassService.courseChapters().length > 0) {
-    <section id="masterclass" class="container mx-auto md:py-10 py-5 scroll-mt-32">
-      <app-course-chapter-list courseType="masterclass" />
-    </section>
-  }
-
-  <!-- Resource Section -->
-  <section id="resource" class="container mx-auto md:py-10 py-5 scroll-mt-32">
-    <app-course-resources courseType="masterclass" />
-  </section>
-
   <!-- About Section -->
-  @if (masterclassService.courseDetails() !== null) {
+  @if (facade.course(); as course) {
     <section id="about" class="container mx-auto md:py-10 py-5 scroll-mt-32">
-      <app-course-about [card]="masterclassService.courseDetails()!" />
-    </section>
-  }
-
-  <!-- Related Section -->
-  @if (masterclassService.courseDetails(); as course) {
-    <section id="related" class="md:py-10 py-5 scroll-mt-32">
-      <app-course-related-section
-        [courseId]="course.id"
-        courseType="masterclass"
-        [instructors]="course.instructor_details"
-      />
+      <app-masterclass-course-about [course]="course" />
     </section>
   }
 
