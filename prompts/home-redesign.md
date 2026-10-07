@@ -272,7 +272,7 @@ F1 ring v3 parity (convex, header, proof points; keep endpoint, ~250 lines) · F
 parity (~150) · F3 hero-grid snapshot script (needs a web-api list endpoint) · F4 fonts: self-host/preload,
 drop render-blocking Google Fonts · F5 wire pricing + webinar once endpoints exist (+ promote the registration
 dialog) · F6 add `/us/accounting/home` to `docs/refactor/smoke-routes.json` and re-record ·
-F7 `HOME_RAIL_MAX_CARDS` + "View all" if the DOM audit asks. · F8 `Carousel`: clip or hide slides until Swiper initialises (15 thumbnails load for 1.1 visible slides on phones, on every rail page) and make its root `block` (the `inline` root ignores `mb-10` and adds line boxes, the last 0.024 CLS) · F9 `scrollbar-gutter: stable` on `html` so no width-scaled layout shifts when the classic scrollbar appears (global; measured on the hero grid before D10's `vw` fix).
+F7 `HOME_RAIL_MAX_CARDS` + "View all" if the DOM audit asks. · F8 **done 2026-10-07** (report below): `Carousel` renders its slides only once Swiper is registered and keeps its skeleton until `initialize()`, its root is `block`, and the home wrappers use flex `gap` instead of `space-y` · F9 `scrollbar-gutter: stable` on `html` so no width-scaled layout shifts when the classic scrollbar appears (global; measured on the hero grid before D10's `vw` fix).
 
 ## Verification (per PR; report real output and the environment)
 
@@ -481,3 +481,34 @@ fully visible cards per phone column, and `vw` geometry) and one small addition 
   "$79 / month", "Or", "$948 / year", "Prices in USD.".
 - **Asset flag:** `home-v3/webinar-banner.webp` is 403 on the bucket; the no-artwork fallback shows a broken
   image until it is uploaded (F5).
+
+### F8 — 2026-10-07 (uncommitted, branch `perf/MIL-XXX-carousel-init-flood`, stacked on PR5)
+
+**Three causes, three fixes**, all measured on UAT-pointed optimized builds (PR4 build vs this one):
+
+- **The pre-Swiper flood.** `Carousel` rendered every `<swiper-slide>` the moment the browser went idle, then
+  awaited the `swiper/element` import; in that window `<swiper-container>` is an unknown element, the slides
+  lay out as a vertical stack, and every lazy thumbnail near the viewport started loading. Now the import
+  starts as soon as the rail renders (`afterNextRender`, browser only), the slides render only once it has
+  resolved (`swiperReady`), and the skeleton stays in flow until `initialize()` has run (`swiperInitialized`)
+  — a registered container has an empty shadow root until then, so on its own the row collapsed for a
+  frame (a 0.036 shift that appeared with the first cut and is gone). One `<ng-template #skeleton>` serves
+  the placeholder, loading and pre-registration phases. Home, mobile: first-rail thumbnails 9 / 3.9 MB →
+  3 / 0.5 MB; all images 36 / 4.4 MB → 30 / 1.0 MB. Desktop: 4 / 1.2 MB → 3 / 0.5 MB.
+- **The `inline` root.** The Carousel's root `div` was `inline` since the original baseline (no reason
+  recorded); it is a block now. Rail height is unchanged (the host is a flex column, where the root's
+  `mb-10` counted either way), so no consumer moves; the home placeholders carry that 40px as padding.
+- **The streaming gap.** The last 0.024 desktop shift was not the Carousel: at ~450ms, before hydration,
+  the first rail jumped 80px because v4's `space-y` is a margin on every child but the last, and while the
+  HTML streams the hero is briefly the last child. The two home wrappers use flex `gap` now. Desktop CLS
+  0.024 → 0.001 (two runs); mobile 0.010 → 0.008 (what remains is the header's font swap).
+- Lighthouse mobile LCP/SI stayed noisy (17–26 s across runs of either build) because UAT's TTFB spiked to
+  1–5 s during the runs; the LCP element is unchanged (a hero-grid card on mobile, a first-rail thumbnail
+  on desktop). Desktop perf 76–77, LCP 3.7–4.1 s, SI 1.4–1.7 s.
+- Consumers: eight templates render `app-carousel`; the SSR smoke's masterclass route is unchanged, and the
+  component's inputs, outputs and classes are untouched. Not exercised in the pane (hidden): the `peek`
+  variant on the AI Labs page and the podcast hover cards — both only change when Swiper initialises,
+  which this PR moves earlier, not later.
+- Gates (local macOS, Node 24.15, **not CI**): `verify.mjs` full run **7/7 GREEN** (before the final
+  `gap` edit; `pnpm lint`, the UAT build and `pnpm build:prod` ran after it), lint 0 errors / 109 legacy
+  warnings, structure check passed, `build:prod` initial 243.30 kB.

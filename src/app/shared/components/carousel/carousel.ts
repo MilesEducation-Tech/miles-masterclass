@@ -105,6 +105,10 @@ export class Carousel {
   private readonly sectionFilters = inject(SectionFiltersFacade);
 
   private readonly swiperContainerRef = viewChild<ElementRef<HTMLElement>>('swiperContainer');
+  /** `swiper/element` is registered, so the slides may render into a defined element. */
+  protected readonly swiperReady = signal(false);
+  /** `initialize()` has run; until then the skeleton stays in flow beside the container. */
+  protected readonly swiperInitialized = signal(false);
   private swiperEl: ElementRef<HTMLElement> | null = null;
   private isDestroyed = false;
   private previousCount = 0;
@@ -154,6 +158,17 @@ export class Carousel {
 
     afterNextRender(() => {
       this.extractClientFilters();
+    });
+
+    // Start loading Swiper as soon as the rail is on the page (browser only), not
+    // when the browser goes idle: by the time the deferred block renders, the
+    // element is usually registered and the slides go straight into a defined
+    // <swiper-container>. Until it resolves the skeleton stands in, so no card
+    // is ever laid out inside an unregistered element.
+    afterNextRender(() => {
+      void Promise.all([ensureSwiperElement(), import('swiper/modules')]).then(() => {
+        if (!this.isDestroyed) this.swiperReady.set(true);
+      });
     });
 
     // Initialize Swiper once its host element becomes available (after @defer loads).
@@ -299,6 +314,9 @@ export class Carousel {
     }
     Object.assign(this.swiperEl.nativeElement, swiperParams);
     (this.swiperEl.nativeElement as any).initialize();
+    // Same change-detection pass as the slides' first layout, so the skeleton
+    // leaves in the frame the real row arrives.
+    this.swiperInitialized.set(true);
 
     // Capture the handler reference so we can detach it on destroy.
     // Without this, navigating away leaves the Swiper instance with a

@@ -20,66 +20,76 @@
     }
   </div>
 }
-<div
-  class="w-full mb-10 group relative inline overflow-y-visible"
-  [class.peek]="variant() === 'peek'"
->
+<!-- One skeleton for every pre-Swiper phase (the placeholder before idle, the
+     loading state, and the wait for Swiper's registration below): identical
+     markup, so the row never changes height until the real slides take over. -->
+<ng-template #skeleton>
+  <div class="flex gap-4 animate-pulse">
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="w-64 bg-muted rounded-lg shrink-0 animate-pulse" [class]="skeletonClass()"></div>
+    }
+  </div>
+</ng-template>
+
+<!-- A block, not inline: `mb-10` only applies to a block, and an inline wrapper
+     around block content adds line boxes that made the rail's skeleton phase and
+     its final height differ (a layout shift on every rail). -->
+<div class="w-full mb-10 group relative overflow-y-visible" [class.peek]="variant() === 'peek'">
   @defer (on idle) {
-    <swiper-container
-      #swiperContainer
-      init="false"
-      [slides-per-view]="swiperConfig()?.slidesPerView"
-      [slides-per-group]="swiperConfig()?.slidesPerGroup"
-      [space-between]="swiperConfig()?.spaceBetween"
-      [breakpoints]="swiperConfig()?.breakpoints"
-      [direction]="swiperConfig()?.direction ?? 'horizontal'"
-      [loop]="swiperConfig()?.loop ?? false"
-      [speed]="swiperConfig()?.speed ?? 1000"
-    >
-      @for (card of filteredCards(); track card.id ?? $index) {
-        <swiper-slide>
-          <div class="relative w-full h-full group/card">
-            <ng-container
-              *ngTemplateOutlet="cardTemplate(); context: { $implicit: card, $index }"
-            ></ng-container>
-            @if (shouldHoverAnimate()) {
-              <div
-                class="absolute top-1/2 left-1/2 opacity-0 pointer-events-none scale-50 w-[110%] min-h-full h-auto -translate-x-1/2 -translate-y-1/2 origin-center group-hover/card:opacity-100 group-hover/card:pointer-events-auto group-hover/card:scale-105 transition-all duration-300 ease-out z-10 group-hover/card:z-100"
-              >
-                <app-hover [card]="card" [type]="'podcast'"></app-hover>
-              </div>
-            }
-          </div>
-        </swiper-slide>
-      }
-      @if (isLoading()) {
-        @for (i of [1, 2, 3, 4]; track i) {
+    <!-- The slides render only once `swiper/element` is registered. Before that
+         `<swiper-container>` is an unknown element: its slides lay out as a
+         vertical stack for the length of the import, and every lazy thumbnail
+         near the viewport starts loading — 15 of them for 1.1 visible slides
+         on a phone (measured on the home page's first rail). The skeleton
+         stays IN FLOW beside the container until `initialize()` has run: a
+         registered container has an empty shadow root until then, so on its own
+         the row would collapse to nothing for a frame and shift the page. -->
+    @if (swiperReady()) {
+      <swiper-container
+        #swiperContainer
+        init="false"
+        [slides-per-view]="swiperConfig()?.slidesPerView"
+        [slides-per-group]="swiperConfig()?.slidesPerGroup"
+        [space-between]="swiperConfig()?.spaceBetween"
+        [breakpoints]="swiperConfig()?.breakpoints"
+        [direction]="swiperConfig()?.direction ?? 'horizontal'"
+        [loop]="swiperConfig()?.loop ?? false"
+        [speed]="swiperConfig()?.speed ?? 1000"
+      >
+        @for (card of filteredCards(); track card.id ?? $index) {
           <swiper-slide>
-            <div
-              class="w-64 bg-muted rounded-lg shrink-0 animate-pulse"
-              [class]="skeletonClass()"
-            ></div>
+            <div class="relative w-full h-full group/card">
+              <ng-container
+                *ngTemplateOutlet="cardTemplate(); context: { $implicit: card, $index }"
+              ></ng-container>
+              @if (shouldHoverAnimate()) {
+                <div
+                  class="absolute top-1/2 left-1/2 opacity-0 pointer-events-none scale-50 w-[110%] min-h-full h-auto -translate-x-1/2 -translate-y-1/2 origin-center group-hover/card:opacity-100 group-hover/card:pointer-events-auto group-hover/card:scale-105 transition-all duration-300 ease-out z-10 group-hover/card:z-100"
+                >
+                  <app-hover [card]="card" [type]="'podcast'"></app-hover>
+                </div>
+              }
+            </div>
           </swiper-slide>
         }
-      }
-    </swiper-container>
+        @if (isLoading()) {
+          @for (i of [1, 2, 3, 4]; track i) {
+            <swiper-slide>
+              <div
+                class="w-64 bg-muted rounded-lg shrink-0 animate-pulse"
+                [class]="skeletonClass()"
+              ></div>
+            </swiper-slide>
+          }
+        }
+      </swiper-container>
+    }
+    @if (!swiperInitialized()) {
+      <ng-container *ngTemplateOutlet="skeleton"></ng-container>
+    }
   } @placeholder {
-    <div class="flex gap-4 animate-pulse">
-      @for (i of [1, 2, 3, 4]; track i) {
-        <div
-          class="w-64 bg-muted rounded-lg shrink-0 animate-pulse"
-          [class]="skeletonClass()"
-        ></div>
-      }
-    </div>
+    <ng-container *ngTemplateOutlet="skeleton"></ng-container>
   } @loading (minimum 200ms) {
-    <div class="flex gap-4 animate-pulse">
-      @for (i of [1, 2, 3, 4]; track i) {
-        <div
-          class="w-64 bg-muted rounded-lg shrink-0 animate-pulse"
-          [class]="skeletonClass()"
-        ></div>
-      }
-    </div>
+    <ng-container *ngTemplateOutlet="skeleton"></ng-container>
   }
 </div>
