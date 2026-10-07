@@ -38,6 +38,12 @@ export class Masterclass {
 
   protected readonly home = inject(MasterclassHomeFacade);
 
+  constructor() {
+    // MIL-23: this page renders the tracks on the server (a crawler gets the
+    // track list; the browser reuses the response). The home page does not.
+    this.home.fetchOnServer.set(true);
+  }
+
   // Even tracks render vertical cards (more per view), odd ones horizontal.
   protected readonly swiperConfigEven = swiperConfigEven;
   protected readonly swiperConfigOdd = swiperConfigOdd;

@@ -17,8 +17,12 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - Gates on the rebased tree (local macOS, Node 24.15, **not CI**): lint 0 errors (110 legacy warnings),
     structure check passed, `build:prod` 242.57 kB initial; the dev server's client-side navigation sent
     `tracks-page/?login_type=pre_login&tracks.page_size=100&tracks.courses.page_size=100` → 200, three rails.
-  - **Next:** after #69 merges, `git rebase --onto origin/master <merged branch> <next branch>` for #70 → #77,
-    in order.
+  - **#69 merged (d582514). Step 3 done the same way:** PR2's commit `179c6d7` replayed onto `master` on the
+    temporary branch `mil29-rebased` (only `STATE.md` conflicted; both entry sets kept), facade and home page
+    merged cleanly; lint 0 errors, `build:prod` 242.62 kB, home rails load through
+    `tracks-page/?…&tracks.page_size=100&tracks.courses.page_size=100` → 200. Awaiting the commit, the ref move
+    onto `feat/MIL-29-home-sections` and the force-push. Because each merged branch is rewritten before its
+    squash, the later rebases use the OLD tip SHA as upstream (#70: `179c6d7`, #71: `2eadb8a`, …).
 
 - 🔧 **2026-10-07, NON-REFACTOR — masterclass tracks read moved to `web-api/v1/masterclass/tracks-page/`
   (`prompts/masterclass-tracks-rebind.md`, contract change of 2026-10-07). DONE, MERGED as #78 from
@@ -29,6 +33,27 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     Types and `parseHomePage` unchanged.
   - The home-redesign stack (#69 → #77) carries the same read in `core/services/masterclass-home-facade/`;
     #69 must take the route and parameter when it is rebased onto this fix.
+- 🔧 **2026-10-06, NON-REFACTOR — home redesign PR2 (`prompts/home-redesign.md`): the home sections rebuilt on
+  the `home-page/` tracks. DONE, UNCOMMITTED, on branch `feat/MIL-XXX-home-sections` (stacked on PR1's
+  branch; rename once the ticket exists).** No refactor phase moved.
+  - `pages/home/home.{ts,html}` rewritten: hero (old, PR3 replaces it) → rails from `MasterclassHomeFacade` +
+    `MasterclassCourseCard` horizontal, every rail `@defer (on viewport)` with a geometry-matching placeholder
+    → AI Labs ring → CAIRA stack (now `hydrate on viewport`, so gsap stops loading on every page load) → plan
+    (still `app-plan-benefits`) → app download → FAQ (`hydrate on viewport`). Offerings, coming soon,
+    premiere and the `FeatureFacade` reads are gone from home; nothing shared deleted.
+  - Facade: `fetchOnServer` opt-in (default off). Measured on home with the server fetch on: HTML 104 KB gzip
+    and Lighthouse mobile FCP 4.8–8.8 s, versus 49 KB / 3.6–7.7 s without. The masterclass page opts in and
+    keeps its MIL-23 behaviour. `isSettled` holds the SSR skeleton through the browser fetch.
+  - Gates (local macOS, Node 24.15, **not CI**): lint 0 errors (110 legacy warnings) + structure check, tsc,
+    `build:prod` 242.69 kB initial (+0.16 kB), the two known CSS budget warnings; `verify.mjs` full run **7/7
+    GREEN** (bundle 243.8 KB gzip, stale-baseline warning; SSR smoke no drift). Lighthouse (UAT builds,
+    interleaved): desktop perf 71 → 74, CLS 0.037 → 0.015, total 13.1 → 10.0 MB; mobile perf 62 → 58 with
+    LCP 19 → 18 s (the old hero's posters; PR3) and simulated FCP 3.6 → 4.8 s while observed FCP is within
+    ~100 ms. Full numbers in the prompt.
+  - **Backend flags:** `api.milescaira.com` returns 404 for `web-api/v1/masterclass/home-page/` (production
+    shows the error state on both pages; UAT serves it); the cards read 13 KB gzip of the 54 KB body
+    (`description` alone is 102 KB raw); course thumbnails are 240–716 KB originals.
+
 - 🔧 **2026-10-06, NON-REFACTOR — home redesign PR1 (`prompts/home-redesign.md`): the `home-page/` read
   promoted for the home page. DONE, UNCOMMITTED, on branch `refactor/MIL-XXX-promote-masterclass-home-read`
   (rename it once the Jira ticket exists).** No refactor phase moved.
