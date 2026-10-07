@@ -1,92 +1,76 @@
-<div class="w-full md:aspect-video aspect-9/16 overflow-hidden relative">
-  <!--
-    The page's single, SEO-canonical <h1>. The visible hero headline is split
-    across stylized <p> lines and duplicated for desktop/mobile breakpoints, so
-    a lone screen-reader-only <h1> carries the real page topic for crawlers
-    (audit: "value proposition rendered as <h4>; H1 was the FAQ heading").
-  -->
-  <h1 class="sr-only">
-    Earn CPE credits as you Master AI in Accounting — AI-Powered CPE Training for Accounting
-    Professionals
-  </h1>
-  <div
-    class="absolute pointer-events-none inset-0 w-full h-full bg-linear-to-b from-background to-transparent from-5% to-30% z-20"
-  ></div>
-  <div
-    class="absolute pointer-events-none inset-0 w-full h-full bg-linear-to-t from-background to-transparent md:from-10% md:to-40% from-20% to-50% z-20"
-  ></div>
-  <div
-    class="z-10 rounded-full outline-10 outline-white w-4/5 aspect-square absolute start-0 translate-x-[-55%] rtl:translate-x-[55%] -top-1/2 translate-y-[15%] bg-linear-to-b from-[#016FD9] to-[#013B73] p-3 max-md:hidden"
-  >
-    <div class="w-full h-full p-3 bg-linear-to-b from-[#013DAF] to-[#001949] rounded-full">
-      <div
-        class="w-full h-full p-3 bg-linear-to-b from-[#011A81] to-[#00051B] rounded-full flex flex-col justify-center items-start ps-[60%] gap-4"
-      >
-        <app-miles-slug slug="miles masterclass" />
-        <div class="space-y-4">
-          <p class="text-[1vw] leading-none font-normal">Earn CPE credits as you Master</p>
-          <p class="text-[3vw] leading-none font-bold">AI in Accounting</p>
-          <p class="text-[1vw] leading-none font-normal text-neutral-400">
-            Real-world AI applications. Immersive Master Classes by experts.
-          </p>
-          <button
-            app-button
-            type="button"
-            class="bg-white text-black font-semibold rounded-md"
-            variant="ghost"
-            (click)="openAppOrStore()"
-          >
-            Download App
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div
-    class="md:hidden absolute bottom-0 start-0 w-full flex justify-end flex-col items-center z-50 px-6"
-  >
-    <app-miles-slug slug="miles masterclass" />
-    <div class="space-y-4 flex justify-center flex-col items-center mb-8">
-      <p class="text-sm text-center leading-none font-normal">Earn CPE credits as you Master</p>
-      <p class="text-2xl text-center leading-none font-bold">AI in Accounting</p>
-      <p class="text-sm text-center leading-none font-normal text-neutral-400">
-        Real-world AI applications. Immersive Master Classes by experts.
-      </p>
-      <button
-        app-button
-        type="button"
-        class="bg-white text-black font-semibold rounded-md"
-        variant="ghost"
-        (click)="openAppOrStore()"
-      >
-        Download App
-      </button>
-    </div>
-  </div>
-  <div class="flex w-full h-full relative">
-    <!-- Desktop Video (hidden on mobile) -->
-    <div class="absolute end-0 top-0 justify-end flex h-full z-0 max-md:hidden">
-      <app-video-poster
-        class="aspect-4/3 h-full"
-        [videoSrc]="desktopVideoSrc"
-        [posterSrc]="desktopPosterSrc"
-        [posterDelay]="3000"
-        videoClass="object-cover"
-        [showControls]="true"
-      />
-    </div>
+<!-- Box ratios per width. The header is fixed over the top 80px and the copy
+     is centred below it (`sm:pt-20`), so each box has to hold the copy at that
+     width's type size plus 136px of header + bottom inset: the medium range
+     (md–lg) needs the taller 16:9 / 10:5 boxes with the smaller type below;
+     the design's 10:4 only fits from xl, where the type is full size. -->
+<div
+  class="relative w-full overflow-hidden aspect-9/14 sm:aspect-10/6 md:aspect-video lg:aspect-10/5 xl:aspect-10/4"
+>
+  <!-- Backdrop: the first three tracks' thumbnails as the design's tilted
+       grid (Figma 2175:21141). Decorative; the vignettes below keep the copy
+       on solid background. -->
+  <app-home-hero-grid />
 
-    <!-- Mobile Video (hidden on desktop) -->
-    <div class="absolute end-0 top-0 justify-end flex w-auto h-full z-0 md:hidden">
-      <app-video-poster
-        class="w-full h-full"
-        [videoSrc]="mobileVideoSrc"
-        [posterSrc]="mobilePosterSrc"
-        [posterDelay]="3000"
-        videoClass="object-cover"
-        [showControls]="true"
-        [controlsPosition]="'top-left'"
-      />
+  <!-- The design's four #0e0e0e overlays (Figma 2175:21162–21165), in its
+       stops: top fade, a 60% dim from the top, bottom fade, and the diagonal
+       that keeps the copy (bottom-left) on solid background while the grid
+       stays brightest top-right. -->
+  <div
+    class="pointer-events-none absolute inset-x-0 top-0 h-[37%] bg-linear-to-b from-background from-1% to-transparent to-68%"
+  ></div>
+  <div
+    class="pointer-events-none absolute inset-0 bg-linear-to-b from-background/60 from-[19.5%] to-transparent to-61%"
+  ></div>
+  <div
+    class="pointer-events-none absolute inset-x-0 bottom-0 h-[79%] bg-linear-to-t from-background to-transparent to-46%"
+  ></div>
+  <div
+    class="pointer-events-none absolute inset-0 bg-linear-[44.4deg] from-background from-26% to-transparent to-[75.4%] max-md:from-12%"
+  ></div>
+
+  <div
+    class="relative z-10 mx-auto flex h-full w-11/12 flex-col items-start sm:justify-center justify-end pb-10 sm:pt-20 md:w-full md:px-16 md:pb-14 xl:px-[4%]"
+  >
+    <!-- `priority`: the one image that must win the first paint — it is the LCP
+         candidate beside the <h1>, and on the server it becomes a preload link. -->
+    <img
+      [ngSrc]="assets.cairaLogo"
+      alt="CAIRA — Certified AI-Ready Accountant"
+      width="2616"
+      height="838"
+      priority
+      class="h-14 w-auto md:h-16 xl:h-24"
+      draggable="false"
+    />
+
+    <!-- The page's single <h1>: the visible headline is the topic, so it needs
+         no sr-only stand-in. -->
+    <h1 class="mt-5 text-3xl font-bold leading-tight md:text-4xl xl:mt-6 xl:text-[47px]">
+      <span class="block">The AI Credential</span>
+      <span class="block text-amber-400">Built for Accountants</span>
+    </h1>
+
+    <p class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium xl:text-base">
+      <span>30 CPE Credits per Level</span>
+      <span class="size-2 rounded-full bg-white hidden md:block" aria-hidden="true"></span>
+      <span>Build AI Agents &amp; Workflows on Miles AI Labs</span>
+    </p>
+
+    <!-- Links, not buttons: crawlable, and no JS needed to follow them. Styled
+         as the design's white and glass pills (app-button is button-only). -->
+    <div class="mt-8 flex flex-wrap gap-4 xl:mt-10">
+      <a
+        [routerLink]="aiLabsLink()"
+        class="inline-flex h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-bold whitespace-nowrap text-black transition-colors duration-200 hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 motion-reduce:transition-none"
+      >
+        Build your 1st AI agent, free
+      </a>
+      <a
+        [routerLink]="cairaLink()"
+        class="inline-flex h-11 items-center justify-center rounded-xl bg-white/7 px-5 text-sm font-semibold whitespace-nowrap text-white transition-colors duration-200 hover:bg-white/12 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 motion-reduce:transition-none md:min-w-[267px]"
+      >
+        Explore CAIRA
+      </a>
     </div>
   </div>
 </div>

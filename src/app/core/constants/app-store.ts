@@ -1,6 +1,6 @@
 /**
  * Miles Masterclass mobile-app store links. They live here rather than in
- * `app-download-dialog` so the home hero can open a store link synchronously
+ * `app-download-dialog` so a caller can open a store link synchronously
  * (inside the tap's user gesture) while the dialog itself stays lazy.
  */
 export const MASTERCLASS_APP_STORE_URL =

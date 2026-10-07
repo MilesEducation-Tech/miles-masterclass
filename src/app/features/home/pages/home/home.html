@@ -19,7 +19,7 @@
       </div>
     } @else {
       <div class="flex flex-col md:space-y-20 space-y-10">
-        @for (track of home.tracks(); track track.id) {
+        @for (track of home.tracks(); track track.id; let first = $first) {
           <!-- The tracks arrive in the browser (the facade fetches them after
                hydration here), so the server HTML carries the skeleton below
                either way and nothing is lost by deferring every rail: the first
@@ -27,16 +27,23 @@
                wait for the scroll, keeping 40+ cards of DOM and their Swiper
                instances off the first render. -->
           @defer (on viewport) {
+            <!-- `skeletonClass` gives the carousel's own idle-time skeleton the
+                 slide's geometry (16:9 art at the slides-per-view width, plus
+                 the card's 140px text block as margin), so the row keeps one
+                 height from this placeholder through Swiper's start. The first
+                 rail's three leading cards take image priority: on desktop one
+                 of them is the LCP element. -->
             <app-carousel
               [cards]="track.courses"
               [heading]="{ text: track.name, subText: track.description ?? '' }"
               [swiperConfig]="swiperConfigEven"
-              skeletonClass="aspect-video"
+              skeletonClass="aspect-video mb-[140px] basis-[calc((100%-3px)/1.1)] md:basis-[calc((100%-30px)/2)] lg:basis-[calc((100%-54px)/2.8)]"
             >
-              <ng-template let-course>
+              <ng-template let-course let-index="$index">
                 <app-masterclass-course-card
                   [course]="course"
                   layout="horizontal"
+                  [priority]="first && index < 3"
                   (trailer)="openTrailer($event)"
                 />
               </ng-template>
