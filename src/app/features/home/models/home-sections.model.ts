@@ -32,3 +32,18 @@ export interface HomePrice {
   /** "USD" / "AED and USD" — for the "Prices in …" footnote. */
   currencies: string;
 }
+
+/**
+ * The live-webinar ticket's row (Figma 2175:21750): the highlighted webinar and
+ * its live or next session. One row is all the ticket renders.
+ */
+export interface HomeWebinar {
+  /** The webinar's id, as `Utils.navigateToCourse('webinar', id, title)` wants it. */
+  id: number;
+  title: string;
+  overview: string | null;
+  /** Square art preferred (the ticket's left card is square); `null` shows the design's banner. */
+  banner: string | null;
+  /** ISO start of the live session, else the next upcoming one; `null` when none is scheduled. */
+  sessionStart: string | null;
+}

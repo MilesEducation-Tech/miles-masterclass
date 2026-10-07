@@ -1,7 +1,7 @@
 # Home page redesign: v3 design on this repo's structure and the `home-page/` API
 
-Status: **approved 2026-10-06 (Claude Code plan mode). PR1 (promote the home-page read) implemented,
-UNCOMMITTED; PR2–PR5 not started.** This file is the plan as approved, kept as the repo's implementation
+Status: **approved 2026-10-06 (Claude Code plan mode). PR1–PR4 committed; PR5 (webinar ticket) implemented,
+UNCOMMITTED. The series is complete once PR5 lands; F1–F9 and the backend asks remain.** This file is the plan as approved, kept as the repo's implementation
 prompt; the per-PR reports are appended under "Reports" at the end.
 
 ## Context
@@ -453,3 +453,31 @@ fully visible cards per phone column, and `vw` geometry) and one small addition 
   375 / 768 / 1440 with no horizontal overflow; the figure block is hidden; the halo and ring animations
   run; store links and both router links resolve; `/ae/accounting/home` shows the new section inside its
   gutter.
+
+### PR5 — 2026-10-07 (uncommitted, branch `feat/MIL-XXX-home-webinar-ticket`, stacked on PR4)
+
+**Built as planned (D6):**
+
+- New `components/home-webinar-ticket/` (presentational: `webinar: HomeWebinar` required input, `register`
+  and `knowMore` outputs; the CSS ticket paper — four radial masks with `mask-composite: intersect` — in
+  `home-webinar-ticket.css` with its baseline entry, your CODEOWNERS review; `LocalTimeZonePipe`, lucide
+  calendar/clock; the artwork falls back to the design's banner on error), `HomeWebinar` in
+  `models/home-sections.model.ts`, `MOCK_HOME_WEBINAR` in `testing/mocks/home.mock.ts`, a story in three
+  states (highlighted, no session, no artwork).
+- `home.ts`: `webinar = signal<HomeWebinar | null>(null)` with the API flag; the sidenav becomes a `computed`
+  whose "Live Webinar" entry shows only with a row; both ticket actions go to the webinar's page through
+  `Utils.navigateToCourse` until the registration dialog is promoted out of `features/offerings` (F5).
+  `home.html`: `#webinar` inside `@if (webinar())`, so without data there is no section, no placeholder and
+  no shift. The pricing card's webinar line stays text until the section has data.
+- Gates (local macOS, Node 24.15, **not CI**): `pnpm lint` 0 errors / 109 legacy warnings, structure check
+  passed (new stylesheet entry accepted); `tsc` clean; `pnpm build:prod` initial 243.25 kB transfer, the two
+  known CSS budget warnings.
+- `verify.mjs` full run (local macOS, Node 24.15, **not CI**): **7/7 GREEN** (Storybook built the new
+  story; bundle 244.7 KB gzip, +0.1 KB, the stale-baseline warning; SSR smoke no drift).
+- Server HTML on the dev server: no `#webinar`, no ticket, seven sidenav labels — the page is unchanged
+  for visitors until the endpoint exists.
+- Storybook (`pnpm storybook`, port 6006): the ticket renders at 1440 (461 px, four mask layers, date and
+  time rows, both buttons) and 375 (849 px, no overflow); the pricing card's monthly + yearly story shows
+  "$79 / month", "Or", "$948 / year", "Prices in USD.".
+- **Asset flag:** `home-v3/webinar-banner.webp` is 403 on the bucket; the no-artwork fallback shows a broken
+  image until it is uploaded (F5).

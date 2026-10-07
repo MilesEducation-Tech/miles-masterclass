@@ -1,0 +1,77 @@
+@let w = webinar();
+<div class="mx-auto max-w-6xl md:grid md:grid-cols-[40%_1fr] md:items-stretch ticket">
+  <img
+    [ngSrc]="banner()"
+    alt=""
+    width="613"
+    height="618"
+    draggable="false"
+    class="relative z-10 aspect-square w-full rounded-2xl object-cover p-6 md:self-center"
+    (error)="bannerFailed.set(true)"
+  />
+
+  <!-- The ticket is CSS, not an image (home-webinar-ticket.css): dark paper with
+       the perforations and side notches punched out by a mask, so it is as tall
+       as whatever copy the API sends. On md+ it stretches to the row and slides
+       under the artwork's right edge, the way the design overlaps the two; the
+       left padding is what keeps the copy clear of that overlap. Below md the
+       artwork sits on top of its first row of perforations. -->
+  <div
+    class="relative -mt-5 flex flex-col justify-center gap-4 px-14 pt-14 pb-10 md:mt-0 md:ml-[-14%] md:py-12 md:pr-[9%] md:pl-[calc(14%+3rem)]"
+  >
+    <div class="space-y-3">
+      <h2 class="text-2xl leading-tight font-bold tracking-tight md:text-[28px]">{{ w.title }}</h2>
+      @if (w.overview) {
+        <p class="text-sm">{{ w.overview }}</p>
+      }
+    </div>
+
+    @if (w.sessionStart; as start) {
+      <dl class="space-y-3 text-sm font-semibold">
+        <div class="flex items-center gap-3">
+          <span
+            class="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-neutral-700"
+          >
+            <ng-icon name="lucideCalendar" class="size-4" aria-hidden="true" />
+          </span>
+          <dt class="text-muted-foreground">Date:</dt>
+          <dd>{{ start | date: 'MMMM d, y' }}</dd>
+        </div>
+        <div class="flex items-center gap-3">
+          <span
+            class="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-neutral-700"
+          >
+            <ng-icon name="lucideClock" class="size-4" aria-hidden="true" />
+          </span>
+          <dt class="text-muted-foreground">Time:</dt>
+          <dd>{{ start | date: 'h:mm a' }} {{ start | localTimeZone }}</dd>
+        </div>
+      </dl>
+    }
+
+    <div class="space-y-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          app-button
+          type="button"
+          class="min-w-[136px] rounded-lg font-semibold"
+          (click)="register.emit()"
+        >
+          Register Now
+        </button>
+        <button
+          app-button
+          type="button"
+          variant="ghost"
+          class="min-w-[136px] rounded-lg font-semibold text-white"
+          (click)="knowMore.emit()"
+        >
+          Know More
+        </button>
+      </div>
+      <p class="text-muted-foreground text-sm">
+        Free to attend. CPE certificate with an active subscription.
+      </p>
+    </div>
+  </div>
+</div>

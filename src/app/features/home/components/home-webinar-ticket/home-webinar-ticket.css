@@ -1,0 +1,43 @@
+/*
+ * The ticket paper. All of it is CSS so the ticket is content-sized: however
+ * many lines the API sends, the paper grows with them. The perforations along
+ * the top and bottom and the semicircular notch in each side are punched out
+ * with a mask; the paper itself is a gradient. Tailwind has mask utilities but
+ * no way to intersect four punched layers, so the one rule lives here.
+ */
+.ticket {
+  --hole: 10px; /* perforation radius */
+  --pitch: 44px; /* centre-to-centre distance between perforations */
+  --notch: 44px; /* side notch radius */
+  --notch-y: 56%; /* where the side notches sit, from the top */
+
+  border-radius: 1rem;
+  background:
+    radial-gradient(120% 90% at 18% 0%, rgb(255 255 255 / 0.06), transparent 60%),
+    linear-gradient(160deg, var(--secondary), var(--muted) 55%, var(--secondary));
+
+  /* Each layer is opaque except for its own holes, and `intersect` keeps only
+     what every layer keeps, so any layer's hole punches through. The two
+     repeating layers are one tile wide and full height with the circle centred
+     on the top / bottom edge, so they only ever cut along that edge. */
+  mask-image:
+    radial-gradient(circle at 50% 0, transparent var(--hole), #000 calc(var(--hole) + 1px)),
+    radial-gradient(circle at 50% 100%, transparent var(--hole), #000 calc(var(--hole) + 1px)),
+    radial-gradient(
+      circle at 0 var(--notch-y),
+      transparent var(--notch),
+      #000 calc(var(--notch) + 1px)
+    ),
+    radial-gradient(
+      circle at 100% var(--notch-y),
+      transparent var(--notch),
+      #000 calc(var(--notch) + 1px)
+    );
+  mask-size:
+    var(--pitch) 100%,
+    var(--pitch) 100%,
+    100% 100%,
+    100% 100%;
+  mask-repeat: repeat-x, repeat-x, no-repeat, no-repeat;
+  mask-composite: intersect;
+}
