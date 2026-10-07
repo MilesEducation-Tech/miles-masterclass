@@ -7,6 +7,20 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-07, NON-REFACTOR — MIL-28 course-info dialog: the close button matches production. DONE,
+  BROWSER-VERIFIED, UNCOMMITTED** on `fix/MIL-28-…` (force-pushed as `1000ba8` before this).
+  - Production's close button (read live) is `bg-background/80 backdrop-blur-sm` with
+    `hover:bg-destructive hover:text-destructive-foreground`. Ours was a transparent ghost button with a grey hover.
+  - Ours now uses the same classes, with `data-hover:` (ngpButton) so `cn()` replaces the ghost
+    variant's `data-hover:bg-muted`.
+  - **Verified on 4101 (`/in/accounting/masterclass`, signed out):**
+    - 68 cards with "i"; the dialog opens
+    - at rest: the same computed background as production (`oklab(0.1637… / 0.8)`) and `blur(8px)`
+    - on hover: `rgb(239, 68, 68)` with a white ✕
+  - Home (`/in/accounting/home`) renders no course cards signed out (0 `app-masterclass-course-card`).
+    In code, home never sets `showInfo`.
+  - prettier, eslint and the structure check are clean.
+
 - 🔧 **2026-10-07, NON-REFACTOR — `fix/MIL-28-…` (PR #68) rebased onto `origin/master` (65c6e2f).
   Both commits resolved; the force-push is yours, from GitHub Desktop, before any new commit.** No
   refactor phase moved.
@@ -3160,6 +3174,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-07 · NON-REFACTOR · **MIL-28 dialog close button turns red on hover**, as on production (classes read live); verified on 4101
 
 - 2026-10-07 · NON-REFACTOR · **MIL-28 rebased onto master (65c6e2f)**: commit 1 as on MIL-25; the "i" button is opt-in (`showInfo`) on the now-shared course card; `tsc`/eslint/Prettier/structure clean
 

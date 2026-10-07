@@ -5,10 +5,12 @@
 <app-dialog [ariaLabel]="card.title" [dismissible]="false" panelClass="p-0 w-auto max-w-none">
   <div class="flex flex-col space-y-4 sm:w-[70vw] w-[84vw] relative bg-background">
     <div class="absolute top-4 end-4 w-full flex justify-end px-4 z-10">
+      <!-- As on production: a blurred dark disc that turns red on hover. `data-hover:` (ngpButton)
+           rather than `hover:`, so cn() replaces the ghost variant's grey hover instead of racing it. -->
       <button
         app-button
         type="button"
-        class="rounded-full"
+        class="rounded-full bg-background/80 backdrop-blur-sm data-hover:bg-destructive data-hover:text-destructive-foreground"
         variant="ghost"
         size="icon"
         aria-label="Close"
