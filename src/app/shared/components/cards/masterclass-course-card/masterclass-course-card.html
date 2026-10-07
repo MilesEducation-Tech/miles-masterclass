@@ -58,6 +58,20 @@
           <ng-icon [svg]="icons.faSolidPlay" class="size-4" />
           Trailer
         </button>
+        @if (showInfo()) {
+          <!-- `outline-solid` is what keeps the ring: `app-button`'s base sets `outline-none`,
+               and tailwind-merge drops it only for a class in the same (style) group. -->
+          <button
+            app-button
+            type="button"
+            class="flex items-center justify-center size-10 aspect-square bg-secondary rounded-full outline outline-solid outline-white/40 cursor-pointer shrink-0 p-0"
+            variant="ghost"
+            aria-label="Course information"
+            (click)="info.emit(c)"
+          >
+            <ng-icon [svg]="icons.faSolidInfo" class="size-8" />
+          </button>
+        }
       </div>
     </div>
   </div>
@@ -118,6 +132,19 @@
           <ng-icon [svg]="icons.faSolidPlay" class="size-4" />
           Trailer
         </button>
+        @if (showInfo()) {
+          <!-- `outline-solid` keeps the ring; see the vertical layout's "i" button. -->
+          <button
+            app-button
+            type="button"
+            class="flex items-center justify-center size-10 aspect-square bg-secondary rounded-full outline outline-solid outline-white/40 cursor-pointer p-0"
+            variant="ghost"
+            aria-label="Course information"
+            (click)="info.emit(c)"
+          >
+            <ng-icon [svg]="icons.faSolidInfo" class="size-8" />
+          </button>
+        }
       </div>
       @if (c.total_cpe_credits !== null) {
         <button

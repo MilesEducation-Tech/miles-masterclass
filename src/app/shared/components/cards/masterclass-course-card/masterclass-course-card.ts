@@ -2,7 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
-import { faSolidPlay } from '@ng-icons/font-awesome/solid';
+import { faSolidInfo, faSolidPlay } from '@ng-icons/font-awesome/solid';
 import { MasterclassCardLayout, MasterclassCourse } from '@core/models/masterclass-home.model';
 import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
 import { CategoriesList } from '@shared/components/categories-list/categories-list';
@@ -16,10 +16,11 @@ import { Button } from '@shared/ui/button/button';
  * Its own component rather than those two because they are bound to the legacy
  * `Content` shape and make their own HTTP calls (about, bookmark) — six other
  * pages still depend on both. This one renders `MasterclassCourse` and decides
- * nothing: the trailer goes up as an output, the card itself is a plain link.
+ * nothing: the trailer and the "i" button go up as outputs, the card itself is
+ * a plain link.
  *
- * Not yet here, deliberately: bookmark (no web route in scope), AI Kit (its
- * route is gone), and the info button (it arrives with the about-course PR).
+ * Not yet here, deliberately: bookmark (no web route in scope) and AI Kit (its
+ * route is gone).
  */
 @Component({
   selector: 'app-masterclass-course-card',
@@ -38,9 +39,17 @@ export class MasterclassCourseCard {
    */
   readonly priority = input(false);
 
-  readonly trailer = output<MasterclassCourse>();
+  /**
+   * The "i" button, for a page that opens the course-info dialog on `info`.
+   * Off by default: the dialog belongs to the masterclass feature, so the home
+   * page's cards have nothing to open.
+   */
+  readonly showInfo = input(false);
 
-  protected readonly icons = { faSolidPlay };
+  readonly trailer = output<MasterclassCourse>();
+  readonly info = output<MasterclassCourse>();
+
+  protected readonly icons = { faSolidInfo, faSolidPlay };
 
   /**
    * Absolute, so the card links to the course from any page: a relative
