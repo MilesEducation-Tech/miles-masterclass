@@ -11,6 +11,7 @@
     "src/app/features/connect-us/pages/connect-us/connect-us.css": "EMPTY or comment-only — delete with its styleUrl (feature outside the Phase 12 tracker)",
     "src/app/features/faculty/pages/faculty/faculty.css": "not reviewed: feature outside the Phase 12 tracker",
     "src/app/features/home/components/home-hero-grid/home-hero-grid.css": "Angular-scoped @keyframes (the strip loop) plus the design's container-query geometry — cos() in calc(), cqw units, per-column custom properties — which Tailwind utilities cannot express",
+    "src/app/features/home/components/home-webinar-ticket/home-webinar-ticket.css": "the ticket paper: four radial-gradient mask layers combined with mask-composite: intersect, which Tailwind's mask utilities cannot express",
     "src/app/features/how-to-claim-credly-badge/pages/how-to-claim-credly-badge/how-to-claim-credly-badge.css": "not reviewed: feature outside the Phase 12 tracker",
     "src/app/features/legal/components/legal-doc/legal-doc.css": "not reviewed: feature outside the Phase 12 tracker",
     "src/app/features/legal/components/legal-section/legal-section.css": "EMPTY or comment-only — delete with its styleUrl (feature outside the Phase 12 tracker)",

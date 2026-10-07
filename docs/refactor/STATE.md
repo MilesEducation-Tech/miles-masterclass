@@ -33,6 +33,21 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     Types and `parseHomePage` unchanged.
   - The home-redesign stack (#69 → #77) carries the same read in `core/services/masterclass-home-facade/`;
     #69 must take the route and parameter when it is rebased onto this fix.
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign PR5 (`prompts/home-redesign.md`): the live-webinar ticket.
+  DONE, UNCOMMITTED, on branch `feat/MIL-XXX-home-webinar-ticket` (stacked on PR4's branch; rename once
+  the ticket exists). The five-PR series is complete with it.** No refactor phase moved.
+  - New `features/home/components/home-webinar-ticket/` (presentational, required `webinar` input, two
+    outputs, CSS ticket mask with a `structure-baseline.json` entry — yours to review; story in three
+    states) + `HomeWebinar` model + mock. Home holds `webinar = signal(null)` with the API flag: the section
+    and its sidenav entry are absent until a web-api highlight endpoint exists; both actions navigate to
+    the webinar page until the registration dialog is promoted (F5).
+  - Gates (local macOS, Node 24.15, **not CI**): lint 0 errors (109 legacy warnings) + structure check, tsc,
+    `build:prod` 243.25 kB initial; `verify.mjs` full run **7/7 GREEN**; dev SSR unchanged for visitors (no
+    `#webinar`); Storybook renders the
+    ticket at 1440 / 375 and the pricing card with figures.
+  - Open after the series: F1–F9 in the prompt, the three backend asks (prod 404 on `home-page/`, card
+    projection, thumbnail sizing), the `webinar-banner.webp` upload, and your baseline re-records.
+
 - 🔧 **2026-10-07, NON-REFACTOR — home redesign PR4 (`prompts/home-redesign.md`): the pricing card and the
   app-download redesign. DONE, UNCOMMITTED, on branch `feat/MIL-XXX-home-pricing-app-download` (stacked
   on PR3's branch; rename once the ticket exists).** No refactor phase moved.

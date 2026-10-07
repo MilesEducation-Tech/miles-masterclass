@@ -1,4 +1,4 @@
-<app-section-nav [items]="sectionNavItems" mode="sidenav" [shareWithHeader]="false" />
+<app-section-nav [items]="sectionNavItems()" mode="sidenav" [shareWithHeader]="false" />
 <div class="overflow-clip flex flex-col md:space-y-20 space-y-10">
   <!-- Hero Section -->
   <section id="home-hero">
@@ -92,10 +92,21 @@
     }
   </section>
 
-  <!-- Live Webinar — not here yet. API flag: the ticket needs a web-api
-       highlight-webinar endpoint (v3 read `v2/webinar/home_section/`, which this
-       app does not adopt). The section and its sidenav entry arrive with the
-       ticket component once that endpoint exists; see prompts/home-redesign.md. -->
+  <!-- Live Webinar: the admin-curated highlight webinar as a ticket. Absent
+       until `webinar` has a row (API flag in home.ts), so there is no placeholder
+       and nothing to shift. -->
+  @if (webinar(); as w) {
+    <section id="webinar" class="w-11/12 mx-auto scroll-mt-20">
+      <div class="flex flex-col space-y-4">
+        <h2 class="md:text-[42px] text-3xl font-bold leading-none text-center">Live Webinar</h2>
+        <app-home-webinar-ticket
+          [webinar]="w"
+          (register)="openWebinar(w)"
+          (knowMore)="openWebinar(w)"
+        />
+      </div>
+    </section>
+  }
 
   <!-- AI Labs ring. Full-bleed: the only section that runs edge to edge, so the
        cards can be cropped by the viewport the way the reference crops them. -->
