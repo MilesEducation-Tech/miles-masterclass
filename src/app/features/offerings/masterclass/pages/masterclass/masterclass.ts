@@ -17,7 +17,7 @@ import { withPreviousValue } from '@shared/utils/with-previous-value';
 import { MasterclassCourseCard } from '@features/offerings/masterclass/components/masterclass-course-card/masterclass-course-card';
 import {
   EMPTY_HOME_PAGE,
-  HOME_PAGE_COURSES_PER_TRACK,
+  HOME_PAGE_LIST_PAGE_SIZE,
   MASTERCLASS_ENDPOINTS,
 } from '@features/offerings/masterclass/constants/masterclass';
 import {
@@ -34,7 +34,7 @@ import {
 
 /**
  * The masterclass landing page: the hero, then one carousel per track from
- * `home-page/`. The page owns the tracks read itself; there is no facade, as
+ * `tracks-page/`. The page owns the tracks read itself; there is no facade, as
  * nothing else reads them.
  */
 @Component({
@@ -77,11 +77,13 @@ export class Masterclass {
       if (!this.isBrowser && loginType === 'post_login') return undefined;
 
       return {
-        url: apiUrl(MASTERCLASS_ENDPOINTS.homePage),
+        url: apiUrl(MASTERCLASS_ENDPOINTS.tracksPage),
         params: {
           login_type: loginType,
-          // Every course in one response; the API pages them 6 at a time.
-          'tracks.courses.page_size': HOME_PAGE_COURSES_PER_TRACK,
+          // Every track and every course in one response; the API pages both
+          // lists 6 rows at a time.
+          'tracks.page_size': HOME_PAGE_LIST_PAGE_SIZE,
+          'tracks.courses.page_size': HOME_PAGE_LIST_PAGE_SIZE,
         },
       };
     },
@@ -131,7 +133,7 @@ export class Masterclass {
     // not only the learner's screen.
     effect(() => {
       const error = this.loadError();
-      if (error) this.logger.error('[Masterclass] home-page load failed', error);
+      if (error) this.logger.error('[Masterclass] tracks-page load failed', error);
     });
   }
 

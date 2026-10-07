@@ -7,6 +7,17 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-07, NON-REFACTOR — masterclass tracks read moved to `web-api/v1/masterclass/tracks-page/`
+  (`prompts/masterclass-tracks-rebind.md`, contract change of 2026-10-07). DONE, UNCOMMITTED, on branch
+  `fix/MIL-37-masterclass-tracks-page` off `master`, together with the
+  regenerated Postman export.** No refactor phase moved.
+  - The backend retired `home-page/` (404 on UAT and production, so the merged masterclass page showed its
+    error state on UAT). `tracks-page/` has the same envelope and keys; `tracks` is now a paginated block, so
+    the page sends `tracks.page_size=100` next to `tracks.courses.page_size=100` (`HOME_PAGE_LIST_PAGE_SIZE`).
+    Types and `parseHomePage` unchanged.
+  - The home-redesign stack (#69 → #77) carries the same read in `core/services/masterclass-home-facade/`;
+    #69 must take the route and parameter when it is rebased onto this fix.
+
 - 🔧 **2026-10-06, NON-REFACTOR — unit tests removed (`prompts/remove-unit-tests.md`). DONE, UNCOMMITTED;
   you applied `harness-no-tests.patch`.** No refactor phase moved. `verify.mjs` full run (local macOS,
   Node 24.15, **not CI**): **7/7 GREEN**. The only warnings are the known stale-baseline ones: bundle +3%
