@@ -6,17 +6,21 @@ import { MasterclassCourseHeroSkeleton } from '@shared/components/skeleton/maste
 import { Button } from '@shared/ui/button/button';
 import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
 import { AppDownloadPrompt } from '@features/offerings/services/app-download-prompt';
+import { MasterclassChapterList } from '@features/offerings/masterclass/components/masterclass-chapter-list/masterclass-chapter-list';
 import { MasterclassCourseAbout } from '@features/offerings/masterclass/components/masterclass-course-about/masterclass-course-about';
+import { MasterclassCourseRelated } from '@features/offerings/masterclass/components/masterclass-course-related/masterclass-course-related';
+import { MasterclassCourseResources } from '@features/offerings/masterclass/components/masterclass-course-resources/masterclass-course-resources';
 import { MasterclassCourseHero } from '@features/offerings/masterclass/components/masterclass-course-hero/masterclass-course-hero';
 import {
-  MASTERCLASS_COURSE_ABOUT_SECTION_ID,
+  MASTERCLASS_COURSE_SECTION_IDS,
   MASTERCLASS_COURSE_SECTION_NAV,
 } from '@features/offerings/masterclass/constants/masterclass-nav';
 import { MasterclassCourseFacade } from '@features/offerings/masterclass/services/masterclass-course-facade';
 
 /**
- * One masterclass course: the hero, About and the FAQ. Data and actions come
- * from the route-scoped `MasterclassCourseFacade`; this page only lays them out.
+ * One masterclass course: the hero, then the Masterclass (chapters), Resource,
+ * About, Related and FAQ sections. Data and actions come from the route-scoped
+ * `MasterclassCourseFacade`; this page only lays them out.
  */
 @Component({
   selector: 'app-masterclass-course',
@@ -27,7 +31,10 @@ import { MasterclassCourseFacade } from '@features/offerings/masterclass/service
     SectionNav,
     MasterclassCourseHero,
     MasterclassCourseHeroSkeleton,
+    MasterclassChapterList,
+    MasterclassCourseResources,
     MasterclassCourseAbout,
+    MasterclassCourseRelated,
   ],
   templateUrl: './masterclass-course.html',
 })
@@ -39,13 +46,20 @@ export class MasterclassCourse {
 
   protected readonly facade = inject(MasterclassCourseFacade);
 
-  protected readonly sectionNavItems = computed<SectionNavItem[]>(() =>
-    MASTERCLASS_COURSE_SECTION_NAV.map((item) =>
-      item.id === MASTERCLASS_COURSE_ABOUT_SECTION_ID
-        ? { ...item, visible: this.facade.course() !== null }
-        : item,
-    ),
-  );
+  protected readonly sectionIds = MASTERCLASS_COURSE_SECTION_IDS;
+
+  protected readonly sectionNavItems = computed<SectionNavItem[]>(() => {
+    const ids = MASTERCLASS_COURSE_SECTION_IDS;
+    const shown: Record<string, boolean> = {
+      [ids.chapters]: this.facade.chapters().length > 0,
+      [ids.resources]: this.facade.hasResources(),
+      [ids.about]: this.facade.course() !== null,
+      [ids.related]: this.facade.relatedRails().length > 0,
+    };
+    return MASTERCLASS_COURSE_SECTION_NAV.map((item) =>
+      item.id in shown ? { ...item, visible: shown[item.id] } : item,
+    );
+  });
 
   constructor() {
     inject(AppDownloadPrompt).maybePrompt();

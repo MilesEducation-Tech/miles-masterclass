@@ -4,16 +4,56 @@
     <div
       class="absolute start-0 top-0 sm:h-full max-sm:w-full sm:aspect-video max-sm:aspect-9/16 overflow-hidden z-0"
     >
-      @if (c.web_background_video_url; as video) {
-        <app-video-poster
-          [videoSrc]="video"
-          [posterSrc]="c.thumbnails.horizontal ?? ''"
-          [showControls]="true"
-          [controlsPosition]="'bottom-left'"
-        />
-      } @else if (c.thumbnails.horizontal; as poster) {
-        <!-- No background video on the API yet: the poster stands alone. -->
-        <img [ngSrc]="poster" [alt]="c.title" fill priority class="object-cover" />
+      @if (poster(); as src) {
+        <img [ngSrc]="src" [alt]="c.name" fill priority class="object-cover" />
+      }
+      @if (trailerMounted() && trailerSource(); as source) {
+        <!-- The HLS trailer over the poster, invisible until it plays, so a slow or
+             failed stream never covers the poster. The arbitrary variants size the
+             video.js element (its unlayered CSS needs !important) and crop like the poster. -->
+        <div
+          class="absolute inset-0 transition-opacity duration-700 [&_.video-js]:w-full! [&_.video-js]:h-full! [&_.video-js]:bg-transparent! [&_.vjs-tech]:object-cover"
+          [class.opacity-0]="!trailerStarted()"
+          aria-hidden="true"
+        >
+          <app-video-js
+            [videoSource]="source"
+            [config]="trailerConfig"
+            (playing)="onTrailerPlaying()"
+            (paused)="trailerPlaying.set(false)"
+          />
+        </div>
+        @if (trailerStarted()) {
+          <!-- The shared VideoPoster's bottom-left controls, class for class. -->
+          <div class="absolute flex items-center gap-1 z-9999 bottom-2/5 start-4">
+            <button
+              type="button"
+              class="group relative flex items-center justify-center w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 cursor-pointer transition-all duration-300 hover:bg-black/70 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30"
+              [attr.aria-label]="trailerPlaying() ? 'Pause video' : 'Play video'"
+              (click)="togglePlay()"
+            >
+              <ng-icon
+                [name]="trailerPlaying() ? 'matPauseRound' : 'matPlayArrowRound'"
+                size="20"
+                class="text-white"
+                aria-hidden="true"
+              />
+            </button>
+            <button
+              type="button"
+              class="group relative flex items-center justify-center w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 cursor-pointer transition-all duration-300 hover:bg-black/70 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30"
+              [attr.aria-label]="trailerMuted() ? 'Unmute video' : 'Mute video'"
+              (click)="toggleMute()"
+            >
+              <ng-icon
+                [name]="trailerMuted() ? 'matVolumeOffRound' : 'matVolumeUpRound'"
+                size="20"
+                class="text-white"
+                aria-hidden="true"
+              />
+            </button>
+          </div>
+        }
       }
     </div>
     <div
@@ -30,7 +70,7 @@
           />
 
           <div class="h-1 w-10 bg-white rounded-full"></div>
-          <h1 class="title text-center sm:text-5xl text-3xl!">{{ c.title }}</h1>
+          <h1 class="title text-center sm:text-5xl text-3xl!">{{ c.name }}</h1>
           @if (instructorNames()) {
             <h2 class="subtitle text-center sm:text-xl text-lg!">By {{ instructorNames() }}</h2>
           }
@@ -42,13 +82,14 @@
             </h3>
             <app-caira-credly-badge
               variant="inline"
-              [includedForCaira]="c.included_for_caira"
-              [hasIndividualBadge]="c.has_individual_badge"
+              [includedForCaira]="cairaLevel() !== null"
+              [hasIndividualBadge]="c.show_credly_icon"
+              [cairaLevel]="cairaLevel()"
             />
           </div>
-          <p class="description text-center">{{ c.short_description }}</p>
+          <p class="description text-center">{{ c.mini_description }}</p>
         </div>
-        @if (c.first_chapter) {
+        @if (c.chapters.length) {
           <div class="flex justify-center items-center">
             <button
               app-button
@@ -61,6 +102,17 @@
             </button>
           </div>
         }
+        <div class="flex space-x-4">
+          @let created = c.nasba_section.created_on;
+          @let updated = c.nasba_section.updated_on;
+          @if (created && updated) {
+            Created At {{ created | date }}&nbsp; | &nbsp;Updated At {{ updated | date }}
+          } @else if (created) {
+            Created At {{ created | date }}
+          } @else if (updated) {
+            Updated At {{ updated | date }}
+          }
+        </div>
         <div class="flex space-x-4">
           <button
             app-button
@@ -88,10 +140,38 @@
             type="button"
             class="text-white rounded-lg flex gap-1 h-auto flex-col justify-end items-center p-1"
             variant="ghost"
+            [disabled]="bookmarkPending()"
+            [attr.aria-pressed]="bookmarked()"
+            (click)="bookmark.emit()"
+          >
+            <ng-icon
+              [name]="bookmarked() ? 'matBookmarkRound' : 'matBookmarkBorderRound'"
+              size="24"
+              aria-hidden="true"
+            />
+            <span>Bookmark</span>
+          </button>
+          <button
+            app-button
+            type="button"
+            class="text-white rounded-lg flex gap-1 h-auto flex-col justify-end items-center p-1"
+            variant="ghost"
             (click)="share.emit()"
           >
             <ng-icon name="phosphorShareFatFill" size="24" aria-hidden="true" />
             <span>Share</span>
+          </button>
+          <!-- Enabled once the API returns the learner's certificate URL. -->
+          <button
+            app-button
+            type="button"
+            class="text-white rounded-lg flex gap-1 h-auto flex-col justify-end items-center p-1"
+            variant="ghost"
+            [disabled]="!c.masterclass_certificate_url"
+            (click)="download.emit()"
+          >
+            <ng-icon name="phosphorDownloadSimpleFill" size="24" aria-hidden="true" />
+            <span>Download</span>
           </button>
         </div>
       </div>

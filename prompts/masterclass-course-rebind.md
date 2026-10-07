@@ -3,7 +3,7 @@
 Route: `/:country/:profession/masterclass/:courseId/:courseTitle` → `pages/masterclass-course/`.
 Branch: `feat/MIL-25-masterclass-details-page-binding`.
 
-**Status:** plan only, awaiting approval. Nothing implemented.
+**Status:** PR1–PR3 committed as `eadf218`. The data source is superseded by Revision 2 at the end (`course-detail`).
 
 ---
 
@@ -335,3 +335,110 @@ signed in, and capture the network log and screenshots.
 - Delete `MasterclassFacade`, `course-load.ts` and the legacy routes once podcast moves too.
 - MIL-23 PR3, the "i" button → `about-course` in the course-info dialog: the PR1 model and parser here can
   serve it.
+
+---
+
+# Revision 2 (2026-10-07): bind `course-detail` instead of `about-course`
+
+**Status:** approved 2026-10-07. **Phases A–D done and browser-verified, uncommitted.** Phase E: Bookmark and the certificate Download are wired (verified signed out only); progress, CPE/Preview mode, feedback/rating and the final assessment are not started.
+
+## Why
+
+- **The hero:** production shows a poster, then a muted looping video. Our hero shows only a still image.
+  `about-course` has no poster for the trailer, and `web_background_video_url` is `null` everywhere.
+- **The backend change:** `course-detail` became `AllowAny` on 2026-10-07, with a required `?login_type=`.
+  Signed out, it carries what the hero needs and most of what we held back.
+
+## Contract (live UAT, pre_login, all 64 courses → 200)
+
+`GET web-api/v1/masterclass/course-detail/<uuid>/?login_type=pre_login|post_login&chapters.page_size=100`
+
+- **Envelope:** `{ success, message, data: { status, login_type, course_details } }`.
+- **Errors:**
+  - `post_login` without a token → **401**
+  - a slug in the path → **404** (UUID only)
+  - an undeclared parameter → 400
+- **Hero:** `trailer_video_url` is a string on 64/64 and is **HLS `.m3u8`**. `trailer_thumbnail_url` is a
+  string on 64/64. `level[].level_number` gives the CAIRA level, so the CAIRA badge can show.
+- **About / NASBA:**
+  - top level: `program_level`, `masterclass_duration` ("2 hour 20 minutes") and
+    `masterclass_duration_seconds`, `expiration_date`, `sponser_identification_number` (sic),
+    `instructional_delivery_method`
+  - `nasba_section`: `created_on`, `reviewed_on`, `updated_on` (ISO dates) and `video_duration`
+- **Chapters:** `chapters.results[]` with `id`, `name`, `mini_description`, `order`, `duration_seconds`,
+  `total_quiz_questions`, `is_locked`, thumbnails and `user_chapter_progress`, which is all `null` signed out.
+  **There is no chapter slug.**
+- **Rails:**
+  - `related_courses[]` (22/64 non-empty)
+  - `instructor_related_courses[].courses[]` (37/64 non-empty)
+  - each course has `id`, `name`, `mini_description`, `thumbnail_url`, `total_cpe_credits` and
+    `field_of_study[]`; **no slug**
+- **Resources** (`miscellaneous_data`):
+  - `glossary`: an HTML string on 64/64
+  - `exercise_files[]`: 2/64
+  - `ai_kit`: 5/64
+  - `tools[]`
+  - `course_navigation_video_url`: `null`
+- **Per-user (post_login):** `enrollment`, `course_mode`, `is_preview_mode`, `course_is_locked`, `show_*`,
+  `feedback_*`, the certificate and Credly fields, and `is_bookmarked`.
+- **There is no course `slug`** in the response.
+
+## Decisions to confirm
+
+**R1. One read for the page and the "i" dialog (recommended).** The facade's `about-course` resource
+becomes `course-detail`.
+
+- `pre_login` is fetched on the server (SSR, transfer cache).
+- `post_login` is fetched in the browser once signed in, with `withPreviousValue` across sign-in so the page
+  doesn't flash, the same as `tracks-page`.
+- `masterclass-course-about` retypes to the new model.
+- The dialog pays 41–81 KB per open (median 56 KB, uncompressed) instead of 9 KB, in exchange for one model.
+
+**R2. Legacy numeric links resolve through `about-course?slug=` (recommended).** `course-detail` takes a
+UUID only. A non-UUID route id first asks `about-course` for the id, then `course-detail`. That's two calls,
+on old links only.
+
+**R3. Slugs.**
+
+- The course URL uses the route's `:courseTitle` on the page and `card.slug` in the dialog.
+- The chapter URL uses `Utils.slugify(chapter.name)`, as the legacy flow did.
+- Related cards link `[id, slugify(name)]`.
+
+**R4. Hero video: poster, then the HLS trailer muted and looping (recommended).**
+
+- **Poster:** a plain `<img ngSrc priority>` of `trailer_thumbnail_url`, server-rendered. It stays the LCP.
+- **Player:** after the same 3 s `posterDelay`, browser only and only while the hero is on screen, the hero
+  mounts the shared `app-video-js`:
+  - video.js and its HLS support load lazily, inside the component
+  - `trailer_video_url`, `muted`, `loop`, `controls: false`
+  - it fades in over the poster once it plays; a failure leaves the poster
+- **Buttons:** the hero's own play/pause and mute buttons call the player's `togglePlay()` and
+  `toggleMute()`. The player pauses while a dialog is open, as `VideoPoster` does.
+- **Not chosen:**
+  - extending the shared `VideoPoster` with HLS (video.js re-wraps its DOM)
+  - adding `hls.js` (a second video library)
+
+**R5. Phases** (each its own commit, each green):
+
+- **A: this request.**
+  - the model and guard for `course-detail`
+  - the facade swap (R1–R3)
+  - the hero on `trailer_thumbnail_url` / `trailer_video_url` (R4) plus the CAIRA level
+  - About gains program level, video duration, the created/reviewed/updated dates, the sponsor id and
+    expiration from the API
+  - SEO reads `name` / `mini_description` / `horizontal_thumbnail_url`
+- **B:** the chapter list section (masterclass-owned, the shared `course-chapter-list` design).
+- **C:** the Related and "More by <instructor>" rails.
+- **D:** Resources: glossary (sanitised HTML in the existing `HtmlContentDialog`), exercise files, AI Kit.
+- **E (post_login):** progress, CPE/Preview mode, feedback/rating, final assessment, certificate, bookmark.
+
+## Risks
+
+- **MIL-28 conflicts.** MIL-28 (the "i" dialog, `c7fd37b`) edits the same facade and the About input. Phase A
+  on the MIL-25 branch will conflict when MIL-28 updates from it. I'll resolve that merge for you, or Phase
+  A can go on MIL-28's branch instead.
+- **HLS autoplay.** Muted autoplay is allowed in all major browsers. Low-power mode on iOS can block it, and
+  the poster stays.
+- **The trailer has speech.** Production loops a short preview clip; we loop the full trailer muted until
+  the backend fills a preview field.
+- **Payload.** 41–81 KB per course (median 56 KB, uncompressed; measured on all 64), mostly chapter transcripts. Fine for SSR, heavier for the dialog.

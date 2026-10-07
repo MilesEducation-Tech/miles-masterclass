@@ -2,12 +2,13 @@
  * Types for one masterclass course on the web API (`web-api/v1/masterclass/`),
  * as the course page reads them. These are the keys the page READS, not a
  * mirror of the payload, and they replace the legacy `ContentDetails` for this
- * page: this API addresses courses by UUID and slug.
+ * page: this API addresses courses by UUID.
  *
- * `about-course/` checked against live UAT on 2026-10-06, all 64 courses on the
- * landing page. Live differs from the Postman export: the envelope is
- * `{ success, message, data }` (Postman: `status: "success"`), and the unset
- * fields arrive as `null` (Postman: `""`). The live keys win.
+ * `course-detail/` checked against live UAT on 2026-10-07, all 64 courses on
+ * the landing page, `pre_login`. The Postman export only has placeholders for
+ * it (`<**detail>`); the live keys win. Two things the payload does NOT carry:
+ * a course slug and a chapter slug — URLs take them from the route and from
+ * the chapter name.
  */
 
 import {
@@ -19,10 +20,7 @@ import {
   isStrOrNull,
   listOf,
 } from '@features/offerings/masterclass/utils/contract-guards';
-import {
-  MasterclassFieldOfStudy,
-  MasterclassThumbnails,
-} from '@core/models/masterclass-home.model';
+import { MasterclassFieldOfStudy } from '@core/models/masterclass-home.model';
 
 /** The course route's two params, as the page's inputs carry them. */
 export interface MasterclassCourseRouteParams {
@@ -30,14 +28,14 @@ export interface MasterclassCourseRouteParams {
   slug: string | undefined;
 }
 
-/** How `about-course/` is asked for: exactly one of the two keys, or it answers 400. */
-export type MasterclassCourseLookup = { course_id: string } | { slug: string };
+/** One side of login; `course-detail/` requires it and serves a different page for each. */
+export type MasterclassCourseLoginType = 'pre_login' | 'post_login';
 
-/** The chapter "Watch Now" opens. */
-export interface MasterclassChapterRef {
+/** A CAIRA level the course belongs to; the badge shows `level_number`. */
+export interface MasterclassLevel {
   id: string;
-  slug: string;
   name: string;
+  level_number: number;
 }
 
 export interface MasterclassInstructor {
@@ -57,60 +55,137 @@ export interface MasterclassTopic {
   name: string;
 }
 
-/** `total_duration` split for the About grid's Hours and Mins cells. */
+/** One chapter of the course; the list shows them in the API's `order`. */
+export interface MasterclassChapter {
+  id: string;
+  name: string;
+  mini_description: string | null;
+  order: number;
+  duration_seconds: number;
+  total_quiz_questions: number;
+  horizontal_thumbnail_url: string | null;
+}
+
+/** A chapter with the URL slug the API doesn't send, made from its name. */
+export type MasterclassChapterLink = MasterclassChapter & { slug: string };
+
+export interface MasterclassExerciseFile {
+  name: string;
+  order: number;
+  url: string;
+}
+
+export interface MasterclassAiKit {
+  id: string;
+  name: string;
+  url: string;
+}
+
+/** `miscellaneous_data`: the Resource section's content. */
+export interface MasterclassResources {
+  /** HTML, authored in the admin; shown in the glossary dialog. */
+  glossary: string | null;
+  course_navigation_video_url: string | null;
+  exercise_files: MasterclassExerciseFile[] | null;
+  ai_kit: MasterclassAiKit | null;
+}
+
+/** A course card in the Related and "More by" rails. */
+export interface MasterclassRelatedCourse {
+  id: string;
+  name: string;
+  mini_description: string;
+  thumbnail_url: string | null;
+  total_cpe_credits: number;
+  field_of_study: MasterclassFieldOfStudy[];
+}
+
+export interface MasterclassInstructorCourses {
+  instructor_id: string;
+  instructor_name: string;
+  courses: MasterclassRelatedCourse[];
+}
+
+/** One rail of the Related section, ready to render: a heading and linkable cards. */
+export interface MasterclassRelatedRail {
+  id: string;
+  heading: string;
+  courses: (MasterclassRelatedCourse & { slug: string })[];
+}
+
+/** The NASBA block's dates (ISO 8601). */
+export interface MasterclassNasbaSection {
+  created_on: string | null;
+  reviewed_on: string | null;
+  updated_on: string | null;
+}
+
+/** `course_details` of `course-detail/`, its chapters unwrapped from their paginated block. */
+export interface MasterclassCourseDetail {
+  id: string;
+  name: string;
+  mini_description: string;
+  description: string;
+  horizontal_thumbnail_url: string | null;
+  /** The hero's poster, before the trailer starts. */
+  trailer_thumbnail_url: string | null;
+  /** An HLS (`.m3u8`) stream on every UAT course, so it needs the video.js player. */
+  trailer_video_url: string | null;
+  sample_video_url: string | null;
+  fields_of_study: MasterclassFieldOfStudy[];
+  /** The course total, summed by the API. Render it as sent; never re-sum. */
+  total_cpe_credits: number;
+  level: MasterclassLevel[];
+  show_credly_icon: boolean;
+  instructors: MasterclassInstructor[];
+  learning_objectives: MasterclassLearningObjective[];
+  topics: MasterclassTopic[];
+  /** The course duration, preformatted ("3 hours"). Not the video length. */
+  masterclass_duration: string;
+  /** The video length: the sum of the chapter videos, in seconds. */
+  masterclass_duration_seconds: number;
+  program_level: string | null;
+  instructional_delivery_method: string;
+  prerequisite_education: string;
+  advance_preparation: string;
+  /** Spelled `sponser` by the API. */
+  sponser_identification_number: string;
+  /** Preformatted text, e.g. "1 year from the start of the course/upon subscription expiry". */
+  expiration_date: string;
+  nasba_section: MasterclassNasbaSection;
+  chapters: MasterclassChapter[];
+  miscellaneous_data: MasterclassResources;
+  related_courses: MasterclassRelatedCourse[];
+  instructor_related_courses: MasterclassInstructorCourses[];
+  /** The learner's own state: always `false` pre-login. */
+  is_bookmarked: boolean;
+  /** Set once the learner's certificate exists; `null` pre-login and until then. */
+  masterclass_certificate_url: string | null;
+}
+
+/** `total_duration`-style text split for the About grid's Hours and Mins cells. */
 export interface MasterclassDurationParts {
   hours: number;
   minutes: number;
 }
 
-/** `data` of `about-course/`: public, so it is the page's server-rendered content. */
-export interface MasterclassAboutCourse {
-  id: string;
-  slug: string;
-  title: string;
-  short_description: string;
-  description: string;
-  thumbnails: MasterclassThumbnails;
-  trailer_url: string | null;
-  /** The hero's looping background; `null` on every UAT course so far. */
-  web_background_video_url: string | null;
-  sample_video_url: string | null;
-  /** Preformatted by the API, e.g. "1 hour 34 minutes" or "3 hours". */
-  total_duration: string;
-  delivery_method: string;
-  program_level: string | null;
-  prerequisite_education: string;
-  advance_preparation: string;
-  fields_of_study: MasterclassFieldOfStudy[];
-  /** The course total, summed by the API. Render it as sent; never re-sum. */
-  total_cpe_credits: number;
-  has_individual_badge: boolean;
-  included_for_caira: boolean;
-  /** `null` is accepted so a course with no chapter yet still renders, without "Watch Now". */
-  first_chapter: MasterclassChapterRef | null;
-  chapter_count: number;
-  learning_objectives: MasterclassLearningObjective[];
-  instructors: MasterclassInstructor[];
-  topics: MasterclassTopic[];
-}
-
 // ---- Trust boundary --------------------------------------------------------
 
-function isThumbnails(v: unknown): v is MasterclassThumbnails {
-  return (
-    isObject(v) &&
-    isStrOrNull(v['horizontal']) &&
-    isStrOrNull(v['vertical']) &&
-    isStrOrNull(v['square'])
-  );
+/** The paginated block `chapters` arrives in; only `results` is read. */
+interface ApiPage<T> {
+  results: T[];
 }
+
+type ApiCourseDetail = Omit<MasterclassCourseDetail, 'chapters'> & {
+  chapters: ApiPage<MasterclassChapter>;
+};
 
 function isFieldOfStudy(v: unknown): v is MasterclassFieldOfStudy {
   return isObject(v) && isStr(v['id']) && isStr(v['name']) && isNum(v['cpe_credit']);
 }
 
-function isChapterRef(v: unknown): v is MasterclassChapterRef {
-  return isObject(v) && isStr(v['id']) && isStr(v['slug']) && isStr(v['name']);
+function isLevel(v: unknown): v is MasterclassLevel {
+  return isObject(v) && isStr(v['id']) && isStr(v['name']) && isNum(v['level_number']);
 }
 
 function isInstructor(v: unknown): v is MasterclassInstructor {
@@ -131,38 +206,122 @@ function isTopic(v: unknown): v is MasterclassTopic {
   return isObject(v) && isStr(v['id']) && isStr(v['name']);
 }
 
-function isAboutCourse(v: unknown): v is MasterclassAboutCourse {
+function isChapter(v: unknown): v is MasterclassChapter {
   return (
     isObject(v) &&
     isStr(v['id']) &&
-    isStr(v['slug']) &&
-    isStr(v['title']) &&
-    isStr(v['short_description']) &&
-    isStr(v['description']) &&
-    isThumbnails(v['thumbnails']) &&
-    isStrOrNull(v['trailer_url']) &&
-    isStrOrNull(v['web_background_video_url']) &&
-    isStrOrNull(v['sample_video_url']) &&
-    isStr(v['total_duration']) &&
-    isStr(v['delivery_method']) &&
-    isStrOrNull(v['program_level']) &&
-    isStr(v['prerequisite_education']) &&
-    isStr(v['advance_preparation']) &&
-    listOf(isFieldOfStudy)(v['fields_of_study']) &&
-    isNum(v['total_cpe_credits']) &&
-    isBool(v['has_individual_badge']) &&
-    isBool(v['included_for_caira']) &&
-    (v['first_chapter'] === null || isChapterRef(v['first_chapter'])) &&
-    isNum(v['chapter_count']) &&
-    listOf(isLearningObjective)(v['learning_objectives']) &&
-    listOf(isInstructor)(v['instructors']) &&
-    listOf(isTopic)(v['topics'])
+    isStr(v['name']) &&
+    isStrOrNull(v['mini_description']) &&
+    isNum(v['order']) &&
+    isNum(v['duration_seconds']) &&
+    isNum(v['total_quiz_questions']) &&
+    isStrOrNull(v['horizontal_thumbnail_url'])
   );
 }
 
-/** `parse` for `about-course/`: the `{ success, message, data }` envelope, unwrapped. */
-export function parseAboutCourse(raw: unknown): MasterclassAboutCourse {
+function isExerciseFile(v: unknown): v is MasterclassExerciseFile {
+  return isObject(v) && isStr(v['name']) && isNum(v['order']) && isStr(v['url']);
+}
+
+function isAiKit(v: unknown): v is MasterclassAiKit {
+  return isObject(v) && isStr(v['id']) && isStr(v['name']) && isStr(v['url']);
+}
+
+function isResources(v: unknown): v is MasterclassResources {
+  return (
+    isObject(v) &&
+    isStrOrNull(v['glossary']) &&
+    isStrOrNull(v['course_navigation_video_url']) &&
+    (v['exercise_files'] === null || listOf(isExerciseFile)(v['exercise_files'])) &&
+    (v['ai_kit'] === null || isAiKit(v['ai_kit']))
+  );
+}
+
+function isRelatedCourse(v: unknown): v is MasterclassRelatedCourse {
+  return (
+    isObject(v) &&
+    isStr(v['id']) &&
+    isStr(v['name']) &&
+    isStr(v['mini_description']) &&
+    isStrOrNull(v['thumbnail_url']) &&
+    isNum(v['total_cpe_credits']) &&
+    listOf(isFieldOfStudy)(v['field_of_study'])
+  );
+}
+
+function isInstructorCourses(v: unknown): v is MasterclassInstructorCourses {
+  return (
+    isObject(v) &&
+    isStr(v['instructor_id']) &&
+    isStr(v['instructor_name']) &&
+    listOf(isRelatedCourse)(v['courses'])
+  );
+}
+
+function isNasbaSection(v: unknown): v is MasterclassNasbaSection {
+  return (
+    isObject(v) &&
+    isStrOrNull(v['created_on']) &&
+    isStrOrNull(v['reviewed_on']) &&
+    isStrOrNull(v['updated_on'])
+  );
+}
+
+function isApiCourseDetail(v: unknown): v is ApiCourseDetail {
+  if (!isObject(v)) return false;
+  const chapters = v['chapters'];
+  return (
+    isStr(v['id']) &&
+    isStr(v['name']) &&
+    isStr(v['mini_description']) &&
+    isStr(v['description']) &&
+    isStrOrNull(v['horizontal_thumbnail_url']) &&
+    isStrOrNull(v['trailer_thumbnail_url']) &&
+    isStrOrNull(v['trailer_video_url']) &&
+    isStrOrNull(v['sample_video_url']) &&
+    listOf(isFieldOfStudy)(v['fields_of_study']) &&
+    isNum(v['total_cpe_credits']) &&
+    listOf(isLevel)(v['level']) &&
+    isBool(v['show_credly_icon']) &&
+    listOf(isInstructor)(v['instructors']) &&
+    listOf(isLearningObjective)(v['learning_objectives']) &&
+    listOf(isTopic)(v['topics']) &&
+    isStr(v['masterclass_duration']) &&
+    isNum(v['masterclass_duration_seconds']) &&
+    isStrOrNull(v['program_level']) &&
+    isStr(v['instructional_delivery_method']) &&
+    isStr(v['prerequisite_education']) &&
+    isStr(v['advance_preparation']) &&
+    isStr(v['sponser_identification_number']) &&
+    isStr(v['expiration_date']) &&
+    isNasbaSection(v['nasba_section']) &&
+    isObject(chapters) &&
+    listOf(isChapter)(chapters['results']) &&
+    isResources(v['miscellaneous_data']) &&
+    listOf(isRelatedCourse)(v['related_courses']) &&
+    listOf(isInstructorCourses)(v['instructor_related_courses']) &&
+    isBool(v['is_bookmarked']) &&
+    isStrOrNull(v['masterclass_certificate_url'])
+  );
+}
+
+/**
+ * `parse` for `course-detail/`: the `{ success, message, data: { course_details } }`
+ * envelope, with the chapters unwrapped from their paginated block.
+ */
+export function parseCourseDetail(raw: unknown): MasterclassCourseDetail {
   const data = isObject(raw) ? raw['data'] : undefined;
-  if (isAboutCourse(data)) return data;
+  const course = isObject(data) ? data['course_details'] : undefined;
+  if (isApiCourseDetail(course)) return { ...course, chapters: course.chapters.results };
+  throw contractError('course-detail');
+}
+
+/**
+ * `parse` for `about-course/?slug=`, read only to turn an old numeric link's
+ * slug into the UUID `course-detail/` needs.
+ */
+export function parseAboutCourseId(raw: unknown): string {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  if (isObject(data) && isStr(data['id'])) return data['id'];
   throw contractError('about-course');
 }

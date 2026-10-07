@@ -795,7 +795,7 @@ export class Utils {
  * Detect a video MIME type from the URL. Uses the URL API for host matching so
  * substrings don't false-match the YouTube host (e.g. `my-youtube.com`).
  */
-function detectVideoMimeType(src: string): string {
+export function detectVideoMimeType(src: string): string {
   const host = parseHostname(src);
   const isYouTube =
     host === 'youtube.com' ||

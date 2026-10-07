@@ -1,0 +1,64 @@
+@let r = resources();
+<div
+  class="lg:w-9/12 sm:w-10/12 w-full mx-auto overflow-hidden flex flex-col gap-6 rounded-2xl bg-[#18181b] p-6 text-white border border-[#27272a]"
+>
+  <h2 class="text-2xl font-bold">Class Resources</h2>
+
+  <div class="flex flex-col gap-3">
+    @if (r.course_navigation_video_url) {
+      <button
+        type="button"
+        class="group flex items-center justify-between rounded-lg bg-[#27272a] p-4 transition-colors hover:bg-[#3f3f46]"
+        (click)="navigation.emit()"
+      >
+        <div class="flex items-center gap-3">
+          <ng-icon name="lucideVideo" class="text-xl text-white" aria-hidden="true" />
+          <span class="font-medium text-white">Course Navigation</span>
+        </div>
+      </button>
+    }
+    @if (r.glossary) {
+      <button
+        type="button"
+        class="group flex items-center justify-between rounded-lg bg-[#27272a] p-4 transition-colors hover:bg-[#3f3f46]"
+        (click)="glossary.emit()"
+      >
+        <div class="flex items-center gap-3">
+          <ng-icon name="lucideFileText" class="text-xl text-white" aria-hidden="true" />
+          <span class="font-medium text-white">Glossary</span>
+        </div>
+      </button>
+    }
+    @for (file of r.exercise_files ?? []; track file.url) {
+      <a
+        class="group flex items-center justify-between rounded-lg bg-[#27272a] p-4 transition-colors hover:bg-[#3f3f46]"
+        [href]="file.url"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <div class="flex items-center gap-3">
+          <ng-icon name="lucideFileText" class="text-xl text-white" aria-hidden="true" />
+          <span class="font-medium text-white">{{ file.name }}</span>
+        </div>
+        <ng-icon
+          name="lucideDownload"
+          class="text-xl text-[#a1a1aa] transition-colors group-hover:text-white"
+          aria-hidden="true"
+        />
+      </a>
+    }
+    @if (r.ai_kit; as kit) {
+      <a
+        class="group flex items-center justify-between rounded-lg bg-[#27272a] p-4 transition-colors hover:bg-[#3f3f46]"
+        [href]="kit.url"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <div class="flex items-center gap-3">
+          <ng-icon name="lucideBot" class="text-xl text-white" aria-hidden="true" />
+          <span class="font-medium text-white">AI Kit</span>
+        </div>
+      </a>
+    }
+  </div>
+</div>

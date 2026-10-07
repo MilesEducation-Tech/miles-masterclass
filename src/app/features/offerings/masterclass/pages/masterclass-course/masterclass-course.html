@@ -2,10 +2,14 @@
   @if (facade.course(); as course) {
     <app-masterclass-course-hero
       [course]="course"
+      [bookmarked]="facade.isBookmarked()"
+      [bookmarkPending]="facade.bookmarkPending()"
       (watch)="facade.watch()"
       (trailer)="facade.openTrailer()"
       (sample)="facade.openSample()"
+      (bookmark)="facade.toggleBookmark()"
       (share)="facade.share()"
+      (download)="facade.downloadCertificate()"
     />
   } @else if (facade.notFound()) {
     <div role="alert" class="container mx-auto flex flex-col items-center gap-4 py-24 text-center">
@@ -32,15 +36,48 @@
     </div>
   </div>
 
+  <!-- Masterclass Section (Chapters) -->
+  @if (facade.chapters().length > 0) {
+    <section [id]="sectionIds.chapters" class="container mx-auto md:py-10 py-5 scroll-mt-32">
+      <app-masterclass-chapter-list [chapters]="facade.chapters()" />
+    </section>
+  }
+
+  <!-- Resource Section -->
+  @if (facade.hasResources() && facade.course(); as course) {
+    <section [id]="sectionIds.resources" class="container mx-auto md:py-10 py-5 scroll-mt-32">
+      <app-masterclass-course-resources
+        [resources]="course.miscellaneous_data"
+        (navigation)="facade.openNavigationVideo()"
+        (glossary)="facade.openGlossary()"
+      />
+    </section>
+  }
+
   <!-- About Section -->
   @if (facade.course(); as course) {
-    <section id="about" class="container mx-auto md:py-10 py-5 scroll-mt-32">
+    <section [id]="sectionIds.about" class="container mx-auto md:py-10 py-5 scroll-mt-32">
       <app-masterclass-course-about [course]="course" />
     </section>
   }
 
+  <!-- Related Section: Swiper carousels below the fold, so they load on viewport. -->
+  @if (facade.relatedRails().length > 0) {
+    <section [id]="sectionIds.related" class="md:py-10 py-5 scroll-mt-32">
+      @defer (on viewport) {
+        <app-masterclass-course-related [rails]="facade.relatedRails()" />
+      } @placeholder {
+        <div class="container mx-auto flex gap-4 animate-pulse" aria-hidden="true">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="w-80 aspect-video bg-muted rounded-lg shrink-0"></div>
+          }
+        </div>
+      }
+    </section>
+  }
+
   <!-- FAQ Section -->
-  <section id="faq" class="md:py-10 py-5 scroll-mt-32">
+  <section [id]="sectionIds.faq" class="md:py-10 py-5 scroll-mt-32">
     <app-faq [standalone]="false" />
   </section>
 </div>

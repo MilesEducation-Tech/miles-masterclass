@@ -62,7 +62,7 @@
         </div>
       } @else if (c.instructors[0]; as ins) {
         <div class="relative aspect-video rounded-lg overflow-hidden">
-          @if (ins.horizontal_image_url || c.thumbnails.horizontal; as image) {
+          @if (ins.horizontal_image_url || c.horizontal_thumbnail_url; as image) {
             <img [ngSrc]="image" [alt]="ins.name" fill class="object-cover" />
           }
           <div class="absolute inset-0 bg-linear-to-t from-black/80 to-transparent z-10"></div>
@@ -78,7 +78,7 @@
         <div
           class="bg-slate-800 rounded-lg p-4 flex-1 flex items-center text-white md:text-base text-sm"
         >
-          1 year from the start of the course/upon subscription expiry
+          {{ c.expiration_date }}
         </div>
       </div>
     </div>
@@ -106,7 +106,9 @@
             <div
               class="flex-1 bg-slate-800 rounded-lg p-4 flex flex-col items-center justify-center"
             >
-              <span class="md:text-2xl text-lg font-bold text-white">{{ c.total_duration }}</span>
+              <span class="md:text-2xl text-lg font-bold text-white">{{
+                c.masterclass_duration
+              }}</span>
             </div>
           }
         </div>
@@ -116,10 +118,10 @@
       <div
         class="flex-1 bg-radial-[at_75%_25%] from-primary to-slate-800 to-55% rounded-lg p-4 flex flex-col justify-between"
       >
-        <p class="text-4xl font-bold text-white">{{ c.chapter_count }}</p>
+        <p class="text-4xl font-bold text-white">{{ c.chapters.length }}</p>
         <div class="flex flex-col gap-2">
           <p class="md:text-xl text-base font-semibold text-white">
-            {{ c.chapter_count === 1 ? 'Chapter' : 'Chapters' }}
+            {{ c.chapters.length === 1 ? 'Chapter' : 'Chapters' }}
           </p>
           <p class="md:text-sm text-xs text-white/80">
             Organized into clear, concise chapters for easy learning!
@@ -202,11 +204,13 @@
               </li>
               <li class="md:text-base text-sm">
                 Sponsor Identification number:
-                <span class="text-white font-medium">149174</span>
+                <span class="text-white font-medium">{{ c.sponser_identification_number }}</span>
               </li>
               <li class="md:text-base text-sm">
                 Instructional Delivery Method:
-                <span class="text-white font-medium ms-2">{{ c.delivery_method }}</span>
+                <span class="text-white font-medium ms-2">{{
+                  c.instructional_delivery_method
+                }}</span>
               </li>
               @if (c.program_level) {
                 <li class="md:text-base text-sm">
@@ -222,6 +226,42 @@
                 <li class="md:text-base text-sm">
                   Advanced Preparation:
                   <span class="text-white font-medium ms-2">{{ c.advance_preparation }}</span>
+                </li>
+              }
+            </ul>
+
+            <!-- Dates -->
+            <ul class="flex flex-col gap-2 text-gray-400">
+              @if (c.nasba_section.created_on) {
+                <li class="md:text-base text-sm">
+                  Created on:
+                  <span class="text-white">{{
+                    c.nasba_section.created_on | date: 'dd MMM yyyy'
+                  }}</span>
+                </li>
+              }
+              @if (c.nasba_section.reviewed_on) {
+                <li class="md:text-base text-sm">
+                  Reviewed on:
+                  <span class="text-white">{{
+                    c.nasba_section.reviewed_on | date: 'dd MMM yyyy'
+                  }}</span>
+                </li>
+              }
+              @if (c.nasba_section.updated_on) {
+                <li class="md:text-base text-sm">
+                  Updated on:
+                  <span class="text-white">{{
+                    c.nasba_section.updated_on | date: 'dd MMM yyyy'
+                  }}</span>
+                </li>
+              }
+              @if (c.masterclass_duration_seconds) {
+                <li class="md:text-base text-sm">
+                  Video Duration:
+                  <span class="text-white">{{
+                    c.masterclass_duration_seconds | duration: 'medium'
+                  }}</span>
                 </li>
               }
             </ul>

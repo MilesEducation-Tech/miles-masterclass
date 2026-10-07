@@ -1,61 +1,87 @@
 # Masterclass course page (web API v1): open questions for the backend
 
 **From:** Masterclass web (Angular SSR), ticket MIL-25.
-**Against:** the Postman export in `postman/` (refreshed 2026-10-06), folder
-`04. Masterclass - Learning Flow (web)`, and live UAT (`uat-api.milescaira.com`) on 2026-10-06.
+**Against:** the Postman export in `postman/` (refreshed 2026-10-07), folder
+`04. Masterclass - Learning Flow (web)`, and live UAT (`uat-api.milescaira.com`) on 2026-10-07.
 **Page:** `/:country/:profession/masterclass/:courseId/:courseTitle`, the course details page.
 
-The web app calls only `api/v1/` and `web-api/v1/`, never `app-api/`. Every gap below is something the
-current production page shows that has no `web-api` source yet, so the page hides it until one exists.
+The web app calls only `api/v1/` and `web-api/v1/`, never `app-api/`. The page reads
+`course-detail/<uuid>/?login_type=pre_login|post_login` (public since 2026-10-07). Every gap below is
+something the production page shows that the page cannot show yet, so it hides it.
 
-## Blocking
+## Answered on 2026-10-07
 
-### Q1. What does `course-detail/<course_id>/` return?
+- **What `course-detail/` returns:** captured live, `pre_login`, for all 64 UAT courses.
+- **Chapters for signed-out visitors:** `course-detail/` now serves them with `?login_type=pre_login`.
 
-`GET web-api/v1/masterclass/course-detail/<uuid>/` is `IsAuthenticated`. Its Postman example is a
-placeholder (`<**detail>` merged in, `chapters` as a paginated block of `<results>`), with no captured
-response. We need the real field list to bind:
+## Open
 
-- the chapter list
-- resume ("Watch Now" on the chapter in progress)
-- the progress bar
-- rating and "Submit Feedback"
-- "Take / Retake Final Assessment"
-- Download
+### Q1. The hero's background video
 
-Please attach a captured 200 for a started course and for an unstarted one.
+Production loops a short muted preview clip in the hero, for example `…/media/static/gif/…Topic Content.mp4`,
+66 s. The web API has no such clip:
 
-### Q2. Chapters for signed-out visitors
+- `about-course.web_background_video_url` is `null` on all 64 courses.
+- `course-detail/` only has the full trailer (`trailer_video_url`, HLS).
 
-Production lists every chapter (duration, quiz count) to anonymous visitors. On the web API, chapters
-only come from `course-detail/`, which needs sign-in. `about-course/` gives only `chapter_count` and
-`first_chapter`. Can `about-course/` (`AllowAny`) carry the chapter list, or can there be a public
-chapters read?
+The page loops the trailer, muted, for now. Can the preview clip be exposed, for example by filling
+`web_background_video_url` and adding it to `course-detail/`?
 
-## Missing from the web API
+### Q2. Credly badge for signed-out visitors
 
-| Production page shows                      | Legacy source                     | Web API today                                                        | Ask                                                    |
-| ------------------------------------------ | --------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------ |
-| CPE / Preview mode badge and switch        | `user/customaction/set_cpe_mode/` | none; `enrollment/` describes a 365-day window instead               | Is CPE/Preview mode gone? If not, which route sets it? |
-| Price, "Purchased", Add To Cart            | legacy details price fields       | none on `about-course/`                                              | Price and purchase state for a course                  |
-| Created / Updated / Reviewed dates         | legacy details                    | none                                                                 | Add to `about-course/`                                 |
-| Video duration (e.g. "1 hr 55 min 52 sec") | legacy details                    | only `total_duration` ("3 hours"), which matches the course duration | A video-duration field                                 |
-| Program level ("Basic")                    | legacy details                    | `program_level` is `null` on all 64 UAT courses                      | Fill it                                                |
-| CAIRA level badge ("CAIRA L2")             | legacy `caira_level`              | only `included_for_caira`; the badge needs the level, so it hides    | Add the course's CAIRA level                           |
-| Learning pathway                           | legacy `learning_pathway_info`    | none                                                                 | Add, or confirm it is gone                             |
-| Glossary, course-navigation video          | legacy course-content route       | `miscellaneous_data.has_*` flags only, no content                    | A route for the content                                |
-| Exercise files, AI Kit                     | legacy download / resources       | `has_additional_resources.has_*` flags only                          | Routes for both                                        |
-| Related courses, "More by <instructor>"    | legacy related / instructor feeds | `instructor-detail/` is auth-only with a placeholder example         | A public related / by-instructor read                  |
-| Background video, Sample                   | `thumbnail_gif`, `sample_link`    | `web_background_video_url`, `sample_video_url` are `null` on all 64  | Fill them                                              |
+`course-detail.show_credly_icon` is `false` on all 64 courses pre-login. But `about-course.has_individual_badge`
+is `true` on 6 of them, so those 6 lose the Credly icon on the course page when signed out. Which field is
+right?
+
+### Q3. Durations
+
+- `masterclass_duration` ("3 hours") and `masterclass_duration_seconds` (6970) disagree on every course. The
+  seconds equal the sum of the chapter videos.
+- The page shows the string as Course Duration and the seconds as Video Duration, as production does.
+- `nasba_section.video_duration` repeats the course-duration string rather than the video length. Please
+  confirm it's meant to.
+
+### Q4. Slugs
+
+`course-detail/` carries no course `slug`, and its chapters carry none either. The page takes the course slug
+from its URL and builds chapter slugs from the chapter name. Can both be added?
+
+### Q5. Duplicated NASBA fields
+
+`program_level` is `"Basic"` at the top level but `null` inside `nasba_section`. Which one is the source?
+
+### Q6. Images on the GCS bucket answer 403
+
+`storage.googleapis.com/miles-usp-bed/…` returns **403** for:
+
+- 227 of 387 chapter thumbnails
+- 19 of 42 related-course thumbnails
+- 24 of 68 course thumbnails on the landing page
+
+Those images show as broken; the S3-hosted ones load. Can the bucket be made public, or the images
+moved to S3?
+
+### Q7. CloudFront caches the CORS header
+
+An HLS trailer segment (`…_720p_00002.ts` on `d2eoseju8m2c1y.cloudfront.net`) was served with
+`Access-Control-Allow-Origin: http://localhost:3000` to a page on another origin. The browser blocked it,
+which can stall the hero trailer and the trailer dialog. Please forward `Origin` in the cache key, or send
+`Access-Control-Allow-Origin: *`, for the video distribution.
+
+## Still missing from the web API
+
+| Production page shows               | Web API today                                                           | Ask                                                |
+| ----------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------- |
+| CPE / Preview mode badge and switch | `course_mode` / `is_preview_mode` read-only; `mode` query is post-login | Confirm the switch is `?mode=` on `course-detail/` |
+| Price, "Purchased", Add To Cart     | none                                                                    | Price and purchase state for a course              |
+| Learning pathway                    | none                                                                    | Add, or confirm it is gone                         |
+| Course-navigation video             | `miscellaneous_data.course_navigation_video_url` is `null` on all 64    | Fill it                                            |
+| Sample video (hero "Sample")        | `sample_video_url` is `null` on all 64, so the button is hidden         | Fill it                                            |
+| Bookmark response                   | `POST bookmark/<id>/` body and response uncaptured; the page re-reads   | Capture a 200                                      |
 
 ## Contract drift (live vs Postman)
 
-- **Envelope:** live is `{ success: true, message, data }`; Postman says `status: "success"`. Same as
-  `home-page/`.
-- **Unset fields:** live sends `null`; Postman shows `""`. Affected:
-  - `thumbnails.square`
-  - `web_background_video_url`, `sample_video_url`
-  - `program_level`
-  - `certificate_expiry_years`, `certifying_organisation`
-- **Bookmark:** `POST bookmark/<id>/`'s body template "could not be resolved from the code". Is the
-  body empty?
+- **Envelope:** live is `{ success: true, message, data }`; Postman says `status: "success"`.
+- **Examples:** `course-detail/`'s Postman examples are still placeholders (`<**detail>`).
+- **Bookmark:** `POST bookmark/<id>/`'s body template "could not be resolved from the code". Is the body
+  empty?
