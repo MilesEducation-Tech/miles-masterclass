@@ -1,5 +1,10 @@
 <app-section-nav [items]="sectionNavItems()" mode="sidenav" [shareWithHeader]="false" />
-<div class="overflow-clip flex flex-col md:space-y-20 space-y-10">
+<!-- `gap`, not `space-y`: v4's space-y is a margin on every child but the last,
+     so while the HTML still streams the hero is briefly the last child with no
+     gap, and the first rail jumps 80px when the next section arrives (a 0.024
+     layout shift at ~450ms, measured). A flex gap exists from a child's first
+     layout. -->
+<div class="overflow-clip flex flex-col gap-10 md:gap-20">
   <!-- Hero Section -->
   <section id="home-hero">
     <app-home-hero />
@@ -18,7 +23,7 @@
         </button>
       </div>
     } @else {
-      <div class="flex flex-col md:space-y-20 space-y-10">
+      <div class="flex flex-col gap-10 md:gap-20">
         @for (track of home.tracks(); track track.id; let first = $first) {
           <!-- The tracks arrive in the browser (the facade fetches them after
                hydration here), so the server HTML carries the skeleton below
@@ -51,11 +56,13 @@
           } @placeholder {
             <!-- Mirrors the rail's geometry (heading, then 1.1 / 2 / 2.8 slides
                  per view of 16:9 art over the card's 140px text block, 30px
-                 apart, and the carousel's bottom margin), so the real rail lands
-                 on the same height at every width and nothing below it moves. -->
+                 apart, and the carousel's bottom margin as padding — the carousel
+                 host is a flex column, where that margin does not collapse), so
+                 the real rail lands on the same height at every width and nothing
+                 below it moves. -->
             <div class="animate-pulse" aria-hidden="true">
               <div class="h-11 md:h-[54px] w-72 max-w-full rounded bg-white/5"></div>
-              <div class="mt-4 mb-10 flex gap-[30px] overflow-hidden">
+              <div class="mt-4 pb-10 flex gap-[30px] overflow-hidden">
                 @for (i of [1, 2, 3]; track i) {
                   <div
                     class="shrink-0 basis-[calc((100%-3px)/1.1)] md:basis-[calc((100%-30px)/2)] lg:basis-[calc((100%-54px)/2.8)]"
@@ -75,7 +82,7 @@
                  rail, so the first rail replaces it without a shift. -->
             <div class="animate-pulse" aria-hidden="true">
               <div class="h-11 md:h-[54px] w-72 max-w-full rounded bg-white/5"></div>
-              <div class="mt-4 mb-10 flex gap-[30px] overflow-hidden">
+              <div class="mt-4 pb-10 flex gap-[30px] overflow-hidden">
                 @for (i of [1, 2, 3]; track i) {
                   <div
                     class="shrink-0 basis-[calc((100%-3px)/1.1)] md:basis-[calc((100%-30px)/2)] lg:basis-[calc((100%-54px)/2.8)]"

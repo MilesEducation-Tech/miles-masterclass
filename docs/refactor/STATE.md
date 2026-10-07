@@ -33,6 +33,19 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     Types and `parseHomePage` unchanged.
   - The home-redesign stack (#69 → #77) carries the same read in `core/services/masterclass-home-facade/`;
     #69 must take the route and parameter when it is rebased onto this fix.
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign follow-up F8 (`prompts/home-redesign.md`): Carousel
+  pre-Swiper flood and layout shifts. DONE, UNCOMMITTED, on branch `perf/MIL-XXX-carousel-init-flood`
+  (stacked on PR5's branch; rename once the ticket exists).** No refactor phase moved.
+  - `shared/components/carousel`: the Swiper import starts when the rail renders; slides render only once
+    `swiper/element` is registered; the skeleton stays in flow until `initialize()`; one shared skeleton
+    template; the root `div` is `block` (was `inline` since the baseline). `home.html`: placeholders carry the
+    rail's bottom margin as padding, and the two wrappers use flex `gap` instead of `space-y` (v4's margin
+    on all-but-last children shifts the first rail 80px while the HTML streams).
+  - Measured (UAT builds, Lighthouse): home mobile first-rail thumbnails 9 / 3.9 MB → 3 / 0.5 MB, images
+    4.4 → 1.0 MB; desktop CLS 0.024 → 0.001; rail height unchanged for all eight consumers.
+  - Gates (local macOS, Node 24.15, **not CI**): `verify.mjs` **7/7 GREEN** before the final `gap` edit;
+    lint, UAT build and `build:prod` (243.30 kB initial) after it.
+
 - 🔧 **2026-10-07, NON-REFACTOR — home redesign PR5 (`prompts/home-redesign.md`): the live-webinar ticket.
   DONE, UNCOMMITTED, on branch `feat/MIL-XXX-home-webinar-ticket` (stacked on PR4's branch; rename once
   the ticket exists). The five-PR series is complete with it.** No refactor phase moved.
