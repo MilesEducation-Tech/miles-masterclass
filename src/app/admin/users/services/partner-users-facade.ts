@@ -15,7 +15,7 @@ import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { fileNameFromContentDisposition, saveBlob } from '@shared/utils/blob-download';
-import { withPreviousValue } from '@shared/utils/with-previous-value';
+import { withPreviousValue } from '@core/utils/with-previous-value';
 import {
   adminContext,
   BlockedStatusFilter,

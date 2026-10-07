@@ -30,7 +30,7 @@ import { Utils } from '@shared/services/utils';
 
 import { AriaSelectOption } from '@core/models/aria.model';
 import { ErrorState } from '@shared/ui/error-state/error-state';
-import { withPreviousValue } from '@shared/utils/with-previous-value';
+import { withPreviousValue } from '@core/utils/with-previous-value';
 import { localeLink } from '../../../utils/tracker-links';
 import { BadgeFilterChips } from '../../../components/badge-filter-chips/badge-filter-chips';
 import { PortfolioSummary } from '../../components/portfolio-summary/portfolio-summary';

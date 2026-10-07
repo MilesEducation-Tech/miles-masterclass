@@ -13,7 +13,7 @@ import { take } from 'rxjs';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { withPreviousValue } from '@shared/utils/with-previous-value';
+import { withPreviousValue } from '@core/utils/with-previous-value';
 import {
   CreateFirmResponse,
   Firm,

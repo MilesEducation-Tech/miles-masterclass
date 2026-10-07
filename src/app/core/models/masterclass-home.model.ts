@@ -1,10 +1,12 @@
 /**
- * Types for the web masterclass API (`web-api/v1/masterclass/`).
+ * Types for the web masterclass API (`web-api/v1/masterclass/`), read by
+ * `MasterclassHomeFacade` for the home page and the masterclass page.
  *
- * These are the keys the masterclass page READS, not a mirror of the payload.
- * The legacy shapes in `@core/models/course.model.ts` (`Content`, integer ids,
- * `course_short_overview`, `class_credits`) describe a different contract and
- * must not be mixed in here — this API addresses courses by UUID and slug.
+ * These are the keys those pages READ, not a mirror of the payload. The legacy
+ * shapes in `masterclass.model.ts` and `course.model.ts` next door (`Content`,
+ * integer ids, `course_short_overview`, `class_credits`) describe a different
+ * contract and must not be mixed in here — this API addresses courses by UUID
+ * and slug.
  *
  * Checked against live UAT on 2026-10-07 (`tracks-page/`, which replaced
  * `home-page/` that day with the same body). Live differs from the Postman
