@@ -11,26 +11,30 @@ const ROOT = environment.BASE_API_URL;
 
 export const MASTERCLASS_ENDPOINTS = {
   /**
-   * Web-only read, `AllowAny`: the tracks with their courses inline.
+   * Web-only read, `AllowAny`: the tracks with their courses inline. Replaced
+   * `home-page/` on 2026-10-07 (Postman `web-masterclass-tracks-page-v1`); the
+   * old route is a 404 on every host.
    *
    * `login_type` is required and strict — leaving it out, or sending any other
-   * key, is a 400 `invalid_query`. An anonymous `post_login` is a 401, and a
-   * bad or expired token is a 403 (this backend authenticates before it checks
-   * the permission).
+   * key, is a 400 `invalid_query`. An anonymous `post_login` is a 401, and so
+   * is a bad or expired token on either branch (the backend rechecked this on
+   * 2026-10-07; it used to be a 403).
    */
-  homePage: `${ROOT}web-api/v1/masterclass/home-page/`,
+  tracksPage: `${ROOT}web-api/v1/masterclass/tracks-page/`,
 } as const;
 
 /**
- * Courses asked for per track on `home-page/`, sent as `tracks.courses.page_size`.
+ * Rows asked for per list on `tracks-page/`: `tracks.page_size` for the tracks
+ * and `tracks.courses.page_size` for each track's courses.
  *
- * Since 2026-10-06 the API pages each track's courses, 6 at a time by default,
- * and a later page needs `?track=<slug>` on its own request (the `next` link it
- * sends leaves that out and is a 400). The page shows every course in each
- * carousel, so it asks for the server's cap in one call instead. The largest
- * track on UAT holds 34; a track past 100 would be cut off at 100.
+ * The API pages both lists, 6 rows each by default, with a ceiling of 100. A
+ * later page needs its own request (`?tracks.page=2`, or `?track=<slug>` plus
+ * `tracks.courses.page=N` for one track's courses). The page shows every track
+ * and every course in each carousel, so it asks for the ceiling once instead
+ * of paging. UAT holds 4 tracks of up to 34 courses; a list past 100 rows
+ * would be cut off at 100.
  */
-export const HOME_PAGE_COURSES_PER_TRACK = 100;
+export const HOME_PAGE_LIST_PAGE_SIZE = 100;
 
-/** The page before `home-page/` answers, so the template reads one fixed shape. */
+/** The page before `tracks-page/` answers, so the template reads one fixed shape. */
 export const EMPTY_HOME_PAGE: MasterclassHomePage = { login_type: 'pre_login', tracks: [] };

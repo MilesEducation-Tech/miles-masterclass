@@ -3,6 +3,25 @@
 Status: **approved 2026-10-05 with D1–D4 as recommended. PR1 and PR2 are committed (`10a5b18`);
 PR3 (about-course) and PR4 (bookmark) are not started.**
 
+**Contract change, 2026-10-07.** The backend retired `home-page/` (404 on UAT and production) and replaced
+it with `GET web-api/v1/masterclass/tracks-page/?login_type=…` (Postman `web-masterclass-tracks-page-v1`,
+collection export of 2026-10-07). Same envelope, same track and course keys. The differences, and what the
+page does about them:
+
+- `data` is `{ login_type, is_test_user, tracks }`. `coming_soon` and the three post-login rails
+  (`highlight_courses`, `in_progress_courses`, `completed_courses`) were retired with the old route and
+  are not served anywhere else yet; `is_test_user` is new and not read.
+- `tracks` is itself a paginated block (default 6 rows, ceiling 100; `?tracks.page=N` for a later page), so
+  the page now sends `tracks.page_size=100` next to `tracks.courses.page_size=100`
+  (`HOME_PAGE_LIST_PAGE_SIZE`). Measured on UAT: 4 tracks, 21 / 34 / 0 / 13 courses, 216 KB raw in one call.
+- A bad or expired token is a 401 on both branches now (was 403); an anonymous `post_login` stays 401.
+- The nested `next` link now carries `?track=<slug>`, so the backend bug noted below is fixed.
+- A bare `?page=` is still a 400 (`invalid_query`): two lists are in flight.
+- Fixed on `fix/MIL-37-masterclass-tracks-page`: `MASTERCLASS_ENDPOINTS.tracksPage`, the second page-size
+  parameter, comments and the error label. Types and `parseHomePage` are unchanged because the body is.
+  The home-redesign stack (#69 → #77) moves this read into `core/services/masterclass-home-facade/`; its
+  facade needs the same route and parameter when #69 is rebased.
+
 **Contract change, 2026-10-06.** Overnight the backend started paginating `home-page/`, and the parse
 guard rejected the new body (the page showed its error state). The changes:
 
@@ -105,8 +124,8 @@ You chose **one call, all courses**:
 Rebuild `/:country/:profession_type/masterclass` on two live web APIs. Keep the design, and drop every old
 type, model and API call the page uses.
 
-1. **Tracks.** `GET web-api/v1/masterclass/home-page/?login_type=pre_login|post_login` returns tracks,
-   each with its courses inline.
+1. **Tracks.** `GET web-api/v1/masterclass/tracks-page/?login_type=pre_login|post_login` (was
+   `home-page/` until 2026-10-07) returns tracks, each with its courses inline.
    - The page loops over them and renders one section per track.
    - Each section has a heading (track `name`), a sub-heading (`description`), and a carousel of that
      track's courses.
@@ -173,18 +192,17 @@ type, model and API call the page uses.
 
 ## Contract (live UAT, 2026-10-05, anonymous)
 
-### `GET web-api/v1/masterclass/home-page/`
+### `GET web-api/v1/masterclass/tracks-page/` (since 2026-10-07; was `home-page/`)
 
 - **Auth:** `AllowAny`. `login_type` is required and strict (any other query key is a 400
   `invalid_query`).
 - **Anonymous `post_login`:** 401 `authentication_required`.
-- **Bad or expired token:** 403, as on every route of this backend.
-- **200 envelope:** `{ success: true, message: "Home page loaded.", data }`.
-- **Since 2026-10-06** every list in `data` is a paginated block (see the note at the top). The page
-  asks for `tracks.courses.page_size=100`.
-- **`data`, `pre_login`:** `{ login_type, tracks[], coming_soon[] }`.
-- **`data`, `post_login`** (Postman B capture) adds `highlight_courses`, `in_progress_courses` and
-  `completed_courses`.
+- **Bad or expired token:** 401 on both branches since 2026-10-07 (was 403).
+- **200 envelope:** `{ success: true, message, data }`.
+- **Since 2026-10-06** every list in `data` is a paginated block (see the notes at the top). The page
+  asks for `tracks.page_size=100` and `tracks.courses.page_size=100`.
+- **`data`:** `{ login_type, is_test_user, tracks }` for both login states. `coming_soon`,
+  `highlight_courses`, `in_progress_courses` and `completed_courses` were retired on 2026-10-07.
 - **Track:** `{ id: uuid, slug, name, description, image_url (null), priority, courses[] }`.
   - UAT has 4 tracks: 21, 34, 0 and 13 courses.
   - No per-track pagination; all courses are inline.

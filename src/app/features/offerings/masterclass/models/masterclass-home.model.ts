@@ -6,10 +6,12 @@
  * `course_short_overview`, `class_credits`) describe a different contract and
  * must not be mixed in here — this API addresses courses by UUID and slug.
  *
- * Checked against live UAT on 2026-10-05, which differs from the 2026-09-30
- * Postman export in two places: the envelope is `{ success, message, data }`
- * (Postman shows `status: "success"`), and a field of study carries
- * `cpe_credit` (Postman shows `cpe_credits`). The live keys win.
+ * Checked against live UAT on 2026-10-07 (`tracks-page/`, which replaced
+ * `home-page/` that day with the same body). Live differs from the Postman
+ * export in two places: the envelope is `{ success, message, data }` (Postman
+ * shows `status: "success"`), and a field of study carries `cpe_credit`
+ * (Postman shows `cpe_credits`). The live keys win. `data.is_test_user` is
+ * sent and not read.
  */
 
 // ---- Login state -----------------------------------------------------------
@@ -63,12 +65,12 @@ export interface MasterclassTrack {
   priority: number;
   /**
    * The track's courses, unwrapped from the API's paginated block. The page asks
-   * for all of them in one call (`HOME_PAGE_COURSES_PER_TRACK`). Can be empty.
+   * for all of them in one call (`HOME_PAGE_LIST_PAGE_SIZE`). Can be empty.
    */
   courses: MasterclassCourse[];
 }
 
-/** `data` of `home-page/`, unwrapped. `coming_soon` is not read yet. */
+/** `data` of `tracks-page/`, unwrapped: the tracks out of their paginated block. */
 export interface MasterclassHomePage {
   login_type: MasterclassLoginType;
   tracks: MasterclassTrack[];
@@ -78,9 +80,9 @@ export interface MasterclassHomePage {
 
 /**
  * The paginated block the API wraps every list in (live UAT since 2026-10-06):
- * the tracks, each track's courses, and `coming_soon`. It also carries `count`,
- * `page`, `has_next`, `next`…; only `results` is read, because the page asks
- * for every course up front instead of paging.
+ * the tracks and each track's courses. It also carries `count`, `page`,
+ * `has_next`, `next`…; only `results` is read, because the page asks for every
+ * row up front instead of paging.
  */
 interface ApiPage<T> {
   results: T[];
@@ -173,12 +175,12 @@ function contractError(route: string): Error {
 }
 
 /**
- * `parse` for `home-page/`: the `{ success, message, data }` envelope and the
+ * `parse` for `tracks-page/`: the `{ success, message, data }` envelope and the
  * paginated tracks and courses, unwrapped into plain lists.
  */
 export function parseHomePage(raw: unknown): MasterclassHomePage {
   const data = isObject(raw) ? raw['data'] : undefined;
-  if (!isObject(data)) throw contractError('home-page');
+  if (!isObject(data)) throw contractError('tracks-page');
 
   // Pulled into locals so each guard narrows its own value — no cast needed.
   const login_type = data['login_type'];
@@ -187,5 +189,5 @@ export function parseHomePage(raw: unknown): MasterclassHomePage {
   if (isLoginType(login_type) && pageOf(isApiTrack)(tracks)) {
     return { login_type, tracks: tracks.results.map(toTrack) };
   }
-  throw contractError('home-page');
+  throw contractError('tracks-page');
 }
