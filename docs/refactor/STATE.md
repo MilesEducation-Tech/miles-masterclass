@@ -33,6 +33,25 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     Types and `parseHomePage` unchanged.
   - The home-redesign stack (#69 → #77) carries the same read in `core/services/masterclass-home-facade/`;
     #69 must take the route and parameter when it is rebased onto this fix.
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign PR4 (`prompts/home-redesign.md`): the pricing card and the
+  app-download redesign. DONE, UNCOMMITTED, on branch `feat/MIL-XXX-home-pricing-app-download` (stacked
+  on PR3's branch; rename once the ticket exists).** No refactor phase moved.
+  - New `features/home/components/home-pricing/` (presentational, `price` input unbound — the figure block
+    waits for the plan-price source; story in three states) + `models/home-sections.model.ts` +
+    `testing/mocks/home.mock.ts`; `shared/components/app-download` redesigned in place (`uae-caira`
+    inherits, wrapped in its gutter); three `@theme` animation tokens; `app-download.ts` left
+    `LEGACY_ANY_FILES`; the plan-benefits section and `goToPlan` are gone from home.
+  - Gates (local macOS, Node 24.15, **not CI**): `verify.mjs` full run **7/7 GREEN** (Storybook built the new
+    story), lint 0 errors (109 legacy warnings) + structure check, tsc, `build:prod` 243.18 kB initial.
+    Browser on the UAT build: both sections at 375 / 768 / 1440, no overflow; placeholders re-measured.
+  - Next: PR5 (live-webinar ticket, presentational + story, section absent until its endpoint exists).
+
+- 🔧 **2026-10-07, NON-REFACTOR — Jira ticket drafted (chat only) for the masterclass card "More info"
+  button and course-info dialog: step PR3 "about-course" of `prompts/masterclass-tracks-rebind.md` (MIL-23).
+  No source changed; no refactor phase moved.** Next: once the ticket number exists, write
+  `prompts/masterclass-course-info.md` for approval before building. Assumptions to confirm: the shared card
+  also shows the button on the home rails, no Figma yet, and `about-course` is not yet checked on production.
+
 - 🔧 **2026-10-07, NON-REFACTOR — home redesign PR3 (`prompts/home-redesign.md`): the CAIRA hero and the
   scrolling course grid. DONE, UNCOMMITTED, on branch `feat/MIL-XXX-home-hero-grid` (stacked on PR2's
   branch; rename once the ticket exists).** No refactor phase moved.

@@ -425,3 +425,31 @@ fully visible cards per phone column, and `vw` geometry) and one small addition 
   stops the loop in CSS (ported rule); not exercised in the pane.
 - SSR and Lighthouse: the table above.
 - Not done here: the in-pane scroll checks (the pane was hidden or zero-width during most runs).
+
+### PR4 — 2026-10-07 (uncommitted, branch `feat/MIL-XXX-home-pricing-app-download`, stacked on PR3)
+
+**Built as planned (D6, D8, D9):**
+
+- New `components/home-pricing/` (presentational; `price: HomePrice | null`, unbound on the page so the
+  figure block stays hidden; the copy, the spinning halo, the app icon, "Subscribe Now" → `payment/plan`
+  and "Talk to us" → `connect-us` as `<a routerLink>`; the webinar line is plain text until PR5 adds the
+  section) with `models/home-sections.model.ts` (`HomePrice`, `HomePriceOption`), a story in three states
+  (no price, monthly + yearly, discounted yearly) fed by `testing/mocks/home.mock.ts`.
+- `shared/components/app-download` redesigned in place (phone render, QR on desktop only, store badges
+  from `core/constants/app-store.ts`, the animated download mark as inline SVG); its `getIcon(): any` is
+  gone, so the file left `LEGACY_ANY_FILES` (lint warnings 110 → 109). `uae-caira` wraps it in the page's
+  `w-11/12` gutter and otherwise inherits the new look.
+- Three `@theme` animation tokens in `styles.css` (`--animate-home-pricing-glow`,
+  `--animate-download-arrow-in`, `--animate-download-ring-draw`) with keyframes in `animation.css`; no
+  component CSS, so no baseline entry.
+- `home.{ts,html}`: the `app-plan-benefits` section, its eight pointers, `goToPlan` and the `Router` are
+  gone; `#plan` renders the card behind `hydrate on viewport`; both placeholders re-measured on the PR4
+  build (pricing 973 / 742 / 464 px, app download 643 / 620 / 592 px at 375 / 768 / 1440).
+- Gates (local macOS, Node 24.15, **not CI**): `verify.mjs` full run **7/7 GREEN** (Storybook built the
+  new story; bundle 244.6 KB gzip, the stale-baseline warning; SSR smoke no drift); `pnpm lint` 0 errors /
+  109 warnings, structure check passed; `tsc` clean; `pnpm build:prod` initial 243.18 kB transfer (+0.4 kB
+  for the three tokens in the initial stylesheet; +0.65 kB over the pre-series 242.53).
+- Browser (UAT-pointed optimized build on 4003): pricing card and app download render as designed at
+  375 / 768 / 1440 with no horizontal overflow; the figure block is hidden; the halo and ring animations
+  run; store links and both router links resolve; `/ae/accounting/home` shows the new section inside its
+  gutter.
