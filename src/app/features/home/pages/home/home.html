@@ -145,12 +145,13 @@
        component (and the gsap it imports) until the section nears the viewport,
        so gsap is no longer fetched on every page load. The placeholder only
        shows on client-side navigation: the section's measured height at
-       375 / 768 / 1440. -->
+       375 / 768 / 1440 (one card tall from md, the carousel and its dots
+       below). -->
   <section id="caira-levels" class="container mx-auto scroll-mt-20">
     @defer (on viewport; prefetch on idle; hydrate on viewport) {
       <app-caira-level-stack />
     } @placeholder {
-      <div class="h-[1115px] md:h-[1312px] lg:h-[1450px]"></div>
+      <div class="h-[539px] md:h-[351px] lg:h-[336px]"></div>
     }
   </section>
 
@@ -172,7 +173,7 @@
        shift on a server-rendered load); the placeholder only shows on client-side
        navigation, sized to the redesigned section's measured height
        (643 / 620 / 592 px at 375 / 768 / 1440). -->
-  <section id="app-download" class="w-11/12 mx-auto scroll-mt-20">
+  <section id="app-download" class="container mx-auto scroll-mt-20">
     @defer (on viewport; prefetch on idle; hydrate on viewport) {
       <app-app-download />
     } @placeholder {
