@@ -23,6 +23,30 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     `tracks-page/?…&tracks.page_size=100&tracks.courses.page_size=100` → 200. Awaiting the commit, the ref move
     onto `feat/MIL-29-home-sections` and the force-push. Because each merged branch is rewritten before its
     squash, the later rebases use the OLD tip SHA as upstream (#70: `179c6d7`, #71: `2eadb8a`, …).
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign follow-up F4 (`prompts/home-redesign.md`): fonts self-hosted.
+  DONE, UNCOMMITTED, on branch `perf/MIL-XXX-self-host-fonts` (stacked on F8's branch; rename once the
+  ticket exists).** No refactor phase moved.
+  - Four `@fontsource-variable` dependencies (OFL); new global `src/styles/fonts.css` (latin + latin-ext,
+    the weight ranges Google served, `Inter Fallback` with Inter's metrics) registered in angular.json;
+    `--font-sans` / `--font-numeric` list the fallback; the Google Fonts link and its preconnects are gone
+    from `index.html`. Arabic still loads Noto Sans Arabic from Google at runtime.
+  - Measured (UAT builds, Lighthouse vs F8): desktop observed FCP 1.1–1.2 s → 0.43–0.55 s, perf 74–76 → 78,
+    Google font requests 1 → 0; initial 243.78 kB.
+  - Gates (local macOS, Node 24.15, **not CI**): lint 0 errors (109 legacy warnings) + structure check,
+    `build:prod` green with eight hashed woff2 files; `verify.mjs` full run **7/7 GREEN** (Storybook included).
+
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign follow-up F8 (`prompts/home-redesign.md`): Carousel
+  pre-Swiper flood and layout shifts. DONE, UNCOMMITTED, on branch `perf/MIL-XXX-carousel-init-flood`
+  (stacked on PR5's branch; rename once the ticket exists).** No refactor phase moved.
+  - `shared/components/carousel`: the Swiper import starts when the rail renders; slides render only once
+    `swiper/element` is registered; the skeleton stays in flow until `initialize()`; one shared skeleton
+    template; the root `div` is `block` (was `inline` since the baseline). `home.html`: placeholders carry the
+    rail's bottom margin as padding, and the two wrappers use flex `gap` instead of `space-y` (v4's margin
+    on all-but-last children shifts the first rail 80px while the HTML streams).
+  - Measured (UAT builds, Lighthouse): home mobile first-rail thumbnails 9 / 3.9 MB → 3 / 0.5 MB, images
+    4.4 → 1.0 MB; desktop CLS 0.024 → 0.001; rail height unchanged for all eight consumers.
+  - Gates (local macOS, Node 24.15, **not CI**): `verify.mjs` **7/7 GREEN** before the final `gap` edit;
+    lint, UAT build and `build:prod` (243.30 kB initial) after it.
 
 - 🔧 **2026-10-07, NON-REFACTOR — masterclass tracks read moved to `web-api/v1/masterclass/tracks-page/`
   (`prompts/masterclass-tracks-rebind.md`, contract change of 2026-10-07). DONE, MERGED as #78 from
