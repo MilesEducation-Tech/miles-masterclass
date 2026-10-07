@@ -23,6 +23,7 @@
           [alt]="c.title"
           class="object-cover w-full h-full group-hover/card:scale-105 transition-transform duration-300 relative z-0"
           fill
+          [priority]="priority()"
           draggable="false"
         />
       }
@@ -75,6 +76,7 @@
             [alt]="c.title"
             class="object-cover w-full h-full group-hover/card:scale-105 transition-transform duration-300 relative z-0"
             fill
+            [priority]="priority()"
             draggable="false"
           />
         }

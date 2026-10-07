@@ -32,6 +32,12 @@ export class MasterclassCourseCard {
   readonly course = input.required<MasterclassCourse>();
   readonly layout = input<MasterclassCardLayout>('vertical');
 
+  /**
+   * Image priority (`fetchpriority="high"`, eager): for the few cards that are
+   * in the first viewport, where one of them is the LCP element. Off by default.
+   */
+  readonly priority = input(false);
+
   readonly trailer = output<MasterclassCourse>();
 
   protected readonly icons = { faSolidPlay };

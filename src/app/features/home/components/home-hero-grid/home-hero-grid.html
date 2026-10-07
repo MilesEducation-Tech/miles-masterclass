@@ -1,0 +1,37 @@
+<!-- Each column is placed and rotated exactly as in the design (maths in
+     home-hero-grid.css); inside it, the card strip slides up along the
+     column's own tilted axis. -->
+@for (column of columns; track $index; let i = $index) {
+  <div
+    class="column"
+    [class.max-md:hidden]="column.desktopOnly"
+    [style.--x]="column.x"
+    [style.--y]="column.y"
+    [style.--i]="i - 1"
+  >
+    <div class="strip" [style.animation-duration]="duration">
+      @for (src of column.cards; track $index; let j = $index) {
+        <div class="card">
+          <!-- Loading tiers. The columns a phone shows get their four on-screen
+               cards eagerly, and the two fully inside the clip at high priority:
+               on phones one of them is the LCP element, and at low priority it
+               queued behind 2 MB of scripts (Lighthouse mobile LCP 14–16 s).
+               Everything else is lazy and low. The hidden column is lazy
+               throughout: `max-md:hidden` is display:none, and an eager <img> in
+               a hidden column still downloads. -->
+          <img
+            [src]="src"
+            alt=""
+            width="480"
+            height="270"
+            [loading]="column.desktopOnly || j >= eagerPerColumn ? 'lazy' : 'eager'"
+            decoding="async"
+            [attr.fetchpriority]="!column.desktopOnly && (j === 1 || j === 2) ? 'high' : 'low'"
+            draggable="false"
+            class="absolute inset-0 size-full object-cover"
+          />
+        </div>
+      }
+    </div>
+  </div>
+}

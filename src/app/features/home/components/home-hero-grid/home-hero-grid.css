@@ -1,0 +1,78 @@
+/*
+ * Geometry straight from Figma 2175:21140 (a 1726px-wide frame). `--s` turns
+ * one design px into viewport width, so the grid scales with the hero, which
+ * spans the viewport. Viewport units, not container units, on purpose: a
+ * classic scrollbar appearing while the HTML streams in narrows the box by
+ * 15px but not `vw`, and with container units that moved every column after
+ * first paint (Lighthouse desktop CLS 0.05, 0.02 with scrollbars hidden). The
+ * 1% overshoot on scrollbar platforms is clipped by the host.
+ * Below md the old export sat at left 8% and 125% wide (vs 27.9% / 72.1%),
+ * i.e. 1.734× bigger and shifted left — same numbers here.
+ */
+:host {
+  --s: calc(100vw / 1726);
+  --ox: 0px;
+  /* Space between cards and between columns, in design px (Figma has 4.73
+     and ~1; opened up per review). */
+  --gap: 16;
+}
+
+@media (width < 48rem) {
+  :host {
+    --s: calc(100vw * 1.734 / 1726);
+    --ox: calc(8vw - 482 * var(--s));
+  }
+}
+
+/* md–lg: at the design scale a 768px hero draws 180px cards, too small to read
+   as artwork beside the copy. 1.3× keeps them card-sized; the offset parks the
+   grid's left edge at 20% so it still covers the right of the hero and bleeds
+   off its right edge like the desktop export. */
+@media (48rem <= width < 80rem) {
+  :host {
+    --s: calc(100vw * 1.3 / 1726);
+    --ox: calc(20vw - 482 * var(--s));
+  }
+}
+
+/* A 406.87-wide strip rotated 11.7° clockwise about its top-left corner,
+   as Figma places it. The strip runs far past the hero; the host clips
+   everything outside. `--i` counts columns from the first right-hand one:
+   each step shifts it sideways by --gap / cos(11.7°), which opens exactly
+   --gap across the tilted columns. */
+.column {
+  position: absolute;
+  left: calc(var(--ox) + (var(--x) + var(--i) * var(--gap) / cos(11.7deg)) * var(--s));
+  top: calc(var(--y) * var(--s));
+  width: calc(406.87 * var(--s));
+  transform-origin: 0 0;
+  rotate: 11.7deg;
+}
+
+/* Spacing is per-card padding, not `gap`, so the two copies are exactly equal
+   halves and the -50% loop has no seam. */
+.card {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  margin-bottom: calc(var(--gap) * var(--s));
+  overflow: hidden;
+  border-radius: calc(4.73 * var(--s));
+  background: rgb(255 255 255 / 0.05);
+}
+
+.strip {
+  animation: hero-grid-up linear infinite;
+  will-change: transform;
+}
+
+@keyframes hero-grid-up {
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .strip {
+    animation: none;
+  }
+}

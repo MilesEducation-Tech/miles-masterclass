@@ -33,6 +33,22 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     Types and `parseHomePage` unchanged.
   - The home-redesign stack (#69 → #77) carries the same read in `core/services/masterclass-home-facade/`;
     #69 must take the route and parameter when it is rebased onto this fix.
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign PR3 (`prompts/home-redesign.md`): the CAIRA hero and the
+  scrolling course grid. DONE, UNCOMMITTED, on branch `feat/MIL-XXX-home-hero-grid` (stacked on PR2's
+  branch; rename once the ticket exists).** No refactor phase moved.
+  - New `features/home/components/home-hero-grid/` (plain `<img>`, 64 cards, `vw` geometry, tiered
+    `fetchpriority`; CSS file with a `structure-baseline.json` entry — yours to review) and
+    `constants/home-assets.ts`; `home-hero` rewritten (logo `priority`, one `<h1>`, `<a>` CTAs to `ai-labs`
+    and `caira`); `MasterclassCourseCard` gains a `priority` input, set on the first rail's first three cards.
+  - Gates (local macOS, Node 24.15, **not CI**): lint 0 errors (110 legacy warnings) + structure check, tsc,
+    `build:prod` 242.79 kB initial, the two known CSS budget warnings; `verify.mjs` full run **7/7 GREEN**
+    (bundle 243.9 KB gzip, stale-baseline warning; SSR smoke no drift). Lighthouse (UAT builds, interleaved vs
+    PR2): desktop total 8.1 → 4.1 MB, SI 2.7 → 1.6 s, CLS 0.015 → 0.024 (the grid's scrollbar shift of 0.05
+    fixed with `vw`; the rest is the Carousel's own skeleton), LCP 3.0 → 4.1 s because the LCP is now a
+    716 KB first-rail original; mobile SI 9.9 → 7.9 s, CLS 0.008–0.010, LCP element a 30 KB grid card.
+  - **Follow-ups filed:** F8 Carousel (pre-init slide flood: 15 thumbnails for 1.1 visible slides on phones;
+    `inline` root), F9 `scrollbar-gutter: stable`; the course-thumbnail sizing ask stands.
+
 - 🔧 **2026-10-06, NON-REFACTOR — home redesign PR2 (`prompts/home-redesign.md`): the home sections rebuilt on
   the `home-page/` tracks. DONE, UNCOMMITTED, on branch `feat/MIL-XXX-home-sections` (stacked on PR1's
   branch; rename once the ticket exists).** No refactor phase moved.
