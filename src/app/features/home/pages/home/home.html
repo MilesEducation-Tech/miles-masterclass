@@ -120,15 +120,23 @@
   <section id="model-carousel" class="scroll-mt-20">
     <!-- `on viewport` is load-bearing, not a nicety: it is what keeps the
          three.js chunk out of the first paint. The placeholder holds the ring's
-         own height — header + 4:3 stage + controls in flow on phones; the stage
-         alone (4:3, 16:9 from lg, capped at 88vh) from md, where the header and
-         controls overlay it — so nothing below reflows when the ring arrives. -->
+         own height so nothing below reflows when it arrives; the convex shape
+         is the design's (Figma 2175:26040). -->
     @defer (on viewport; prefetch on idle) {
-      <app-surround-carousel />
+      <app-surround-carousel shape="convex" />
     } @placeholder {
-      <div
-        class="w-full animate-pulse bg-white/5 h-[515px] md:h-auto md:aspect-4/3 md:max-h-[88vh] lg:aspect-video"
-      ></div>
+      <!-- The stage (header + row + controls in flow on phones; 4:3 / 16:9 / 2:1
+           from md, where they overlay it) plus the proof-point cards below it,
+           at their measured heights (444 + 566 / 576 + 298 / 720 + 183 px at
+           375 / 768 / 1440, rendered with the convex ring). -->
+      <div class="w-full animate-pulse">
+        <div
+          class="bg-white/5 h-[444px] md:h-auto md:aspect-4/3 md:max-h-[88vh] lg:aspect-video xl:aspect-2/1"
+        ></div>
+        <div
+          class="mx-auto mt-10 h-[566px] w-11/12 max-w-6xl rounded-2xl bg-white/5 md:h-[298px] lg:h-[230px] xl:h-[183px]"
+        ></div>
+      </div>
     }
   </section>
 

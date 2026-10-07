@@ -17,19 +17,25 @@ import {
   CanvasTexture,
   Group,
   Mesh,
+  NoColorSpace,
   OrthographicCamera,
   PerspectiveCamera,
   PlaneGeometry,
   Raycaster,
   Scene,
   ShaderMaterial,
-  SRGBColorSpace,
   Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three';
 
 import type { CarouselCard } from './surround-carousel';
+
+/**
+ * How the drum is seen. The panels always sit on a cylinder; the shape is
+ * where the camera sits and which way the panels face — see `SHAPES`.
+ */
+export type RingShape = 'concave' | 'convex' | 'flat';
 
 export interface SurroundEngineHooks {
   /** 0…1 around the ring. Throttled — see `PROGRESS_EPSILON`. */
@@ -88,25 +94,85 @@ const GUTTER = 0.18;
 const CURVE_SEGMENTS = 40;
 
 /**
- * Panels the ring aims for, which is really a choice about the angle between
- * neighbours: 2π/20 is 18°, and 18° is what makes a neighbour read as *beside*
- * the centred card rather than folded away from it. At 10 panels (36°) the
- * sides foreshorten so hard that the ring looks like three loose cards.
- *
- * Short lists are repeated to reach it — cheap, because repeated panels share
- * their card's texture. At 20 slots a five-card list repeats every 90°, well
- * outside the ~±55° the camera ever sees.
+ * Panels the ring aims for, per shape, which is really the angle between
+ * neighbours — see `SHAPES`. Short lists are repeated to reach it: cheap,
+ * because repeated panels share their card's texture. `panelCountFor` rounds
+ * to a whole number of repeats, so six cards give 12 slots for a target of 12
+ * (repeating every 180°, outside the ~±70° the concave camera sees) and 18
+ * for a target of 16. A four-card list on 12 slots would show the same card
+ * cut at both edges; the rail carries six today.
  */
-const TARGET_PANELS = 20;
 
-/** Ceiling on meshes and draw calls for a decorative rail. */
-const MAX_PANELS = 26;
+/**
+ * Ceiling on meshes and draw calls for a decorative rail. Must stay ≥ every
+ * shape's panel target rounded up to a whole number of card repeats (8 cards ×
+ * 5 = 40), or the cap lands mid-repeat and the `slot % cards.length` seam
+ * shows.
+ */
+const MAX_PANELS = 40;
 
-const FOV = 38;
+/**
+ * Fraction of the viewport width the frontmost card should span, per
+ * breakpoint. The camera sits at a fixed point on the axis, so this is solved
+ * as a field of view, not a distance — see `resize()`. Smaller is farther. The
+ * desktop value balances the C (the ring's ends curling in from both edges)
+ * against the band's height: with the header and controls overlaid on a 2:1
+ * stage, 0.24 leaves the ring roughly a hundred pixels clear of each.
+ */
+const FILL_DESKTOP = 0.24;
+const FILL_TABLET = 0.38;
 
-/** Fraction of the viewport width the frontmost card should span, per breakpoint. */
-const FILL_DESKTOP = 0.34;
-const FILL_TABLET = 0.52;
+/**
+ * Floor on the front card's rendered width, in CSS px. A fixed share of the
+ * viewport is right for the composition but wrong for legibility: 20% of a
+ * 1024px window is a 205px card whose title bar cannot be read. Below this the
+ * fill is raised to hold the card at this width — fewer cards across, not
+ * smaller ones.
+ */
+const MIN_CARD_PX = 260;
+
+/**
+ * Per shape: where the camera sits on the ring's axis (`cameraZ`, a multiple
+ * of the radius along +Z — the front panel is at +R) and how many panels the
+ * ring aims for (`targetPanels`, i.e. the angle between neighbours; through
+ * the radius, also how hard each panel is bent).
+ *
+ * - `concave`: inside the drum, against the far wall (−1R). The front card is
+ *   2R away and each card toward the sides is nearer and seen more obliquely,
+ *   so the wall is a real C in perspective — the side cards' outer edges stand
+ *   taller than their inner ones and the ends curl toward the viewer. 12
+ *   slots (30° apart, 28° of arc each) put five cards across the desktop
+ *   stage, the outer pair cut by the edge; from the far wall the 60° card is
+ *   13% nearer than the front one and its outer edge a third taller.
+ * - `flat`: the ring is unrolled onto the plane z = R — each slot's arc length
+ *   becomes a straight offset — and the camera sits three radii in front of
+ *   it (−2R), so the cards stand side by side at one size, square to the lens:
+ *   the flat design. (Sitting at the centre of the drum does NOT read flat:
+ *   the planar projection stretches the off-axis cards into a fisheye.) The
+ *   slot count only sets the wrap seam, far off-screen.
+ * - `convex`: outside the drum, with the panels turned to face outward. The
+ *   front card is nearest and the sides fall away round the curve. Seen from
+ *   close up a 12-slot drum fills only the middle of the stage — the visible
+ *   half holds six cards that shrink to nothing at the silhouette — so this
+ *   one uses a finer ring (16 → 18 slots for six cards, 20° apart) seen from
+ *   seven radii in front of the front panel (+8R): near-orthographic, the
+ *   sides compress gradually and the drum spans the stage edge to edge like
+ *   the concave ring does.
+ */
+const SHAPES: Record<RingShape, { cameraZ: number; targetPanels: number }> = {
+  concave: { cameraZ: -1, targetPanels: 12 },
+  flat: { cameraZ: -2, targetPanels: 12 },
+  convex: { cameraZ: 8, targetPanels: 16 },
+};
+
+/**
+ * Vertical offset of the ring as a fraction of the stage height, positive up.
+ * The header overlays the stage's top (~150px) and the controls its bottom
+ * (~76px), so the band they leave free is centred a little BELOW the stage's
+ * centre; this nudges the ring down to meet it. Applied through
+ * `setViewOffset`, so the projection is untouched.
+ */
+const BAND_LIFT = -0.06;
 const TABLET_MAX_WIDTH = 1024;
 
 // ---------------------------------------------------------------------------
@@ -216,10 +282,12 @@ const FONT_STACK =
 
 /**
  * A cylindrical gallery. N panels sit on the wall of a cylinder of radius R;
- * the camera looks down the axis from just outside it, so the panel at angle 0
- * faces the lens square-on and its neighbours swing away. Each panel is bent
- * onto that same cylinder, which is what a DOM carousel cannot do and the
- * reason this is WebGL at all.
+ * where the camera sits on its axis and which way the panels face is the
+ * `RingShape` (`SHAPES`). Concave by default: the camera is against the far
+ * wall looking across the drum, so the panel at angle 0 is the farthest and
+ * squarest and each neighbour is nearer and more oblique — a C in true
+ * perspective. Each panel is bent onto that same cylinder, which is what a
+ * DOM carousel cannot do and the reason this is WebGL at all.
  *
  * Behind the ring, a second full-screen pass draws the dot field and lights the
  * dots nearest the cursor.
@@ -285,6 +353,7 @@ export class SurroundEngine {
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly hooks: SurroundEngineHooks,
+    private readonly shape: RingShape = 'concave',
   ) {
     this.palette = readPalette(canvas);
 
@@ -300,7 +369,10 @@ export class SurroundEngine {
     // Two passes share the frame, so clearing is ours to schedule.
     this.renderer.autoClear = false;
 
-    this.camera = new PerspectiveCamera(FOV, 1, 0.1, 100);
+    // The fov is a placeholder: `resize()` owns it and solves it from the card
+    // size. The far plane covers the convex seat (`SHAPES`): eight radii out,
+    // and the radius grows with the card count.
+    this.camera = new PerspectiveCamera(50, 1, 0.1, 1000);
     this.scene.add(this.ring);
 
     this.backdropMaterial = createBackdropMaterial(this.palette.highlight);
@@ -347,13 +419,16 @@ export class SurroundEngine {
     this.cards = cards;
     this.teardownRing();
 
-    const panelCount = panelCountFor(cards.length);
+    const panelCount = panelCountFor(cards.length, SHAPES[this.shape].targetPanels);
     this.angleStep = (2 * Math.PI) / panelCount;
     // Derived rather than fixed so the gap between panels is identical whether
     // the ring carries 8 or 26 of them.
     this.radius = (panelCount * (CARD_W + GUTTER)) / (2 * Math.PI);
 
-    this.geometry = curvedPanel(CARD_W, CARD_H, this.radius);
+    // Convex panels face outward, so their bend has to go the other way to
+    // stay on the drum's wall; flat ones are not bent at all.
+    const bulge = this.shape === 'convex' ? -1 : this.shape === 'flat' ? 0 : 1;
+    this.geometry = curvedPanel(CARD_W, CARD_H, this.radius, bulge);
 
     // One texture per card. Repeated panels reference the same one — the whole
     // point of repeating a short list rather than paginating for more rows.
@@ -507,15 +582,42 @@ export class SurroundEngine {
   private layout(): void {
     for (const mesh of this.meshes) {
       const angle = this.rotation + (mesh.userData['slot'] as number) * this.angleStep;
-      mesh.position.set(this.radius * Math.sin(angle), 0, this.radius * Math.cos(angle));
-      mesh.rotation.y = angle;
+      // Signed offset from the front, in (-π, π]. The yaw below MUST use this
+      // and not `angle`: slots run 0…2π, so the card just left of the front is
+      // at ~350°, and scaling that by anything but a whole number would spin it
+      // into the wall.
+      const swing = shortestAngle(angle);
+
+      const x = this.radius * Math.sin(angle);
+      const z = this.radius * Math.cos(angle);
+      if (this.shape === 'flat') {
+        // Unrolled: `swing` (not `angle`, so the seam stays off-screen at ±π)
+        // times R is the arc length, laid out straight along x at one depth.
+        // Same mirrored x as the concave case; `π` turns the face to the lens.
+        mesh.position.set(-swing * this.radius, 0, this.radius);
+        mesh.rotation.y = Math.PI;
+      } else if (this.shape === 'convex') {
+        // Seen from outside, looking down −Z, the camera's right is world +X.
+        // `angle` points the panel's local +Z away from the axis — its front
+        // face (the only one drawn) faces out, texture reading left-to-right.
+        mesh.position.set(x, 0, z);
+        mesh.rotation.y = angle;
+      } else {
+        // Mirrored x: from inside the drum the camera's right is world -X, so
+        // negating here keeps "+angle = screen-right" and every input sign as
+        // it was. `π - angle` points local +Z at the axis — a true cylinder;
+        // where the camera sits on that axis (`SHAPES`) is what decides
+        // whether it reads concave or flat.
+        mesh.position.set(-x, 0, z);
+        mesh.rotation.y = Math.PI - angle;
+      }
 
       // `uFade` is 0 for the card facing the lens and 1 for the one directly
       // behind the camera, so the shader can recede the sides without us
-      // sorting or culling anything. Curved rather than linear: at an 18° step
-      // the first neighbour is only a tenth of the way round, and a linear
+      // sorting or culling anything. Curved rather than linear: at a 15° step
+      // the first neighbour is only a twelfth of the way round, and a linear
       // ramp leaves it indistinguishable from the frontmost card.
-      const off = Math.pow(Math.abs(shortestAngle(angle)) / Math.PI, 0.75);
+      const off = Math.pow(Math.abs(swing) / Math.PI, 0.75);
       (mesh.material as ShaderMaterial).uniforms['uFade'].value = off;
     }
 
@@ -549,10 +651,10 @@ export class SurroundEngine {
   };
 
   /**
-   * Camera distance is solved from the card size rather than hard-coded, so the
-   * frontmost card keeps its share of the viewport at any window width — the
-   * one thing that otherwise breaks the composition on a half-width desktop
-   * window.
+   * The camera sits on the drum's axis, so what keeps the frontmost card at its
+   * share of the viewport is the field of view, not a distance. It is solved
+   * from the card size rather than hard-coded so the composition survives a
+   * half-width desktop window.
    */
   private resize(): void {
     const parent = this.canvas.parentElement;
@@ -567,14 +669,36 @@ export class SurroundEngine {
     this.renderer.setSize(width, height, false);
 
     const aspect = width / height;
-    const fill = width < TABLET_MAX_WIDTH ? FILL_TABLET : FILL_DESKTOP;
-    const halfFov = (FOV * Math.PI) / 360;
-    const distance = CARD_W / (2 * Math.tan(halfFov) * aspect * fill);
+    // Decided by the same media query Tailwind's `lg:` uses, not by the stage's
+    // own width: the stage is the viewport minus a scrollbar, so comparing it
+    // to 1024 put a 1024–1039px window on the tablet fill (big cards) while the
+    // template had already switched to the short desktop stage, and the band
+    // ran into the controls.
+    const fillForWidth = window.matchMedia(`(min-width: ${TABLET_MAX_WIDTH}px)`).matches
+      ? FILL_DESKTOP
+      : FILL_TABLET;
+    const fill = Math.max(fillForWidth, MIN_CARD_PX / width);
+    // The front card's edge sits at `halfArc` radians round the ring from its
+    // centre, i.e. at (R·sin, R·cos), and the camera at (0, cameraZ·R). Solve
+    // the vertical FOV that makes that edge land at `fill` of the viewport
+    // width — exact, not the small-angle shortcut.
+    const camZ = SHAPES[this.shape].cameraZ;
+    const halfArc = CARD_W / (2 * this.radius);
+    const halfTan =
+      this.shape === 'flat'
+        ? // Unrolled row: the edge is simply CARD_W/2 across at depth (1 − camZ)·R.
+          CARD_W / 2 / (this.radius * (1 - camZ)) / fill
+        : Math.sin(halfArc) / Math.abs(Math.cos(halfArc) - camZ) / fill;
 
     this.camera.aspect = aspect;
-    this.camera.position.set(0, 0, this.radius + distance);
-    this.camera.lookAt(0, 0, 0);
-    this.camera.updateProjectionMatrix();
+    this.camera.fov = (360 / Math.PI) * Math.atan(halfTan / aspect);
+    this.camera.position.set(0, 0, camZ * this.radius);
+    // Face the front panel: +Z from inside the drum, −Z from outside it.
+    this.camera.lookAt(0, 0, this.shape === 'convex' ? 0 : this.radius);
+    // Render the lower part of a frame that is BAND_LIFT taller, which moves
+    // everything up the stage by that much. `setViewOffset` refreshes the
+    // projection matrix itself.
+    this.camera.setViewOffset(width, height, 0, height * BAND_LIFT, width, height);
 
     const uniforms = this.backdropMaterial.uniforms;
     (uniforms['uResolution'].value as Vector2).set(width, height);
@@ -707,7 +831,15 @@ export class SurroundEngine {
     drawCardChrome(canvas, card, null, this.palette);
 
     const texture = new CanvasTexture(canvas);
-    texture.colorSpace = SRGBColorSpace;
+    // Deliberately NOT `SRGBColorSpace`. Tagging the texture sRGB makes three
+    // upload it as SRGB8_ALPHA8, so `texture2D` in the panel shader returns
+    // *linear* light — and that shader is a raw ShaderMaterial with no
+    // `#include <colorspace_fragment>` to re-encode on the way out. The result
+    // was linear values painted onto an sRGB canvas: dark midtones, crushed
+    // contrast, oversaturated artwork (a flat 128 grey rendered as 54). The
+    // panel is an unlit passthrough, so the bytes go straight through, same as
+    // the backdrop's raw colour uniform.
+    texture.colorSpace = NoColorSpace;
     texture.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
     return texture;
   }
@@ -809,19 +941,26 @@ function toRgbTriple(colour: string): Vector3 {
  * panel's width exact rather than chord-shortened, so neighbouring panels stay
  * evenly gapped however tight the ring gets.
  *
- * The bend CUPS the viewer: local +Z faces the camera, and the edges are pushed
- * toward it, so each card's corners come forward while its middle sits back.
- * Negate this term to bow the cards the other way — that one sign is the whole
- * difference between the two readings of the curve.
+ * `layout()` points local +Z at the drum's axis (or, convex, away from it), so
+ * `bulge` pushes the edges along ±Z toward the axis either way — every vertex
+ * ends up exactly `radius` from it, on the wall of the drum. That is what
+ * makes the ring read as one continuous surface rather than a fan of flat
+ * cards. `0` leaves the plane flat for the unrolled row.
  */
-function curvedPanel(width: number, height: number, radius: number): PlaneGeometry {
+function curvedPanel(
+  width: number,
+  height: number,
+  radius: number,
+  bulge: 1 | -1 | 0,
+): PlaneGeometry {
   const geometry = new PlaneGeometry(width, height, CURVE_SEGMENTS, 1);
+  if (bulge === 0) return geometry;
   const position = geometry.attributes['position'];
 
   for (let i = 0; i < position.count; i++) {
     const angle = position.getX(i) / radius;
     position.setX(i, radius * Math.sin(angle));
-    position.setZ(i, radius - radius * Math.cos(angle));
+    position.setZ(i, bulge * (radius - radius * Math.cos(angle)));
   }
 
   position.needsUpdate = true;
@@ -846,8 +985,8 @@ function wrap01(value: number): number {
  * Repeating is cheaper and more honest than paginating for rows marketing did
  * not rank, and costs no extra texture memory.
  */
-function panelCountFor(cardCount: number): number {
-  const repeats = Math.max(1, Math.round(TARGET_PANELS / cardCount));
+function panelCountFor(cardCount: number, target: number): number {
+  const repeats = Math.max(1, Math.round(target / cardCount));
   return Math.min(cardCount * repeats, MAX_PANELS);
 }
 
