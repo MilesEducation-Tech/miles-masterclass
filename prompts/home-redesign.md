@@ -1,8 +1,10 @@
 # Home page redesign: v3 design on this repo's structure and the `home-page/` API
 
-Status: **approved 2026-10-06 (Claude Code plan mode). PR1–PR4 committed; PR5 (webinar ticket) implemented,
-UNCOMMITTED. The series is complete once PR5 lands; F1–F9 and the backend asks remain.** This file is the plan as approved, kept as the repo's implementation
-prompt; the per-PR reports are appended under "Reports" at the end.
+Status: **approved 2026-10-06 (Claude Code plan mode). PR1–PR5, F8, F4, F1 and F2 are committed on stacked
+branches (MIL-27, MIL-29–35; F2's ticket pending); the PRs are opened per `docs/home-redesign-delivery.md`.
+F3, F5, F6, F7, F9 and the backend asks remain.** This file is the plan as approved, kept as the repo's
+implementation prompt; the per-PR reports are appended under "Reports" at the end. The filled Jira tickets,
+the PR / merge guide and the ready-to-run PR blocks for every branch are in `docs/home-redesign-delivery.md`.
 
 ## Context
 

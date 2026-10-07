@@ -23,6 +23,13 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     `tracks-page/?…&tracks.page_size=100&tracks.courses.page_size=100` → 200. Awaiting the commit, the ref move
     onto `feat/MIL-29-home-sections` and the force-push. Because each merged branch is rewritten before its
     squash, the later rebases use the OLD tip SHA as upstream (#70: `179c6d7`, #71: `2eadb8a`, …).
+- 📝 **2026-10-07, NON-REFACTOR — home redesign delivery doc (`docs/home-redesign-delivery.md`): the filled
+  Jira tickets for the parent and all nine branches (PR1–PR5, F8, F4, F1, F2 — MIL-27, MIL-29–35, F2 pending),
+  the backend asks, the stacked-PR guide (Flow E rebase after each squash merge, UAT sign-off for PR2–PR4) and
+  the ready-to-run `gh pr create` blocks. The combined F1 + F2 commit was split (Recipe 5): the ring commit on
+  `feat/MIL-35-ai-labs-ring-v3`, the CAIRA stack commit on its own branch stacked on it. Docs only.** No
+  refactor phase moved.
+
 - 🔧 **2026-10-07, NON-REFACTOR — home redesign follow-up F2 (`prompts/home-redesign.md`): the CAIRA stack's
   v3 cross-fade. DONE, UNCOMMITTED (unstaged; F1 is staged on the same tree), for branch
   `feat/MIL-XXX-caira-stack-v3` stacked on F1.** No refactor phase moved.
