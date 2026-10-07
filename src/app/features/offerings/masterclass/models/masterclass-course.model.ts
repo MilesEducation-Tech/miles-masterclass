@@ -20,12 +20,17 @@ import {
   isStrOrNull,
   listOf,
 } from '@features/offerings/masterclass/utils/contract-guards';
-import { MasterclassFieldOfStudy } from '@core/models/masterclass-home.model';
+import { MasterclassCourse, MasterclassFieldOfStudy } from '@core/models/masterclass-home.model';
 
 /** The course route's two params, as the page's inputs carry them. */
 export interface MasterclassCourseRouteParams {
   courseId: string | undefined;
   slug: string | undefined;
+}
+
+/** What the course-info dialog opens with: the card the learner clicked "i" on. */
+export interface MasterclassCourseInfoDialogData {
+  course: MasterclassCourse;
 }
 
 /** One side of login; `course-detail/` requires it and serves a different page for each. */

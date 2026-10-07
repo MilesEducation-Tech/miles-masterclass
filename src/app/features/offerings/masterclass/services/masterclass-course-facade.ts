@@ -44,13 +44,15 @@ const isMissing = (error: unknown): boolean =>
   error instanceof HttpErrorResponse && (error.status === 404 || error.status === 400);
 
 /**
- * State and actions for one masterclass course page (`:courseId/:courseTitle`).
+ * State and actions for one masterclass course: the course page
+ * (`:courseId/:courseTitle`) and the course-info dialog the landing page's
+ * "i" button opens.
  *
- * Route-scoped: listed in the course route's `providers`, so only the course
- * pages share it, and `connect()` points it at the course the router lands on.
- * The page and its components read these signals and call these methods; none
- * of them calls the API. It replaces the shared, legacy
- * `MasterclassFacade` for this page only — podcast and the chapter player still
+ * Never a root service. The course route lists it in `providers`, and the
+ * dialog in its own `providers`, so each has an instance that `connect()`
+ * points at its course. Their templates read these signals and call these
+ * methods; none of them calls the API. It replaces the shared, legacy
+ * `MasterclassFacade` for these two only — podcast and the chapter player still
  * use that one until their own APIs move.
  */
 @Service({ autoProvided: false })
@@ -65,7 +67,7 @@ export class MasterclassCourseFacade {
   private readonly document = inject(DOCUMENT);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  /** The page's route params, as a signal; `null` until `connect()`. */
+  /** The course's id and slug, as a signal; `null` until `connect()`. */
   private readonly params = signal<Signal<MasterclassCourseRouteParams> | null>(null);
 
   /**
@@ -239,7 +241,7 @@ export class MasterclassCourseFacade {
     });
   }
 
-  /** Follow the page's route params; called once, from the page's constructor. */
+  /** Follow a course's id and slug; called once, from the host's constructor. */
   connect(params: Signal<MasterclassCourseRouteParams>): void {
     this.params.set(params);
   }
@@ -260,8 +262,22 @@ export class MasterclassCourseFacade {
     if (course) void this.utils.openVideoDialog(course.sample_video_url, course.name);
   }
 
+  /**
+   * Share the course page. The URL is spelled out because the share dialog
+   * otherwise shares the current page, which from the "i" dialog is the
+   * landing page, not the course.
+   */
   share(): void {
-    void this.utils.openShareDialog();
+    const course = this.course();
+    if (!course) return;
+    const url = `${this.document.location.origin}${this.coursePagePath(course)}`;
+    void this.utils.openShareDialog({ url });
+  }
+
+  /** The course page, from the "i" dialog. */
+  openCoursePage(): void {
+    const course = this.course();
+    if (course) void this.router.navigateByUrl(this.coursePagePath(course));
   }
 
   /**
@@ -275,8 +291,20 @@ export class MasterclassCourseFacade {
     if (!course || !chapter) return;
 
     this.analytics.trackEvent('start_course', { course_id: course.id, course_type: 'masterclass' });
-    const courseUrl = this.router.url.split(/[?#]/)[0];
-    void this.router.navigate([courseUrl, 'chapter', chapter.id, chapter.slug]);
+    void this.router.navigateByUrl(
+      `${this.coursePagePath(course)}/chapter/${chapter.id}/${chapter.slug}`,
+    );
+  }
+
+  /**
+   * The course page's path: the same URL the landing page's cards link to. The
+   * payload carries no slug, so it comes from the connected params (the route's
+   * or the card's), falling back to one made from the name.
+   */
+  private coursePagePath(course: MasterclassCourseDetail): string {
+    const { country, profession } = this.utils.getRouteParams();
+    const slug = this.params()?.().slug || this.utils.slugify(course.name);
+    return `/${country}/${profession}/masterclass/${course.id}/${slug}`;
   }
 
   /**

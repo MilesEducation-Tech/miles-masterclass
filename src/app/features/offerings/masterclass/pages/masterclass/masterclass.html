@@ -32,7 +32,9 @@
               <app-masterclass-course-card
                 [course]="course"
                 [layout]="layout"
+                [showInfo]="true"
                 (trailer)="openTrailer($event)"
+                (info)="openCourseInfo($event)"
               />
             </ng-template>
           </app-carousel>
