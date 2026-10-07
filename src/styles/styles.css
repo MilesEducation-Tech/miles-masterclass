@@ -101,7 +101,7 @@
   --sidebar-accent-foreground: rgb(191, 219, 254);
   --sidebar-border: rgb(64, 64, 64);
   --sidebar-ring: rgb(59, 130, 246);
-  --font-sans: Inter, sans-serif;
+  --font-sans: Inter, 'Inter Fallback', sans-serif;
   /* Quoted deliberately: an unquoted family name whose component starts with a
      digit ("4") is invalid per the CSS custom-ident grammar, so the browser
      dropped the whole declaration and `font-serif` silently inherited Inter. */
@@ -195,7 +195,7 @@
   --mm-yellow: #f2c94c;
   --mm-yellow-bg: rgba(242, 201, 76, 0.16);
 
-  --font-numeric: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  --font-numeric: 'Inter Tight', 'Inter', 'Inter Fallback', system-ui, sans-serif;
 }
 
 @theme inline {
