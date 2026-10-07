@@ -7,8 +7,16 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🔧 **2026-10-07, NON-REFACTOR — `feat/MIL-25-…` rebased onto `origin/master` (65c6e2f). Both commits
-  resolved; after your last continue, the force-push is yours.** No refactor phase moved.
+- 🔧 **2026-10-07, NON-REFACTOR — `feat/MIL-25-…` rebased onto `origin/master` (65c6e2f) as `1d02d65` +
+  `d5a7517`. DONE, BUILD GREEN; the force-push is yours.** No refactor phase moved.
+  - `pnpm build:prod` (local macOS, not CI) is green: only the two known CSS budget warnings
+    (`ai-labs.css`, `briefing-session.css`), initial transfer 243.87 kB. `tsc`, eslint on the branch's
+    files, Prettier and the structure check are clean.
+  - Not re-checked in a browser after the rebase: restart `pnpm run start:dev` and load a course page and
+    `/masterclass`.
+  - After `df515e0` (the docs commit), GitHub Desktop's "Pull origin" began merging the old remote
+    `433dfb0`; you aborted it. `tsc` exits 0 again and no conflict markers remain. The remote branch is
+    still at `433dfb0` until your force-push.
   - Master's #69 moved three things into core and deleted `constants/masterclass.ts`:
     - the home model → `core/models/`
     - `with-previous-value` → `core/utils/`
@@ -3233,7 +3241,9 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
-- 2026-10-07 · NON-REFACTOR · **MIL-25 rebased onto master (65c6e2f)**: both commits resolved (core model and masterclass page kept as master's, constants trimmed to the course endpoints, `withPreviousValue` from core, postman kept tracked)
+- 2026-10-07 · NON-REFACTOR · **MIL-25: accidental Pull merge aborted**; `tsc` 0, no conflict markers; force-push still pending (remote at `433dfb0`)
+
+- 2026-10-07 · NON-REFACTOR · **MIL-25 rebased onto master (65c6e2f), build:prod green** (local): both commits resolved (core model and masterclass page kept as master's, constants trimmed to the course endpoints, `withPreviousValue` from core, postman kept tracked)
 
 - 2026-10-07 · NON-REFACTOR · **MIL-25 hero actions**: Created/Updated line, Bookmark (POST + re-read, login redirect signed out), Download (certificate URL); verified signed out on 4101
 
