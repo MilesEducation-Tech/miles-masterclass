@@ -285,7 +285,6 @@ export default [
         'src/app/layout/footer/footer.stories.ts',
         'src/app/layout/footer/footer.ts',
         'src/app/layout/header/header.stories.ts',
-        'src/app/shared/components/app-download/app-download.ts',
         'src/app/shared/components/cards/horizontal/horizontal.ts',
         'src/app/shared/components/cards/hover/hover.ts',
         'src/app/shared/components/cards/vertical/vertical.ts',

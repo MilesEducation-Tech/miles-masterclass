@@ -114,3 +114,29 @@
     transform: translateY(0) scale(1);
   }
 }
+
+/* Home page: the pricing halo and the app-download mark (tokens in styles.css). */
+@keyframes home-pricing-glow {
+  from {
+    transform: rotate(223deg);
+  }
+  to {
+    transform: rotate(373deg);
+  }
+}
+
+@keyframes download-arrow-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8%);
+  }
+}
+
+@keyframes download-ring-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}

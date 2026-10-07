@@ -128,40 +128,29 @@
     }
   </section>
 
-  <!-- Plan. API flag: the design's pricing card needs the web source of truth
-       for plan prices confirmed; until then this is the plan copy as before. -->
-  <section id="plan" class="flex container mx-auto flex-col space-y-10 scroll-mt-20">
-    <app-plan-benefits heading="Unlimited CPE. One Subscription." [planPointers]="planPointers">
-      <p class="text-gray-400 md:text-lg text-sm">
-        Access our full library of AI-powered CPE content, along with certificates, CPE tracking,
-        and LinkedIn-ready digital badges.
-      </p>
-      <div class="flex gap-3">
-        <button
-          app-button
-          type="button"
-          class="bg-white text-black rounded-md"
-          variant="ghost"
-          (click)="router.navigate(['/auth/login'])"
-        >
-          Get Started
-        </button>
-        <button app-button type="button" variant="secondary" (click)="goToPlan()">
-          Subscribe Now
-        </button>
-      </div>
-    </app-plan-benefits>
+  <!-- Pricing card. API flag: it shows no figures until the web source of truth
+       for plan prices is confirmed (v3 read `v2/plans/`, not adopted); the card
+       takes them through its `price` input, and its story shows the full design.
+       `hydrate on viewport` keeps the copy in the SSR HTML; the placeholder only
+       shows on client-side navigation, at the card's measured height
+       (973 / 742 / 464 px at 375 / 768 / 1440, without the figure block). -->
+  <section id="plan" class="container mx-auto scroll-mt-20">
+    @defer (on viewport; prefetch on idle; hydrate on viewport) {
+      <app-home-pricing />
+    } @placeholder {
+      <div class="h-[973px] md:h-[742px] lg:h-[464px]"></div>
+    }
   </section>
 
   <!-- App Download. `hydrate on viewport` keeps it in the SSR HTML (SEO, and no
        shift on a server-rendered load); the placeholder only shows on client-side
-       navigation, sized to the section's measured height (773 / 715 / 493 px at
-       375 / 768 / 1440). -->
+       navigation, sized to the redesigned section's measured height
+       (643 / 620 / 592 px at 375 / 768 / 1440). -->
   <section id="app-download" class="w-11/12 mx-auto scroll-mt-20">
     @defer (on viewport; prefetch on idle; hydrate on viewport) {
       <app-app-download />
     } @placeholder {
-      <div class="h-[773px] md:h-[715px] lg:h-[493px]"></div>
+      <div class="h-[643px] md:h-[620px] lg:h-[592px]"></div>
     }
   </section>
 
