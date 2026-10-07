@@ -7,6 +7,22 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-07, NON-REFACTOR — `fix/MIL-28-…` (PR #68) rebased onto `origin/master` (65c6e2f).
+  Both commits resolved; the force-push is yours, from GitHub Desktop, before any new commit.** No
+  refactor phase moved.
+  - **Commit 1** is the old first course-page commit (`eadf218`) that MIL-28 was built on. It is resolved
+    exactly as on MIL-25: the replayed `3e7408d` has the same tree as MIL-25's `1d02d65`, apart from this file.
+  - **Commit 2** (`c7fd37b`, the "i" dialog):
+    - master moved the course card to `shared/components/cards/` and the home page renders it too, so
+      the "i" button is now opt-in: `showInfo` input, default off, set only by `/masterclass`
+    - `openCourseInfo` was re-added to master's rewritten `pages/masterclass/masterclass.ts` (the
+      core `MasterclassHomeFacade` version)
+    - the dialog and the facade's `share()` / `openCoursePage()` came over unchanged
+  - **Gates** (local macOS): `tsc` 0, eslint 0 on the branch's files, Prettier clean, structure check passed.
+  - The dialog still reads the `about-course/` facade from commit 1. #67 replaced that facade with
+    `course-detail/`, so whichever of #67 / #68 merges second will conflict in the facade, model and About.
+  - Not re-checked in a browser after the rebase.
+
 - 🔧 **2026-10-07, NON-REFACTOR — home redesign PR1 (#69, `refactor/MIL-27-promote-masterclass-home-read`)
   rebased onto `master` after the MIL-37 fix (#78). Conflicts resolved in the replayed commit, awaiting
   `git rebase --continue` and the force-push.** No refactor phase moved.
@@ -189,7 +205,55 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     Browser on your `pnpm start` (4101): `/us/accounting/masterclass` 3 rails 21/34/13, card hrefs
     `/us/accounting/masterclass/<uuid>/<slug>`, trailer dialog opens.
   - Next: PR2–PR5 in the prompt; its API-flags table is the backend ask.
-git push --force-with-lease origin feat/MIL-35-ai-labs-ring-v3
+    git push --force-with-lease origin feat/MIL-35-ai-labs-ring-v3
+
+- 🔧 **2026-10-07, NON-REFACTOR — MIL-23 PR3: the landing page's "i" button and course-info dialog. DONE,
+  BROWSER-VERIFIED, UNCOMMITTED** on `fix/MIL-28-MasterclassHomePage-MoreInfoDialog-Logic-fix`, which you
+  fast-forwarded to `eadf218` (MIL-25) on 2026-10-07. No refactor phase moved.
+  - **Branch fix:** the branch was first cut from `master`, so the carried changes conflicted and could
+    not typecheck.
+    - You ran `git reset --hard` and `git merge --ff-only feat/MIL-25-…`; I restored the 9 files from
+      backup.
+    - The fast-forward deleted the untracked-by-MIL-25 `postman/` from disk. I restored it from
+      `~/Downloads/MergedMasterclassApp2`, plus the two YAMLs from `2698d0d`; it is ignored, so no git
+      change.
+  - **PR base:** `feat/MIL-25-…` until MIL-25 merges.
+  - **`verify.mjs` on the MIL-28 branch** (local macOS, Node 24.18, **not CI**): **7/7 GREEN**, with only
+    the known baseline warnings. `tsc` is clean, and your `start:dev` rebuilt green.
+  - **`verify.mjs`** (local macOS, Node 24.18, **not CI**): **7/7 GREEN**.
+    - lint: 0 errors, 110 legacy warnings
+    - build:prod: only the two known CSS budgets; initial 242.45 kB transfer
+    - bundle report: the known stale-baseline warning
+    - SSR smoke: the 9 known "not in baseline" routes
+    - The dialog is its own 5.9 KB lazy chunk, reached only by a dynamic `import()`.
+  - **Card:** the course card gains the "i" button on both layouts. It is a real `<button>` with the shared
+    cards' classes, emitting `info`.
+    - Plus `outline-solid` (your 2026-10-07 review): `app-button`'s base `outline-none` was overriding the
+      ring, because tailwind-merge keeps bare `outline` (width group) next to `outline-none` (style
+      group).
+    - It now computes to `solid 1px white/40` on both layouts, like production.
+  - **Page:** the landing page's `openCourseInfo()` opens the dialog with `import()`.
+  - **Dialog:** the new `dialogs/masterclass-course-info-dialog` copies the shared `CourseInfo` design class
+    for class.
+    - Its header paints from the card. The body is `masterclass-course-about`, read through its own
+      `MasterclassCourseFacade` in component `providers`.
+    - It has loading, not-found and retry states.
+    - Bookmark is held back.
+  - **Facade:** `share()` now passes the course page URL (the share dialog otherwise shares the current
+    page). `watch()` and the new `openCoursePage()` build the course path from the course instead of
+    `router.url`.
+  - **Panel:** `p-0 w-auto max-w-none` with the content in vw (`w-[84vw] sm:w-[70vw]`).
+    - At 1024 it measures 722 × 691, centred and scrollable, the same as production. At 375 it is 304 px
+      wide (production: 300).
+    - Production clips the title above the 16:9 header at 375, and so does ours, by parity.
+  - **Verified on 4101:**
+    - 55 rendered cards, each with "i"
+    - the dialog loads About and "By <instructor>"
+    - Share gives the course URL, from both the dialog and the course page
+    - dialog Watch Now opens the course page; hero Watch Now opens `chapter/<uuid>/<slug>`
+  - **Resource timing** (the pane's network log misses cross-origin calls):
+    - the course page makes 0 API calls in the browser
+    - the landing page makes `v2/dashboard` (the hero, unchanged) plus one `about-course` per dialog open
 
 - 🔧 **2026-10-06, NON-REFACTOR — MIL-25 masterclass course page rebind (`prompts/masterclass-course-rebind.md`):
   PR1–PR3 DONE, BROWSER-VERIFIED, UNCOMMITTED.** No refactor phase moved. Plan approved with D1, D2,
@@ -3096,6 +3160,14 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-07 · NON-REFACTOR · **MIL-28 rebased onto master (65c6e2f)**: commit 1 as on MIL-25; the "i" button is opt-in (`showInfo`) on the now-shared course card; `tsc`/eslint/Prettier/structure clean
+
+- 2026-10-07 · NON-REFACTOR · **MIL-28 `verify.mjs` 7/7 GREEN** (local, Node 24.18) on the fast-forwarded branch
+
+- 2026-10-07 · NON-REFACTOR · **MIL-28 unblocked**: branch fast-forwarded to `eadf218`, dialog files restored (diff = dialog work only), `postman/` restored locally
+
+- 2026-10-07 · NON-REFACTOR · **MIL-23 PR3 "i" dialog** (uncommitted): card button, course-info dialog on the course facade, panel matches production at 1024/375 · `verify.mjs` 7/7 GREEN (local, Node 24.18); dialog is a lazy chunk
 
 - 2026-10-06 · NON-REFACTOR · **MIL-25 `verify.mjs` 7/7 GREEN** (local, Node 24.18); split into 2 commits, the first builds alone
 

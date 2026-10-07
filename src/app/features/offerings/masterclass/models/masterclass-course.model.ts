@@ -20,9 +20,15 @@ import {
   listOf,
 } from '@features/offerings/masterclass/utils/contract-guards';
 import {
+  MasterclassCourse,
   MasterclassFieldOfStudy,
   MasterclassThumbnails,
 } from '@core/models/masterclass-home.model';
+
+/** What the course-info dialog opens with: the card the learner clicked "i" on. */
+export interface MasterclassCourseInfoDialogData {
+  course: MasterclassCourse;
+}
 
 /** The course route's two params, as the page's inputs carry them. */
 export interface MasterclassCourseRouteParams {
