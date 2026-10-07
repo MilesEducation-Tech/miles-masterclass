@@ -28,53 +28,127 @@
   color: #6b6b6b;
 }
 
-/* Height is explicit, not derived from flow. `pinSpacing: false` pulls each
-   wrapper out of flow as it pins, so a flow-sized column would shrink
-   mid-animation and jump the scroll position. This value matches the natural
-   stacked height exactly, so the mobile, reduced-motion and SSR renders are
-   layout-identical to the animated one — no CLS either way. */
+/* Below md there is no stack: GSAP never starts (caira-level-stack.ts gates it
+   on `md+`), so the cards are a native scroll-snap carousel — no tilt, every
+   slide stretched to the tallest one. Everything that exists for the pinning
+   lives inside the `md` query below. */
 .cards {
-  /* Trailing scroll room so the finished stack holds on screen before it
-     releases, instead of unpinning the instant the last card lands. Without it
-     the last card's trigger has a zero-length range: it pins at exactly the
-     scroll position where the container's release point is reached. The pen got
-     this room from a 100vh `.wrapper` plus `.spacer` divs. Only at `md+`, where
-     pinning is active — below that it would just be dead space. */
-  --stack-hold: 0px;
-
-  height: calc(
-    var(--count, 3) * var(--card-h) + (var(--count, 3) - 1) * var(--card-gap) + var(--stack-hold)
-  );
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
 }
 
-@media (min-width: 768px) {
-  .cards {
-    --stack-hold: 50vh;
-  }
+.cards::-webkit-scrollbar {
+  display: none;
 }
 
 .card-wrapper {
-  width: 80%;
-  height: var(--card-h);
-  margin-bottom: var(--card-gap);
+  flex: 0 0 min(85%, 22rem);
+  scroll-snap-align: center;
 }
 
-.card-wrapper:last-child {
-  margin-bottom: 0;
+@media (min-width: 768px) {
+  /* md+: every card shares the first card's rectangle. The column is exactly
+     one card tall from the first paint, so the lazy GSAP chunk landing (or
+     never landing) changes no layout — the SSR, pre-GSAP and animated renders
+     are all `--card-h` tall. */
+  .cards {
+    position: relative;
+    display: block;
+    height: var(--card-h);
+    overflow: visible;
+  }
+
+  .card-wrapper {
+    position: absolute;
+    top: 0;
+    inset-inline-start: 0;
+    width: 80%;
+    height: var(--card-h);
+  }
+
+  /* Frame zero of the cross-fade: only the first card shows. GSAP writes inline
+     `opacity` on top of this while the section is pinned and strips it again on
+     revert, so this rule is the state whenever GSAP is not driving. Later
+     siblings paint above earlier ones by DOM order — that is the deck's z-order,
+     no z-index needed. */
+  .card-wrapper:not(:first-child) .card {
+    opacity: 0;
+  }
 }
 
-/* No CSS `perspective` here on purpose — it would create a containing block for
-   `position: fixed` descendants, which is what ScrollTrigger pins with. The
-   component passes `transformPerspective: 500` to GSAP instead. */
+/* The "more below" cue: a 2px column of dashes under the card, centred on it,
+   with the dashes drifting downward. Only exists where the stack pins; the
+   mobile carousel needs no such hint. */
+.scroll-hint {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .scroll-hint {
+    display: block;
+    position: absolute;
+    top: calc(100% + 1rem);
+    /* The card is 80% wide and start-aligned, so its centre is at 40%. */
+    inset-inline-start: calc(40% - 1px);
+    width: 2px;
+    height: 3.5rem;
+    background: repeating-linear-gradient(to bottom, var(--primary) 0 6px, transparent 6px 12px);
+    animation: scroll-hint-flow 0.9s linear infinite;
+  }
+
+  @keyframes scroll-hint-flow {
+    to {
+      background-position: 0 12px;
+    }
+  }
+}
+
+/* Reduced motion on md+: no pin, no fade, so every card has to be readable.
+   This is the plain stacked column the section had before the cross-fade. The
+   JS side never loads GSAP for these users (caira-level-stack.ts). */
+@media (min-width: 768px) and (prefers-reduced-motion: reduce) {
+  .cards {
+    height: auto;
+  }
+
+  .card-wrapper {
+    position: static;
+    margin-bottom: var(--card-gap);
+  }
+
+  .card-wrapper:last-child {
+    margin-bottom: 0;
+  }
+
+  .card-wrapper:not(:first-child) .card {
+    opacity: 1;
+  }
+
+  .scroll-hint {
+    display: none;
+  }
+}
+
+/* No CSS `perspective` or `transform` on the wrappers on purpose — either
+   would create a containing block for `position: fixed` descendants, which is
+   what ScrollTrigger pins with. */
 .card {
   position: relative;
-  /* Must match the tween's `transformOrigin`. The static `rotate` below would
-     otherwise spin about the default `center center`, and the moment GSAP first
-     renders and switches the origin to `top center` the card jumps sideways by
-     half-height x sin(tilt) — ~9px at 3.58deg, and the opposite way for a
-     negative tilt. Same origin on both sides means no discontinuity. */
+  /* Must match the tween's `transformOrigin`. A receding card scales about its
+     top edge so that edge lifts clear above the incoming card like a deck; if
+     the static origin differed, GSAP's first render would jump the card. */
   transform-origin: top center;
+  /* The "tossed on the table" tilt only applies where the stack does. Below md
+     it is a carousel, and a tilted slide is just a crooked one. */
+  rotate: none;
+  /* Fills its wrapper rather than sizing by aspect-ratio, so every card is
+     exactly `--card-h` tall and the cross-fade lands each one on the same
+     rectangle at every screen size. */
   height: 100%;
+  min-height: 12.5rem;
   overflow: hidden;
   padding: 1.25rem 1.5rem;
   border-radius: 12px;
@@ -93,6 +167,12 @@
 
 .card--gold {
   background: linear-gradient(112deg, #6a5a20 0%, #9d8833 52%, #c9b25a 100%);
+}
+
+@media (min-width: 768px) {
+  .card {
+    rotate: var(--tilt, 0deg);
+  }
 }
 
 /* Oversized level numeral bleeding off the bottom corner at the reading start. */

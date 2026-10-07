@@ -271,6 +271,8 @@ Branch `feat/MIL-XXX-home-webinar-ticket`.
 F1 ring v3 parity (convex, header, proof points; keep endpoint, ~250 lines) · F2 CAIRA stack cross-fade
 parity (~150) · F3 hero-grid snapshot script (needs a web-api list endpoint) · F4 fonts: self-host/preload,
 drop render-blocking Google Fonts · F5 wire pricing + webinar once endpoints exist (+ promote the registration
+F1 **done 2026-10-07** (report below): ring v3 parity — convex shape, header, proof points; endpoint kept · F2 **done 2026-10-07** (report below): CAIRA stack cross-fade parity · F3 hero-grid snapshot script (needs a web-api list endpoint) · F4 **done 2026-10-07** (report below): fonts self-hosted from the
+`@fontsource-variable` packages, Google Fonts link and preconnects dropped, metric-matched Inter fallback · F5 wire pricing + webinar once endpoints exist (+ promote the registration
 dialog) · F6 add `/us/accounting/home` to `docs/refactor/smoke-routes.json` and re-record ·
 F7 `HOME_RAIL_MAX_CARDS` + "View all" if the DOM audit asks. · F8 **done 2026-10-07** (report below): `Carousel` renders its slides only once Swiper is registered and keeps its skeleton until `initialize()`, its root is `block`, and the home wrappers use flex `gap` instead of `space-y` · F9 `scrollbar-gutter: stable` on `html` so no width-scaled layout shifts when the classic scrollbar appears (global; measured on the hero grid before D10's `vw` fix).
 
@@ -512,3 +514,91 @@ fully visible cards per phone column, and `vw` geometry) and one small addition 
 - Gates (local macOS, Node 24.15, **not CI**): `verify.mjs` full run **7/7 GREEN** (before the final
   `gap` edit; `pnpm lint`, the UAT build and `pnpm build:prod` ran after it), lint 0 errors / 109 legacy
   warnings, structure check passed, `build:prod` initial 243.30 kB.
+
+### F4 — 2026-10-07 (uncommitted, branch `perf/MIL-XXX-self-host-fonts`, stacked on F8)
+
+**Fonts served by the app, not by Google.** Every page loaded a render-blocking stylesheet from
+`fonts.googleapis.com` and then the files from `fonts.gstatic.com`: two extra origins before text could
+settle, and the swap moved the header on every load.
+
+- Four runtime dependencies: `@fontsource-variable/{inter,inter-tight,jetbrains-mono,source-serif-4}` 5.3.0
+  (SIL OFL; the same variable files Google serves, so glyphs are identical). New global stylesheet
+  `src/styles/fonts.css` (registered first in angular.json's three `styles` arrays) declares the latin and
+  latin-ext subsets of each family with `unicode-range`, `font-display: swap`, and the **weight ranges Google
+  served** (Inter and Inter Tight 400–700, JetBrains Mono 400–500, Source Serif 4 400–600 on its `opsz`
+  file), so nothing renders heavier or lighter than before; the variable files carry 100–900 if a true
+  `font-extrabold` is wanted later. The build emits the eight woff2 files with hashed names.
+- `Inter Fallback`: Arial with Inter's metrics (`size-adjust` 107.06%, ascent 90.49%, descent 22.56%,
+  line-gap 0), second in `--font-sans` and `--font-numeric`, so the swap no longer moves text.
+- `index.html`: the Google Fonts `<link>` and the two Google preconnects are gone. Arabic still adds Noto Sans
+  Arabic from Google at runtime (`configuration/language.ts`; the I18N switch is off in production) — it pays
+  the connection it used to get for free; self-hosting it is a one-package follow-up when Arabic ships.
+- No `<link rel="preload">` for the Inter file: its name is hashed at build time and `index.html` is static.
+  The font request starts as soon as the stylesheet parses, one round trip later than a preload would; the
+  same-origin, non-blocking path is still ahead of the old two-origin chain (numbers below).
+- Measured (UAT-pointed optimized builds, Lighthouse, F8 build vs this one, two runs each): desktop observed
+  FCP 1114 / 1227 ms → 432 / 554 ms, simulated FCP 0.7 / 1.0 s → 0.4 / 0.6 s, SI 1.8 / 2.0 → 1.5 / 1.4 s,
+  CLS 0.001 → 0 / 0.001, perf 74–76 → 78; mobile observed FCP 1035 / 1517 → 486 / 1169 ms with the
+  simulated figures still dominated by UAT's TTFB variance; Google font requests 1 → 0; the remaining 0.0075
+  mobile shift is the header's logo link and predates this change. Initial bundle 243.30 → 243.78 kB (the
+  @font-face rules).
+- Gates (local macOS, Node 24.15, **not CI**): `pnpm lint` 0 errors / 109 legacy warnings, structure check
+  passed; `pnpm build:prod` green (the two known CSS budget warnings), eight `media/*.woff2` emitted, no
+  `googleapis` reference in the output.
+  `verify.mjs` full run **7/7 GREEN**: Storybook resolves the stylesheet and ships the eight files; bundle 245.3 KB
+  gzip (the stale-baseline warning); SSR smoke no drift.
+
+### F1 — 2026-10-07 (uncommitted, branch `feat/MIL-XXX-ai-labs-ring-v3`, stacked on F4)
+
+**The v3 ring visuals, this repo's data.** `shared/components/surround-carousel`:
+
+- Engine: `RingShape` (`concave` | `convex` | `flat`) — camera seat and panel target per shape, panels bent
+  toward or away from the axis, the FOV solved from the card size with a 260px floor, `BAND_LIFT` to centre
+  the ring between the overlaid header and controls, `NoColorSpace` textures (the sRGB tag had been crushing
+  the artwork's midtones). v3's dev-only UAT proxy hack (`textureUrl`) was left out: this repo has no such
+  proxy rule.
+- Component: `shape` input (default `concave`, so nothing else changes), the design's header ("The World's
+  1st AI Labs for Accountants" + subtext), three proof-point cards under the stage, the 4:3 / 16:9 / 2:1 stage
+  with header and controls overlaid from md and in flow below. Kept from this repo: the `httpResource` on
+  `v2/tracks/7/courses/?course_type=ai_lab`, the `ai-labs` route segment, `dir="ltr"` on the controls, the
+  `[scrollbar-width:none]` utility and the card backgrounds.
+- Home passes `shape="convex"`; the placeholder is now two parts (stage + proof cards) at the heights the
+  rendered section measured: 444 + 566 / 576 + 298 / 720 + 183 px at 375 / 768 / 1440.
+- Verification: the UAT and production APIs answer 404 for the ring's endpoint (see the API flags row), so the
+  section renders nothing there. It was verified by rendering the production build in headless Chrome with
+  the course response mocked (six cards): at 1440 and 768 the convex ring draws (`data-webgl="on"`, canvas
+  visible), the header and three proof cards render, no horizontal overflow; at 375 the fallback row shows
+  and WebGL stays off. Screenshots in the session scratchpad.
+- Gates (local macOS, Node 24.15, **not CI**): `verify.mjs` full run **7/7 GREEN** — the three.js engine is
+  still its own lazy chunk (546 kB raw / 114 kB transfer), referenced only by the lazy ring chunk; lint 0 errors
+  / 109 legacy warnings, structure check passed; `pnpm build:prod` initial 243.75 kB. The placeholder-height
+  edit to `home.html` followed the gate run; lint ran again after it.
+- **Risk kept:** when the ring's fetch fails or returns under two cards the component renders nothing and the
+  deferred placeholder collapses — a large shift if the section is in view at that moment. Fixing that means
+  knowing the answer before the section is in view (an SSR-side read with `hydrate on viewport`, or a smaller
+  placeholder); it is the state of UAT today and is tied to the v2-host decision above.
+
+### F2 — 2026-10-07 (uncommitted, branch for the second commit: `feat/MIL-XXX-caira-stack-v3`, stacked on F1)
+
+**The v3 CAIRA stack behaviour, this repo's data.** `shared/components/caira-level-stack`:
+
+- On md+ the whole grid pins once it is centred (`start: 'center center'`) and one scrubbed timeline
+  cross-fades the cards in place over 3 × 300 + 2 × 400 = 1700 px of scroll: each earlier card steps up and
+  back (`RECEDE_LIFT_PX` 48, `RECEDE_SCALE_STEP` 0.1) while the next rises in on the same rectangle; a
+  dashed "more below" cue fades out as the last card lands. The pre-GSAP, SSR and reduced-motion renders
+  are all exactly one card tall (`--card-h`), so the lazy gsap chunk changes no layout. Below md the cards
+  are a native scroll-snap carousel with dots (`activeSlide` from scroll progress, `goToSlide`).
+- Copy fix "Be a Certified"; the card header per Figma 2595:13785. Kept from this repo: the `httpResource`
+  on `v2/caira-badges/`, the `<button app-button>` markup, and the RTL-aware logical properties in the
+  stylesheet (`inset-inline-*`, `margin-inline-end`). The per-card tilt is not bound (as in v3); the
+  `--tilt` hook and the values remain.
+- Home's placeholder for the section (client-side navigation only) is now 539 / 351 / 336 px at
+  375 / 768 / 1440, measured on the build; it was 1115 / 1312 / 1450 for the old stacked column.
+- Verification (headless Chrome against the UAT-pointed build, fallback copy because `v2/caira-badges/`
+  is 404 on this host — see the API flags row): at 1440 and 768 the pin spacer appears (2036 / 2051 px),
+  card 1 recedes (scale 0.87, −60 px) and card 2 fades in as the page scrolls; at 375 three dots and the
+  carousel; no horizontal overflow at any width. Screenshots in the session scratchpad.
+- Gates (local macOS, Node 24.15, **not CI**): lint 0 errors / 109 legacy warnings, structure check passed
+  (`caira-level-stack.css` keeps its baseline entry), `tsc` clean, `pnpm build:prod` initial 243.78 kB.
+  `verify.mjs` full run on the combined F1 + F2 tree **7/7 GREEN**: three.js and gsap stay out of the initial set
+  (checked in the built chunks), bundle 245.3 KB gzip (the stale-baseline warning), SSR smoke no drift.

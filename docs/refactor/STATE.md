@@ -23,6 +23,16 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     `tracks-page/?…&tracks.page_size=100&tracks.courses.page_size=100` → 200. Awaiting the commit, the ref move
     onto `feat/MIL-29-home-sections` and the force-push. Because each merged branch is rewritten before its
     squash, the later rebases use the OLD tip SHA as upstream (#70: `179c6d7`, #71: `2eadb8a`, …).
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign follow-up F2 (`prompts/home-redesign.md`): the CAIRA stack's
+  v3 cross-fade. DONE, UNCOMMITTED (unstaged; F1 is staged on the same tree), for branch
+  `feat/MIL-XXX-caira-stack-v3` stacked on F1.** No refactor phase moved.
+  - `shared/components/caira-level-stack`: one pinned grid with a scrubbed cross-fade on md+ (1700 px of
+    scroll), a snap carousel with dots below md, the "more below" cue, "Be a Certified". Data layer unchanged
+    (`v2/caira-badges/`, fallback copy while that host 404s). Home's placeholder re-measured (539 / 351 / 336).
+  - Verified in headless Chrome (pin spacer, recede transforms, dots); gates: lint 0 errors (109 legacy),
+    tsc, `build:prod` 243.78 kB; `verify.mjs` on the combined F1+F2 tree **7/7 GREEN** (three.js and gsap
+    still lazy, SSR smoke no drift).
+
 - 🔧 **2026-10-07, NON-REFACTOR — home redesign follow-up F1 (`prompts/home-redesign.md`): the AI Labs ring's
   v3 visuals. DONE, UNCOMMITTED and STAGED, on branch `feat/MIL-XXX-ai-labs-ring-v3` (stacked on F4's branch;
   rename once the ticket exists).** No refactor phase moved.

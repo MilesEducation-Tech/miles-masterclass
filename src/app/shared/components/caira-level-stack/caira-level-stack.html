@@ -1,6 +1,7 @@
-<div class="stack grid gap-10 md:grid-cols-2 md:gap-12 lg:gap-16" [style.--count]="levels().length">
-  <!-- Copy column. Sticky so it holds while the cards stack past it. -->
-  <div class="flex flex-col items-start md:sticky md:top-24 md:self-start sticky top-36">
+<div class="stack grid gap-10 md:grid-cols-2 md:gap-12 lg:gap-16">
+  <!-- Copy column. Inert while the whole grid is pinned; the sticky keeps it
+       in view in the reduced-motion fallback, where the cards stack in flow. -->
+  <div class="flex flex-col items-start md:sticky md:top-24 md:self-start">
     <img
       [src]="cairaLogo"
       alt="CAIRA — Certified AI-Ready Accountant"
@@ -11,7 +12,7 @@
     />
 
     <h2 class="mt-6 text-3xl font-bold leading-tight md:text-4xl lg:text-5xl">
-      Be an Certified<br />AI-Ready Accountant
+      Be a Certified<br />AI-Ready Accountant
     </h2>
 
     <ul class="stack__meta mt-4 text-sm text-[#A8A8A8] md:text-base">
@@ -30,49 +31,75 @@
     </div>
   </div>
 
-  <!-- Cards column. The explicit height is load-bearing: `pinSpacing: false`
-       takes each wrapper out of flow as it pins, so without it the column
-       collapses mid-animation and the scroll position jumps. -->
-  <div class="cards">
-    @for (level of levels(); track level.rank) {
-      <div class="card-wrapper">
-        <div class="card" [class]="'card card--' + level.tone" [style.rotate.deg]="level.tilt">
-          <span class="card__ghost" aria-hidden="true">{{
-            (level.rank + '').padStart(2, '0')
-          }}</span>
+  <!-- Cards column. On md+ the cards share one rectangle and only the first is
+       visible until GSAP cross-fades them while the grid is pinned
+       (caira-level-stack.ts). `min-w-0` lets the mobile carousel scroll instead
+       of widening the grid track. -->
+  <div class="min-w-0">
+    <div class="cards" #track (scroll)="onTrackScroll(track)">
+      @for (level of levels(); track level.rank) {
+        <div class="card-wrapper">
+          <div class="card" [class]="'card card--' + level.tone">
+            <span class="card__ghost" aria-hidden="true">{{
+              (level.rank + '').padStart(2, '0')
+            }}</span>
 
-          <div class="relative flex items-start justify-between gap-4">
-            <img
-              [src]="cairaLogo"
-              alt=""
-              width="120"
-              height="30"
-              class="h-6 w-auto md:h-7"
-              draggable="false"
-            />
-            <span class="text-sm font-bold tracking-wide whitespace-nowrap uppercase md:text-base">
-              {{ level.levelLabel }}
-            </span>
+            <!-- Design (Figma 2595:13785, CAIRA card): the CAIRA mark top-left
+                 with the level top-right, the title on its own line below. -->
+            <div class="relative flex items-start justify-between gap-4">
+              <img
+                [src]="cairaLogo"
+                alt=""
+                width="120"
+                height="30"
+                class="h-6 w-auto md:h-7"
+                draggable="false"
+              />
+              <span
+                class="text-sm font-bold tracking-wide whitespace-nowrap uppercase md:text-base"
+              >
+                {{ level.levelLabel }}
+              </span>
+            </div>
+
+            <div class="relative mt-4">
+              <h3 class="text-lg font-semibold leading-snug md:text-xl">{{ level.title }}</h3>
+              <p class="mt-1.5 max-w-[62%] text-xs font-medium leading-snug md:text-sm">
+                {{ level.subtitle }}
+              </p>
+            </div>
+
+            @if (level.medalUrl) {
+              <img
+                [src]="level.medalUrl"
+                alt=""
+                class="card__medal"
+                draggable="false"
+                loading="lazy"
+              />
+            }
           </div>
-
-          <div class="relative mt-4">
-            <h3 class="text-lg font-semibold leading-snug md:text-xl">{{ level.title }}</h3>
-            <p class="mt-1.5 max-w-[62%] text-xs font-medium leading-snug md:text-sm">
-              {{ level.subtitle }}
-            </p>
-          </div>
-
-          @if (level.medalUrl) {
-            <img
-              [src]="level.medalUrl"
-              alt=""
-              class="card__medal"
-              draggable="false"
-              loading="lazy"
-            />
-          }
         </div>
-      </div>
-    }
+      }
+      <!-- "More below" cue while the section is pinned: dashes flowing
+           downward under the resting card. GSAP fades it out as the last card
+           arrives; the CSS hides it below md and under reduced motion. Last
+           child on purpose — `goToSlide` indexes `track.children` by slot. -->
+      <div class="scroll-hint" aria-hidden="true"></div>
+    </div>
+
+    <!-- Mobile carousel dots. The stack has no pagination on md+. -->
+    <div class="mt-4 flex justify-center gap-2 md:hidden">
+      @for (level of levels(); track level.rank; let i = $index) {
+        <button
+          type="button"
+          class="h-2 rounded-full transition-all"
+          [class]="i === activeSlide() ? 'w-6 bg-primary' : 'w-2 bg-foreground/60'"
+          [attr.aria-label]="'Show ' + level.levelLabel"
+          [attr.aria-current]="i === activeSlide()"
+          (click)="goToSlide(track, i)"
+        ></button>
+      }
+    </div>
   </div>
 </div>
