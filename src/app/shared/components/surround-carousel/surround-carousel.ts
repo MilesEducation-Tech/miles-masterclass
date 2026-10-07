@@ -7,6 +7,7 @@ import {
   effect,
   ElementRef,
   inject,
+  input,
   signal,
   viewChild,
 } from '@angular/core';
@@ -24,7 +25,7 @@ import { Viewport } from '@core/services/viewport/viewport';
 // `import type` is erased at compile time, so naming the engine here does NOT
 // create a static edge to it — `three` stays in the dynamic chunk. See the
 // header comment in surround-carousel.engine.ts.
-import type { SurroundEngine } from './surround-carousel.engine';
+import type { RingShape, SurroundEngine } from './surround-carousel.engine';
 
 /** One panel on the ring, flattened from `Content` so the engine never sees the API model. */
 export interface CarouselCard {
@@ -59,8 +60,8 @@ const AI_LAB_ROUTE_SEGMENT = 'ai-labs';
  * and the engine repeats the set to fill the ring rather than us paginating for
  * rows that do not exist.
  *
- * Be aware of what that means visually: a surround ring shows roughly six
- * panels at once, so two distinct courses tile as A B A B A B. The section is
+ * Be aware of what that means visually: the camera sees a handful of a 12- to
+ * 18-slot ring at once, so two distinct courses tile as A B A B. The section is
  * honest but obviously repetitive until the track carries ~5 courses.
  */
 const MIN_CARDS = 2;
@@ -161,6 +162,22 @@ export class SurroundCarousel {
 
   protected readonly canRender = computed(() => this.cards().length >= MIN_CARDS);
 
+  /** Design copy (Figma 2175:26040 / 2175:26081). Marketing, not data. */
+  protected readonly proofPoints = [
+    {
+      title: 'No licenses, no tickets',
+      body: "No Copilot Studio tokens. No Power Automate licenses. No IT tickets. Zero setup required—enjoy 12 months of unlimited access to a lab that's ready when you are.",
+    },
+    {
+      title: 'A safe sandbox.',
+      body: 'No firm systems. No client data. Zero confidentiality risk—start from scratch, experiment, and learn safely.',
+    },
+    {
+      title: "You're already qualified.",
+      body: "100% No-Code. If you know accounting, you're in. Your domain knowledge is the only input needed.",
+    },
+  ];
+
   /**
    * Position around the loop, 0…1 — not a card index. It wraps forever, so the
    * bar reads as a place in an endless run rather than progress toward an end.
@@ -170,6 +187,12 @@ export class SurroundCarousel {
 
   /** Set once the three capability gates pass. See the constructor. */
   private readonly webglAllowed = signal(false);
+
+  /**
+   * `concave` (default), `convex` or `flat` — see `RingShape` in the engine.
+   * Read once, when the engine starts; it is a design choice, not live state.
+   */
+  readonly shape = input<RingShape>('concave');
 
   private engine?: SurroundEngine;
   private initStarted = false;
@@ -273,16 +296,20 @@ export class SurroundCarousel {
     const { SurroundEngine } = await import('./surround-carousel.engine');
     if (this.destroyed) return; // navigated away while the chunk was in flight
 
-    this.engine = new SurroundEngine(canvas, {
-      onProgress: (fraction) => this.progress.set(fraction),
-      onSelect: (index) => this.openCard(index),
-      onTextureBlocked: (host) =>
-        this.logger.warn(
-          `[surround-carousel] ${host} serves no Access-Control-Allow-Origin, ` +
-            `so its images cannot be uploaded as WebGL textures. Cards render ` +
-            `without artwork until a CORS policy is added to that origin.`,
-        ),
-    });
+    this.engine = new SurroundEngine(
+      canvas,
+      {
+        onProgress: (fraction) => this.progress.set(fraction),
+        onSelect: (index) => this.openCard(index),
+        onTextureBlocked: (host) =>
+          this.logger.warn(
+            `[surround-carousel] ${host} serves no Access-Control-Allow-Origin, ` +
+              `so its images cannot be uploaded as WebGL textures. Cards render ` +
+              `without artwork until a CORS policy is added to that origin.`,
+          ),
+      },
+      this.shape(),
+    );
 
     // Read fresh rather than closing over the effect's snapshot: a refetch may
     // have landed while the chunk was downloading, and nothing re-runs the

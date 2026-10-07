@@ -23,6 +23,20 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     `tracks-page/?…&tracks.page_size=100&tracks.courses.page_size=100` → 200. Awaiting the commit, the ref move
     onto `feat/MIL-29-home-sections` and the force-push. Because each merged branch is rewritten before its
     squash, the later rebases use the OLD tip SHA as upstream (#70: `179c6d7`, #71: `2eadb8a`, …).
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign follow-up F1 (`prompts/home-redesign.md`): the AI Labs ring's
+  v3 visuals. DONE, UNCOMMITTED and STAGED, on branch `feat/MIL-XXX-ai-labs-ring-v3` (stacked on F4's branch;
+  rename once the ticket exists).** No refactor phase moved.
+  - `shared/components/surround-carousel`: `RingShape` in the engine (convex / flat / concave camera seats,
+    FOV from card size, `BAND_LIFT`, `NoColorSpace` textures), `shape` input, the design's header and three
+    proof-point cards, the 4:3 / 16:9 / 2:1 stage. Data layer unchanged (`v2/tracks/7/courses/`). Home passes
+    `shape="convex"` with a two-part placeholder at the measured heights.
+  - **Finding:** every `v2/` path 404s on `(uat-)api.milescaira.com` and answers on the previous host
+    `(uat-)api.milesmasterclass.com/api/`; in UAT and production the ring is empty and the CAIRA stack shows
+    its fallback. Verified the ring with a mocked response in headless Chrome instead. Decision needed on the
+    v2 base URL (API flags table).
+  - Gates (local macOS, Node 24.15, **not CI**): `verify.mjs` **7/7 GREEN** (engine chunk still lazy), lint 0
+    errors (109 legacy warnings), `build:prod` 243.75 kB initial.
+
 - 🔧 **2026-10-07, NON-REFACTOR — home redesign follow-up F4 (`prompts/home-redesign.md`): fonts self-hosted.
   DONE, UNCOMMITTED, on branch `perf/MIL-XXX-self-host-fonts` (stacked on F8's branch; rename once the
   ticket exists).** No refactor phase moved.
@@ -158,7 +172,7 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     Browser on your `pnpm start` (4101): `/us/accounting/masterclass` 3 rails 21/34/13, card hrefs
     `/us/accounting/masterclass/<uuid>/<slug>`, trailer dialog opens.
   - Next: PR2–PR5 in the prompt; its API-flags table is the backend ask.
-
+git push --force-with-lease origin feat/MIL-35-ai-labs-ring-v3
 - 🔧 **2026-10-06, NON-REFACTOR — unit tests removed (`prompts/remove-unit-tests.md`). DONE, UNCOMMITTED;
   you applied `harness-no-tests.patch`.** No refactor phase moved. `verify.mjs` full run (local macOS,
   Node 24.15, **not CI**): **7/7 GREEN**. The only warnings are the known stale-baseline ones: bundle +3%
