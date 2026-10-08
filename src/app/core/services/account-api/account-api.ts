@@ -1,7 +1,8 @@
-import { httpResource } from '@angular/common/http';
+import { HttpContext, httpResource } from '@angular/common/http';
 import { Service, effect, inject } from '@angular/core';
 
 import { ACCOUNT_ROUTES, parseUserDetails } from '../../models/account.model';
+import { SKIP_LOADING } from '../../models/http.model';
 import { apiUrl } from '../api-client/api-client';
 import { AuthSession } from '../auth-session/auth-session';
 
@@ -38,8 +39,15 @@ export class AccountApi {
 
   /** `parse` is the trust boundary: a body that drifted from the contract lands
    *  in `error()` here, once, instead of rendering `undefined` downstream. */
+  // Read in the background on every signed-in load, so it doesn't drive the loading bar.
   readonly user = httpResource(
-    () => (this.auth.isAuthenticated() ? apiUrl(ACCOUNT_ROUTES.userDetails.path) : undefined),
+    () =>
+      this.auth.isAuthenticated()
+        ? {
+            url: apiUrl(ACCOUNT_ROUTES.userDetails.path),
+            context: new HttpContext().set(SKIP_LOADING, true),
+          }
+        : undefined,
     { parse: parseUserDetails },
   );
 

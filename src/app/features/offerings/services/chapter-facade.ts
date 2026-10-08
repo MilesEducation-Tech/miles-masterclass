@@ -3,7 +3,8 @@ import { Logger } from '@core/services/logger/logger';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { NotificationService } from '@core/services/notification/notification';
 import { Analytics } from '@core/services/analytics/analytics';
-import { RouteParams, RouteResponse, RouteRequest } from '@core/models/http.model';
+import { HttpContext } from '@angular/common/http';
+import { RouteParams, RouteResponse, RouteRequest, SKIP_LOADING } from '@core/models/http.model';
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
 import { courseLoad, CourseLoadParams } from '../utils/course-load';
 import { catchError, of, tap } from 'rxjs';
@@ -86,8 +87,11 @@ export class ChapterFacade {
       event,
     };
 
+    // Sent by the player on its own clock, so it never drives the loading bar.
     const request = this.http
-      .post<MyClassActivityResponse>(MASTERCLASS_ROUTES.myClassActivity.path, body)
+      .post<MyClassActivityResponse>(MASTERCLASS_ROUTES.myClassActivity.path, body, {
+        context: new HttpContext().set(SKIP_LOADING, true),
+      })
       .pipe(
         tap(() => {
           if (event === 'completed') {

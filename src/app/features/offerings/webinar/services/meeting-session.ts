@@ -1,9 +1,11 @@
 import { isPlatformBrowser } from '@angular/common';
 import { DestroyRef, inject, Service, PLATFORM_ID, signal } from '@angular/core';
+import { HttpContext } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '@env/environment';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
+import { SKIP_LOADING } from '@core/models/http.model';
 import {
   ClaimRequest,
   ClaimResponse,
@@ -50,6 +52,9 @@ import { isSessionConflict, isSupersededError, toWebinarError } from '../utils/w
 
 const LOCK_NAME = 'miles:webinar-session';
 const CHANNEL_NAME = 'miles:webinar-session';
+
+/** The lease heartbeat runs on a timer for the whole meeting, so it never drives the loading bar. */
+const HEARTBEAT = new HttpContext().set(SKIP_LOADING, true);
 
 type ChannelMessage =
   | { type: 'claimed'; sessionId: string; webinarId: string }
@@ -217,9 +222,11 @@ export class MeetingSession {
     this.heartbeatId = setInterval(async () => {
       try {
         await firstValueFrom(
-          this.api.post<HeartbeatResponse>(MEETING_ENDPOINTS.heartbeat, {
-            session_id: this.sessionId,
-          }),
+          this.api.post<HeartbeatResponse>(
+            MEETING_ENDPOINTS.heartbeat,
+            { session_id: this.sessionId },
+            { context: HEARTBEAT },
+          ),
         );
       } catch (err) {
         const error = toWebinarError(err);
@@ -385,9 +392,11 @@ export class MeetingSession {
   private async verifyAfterRestore(): Promise<void> {
     try {
       await firstValueFrom(
-        this.api.post<HeartbeatResponse>(MEETING_ENDPOINTS.heartbeat, {
-          session_id: this.sessionId,
-        }),
+        this.api.post<HeartbeatResponse>(
+          MEETING_ENDPOINTS.heartbeat,
+          { session_id: this.sessionId },
+          { context: HEARTBEAT },
+        ),
       );
     } catch (err) {
       if (isSupersededError(toWebinarError(err))) this.evict('superseded-remotely');

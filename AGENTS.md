@@ -218,6 +218,12 @@ Full detail — versions, scripts, build configs, environments — lives in the 
   the affected resource. Never use `httpResource` for a mutation.
 - **Stay on HttpClient/RxJS** for blob and file downloads with progress, for polling, and for debounced search (use
   `rxResource` or an RxJS pipeline).
+- **Global loading bar:** every HttpClient request (`ApiClient`, `httpResource`) drives it through
+  `loadingInterceptor`.
+  - Opt out with `context: new HttpContext().set(SKIP_LOADING, true)` for traffic the learner didn't ask for:
+    polling, heartbeats, progress tracking, typeahead, token refresh, background reads, and any call that shows its
+    own inline indicator.
+  - Never hand-roll a page-wide spinner for a request.
 - **Templates:**
   - Guard every `.value()` with `.hasValue()`.
   - Render `.isLoading()` and `.error()` explicitly.

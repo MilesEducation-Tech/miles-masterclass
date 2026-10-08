@@ -10,7 +10,7 @@ import {
   SessionResponse,
   isSessionResponse,
 } from '../../models/auth.model';
-import { SKIP_ERROR_NOTIFICATION } from '../../models/http.model';
+import { SKIP_ERROR_NOTIFICATION, SKIP_LOADING } from '../../models/http.model';
 import { ApiClient } from '../api-client/api-client';
 import { Storage } from '../storage/storage';
 import { HttpContext, HttpErrorResponse } from '@angular/common/http';
@@ -26,6 +26,11 @@ const REFRESH_SKEW_SECONDS = 120;
 
 /** Errors here are rendered by the caller, never by a global toast. */
 const QUIET = new HttpContext().set(SKIP_ERROR_NOTIFICATION, true);
+
+/** The refresh runs behind another request (or ahead of expiry), so it doesn't drive the loading bar. */
+const QUIET_BACKGROUND = new HttpContext()
+  .set(SKIP_ERROR_NOTIFICATION, true)
+  .set(SKIP_LOADING, true);
 
 /**
  * The learner's session against the MilesCAIRA Accounts v1 API.
@@ -209,7 +214,7 @@ export class AuthSession {
         this.api.call(
           AUTH_ROUTES.refresh,
           { refreshToken: this._refreshToken() },
-          { context: QUIET },
+          { context: QUIET_BACKGROUND },
         ),
       );
       this.store(session);
