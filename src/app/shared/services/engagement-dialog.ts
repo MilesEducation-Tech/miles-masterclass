@@ -39,15 +39,14 @@ const ADMIN_ROUTE = /^\/admin(\/|\?|$)/;
 const PAYMENT_ROUTE = /\/payment(\/|\?|$)/;
 
 /**
- * Immersive, auth-gated feature experiences — AI Labs and the MilesVerse
- * simulations. Both mount under the `/:country/:profession_type` prefix
- * (`/us/accounting/ai-labs`, `/us/accounting/simulation/...`), so this matches
- * either as a whole path segment anywhere rather than anchoring at the root.
- * A learner steps into these deliberately; a profile/subscription/announcement
- * pop-up over them breaks the flow (and the AI Labs announcement over the AI
+ * Immersive, auth-gated feature experience — AI Labs. It mounts under the
+ * `/:country/:profession_type` prefix (`/us/accounting/ai-labs`), so this
+ * matches it as a whole path segment anywhere rather than anchoring at the root.
+ * A learner steps into it deliberately; a profile/subscription/announcement
+ * pop-up over it breaks the flow (and the AI Labs announcement over the AI
  * Labs page is doubly pointless).
  */
-const IMMERSIVE_ROUTE = /\/(ai-labs|simulation)(\/|\?|$)/;
+const IMMERSIVE_ROUTE = /\/ai-labs(\/|\?|$)/;
 
 /**
  * Auth module — login, signup, forgot-password, the AI Labs OAuth callback.
@@ -165,7 +164,7 @@ export class EngagementDialog {
 
   /**
    * Routes no engagement dialog may sit on: the admin panel, checkout, the
-   * immersive AI Labs / simulation experiences, the auth pages (login, signup,
+   * immersive AI Labs experience, the auth pages (login, signup,
    * forgot-password, profile) and the in-course chapter / assessment /
    * feedback steps. Used both to decide whether to open and to close one we
    * already opened when the router moves onto such a route.

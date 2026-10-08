@@ -26,7 +26,6 @@ export const LOGGED_IN_NAV: readonly NavItem[] = [
   { label: 'nav.webinar', subLabel: 'nav.webinarSub', type: 'link', route: 'webinar' },
   { label: 'nav.reels', subLabel: 'nav.reelsSub', type: 'link', route: 'micro-learning' },
   { label: 'nav.podcast', subLabel: 'nav.podcastSub', type: 'link', route: 'podcast' },
-  { label: 'nav.simulation', subLabel: 'nav.simulationSub', type: 'link', route: 'simulation' },
   {
     label: 'nav.resources',
     type: 'menu',

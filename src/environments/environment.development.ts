@@ -32,19 +32,6 @@ export const environment = {
     registrationPollCapSeconds: 45,
   },
 
-  // MilesVerse API origin. Empty = MilesVerse pages show not-connected.
-  MILESVERSE_API_URL: 'https://uat.milesverse.ai',
-
-  MILESVERSE_SSO: {
-    token: '',
-    orgId: '809b6004-675f-4650-9845-315ccd9e1cd8',
-    applicationId: '01780b77-1c09-4a85-ab33-6aaa33353505',
-  },
-  // MilesVerse SSO login (UAT org/application registered on the MilesVerse
-  // backend). The token must be minted by the Masterclass backend with the
-  // shared SSO secret — empty until that endpoint exists, so MilesVerse pages
-  // will show their error state rather than silently using a wrong identity.
-
   /**
    * Miles360 Salesforce lead endpoint (AWS API Gateway). Fired fire-and-forget
    * when a new account is created — see `SalesforceLead`. `courseId` and

@@ -19,11 +19,6 @@
     "src/app/features/legal/pages/privacy-policy/privacy-policy.css": "EMPTY or comment-only — delete with its styleUrl (feature outside the Phase 12 tracker)",
     "src/app/features/legal/pages/terms-of-service/terms-of-service.css": "EMPTY or comment-only — delete with its styleUrl (feature outside the Phase 12 tracker)",
     "src/app/features/library/badge/components/badge-spot-animation/badge-spot-animation.css": "Angular-scoped @keyframes (+ the classes that use them)",
-    "src/app/features/milesverse/pages/briefing/briefing-session.css": "not reviewed: feature outside the Phase 12 tracker (has @keyframes)",
-    "src/app/features/milesverse/pages/briefing/briefing.css": "not reviewed: feature outside the Phase 12 tracker",
-    "src/app/features/milesverse/pages/milesverse/milesverse.css": "not reviewed: feature outside the Phase 12 tracker",
-    "src/app/features/milesverse/pages/report/report.css": "not reviewed: feature outside the Phase 12 tracker (has @keyframes)",
-    "src/app/features/milesverse/pages/subject/subject.css": "not reviewed: feature outside the Phase 12 tracker",
     "src/app/features/offerings/micro-learning/components/micro-learning-reel-card/micro-learning-reel-card.css": "third-party DOM: ::ng-deep video.js overrides, :has() rule, :host layout",
     "src/app/features/page-not-found/pages/page-not-found/page-not-found.css": "EMPTY or comment-only — delete with its styleUrl (feature outside the Phase 12 tracker)",
     "src/app/features/payment/components/empty-cart/empty-cart.css": "Angular-scoped @keyframes (+ the classes that use them)",
@@ -77,14 +72,6 @@
     "src/app/features/library/badge/components/badge-spot-animation/badge-spot-animation.html": {
       "count": 3,
       "reason": "animation-delay: the component CSS animation shorthand is unlayered and would reset a utility"
-    },
-    "src/app/features/milesverse/pages/briefing/briefing.html": {
-      "count": 1,
-      "reason": "two-property transition with per-property durations"
-    },
-    "src/app/features/milesverse/pages/report/report.html": {
-      "count": 2,
-      "reason": ".mv-card panels: unlayered .mv-card rule would beat a utility"
     },
     "src/app/features/offerings/micro-learning/components/micro-learning-hero/micro-learning-hero.html": {
       "count": 3,

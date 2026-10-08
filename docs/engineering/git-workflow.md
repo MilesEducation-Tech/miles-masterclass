@@ -99,7 +99,7 @@ This list **is enforced** — commitlint rejects anything else. (`revert` is als
 
 **Scope** is the area of the app, matching our folder structure: `core`, `shared`, `layout`, `admin`,
 `payment`, `offerings`, `tracker`, `partners`, `seo`, `auth`, plus the other feature folders
-(`library`, `legal`, `home`, `milesverse`, `ai-labs`, `uae-caira`, `connect-us`, `faculty`), and
+(`library`, `legal`, `home`, `ai-labs`, `uae-caira`, `connect-us`, `faculty`), and
 `deps` / `release` for dependency bumps and release commits.
 
 > **Scope is not machine-enforced on your local commits, and that is deliberate.** Two reasons, both

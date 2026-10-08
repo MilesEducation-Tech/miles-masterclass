@@ -220,9 +220,6 @@ importers:
       '@jsverse/transloco':
         specifier: ^8.4.0
         version: 8.4.0(@angular/core@22.2.0(@angular/compiler@22.2.0)(rxjs@7.8.2))(rxjs@7.8.2)(typescript@6.0.3)
-      '@milesverse/sdk':
-        specifier: ^0.1.0
-        version: 0.1.0
       '@supabase/supabase-js':
         specifier: ^2.117.2
         version: 2.117.2
@@ -2291,9 +2288,6 @@ packages:
       '@types/react': '>=16'
       react: '>=16'
 
-  '@milesverse/sdk@0.1.0':
-    resolution: {integrity: sha512-T+j1YU7E2mDL3LEj+XIRSkU0WMtfgaUNxSWK9SLd1mDcsWSmkhoLz/noNRQA9Sm5hxtIE91qdki7xHeAAL9ALQ==}
-
   '@modelcontextprotocol/core@2.0.0':
     resolution: {integrity: sha512-pJCEwGG7Lfr/+PQp9ZTwKXNeO5wzbfKL7H3MYpCorM4oFBoQrdjnBgEoqG+RjhsvS1FKrDbKux+M1HhlnGWqcA==}
     engines: {node: '>=20'}
@@ -2498,6 +2492,7 @@ packages:
   '@ngtools/webpack@22.2.0':
     resolution: {integrity: sha512-p71fd66PAkPGQCxYuaxFFSGPUOGdLsE3af/yXAMshUE6+XJyJp7RIOYoyu1dLuAOjrYpua+lqj/yl/ldOVu+Jg==}
     engines: {node: ^22.22.3 || ^24.15.0 || >=26.0.0, npm: ^6.11.0 || ^7.5.6 || >=8.0.0, yarn: '>= 1.13.0'}
+    deprecated: Angular's Webpack support is deprecated. Use the esbuild and Vite-based "@angular/build" package instead.
     peerDependencies:
       '@angular/compiler-cli': ^22.0.0
       typescript: '>=6.0 <6.1'
@@ -9442,8 +9437,6 @@ snapshots:
       '@types/mdx': 2.0.14
       '@types/react': 19.2.17
       react: 19.2.8
-
-  '@milesverse/sdk@0.1.0': {}
 
   '@modelcontextprotocol/core@2.0.0':
     dependencies:
