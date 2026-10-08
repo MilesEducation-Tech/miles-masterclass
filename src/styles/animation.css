@@ -140,3 +140,14 @@
     stroke-dashoffset: 0;
   }
 }
+
+/* `--animate-progress-indeterminate`: the indicator is a third of its track,
+   so -100% starts it just off the left edge and 300% ends it just off the right. */
+@keyframes progress-indeterminate {
+  from {
+    translate: -100%;
+  }
+  to {
+    translate: 300%;
+  }
+}

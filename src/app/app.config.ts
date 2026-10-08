@@ -27,6 +27,7 @@ import { provideIconsProvider } from './configuration/ng-icon';
 import { provideLanguage } from './configuration/language';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { appInterceptor } from '@core/interceptors/app/app-interceptor';
+import { loadingInterceptor } from '@core/interceptors/loading/loading-interceptor';
 import { adminTokenInterceptor } from '@admin/core/interceptors/admin-token-interceptor';
 import { devInterceptors } from '@core/interceptors/dev/dev-interceptors';
 import { Network } from '@core/services/network/network';
@@ -88,7 +89,14 @@ export const appConfig: ApplicationConfig = {
       // local/development builds still short-circuits only fully-prepared
       // requests; it no-ops unless localStorage.partnerMock is set. In
       // production the array is empty, so nothing mock-related is reachable.
-      withInterceptors([appInterceptor, adminTokenInterceptor, ...devInterceptors]),
+      // loadingInterceptor is first, so the loading bar also covers the token
+      // refresh appInterceptor waits on before sending.
+      withInterceptors([
+        loadingInterceptor,
+        appInterceptor,
+        adminTokenInterceptor,
+        ...devInterceptors,
+      ]),
     ),
     provideClientHydration(
       withEventReplay(),

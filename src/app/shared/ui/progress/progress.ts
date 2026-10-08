@@ -9,12 +9,12 @@ import {
 import { cn } from '../../utils/cn';
 
 const SIZES = { sm: 'h-1', md: 'h-2' } as const;
-const VARIANTS = { primary: 'bg-primary', success: 'bg-success' } as const;
+const VARIANTS = { primary: 'bg-primary', success: 'bg-success', accent: 'bg-accent' } as const;
 
 /**
  * Progress of a running task. `value` `null` is indeterminate (the primitive drops
- * `aria-valuenow` and the bar pulses). A visible `label` names the bar; a bare bar takes
- * `ariaLabel` instead.
+ * `aria-valuenow` and a third of the bar slides across; with reduced motion it stands still,
+ * full width). A visible `label` names the bar; a bare bar takes `ariaLabel` instead.
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,7 +61,7 @@ export class Progress {
 
   protected readonly indicatorClass = computed(() =>
     cn(
-      'h-full rounded-full transition-[width] group-data-indeterminate:w-full group-data-indeterminate:animate-pulse motion-reduce:transition-none motion-reduce:group-data-indeterminate:animate-none',
+      'h-full rounded-full transition-[width] group-data-indeterminate:w-1/3 group-data-indeterminate:animate-progress-indeterminate motion-reduce:transition-none motion-reduce:group-data-indeterminate:w-full motion-reduce:group-data-indeterminate:animate-none',
       VARIANTS[this.variant()],
     ),
   );
