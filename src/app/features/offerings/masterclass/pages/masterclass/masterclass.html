@@ -2,9 +2,12 @@
   <app-section-nav [items]="sectionNavItems()" mode="sidenav" [shareWithHeader]="false" />
 
   <section id="masterclass-home" class="scroll-mt-20">
-    @if (popular.items()) {
-      <app-slider [items]="popular.items()!" />
-    } @else {
+    <!-- `items()` is always an array, so test its length. The skeleton is in the
+         server HTML and stays while the read runs; a failed or empty read shows
+         nothing rather than an empty slider. -->
+    @if (popular.items().length) {
+      <app-slider [items]="popular.items()" />
+    } @else if (popular.isPending()) {
       <app-slider-skeleton />
     }
   </section>

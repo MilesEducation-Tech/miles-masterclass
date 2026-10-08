@@ -12,12 +12,14 @@ const meta: Meta<Spinner> = {
       description: 'Size of the spinner',
     },
     color: {
-      control: 'text',
-      description: 'Tailwind color for the spinning part (e.g., "primary", "white")',
+      control: 'select',
+      options: ['current', 'primary', 'white'],
+      description: 'The spinning arc; `current` follows the surrounding text colour',
     },
     trackColor: {
-      control: 'text',
-      description: 'Tailwind color for the track (e.g., "neutral-tertiary")',
+      control: 'select',
+      options: ['current', 'neutral-600'],
+      description: 'The ring behind the arc; `current` is the text colour at 25%',
     },
   },
 };
@@ -28,8 +30,8 @@ type Story = StoryObj<Spinner>;
 export const Default: Story = {
   args: {
     size: 'md',
-    color: 'primary',
-    trackColor: 'neutral-tertiary',
+    color: 'current',
+    trackColor: 'current',
   },
 };
 
@@ -54,7 +56,7 @@ export const ExtraLarge: Story = {
 };
 
 export const WhiteSpinner: Story = {
-  args: { size: 'lg', color: 'white', trackColor: 'neutral-tertiary' },
+  args: { size: 'lg', color: 'white', trackColor: 'neutral-600' },
 };
 
 export const AllSizes: Story = {
