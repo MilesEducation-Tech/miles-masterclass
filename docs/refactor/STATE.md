@@ -16,6 +16,44 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - Open: `/ai-labs` `catalogueCourses` (440/442) are production-only, so that catalogue renders empty;
     `MILESVERSE_API_URL` is still production; the UAT API must allow the `www.milesmasterclass.com` origin (CORS).
 
+- 🔧 **2026-10-08, NON-REFACTOR — global loading bar: visible, robust, skippable per request
+  (`prompts/global-loading-bar.md`, approved). DONE, BROWSER-VERIFIED, UNCOMMITTED** on
+  `fix/MIL-XXX-global-loading-bar` (from `master`, after MIL-40). No refactor phase moved. This entry sits
+  below the top one, so it merges with MIL-40's STATE edit without a conflict.
+  - New `SKIP_LOADING` token and `core/interceptors/loading/loading-interceptor.ts`, registered first.
+    `LoadingService` is rewritten:
+    - browser-only
+    - an idempotent stop
+    - a 150 ms show delay and a 400 ms minimum visible time
+    - one `visible` signal
+  - `appInterceptor` lost its loading code.
+  - The bar: `accent` variant, a sliding third (`animate-progress-indeterminate`, keyframes in
+    `animation.css`), and a static full bar under reduced motion.
+  - Opted out:
+    - token refresh
+    - `myclassactivity` (chapter and reel)
+    - webinar heartbeats
+    - registration polling
+    - global search
+    - location autocomplete
+    - UTM capture
+    - `user-details`
+  - AGENTS.md §4.2 states the rule.
+  - Gates (local macOS, Node 24.15, not CI): `tsc` 0; `pnpm lint` 0 errors (109 legacy warnings); structure
+    passed; `build:prod` green, 243.72 kB initial, only the `ai-labs.css` warning.
+  - Browser: `build:prod` SSR on 4000, headless Chromium, signed out.
+    - The SSR HTML has no `app-progress`.
+    - Home → `/masterclass` unthrottled: the bar showed 401 ms.
+    - At 400 ms latency it showed exactly 400 ms, and released on the UAT 404 for `v2/dashboard/?filter=popular`.
+    - Global-search typing mounted no bar (its request ran and 404s on UAT).
+    - Reduced motion: `animation: none`, full width.
+    - The bar is `rgb(42,133,255)`, 4 px, `pointer-events: none`, `role=progressbar`, `aria-label=Loading`.
+  - Follow-up ticket (not here): the per-page loading UI.
+    - the `Spinner`'s dynamic colour classes
+    - the dead `/masterclass` hero skeleton (`popular.items()` is always an array)
+    - the podcast / micro-learning rail skeletons gated behind data
+    - manual flags without `finalize`
+
 - 🔧 **2026-10-08, NON-REFACTOR — PR #67 review, Revision 3 IMPLEMENTED (you approved), BROWSER-VERIFIED,
   UNCOMMITTED.** No refactor phase moved.
   - **Verified on your restarted `start:dev` (4101), signed out, headless Chromium (visible page):**
@@ -3407,6 +3445,8 @@ These are environment and product observations the repair surfaced. None changed
 ## Step log (latest first; keep the last 30 lines)
 
 - 2026-10-08 · NON-REFACTOR · **Production `BASE_API_URL` → UAT** (uncommitted, live API not up yet) · Prettier/ESLint clean, build:prod green (local) · open: ai-labs course ids, MilesVerse URL, CORS
+
+- 2026-10-08 · NON-REFACTOR · **Global loading bar** (uncommitted, `fix/MIL-XXX-global-loading-bar`): `SKIP_LOADING`, `loadingInterceptor` first, `LoadingService` with show delay + minimum, sliding accent bar, 8 background opt-outs · lint 0 errors, structure ✔, build:prod 243.72 kB (local) · verified on the 4000 SSR build, headless
 
 - 2026-10-08 · NON-REFACTOR · **MIL-25 Revision 3 implemented** (uncommitted): `CourseDetailFacade` at the offerings level, keyed by offering; the sections inject it · tsc 0, lint 0 errors, structure ✔, build:prod 243.85 kB (local) · browser-verified on 4101 (page, legacy link, "i" dialog)
 

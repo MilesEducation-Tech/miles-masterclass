@@ -1,7 +1,9 @@
+import { HttpContext } from '@angular/common/http';
 import { computed, inject, Signal, WritableSignal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
 import { AriaSelectOption } from '../../models/aria.model';
+import { SKIP_LOADING } from '../../models/http.model';
 import { ApiClient } from '../api-client/api-client';
 import { Logger } from '../logger/logger';
 
@@ -56,7 +58,11 @@ export function placeSuggestions(
         q.length < 2
           ? of<string[]>([])
           : http
-              .get<LocationAutocompleteResponse>(AUTOCOMPLETE_URL, { params: { search: q } })
+              // Typeahead: suggestions fill in as they arrive, not behind the loading bar.
+              .get<LocationAutocompleteResponse>(AUTOCOMPLETE_URL, {
+                params: { search: q },
+                context: new HttpContext().set(SKIP_LOADING, true),
+              })
               .pipe(
                 map((res) => {
                   // Recovered — a later query succeeding clears an earlier failure.

@@ -1,6 +1,8 @@
-@if (loading.isLoading()) {
-  <div class="fixed top-0 start-0 end-0 z-9999">
-    <app-progress [value]="null" variant="primary" size="sm" />
+<!-- The global loading bar (LoadingService, driven by loadingInterceptor). It
+     never takes clicks, so it can stay on for every request by default. -->
+@if (loading.visible()) {
+  <div class="pointer-events-none fixed top-0 start-0 end-0 z-9999">
+    <app-progress [value]="null" variant="accent" size="sm" ariaLabel="Loading" />
   </div>
 }
 <router-outlet />
