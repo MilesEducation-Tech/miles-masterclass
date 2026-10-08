@@ -262,7 +262,7 @@ interaction)`. A plain `@defer` renders only its placeholder on the server.
 
 **When to use it:** for a service that isn't needed to render the page and serves only a user action or a subset of
 pages. It is **required** when the service pulls in a heavy library: three, video.js, swiper, gsap, lenis, motion,
-jspdf, html2canvas-pro, jszip, canvas-confetti, `@milesverse/sdk`.
+jspdf, html2canvas-pro, jszip, canvas-confetti.
 
 **It fits only when all of these hold:**
 
@@ -428,7 +428,7 @@ Then, depending on what changed:
 
 Known baseline — **state the environment, because it changes the answer:**
 
-- **Locally (macOS, Node 24.15), re-measured 2026-10-06:** all green. `pnpm lint` 0 errors (110 legacy `any` warnings, see below), `pnpm format` 0, `pnpm build:prod` 0 (two known component-CSS budget warnings), `pnpm build-storybook` 0. Unit tests were removed on 2026-10-06; there is no test gate.
+- **Locally (macOS, Node 24.15), re-measured 2026-10-06:** all green. `pnpm lint` 0 errors (110 legacy `any` warnings, see below), `pnpm format` 0, `pnpm build:prod` 0 (one known component-CSS budget warning, `ai-labs.css`), `pnpm build-storybook` 0. Unit tests were removed on 2026-10-06; there is no test gate.
 
 **A red gate means you broke it** — the old "lint and test are already red from pre-existing debt" note was stale and that debt is paid off, so don't reach for it as an excuse. But **say which environment you measured**: a local-green/CI-red split is the hardest kind to debug if nobody records which side they ran.
 

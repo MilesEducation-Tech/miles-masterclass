@@ -1,5 +1,5 @@
 allowBuilds:
-  "@parcel/watcher": true
+  '@parcel/watcher': true
   # Its postinstall only prints a notice about bot/AI use cases — nothing to
   # build, so denying it keeps installs quiet without losing anything.
   '@zoom/meetingsdk': false
@@ -8,5 +8,3 @@ allowBuilds:
   lmdb: true
   msgpackr-extract: true
   unrs-resolver: true
-minimumReleaseAgeExclude:
-  - "@milesverse/sdk@0.1.0"

@@ -114,7 +114,7 @@ The branch prefix and the PR-title type almost always match. The one exception i
 
 **Scope** (the part in brackets in the title) = the area of the app you touched: `core`, `shared`, `layout`,
 `admin`, `payment`, `offerings`, `tracker`, `partners`, `seo`, `auth`, `library`, `legal`, `home`,
-`milesverse`, `ai-labs`, `uae-caira`, `connect-us`, `faculty`, `deps`. It isn't machine-checked, but the
+`ai-labs`, `uae-caira`, `connect-us`, `faculty`, `deps`. It isn't machine-checked, but the
 reviewer will ask.
 
 ---

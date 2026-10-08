@@ -67,15 +67,6 @@ export const environment = {
     registrationPollCapSeconds: 45,
   },
 
-  // MilesVerse API origin. Empty = MilesVerse pages show not-connected.
-  MILESVERSE_API_URL: 'https://api.milesverse.ai',
-
-  MILESVERSE_SSO: {
-    token: '',
-    orgId: 'daad80f2-95ee-47db-b65c-6e029b4f710d',
-    applicationId: 'f701288a-f040-471f-bd83-8d33e8f15f3c',
-  },
-
   /**
    * Miles360 Salesforce lead endpoint (AWS API Gateway). Fired fire-and-forget
    * when a new account is created — see `SalesforceLead`. `courseId` and
