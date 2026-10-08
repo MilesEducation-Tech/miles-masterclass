@@ -1,6 +1,9 @@
 import { Component, computed, inject } from '@angular/core';
 import { swiperConfigEven, swiperConfigOdd } from '@core/config/swiper.config';
-import { MasterclassCourse } from '@core/models/masterclass-home.model';
+import {
+  MasterclassCourse,
+  MasterclassCourseInfoDialogData,
+} from '@core/models/masterclass-home.model';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { MasterclassHomeFacade } from '@core/services/masterclass-home-facade/masterclass-home-facade';
 import { NgpDialogManager } from 'ng-primitives/dialog';
@@ -16,8 +19,6 @@ import {
   MASTERCLASS_SECTION_NAV,
   MASTERCLASS_TRACKS_SECTION_ID,
 } from '@features/offerings/masterclass/constants/masterclass-nav';
-// Type-only: the dialog itself loads with `import()` when opened (AGENTS.md §4.4).
-import type { MasterclassCourseInfoDialogData } from '@features/offerings/masterclass/models/masterclass-course.model';
 
 /**
  * The masterclass landing page: the hero, then one carousel per track from

@@ -5,12 +5,12 @@ import { heroXMark } from '@ng-icons/heroicons/outline';
 import { matPlayArrowRound } from '@ng-icons/material-icons/round';
 import { phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
 import { injectDialogRef } from 'ng-primitives/dialog';
+import { MasterclassCourseInfoDialogData } from '@core/models/masterclass-home.model';
 import { MilesSlug } from '@shared/components/miles-slug/miles-slug';
 import { Button } from '@shared/ui/button/button';
 import { Dialog } from '@shared/ui/dialog/dialog';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { MasterclassCourseAbout } from '@features/offerings/masterclass/components/masterclass-course-about/masterclass-course-about';
-import { MasterclassCourseInfoDialogData } from '@features/offerings/masterclass/models/masterclass-course.model';
 
 /**
  * The landing page's "i" dialog: a course's header and its About section, in

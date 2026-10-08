@@ -21,17 +21,16 @@
       </div>
     } @else {
       @for (track of home.tracks(); track track.id; let even = $even) {
-        @let layout = even ? 'vertical' : 'horizontal';
         @defer (on viewport; prefetch on idle) {
           <app-carousel
             [cards]="track.courses"
             [heading]="{ text: track.name, subText: track.description ?? '' }"
-            [swiperConfig]="even ? swiperConfigOdd : swiperConfigEven"
+            [swiperConfig]="swiperConfigEven"
           >
             <ng-template let-course>
               <app-masterclass-course-card
                 [course]="course"
-                [layout]="layout"
+                [layout]="'horizontal'"
                 [showInfo]="true"
                 (trailer)="openTrailer($event)"
                 (info)="openCourseInfo($event)"
@@ -39,20 +38,35 @@
             </ng-template>
           </app-carousel>
         } @placeholder {
-          <div
-            class="flex items-center justify-center min-w-28"
-            [class]="even ? 'aspect-9/16' : 'aspect-video'"
-          >
-            <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+          <div class="animate-pulse" aria-hidden="true">
+            <div class="h-11 md:h-[54px] w-72 max-w-full rounded bg-white/5"></div>
+            <div class="mt-4 pb-10 flex gap-[30px] overflow-hidden">
+              @for (i of [1, 2, 3]; track i) {
+                <div
+                  class="shrink-0 basis-[calc((100%-3px)/1.1)] md:basis-[calc((100%-30px)/2)] lg:basis-[calc((100%-54px)/2.8)]"
+                >
+                  <div class="aspect-video rounded-lg bg-muted"></div>
+                  <div class="h-[140px]"></div>
+                </div>
+              }
+            </div>
           </div>
         }
       } @empty {
         @if (home.isLoading()) {
           <!-- The carousel's own placeholder row, so the first rail lands in place. -->
-          <div class="flex gap-4 animate-pulse" aria-hidden="true">
-            @for (i of [1, 2, 3, 4]; track i) {
-              <div class="w-64 aspect-9/16 bg-muted rounded-lg shrink-0"></div>
-            }
+          <div class="animate-pulse" aria-hidden="true">
+            <div class="h-11 md:h-[54px] w-72 max-w-full rounded bg-white/5"></div>
+            <div class="mt-4 pb-10 flex gap-[30px] overflow-hidden">
+              @for (i of [1, 2, 3]; track i) {
+                <div
+                  class="shrink-0 basis-[calc((100%-3px)/1.1)] md:basis-[calc((100%-30px)/2)] lg:basis-[calc((100%-54px)/2.8)]"
+                >
+                  <div class="aspect-video rounded-lg bg-muted"></div>
+                  <div class="h-[140px]"></div>
+                </div>
+              }
+            </div>
           </div>
         }
       }

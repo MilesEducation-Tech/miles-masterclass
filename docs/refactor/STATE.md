@@ -7,6 +7,27 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-08, NON-REFACTOR — home cards get the "i" course-info button (`prompts/home-course-info.md`,
+  approved). DONE, BROWSER-VERIFIED, UNCOMMITTED** on `feat/MIL-XXX-home-course-info` (from `master`). No
+  refactor phase moved. Ticket B of the same request (global loading bar, `prompts/global-loading-bar.md`)
+  starts from `master` after this one is committed: both edit `app.config.ts`.
+  - New `MASTERCLASS_COURSE_INFO_DIALOG` in `core/services/dialog/feature-dialog-tokens.ts`, bound in
+    `app.config.ts` to the offerings dialog's `import()`; `MasterclassCourseInfoDialogData` moved to
+    `core/models/masterclass-home.model.ts`; home passes `[showInfo]="true" (info)="openCourseInfo($event)"`.
+  - Gates (local macOS, Node 24.15, not CI): `pnpm lint` 0 errors (109 legacy warnings), structure check
+    passed; `build:prod` green, only the `ai-labs.css` budget warning; the dialog is its own 5.7 kB chunk.
+  - Browser: the `build:prod` SSR server on 4000, headless Chromium (visible page), signed out:
+    - 21 home cards, each with an "i"
+    - the dialog opens with the card header, then the About from `course-detail/`
+    - Watch Now → `/us/accounting/masterclass/<id>/<slug>`
+    - 0 console errors
+  - Your 4101 dev server serves a stale `MasterclassCourseCard` (inputs `course`/`layout`/`priority`, no
+    `showInfo`). The 4100 server shares its `.angular` cache and deleted it on start. Restart 4101 to
+    see the change there.
+  - Your uncommitted edits are untouched and not part of this ticket: `slider.html`, `masterclass.html`,
+    `swiper.config.ts`, `caira-level-stack.css`. They are still changing, which trips the stop gate on its
+    own.
+
 - 🔧 **2026-10-08, NON-REFACTOR — production points at the UAT API. DONE, BUILD GREEN, UNCOMMITTED** on
   `master` (branch `chore/MIL-XXX-prod-uses-uat-api` proposed). No refactor phase moved.
   - `environment.ts` `BASE_API_URL` is `https://uat-api.milescaira.com/`, with a `why:` comment to switch back
@@ -3405,6 +3426,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-08 · NON-REFACTOR · **Home "i" course-info button** (uncommitted, `feat/MIL-XXX-home-course-info`): dialog token bound in `app.config.ts`, data type moved to core · lint 0 errors, structure ✔, build:prod green (local) · verified on the 4000 SSR build, headless · next: global loading bar from master
 
 - 2026-10-08 · NON-REFACTOR · **Production `BASE_API_URL` → UAT** (uncommitted, live API not up yet) · Prettier/ESLint clean, build:prod green (local) · open: ai-labs course ids, MilesVerse URL, CORS
 

@@ -1,7 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { swiperConfigEven } from '@core/config/swiper.config';
-import { MasterclassCourse } from '@core/models/masterclass-home.model';
+import {
+  MasterclassCourse,
+  MasterclassCourseInfoDialogData,
+} from '@core/models/masterclass-home.model';
+import { MASTERCLASS_COURSE_INFO_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
 import { MasterclassHomeFacade } from '@core/services/masterclass-home-facade/masterclass-home-facade';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { AppDownload } from '@shared/components/app-download/app-download';
 import { CairaLevelStack } from '@shared/components/caira-level-stack/caira-level-stack';
 import { MasterclassCourseCard } from '@shared/components/cards/masterclass-course-card/masterclass-course-card';
@@ -46,6 +51,8 @@ import { HomeWebinar } from '../../models/home-sections.model';
 })
 export class Home {
   private readonly utils = inject(Utils);
+  private readonly dialogs = inject(NgpDialogManager);
+  private readonly courseInfoDialog = inject(MASTERCLASS_COURSE_INFO_DIALOG);
 
   protected readonly home = inject(MasterclassHomeFacade);
 
@@ -89,5 +96,16 @@ export class Home {
   /** The shared video dialog; it toasts "Trailer Not Found" for a course with none. */
   protected openTrailer(course: MasterclassCourse): void {
     void this.utils.openVideoDialog(course.trailer_url, course.title);
+  }
+
+  /**
+   * The "i" dialog `/masterclass` opens: the course's About, read when it
+   * opens. It belongs to the offerings feature, so it comes through the token
+   * `app.config.ts` binds, and loads on first use.
+   */
+  protected async openCourseInfo(course: MasterclassCourse): Promise<void> {
+    this.dialogs.open<MasterclassCourseInfoDialogData>(await this.courseInfoDialog(), {
+      data: { course },
+    });
   }
 }

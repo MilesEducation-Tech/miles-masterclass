@@ -49,7 +49,9 @@
                   [course]="course"
                   layout="horizontal"
                   [priority]="first && index < 3"
+                  [showInfo]="true"
                   (trailer)="openTrailer($event)"
+                  (info)="openCourseInfo($event)"
                 />
               </ng-template>
             </app-carousel>
