@@ -57,6 +57,14 @@ export interface MasterclassCourse {
   included_for_caira: boolean;
 }
 
+/**
+ * What the course-info ("i") dialog opens with: the card the learner clicked.
+ * Here, not in the dialog's feature, because the home page opens it too.
+ */
+export interface MasterclassCourseInfoDialogData {
+  course: MasterclassCourse;
+}
+
 // ---- Home page -------------------------------------------------------------
 
 export interface MasterclassTrack {

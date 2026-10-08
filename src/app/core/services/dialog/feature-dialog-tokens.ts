@@ -37,3 +37,12 @@ export const CART_DRAWER_DIALOG = new InjectionToken<() => Promise<Type<unknown>
 export const SUBSCRIPTION_DIALOG = new InjectionToken<() => Promise<Type<unknown>>>(
   'SUBSCRIPTION_DIALOG',
 );
+
+/**
+ * The masterclass course-info ("i") dialog, opened from `features/home`. Its
+ * data is `MasterclassCourseInfoDialogData`. The `/masterclass` page, in the
+ * dialog's own feature, imports it directly.
+ */
+export const MASTERCLASS_COURSE_INFO_DIALOG = new InjectionToken<() => Promise<Type<unknown>>>(
+  'MASTERCLASS_COURSE_INFO_DIALOG',
+);

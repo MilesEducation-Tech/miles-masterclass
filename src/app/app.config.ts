@@ -35,6 +35,7 @@ import { Analytics } from '@core/services/analytics/analytics';
 import { TOAST_COMPONENT } from '@core/services/notification/notification';
 import {
   CART_DRAWER_DIALOG,
+  MASTERCLASS_COURSE_INFO_DIALOG,
   SUBSCRIPTION_DIALOG,
 } from '@core/services/dialog/feature-dialog-tokens';
 import { Toast } from '@shared/ui/toast/toast';
@@ -129,6 +130,15 @@ export const appConfig: ApplicationConfig = {
       useValue: () =>
         import('@features/payment/dialogs/subscription-dialog/subscription-dialog').then(
           (m) => m.SubscriptionDialog,
+        ),
+    },
+    // The masterclass "i" dialog, for the home page's cards (features/home may not
+    // import features/offerings).
+    {
+      provide: MASTERCLASS_COURSE_INFO_DIALOG,
+      useValue: () =>
+        import('@features/offerings/masterclass/dialogs/masterclass-course-info-dialog/masterclass-course-info-dialog').then(
+          (m) => m.MasterclassCourseInfoDialog,
         ),
     },
     // `Network` is `providedIn: 'root'` but only does its job once instantiated

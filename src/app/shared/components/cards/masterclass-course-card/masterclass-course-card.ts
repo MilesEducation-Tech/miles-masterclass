@@ -40,9 +40,9 @@ export class MasterclassCourseCard {
   readonly priority = input(false);
 
   /**
-   * The "i" button, for a page that opens the course-info dialog on `info`.
-   * Off by default: the dialog belongs to the masterclass feature, so the home
-   * page's cards have nothing to open.
+   * The "i" button, for a page that opens the course-info dialog on `info`
+   * (the home page and `/masterclass`). Off by default: a page without that
+   * dialog would render a button that does nothing.
    */
   readonly showInfo = input(false);
 

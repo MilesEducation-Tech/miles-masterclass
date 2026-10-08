@@ -36,6 +36,10 @@ export const swiperConfigEven: SwiperConfig = {
       slidesPerView: 2.8,
       spaceBetween: 30,
     },
+    '1440': {
+      slidesPerView: 3.3,
+      spaceBetween: 30,
+    },
   },
 };
 
