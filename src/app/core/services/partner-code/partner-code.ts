@@ -1,5 +1,5 @@
 import { Service, inject, signal } from '@angular/core';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Observable, catchError, defer, finalize, map, of, tap } from 'rxjs';
 import { ApiClient } from '../api-client/api-client';
 import { Logger } from '../logger/logger';
 import { NotificationService } from '../notification/notification';
@@ -32,21 +32,25 @@ export class PartnerCode {
     const partner_code = rawCode.trim();
     if (!partner_code) return of(false);
 
-    this.loading.set(true);
-    return this.http.post(PROFILE_ROUTES.applyPartnerCode.path, { partner_code }).pipe(
+    // `loading` is set on subscribe and cleared in `finalize`, so a caller that
+    // unsubscribes mid-request (the dialog closing) can't leave this root flag
+    // stuck on, which would lock the dialog's next open on "Applying…".
+    return defer(() => {
+      this.loading.set(true);
+      return this.http.post(PROFILE_ROUTES.applyPartnerCode.path, { partner_code });
+    }).pipe(
       tap(() => {
         // ponytail: used to refetch the profile here so server-derived flags
         // (`is_existing_user`) picked up the new code. No profile layer now.
         this.notification.success('Partner Code', 'Partner code applied successfully');
-        this.loading.set(false);
       }),
       map(() => true),
       catchError((error: unknown) => {
         this.logger.error('Failed to apply partner code', error);
         this.notification.error('Partner Code', 'Failed to apply partner code');
-        this.loading.set(false);
         return of(false);
       }),
+      finalize(() => this.loading.set(false)),
     );
   }
 }

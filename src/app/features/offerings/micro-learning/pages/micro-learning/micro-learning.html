@@ -53,6 +53,19 @@
           </div>
         }
       }
+    } @empty {
+      @if (track.isPending()) {
+        <!-- The tracks' first load, and the server HTML (the browser fetches them):
+             a rail-shaped skeleton the first rail replaces. Nothing if there are none. -->
+        <div class="animate-pulse" aria-hidden="true">
+          <div class="h-8 w-64 max-w-full rounded bg-muted"></div>
+          <div class="mt-4 flex gap-4 overflow-hidden">
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <div class="w-64 aspect-9/16 shrink-0 rounded-lg bg-muted"></div>
+            }
+          </div>
+        </div>
+      }
     }
     @if (bookmark.items().length) {
       @defer (on viewport; prefetch on idle) {
