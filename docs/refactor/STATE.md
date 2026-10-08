@@ -7,6 +7,15 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-08, NON-REFACTOR — production points at the UAT API. DONE, BUILD GREEN, UNCOMMITTED** on
+  `master` (branch `chore/MIL-XXX-prod-uses-uat-api` proposed). No refactor phase moved.
+  - `environment.ts` `BASE_API_URL` is `https://uat-api.milescaira.com/`, with a `why:` comment to switch back
+    when the live API is up. No other tracked file names the API host.
+  - Gates (local macOS, not CI): Prettier and ESLint clean on the file; `build:prod` green with the two known
+    CSS budget warnings; the browser and server bundles carry only the UAT host.
+  - Open: `/ai-labs` `catalogueCourses` (440/442) are production-only, so that catalogue renders empty;
+    `MILESVERSE_API_URL` is still production; the UAT API must allow the `www.milesmasterclass.com` origin (CORS).
+
 - 🔧 **2026-10-08, NON-REFACTOR — PR #67 review, Revision 3 IMPLEMENTED (you approved), BROWSER-VERIFIED,
   UNCOMMITTED.** No refactor phase moved.
   - **Verified on your restarted `start:dev` (4101), signed out, headless Chromium (visible page):**
@@ -3377,6 +3386,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-08 · NON-REFACTOR · **Production `BASE_API_URL` → UAT** (uncommitted, live API not up yet) · Prettier/ESLint clean, build:prod green (local) · open: ai-labs course ids, MilesVerse URL, CORS
 
 - 2026-10-08 · NON-REFACTOR · **MIL-25 Revision 3 implemented** (uncommitted): `CourseDetailFacade` at the offerings level, keyed by offering; the sections inject it · tsc 0, lint 0 errors, structure ✔, build:prod 243.85 kB (local) · browser-verified on 4101 (page, legacy link, "i" dialog)
 
