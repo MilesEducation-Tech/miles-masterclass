@@ -442,3 +442,190 @@ on old links only.
 - **The trailer has speech.** Production loops a short preview clip; we loop the full trailer muted until
   the backend fills a preview field.
 - **Payload.** 41–81 KB per course (median 56 KB, uncompressed; measured on all 64), mostly chapter transcripts. Fine for SSR, heavier for the dialog.
+
+---
+
+# Revision 3 (2026-10-08): PR #67 review — an offerings-level facade, injected by the components
+
+**Status:** approved 2026-10-08, with R3-5 (the AGENTS.md line). **Implemented, uncommitted.** Phases 1 and 2
+land as one commit, because both touch the same files. The gates are green; the browser check is pending.
+
+## Why
+
+Reviewer me-sachin-singh requested changes on #67 with two comments:
+
+1. **On `masterclass-course-facade.ts`:** "Create a new service on the offerings level, and then we'll use the
+   same service offering-wide."
+2. **On the page:** "For this page, we are using the facade pattern. In this case, try to avoid the
+   input/output signal exchange between the parent and child … injecting the facade surface into each of the
+   components and directly doing all things."
+
+## What I read
+
+- **`features/offerings/services/`** already holds the offering-wide services: `chapter-facade`,
+  `feedback-facade`, `final-assessment-facade`, `micro-learning-course-facade`, and the legacy
+  `masterclass-facade`. The podcast course page and the chapter player still share that legacy facade.
+- **The web API** (Postman, refreshed 2026-10-07) has `course-detail/` only under `web-api/v1/masterclass/`.
+  Its only other web routes are three webinar feedback ones. Podcast still reads `v2/:course_type/details/`
+  through the legacy facade, and micro-learning reads `v2/nano-learning/`.
+- **Masterclass-only parts of the facade today:**
+  - the `about-course/`, `course-detail/` and `bookmark/:id/` URLs
+  - the course URL segment `masterclass`
+  - the analytics `course_type: 'masterclass'`
+  - the payload's own `masterclass_duration`, `masterclass_duration_seconds` and
+    `masterclass_certificate_url` keys
+- **Who imports the facade, model, guards or constants:** 12 files, all under `offerings/masterclass/`. No
+  story file exists for any of them.
+- **Components that already inject their page's facade:** payment's `price-overview` and `promo-coupons`,
+  webinar's `webinar-hero` and `webinar-card`, `uae-caira`'s levels section, and the legacy offerings
+  components. Comment 2 matches that house pattern. AGENTS.md §3 line 74 ("components: inputs and outputs
+  only") is the outlier.
+
+## Decisions to confirm
+
+**R3-1. Location and names (recommended).**
+
+| Today (`offerings/masterclass/…`)                | After (`offerings/…`)                                     |
+| ------------------------------------------------ | --------------------------------------------------------- |
+| `services/masterclass-course-facade.ts`          | `services/course-detail-facade.ts` → `CourseDetailFacade` |
+| `models/masterclass-course.model.ts` (contract)  | `models/course-detail.model.ts`                           |
+| `utils/contract-guards.ts`                       | `utils/contract-guards.ts`                                |
+| endpoints, bookmark route, id pattern, page size | new `constants/course-detail.ts`                          |
+
+Named after the API route, `course-detail/`. The legacy `MasterclassFacade` keeps its name until podcast
+moves off it.
+
+**These stay in `masterclass/`:**
+
+- the hero trailer constants
+- `MasterclassCourseInfoDialogData` and `MasterclassDurationParts`, which are masterclass views. The
+  slimmed-down `masterclass-course.model.ts` keeps them.
+- `utils/duration-parts.ts`
+- every component and the dialog
+
+**R3-2. The offering is a parameter, with one entry (recommended).**
+
+- A `CourseOffering` type, `'masterclass'` for now. `COURSE_DETAIL_API: Record<CourseOffering, …>` holds,
+  per offering:
+  - the detail, about-course and bookmark URLs
+  - the URL segment
+  - the analytics `course_type`
+- `connect()` takes `{ offering, courseId, slug }`. The course page and the "i" dialog pass `'masterclass'`.
+- Another offering plugs in by adding its entry, once the backend ships its web route. No podcast or
+  micro-learning URL is invented now.
+- **Not chosen:** an `InjectionToken` per route. It means more wiring for the same result.
+
+**R3-3. Payload types keep their names (recommended).**
+
+- `MasterclassCourseDetail`, `MasterclassChapter` and the rest describe the masterclass payload, including
+  its `masterclass_*` keys.
+- Only the facade-level param type becomes generic: `MasterclassCourseRouteParams` → `CourseDetailParams`,
+  which gains `offering`.
+- Renaming the payload types now would promise a podcast contract nobody has seen. When a second offering
+  lands, its payload joins as a union.
+
+**R3-4. The components inject the facade (comment 2).**
+
+| Component                      | Drops                                                | Reads / calls on `CourseDetailFacade`                                                                                                                 |
+| ------------------------------ | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `masterclass-course-hero`      | `course`, `bookmarked`, `bookmarkPending`; 6 outputs | `course()`, `isBookmarked()`, `bookmarkPending()`; `watch()`, `openTrailer()`, `openSample()`, `toggleBookmark()`, `share()`, `downloadCertificate()` |
+| `masterclass-course-about`     | `course`                                             | `course()`                                                                                                                                            |
+| `masterclass-chapter-list`     | `chapters`                                           | `chapters()`                                                                                                                                          |
+| `masterclass-course-resources` | `resources`; `navigation`, `glossary` outputs        | `course().miscellaneous_data`; `openNavigationVideo()`, `openGlossary()`                                                                              |
+| `masterclass-course-related`   | `rails`                                              | `relatedRails()`                                                                                                                                      |
+
+- **Kept in the components:**
+  - the hero's view-only state: poster/trailer timing, play/pause, mute, pause-on-dialog
+  - formatting computeds such as `poster`, `cairaLevel` and `duration`
+- **Each template guards `course()`.** It can be `null`.
+- **The page keeps every section's `@if`.** Empty sections are hidden by the parent, as before.
+- **Inside the "i" dialog,** `masterclass-course-about` injects the dialog's own instance, from the dialog's
+  `providers`. That is the right course, with no input.
+- **Out of scope:** the shared `masterclass-course-card` on the landing page stays inputs/outputs. It lives in
+  `shared/` and cannot import a feature facade.
+
+**R3-5. AGENTS.md §3 line 74 (your call).** It still says components are "inputs and outputs only".
+
+- **Recommended:** a one-line `docs(core)` commit:
+
+  > Presentational. On a facade-backed page they may inject that page's facade; components in `shared/`
+  > stay inputs and outputs.
+
+- **Otherwise:** leave the line, and the reviewer's pattern stays undocumented.
+
+## Phases (each its own commit on `feat/MIL-25-…`, each green)
+
+1. **`refactor(offerings): move the course-detail facade to the offerings level`.** R3-1 to R3-3.
+   Behaviour-neutral: the moves show as renames, and the diff is imports plus the offering parameter.
+2. **`refactor(offerings): let the course page's sections inject the facade`.** R3-4.
+3. **(R3-5)** `docs(core): let feature components inject their page's facade`.
+
+## Files touched
+
+- **Moved:** the facade, the course-detail contract and the guards (R3-1).
+- **New:** `features/offerings/constants/course-detail.ts`.
+- **Edited:**
+  - `masterclass/constants/masterclass.ts`, which keeps the hero trailer constants
+  - `masterclass/models/masterclass-course.model.ts`, which keeps the two view types
+  - `masterclass.routes.ts`
+  - `pages/masterclass-course/masterclass-course.{ts,html}`
+  - the five components' `.ts` and `.html`
+  - `dialogs/masterclass-course-info-dialog/masterclass-course-info-dialog.ts`
+  - `utils/duration-parts.ts`
+  - `docs/refactor/STATE.md`
+  - AGENTS.md, for R3-5
+
+## Acceptance criteria
+
+- `CourseDetailFacade` lives in `features/offerings/services/`. It is listed in the course route's
+  `providers` and in the dialog's.
+- No offering string is hard-coded in the facade; every URL, segment and analytics type comes from
+  `COURSE_DETAIL_API[offering]`.
+- The five components have no `input()` or `output()` for facade-owned data or actions. Each injects
+  `CourseDetailFacade`.
+- The page template renders them as bare elements inside its section `@if`s.
+- **Behaviour is unchanged:**
+  - SSR HTML is the same, and the browser makes 0 API calls after hydration
+  - the hero shows the poster, then the trailer, and play/mute work
+  - signed out, Bookmark redirects to login; Download stays disabled
+  - the glossary dialog opens, and AI Kit and exercise files link out
+  - a related card navigates to its course
+  - an old numeric `442/<slug>` link still resolves, and an unknown id shows not-found
+  - the "i" dialog on `/masterclass` shows the right course's About
+- `pnpm lint` 0 errors; the structure check passes; `pnpm build:prod` stays within budget.
+
+## Checks to run
+
+- `pnpm lint`
+- Prettier on the touched files
+- `pnpm check:structure`
+- `tsc -p tsconfig.app.json`
+- `pnpm build:prod`, only with your dev server stopped, because it stales Vite's cache
+
+## How to verify
+
+On `pnpm run start:dev` (4101), signed out:
+
+- `/in/accounting/masterclass/<uuid>/<slug>`: the hero trailer, Bookmark → login, the Masterclass, Resource,
+  About and Related sections
+- `/in/accounting/masterclass/442/building-finance-agents-with-copilot-studio`: the legacy link
+- `/in/accounting/masterclass`: "i" on a card opens the dialog with that course's About
+
+## Risks
+
+- **DI reach.** A component that injects the facade throws NG0201 anywhere it isn't provided. Today they
+  render only under the course route or inside the dialog, and none has a story.
+- **PR size.** #67 grows mostly by renames, which GitHub shows as moves.
+- **Generic name, masterclass payload.** The facade is offering-agnostic, but its types are the masterclass
+  contract until a second offering's web route exists. The reply to comment 1 says so.
+
+## Draft replies on #67
+
+- **Comment 1:** Moved to `features/offerings/services/course-detail-facade.ts` (`CourseDetailFacade`), with
+  its model, guards and endpoints at the offerings level. The offering-specific parts (URLs, URL segment,
+  analytics type) are keyed by offering, so another offering plugs in by adding its entry. Only masterclass
+  is wired: the web API has `course-detail/` only under `web-api/v1/masterclass/`, while podcast is still on
+  `v2/:course_type/details/` and micro-learning on `v2/nano-learning/`.
+- **Comment 2:** Done. Hero, About, chapter list, resources and related now inject `CourseDetailFacade` and
+  read and call it directly; the page only decides which sections show. The "i" dialog's About gets the
+  dialog's own instance.

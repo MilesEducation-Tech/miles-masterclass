@@ -6,6 +6,7 @@ import { MasterclassCourseHeroSkeleton } from '@shared/components/skeleton/maste
 import { Button } from '@shared/ui/button/button';
 import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
 import { AppDownloadPrompt } from '@features/offerings/services/app-download-prompt';
+import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { MasterclassChapterList } from '@features/offerings/masterclass/components/masterclass-chapter-list/masterclass-chapter-list';
 import { MasterclassCourseAbout } from '@features/offerings/masterclass/components/masterclass-course-about/masterclass-course-about';
 import { MasterclassCourseRelated } from '@features/offerings/masterclass/components/masterclass-course-related/masterclass-course-related';
@@ -15,12 +16,12 @@ import {
   MASTERCLASS_COURSE_SECTION_IDS,
   MASTERCLASS_COURSE_SECTION_NAV,
 } from '@features/offerings/masterclass/constants/masterclass-nav';
-import { MasterclassCourseFacade } from '@features/offerings/masterclass/services/masterclass-course-facade';
 
 /**
  * One masterclass course: the hero, then the Masterclass (chapters), Resource,
- * About, Related and FAQ sections. Data and actions come from the route-scoped
- * `MasterclassCourseFacade`; this page only lays them out.
+ * About, Related and FAQ sections. It points the route-scoped
+ * `CourseDetailFacade` at the route's course and decides which sections show;
+ * each section injects the facade for its own data and actions.
  */
 @Component({
   selector: 'app-masterclass-course',
@@ -44,7 +45,7 @@ export class MasterclassCourse {
   /** The course slug. */
   readonly courseTitle = input<string>();
 
-  protected readonly facade = inject(MasterclassCourseFacade);
+  protected readonly facade = inject(CourseDetailFacade);
 
   protected readonly sectionIds = MASTERCLASS_COURSE_SECTION_IDS;
 
@@ -73,6 +74,9 @@ export class MasterclassCourse {
       courseDetails: this.facade.course,
     });
 
-    this.facade.connect(computed(() => ({ courseId: this.courseId(), slug: this.courseTitle() })));
+    this.facade.connect(
+      'masterclass',
+      computed(() => ({ courseId: this.courseId(), slug: this.courseTitle() })),
+    );
   }
 }

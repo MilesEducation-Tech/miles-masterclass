@@ -5,8 +5,6 @@ import {
   computed,
   DestroyRef,
   inject,
-  input,
-  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -29,15 +27,16 @@ import { CategoriesList } from '@shared/components/categories-list/categories-li
 import { VideoJs } from '@shared/components/video-js/video-js';
 import { detectVideoMimeType } from '@shared/services/utils';
 import { Button } from '@shared/ui/button/button';
+import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import {
   HERO_TRAILER_CONFIG,
   HERO_TRAILER_DELAY_MS,
 } from '@features/offerings/masterclass/constants/masterclass';
-import { MasterclassCourseDetail } from '@features/offerings/masterclass/models/masterclass-course.model';
 
 /**
- * The course page's hero. It renders the course it is given and emits what the
- * learner asked for; the page hands each event to the facade.
+ * The course page's hero. It reads the course from `CourseDetailFacade` and
+ * calls it for every action (Watch Now, Trailer, Sample, Bookmark, Share,
+ * Download); it keeps only the background trailer's own playback state.
  *
  * The background is the trailer, as on production: the poster first (a plain
  * image, server-rendered, the LCP), then after `HERO_TRAILER_DELAY_MS` the HLS
@@ -70,17 +69,8 @@ import { MasterclassCourseDetail } from '@features/offerings/masterclass/models/
   ],
 })
 export class MasterclassCourseHero {
-  readonly course = input.required<MasterclassCourseDetail>();
-  /** The learner's bookmark, held by the facade while a toggle is read back. */
-  readonly bookmarked = input(false);
-  readonly bookmarkPending = input(false);
-
-  readonly watch = output();
-  readonly trailer = output();
-  readonly sample = output();
-  readonly bookmark = output();
-  readonly share = output();
-  readonly download = output();
+  protected readonly facade = inject(CourseDetailFacade);
+  protected readonly course = this.facade.course;
 
   private readonly player = viewChild(VideoJs);
 
@@ -93,23 +83,25 @@ export class MasterclassCourseHero {
   protected readonly trailerPlaying = signal(false);
   protected readonly trailerMuted = signal(true);
 
-  protected readonly poster = computed(
-    () => this.course().trailer_thumbnail_url || this.course().horizontal_thumbnail_url,
-  );
+  protected readonly poster = computed(() => {
+    const course = this.course();
+    return course ? course.trailer_thumbnail_url || course.horizontal_thumbnail_url : null;
+  });
 
   protected readonly trailerSource = computed<VideoSource | null>(() => {
-    const src = this.course().trailer_video_url;
+    const src = this.course()?.trailer_video_url;
     return src ? { src, type: detectVideoMimeType(src) } : null;
   });
 
-  protected readonly instructorNames = computed(() =>
-    this.course()
-      .instructors.map((instructor) => instructor.name)
-      .join(', '),
+  protected readonly instructorNames = computed(
+    () =>
+      this.course()
+        ?.instructors.map((instructor) => instructor.name)
+        .join(', ') ?? '',
   );
 
   /** Every UAT course sits in one CAIRA level; the badge shows its number. */
-  protected readonly cairaLevel = computed(() => this.course().level[0]?.level_number ?? null);
+  protected readonly cairaLevel = computed(() => this.course()?.level[0]?.level_number ?? null);
 
   constructor() {
     const destroyRef = inject(DestroyRef);

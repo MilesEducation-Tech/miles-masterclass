@@ -7,6 +7,53 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-08, NON-REFACTOR — PR #67 review, Revision 3 IMPLEMENTED (you approved), BROWSER-VERIFIED,
+  UNCOMMITTED.** No refactor phase moved.
+  - **Verified on your restarted `start:dev` (4101), signed out, headless Chromium (visible page):**
+    - SSR HTML carries the course and About
+    - the hero shows Watch Now / Trailer / Bookmark / Share / Download; the trailer plays muted, faded in by 8 s
+    - 8 chapter rows; Resource (Glossary) opens `HtmlContentDialog`
+    - About renders; Related shows "Related Courses" and "More by Chris Stegh" (4 cards)
+    - Bookmark → `/auth/login?redirect=…`
+    - the legacy `442/<slug>` link resolves
+    - the "i" dialog on `/masterclass` shows the clicked course's About through its own facade instance
+    - 0 console errors
+  - In the in-app browser pane, which is hidden (`visibilityState: hidden`), the trailer stays paused and
+    `@defer (on viewport)` never fires. That is the pane, not the code.
+  - **Moved to `features/offerings/`:**
+    - `services/course-detail-facade.ts` (`CourseDetailFacade`, from `masterclass/services/masterclass-course-facade.ts`)
+    - `models/course-detail.model.ts` (the `course-detail/` contract, plus `CourseOffering`, `CourseDetailApi`,
+      `CourseDetailParams` and `CourseLoginType`)
+    - `utils/contract-guards.ts`
+    - new `constants/course-detail.ts`: `COURSE_DETAIL_API` (masterclass only), the chapter page size and
+      `COURSE_ID_PATTERN`
+  - **The facade:**
+    - `connect(offering, params)`
+    - every URL, the URL segment and the analytics `course_type` come from `COURSE_DETAIL_API[offering]`
+    - no "masterclass" literal remains
+  - **The page:** hero, About, chapter list, resources and related inject the facade, with 0
+    `input()`/`output()`; the page keeps the section `@if`s; the dialog's About injects the dialog's own instance.
+  - **Stayed in `masterclass/`:** the hero trailer constants, `MasterclassCourseInfoDialogData`,
+    `MasterclassDurationParts` and `duration-parts.ts`.
+  - **Gates** (local macOS, not CI): `tsc` 0; `pnpm lint` 0 errors (109 legacy warnings); Prettier clean;
+    structure check passed; `build:prod` green, 243.85 kB initial, with the two known CSS budget warnings.
+  - **Your dev server's watcher stopped** on a mid-edit error after the file moves, and does not rebuild
+    (`touch` didn't wake it); `build:prod` has also staled its cache, so it needs a restart before the
+    browser check.
+  - **Comment 1:** move the course facade to the offerings level and share it offering-wide.
+    → `features/offerings/services/course-detail-facade.ts` (`CourseDetailFacade`), with the contract model,
+    guards and endpoints beside it. Per-offering URLs are keyed by `CourseOffering` (`'masterclass'` only).
+    The web API has `course-detail/` under `masterclass/` only; podcast is still on
+    `v2/:course_type/details/` and micro-learning on `v2/nano-learning/`.
+  - **Comment 2:** the components inject the facade instead of taking inputs/outputs. → hero, About,
+    chapter list, resources and related inject it; the page keeps the section `@if`s. Payment, webinar and
+    uae-caira already do this.
+  - **R3-5 DONE (you chose it), uncommitted:** AGENTS.md §3 makes two changes. The tree line now reads
+    "Presentational. On a facade page they inject that facade". The "Components display, facades decide"
+    boundary adds the rule: inject the page's facade, no input/output relay, and `shared/` components stay
+    inputs/outputs. Prettier is clean.
+  - Branch state: #68 merged (`bca3ad8`), and master is merged into MIL-25 (`4b9cf0f`, pushed, in sync).
+
 - 🔧 **2026-10-07, NON-REFACTOR — PR #67 (`feat/MIL-25-masterclass-details-page-binding`) made mergeable:
   `origin/master` merged into the branch, conflicts resolved, awaiting the merge commit and push.** No refactor
   phase moved.
@@ -3330,6 +3377,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-08 · NON-REFACTOR · **MIL-25 Revision 3 implemented** (uncommitted): `CourseDetailFacade` at the offerings level, keyed by offering; the sections inject it · tsc 0, lint 0 errors, structure ✔, build:prod 243.85 kB (local) · browser-verified on 4101 (page, legacy link, "i" dialog)
+
+- 2026-10-08 · NON-REFACTOR · ⏸ **MIL-25 Revision 3 planned** for the #67 review: `CourseDetailFacade` at the offerings level, keyed by offering; the components inject it. Awaiting approval
 
 - 2026-10-07 · NON-REFACTOR · **MIL-25: accidental Pull merge aborted**; `tsc` 0, no conflict markers; force-push still pending (remote at `433dfb0`)
 

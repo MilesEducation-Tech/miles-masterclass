@@ -21,21 +21,21 @@ import { Logger } from '@core/services/logger/logger';
 import { withPreviousValue } from '@core/utils/with-previous-value';
 import { Utils } from '@shared/services/utils';
 import {
+  COURSE_DETAIL_API,
   COURSE_DETAIL_CHAPTERS_PAGE_SIZE,
-  MASTERCLASS_COURSE_ID_PATTERN,
-  MASTERCLASS_COURSE_ROUTES,
-  MASTERCLASS_ENDPOINTS,
-} from '@features/offerings/masterclass/constants/masterclass';
+  COURSE_ID_PATTERN,
+} from '@features/offerings/constants/course-detail';
 import {
+  CourseDetailParams,
+  CourseLoginType,
+  CourseOffering,
   MasterclassChapterLink,
   MasterclassCourseDetail,
-  MasterclassCourseLoginType,
-  MasterclassCourseRouteParams,
   MasterclassRelatedCourse,
   MasterclassRelatedRail,
   parseAboutCourseId,
   parseCourseDetail,
-} from '@features/offerings/masterclass/models/masterclass-course.model';
+} from '@features/offerings/models/course-detail.model';
 // Type-only: the dialog loads with `import()` when opened (AGENTS.md §4.4).
 import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 
@@ -44,19 +44,22 @@ const isMissing = (error: unknown): boolean =>
   error instanceof HttpErrorResponse && (error.status === 404 || error.status === 400);
 
 /**
- * State and actions for one masterclass course: the course page
- * (`:courseId/:courseTitle`) and the course-info dialog the landing page's
- * "i" button opens.
+ * State and actions for one course of an offering, read from its web
+ * `course-detail/` route: today the masterclass course page
+ * (`:courseId/:courseTitle`) and the course-info dialog the landing page's "i"
+ * button opens. Offering-wide on purpose: what differs per offering (routes,
+ * URL segment, analytics name) comes from `COURSE_DETAIL_API`, so podcast and
+ * micro-learning plug in by adding their entry once their web routes exist.
  *
  * Never a root service. The course route lists it in `providers`, and the
  * dialog in its own `providers`, so each has an instance that `connect()`
- * points at its course. Their templates read these signals and call these
- * methods; none of them calls the API. It replaces the shared, legacy
- * `MasterclassFacade` for these two only — podcast and the chapter player still
- * use that one until their own APIs move.
+ * points at its course. The page's sections inject it and read these signals
+ * and call these methods themselves; none of them calls the API. It replaces
+ * the shared, legacy `MasterclassFacade` for these two only — podcast and the
+ * chapter player still use that one until their own APIs move.
  */
 @Service({ autoProvided: false })
-export class MasterclassCourseFacade {
+export class CourseDetailFacade {
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
   private readonly analytics = inject(Analytics);
@@ -67,8 +70,17 @@ export class MasterclassCourseFacade {
   private readonly document = inject(DOCUMENT);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
+  /** Which offering's routes to call; `null` until `connect()`. */
+  private readonly offering = signal<CourseOffering | null>(null);
+
+  /** The offering's routes and names, from `COURSE_DETAIL_API`. */
+  private readonly routes = computed(() => {
+    const offering = this.offering();
+    return offering ? COURSE_DETAIL_API[offering] : null;
+  });
+
   /** The course's id and slug, as a signal; `null` until `connect()`. */
-  private readonly params = signal<Signal<MasterclassCourseRouteParams> | null>(null);
+  private readonly params = signal<Signal<CourseDetailParams> | null>(null);
 
   /**
    * Derived from the inputs rather than set from an effect: an effect writes
@@ -77,7 +89,7 @@ export class MasterclassCourseFacade {
    */
   private readonly routeId = computed(() => {
     const id = this.params()?.().courseId;
-    return id && MASTERCLASS_COURSE_ID_PATTERN.test(id) ? id : null;
+    return id && COURSE_ID_PATTERN.test(id) ? id : null;
   });
 
   /** An old numeric link (still in search results and shared links) is looked up by slug. */
@@ -92,10 +104,9 @@ export class MasterclassCourseFacade {
   /** `course-detail/` takes a UUID only, so a legacy slug asks `about-course/` for it first. */
   private readonly legacyIdResource = httpResource<string>(
     () => {
+      const routes = this.routes();
       const slug = this.legacySlug();
-      return slug
-        ? { url: apiUrl(MASTERCLASS_ENDPOINTS.aboutCourse), params: { slug } }
-        : undefined;
+      return routes && slug ? { url: apiUrl(routes.aboutCourse), params: { slug } } : undefined;
     },
     { parse: parseAboutCourseId },
   );
@@ -106,14 +117,15 @@ export class MasterclassCourseFacade {
   );
 
   /** From the session's boolean, never the token, so a token rotation doesn't refetch. */
-  private readonly loginType = computed<MasterclassCourseLoginType>(() =>
+  private readonly loginType = computed<CourseLoginType>(() =>
     this.auth.isAuthenticated() ? 'post_login' : 'pre_login',
   );
 
   private readonly detailResource = httpResource<MasterclassCourseDetail>(
     () => {
+      const routes = this.routes();
       const id = this.courseId();
-      if (!id) return undefined;
+      if (!routes || !id) return undefined;
       const loginType = this.loginType();
 
       // `pre_login` is public, so the SERVER fetches it: the course is in the SSR
@@ -122,7 +134,7 @@ export class MasterclassCourseFacade {
       if (!this.isBrowser && loginType === 'post_login') return undefined;
 
       return {
-        url: apiUrl(`${MASTERCLASS_ENDPOINTS.courseDetail}${id}/`),
+        url: apiUrl(`${routes.courseDetail}${id}/`),
         params: { login_type: loginType, 'chapters.page_size': COURSE_DETAIL_CHAPTERS_PAGE_SIZE },
       };
     },
@@ -224,7 +236,7 @@ export class MasterclassCourseFacade {
     // not only the learner's screen.
     effect(() => {
       const error = this.loadError();
-      if (error) this.logger.error('[MasterclassCourse] course-detail load failed', error);
+      if (error) this.logger.error('[CourseDetail] course-detail load failed', error);
     });
 
     // Once per loaded course, as the old facade did.
@@ -235,14 +247,18 @@ export class MasterclassCourseFacade {
         this.analytics.trackEvent('view_item', {
           course_id: id,
           course_name: this.course()?.name,
-          course_type: 'masterclass',
+          course_type: this.routes()?.analyticsType,
         }),
       );
     });
   }
 
-  /** Follow a course's id and slug; called once, from the host's constructor. */
-  connect(params: Signal<MasterclassCourseRouteParams>): void {
+  /**
+   * Follow one offering's course by its id and slug; called once, from the
+   * host's constructor.
+   */
+  connect(offering: CourseOffering, params: Signal<CourseDetailParams>): void {
+    this.offering.set(offering);
     this.params.set(params);
   }
 
@@ -290,7 +306,10 @@ export class MasterclassCourseFacade {
     const chapter = this.chapters()[0];
     if (!course || !chapter) return;
 
-    this.analytics.trackEvent('start_course', { course_id: course.id, course_type: 'masterclass' });
+    this.analytics.trackEvent('start_course', {
+      course_id: course.id,
+      course_type: this.routes()?.analyticsType,
+    });
     void this.router.navigateByUrl(
       `${this.coursePagePath(course)}/chapter/${chapter.id}/${chapter.slug}`,
     );
@@ -303,8 +322,9 @@ export class MasterclassCourseFacade {
    */
   private coursePagePath(course: MasterclassCourseDetail): string {
     const { country, profession } = this.utils.getRouteParams();
+    const segment = this.routes()?.urlSegment;
     const slug = this.params()?.().slug || this.utils.slugify(course.name);
-    return `/${country}/${profession}/masterclass/${course.id}/${slug}`;
+    return `/${country}/${profession}/${segment}/${course.id}/${slug}`;
   }
 
   /**
@@ -315,14 +335,14 @@ export class MasterclassCourseFacade {
    */
   toggleBookmark(): void {
     const course = this.course();
-    if (!course || this.bookmarkPending()) return;
+    const route = this.routes()?.bookmark;
+    if (!course || !route || this.bookmarkPending()) return;
 
     if (!this.auth.isAuthenticated()) {
       void this.router.navigate(['/auth/login'], { queryParams: { redirect: this.router.url } });
       return;
     }
 
-    const route = MASTERCLASS_COURSE_ROUTES.bookmark;
     this.bookmarkOverride.set(!this.isBookmarked());
     this.bookmarkPending.set(true);
     this.api.call({ ...route, path: route.path.replace(':id', course.id) }).subscribe({

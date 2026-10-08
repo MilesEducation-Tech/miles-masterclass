@@ -1,16 +1,8 @@
 <div class="w-full overflow-hidden">
-  @if (facade.course(); as course) {
-    <app-masterclass-course-hero
-      [course]="course"
-      [bookmarked]="facade.isBookmarked()"
-      [bookmarkPending]="facade.bookmarkPending()"
-      (watch)="facade.watch()"
-      (trailer)="facade.openTrailer()"
-      (sample)="facade.openSample()"
-      (bookmark)="facade.toggleBookmark()"
-      (share)="facade.share()"
-      (download)="facade.downloadCertificate()"
-    />
+  <!-- Each section injects CourseDetailFacade for its own data and actions; the page only
+       decides which ones show. -->
+  @if (facade.course()) {
+    <app-masterclass-course-hero />
   } @else if (facade.notFound()) {
     <div role="alert" class="container mx-auto flex flex-col items-center gap-4 py-24 text-center">
       <p class="text-muted-foreground">We couldn't find this masterclass.</p>
@@ -39,25 +31,21 @@
   <!-- Masterclass Section (Chapters) -->
   @if (facade.chapters().length > 0) {
     <section [id]="sectionIds.chapters" class="container mx-auto md:py-10 py-5 scroll-mt-32">
-      <app-masterclass-chapter-list [chapters]="facade.chapters()" />
+      <app-masterclass-chapter-list />
     </section>
   }
 
   <!-- Resource Section -->
-  @if (facade.hasResources() && facade.course(); as course) {
+  @if (facade.hasResources()) {
     <section [id]="sectionIds.resources" class="container mx-auto md:py-10 py-5 scroll-mt-32">
-      <app-masterclass-course-resources
-        [resources]="course.miscellaneous_data"
-        (navigation)="facade.openNavigationVideo()"
-        (glossary)="facade.openGlossary()"
-      />
+      <app-masterclass-course-resources />
     </section>
   }
 
   <!-- About Section -->
-  @if (facade.course(); as course) {
+  @if (facade.course()) {
     <section [id]="sectionIds.about" class="container mx-auto md:py-10 py-5 scroll-mt-32">
-      <app-masterclass-course-about [course]="course" />
+      <app-masterclass-course-about />
     </section>
   }
 
@@ -65,7 +53,7 @@
   @if (facade.relatedRails().length > 0) {
     <section [id]="sectionIds.related" class="md:py-10 py-5 scroll-mt-32">
       @defer (on viewport) {
-        <app-masterclass-course-related [rails]="facade.relatedRails()" />
+        <app-masterclass-course-related />
       } @placeholder {
         <div class="container mx-auto flex gap-4 animate-pulse" aria-hidden="true">
           @for (i of [1, 2, 3]; track i) {

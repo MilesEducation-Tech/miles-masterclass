@@ -71,7 +71,7 @@ src/app/
     <feature>/
       <feature>.routes.ts
       pages/<page>/               Routed containers. They inject facades.
-      components/<name>/          Presentational: inputs and outputs only
+      components/<name>/          Presentational. On a facade page they inject that facade
       dialogs/<name>-dialog/
       services/<name>-facade.ts   Flat files
       models/<name>.model.ts
@@ -130,7 +130,9 @@ src/app/
 Three hard boundaries:
 
 - **Components display, facades decide.** If a component grows an `if` about business rules, that `if` belongs in a
-  facade.
+  facade. On a facade-backed page, each component injects that facade and reads its signals and calls its methods
+  directly. The page does not relay them as inputs and outputs (see `features/payment/` and `webinar-hero`).
+  Components in `shared/` stay inputs and outputs, because they cannot import a feature.
 - **Facades are route-scoped by default.** Most are `@Service({ autoProvided: false })` and listed in the route's
   `providers`, so two feature trees get independent instances. Root facades such as `PaymentFacade` and
   `FeatureFacade`, and the core singletons, are the deliberate exceptions.

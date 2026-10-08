@@ -8,9 +8,9 @@ import { injectDialogRef } from 'ng-primitives/dialog';
 import { MilesSlug } from '@shared/components/miles-slug/miles-slug';
 import { Button } from '@shared/ui/button/button';
 import { Dialog } from '@shared/ui/dialog/dialog';
+import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { MasterclassCourseAbout } from '@features/offerings/masterclass/components/masterclass-course-about/masterclass-course-about';
 import { MasterclassCourseInfoDialogData } from '@features/offerings/masterclass/models/masterclass-course.model';
-import { MasterclassCourseFacade } from '@features/offerings/masterclass/services/masterclass-course-facade';
 
 /**
  * The landing page's "i" dialog: a course's header and its About section, in
@@ -18,22 +18,23 @@ import { MasterclassCourseFacade } from '@features/offerings/masterclass/service
  * `ContentAbout` for the other pages that open it.
  *
  * The header paints at once from the card the learner clicked; the About body
- * and the instructor line follow from `course-detail/`, read through its own
- * `MasterclassCourseFacade`. Bookmark is held back until its web route is bound.
+ * and the instructor line follow from `course-detail/`, read through the
+ * dialog's own `CourseDetailFacade`, which the About section injects too.
+ * Bookmark is held back until its web route is bound.
  */
 @Component({
   selector: 'app-masterclass-course-info-dialog',
   imports: [NgOptimizedImage, NgIcon, Button, Dialog, MilesSlug, MasterclassCourseAbout],
   templateUrl: './masterclass-course-info-dialog.html',
   providers: [
-    MasterclassCourseFacade,
+    CourseDetailFacade,
     provideIcons({ heroXMark, matPlayArrowRound, phosphorShareFatFill }),
   ],
 })
 export class MasterclassCourseInfoDialog {
   private readonly dialogRef = injectDialogRef<MasterclassCourseInfoDialogData>();
   protected readonly card = this.dialogRef.data.course;
-  protected readonly facade = inject(MasterclassCourseFacade);
+  protected readonly facade = inject(CourseDetailFacade);
 
   protected readonly instructorNames = computed(
     () =>
@@ -44,7 +45,7 @@ export class MasterclassCourseInfoDialog {
   );
 
   constructor() {
-    this.facade.connect(signal({ courseId: this.card.id, slug: this.card.slug }));
+    this.facade.connect('masterclass', signal({ courseId: this.card.id, slug: this.card.slug }));
   }
 
   close(): void {
