@@ -1,6 +1,6 @@
 /**
- * The trust boundary for the web masterclass API (`web-api/v1/masterclass/`),
- * shared by the feature's models.
+ * The trust boundary for the offerings' web API (`web-api/v1/<offering>/`),
+ * shared by the offerings' models.
  *
  * Hand-written, like the webinar model's: a renamed key would otherwise render
  * as `undefined` with no signal. Every key a page reads is checked; EXTRA keys
@@ -26,5 +26,5 @@ export const listOf =
 
 /** Thrown from `parse`; the message names the route so the log says where. */
 export function contractError(route: string): Error {
-  return new Error(`[masterclass] ${route} response does not match the contract.`);
+  return new Error(`[offerings] ${route} response does not match the contract.`);
 }

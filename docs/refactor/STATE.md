@@ -7,6 +7,103 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-08, NON-REFACTOR — PR #67 review, Revision 3 IMPLEMENTED (you approved), BROWSER-VERIFIED,
+  UNCOMMITTED.** No refactor phase moved.
+  - **Verified on your restarted `start:dev` (4101), signed out, headless Chromium (visible page):**
+    - SSR HTML carries the course and About
+    - the hero shows Watch Now / Trailer / Bookmark / Share / Download; the trailer plays muted, faded in by 8 s
+    - 8 chapter rows; Resource (Glossary) opens `HtmlContentDialog`
+    - About renders; Related shows "Related Courses" and "More by Chris Stegh" (4 cards)
+    - Bookmark → `/auth/login?redirect=…`
+    - the legacy `442/<slug>` link resolves
+    - the "i" dialog on `/masterclass` shows the clicked course's About through its own facade instance
+    - 0 console errors
+  - In the in-app browser pane, which is hidden (`visibilityState: hidden`), the trailer stays paused and
+    `@defer (on viewport)` never fires. That is the pane, not the code.
+  - **Moved to `features/offerings/`:**
+    - `services/course-detail-facade.ts` (`CourseDetailFacade`, from `masterclass/services/masterclass-course-facade.ts`)
+    - `models/course-detail.model.ts` (the `course-detail/` contract, plus `CourseOffering`, `CourseDetailApi`,
+      `CourseDetailParams` and `CourseLoginType`)
+    - `utils/contract-guards.ts`
+    - new `constants/course-detail.ts`: `COURSE_DETAIL_API` (masterclass only), the chapter page size and
+      `COURSE_ID_PATTERN`
+  - **The facade:**
+    - `connect(offering, params)`
+    - every URL, the URL segment and the analytics `course_type` come from `COURSE_DETAIL_API[offering]`
+    - no "masterclass" literal remains
+  - **The page:** hero, About, chapter list, resources and related inject the facade, with 0
+    `input()`/`output()`; the page keeps the section `@if`s; the dialog's About injects the dialog's own instance.
+  - **Stayed in `masterclass/`:** the hero trailer constants, `MasterclassCourseInfoDialogData`,
+    `MasterclassDurationParts` and `duration-parts.ts`.
+  - **Gates** (local macOS, not CI): `tsc` 0; `pnpm lint` 0 errors (109 legacy warnings); Prettier clean;
+    structure check passed; `build:prod` green, 243.85 kB initial, with the two known CSS budget warnings.
+  - **Your dev server's watcher stopped** on a mid-edit error after the file moves, and does not rebuild
+    (`touch` didn't wake it); `build:prod` has also staled its cache, so it needs a restart before the
+    browser check.
+  - **Comment 1:** move the course facade to the offerings level and share it offering-wide.
+    → `features/offerings/services/course-detail-facade.ts` (`CourseDetailFacade`), with the contract model,
+    guards and endpoints beside it. Per-offering URLs are keyed by `CourseOffering` (`'masterclass'` only).
+    The web API has `course-detail/` under `masterclass/` only; podcast is still on
+    `v2/:course_type/details/` and micro-learning on `v2/nano-learning/`.
+  - **Comment 2:** the components inject the facade instead of taking inputs/outputs. → hero, About,
+    chapter list, resources and related inject it; the page keeps the section `@if`s. Payment, webinar and
+    uae-caira already do this.
+  - **R3-5 DONE (you chose it), uncommitted:** AGENTS.md §3 makes two changes. The tree line now reads
+    "Presentational. On a facade page they inject that facade". The "Components display, facades decide"
+    boundary adds the rule: inject the page's facade, no input/output relay, and `shared/` components stay
+    inputs/outputs. Prettier is clean.
+  - Branch state: #68 merged (`bca3ad8`), and master is merged into MIL-25 (`4b9cf0f`, pushed, in sync).
+
+- 🔧 **2026-10-07, NON-REFACTOR — PR #67 (`feat/MIL-25-masterclass-details-page-binding`) made mergeable:
+  `origin/master` merged into the branch, conflicts resolved, awaiting the merge commit and push.** No refactor
+  phase moved.
+  - Cause: #68 (MIL-28, the course-info dialog) was built on MIL-25's first commit and merged first, so master
+    held an older copy of the course model, facade, guards and About component. Twelve of the conflicted files
+    were byte-identical on master to that first commit and take the branch's version. The model gains #68's
+    `MasterclassCourseInfoDialogData`; the facade gains `openCoursePage()`, the explicit share URL and a
+    `coursePagePath()` built from the connected slug (`course-detail/` sends none), which `watch()` also uses so
+    the dialog's Watch Now reaches the right course. The dialog template drops its `web_background_video_url`
+    branch (no such field on `course-detail/`) and keeps the poster. STATE kept both sides.
+  - Gates (local macOS, Node 24.15, **not CI**): lint 0 errors (109 legacy warnings), structure check passed,
+    `build:prod` 243.81 kB initial. Browser check of the dialog and course page pending: the UAT API answered
+    503 from the load balancer for every route at 17:20 IST.
+
+- 🔧 **2026-10-07, NON-REFACTOR — `feat/MIL-25-…` rebased onto `origin/master` (65c6e2f) as `1d02d65` +
+  `d5a7517`. DONE, BUILD GREEN; the force-push is yours.** No refactor phase moved.
+  - `pnpm build:prod` (local macOS, not CI) is green: only the two known CSS budget warnings
+    (`ai-labs.css`, `briefing-session.css`), initial transfer 243.87 kB. `tsc`, eslint on the branch's
+    files, Prettier and the structure check are clean.
+  - Not re-checked in a browser after the rebase: restart `pnpm run start:dev` and load a course page and
+    `/masterclass`.
+  - After `df515e0` (the docs commit), GitHub Desktop's "Pull origin" began merging the old remote
+    `433dfb0`; you aborted it. `tsc` exits 0 again and no conflict markers remain. The remote branch is
+    still at `433dfb0` until your force-push.
+  - Master's #69 moved three things into core and deleted `constants/masterclass.ts`:
+    - the home model → `core/models/`
+    - `with-previous-value` → `core/utils/`
+    - the home-page read → `core/services/masterclass-home-facade/`
+
+    #78 already carries the `tracks-page/` fix.
+
+  - **Commit 1 resolved:**
+    - `core/models/masterclass-home.model.ts` is master's. The auto-merge had pulled in the feature's
+      `contract-guards` import, which breaks the core → features boundary. `utils/contract-guards.ts`
+      now serves only the course model.
+    - `constants/masterclass.ts` is kept with the course endpoints only; the home-page constants live
+      in core.
+    - The course model imports the field-of-study and thumbnail types from
+      `@core/models/masterclass-home.model`.
+    - `postman/` stays tracked, as master's `.gitignore` decided, using master's copies of the exports.
+      Your local `Merged Masterclass App 2` copy (same 209 requests, different bytes) is backed up in
+      the session scratchpad.
+  - `tsc -p tsconfig.app.json` exits 0 at commit 1. `pnpm exec` installed master's four `@fontsource`
+    packages on the way; no tracked file changed.
+  - **Commit 2 (`433dfb0`) resolved:**
+    - `pages/masterclass/masterclass.ts` and the core model are master's; #78 already made this commit's
+      `tracks-page/` edits there, so they drop out.
+    - `constants/masterclass.ts` keeps `course-detail/`, the bookmark route, the chapter page size and
+      the hero trailer config, without the home-page constants.
+    - The facade imports `withPreviousValue` from `@core/utils/`.
 - 🔧 **2026-10-07, NON-REFACTOR — MIL-28 course-info dialog: the close button matches production. DONE,
   BROWSER-VERIFIED, UNCOMMITTED** on `fix/MIL-28-…` (force-pushed as `1000ba8` before this).
   - Production's close button (read live) is `bg-background/80 backdrop-blur-sm` with
@@ -221,6 +318,112 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - Next: PR2–PR5 in the prompt; its API-flags table is the backend ask.
     git push --force-with-lease origin feat/MIL-35-ai-labs-ring-v3
 
+- 🔧 **2026-10-07, NON-REFACTOR — MIL-25 course hero: Created/Updated line, Bookmark and Download added
+  (your review). DONE, BROWSER-VERIFIED (signed out), UNCOMMITTED** on `feat/MIL-25-…`.
+  - **Dates:** `nasba_section.created_on/updated_on | date`, in the legacy markup.
+  - **Download:** disabled until `masterclass_certificate_url` is set; then the facade opens it in a new
+    tab. It is `null` for signed-out visitors, so greyed out, as on production.
+  - **Bookmark:**
+    - `MASTERCLASS_COURSE_ROUTES.bookmark` (`POST web-api/v1/masterclass/bookmark/:id/`) through
+      `ApiClient.call()`
+    - an optimistic flip (`linkedSignal` that resets on the next `course()`), then
+      `detailResource.reload()`; a failure flips back
+    - signed out → `/auth/login?redirect=<course>`, like `authGuard`
+    - `aria-pressed` on the button
+  - **Sample:** still hidden; `sample_video_url` is null on all 64 courses (logged).
+  - **Verified on 4101 (signed out):** "Created At Jun 21, 2026 | Updated At Jun 21, 2026"; Trailer /
+    Bookmark / Share / Download (disabled); Bookmark redirected to login with the redirect.
+    eslint, structure and `tsc` are clean.
+  - **NOT verified:** the signed-in Bookmark POST (I can't sign in), and the response shape is uncaptured,
+    hence the re-read.
+
+- 🔧 **2026-10-07, NON-REFACTOR — MIL-25 Revision 2, Phases B–D: Masterclass (chapters), Resource and Related
+  sections from `course-detail/`. DONE, BROWSER-VERIFIED, UNCOMMITTED** on `feat/MIL-25-…`, on top of Phase A
+  and the `tracks-page` fix. No refactor phase moved.
+  - **Model:**
+    - chapters: name, mini_description, order, duration, quiz count, thumbnail
+    - `miscellaneous_data`: glossary HTML, navigation video, exercise files, AI Kit
+    - `related_courses` and `instructor_related_courses`
+    - the parser accepts 64/64 live courses
+  - **Facade:**
+    - `chapters()` with name-based slugs
+    - `relatedRails()`: Related + one "More by" per instructor, current course and empty rails dropped
+    - `hasResources()`
+    - `openGlossary()` (`HtmlContentDialog` via `import()`) and `openNavigationVideo()`
+  - **New sections, class for class from the shared ones:**
+    - `masterclass-chapter-list`: rows are `routerLink`s, not `role="button"`
+    - `masterclass-course-resources`: files and AI Kit are plain links
+    - `masterclass-course-related`: inline horizontal cards, the section `@defer (on viewport)`, its own
+      8.9 kB chunk
+  - **Section nav:** Masterclass / Resource / About / Related / FAQ, each shown only when it has content.
+  - **Verified on your `start:dev` (4101), headless Chromium:**
+    - the nav order matches production
+    - chapter rows match your production screenshot
+    - the glossary dialog opens; AI Kit and exercise files link out (`_blank`)
+    - Related and "More by" rails render, and a card navigates to its course (page reloads data, scroll top)
+    - no horizontal scroll
+  - **Gates:** prettier, eslint, structure check and `tsc` are clean. `verify.mjs` was not run (your dev
+    server is up).
+  - **Backend issues logged** (`docs/MASTERCLASS_API_QUESTIONS.md` Q6–Q7):
+    - GCS `miles-usp-bed` 403s on 227/387 chapter and 19/42 related thumbnails
+    - CloudFront cached `Access-Control-Allow-Origin: http://localhost:3000` on an HLS segment
+  - **Not in these phases:** chapter progress/completed/lock states and CPE gating, which wait for Phase E
+    (post_login).
+
+- 🔧 **2026-10-07, NON-REFACTOR — MIL-25 Revision 2, Phase A: the course page reads `course-detail/`. DONE,
+  BROWSER-VERIFIED, UNCOMMITTED** on `feat/MIL-25-…`, next to the uncommitted `tracks-page` fix. No refactor
+  phase moved.
+  - **Model:** `MasterclassCourseDetail` + `parseCourseDetail`, typed from a live survey of 64/64 courses;
+    `parseAboutCourseId` for legacy slugs.
+  - **Facade:**
+    - `course-detail/<uuid>/?login_type=pre_login|post_login&chapters.page_size=100`
+    - `post_login` is skipped on the server, with `withPreviousValue` plus an id check across sign-in
+    - old numeric links resolve through `about-course?slug=`
+  - **Hero:**
+    - `trailer_thumbnail_url` poster (SSR, LCP)
+    - after 3 s, the HLS `trailer_video_url` through the shared `app-video-js`: muted, looping, fading in on
+      `playing`
+    - the VideoPoster-style play/pause and mute buttons; it pauses when a dialog opens
+    - the CAIRA level badge
+  - **About:** expiration, sponsor id, delivery method and program level from the API; created / reviewed /
+    updated dates (DatePipe); Video Duration = `masterclass_duration_seconds | duration:'medium'`.
+  - **Shared:** `courseToSeoConfig` reads the course-detail keys; `detectVideoMimeType` is exported from
+    `shared/services/utils.ts`.
+  - **Verified on your `start:dev` (4101) with headless Chromium:**
+    - poster only at 0–1.5 s; trailer playing, muted, by 7.5 s
+    - cover fit at 1440 (1191 × 670) and 375 (370 × 658)
+    - pause/play, mute/unmute and pause-on-dialog work
+    - 0 browser API calls (transfer cache)
+    - the legacy `442/<slug>` link resolves; an unknown id or UUID shows not-found
+    - SSR HTML has the new fields
+  - **Gates:** prettier, eslint and the structure check pass, `tsc` is clean. `verify.mjs` was not run, so
+    as not to break your running dev server.
+  - **Dev-only NG0201 `TOAST_COMPONENT`, once:** a Vite SSR module-reload artifact after editing
+    `shared/services/utils.ts`. It did not recur on later requests; a server restart clears it.
+  - **Backend questions** (`docs/MASTERCLASS_API_QUESTIONS.md`): the preview clip, Credly
+    `show_credly_icon`, the duration fields, the missing slugs.
+
+- ⚠️ **2026-10-07, NON-REFACTOR — Postman export replaced (`~/Downloads/Merged Masterclass App 2`, local
+  only).** The collection grows from 191 to 209 requests; the env files gain 7 empty keys.
+  - Two backend changes, checked against live UAT on 2026-10-07:
+    1. **`web-api/v1/masterclass/home-page/` is now a 404 on UAT**; it is renamed `tracks-page/` with the
+       same params. The `/masterclass` landing page (on `master` since #64) therefore shows its error
+       state on UAT.
+       - The existing `parseHomePage` accepts the live `tracks-page/` body unchanged (21/34/0/13), so the
+         fix is the `MASTERCLASS_ENDPOINTS.homePage` URL.
+       - **FIXED on `feat/MIL-25-…`** (your choice), uncommitted:
+         - `constants/masterclass.ts` now points at `tracks-page/`
+         - the model's contract-error label and the page's log name the new route
+       - Verified on your `start:dev` (4101): no error state, 3 rails / 68 cards, and no browser call (SSR
+         transfer cache). The server log is clean. Prettier, eslint and `tsc` are clean.
+       - `master`, MIL-28, MIL-27 and MIL-29 still call the old path until they take this commit.
+    2. **`course-detail/<id>/` is now `AllowAny` with a required `?login_type=pre_login|post_login`.**
+       - Pre-login it returns 60 keys, including the chapters, related and instructor rails, the NASBA
+         block, program level, sponsor id and expiration.
+       - This unblocks MIL-25's PR4 (D3) and would let the course page bind it instead of
+         `about-course/`. It is a plan revision, awaiting your call.
+  - `top-section/` was removed and `highlight/` added (pinned courses). `coming_soon` is gone from the
+    landing payload.
 - 🔧 **2026-10-07, NON-REFACTOR — MIL-23 PR3: the landing page's "i" button and course-info dialog. DONE,
   BROWSER-VERIFIED, UNCOMMITTED** on `fix/MIL-28-MasterclassHomePage-MoreInfoDialog-Logic-fix`, which you
   fast-forwarded to `eadf218` (MIL-25) on 2026-10-07. No refactor phase moved.
@@ -3175,6 +3378,23 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-10-08 · NON-REFACTOR · **MIL-25 Revision 3 implemented** (uncommitted): `CourseDetailFacade` at the offerings level, keyed by offering; the sections inject it · tsc 0, lint 0 errors, structure ✔, build:prod 243.85 kB (local) · browser-verified on 4101 (page, legacy link, "i" dialog)
+
+- 2026-10-08 · NON-REFACTOR · ⏸ **MIL-25 Revision 3 planned** for the #67 review: `CourseDetailFacade` at the offerings level, keyed by offering; the components inject it. Awaiting approval
+
+- 2026-10-07 · NON-REFACTOR · **MIL-25: accidental Pull merge aborted**; `tsc` 0, no conflict markers; force-push still pending (remote at `433dfb0`)
+
+- 2026-10-07 · NON-REFACTOR · **MIL-25 rebased onto master (65c6e2f), build:prod green** (local): both commits resolved (core model and masterclass page kept as master's, constants trimmed to the course endpoints, `withPreviousValue` from core, postman kept tracked)
+
+- 2026-10-07 · NON-REFACTOR · **MIL-25 hero actions**: Created/Updated line, Bookmark (POST + re-read, login redirect signed out), Download (certificate URL); verified signed out on 4101
+
+- 2026-10-07 · NON-REFACTOR · **MIL-25 Rev 2 Phases B–D done** (uncommitted): chapters, resources, related rails from `course-detail/`; browser-verified on 4101; prettier/eslint/structure/tsc clean
+
+- 2026-10-07 · NON-REFACTOR · **MIL-25 Rev 2 Phase A done** (uncommitted): course page on `course-detail/`, hero plays the HLS trailer after the poster; browser-verified on 4101; prettier/eslint/structure/tsc clean
+
+- 2026-10-07 · NON-REFACTOR · ⏸ **MIL-25 Revision 2 planned** (`prompts/masterclass-course-rebind.md`, end): course page → `course-detail` (hero HLS trailer + poster first). Surveyed 64/64 courses live; awaiting your approval of R1–R5
+
+- 2026-10-07 · NON-REFACTOR · **`home-page/` → `tracks-page/` fixed on MIL-25** (uncommitted): the landing page loads again on UAT data; prettier/eslint/tsc clean, browser-verified on 4101
 - 2026-10-07 · NON-REFACTOR · **MIL-28 dialog close button turns red on hover**, as on production (classes read live); verified on 4101
 
 - 2026-10-07 · NON-REFACTOR · **MIL-28 rebased onto master (65c6e2f)**: commit 1 as on MIL-25; the "i" button is opt-in (`showInfo`) on the now-shared course card; `tsc`/eslint/Prettier/structure clean
