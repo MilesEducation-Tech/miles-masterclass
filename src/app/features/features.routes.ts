@@ -55,7 +55,10 @@ export const featuresRoutes: Route[] = [
         loadChildren: () =>
           import('@features/tracker/caira/caira-tracker.routes').then((m) => m.CairaTrackerRoutes),
       },
-      { path: 'faq', component: Faq },
+      // `standalone` arrives through withComponentInputBinding(), which sets an
+      // input with no matching route data to `undefined` and so overrides its
+      // `true` default. Without this the page lost its <h1> and top padding.
+      { path: 'faq', component: Faq, data: { standalone: true } },
       { path: 'terms-of-service', component: TermsOfService },
       { path: 'privacy-policy', component: PrivacyPolicy },
       // Mobile-webview variants — same components, plain layout (no header/

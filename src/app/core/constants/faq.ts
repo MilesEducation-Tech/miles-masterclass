@@ -3,6 +3,12 @@ import { CountryCode, ProfessionType } from '../models/route-params.model';
 import { LocaleKey, resolveByLocale } from '@core/utils/locale-resolver';
 
 /**
+ * The "Still stuck? Write to …" address under the FAQ heading. Deliberately
+ * `support1@`, not the `support@` the answers below name (confirmed 2026-10-09).
+ */
+export const FAQ_SUPPORT_EMAIL = 'support1@milesmasterclass.com';
+
+/**
  * FAQ data. Pages should consume `resolveFaqData(country, profession)` so
  * future per-market FAQ variations slot in without page-level changes.
  * Today the resolver always returns `FAQ_DATA` since no overrides exist;

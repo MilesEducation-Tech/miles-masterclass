@@ -29,7 +29,6 @@
     "src/app/shared/components/cards/horizontal/horizontal.css": "kept in Phase 12 with a reason in its report",
     "src/app/shared/components/carousel/carousel.css": "third-party DOM: Swiper internals",
     "src/app/shared/components/consent-banner/consent-banner.css": "Angular-scoped @keyframes (+ the classes that use them)",
-    "src/app/shared/components/faq-item/faq-item.css": "Angular-scoped @keyframes (+ the classes that use them)",
     "src/app/shared/components/floating-assets/floating-assets.css": "Angular-scoped @keyframes (+ the classes that use them)",
     "src/app/shared/components/laptop/laptop.css": "Angular-scoped @keyframes (+ the classes that use them)",
     "src/app/shared/components/marquee/marquee.css": "Angular-scoped @keyframes (+ the classes that use them)",

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DOCUMENT, computed, inject } from '
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { NotificationService } from '@core/services/notification/notification';
-import { WebinarFaq } from '../../components/webinar-faq/webinar-faq';
+import { Faq } from '@shared/components/faq/faq';
 import { WebinarHero } from '../../components/webinar-hero/webinar-hero';
 import { WebinarMeetCta } from '../../components/webinar-meet-cta/webinar-meet-cta';
 import { WebinarRail } from '../../components/webinar-rail/webinar-rail';
@@ -20,7 +20,7 @@ import { WebinarRegistration } from '../../services/webinar-registration';
  */
 @Component({
   selector: 'app-webinar-list',
-  imports: [WebinarFaq, WebinarHero, WebinarMeetCta, WebinarRail],
+  imports: [Faq, WebinarHero, WebinarMeetCta, WebinarRail],
   templateUrl: './webinar-list.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

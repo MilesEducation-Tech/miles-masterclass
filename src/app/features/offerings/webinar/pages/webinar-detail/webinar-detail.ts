@@ -10,9 +10,9 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NotificationService } from '@core/services/notification/notification';
+import { Faq } from '@shared/components/faq/faq';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { WebinarAbout } from '../../components/webinar-about/webinar-about';
-import { WebinarFaq } from '../../components/webinar-faq/webinar-faq';
 import { WebinarHero } from '../../components/webinar-hero/webinar-hero';
 import { eligibleOf } from '../../models/webinar.model';
 import { WebinarFacade } from '../../services/webinar-facade';
@@ -36,7 +36,7 @@ import { setupWebinarDetailSeo } from '../../utils/webinar-seo';
  */
 @Component({
   selector: 'app-webinar-detail',
-  imports: [RouterLink, Spinner, WebinarAbout, WebinarFaq, WebinarHero],
+  imports: [Faq, RouterLink, Spinner, WebinarAbout, WebinarHero],
   templateUrl: './webinar-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
