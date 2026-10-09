@@ -184,12 +184,13 @@
   </section>
 
   <!-- FAQ. Same hydrate shape; its 76 KB question bank leaves the home chunk.
-       416px is the embedded, collapsed list at every width. -->
+       The placeholder is the embedded, collapsed list measured at 375 / 640 /
+       768+ px (430 / 434 / 446). -->
   <section id="faq" class="scroll-mt-20">
     @defer (on viewport; prefetch on idle; hydrate on viewport) {
       <app-faq [standalone]="false" />
     } @placeholder {
-      <div class="h-[416px]"></div>
+      <div class="h-[430px] sm:h-[434px] md:h-[446px]"></div>
     }
   </section>
 </div>
