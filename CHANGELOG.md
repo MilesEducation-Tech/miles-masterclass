@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.2.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.1.0...v3.2.0) (2026-10-09)
+
+
+### Features
+
+* **offerings:** join live webinars in the app, one session at a time ([#88](https://github.com/MilesEducation-Tech/miles-masterclass/issues/88)) ([25d5ba4](https://github.com/MilesEducation-Tech/miles-masterclass/commit/25d5ba40d0a58cb3a9a4f04bbda34b0b584b45d7))
+
+
+### Bug Fixes
+
+* **offerings:** let the webinar FAQ categories open ([#91](https://github.com/MilesEducation-Tech/miles-masterclass/issues/91)) ([55fa306](https://github.com/MilesEducation-Tech/miles-masterclass/commit/55fa306aacf83879247b87bf7fc6c41adbc35127))
+
 ## [3.1.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.0.1...v3.1.0) (2026-10-09)
 
 
