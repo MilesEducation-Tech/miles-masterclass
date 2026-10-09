@@ -1,17 +1,20 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
-  input,
-  output,
+  inject,
   viewChild,
 } from '@angular/core';
+import { Button } from '@shared/ui/button/button';
+import { LiveSessionFacade } from '@features/offerings/webinar/services/live-session-facade';
 
 /**
  * The element the Zoom SDK renders into, plus our chrome around it.
  *
- * Deliberately dumb: it owns no SDK, no lease and no state. The live page drives
- * everything and hands this component the element via `stageRoot()`.
+ * It owns no SDK, no lease and no state: it reads the room's title and status
+ * from `LiveSessionFacade` and hands the facade its `#zoomRoot` once rendered.
  *
  * The container is kept free of Tailwind utilities on purpose. The SDK injects
  * its own stylesheet and lays the meeting out itself; classes applied inside
@@ -20,22 +23,21 @@ import {
  */
 @Component({
   selector: 'app-meeting-stage',
-  imports: [],
+  imports: [Button],
   templateUrl: './meeting-stage.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MeetingStage {
-  readonly title = input.required<string>();
-  /** Shown while the SDK chunk downloads and the join handshake runs. */
-  readonly isPreparing = input(false);
-  readonly statusText = input<string | null>(null);
-
-  readonly leave = output<void>();
+  protected readonly facade = inject(LiveSessionFacade);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly zoomRoot = viewChild.required<ElementRef<HTMLElement>>('zoomRoot');
 
-  /** The element to pass to `client.init({ zoomAppRoot })`. */
-  stageRoot(): HTMLElement {
-    return this.zoomRoot().nativeElement;
+  constructor() {
+    afterNextRender(() => {
+      const root = this.zoomRoot().nativeElement;
+      this.facade.attachStage(root);
+      this.destroyRef.onDestroy(() => this.facade.detachStage(root));
+    });
   }
 }

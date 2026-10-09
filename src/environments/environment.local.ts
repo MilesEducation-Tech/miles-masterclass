@@ -24,8 +24,12 @@ export const environment = {
 
   WEBINAR: {
     joinWindowMinutes: 15,
-    /** In-app `/live` page. Off until the attendance-session routes exist. */
-    liveEnabled: false,
+    /**
+     * In-app `/live` page (Zoom Meeting SDK + session lease). ON here, so every
+     * Vercel preview (`build:dev`) and local run can be QA'd; production stays
+     * off until QA signs off. Each webinar still needs `route_to_web_lms`.
+     */
+    liveEnabled: true,
     /** Flip to `true` locally once the poll API exists, to exercise the panel. */
     pollsEnabled: false,
     leaseHeartbeatSeconds: 15,

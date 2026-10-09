@@ -12,6 +12,12 @@ exist, we mean it returns zero matches across the whole collection, not that we 
 (see below). Two asks are new (Q9, Q10), because the client stopped declaring fields the contract
 never sends (MIL-8).
 
+**Update 2026-10-09 (MIL-43): Q3 and Q6 are answered.** The collection now carries
+`attendance-session/{claim,heartbeat,release}/` and `meeting-sdk-signature/` (with
+`registrant_token`), and the client is bound to them. See the answers under Q3 and Q6. It also
+carries a web `web-api/v1/events/all-bookings/` (webinars only), which may answer Q1/Q2: not yet
+checked.
+
 ### Already fixed on our side
 
 - `cpe_credits` → `total_cpe_credits` (renamed 2026-09-18, no alias) — the client reads the new name
@@ -75,6 +81,13 @@ populate. Restoring it is a few lines once the data exists.
 more than we need.
 
 ### Q3. The Meeting SDK has no endpoints
+
+> **Answered 2026-10-09 (MIL-43).** All four routes are in the collection under `UNIVERSAL POST`.
+> The server lease is the arbiter across devices (lease keyed on the user, TTL 45 s, heartbeat
+> interval sent in the response). `release/` is `AllowAny`, CSRF-exempt, always `204`, and takes a
+> `text/plain` JSON body with no `Authorization`, so the tab-close `sendBeacon` works. Differences from
+> our spec, now handled on our side: claim also takes `device_label`; the signature response does
+> not echo `lease_expires_at`; `user_name` can be empty. The question below is kept for the record.
 
 **Wanted:** Join opens an embedded Zoom session in our LMS, with a hard "one session at a time"
 rule across tabs, windows and devices.
@@ -141,6 +154,9 @@ client can correct for clock skew). Either one alone helps; both is best.
 
 ### Q6. `registrant_token` is likewise absent
 
+> **Answered 2026-10-09 (MIL-43).** `meeting-sdk-signature/` returns `registrant_token`, parsed
+> server-side from the registrant's `join_url`, next to the signature, so it stays off the feed card.
+
 0 matches. The SDK path (Q3, disabled) needs it as the Zoom `tk`; without it that path has no
 token at all. Parsing it out of `join_url` would break silently the moment Zoom changes that URL
 shape, so we do not.
@@ -179,20 +195,36 @@ badge URL (the v2 `UpcomingPremiere` did). The space is reserved in the layout; 
 
 ---
 
+### Q11. The feed buckets became paginated, undocumented (2026-10-09)
+
+Every bucket on `webinar-main-page` is now `{slug, count, page, page_size, total_pages, has_next,
+has_previous, next, previous, results}`. Postman still documents a bare array and says "no
+pagination". The client reads `results` (MIL-43) and shows page 1 only, which is 6 cards.
+
+**Ask:** document the envelope and the query parameters that page each bucket, and re-export Postman.
+
+### Q12. Nulls where the contract says string (2026-10-09)
+
+`short_description` is `null` on every live card (Postman: `string`). `vertical_thumbnail` and
+`product.{horizontal,vertical,square}_image` are `null` (Postman: `""` when unset). The client now
+accepts `null` for all of them (MIL-43).
+
+**Ask:** either send `""` as documented, or update the contract to say nullable.
+
 ## Summary
 
-| #   | Question                                      | Blocks                               |
-| --- | --------------------------------------------- | ------------------------------------ |
-| Q1  | `attended_status` / attendance-pending signal | "waiting for attendance" state       |
-| Q2  | Duration + poll fields on a web route         | "what did you miss" for Not Eligible |
-| Q3  | Meeting SDK signature + session lease routes  | embedded join, one-session-at-a-time |
-| Q4  | Webinar feedback / certificate / badge routes | the whole post-attendance chain      |
-| Q5  | `join_opens_at`                               | correctness of the join window       |
-| Q6  | `registrant_token`                            | SDK join without URL parsing         |
-| Q7  | `product` vs `subject`                        | detail page display only             |
-| Q8  | Enrolment filtering                           | list relevance                       |
-| Q9  | NASBA disclosure fields                       | compliance block on the detail page  |
-| Q10 | `badge_icon_url`                              | credential badge on the row artwork  |
+| #   | Question                                                     | Blocks                               |
+| --- | ------------------------------------------------------------ | ------------------------------------ |
+| Q1  | `attended_status` / attendance-pending signal                | "waiting for attendance" state       |
+| Q2  | Duration + poll fields on a web route                        | "what did you miss" for Not Eligible |
+| Q3  | ✅ Meeting SDK signature + session lease routes (2026-10-09) | —                                    |
+| Q4  | Webinar feedback / certificate / badge routes                | the whole post-attendance chain      |
+| Q5  | `join_opens_at`                                              | correctness of the join window       |
+| Q6  | ✅ `registrant_token` (2026-10-09)                           | —                                    |
+| Q7  | `product` vs `subject`                                       | detail page display only             |
+| Q8  | Enrolment filtering                                          | list relevance                       |
+| Q9  | NASBA disclosure fields                                      | compliance block on the detail page  |
+| Q10 | `badge_icon_url`                                             | credential badge on the row artwork  |
 
-**Q1–Q4 are the ones that block shipping the flow as specified.** Everything else in the module is
+**Q1, Q2 and Q4 are the ones that still block shipping the flow as specified.** Everything else in the module is
 built and working against the contract as it stands.

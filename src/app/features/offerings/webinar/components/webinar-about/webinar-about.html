@@ -88,10 +88,10 @@
                 <span class="font-medium text-foreground">{{ sponsorId }}</span>
               </li>
 
-              @if (w.duration_minutes; as minutes) {
+              @if (w.duration_seconds; as seconds) {
                 <li class="text-sm md:text-base">
                   Webinar Duration:
-                  <span class="font-medium text-foreground">{{ minutes }} minutes</span>
+                  <span class="font-medium text-foreground">{{ seconds | duration: 'long' }}</span>
                 </li>
               }
             </ul>

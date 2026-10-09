@@ -1,22 +1,24 @@
 <div class="flex min-h-[70vh] flex-col gap-4">
   <header class="flex flex-wrap items-center justify-between gap-3">
     <div class="flex flex-col">
-      <h1 class="text-lg font-medium">{{ title() }}</h1>
-      @if (statusText(); as status) {
+      <h1 class="text-lg font-medium">{{ facade.title() }}</h1>
+      @if (facade.statusText(); as status) {
         <p class="text-sm text-muted-foreground">{{ status }}</p>
       }
     </div>
     <button
+      app-button
       type="button"
-      class="rounded-md border border-border px-4 py-2 text-sm transition-colors hover:border-destructive/60 hover:text-destructive"
-      (click)="leave.emit()"
+      variant="outline"
+      class="data-hover:border-destructive/60 data-hover:bg-transparent data-hover:text-destructive"
+      (click)="facade.leave()"
     >
       Leave session
     </button>
   </header>
 
   <div class="relative flex-1 overflow-hidden rounded-xl border border-border bg-black">
-    @if (isPreparing()) {
+    @if (facade.isPreparing()) {
       <div
         class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/90"
       >
