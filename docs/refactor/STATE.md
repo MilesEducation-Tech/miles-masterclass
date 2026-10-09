@@ -7,7 +7,29 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-09, NON-REFACTOR — footer layout fix, ticket A of `prompts/footer-redesign.md` (approved).
+  DONE, UNCOMMITTED** on `fix/MIL-XXX-footer-layout` (from `master`). No refactor phase moved.
+  - **What changed:**
+    - The footer grid sits on grid lines, with no `mx-auto` centring.
+    - `md:px-16` gutters clear the home side rail.
+    - The 4-column layout starts at xl. Phones use a compact 2-column grid and hide the QR code.
+    - `pb-56` on phones clears the overlay card.
+    - The grid generator, `getIcon(): any` and `navigateTo` are gone, and `footer.ts` is off `LEGACY_ANY_FILES`.
+  - **Gates (local macOS, not CI):**
+    - `pnpm lint` 0 errors (107 legacy warnings), structure check passed.
+    - `build:prod` green, initial 243.84 kB, only the `ai-labs.css` warning.
+    - `build-storybook` 0.
+  - **Browser (4101, home and masterclass, en and ar):**
+    - Every row starts at the same x at 320–1440.
+    - No horizontal scroll.
+    - The last row clears the overlay card.
+    - 375 height 1,804 → 1,658px.
+  - **Next:** ticket B (glass-and-glow finish), then C (AI Labs underline).
+- ⚠️ The `<<<<<<< HEAD` / `>>>>>>> 9f90195` markers below were committed to `master` unresolved; left for the
+  owner.
+
 <<<<<<< HEAD
+
 - 🔧 **2026-10-09, NON-REFACTOR — production deploys on release, not on every merge
   (`prompts/deploy-on-release.md`, approved). DONE, UNCOMMITTED** on `ci/MIL-44-deploy-on-release` (from
   `master`). No refactor phase moved.
@@ -22,7 +44,7 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - #86 merged 11:40 UTC by me-sachin-singh → `v3.1.0` tag + GitHub Release (label `autorelease: tagged`).
     `www.milesmasterclass.com/version.json` reports sha `a674eeca`, which isn't in this repo, so that domain
     isn't serving this project; the domain this project actually serves in production is unconfirmed.
-=======
+    \=======
 - 🔧 **2026-10-09, NON-REFACTOR — MIL-43 webinar live join: ALL 3 PHASES DONE, UNCOMMITTED; GATES GREEN;
   BROWSER-VERIFIED AS FAR AS A DOWN UAT ALLOWS** (`prompts/webinar-live-join.md`), on
   `feat/MIL-43-webinar-live-join` from `master` at `741d0f7`. No refactor phase moved. The user did not commit
@@ -98,7 +120,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
   - Next: a signed-in learner (the backend's `route_to_web_lms` test user) runs the real join, two-browser
     conflict, takeover and tab-close checks.
->>>>>>> 9f90195 (feat(offerings): join live webinars in the app, one session at a time)
+
+> > > > > > > 9f90195 (feat(offerings): join live webinars in the app, one session at a time)
 
 - 🔧 **2026-10-08, NON-REFACTOR — home cards get the "i" course-info button (`prompts/home-course-info.md`,
   approved). DONE, BROWSER-VERIFIED, UNCOMMITTED** on `feat/MIL-XXX-home-course-info` (from `master`). No

@@ -283,7 +283,6 @@ export default [
         'src/app/features/offerings/services/chapter-facade.ts',
         'src/app/features/payment/pages/plan/plan.ts',
         'src/app/layout/footer/footer.stories.ts',
-        'src/app/layout/footer/footer.ts',
         'src/app/layout/header/header.stories.ts',
         'src/app/shared/components/cards/horizontal/horizontal.ts',
         'src/app/shared/components/cards/hover/hover.ts',
