@@ -1,4 +1,4 @@
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import {
   afterNextRender,
   Component,
@@ -87,6 +87,7 @@ const ROUTE_MATCH_OPTIONS: IsActiveMatchOptions = {
     NgpCollapsibleContent,
     NgpFocusTrap,
     TranslocoPipe,
+    NgTemplateOutlet,
   ],
   providers: [provideIcons({ lucideChevronDown, lucideChevronRight, lucideMenu, lucideX })],
   templateUrl: './header.html',

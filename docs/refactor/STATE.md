@@ -45,6 +45,27 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - 375 height 1,651px (Phase A was 1,658).
 - ⚠️ The `<<<<<<< HEAD` / `>>>>>>> 9f90195` markers below were committed to `master` unresolved; left for the
   owner.
+- 🔧 **2026-10-09, NON-REFACTOR — AI Labs header underline, ticket C of `prompts/footer-redesign.md`
+  (approved). DONE, UNCOMMITTED** on `feat/MIL-XXX-ai-labs-underline` (from `master` at `7ba1b62`). No refactor
+  phase moved.
+  - **What changed:**
+    - AI Labs is a `type: 'link'` with `highlight: true` in both navs, no longer the `demo` pill.
+    - Link items render their badge.
+    - A shared `#navUnderline` SVG draws in once (`navUnderlineDraw` in animation.css).
+  - **Gates (local macOS, not CI):**
+    - `pnpm lint` 0 errors (109 warnings, master's baseline), structure check passed.
+    - `build:prod` green, initial 243.80 kB, no NG8002.
+    - `build-storybook` 0.
+  - **Browser (4000 prod SSR, stopped afterwards):**
+    - Signed out and signed in (dummy cookie, removed): the underline matches the label width on desktop
+      (90px) and in the drawer (95px, not the 256px row).
+    - The dashoffset runs 1px → 0px by 840ms.
+    - The click lands on `/us/accounting/ai-labs` with `aria-current`.
+  - **4101 dev server:** stale after the branch switches. NG0500 hydration mismatch in the footer breaks in-app
+    navigation. It needs a restart; this is not a code fault.
+  - The footer tickets A (`a403a83`) and B (`a0f5c52`) are committed by the user on their own branches; their
+    STATE lines live there.
+  - **Merge:** B and C both append to `animation.css`, so keep both blocks.
 
 <<<<<<< HEAD
 
@@ -3630,6 +3651,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-09 · NON-REFACTOR · **AI Labs header underline** (uncommitted, `feat/MIL-XXX-ai-labs-underline`): AI Labs nav pill → highlighted link with badge, SVG draw-in underline (desktop + drawer) · lint 0 errors, structure ✔, build:prod 243.80 kB, storybook ✔ (local) · verified on the 4000 prod SSR build, signed out and in
+
+- 2026-10-09 · NON-REFACTOR · **Footer glass-and-glow finish** (committed `a0f5c52`, `feat/MIL-47-footer-finish`) and **footer layout fix** (committed `a403a83`, `fix/MIL-46-footer-layout`) · gates green (local) · verified on 4101 at 320–1440, en and ar
 
 - 2026-10-08 · NON-REFACTOR · **Home "i" course-info button** (uncommitted, `feat/MIL-XXX-home-course-info`): dialog token bound in `app.config.ts`, data type moved to core · lint 0 errors, structure ✔, build:prod green (local) · verified on the 4000 SSR build, headless · next: global loading bar from master
 
