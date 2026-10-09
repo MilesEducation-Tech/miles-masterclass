@@ -231,7 +231,8 @@ When you have: ✅ approval, ✅ 4 green checks, ✅ all conversations resolved,
 2. Check the commit title GitHub shows — it's your PR title. It must be `type(scope): subject`.
 3. Confirm. GitHub deletes the branch automatically.
 
-**This deploys to production.** Keep an eye on production for a few minutes.
+**This lands on `master`, not on production.** Production gets it when the release owner merges the next
+Release PR ([§12](#12-releases-version-numbers)).
 
 ### Step 9 — clean up locally
 
@@ -313,7 +314,7 @@ gitGraph
   checkout feat/B
   commit id: "B2 (QA fix)"
   checkout master
-  merge feat/A tag: "A approved → prod"
+  merge feat/A tag: "A approved → master"
 ```
 
 After `A` merges, the release owner rebuilds `uat` from `master` + `feat/B` (which now includes `B2`).
@@ -461,13 +462,15 @@ Then:
    (**`fix`, not `hotfix`**). Put **URGENT** in the description and ping the reviewer directly.
 2. Verify the fix locally (`pnpm start`). If it can only be reproduced deployed, ask the release owner
    to put the PR on UAT first — reset UAT for it if needed; a hotfix jumps the queue.
-3. Approval + green CI → **Squash and merge** → production deploys.
-4. Release owner: if `uat` is in use, reset or rebuild it so it contains the hotfix ([§5](#for-the-release-owner--putting-branches-on-uat)).
-5. Release owner: merge the open Release PR to tag the patch version ([§12](#12-releases-version-numbers)).
+3. Approval + green CI → **Squash and merge**.
+4. Release owner: merge the open Release PR right away. **That is what deploys the fix**
+   ([§12](#12-releases-version-numbers)).
+5. Release owner: if `uat` is in use, reset or rebuild it so it contains the hotfix ([§5](#for-the-release-owner--putting-branches-on-uat)).
 
 **Production is on fire and the fix will take a while?** Don't rush a fix. **Roll back first** in Vercel
 (Deployments → previous production deployment → **Instant Rollback**). That takes seconds. Then do the
-hotfix calmly through the flow above.
+hotfix calmly through the flow above. After a rollback, Vercel stops putting new production builds live,
+so the hotfix release builds but stays parked: click **Undo Rollback** on the production tile and pick it.
 
 **Hotfix permutations**
 
@@ -818,7 +821,8 @@ git push --force-with-lease
 
 How it works:
 
-1. Every merge to `master` deploys to production immediately. Versions don't gate deploys.
+1. A merge to `master` does **not** deploy. Production builds only when the Release PR merges
+   ([`versioning.md` §4](versioning.md#4-the-deploy-is-atomic-and-old-assets-stay-reachable)).
 2. A bot (**release-please**) keeps one open PR called something like **"chore(master): release 3.1.0"**,
    listing every change since the last release.
 3. When the release owner merges that PR, it bumps `package.json`, writes `CHANGELOG.md`, and creates the
