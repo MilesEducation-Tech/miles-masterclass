@@ -151,3 +151,16 @@
     translate: 300%;
   }
 }
+
+/* `--animate-footer-sweep`: the highlight on the footer's top hairline is a third of the line, so
+   -100% → 300% carries it fully across. It crosses in the first 60% of the cycle and rests for the
+   rest, so the line reads as a slow pulse rather than a constant scroll. */
+@keyframes footer-sweep {
+  from {
+    translate: -100%;
+  }
+  60%,
+  to {
+    translate: 300%;
+  }
+}

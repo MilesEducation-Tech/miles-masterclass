@@ -1,6 +1,25 @@
 <!-- Bottom padding keeps the last row clear of the fixed footer-overlay card, which is
-     ~190px tall on a 375px phone (its copy wraps) and ~100px from md up. -->
-<footer class="pt-16 pb-56 md:pb-32">
+     ~190px tall on a 375px phone (its copy wraps) and ~100px from md up.
+     `isolate` gives the -z-10 glow and wordmark a stacking context above the footer's own
+     background; `overflow-hidden` clips them and the hairline sweep to the footer. -->
+<footer
+  class="relative isolate overflow-hidden bg-linear-to-b from-background to-surface-deep pt-16 pb-56 md:pb-32"
+>
+  <!-- Accent hairline along the top edge, with a highlight that crosses it and rests (keyframes in
+       animation.css). Physical `left-0` on purpose: it is decoration, and one direction suits RTL too. -->
+  <div
+    class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-accent/40 to-transparent"
+    aria-hidden="true"
+  >
+    <span
+      class="absolute inset-y-0 left-0 w-1/3 bg-linear-to-r from-transparent via-accent to-transparent shadow-[0_0_12px_2px_rgb(var(--accent-rgb)/0.5)] animate-footer-sweep motion-reduce:hidden"
+    ></span>
+  </div>
+  <div
+    class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80 bg-[radial-gradient(ellipse_at_top,rgb(var(--accent-rgb)/0.14),transparent_70%)]"
+    aria-hidden="true"
+  ></div>
+
   <!-- Side gutters: `container` has none from sm up, and md:px-16 clears the home page's 56px side rail. -->
   <div class="container mx-auto flex flex-col gap-12 sm:px-6 md:px-16">
     <!-- Cells sit on the grid lines (no mx-auto), so every column in a row starts at the same x.
@@ -17,32 +36,43 @@
           <a
             routerLink="/"
             draggable="false"
-            class="col-span-2 w-fit"
+            class="col-span-2 w-fit rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
             [attr.aria-label]="'header.home' | transloco"
           >
             <ng-icon [svg]="logo" class="w-24! h-10!" />
           </a>
 
           <div class="flex flex-col gap-3">
-            <p class="md:text-2xl text-xl font-bold">{{ 'footer.social' | transloco }}</p>
-            <ul class="flex gap-4">
+            <p
+              class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-foreground"
+            >
+              <span
+                class="size-1.5 rounded-full bg-accent shadow-[0_0_8px_rgb(var(--accent-rgb))]"
+                aria-hidden="true"
+              ></span>
+              {{ 'footer.social' | transloco }}
+            </p>
+            <ul class="flex gap-3">
               @for (social of socialLinks; track social.url) {
                 <li>
+                  <!-- The header's gradient ring, glowing in the accent on hover. -->
                   <a
                     draggable="false"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="flex size-10 items-center justify-center"
+                    class="block rounded-full bg-linear-to-br from-white/40 via-transparent to-white/40 p-px transition-shadow duration-300 hover:shadow-[0_0_20px_rgb(var(--accent-rgb)/0.4)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
                     [href]="social.url"
                     [title]="social.label"
                     [attr.aria-label]="social.label"
                   >
-                    <ng-icon
-                      draggable="false"
-                      [svg]="social.icon!"
-                      class="size-8!"
-                      aria-hidden="true"
-                    />
+                    <span class="grid size-10 place-items-center rounded-full bg-background">
+                      <ng-icon
+                        draggable="false"
+                        [svg]="social.icon!"
+                        class="size-5!"
+                        aria-hidden="true"
+                      />
+                    </span>
                   </a>
                 </li>
               }
@@ -50,15 +80,24 @@
           </div>
 
           <div class="flex flex-col gap-3">
-            <p class="md:text-2xl text-xl font-bold">{{ 'footer.ourLocation' | transloco }}</p>
+            <p
+              class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-foreground"
+            >
+              <span
+                class="size-1.5 rounded-full bg-accent shadow-[0_0_8px_rgb(var(--accent-rgb))]"
+                aria-hidden="true"
+              ></span>
+              {{ 'footer.ourLocation' | transloco }}
+            </p>
             <ul class="flex gap-4">
               @for (location of ['footer.usa', 'footer.uae', 'footer.india']; track location) {
-                <li class="md:text-base text-sm text-gray-300 hover:underline">
+                <li>
                   <a
                     draggable="false"
                     href="https://www.mileseducation.com/contact-us"
                     target="_blank"
                     rel="noopener noreferrer"
+                    class="rounded-sm text-sm text-muted-foreground transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
                     >{{ location | transloco }}</a
                   >
                 </li>
@@ -67,30 +106,42 @@
           </div>
         </div>
 
-        <div class="flex flex-col gap-4">
-          <p class="md:text-2xl text-xl font-bold">{{ 'footer.downloadApp' | transloco }}</p>
-          <div class="flex flex-wrap items-start gap-6">
-            <ul class="grid grid-cols-2 gap-3 md:grid-cols-1">
+        <!-- Glass card for the app downloads. -->
+        <div
+          class="flex flex-col gap-4 self-start rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm max-md:self-stretch"
+        >
+          <p
+            class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-foreground"
+          >
+            <span
+              class="size-1.5 rounded-full bg-accent shadow-[0_0_8px_rgb(var(--accent-rgb))]"
+              aria-hidden="true"
+            ></span>
+            {{ 'footer.downloadApp' | transloco }}
+          </p>
+          <div class="flex flex-wrap items-start gap-4">
+            <!-- flex-wrap, not a 2-column grid: under ~360px the two buttons stack instead of overflowing. -->
+            <ul class="flex flex-wrap gap-3 md:flex-col">
               @for (store of appStoreLinks; track store.url) {
                 <li>
                   <a
                     draggable="false"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="flex items-center gap-2 whitespace-nowrap rounded-md bg-[#39434f] px-3 py-2"
+                    class="flex items-center gap-2 whitespace-nowrap rounded-lg border border-white/10 bg-white/5 px-3 py-2 transition-colors hover:border-accent/50 hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
                     [href]="store.url"
                   >
                     <ng-icon
                       draggable="false"
                       [svg]="store.icon!"
-                      class="w-8! h-auto!"
+                      class="size-7!"
                       aria-hidden="true"
                     />
                     <span class="flex flex-col">
-                      <span class="text-[10px] leading-none">{{
+                      <span class="text-[10px] leading-none text-muted-foreground">{{
                         'footer.downloadOnThe' | transloco
                       }}</span>
-                      <span class="text-base font-bold">{{ store.label }}</span>
+                      <span class="text-sm font-bold md:text-base">{{ store.label }}</span>
                     </span>
                   </a>
                 </li>
@@ -103,10 +154,12 @@
                 [alt]="'footer.scanMe' | transloco"
                 width="173"
                 height="173"
-                class="size-28"
+                class="size-24 rounded-lg bg-white p-1"
                 draggable="false"
               />
-              <p class="text-xs font-light">{{ 'footer.scanToDownload' | transloco }}</p>
+              <p class="text-[11px] text-muted-foreground">
+                {{ 'footer.scanToDownload' | transloco }}
+              </p>
             </div>
           </div>
         </div>
@@ -114,25 +167,33 @@
 
       @for (section of linkSections(); track section.title) {
         <div class="flex flex-col gap-4" [class]="section.wide ? 'max-md:col-span-2' : ''">
-          <p class="md:text-2xl text-xl font-bold">{{ section.title }}</p>
+          <p
+            class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-foreground"
+          >
+            <span
+              class="size-1.5 rounded-full bg-accent shadow-[0_0_8px_rgb(var(--accent-rgb))]"
+              aria-hidden="true"
+            ></span>
+            {{ section.title }}
+          </p>
           <ul
-            class="flex flex-col gap-2"
+            class="flex flex-col gap-2 md:gap-2.5"
             [class]="section.wide ? 'max-md:grid max-md:grid-cols-2 max-md:gap-x-6' : ''"
           >
             @for (link of section.links; track link.label) {
-              <li class="md:text-base text-sm text-gray-300">
+              <li class="text-sm">
                 @if (link.action) {
                   <button
                     type="button"
                     (click)="handleLinkAction(link)"
-                    class="cursor-pointer bg-transparent p-0 text-start hover:underline"
+                    class="cursor-pointer rounded-sm bg-transparent p-0 text-start text-muted-foreground transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
                   >
                     {{ link.label }}
                   </button>
                 } @else {
                   <a
                     draggable="false"
-                    class="hover:underline"
+                    class="rounded-sm text-muted-foreground transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
                     [routerLink]="link.route"
                     [queryParams]="link.queryParams || null"
                   >
@@ -146,20 +207,23 @@
       }
     </div>
 
-    <div class="flex items-start gap-4 md:gap-8">
+    <div class="flex items-start gap-4 border-y border-hairline py-6 md:gap-8 md:py-8">
+      <!-- White tile: the navy NASBA mark is barely legible on the dark footer. -->
       <img
         [ngSrc]="'https://asset.milesmasterclass.com/media/web-app/home/nasba.webp'"
         alt="nasba"
-        class="w-14 shrink-0 md:w-20"
+        class="w-14 shrink-0 rounded-lg bg-white p-1.5 md:w-20"
         draggable="false"
         width="105"
         height="138"
       />
       <div class="flex flex-col gap-2">
-        <p class="text-base text-gray-300">{{ 'footer.sponsorId' | transloco: { id: 149174 } }}</p>
+        <p class="font-mono text-xs uppercase tracking-wider text-accent">
+          {{ 'footer.sponsorId' | transloco: { id: 149174 } }}
+        </p>
         <!-- NASBA prescribes this sponsor statement's wording: English in every language until compliance decides otherwise.
              `lang`/`dir` keep it read and punctuated as English on the Arabic page. -->
-        <p lang="en" dir="ltr" class="text-sm text-gray-300">
+        <p lang="en" dir="ltr" class="text-xs leading-relaxed text-muted-foreground md:text-sm">
           Miles Masterclass Inc. is registered with the National Association of State Boards of
           Accountancy (NASBA) as a sponsor of continuing professional education on the National
           Registry of CPE Sponsors. State boards of accountancy have final authority on the
@@ -179,14 +243,16 @@
     </div>
 
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <p class="text-gray-300">{{ 'footer.copyright' | transloco: { year: copyrightYear } }}</p>
-      <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
+      <p class="text-sm text-muted-foreground">
+        {{ 'footer.copyright' | transloco: { year: copyrightYear } }}
+      </p>
+      <ul class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
         @for (legal of legalLinks(); track legal.label) {
           <li>
             <a
               [routerLink]="legal.route"
               [queryParams]="legal.queryParams || null"
-              class="text-gray-300 hover:underline"
+              class="rounded-sm text-muted-foreground transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
             >
               {{ legal.label }}
             </a>
@@ -197,7 +263,7 @@
             <button
               type="button"
               (click)="consent.openPreferences()"
-              class="cursor-pointer bg-transparent p-0 text-gray-300 hover:underline"
+              class="cursor-pointer rounded-sm bg-transparent p-0 text-muted-foreground transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
             >
               {{ 'footer.cookieSettings' | transloco }}
             </button>
@@ -211,4 +277,13 @@
       </ul>
     </div>
   </div>
+
+  <!-- Oversized, near-invisible wordmark sinking into the bottom edge. It sits in the bottom padding,
+       so it takes no layout space; a brand name, so it is not translated. -->
+  <p
+    class="pointer-events-none absolute inset-x-0 bottom-0 -z-10 translate-y-1/4 select-none whitespace-nowrap bg-linear-to-b from-white/10 to-transparent bg-clip-text text-center text-[length:9vw] font-bold leading-none tracking-tighter text-transparent 2xl:text-[length:8.5rem]"
+    aria-hidden="true"
+  >
+    Miles Masterclass
+  </p>
 </footer>
