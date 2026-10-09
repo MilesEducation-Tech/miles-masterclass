@@ -22,7 +22,8 @@ How we branch, review and ship. Read this once; keep the "Daily routine" section
 
 We use **GitHub Flow**: one permanent branch (`master`), and short-lived branches off it.
 
-- `master` is always deployable. Whatever is on `master` is what's in production.
+- `master` is always deployable. Production runs the last release: merging the Release PR is what deploys
+  (`versioning.md` §4).
 - You never commit directly to `master`. Everything goes through a Pull Request (PR).
 - A branch lives **1–3 days**, not weeks. Small PRs get reviewed fast, and big ones rot.
 - Vercel previews are **disabled**. Test locally before asking for review; a change that must be seen
@@ -35,11 +36,12 @@ gitGraph
   commit id: "feat: seat picker"
   commit id: "test: seat picker"
   checkout master
-  merge feat/MIL-231-seat-allocation tag: "→ prod"
+  merge feat/MIL-231-seat-allocation
   branch fix/MIL-240-invoice-total
   commit id: "fix: invoice total"
   checkout master
   merge fix/MIL-240-invoice-total
+  commit id: "chore: release 3.1.0" tag: "→ prod"
 ```
 
 **Why not a `develop` branch?** Because we deploy from `master`, and the UAT environment is fed from a
@@ -249,16 +251,18 @@ Full detail is in **`docs/engineering/versioning.md`**. The short version:
 
 ### Release
 
-`master` deploys to production on merge. Version numbers are **derived from commit messages**, not chosen
-by hand: `fix:` bumps the patch, `feat:` the minor, and `!`/`BREAKING CHANGE:` the major. A release tool
-(release-please) keeps an open Release PR with the next version and the changelog; merging it bumps
-`package.json`, writes `CHANGELOG.md`, and creates the tag `v3.1.0` and a GitHub Release.
+Production deploys when a release merges, not on every merge to `master`. Version numbers are
+**derived from commit messages**, not chosen by hand: `fix:` bumps the patch, `feat:` the minor, and
+`!`/`BREAKING CHANGE:` the major. A release tool (release-please) keeps an open Release PR with the next
+version and the changelog; merging it bumps `package.json`, writes `CHANGELOG.md`, creates the tag
+`v3.1.0` and a GitHub Release, and deploys production.
 
 Until that's wired up, do it manually:
 
 ```bash
 git checkout master && git pull
 # bump "version" in package.json (3.0.1 → 3.1.0 for features, 3.0.2 for fixes)
+# and the same number in .release-please-manifest.json: production only builds when that file changes
 git commit -am "chore(release): v3.1.0"
 git tag -a v3.1.0 -m "v3.1.0"
 git push origin master --tags
@@ -283,8 +287,8 @@ git checkout -b hotfix/MIL-299-checkout-500
 git push -u origin hotfix/MIL-299-checkout-500
 ```
 
-Open the PR, mark it urgent, get one fast review, merge, tag a patch version. Because we only have
-`master`, there is nothing to back-merge afterwards.
+Open the PR, mark it urgent, get one fast review, merge, then merge the Release PR: that is what
+deploys. Because we only have `master`, there is nothing to back-merge afterwards.
 
 ---
 

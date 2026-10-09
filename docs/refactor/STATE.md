@@ -7,6 +7,21 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-09, NON-REFACTOR — production deploys on release, not on every merge
+  (`prompts/deploy-on-release.md`, approved). DONE, UNCOMMITTED** on `ci/MIL-44-deploy-on-release` (from
+  `master`). No refactor phase moved.
+  - `vercel.json` `ignoreCommand`: if `VERCEL_ENV` is not production, build; otherwise build only if HEAD
+    changes `.release-please-manifest.json`. versioning.md §4, git-workflow.md and git-playbook.md updated.
+  - Tested locally: master HEAD in production → 0 (skip); in preview → 1; `248bc2b` in production → 1.
+  - Gates (local macOS, not CI): Prettier clean; `pnpm lint` 0 errors (109 legacy warnings), structure passed.
+  - ✅ Unblocked 2026-10-09: `RELEASE_PLEASE_TOKEN` set 11:09 UTC; the next `release` run opened Release
+    PR #86 `chore(master): release 3.1.0` (author me-sachin-singh, label `autorelease: pending`). It
+    changes `.release-please-manifest.json`, so the `ignoreCommand` will build it. All four required
+    checks triggered on it. The PAT needs Issues write too, for the labels; versioning.md §2 now says so.
+  - #86 merged 11:40 UTC by me-sachin-singh → `v3.1.0` tag + GitHub Release (label `autorelease: tagged`).
+    `www.milesmasterclass.com/version.json` reports sha `a674eeca`, which isn't in this repo, so that domain
+    isn't serving this project; the domain this project actually serves in production is unconfirmed.
+
 - 🔧 **2026-10-08, NON-REFACTOR — home cards get the "i" course-info button (`prompts/home-course-info.md`,
   approved). DONE, BROWSER-VERIFIED, UNCOMMITTED** on `feat/MIL-XXX-home-course-info` (from `master`). No
   refactor phase moved. Ticket B of the same request (global loading bar, `prompts/global-loading-bar.md`)
