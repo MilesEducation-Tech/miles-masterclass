@@ -74,7 +74,10 @@
             [attr.inert]="isOpen ? null : ''"
           >
             <div class="overflow-hidden">
-              <div class="pe-8 pb-1 text-sm">
+              <!-- appAccordionScope gives the nested question accordion its own state.
+                   Without it, it takes over this category accordion's state and no
+                   category opens. -->
+              <div appAccordionScope class="pe-8 pb-1 text-sm">
                 <!-- A category carries no content of its own, only children;
                      a leaf is the other way round. Both are rendered, so an
                      entry that has each still works. -->

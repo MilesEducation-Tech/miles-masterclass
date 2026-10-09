@@ -8,6 +8,7 @@ import {
 } from 'ng-primitives/accordion';
 import { matAddRound, matRemoveRound } from '@ng-icons/material-icons/round';
 import { FaqContent } from '@shared/components/faq-content/faq-content';
+import { AccordionScope } from '@shared/ui/accordion/accordion-scope';
 import { resolveFaqData } from '@core/constants/faq';
 import { FAQ } from '@core/models/faq.model';
 import { Utils } from '@shared/services/utils';
@@ -29,13 +30,16 @@ import { Utils } from '@shared/services/utils';
  *
  * The accordion is local rather than the FAQ page's `app-faq-item`: that one
  * recurses to arbitrary depth and carries grey-card styling, and this list is
- * two fixed levels styled as dividers. Both levels are `ngpAccordion`s.
+ * two fixed levels styled as dividers. Both levels are `ngpAccordion`s, and
+ * the inner one sits inside an `appAccordionScope` so the two do not share
+ * state (see `AccordionScope`).
  */
 @Component({
   selector: 'app-webinar-faq',
   imports: [
     NgIcon,
     FaqContent,
+    AccordionScope,
     NgpAccordion,
     NgpAccordionContent,
     NgpAccordionItem,
