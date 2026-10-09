@@ -4,7 +4,7 @@
     [queryParams]="item().queryParams"
     [attr.aria-current]="isActiveRoute(item().route) ? 'page' : null"
     (click)="onLink()"
-    class="flex flex-col py-2.5 px-3.5 rounded-lg text-sm text-foreground/90 no-underline hover:text-accent transition-all duration-200 cursor-pointer outline-none focus:bg-accent/12 focus:text-accent"
+    class="flex flex-col py-2.5 px-3.5 rounded-lg text-sm text-foreground/90 no-underline hover:bg-white/5 hover:text-accent transition-all duration-200 cursor-pointer outline-none focus:bg-accent/12 focus:text-accent"
   >
     <span>{{ item().label }}</span>
     @if (item().subLabel) {
@@ -17,7 +17,7 @@
   <button
     type="button"
     (click)="onAction()"
-    class="w-full text-start flex flex-col py-2.5 px-3.5 rounded-lg text-sm text-foreground/90 bg-transparent border-0 hover:text-accent transition-all duration-200 cursor-pointer outline-none focus:bg-accent/12 focus:text-accent"
+    class="w-full text-start flex flex-col py-2.5 px-3.5 rounded-lg text-sm text-foreground/90 bg-transparent border-0 hover:bg-white/5 hover:text-accent transition-all duration-200 cursor-pointer outline-none focus:bg-accent/12 focus:text-accent"
   >
     <span>{{ item().label }}</span>
   </button>
@@ -36,7 +36,7 @@
       ngpCollapsibleTrigger
       [class]="
         cn(
-          'w-full text-start flex items-center justify-between gap-2 py-2.5 px-3.5 rounded-lg text-sm text-foreground/90 bg-transparent border-0  hover:text-accent  transition-all duration-200 cursor-pointer outline-none focus:outline-none focus:ring-2 focus:ring-ring/40',
+          'w-full text-start flex items-center justify-between gap-2 py-2.5 px-3.5 rounded-lg text-sm text-foreground/90 bg-transparent border-0 hover:bg-white/5 hover:text-accent  transition-all duration-200 cursor-pointer outline-none focus:outline-none focus:ring-2 focus:ring-ring/40',
           hasActiveChild(item()) && 'text-accent'
         )
       "
@@ -50,7 +50,7 @@
       [class]="
         cn(
           'mt-1 ms-3 bg-muted rounded-lg p-2 z-1010 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)]',
-          'lg:mt-0 lg:ms-0 lg:absolute lg:top-0 lg:min-w-[220px] lg:max-w-[300px] lg:bg-popover/95 lg:backdrop-blur-xl lg:rounded-xl lg:p-2 lg:shadow-[0_10px_40px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1)]',
+          'lg:mt-0 lg:ms-0 lg:absolute lg:top-0 lg:min-w-[220px] lg:max-w-[300px] lg:bg-popover lg:rounded-xl lg:p-2 lg:shadow-glass',
           flipped() ? 'lg:end-full lg:me-1' : 'lg:start-full lg:ms-1'
         )
       "

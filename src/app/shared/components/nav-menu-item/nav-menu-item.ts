@@ -2,15 +2,19 @@ import { isPlatformBrowser } from '@angular/common';
 import {
   afterNextRender,
   Component,
+  DestroyRef,
   effect,
   ElementRef,
   forwardRef,
   inject,
   Injector,
   input,
+  linkedSignal,
   output,
   PLATFORM_ID,
+  Service,
   signal,
+  untracked,
   ViewEncapsulation,
   viewChild,
 } from '@angular/core';
@@ -29,6 +33,17 @@ import { Utils } from '@shared/services/utils';
 const PANEL_MAX_WIDTH = 300;
 const VIEWPORT_MARGIN = 16;
 
+/**
+ * One per list of sibling items, so only one sub-panel per level is open at a time: the header
+ * provides it for the items in its dropdowns and drawer, and every `NavMenuItem` provides one for its
+ * own children. Keyed by label, not by item, because the header rebuilds its nav items when the
+ * session changes.
+ */
+@Service({ autoProvided: false })
+export class NavMenuGroup {
+  readonly open = signal<string | null>(null);
+}
+
 @Component({
   selector: 'app-nav-menu-item',
   imports: [
@@ -39,7 +54,8 @@ const VIEWPORT_MARGIN = 16;
     NgpCollapsibleContent,
     forwardRef(() => NavMenuItem),
   ],
-  providers: [provideIcons({ lucideChevronRight })],
+  // The group this item's own children share; the item itself joins its parent's (`skipSelf`).
+  providers: [provideIcons({ lucideChevronRight }), NavMenuGroup],
   templateUrl: './nav-menu-item.html',
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -51,6 +67,7 @@ export class NavMenuItem {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly injector = inject(Injector);
   protected readonly utils = inject(Utils);
+  private readonly group = inject(NavMenuGroup, { skipSelf: true });
 
   readonly item = input.required<NavItem>();
   readonly navigated = output<void>();
@@ -66,15 +83,28 @@ export class NavMenuItem {
    * to an absolutely-positioned flyout at `lg`. A menu primitive portals its
    * content to the body and positions it with floating-ui, which would lose
    * the inline mobile layout entirely.
+   *
+   * Linked to the sibling group: opening it claims the group (see the constructor), and it reads
+   * closed again as soon as a sibling claims it.
    */
-  readonly subPanelOpen = signal(false);
+  readonly subPanelOpen = linkedSignal(() => this.group.open() === this.item().label);
 
   private readonly triggerBtn = viewChild<ElementRef<HTMLButtonElement>>('triggerBtn');
 
   constructor() {
     effect(() => {
-      if (!this.subPanelOpen()) return;
-      afterNextRender(() => this.recheckPosition(), { injector: this.injector });
+      const open = this.subPanelOpen();
+      const label = this.item().label;
+      untracked(() => {
+        if (open) this.group.open.set(label);
+        // Closing itself releases the group, so a re-rendered list (the drawer reopening) starts collapsed.
+        else if (this.group.open() === label) this.group.open.set(null);
+      });
+      if (open) afterNextRender(() => this.recheckPosition(), { injector: this.injector });
+    });
+    // Destroyed while open (drawer closed, desktop ↔ mobile switch): release the group for the same reason.
+    inject(DestroyRef).onDestroy(() => {
+      if (this.group.open() === this.item().label) this.group.open.set(null);
     });
   }
 

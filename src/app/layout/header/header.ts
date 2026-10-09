@@ -45,7 +45,7 @@ import { Button } from '@shared/ui/button/button';
 import { cn } from '@shared/utils/cn';
 import { SectionNav } from '@shared/components/section-nav/section-nav';
 import { UserAvatarMenu } from '@shared/components/user-avatar-menu/user-avatar-menu';
-import { NavMenuItem } from '@shared/components/nav-menu-item/nav-menu-item';
+import { NavMenuGroup, NavMenuItem } from '@shared/components/nav-menu-item/nav-menu-item';
 import { GUEST_NAV, LOGGED_IN_NAV } from './nav.config';
 import { Utils } from '@shared/services/utils';
 import { Viewport } from '@core/services/viewport/viewport';
@@ -89,7 +89,11 @@ const ROUTE_MATCH_OPTIONS: IsActiveMatchOptions = {
     TranslocoPipe,
     NgTemplateOutlet,
   ],
-  providers: [provideIcons({ lucideChevronDown, lucideChevronRight, lucideMenu, lucideX })],
+  // `NavMenuGroup`: sub-menus under the same dropdown close each other (see `nav-menu-item`).
+  providers: [
+    provideIcons({ lucideChevronDown, lucideChevronRight, lucideMenu, lucideX }),
+    NavMenuGroup,
+  ],
   templateUrl: './header.html',
   host: {
     '(document:click)': 'onDocumentClick($event)',

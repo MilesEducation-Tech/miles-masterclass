@@ -45,6 +45,56 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - 375 height 1,651px (Phase A was 1,658).
 - ⚠️ The `<<<<<<< HEAD` / `>>>>>>> 9f90195` markers below were committed to `master` unresolved; left for the
   owner.
+- 🔧 **2026-10-10, NON-REFACTOR — nav sub-menus open one at a time (user bug report). DONE, UNCOMMITTED**, on
+  top of ticket E on `feat/MIL-XXX-header-finish` in separate files (`nav-menu-item.ts`, `header.ts`), so it
+  commits on its own.
+  - **Cause:** every `NavMenuItem` kept its own `subPanelOpen`, so sibling sub-menus could both be open. It
+    surfaced in ticket D, where guest Resources gained sibling sub-menus (Learning Modes, Library).
+  - **Fix:**
+    - A `NavMenuGroup` (`@Service({ autoProvided: false })`) per sibling list, provided by the header and by each
+      `NavMenuItem` for its own children; each item joins its parent's group via `skipSelf`.
+    - `subPanelOpen` is a `linkedSignal` on the group, keyed by label because the header rebuilds its items on
+      session change.
+    - Closing or destroying an item releases the group, so the drawer reopens collapsed, as before.
+  - **Gates (local macOS):** lint 0 errors, structure check passed, `build:prod` 244.10 kB.
+  - **Browser (4000 prod SSR, stopped):** on desktop and in the 375 drawer, opening Library closes Learning Modes
+    and vice versa; the reopened drawer starts collapsed.
+- 🔧 **2026-10-10, NON-REFACTOR — header glass-and-glow finish, ticket E of `prompts/header-redesign.md`
+  (approved). DONE, UNCOMMITTED** on `feat/MIL-XXX-header-finish` (from `826294f`, ticket D). No refactor phase
+  moved.
+  - **What changed:**
+    - The scrolled pill is glass, with a masked gradient ring and an accent hairline. A one-shot sweep
+      (`--animate-header-sweep`, reusing the `progress-indeterminate` keyframes) runs each time the bar becomes the
+      pill.
+    - Active links get a glowing dot; highlighted items keep their underline.
+    - New `shadow-glass` token for the dropdowns, sub-menus, avatar menu and drawer.
+    - Sign Up gets a primary → accent gradient; the avatar gets a gradient ring.
+    - The global `.header` rule is deleted.
+  - **Avatar menu:** ng-primitives sets `left`/`top` but not `position`, so it had been opening at the bottom of
+    the page. Fixed in this ticket with `absolute` plus `ngpMenuTriggerScrollBehavior="close"`; `block` pins
+    `<html>` and drops the header out of pill mode. The same missing class on three other menus (reel card,
+    orders, admin sidebar) is flagged as a separate task.
+  - **Gates (local macOS, not CI):**
+    - `pnpm lint` 0 errors (109 warnings), structure check passed.
+    - `build:prod` green, initial 244.26 kB.
+    - `build-storybook` 0.
+  - **Browser (4000 prod SSR, stopped afterwards):**
+    - The sweep crosses once (−381 → 1164px in about 1.2s), rests off-screen, and fires again on the next
+      transition.
+    - The dropdowns are not clipped.
+    - The dot moves between links with the nav row a constant 517px.
+    - The drawer and Sign Up checked at 375.
+    - Signed in (dummy cookie, removed): the avatar menu opens 8px under the avatar, the pill stays, and scrolling
+      closes the menu.
+  - **Follow-up 2026-10-10 (bleed-through):** the desktop dropdown, the sub-menus and the drawer are now solid
+    `bg-popover` with no blur of their own. Once scrolled, the pill's backdrop-filter is their backdrop root, so
+    the /95 panels showed the page through unblurred. Confirmed in a headless capture and in the browser; lint and
+    `build:prod` green (244.33 kB). The taste-skill review is published as an artifact (screens + scorecard),
+    with its screenshots from `a0f5c52` (footer) and this tree (header).
+  - **RTL:** only the server render was checked (it mirrors and the items fit). The `local` build fails hydration
+    at `App` (NG0500, `app-consent-banner` vs `app-notification`), so its client never runs. That is pre-existing
+    and unrelated to this ticket.
+  - ✅ Ticket D was committed by the user as `826294f`.
 - 🔧 **2026-10-09, NON-REFACTOR — header nav order and labels, ticket D of `prompts/header-redesign.md`
   (approved). DONE, UNCOMMITTED** on `feat/MIL-XXX-header-nav-order` (from `feat/MIL-48-ai-labs-underline` at
   `bf79068`). No refactor phase moved.
@@ -3674,6 +3724,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-10 · NON-REFACTOR · **Nav sub-menus single-open** (uncommitted, on `feat/MIL-XXX-header-finish`, separate files): `NavMenuGroup` per sibling list, `linkedSignal` open state, released on close/destroy · lint 0 errors, structure ✔, build:prod 244.10 kB (local) · verified on the 4000 prod SSR build, desktop + drawer
+
+- 2026-10-10 · NON-REFACTOR · **Header glass-and-glow finish** (uncommitted, `feat/MIL-XXX-header-finish`): glass pill + gradient ring + hairline with one-shot sweep, active dot, `shadow-glass` panels, gradient Sign Up, ringed avatar, `.header` deleted; avatar menu positioned (`absolute`, scroll `close`) · lint 0 errors, structure ✔, build:prod 244.26 kB, storybook ✔ (local) · verified on the 4000 prod SSR build, signed out and in
 
 - 2026-10-09 · NON-REFACTOR · **Header nav order + labels** (uncommitted, `feat/MIL-XXX-header-nav-order`): user's new guest/member order, AI Lab / Masterclasses / Podcasts / Plans / Home copy in 5 languages · lint 0 errors, structure ✔, build:prod 244.27 kB, storybook ✔ (local) · verified on the 4000 prod SSR build, signed out and in, 12 routes 200
 
