@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
 import { logo } from '@core/constants/icon';
-import { WebinarCard, WebinarDetail } from '../../models/webinar.model';
+import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
+import { WebinarCard, WebinarDetail } from '@features/offerings/webinar/models/webinar.model';
 
 /** The sponsor id is a property of Miles, not of any one webinar. */
 const NASBA_SPONSOR_ID = '149174';
@@ -23,7 +24,7 @@ const NASBA_LOGO = 'https://asset.milesmasterclass.com/media/web-app/home/nasba.
  */
 @Component({
   selector: 'app-webinar-about',
-  imports: [NgIcon],
+  imports: [NgIcon, DurationPipe],
   templateUrl: './webinar-about.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,

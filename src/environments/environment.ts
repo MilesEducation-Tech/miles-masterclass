@@ -49,11 +49,11 @@ export const environment = {
      * Whether "Join" opens the in-app `/live` page (Zoom Meeting SDK + session
      * lease) or the registrant's own `join_url` in Zoom.
      *
-     * OFF until the backend ships it. `EVENTS_API_CONTRACT_V1` has no
-     * `attendance-session/*` and no `meeting-sdk-signature` route, so the
-     * embedded page cannot acquire a lease or mint a signature — it would show
-     * a spinner and a 404. The page, the SDK and the lease client all ship
-     * inert behind this; flipping it to `true` is the whole cutover.
+     * OFF in production until QA signs off on a preview (MIL-43). The backend
+     * routes exist (`attendance-session/*`, `meeting-sdk-signature/`) and the
+     * development and local builds turn this on. Flipping it to `true` here is
+     * the whole production cutover; each webinar still needs the backend's own
+     * `registration.route_to_web_lms` switch.
      */
     liveEnabled: false,
     /** Custom (non-Zoom) poll surface. Flip on once the poll API ships. */

@@ -1,8 +1,16 @@
 import { isPlatformBrowser } from '@angular/common';
 import { DestroyRef, inject, Service, PLATFORM_ID, signal } from '@angular/core';
 import { Logger } from '@core/services/logger/logger';
-import { JoinPhase, SignatureResponse, ZoomJoinParams } from '../models/meeting-session.model';
-import { WebinarError } from '../utils/webinar-error';
+import { isObject, isStr } from '@features/offerings/utils/contract-guards';
+import {
+  ConnectionChangePayload,
+  JoinPhase,
+  SignatureResponse,
+  ZoomCloseReason,
+  ZoomEmbeddedClient,
+  ZoomJoinParams,
+} from '@features/offerings/webinar/models/meeting-session.model';
+import { WebinarError } from '@features/offerings/webinar/utils/webinar-error';
 
 /**
  * Thin wrapper around the Zoom Meeting SDK's Component View.
@@ -14,7 +22,8 @@ import { WebinarError } from '../utils/webinar-error';
  *    2.00 MB, already close to full. A static import would put Zoom in `main`
  *    and fail `build:prod` — which is the correct outcome, so do not "fix" that
  *    by raising the budget. The same reasoning drives the lazy
- *    `import('@supabase/supabase-js')` in `@core/services/supabase`.
+ *    `import('@supabase/supabase-js')` in `@core/services/supabase`. The SDK's
+ *    TYPES are imported with `import type` in the model, which the build erases.
  *
  * 2. **Browser only.** The SDK touches `window`, `document` and WebAssembly at
  *    module scope. The `/live` route is registered as `RenderMode.Client` so
@@ -27,27 +36,6 @@ import { WebinarError } from '../utils/webinar-error';
  *
  * Route-scoped — provided on `/live`, destroyed with it.
  */
-
-/**
- * The slice of the SDK surface this app uses.
- *
- * Declared locally rather than imported as a type so the SDK's types are not
- * pulled into the graph of every file that references a phase — the whole point
- * of the dynamic import is that nothing static reaches into the package.
- */
-interface ZoomEmbeddedClient {
-  init(options: Record<string, unknown>): Promise<void>;
-  join(options: Record<string, unknown>): Promise<void>;
-  leave(): Promise<void>;
-  on(event: string, callback: (payload: unknown) => void): void;
-  off?(event: string, callback: (payload: unknown) => void): void;
-}
-
-interface ConnectionChangePayload {
-  state?: string;
-  reason?: string;
-}
-
 @Service({ autoProvided: false })
 export class ZoomMeetingClient {
   private readonly logger = inject(Logger);
@@ -58,10 +46,11 @@ export class ZoomMeetingClient {
   readonly error = signal<WebinarError | null>(null);
 
   /**
-   * Fired when Zoom itself ends the connection — the host ended the webinar, or
-   * the socket dropped. Distinct from the learner pressing Leave.
+   * Fired when Zoom itself ends the connection — the host ended the webinar
+   * (`meeting-ended`), or the connection failed (`connection-lost`). Never for
+   * our own `leave()`: that is the learner's action, not news.
    */
-  onConnectionClosed: ((reason: string) => void) | null = null;
+  onConnectionClosed: ((reason: ZoomCloseReason) => void) | null = null;
 
   private client: ZoomEmbeddedClient | null = null;
   private destroyClient: (() => void) | null = null;
@@ -86,39 +75,43 @@ export class ZoomMeetingClient {
     try {
       // Everything about the SDK stays behind this boundary.
       const { default: ZoomMtgEmbedded } = await import('@zoom/meetingsdk/embedded');
-      const client = ZoomMtgEmbedded.createClient() as unknown as ZoomEmbeddedClient;
+      const client = ZoomMtgEmbedded.createClient();
       this.client = client;
       this.destroyClient = () => ZoomMtgEmbedded.destroyClient();
 
-      await client.init({
-        zoomAppRoot: root,
-        language: 'en-US',
-        // Pull Zoom's media hot-fix branch rather than pinning to whatever
-        // shipped with this SDK version — the media layer is where their
-        // browser-compatibility fixes land between releases.
-        patchJsMedia: true,
-        // Second exit path. Our own `pagehide` handler releases the lease; this
-        // makes Zoom itself drop the participant, so the webhook sees a clean
-        // leave rather than a timeout.
-        leaveOnPageUnload: true,
-      });
+      assertExecuted(
+        await client.init({
+          zoomAppRoot: root,
+          language: 'en-US',
+          // Pull Zoom's media hot-fix branch rather than pinning to whatever
+          // shipped with this SDK version — the media layer is where their
+          // browser-compatibility fixes land between releases.
+          patchJsMedia: true,
+          // Second exit path. Our own `pagehide` handler releases the lease; this
+          // makes Zoom itself drop the participant, so the webhook sees a clean
+          // leave rather than a timeout.
+          leaveOnPageUnload: true,
+        }),
+      );
 
       this.wireEvents(client);
 
-      await client.join({
-        signature: params.signature,
-        sdkKey: params.sdkKey,
-        meetingNumber: params.meetingNumber,
-        // Empty string is correct when the session only gates on the waiting
-        // room — it must still be passed.
-        password: params.password,
-        userName: params.userName,
-        // REQUIRED for webinars, unlike meetings.
-        userEmail: params.userEmail,
-        // REQUIRED whenever the webinar requires registration. This is the `tk`
-        // from the registrant's own join URL; without it Zoom refuses the join.
-        tk: params.tk,
-      });
+      assertExecuted(
+        await client.join({
+          signature: params.signature,
+          sdkKey: params.sdkKey,
+          meetingNumber: params.meetingNumber,
+          // Empty string is correct when the session only gates on the waiting
+          // room — it must still be passed.
+          password: params.password,
+          userName: params.userName,
+          // REQUIRED for webinars, unlike meetings.
+          userEmail: params.userEmail,
+          // REQUIRED whenever the webinar requires registration. This is the `tk`
+          // from the registrant's own join URL; without it Zoom refuses the join.
+          tk: params.tk,
+        }),
+      );
 
       this.phase.set('in-meeting');
     } catch (err) {
@@ -130,12 +123,15 @@ export class ZoomMeetingClient {
 
   /** Leave and tear the SDK down. Safe to call when never joined. */
   async leave(): Promise<void> {
+    // Cleared FIRST: the `connection-change` handler ignores events from a
+    // client that is no longer current, so our own leave is never reported as
+    // the host ending the webinar.
     const client = this.client;
     this.client = null;
 
     if (client) {
       try {
-        await client.leave();
+        await client.leaveMeeting();
       } catch (err) {
         // A failed leave is not actionable — the page is going away and Zoom
         // will time the participant out. Losing the teardown below would be
@@ -162,14 +158,16 @@ export class ZoomMeetingClient {
 
   private wireEvents(client: ZoomEmbeddedClient): void {
     client.on('connection-change', (payload: unknown) => {
-      const state = (payload as ConnectionChangePayload)?.state;
-      if (state === 'Closed' || state === 'Fail') {
-        const reason = (payload as ConnectionChangePayload)?.reason ?? 'closed';
-        // Zoom ended it, not the learner. The page decides whether that means
-        // "the webinar finished" or "you dropped".
-        if (this.phase() === 'in-meeting') this.phase.set('left');
-        this.onConnectionClosed?.(reason);
-      }
+      if (this.client !== client) return;
+      const { state, reason } = readConnectionChange(payload);
+      if (state !== 'Closed' && state !== 'Fail') return;
+
+      // Zoom ended it, not the learner: `Closed` is the host ending (or
+      // removing us from) the webinar, which is final; `Fail` is a dropped
+      // connection, which the learner can rejoin.
+      this.logger.warn('[ZoomMeetingClient] connection closed', state, reason);
+      if (this.phase() === 'in-meeting') this.phase.set('left');
+      this.onConnectionClosed?.(state === 'Closed' ? 'meeting-ended' : 'connection-lost');
     });
   }
 
@@ -178,28 +176,55 @@ export class ZoomMeetingClient {
    * `Error`, so map it into the shape the rest of the module renders.
    */
   private toSdkError(err: unknown): WebinarError {
-    const zoom = err as { reason?: string; errorCode?: number; message?: string } | null;
+    const zoom = isObject(err) ? err : {};
+    const reason = zoom['reason'];
+    const message = zoom['message'];
+    const errorCode = zoom['errorCode'];
     return {
       code: 'zoom_join_failed',
       message:
-        zoom?.reason ??
-        zoom?.message ??
+        (isStr(reason) && reason) ||
+        (isStr(message) && message) ||
         'We could not connect you to the session. Please try again.',
-      status: typeof zoom?.errorCode === 'number' ? zoom.errorCode : null,
+      status: typeof errorCode === 'number' ? errorCode : null,
       isProfileProblem: false,
       isRetryable: true,
     };
   }
 }
 
-/** Build the SDK join parameters from a signature response. */
+/**
+ * The SDK types `init`/`join` as RESOLVING to `string | { type, reason }`, and
+ * in practice rejects on failure. Treat a resolved failure object the same as a
+ * rejection, so neither path reports a failed join as `in-meeting`.
+ */
+function assertExecuted(result: unknown): void {
+  if (isObject(result) && isStr(result['type']) && isStr(result['reason'])) {
+    throw new Error(result['reason']);
+  }
+}
+
+/** Read the SDK's `any`-typed `connection-change` payload field by field. */
+function readConnectionChange(payload: unknown): ConnectionChangePayload {
+  if (!isObject(payload)) return {};
+  return {
+    state: isStr(payload['state']) ? payload['state'] : undefined,
+    reason: isStr(payload['reason']) ? payload['reason'] : undefined,
+  };
+}
+
+/**
+ * Build the SDK join parameters from a signature response. `user_name` can be
+ * empty (`get_full_name()` of a learner with no name on file) and Zoom refuses
+ * an empty `userName`, so fall back to the email's local part.
+ */
 export function toJoinParams(signature: SignatureResponse): ZoomJoinParams {
   return {
     signature: signature.signature,
     sdkKey: signature.sdk_key,
     meetingNumber: signature.meeting_number,
-    password: signature.password ?? '',
-    userName: signature.user_name,
+    password: signature.password,
+    userName: signature.user_name || signature.user_email.split('@')[0] || 'Learner',
     userEmail: signature.user_email,
     tk: signature.registrant_token ?? '',
   };

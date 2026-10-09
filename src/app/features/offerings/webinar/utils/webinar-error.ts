@@ -21,8 +21,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 /**
  * Every `code` this client knows. The Events contract's refusals, plus
  * `authentication_failed` (our name for DRF's code-less 403) and
- * `unknown_error` (nothing usable came back). The live-session codes belong to
- * the embedded meeting path, which is not in the contract yet.
+ * `unknown_error` (nothing usable came back). The live-session codes come from
+ * the embedded meeting path (`attendance-session/*`, `meeting-sdk-signature/`).
  */
 export type KnownWebinarErrorCode =
   | 'invalid_request'
@@ -39,7 +39,7 @@ export type KnownWebinarErrorCode =
   | 'webinar_cancelled'
   | 'webinar_inactive'
   | 'webinar_start_time_missing'
-  // Live-session path (liveEnabled: false).
+  // Live-session path: attendance-session/* and meeting-sdk-signature.
   | 'not_registered'
   | 'join_window_not_open'
   | 'webinar_ended'
@@ -71,6 +71,8 @@ export interface WebinarError {
   errors?: FieldError[];
   /** Present on `registration_in_progress`. Currently 15. */
   retryAfterSeconds?: number;
+  /** When the join window opens (server clock), if a `join_window_not_open` refusal carries it. */
+  joinOpensAt?: string;
   /**
    * True when the refusal names something the user must fix in their profile.
    * None of these is retryable without that fix, so the UI shows a profile link
@@ -165,20 +167,27 @@ export function toWebinarError(err: unknown): WebinarError {
   // Read key by key rather than cast to a body type: this is untrusted input,
   // and a refusal that is not even an object still has to become a WebinarError.
   const body: Record<string, unknown> = isRecord(err.error) ? err.error : {};
-  const bodyCode = stringOr(body['code']);
+  // The live-session routes wrap their own answers as `{success, message,
+  // data}`, so a refusal's `code` may sit on the body or inside `data`.
+  const inner: Record<string, unknown> = isRecord(body['data']) ? body['data'] : {};
+  const bodyCode = stringOr(body['code']) ?? stringOr(inner['code']);
 
   let code: WebinarErrorCode = bodyCode ?? 'unknown_error';
   // `detail ?? message` — the one documented inconsistency in the envelope.
   let serverText = stringOr(body['detail']) ?? stringOr(body['message']);
 
-  // The bad-token 403 is the one refusal that does NOT carry `code`. Verified
-  // against UAT on 2026-09-18: a malformed bearer token answers
-  // `403 {"detail": "Error decoding signature."}` — DRF's own envelope, not
-  // this app's. Switching on `code` alone would file it under `unknown_error`
-  // and show the user a JWT library's internal wording.
+  // The auth refusals are the ones that do NOT carry `code`. Verified against
+  // UAT: a malformed bearer token answers `403 {"detail": "Error decoding
+  // signature."}` (2026-09-18), and no token at all answers `401 {"success":
+  // false, "message": "Authentication credentials were not provided."}` on the
+  // live-session routes (2026-10-09). Switching on `code` alone would file both
+  // under `unknown_error` and show the user an auth library's internal wording.
   if (err.status === 403 && !bodyCode) {
     code = 'authentication_failed';
     serverText = FALLBACK_MESSAGES['authentication_failed'];
+  } else if (err.status === 401 && !bodyCode) {
+    code = 'authentication_required';
+    serverText = FALLBACK_MESSAGES['authentication_required'];
   }
 
   return {
@@ -188,6 +197,7 @@ export function toWebinarError(err: unknown): WebinarError {
     errors: isFieldErrors(body['errors']) ? body['errors'] : undefined,
     retryAfterSeconds:
       typeof body['retry_after_seconds'] === 'number' ? body['retry_after_seconds'] : undefined,
+    joinOpensAt: stringOr(body['join_opens_at']) ?? stringOr(inner['join_opens_at']),
     isProfileProblem: PROFILE_CODES.has(code),
     isRetryable: RETRYABLE_CODES.has(code),
   };

@@ -1,23 +1,38 @@
 import { isPlatformBrowser } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, inject, Service, PLATFORM_ID, signal } from '@angular/core';
-import { HttpContext } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map } from 'rxjs';
 import { environment } from '@env/environment';
-import { ApiClient } from '@core/services/api-client/api-client';
+import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
-import { SKIP_LOADING } from '@core/models/http.model';
+import { isObject } from '@features/offerings/utils/contract-guards';
 import {
-  ClaimRequest,
+  HEARTBEAT_MAX_SECONDS,
+  HEARTBEAT_MIN_SECONDS,
+  LIVE_SESSION_BACKGROUND,
+  LIVE_SESSION_CHANNEL,
+  LIVE_SESSION_LOCK,
+  LIVE_SESSION_ROUTES,
+  TAKEOVER_POLL_MS,
+  TAKEOVER_WAIT_MS,
+} from '@features/offerings/webinar/constants/live-session';
+import {
   ClaimResponse,
   EjectionReason,
-  HeartbeatResponse,
   LeaseHolder,
-  MEETING_ENDPOINTS,
+  parseClaim,
+  parseLeaseHolder,
+  parseSignature,
+  SessionChannelMessage,
   SessionConflict,
-  SignatureRequest,
   SignatureResponse,
-} from '../models/meeting-session.model';
-import { isSessionConflict, isSupersededError, toWebinarError } from '../utils/webinar-error';
+} from '@features/offerings/webinar/models/meeting-session.model';
+import { deviceLabel } from '@features/offerings/webinar/utils/device-label';
+import {
+  isSessionConflict,
+  isSupersededError,
+  toWebinarError,
+} from '@features/offerings/webinar/utils/webinar-error';
 
 /**
  * Enforces "one learner, one meeting, one surface" in three layers.
@@ -49,18 +64,6 @@ import { isSessionConflict, isSupersededError, toWebinarError } from '../utils/w
  * Route-scoped: provided on the `/live` route, so the lock's lifetime is exactly
  * the lifetime of the page that holds the meeting.
  */
-
-const LOCK_NAME = 'miles:webinar-session';
-const CHANNEL_NAME = 'miles:webinar-session';
-
-/** The lease heartbeat runs on a timer for the whole meeting, so it never drives the loading bar. */
-const HEARTBEAT = new HttpContext().set(SKIP_LOADING, true);
-
-type ChannelMessage =
-  | { type: 'claimed'; sessionId: string; webinarId: string }
-  | { type: 'takeover-requested'; sessionId: string; webinarId: string }
-  | { type: 'released'; sessionId: string };
-
 @Service({ autoProvided: false })
 export class MeetingSession {
   private readonly api = inject(ApiClient);
@@ -70,6 +73,9 @@ export class MeetingSession {
 
   /** Stable for this surface's whole session; the lease is keyed on it. */
   readonly sessionId = this.isBrowser ? crypto.randomUUID() : '';
+
+  /** How this device is named on the learner's other devices ("Chrome on macOS"). */
+  private readonly deviceLabel = this.isBrowser ? deviceLabel(navigator.userAgent) : '';
 
   readonly conflict = signal<SessionConflict | null>(null);
   readonly ejection = signal<EjectionReason | null>(null);
@@ -86,6 +92,12 @@ export class MeetingSession {
   private releaseWebLock: (() => void) | null = null;
   private heartbeatId: ReturnType<typeof setInterval> | null = null;
   private currentWebinarId: string | null = null;
+  /**
+   * Set when `pagehide` gave the lease back by beacon. If the page then comes
+   * back from the bfcache, the lease is gone and Zoom left on unload, so the
+   * room must not keep claiming to be live.
+   */
+  private releasedByBeacon = false;
 
   constructor() {
     if (this.isBrowser) {
@@ -140,7 +152,13 @@ export class MeetingSession {
         });
       } else {
         this.conflict.set(null);
-        this.logger.error('[MeetingSession] acquire failed', error.code, err);
+        // A refusal the contract names (not registered, not open yet, ended…)
+        // is an answer, not a fault; only the unexplained ones are errors.
+        if (error.code === 'unknown_error') {
+          this.logger.error('[MeetingSession] acquire failed', error.code, err);
+        } else {
+          this.logger.warn('[MeetingSession] acquire refused', error.code);
+        }
       }
 
       // The lease may already be OURS: `claimLease` can succeed and
@@ -173,7 +191,11 @@ export class MeetingSession {
 
     try {
       await firstValueFrom(
-        this.api.post(MEETING_ENDPOINTS.release, { session_id: this.sessionId }),
+        this.api.call(
+          LIVE_SESSION_ROUTES.release,
+          { session_id: this.sessionId },
+          { context: LIVE_SESSION_BACKGROUND },
+        ),
       );
     } catch (err) {
       // A failed release is not worth surfacing: the lease expires on its own
@@ -185,23 +207,28 @@ export class MeetingSession {
   // ---- Layer 1: the server lease -------------------------------------------
 
   private async claimLease(webinarId: string, takeover: boolean): Promise<ClaimResponse> {
-    const body: ClaimRequest = {
-      webinar_id: webinarId,
-      session_id: this.sessionId,
-      takeover,
-      surface: 'web',
-    };
-    return await firstValueFrom(this.api.post<ClaimResponse>(MEETING_ENDPOINTS.claim, body));
+    return await firstValueFrom(
+      this.api
+        .call(LIVE_SESSION_ROUTES.claim, {
+          webinar_id: webinarId,
+          session_id: this.sessionId,
+          takeover,
+          surface: 'web',
+          device_label: this.deviceLabel,
+        })
+        .pipe(map(parseClaim)),
+    );
   }
 
   private async mintSignature(webinarId: string): Promise<SignatureResponse> {
-    const body: SignatureRequest = {
-      webinar_id: webinarId,
-      session_id: this.sessionId,
-      surface: 'web',
-    };
     return await firstValueFrom(
-      this.api.post<SignatureResponse>(MEETING_ENDPOINTS.signature, body),
+      this.api
+        .call(LIVE_SESSION_ROUTES.signature, {
+          webinar_id: webinarId,
+          session_id: this.sessionId,
+          surface: 'web',
+        })
+        .pipe(map(parseSignature)),
     );
   }
 
@@ -215,19 +242,13 @@ export class MeetingSession {
    * device finds out it has been superseded, since BroadcastChannel cannot reach
    * it. Worst-case eviction delay is therefore one interval.
    */
-  private startHeartbeat(intervalSeconds?: number): void {
+  private startHeartbeat(intervalSeconds: number | null): void {
     this.stopHeartbeat();
-    const seconds = intervalSeconds ?? environment.WEBINAR.leaseHeartbeatSeconds;
+    const seconds = heartbeatSeconds(intervalSeconds);
 
     this.heartbeatId = setInterval(async () => {
       try {
-        await firstValueFrom(
-          this.api.post<HeartbeatResponse>(
-            MEETING_ENDPOINTS.heartbeat,
-            { session_id: this.sessionId },
-            { context: HEARTBEAT },
-          ),
-        );
+        await this.beat();
       } catch (err) {
         const error = toWebinarError(err);
         if (isSupersededError(error)) {
@@ -240,6 +261,17 @@ export class MeetingSession {
         this.logger.warn('[MeetingSession] heartbeat failed', error.code);
       }
     }, seconds * 1000);
+  }
+
+  /** One heartbeat. Its body is not read: the 200 is the whole answer. */
+  private async beat(): Promise<void> {
+    await firstValueFrom(
+      this.api.call(
+        LIVE_SESSION_ROUTES.heartbeat,
+        { session_id: this.sessionId },
+        { context: LIVE_SESSION_BACKGROUND },
+      ),
+    );
   }
 
   private stopHeartbeat(): void {
@@ -266,7 +298,7 @@ export class MeetingSession {
 
     return new Promise<boolean>((settle) => {
       navigator.locks
-        .request(LOCK_NAME, { ifAvailable: true }, (lock) => {
+        .request(LIVE_SESSION_LOCK, { ifAvailable: true }, (lock) => {
           if (!lock) {
             settle(false);
             return Promise.resolve();
@@ -285,10 +317,10 @@ export class MeetingSession {
 
   /** Wait for a sibling tab to stand down, with a ceiling so we never hang. */
   private async waitForWebLock(): Promise<void> {
-    const deadline = Date.now() + 3_000;
+    const deadline = Date.now() + TAKEOVER_WAIT_MS;
     while (Date.now() < deadline) {
       if (await this.acquireWebLock()) return;
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, TAKEOVER_POLL_MS));
     }
   }
 
@@ -301,8 +333,8 @@ export class MeetingSession {
 
   private openChannel(): void {
     if (typeof BroadcastChannel === 'undefined') return;
-    this.channel = new BroadcastChannel(CHANNEL_NAME);
-    this.channel.onmessage = (event: MessageEvent<ChannelMessage>) => {
+    this.channel = new BroadcastChannel(LIVE_SESSION_CHANNEL);
+    this.channel.onmessage = (event: MessageEvent<SessionChannelMessage>) => {
       const msg = event.data;
       // Ignore our own echo — BroadcastChannel does not deliver to the sender,
       // but a re-entrant claim within this tab would still show up here.
@@ -324,7 +356,7 @@ export class MeetingSession {
     };
   }
 
-  private post(message: ChannelMessage): void {
+  private post(message: SessionChannelMessage): void {
     this.channel?.postMessage(message);
   }
 
@@ -340,14 +372,22 @@ export class MeetingSession {
    * - `visibilitychange` deliberately does NOT release. Backgrounding a tab is
    *   not leaving a webinar, and treating it as one would eject anyone who
    *   checks their email mid-session.
-   * - `pageshow` with `persisted` means a bfcache restore: the heartbeat was
-   *   frozen while we were away, so the lease must be re-verified before the UI
-   *   keeps claiming to be live.
+   * - `pageshow` with `persisted` means a bfcache restore. If `pagehide` gave
+   *   the lease back by beacon, the session is over on both ends (Zoom left on
+   *   unload too), so the room drops to "disconnected" and offers a rejoin.
+   *   Otherwise the heartbeat was merely frozen while we were away, and one
+   *   beat re-verifies the lease before the UI keeps claiming to be live.
    */
   private watchPageLifecycle(): void {
     const onPageHide = () => this.beaconRelease();
     const onPageShow = (event: PageTransitionEvent) => {
-      if (event.persisted && this.holdsLease()) this.verifyAfterRestore();
+      if (!event.persisted) return;
+      if (this.releasedByBeacon) {
+        this.releasedByBeacon = false;
+        this.evict('connection-lost');
+      } else if (this.holdsLease()) {
+        void this.verifyAfterRestore();
+      }
     };
 
     window.addEventListener('pagehide', onPageHide);
@@ -364,25 +404,21 @@ export class MeetingSession {
    * survive. `pagehide` only — an in-app navigation goes through `release()`,
    * which is authenticated and gets a response.
    *
-   * UNVERIFIED AGAINST THE BACKEND, and it cannot be until the endpoint exists:
-   * `EVENTS_API_CONTRACT_V1` carries no `attendance-session/*` route at all.
-   * Two things to check the day it ships, because both fail SILENTLY:
-   *   1. `sendBeacon` cannot set headers, so this carries NO `Authorization`.
-   *      Either the route accepts a release keyed on `session_id` alone, or
-   *      this never works.
-   *   2. `application/json` is not a CORS-safelisted content type, so a
-   *      cross-origin beacon needs a preflight it cannot make. If the route
-   *      rejects it, send `text/plain;charset=UTF-8` and parse server-side.
-   * The 45s lease TTL is the backstop either way, which is why this stays
-   * best-effort rather than being made load-bearing.
+   * The release route is built for exactly this caller (`AllowAny`, CSRF-exempt):
+   *   1. `sendBeacon` cannot set headers, so this carries NO `Authorization`;
+   *      the route ends the lease only while this `session_id` still holds it.
+   *   2. The body MUST be a plain string. A string is sent as
+   *      `text/plain;charset=UTF-8`, which is CORS-safelisted; an
+   *      `application/json` Blob needs a preflight a beacon cannot make, and the
+   *      browser drops it silently — the learner then waits out the 45s TTL to
+   *      rejoin from another device.
+   * The TTL stays the backstop, which is why this is best-effort.
    */
   private beaconRelease(): void {
     if (!this.holdsLease()) return;
     try {
-      const blob = new Blob([JSON.stringify({ session_id: this.sessionId })], {
-        type: 'application/json',
-      });
-      navigator.sendBeacon(MEETING_ENDPOINTS.release, blob);
+      const body = JSON.stringify({ session_id: this.sessionId });
+      this.releasedByBeacon = navigator.sendBeacon(apiUrl(LIVE_SESSION_ROUTES.release.path), body);
     } catch {
       // Nothing to do — the lease TTL is the backstop.
     }
@@ -391,13 +427,7 @@ export class MeetingSession {
   /** One heartbeat after a bfcache restore, to learn if we were superseded. */
   private async verifyAfterRestore(): Promise<void> {
     try {
-      await firstValueFrom(
-        this.api.post<HeartbeatResponse>(
-          MEETING_ENDPOINTS.heartbeat,
-          { session_id: this.sessionId },
-          { context: HEARTBEAT },
-        ),
-      );
+      await this.beat();
     } catch (err) {
       if (isSupersededError(toWebinarError(err))) this.evict('superseded-remotely');
     }
@@ -427,7 +457,22 @@ export class MeetingSession {
 
   /** Pull the holder block off a `409 session_active` for the conflict dialog. */
   private readHolder(err: unknown): LeaseHolder | null {
-    const body = (err as { error?: { holder?: LeaseHolder } })?.error;
-    return body?.holder ?? null;
+    if (!(err instanceof HttpErrorResponse) || !isObject(err.error)) return null;
+    // On the body, or inside `data` if the refusal is wrapped (see `toWebinarError`).
+    const body = err.error;
+    const inner = isObject(body['data']) ? body['data'] : {};
+    return parseLeaseHolder(body['holder'] ?? inner['holder']);
   }
+}
+
+/**
+ * The server's heartbeat cadence when it is a sane one, else the environment
+ * default. A `0` or a string must never become `setInterval(fn, 0)`.
+ */
+function heartbeatSeconds(fromServer: number | null): number {
+  return fromServer !== null &&
+    fromServer >= HEARTBEAT_MIN_SECONDS &&
+    fromServer <= HEARTBEAT_MAX_SECONDS
+    ? fromServer
+    : environment.WEBINAR.leaseHeartbeatSeconds;
 }

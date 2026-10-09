@@ -7,6 +7,7 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+<<<<<<< HEAD
 - 🔧 **2026-10-09, NON-REFACTOR — production deploys on release, not on every merge
   (`prompts/deploy-on-release.md`, approved). DONE, UNCOMMITTED** on `ci/MIL-44-deploy-on-release` (from
   `master`). No refactor phase moved.
@@ -21,6 +22,83 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - #86 merged 11:40 UTC by me-sachin-singh → `v3.1.0` tag + GitHub Release (label `autorelease: tagged`).
     `www.milesmasterclass.com/version.json` reports sha `a674eeca`, which isn't in this repo, so that domain
     isn't serving this project; the domain this project actually serves in production is unconfirmed.
+=======
+- 🔧 **2026-10-09, NON-REFACTOR — MIL-43 webinar live join: ALL 3 PHASES DONE, UNCOMMITTED; GATES GREEN;
+  BROWSER-VERIFIED AS FAR AS A DOWN UAT ALLOWS** (`prompts/webinar-live-join.md`), on
+  `feat/MIL-43-webinar-live-join` from `master` at `741d0f7`. No refactor phase moved. The user did not commit
+  between phases, so P1–P3 go in as one commit.
+  - **P1 (refactor):** `LiveSessionFacade` on `:id/live` owns the join flow. The page and `MeetingStage` inject
+    it, and `MeetingStage` lost its 3 inputs and 1 output. Config moved to `constants/live-session.ts`, types to
+    the model.
+  - **P2 (bind):**
+    - **Routes:** `LIVE_SESSION_ROUTES` through `ApiClient.call()`.
+    - **Contract:**
+      - `parseClaim`, `parseSignature`, `parseLeaseHolder`
+      - `device_label` sent with the claim
+      - `lease_expires_at` optional on the signature
+    - **Release and timers:**
+      - the beacon sends a `text/plain` string
+      - the heartbeat interval is accepted only between 5 and 30 s
+      - bfcache restore after a beacon evicts as `connection-lost`
+    - **Room states:**
+      - a refusal room for each case: not-registered, not-open (with `joinOpensAt`), ended, not-found,
+        signed-out, failed
+      - `exit` covers host-ended (final) and connection-lost (Rejoin)
+      - the webinar lookup is reactive, falling back to `showDetail`
+    - **Zoom:**
+      - the SDK is typed via `import type`
+      - **G16, found in the work:** the SDK has `leaveMeeting()`, not `leave()`, so Leave used to throw and get
+        swallowed
+      - a resolved `ExecutedFailure` counts as a failed join
+      - empty `user_name` falls back to the email's local part
+    - **Buttons:** the page and stage use the shared `app-button`.
+  - **P3 (turn on):**
+    - `liveEnabled: true` in `development` and `local`; production stays `false`.
+    - Stale comments are fixed.
+    - `WEBINAR_API_QUESTIONS.md` marks Q3 and Q6 answered and notes the new `web-api/v1/events/all-bookings/`.
+  - Gates (local macOS, Node 24.18, not CI):
+    - tsc 0
+    - `pnpm lint` 0 errors (109 legacy warnings)
+    - Prettier clean
+    - structure check passed
+    - `build:prod` green, initial 243.64 kB, with only the known `ai-labs.css` warning
+    - Zoom `embedded` is a lazy chunk, 767 kB transfer
+  - Browser, 4101 `local` config, UAT down (503, no CORS headers):
+    - Signed out, `/live` matches and redirects to `/auth/login?redirect=…/live`.
+    - With a dummy `ACCESS_TOKEN` cookie on localhost (removed afterwards):
+      - the claim POST carries exactly `webinar_id`, `session_id`, `takeover`, `surface`, `device_label`
+        ("Chrome on macOS")
+      - the room shows "We could not connect you" with Try again, not the old endless spinner
+      - Try again re-claims
+      - 0 unhandled rejections
+  - NOT verified until UAT is back and the backend shares its `route_to_web_lms` test user:
+    - an actual Zoom join
+    - conflicts across tabs and devices
+    - takeover
+    - the tab-close beacon
+    - CSP on a Vercel preview
+  - Dev server: started by Claude in terminal tab "dev server 4101" (`pnpm start`).
+  - **Revision 2 (after UAT came back):** the webinar list and detail failed the contract check on
+    `master` too. Fixed in MIL-43 per the user:
+    - paginated buckets: `bucketCards()` reads `results`
+    - `duration_seconds`
+    - nullable `short_description`, `vertical_thumbnail` and the product images
+    - the live-session parsers and errors accept the `{success, message, data}` wrapper
+    - a code-less 401 means signed out (UAT answers a bad token with 401, not 403)
+
+    Browser:
+    - the list renders the hero and 4 cards
+    - the detail page renders "Webinar Duration: 2 hours" and the details description
+    - with a dummy cookie, the live room shows the signed-out state from a real UAT 401
+
+    Gates after the revision:
+    - `pnpm lint` 0 errors (109 warnings)
+    - structure check passed, Prettier clean
+    - `build:prod` green, initial 243.78 kB, only the `ai-labs.css` warning
+
+  - Next: a signed-in learner (the backend's `route_to_web_lms` test user) runs the real join, two-browser
+    conflict, takeover and tab-close checks.
+>>>>>>> 9f90195 (feat(offerings): join live webinars in the app, one session at a time)
 
 - 🔧 **2026-10-08, NON-REFACTOR — home cards get the "i" course-info button (`prompts/home-course-info.md`,
   approved). DONE, BROWSER-VERIFIED, UNCOMMITTED** on `feat/MIL-XXX-home-course-info` (from `master`). No
