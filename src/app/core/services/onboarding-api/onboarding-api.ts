@@ -16,10 +16,13 @@ import { AuthSession } from '../auth-session/auth-session';
 /**
  * The onboarding / profile questionnaire.
  *
- * `questions/` says what to render and `profile/` says what has been answered;
- * the two join on the question `code`. Both are reads and both are reactive on
- * `form()`, so switching between the onboarding and profile questionnaires
- * re-fetches with no plumbing.
+ * `questions/` says what to render, reactive on `form()`, so switching between
+ * the onboarding and profile questionnaires re-fetches with no plumbing.
+ *
+ * `GET profile/` (the saved answers) is deliberately NOT read — product decision
+ * 2026-10-10: the form is pre-filled from `user-details/` alone, which carries
+ * the name and nothing else, so a saved answer does not show when the learner
+ * comes back. `PATCH profile/` is still the only write.
  *
  * Same three resource rules as `AccountApi` — gate on the boolean, never set
  * the bearer here, `undefined` means idle.
@@ -41,18 +44,7 @@ export class OnboardingApi {
   );
 
   /**
-   * A flat map keyed by question code. `{}` is a normal empty state, not a
-   * 404 — having answered nothing is a legitimate position. Three derived keys
-   * ride along (`country_name`, `show_referral_code`, `profile_picture`); they
-   * are not questions, so the profile page never renders or sends them back.
-   */
-  readonly answers = httpResource(
-    () => (this.auth.isAuthenticated() ? apiUrl(ACCOUNT_ROUTES.answers.path) : undefined),
-    { parse: (raw) => (raw as CommonResponse<AnswerMap>).data },
-  );
-
-  /**
-   * Write answers back in the same flat shape the GET returns.
+   * Write answers as a flat map keyed by question code.
    *
    * Partial by definition — a code you omit is left exactly as it was, which is
    * why this is a PATCH and not a PUT. `null` is refused rather than read as
@@ -70,12 +62,10 @@ export class OnboardingApi {
    * common integration bug on this surface.
    */
   async saveAnswers(patch: AnswerMap): Promise<SaveAnswersResponse> {
-    const result = await firstValueFrom(
+    return firstValueFrom(
       this.api
         .call(ACCOUNT_ROUTES.saveAnswers, patch, { params: { form: this.form() } })
         .pipe(map((res) => res.data)),
     );
-    this.answers.reload();
-    return result;
   }
 }
