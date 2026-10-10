@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { RouteConfig } from './http.model';
+import { CommonResponse, RouteConfig } from './http.model';
 
 /**
  * MilesCAIRA Accounts v1 — sign-in.
@@ -9,7 +9,9 @@ import { RouteConfig } from './http.model';
  * `postman/Merged_Masterclass_Backend_All_APIs.postman_collection.json`,
  * which quote `ACCOUNTS_API_CONTRACT_V1.md` verbatim.
  *
- * `CommonResponse<T>` does NOT apply here — these routes return bare bodies.
+ * Every body — success AND error — arrives inside `{success, message, data}`
+ * (enveloped backend-wide, verified live on UAT 2026-10-10). The interfaces
+ * below describe `data`; `AuthSession` unwraps it at the call.
  * Field casing is left exactly as the API sends it: `accessToken` and
  * `profile_status` sit in the same body because one half comes from the SSO and
  * the other is merged in locally. Normalising that would hide which is which.
@@ -137,22 +139,22 @@ export const AUTH_ROUTES = {
   identify: {
     path: 'api/v1/account/auth-identify/',
     method: 'POST',
-  } as RouteConfig<IdentifyRequest, IdentifyResponse>,
+  } as RouteConfig<IdentifyRequest, CommonResponse<IdentifyResponse>>,
 
   sendOtp: {
     path: 'api/v1/account/auth-otp-send/',
     method: 'POST',
-  } as RouteConfig<OtpSendRequest, OtpSendResponse>,
+  } as RouteConfig<OtpSendRequest, CommonResponse<OtpSendResponse>>,
 
   verifyOtp: {
     path: 'api/v1/account/auth-otp-verify/',
     method: 'POST',
-  } as RouteConfig<OtpVerifyRequest, SessionResponse>,
+  } as RouteConfig<OtpVerifyRequest, CommonResponse<SessionResponse>>,
 
   refresh: {
     path: 'api/v1/account/auth-token-refresh/',
     method: 'POST',
-  } as RouteConfig<RefreshRequest, SessionResponse>,
+  } as RouteConfig<RefreshRequest, CommonResponse<SessionResponse>>,
 
   /** No body, and — unlike the other four — it REQUIRES `Authorization: Bearer`.
    *  Without it the answer is 401 "Authorization header with a Bearer token is
@@ -237,14 +239,14 @@ export type AuthFailure =
   | { kind: 'unknown'; message: string };
 
 /**
- * The error bodies the collection documents for the five auth routes. There is
- * no shared envelope (collection §8.2) — each is the SSO's body or one of these:
+ * The error bodies the collection documents for the five auth routes, all inside
+ * the `{success: false, message, data}` envelope:
  *
- * - `{ message }` — 401 / 502 / 503.
- * - `{ code, message }` — 403 on verify; `code` is `account_blocked` or
- *   `account_deactivated`.
- * - `{ [field]: message }` — 400: the strict-input refusal of an undeclared key,
- *   or the SSO's field-keyed copy.
+ * - `message` — the learner-facing copy on every status (401 / 429 / 502 / 503).
+ * - `code` — 403 on verify: `account_blocked` or `account_deactivated`. Read off
+ *   the top level or `data`, since the envelope moved other routes' codes there.
+ * - `data: { [field]: message | [message] }` — 400: the strict-input refusal of
+ *   an undeclared key, or DRF's field-keyed list.
  *
  * Normalised once by `readErrorBody`, so nothing downstream casts an `unknown`.
  */
@@ -272,6 +274,15 @@ function readErrorBody(body: unknown): AuthErrorBody {
   const fields: Record<string, string> = {};
   for (const [key, value] of Object.entries(body)) {
     if (typeof value === 'string' && value) fields[key] = value;
+  }
+  // The envelope's `data` carries the field map (and on some routes the `code`).
+  // The top-level `message` still wins, so only fill what it didn't set.
+  const data: unknown = (body as Record<string, unknown>)['data'];
+  if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
+    for (const [key, value] of Object.entries(data)) {
+      const text = Array.isArray(value) ? value[0] : value;
+      if (typeof text === 'string' && text && !(key in fields)) fields[key] = text;
+    }
   }
   const named = MESSAGE_KEYS.map((key) => fields[key]).find((value) => value !== undefined);
   return {

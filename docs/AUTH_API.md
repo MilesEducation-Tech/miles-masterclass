@@ -9,7 +9,14 @@ How this app signs a learner in, and the rules the backend imposes on it.
 saved response per documented status. The collection is generated backend-side and marked
 do-not-hand-edit — treat it as the source of truth and this file as the frontend's reading of it.
 
-Re-audited against the collection on 2026-09-27 (MIL-5 auth fixes, MIL-6 profile rebind).
+Re-audited against the collection on 2026-09-27 (MIL-5 auth fixes, MIL-6 profile rebind), and again on
+2026-10-10 when the backend enveloped every response (see "The envelope" below).
+
+**The envelope.** Since 2026-10-10 every body, success and error alike, on every route is
+`{success, message, data}` (verified live on UAT). Everything this document calls "the body" or "the 200" is
+`data`. The client unwraps it at the service: `AuthSession` (`.pipe(map((res) => res.data))`), `AccountApi`
+and `OnboardingApi` (`parse`). Error details move too: a field-keyed 400 is `data: {<field>: message}`, and
+`message` is lifted to the top.
 
 | Environment | `BASE_API_URL`                    |
 | ----------- | --------------------------------- |
@@ -51,17 +58,16 @@ a caller must not be able to claim to be another one.
 
 Each of these is a bug if ignored, and each has a test that fails if it regresses.
 
-### Rule 1 — a bad or expired token answers **403**, not 401
+### Rule 1 — a missing or bad token answers **401** (it used to be 403)
 
-DRF downgrades an authentication failure to 403 when the authenticator does not implement
-`authenticate_header()`, and this one does not. The usual reading — 401 means signed out, 403 means
-not allowed — is **exactly inverted** on this API.
+Until the envelope landed, DRF downgraded an authentication failure to 403, because the authenticator
+did not implement `authenticate_header()`. **As of 2026-10-10 UAT answers 401** —
+`{"success":false,"message":"Authentication credentials were not provided.","data":null}` with no token,
+`"Error decoding signature."` with a bad one — while the collection's saved examples are still labelled 403.
+Nothing in the client branches on the difference: no read retries, and only `logout`/refresh act on a 401.
 
-Genuine 401s exist but only from routes that check the caller inside the handler:
-`privacy-policy/`, `terms-and-conditions/`, the QR routes, and the `auth-*` routes themselves.
-
-_Verified live against UAT on 2026-09-22 (before the 2026-09-24 rename): `user_details/`, `questions/`,
-`profile/` and `web/app-status/` all answered 403 with no token._
+_Verified live against UAT on 2026-10-10: `user-details/` and `questions/` answered 401 with no token and
+with a garbage bearer._
 
 ### Rule 2 — refresh **before** expiry, never as a retry after a 401/403
 
@@ -161,9 +167,9 @@ field returns 400 keyed by **that field's own name**, with a string (not a list)
 `{"appCode": "Unrecognised field for this endpoint. Each endpoint declares its own fields; …"}`.
 Send exactly the declared keys and nothing else.
 
-**There is no shared envelope on auth routes.** Success bodies are the SSO's own, bare. Errors are
-`{message}` (401/502/503), `{code, message}` (403), or the field-keyed 400 above. No
-`success`/`fail`/`warning` status field exists anywhere in the collection.
+**Auth routes share the envelope.** The SSO's body arrives whole inside `data`. Errors carry `message` at
+the top (401/429/502/503), a `code` for the two 403s (read off the top level or `data`), and the field-keyed
+400 under `data`. `toAuthFailure()` reads all three.
 
 ---
 
@@ -196,17 +202,21 @@ of them — was **deleted**; a client still calling it gets 404, and a PATCH on 
   "full_name": "Sohan Biswas",
   "is_onboarding_completed": true,
   "is_profile_completed": true,
-  "Pathway": "Yes",
-  "Enrolled_status": "Yes",
-  "Enrolled_course": ["US CPA"],
-  "onboarding_fully_completed": true
+  "pathway": "Yes",
+  "enrolled_status": "Yes",
+  "enrolled_course": [{ "course_name": "cpa", "is_enrolled": true, "is_alumni": false, "…": "…" }],
+  "user_data_fully_filled": true,
+  "career_counselling_booked": false
 }
 ```
 
-- `Pathway` / `Enrolled_status` are **capitalised strings**, not booleans. `"No"` means "could not
-  confirm": an enrolment lookup failure answers 200 with the conservative `"No"` payload, never 500.
+- **The client binds only the first four keys.** The rest were renamed or reshaped three times in a month
+  (`Pathway` → `pathway` on 2026-10-05, the course list became rows and `onboarding_fully_completed` became
+  `user_data_fully_filled` on 2026-10-07), and nothing in the app branches on them. `isUserDetails` checks
+  exactly what `UserDetails` types, so one of those renames can no longer blank the header.
+- `pathway` / `enrolled_status` are **strings**, not booleans. `"No"` means "could not confirm".
 - The onboarding gate reads the **stored** `is_onboarding_completed`, not the derived
-  `onboarding_fully_completed`.
+  `user_data_fully_filled`.
 - There is **no email, last name, phone or city** here — those are questionnaire answers now. The
   avatar menu shows `full_name` and its initials only.
 - `parseUserDetails` in `account.model.ts` checks every key at the `httpResource` boundary; a drifted
@@ -236,7 +246,9 @@ Four shapes are live; `readAccountError()` in `account.model.ts` normalises them
 | 500        | `{status: "error", message, details?}` | Toast                            |
 
 `questions/` is server-driven: the backend decides which questions exist, in what order and with what
-options. `section` is a label to group by — it does not affect ordering, and there are no screen
+options. Each option is `{text, description, value}`, and `value` is a **string** (it was a one-element list
+until 2026-10-09). A select's answer is still a **list** of those values, even for a single-select.
+`placeholder` may be `null`. `section` is a label to group by — it does not affect ordering, and there are no screen
 buckets (the legacy `Screen1`/`Screen2` keying is gone). `visibility: "both"` appears under either
 `form` value.
 
@@ -305,14 +317,15 @@ deployed there yet).
 The auth folder saves 19 example responses, **none of them a 200** — every success shape in this
 document is contract prose, not a captured payload.
 
-| #   | Item                                   | Current assumption                                                  | Where to change it                    |
-| --- | -------------------------------------- | ------------------------------------------------------------------- | ------------------------------------- |
-| 1   | Phone identifier format                | E.164 — `country_code + phone`, e.g. `+919876543210`                | `AuthFacade.toIdentifier()`, one line |
-| 2   | `miles_sso_refresh` cookie attributes  | Not used; body-token path instead                                   | `AuthSession.store()` / `doRefresh()` |
-| 3   | OTP code length                        | 6; no route returns it. **Backend ask:** `codeLength` on otp-send   | `AuthFacade.otpLength`                |
-| 4   | The two 502s                           | Told apart by copy (`/new code/i`). **Backend ask:** a `code` field | `toAuthFailure()` in `auth.model.ts`  |
-| 5   | Email for the account menu             | Not shown. **Backend ask:** `email` on `user-details/`              | `UserAvatarMenu`                      |
-| 6   | Does a name answer update `full_name`? | Assumed yes (`PATCH profile/` is the only write)                    | Add `POST name/` if not               |
+| #   | Item                                                                        | Current assumption                                                                                                                                                                                                          | Where to change it                    |
+| --- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| 1   | Phone identifier format                                                     | E.164 — `country_code + phone`, e.g. `+919876543210`                                                                                                                                                                        | `AuthFacade.toIdentifier()`, one line |
+| 2   | `miles_sso_refresh` cookie attributes                                       | Not used; body-token path instead                                                                                                                                                                                           | `AuthSession.store()` / `doRefresh()` |
+| 3   | OTP code length                                                             | 6; no route returns it. **Backend ask:** `codeLength` on otp-send                                                                                                                                                           | `AuthFacade.otpLength`                |
+| 4   | The two 502s                                                                | Told apart by copy (`/new code/i`). **Backend ask:** a `code` field                                                                                                                                                         | `toAuthFailure()` in `auth.model.ts`  |
+| 5   | Email for the account menu                                                  | Not shown. **Backend ask:** `email` on `user-details/`                                                                                                                                                                      | `UserAvatarMenu`                      |
+| 6   | Does a name answer update `full_name`?                                      | **No** (live UAT, 2026-10-10): after `PATCH profile/` saves `full_name`, `user-details/` still answers `null`, so the avatar shows "U". **Backend ask:** write the answer to the row, or the client also calls `POST name/` | `Profile.save()`                      |
+| 7   | `country_code` / `phone_number` / `communication` on identify, send, verify | Declared by the serializers, undocumented. Not sent; `identifier` alone, as the contract's example                                                                                                                          | `AuthFacade.toIdentifier()`           |
 
 When a real token is obtainable, capture `identify`, `otp-send`, `otp-verify`, `user-details/` and
 `questions/` into `docs/contracts/` and tighten the items above.

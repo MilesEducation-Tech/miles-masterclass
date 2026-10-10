@@ -7,6 +7,49 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-10, NON-REFACTOR — sign-in and profile against the enveloped Accounts API
+  (`prompts/auth-envelope-fix.md`, approved). DONE, UNCOMMITTED** on `fix/MIL-XXX-auth-envelope` (from
+  `master`, carrying the regenerated Postman files). No refactor phase moved.
+  - **Cause:** the backend now wraps every body in `{success, message, data}` (live on UAT). `isSessionResponse`
+    rejected the wrapped verify body, so a correct OTP never signed in, and every refresh cleared the session.
+  - **What changed:**
+    - Auth routes are typed `CommonResponse<…>`, and `AuthSession` maps `res.data`.
+    - `readErrorBody` and `readAccountError` read `data`.
+    - The identify validator reads `data.methods`.
+    - `AccountApi` and `OnboardingApi` unwrap in `parse` / `map`.
+    - `UserDetails` and `isUserDetails` cover only the four keys the app reads.
+    - Option `value` is a string now; the profile page's key↔value helpers are deleted.
+    - `rowDefaults` seeds `full_name`, and the `placeholder` is null-safe.
+    - `docs/AUTH_API.md` is updated (envelope, the 403 → 401 change, `user-details/` and option shapes).
+    - **Found live and fixed:**
+      - `user-details/` sends `first_name` / `full_name` as `null` for a new account, so both are typed
+        nullable.
+      - The single-select writes a scalar into `choices`, so it is read through `asList()`; select answers now
+        go out as lists.
+  - **Gates (local macOS):** `pnpm lint` 0 errors (107 warnings), structure check passed, `tsc` clean.
+    `build:prod` green, initial 244.80 kB, with only the `ai-labs.css` warning.
+  - **Browser (dev, port 3000, UAT, temp account `tizagi@forexzig.com`): steps 2–10 passed.**
+    - **Sign-in:** guards; identify (phone E.164 and email); send (channel copy, 90 s cooldown); resend hint;
+      a wrong code gives 401; verify gives 200 and sets the cookies; `new_user` → `/auth/profile`.
+    - **Onboarding:** renders; a 400 shows under its question; save → refresh → `/`.
+    - **Signed in:** a reload keeps the session; SSR renders the avatar; the guest guard holds.
+    - **Profile form:** prefilled; gating and the multi-select work; save → `profile_completed` → refresh,
+      with a toast.
+    - **Forced near-expiry:** two concurrent reads made exactly 1 refresh.
+    - **Logout:** clears the session.
+    - **Returning user:** a superseded code gives 401 with "replaced by a newer one"; verify → the `redirect`
+      target, `profile_completed`.
+    - **Logout:** `auth-logout/` answers 204 with the bearer.
+    - **Prod SSR (4000, stopped):** a dummy session renders the avatar on home, with no server errors.
+      `auth/**` is `RenderMode.Client` by design.
+  - **Backend gap:** the `full_name` answer does not update the row, so `user-details/` stays `null` and the
+    avatar shows "U".
+  - **Out of scope, flagged:**
+    - The app-wide `response.status` reads (`faculty.ts`, `podcast-course-hero.ts`).
+    - The option `description` line and `?login_via=`.
+    - Native `required` popups on submit.
+    - Raw `section` labels.
+    - `v2/user/last_viewed/` and `user/cart/mybucket/` both answer 404.
 - 🔧 **2026-10-09, NON-REFACTOR — footer layout fix, ticket A of `prompts/footer-redesign.md` (approved).
   DONE, UNCOMMITTED** on `fix/MIL-XXX-footer-layout` (from `master`). No refactor phase moved.
   - **What changed:**
@@ -3750,6 +3793,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-10 · NON-REFACTOR · **Auth envelope fix** (uncommitted, `fix/MIL-XXX-auth-envelope`): unwrap `{success, message, data}` across sign-in, refresh, `user-details/`, questions/profile; `UserDetails` cut to the keys read (names nullable); string option values; single-select scalar → list · lint 0 errors, structure ✔, tsc ✔ (local) · sign-in, onboarding, profile save, rotation, guards, logout returning-user sign-in, logout 204 verified live on UAT; build:prod 244.80 kB; prod SSR clean
 
 - 2026-10-10 · NON-REFACTOR · **P0 accessibility fixes** (uncommitted): header focus rings + reduced motion folded into ticket E; new `fix/MIL-XXX-p0-accessibility` (scratch worktree) fixes the kit-wide `outline-none` focus-ring trap in 23 `shared/ui` files, adds a skip link and Google's "Get it on" caption · lint 0 errors, structure ✔, build:prod, storybook ✔ (local) · verified in headless Chrome with real key presses
 

@@ -111,7 +111,7 @@
                       ngpTextarea
                       rows="4"
                       [id]="question.code"
-                      [placeholder]="question.placeholder"
+                      [placeholder]="question.placeholder ?? ''"
                       [formField]="field.text"
                       class="w-full rounded-md border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/40"
                     ></textarea>
@@ -121,7 +121,7 @@
                       ngpInput
                       [id]="question.code"
                       [type]="entry.control"
-                      [placeholder]="question.placeholder"
+                      [placeholder]="question.placeholder ?? ''"
                       [formField]="field.text"
                       class="w-full rounded-md border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/40"
                     />

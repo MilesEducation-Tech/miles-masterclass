@@ -14,6 +14,7 @@ import {
   isTerminalFailure,
   toAuthFailure,
 } from '@core/models/auth.model';
+import { CommonResponse } from '@core/models/http.model';
 import { apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -335,7 +336,7 @@ export class AuthFacade {
         // The values are `email_otp`, `phone_otp`, `password` and later `saml` —
         // never a bare `otp`. An account with no `*_otp` method cannot be sent a
         // code at all, which today means enterprise SSO.
-        const methods = (result as IdentifyResponse).methods ?? [];
+        const methods = (result as CommonResponse<IdentifyResponse>).data?.methods ?? [];
         if (methods.length && !methods.some(isOtpMethod)) {
           return {
             kind: 'sso_only',
