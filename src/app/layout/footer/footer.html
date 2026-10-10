@@ -1,167 +1,170 @@
-<footer class="flex flex-col gap-8 footer container mx-auto py-10 md:pb-32 pb-44">
-  <div class="footer-top grid md:grid-cols-2 grid-cols-2 gap-4" [class]="gridColumnsClass()">
-    @for (section of footerSections(); track $index) {
+<!-- Bottom padding keeps the last row clear of the fixed footer-overlay card, which is
+     ~190px tall on a 375px phone (its copy wraps) and ~100px from md up. -->
+<footer class="pt-16 pb-56 md:pb-32">
+  <!-- Side gutters: `container` has none from sm up, and md:px-16 clears the home page's 56px side rail. -->
+  <div class="container mx-auto flex flex-col gap-12 sm:px-6 md:px-16">
+    <!-- Cells sit on the grid lines (no mx-auto), so every column in a row starts at the same x.
+         Phones: brand, then Explore | Policies, then Partnerships across both columns.
+         md–lg: brand as one row, then the three link columns. xl: brand is the first of four columns. -->
+    <div
+      class="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-3 xl:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] xl:gap-x-10"
+    >
       <div
-        class="w-auto md:mx-auto flex flex-col gap-4"
-        [class.md:w-3/4]="section.type === 'download-app'"
-        [class.w-full]="section.type === 'download-app'"
-        [class.md:col-span-2]="section.colSpan === 2"
-        /* [class.max-md:col-span-2]="section.type === 'download-app'" */
+        class="col-span-2 flex flex-col gap-8 md:col-span-3 md:flex-row md:justify-between xl:col-span-1 xl:flex-col xl:justify-start"
       >
-        <p class="md:text-2xl text-xl font-bold">{{ section.title }}</p>
-        @switch (section.type) {
-          @case ('download-app') {
-            <div class="w-full flex gap-4 max-md:flex-col">
-              <ul class="flex flex-col gap-2 md:w-1/2">
-                @for (link of section.links; track $index) {
-                  <li class="md:text-base text-sm text-gray-300 w-full">
-                    <div class="flex gap-0.5 justify-start w-full">
-                      <a
-                        draggable="false"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="w-full"
-                        [href]="link.url"
-                      >
-                        <div
-                          class="bg-[#39434f] px-4 py-2 flex items-center rounded-md text-base gap-2 w-full"
-                        >
-                          <ng-icon
-                            draggable="false"
-                            [svg]="getIcon(link.icon!)"
-                            class="w-8! h-auto!"
-                          />
-                          <div class="flex flex-col justify-center">
-                            <p class="text-[10px] leading-none">
-                              {{ 'footer.downloadOnThe' | transloco }}
-                            </p>
-                            <p class="text-base font-bold">{{ link.label }}</p>
-                          </div>
-                        </div>
-                      </a>
-                    </div>
-                  </li>
-                }
-              </ul>
-              <div class="w-auto md:mx-auto footer-top-grid flex flex-col gap-4">
-                <div class="w-44 aspect-square relative">
-                  <img
-                    [ngSrc]="section.qrCodeUrl!"
-                    [alt]="'footer.scanMe' | transloco"
-                    [fill]="true"
+        <!-- Phones: Social and Our Location side by side under the logo, to keep the footer short. -->
+        <div class="grid grid-cols-2 gap-6 md:flex md:flex-col">
+          <a
+            routerLink="/"
+            draggable="false"
+            class="col-span-2 w-fit"
+            [attr.aria-label]="'header.home' | transloco"
+          >
+            <ng-icon [svg]="logo" class="w-24! h-10!" />
+          </a>
+
+          <div class="flex flex-col gap-3">
+            <p class="md:text-2xl text-xl font-bold">{{ 'footer.social' | transloco }}</p>
+            <ul class="flex gap-4">
+              @for (social of socialLinks; track social.url) {
+                <li>
+                  <a
                     draggable="false"
-                  />
-                </div>
-                <p class="text-sm ms-1 font-light">{{ 'footer.scanToDownload' | transloco }}</p>
-              </div>
-            </div>
-          }
-          @default {
-            <ul class="flex flex-col gap-2">
-              @for (link of section.links; track $index) {
-                <li class="md:text-base text-sm text-gray-300">
-                  @if (link.action) {
-                    <button
-                      type="button"
-                      (click)="handleLinkAction(link)"
-                      class="cursor-pointer bg-transparent p-0 text-start hover:underline"
-                    >
-                      {{ link.label }}
-                    </button>
-                  } @else {
-                    <a
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex size-10 items-center justify-center"
+                    [href]="social.url"
+                    [title]="social.label"
+                    [attr.aria-label]="social.label"
+                  >
+                    <ng-icon
                       draggable="false"
-                      class="hover:underline"
-                      [routerLink]="link.route"
-                      [queryParams]="link.queryParams || null"
-                    >
-                      {{ link.label }}
-                    </a>
-                  }
+                      [svg]="social.icon!"
+                      class="size-8!"
+                      aria-hidden="true"
+                    />
+                  </a>
                 </li>
               }
             </ul>
-          }
-        }
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <p class="md:text-2xl text-xl font-bold">{{ 'footer.ourLocation' | transloco }}</p>
+            <ul class="flex gap-4">
+              @for (location of ['footer.usa', 'footer.uae', 'footer.india']; track location) {
+                <li class="md:text-base text-sm text-gray-300 hover:underline">
+                  <a
+                    draggable="false"
+                    href="https://www.mileseducation.com/contact-us"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >{{ location | transloco }}</a
+                  >
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <p class="md:text-2xl text-xl font-bold">{{ 'footer.downloadApp' | transloco }}</p>
+          <div class="flex flex-wrap items-start gap-6">
+            <ul class="grid grid-cols-2 gap-3 md:grid-cols-1">
+              @for (store of appStoreLinks; track store.url) {
+                <li>
+                  <a
+                    draggable="false"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center gap-2 whitespace-nowrap rounded-md bg-[#39434f] px-3 py-2"
+                    [href]="store.url"
+                  >
+                    <ng-icon
+                      draggable="false"
+                      [svg]="store.icon!"
+                      class="w-8! h-auto!"
+                      aria-hidden="true"
+                    />
+                    <span class="flex flex-col">
+                      <span class="text-[10px] leading-none">{{
+                        'footer.downloadOnThe' | transloco
+                      }}</span>
+                      <span class="text-base font-bold">{{ store.label }}</span>
+                    </span>
+                  </a>
+                </li>
+              }
+            </ul>
+            <!-- Phones scan nothing; the QR only earns its space from md up (as in app-download). -->
+            <div class="flex flex-col items-center gap-2 max-md:hidden">
+              <img
+                [ngSrc]="qrCodeUrl"
+                [alt]="'footer.scanMe' | transloco"
+                width="173"
+                height="173"
+                class="size-28"
+                draggable="false"
+              />
+              <p class="text-xs font-light">{{ 'footer.scanToDownload' | transloco }}</p>
+            </div>
+          </div>
+        </div>
       </div>
-    }
-  </div>
-  <div class="footer-middle flex flex-col gap-8">
-    <div class="w-auto md:mx-auto footer-top-grid flex flex-col gap-4 items-center">
-      <p class="md:text-2xl text-xl font-bold">{{ 'footer.ourLocation' | transloco }}</p>
-      <ul class="flex gap-4">
-        <li class="md:text-base text-sm text-gray-300 hover:underline">
-          <a
-            draggable="false"
-            href="https://www.mileseducation.com/contact-us"
-            target="_blank"
-            rel="noopener noreferrer"
-            >{{ 'footer.usa' | transloco }}</a
+
+      @for (section of linkSections(); track section.title) {
+        <div class="flex flex-col gap-4" [class]="section.wide ? 'max-md:col-span-2' : ''">
+          <p class="md:text-2xl text-xl font-bold">{{ section.title }}</p>
+          <ul
+            class="flex flex-col gap-2"
+            [class]="section.wide ? 'max-md:grid max-md:grid-cols-2 max-md:gap-x-6' : ''"
           >
-        </li>
-        <li class="md:text-base text-sm text-gray-300 hover:underline">
-          <a
-            draggable="false"
-            href="https://www.mileseducation.com/contact-us"
-            target="_blank"
-            rel="noopener noreferrer"
-            >{{ 'footer.uae' | transloco }}</a
-          >
-        </li>
-        <li class="md:text-base text-sm text-gray-300 hover:underline">
-          <a
-            draggable="false"
-            href="https://www.mileseducation.com/contact-us"
-            target="_blank"
-            rel="noopener noreferrer"
-            >{{ 'footer.india' | transloco }}</a
-          >
-        </li>
-      </ul>
+            @for (link of section.links; track link.label) {
+              <li class="md:text-base text-sm text-gray-300">
+                @if (link.action) {
+                  <button
+                    type="button"
+                    (click)="handleLinkAction(link)"
+                    class="cursor-pointer bg-transparent p-0 text-start hover:underline"
+                  >
+                    {{ link.label }}
+                  </button>
+                } @else {
+                  <a
+                    draggable="false"
+                    class="hover:underline"
+                    [routerLink]="link.route"
+                    [queryParams]="link.queryParams || null"
+                  >
+                    {{ link.label }}
+                  </a>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
     </div>
-    <hr class="border-t border-white/50" />
-    <div class="w-auto md:mx-auto footer-top-grid flex flex-col gap-4 items-center">
-      <p class="md:text-2xl text-xl font-bold">{{ 'footer.social' | transloco }}</p>
-      <ul class="flex gap-4">
-        @for (social of socialLinks; track $index) {
-          <li class="md:text-base text-sm text-gray-300">
-            <a
-              draggable="false"
-              target="_blank"
-              rel="noopener noreferrer"
-              [href]="social.url"
-              [title]="social.label"
-            >
-              <div class="w-[46px] h-[46px] flex items-center rounded-[50px]">
-                <ng-icon draggable="false" [svg]="getIcon(social.icon!)" class="size-8! h-auto!" />
-              </div>
-            </a>
-          </li>
-        }
-      </ul>
-    </div>
-  </div>
-  <div class="footer-bottom flex flex-col gap-8">
-    <div class="grid grid-cols-1 gap-10">
-      <div class="flex flex-col gap-4 w-full md:w-3/4 mx-auto items-center">
-        <img
-          [ngSrc]="'https://asset.milesmasterclass.com/media/web-app/home/nasba.webp'"
-          alt="nasba"
-          class="w-20"
-          draggable="false"
-          width="105"
-          height="138"
-        />
+
+    <div class="flex items-start gap-4 md:gap-8">
+      <img
+        [ngSrc]="'https://asset.milesmasterclass.com/media/web-app/home/nasba.webp'"
+        alt="nasba"
+        class="w-14 shrink-0 md:w-20"
+        draggable="false"
+        width="105"
+        height="138"
+      />
+      <div class="flex flex-col gap-2">
         <p class="text-base text-gray-300">{{ 'footer.sponsorId' | transloco: { id: 149174 } }}</p>
-        <!-- NASBA prescribes this sponsor statement's wording: English in every language until compliance decides otherwise. -->
-        <p class="text-sm text-gray-300 text-center">
+        <!-- NASBA prescribes this sponsor statement's wording: English in every language until compliance decides otherwise.
+             `lang`/`dir` keep it read and punctuated as English on the Arabic page. -->
+        <p lang="en" dir="ltr" class="text-sm text-gray-300">
           Miles Masterclass Inc. is registered with the National Association of State Boards of
           Accountancy (NASBA) as a sponsor of continuing professional education on the National
           Registry of CPE Sponsors. State boards of accountancy have final authority on the
           acceptance of individual courses for CPE credit. Complaints regarding registered sponsors
-          may be submitted to the National Registry of CPE Sponsors through its
-          <br />
-          website:
+          may be submitted to the National Registry of CPE Sponsors through its website:
           <a
             draggable="false"
             href="https://www.nasbaregistry.org/"
@@ -174,10 +177,11 @@
         </p>
       </div>
     </div>
-    <div class="flex justify-between max-md:flex-col max-md:gap-4 max-md:items-center">
-      <p class="text-gray-300">{{ 'footer.copyright' | transloco: { year: 2026 } }}</p>
-      <ul class="flex gap-4 max-md:flex-col max-md:gap-2">
-        @for (legal of legalLinks(); track $index) {
+
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <p class="text-gray-300">{{ 'footer.copyright' | transloco: { year: copyrightYear } }}</p>
+      <ul class="flex flex-wrap items-center gap-x-6 gap-y-2">
+        @for (legal of legalLinks(); track legal.label) {
           <li>
             <a
               [routerLink]="legal.route"

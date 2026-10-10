@@ -12,7 +12,6 @@ export interface FooterLink {
 export interface FooterSection {
   title: string;
   links: FooterLink[];
-  type?: 'links' | 'download-app';
-  qrCodeUrl?: string;
-  colSpan?: number;
+  /** Spans both columns on phones, with its links in two columns. */
+  wide?: boolean;
 }

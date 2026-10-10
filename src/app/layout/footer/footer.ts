@@ -1,9 +1,9 @@
 import { NgOptimizedImage } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
 import { svglLinkedin, svglYoutube } from '@ng-icons/svgl';
-import { appStoreIcon, googlePlayIcon, instagramIcon } from '@core/constants/icon';
+import { appStoreIcon, googlePlayIcon, instagramIcon, logo } from '@core/constants/icon';
 import { FooterLink, FooterSection } from '@core/models/footer.model';
 import { Utils } from '@shared/services/utils';
 import { Consent } from '@core/services/consent/consent';
@@ -21,7 +21,6 @@ import { LanguageSwitcher } from '../components/language-switcher/language-switc
   templateUrl: './footer.html',
 })
 export class Footer {
-  private readonly router = inject(Router);
   private readonly utils = inject(Utils);
   private readonly dialogs = inject(NgpDialogManager);
   // Exposed for the footer "Cookie settings" link (reopens the consent panel).
@@ -47,14 +46,10 @@ export class Footer {
     return `/${country?.toLowerCase()}/${profession}`;
   });
 
-  // Icons mapping
-  readonly icons = {
-    svglLinkedin,
-    svglYoutube,
-    instagramIcon,
-    appStoreIcon,
-    googlePlayIcon,
-  };
+  protected readonly logo = logo;
+  protected readonly qrCodeUrl =
+    'https://asset.milesmasterclass.com/media/web-app/home/qr-code-styling.png';
+  protected readonly copyrightYear = new Date().getFullYear();
 
   // All links configuration
   readonly exploreLinks = computed<FooterLink[]>(() => [
@@ -109,13 +104,13 @@ export class Footer {
     {
       label: 'LinkedIn',
       url: 'https://www.linkedin.com/company/miles-masterclass',
-      icon: 'svglLinkedin',
+      icon: svglLinkedin,
     },
-    { label: 'YouTube', url: 'https://www.youtube.com/@MilesMasterclass', icon: 'svglYoutube' },
+    { label: 'YouTube', url: 'https://www.youtube.com/@MilesMasterclass', icon: svglYoutube },
     {
       label: 'Instagram',
       url: 'https://www.instagram.com/miles.masterclass/',
-      icon: 'instagramIcon',
+      icon: instagramIcon,
     },
   ];
 
@@ -123,12 +118,12 @@ export class Footer {
     {
       label: 'App Store',
       url: 'https://apps.apple.com/in/app/miles-masterclass-ai-cpe/id6736642042',
-      icon: 'appStoreIcon',
+      icon: appStoreIcon,
     },
     {
       label: 'Google Play',
       url: 'https://play.google.com/store/apps/details?id=com.miles.masterclass&hl=en',
-      icon: 'googlePlayIcon',
+      icon: googlePlayIcon,
     },
   ];
 
@@ -195,42 +190,13 @@ export class Footer {
     this.exploreLinks().filter((link) => this.shouldShowLink(link)),
   );
 
-  // Dynamic footer sections for grid
-  readonly footerSections = computed<FooterSection[]>(() => [
-    { title: this.t('footer.explore'), links: this.visibleExploreLinks(), type: 'links' },
-    { title: this.t('footer.policies'), links: this.policyLinks(), type: 'links' },
-    { title: this.t('footer.partnerships'), links: this.partnershipLinks(), type: 'links' },
-    {
-      title: this.t('footer.downloadApp'),
-      links: this.appStoreLinks,
-      type: 'download-app',
-      qrCodeUrl: 'https://asset.milesmasterclass.com/media/web-app/home/qr-code-styling.png',
-      colSpan: 2,
-    },
+  // The three link columns. Partnerships is `wide`: on phones it spans both columns and its
+  // nine links run in two columns, which keeps the footer short.
+  readonly linkSections = computed<FooterSection[]>(() => [
+    { title: this.t('footer.explore'), links: this.visibleExploreLinks() },
+    { title: this.t('footer.policies'), links: this.policyLinks() },
+    { title: this.t('footer.partnerships'), links: this.partnershipLinks(), wide: true },
   ]);
-
-  // Static mapping for grid columns (Tailwind JIT requires static class names)
-  private readonly gridColsMap: Record<number, string> = {
-    1: 'xl:grid-cols-1',
-    2: 'xl:grid-cols-2',
-    3: 'xl:grid-cols-3',
-    4: 'xl:grid-cols-4',
-    5: 'xl:grid-cols-5',
-    6: 'xl:grid-cols-6',
-  };
-
-  // Calculate total columns accounting for colSpan
-  readonly gridColumnsClass = computed(() => {
-    const totalCols = this.footerSections().reduce(
-      (sum, section) => sum + (section.colSpan ?? 1),
-      0,
-    );
-    return this.gridColsMap[totalCols] ?? 'xl:grid-cols-4';
-  });
-
-  navigateTo(path: string, queryParams?: Record<string, any>): void {
-    this.router.navigate([path], { queryParams });
-  }
 
   /** Dispatch for action-type links (e.g. "Become an Instructor" → Book a demo). */
   handleLinkAction(link: FooterLink): void {
@@ -249,10 +215,6 @@ export class Footer {
         closeAction: true,
       } satisfies CalendlyDialogData,
     });
-  }
-
-  getIcon(iconName: string): any {
-    return this.icons[iconName as keyof typeof this.icons];
   }
 
   private shouldShowLink(link: FooterLink): boolean {
