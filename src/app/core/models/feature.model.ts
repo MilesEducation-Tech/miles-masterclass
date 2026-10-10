@@ -13,7 +13,6 @@ export type FeatureApiKey =
   | 'comingSoon'
   | 'instructor'
   | 'inprogress'
-  | 'lastViewed'
   | 'completed'
   | 'bookmark'
   | 'upcoming'
@@ -63,7 +62,6 @@ export interface FeatureResponseMap {
   comingSoon?: Content[];
   instructor?: BaseInstructorDetails[];
   inprogress?: Content[];
-  lastViewed?: Content[];
   popular?: Content[];
   completed?: Content[];
   bookmark?: Content[];
@@ -360,14 +358,6 @@ export const FEATURE_ROUTES = {
       page: number;
     }
   >,
-
-  // Footer "continue learning" resume card — single most-recently-viewed course
-  // (global, no query params). Response `data` is one `Content` object; the
-  // facade wraps it to an array so the card reads items()[0].
-  lastViewed: {
-    path: 'v2/user/last_viewed/',
-    method: 'GET',
-  } as RouteConfig<void, FeatureApiResponse<Content>>,
 
   completed: {
     path: 'v2/user/completed_classes/',

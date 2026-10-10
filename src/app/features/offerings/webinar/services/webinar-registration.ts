@@ -1,10 +1,10 @@
 import { DestroyRef, inject, Service, signal } from '@angular/core';
 import { HttpContext } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map } from 'rxjs';
 import { environment } from '@env/environment';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
-import { SKIP_LOADING } from '@core/models/http.model';
+import { CommonResponse, SKIP_LOADING } from '@core/models/http.model';
 import {
   AttemptStatusResponse,
   isAlreadyRegistered,
@@ -139,19 +139,23 @@ export class WebinarRegistration {
     // key is a 400 naming it, and that includes `webinar_date_id: null` — the
     // KEY is forbidden, not just a non-null value.
     const body: RegisterRequest = { webinar_id: webinarId };
+    // The result is in `data`; the copy ("You are already registered…") is the
+    // envelope's own `message`, so it is merged back in.
+    const post = (): Promise<RegisterResponse> =>
+      firstValueFrom(
+        this.api
+          .post<CommonResponse<RegisterResponse>>(WEBINAR_ENDPOINTS.register, body)
+          .pipe(map((res) => ({ ...res.data, message: res.message }))),
+      );
 
     try {
-      return await firstValueFrom(
-        this.api.post<RegisterResponse>(WEBINAR_ENDPOINTS.register, body),
-      );
+      return await post();
     } catch (err) {
       const error = toWebinarError(err);
       if (error.code !== 'registration_in_progress') throw err;
 
       await sleep((error.retryAfterSeconds ?? 15) * 1000);
-      return await firstValueFrom(
-        this.api.post<RegisterResponse>(WEBINAR_ENDPOINTS.register, body),
-      );
+      return await post();
     }
   }
 
@@ -183,9 +187,11 @@ export class WebinarRegistration {
       // Polled behind the card's own `inFlight` spinner, so not the loading bar.
       last = normaliseAttemptStatus(
         await firstValueFrom(
-          this.api.get<AttemptStatusResponse>(statusUrl, {
-            context: new HttpContext().set(SKIP_LOADING, true),
-          }),
+          this.api
+            .get<CommonResponse<AttemptStatusResponse>>(statusUrl, {
+              context: new HttpContext().set(SKIP_LOADING, true),
+            })
+            .pipe(map((res) => res.data)),
         ),
       );
 

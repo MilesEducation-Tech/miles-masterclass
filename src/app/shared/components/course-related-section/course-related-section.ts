@@ -20,7 +20,7 @@ import { swiperConfigEven, swiperConfigPodcast } from '@core/config/swiper.confi
 /** Empty envelope for the related-content resource's `defaultValue`. */
 const EMPTY_RELATED: CommonResponse<Content[]> = {
   data: [],
-  status: false,
+  success: false,
   message: '',
 };
 

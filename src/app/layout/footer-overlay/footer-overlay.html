@@ -11,12 +11,6 @@
     >
       <div class="mx-auto w-full max-w-[1200px]">
         @switch (cardKind()) {
-          @case ('continue') {
-            <app-continue-learning-card
-              [course]="inProgressCourse()!"
-              (resume)="onResume($event)"
-            />
-          }
           @case ('subscribe') {
             <app-subscribe-card
               data-click-tag="overlay_subscribe"

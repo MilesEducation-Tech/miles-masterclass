@@ -56,8 +56,8 @@ interface ListSnapshot {
  * Hoisted out of the old `items$` `switchMap` so the `httpResource` path and the
  * track path cannot drift apart. Two shapes are in play and both are real: most
  * list endpoints return `{ data: Content[], pagination_data }`, while a few return
- * a bare array, and single-item endpoints (`lastViewed` → `v2/user/last_viewed/`)
- * return one `Content` object — wrapped here so consumers keep reading `items()[0]`.
+ * a bare array. A single `Content` object in `data` is wrapped, so consumers
+ * always read an array.
  */
 function unwrapListResponse(response: FeatureApiResponse<any[]> | any[] | null | undefined): {
   data: any[];
@@ -276,14 +276,11 @@ export class FeatureResource {
         if (!route) return undefined;
         if (this.options?.requiresAuth && !this.isAuthenticated()) return undefined;
 
-        // Route defaults + dynamic params + applied filters. `lastViewed` is a
-        // single global endpoint and takes no query params.
+        // Route defaults + dynamic params + applied filters.
         const params: Record<string, any> = { ...(route.params || {}) };
-        if (this.key !== 'lastViewed') {
-          params['page'] = this.page();
-          if (this.type && this.key !== 'premiere') {
-            params['course_type'] = this.type;
-          }
+        params['page'] = this.page();
+        if (this.type && this.key !== 'premiere') {
+          params['course_type'] = this.type;
         }
         appendFilterParams(params, this.filters());
 
@@ -295,9 +292,7 @@ export class FeatureResource {
       if (this.isTrack || !this.isBrowser) return null;
       if (this.options?.requiresAuth && !this.isAuthenticated()) return 'unauthorized';
 
-      // `lastViewed` takes no page param, so it is always page 1 however far another
-      // listing has paged.
-      const page = this.key === 'lastViewed' ? 1 : this.page();
+      const page = this.page();
 
       // A failure counts as SETTLED WITH NO ROWS, which is what the old
       // `catchError(() => of({ data: [], pagination: undefined, ... }))` produced.

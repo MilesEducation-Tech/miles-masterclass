@@ -141,9 +141,13 @@ export interface PaginationData {
   previous_page: string;
 }
 
+/**
+ * The MilesCAIRA envelope. Since 2026-10-10 every response, success and error
+ * alike, is `{success, message, data}`; the old top-level `status` is gone.
+ */
 export interface CommonResponse<T> {
   data: T;
   pagination_data?: PaginationData;
-  status: boolean;
+  success: boolean;
   message: string;
 }

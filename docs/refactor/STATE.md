@@ -7,6 +7,36 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-10, NON-REFACTOR — envelope fallout (`prompts/envelope-fallout.md`, approved with D1–D3 as
+  recommended). DONE, PR #103** on `fix/MIL-54-envelope-fallout` (from `master`), in the sibling
+  worktree `/Users/SACHIN.SINGH/Documents/GitHub/miles-masterclass-envelope`. The edit guard refuses
+  `.claude/worktrees/` paths. No refactor phase moved.
+  - **Found:**
+    - All 103 legacy path literals (`v2/*`, `user/*`, `promotion/*`, `partners/*`…) answer Django 404 on UAT.
+    - So the `.status` reads in `faculty.ts` and `podcast-course-hero.ts` never run. They are left to the
+      feature rebinds (D3), and the plan lists them by feature.
+    - The live bug was webinar registration: `status_url` and `attempt_id` now sit in `data`.
+  - **What changed:**
+    - Register and status `map` to `data`, with the envelope `message` merged in.
+    - `toWebinarError` reads `errors` and `retry_after_seconds` from `data`.
+    - `CommonResponse.status` → `success`, and the two default literals follow.
+    - Removed the continue-learning card, the `lastViewed` route and its FeatureFacade special cases (D1).
+    - The footer no longer loads the cart (D2).
+    - Backend asks added: Q8 in `MASTERCLASS_API_QUESTIONS.md`, Q13 in `WEBINAR_API_QUESTIONS.md`.
+  - **Gates (local macOS):** lint 0 errors (107 warnings), structure check passed, tsc clean. `build:prod`
+    244.61 kB, with only the `ai-labs.css` warning.
+  - **Browser (dev, UAT):**
+    - **Signed out (4102):** home calls only `tracks-page/` (200); the webinar list and detail render.
+    - **Signed in:**
+      - Tested on 4103, a throwaway detached worktree at MIL-52 `803bc1d` plus this diff (since removed),
+        because sign-in needs MIL-52.
+      - Home calls only `user-details/` and `tracks-page/?login_type=post_login`, both 200, with no 404s.
+      - The footer shows the subscribe card.
+    - **Register (user-approved):**
+      - Register answered 202, and the client followed `status_url` with the attempt id.
+      - It polled `data.registration_status` to the 45 s cap, then the facade reloaded the feed.
+      - **Blocked by the backend:** UAT never moves the attempt past `PENDING` (Q13), so "registered" and
+        "already registered" could not be reached.
 - 🔧 **2026-10-10, NON-REFACTOR — sign-in and profile against the enveloped Accounts API
   (`prompts/auth-envelope-fix.md`, approved). ✅ Committed by the user as `f877623` (Postman) + `803bc1d` (fix)
   on `fix/MIL-52-auth-envelope`** (from
@@ -3813,6 +3843,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-10 · NON-REFACTOR · **Envelope fallout** (PR #103, `fix/MIL-54-envelope-fallout`, sibling worktree `../miles-masterclass-envelope`): webinar register/status unwrap `data`, `toWebinarError` reads `data.errors`/`retry_after_seconds`, `CommonResponse.success`, footer drops the `last_viewed` card and the eager cart load · lint 0 errors, structure ✔, tsc ✔, build:prod 244.61 kB (local) · signed-out (4102) and signed-in (4103 = MIL-52 + this diff) verified on UAT: no 404s on home; register 202 → status polls read `data`; UAT attempts stuck `PENDING` (WEBINAR Q13)
 
 - 2026-10-10 · NON-REFACTOR · **Profile form pre-fills from `user-details/` only** (uncommitted, `fix/MIL-52-auth-envelope`): `GET profile/` dropped (user decision); re-seed keeps typed rows; no blanks or unticked booleans sent · lint 0 errors, structure ✔, build:prod 244.75 kB (local) · verified in dev with a dummy session (UAT OTP mail to temp domains stopped arriving)
 

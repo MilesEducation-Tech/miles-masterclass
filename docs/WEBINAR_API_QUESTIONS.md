@@ -211,6 +211,18 @@ accepts `null` for all of them (MIL-43).
 
 **Ask:** either send `""` as documented, or update the contract to say nullable.
 
+### Q13. Registration attempts never leave `PENDING` on UAT (2026-10-10)
+
+`register-via-zoom/` answers 202 with an `attempt_id`, but the attempt stays `status: "PENDING"` /
+`registration_status: "PENDING"` with `zoom_attempts: 1`, `last_status_code: null` and `error_code: null`.
+
+- Attempt `3438f63b-2deb-46c0-b726-842f3e889dd5` was still in that state after more than 3 minutes.
+- The test account already had three older upcoming webinars stuck the same way.
+- The client polls to its 45 s cap, says "Still working on it", and the card stays on "Booking…".
+
+**Ask:** is the registration worker running on UAT? Per the contract, a dead worker's attempt should be
+reaped to `INTERRUPTED` / `stuck` on read. That isn't happening either.
+
 ## Summary
 
 | #   | Question                                                     | Blocks                               |
@@ -225,6 +237,7 @@ accepts `null` for all of them (MIL-43).
 | Q8  | Enrolment filtering                                          | list relevance                       |
 | Q9  | NASBA disclosure fields                                      | compliance block on the detail page  |
 | Q10 | `badge_icon_url`                                             | credential badge on the row artwork  |
+| Q13 | Registration attempts stuck in `PENDING` on UAT              | registering for any webinar on UAT   |
 
 **Q1, Q2 and Q4 are the ones that still block shipping the flow as specified.** Everything else in the module is
 built and working against the contract as it stands.
