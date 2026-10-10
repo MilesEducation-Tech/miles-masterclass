@@ -1,74 +1,60 @@
+import { Component, inject } from '@angular/core';
 import type { Meta, StoryObj } from '@storybook/angular';
-import { ToastComponent } from './toast';
-import { MOCK_SUCCESS_TOAST, MOCK_ERROR_TOAST, MOCK_INFO_TOAST } from '@testing/mocks/toast.mock';
+import { applicationConfig } from '@storybook/angular';
+import { NotificationService, TOAST_COMPONENT } from '@core/services/notification/notification';
+import { Button } from '../button/button';
+import { Toast } from './toast';
 
-const meta: Meta<ToastComponent> = {
+/** Toasts are shown by `NotificationService`, the way the app does it; nothing is bound by hand. */
+@Component({
+  selector: 'app-toast-demo',
+  imports: [Button],
+  template: `
+    <div class="flex flex-wrap gap-3">
+      <button app-button type="button" (click)="success()">Success</button>
+      <button app-button type="button" variant="destructive" (click)="error()">Error</button>
+      <button app-button type="button" variant="secondary" (click)="info()">Info</button>
+      <button app-button type="button" variant="outline" (click)="sticky()">
+        Not closable, 10s
+      </button>
+    </div>
+  `,
+})
+class ToastDemo {
+  private readonly notifications = inject(NotificationService);
+
+  success(): void {
+    this.notifications.success('Saved', 'Your progress has been saved.');
+  }
+
+  error(): void {
+    this.notifications.error('Payment failed', 'Check your card details and try again.');
+  }
+
+  info(): void {
+    this.notifications.info('New content', 'Refresh to see the latest courses.');
+  }
+
+  sticky(): void {
+    this.notifications.info('Heads up', 'This one has no dismiss button.', {
+      closable: false,
+      duration: 10000,
+      position: 'bottom-center',
+    });
+  }
+}
+
+const meta: Meta<ToastDemo> = {
   title: 'UI/Toast',
-  component: ToastComponent,
+  component: ToastDemo,
   tags: ['autodocs'],
   decorators: [
-    (story) => ({
-      template: `<div style="width: 380px;">${story().template ?? ''}</div>`,
-      props: story().props,
-    }),
+    // The same binding `app.config.ts` makes: core resolves the toast through a token.
+    applicationConfig({ providers: [{ provide: TOAST_COMPONENT, useValue: Toast }] }),
   ],
-  argTypes: {
-    toast: { control: 'object', description: 'Toast data object' },
-  },
 };
 
 export default meta;
-type Story = StoryObj<ToastComponent>;
+type Story = StoryObj<ToastDemo>;
 
-export const Success: Story = {
-  args: {
-    toast: MOCK_SUCCESS_TOAST,
-  },
-};
-
-export const Error: Story = {
-  args: {
-    toast: MOCK_ERROR_TOAST,
-  },
-};
-
-export const Info: Story = {
-  args: {
-    toast: MOCK_INFO_TOAST,
-  },
-};
-
-export const NonClosable: Story = {
-  args: {
-    toast: { ...MOCK_INFO_TOAST, id: 'toast-nc', closable: false },
-  },
-};
-
-export const LongMessage: Story = {
-  args: {
-    toast: {
-      ...MOCK_ERROR_TOAST,
-      id: 'toast-long',
-      title: 'Payment Failed',
-      message:
-        'Your payment could not be processed. Please check your card details, ensure sufficient balance, and try again. If the issue persists, contact support.',
-    },
-  },
-};
-
-export const AllTypes: Story = {
-  render: () => ({
-    props: {
-      success: MOCK_SUCCESS_TOAST,
-      error: MOCK_ERROR_TOAST,
-      info: MOCK_INFO_TOAST,
-    },
-    template: `
-      <div style="width: 380px;" class="flex flex-col gap-4">
-        <app-toast [toast]="success" />
-        <app-toast [toast]="error" />
-        <app-toast [toast]="info" />
-      </div>
-    `,
-  }),
-};
+export const Default: Story = {};

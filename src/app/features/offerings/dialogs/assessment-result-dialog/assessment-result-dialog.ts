@@ -9,7 +9,8 @@ import {
 } from '@ng-icons/heroicons/outline';
 import { Button } from '@shared/ui/button/button';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
+import { Dialog } from '@shared/ui/dialog/dialog';
 
 export interface AssessmentResultData {
   isPassed: boolean;
@@ -23,7 +24,7 @@ export type AssessmentResultAction = 'report' | 'course' | 'retake';
 @Component({
   selector: 'app-assessment-result-dialog',
   standalone: true,
-  imports: [CommonModule, NgIconComponent, Button, DialogShell],
+  imports: [CommonModule, NgIconComponent, Button, Dialog],
   templateUrl: './assessment-result-dialog.html',
   viewProviders: [provideIcons({ heroCheckCircle, heroXCircle, heroArrowRight, heroArrowPath })],
 })

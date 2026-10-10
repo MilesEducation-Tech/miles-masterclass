@@ -13,7 +13,7 @@
 
     <app-webinar-about [webinar]="w" />
 
-    <app-webinar-faq />
+    <app-faq [standalone]="false" />
   } @else if (isLoading()) {
     <div class="flex justify-center py-24" role="status" aria-label="Loading webinar">
       <app-spinner size="xl" />

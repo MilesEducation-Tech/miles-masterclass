@@ -70,13 +70,27 @@
     }
   </div>
   @if (showEdit()) {
-    <app-button variant="ghost" size="icon" class="p-0! m-0" (clicked)="onEdit()">
+    <button
+      app-button
+      type="button"
+      class="p-0! m-0"
+      variant="ghost"
+      size="icon"
+      (click)="onEdit()"
+    >
       <ng-icon [svg]="icons.edit" class="w-6! h-6! text-blue-400" />
-    </app-button>
+    </button>
   }
   @if (showDelete()) {
-    <app-button variant="ghost" size="icon" class="p-0! m-0" (clicked)="onDelete()">
+    <button
+      app-button
+      type="button"
+      class="p-0! m-0"
+      variant="ghost"
+      size="icon"
+      (click)="onDelete()"
+    >
       <ng-icon [svg]="icons.delete" class="w-6! h-6! text-blue-400" />
-    </app-button>
+    </button>
   }
 </div>

@@ -1,39 +1,58 @@
 @let starts = startsAt();
 @let leadingIcon = icon();
 
-<div class="flex flex-col gap-2" [class.w-full]="prominent()">
+<div class="flex flex-col gap-2" [class]="prominent() ? 'w-full items-center' : ''">
   @if (isActionable()) {
-    <app-button
+    <button
+      app-button
+      type="button"
       [variant]="variant()"
-      [size]="prominent() ? 'lg' : 'default'"
+      [size]="prominent() ? 'lg' : 'md'"
       [class]="buttonClass()"
-      (clicked)="onClick()"
+      (click)="onClick()"
     >
       @if (leadingIcon) {
         <ng-icon [svg]="leadingIcon" size="1.15rem" aria-hidden="true" />
       }
       {{ label() }}
-    </app-button>
+    </button>
   } @else if (isBusy()) {
     <!-- Disabled rather than hidden: the button must not move under the cursor
          while the 202 handshake resolves. -->
-    <app-button
+    <button
+      app-button
+      type="button"
       [variant]="variant()"
-      [size]="prominent() ? 'lg' : 'default'"
+      [size]="prominent() ? 'lg' : 'md'"
       [class]="buttonClass()"
       [disabled]="true"
     >
-      <app-spinner size="xs" />
+      <!-- Not `app-spinner`. That component builds its colours by string
+           interpolation (`text-${trackColor} fill-${color}`), so Tailwind never
+           sees the class names: its default `text-neutral-tertiary` is not
+           emitted AT ALL — and `neutral-tertiary` is not a token — leaving the
+           track at `currentColor` and the arc at `fill-primary`, a deep navy.
+           Two dark tones on a greyed-out white button is the faint ring this
+           used to draw.
+
+           A bordered circle instead: `border-current` takes the button's own
+           text colour, so it reads on the white variant and the primary one
+           alike, and `border-t-transparent` is the gap that makes the spin
+           visible. Every class here is a literal, so Tailwind emits them. -->
+      <span
+        class="size-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+        aria-hidden="true"
+      ></span>
       <span>{{ label() }}</span>
-    </app-button>
+    </button>
   } @else if (dense()) {
     <!-- v2 rendered every non-actionable state as a DISABLED secondary button
          (`@case ('ended')` / `@case ('joined')`), not as a bordered chip. The
          chip was both wider and taller, which pushed the info button and the
          CPE pill onto a second line. -->
-    <app-button variant="secondary" class="rounded-md" [disabled]="true">
+    <button app-button type="button" class="rounded-md" variant="secondary" [disabled]="true">
       {{ label() }}
-    </app-button>
+    </button>
   } @else {
     <span
       class="inline-flex items-center gap-2 rounded-[8px] border border-outline bg-surface-raised px-6 py-3.5 text-sm text-muted-foreground"
@@ -45,10 +64,12 @@
 
   @if (showCountdown() && starts !== null) {
     <!-- The hero gets the sentence form; a card strip has no room for it. -->
+    <!-- The hero gets v3's four boxes; a card gets the one-line compact form. -->
     <app-webinar-countdown
+      [class.mt-2]="prominent()"
       [target]="starts"
-      [format]="prominent() ? 'long' : 'compact'"
-      [label]="prominent() ? 'This webinar starts in' : 'Starts in'"
+      [format]="prominent() ? 'cells' : 'compact'"
+      [label]="prominent() ? 'Webinar starts in' : 'Starts in'"
     />
   }
 

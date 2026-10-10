@@ -81,17 +81,19 @@
                         (keydown.enter)="canSend(row) && onSend(row)"
                         [attr.aria-label]="'Email to send seat to'"
                       />
-                      <app-button
+                      <button
+                        app-button
+                        type="button"
                         variant="primary"
                         size="sm"
                         [disabled]="!canSend(row)"
-                        (clicked)="onSend(row)"
+                        (click)="onSend(row)"
                       >
                         <span class="inline-flex items-center gap-1.5">
                           <ng-icon name="lucideSend" class="text-sm" aria-hidden="true" />
                           Send
                         </span>
-                      </app-button>
+                      </button>
                     </span>
                   } @else if (row.status === 'expired') {
                     <span class="text-xs text-neutral-500">Expired — sending disabled</span>
@@ -154,25 +156,29 @@
         of {{ pageWindow().total }}
       </span>
       <div class="flex items-center gap-3">
-        <app-button
+        <button
+          app-button
+          type="button"
+          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
           variant="outline"
           size="sm"
-          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
           [disabled]="!canPrev()"
-          (clicked)="prevPage.emit()"
+          (click)="prevPage.emit()"
         >
           Prev
-        </app-button>
+        </button>
         <span class="text-white/70 tabular-nums">Page {{ currentPage() }}</span>
-        <app-button
+        <button
+          app-button
+          type="button"
+          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
           variant="outline"
           size="sm"
-          class="h-9 rounded-md border-white/15 bg-transparent w-28 text-xs text-white hover:bg-white/5"
           [disabled]="!canNext()"
-          (clicked)="nextPage.emit()"
+          (click)="nextPage.emit()"
         >
           Next
-        </app-button>
+        </button>
       </div>
     </div>
   } @else if (!isLoading()) {

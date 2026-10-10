@@ -21,7 +21,7 @@ export const CTCPA: PartnerLandingConfig = {
       // Render the logo inline at the end of the heading text so the two read
       // as one phrase and wrap together (see PartnerContentItem.logosInline).
       logosInline: true,
-      logosClass: 'inline-flex items-center align-middle ml-2 gap-2',
+      logosClass: 'inline-flex items-center align-middle ms-2 gap-2',
       itemClass: 'py-1',
     },
     {

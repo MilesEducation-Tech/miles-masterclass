@@ -1,24 +1,47 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { FeedCard } from '../../models/webinar.model';
-import { ServerClock } from '../../services/server-clock';
-import { formatSessionLabel } from '../../utils/session-time';
-import { TICKET_ICON } from '../../utils/brand-assets';
-import { ctaFor, isLive, WebinarBucket } from '../../utils/webinar-status';
-import { JoinCta } from '../join-cta/join-cta';
+import { FeedCard } from '@features/offerings/webinar/models/webinar.model';
+import { ServerClock } from '@features/offerings/webinar/services/server-clock';
+import { WebinarFacade } from '@features/offerings/webinar/services/webinar-facade';
+import {
+  formatSessionLabel,
+  formatStartsIn,
+  parseIso,
+  sessionParts,
+} from '@features/offerings/webinar/utils/session-time';
+import { TICKET_ICON } from '@features/offerings/webinar/utils/brand-assets';
+import {
+  ctaFor,
+  sessionPhaseOf,
+  WebinarBucket,
+} from '@features/offerings/webinar/utils/webinar-status';
+import { JoinCta } from '@features/offerings/webinar/components/join-cta/join-cta';
+import { SeatForm } from '@features/offerings/webinar/components/seat-form/seat-form';
+import { WebinarCountdown } from '@features/offerings/webinar/components/webinar-countdown/webinar-countdown';
 
 /**
- * The banner: one highlighted webinar, centred over its own artwork.
+ * The banner, in the two layouts the v3 design draws.
  *
- * Deliberately flat — artwork, status pill, title, description, session time,
- * one call to action. The CTA is `app-join-cta`, so the twelve states the
- * machine in `webinar-status.ts` can produce all render here without this
+ * **Member** (`post_login`): the artwork centred over its glow, the LIVE
+ * pill, title, chips, the session caption and amber date line, the four-cell
+ * countdown once booked, and the CTA row. The CTA is `app-join-cta`, so every
+ * state the machine in `webinar-status.ts` produces renders here without this
  * component knowing about any of them.
+ *
+ * **Guest** (`pre_login`): the same webinar as a white "ticket" over a blurred
+ * full-bleed backdrop, beside a "Secure Your Seat" card that signs the visitor
+ * in and books the seat (`app-seat-form`). There is no CTA row for a guest —
+ * the card IS the call to action — and, as in v3, it shows whatever the
+ * session's phase, because the card is also how a guest joins a live one.
+ *
+ * Which layout renders follows `WebinarFacade.loginType()`, i.e. the session,
+ * not the bucket: on the server that is always `pre_login`, so a crawler and
+ * the first paint see the guest layout and hydration flips it for a member.
  */
 @Component({
   selector: 'app-webinar-hero',
   host: { class: 'block' },
-  imports: [JoinCta, RouterLink],
+  imports: [JoinCta, RouterLink, SeatForm, WebinarCountdown],
   templateUrl: './webinar-hero.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -45,27 +68,42 @@ export class WebinarHero {
   readonly join = output<string>();
 
   private readonly clock = inject(ServerClock);
+  private readonly facade = inject(WebinarFacade);
 
   protected readonly ticketIcon = TICKET_ICON;
 
+  protected readonly isGuest = computed(() => this.facade.loginType() === 'pre_login');
+
+  /** Read once per second so every phase-dependent piece below re-evaluates. */
+  private readonly now = computed(() => (this.clock.tick(), this.clock.now()));
+
   protected readonly cta = computed(() =>
     ctaFor(this.webinar(), {
-      now: (this.clock.tick(), this.clock.now()),
+      now: this.now(),
       bucket: this.bucket(),
       isRegistering: this.isRegistering(),
       isLockedElsewhere: this.isLockedElsewhere(),
     }),
   );
 
-  protected readonly live = computed(() => {
-    this.clock.tick();
-    return isLive(this.webinar(), this.clock.now());
+  protected readonly phase = computed(() => sessionPhaseOf(this.webinar(), this.now()));
+
+  /** "Upcoming Session" / "Live Now" / "Session Ended" — the caption over the date. */
+  protected readonly phaseCaption = computed(() => {
+    switch (this.phase()) {
+      case 'live':
+        return 'Live Now';
+      case 'ended':
+        return 'Session Ended';
+      default:
+        return 'Upcoming Session';
+    }
   });
 
   /**
    * Landscape crop, used both for the frame and — blurred and blown up — for
-   * the ambient glow behind it, so the halo picks up whatever colours this
-   * webinar's poster actually uses instead of a fixed brand wash.
+   * the ambient backdrop behind the guest ticket, so the wash picks up whatever
+   * colours this webinar's poster actually uses instead of a fixed brand tint.
    */
   protected readonly artwork = computed(() => {
     const w = this.webinar();
@@ -76,4 +114,31 @@ export class WebinarHero {
   protected readonly sessionLabel = computed(() =>
     formatSessionLabel(this.webinar().start_date_time),
   );
+
+  /** `NOV` / `12` / `7:00 PM` / `EST`, for the guest ticket's date pill. */
+  protected readonly session = computed(() => sessionParts(this.webinar().start_date_time));
+
+  protected readonly startsAt = computed(() => parseIso(this.webinar().start_date_time));
+
+  /** The amber "Webinar starts in 2 hrs" chip on the guest ticket; null once live. */
+  protected readonly startsIn = computed(() => {
+    const start = this.startsAt();
+    if (start === null || this.phase() !== 'upcoming') return null;
+    return formatStartsIn(start - this.now());
+  });
+
+  /** Field-of-study names, pipe-separated — the categories strip. */
+  protected readonly categories = computed(() =>
+    this.webinar()
+      .fields_of_study.map((f) => f.name)
+      .join(' | '),
+  );
+
+  /** `L1`, only when the level sits under the CAIRA subject. */
+  protected readonly cairaLevel = computed<string | null>(() => {
+    const w = this.webinar();
+    const level = w.level_details?.level_number;
+    if (!w.subject || level == null) return null;
+    return `L${level}`;
+  });
 }

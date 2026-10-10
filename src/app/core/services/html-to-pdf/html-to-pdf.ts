@@ -45,6 +45,9 @@ export class HtmlToPdf {
       // 1. Create offscreen host — fixed, off-screen, 1280px wide like the old platform
       offscreenHost = document.createElement('div');
       offscreenHost.setAttribute('aria-hidden', 'true');
+      // Documents are laid out left-to-right in every language. The clone is appended to <body>,
+      // so it would otherwise inherit an Arabic page's dir="rtl" and lose any ancestor's dir.
+      offscreenHost.dir = 'ltr';
       Object.assign(offscreenHost.style, {
         position: 'fixed',
         left: '-10000px',

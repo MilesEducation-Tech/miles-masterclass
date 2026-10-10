@@ -14,12 +14,9 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormField as AngularFormField, form, required, validate } from '@angular/forms/signals';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { AriaAutocomplete } from '@shared/ui/aria/aria-autocomplete/aria-autocomplete';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
-import { AriaMultiselect } from '@shared/ui/aria/aria-multiselect/aria-multiselect';
-import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+
 import { Button } from '@shared/ui/button/button';
-import { Forms } from '@shared/ui/forms/forms';
+
 import { AriaSelectOption } from '@core/models/aria.model';
 import { dialCodeWithLength } from '@core/constants/dial-code';
 import { placeSuggestions } from '@core/services/location-autocomplete/location-autocomplete';
@@ -28,6 +25,12 @@ import {
   OnboardUserPayload,
 } from '@admin/user-onboarding/models/user-onboarding.model';
 import { UserOnboardingFacade } from '@admin/user-onboarding/services/user-onboarding-facade';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
+import { Select } from '@shared/ui/select/select';
+import { Combobox } from '@shared/ui/combobox/combobox';
 
 interface UserFormModel {
   email: string;
@@ -87,15 +90,7 @@ function byLabel<T>(options: readonly AriaSelectOption<T>[], label: string | nul
  */
 @Component({
   selector: 'app-user-form',
-  imports: [
-    AngularFormField,
-    Forms,
-    AriaInput,
-    AriaSelect,
-    AriaMultiselect,
-    AriaAutocomplete,
-    Button,
-  ],
+  imports: [AngularFormField, Button, Field, NgpLabel, Input, Checkbox, Select, Combobox],
   templateUrl: './user-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block w-full' },

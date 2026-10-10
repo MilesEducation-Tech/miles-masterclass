@@ -1,9 +1,12 @@
 import { NavItem } from '@core/models/nav.model';
 
+// `label`, `subLabel` and `badge` are translation keys (`src/i18n/<lang>.json`); the header
+// translates them once, since the language is fixed for the life of the page.
+
 const LIBRARY_CHILDREN: readonly NavItem[] = [
-  { label: 'Course Library', type: 'link', route: 'library/course-library' },
+  { label: 'nav.courseLibrary', type: 'link', route: 'library/course-library' },
   // { label: 'Badge Library', type: 'link', route: 'library/badge-library' },
-  { label: 'Instructor Library', type: 'link', route: 'library/instructor-library' },
+  { label: 'nav.instructorLibrary', type: 'link', route: 'library/instructor-library' },
 ];
 
 /**
@@ -14,67 +17,69 @@ const LIBRARY_CHILDREN: readonly NavItem[] = [
  */
 export const LOGGED_IN_NAV: readonly NavItem[] = [
   {
-    label: 'Master Class',
-    subLabel: '(Netflix style Courses)',
+    label: 'nav.masterClass',
+    subLabel: 'nav.masterClassSub',
     type: 'link',
     route: 'masterclass',
   },
+  { label: 'nav.aiLabs', type: 'link', route: 'ai-labs', badge: 'nav.beta', highlight: true },
   // { label: 'CAIRA', type: 'link', route: 'caira' },
-  { label: 'Webinar', subLabel: '(Premiere)', type: 'link', route: 'webinar' },
-  { label: 'Reels', subLabel: '(Micro Learning)', type: 'link', route: 'micro-learning' },
-  { label: 'Podcast', subLabel: '(Audio Courses)', type: 'link', route: 'podcast' },
-  { label: 'Simulation', subLabel: '(AI Role-play)', type: 'link', route: 'simulation' },
+  { label: 'nav.webinar', subLabel: 'nav.webinarSub', type: 'link', route: 'webinar' },
+  { label: 'nav.reels', subLabel: 'nav.reelsSub', type: 'link', route: 'micro-learning' },
+  { label: 'nav.podcast', subLabel: 'nav.podcastSub', type: 'link', route: 'podcast' },
+  // { label: 'Simulation', subLabel: '(AI Role-play)', type: 'link', route: 'simulation' },
   {
-    label: 'Resources',
+    label: 'nav.resources',
     type: 'menu',
     children: [
-      { label: 'CAIRA Badges', type: 'link', route: 'caira-tracker' },
-      { label: 'CPE Tracker', type: 'link', route: 'cpe-tracker' },
-      { label: 'Plan', type: 'link', route: 'payment/plan' },
+      { label: 'nav.cairaBadges', type: 'link', route: 'caira-tracker' },
+      { label: 'nav.cpeTracker', type: 'link', route: 'cpe-tracker' },
+      { label: 'nav.plan', type: 'link', route: 'payment/plan' },
       {
-        label: 'Library',
+        label: 'nav.library',
         type: 'menu',
         children: LIBRARY_CHILDREN,
       },
     ],
   },
-  { label: 'Miles AI Labs', type: 'button', route: 'ai-labs', style: 'demo', badge: 'Beta' },
 ];
 
 /** Nav for unauthenticated visitors. */
 export const GUEST_NAV: readonly NavItem[] = [
-  {
-    label: 'CPE Solutions',
-    type: 'menu',
-    children: [
-      { label: 'Individual Learners', type: 'link', route: 'home' },
-      { label: 'Enterprise Solutions', type: 'link', route: 'cpe-for-corporate' },
-    ],
-  },
+  { label: 'nav.home', type: 'link', route: 'home' },
+  { label: 'nav.aiLabs', type: 'link', route: 'ai-labs', badge: 'nav.beta', highlight: true },
+  { label: 'nav.webinar', subLabel: 'nav.webinarSub', type: 'link', route: 'webinar' },
+  { label: 'nav.plans', type: 'link', route: 'payment/plan' },
+  // {
+  //   label: 'nav.cpeSolutions',
+  //   type: 'menu',
+  //   children: [
+  //     { label: 'nav.individualLearners', type: 'link', route: 'home' },
+  //     { label: 'nav.enterpriseSolutions', type: 'link', route: 'cpe-for-corporate' },
+  //   ],
+  // },
   // { label: 'CAIRA', type: 'link', route: 'caira' },
-  { label: 'Webinar', subLabel: '(Premiere)', type: 'link', route: 'webinar' },
   {
-    label: 'Learning Modes',
+    label: 'nav.resources',
     type: 'menu',
     children: [
+      { label: 'nav.enterpriseSolutions', type: 'link', route: 'cpe-for-corporate' },
       {
-        label: 'Master Class',
-        subLabel: '(Netflix style Courses)',
-        type: 'link',
-        route: 'masterclass',
+        label: 'nav.learningModes',
+        type: 'menu',
+        children: [
+          {
+            label: 'nav.masterClass',
+            subLabel: 'nav.masterClassSub',
+            type: 'link',
+            route: 'masterclass',
+          },
+          { label: 'nav.reels', subLabel: 'nav.reelsSub', type: 'link', route: 'micro-learning' },
+          { label: 'nav.podcast', subLabel: 'nav.podcastSub', type: 'link', route: 'podcast' },
+        ],
       },
-      { label: 'Reels', subLabel: '(Micro Learning)', type: 'link', route: 'micro-learning' },
-      { label: 'Podcast', subLabel: '(Audio Courses)', type: 'link', route: 'podcast' },
+      { label: 'nav.library', type: 'menu', children: LIBRARY_CHILDREN },
     ],
   },
-  {
-    label: 'Resources',
-    type: 'menu',
-    children: [
-      { label: 'Plan', type: 'link', route: 'payment/plan' },
-      { label: 'Library', type: 'menu', children: LIBRARY_CHILDREN },
-    ],
-  },
-  { label: 'Miles AI Labs', type: 'button', route: 'ai-labs', style: 'demo', badge: 'Beta' },
-  { label: 'Sign Up', type: 'button', actionKind: 'signup', style: 'signup' },
+  { label: 'nav.signUp', type: 'button', actionKind: 'signup', style: 'signup' },
 ];

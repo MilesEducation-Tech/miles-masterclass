@@ -41,7 +41,7 @@ export class WebinarBadgeCard {
 
   protected readonly cardClass = computed(() =>
     cn(
-      'flex h-full w-full items-center gap-4 overflow-hidden rounded-2xl border border-border/50 bg-muted/60 p-4 text-left transition-colors',
+      'flex h-full w-full items-center gap-4 overflow-hidden rounded-2xl border border-border/50 bg-muted/60 p-4 text-start transition-colors',
       'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
       this.ui().ring,
       this.isActionable() ? 'cursor-pointer hover:bg-muted' : 'cursor-default opacity-80',

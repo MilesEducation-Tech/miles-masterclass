@@ -3,69 +3,85 @@
 
 @if (webinars().length > 0 || showWhenEmpty()) {
   <section class="mx-auto w-full max-w-360">
-    <header class="flex flex-col items-center text-center">
-      <!-- Heading, flanked by a rule that ends in a diamond on each side. The
-           rules are centred on the whole heading block, so they sit beside a
-           one-line heading on desktop and beside the stacked one on mobile. -->
-      <div class="flex w-full items-center justify-center gap-3 sm:gap-5">
-        <span class="flex flex-1 items-center justify-end gap-1.5 sm:flex-none" aria-hidden="true">
-          <span class="h-px w-12 bg-linear-to-r from-transparent to-foreground/45 sm:w-24"></span>
-          <span class="size-1.5 rotate-45 bg-foreground/70"></span>
-        </span>
+    @if (variant() === 'guest') {
+      <header class="text-center">
+        <h2 class="text-2xl font-semibold sm:text-3xl">{{ heading() }}</h2>
+        @if (description(); as desc) {
+          <p class="mx-auto mt-2 max-w-2xl text-sm text-pretty text-muted-foreground">{{ desc }}</p>
+        }
+      </header>
+    } @else {
+      <header class="flex flex-col items-center text-center">
+        <!-- Heading, flanked by a rule that ends in a diamond on each side. The
+             rules are centred on the whole heading block, so they sit beside a
+             one-line heading on desktop and beside the stacked one on mobile. -->
+        <div class="flex w-full items-center justify-center gap-3 sm:gap-5">
+          <span
+            class="flex flex-1 items-center justify-end gap-1.5 sm:flex-none"
+            aria-hidden="true"
+          >
+            <span
+              class="h-px w-12 bg-linear-to-r rtl:bg-linear-to-l from-transparent to-foreground/45 sm:w-24"
+            ></span>
+            <span class="size-1.5 rotate-45 bg-foreground/70"></span>
+          </span>
 
-        <h2
-          class="flex flex-col items-center gap-1.5 text-2xl font-bold tracking-wide sm:flex-row sm:gap-3 sm:text-3xl md:text-4xl"
-        >
-          @if (withCairaMark()) {
-            <!-- The wordmark carries its own "Certified AI-Ready Accountant"
-                 lockup, so it is sized by height and the alt text stands in for
-                 the word it replaces in the heading. -->
-            <img
-              [src]="cairaMark"
-              alt="CAIRA"
-              class="h-8 w-auto shrink-0 sm:h-9 md:h-10"
-              loading="lazy"
-              decoding="async"
-            />
-          }
-          <span>{{ heading() }}</span>
-        </h2>
+          <h2
+            class="flex flex-col items-center gap-1.5 text-2xl font-bold tracking-wide sm:flex-row sm:gap-3 sm:text-3xl md:text-4xl"
+          >
+            @if (withCairaMark()) {
+              <!-- The wordmark carries its own "Certified AI-Ready Accountant"
+                   lockup, so it is sized by height and the alt text stands in for
+                   the word it replaces in the heading. -->
+              <img
+                [src]="cairaMark"
+                alt="CAIRA"
+                class="h-8 w-auto shrink-0 sm:h-9 md:h-10"
+                loading="lazy"
+                decoding="async"
+              />
+            }
+            <span>{{ heading() }}</span>
+          </h2>
 
-        <span class="flex flex-1 items-center gap-1.5 sm:flex-none" aria-hidden="true">
-          <span class="size-1.5 rotate-45 bg-foreground/70"></span>
-          <span class="h-px w-12 bg-linear-to-l from-transparent to-foreground/45 sm:w-24"></span>
-        </span>
-      </div>
-
-      @if (description(); as desc) {
-        <p class="mt-4 max-w-xl text-sm text-pretty text-muted-foreground md:text-base">
-          {{ desc }}
-        </p>
-      }
-
-      @if (tabs.length > 0) {
-        <div
-          class="mt-6 inline-flex items-center gap-1 rounded-full border border-border bg-muted/60 p-1.5 md:mt-8"
-          role="group"
-          [attr.aria-label]="heading() + ' level filter'"
-        >
-          @for (level of tabs; track level.number) {
-            @let isSelected = selectedLevel() === level.number;
-            <button
-              type="button"
-              [attr.aria-pressed]="isSelected"
-              class="cursor-pointer rounded-full px-5 py-2 text-sm font-medium transition-colors sm:px-7"
-              [class]="
-                isSelected ? 'bg-white text-black' : 'text-muted-foreground hover:text-foreground'
-              "
-              (click)="selectedLevel.set(level.number)"
-            >
-              {{ level.name }}
-            </button>
-          }
+          <span class="flex flex-1 items-center gap-1.5 sm:flex-none" aria-hidden="true">
+            <span class="size-1.5 rotate-45 bg-foreground/70"></span>
+            <span
+              class="h-px w-12 bg-linear-to-l rtl:bg-linear-to-r from-transparent to-foreground/45 sm:w-24"
+            ></span>
+          </span>
         </div>
-      }
-    </header>
+
+        @if (description(); as desc) {
+          <p class="mt-4 max-w-xl text-sm text-pretty text-muted-foreground md:text-base">
+            {{ desc }}
+          </p>
+        }
+
+        @if (tabs.length > 0) {
+          <div
+            class="mt-6 inline-flex h-[62px] items-center gap-0 rounded-[26px] border-[1.5px] border-white/18 bg-white/8 p-1.5 md:mt-8"
+            role="group"
+            [attr.aria-label]="heading() + ' level filter'"
+          >
+            @for (level of tabs; track level.number) {
+              @let isSelected = selectedLevel() === level.number;
+              <button
+                type="button"
+                [attr.aria-pressed]="isSelected"
+                class="cursor-pointer rounded-full px-5 py-2 text-sm font-medium transition-colors sm:px-7"
+                [class]="
+                  isSelected ? 'bg-white text-black' : 'text-muted-foreground hover:text-foreground'
+                "
+                (click)="selectedLevel.set(level.number)"
+              >
+                {{ level.name }}
+              </button>
+            }
+          </div>
+        }
+      </header>
+    }
 
     @if (items.length > 0) {
       @if (isStrip()) {
@@ -91,7 +107,8 @@
              the same cards stack as full-width rows. Pure CSS, so it costs no
              JS and needs no viewport probe that SSR would have to guess at. -->
         <div
-          class="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] md:mt-14 md:snap-none md:flex-col md:gap-12 md:overflow-x-visible md:pb-0"
+          class="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] md:mt-14 md:snap-none md:flex-col md:overflow-x-visible md:pb-0"
+          [class]="variant() === 'guest' ? 'mx-auto max-w-6xl md:gap-6' : 'md:gap-12 lg:gap-[63px]'"
         >
           @for (webinar of items; track webinar.id) {
             <app-webinar-card

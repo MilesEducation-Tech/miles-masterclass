@@ -1,8 +1,11 @@
 import { Component } from '@angular/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { VideoJs, VideoSource, VideoConfig } from '../../components/video-js/video-js';
 import { Button } from '../../ui/button/button';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface VideoDialogData {
   title?: string;
@@ -12,22 +15,35 @@ export interface VideoDialogData {
 
 @Component({
   selector: 'app-video-dialog',
-  imports: [VideoJs, Button, DialogShell],
+  imports: [VideoJs, Button, Dialog, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   template: `
-    <app-dialog-shell maxWidth="100%" [ariaLabel]="data.title || 'Video'">
+    <!-- The panel shrinks to the 50vw player and centres. With the panel's default
+         w-full it spanned the viewport, leaving the player in its left half. -->
+    <app-dialog [ariaLabel]="data.title || 'Video'" panelClass="p-0 w-auto max-w-none">
       <div class="h-full w-[50vw] flex flex-col bg-background text-foreground overflow-hidden">
         <!-- Header -->
         <div
           class="flex items-center justify-between p-4 border-b border-border z-10 bg-background relative shrink-0"
         >
           @if (data.title) {
-            <h2 class="text-lg font-semibold truncate pr-4">{{ data.title }}</h2>
+            <h2 class="text-lg font-semibold truncate pe-4">{{ data.title }}</h2>
           } @else {
             <!-- Spacer to ensure close button alignment if needed -->
             <span></span>
           }
 
-          <app-button variant="close" (clicked)="close()" aria-label="Close dialog" />
+          <button
+            app-button
+            type="button"
+            class="rounded-full"
+            aria-label="Close dialog"
+            variant="ghost"
+            size="icon"
+            (click)="close()"
+          >
+            <ng-icon name="heroXMark" aria-hidden="true" />
+          </button>
         </div>
 
         <!-- Video Content -->
@@ -39,7 +55,7 @@ export interface VideoDialogData {
           />
         </div>
       </div>
-    </app-dialog-shell>
+    </app-dialog>
   `,
   host: { class: 'block h-full w-full max-h-[inherit]' },
 })

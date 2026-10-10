@@ -1,34 +1,43 @@
 <div class="flex flex-col gap-1.5 rounded-md border border-white/10 p-2">
   @for (code of codes(); track code.id) {
     <div class="flex flex-wrap items-center gap-3 rounded px-2 py-1.5 hover:bg-white/5">
-      <app-aria-input
-        [id]="'alloc-code-' + code.id"
-        type="checkbox"
-        [label]="code.code + (code.network || code.firm ? '' : ' (global)')"
-        [value]="isSelected(code.id)"
-        (valueChange)="toggleCode(code.id, $any($event) === true)"
-      />
+      <app-field class="flex-row items-start gap-3">
+        <app-checkbox
+          [id]="'alloc-code-' + code.id"
+          [checked]="isSelected(code.id)"
+          (checkedChange)="toggleCode(code.id, $event)"
+        />
+        <div class="flex flex-col gap-0.5">
+          <span ngpLabel>{{ code.code + (code.network || code.firm ? '' : ' (global)') }}</span>
+        </div>
+      </app-field>
       <span class="text-xs text-neutral-400 ml-auto tabular-nums">
         {{ +code.discounted_price | currency: 'USD' : 'symbol' : '1.0-2' }}
       </span>
       @if (isSelected(code.id)) {
-        <app-aria-input
-          [id]="'alloc-count-' + code.id"
-          type="number"
-          label="Seats"
-          [min]="1"
-          class="w-28"
-          [value]="count(code.id)"
-          (valueChange)="onCountChange(code.id, $any($event))"
-        />
-        <app-aria-input
-          [id]="'alloc-expiry-' + code.id"
-          type="date"
-          label="Expiry (optional)"
-          class="w-44"
-          [value]="expiry(code.id)"
-          (valueChange)="onExpiryChange(code.id, $any($event))"
-        />
+        <app-field class="w-28">
+          <label ngpLabel [for]="'alloc-count-' + code.id">Seats</label>
+
+          <input
+            app-input
+            [id]="'alloc-count-' + code.id"
+            type="number"
+            [min]="1"
+            [value]="count(code.id)"
+            (input)="onCountChange(code.id, $any($any($event.target).value))"
+          />
+        </app-field>
+        <app-field class="w-44">
+          <label ngpLabel [for]="'alloc-expiry-' + code.id">Expiry (optional)</label>
+
+          <input
+            app-input
+            [id]="'alloc-expiry-' + code.id"
+            type="date"
+            [value]="expiry(code.id)"
+            (input)="onExpiryChange(code.id, $any($any($event.target).value))"
+          />
+        </app-field>
       }
     </div>
   }

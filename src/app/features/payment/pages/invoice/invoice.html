@@ -1,4 +1,6 @@
+<!-- dir="ltr": an invoice is a document, laid out the same in every language (and captured to PDF). -->
 <div
+  dir="ltr"
   [class]="
     isInvoice()
       ? 'md:w-9/12 w-11/12 mx-auto mt-32'
@@ -92,10 +94,16 @@
       >
         <div class="flex w-full justify-between no-print">
           <p class="text-2xl text-white font-semibold">Order Details</p>
-          <app-button variant="default" class="gap-2" (clicked)="downloadInvoice()">
+          <button
+            app-button
+            type="button"
+            class="gap-2"
+            variant="default"
+            (click)="downloadInvoice()"
+          >
             <ng-icon name="heroArrowDownTray" size="18" aria-hidden="true" />
             Download Invoice
-          </app-button>
+          </button>
         </div>
         <div class="flex w-full justify-between">
           <p>Order Number</p>
@@ -189,12 +197,18 @@
         </div>
       </div>
       <div class="flex justify-between w-full items-center mt-auto">
-        <app-button variant="ghost" [routerLink]="cartRoute()">
+        <button app-button type="button" variant="ghost" [routerLink]="cartRoute()">
           <ng-icon name="heroChevronLeft" size="18" /> Back to Cart
-        </app-button>
-        <app-button variant="default" [disabled]="!termsAccepted()" (clicked)="proceedToPayment()">
+        </button>
+        <button
+          app-button
+          type="button"
+          variant="default"
+          [disabled]="!termsAccepted()"
+          (click)="proceedToPayment()"
+        >
           Proceed to Payment
-        </app-button>
+        </button>
       </div>
     } @else {}
   </div>

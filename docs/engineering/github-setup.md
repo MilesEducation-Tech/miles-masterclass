@@ -16,7 +16,7 @@ Enforcement happens in three places, and each catches a different class of mista
 | Layer                                      | Runs                         | Catches                                                                                                    | Can be bypassed?             |
 | ------------------------------------------ | ---------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------- |
 | **Local** — husky, lint-staged, commitlint | On your machine, at commit   | Formatting, lint, bad commit message, bad branch name                                                      | Yes, with `--no-verify`      |
-| **CI** — GitHub Actions                    | On every PR push             | Broken build, failing tests, bad PR title, bad commits, boundary violations                                | No, if the check is required |
+| **CI** — GitHub Actions                    | On every PR push             | Broken build, bad PR title, bad commits, boundary violations                                               | No, if the check is required |
 | **Platform** — rulesets                    | At push/merge time on GitHub | Direct pushes to `master`, unreviewed merges, red merges, deleted branches, force-pushes, unprotected tags | Only by listed bypass actors |
 
 Local hooks are for speed, CI is for truth, and rulesets are for the rules that _must_ hold. Never rely on a
@@ -111,7 +111,7 @@ What that means in practice:
 | @me-sachin-singh pushes to `master` | Allowed                                                           |
 
 The bypass exists so the owner is never blocked, not so the process gets skipped. Two habits keep it honest:
-still open a PR for your own work (you get CI, the preview URL and a reviewable diff), and don't merge red —
+still open a PR for your own work (you get CI and a reviewable diff), and don't merge red —
 if a required check is wrong, fix the check rather than bypassing it. When a second reliable reviewer exists,
 narrow the bypass to "Pull requests" mode or remove it, and turn "Require approval of the most recent push"
 back on.
@@ -210,7 +210,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm format
       - run: pnpm lint
-      - run: pnpm ng test --watch=false
       - run: pnpm build:prod
       - run: pnpm build-storybook
 ```
@@ -229,8 +228,7 @@ Notes:
 - A check only appears in the ruleset picker **after it has run at least once**. So merge the workflow first,
   then add it as required. Getting this backwards is the classic way to lock the repo: a required check that
   has never reported sits at "pending" forever, and the PR that would fix it is blocked too.
-- Keep `verify` as one job while the suite is fast. Split it into `lint` / `test` / `build` jobs (and require all
-  three) when you want parallelism and clearer failure signals — but remember to mark **all** of them
+- Keep `verify` as one job while the suite is fast. Split it into `lint` / `build` jobs (and require both) when you want parallelism and clearer failure signals — but remember to mark **all** of them
   required, or splitting quietly weakens the gate.
 - `permissions: contents: read` at the top means a compromised dependency in CI can't push to the repo.
   Also set Settings → Actions → General → Workflow permissions to **read-only** as the org default.
@@ -358,12 +356,10 @@ browser, and steps. That closes the loop with the build-identity work in `versio
 
 ## 7. Vercel integration
 
-- Connect the repo through the Vercel GitHub app. Production deploys from `master`; every PR gets a preview.
-- Set env vars per environment in Vercel (Production / Preview / Development), not in the repo.
+- Connect the repo through the Vercel GitHub app. Production deploys from `master`. **Preview deployments are disabled**; a custom **UAT** environment
+  tracks the `uat` branch (protected by `.github/rulesets/uat.json`, flow in `git-playbook.md` §5).
+- Set env vars per environment in Vercel (Production / UAT / Development), not in the repo.
 - Enable **Skew Protection** (Settings → Advanced) and wire the deployment ID into requests — see `versioning.md`.
-- Consider adding Vercel's deployment status as a required check so a PR can't merge if its preview failed to
-  build. Verify it reports reliably on your plan first; a check that sometimes doesn't post will block every merge.
-- Use the Ignored Build Step to skip preview builds for docs-only branches if preview minutes become a concern.
 
 > If you ever rename the default branch, Vercel's production branch must be changed in the dashboard in the
 > same window, or production deploys stop silently.
@@ -457,7 +453,7 @@ What is left, in this order — step 1 before step 3 is the part that matters:
 ## Verification checklist
 
 - [ ] `git push origin master` is rejected
-- [ ] A PR with a failing test cannot be merged
+- [ ] A PR with a failing build cannot be merged
 - [ ] A PR titled `update stuff` fails the `pr-title` check
 - [ ] A local `git commit -m "update"` is rejected by commitlint
 - [ ] A commit on a branch named `my-stuff` is rejected locally, and the PR fails `branch-name` in CI
@@ -469,4 +465,4 @@ What is left, in this order — step 1 before step 3 is the part that matters:
 - [ ] The head branch is deleted after merge
 - [ ] `git tag -d v3.0.1 && git push --delete origin v3.0.1` is rejected
 - [ ] A commit containing a fake token is blocked by push protection
-- [ ] A Vercel preview URL appears on every PR
+- [ ] A push to `uat` by a non-admin is rejected, and an admin's push deploys to the UAT environment

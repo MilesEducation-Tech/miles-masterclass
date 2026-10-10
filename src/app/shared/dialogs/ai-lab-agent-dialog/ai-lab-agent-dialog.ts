@@ -5,7 +5,7 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matPlayArrowRound } from '@ng-icons/material-icons/round';
 import { NgpRadioGroup, NgpRadioIndicator, NgpRadioItem } from 'ng-primitives/radio';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { ContentDetails } from '@core/models/course.model';
@@ -18,6 +18,8 @@ import { AiLabSubmission } from '@core/services/ai-lab-submission/ai-lab-submiss
 import { MilesSlug } from '../../components/miles-slug/miles-slug';
 import { Button } from '../../ui/button/button';
 import { environment } from '@env/environment';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 /**
  * One catalogue tile, flattened from either a masterclass chapter or a static
@@ -75,10 +77,10 @@ export type AiLabAgentDialogResult = 'launch';
     NgpRadioGroup,
     NgpRadioIndicator,
     NgpRadioItem,
-    DialogShell,
+    Dialog,
   ],
   templateUrl: './ai-lab-agent-dialog.html',
-  providers: [provideIcons({ matPlayArrowRound })],
+  providers: [provideIcons({ matPlayArrowRound, heroXMark })],
 })
 export class AiLabAgentDialog implements OnInit {
   private readonly dialogRef = injectDialogRef<AiLabAgentCard, AiLabAgentDialogResult>();

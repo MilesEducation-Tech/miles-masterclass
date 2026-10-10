@@ -10,7 +10,9 @@
       </p>
     </div>
     @if (!showForm()) {
-      <app-button variant="default" (clicked)="openForm()">New admin user</app-button>
+      <button app-button type="button" variant="default" (click)="openForm()">
+        New admin user
+      </button>
     }
   </header>
 
@@ -74,56 +76,72 @@
               </td>
               <td class="px-4 py-2 text-right">
                 <div class="inline-flex items-center gap-2">
-                  <app-button
+                  <button
+                    app-button
+                    type="button"
+                    class="text-white"
                     variant="outline"
                     size="sm"
-                    class="text-white"
-                    (clicked)="editRoles(admin)"
+                    (click)="editRoles(admin)"
                   >
                     Roles
-                  </app-button>
-                  <app-button
+                  </button>
+                  <button
+                    app-button
+                    type="button"
+                    class="text-white"
                     variant="outline"
                     size="sm"
-                    class="text-white"
-                    (clicked)="editDomains(admin)"
+                    (click)="editDomains(admin)"
                   >
                     Domains
-                  </app-button>
-                  <app-button
+                  </button>
+                  <button
+                    app-button
+                    type="button"
+                    class="text-white"
                     variant="outline"
                     size="sm"
-                    class="text-white"
-                    (clicked)="openRegister(admin)"
                     title="Create the Django partner-admin row for an existing login"
+                    (click)="openRegister(admin)"
                   >
                     Register partner admin
-                  </app-button>
+                  </button>
                   @if (admin.user_id === currentUserId()) {
                     <span class="text-xs text-white/40">You</span>
                   } @else {
                     @if (admin.is_active) {
-                      <app-button
+                      <button
+                        app-button
+                        type="button"
+                        class="text-white"
                         variant="outline"
                         size="sm"
-                        class="text-white"
-                        (clicked)="toggleActive(admin)"
+                        (click)="toggleActive(admin)"
                       >
                         Disable
-                      </app-button>
+                      </button>
                     } @else {
-                      <app-button
+                      <button
+                        app-button
+                        type="button"
+                        class="text-white"
                         variant="outline"
                         size="sm"
-                        class="text-white"
-                        (clicked)="toggleActive(admin)"
+                        (click)="toggleActive(admin)"
                       >
                         Enable
-                      </app-button>
+                      </button>
                     }
-                    <app-button variant="destructive" size="sm" (clicked)="deleteUser(admin)">
+                    <button
+                      app-button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      (click)="deleteUser(admin)"
+                    >
                       Delete
-                    </app-button>
+                    </button>
                   }
                 </div>
               </td>
@@ -151,9 +169,16 @@
             Configure new admin
           }
         </h2>
-        <app-button variant="outline" size="sm" class="text-white" (clicked)="closeForm()">
+        <button
+          app-button
+          type="button"
+          class="text-white"
+          variant="outline"
+          size="sm"
+          (click)="closeForm()"
+        >
           Cancel
-        </app-button>
+        </button>
       </div>
 
       @if (prefilledNetworkName()) {
@@ -172,14 +197,29 @@
 
       @if (!registerFor()) {
         <div class="grid gap-4 md:grid-cols-2">
-          <app-aria-input
-            id="new-admin-email"
-            type="email"
-            label="Email"
-            [required]="true"
-            [(value)]="email"
-          />
-          <app-aria-input id="new-admin-name" type="text" label="Full name" [(value)]="fullName" />
+          <app-field>
+            <label ngpLabel for="new-admin-email">Email</label>
+
+            <input
+              app-input
+              id="new-admin-email"
+              type="email"
+              [required]="true"
+              [value]="email()"
+              (input)="email.set($any($event.target).value)"
+            />
+          </app-field>
+          <app-field>
+            <label ngpLabel for="new-admin-name">Full name</label>
+
+            <input
+              app-input
+              id="new-admin-name"
+              type="text"
+              [value]="fullName()"
+              (input)="fullName.set($any($event.target).value)"
+            />
+          </app-field>
         </div>
 
         <fieldset class="flex flex-col gap-2">
@@ -191,36 +231,49 @@
           </legend>
           <div class="grid gap-2 sm:grid-cols-2">
             @for (role of facade.roles(); track role.id) {
-              <app-aria-input
-                [id]="'new-admin-role-' + role.slug"
-                type="checkbox"
-                [label]="role.name"
-                [description]="role.description ?? ''"
-                [disabled]="isRoleLocked(role.slug)"
-                [value]="isRoleChecked(role.slug)"
-                (valueChange)="toggleRole(role.slug, $any($event) === true)"
-              />
+              <app-field class="flex-row items-start gap-3">
+                <app-checkbox
+                  [id]="'new-admin-role-' + role.slug"
+                  [disabled]="isRoleLocked(role.slug)"
+                  [checked]="isRoleChecked(role.slug)"
+                  (checkedChange)="toggleRole(role.slug, $event)"
+                />
+                <div class="flex flex-col gap-0.5">
+                  <span ngpLabel>{{ role.name }}</span>
+                  <p ngpDescription>{{ role.description ?? '' }}</p>
+                </div>
+              </app-field>
             }
           </div>
         </fieldset>
 
-        <app-aria-input
-          id="new-admin-domains"
-          type="text"
-          label="Email domains"
-          placeholder="acme.com, partner.org"
-          [(value)]="domains"
-        />
+        <app-field>
+          <label ngpLabel for="new-admin-domains">Email domains</label>
+
+          <input
+            app-input
+            id="new-admin-domains"
+            type="text"
+            placeholder="acme.com, partner.org"
+            [value]="domains()"
+            (input)="domains.set($any($event.target).value)"
+          />
+        </app-field>
         <p class="-mt-3 text-xs text-white/50">
           Domains this admin manages on the partner-user screens. Separate multiple with commas.
         </p>
 
-        <app-aria-input
-          id="new-admin-report-type"
-          type="text"
-          label="Report type (optional)"
-          [(value)]="reportType"
-        />
+        <app-field>
+          <label ngpLabel for="new-admin-report-type">Report type (optional)</label>
+
+          <input
+            app-input
+            id="new-admin-report-type"
+            type="text"
+            [value]="reportType()"
+            (input)="reportType.set($any($event.target).value)"
+          />
+        </app-field>
         <p class="-mt-3 text-xs text-white/50">
           Forwarded as the <code>report_type</code> filter on the vendor users screen.
         </p>
@@ -237,36 +290,46 @@
           </div>
 
           @if (isSuperSelected()) {
-            <app-aria-input
-              id="new-admin-register-super"
-              type="checkbox"
-              label="Register as a Django super admin"
-              description="Needed to use the Partner v2 super-admin console. Untick for a super admin who won't touch partners."
-              [value]="registerPartnerSuper()"
-              (valueChange)="registerPartnerSuper.set($any($event) === true)"
-            />
+            <app-field class="flex-row items-start gap-3">
+              <app-checkbox
+                id="new-admin-register-super"
+                [checked]="registerPartnerSuper()"
+                (checkedChange)="registerPartnerSuper.set($event)"
+              />
+              <div class="flex flex-col gap-0.5">
+                <span ngpLabel>Register as a Django super admin</span>
+                <p ngpDescription>
+                  Needed to use the Partner v2 super-admin console. Untick for a super admin who
+                  won't touch partners.
+                </p>
+              </div>
+            </app-field>
           }
 
           @if (partnerMapping()?.scope === 'either') {
-            <app-aria-select
-              id="partner-scope"
-              label="Network or firm"
-              placeholder="Select a network or firm"
-              [required]="true"
-              [options]="scopeOptions()"
-              [(value)]="partnerScope"
-            />
+            <app-field>
+              <label ngpLabel for="partner-scope">Network or firm</label>
+
+              <app-select
+                id="partner-scope"
+                placeholder="Select a network or firm"
+                [options]="scopeOptions()"
+                [(value)]="partnerScope"
+              />
+            </app-field>
           }
 
           @if (partnerMapping()?.scope === 'firm') {
-            <app-aria-select
-              id="partner-firm"
-              label="Firm (sub-company)"
-              placeholder="Select a firm"
-              [required]="true"
-              [options]="firmOptions()"
-              [(value)]="partnerFirmId"
-            />
+            <app-field>
+              <label ngpLabel for="partner-firm">Firm (sub-company)</label>
+
+              <app-select
+                id="partner-firm"
+                placeholder="Select a firm"
+                [options]="firmOptions()"
+                [(value)]="partnerFirmId"
+              />
+            </app-field>
           }
 
           @if (effectiveRole() !== 'super') {
@@ -275,11 +338,19 @@
               <p class="text-xs text-white/50">
                 Pre-set for a {{ effectiveRole() }} admin; each one gates an action in the panel.
               </p>
-              <app-checkbox-list
-                [options]="capabilityOptions"
-                [selected]="selectedCapabilities()"
-                (selectionChange)="onCapabilitiesChange($event)"
-              />
+              <app-listbox
+                mode="multiple"
+                [value]="selectedCapabilities()"
+                (valueChange)="onCapabilitiesChange($event)"
+              >
+                @for (option of capabilityOptions; track option.value) {
+                  <app-listbox-option
+                    [value]="option.value"
+                    [disabled]="option.disabled ?? false"
+                    >{{ option.label }}</app-listbox-option
+                  >
+                }
+              </app-listbox>
             </div>
           } @else {
             <p class="text-xs text-white/50">
@@ -304,14 +375,17 @@
               </legend>
               <div class="grid gap-2 sm:grid-cols-2">
                 @for (perm of group.perms; track perm.key) {
-                  <app-aria-input
-                    [id]="'new-admin-perm-' + perm.id"
-                    type="checkbox"
-                    [label]="perm.label"
-                    [description]="perm.key"
-                    [value]="isChecked(perm.key)"
-                    (valueChange)="toggle(perm.key, $any($event) === true)"
-                  />
+                  <app-field class="flex-row items-start gap-3">
+                    <app-checkbox
+                      [id]="'new-admin-perm-' + perm.id"
+                      [checked]="isChecked(perm.key)"
+                      (checkedChange)="toggle(perm.key, $event)"
+                    />
+                    <div class="flex flex-col gap-0.5">
+                      <span ngpLabel>{{ perm.label }}</span>
+                      <p ngpDescription>{{ perm.key }}</p>
+                    </div>
+                  </app-field>
                 }
               </div>
             </fieldset>
@@ -320,17 +394,19 @@
       }
 
       <div class="flex items-center gap-3">
-        <app-button
+        <button
+          app-button
+          type="button"
           variant="default"
           [disabled]="!canSubmit() || isSubmitting()"
-          (clicked)="provision()"
+          (click)="provision()"
         >
           @if (registerFor()) {
             {{ isSubmitting() ? 'Registering…' : 'Register partner admin' }}
           } @else {
             {{ isSubmitting() ? 'Creating…' : 'Create admin' }}
           }
-        </app-button>
+        </button>
       </div>
     </div>
   }

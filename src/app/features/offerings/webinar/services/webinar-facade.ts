@@ -11,8 +11,8 @@ import {
   ResourceSnapshot,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { environment } from '@env/environment';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { apiUrl } from '@core/services/api-client/api-client';
@@ -21,7 +21,7 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 import { NotificationService } from '@core/services/notification/notification';
 // Type-only: UtilsDialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
-import { withPreviousValue } from '@shared/utils/with-previous-value';
+import { withPreviousValue } from '@core/utils/with-previous-value';
 import {
   FeedCard,
   LoginType,
@@ -34,7 +34,6 @@ import {
 } from '../models/webinar.model';
 import { toWebinarError, WebinarError } from '../utils/webinar-error';
 import type { WebinarBucket } from '../utils/webinar-status';
-import { buildPreviewFeed, PREVIEW_ON, PREVIEW_PARAM } from '../utils/webinar-preview';
 import { WebinarRegistration } from './webinar-registration';
 
 /**
@@ -58,21 +57,6 @@ const EMPTY_FEED: WebinarMainPageData = {
   missed_webinar: [],
 };
 
-/**
- * Whether the stand-in feed can be reached at all. `false` in every production
- * build, where the page is always bound to the live API.
- *
- * The page is now bound to the API BY DEFAULT — the stand-in is opt-in with
- * `?preview=design`, and exists only because UAT still has no future-dated
- * webinar, so there is otherwise no way to look at the hero or the upcoming
- * rail. Delete `webinar-preview.ts` and this flag once it does.
- *
- * Note this does NOT tree-shake that module out of the bundle:
- * `environment.production` is a property read on an object, not a literal, so
- * no bundler can fold the branch. It ships inert (~2 kB, lazy webinar chunk).
- */
-const PREVIEW_ENABLED = !environment.production;
-
 @Service({ autoProvided: false })
 export class WebinarFacade {
   private readonly logger = inject(Logger);
@@ -82,7 +66,6 @@ export class WebinarFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(AuthSession);
   private readonly registration = inject(WebinarRegistration);
-  private readonly route = inject(ActivatedRoute);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /**
@@ -131,10 +114,7 @@ export class WebinarFacade {
    * Held through a refetch (like the old flag, cleared only by a success), so a
    * retry does not blank the banner before it has an answer.
    */
-  private readonly feedError = linkedSignal<
-    ResourceSnapshot<WebinarMainPageData>,
-    WebinarError | null
-  >({
+  readonly loadError = linkedSignal<ResourceSnapshot<WebinarMainPageData>, WebinarError | null>({
     source: this.feedResource.snapshot,
     computation: (snap, previous) => {
       if (snap.status === 'error') return toWebinarError(snap.error);
@@ -154,37 +134,6 @@ export class WebinarFacade {
     },
   });
 
-  // ---- Stand-in feed (development builds only) ----------------------------
-
-  /**
-   * The page reads the live API. `?preview=design` swaps in
-   * `webinar-preview.ts` instead, for looking at sections UAT cannot currently
-   * populate. Never available in a production build.
-   */
-  private readonly queryParams = toSignal(this.route.queryParamMap, {
-    initialValue: this.route.snapshot.queryParamMap,
-  });
-
-  /** Captured once — dates that tick every second are unreviewable. */
-  private readonly previewBaseTime = Date.now();
-
-  /** Exposed so the page can also relax its signed-out gate under preview. */
-  readonly isPreview = computed(
-    () => PREVIEW_ENABLED && this.queryParams().get(PREVIEW_PARAM) === PREVIEW_ON,
-  );
-
-  /**
-   * The feed error the page shows. Suppressed under preview: the page is not
-   * bound to the live call there, so an error banner over stand-in content
-   * would be reporting a failure that has no bearing on what is on screen.
-   */
-  readonly loadError = computed(() => (this.isPreview() ? null : this.feedError()));
-
-  /** What the sections below read. Identical to `feedData` in production. */
-  private readonly visibleFeed = computed<WebinarMainPageData>(() =>
-    this.isPreview() ? buildPreviewFeed(this.previewBaseTime) : this.feedData(),
-  );
-
   readonly isLoading = computed(() => this.feed.isLoading());
 
   // ---- Sections ------------------------------------------------------------
@@ -196,7 +145,7 @@ export class WebinarFacade {
    * upcoming so the hero is never empty while anything is scheduled.
    */
   readonly heroWebinar = computed<UpcomingWebinarCard | null>(() => {
-    const data = this.visibleFeed();
+    const data = this.feedData();
     return data.highlight_webinars[0] ?? data.upcoming_webinars[0] ?? null;
   });
 
@@ -207,19 +156,19 @@ export class WebinarFacade {
    */
   readonly upcomingWebinars = computed<UpcomingWebinarCard[]>(() => {
     const heroId = this.heroWebinar()?.id;
-    return this.visibleFeed().upcoming_webinars.filter((w) => w.id !== heroId);
+    return this.feedData().upcoming_webinars.filter((w) => w.id !== heroId);
   });
 
   /** Past webinars the user attended. Each carries `eligible`. */
-  readonly attendedWebinars = computed(() => this.visibleFeed().completed_webinar);
+  readonly attendedWebinars = computed(() => this.feedData().completed_webinar);
   /** Past webinars the user booked and did not attend. */
-  readonly absentWebinars = computed(() => this.visibleFeed().absent_webinar);
+  readonly absentWebinars = computed(() => this.feedData().absent_webinar);
   /** Past webinars in the window the user never booked at all. */
-  readonly missedWebinars = computed(() => this.visibleFeed().missed_webinar);
+  readonly missedWebinars = computed(() => this.feedData().missed_webinar);
 
   /** True when there is genuinely nothing to show — not merely still loading. */
   readonly isEmpty = computed(() => {
-    const data = this.visibleFeed();
+    const data = this.feedData();
     return (
       !this.isLoading() &&
       data.highlight_webinars.length === 0 &&
@@ -357,7 +306,7 @@ export class WebinarFacade {
   }
 
   private locate(id: string): { card: FeedCard; bucket: WebinarBucket } | null {
-    const data = this.visibleFeed();
+    const data = this.feedData();
     const buckets: [WebinarBucket, readonly FeedCard[]][] = [
       ['highlight', data.highlight_webinars],
       ['upcoming', data.upcoming_webinars],
@@ -446,7 +395,7 @@ export class WebinarFacade {
   private async promptSignIn(): Promise<void> {
     const data: UtilsDialogData = {
       title: 'Sign in to register',
-      containerClass: 'max-w-md text-left!',
+      containerClass: 'max-w-md text-start!',
       content: [
         {
           type: 'text',

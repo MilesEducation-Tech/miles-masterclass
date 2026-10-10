@@ -24,7 +24,9 @@
           }
         </div>
         @if (!showRoleForm()) {
-          <app-button variant="default" size="sm" (clicked)="openCreateRole()">Add role</app-button>
+          <button app-button type="button" variant="default" size="sm" (click)="openCreateRole()">
+            Add role
+          </button>
         }
       </div>
 
@@ -35,24 +37,55 @@
             {{ editingRoleId() ? 'Edit role' : 'New role' }}
           </h3>
           <div class="grid gap-4 md:grid-cols-3">
-            <app-aria-input id="role-name" label="Name" [required]="true" [(value)]="roleName" />
-            @if (!editingRoleId()) {
-              <app-aria-input
-                id="role-slug"
-                label="Slug (e.g. content_editor)"
+            <app-field>
+              <label ngpLabel for="role-name">Name</label>
+
+              <input
+                app-input
+                id="role-name"
+                type="text"
                 [required]="true"
-                [(value)]="roleSlug"
-                [invalid]="roleSlugInvalid()"
+                [value]="roleName()"
+                (input)="roleName.set($any($event.target).value)"
               />
+            </app-field>
+            @if (!editingRoleId()) {
+              <app-field>
+                <label ngpLabel for="role-slug">Slug (e.g. content_editor)</label>
+
+                <input
+                  app-input
+                  id="role-slug"
+                  type="text"
+                  [required]="true"
+                  [value]="roleSlug()"
+                  (input)="roleSlug.set($any($event.target).value)"
+                />
+              </app-field>
             } @else {
-              <app-aria-input
-                id="role-slug-ro"
-                label="Slug"
-                [value]="roleSlug()"
-                [readonly]="true"
-              />
+              <app-field>
+                <label ngpLabel for="role-slug-ro">Slug</label>
+
+                <input
+                  app-input
+                  id="role-slug-ro"
+                  type="text"
+                  [readonly]="true"
+                  [value]="roleSlug()"
+                />
+              </app-field>
             }
-            <app-aria-input id="role-desc" label="Description" [(value)]="roleDescription" />
+            <app-field>
+              <label ngpLabel for="role-desc">Description</label>
+
+              <input
+                app-input
+                id="role-desc"
+                type="text"
+                [value]="roleDescription()"
+                (input)="roleDescription.set($any($event.target).value)"
+              />
+            </app-field>
           </div>
 
           <div class="flex flex-col gap-3">
@@ -64,14 +97,17 @@
                 </legend>
                 <div class="grid gap-2 sm:grid-cols-2">
                   @for (perm of group.perms; track perm.id) {
-                    <app-aria-input
-                      [id]="'role-perm-' + perm.id"
-                      type="checkbox"
-                      [label]="perm.label"
-                      [description]="perm.key"
-                      [value]="isPermChecked(perm.id)"
-                      (valueChange)="toggleRolePerm(perm.id, $any($event) === true)"
-                    />
+                    <app-field class="flex-row items-start gap-3">
+                      <app-checkbox
+                        [id]="'role-perm-' + perm.id"
+                        [checked]="isPermChecked(perm.id)"
+                        (checkedChange)="toggleRolePerm(perm.id, $event)"
+                      />
+                      <div class="flex flex-col gap-0.5">
+                        <span ngpLabel>{{ perm.label }}</span>
+                        <p ngpDescription>{{ perm.key }}</p>
+                      </div>
+                    </app-field>
                   }
                 </div>
               </fieldset>
@@ -79,16 +115,24 @@
           </div>
 
           <div class="flex items-center gap-3">
-            <app-button
+            <button
+              app-button
+              type="button"
               variant="default"
               [disabled]="!canSaveRole() || isSaving()"
-              (clicked)="saveRole()"
+              (click)="saveRole()"
             >
               {{ editingRoleId() ? 'Save role' : 'Create role' }}
-            </app-button>
-            <app-button variant="outline" class="text-white" (clicked)="cancelRoleForm()">
+            </button>
+            <button
+              app-button
+              type="button"
+              class="text-white"
+              variant="outline"
+              (click)="cancelRoleForm()"
+            >
               Cancel
-            </app-button>
+            </button>
           </div>
         </div>
       }
@@ -125,40 +169,48 @@
                   } @else if (isPendingDelete('role', role.id)) {
                     <div class="inline-flex items-center gap-2">
                       <span class="text-xs text-white/70">Delete?</span>
-                      <app-button
+                      <button
+                        app-button
+                        type="button"
                         variant="destructive"
                         size="sm"
                         [disabled]="isSaving()"
-                        (clicked)="confirmDelete()"
+                        (click)="confirmDelete()"
                       >
                         Yes
-                      </app-button>
-                      <app-button
+                      </button>
+                      <button
+                        app-button
+                        type="button"
+                        class="text-white"
                         variant="outline"
                         size="sm"
-                        class="text-white"
-                        (clicked)="cancelDelete()"
+                        (click)="cancelDelete()"
                       >
                         No
-                      </app-button>
+                      </button>
                     </div>
                   } @else {
                     <div class="inline-flex items-center gap-2">
-                      <app-button
+                      <button
+                        app-button
+                        type="button"
+                        class="text-white"
                         variant="outline"
                         size="sm"
-                        class="text-white"
-                        (clicked)="openEditRole(role)"
+                        (click)="openEditRole(role)"
                       >
                         Edit
-                      </app-button>
-                      <app-button
+                      </button>
+                      <button
+                        app-button
+                        type="button"
                         variant="destructive"
                         size="sm"
-                        (clicked)="askDelete('role', role.id)"
+                        (click)="askDelete('role', role.id)"
                       >
                         Delete
-                      </app-button>
+                      </button>
                     </div>
                   }
                 </td>
@@ -182,9 +234,9 @@
       <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-2">
         <h2 class="text-sm font-semibold">Permission catalog</h2>
         @if (!showPermForm()) {
-          <app-button variant="default" size="sm" (clicked)="openCreatePerm()">
+          <button app-button type="button" variant="default" size="sm" (click)="openCreatePerm()">
             Add permission
-          </app-button>
+          </button>
         }
       </div>
 
@@ -196,36 +248,86 @@
           </h3>
           <div class="grid gap-4 md:grid-cols-2">
             @if (!editingPermId()) {
-              <app-aria-input
-                id="perm-key"
-                label="Key (e.g. reports:courses:read)"
-                [required]="true"
-                [(value)]="permKey"
-                [invalid]="permKeyInvalid()"
-              />
+              <app-field>
+                <label ngpLabel for="perm-key">Key (e.g. reports:courses:read)</label>
+
+                <input
+                  app-input
+                  id="perm-key"
+                  type="text"
+                  [required]="true"
+                  [value]="permKey()"
+                  (input)="permKey.set($any($event.target).value)"
+                />
+              </app-field>
             } @else {
-              <app-aria-input id="perm-key-ro" label="Key" [value]="permKey()" [readonly]="true" />
+              <app-field>
+                <label ngpLabel for="perm-key-ro">Key</label>
+
+                <input
+                  app-input
+                  id="perm-key-ro"
+                  type="text"
+                  [readonly]="true"
+                  [value]="permKey()"
+                />
+              </app-field>
             }
-            <app-aria-input
-              id="perm-category"
-              label="Category"
-              [required]="true"
-              [(value)]="permCategory"
-            />
-            <app-aria-input id="perm-label" label="Label" [required]="true" [(value)]="permLabel" />
-            <app-aria-input id="perm-desc" label="Description" [(value)]="permDescription" />
+            <app-field>
+              <label ngpLabel for="perm-category">Category</label>
+
+              <input
+                app-input
+                id="perm-category"
+                type="text"
+                [required]="true"
+                [value]="permCategory()"
+                (input)="permCategory.set($any($event.target).value)"
+              />
+            </app-field>
+            <app-field>
+              <label ngpLabel for="perm-label">Label</label>
+
+              <input
+                app-input
+                id="perm-label"
+                type="text"
+                [required]="true"
+                [value]="permLabel()"
+                (input)="permLabel.set($any($event.target).value)"
+              />
+            </app-field>
+            <app-field>
+              <label ngpLabel for="perm-desc">Description</label>
+
+              <input
+                app-input
+                id="perm-desc"
+                type="text"
+                [value]="permDescription()"
+                (input)="permDescription.set($any($event.target).value)"
+              />
+            </app-field>
           </div>
           <div class="flex items-center gap-3">
-            <app-button
+            <button
+              app-button
+              type="button"
               variant="default"
               [disabled]="!canSavePerm() || isSaving()"
-              (clicked)="savePerm()"
+              (click)="savePerm()"
             >
               {{ editingPermId() ? 'Save permission' : 'Create permission' }}
-            </app-button>
-            <app-button variant="outline" class="text-white" (clicked)="cancelPermForm()">
+            </button>
+            <button
+              app-button
+              type="button"
+              class="text-white"
+              variant="outline"
+              (click)="cancelPermForm()"
+            >
               Cancel
-            </app-button>
+            </button>
           </div>
         </div>
       }
@@ -253,40 +355,48 @@
                   @if (isPendingDelete('permission', perm.id)) {
                     <div class="inline-flex items-center gap-2">
                       <span class="text-xs text-white/70">Delete?</span>
-                      <app-button
+                      <button
+                        app-button
+                        type="button"
                         variant="destructive"
                         size="sm"
                         [disabled]="isSaving()"
-                        (clicked)="confirmDelete()"
+                        (click)="confirmDelete()"
                       >
                         Yes
-                      </app-button>
-                      <app-button
+                      </button>
+                      <button
+                        app-button
+                        type="button"
+                        class="text-white"
                         variant="outline"
                         size="sm"
-                        class="text-white"
-                        (clicked)="cancelDelete()"
+                        (click)="cancelDelete()"
                       >
                         No
-                      </app-button>
+                      </button>
                     </div>
                   } @else {
                     <div class="inline-flex items-center gap-2">
-                      <app-button
+                      <button
+                        app-button
+                        type="button"
+                        class="text-white"
                         variant="outline"
                         size="sm"
-                        class="text-white"
-                        (clicked)="openEditPerm(perm)"
+                        (click)="openEditPerm(perm)"
                       >
                         Edit
-                      </app-button>
-                      <app-button
+                      </button>
+                      <button
+                        app-button
+                        type="button"
                         variant="destructive"
                         size="sm"
-                        (clicked)="askDelete('permission', perm.id)"
+                        (click)="askDelete('permission', perm.id)"
                       >
                         Delete
-                      </app-button>
+                      </button>
                     </div>
                   }
                 </td>

@@ -1,11 +1,14 @@
 import { DestroyRef, inject, Service, signal } from '@angular/core';
+import { HttpContext } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '@env/environment';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
+import { SKIP_LOADING } from '@core/models/http.model';
 import {
   AttemptStatusResponse,
   isAlreadyRegistered,
+  normaliseAttemptStatus,
   RegisterRequest,
   RegisterResponse,
   resolveStatusUrl,
@@ -177,7 +180,14 @@ export class WebinarRegistration {
       if (this.destroyed) break;
 
       // The status route takes NO query parameters — any query string is a 400.
-      last = await firstValueFrom(this.api.get<AttemptStatusResponse>(statusUrl));
+      // Polled behind the card's own `inFlight` spinner, so not the loading bar.
+      last = normaliseAttemptStatus(
+        await firstValueFrom(
+          this.api.get<AttemptStatusResponse>(statusUrl, {
+            context: new HttpContext().set(SKIP_LOADING, true),
+          }),
+        ),
+      );
 
       if (last.registration_status === 'REGISTERED') {
         return {

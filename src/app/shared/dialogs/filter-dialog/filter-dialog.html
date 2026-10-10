@@ -1,9 +1,19 @@
-<app-dialog-shell maxWidth="100%" ariaLabel="Filters">
+<app-dialog ariaLabel="Filters" panelClass="p-0 max-w-full">
   <div class="flex flex-col space-y-4 md:w-[60vw] w-full relative bg-background">
     <!-- Header -->
     <div class="flex items-center justify-between p-4 border-b border-gray-100 w-full">
       <h2 id="filter-dialog-title" class="text-xl font-bold text-white">Filters</h2>
-      <app-button variant="close" (clicked)="close()"></app-button>
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <!-- Scrollable Content -->
@@ -61,8 +71,8 @@
 
     <!-- Footer -->
     <div class="p-4 border-t border-gray-100 flex justify-between gap-3">
-      <app-button variant="outline" (clicked)="clearFilters()">Clear All</app-button>
-      <app-button (clicked)="apply()">Apply Filters</app-button>
+      <button app-button type="button" variant="outline" (click)="clearFilters()">Clear All</button>
+      <button app-button type="button" (click)="apply()">Apply Filters</button>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

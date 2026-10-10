@@ -45,15 +45,17 @@
             </span>
           </div>
 
-          <app-button
+          <button
+            app-button
+            type="button"
+            class="h-auto max-w-full min-w-0 justify-start truncate px-0 py-0 text-start text-sm text-neutral-100 underline-offset-4 hover:text-white hover:underline"
             variant="ghost"
             size="sm"
-            [ariaLabel]="'Open ' + view.raw.course.title"
-            class="h-auto max-w-full min-w-0 justify-start truncate px-0 py-0 text-left text-sm text-neutral-100 underline-offset-4 hover:text-white hover:underline"
-            (clicked)="titleClick.emit(view.raw)"
+            [attr.aria-label]="'Open ' + view.raw.course.title"
+            (click)="titleClick.emit(view.raw)"
           >
             {{ view.raw.course.title }}
-          </app-button>
+          </button>
 
           <app-categories-list
             class="min-w-0 overflow-hidden text-sm text-neutral-400"
@@ -70,16 +72,18 @@
 
           <div class="flex flex-wrap gap-2 md:justify-end">
             @for (action of view.actions; track action) {
-              <app-button
+              <button
+                app-button
+                type="button"
                 size="sm"
                 [class]="actionClass(action)"
-                (clicked)="onAction(view.raw, action)"
+                (click)="onAction(view.raw, action)"
               >
                 @if (actionUi[action].icon) {
                   <ng-icon name="lucideDownload" aria-hidden="true" />
                 }
                 {{ actionUi[action].label }}
-              </app-button>
+              </button>
             }
           </div>
         </li>
@@ -93,24 +97,28 @@
         of {{ pageWindow().total }}
       </span>
       <div class="flex items-center gap-4">
-        <app-button
+        <button
+          app-button
+          type="button"
+          class="h-9 w-32 rounded-md border-white/15 bg-transparent text-xs text-white hover:bg-white/5"
           variant="outline"
           size="sm"
-          class="h-9 w-32 rounded-md border-white/15 bg-transparent text-xs text-white hover:bg-white/5"
           [disabled]="!canPrev()"
-          (clicked)="prevPage.emit()"
+          (click)="prevPage.emit()"
         >
           Prev
-        </app-button>
-        <app-button
+        </button>
+        <button
+          app-button
+          type="button"
+          class="h-9 w-32 rounded-md border-white/15 bg-transparent text-xs text-white hover:bg-white/5"
           variant="outline"
           size="sm"
-          class="h-9 w-32 rounded-md border-white/15 bg-transparent text-xs text-white hover:bg-white/5"
           [disabled]="!canNext()"
-          (clicked)="nextPage.emit()"
+          (click)="nextPage.emit()"
         >
           Next
-        </app-button>
+        </button>
       </div>
     </div>
   } @else if (!isLoading()) {

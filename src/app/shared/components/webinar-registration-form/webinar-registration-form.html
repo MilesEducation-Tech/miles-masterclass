@@ -1,5 +1,5 @@
 @if (step() === 'REGISTER' || step() === 'DONE') {
-  <app-forms type="signal" class="flex flex-col gap-4 w-full space-y-0" (submitted)="submit()">
+  <form class="flex flex-col gap-4 w-full space-y-0" (submit)="$event.preventDefault(); submit()">
     @if (multiStep() && step() !== 'DONE') {
       <p class="text-xs font-medium text-muted-foreground">Step {{ regStep() }} of 2</p>
     }
@@ -15,71 +15,92 @@
     >
       @if (step() === 'DONE' || !multiStep() || regStep() === 1) {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <app-aria-input
-            id="webinar_first_name"
-            label="First Name"
-            [formField]="registrationForm.first_name"
-          />
-          <app-aria-input
-            id="webinar_last_name"
-            label="Last Name"
-            [formField]="registrationForm.last_name"
-          />
+          <app-field [errors]="registrationForm.first_name().errors()">
+            <label ngpLabel for="webinar_first_name">First Name</label>
+
+            <input
+              app-input
+              id="webinar_first_name"
+              type="text"
+              [formField]="registrationForm.first_name"
+            />
+          </app-field>
+          <app-field [errors]="registrationForm.last_name().errors()">
+            <label ngpLabel for="webinar_last_name">Last Name</label>
+
+            <input
+              app-input
+              id="webinar_last_name"
+              type="text"
+              [formField]="registrationForm.last_name"
+            />
+          </app-field>
         </div>
 
-        <app-aria-input
-          id="webinar_email"
-          label="Email"
-          type="email"
-          [formField]="registrationForm.email"
-        />
+        <app-field [errors]="registrationForm.email().errors()">
+          <label ngpLabel for="webinar_email">Email</label>
+
+          <input app-input id="webinar_email" type="email" [formField]="registrationForm.email" />
+        </app-field>
       }
 
       @if (step() === 'DONE' || !multiStep() || regStep() === 2) {
         <div class="flex gap-2">
           <div class="w-[120px] shrink-0">
-            <app-aria-autocomplete
-              id="webinar_country_code"
-              label="Code"
-              placeholder="Search..."
-              [options]="countryCodes()"
-              [formField]="registrationForm.country_code"
-            />
+            <app-field [errors]="registrationForm.country_code().errors()">
+              <label ngpLabel for="webinar_country_code">Code</label>
+
+              <app-combobox
+                id="webinar_country_code"
+                dir="ltr"
+                placeholder="Search..."
+                [options]="countryCodes()"
+                [formField]="registrationForm.country_code"
+              />
+            </app-field>
           </div>
-          <app-aria-input
-            class="flex-1"
-            id="webinar_phone"
-            label="Phone"
-            type="tel"
-            [formField]="registrationForm.phone"
-          />
+          <app-field class="flex-1" [errors]="registrationForm.phone().errors()">
+            <label ngpLabel for="webinar_phone">Phone</label>
+
+            <input app-input id="webinar_phone" type="tel" [formField]="registrationForm.phone" />
+          </app-field>
         </div>
 
-        <app-aria-autocomplete
-          id="webinar_location"
-          label="Location"
-          [options]="locationOptions()"
-          [serverFiltered]="true"
-          [formField]="registrationForm.location"
-          (queryChange)="locationQuery.set($event)"
-        />
+        <app-field [errors]="registrationForm.location().errors()">
+          <label ngpLabel for="webinar_location">Location</label>
 
-        <app-aria-autocomplete
-          id="webinar_company"
-          label="Company"
-          placeholder="Where do you work? (Optional)"
-          [options]="companyOptions()"
-          [formField]="registrationForm.company_id"
-          (queryChange)="onCompanySearch($event)"
-        />
+          <app-combobox
+            id="webinar_location"
+            [options]="locationOptions()"
+            [serverFiltered]="true"
+            [formField]="registrationForm.location"
+            (queryChange)="locationQuery.set($event)"
+          />
+        </app-field>
 
-        <app-aria-input
-          id="webinar_terms"
-          type="checkbox"
-          class="leading-tight gap-2"
-          [formField]="registrationForm.terms"
-          [label]="'I agree to receive updates via email and SMS. I have read and agree to the Terms & Conditions and Privacy Policy.'"
-        />
+        <app-field [errors]="registrationForm.company_id().errors()">
+          <label ngpLabel for="webinar_company">Company</label>
+
+          <app-combobox
+            id="webinar_company"
+            placeholder="Where do you work? (Optional)"
+            [options]="companyOptions()"
+            [formField]="registrationForm.company_id"
+            (queryChange)="onCompanySearch($event)"
+          />
+        </app-field>
+
+        <app-field
+          class="flex-row items-start gap-3 leading-tight gap-2"
+          [errors]="registrationForm.terms().errors()"
+        >
+          <app-checkbox id="webinar_terms" [formField]="registrationForm.terms" />
+          <div class="flex flex-col gap-0.5">
+            <span ngpLabel>{{
+              'I agree to receive updates via email and SMS. I have read and agree to the Terms & Conditions and Privacy Policy.'
+            }}</span>
+          </div>
+        </app-field>
       }
     </fieldset>
 
@@ -88,33 +109,36 @@
     }
 
     @if (step() === 'DONE') {
-      <app-button class="w-full mt-1" type="button" variant="default" (clicked)="goToLogin()">
+      <button app-button class="w-full mt-1" type="button" variant="default" (click)="goToLogin()">
         Log in
-      </app-button>
+      </button>
     } @else if (multiStep() && regStep() === 1) {
-      <app-button
+      <button
+        app-button
         class="w-full mt-1"
         type="button"
         variant="default"
         [disabled]="step1Invalid()"
-        (clicked)="goToContactStep()"
+        (click)="goToContactStep()"
       >
         Next
-      </app-button>
+      </button>
     } @else {
       <div class="flex gap-3">
         @if (multiStep()) {
-          <app-button
+          <button
+            app-button
             class="mt-1 shrink-0"
             type="button"
             variant="outline"
             [disabled]="submitting()"
-            (clicked)="backToDetails()"
+            (click)="backToDetails()"
           >
             Back
-          </app-button>
+          </button>
         }
-        <app-button
+        <button
+          app-button
           class="w-full mt-1"
           type="submit"
           variant="default"
@@ -124,10 +148,10 @@
             <app-spinner></app-spinner>
           }
           Reserve My Seat
-        </app-button>
+        </button>
       </div>
     }
-  </app-forms>
+  </form>
 } @else {
   <div class="flex flex-col gap-4 w-full">
     <div class="flex flex-col gap-1">
@@ -135,32 +159,37 @@
         Enter the 6-digit code we sent to
         <strong class="text-foreground">{{ emailDisplay() }}</strong> to confirm your seat.
       </p>
-      <app-button
-        class="w-max -ml-3"
+      <button
+        app-button
+        type="button"
+        class="w-max -ms-3 h-auto p-0"
         variant="link"
-        size="link"
         [disabled]="verifying() || resending()"
-        (clicked)="backToRegister()"
+        (click)="backToRegister()"
       >
         Change email
-      </app-button>
+      </button>
     </div>
 
-    <app-forms type="signal" class="flex flex-col gap-3" (submitted)="verifyOtp()">
-      <app-otp
-        id="webinar_otp"
-        label="Enter OTP"
-        [length]="otpLength"
-        [autoFocus]="true"
-        [formField]="otpForm.otp"
-        (completed)="verifyOtp()"
-      />
+    <form class="flex flex-col gap-3" (submit)="$event.preventDefault(); verifyOtp()">
+      <app-field [errors]="otpForm.otp().errors()">
+        <span ngpLabel>Enter OTP</span>
+
+        <app-input-otp
+          id="webinar_otp"
+          [length]="otpLength"
+          [autoFocus]="true"
+          [formField]="otpForm.otp"
+          (complete)="verifyOtp()"
+        />
+      </app-field>
 
       @if (error()) {
         <p class="text-sm text-destructive" role="alert">{{ error() }}</p>
       }
 
-      <app-button
+      <button
+        app-button
         class="w-full mt-1"
         type="submit"
         variant="default"
@@ -170,20 +199,22 @@
           <app-spinner></app-spinner>
         }
         Verify & Book
-      </app-button>
-    </app-forms>
+      </button>
+    </form>
 
     <div class="flex justify-center items-center text-sm text-muted-foreground">
       @if (canResend()) {
         <span>Didn't receive the OTP?&nbsp;</span>
-        <app-button
+        <button
+          app-button
+          type="button"
+          class="h-auto p-0"
           variant="link"
-          size="link"
           [disabled]="resending() || verifying()"
-          (clicked)="resendOtp()"
+          (click)="resendOtp()"
         >
           Resend OTP
-        </app-button>
+        </button>
       } @else {
         <span>
           Resend OTP in <strong class="text-foreground">{{ resendDisplay() }}</strong>

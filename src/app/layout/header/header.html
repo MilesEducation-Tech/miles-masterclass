@@ -1,7 +1,7 @@
 <header
   [class]="
     cn(
-      'fixed left-1/2 -translate-x-1/2 z-1000 transition-[top,max-width,padding,background] duration-600 ease-[cubic-bezier(0.175,0.885,0.32,2.2)]',
+      'fixed left-1/2 -translate-x-1/2 z-1000 transition-[top,max-width,padding,background] duration-600 ease-[cubic-bezier(0.175,0.885,0.32,2.2)] motion-reduce:transition-none',
       isScrolled()
         ? 'top-4 container mx-auto bg-none px-4'
         : 'top-0 pt-2 w-full max-w-none bg-linear-to-b from-background to-transparent md:px-10'
@@ -11,7 +11,7 @@
   <div
     [class]="
       cn(
-        'relative transition-all duration-600 ease-[cubic-bezier(0.175,0.885,0.32,2.2)] border-0',
+        'relative transition-all duration-600 ease-[cubic-bezier(0.175,0.885,0.32,2.2)] motion-reduce:transition-none border-0',
         isScrolled()
           ? 'shadow-[0_6px_6px_rgba(0,0,0,0.2),0_0_10px_rgba(0,0,0,0.1)] rounded-[999px] bg-transparent'
           : 'shadow-none rounded-none bg-transparent'
@@ -21,22 +21,40 @@
     <div
       [class]="
         cn(
-          'relative flex flex-col items-center justify-between w-full mx-auto transition-all duration-600 ease-in-out rounded-full border-2 border-transparent',
-          isScrolled() && 'header'
+          'relative flex flex-col items-center justify-between w-full mx-auto transition-all duration-600 ease-in-out motion-reduce:transition-none rounded-full border-2 border-transparent',
+          isScrolled() &&
+            'bg-background/60 backdrop-blur-xl shadow-[0_8px_32px_rgb(0_0_0/0.45),inset_0_1px_0_rgb(255_255_255/0.08)] before:pointer-events-none before:absolute before:-inset-0.5 before:rounded-[inherit] before:p-px before:bg-linear-to-br before:from-white/40 before:via-white/5 before:to-white/40 before:[mask:linear-gradient(#000_0_0)_content-box_exclude,linear-gradient(#000_0_0)]'
         )
       "
     >
+      <!-- Accent hairline along the pill's bottom edge. Rendered only while the bar is a pill, so the
+           sweep inside it is created, and its one-shot animation runs, each time the bar turns into the
+           pill: no timers, nothing on the server. No overflow-hidden on the pill itself, or it would
+           clip the desktop dropdowns. -->
+      @if (isScrolled()) {
+        <span
+          class="pointer-events-none absolute inset-x-10 -bottom-0.5 h-px overflow-hidden bg-linear-to-r from-transparent via-accent/70 to-transparent drop-shadow-[0_0_4px_rgb(var(--accent-rgb))]"
+          aria-hidden="true"
+        >
+          <span
+            class="absolute inset-y-0 left-0 w-1/3 bg-linear-to-r from-transparent via-white to-transparent animate-header-sweep motion-reduce:hidden"
+          ></span>
+        </span>
+      }
       <div
-        class="flex items-center justify-between w-full rounded-[50px] px-2 py-2 transition-all duration-500! ease-in-out lg:px-4 lg:py-2.5 md:px-3 md:py-2 z-20 relative"
+        class="flex items-center justify-between w-full rounded-[50px] px-2 py-2 transition-all duration-500! ease-in-out motion-reduce:transition-none lg:px-4 lg:py-2.5 md:px-3 md:py-2 z-20 relative"
       >
         <!-- Logo -->
-        <a routerLink="/" class="flex items-center" aria-label="Go to homepage">
+        <a routerLink="/" class="flex items-center" [attr.aria-label]="'header.home' | transloco">
           <ng-icon [svg]="logoIcon" class="w-24! h-10!" />
         </a>
 
         <!-- Right Navigation - Desktop -->
         @if (!isMobile()) {
-          <nav class="flex justify-between items-center gap-2" aria-label="Primary">
+          <nav
+            class="flex justify-between items-center gap-2"
+            [attr.aria-label]="'header.primaryNav' | transloco"
+          >
             <ul
               class="flex items-center gap-2 list-none m-0 p-0"
               ngpAccordion
@@ -56,7 +74,10 @@
                       ariaCurrentWhenActive="page"
                       [class]="
                         cn(
-                          'flex items-center gap-1 px-2 py-1.5 no-underline text-sm font-semibold rounded-3xl transition-all duration-200 whitespace-nowrap cursor-pointer border-0 bg-transparent outline-none focus:outline-none ',
+                          'relative flex items-center gap-1 px-2 py-1.5 no-underline text-sm font-semibold rounded-3xl transition-all duration-200 whitespace-nowrap cursor-pointer border-0 bg-transparent hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60',
+                          rla.isActive &&
+                            !item.highlight &&
+                            'after:absolute after:bottom-0 after:left-1/2 after:size-1 after:-translate-x-1/2 after:rounded-full after:bg-current after:shadow-[0_0_6px_currentColor]',
                           rla.isActive && hasActivePlan()
                             ? 'text-accent-premium text-shadow-2xs text-shadow-primary-foreground/20'
                             : rla.isActive
@@ -68,12 +89,29 @@
                       @if (first && hasActivePlan()) {
                         <ng-icon [svg]="crownIcon" class="w-4! h-4!" aria-hidden="true" />
                       }
-                      {{ item.label }}
+                      <span class="relative">
+                        {{ item.label }}
+                        @if (item.highlight) {
+                          <ng-container [ngTemplateOutlet]="navUnderline" />
+                        }
+                      </span>
+                      @if (item.badge) {
+                        <span
+                          class="rounded-full bg-accent/20 text-accent px-1.5 py-px text-[10px] font-bold uppercase tracking-wide leading-4"
+                          >{{ item.badge }}</span
+                        >
+                      }
                     </a>
                   }
 
                   @if (item.type === 'button') {
-                    <app-button (clicked)="handleAction(item)" variant="ghost" class="p-0! h-auto!">
+                    <button
+                      app-button
+                      type="button"
+                      class="p-0! h-auto!"
+                      variant="ghost"
+                      (click)="handleAction(item)"
+                    >
                       @switch (item.style) {
                         @case ('demo') {
                           <span
@@ -101,10 +139,10 @@
                         }
                         @case ('signup') {
                           <span
-                            class="lg:w-max w-full h-full overflow-hidden p-px rounded-full bg-primary flex justify-center items-center"
+                            class="lg:w-max w-full h-full overflow-hidden p-px rounded-full bg-linear-to-r from-primary to-accent transition-shadow duration-300 hover:shadow-[0_0_20px_rgb(var(--accent-rgb)/0.5)] flex justify-center items-center"
                           >
                             <span
-                              class="w-full h-full overflow-hidden p-px rounded-full bg-primary px-4 py-1.5 flex justify-center items-center"
+                              class="w-full h-full overflow-hidden p-px rounded-full px-4 py-1.5 flex justify-center items-center"
                             >
                               <span
                                 class="z-10 relative text-sm font-semibold text-primary-foreground"
@@ -117,7 +155,7 @@
                           <span>{{ item.label }}</span>
                         }
                       }
-                    </app-button>
+                    </button>
                   }
 
                   @if (item.type === 'menu') {
@@ -126,7 +164,7 @@
                       ngpAccordionTrigger
                       [class]="
                         cn(
-                          'flex items-center gap-1 px-2 py-1.5 text-sm font-semibold text-foreground rounded-3xl hover:text-accent transition-all duration-200 cursor-pointer border-0 bg-transparent outline-none focus:outline-none ',
+                          'flex items-center gap-1 px-2 py-1.5 text-sm font-semibold text-foreground rounded-3xl hover:bg-white/5 hover:text-accent transition-all duration-200 cursor-pointer border-0 bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60',
                           hasActiveChild(item) && hasActivePlan()
                             ? 'text-accent-premium'
                             : hasActiveChild(item) && !hasActivePlan()
@@ -147,9 +185,12 @@
                       />
                     </button>
 
+                    <!-- Solid, like the drawer and the sub-menus, and no blur of its own: once scrolled, the
+                         pill's backdrop-filter makes it the backdrop root, so a panel blur can't reach the page
+                         and any transparency shows the page through unblurred. -->
                     <div
                       ngpAccordionContent
-                      class="absolute top-[calc(100%+8px)] right-0 min-w-[220px] max-w-[300px] bg-popover/95 backdrop-blur-xl rounded-xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1)] z-1000 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)] origin-top-center"
+                      class="absolute top-[calc(100%+8px)] end-0 min-w-[220px] max-w-[300px] bg-popover rounded-xl p-2 shadow-glass before:absolute before:inset-x-6 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-accent/50 before:to-transparent z-1000 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)] motion-reduce:animate-none origin-top-center"
                     >
                       @for (child of item.children; track child.label) {
                         <app-nav-menu-item [item]="child" (navigated)="closeNavDropdown()" />
@@ -175,13 +216,13 @@
               class="toggler flex-col gap-y-1 flex cursor-pointer z-100 bg-transparent border-none p-1"
               [attr.aria-expanded]="isMobileMenuOpen()"
               aria-controls="mobile-nav-panel"
-              aria-label="Toggle navigation menu"
+              [attr.aria-label]="'header.toggleMenu' | transloco"
               (click)="toggleMobileMenu($event)"
             >
               <span
                 [class]="
                   cn(
-                    'w-[25px] h-[2px] bg-foreground inline-block relative transition-all duration-300',
+                    'w-[25px] h-[2px] bg-foreground inline-block relative transition-all duration-300 motion-reduce:transition-none',
                     isMobileMenuOpen() && 'rotate-45 top-[6px]'
                   )
                 "
@@ -190,7 +231,7 @@
               <span
                 [class]="
                   cn(
-                    'w-[25px] h-[2px] bg-foreground inline-block relative transition-all duration-300',
+                    'w-[25px] h-[2px] bg-foreground inline-block relative transition-all duration-300 motion-reduce:transition-none',
                     isMobileMenuOpen() && 'opacity-0'
                   )
                 "
@@ -199,7 +240,7 @@
               <span
                 [class]="
                   cn(
-                    'w-[25px] h-[2px] bg-foreground inline-block relative transition-all duration-300',
+                    'w-[25px] h-[2px] bg-foreground inline-block relative transition-all duration-300 motion-reduce:transition-none',
                     isMobileMenuOpen() && '-rotate-45 top-[-6px]'
                   )
                 "
@@ -213,9 +254,9 @@
                 id="mobile-nav-panel"
                 role="dialog"
                 aria-modal="true"
-                aria-label="Site navigation"
+                [attr.aria-label]="'header.siteNav' | transloco"
                 ngpFocusTrap
-                class="absolute top-[calc(100%+12px)] right-0 min-w-[280px] max-w-[90vw] max-h-[calc(100vh-120px)] overflow-y-auto bg-popover/98 backdrop-blur-2xl rounded-2xl p-3 shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.1)] z-1000 animate-[mobileMenuSlideIn_0.3s_cubic-bezier(0.4,0,0.2,1)] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-[10px]"
+                class="absolute top-[calc(100%+12px)] end-0 min-w-[280px] max-w-[90vw] max-h-[calc(100vh-120px)] overflow-y-auto bg-popover rounded-2xl p-3 shadow-glass before:absolute before:inset-x-6 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-accent/50 before:to-transparent z-1000 animate-[mobileMenuSlideIn_0.3s_cubic-bezier(0.4,0,0.2,1)] motion-reduce:animate-none [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-[10px]"
               >
                 <!-- Logged-in user info + profile actions -->
                 @if (isLoggedIn()) {
@@ -237,21 +278,21 @@
                     (click)="closeMobileMenu()"
                     class="block py-3 px-4 rounded-lg text-sm text-foreground/90 no-underline hover:bg-accent/12 hover:text-accent transition-all outline-none focus:outline-none focus:bg-accent/12 focus:text-accent"
                   >
-                    Profile
+                    {{ 'header.profile' | transloco }}
                   </a>
                   <a
                     [routerLink]="utils.localePath('payment/order-history')"
                     (click)="closeMobileMenu()"
                     class="block py-3 px-4 rounded-lg text-sm text-foreground/90 no-underline hover:bg-accent/12 hover:text-accent transition-all outline-none focus:outline-none focus:bg-accent/12 focus:text-accent"
                   >
-                    Order History
+                    {{ 'header.orderHistory' | transloco }}
                   </a>
                   <button
                     type="button"
                     (click)="signOut()"
-                    class="w-full text-left py-3 px-4 rounded-lg text-sm text-destructive/90 bg-transparent border-0 hover:bg-destructive/10 transition-all cursor-pointer outline-none focus:outline-none focus:bg-destructive/10 focus:text-destructive"
+                    class="w-full text-start py-3 px-4 rounded-lg text-sm text-destructive/90 bg-transparent border-0 hover:bg-destructive/10 transition-all cursor-pointer outline-none focus:outline-none focus:bg-destructive/10 focus:text-destructive"
                   >
-                    Sign out
+                    {{ 'header.signOut' | transloco }}
                   </button>
 
                   <div
@@ -273,11 +314,11 @@
                         (click)="closeMobileMenu()"
                         [class]="
                           cn(
-                            'flex items-center gap-1 w-full text-left no-underline text-[15px] font-medium bg-transparent border-0 rounded-[10px] cursor-pointer transition-all duration-200 ease-in-out mb-1 py-3.5 px-4 active:scale-[0.98] outline-none focus:outline-none',
+                            'flex items-center gap-1 w-full text-start no-underline text-[15px] font-medium bg-transparent border-0 rounded-[10px] cursor-pointer transition-all duration-200 ease-in-out mb-1 py-3.5 px-4 active:scale-[0.98] outline-none focus:outline-none',
                             mrla.isActive && hasActivePlan()
-                              ? 'bg-accent-premium/15 text-accent-premium font-semibold border-l-[3px] border-accent-premium pl-[13px]'
+                              ? 'bg-accent-premium/15 text-accent-premium font-semibold border-s-[3px] border-accent-premium ps-[13px]'
                               : mrla.isActive
-                                ? 'bg-accent/15 text-accent font-semibold border-l-[3px] border-accent pl-[13px]'
+                                ? 'bg-accent/15 text-accent font-semibold border-s-[3px] border-accent ps-[13px]'
                                 : 'text-foreground/90 hover:bg-accent/12 hover:text-accent focus:bg-accent/12 focus:text-accent'
                           )
                         "
@@ -285,18 +326,31 @@
                         @if (first && hasActivePlan()) {
                           <ng-icon [svg]="crownIcon" class="w-4! h-4!" aria-hidden="true" />
                         }
-                        {{ item.label }}
+                        <span class="relative">
+                          {{ item.label }}
+                          @if (item.highlight) {
+                            <ng-container [ngTemplateOutlet]="navUnderline" />
+                          }
+                        </span>
+                        @if (item.badge) {
+                          <span
+                            class="rounded-full bg-accent/20 text-accent px-1.5 py-px text-[10px] font-bold uppercase tracking-wide leading-4"
+                            >{{ item.badge }}</span
+                          >
+                        }
                       </a>
                     }
 
                     @if (item.type === 'button') {
-                      <app-button
-                        variant="ghost"
+                      <button
+                        app-button
+                        type="button"
                         class="w-full p-0! h-auto! block mb-1"
-                        (clicked)="handleAction(item); closeMobileMenu()"
+                        variant="ghost"
+                        (click)="handleAction(item); closeMobileMenu()"
                       >
                         <span
-                          class="block w-full text-left no-underline text-foreground/90 text-[15px] font-medium bg-transparent border-0 rounded-[10px] cursor-pointer transition-all duration-200 ease-in-out py-1 px-4 active:scale-[0.98]"
+                          class="block w-full text-start no-underline text-foreground/90 text-[15px] font-medium bg-transparent border-0 rounded-[10px] cursor-pointer transition-all duration-200 ease-in-out py-1 px-4 active:scale-[0.98]"
                         >
                           @switch (item.style) {
                             @case ('demo') {
@@ -321,10 +375,10 @@
                             }
                             @case ('signup') {
                               <span
-                                class="lg:w-max w-full h-full overflow-hidden p-px rounded-full bg-primary flex justify-center items-center"
+                                class="lg:w-max w-full h-full overflow-hidden p-px rounded-full bg-linear-to-r from-primary to-accent transition-shadow duration-300 hover:shadow-[0_0_20px_rgb(var(--accent-rgb)/0.5)] flex justify-center items-center"
                               >
                                 <span
-                                  class="w-full h-full overflow-hidden p-px rounded-full bg-primary px-4 py-1.5 flex justify-center items-center"
+                                  class="w-full h-full overflow-hidden p-px rounded-full px-4 py-1.5 flex justify-center items-center"
                                 >
                                   <span
                                     class="z-10 relative text-sm font-semibold text-primary-foreground"
@@ -338,7 +392,7 @@
                             }
                           }
                         </span>
-                      </app-button>
+                      </button>
                     }
 
                     @if (item.type === 'menu' && item.children?.length) {
@@ -365,14 +419,14 @@
                           </span>
                           <ng-icon
                             name="lucideChevronDown"
-                            class="ml-2"
+                            class="ms-2"
                             size="16"
                             aria-hidden="true"
                           />
                         </button>
                         <div
                           ngpCollapsibleContent
-                          class="mt-1 mb-1 ml-2 bg-muted rounded-lg p-2 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)]"
+                          class="mt-1 mb-1 ms-2 bg-muted rounded-lg p-2 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)] motion-reduce:animate-none"
                         >
                           @for (child of item.children; track child.label) {
                             <app-nav-menu-item [item]="child" (navigated)="closeMobileMenu()" />
@@ -395,3 +449,24 @@
     </div>
   </div>
 </header>
+
+<!-- Hand-drawn underline for NavItem.highlight. pathLength="1" lets a 1-unit
+     dash draw in from offset 1 → 0. Host span must be `relative`. -->
+<ng-template #navUnderline>
+  <svg
+    class="absolute inset-x-0 -bottom-1.5 h-1.5 w-full overflow-visible text-accent pointer-events-none"
+    viewBox="0 0 100 12"
+    preserveAspectRatio="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M3 8 Q 25 2 50 6 T 97 4"
+      pathLength="1"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="5"
+      stroke-linecap="round"
+      class="[stroke-dasharray:1] animate-[navUnderlineDraw_0.48s_cubic-bezier(0.25,0.46,0.45,0.94)_0.3s_backwards] motion-reduce:animate-none"
+    />
+  </svg>
+</ng-template>

@@ -1,72 +1,82 @@
-import { Component, computed, DestroyRef, effect, inject, input } from '@angular/core';
-import { CourseAbout } from '@shared/components/course-about/course-about';
-import { CourseRelatedSection } from '@shared/components/course-related-section/course-related-section';
-import { CourseChapterList } from '../../../components/course-chapter-list/course-chapter-list';
-import { CourseResources } from '../../../components/course-resources/course-resources';
+import { Component, computed, inject, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { Faq } from '@shared/components/faq/faq';
 import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
 import { MasterclassCourseHeroSkeleton } from '@shared/components/skeleton/masterclass-course-hero-skeleton/masterclass-course-hero-skeleton';
-import { Faq } from '@shared/components/faq/faq';
-import { AppDownloadPrompt } from '@features/offerings/services/app-download-prompt';
+import { Button } from '@shared/ui/button/button';
 import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
-import { MasterclassFacade } from '../../../services/masterclass-facade';
-import { MasterclassCourseHero } from '../../components/masterclass-course-hero/masterclass-course-hero';
+import { AppDownloadPrompt } from '@features/offerings/services/app-download-prompt';
+import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
+import { MasterclassChapterList } from '@features/offerings/masterclass/components/masterclass-chapter-list/masterclass-chapter-list';
+import { MasterclassCourseAbout } from '@features/offerings/masterclass/components/masterclass-course-about/masterclass-course-about';
+import { MasterclassCourseRelated } from '@features/offerings/masterclass/components/masterclass-course-related/masterclass-course-related';
+import { MasterclassCourseResources } from '@features/offerings/masterclass/components/masterclass-course-resources/masterclass-course-resources';
+import { MasterclassCourseHero } from '@features/offerings/masterclass/components/masterclass-course-hero/masterclass-course-hero';
+import {
+  MASTERCLASS_COURSE_SECTION_IDS,
+  MASTERCLASS_COURSE_SECTION_NAV,
+} from '@features/offerings/masterclass/constants/masterclass-nav';
 
+/**
+ * One masterclass course: the hero, then the Masterclass (chapters), Resource,
+ * About, Related and FAQ sections. It points the route-scoped
+ * `CourseDetailFacade` at the route's course and decides which sections show;
+ * each section injects the facade for its own data and actions.
+ */
 @Component({
   selector: 'app-masterclass-course',
   imports: [
-    MasterclassCourseHero,
-    CourseChapterList,
-    MasterclassCourseHeroSkeleton,
-    SectionNav,
-    CourseAbout,
-    CourseRelatedSection,
+    RouterLink,
+    Button,
     Faq,
-    CourseResources,
+    SectionNav,
+    MasterclassCourseHero,
+    MasterclassCourseHeroSkeleton,
+    MasterclassChapterList,
+    MasterclassCourseResources,
+    MasterclassCourseAbout,
+    MasterclassCourseRelated,
   ],
   templateUrl: './masterclass-course.html',
 })
 export class MasterclassCourse {
+  /** The course UUID; an old numeric id is resolved by `courseTitle` instead. */
   readonly courseId = input<string>();
+  /** The course slug. */
   readonly courseTitle = input<string>();
 
-  protected readonly masterclassService = inject(MasterclassFacade);
+  protected readonly facade = inject(CourseDetailFacade);
 
-  /** Dynamic navigation items based on available data */
+  protected readonly sectionIds = MASTERCLASS_COURSE_SECTION_IDS;
+
   protected readonly sectionNavItems = computed<SectionNavItem[]>(() => {
-    const course = this.masterclassService.courseDetails();
-    const chapters = this.masterclassService.courseChapters();
-
-    return [
-      { id: 'masterclass', label: 'Masterclass', visible: chapters.length > 0 },
-      { id: 'resource', label: 'Resource', visible: true },
-      { id: 'about', label: 'About', visible: course !== null },
-      { id: 'related', label: 'Related', visible: course !== null },
-      { id: 'faq', label: 'FAQ', visible: true },
-    ];
+    const ids = MASTERCLASS_COURSE_SECTION_IDS;
+    const shown: Record<string, boolean> = {
+      [ids.chapters]: this.facade.chapters().length > 0,
+      [ids.resources]: this.facade.hasResources(),
+      [ids.about]: this.facade.course() !== null,
+      [ids.related]: this.facade.relatedRails().length > 0,
+    };
+    return MASTERCLASS_COURSE_SECTION_NAV.map((item) =>
+      item.id in shown ? { ...item, visible: shown[item.id] } : item,
+    );
   });
 
   constructor() {
     inject(AppDownloadPrompt).maybePrompt();
 
-    // SSR gate, URL-derived fallback SEO, slug signal, Supabase load,
-    // error fallback, and seoManager.reset() on destroy. See helper for the
-    // full SSR lifecycle. Component handles its own facade load + cleanup.
+    // SSR gate, URL-derived fallback SEO, the Supabase row, and the reset on
+    // destroy all live in the helper; the course upgrades the fallback once it
+    // loads.
     setupCourseSeo({
       kind: 'masterclass',
       courseTitle: this.courseTitle,
-      courseDetails: this.masterclassService.courseDetails,
+      courseDetails: this.facade.course,
     });
 
-    // Load the course as soon as the id input is set.
-    effect(() => {
-      const id = this.courseId();
-      // ponytail: also re-ran on auth-state change so the API picked up the
-      // new auth context. Nothing to depend on now.
-      if (id) {
-        this.masterclassService.loadCourse({ id: Number(id), course_type: 'masterclass' });
-      }
-    });
-
-    inject(DestroyRef).onDestroy(() => this.masterclassService.clear());
+    this.facade.connect(
+      'masterclass',
+      computed(() => ({ courseId: this.courseId(), slug: this.courseTitle() })),
+    );
   }
 }

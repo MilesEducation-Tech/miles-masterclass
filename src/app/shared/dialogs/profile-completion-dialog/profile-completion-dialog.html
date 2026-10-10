@@ -1,9 +1,19 @@
-<app-dialog-shell maxWidth="95vw" ariaLabel="Complete your profile" [dismissible]="false">
+<app-dialog ariaLabel="Complete your profile" [dismissible]="false" panelClass="p-0 max-w-[95vw]">
   <div
     class="bg-linear-to-b from-[#0f2237] to-[#1a3a5c] flex flex-col md:max-w-[640px] w-[95svw] max-h-[85svh] mx-auto overflow-hidden relative rounded-xl"
   >
-    <div class="absolute right-2 top-2">
-      <app-button variant="close" (clicked)="dialogRef.close()"></app-button>
+    <div class="absolute end-2 top-2">
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="dialogRef.close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
     <div class="flex-1 overflow-y-auto px-6 py-8 sm:px-10 sm:py-10">
       <h2 class="text-2xl sm:text-3xl font-extrabold text-white text-center leading-tight">
@@ -15,36 +25,43 @@
         and reels that match your day-to-day.
       </p>
 
-      <app-forms type="signal" class="mt-8" (submitted)="submit()">
+      <form class="mt-8" (submit)="$event.preventDefault(); submit()">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <app-aria-autocomplete
-            id="profile-sector"
-            label="Sector"
-            placeholder="Select your sector"
-            [options]="sectorOptions()"
-            [formField]="profileForm.sector_id"
-          />
+          <app-field [errors]="profileForm.sector_id().errors()">
+            <label ngpLabel for="profile-sector">Sector</label>
 
-          <app-aria-autocomplete
-            id="profile-job-role"
-            label="Job Role"
-            placeholder="Select your role"
-            [options]="jobRoleOptions()"
-            [formField]="profileForm.job_role_id"
-          />
+            <app-combobox
+              id="profile-sector"
+              placeholder="Select your sector"
+              [options]="sectorOptions()"
+              [formField]="profileForm.sector_id"
+            />
+          </app-field>
+
+          <app-field [errors]="profileForm.job_role_id().errors()">
+            <label ngpLabel for="profile-job-role">Job Role</label>
+
+            <app-combobox
+              id="profile-job-role"
+              placeholder="Select your role"
+              [options]="jobRoleOptions()"
+              [formField]="profileForm.job_role_id"
+            />
+          </app-field>
         </div>
 
         <div class="flex justify-center mt-8">
-          <app-button
+          <button
+            app-button
             variant="default"
             size="lg"
             type="submit"
             [disabled]="profileForm().invalid() || loading()"
           >
             {{ loading() ? 'Saving…' : 'Save' }}
-          </app-button>
+          </button>
         </div>
-      </app-forms>
+      </form>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

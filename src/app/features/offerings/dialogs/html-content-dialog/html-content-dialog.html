@@ -1,11 +1,22 @@
-<app-dialog-shell maxWidth="100%" [ariaLabel]="data.title">
+<app-dialog [ariaLabel]="data.title" panelClass="p-0 max-w-full">
   <div class="flex flex-col h-[90vh] md:min-w-[50vw] w-[95vw] md:w-auto bg-background">
     <!-- Header -->
     <div class="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
-      <h2 id="html-dialog-title" class="text-lg font-semibold text-foreground truncate pr-4">
+      <h2 id="html-dialog-title" class="text-lg font-semibold text-foreground truncate pe-4">
         {{ data.title }}
       </h2>
-      <app-button variant="close" size="sm" (clicked)="close()" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        size="sm"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <!-- Content -->
@@ -13,4 +24,4 @@
       <div [innerHTML]="safeHtml"></div>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

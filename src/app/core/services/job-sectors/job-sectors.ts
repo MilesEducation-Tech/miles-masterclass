@@ -63,12 +63,12 @@ export class JobSectors {
     this.sectorsResource.hasValue() ? (this.sectorsResource.value()?.data ?? []) : [],
   );
 
-  /** Sector list shaped for `<app-aria-autocomplete>`. */
+  /** Sector list shaped for `<app-combobox>`. */
   readonly sectorOptions = computed<AutoCompleteOption<number>[]>(() =>
     this.sectors().map((s) => ({ label: s.name, value: s.id })),
   );
 
-  /** Roles for the given sector id, shaped for `<app-aria-autocomplete>`. */
+  /** Roles for the given sector id, shaped for `<app-combobox>`. */
   rolesFor(sectorId: number | null): AutoCompleteOption<number>[] {
     if (sectorId == null) return [];
     const match = this.sectors().find((s) => s.id === sectorId);

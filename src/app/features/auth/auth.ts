@@ -1,5 +1,6 @@
 import { NgOptimizedImage } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
 import { environment } from '@env/environment';
 import { NgIcon } from '@ng-icons/core';
@@ -14,7 +15,7 @@ import { logo } from '@core/constants/icon';
  */
 @Component({
   selector: 'app-auth',
-  imports: [RouterOutlet, NgOptimizedImage, NgIcon],
+  imports: [RouterOutlet, NgOptimizedImage, NgIcon, TranslocoPipe],
   templateUrl: './auth.html',
 })
 export class Auth {
@@ -29,8 +30,6 @@ export class Auth {
     apple: svglAppleDark,
     faSolidAngleLeft,
   });
-
-  protected readonly buttonLabel = signal('Back to Home');
 
   protected handleBackOrLogout(): void {
     const redirect = this.route.snapshot.queryParamMap.get('redirect');

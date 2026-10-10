@@ -59,7 +59,7 @@ export class CourseChapterList {
   readonly lockOverlayClass = computed(
     () =>
       'absolute z-30 flex flex-col items-center justify-center gap-2 bg-black/75 px-4 text-center backdrop-blur-[2px] ' +
-      (this.courseType() === 'podcast' ? 'inset-y-0 left-0 aspect-square' : 'inset-0'),
+      (this.courseType() === 'podcast' ? 'inset-y-0 start-0 aspect-square' : 'inset-0'),
   );
 
   /**

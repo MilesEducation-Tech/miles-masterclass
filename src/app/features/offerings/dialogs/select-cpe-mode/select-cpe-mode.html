@@ -1,4 +1,4 @@
-<app-dialog-shell maxWidth="100%" ariaLabel="Choose a CPE mode" [dismissible]="false">
+<app-dialog ariaLabel="Choose a CPE mode" [dismissible]="false" panelClass="p-0 max-w-full">
   <div
     class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] rounded-lg shadow-2xl flex flex-col md:w-[50svw] w-[95svw] mx-auto md:overflow-hidden"
   >
@@ -12,7 +12,18 @@
           Choose Your {{ data.type }} Mode
         </h1>
       </div>
-      <app-button variant="close" size="sm" (clicked)="close()" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        size="sm"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <!-- Content -->
@@ -41,7 +52,7 @@
           type="button"
           ngpRadioItem
           [ngpRadioItemValue]="false"
-          class="group relative flex w-full cursor-pointer gap-4 rounded-lg border-2 p-5 text-left transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[checked]:border-blue-500 data-[checked]:bg-blue-500/10 not-data-[checked]:border-gray-600 not-data-[checked]:bg-gray-800/50 not-data-[checked]:hover:border-gray-500 not-data-[checked]:hover:bg-gray-700/50"
+          class="group relative flex w-full cursor-pointer gap-4 rounded-lg border-2 p-5 text-start transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[checked]:border-blue-500 data-[checked]:bg-blue-500/10 not-data-[checked]:border-gray-600 not-data-[checked]:bg-gray-800/50 not-data-[checked]:hover:border-gray-500 not-data-[checked]:hover:bg-gray-700/50"
         >
           <span class="mt-1 shrink-0">
             <span
@@ -91,7 +102,7 @@
           type="button"
           ngpRadioItem
           [ngpRadioItemValue]="true"
-          class="group relative flex w-full cursor-pointer gap-4 rounded-lg border-2 p-5 text-left transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[checked]:border-blue-500 data-[checked]:bg-blue-500/10 not-data-[checked]:border-gray-600 not-data-[checked]:bg-gray-800/50 not-data-[checked]:hover:border-gray-500 not-data-[checked]:hover:bg-gray-700/50"
+          class="group relative flex w-full cursor-pointer gap-4 rounded-lg border-2 p-5 text-start transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[checked]:border-blue-500 data-[checked]:bg-blue-500/10 not-data-[checked]:border-gray-600 not-data-[checked]:bg-gray-800/50 not-data-[checked]:hover:border-gray-500 not-data-[checked]:hover:bg-gray-700/50"
         >
           <span class="mt-1 shrink-0">
             <span
@@ -136,11 +147,13 @@
 
       <!-- Action Buttons -->
       <div class="flex flex-col sm:flex-row sm:justify-end gap-3 pt-4 border-t border-gray-700">
-        <app-button variant="secondary" (clicked)="close()"> Cancel </app-button>
-        <app-button
+        <button app-button type="button" variant="secondary" (click)="close()">Cancel</button>
+        <button
+          app-button
+          type="button"
           variant="default"
           [disabled]="selectedMode() === null"
-          (clicked)="confirmSelection()"
+          (click)="confirmSelection()"
         >
           Continue with
           {{
@@ -150,8 +163,8 @@
                 ? 'CPE Mode'
                 : 'Selected Mode'
           }}
-        </app-button>
+        </button>
       </div>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

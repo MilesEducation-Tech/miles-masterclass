@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { NgIconComponent, provideIcons, NgIcon } from '@ng-icons/core';
 import {
   heroArrowUpTray,
   heroCheckCircle,
@@ -31,15 +31,19 @@ import {
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { computeSeoScore, createDefaultSeoPage, SeoPage } from '@core/models/seo.models';
 import { NgpDialogContext, NgpDialogManager, NgpDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Logger } from '@core/services/logger/logger';
 import { SupabaseSeo } from '@core/services/seo/supabase-seo';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+
 import { Button } from '@shared/ui/button/button';
 import { AriaSelectOption } from '@core/models/aria.model';
 import { PERM } from '@admin/core/models/admin-rbac.model';
 import { HasPermissionDirective } from '@admin/core/directives/has-permission';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel, NgpDescription } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Select } from '@shared/ui/select/select';
 
 @Component({
   selector: 'app-seo-dashboard',
@@ -47,10 +51,14 @@ import { HasPermissionDirective } from '@admin/core/directives/has-permission';
     NgIconComponent,
     RouterLink,
     HasPermissionDirective,
-    AriaInput,
-    AriaSelect,
     Button,
-    DialogShell,
+    Dialog,
+    Field,
+    NgpLabel,
+    NgpDescription,
+    Input,
+    Select,
+    NgIcon,
   ],
   providers: [
     provideIcons({

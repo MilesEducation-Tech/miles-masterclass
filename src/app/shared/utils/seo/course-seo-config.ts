@@ -17,7 +17,22 @@ const TITLE_SUFFIX: Record<CourseSeoKind, string> = {
  * carry the fields we use here, with `course_overview` only on `ContentDetails`
  * and `trailer_link` optional on both.
  */
-export type CourseSeoSource = ContentDetails | (Content & { trailer_link?: string | null });
+export type CourseSeoSource =
+  ContentDetails | (Content & { trailer_link?: string | null }) | WebCourseSeoSource;
+
+/**
+ * A course from the web API's `course-detail/`, which the masterclass course
+ * page reads. Structural, so `shared` names only the keys it reads and never
+ * imports the feature's model.
+ */
+export interface WebCourseSeoSource {
+  id: string;
+  name: string;
+  mini_description: string;
+  horizontal_thumbnail_url: string | null;
+  trailer_video_url: string | null;
+  instructors: readonly { name: string }[];
+}
 
 /**
  * Build a fallback `SeoConfig` from a populated course/reel record. Used by the
@@ -25,6 +40,8 @@ export type CourseSeoSource = ContentDetails | (Content & { trailer_link?: strin
  * plausible OG/Twitter metadata even before any Supabase override resolves.
  */
 export function courseToSeoConfig(course: CourseSeoSource, kind: CourseSeoKind): SeoConfig {
+  if ('mini_description' in course) return webCourseToSeoConfig(course, kind);
+
   const longOverview = 'course_overview' in course ? course.course_overview : undefined;
   const description = course.course_short_overview || longOverview || undefined;
   const image = course.horizontal_thumbnail || course.thumbnail || undefined;
@@ -47,6 +64,33 @@ export function courseToSeoConfig(course: CourseSeoSource, kind: CourseSeoKind):
     twitter: {
       card: 'summary_large_image',
       title: course.title,
+      description,
+      image,
+    },
+  };
+}
+
+/** The same fallback, read from the web API's keys. */
+function webCourseToSeoConfig(course: WebCourseSeoSource, kind: CourseSeoKind): SeoConfig {
+  const description = course.mini_description || undefined;
+  const image = course.horizontal_thumbnail_url || undefined;
+  const author = course.instructors.map((instructor) => instructor.name).join(', ') || undefined;
+
+  return {
+    title: `${course.name} ${TITLE_SUFFIX[kind]}`.trim(),
+    description,
+    image,
+    author,
+    openGraph: {
+      title: course.name,
+      description,
+      image,
+      video: course.trailer_video_url || undefined,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: course.name,
       description,
       image,
     },

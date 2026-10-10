@@ -87,7 +87,6 @@ export default [
           { type: 'bootstrap', pattern: 'src', partialMatch: false },
         ],
         'boundaries/files': [
-          { category: 'test', pattern: '**/*.spec.ts' },
           { category: 'story', pattern: '**/*.stories.ts' },
           // Load-bearing catch-all: an array query returns false against a null value, so
           // without a category on ordinary files the `noneOf` selector in the testing policy
@@ -115,10 +114,14 @@ export default [
             style: 'camelCase',
           },
         ],
+        // Attribute selectors are allowed for components that enhance a native element
+        // (`button[app-button]`, `input[app-input]`), the shape ng-primitives' generator emits:
+        // the consumer keeps the real element and every native attribute (type, autocomplete,
+        // aria-*) lands where assistive technology reads it.
         '@angular-eslint/component-selector': [
           'error',
           {
-            type: 'element',
+            type: ['element', 'attribute'],
             prefix: 'app',
             style: 'kebab-case',
           },
@@ -169,8 +172,8 @@ export default [
               },
               {
                 to: { element: { type: 'testing' } },
-                disallow: { from: { file: { categories: { noneOf: ['test', 'story'] } } } },
-                message: '@testing/* is importable only from specs and stories',
+                disallow: { from: { file: { categories: { noneOf: ['story'] } } } },
+                message: '@testing/* is importable only from stories',
               },
             ],
           },
@@ -261,7 +264,7 @@ export default [
         ],
       },
     },
-    // LEGACY_ANY_FILES — the ratchet for `no-explicit-any` (AGENTS.md §8). These 34 files
+    // LEGACY_ANY_FILES — the ratchet for `no-explicit-any` (AGENTS.md §8). These 30 files
     // already used `any` when the rule became an error (MIL-240, 135 hits), so they only warn:
     // the debt stays visible in every lint run without failing it. Every other file errors.
     // Remove a file from this list once its `any`s are gone; never add one.
@@ -271,21 +274,16 @@ export default [
         'src/app/core/models/http.model.ts',
         'src/app/core/models/library-filters.model.ts',
         'src/app/core/services/feature-facade/feature-facade.ts',
-        'src/app/core/services/location/location.ts',
         'src/app/core/services/logger/logger.ts',
-        'src/app/core/services/section-filters-facade/section-filters-facade.spec.ts',
         'src/app/features/offerings/components/chapter-quiz/chapter-quiz.ts',
         'src/app/features/offerings/components/course-resources/course-resources.ts',
         'src/app/features/offerings/pages/course-feedback/course-feedback.ts',
-        'src/app/features/offerings/pages/final-assessment-exam/final-assessment-exam.spec.ts',
         'src/app/features/offerings/pages/final-assessment-exam/final-assessment-exam.ts',
         'src/app/features/offerings/pages/final-assessment-report/final-assessment-report.ts',
         'src/app/features/offerings/services/chapter-facade.ts',
         'src/app/features/payment/pages/plan/plan.ts',
         'src/app/layout/footer/footer.stories.ts',
-        'src/app/layout/footer/footer.ts',
         'src/app/layout/header/header.stories.ts',
-        'src/app/shared/components/app-download/app-download.ts',
         'src/app/shared/components/cards/horizontal/horizontal.ts',
         'src/app/shared/components/cards/hover/hover.ts',
         'src/app/shared/components/cards/vertical/vertical.ts',
@@ -295,13 +293,37 @@ export default [
         'src/app/shared/components/slider/slider.ts',
         'src/app/shared/dialogs/filter-dialog/filter-dialog.ts',
         'src/app/shared/dialogs/utils-dialog/utils-dialog.ts',
-        'src/app/shared/ui/aria/aria-autocomplete/aria-autocomplete.ts',
-        'src/app/shared/ui/aria/aria-input/aria-input.ts',
-        'src/app/shared/ui/aria/aria-multiselect/aria-multiselect.ts',
-        'src/app/shared/ui/aria/aria-select/aria-select.ts',
         'src/app/testing/mocks/services.mock.ts',
       ],
       rules: { '@typescript-eslint/no-explicit-any': 'warn' },
+    },
+    {
+      // shared/ui is an ng-primitives kit bound to Angular Signal Forms only. A control takes
+      // part in a form through its `value`/`valueChange` (or `checked`/`checkedChange`) pair
+      // and `[formField]`; ControlValueAccessor, NgControl and the reactive/template-forms
+      // modules must not come back. The core rule is used here so the base
+      // `@typescript-eslint/no-restricted-imports` list above still applies untouched.
+      files: ['src/app/shared/ui/**/*.ts'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: [
+              {
+                name: '@angular/forms',
+                message:
+                  'shared/ui binds to Signal Forms only: import from @angular/forms/signals. No ControlValueAccessor, NgControl, FormsModule or ReactiveFormsModule in the kit.',
+              },
+              {
+                name: 'ng-primitives/utils',
+                importNames: ['provideValueAccessor', 'ChangeFn', 'TouchedFn'],
+                message:
+                  'shared/ui binds to Signal Forms only: expose value/valueChange (or checked/checkedChange) and a `touch` output instead of a ControlValueAccessor.',
+              },
+            ],
+          },
+        ],
+      },
     },
     {
       files: ['**/*.html'],

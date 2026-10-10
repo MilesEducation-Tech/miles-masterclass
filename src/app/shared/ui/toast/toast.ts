@@ -1,59 +1,68 @@
-import { Component, computed, inject } from '@angular/core';
-import { injectToastContext, NgpToast, NgpToastManager } from 'ng-primitives/toast';
-import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroXMark } from '@ng-icons/heroicons/outline';
-import { ToastContext } from '@core/models/notification.model';
+import { NgpButton } from 'ng-primitives/button';
+import { injectToastContext, NgpToast, NgpToastManager } from 'ng-primitives/toast';
+import { ToastContext, ToastType } from '@core/models/notification.model';
 import { cn } from '../../utils/cn';
 
+const TYPES: Record<ToastType, string> = {
+  success: 'border-s-success',
+  error: 'border-s-destructive',
+  info: 'border-s-accent',
+};
+
 /**
- * A single toast, rendered by `NgpToastManager`.
- *
- * `NgpToast` is a host directive here because the manager instantiates this
- * component itself — there is no template to put the directive in. The
- * primitive owns stacking, placement, the auto-dismiss timer (including
- * pause-on-hover) and swipe-to-dismiss, all of which used to live in
- * `NotificationService` and the now-deleted `NotificationComponent`.
+ * What `NgpToastManager` renders for each `NotificationService` call. The stacking,
+ * swipe and enter/leave rules live in `toast.css`: they are `:host[data-*]` custom-property
+ * maths and keyframes that utilities cannot express.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-toast',
-  imports: [NgIconComponent],
-  hostDirectives: [NgpToast],
-  templateUrl: './toast.html',
+  imports: [NgpButton, NgIcon],
   providers: [provideIcons({ heroXMark })],
+  hostDirectives: [NgpToast],
+  styleUrl: './toast.css',
   host: {
-    'animate.enter': 'toast-enter-top',
-    'animate.leave': 'toast-leave-top',
-    class: 'block w-full',
+    'animate.enter': 'toast-enter',
+    'animate.leave': 'toast-leave',
+    '[class]': 'classes()',
+    '[attr.data-type]': 'context.type',
   },
+  template: `
+    <p class="col-start-1 row-start-1 m-0 text-sm leading-5 font-semibold select-none">
+      {{ context.title }}
+    </p>
+    <p class="col-start-1 row-start-2 m-0 text-sm leading-5 text-muted-foreground select-none">
+      {{ context.message }}
+    </p>
+    @if (context.closable) {
+      <button
+        ngpButton
+        type="button"
+        class="col-start-2 row-span-2 inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none data-hover:bg-muted data-hover:text-foreground data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-ring"
+        aria-label="Dismiss notification"
+        (click)="dismiss()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
+    }
+  `,
 })
-export class ToastComponent {
+export class Toast {
   private readonly toastManager = inject(NgpToastManager);
   private readonly toast = inject(NgpToast);
-
   protected readonly context = injectToastContext<ToastContext>();
 
-  protected readonly containerClasses = computed(() =>
+  protected readonly classes = computed(() =>
     cn(
-      'relative w-full py-2 px-4 rounded-xl border shadow-sm transition-all duration-300 ease-out flex items-start group',
-      'backdrop-blur-sm',
-      {
-        'bg-green-50/90 text-green-600 border-green-200': this.context.type === 'success',
-        'bg-red-50/90 text-red-600 border-red-200': this.context.type === 'error',
-        'bg-white/90 text-gray-500 border-gray-200': this.context.type === 'info',
-      },
+      'absolute z-(--ngp-toast-z-index) inline-grid w-[350px] max-w-[calc(100vw-2rem)] grid-cols-[1fr_auto] grid-rows-[min-content_min-content] items-center gap-x-3 gap-y-1 rounded-lg border border-border border-s-4 bg-popover px-4 py-3 text-popover-foreground shadow-lg',
+      TYPES[this.context.type],
     ),
   );
 
-  protected readonly titleClasses = computed(() =>
-    cn('font-bold mb-1', {
-      'text-green-800': this.context.type === 'success',
-      'text-red-800': this.context.type === 'error',
-      'text-gray-900': this.context.type === 'info',
-    }),
-  );
-
-  protected onDismiss(event: Event): void {
-    event.stopPropagation();
-    void this.toastManager.dismiss(this.toast);
+  dismiss(): void {
+    this.toastManager.dismiss(this.toast);
   }
 }

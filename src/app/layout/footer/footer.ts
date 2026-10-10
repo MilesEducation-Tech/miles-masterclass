@@ -1,9 +1,9 @@
 import { NgOptimizedImage } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
 import { svglLinkedin, svglYoutube } from '@ng-icons/svgl';
-import { appStoreIcon, googlePlayIcon, instagramIcon } from '@core/constants/icon';
+import { appStoreIcon, googlePlayIcon, instagramIcon, logo } from '@core/constants/icon';
 import { FooterLink, FooterSection } from '@core/models/footer.model';
 import { Utils } from '@shared/services/utils';
 import { Consent } from '@core/services/consent/consent';
@@ -11,18 +11,28 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 // Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { AuthSession } from '@core/services/auth-session/auth-session';
+import { LanguageContext } from '@core/services/language-context/language-context';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { LanguageSwitcher } from '../components/language-switcher/language-switcher';
 
 @Component({
   selector: 'app-footer',
-  imports: [RouterLink, NgIcon, NgOptimizedImage],
+  imports: [RouterLink, NgIcon, NgOptimizedImage, LanguageSwitcher, TranslocoPipe],
   templateUrl: './footer.html',
 })
 export class Footer {
-  private readonly router = inject(Router);
   private readonly utils = inject(Utils);
   private readonly dialogs = inject(NgpDialogManager);
   // Exposed for the footer "Cookie settings" link (reopens the consent panel).
   protected readonly consent = inject(Consent);
+  // The switcher only exists when this build offers more than one language (not production yet).
+  protected readonly canSwitchLanguage = inject(LanguageContext).canSwitch;
+  private readonly transloco = inject(TranslocoService);
+  /**
+   * Translates a key into the visitor's language. Brand and partner names (social, app stores,
+   * partnerships) are deliberately NOT passed through it: they read the same in every language.
+   */
+  private readonly t = (key: string): string => this.transloco.translate(key);
 
   // The token-cookie boolean, so SSR renders the right links (same as the header).
   readonly isLoggedIn = inject(AuthSession).isAuthenticated;
@@ -36,31 +46,38 @@ export class Footer {
     return `/${country?.toLowerCase()}/${profession}`;
   });
 
-  // Icons mapping
-  readonly icons = {
-    svglLinkedin,
-    svglYoutube,
-    instagramIcon,
-    appStoreIcon,
-    googlePlayIcon,
-  };
+  protected readonly logo = logo;
+  protected readonly qrCodeUrl =
+    'https://asset.milesmasterclass.com/media/web-app/home/qr-code-styling.png';
+  protected readonly copyrightYear = new Date().getFullYear();
 
   // All links configuration
   readonly exploreLinks = computed<FooterLink[]>(() => [
-    { label: 'Home', route: `${this.basePath()}/home`, showWhen: 'not-authenticated' },
-    { label: 'Master Class', route: `${this.basePath()}/masterclass` },
-    { label: 'Webinar', route: `${this.basePath()}/webinar` },
     {
-      label: 'Micro Learning',
+      label: this.t('footer.home'),
+      route: `${this.basePath()}/home`,
+      showWhen: 'not-authenticated',
+    },
+    { label: this.t('nav.masterClass'), route: `${this.basePath()}/masterclass` },
+    { label: this.t('nav.webinar'), route: `${this.basePath()}/webinar` },
+    {
+      label: this.t('footer.microLearning'),
       route: `${this.basePath()}/micro-learning`,
     },
-    { label: 'Podcast', route: `${this.basePath()}/podcast` },
-    { label: 'Course Library', route: `${this.basePath()}/library/course-library` },
-    { label: 'Instructor Library', route: `${this.basePath()}/library/instructor-library` },
-    { label: 'Badge Library', route: `${this.basePath()}/library/badge-library` },
-    { label: 'Become an Instructor', action: 'bookDemo' },
-    { label: 'CPE Tracker', route: `${this.basePath()}/cpe-tracker`, showWhen: 'authenticated' },
-    { label: 'Plan', route: `${this.basePath()}/payment/plan` },
+    { label: this.t('nav.podcast'), route: `${this.basePath()}/podcast` },
+    { label: this.t('nav.courseLibrary'), route: `${this.basePath()}/library/course-library` },
+    {
+      label: this.t('nav.instructorLibrary'),
+      route: `${this.basePath()}/library/instructor-library`,
+    },
+    { label: this.t('footer.badgeLibrary'), route: `${this.basePath()}/library/badge-library` },
+    { label: this.t('footer.becomeInstructor'), action: 'bookDemo' },
+    {
+      label: this.t('nav.cpeTracker'),
+      route: `${this.basePath()}/cpe-tracker`,
+      showWhen: 'authenticated',
+    },
+    { label: this.t('nav.plan'), route: `${this.basePath()}/payment/plan` },
     // Blog lives at the top level (matches WordPress permalinks), so it is not
     // scoped under basePath like the rest.
     // { label: 'Blog', route: '/blog' },
@@ -68,17 +85,17 @@ export class Footer {
 
   readonly policyLinks = computed<FooterLink[]>(() => [
     {
-      label: 'Payment, Cancellation & Refund Policy',
+      label: this.t('footer.paymentPolicy'),
       route: `${this.basePath()}/faq`,
       queryParams: { faq: '3' },
     },
     {
-      label: 'Credits & Reporting Policy',
+      label: this.t('footer.creditsPolicy'),
       route: `${this.basePath()}/faq`,
       queryParams: { faq: '2' },
     },
     {
-      label: 'How to Claim Credly Badge',
+      label: this.t('footer.credlyBadge'),
       route: `${this.basePath()}/how-to-claim-credly-badge`,
     },
   ]);
@@ -87,13 +104,13 @@ export class Footer {
     {
       label: 'LinkedIn',
       url: 'https://www.linkedin.com/company/miles-masterclass',
-      icon: 'svglLinkedin',
+      icon: svglLinkedin,
     },
-    { label: 'YouTube', url: 'https://www.youtube.com/@MilesMasterclass', icon: 'svglYoutube' },
+    { label: 'YouTube', url: 'https://www.youtube.com/@MilesMasterclass', icon: svglYoutube },
     {
       label: 'Instagram',
       url: 'https://www.instagram.com/miles.masterclass/',
-      icon: 'instagramIcon',
+      icon: instagramIcon,
     },
   ];
 
@@ -101,12 +118,15 @@ export class Footer {
     {
       label: 'App Store',
       url: 'https://apps.apple.com/in/app/miles-masterclass-ai-cpe/id6736642042',
-      icon: 'appStoreIcon',
+      icon: appStoreIcon,
+      caption: 'footer.downloadOnThe',
     },
     {
       label: 'Google Play',
       url: 'https://play.google.com/store/apps/details?id=com.miles.masterclass&hl=en',
-      icon: 'googlePlayIcon',
+      icon: googlePlayIcon,
+      // Each store prescribes its badge wording: Apple's "Download on the", Google's "Get it on".
+      caption: 'footer.getItOn',
     },
   ];
 
@@ -155,15 +175,15 @@ export class Footer {
 
   readonly legalLinks = computed<FooterLink[]>(() => [
     {
-      label: 'Privacy Policy',
+      label: this.t('footer.privacyPolicy'),
       route: `${this.basePath()}/privacy-policy`,
     },
     {
-      label: 'Compliance',
+      label: this.t('footer.compliance'),
       route: `/compliance`,
     },
     {
-      label: 'Terms of Service',
+      label: this.t('footer.termsOfService'),
       route: `${this.basePath()}/terms-of-service`,
     },
   ]);
@@ -173,42 +193,13 @@ export class Footer {
     this.exploreLinks().filter((link) => this.shouldShowLink(link)),
   );
 
-  // Dynamic footer sections for grid
-  readonly footerSections = computed<FooterSection[]>(() => [
-    { title: 'Explore', links: this.visibleExploreLinks(), type: 'links' },
-    { title: 'Policies', links: this.policyLinks(), type: 'links' },
-    { title: 'Partnerships', links: this.partnershipLinks(), type: 'links' },
-    {
-      title: 'Download App',
-      links: this.appStoreLinks,
-      type: 'download-app',
-      qrCodeUrl: 'https://asset.milesmasterclass.com/media/web-app/home/qr-code-styling.png',
-      colSpan: 2,
-    },
+  // The three link columns. Partnerships is `wide`: on phones it spans both columns and its
+  // nine links run in two columns, which keeps the footer short.
+  readonly linkSections = computed<FooterSection[]>(() => [
+    { title: this.t('footer.explore'), links: this.visibleExploreLinks() },
+    { title: this.t('footer.policies'), links: this.policyLinks() },
+    { title: this.t('footer.partnerships'), links: this.partnershipLinks(), wide: true },
   ]);
-
-  // Static mapping for grid columns (Tailwind JIT requires static class names)
-  private readonly gridColsMap: Record<number, string> = {
-    1: 'xl:grid-cols-1',
-    2: 'xl:grid-cols-2',
-    3: 'xl:grid-cols-3',
-    4: 'xl:grid-cols-4',
-    5: 'xl:grid-cols-5',
-    6: 'xl:grid-cols-6',
-  };
-
-  // Calculate total columns accounting for colSpan
-  readonly gridColumnsClass = computed(() => {
-    const totalCols = this.footerSections().reduce(
-      (sum, section) => sum + (section.colSpan ?? 1),
-      0,
-    );
-    return this.gridColsMap[totalCols] ?? 'xl:grid-cols-4';
-  });
-
-  navigateTo(path: string, queryParams?: Record<string, any>): void {
-    this.router.navigate([path], { queryParams });
-  }
 
   /** Dispatch for action-type links (e.g. "Become an Instructor" → Book a demo). */
   handleLinkAction(link: FooterLink): void {
@@ -222,15 +213,11 @@ export class Footer {
     const { CalendlyDialog } = await import('@shared/dialogs/calendly-dialog/calendly-dialog');
     this.dialogs.open(CalendlyDialog, {
       data: {
-        ariaLabel: 'Schedule a demo',
+        ariaLabel: this.t('common.scheduleDemo'),
         url: 'https://calendly.com/rohan-singhai-milesmasterclass/30min',
         closeAction: true,
       } satisfies CalendlyDialogData,
     });
-  }
-
-  getIcon(iconName: string): any {
-    return this.icons[iconName as keyof typeof this.icons];
   }
 
   private shouldShowLink(link: FooterLink): boolean {

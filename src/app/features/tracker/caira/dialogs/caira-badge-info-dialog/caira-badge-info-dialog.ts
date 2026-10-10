@@ -3,7 +3,7 @@ import { HttpContext, httpResource } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, linkedSignal, signal } from '@angular/core';
 import { NgpTabButton, NgpTabList, NgpTabPanel, NgpTabset } from 'ng-primitives/tabs';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import {
   BadgeV2Response,
   CAIRA_STATUS_LABEL,
@@ -15,6 +15,9 @@ import { SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
 import { apiUrl } from '@core/services/api-client/api-client';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface CairaBadgeInfoDialogData {
   /** The ladder row from the list response — supplies the header only. */
@@ -52,14 +55,16 @@ const EMPTY_DETAIL: BadgeV2Response<CairaLadderItem | null> = { data: null };
   selector: 'app-caira-badge-info-dialog',
   imports: [
     Button,
-    DialogShell,
     NgOptimizedImage,
     Spinner,
     NgpTabset,
     NgpTabList,
     NgpTabButton,
     NgpTabPanel,
+    Dialog,
+    NgIcon,
   ],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './caira-badge-info-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

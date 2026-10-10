@@ -2,8 +2,11 @@ import { DecimalPipe } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
 import { Button } from '@shared/ui/button/button';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { CreditsSummary, StudyModeBreakdown } from '@core/models/cpe-tracker.model';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface ComplianceDialogData {
   year: number;
@@ -29,7 +32,8 @@ const FIELD_CARD_COLORS: Record<string, string> = {
 
 @Component({
   selector: 'app-cpe-compliance-dialog',
-  imports: [DecimalPipe, Button, DialogShell],
+  imports: [DecimalPipe, Button, Dialog, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './cpe-compliance-dialog.html',
 })
 export class CpeComplianceDialog {

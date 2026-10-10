@@ -24,6 +24,17 @@ export interface FieldOfStudy {
   cpe_credits?: number;
 }
 
+/**
+ * What `CategoriesList` renders: a field of study from either contract — the
+ * legacy integer-id `FieldOfStudy` above, or the web API's UUID one. Structural,
+ * so neither has to be mapped into the other first.
+ */
+export type CategoryListItem = Pick<FieldOfStudy, 'name' | 'cpe_credits'> & {
+  id: number | string;
+  /** The web API's spelling of `cpe_credits`. */
+  cpe_credit?: number;
+};
+
 export interface PriceDetails {
   price: number;
   currency_code: string;

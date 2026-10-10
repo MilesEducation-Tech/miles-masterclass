@@ -4,6 +4,8 @@ export interface FooterLink {
   url?: string;
   queryParams?: Record<string, unknown>;
   icon?: string;
+  /** Small line above an app-store label ("Download on the", "Get it on"). Translation key. */
+  caption?: string;
   showWhen?: 'always' | 'authenticated' | 'trail-access' | 'not-authenticated';
   /** Renders the link as a button that triggers an in-app action instead of navigating. */
   action?: 'bookDemo';
@@ -12,7 +14,6 @@ export interface FooterLink {
 export interface FooterSection {
   title: string;
   links: FooterLink[];
-  type?: 'links' | 'download-app';
-  qrCodeUrl?: string;
-  colSpan?: number;
+  /** Spans both columns on phones, with its links in two columns. */
+  wide?: boolean;
 }

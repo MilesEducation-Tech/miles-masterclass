@@ -1,4 +1,15 @@
+<!-- Skip link: the first Tab stop on every page, visible only while focused. A button, not an
+     `href="#…"` link: the app's `<base href="/">` resolves a bare fragment to the home page. -->
+<button
+  type="button"
+  class="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-1001 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-white/60"
+  (click)="skipToContent()"
+>
+  {{ 'header.skipToContent' | transloco }}
+</button>
 <app-header />
+<!-- Skip-link target. Not a <main> wrapper: some pages already render their own <main>. -->
+<span #contentStart tabindex="-1" class="outline-none"></span>
 <router-outlet />
 <!-- The overlay is a fixed-position floating bar (§4.4 always-defer), so it takes no
      layout space: an empty placeholder causes no shift, and it stays out of the

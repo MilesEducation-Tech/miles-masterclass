@@ -7,18 +7,22 @@
         Onboard learner users, edit their profile, and record offline invoice payments.
       </p>
     </div>
-    <app-button variant="primary" size="default" (clicked)="onCreate()">Create user</app-button>
+    <button app-button type="button" variant="primary" (click)="onCreate()">Create user</button>
   </header>
 
   <!-- Filters bar -->
   <div class="flex w-full max-w-md items-center">
-    <app-aria-input
-      id="user-onboarding-search"
-      type="search"
-      label="Search name or email"
-      class="w-full"
-      [(value)]="searchInput"
-    />
+    <app-field class="w-full">
+      <label ngpLabel for="user-onboarding-search">Search name or email</label>
+
+      <input
+        app-input
+        id="user-onboarding-search"
+        type="search"
+        [value]="searchInput()"
+        (input)="searchInput.set($any($event.target).value)"
+      />
+    </app-field>
   </div>
 
   <!-- Error banner -->

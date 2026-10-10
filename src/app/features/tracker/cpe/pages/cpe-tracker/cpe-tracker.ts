@@ -27,10 +27,10 @@ import {
 import { CreditsSummary } from '@core/models/cpe-tracker.model';
 import { apiUrl } from '@core/services/api-client/api-client';
 import { Utils } from '@shared/services/utils';
-import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+
 import { AriaSelectOption } from '@core/models/aria.model';
 import { ErrorState } from '@shared/ui/error-state/error-state';
-import { withPreviousValue } from '@shared/utils/with-previous-value';
+import { withPreviousValue } from '@core/utils/with-previous-value';
 import { localeLink } from '../../../utils/tracker-links';
 import { BadgeFilterChips } from '../../../components/badge-filter-chips/badge-filter-chips';
 import { PortfolioSummary } from '../../components/portfolio-summary/portfolio-summary';
@@ -40,6 +40,9 @@ import { NotificationService } from '@core/services/notification/notification';
 import { TrackerDialogOrchestrator } from '../../services/tracker-dialog-orchestrator';
 import { DEFAULT_CPE_REQUIREMENT } from '../../constants/cpe-tracker.constants';
 import { courseCommands, feedbackCommands } from '../../utils/credit-row';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Select } from '@shared/ui/select/select';
 
 /** The API's page-size param is `page_count`, **not** `page_size`. */
 const PAGE_COUNT = 15;
@@ -60,13 +63,15 @@ type CourseTypeChoice = CpeCourseType | 'all';
 @Component({
   selector: 'app-cpe-tracker',
   imports: [
-    AriaSelect,
     BadgeFilterChips,
     ErrorState,
     NgIcon,
     PortfolioSummary,
     RouterLink,
     TrackerTable,
+    Field,
+    NgpLabel,
+    Select,
   ],
   providers: [provideIcons({ lucideArrowLeft })],
   templateUrl: './cpe-tracker.html',

@@ -5,7 +5,7 @@ import {
   registrationOf,
   WebinarCard,
   WebinarRegistrationInfo,
-} from '../models/webinar.model';
+} from '@features/offerings/webinar/models/webinar.model';
 import { parseIso } from './session-time';
 
 /**
@@ -118,10 +118,26 @@ export function effectiveEndAt(card: WebinarCard): number | null {
   const end = parseIso(card.end_date_time);
   const start = parseIso(card.start_date_time);
   const derived =
-    start !== null && card.duration_minutes ? start + card.duration_minutes * 60_000 : null;
+    start !== null && card.duration_seconds ? start + card.duration_seconds * 1_000 : null;
 
   if (end !== null && derived !== null) return Math.min(end, derived);
   return end ?? derived;
+}
+
+/** Where "now" sits relative to the session — the v3 `liveStateOf`. */
+export type SessionPhase = 'upcoming' | 'live' | 'ended';
+
+/**
+ * The session's phase. `live` opens with the join window (`start − 15 min`),
+ * as in v3, so the "Live Now" caption and the Join button flip together.
+ * No start time reads as `upcoming`: the honest answer is "not yet".
+ */
+export function sessionPhaseOf(card: WebinarCard, now: number): SessionPhase {
+  const end = effectiveEndAt(card);
+  if (end !== null && now >= end) return 'ended';
+  const opens = joinOpensAt(card);
+  if (opens !== null && now >= opens) return 'live';
+  return 'upcoming';
 }
 
 /** Is the session running right now? */
@@ -221,9 +237,9 @@ export function opensMeeting(cta: WebinarCta): boolean {
 /** Button copy for each state. One place, so no two surfaces word it differently. */
 export const CTA_LABELS: Record<WebinarCta, string> = {
   register: 'Register Now',
-  registering: 'Registering…',
-  'registered-waiting': 'Registered',
-  'join-open': 'Join Now',
+  registering: 'Booking…',
+  'registered-waiting': 'Booked',
+  'join-open': 'Join Live',
   'join-pending-approval': 'Awaiting approval',
   'register-retry': 'Try again',
   'live-elsewhere': 'In session elsewhere',
@@ -234,3 +250,10 @@ export const CTA_LABELS: Record<WebinarCta, string> = {
   absent: 'Missed this one',
   missed: 'Not registered',
 };
+
+/**
+ * The guest wording for the one state a signed-out visitor can act on. v3
+ * says "Book Now" to a guest and "Register Now" to a member; every other
+ * label is shared.
+ */
+export const GUEST_REGISTER_LABEL = 'Book Now';

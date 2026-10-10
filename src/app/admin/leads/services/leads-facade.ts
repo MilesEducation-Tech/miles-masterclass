@@ -7,7 +7,7 @@ import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { fileNameFromContentDisposition, saveBlob } from '@shared/utils/blob-download';
 import { drfErrorMessage } from '@core/utils/drf-error-message';
-import { withPreviousValue } from '@shared/utils/with-previous-value';
+import { withPreviousValue } from '@core/utils/with-previous-value';
 import {
   adminContext,
   EMPTY_PAGINATION,

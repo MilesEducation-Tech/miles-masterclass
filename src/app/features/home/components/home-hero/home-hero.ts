@@ -1,66 +1,33 @@
-import { Component, inject, PLATFORM_ID, signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { logoIcon } from '@core/constants/icon';
-import { Button } from '@shared/ui/button/button';
-import { environment } from '@env/environment';
-import { VideoPoster } from '@shared/components/video-poster/video-poster';
-import { MilesSlug } from '@shared/components/miles-slug/miles-slug';
-import { MASTERCLASS_APP_STORE_URL, MASTERCLASS_PLAY_STORE_URL } from '@core/constants/app-store';
-import { NgpDialogManager } from 'ng-primitives/dialog';
+import { NgOptimizedImage } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { Utils } from '@shared/services/utils';
+import { HOME_ASSETS } from '../../constants/home-assets';
+import { HomeHeroGrid } from '../home-hero-grid/home-hero-grid';
 
+/**
+ * The home hero (Figma "Home Page" `2175:21139`): the CAIRA credential pitch
+ * over the tilted, scrolling grid of course thumbnails. Static copy, no API.
+ * The CTAs are real links, so they are in the server HTML for crawlers.
+ */
 @Component({
   selector: 'app-home-hero',
-  imports: [Button, VideoPoster, MilesSlug],
+  imports: [NgOptimizedImage, RouterLink, HomeHeroGrid],
   templateUrl: './home-hero.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeHero {
-  private readonly platformId = inject(PLATFORM_ID);
-  private readonly dialogs = inject(NgpDialogManager);
-  readonly S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  private readonly utils = inject(Utils);
 
-  readonly icons = signal({
-    logoIcon,
-  });
+  protected readonly assets = HOME_ASSETS;
 
-  /** Video sources */
-  readonly desktopVideoSrc = `${this.S3_BUCKET_URL}static-assests/web-app/home/home-hero-web.mp4`;
-  readonly mobileVideoSrc = `${this.S3_BUCKET_URL}static-assests/web-app/home/hero-bg-mob.mp4`;
+  private readonly localePrefix = computed(() => [
+    '/',
+    this.utils.country(),
+    this.utils.profession(),
+  ]);
 
-  /** Poster sources */
-  readonly desktopPosterSrc = `${this.S3_BUCKET_URL}static-assests/web-app/home/home-hero.webp`;
-  readonly mobilePosterSrc = `${this.S3_BUCKET_URL}static-assests/web-app/home/home-hero-sm.webp`;
-
-  /**
-   * Known mobile UA → straight to that platform's store (one tap). Anything
-   * else (desktop, unknown UA) → the shared AppDownloadDialog, which already
-   * shows both badges. Previously this sent every visitor, iPhone included, to
-   * the Play Store.
-   */
-  openAppOrStore(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-
-    const ua = navigator.userAgent;
-    const storeUrl = /iPad|iPhone|iPod/i.test(ua)
-      ? MASTERCLASS_APP_STORE_URL
-      : /Android/i.test(ua)
-        ? MASTERCLASS_PLAY_STORE_URL
-        : null;
-
-    if (!storeUrl) {
-      // Desktop only: load the QR dialog on demand (§4.4). Phones never reach it.
-      void import('@shared/dialogs/app-download-dialog/app-download-dialog').then(
-        ({ AppDownloadDialog }) => this.dialogs.open(AppDownloadDialog),
-      );
-      return;
-    }
-
-    // Popup blockers return null (or throw in hardened in-app webviews) —
-    // fall back to a same-tab navigation so the tap is never a no-op.
-    try {
-      const opened = window.open(storeUrl, '_blank', 'noopener');
-      if (!opened) window.location.assign(storeUrl);
-    } catch {
-      window.location.assign(storeUrl);
-    }
-  }
+  /** "Build your 1st AI agent, free" → the AI Labs landing (product decision). */
+  protected readonly aiLabsLink = computed(() => [...this.localePrefix(), 'ai-labs']);
+  protected readonly cairaLink = computed(() => [...this.localePrefix(), 'caira']);
 }

@@ -58,32 +58,37 @@
                   <strong class="text-foreground">{{ emailDisplay() }}</strong> to confirm your
                   details.
                 </p>
-                <app-button
-                  class="w-max"
+                <button
+                  app-button
+                  type="button"
+                  class="w-max h-auto p-0"
                   variant="link"
-                  size="link"
                   [disabled]="verifying() || resending()"
-                  (clicked)="backToForm()"
+                  (click)="backToForm()"
                 >
                   Change email
-                </app-button>
+                </button>
               </div>
 
-              <app-forms type="signal" class="flex flex-col gap-3" (submitted)="verifyOtp()">
-                <app-otp
-                  id="faculty_otp"
-                  label="Enter OTP"
-                  [length]="otpLength"
-                  [autoFocus]="true"
-                  [formField]="otpForm.otp"
-                  (completed)="verifyOtp()"
-                />
+              <form class="flex flex-col gap-3" (submit)="$event.preventDefault(); verifyOtp()">
+                <app-field [errors]="otpForm.otp().errors()">
+                  <span ngpLabel>Enter OTP</span>
+
+                  <app-input-otp
+                    id="faculty_otp"
+                    [length]="otpLength"
+                    [autoFocus]="true"
+                    [formField]="otpForm.otp"
+                    (complete)="verifyOtp()"
+                  />
+                </app-field>
 
                 @if (error()) {
                   <p class="text-sm text-destructive" role="alert">{{ error() }}</p>
                 }
 
-                <app-button
+                <button
+                  app-button
                   class="w-full mt-1"
                   type="submit"
                   variant="default"
@@ -93,20 +98,22 @@
                     <app-spinner></app-spinner>
                   }
                   Verify &amp; Submit
-                </app-button>
-              </app-forms>
+                </button>
+              </form>
 
               <div class="flex justify-center items-center text-sm text-muted-foreground">
                 @if (canResend()) {
                   <span>Didn't receive the OTP?&nbsp;</span>
-                  <app-button
+                  <button
+                    app-button
+                    type="button"
+                    class="h-auto p-0"
                     variant="link"
-                    size="link"
                     [disabled]="resending() || verifying()"
-                    (clicked)="resendOtp()"
+                    (click)="resendOtp()"
                   >
                     Resend OTP
-                  </app-button>
+                  </button>
                 } @else {
                   <span>
                     Resend OTP in <strong class="text-foreground">{{ resendDisplay() }}</strong>
@@ -158,31 +165,44 @@
               </p>
             </div> -->
 
-            <app-forms
-              type="signal"
+            <form
               class="flex flex-col gap-4 w-full space-y-0"
-              (submitted)="submit()"
+              (submit)="$event.preventDefault(); submit()"
             >
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <app-aria-input
-                  id="faculty_first_name"
-                  label="First Name"
-                  [formField]="facultyForm.first_name"
-                />
-                <app-aria-input
-                  id="faculty_last_name"
-                  label="Last Name"
-                  [formField]="facultyForm.last_name"
-                />
+                <app-field [errors]="facultyForm.first_name().errors()">
+                  <label ngpLabel for="faculty_first_name">First Name</label>
+
+                  <input
+                    app-input
+                    id="faculty_first_name"
+                    type="text"
+                    [formField]="facultyForm.first_name"
+                  />
+                </app-field>
+                <app-field [errors]="facultyForm.last_name().errors()">
+                  <label ngpLabel for="faculty_last_name">Last Name</label>
+
+                  <input
+                    app-input
+                    id="faculty_last_name"
+                    type="text"
+                    [formField]="facultyForm.last_name"
+                  />
+                </app-field>
               </div>
 
               <div class="flex flex-col gap-1.5">
-                <app-aria-input
-                  id="faculty_email"
-                  label="Institutional Email"
-                  type="email"
-                  [formField]="facultyForm.email"
-                />
+                <app-field [errors]="facultyForm.email().errors()">
+                  <label ngpLabel for="faculty_email">Institutional Email</label>
+
+                  <input
+                    app-input
+                    id="faculty_email"
+                    type="email"
+                    [formField]="facultyForm.email"
+                  />
+                </app-field>
                 @switch (emailTier()) {
                   @case ('subscription') {
                     <p class="text-xs font-semibold text-accent-premium" role="status">
@@ -200,58 +220,81 @@
                 }
               </div>
 
-              <app-aria-input
-                id="faculty_institution"
-                label="Institution Name"
-                [formField]="facultyForm.institution"
-              />
+              <app-field [errors]="facultyForm.institution().errors()">
+                <label ngpLabel for="faculty_institution">Institution Name</label>
 
-              <app-aria-input id="faculty_role" label="Role" [formField]="facultyForm.role" />
+                <input
+                  app-input
+                  id="faculty_institution"
+                  type="text"
+                  [formField]="facultyForm.institution"
+                />
+              </app-field>
 
-              <app-aria-autocomplete
-                id="faculty_location"
-                label="Location"
-                [options]="locationOptions()"
-                [serverFiltered]="true"
-                [formField]="facultyForm.location"
-                (queryChange)="locationQuery.set($event)"
-              />
+              <app-field [errors]="facultyForm.role().errors()">
+                <label ngpLabel for="faculty_role">Role</label>
+
+                <input app-input id="faculty_role" type="text" [formField]="facultyForm.role" />
+              </app-field>
+
+              <app-field [errors]="facultyForm.location().errors()">
+                <label ngpLabel for="faculty_location">Location</label>
+
+                <app-combobox
+                  id="faculty_location"
+                  [options]="locationOptions()"
+                  [serverFiltered]="true"
+                  [formField]="facultyForm.location"
+                  (queryChange)="locationQuery.set($event)"
+                />
+              </app-field>
 
               <div class="flex gap-2">
                 <div class="w-[120px] shrink-0">
-                  <app-aria-autocomplete
-                    id="faculty_country_code"
-                    label="Code"
-                    placeholder="Search..."
-                    [options]="countryCodes()"
-                    [formField]="facultyForm.country_code"
-                  />
+                  <app-field [errors]="facultyForm.country_code().errors()">
+                    <label ngpLabel for="faculty_country_code">Code</label>
+
+                    <app-combobox
+                      id="faculty_country_code"
+                      dir="ltr"
+                      placeholder="Search..."
+                      [options]="countryCodes()"
+                      [formField]="facultyForm.country_code"
+                    />
+                  </app-field>
                 </div>
-                <app-aria-input
-                  class="flex-1"
-                  id="faculty_phone"
-                  label="Phone"
-                  type="tel"
-                  [formField]="facultyForm.phone"
-                />
+                <app-field class="flex-1" [errors]="facultyForm.phone().errors()">
+                  <label ngpLabel for="faculty_phone">Phone</label>
+
+                  <input app-input id="faculty_phone" type="tel" [formField]="facultyForm.phone" />
+                </app-field>
               </div>
 
-              <app-aria-input
-                id="faculty_terms"
-                type="checkbox"
-                class="leading-tight gap-2"
-                [formField]="facultyForm.terms"
-                label="I agree to the Terms & Conditions and Privacy Policy, and consent to being contacted about this programme."
-              />
+              <app-field
+                class="flex-row items-start gap-3 leading-tight gap-2"
+                [errors]="facultyForm.terms().errors()"
+              >
+                <app-checkbox id="faculty_terms" [formField]="facultyForm.terms" />
+                <div class="flex flex-col gap-0.5">
+                  <span ngpLabel
+                    >I agree to the Terms & Conditions and Privacy Policy, and consent to being
+                    contacted about this programme.</span
+                  >
+                </div>
+              </app-field>
 
               <!-- Marketing opt-in, deliberately not required. -->
-              <app-aria-input
-                id="faculty_sms_consent"
-                type="checkbox"
-                class="leading-tight gap-2"
-                [formField]="facultyForm.sms_consent"
-                label="Send me course updates and teaching resources by SMS and WhatsApp."
-              />
+              <app-field
+                class="flex-row items-start gap-3 leading-tight gap-2"
+                [errors]="facultyForm.sms_consent().errors()"
+              >
+                <app-checkbox id="faculty_sms_consent" [formField]="facultyForm.sms_consent" />
+                <div class="flex flex-col gap-0.5">
+                  <span ngpLabel
+                    >Send me course updates and teaching resources by SMS and WhatsApp.</span
+                  >
+                </div>
+              </app-field>
 
               <p class="text-xs text-muted-foreground">
                 Read our
@@ -272,7 +315,8 @@
                 <p class="text-sm text-destructive" role="alert">{{ error() }}</p>
               }
 
-              <app-button
+              <button
+                app-button
                 class="w-full mt-1"
                 type="submit"
                 variant="default"
@@ -282,8 +326,8 @@
                   <app-spinner></app-spinner>
                 }
                 Get My Free Access
-              </app-button>
-            </app-forms>
+              </button>
+            </form>
           }
         }
       </div>

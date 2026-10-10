@@ -5,10 +5,11 @@
   [class.justify-end]="align() === 'end'"
 >
   @for (item of visibleItems(); track item.id; let last = $last) {
+    @let credits = item.cpe_credits ?? item.cpe_credit ?? null;
     <span class="inline-flex items-center shrink-0 gap-1 mx-1">
       <span>{{ item.name }}</span>
-      @if (showCredits() && item.cpe_credits !== null) {
-        <span class="bg-white/20 rounded-full px-3 py-1 text-sm">{{ item.cpe_credits }} CPE</span>
+      @if (showCredits() && credits !== null) {
+        <span class="bg-white/20 rounded-full px-3 py-1 text-sm">{{ credits }} CPE</span>
       }
     </span>
     @if (!last) {
@@ -17,7 +18,7 @@
   }
   @if (hiddenCount() > 0) {
     <span
-      class="shrink-0 ml-1 cursor-help underline decoration-dotted underline-offset-2 pointer-events-auto"
+      class="shrink-0 ms-1 cursor-help underline decoration-dotted underline-offset-2 pointer-events-auto"
       tabindex="0"
       [ngpTooltipTrigger]="tooltipTemplate"
       [ngpTooltipTriggerOffset]="8"
@@ -32,15 +33,14 @@
 
 <div
   aria-hidden="true"
-  class="flex items-baseline whitespace-nowrap invisible pointer-events-none fixed top-0 left-[-99999px]"
+  class="flex items-baseline whitespace-nowrap invisible pointer-events-none fixed top-0 start-[-99999px]"
 >
   @for (item of items(); track item.id) {
+    @let credits = item.cpe_credits ?? item.cpe_credit ?? null;
     <span #measureItem class="inline-flex items-center shrink-0 gap-1 mx-1">
       <span>{{ item.name }}</span>
-      @if (showCredits() && item.cpe_credits !== null) {
-        <span class="bg-white/20 text-white rounded-full px-3 py-1 text-sm"
-          >{{ item.cpe_credits }} CPE</span
-        >
+      @if (showCredits() && credits !== null) {
+        <span class="bg-white/20 text-white rounded-full px-3 py-1 text-sm">{{ credits }} CPE</span>
       }
     </span>
   }
@@ -59,8 +59,9 @@
             class="px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30 text-xs font-medium whitespace-nowrap"
           >
             {{ item.name }}
-            @if (showCredits() && item.cpe_credits !== null) {
-              <span class="opacity-80"> ({{ item.cpe_credits }} CPE)</span>
+            @let credits = item.cpe_credits ?? item.cpe_credit ?? null;
+            @if (showCredits() && credits !== null) {
+              <span class="opacity-80"> ({{ credits }} CPE)</span>
             }
           </span>
         }
@@ -69,7 +70,7 @@
     <div
       ngpTooltipArrow
       aria-hidden="true"
-      class="absolute size-2 rotate-45 bg-popover border-border data-[placement=top]:top-full data-[placement=top]:-mt-1 data-[placement=top]:border-r data-[placement=top]:border-b data-[placement=bottom]:bottom-full data-[placement=bottom]:-mb-1 data-[placement=bottom]:border-l data-[placement=bottom]:border-t"
+      class="absolute size-2 rotate-45 bg-popover border-border data-[placement=top]:top-full data-[placement=top]:-mt-1 data-[placement=top]:border-e data-[placement=top]:border-b data-[placement=bottom]:bottom-full data-[placement=bottom]:-mb-1 data-[placement=bottom]:border-s data-[placement=bottom]:border-t"
     ></div>
   </div>
 </ng-template>

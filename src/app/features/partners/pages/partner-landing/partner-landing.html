@@ -5,10 +5,10 @@
   >
     <app-partner-content-list
       [content]="p.heroContent"
-      containerClass="text-left items-start pointer-events-auto"
+      containerClass="text-start items-start pointer-events-auto"
     />
     <div
-      class="flex items-center gap-4 max-sm:gap-2 pl-5 max-sm:pl-3 pr-2 py-2 max-sm:py-1 rounded-full bg-white/15 backdrop-blur-[6.4px] shrink-0 pointer-events-auto"
+      class="flex items-center gap-4 max-sm:gap-2 ps-5 max-sm:ps-3 pe-2 py-2 max-sm:py-1 rounded-full bg-white/15 backdrop-blur-[6.4px] shrink-0 pointer-events-auto"
     >
       <span
         class="text-sm max-sm:text-xs font-semibold tracking-[-0.374px] text-pill-label whitespace-nowrap"
@@ -19,12 +19,15 @@
           {{ p.pill.brand }} Members Access
         }
       </span>
-      <app-button
+      <button
+        app-button
+        type="button"
         class="bg-pill-cta hover:bg-pill-cta/90 text-white rounded-full font-semibold px-5 max-sm:px-3 max-sm:h-8 max-sm:text-xs"
         variant="ghost"
-        (clicked)="scrollTo(p.sectionId)"
-        >Activate</app-button
+        (click)="scrollTo(p.sectionId)"
       >
+        Activate
+      </button>
     </div>
   </div>
 </app-video-list-wrapper>
@@ -96,11 +99,13 @@
       This isn't just more content to consume. This is how you stay relevant in an AI-driven market.
     </p>
   }
-  <app-button
-    variant="ghost"
+  <button
+    app-button
+    type="button"
     class="text-black bg-white rounded-full px-5 w-fit min-w-56 md:text-base text-sm"
-    (clicked)="scrollTo(p.sectionId)"
+    variant="ghost"
+    (click)="scrollTo(p.sectionId)"
   >
     {{ p.audience === 'firm' ? "Activate Your Firm's Access" : 'Schedule Discovery Call' }}
-  </app-button>
+  </button>
 </ng-template>

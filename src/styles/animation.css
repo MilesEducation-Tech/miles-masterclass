@@ -29,6 +29,17 @@
     300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
 }
 
+/* Right-to-left pages read the other way, so the outgoing page leaves to the right. */
+@keyframes slide-to-right {
+  to {
+    transform: translateX(30px);
+  }
+}
+
+:root[dir='rtl']::view-transition-old(root) {
+  animation-name: fade-out, slide-to-right;
+}
+
 @keyframes slide-in {
   from {
     transform: translateX(100%);
@@ -101,5 +112,66 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+/* Home page: the pricing halo and the app-download mark (tokens in styles.css). */
+@keyframes home-pricing-glow {
+  from {
+    transform: rotate(223deg);
+  }
+  to {
+    transform: rotate(373deg);
+  }
+}
+
+@keyframes download-arrow-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8%);
+  }
+}
+
+@keyframes download-ring-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* `--animate-progress-indeterminate`: the indicator is a third of its track,
+   so -100% starts it just off the left edge and 300% ends it just off the right. */
+@keyframes progress-indeterminate {
+  from {
+    translate: -100%;
+  }
+  to {
+    translate: 300%;
+  }
+}
+
+/* `--animate-footer-sweep`: the highlight on the footer's top hairline is a third of the line, so
+   -100% → 300% carries it fully across. It crosses in the first 60% of the cycle and rests for the
+   rest, so the line reads as a slow pulse rather than a constant scroll. */
+@keyframes footer-sweep {
+  from {
+    translate: -100%;
+  }
+  60%,
+  to {
+    translate: 300%;
+  }
+}
+
+/* Header nav underline draw-in (NavItem.highlight). Global for the same
+   reason as dropdownFadeIn — the header has no component stylesheet. */
+@keyframes navUnderlineDraw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
   }
 }

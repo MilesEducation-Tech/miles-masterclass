@@ -2,9 +2,10 @@ import { Component } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroXMark } from '@ng-icons/heroicons/outline';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { CourseFilterGroup, CourseFilterSelection } from '@core/models/library-filters.model';
 import { CourseFilters } from '../course-filters/course-filters';
+import { Dialog } from '@shared/ui/dialog/dialog';
 
 export interface CourseFiltersDrawerData {
   /** Reactive accessors so the drawer reflects upstream state without a copy. */
@@ -20,7 +21,7 @@ export interface CourseFiltersDrawerData {
  */
 @Component({
   selector: 'app-course-filters-drawer',
-  imports: [CourseFilters, DialogShell, NgIcon],
+  imports: [CourseFilters, NgIcon, Dialog],
   providers: [provideIcons({ heroXMark })],
   templateUrl: './course-filters-drawer.html',
 })

@@ -17,12 +17,12 @@
     [style.background-image]="'url(' + current()!.chapter_thumbnail + ')'"
   >
     <!-- Overlay layers -->
-    <div class="absolute top-0 left-0 w-full h-full bg-[#0a1929]/60 z-0 max-md:hidden"></div>
+    <div class="absolute top-0 start-0 w-full h-full bg-[#0a1929]/60 z-0 max-md:hidden"></div>
     <div
-      class="absolute top-0 left-0 w-full h-full bg-linear-to-r from-background/80 to-backfrom-background/50 z-20"
+      class="absolute top-0 start-0 w-full h-full bg-linear-to-r rtl:bg-linear-to-l from-background/80 to-backfrom-background/50 z-20"
     ></div>
     <div
-      class="absolute top-0 left-0 w-full h-full bg-linear-to-t from-background from-10% to-30% to-transparent z-10"
+      class="absolute top-0 start-0 w-full h-full bg-linear-to-t from-background from-10% to-30% to-transparent z-10"
     ></div>
 
     <!-- Main Content -->
@@ -52,7 +52,7 @@
             @if (current()?.quiz_details?.overall_chapter_questions && cpeMode()) {
               <button
                 type="button"
-                class="bg-player-panel md:py-3 py-1.5 px-4 rounded-lg flex flex-col md:w-2/3 w-full text-left"
+                class="bg-player-panel md:py-3 py-1.5 px-4 rounded-lg flex flex-col md:w-2/3 w-full text-start"
                 [class]="isQuizEnabled() ? 'cursor-pointer' : 'cursor-not-allowed'"
                 [disabled]="!isQuizEnabled()"
                 (click)="handleTrackQuiz()"
@@ -63,7 +63,7 @@
                     <span>Track Quiz</span>
                   </span>
                 </div>
-                <div class="ml-6 text-xs text-gray-500">
+                <div class="ms-6 text-xs text-gray-500">
                   {{ current()!.quiz_details.overall_chapter_questions }}
                   {{
                     current()!.quiz_details.overall_chapter_questions > 1 ? 'questions' : 'question'
@@ -93,7 +93,7 @@
               <p class="text-base uppercase text-white">Next Chapter</p>
               <button
                 type="button"
-                class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
+                class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-start"
                 [class]="canGoToNextChapter() ? 'cursor-pointer' : 'cursor-not-allowed'"
                 [disabled]="!canGoToNextChapter()"
                 (click)="navigate.emit(nextChapter.id)"
@@ -121,7 +121,7 @@
               @if (userAssessmentDetails()?.status === 'Exam_Passed') {
                 <button
                   type="button"
-                  class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative cursor-pointer backdrop-blur-sm text-left"
+                  class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative cursor-pointer backdrop-blur-sm text-start"
                   (click)="viewFinalAssessmentReport.emit()"
                 >
                   <div class="flex flex-col gap-1 m-2">
@@ -132,7 +132,7 @@
               } @else {
                 <button
                   type="button"
-                  class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
+                  class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-start"
                   [class]="canStartFinalAssessment() ? 'cursor-pointer' : 'cursor-not-allowed'"
                   [disabled]="!canStartFinalAssessment()"
                   (click)="startFinalAssessment.emit()"
@@ -155,7 +155,7 @@
               class="rounded-full flex justify-center items-center px-4 py-2 bg-white/20 gap-2 mt-4 cursor-pointer backdrop-blur-sm hover:bg-white/30 transition-colors"
               (click)="navigate.emit(prev.id)"
             >
-              <span class="text-white text-lg">←</span>
+              <span class="inline-block text-white text-lg rtl:-scale-x-100">←</span>
               <p class="text-white text-sm">Back to Previous Chapter</p>
             </button>
           }
@@ -191,7 +191,7 @@
           <p class="text-base uppercase text-white">Next Chapter</p>
           <button
             type="button"
-            class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
+            class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-start"
             [class]="canGoToNextChapter() ? 'cursor-pointer' : 'cursor-not-allowed'"
             [disabled]="!canGoToNextChapter()"
             (click)="navigate.emit(nextChapter.id)"
@@ -218,7 +218,7 @@
           @if (userAssessmentDetails()?.status === 'Exam_Passed') {
             <button
               type="button"
-              class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative cursor-pointer backdrop-blur-sm text-left"
+              class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative cursor-pointer backdrop-blur-sm text-start"
               (click)="viewFinalAssessmentReport.emit()"
             >
               <div class="flex flex-col gap-1 m-2">
@@ -229,7 +229,7 @@
           } @else {
             <button
               type="button"
-              class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-left"
+              class="bg-black/20 w-2/3 flex gap-2 rounded-lg relative backdrop-blur-sm text-start"
               [class]="canStartFinalAssessment() ? 'cursor-pointer' : 'cursor-not-allowed'"
               [disabled]="!canStartFinalAssessment()"
               (click)="startFinalAssessment.emit()"
@@ -250,7 +250,7 @@
           class="rounded-full flex justify-center items-center px-4 py-2 bg-white/20 gap-2 mt-4 cursor-pointer backdrop-blur-sm"
           (click)="navigate.emit(prev.id)"
         >
-          <span class="text-white text-lg">←</span>
+          <span class="inline-block text-white text-lg rtl:-scale-x-100">←</span>
           <p class="text-white text-sm">Back to Previous Chapter</p>
         </button>
       }

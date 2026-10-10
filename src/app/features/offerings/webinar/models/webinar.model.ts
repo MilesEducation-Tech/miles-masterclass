@@ -1,5 +1,5 @@
 import { environment } from '@env/environment';
-import type { WebinarErrorCode } from '../utils/webinar-error';
+import type { WebinarErrorCode } from '@features/offerings/webinar/utils/webinar-error';
 
 /**
  * Types for the Events API v1 (`EVENTS_API_CONTRACT_V1`).
@@ -193,11 +193,19 @@ export interface WebinarCard {
   slug: string | null;
   name: string;
   type: WebinarType;
-  short_description: string;
+  /** `null` on every live UAT card on 2026-10-09, although Postman types it `string`. */
+  short_description: string | null;
   start_date_time: string | null;
   end_date_time: string | null;
-  /** Minutes. One hour is `60`. */
-  duration_minutes: number | null;
+  /**
+   * SECONDS. One hour is `3600` — Postman `06 → webinar-main-page` §8:
+   * "`duration_seconds` | integer or null | SECONDS from 2026-09-25. Was
+   * `duration_minutes`." The live UAT feed sends it on every card.
+   *
+   * May be `null`, so nothing may depend on it being present —
+   * `effectiveEndAt` falls back to `end_date_time`.
+   */
+  duration_seconds: number | null;
   /** The id Zoom keys the session on — what the SDK needs as `meetingNumber`. */
   webinar_zoom_id: string | null;
   is_test_webinar: boolean;
@@ -216,7 +224,11 @@ export interface WebinarCard {
   level_details: WebinarLevelDetails | null;
   /** Full public URL, or `''`. Never null, never a bare storage key. */
   horizontal_thumbnail: string;
-  vertical_thumbnail: string;
+  /**
+   * Postman says `''` when unset, but UAT sends `null` (10 of 14 cards on
+   * 2026-10-09). Every reader already falls through on a falsy value.
+   */
+  vertical_thumbnail: string | null;
   square_image: string;
   fields_of_study: FieldOfStudy[];
   /**
@@ -298,7 +310,9 @@ export interface RegisterRequest {
 /** `202` — the pipeline started, or an in-flight attempt was joined. */
 export interface RegisterAcceptedResponse {
   status: 'accepted';
-  registration_status: 'PENDING';
+  /** `fe_registration_status(attempt_status)` — `PENDING` in practice, but the
+   *  contract types it as the three-state value, so it is not narrowed here. */
+  registration_status: RegistrationStatus;
   message: string;
   attempt_id: string;
   /** Built server-side off the URLconf. Prefer following it. */
@@ -322,6 +336,7 @@ export function isAlreadyRegistered(res: RegisterResponse): res is AlreadyRegist
 /** `GET register-via-zoom-status/<attempt_id>/`. Takes NO query parameters. */
 export interface AttemptStatusResponse {
   attempt_id: string;
+  /** Ten known values; anything unknown is read as `PENDING` (`isInternalAttemptStatus`). */
   status: InternalAttemptStatus;
   registration_status: RegistrationStatus;
   zoom_attempts: number;
@@ -340,6 +355,39 @@ export interface AttemptStatusResponse {
   completed_at: string | null;
 }
 
+const INTERNAL_ATTEMPT_STATUSES: readonly string[] = [
+  'SUCCESS',
+  'MF_FAILED',
+  'MF_PERMANENTLY_FAILED',
+  'MF_SKIPPED',
+  'ZOOM_FAILED',
+  'BOOKING_FAILED',
+  'INTERRUPTED',
+  'PENDING',
+  'ZOOM_RETRYING',
+  'ZOOM_PENDING_APPROVAL',
+];
+
+export function isInternalAttemptStatus(v: unknown): v is InternalAttemptStatus {
+  return typeof v === 'string' && INTERNAL_ATTEMPT_STATUSES.includes(v);
+}
+
+/**
+ * Normalise a status-route body at the trust boundary.
+ *
+ * Two things the contract warns about: an internal `status` outside the ten
+ * documented values collapses to `PENDING` (the server does the same for
+ * `registration_status`), and `booking_id` is built with Python's `str()`, so
+ * an unset booking can arrive as the literal string `"None"` rather than null.
+ */
+export function normaliseAttemptStatus(raw: AttemptStatusResponse): AttemptStatusResponse {
+  return {
+    ...raw,
+    status: isInternalAttemptStatus(raw.status) ? raw.status : 'PENDING',
+    booking_id: raw.booking_id === 'None' ? null : raw.booking_id,
+  };
+}
+
 // ---- The detail page -------------------------------------------------------
 
 /** The Miles product a webinar is sold under. `null` as a whole when untagged. */
@@ -348,10 +396,13 @@ export interface WebinarProduct {
   name: string;
   mini_description: string | null;
   description: string | null;
-  /** `""` when unset, not null — the contract is explicit about that. */
-  horizontal_image: string;
-  vertical_image: string;
-  square_image: string;
+  /**
+   * The contract says `""` when unset, but UAT sends `null` (all three, on the
+   * CAIRA product, 2026-10-09). Nothing renders them yet.
+   */
+  horizontal_image: string | null;
+  vertical_image: string | null;
+  square_image: string | null;
 }
 
 /**
@@ -439,10 +490,10 @@ export function isWebinarCard(v: unknown): v is WebinarCard {
     isStrOrNull(v['slug']) &&
     isStr(v['name']) &&
     WEBINAR_TYPES.includes(v['type']) &&
-    isStr(v['short_description']) &&
+    isStrOrNull(v['short_description']) &&
     isStrOrNull(v['start_date_time']) &&
     isStrOrNull(v['end_date_time']) &&
-    isNumOrNull(v['duration_minutes']) &&
+    isNumOrNull(v['duration_seconds']) &&
     isStrOrNull(v['webinar_zoom_id']) &&
     typeof v['is_test_webinar'] === 'boolean' &&
     (v['webinar_why_attend_points'] === null || isStrList(v['webinar_why_attend_points'])) &&
@@ -452,7 +503,7 @@ export function isWebinarCard(v: unknown): v is WebinarCard {
     (v['subject_details'] === null || isSubjectDetails(v['subject_details'])) &&
     (v['level_details'] === null || isLevelDetails(v['level_details'])) &&
     isStr(v['horizontal_thumbnail']) &&
-    isStr(v['vertical_thumbnail']) &&
+    isStrOrNull(v['vertical_thumbnail']) &&
     isStr(v['square_image']) &&
     Array.isArray(v['fields_of_study']) &&
     v['fields_of_study'].every(isFieldOfStudy) &&
@@ -496,6 +547,15 @@ function contractError(resource: string): Error {
 
 const isLoginType = (v: unknown): v is LoginType => LOGIN_TYPES.includes(v);
 
+/**
+ * A bucket's cards. On UAT by 2026-10-09 every bucket is a paginated envelope,
+ * `{slug, count, page, page_size, total_pages, has_next, has_previous, next,
+ * previous, results}`, where Postman still documents a bare array; both shapes
+ * are accepted so the feed parses either way. Only the first page is read: the
+ * rails have no "more" control, and the paging parameters are undocumented.
+ */
+const bucketCards = (v: unknown): unknown => (isObject(v) ? v['results'] : v);
+
 /** `parse` for `webinar-main-page/`: the `{message, data}` envelope, unwrapped. */
 export function parseMainPage(raw: unknown): WebinarMainPageData {
   const data = isObject(raw) ? raw['data'] : undefined;
@@ -503,11 +563,11 @@ export function parseMainPage(raw: unknown): WebinarMainPageData {
 
   // Pulled into locals so each guard narrows its own value — no cast needed.
   const login_type = data['login_type'];
-  const highlight_webinars = data['highlight_webinars'];
-  const upcoming_webinars = data['upcoming_webinars'];
-  const completed_webinar = data['completed_webinar'];
-  const absent_webinar = data['absent_webinar'];
-  const missed_webinar = data['missed_webinar'];
+  const highlight_webinars = bucketCards(data['highlight_webinars']);
+  const upcoming_webinars = bucketCards(data['upcoming_webinars']);
+  const completed_webinar = bucketCards(data['completed_webinar']);
+  const absent_webinar = bucketCards(data['absent_webinar']);
+  const missed_webinar = bucketCards(data['missed_webinar']);
 
   if (
     isLoginType(login_type) &&
@@ -555,8 +615,8 @@ function isProduct(v: unknown): v is WebinarProduct {
     isStr(v['name']) &&
     isStrOrNull(v['mini_description']) &&
     isStrOrNull(v['description']) &&
-    isStr(v['horizontal_image']) &&
-    isStr(v['vertical_image']) &&
-    isStr(v['square_image'])
+    isStrOrNull(v['horizontal_image']) &&
+    isStrOrNull(v['vertical_image']) &&
+    isStrOrNull(v['square_image'])
   );
 }

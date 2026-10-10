@@ -8,6 +8,7 @@ import {
   matPlayArrowRound,
 } from '@ng-icons/material-icons/round';
 import { Content } from '@core/models/course.model';
+import { LanguageContext } from '@core/services/language-context/language-context';
 import { VideoPoster } from '../video-poster/video-poster';
 import { MilesSlug } from '../miles-slug/miles-slug';
 import { Button } from '../../ui/button/button';
@@ -43,19 +44,19 @@ import { Viewport } from '@core/services/viewport/viewport';
  */
 const SLIDE_BASE =
   'absolute bg-center bg-cover overflow-hidden transition-all duration-700 ease-out';
-const SLIDE_FULL = `${SLIDE_BASE} sm:bottom-32 bottom-8 md:aspect-9/16 aspect-video left-0 top-0 w-full h-full translate-y-0 rounded-none shadow-none opacity-100`;
+const SLIDE_FULL = `${SLIDE_BASE} sm:bottom-32 bottom-8 md:aspect-9/16 aspect-video start-0 top-0 w-full h-full translate-y-0 rounded-none shadow-none opacity-100`;
 const SLIDE_THUMB = `${SLIDE_BASE} sm:bottom-32 bottom-8 xl:w-[150px] w-[120px] md:aspect-9/16 aspect-video rounded-xl shadow-[inset_0_20px_30px_rgba(255,255,255,0.3)]`;
 const SLIDE_CLASS = [
   `${SLIDE_FULL} z-0`, // behind the hero
   `${SLIDE_FULL} z-1`, // hero
-  `${SLIDE_THUMB} left-1/2 z-2`,
-  `${SLIDE_THUMB} xl:left-[calc(50%+180px)] left-[calc(50%+140px)] z-2`,
-  `${SLIDE_THUMB} xl:left-[calc(50%+360px)] left-[calc(50%+280px)] z-2`,
+  `${SLIDE_THUMB} start-1/2 z-2`,
+  `${SLIDE_THUMB} xl:start-[calc(50%+180px)] start-[calc(50%+140px)] z-2`,
+  `${SLIDE_THUMB} xl:start-[calc(50%+360px)] start-[calc(50%+280px)] z-2`,
 ];
-const SLIDE_HIDDEN = `${SLIDE_THUMB} xl:left-[calc(50%+660px)] left-[calc(50%+500px)] opacity-0 z-1`;
+const SLIDE_HIDDEN = `${SLIDE_THUMB} xl:start-[calc(50%+660px)] start-[calc(50%+500px)] opacity-0 z-1`;
 
 const CONTENT_BASE =
-  'absolute bottom-20 left-6 z-2 mx-auto w-10/12 sm:left-20 sm:w-2/5 text-sm font-normal text-white opacity-0 font-[Helvetica,sans-serif] text-shadow-[0_3px_8px_rgba(0,0,0,0.5)]';
+  'absolute bottom-20 start-6 z-2 mx-auto w-10/12 sm:start-20 sm:w-2/5 text-sm font-normal text-white opacity-0 font-[Helvetica,sans-serif] text-shadow-[0_3px_8px_rgba(0,0,0,0.5)]';
 // `slideIn` is the global keyframe in styles/animation.css.
 const CONTENT_VISIBLE = `${CONTENT_BASE} flex flex-col gap-2 sm:gap-4 animate-[slideIn_0.75s_ease-in-out_0.3s_forwards]`;
 const CONTENT_HIDDEN = `${CONTENT_BASE} hidden`;
@@ -88,6 +89,7 @@ const CONTENT_HIDDEN = `${CONTENT_BASE} hidden`;
   },
 })
 export class Slider {
+  private readonly rtl = inject(LanguageContext).dir === 'rtl';
   private readonly platformId = inject(PLATFORM_ID);
   private readonly utils = inject(Utils);
   private readonly router = inject(Router);
@@ -177,9 +179,11 @@ export class Slider {
    * Handles keyboard navigation for accessibility.
    */
   protected onKeydown(event: KeyboardEvent): void {
-    if (event.key === 'ArrowLeft') {
+    // Upcoming slides sit along the reading direction: to the left on a right-to-left page.
+    const [back, forward] = this.rtl ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
+    if (event.key === back) {
       this.prev();
-    } else if (event.key === 'ArrowRight') {
+    } else if (event.key === forward) {
       this.next();
     }
   }

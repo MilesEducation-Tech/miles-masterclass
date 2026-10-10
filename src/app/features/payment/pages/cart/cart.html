@@ -10,7 +10,7 @@
       <span class="font-mono font-semibold">{{ coupon.coupon_code }}</span>
       <span class="text-white/70">applied</span>
       @if (coupon.discount) {
-        <span class="ml-auto font-semibold">
+        <span class="ms-auto font-semibold">
           {{ round(coupon.discount) }}{{ coupon.discount_type === 'percent' ? '%' : '' }} off
         </span>
       }

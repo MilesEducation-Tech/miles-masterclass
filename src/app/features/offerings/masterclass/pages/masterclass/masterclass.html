@@ -2,214 +2,79 @@
   <app-section-nav [items]="sectionNavItems()" mode="sidenav" [shareWithHeader]="false" />
 
   <section id="masterclass-home" class="scroll-mt-20">
-    @if (popular.items()) {
-      <app-slider [items]="popular.items()!" />
-    } @else {
+    <!-- `items()` is always an array, so test its length. The skeleton is in the
+         server HTML and stays while the read runs; a failed or empty read shows
+         nothing rather than an empty slider. -->
+    @if (popular.items().length) {
+      <app-slider [items]="popular.items()" />
+    } @else if (popular.isPending()) {
       <app-slider-skeleton />
     }
   </section>
-  <div class="flex flex-col w-11/12 mx-auto md:space-y-20 space-y-10">
-    @if (inprogress.items().length) {
-      <section id="continue-watching" class="scroll-mt-20">
+  <section
+    id="masterclass-tracks"
+    class="flex flex-col w-11/12 mx-auto md:space-y-20 space-y-10 scroll-mt-20"
+  >
+    @if (home.loadError()) {
+      <div role="alert" class="flex flex-col items-center gap-4 py-16 text-center">
+        <p class="text-muted-foreground">We couldn't load the masterclasses. Please try again.</p>
+        <button app-button type="button" variant="outline" (click)="home.reload()">
+          Try again
+        </button>
+      </div>
+    } @else {
+      @for (track of home.tracks(); track track.id; let even = $even) {
         @defer (on viewport; prefetch on idle) {
           <app-carousel
-            [cards]="inprogress.items()!"
-            [heading]="{ text: 'Continue Watching', subText: '' }"
+            [cards]="track.courses"
+            [heading]="{ text: track.name, subText: track.description ?? '' }"
             [swiperConfig]="swiperConfigEven"
-            [filterConfig]="filterConfig"
-            [isLoading]="inprogress.isLoading()"
-            skeletonClass="aspect-video"
-            (loadMore)="inprogress.loadNextPage()"
           >
-            <ng-template let-card> <app-horizontal [card]="card" /> </ng-template>
+            <ng-template let-course>
+              <app-masterclass-course-card
+                [course]="course"
+                [layout]="'horizontal'"
+                [showInfo]="true"
+                (trailer)="openTrailer($event)"
+                (info)="openCourseInfo($event)"
+              />
+            </ng-template>
           </app-carousel>
         } @placeholder {
-          <div class="flex items-center justify-center min-w-28 aspect-video">
-            <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
-          </div>
-        }
-      </section>
-    }
-    @if (recommended.items().length) {
-      @defer (on viewport; prefetch on idle) {
-        <app-carousel
-          [cards]="recommended.items()!"
-          [heading]="{ text: 'Recommended For You', subText: '' }"
-          [swiperConfig]="swiperConfigEven"
-          [filterConfig]="{
-            filterEnabled: true,
-            courseType: 'masterclass',
-            section: 'recommended',
-          }"
-          [isLoading]="recommended.isLoading()"
-          skeletonClass="aspect-9/16"
-          (loadMore)="recommended.loadNextPage()"
-          (filtersChanged)="recommended.setFilters($event)"
-        >
-          <ng-template let-card> <app-horizontal [card]="card" /> </ng-template>
-        </app-carousel>
-      } @placeholder {
-        <div class="flex items-center justify-center min-w-28 aspect-9/16">
-          <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
-        </div>
-      }
-    }
-    @if (complimentary.items().length) {
-      @defer (on viewport; prefetch on idle) {
-        <app-carousel
-          [cards]="complimentary.items()!"
-          [heading]="{ text: complimentaryHeading(), subText: '' }"
-          [swiperConfig]="swiperConfigEven"
-          [filterConfig]="{
-            filterEnabled: true,
-            courseType: 'masterclass',
-            section: 'complimentary',
-          }"
-          [isLoading]="complimentary.isLoading()"
-          skeletonClass="aspect-video"
-          (loadMore)="complimentary.loadNextPage()"
-          (filtersChanged)="complimentary.setFilters($event)"
-        >
-          <ng-template let-card> <app-horizontal [card]="card" /> </ng-template>
-        </app-carousel>
-      } @placeholder {
-        <div class="flex items-center justify-center min-w-28 aspect-video">
-          <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
-        </div>
-      }
-    }
-    @if (becauseYouWatched.items().length) {
-      @defer (on viewport; prefetch on idle) {
-        <app-carousel
-          [cards]="becauseYouWatched.items()!"
-          [heading]="{ text: becauseYouWatchedHeading(), subText: '' }"
-          [swiperConfig]="swiperConfigEven"
-          [filterConfig]="filterConfig"
-          [isLoading]="becauseYouWatched.isLoading()"
-          skeletonClass="aspect-9/16"
-          (loadMore)="becauseYouWatched.loadNextPage()"
-        >
-          <ng-template let-card> <app-horizontal [card]="card" /> </ng-template>
-        </app-carousel>
-      } @placeholder {
-        <div class="flex items-center justify-center min-w-28 aspect-9/16">
-          <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
-        </div>
-      }
-    }
-    @for (item of track.items(); track $index) {
-      <section id="masterclass-tracks" class="flex flex-col md:space-y-20 space-y-10 scroll-mt-20">
-        @if (item.content.length) {
-          @defer (on viewport; prefetch on idle) {
-            <app-carousel
-              [cards]="item.content"
-              [heading]="{ text: item.title, subText: item.description }"
-              [swiperConfig]="$even ? swiperConfigOdd : swiperConfigEven"
-              [filterConfig]="{
-                filterEnabled: true,
-                courseType: 'masterclass',
-                section: 'track',
-                trackId: item.ids[0],
-              }"
-              (loadMore)="track.loadNextTrackPage(item.ids[0])"
-              (filtersChanged)="track.setTrackFilters(item.ids[0], $event)"
-            >
-              <ng-template let-card>
-                @if ($even) {
-                  <app-vertical [card]="card" />
-                } @else if ($odd) {
-                  <app-horizontal [card]="card" />
-                }
-              </ng-template>
-            </app-carousel>
-          } @placeholder {
-            <div
-              class="flex items-center justify-center min-w-28"
-              [class]="$odd ? 'aspect-video' : 'aspect-9/16'"
-            >
-              <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+          <div class="animate-pulse" aria-hidden="true">
+            <div class="h-11 md:h-[54px] w-72 max-w-full rounded bg-white/5"></div>
+            <div class="mt-4 pb-10 flex gap-[30px] overflow-hidden">
+              @for (i of [1, 2, 3]; track i) {
+                <div
+                  class="shrink-0 basis-[calc((100%-3px)/1.1)] md:basis-[calc((100%-30px)/2)] lg:basis-[calc((100%-54px)/2.8)]"
+                >
+                  <div class="aspect-video rounded-lg bg-muted"></div>
+                  <div class="h-[140px]"></div>
+                </div>
+              }
             </div>
-          }
-        }
-      </section>
-    }
-    @if (bookmark.items().length) {
-      <section id="my-list" class="scroll-mt-20">
-        @defer (on viewport; prefetch on idle) {
-          <app-carousel
-            [cards]="bookmark.items()!"
-            [heading]="{ text: 'My List', subText: '' }"
-            [swiperConfig]="swiperConfigEven"
-            [filterConfig]="filterConfig"
-            [isLoading]="bookmark.isLoading()"
-            skeletonClass="aspect-video"
-            (loadMore)="bookmark.loadNextPage()"
-          >
-            <ng-template let-card> <app-horizontal [card]="card" /> </ng-template>
-          </app-carousel>
-        } @placeholder {
-          <div class="flex items-center justify-center min-w-28 aspect-video">
-            <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
           </div>
         }
-      </section>
-    }
-    @if (completed.items().length) {
-      <section id="completed-courses" class="scroll-mt-20">
-        @defer (on viewport; prefetch on idle) {
-          <app-carousel
-            [cards]="completed.items()!"
-            [heading]="{ text: 'Courses you\'ve mastered', subText: '' }"
-            [swiperConfig]="swiperConfigEven"
-            [filterConfig]="filterConfig"
-            [isLoading]="completed.isLoading()"
-            skeletonClass="aspect-video"
-            (loadMore)="completed.loadNextPage()"
-          >
-            <ng-template let-card> <app-horizontal [card]="card" /> </ng-template>
-          </app-carousel>
-        } @placeholder {
-          <div class="flex items-center justify-center min-w-28 aspect-video">
-            <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
-          </div>
-        }
-      </section>
-    }
-    @if (comingSoon.items().length) {
-      <section id="masterclass-coming-soon" class="scroll-mt-20">
-        <div class="flex flex-col space-y-6">
-          @defer (on viewport; prefetch on idle) {
-            <app-partner-content-list
-              [content]="[
-                {
-                  subHeading: 'Coming Soon on Master Classes',
-                  paragraph: 'Hit the bell icon for updates and never miss a new CPE course drop!',
-                  subHeadingClass: 'text-white md:text-5xl text-3xl font-bold ',
-                  itemClass: 'text-center py-4 md:w-2/3 w-full mx-auto leading-relaxed',
-                  paragraphClass: 'text-white md:text-lg text-base font-normal mt-2',
-                },
-              ]"
-            />
-            <app-carousel
-              [cards]="comingSoon.items()"
-              [heading]="{ text: '', subText: '' }"
-              [swiperConfig]="swiperConfigComingSoon"
-              [filterConfig]="{ filterEnabled: false }"
-              (loadMore)="comingSoon.loadNextPage()"
-            >
-              <ng-template let-card let-index="$index">
-                <app-coming-soon [card]="card" [index]="index" />
-              </ng-template>
-            </app-carousel>
-          } @placeholder {
-            <div class="flex items-center justify-center min-w-28 aspect-9/16">
-              <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+      } @empty {
+        @if (home.isLoading()) {
+          <!-- The carousel's own placeholder row, so the first rail lands in place. -->
+          <div class="animate-pulse" aria-hidden="true">
+            <div class="h-11 md:h-[54px] w-72 max-w-full rounded bg-white/5"></div>
+            <div class="mt-4 pb-10 flex gap-[30px] overflow-hidden">
+              @for (i of [1, 2, 3]; track i) {
+                <div
+                  class="shrink-0 basis-[calc((100%-3px)/1.1)] md:basis-[calc((100%-30px)/2)] lg:basis-[calc((100%-54px)/2.8)]"
+                >
+                  <div class="aspect-video rounded-lg bg-muted"></div>
+                  <div class="h-[140px]"></div>
+                </div>
+              }
             </div>
-          }
-        </div>
-      </section>
+          </div>
+        }
+      }
     }
-  </div>
+  </section>
   <section id="masterclass-faq" class="scroll-mt-20">
     <app-faq [standalone]="false" />
   </section>

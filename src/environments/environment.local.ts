@@ -24,23 +24,17 @@ export const environment = {
 
   WEBINAR: {
     joinWindowMinutes: 15,
-    /** In-app `/live` page. Off until the attendance-session routes exist. */
-    liveEnabled: false,
+    /**
+     * In-app `/live` page (Zoom Meeting SDK + session lease). ON here, so every
+     * Vercel preview (`build:dev`) and local run can be QA'd; production stays
+     * off until QA signs off. Each webinar still needs `route_to_web_lms`.
+     */
+    liveEnabled: true,
     /** Flip to `true` locally once the poll API exists, to exercise the panel. */
     pollsEnabled: false,
     leaseHeartbeatSeconds: 15,
     registrationPollCapSeconds: 45,
   },
-
-  // MilesVerse API origin. Empty = MilesVerse pages show not-connected.
-  MILESVERSE_API_URL: 'https://uat.milesverse.ai',
-
-  MILESVERSE_SSO: {
-    token: '',
-    orgId: '809b6004-675f-4650-9845-315ccd9e1cd8',
-    applicationId: '01780b77-1c09-4a85-ab33-6aaa33353505',
-  },
-  // MilesVerse SSO login. Token: local fixture from backend
 
   /**
    * Miles360 Salesforce lead endpoint (AWS API Gateway). Fired fire-and-forget
@@ -201,5 +195,17 @@ export const environment = {
         projectId: 'miles-masterclass',
       },
     },
+  },
+
+  /**
+   * Languages this build may resolve a visitor to (`LanguageContext`). Anything else in a cookie or
+   * `Accept-Language` is skipped, so a half-translated language never reaches real users.
+   * Local: every language, including the ones still being translated.
+   * `enabled: false` turns the feature off without editing the list: every visitor gets English
+   * and no switcher renders.
+   */
+  I18N: {
+    enabled: true, // master switch for this environment
+    languages: ['en', 'ar', 'fr', 'de', 'es'],
   },
 };

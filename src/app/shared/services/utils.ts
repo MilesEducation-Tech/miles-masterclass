@@ -13,7 +13,8 @@ import { HttpContext } from '@angular/common/http';
 import { Router, NavigationEnd, Event as RouterEvent } from '@angular/router';
 import { EMPTY, Observable } from 'rxjs';
 import { filter, tap } from 'rxjs/operators';
-import { DynamicRouteParams, ProfessionType, CountryCode } from '@core/models/route-params.model';
+import { DynamicRouteParams, ProfessionType } from '@core/models/route-params.model';
+import { CountryContext } from '@core/services/country-context/country-context';
 import { PROFESSIONS } from '@core/constants/profession';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 // The dialogs below are imported as types only and loaded with `import()` where
@@ -129,12 +130,15 @@ export class Utils {
   private readonly destroyRef = inject(DestroyRef);
   private readonly viewport = inject(Viewport);
 
-  private readonly _country = signal<CountryCode>('us');
   private readonly _profession = signal<ProfessionType>('accounting');
   private readonly _currentUrl = signal<string>('');
 
-  /** Current country code from route (lowercase) */
-  readonly country = this._country.asReadonly();
+  /**
+   * The visitor's country (lower-case). Delegates to `CountryContext`, the single source: the URL
+   * country when there is one, otherwise the geo-detected one — never a hard-coded `us`, so links
+   * built on `/auth/login` point at the visitor's own country.
+   */
+  readonly country = inject(CountryContext).current;
 
   /** Current profession type from route */
   readonly profession = this._profession.asReadonly();
@@ -144,7 +148,7 @@ export class Utils {
 
   /** Combined route params object */
   readonly routeParams = computed<DynamicRouteParams>(() => ({
-    country: this._country(),
+    country: this.country(),
     profession: this._profession(),
   }));
 
@@ -192,7 +196,7 @@ export class Utils {
     this.extractParamsFromUrl(this.router.url);
     this._currentUrl.set(this.router.url);
 
-    // Keep country/profession/currentUrl in sync with navigation.
+    // Keep profession/currentUrl in sync with navigation (country is CountryContext's).
     effect(() => {
       const ev = this.navigationEnd();
       if (!ev) return;
@@ -202,30 +206,26 @@ export class Utils {
   }
 
   /**
-   * Extract country and profession from URL path.
+   * Extract the profession from URL path (country is tracked by `CountryContext`).
    * Pattern: /:country/:profession_type/...
    * URLs outside that tree (e.g. `/`, `/auth/login`, `/admin/users`, `/blog/x`)
-   * intentionally preserve the last known values so downstream consumers stay on
+   * intentionally preserve the last known value so downstream consumers stay on
    * the correct scope while the user navigates through scope-less routes. The
    * second segment must be a real profession, otherwise `/auth/login` would set
-   * country=`auth`/profession=`login` and every locale-scoped link built from
-   * them (login's policy links, footer, header) would 404.
+   * profession=`login` and every locale-scoped link built from it (login's
+   * policy links, footer, header) would 404.
    */
   private extractParamsFromUrl(url: string): void {
-    const segments = url.split(/[/?#]/).filter(Boolean);
-    if (segments.length < 2) return;
-
-    const [country, profession] = segments.map((s) => s.toLowerCase());
+    const profession = url.split(/[/?#]/).filter(Boolean)[1]?.toLowerCase();
     if (!PROFESSIONS.some((p) => p.toLowerCase() === profession)) return;
 
-    this._country.set(country as CountryCode);
     this._profession.set(profession as ProfessionType);
   }
 
   /** Get country and profession as a plain object (for non-reactive use). */
   getRouteParams(): DynamicRouteParams {
     return {
-      country: this._country(),
+      country: this.country(),
       profession: this._profession(),
     };
   }
@@ -248,7 +248,7 @@ export class Utils {
    * `:country/:profession_type` tree — e.g. on the top-level `/blog` pages.
    */
   localePath(route?: string): string {
-    const base = `/${this._country()}/${this._profession()}`;
+    const base = `/${this.country()}/${this._profession()}`;
     if (!route) return base;
     return route.startsWith('/') ? route : `${base}/${route}`;
   }
@@ -331,7 +331,7 @@ export class Utils {
     const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
       data: {
         title: 'Final Assessment',
-        containerClass: 'flex flex-col space-y-4 text-left',
+        containerClass: 'flex flex-col space-y-4 text-start',
         content: [
           { type: 'text', value: 'QAS Self-Study Qualified Assessment Rules:' },
           { type: 'list', items: examRulesArray, ordered: true },
@@ -349,7 +349,7 @@ export class Utils {
       if (cached.length) {
         const session_id = this.storage.getLocal('session_id');
         this.router.navigate([
-          `${this._country()}/${this._profession()}/${urlSegment}/${courseId}/${titleSlug}/final-assessment/${session_id}/exam`,
+          `${this.country()}/${this._profession()}/${urlSegment}/${courseId}/${titleSlug}/final-assessment/${session_id}/exam`,
         ]);
         return;
       }
@@ -374,7 +374,7 @@ export class Utils {
             this.storage.setLocal('session_id', value.session_id.toString());
             this.storage.setLocal(`final_assessment_questions_${courseId}`, value.questions);
             this.router.navigate([
-              `${this._country()}/${this._profession()}/${urlSegment}/${courseId}/${titleSlug}/final-assessment/${value.session_id}/exam`,
+              `${this.country()}/${this._profession()}/${urlSegment}/${courseId}/${titleSlug}/final-assessment/${value.session_id}/exam`,
             ]);
           },
           error: (error) => {
@@ -474,7 +474,7 @@ export class Utils {
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe(),
         onCancel: () =>
-          this.router.navigate(['/', this._country(), this._profession(), 'payment', 'plan']),
+          this.router.navigate(['/', this.country(), this._profession(), 'payment', 'plan']),
       });
       return;
     }
@@ -490,7 +490,7 @@ export class Utils {
           { label: 'Subscribe', variant: 'default', action: 'confirm' },
         ],
         onConfirm: () =>
-          this.router.navigate(['/', this._country(), this._profession(), 'payment', 'plan']),
+          this.router.navigate(['/', this.country(), this._profession(), 'payment', 'plan']),
       });
       return;
     }
@@ -564,7 +564,7 @@ export class Utils {
   }): Promise<void> {
     const data: UtilsDialogData = {
       title: config.title,
-      containerClass: 'max-w-lg text-left!',
+      containerClass: 'max-w-lg text-start!',
       content: [{ type: 'text', value: config.message }],
       buttons: config.buttons,
     };
@@ -588,7 +588,7 @@ export class Utils {
 
   navigateToCourse(type: string, id: number, title: string, state?: Record<string, unknown>) {
     const titleSlug = this.slugify(title);
-    this.router.navigate([`/${this._country()}/${this._profession()}`, type, id, titleSlug], {
+    this.router.navigate([`/${this.country()}/${this._profession()}`, type, id, titleSlug], {
       state,
     });
   }
@@ -603,7 +603,7 @@ export class Utils {
     const urlSegment =
       type === 'micro_learning' ? 'micro-learning' : type === 'ai_lab' ? 'ai-labs' : type;
     const titleSlug = this.slugify(title);
-    const path = `/${this._country()}/${this._profession()}/${urlSegment}/${id}/${titleSlug}`;
+    const path = `/${this.country()}/${this._profession()}/${urlSegment}/${id}/${titleSlug}`;
     if (typeof window === 'undefined') return path;
     return `${window.location.origin}${path}`;
   }
@@ -621,7 +621,7 @@ export class Utils {
     const titleSlug = this.slugify(title);
     const redirectTo = redirect ?? this.router.url;
     this.router.navigate(
-      [`/${this._country()}/${this._profession()}`, type, id, titleSlug, 'feedback'],
+      [`/${this.country()}/${this._profession()}`, type, id, titleSlug, 'feedback'],
       { queryParams: { redirect: redirectTo } },
     );
   }
@@ -767,7 +767,7 @@ export class Utils {
             this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
               data: {
                 title: 'Additional Resources',
-                containerClass: 'max-w-lg text-left!',
+                containerClass: 'max-w-lg text-start!',
                 content: [{ type: 'links', items: links }],
                 buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
                 maxWidth: '100%',
@@ -795,7 +795,7 @@ export class Utils {
  * Detect a video MIME type from the URL. Uses the URL API for host matching so
  * substrings don't false-match the YouTube host (e.g. `my-youtube.com`).
  */
-function detectVideoMimeType(src: string): string {
+export function detectVideoMimeType(src: string): string {
   const host = parseHostname(src);
   const isYouTube =
     host === 'youtube.com' ||

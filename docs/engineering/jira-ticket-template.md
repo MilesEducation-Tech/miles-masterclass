@@ -38,11 +38,11 @@ What should happen, citing the contract (Postman folder / request, `docs/*.md`) 
 
 - [ ] Observable, testable outcome 1
 - [ ] Observable, testable outcome 2
-- [ ] `pnpm lint`, `pnpm ng test --watch=false`, `pnpm build:prod` green (state the environment)
+- [ ] `pnpm lint`, `pnpm build:prod` green (state the environment)
 
 ### How to verify
 
-Steps on local (`pnpm start`, port 4101) or the preview URL — routes, accounts, what to look for.
+Steps on local (`pnpm start`, port 4101) or the UAT environment (if the PR needs a deployed check) — routes, accounts, what to look for.
 
 ### Risks / assumptions / open questions
 

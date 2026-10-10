@@ -246,6 +246,14 @@ export class FeatureResource {
     computation: (loading) => loading,
   });
 
+  /**
+   * True until there is something to show or nothing is coming: on the server,
+   * where these resources never fetch (the browser does), and while a request is
+   * in flight. Gate a first-load skeleton on `isPending()` once `items()` is
+   * empty, so the server HTML carries it and a failed or empty read leaves none.
+   */
+  readonly isPending = computed(() => !this.isBrowser || this.isLoading());
+
   constructor(
     private key: FeatureApiKey,
     private type: string,

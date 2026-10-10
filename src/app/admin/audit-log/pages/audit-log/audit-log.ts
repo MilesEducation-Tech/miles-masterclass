@@ -18,17 +18,22 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideChevronRight } from '@ng-icons/lucide';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
+
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { TabStrip } from '@shared/ui/tab-strip/tab-strip';
+
 import { Supabase } from '@core/services/supabase/supabase';
-import { withPreviousValue } from '@shared/utils/with-previous-value';
+import { withPreviousValue } from '@core/utils/with-previous-value';
 import {
   AUDIT_CATEGORY_LABELS,
   AuditCategory,
   AuditLogRow,
 } from '@admin/core/models/audit-log.model';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Input } from '@shared/ui/input/input';
+import { Tabs } from '@shared/ui/tabs/tabs';
+import { Tab } from '@shared/ui/tabs/tab';
 
 const TABLE = 'admin_audit_log';
 const PAGE_SIZE = 50;
@@ -70,14 +75,17 @@ function fmt(value: unknown): string {
   selector: 'app-admin-audit-log',
   imports: [
     DatePipe,
-    AriaInput,
     Button,
     Spinner,
-    TabStrip,
     NgIcon,
     NgpCollapsible,
     NgpCollapsibleContent,
     NgpCollapsibleTrigger,
+    Field,
+    NgpLabel,
+    Input,
+    Tabs,
+    Tab,
   ],
   providers: [provideIcons({ lucideChevronDown, lucideChevronRight })],
   templateUrl: './audit-log.html',

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
+import { applicationConfig, moduleMetadata } from '@storybook/angular';
+import { provideTranslocoTesting } from '@testing/transloco';
 import { RouterModule } from '@angular/router';
 import { Header } from './header';
 import { Logger } from '@core/services/logger/logger';
@@ -21,6 +22,7 @@ const meta: Meta<Header> = {
   tags: ['autodocs'],
   parameters: { layout: 'fullscreen' },
   decorators: [
+    applicationConfig({ providers: [provideTranslocoTesting()] }),
     moduleMetadata({
       imports: [RouterModule.forRoot([], { initialNavigation: 'disabled' as any })],
       providers: [{ provide: Logger, useClass: MockLogger }],

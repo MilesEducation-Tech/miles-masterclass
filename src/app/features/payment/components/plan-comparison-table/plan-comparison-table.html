@@ -28,7 +28,7 @@
 
   <!-- Feature rows -->
   @for (row of rows(); track row.id; let isLast = $last) {
-    <div class="text-sm text-white py-3 pr-3 leading-snug">
+    <div class="text-sm text-white py-3 pe-3 leading-snug">
       {{ row.name }}
     </div>
     @for (col of columns(); track col.plan.id) {

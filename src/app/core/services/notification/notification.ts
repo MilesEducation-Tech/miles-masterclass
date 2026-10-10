@@ -1,4 +1,5 @@
 import { InjectionToken, Service, Type, inject } from '@angular/core';
+import { LanguageContext } from '../language-context/language-context';
 import { NgpToastManager, type NgpToastOptions } from 'ng-primitives/toast';
 import {
   ToastContext,
@@ -30,6 +31,7 @@ export const TOAST_COMPONENT = new InjectionToken<Type<unknown>>('TOAST_COMPONEN
 export class NotificationService {
   private readonly toastManager = inject(NgpToastManager);
   private readonly toastComponent = inject(TOAST_COMPONENT);
+  private readonly rtl = inject(LanguageContext).dir === 'rtl';
 
   /** This project's positions use left/right; the primitive uses start/end. */
   private static readonly PLACEMENTS: Record<
@@ -50,13 +52,25 @@ export class NotificationService {
     const context: ToastContext = { title, message, type, closable };
 
     this.toastManager.show(this.toastComponent, {
-      placement: NotificationService.PLACEMENTS[options?.position ?? 'top-right'],
+      placement: this.placement(options?.position ?? 'top-right'),
       duration,
       // A zero/negative duration used to mean "never auto-dismiss".
       persistent: duration <= 0,
       dismissible: closable,
       context,
     });
+  }
+
+  /**
+   * The primitive places `end` on the physical right. On a right-to-left page the default corner
+   * ('top-right') belongs on the left, so start and end swap.
+   */
+  private placement(position: ToastPosition): NonNullable<NgpToastOptions['placement']> {
+    const placement = NotificationService.PLACEMENTS[position];
+    if (!this.rtl) return placement;
+    return placement.endsWith('-end')
+      ? (placement.replace('-end', '-start') as typeof placement)
+      : (placement.replace('-start', '-end') as typeof placement);
   }
 
   success(title: string, message: string, options?: ToastOptions): void {

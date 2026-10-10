@@ -1,9 +1,14 @@
 import { Component, ElementRef, afterNextRender, signal, viewChild } from '@angular/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
-import { AriaInput } from '../../ui/aria/aria-input/aria-input';
+
 import { Button } from '../../ui/button/button';
 import { AI_LAB_AGREEMENT } from './ai-lab-terms-dialog.model';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 /**
  * The Miles AI Labs participant agreement, gating account provisioning.
@@ -18,7 +23,8 @@ import { AI_LAB_AGREEMENT } from './ai-lab-terms-dialog.model';
  */
 @Component({
   selector: 'app-ai-lab-terms-dialog',
-  imports: [AriaInput, Button, DialogShell],
+  imports: [Button, Dialog, Field, NgpLabel, Checkbox, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './ai-lab-terms-dialog.html',
 })
 export class AiLabTermsDialog {
@@ -37,7 +43,7 @@ export class AiLabTermsDialog {
    */
   protected readonly atBottom = signal(false);
 
-  protected readonly accepted = signal<unknown>(false);
+  protected readonly accepted = signal(false);
 
   constructor() {
     // A viewport tall enough to show the whole agreement never fires `scroll`,

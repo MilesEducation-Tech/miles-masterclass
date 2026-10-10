@@ -9,21 +9,22 @@
         <span class="font-medium text-white truncate">Downloading {{ job.label }}</span>
         <span class="text-xs text-fg-3">{{ status() }}</span>
       </div>
-      <app-button
+      <button
+        app-button
+        type="button"
+        class="text-white"
         variant="outline"
         size="sm"
-        class="text-white"
         [disabled]="job.phase === 'saving'"
-        (clicked)="facade.cancelDownload()"
+        (click)="facade.cancelDownload()"
       >
         Cancel
-      </app-button>
+      </button>
     </div>
     <app-progress
-      size="sm"
-      variant="info"
       [value]="percent()"
-      [indeterminate]="indeterminate()"
+      size="sm"
+      variant="primary"
       ariaLabel="Certificate download progress"
     />
   </div>

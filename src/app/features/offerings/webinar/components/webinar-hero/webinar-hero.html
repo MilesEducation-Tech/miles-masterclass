@@ -1,115 +1,268 @@
 @let w = webinar();
 @let art = artwork();
 @let session = sessionLabel();
+@let level = cairaLevel();
 
-<section class="relative isolate w-full overflow-hidden">
-  <!-- 1456px wide, column, centred, 31px between the artwork and the copy.
-       `max-w`, not `w`, so it still shrinks below that; `px-4` keeps the
-       gutter the design leaves either side.
-
-       `max-w-hero` / `gap-hero-gap` / `max-w-hero-art` are NAMED theme values
-       in styles.css, not bracket values. The editor offers to rewrite brackets
-       into spacing-scale forms, and `gap-7.75` / `max-w-247.5` are not classes
-       at all — that scale takes integer multipliers only — so the gap and the
-       artwork's width silently disappear. A named token already has a
-       canonical class, so there is nothing left to "fix". -->
-  <div
-    class="mx-auto flex w-full max-w-hero flex-col items-center gap-hero-gap px-4 pt-10 sm:pt-12 md:pt-16 lg:pt-20"
-  >
-    <!-- Artwork. 990 × 466.241 from the design, as a ratio so it scales down
-         intact. 16:9 below `md`: that ratio is 184px tall on a 390px phone,
-         and the mobile mock uses 16:9 anyway. -->
-    @if (linkToDetail()) {
-      <a
-        [routerLink]="[w.id]"
-        queryParamsHandling="preserve"
-        class="block relative aspect-video w-full max-w-hero-art overflow-hidden rounded-2xl border-[0.871px] border-white md:aspect-[990/466.241] md:rounded-3xl"
-        [attr.aria-label]="w.name"
-      >
-        @if (art) {
-          <img
-            [src]="art"
-            [alt]="w.name"
-            class="h-full w-full object-cover"
-            fetchpriority="high"
-            decoding="async"
-          />
-        } @else {
-          <!-- Hold the frame rather than collapsing the page around a missing
-               asset — the whole banner is sized off this box. -->
-          <div class="h-full w-full bg-muted"></div>
-        }
-      </a>
-    } @else {
-      <div
-        class="relative aspect-video w-full max-w-hero-art overflow-hidden rounded-2xl border-[0.871px] border-white md:aspect-[990/466.241] md:rounded-3xl"
-      >
-        @if (art) {
-          <img
-            [src]="art"
-            [alt]="w.name"
-            class="h-full w-full object-cover"
-            fetchpriority="high"
-            decoding="async"
-          />
-        } @else {
-          <!-- Hold the frame rather than collapsing the page around a missing
-               asset — the whole banner is sized off this box. -->
-          <div class="h-full w-full bg-muted"></div>
-        }
+@if (isGuest()) {
+  <!-- ═══ GUEST: blurred backdrop, white ticket, "Secure Your Seat" card ═══ -->
+  <section class="relative isolate w-full overflow-hidden">
+    @if (art) {
+      <div class="absolute inset-0 -z-10" aria-hidden="true">
+        <img [src]="art" alt="" class="h-full w-full scale-110 object-cover blur-2xl" />
+        <div
+          class="absolute inset-0 bg-linear-to-t from-background via-background/85 to-background/40"
+        ></div>
       </div>
     }
 
-    <div class="flex flex-col items-center text-center">
-      @if (live()) {
-        <span
-          class="inline-flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-[0.6875rem] font-semibold tracking-[0.18em] text-destructive uppercase"
-        >
-          <span class="size-1.5 animate-pulse rounded-full bg-destructive"></span>
-          Live now
-        </span>
-      } @else {
-        <span
-          class="inline-flex items-center gap-2 rounded-full border border-success/40 bg-success/10 px-3 py-1 text-[0.6875rem] font-semibold tracking-[0.18em] text-success uppercase"
-        >
-          <span class="size-1.5 rounded-full bg-success"></span>
-          Live webinar
-        </span>
-      }
-
-      <h1
-        class="mt-5 max-w-4xl text-xl leading-tight font-bold text-balance sm:text-xl md:mt-6 md:text-2xl lg:text-3xl"
+    <div
+      class="mx-auto flex w-full max-w-hero flex-col items-center justify-between gap-6 px-4 pt-10 sm:pt-12 md:flex-row md:items-start md:gap-10 md:px-6 md:pt-16 lg:pt-20"
+    >
+      <!-- The ticket. The mask keeps the card and subtracts a 14px half-circle
+           from each long edge at 80% of the height, where a real stub would
+           tear. `mask-subtract` also sets the `-webkit-` composite. -->
+      <article
+        class="w-full rounded-2xl bg-white px-5 py-10 text-black mask-subtract md:w-[420px] md:shrink-0 md:p-8 [mask-image:linear-gradient(#000_0_0),radial-gradient(circle_14px_at_0_80%,#000_98%,transparent_100%),radial-gradient(circle_14px_at_100%_80%,#000_98%,transparent_100%)]"
       >
-        {{ w.name }}
-      </h1>
+        <!-- Banner with the status chips -->
+        <div class="relative aspect-video w-full overflow-hidden rounded-md bg-muted">
+          @if (art) {
+            <img
+              [src]="art"
+              [alt]="w.name"
+              class="h-full w-full object-cover"
+              fetchpriority="high"
+              decoding="async"
+            />
+          }
+          <div class="absolute top-3 left-3 flex flex-wrap items-center gap-2">
+            @if (phase() === 'live') {
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full bg-destructive px-2.5 py-1 text-[11px] font-bold tracking-wide text-white uppercase"
+              >
+                <span class="size-1.5 animate-pulse rounded-full bg-white"></span>
+                Now Live
+              </span>
+            } @else if (startsIn(); as startsInLabel) {
+              <span
+                class="inline-flex items-center rounded-full bg-accent-premium px-2.5 py-1 text-[11px] font-bold tracking-wide text-black uppercase"
+              >
+                Webinar starts in {{ startsInLabel }}
+              </span>
+            } @else if (phase() === 'ended') {
+              <span
+                class="inline-flex items-center rounded-full bg-surface-control px-2.5 py-1 text-[11px] font-bold tracking-wide text-white uppercase"
+              >
+                Ended
+              </span>
+            }
+          </div>
+        </div>
 
-      @if (w.short_description) {
-        <p class="mt-3 max-w-4xl text-sm text-pretty text-muted-foreground md:mt-4 md:text-sm">
-          {{ w.short_description }}
-        </p>
-      }
+        <div class="mt-5 flex flex-col gap-3">
+          @if (categories(); as cats) {
+            <p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">{{ cats }}</p>
+          }
 
-      @if (session) {
-        <p
-          class="mt-8 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase md:mt-10"
-        >
-          Upcoming session
-        </p>
-        <p class="mt-1.5 text-base font-semibold text-accent-premium sm:text-lg md:text-xl">
-          {{ session }}
-        </p>
-      }
+          @if (linkToDetail()) {
+            <a
+              [routerLink]="[w.id]"
+              queryParamsHandling="preserve"
+              class="text-xl leading-tight font-bold text-balance hover:underline md:text-3xl"
+            >
+              {{ w.name }}
+            </a>
+          } @else {
+            <h1 class="text-xl leading-tight font-bold text-balance md:text-3xl">{{ w.name }}</h1>
+          }
 
-      <div class="mt-7 w-full max-w-sm md:mt-8 md:max-w-70">
-        <app-join-cta
-          [webinar]="w"
-          [cta]="cta()"
-          [prominent]="true"
-          [icon]="ticketIcon"
-          (register)="register.emit(w.id)"
-          (join)="join.emit(w.id)"
-        />
+          <div class="flex flex-wrap items-center gap-2">
+            @if (w.total_cpe_credits; as cpe) {
+              <span
+                class="inline-flex items-center rounded-full border-2 border-accent/40 bg-accent/5 px-3 py-1 text-xs font-semibold text-accent"
+              >
+                {{ cpe }} CPE
+              </span>
+            }
+            @if (level) {
+              <span
+                class="inline-flex items-center rounded-full border border-black/10 bg-black/5 px-3 py-1 text-xs font-semibold"
+              >
+                CAIRA {{ level }}
+              </span>
+            }
+          </div>
+
+          @if (w.short_description) {
+            <p class="text-sm leading-relaxed text-pretty text-neutral-600">
+              {{ w.short_description }}
+            </p>
+          }
+
+          @if (session) {
+            <p
+              class="inline-flex w-max items-center rounded-xl bg-muted px-4 py-2 text-sm font-semibold text-white"
+            >
+              {{ session }}
+            </p>
+          }
+
+          @if (phase() === 'upcoming' && startsAt(); as starts) {
+            <div class="mt-2">
+              <app-webinar-countdown [target]="starts" format="long" label="Starts in" />
+            </div>
+          }
+        </div>
+      </article>
+
+      <!-- The seat card -->
+      <div class="w-full max-w-md md:min-w-xs md:flex-1">
+        <div class="rounded-2xl border border-border bg-card p-5 shadow-2xl md:p-6">
+          <h2 class="text-xl font-bold md:text-2xl">Secure Your Seat</h2>
+          <p class="mt-1 text-sm text-muted-foreground">
+            Sign in with your email or phone and we will book this seat for you.
+          </p>
+          <div class="mt-5">
+            <app-seat-form [webinarId]="w.id" />
+          </div>
+          <p class="mt-4 text-xs leading-relaxed text-muted-foreground">
+            Once you're registered, the Zoom link and calendar invite are on their way to your
+            inbox.
+          </p>
+        </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
+} @else {
+  <!-- ═══ MEMBER: artwork over its glow, pill, title, chips, date, countdown, CTA ═══ -->
+  <section class="relative isolate w-full overflow-hidden">
+    <div
+      class="mx-auto flex w-full max-w-hero flex-col items-center gap-hero-gap px-4 pt-10 sm:pt-12 md:px-6 md:pt-16 lg:pt-20"
+    >
+      <!-- The glow behind the artwork is the `before:` layer: a blurred radial
+           gradient, the same picture v3 ships as a blurred SVG ellipse, without
+           the asset. `-z-1` sits it behind the artwork inside the section's
+           `isolate`. -->
+      <div
+        class="relative w-full max-w-hero-art before:pointer-events-none before:absolute before:-z-1 before:inset-[-12%_-14%] before:rounded-[50%] before:bg-[radial-gradient(ellipse_at_center,rgb(51_153_255/0.45),transparent_65%)] before:blur-[40px]"
+      >
+        @if (linkToDetail()) {
+          <a
+            [routerLink]="[w.id]"
+            queryParamsHandling="preserve"
+            class="block relative aspect-video w-full overflow-hidden rounded-2xl border border-white/40 md:aspect-[990/557] md:rounded-3xl"
+            [attr.aria-label]="w.name"
+          >
+            @if (art) {
+              <img
+                [src]="art"
+                [alt]="w.name"
+                class="h-full w-full object-cover"
+                fetchpriority="high"
+                decoding="async"
+              />
+            } @else {
+              <div class="h-full w-full bg-muted"></div>
+            }
+          </a>
+        } @else {
+          <div
+            class="relative aspect-video w-full overflow-hidden rounded-2xl border border-white/40 md:aspect-[990/557] md:rounded-3xl"
+          >
+            @if (art) {
+              <img
+                [src]="art"
+                [alt]="w.name"
+                class="h-full w-full object-cover"
+                fetchpriority="high"
+                decoding="async"
+              />
+            } @else {
+              <div class="h-full w-full bg-muted"></div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="flex w-full flex-col items-center text-center">
+        <span
+          class="inline-flex items-center gap-2 rounded-full border border-success bg-success/10 px-3 py-1.5 text-xs font-bold tracking-[1px] text-success uppercase"
+        >
+          <span
+            class="size-2 rounded-full bg-success"
+            [class.animate-pulse]="phase() === 'live'"
+          ></span>
+          Live webinar
+        </span>
+
+        <h1
+          class="mt-5 max-w-4xl text-3xl leading-[1.15] font-bold tracking-[-1px] text-balance md:mt-6 md:text-[42px]"
+        >
+          {{ w.name }}
+        </h1>
+
+        @if (w.short_description) {
+          <p class="mt-3 max-w-3xl text-sm text-pretty text-muted-foreground md:mt-4 md:text-base">
+            {{ w.short_description }}
+          </p>
+        }
+
+        <div class="mt-5 flex flex-wrap items-center justify-center gap-2">
+          @if (w.total_cpe_credits; as cpe) {
+            <span
+              class="inline-flex items-center rounded-full border border-muted-foreground bg-muted-foreground/10 px-3 py-1 text-[13px] font-medium text-muted-foreground"
+            >
+              {{ cpe }} CPE
+            </span>
+          }
+          @if (level) {
+            <span
+              class="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[13px] font-medium"
+            >
+              CAIRA {{ level }}
+            </span>
+          }
+          @if (categories(); as cats) {
+            <span
+              class="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[13px] font-medium text-muted-foreground"
+            >
+              {{ cats }}
+            </span>
+          }
+        </div>
+
+        @if (session) {
+          <p
+            class="mt-8 text-[13px] font-medium tracking-[1px] text-muted-foreground uppercase md:mt-10"
+          >
+            {{ phaseCaption() }}
+          </p>
+          <p class="mt-1.5 text-lg font-semibold text-accent-premium md:text-xl">
+            {{ session }}
+          </p>
+        }
+
+        <div class="mt-7 flex w-full max-w-sm flex-col items-center gap-4 md:mt-8 md:max-w-md">
+          <app-join-cta
+            class="w-full"
+            [webinar]="w"
+            [cta]="cta()"
+            [prominent]="true"
+            [icon]="ticketIcon"
+            (register)="register.emit(w.id)"
+            (join)="join.emit(w.id)"
+          />
+          @if (linkToDetail()) {
+            <a
+              [routerLink]="[w.id]"
+              queryParamsHandling="preserve"
+              class="inline-flex w-full items-center justify-center rounded-[8px] border border-outline px-6 py-3.5 text-sm font-medium transition-colors hover:border-accent/50 md:w-auto"
+            >
+              More Info
+            </a>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+}

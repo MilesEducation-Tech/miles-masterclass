@@ -47,7 +47,8 @@ export { VideoState, PlayerMode } from '@core/models/video-player.model';
   selector: 'app-video-js',
   imports: [],
   template: `
-    <div class="video-container" [class.cpe-mode]="cpeRestricted()">
+    <!-- dir="ltr": a timeline runs left-to-right in every language, and video.js seek math assumes it. -->
+    <div class="video-container" dir="ltr" [class.cpe-mode]="cpeRestricted()">
       @if (isLoading()) {
         <div class="loading-overlay" [style.background-image]="posterStyle()">
           <div class="loading-spinner" aria-label="Loading video"></div>

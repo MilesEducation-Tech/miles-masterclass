@@ -64,7 +64,8 @@ export { VideoState, PlayerMode } from '@core/models/video-player.model';
     }),
   ],
   template: `
-    <div class="overflow-visible w-full flex flex-col gap-4 relative">
+    <!-- dir="ltr": a timeline runs left-to-right in every language, as on the video player. -->
+    <div class="overflow-visible w-full flex flex-col gap-4 relative" dir="ltr">
       <!-- Hidden video.js audio element -->
       <audio
         #audioPlayer
@@ -157,7 +158,7 @@ export { VideoState, PlayerMode } from '@core/models/video-player.model';
                 </button>
                 @if (showPlaybackMenu()) {
                   <div
-                    class="absolute bottom-full right-0 mb-1 bg-gray-800 rounded-lg shadow-xl border border-white/10 overflow-hidden z-50"
+                    class="absolute bottom-full end-0 mb-1 bg-gray-800 rounded-lg shadow-xl border border-white/10 overflow-hidden z-50"
                   >
                     @for (rate of playbackRates; track rate) {
                       <button

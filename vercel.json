@@ -3,6 +3,7 @@
   "name": "miles-masterclass-v3",
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "sh vercel.sh",
+  "ignoreCommand": "[ \"$VERCEL_ENV\" != production ] && exit 1; git diff --quiet HEAD^ HEAD -- .release-please-manifest.json",
   "rewrites": [
     {
       "source": "/blog",

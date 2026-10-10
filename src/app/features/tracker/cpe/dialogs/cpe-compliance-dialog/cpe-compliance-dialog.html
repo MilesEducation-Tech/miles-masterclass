@@ -1,15 +1,21 @@
-<app-dialog-shell
-  maxWidth="100%"
-  ariaLabel="CPE compliance"
-  panelClass="bg-transparent shadow-none"
->
+<app-dialog ariaLabel="CPE compliance" panelClass="p-0 max-w-full bg-transparent shadow-none">
   <div class="relative w-[min(94vw,560px)] rounded-2xl bg-[#0B1838] p-8 text-white">
-    <app-button variant="close" class="absolute top-4 right-4" (clicked)="close()" />
+    <button
+      app-button
+      type="button"
+      class="absolute top-4 end-4 rounded-full"
+      variant="ghost"
+      size="icon"
+      aria-label="Close"
+      (click)="close()"
+    >
+      <ng-icon name="heroXMark" aria-hidden="true" />
+    </button>
 
     <header class="flex flex-col gap-1">
       <h2 class="text-3xl font-extrabold">
         <span class="text-white">{{ credits()?.earned ?? 0 | number: '1.0-2' }}</span>
-        <span class="ml-1 text-amber-400">CPE Credits</span>
+        <span class="ms-1 text-amber-400">CPE Credits</span>
       </h2>
       <p class="text-sm text-gray-300">Total credits that you have earned so far.</p>
     </header>
@@ -81,4 +87,4 @@
       </div>
     }
   </div>
-</app-dialog-shell>
+</app-dialog>

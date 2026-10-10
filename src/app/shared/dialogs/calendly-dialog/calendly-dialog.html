@@ -1,12 +1,17 @@
-<app-dialog-shell width="min(95vw, 760px)" [ariaLabel]="data.ariaLabel ?? 'Schedule a call'">
+<app-dialog [ariaLabel]="data.ariaLabel ?? 'Schedule a call'" panelClass="p-0 w-[min(95vw,760px)]">
   <div class="bg-background text-foreground relative rounded-xl overflow-hidden">
     @if (data.closeAction ?? true) {
-      <app-button
-        variant="close"
-        class="absolute top-4 right-4 z-10"
-        (clicked)="close()"
+      <button
+        app-button
+        type="button"
+        class="absolute top-4 end-4 z-10 rounded-full"
         aria-label="Close scheduler"
-      />
+        variant="ghost"
+        size="icon"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     }
 
     <div #widget class="calendly-inline-widget" style="width: 100%; height: 700px"></div>
@@ -30,4 +35,4 @@
       </div>
     }
   </div>
-</app-dialog-shell>
+</app-dialog>

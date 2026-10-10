@@ -1,7 +1,16 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "schematics": {
-    "@schematics/angular": {}
+    "@schematics/angular": {
+      "component": { "skipTests": true },
+      "directive": { "skipTests": true },
+      "pipe": { "skipTests": true },
+      "service": { "skipTests": true },
+      "guard": { "skipTests": true },
+      "interceptor": { "skipTests": true },
+      "resolver": { "skipTests": true },
+      "class": { "skipTests": true }
+    }
   },
   "version": 1,
   "cli": {
@@ -32,7 +41,7 @@
               "src/.well-known/assetlinks.json",
               "src/.well-known/apple-app-site-association"
             ],
-            "styles": ["src/styles/styles.css", "src/styles/animation.css"],
+            "styles": ["src/styles/fonts.css", "src/styles/styles.css", "src/styles/animation.css"],
             "server": "src/main.server.ts",
             "outputMode": "server",
             "ssr": {
@@ -152,12 +161,6 @@
           },
           "defaultConfiguration": "production"
         },
-        "test": {
-          "builder": "@angular/build:unit-test",
-          "options": {
-            "setupFiles": ["src/test-setup.ts"]
-          }
-        },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
@@ -171,7 +174,7 @@
             "browserTarget": "miles-masterclass-v3:build",
             "compodoc": false,
             "port": 6006,
-            "styles": ["src/styles/styles.css", "src/styles/animation.css"]
+            "styles": ["src/styles/fonts.css", "src/styles/styles.css", "src/styles/animation.css"]
           }
         },
         "build-storybook": {
@@ -181,7 +184,7 @@
             "browserTarget": "miles-masterclass-v3:build",
             "compodoc": false,
             "outputDir": "storybook-static",
-            "styles": ["src/styles/styles.css", "src/styles/animation.css"]
+            "styles": ["src/styles/fonts.css", "src/styles/styles.css", "src/styles/animation.css"]
           }
         }
       }

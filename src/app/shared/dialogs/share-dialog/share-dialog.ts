@@ -1,11 +1,12 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Button } from '../../ui/button/button';
-import { NgIcon } from '@ng-icons/core';
-import { heroLink, heroCheck } from '@ng-icons/heroicons/outline';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroLink, heroCheck, heroXMark } from '@ng-icons/heroicons/outline';
 import { Logger } from '@core/services/logger/logger';
+import { Dialog } from '@shared/ui/dialog/dialog';
 
 export interface ShareDialogData {
   url?: string;
@@ -13,7 +14,8 @@ export interface ShareDialogData {
 
 @Component({
   selector: 'app-share-dialog',
-  imports: [Button, DialogShell, NgIcon],
+  imports: [Button, NgIcon, Dialog],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './share-dialog.html',
 })
 export class ShareDialog implements OnInit {

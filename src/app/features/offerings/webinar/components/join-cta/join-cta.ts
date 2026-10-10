@@ -2,10 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { NgIcon } from '@ng-icons/core';
 import { Button } from '@shared/ui/button/button';
 import { ButtonVariant } from '@core/models/button.model';
-import { Spinner } from '@shared/ui/spinner/spinner';
-import { FeedCard, registrationOf } from '../../models/webinar.model';
-import { CTA_LABELS, needsCountdown, WebinarCta } from '../../utils/webinar-status';
-import { parseIso } from '../../utils/session-time';
+import { FeedCard, registrationOf } from '@features/offerings/webinar/models/webinar.model';
+import {
+  CTA_LABELS,
+  GUEST_REGISTER_LABEL,
+  needsCountdown,
+  WebinarCta,
+} from '@features/offerings/webinar/utils/webinar-status';
+import { parseIso } from '@features/offerings/webinar/utils/session-time';
 import { WebinarCountdown } from '../webinar-countdown/webinar-countdown';
 
 /**
@@ -17,7 +21,7 @@ import { WebinarCountdown } from '../webinar-countdown/webinar-countdown';
  */
 @Component({
   selector: 'app-join-cta',
-  imports: [Button, NgIcon, Spinner, WebinarCountdown],
+  imports: [Button, NgIcon, WebinarCountdown],
   templateUrl: './join-cta.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -42,11 +46,18 @@ export class JoinCta {
    * but oversized on a ~300px card.
    */
   readonly dense = input(false);
+  /**
+   * Signed-out wording: v3 says "Book Now" to a guest and "Register Now" to a
+   * member. Only the `register` state differs; every other label is shared.
+   */
+  readonly guest = input(false);
 
   readonly register = output<void>();
   readonly join = output<void>();
 
-  protected readonly label = computed(() => CTA_LABELS[this.cta()]);
+  protected readonly label = computed(() =>
+    this.guest() && this.cta() === 'register' ? GUEST_REGISTER_LABEL : CTA_LABELS[this.cta()],
+  );
 
   /** States where pressing the button does something. */
   protected readonly isActionable = computed(() => {

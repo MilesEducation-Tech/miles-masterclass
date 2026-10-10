@@ -1,0 +1,104 @@
+{
+  "shell": {
+    "backToHome": "Volver al inicio",
+    "background": "Fondo"
+  },
+  "login": {
+    "titleLead": "Entra en el",
+    "titleStrong": "mundo de Miles Masterclass",
+    "intro": "Inicia sesión para explorar las Master Classes, rutas de aprendizaje con IA y herramientas prácticas que te ayudan a mantenerte a la vanguardia y obtener valiosos créditos CPE.",
+    "tabs": {
+      "Mobile": "Móvil",
+      "Email": "Correo"
+    },
+    "code": "Código",
+    "searchCode": "Buscar...",
+    "phone": "Teléfono",
+    "phonePlaceholder": "Introduce tu número de teléfono",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "Introduce tu correo electrónico",
+    "consent": {
+      "phone": "Acepto recibir mensajes informativos y promocionales recurrentes de Miles Masterclass por SMS y WhatsApp, incluidas confirmaciones de inscripción a webinars, recordatorios, instrucciones para unirse, novedades educativas, información sobre cursos y ofertas, enviados mediante tecnología automatizada. La frecuencia de los mensajes puede variar. Pueden aplicarse tarifas por mensajes y datos. Responde STOP para darte de baja o HELP para obtener ayuda, o escribe a",
+      "email": "Me gustaría recibir correos electrónicos promocionales e informativos de Miles Masterclass, incluidas invitaciones a próximos eventos, novedades de los programas y ofertas. Puedo darme de baja en cualquier momento con el enlace incluido en cada correo.",
+      "notCondition": "El consentimiento no es una condición de compra. Consulta nuestra",
+      "and": "y nuestros"
+    },
+    "agree": {
+      "lead": "Al registrarte o iniciar sesión en Miles Masterclass, aceptas los",
+      "and": "y la"
+    },
+    "termsOfService": "Términos del servicio",
+    "privacyPolicy": "Política de privacidad",
+    "sendOtp": "Enviar código",
+    "requestNewCodeIn": "Podrás solicitar un nuevo código en",
+    "errors": {
+      "digitsOnly": "Solo dígitos",
+      "minLength": "Longitud mínima: {{ min }}",
+      "maxLength": "Longitud máxima: {{ max }}",
+      "invalidEmail": "Correo electrónico no válido",
+      "countryCodeRequired": "El código de país es obligatorio",
+      "countryCodeInvalid": "Código de país no válido",
+      "identifierRequired": "Introduce tu correo electrónico o número de teléfono",
+      "ssoOnly": "Esta cuenta inicia sesión a través de tu organización. Usa la página de inicio de sesión de tu empresa."
+    }
+  },
+  "otp": {
+    "title": "Verificación del código",
+    "sentTo": {
+      "email": "Código enviado por correo electrónico a",
+      "whatsapp": "Código enviado por WhatsApp al",
+      "sms": "Código enviado por SMS al",
+      "other": "Código enviado a"
+    },
+    "editPhone": "¿Número incorrecto? Editar",
+    "editEmail": "¿Correo incorrecto? Editar",
+    "label": "Código",
+    "attemptsLeft": {
+      "one": "Te queda {{ count }} intento antes de que se bloquee el inicio de sesión.",
+      "other": "Te quedan {{ count }} intentos antes de que se bloquee el inicio de sesión."
+    },
+    "verify": "Verificar código",
+    "useLatest": "Usa el mensaje más reciente.",
+    "tryAgainIn": "Vuelve a intentarlo en",
+    "emailInstead": "Iniciar sesión con correo electrónico",
+    "resendIn": "Reenviar código en",
+    "notReceived": "¿No recibiste el código?",
+    "resend": "Reenviar código",
+    "errors": {
+      "required": "Introduce el código",
+      "digitsOnly": "Solo dígitos",
+      "length": "El código debe tener {{ length }} dígitos"
+    }
+  },
+  "profile": {
+    "title": "Tu perfil",
+    "titleOnboarding": "Cuéntanos sobre ti",
+    "intro": "Gestiona tu información personal",
+    "introOnboarding": "Unas preguntas para adaptar lo que ves.",
+    "loadError": "No pudimos cargar tu perfil. Actualiza la página e inténtalo de nuevo.",
+    "selectOne": "Selecciona una opción",
+    "selectMany": "Selecciona todas las que correspondan",
+    "continue": "Continuar",
+    "saveChanges": "Guardar cambios",
+    "errors": {
+      "required": "Esta respuesta es obligatoria.",
+      "chooseOption": "Elige una opción."
+    },
+    "toast": {
+      "saved": "Guardado",
+      "stillToAnswer": {
+        "one": "Falta por responder: {{ count }} pregunta.",
+        "other": "Faltan por responder: {{ count }} preguntas."
+      },
+      "updated": "Tu perfil se ha actualizado.",
+      "saveFailed": "No se pudo guardar",
+      "couldNotSave": "No se pudo guardar tu perfil. Inténtalo de nuevo."
+    },
+    "leave": {
+      "title": "¿Salir sin guardar?",
+      "body": "Tus respuestas aún no se han guardado y se perderán si sales ahora.",
+      "keepEditing": "Seguir editando",
+      "confirm": "Salir"
+    }
+  }
+}

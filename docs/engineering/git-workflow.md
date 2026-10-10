@@ -22,10 +22,12 @@ How we branch, review and ship. Read this once; keep the "Daily routine" section
 
 We use **GitHub Flow**: one permanent branch (`master`), and short-lived branches off it.
 
-- `master` is always deployable. Whatever is on `master` is what's in production.
+- `master` is always deployable. Production runs the last release: merging the Release PR is what deploys
+  (`versioning.md` §4).
 - You never commit directly to `master`. Everything goes through a Pull Request (PR).
 - A branch lives **1–3 days**, not weeks. Small PRs get reviewed fast, and big ones rot.
-- Every PR gets a Vercel preview URL. Test there before asking for review.
+- Vercel previews are **disabled**. Test locally before asking for review; a change that must be seen
+  deployed goes on the shared UAT environment first (`git-playbook.md` §5).
 
 ```mermaid
 gitGraph
@@ -34,15 +36,17 @@ gitGraph
   commit id: "feat: seat picker"
   commit id: "test: seat picker"
   checkout master
-  merge feat/MIL-231-seat-allocation tag: "preview → prod"
+  merge feat/MIL-231-seat-allocation
   branch fix/MIL-240-invoice-total
   commit id: "fix: invoice total"
   checkout master
   merge fix/MIL-240-invoice-total
+  commit id: "chore: release 3.1.0" tag: "→ prod"
 ```
 
-**Why not a `develop` branch?** Because we deploy from `master` and every PR already gets its own preview
-environment. A second long-lived branch would only add a merge step and a place for work to get stuck.
+**Why not a `develop` branch?** Because we deploy from `master`, and the UAT environment is fed from a
+disposable `uat` branch that only ever shows PRs still waiting to merge. A second long-lived branch would
+only add a merge step and a place for work to get stuck.
 
 ---
 
@@ -97,7 +101,7 @@ This list **is enforced** — commitlint rejects anything else. (`revert` is als
 
 **Scope** is the area of the app, matching our folder structure: `core`, `shared`, `layout`, `admin`,
 `payment`, `offerings`, `tracker`, `partners`, `seo`, `auth`, plus the other feature folders
-(`library`, `legal`, `home`, `milesverse`, `ai-labs`, `uae-caira`, `connect-us`, `faculty`), and
+(`library`, `legal`, `home`, `ai-labs`, `uae-caira`, `connect-us`, `faculty`), and
 `deps` / `release` for dependency bumps and release commits.
 
 > **Scope is not machine-enforced on your local commits, and that is deliberate.** Two reasons, both
@@ -159,7 +163,7 @@ Practical notes:
 ### Size
 
 Aim for **under 400 changed lines**. If it's bigger, split it: one PR for the backend contract, one for
-the UI, one for the tests. A 2,000-line PR does not get reviewed; it gets rubber-stamped.
+the UI. A 2,000-line PR does not get reviewed; it gets rubber-stamped.
 
 This one is a review norm, not a bot. Nobody fails your build over a line count — but a reviewer is
 entitled to ask you to split.
@@ -229,12 +233,12 @@ on the ruleset, not suggestions.
 The workflows are `.github/workflows/ci.yml` and `.github/workflows/pr-title.yml`; read those for the
 exact steps rather than trusting a copy pasted into a doc. Four checks must be green:
 
-| Check         | What it does                                                                                                                                                                                         |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `verify`      | `pnpm format` → `pnpm lint` → `pnpm ng test --watch=false` → `pnpm build:prod` → `pnpm build-storybook`. Fast gates first, so a formatting slip fails in under a minute instead of after two builds. |
-| `pr-title`    | Your PR title is a Conventional Commit with a known type and scope                                                                                                                                   |
-| `commitlint`  | Every commit on the branch is a Conventional Commit, even if you used `--no-verify`                                                                                                                  |
-| `branch-name` | Your branch matches `type/description`                                                                                                                                                               |
+| Check         | What it does                                                                                                                                                          |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verify`      | `pnpm format` → `pnpm lint` → `pnpm build:prod` → `pnpm build-storybook`. Fast gates first, so a formatting slip fails in under a minute instead of after two builds. |
+| `pr-title`    | Your PR title is a Conventional Commit with a known type and scope                                                                                                    |
+| `commitlint`  | Every commit on the branch is a Conventional Commit, even if you used `--no-verify`                                                                                   |
+| `branch-name` | Your branch matches `type/description`                                                                                                                                |
 
 The job name is the check name, so don't rename a job without updating the ruleset — a check that never
 reports reads as "pending", which blocks the merge forever.
@@ -247,16 +251,18 @@ Full detail is in **`docs/engineering/versioning.md`**. The short version:
 
 ### Release
 
-`master` deploys to production on merge. Version numbers are **derived from commit messages**, not chosen
-by hand: `fix:` bumps the patch, `feat:` the minor, and `!`/`BREAKING CHANGE:` the major. A release tool
-(release-please) keeps an open Release PR with the next version and the changelog; merging it bumps
-`package.json`, writes `CHANGELOG.md`, and creates the tag `v3.1.0` and a GitHub Release.
+Production deploys when a release merges, not on every merge to `master`. Version numbers are
+**derived from commit messages**, not chosen by hand: `fix:` bumps the patch, `feat:` the minor, and
+`!`/`BREAKING CHANGE:` the major. A release tool (release-please) keeps an open Release PR with the next
+version and the changelog; merging it bumps `package.json`, writes `CHANGELOG.md`, creates the tag
+`v3.1.0` and a GitHub Release, and deploys production.
 
 Until that's wired up, do it manually:
 
 ```bash
 git checkout master && git pull
 # bump "version" in package.json (3.0.1 → 3.1.0 for features, 3.0.2 for fixes)
+# and the same number in .release-please-manifest.json: production only builds when that file changes
 git commit -am "chore(release): v3.1.0"
 git tag -a v3.1.0 -m "v3.1.0"
 git push origin master --tags
@@ -277,12 +283,12 @@ Production is broken and you can't wait for the queue:
 ```bash
 git checkout master && git pull
 git checkout -b hotfix/MIL-299-checkout-500
-# smallest possible fix + a test that would have caught it
+# smallest possible fix, verified in the running app
 git push -u origin hotfix/MIL-299-checkout-500
 ```
 
-Open the PR, mark it urgent, get one fast review, merge, tag a patch version. Because we only have
-`master`, there is nothing to back-merge afterwards.
+Open the PR, mark it urgent, get one fast review, merge, then merge the Release PR: that is what
+deploys. Because we only have `master`, there is nothing to back-merge afterwards.
 
 ---
 
@@ -404,5 +410,6 @@ and the two will disagree at the worst moment.
 - **Rebase** — replay your commits on top of the latest `master`, so history stays a straight line.
 - **Merge conflict** — two people changed the same lines. Git can't choose, so you decide and commit the fix.
 - **Squash** — collapse all the commits on your branch into one commit on `master`.
-- **CI** — the automated checks (lint, tests, build) that run on your PR.
-- **Preview URL** — the temporary Vercel deployment of your branch, for testing before merge.
+- **CI** — the automated checks (lint, build) that run on your PR.
+- **UAT** — the shared Vercel environment for testing deployed code before merge. The release owner puts
+  PRs on it through the `uat` branch.

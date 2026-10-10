@@ -1,4 +1,4 @@
-<app-dialog-shell maxWidth="100%" ariaLabel="Share">
+<app-dialog ariaLabel="Share" panelClass="p-0 max-w-full">
   <div
     class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col md:max-w-[500px] w-[95svw] mx-auto overflow-hidden relative rounded-xl"
   >
@@ -7,19 +7,29 @@
     >
       <span></span>
 
-      <app-button variant="close" (clicked)="close()" aria-label="Close dialog" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        aria-label="Close dialog"
+        variant="ghost"
+        size="icon"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <div class="p-8 text-center">
-      <p class="text-gray-300 mb-2 text-left text-sm">Share this link</p>
+      <p class="text-gray-300 mb-2 text-start text-sm">Share this link</p>
 
       <div
         class="flex items-center justify-between bg-gray-800 p-1.5 rounded-lg border border-gray-700"
       >
-        <div class="truncate text-sm text-gray-300 px-2 flex-1 text-left select-all">
+        <div class="truncate text-sm text-gray-300 px-2 flex-1 text-start select-all">
           {{ url() }}
         </div>
-        <app-button variant="default" size="sm" (clicked)="copy()">
+        <button app-button type="button" variant="default" size="sm" (click)="copy()">
           <div class="flex items-center gap-2">
             @if (copied()) {
               <ng-icon [svg]="icons().check" class="text-lg" />
@@ -29,8 +39,8 @@
               <span>Copy</span>
             }
           </div>
-        </app-button>
+        </button>
       </div>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

@@ -1,103 +1,136 @@
-import { Component, computed, inject, input } from '@angular/core';
-import { VideoPoster } from '@shared/components/video-poster/video-poster';
-import { Button } from '@shared/ui/button/button';
+import { DatePipe, NgOptimizedImage } from '@angular/common';
+import {
+  afterNextRender,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
-  matAddShoppingCartRound,
   matBookmarkBorderRound,
   matBookmarkRound,
+  matPauseRound,
   matPlayArrowRound,
-  matRestartAltRound,
-  matShoppingCartRound,
+  matVolumeOffRound,
+  matVolumeUpRound,
 } from '@ng-icons/material-icons/round';
 import { phosphorDownloadSimpleFill, phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
 import { phosphorCards } from '@ng-icons/phosphor-icons/regular';
-import { DatePipe } from '@angular/common';
-
-import { Progress } from '@shared/ui/progress/progress';
-import { cn } from '@shared/utils/cn';
-import { MasterclassFacade } from '../../../services/masterclass-facade';
-import { RatingStar } from '@shared/components/rating-star/rating-star';
-import { Utils } from '@shared/services/utils';
-import { CategoriesList } from '@shared/components/categories-list/categories-list';
-import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits-pipe';
+import { NgpDialogManager } from 'ng-primitives/dialog';
+import { VideoSource } from '@core/models/video-player.model';
 import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
+import { CategoriesList } from '@shared/components/categories-list/categories-list';
+import { VideoJs } from '@shared/components/video-js/video-js';
+import { detectVideoMimeType } from '@shared/services/utils';
+import { Button } from '@shared/ui/button/button';
+import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
+import {
+  HERO_TRAILER_CONFIG,
+  HERO_TRAILER_DELAY_MS,
+} from '@features/offerings/masterclass/constants/masterclass';
 
+/**
+ * The course page's hero. It reads the course from `CourseDetailFacade` and
+ * calls it for every action (Watch Now, Trailer, Sample, Bookmark, Share,
+ * Download); it keeps only the background trailer's own playback state.
+ *
+ * The background is the trailer, as on production: the poster first (a plain
+ * image, server-rendered, the LCP), then after `HERO_TRAILER_DELAY_MS` the HLS
+ * trailer, muted and looping, fading in once it actually plays. It plays
+ * through the shared video.js player, which loads video.js only when it
+ * mounts; if it fails, the poster simply stays.
+ *
+ * Sample shows only when the API sends `sample_video_url` (null on every UAT
+ * course so far); Download is enabled once it sends the certificate URL.
+ * Held back until the web API covers them (`docs/MASTERCLASS_API_QUESTIONS.md`)
+ * or their own PR: the CPE/Preview mode switch, price and Add To Cart, and the
+ * signed-in progress, rating and final-assessment actions.
+ */
 @Component({
   selector: 'app-masterclass-course-hero',
-  imports: [
-    VideoPoster,
-    Button,
-    NgIcon,
-    DatePipe,
-    Progress,
-    RatingStar,
-    CategoriesList,
-    TotalCpeCreditsPipe,
-    CairaCredlyBadge,
-  ],
+  imports: [DatePipe, NgOptimizedImage, NgIcon, Button, VideoJs, CategoriesList, CairaCredlyBadge],
   templateUrl: './masterclass-course-hero.html',
   providers: [
     provideIcons({
       matPlayArrowRound,
-      matBookmarkBorderRound,
+      matPauseRound,
+      matVolumeOffRound,
+      matVolumeUpRound,
       matBookmarkRound,
-      phosphorShareFatFill,
+      matBookmarkBorderRound,
       phosphorCards,
+      phosphorShareFatFill,
       phosphorDownloadSimpleFill,
-      matRestartAltRound,
-      matAddShoppingCartRound,
-      matShoppingCartRound,
     }),
   ],
 })
 export class MasterclassCourseHero {
-  readonly masterclass = inject(MasterclassFacade);
-  readonly utils = inject(Utils);
-  cn = cn;
+  protected readonly facade = inject(CourseDetailFacade);
+  protected readonly course = this.facade.course;
 
-  courseId = input<string>();
-  courseTitle = input<string>();
+  private readonly player = viewChild(VideoJs);
 
-  protected readonly instructor = computed(
-    () => this.masterclass.courseDetails()?.instructor_details,
-  );
-  protected readonly instructorNames = computed(() => {
-    const lead = this.instructor();
-    const others = lead?.other_instructors ?? [];
-    return [lead, ...others]
-      .filter((person) => person?.first_name || person?.last_name)
-      .map((person) => `${person?.first_name ?? ''} ${person?.last_name ?? ''}`.trim());
+  protected readonly trailerConfig = HERO_TRAILER_CONFIG;
+
+  /** Mounts the player once the poster has had its moment; browser only. */
+  protected readonly trailerMounted = signal(false);
+  /** Set by the first `playing`: the trailer fades in over the poster then. */
+  protected readonly trailerStarted = signal(false);
+  protected readonly trailerPlaying = signal(false);
+  protected readonly trailerMuted = signal(true);
+
+  protected readonly poster = computed(() => {
+    const course = this.course();
+    return course ? course.trailer_thumbnail_url || course.horizontal_thumbnail_url : null;
   });
 
-  openVideoDialog(source: 'trailer' | 'sample') {
-    const courseDetails = this.masterclass.courseDetails();
-    if (!courseDetails) return;
+  protected readonly trailerSource = computed<VideoSource | null>(() => {
+    const src = this.course()?.trailer_video_url;
+    return src ? { src, type: detectVideoMimeType(src) } : null;
+  });
 
-    const link = source === 'trailer' ? courseDetails.trailer_link : courseDetails.sample_link;
-    this.utils.openVideoDialog(link, courseDetails.title);
+  protected readonly instructorNames = computed(
+    () =>
+      this.course()
+        ?.instructors.map((instructor) => instructor.name)
+        .join(', ') ?? '',
+  );
+
+  /** Every UAT course sits in one CAIRA level; the badge shows its number. */
+  protected readonly cairaLevel = computed(() => this.course()?.level[0]?.level_number ?? null);
+
+  constructor() {
+    const destroyRef = inject(DestroyRef);
+
+    afterNextRender(() => {
+      const timer = setTimeout(() => this.trailerMounted.set(true), HERO_TRAILER_DELAY_MS);
+      destroyRef.onDestroy(() => clearTimeout(timer));
+    });
+
+    // Like `VideoPoster`: a dialog (the trailer with sound, Share) pauses the
+    // background trailer rather than playing under it.
+    inject(NgpDialogManager)
+      .afterOpened.pipe(takeUntilDestroyed())
+      .subscribe(() => this.player()?.pause());
   }
 
-  toggleBookmark() {
-    const id = this.courseId();
-    if (!id) return;
-
-    this.utils.toggleBookmarkCourse(+id).subscribe((response) => {
-      if (response.status) {
-        this.masterclass.courseDetails.update((course) =>
-          course ? { ...course, added_bookmark: response.is_bookmarked } : course,
-        );
-      }
-    });
+  protected onTrailerPlaying(): void {
+    this.trailerStarted.set(true);
+    this.trailerPlaying.set(true);
   }
 
-  addToCart(courseId: number, isAddedToCart: boolean) {
-    this.utils.addCourseToCart(courseId, isAddedToCart).subscribe((response) => {
-      if (response.status) {
-        this.masterclass.courseDetails.update((course) =>
-          course ? { ...course, is_added_to_cart: response.in_cart } : course,
-        );
-      }
-    });
+  protected togglePlay(): void {
+    this.player()?.togglePlay();
+  }
+
+  protected toggleMute(): void {
+    const player = this.player();
+    if (!player) return;
+    player.toggleMute();
+    this.trailerMuted.set(player.isMuted());
   }
 }

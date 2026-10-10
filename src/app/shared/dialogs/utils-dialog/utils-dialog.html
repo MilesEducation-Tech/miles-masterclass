@@ -1,16 +1,28 @@
-<app-dialog-shell
+<app-dialog
   [width]="data.width"
   [maxWidth]="data.maxWidth"
   [ariaLabel]="data.ariaLabel ?? data.title ?? 'Dialog'"
   [dismissible]="!data.disableClose"
+  panelClass="p-0"
 >
   <div
     class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] mx-auto overflow-hidden relative"
     [class]="showAppDownload ? 'md:w-[640px] xl:w-[800px]' : 'md:max-w-[500px]'"
   >
     <!-- Close Button -->
-    <div class="absolute top-4 right-4 z-30">
-      <app-button variant="close" size="sm" (clicked)="close()" />
+    <div class="absolute top-4 end-4 z-30">
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        size="sm"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <!-- Miles One app-download layout: title + subtitle + store badges + QR + phone mockup + footer -->
@@ -19,7 +31,7 @@
         @if (data.title) {
           <h2
             id="modal-title"
-            class="text-xl sm:text-2xl font-bold leading-tight mb-3 text-left mx-6 mt-6"
+            class="text-xl sm:text-2xl font-bold leading-tight mb-3 text-start mx-6 mt-6"
           >
             {{ data.title }}
           </h2>
@@ -28,7 +40,7 @@
         @if (data.subtitle) {
           <p
             id="modal-description"
-            class="text-sm leading-relaxed text-white/75 mb-6 text-left mx-6"
+            class="text-sm leading-relaxed text-white/75 mb-6 text-start mx-6"
           >
             {{ data.subtitle }}
           </p>
@@ -75,7 +87,7 @@
 
         <div class="relative h-36 w-full z-0">
           <div class="bg-linear-to-t from-black to-transparent z-10 inset-0 absolute"></div>
-          <div class="flex items-center justify-center shrink-0 absolute right-6 bottom-0 -z-10">
+          <div class="flex items-center justify-center shrink-0 absolute end-6 bottom-0 -z-10">
             <div
               class="w-[160px] h-[210px] sm:w-[200px] sm:h-[260px] flex items-center justify-center"
             >
@@ -89,7 +101,7 @@
           </div>
           @if (data.footer) {
             <p
-              class="text-[13px] leading-relaxed text-white/60 m-0 absolute left-0 bottom-4 z-20 mx-6"
+              class="text-[13px] leading-relaxed text-white/60 m-0 absolute start-0 bottom-4 z-20 mx-6"
             >
               {{ data.footer }}
             </p>
@@ -123,14 +135,14 @@
             }
             @case ('description') {
               <p
-                class="text-gray-300 mb-4 leading-relaxed bg-gray-800 p-4 rounded-lg border-l-4 border-blue-500 text-left"
+                class="text-gray-300 mb-4 leading-relaxed bg-gray-800 p-4 rounded-lg border-s-4 border-blue-500 text-start"
               >
                 {{ item.value }}
               </p>
             }
             @case ('note') {
               <div
-                class="mb-4 p-4 rounded-lg border-l-4 text-left"
+                class="mb-4 p-4 rounded-lg border-s-4 text-start"
                 [class.bg-blue-900]="item.variant === 'info' || !item.variant"
                 [class.border-blue-500]="item.variant === 'info' || !item.variant"
                 [class.bg-yellow-900]="item.variant === 'warning'"
@@ -139,7 +151,7 @@
                 [class.border-green-500]="item.variant === 'success'"
               >
                 <p class="text-gray-200 text-sm leading-relaxed">
-                  <span class="font-semibold mr-2">
+                  <span class="font-semibold me-2">
                     @if (item.variant === 'warning') {
                       ⚠️ Warning:
                     }
@@ -156,13 +168,13 @@
             }
             @case ('list') {
               @if (item.ordered) {
-                <ol class="list-decimal list-inside mb-4 space-y-2 text-gray-300 ml-4 text-left">
+                <ol class="list-decimal list-inside mb-4 space-y-2 text-gray-300 ms-4 text-start">
                   @for (listItem of item.items; track $index) {
                     <li class="leading-relaxed">{{ listItem }}</li>
                   }
                 </ol>
               } @else {
-                <ul class="list-disc list-inside mb-4 space-y-2 text-gray-300 ml-4 text-left">
+                <ul class="list-disc list-inside mb-4 space-y-2 text-gray-300 ms-4 text-start">
                   @for (listItem of item.items; track $index) {
                     <li class="leading-relaxed">{{ listItem }}</li>
                   }
@@ -171,11 +183,11 @@
             }
             @case ('table') {
               <div class="mb-6 overflow-x-auto rounded-lg border border-gray-700">
-                <table class="w-full text-left text-sm">
+                <table class="w-full text-start text-sm">
                   <thead class="bg-gray-800 text-gray-200">
                     <tr>
                       @for (header of item.headers; track $index) {
-                        <th class="px-4 py-3 font-semibold">{{ header }}</th>
+                        <th class="px-4 py-3 text-start font-semibold">{{ header }}</th>
                       }
                     </tr>
                   </thead>
@@ -206,7 +218,7 @@
               </figure>
             }
             @case ('code') {
-              <div class="mb-4 rounded-lg overflow-hidden border border-gray-700 text-left">
+              <div class="mb-4 rounded-lg overflow-hidden border border-gray-700 text-start">
                 <div class="bg-gray-800 px-4 py-2 text-gray-400 text-xs font-mono">
                   {{ item.language || 'code' }}
                 </div>
@@ -219,17 +231,20 @@
               <div class="flex flex-col space-y-2 mb-4">
                 @for (listItem of item.items; track $index) {
                   <button
-                    class="text-left px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-200 transition-colors flex items-center justify-between group"
+                    class="text-start px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-200 transition-colors flex items-center justify-between group"
                     (click)="handleItemClick(listItem.value)"
                   >
                     <span>{{ listItem.label }}</span>
-                    <span class="text-gray-500 group-hover:text-white transition-colors">→</span>
+                    <span
+                      class="inline-block text-gray-500 group-hover:text-white transition-colors rtl:-scale-x-100"
+                      >→</span
+                    >
                   </button>
                 }
               </div>
             }
             @case ('links') {
-              <ul class="flex flex-col gap-2 mb-4 text-left">
+              <ul class="flex flex-col gap-2 mb-4 text-start">
                 @for (link of item.items; track link.href) {
                   <li>
                     <a
@@ -295,16 +310,18 @@
         @if (data.buttons && data.buttons.length > 0) {
           <div class="mt-6 flex justify-center gap-3">
             @for (button of data.buttons; track $index) {
-              <app-button
+              <button
+                app-button
+                type="button"
                 [variant]="button.variant ?? 'default'"
-                (clicked)="handleButtonClick(button.action)"
+                (click)="handleButtonClick(button.action)"
               >
                 {{ button.label }}
-              </app-button>
+              </button>
             }
           </div>
         }
       </div>
     }
   </div>
-</app-dialog-shell>
+</app-dialog>

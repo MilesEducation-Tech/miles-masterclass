@@ -1,8 +1,8 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { finalize, from, switchMap } from 'rxjs';
-import { LoadingService } from '../../services/loading/loading';
+import { from, switchMap } from 'rxjs';
 import { AuthSession } from '../../services/auth-session/auth-session';
+import { LanguageContext } from '../../services/language-context/language-context';
 import { IS_ADMIN_REQUEST, IS_EXTERNAL_REQUEST, SKIP_AUTH_TOKEN } from '../../models/http.model';
 import { SESSION_MINTING_PATHS } from '../../models/auth.model';
 
@@ -19,16 +19,19 @@ function isSessionMintingRoute(url: string): boolean {
   return SESSION_MINTING_PATHS.some((path) => url.includes(path));
 }
 
-export const appInterceptor: HttpInterceptorFn = (req, next) => {
+export const appInterceptor: HttpInterceptorFn = (original, next) => {
   // Third-party origins get the request untouched: a bearer for this platform
-  // must never leak off-platform, and a background call shouldn't drive the
-  // global loading spinner either.
-  if (req.context.get(IS_EXTERNAL_REQUEST)) return next(req);
+  // must never leak off-platform. (`loadingInterceptor` skips them too.)
+  if (original.context.get(IS_EXTERNAL_REQUEST)) return next(original);
 
-  const loading = inject(LoadingService);
+  // Django answers in the visitor's language (`LanguageContext`): the browser's own header would
+  // ignore the switcher's choice, and SSR calls from Node would send none at all. For a bare
+  // language like `fr` this is a CORS-safelisted header, so it never costs a preflight.
+  const req = original.clone({
+    setHeaders: { 'Accept-Language': inject(LanguageContext).current },
+  });
+
   const auth = inject(AuthSession);
-
-  loading.start();
 
   // `x-app-type`, `x-platform` and `x-country-code` used to be set here. They
   // are gone deliberately: MilesCAIRA's `Access-Control-Allow-Headers` does not
@@ -43,7 +46,7 @@ export const appInterceptor: HttpInterceptorFn = (req, next) => {
     req.context.get(IS_ADMIN_REQUEST) ||
     isSessionMintingRoute(req.url);
 
-  const send = skipToken
+  return skipToken
     ? next(req)
     : // Rule 2: rotate BEFORE the request, never as a retry after a 401/403.
       // The access token is short by design and cannot be revoked once issued,
@@ -60,11 +63,4 @@ export const appInterceptor: HttpInterceptorFn = (req, next) => {
           );
         }),
       );
-
-  return send.pipe(
-    finalize(() => {
-      // Stop loading indicator when request completes (success or error)
-      loading.stop();
-    }),
-  );
 };

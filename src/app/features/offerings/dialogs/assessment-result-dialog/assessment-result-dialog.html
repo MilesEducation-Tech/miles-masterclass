@@ -1,4 +1,8 @@
-<app-dialog-shell maxWidth="500px" ariaLabel="Final assessment result" [dismissible]="false">
+<app-dialog
+  ariaLabel="Final assessment result"
+  [dismissible]="false"
+  panelClass="p-0 max-w-[500px]"
+>
   <div class="relative p-6 text-center max-w-md mx-auto">
     <!-- Status Icon -->
     <div class="mb-6 flex justify-center">
@@ -45,28 +49,52 @@
     <!-- Actions -->
     <div class="flex flex-col gap-3">
       @if (data.isPassed) {
-        <app-button variant="default" class="w-full" (clicked)="onAction('report')">
+        <button
+          app-button
+          type="button"
+          class="w-full"
+          variant="default"
+          (click)="onAction('report')"
+        >
           <div class="flex items-center justify-center gap-2">
             View Detailed Report
-            <ng-icon name="heroArrowRight"></ng-icon>
+            <ng-icon class="rtl:-scale-x-100" name="heroArrowRight"></ng-icon>
           </div>
-        </app-button>
+        </button>
 
-        <app-button variant="outline" class="w-full" (clicked)="onAction('course')">
+        <button
+          app-button
+          type="button"
+          class="w-full"
+          variant="outline"
+          (click)="onAction('course')"
+        >
           Back to Course
-        </app-button>
+        </button>
       } @else {
-        <app-button variant="default" class="w-full" (clicked)="onAction('retake')">
+        <button
+          app-button
+          type="button"
+          class="w-full"
+          variant="default"
+          (click)="onAction('retake')"
+        >
           <div class="flex items-center justify-center gap-2">
             <ng-icon name="heroArrowPath"></ng-icon>
             Retake Assessment
           </div>
-        </app-button>
+        </button>
 
-        <app-button variant="outline" class="w-full" (clicked)="onAction('course')">
+        <button
+          app-button
+          type="button"
+          class="w-full"
+          variant="outline"
+          (click)="onAction('course')"
+        >
           Return to Study Material
-        </app-button>
+        </button>
       }
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

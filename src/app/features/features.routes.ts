@@ -55,7 +55,10 @@ export const featuresRoutes: Route[] = [
         loadChildren: () =>
           import('@features/tracker/caira/caira-tracker.routes').then((m) => m.CairaTrackerRoutes),
       },
-      { path: 'faq', component: Faq },
+      // `standalone` arrives through withComponentInputBinding(), which sets an
+      // input with no matching route data to `undefined` and so overrides its
+      // `true` default. Without this the page lost its <h1> and top padding.
+      { path: 'faq', component: Faq, data: { standalone: true } },
       { path: 'terms-of-service', component: TermsOfService },
       { path: 'privacy-policy', component: PrivacyPolicy },
       // Mobile-webview variants — same components, plain layout (no header/
@@ -142,28 +145,6 @@ export const featuresRoutes: Route[] = [
         path: 'ai-labs',
         loadChildren: () =>
           import('@features/ai-labs/ai-labs.routes').then((m) => m.AI_LABS_ROUTES),
-      },
-      // Simulations require a logged-in user: anonymous visitors are sent to
-      // /auth/login?redirect=<url> and land back here after OTP verify.
-      {
-        path: 'simulation',
-        loadComponent: () =>
-          import('@features/milesverse/pages/milesverse/milesverse').then((m) => m.Milesverse),
-      },
-      {
-        path: 'simulation/subjects/:slug',
-        loadComponent: () =>
-          import('@features/milesverse/pages/subject/subject').then((m) => m.MilesverseSubject),
-      },
-      {
-        path: 'simulation/briefing/:id',
-        loadComponent: () =>
-          import('@features/milesverse/pages/briefing/briefing').then((m) => m.MilesverseBriefing),
-      },
-      {
-        path: 'simulation/report',
-        loadComponent: () =>
-          import('@features/milesverse/pages/report/report').then((m) => m.MilesverseReport),
       },
       {
         path: '',

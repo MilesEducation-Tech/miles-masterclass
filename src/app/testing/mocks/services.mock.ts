@@ -1,6 +1,11 @@
+import { signal } from '@angular/core';
 import { of } from 'rxjs';
 
 export class MockUtils {
+  /** The locale segments the cards build their links from. */
+  readonly country = signal('us');
+  readonly profession = signal('accounting');
+
   navigateTo() {
     // no-op test double
   }

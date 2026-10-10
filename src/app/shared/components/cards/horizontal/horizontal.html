@@ -25,7 +25,7 @@
     ></div>
     @if (attendanceTag(); as tag) {
       <span
-        class="absolute top-3 left-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide z-20"
+        class="absolute top-3 start-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide z-20"
         [class]="tag.classes"
       >
         {{ tag.label }}
@@ -34,7 +34,7 @@
     @if (type() !== 'webinar') {
       <button
         type="button"
-        class="absolute top-3 right-3 z-30 size-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center pointer-events-auto cursor-pointer transition-colors"
+        class="absolute top-3 end-3 z-30 size-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center pointer-events-auto cursor-pointer transition-colors"
         [attr.aria-label]="card().added_bookmark ? 'Remove bookmark' : 'Add bookmark'"
         (click)="toggleBookmark($event)"
       >
@@ -82,39 +82,59 @@
       @if (webinarCta(); as wcta) {
         @switch (wcta) {
           @case ('book') {
-            <app-button
-              variant="default"
+            <button
+              app-button
+              type="button"
               class="bg-white text-black hover:bg-white hover:text-black rounded-md"
-              (clicked)="bookWebinar()"
-              >Book Now</app-button
+              variant="default"
+              (click)="bookWebinar()"
             >
+              Book Now
+            </button>
           }
           @case ('joined') {
-            <app-button variant="secondary" class="rounded-md" [disabled]="true">Booked</app-button>
+            <button
+              app-button
+              type="button"
+              class="rounded-md"
+              variant="secondary"
+              [disabled]="true"
+            >
+              Booked
+            </button>
           }
           @case ('join-live') {
-            <app-button
-              variant="default"
+            <button
+              app-button
+              type="button"
               class="bg-white text-black hover:bg-white hover:text-black rounded-md"
-              (clicked)="joinLive()"
-              >Join Now</app-button
+              variant="default"
+              (click)="joinLive()"
             >
+              Join Now
+            </button>
           }
           @case ('submit-feedback') {
-            <app-button
-              variant="default"
+            <button
+              app-button
+              type="button"
               class="bg-amber-400 text-black hover:bg-amber-400 hover:text-black rounded-md"
-              (clicked)="submitFeedback()"
-              >Submit Feedback</app-button
+              variant="default"
+              (click)="submitFeedback()"
             >
+              Submit Feedback
+            </button>
           }
           @case ('download-certificate') {
-            <app-button
-              variant="default"
+            <button
+              app-button
+              type="button"
               class="bg-white text-black hover:bg-white hover:text-black rounded-md"
-              (clicked)="downloadCertificate()"
-              >Download Certificate</app-button
+              variant="default"
+              (click)="downloadCertificate()"
             >
+              Download Certificate
+            </button>
           }
           @case ('series-awarded') {
             <span class="rounded-md bg-white/15 px-3 py-2 text-xs text-white">
@@ -122,26 +142,39 @@
             </span>
           }
           @case ('watch-recording') {
-            <app-button
-              variant="default"
+            <button
+              app-button
+              type="button"
               class="bg-white text-black hover:bg-white hover:text-black rounded-md"
-              (clicked)="watchRecording()"
-              >Watch Recording</app-button
+              variant="default"
+              (click)="watchRecording()"
             >
+              Watch Recording
+            </button>
           }
           @case ('ended') {
-            <app-button variant="secondary" class="rounded-md" [disabled]="true">Ended</app-button>
+            <button
+              app-button
+              type="button"
+              class="rounded-md"
+              variant="secondary"
+              [disabled]="true"
+            >
+              Ended
+            </button>
           }
         }
       } @else {
-        <app-button
-          variant="default"
+        <button
+          app-button
+          type="button"
           class="bg-white text-black hover:bg-white hover:text-black rounded-md gap-2"
-          (clicked)="openVideoDialog()"
+          variant="default"
+          (click)="openVideoDialog()"
         >
           <ng-icon [svg]="icons().faSolidPlay" class="size-4" />
           Trailer
-        </app-button>
+        </button>
       }
       @if (card().has_additional_resources) {
         <div
@@ -150,27 +183,35 @@
           (click)="openAdditionalResources()"
           tabindex="0"
         >
-          <app-button variant="ghost" class="bg-background rounded-full! gap-2">
+          <button
+            app-button
+            type="button"
+            class="bg-background rounded-full! gap-2"
+            variant="ghost"
+          >
             <ng-icon [svg]="icons().faSolidRobot" class="size-4" />
             AI Kit
-          </app-button>
+          </button>
         </div>
       }
-      <app-button
-        variant="ghost"
+      <button
+        app-button
+        type="button"
         class="flex items-center justify-center size-10 aspect-square bg-secondary rounded-full outline outline-white/40 cursor-pointer p-0"
-        role="button"
+        variant="ghost"
         [disabled]="loading()"
         (click)="openCourseInfo()"
       >
         <ng-icon [svg]="icons().faSolidInfo" class="size-8" />
-      </app-button>
+      </button>
     </div>
-    <app-button
-      variant="outline"
+    <button
+      app-button
+      type="button"
       class="text-accent hover:bg-transparent border-accent rounded-md cursor-default"
+      variant="outline"
     >
       {{ card().fields_of_study | totalCpeCredits: card().class_credits }} CPE
-    </app-button>
+    </button>
   </div>
 </div>

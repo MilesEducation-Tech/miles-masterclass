@@ -1,0 +1,104 @@
+{
+  "shell": {
+    "backToHome": "Zurück zur Startseite",
+    "background": "Hintergrund"
+  },
+  "login": {
+    "titleLead": "Willkommen in der",
+    "titleStrong": "Welt von Miles Masterclass",
+    "intro": "Melden Sie sich jetzt an und entdecken Sie Master Classes, KI-Lernpfade und praktische Tools, mit denen Sie immer einen Schritt voraus sind und wertvolle CPE-Credits sammeln.",
+    "tabs": {
+      "Mobile": "Mobil",
+      "Email": "E-Mail"
+    },
+    "code": "Vorwahl",
+    "searchCode": "Suchen...",
+    "phone": "Telefon",
+    "phonePlaceholder": "Telefonnummer eingeben",
+    "email": "E-Mail",
+    "emailPlaceholder": "E-Mail-Adresse eingeben",
+    "consent": {
+      "phone": "Ich bin damit einverstanden, wiederkehrende informative und werbliche Nachrichten von Miles Masterclass per SMS und WhatsApp zu erhalten, darunter Bestätigungen von Webinar-Anmeldungen, Erinnerungen, Teilnahmeanweisungen, Lernupdates, Kursinformationen und Angebote, die mithilfe automatisierter Technologie versendet werden. Die Häufigkeit der Nachrichten kann variieren. Es können Gebühren für Nachrichten und Daten anfallen. Antworten Sie mit STOP, um sich abzumelden, oder mit HELP, um Hilfe zu erhalten, oder wenden Sie sich an",
+      "email": "Ich möchte werbliche und informative E-Mails von Miles Masterclass erhalten, darunter Einladungen zu kommenden Veranstaltungen, Neuigkeiten zu Programmen und Angebote. Ich kann mich jederzeit über den Link in jeder E-Mail abmelden.",
+      "notCondition": "Die Einwilligung ist keine Voraussetzung für einen Kauf. Siehe unsere",
+      "and": "und"
+    },
+    "agree": {
+      "lead": "Mit der Registrierung oder Anmeldung bei Miles Masterclass akzeptieren Sie die",
+      "and": "und die"
+    },
+    "termsOfService": "Nutzungsbedingungen",
+    "privacyPolicy": "Datenschutzerklärung",
+    "sendOtp": "Code senden",
+    "requestNewCodeIn": "Einen neuen Code können Sie anfordern in",
+    "errors": {
+      "digitsOnly": "Nur Ziffern",
+      "minLength": "Mindestlänge: {{ min }}",
+      "maxLength": "Maximallänge: {{ max }}",
+      "invalidEmail": "Ungültige E-Mail-Adresse",
+      "countryCodeRequired": "Vorwahl ist erforderlich",
+      "countryCodeInvalid": "Ungültige Vorwahl",
+      "identifierRequired": "Bitte geben Sie Ihre E-Mail-Adresse oder Telefonnummer ein",
+      "ssoOnly": "Dieses Konto meldet sich über Ihre Organisation an. Bitte verwenden Sie die Anmeldeseite Ihres Unternehmens."
+    }
+  },
+  "otp": {
+    "title": "Code-Bestätigung",
+    "sentTo": {
+      "email": "Code per E-Mail gesendet an",
+      "whatsapp": "Code per WhatsApp gesendet an",
+      "sms": "Code per SMS gesendet an",
+      "other": "Code gesendet an"
+    },
+    "editPhone": "Falsche Nummer? Bearbeiten",
+    "editEmail": "Falsche E-Mail? Bearbeiten",
+    "label": "Code",
+    "attemptsLeft": {
+      "one": "Noch {{ count }} Versuch, bevor die Anmeldung gesperrt wird.",
+      "other": "Noch {{ count }} Versuche, bevor die Anmeldung gesperrt wird."
+    },
+    "verify": "Code bestätigen",
+    "useLatest": "Verwenden Sie die neueste Nachricht.",
+    "tryAgainIn": "Erneut versuchen in",
+    "emailInstead": "Stattdessen mit E-Mail anmelden",
+    "resendIn": "Code erneut senden in",
+    "notReceived": "Keinen Code erhalten?",
+    "resend": "Code erneut senden",
+    "errors": {
+      "required": "Bitte geben Sie den Code ein",
+      "digitsOnly": "Nur Ziffern",
+      "length": "Der Code muss {{ length }} Ziffern haben"
+    }
+  },
+  "profile": {
+    "title": "Ihr Profil",
+    "titleOnboarding": "Erzählen Sie uns von sich",
+    "intro": "Verwalten Sie Ihre persönlichen Daten",
+    "introOnboarding": "Ein paar Fragen, damit wir Ihre Inhalte anpassen können.",
+    "loadError": "Ihr Profil konnte nicht geladen werden. Bitte laden Sie die Seite neu und versuchen Sie es erneut.",
+    "selectOne": "Option auswählen",
+    "selectMany": "Alle zutreffenden auswählen",
+    "continue": "Weiter",
+    "saveChanges": "Änderungen speichern",
+    "errors": {
+      "required": "Diese Antwort ist erforderlich.",
+      "chooseOption": "Wählen Sie eine Option."
+    },
+    "toast": {
+      "saved": "Gespeichert",
+      "stillToAnswer": {
+        "one": "Noch zu beantworten: {{ count }} Frage.",
+        "other": "Noch zu beantworten: {{ count }} Fragen."
+      },
+      "updated": "Ihr Profil wurde aktualisiert.",
+      "saveFailed": "Speichern fehlgeschlagen",
+      "couldNotSave": "Ihr Profil konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
+    },
+    "leave": {
+      "title": "Ohne Speichern verlassen?",
+      "body": "Ihre Antworten wurden noch nicht gespeichert und gehen verloren, wenn Sie die Seite jetzt verlassen.",
+      "keepEditing": "Weiter bearbeiten",
+      "confirm": "Verlassen"
+    }
+  }
+}

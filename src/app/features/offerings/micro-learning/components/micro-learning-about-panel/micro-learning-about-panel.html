@@ -1,4 +1,4 @@
-<app-dialog-shell position="right" ariaLabel="About this course">
+<app-dialog position="right" ariaLabel="About this course" panelClass="p-0">
   <section
     class="w-full xl:w-[50vw] sm:w-[80vw] h-full bg-secondary/95 backdrop-blur-md text-foreground overflow-y-auto"
   >
@@ -9,11 +9,21 @@
         <ng-icon name="matInfoRound" size="20" aria-hidden="true" />
         <h2 id="about-panel-title" class="text-lg font-semibold">About</h2>
       </div>
-      <app-button variant="close" (clicked)="close()" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </header>
 
     <div class="px-6">
       <app-course-about [card]="data" type="micro-learning" />
     </div>
   </section>
-</app-dialog-shell>
+</app-dialog>

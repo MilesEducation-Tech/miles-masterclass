@@ -7,6 +7,1376 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-09, NON-REFACTOR — footer layout fix, ticket A of `prompts/footer-redesign.md` (approved).
+  DONE, UNCOMMITTED** on `fix/MIL-XXX-footer-layout` (from `master`). No refactor phase moved.
+  - **What changed:**
+    - The footer grid sits on grid lines, with no `mx-auto` centring.
+    - `md:px-16` gutters clear the home side rail.
+    - The 4-column layout starts at xl. Phones use a compact 2-column grid and hide the QR code.
+    - `pb-56` on phones clears the overlay card.
+    - The grid generator, `getIcon(): any` and `navigateTo` are gone, and `footer.ts` is off `LEGACY_ANY_FILES`.
+  - **Gates (local macOS, not CI):**
+    - `pnpm lint` 0 errors (107 legacy warnings), structure check passed.
+    - `build:prod` green, initial 243.84 kB, only the `ai-labs.css` warning.
+    - `build-storybook` 0.
+  - **Browser (4101, home and masterclass, en and ar):**
+    - Every row starts at the same x at 320–1440.
+    - No horizontal scroll.
+    - The last row clears the overlay card.
+    - 375 height 1,804 → 1,658px.
+  - **Next:** ticket B (glass-and-glow finish), then C (AI Labs underline).
+  - ✅ Committed by the user as `a403a83` on `fix/MIL-46-footer-layout`.
+- 🔧 **2026-10-09, NON-REFACTOR — footer glass-and-glow finish, ticket B of `prompts/footer-redesign.md`.
+  DONE, UNCOMMITTED** on `feat/MIL-XXX-footer-finish` (from `fix/MIL-46-footer-layout`). No refactor phase moved.
+  - **What changed:**
+    - An accent hairline with a light sweep (`--animate-footer-sweep`, hidden under reduce-motion) and a radial
+      glow across the top.
+    - Small uppercase section labels with glowing dots; gradient-ring social chips.
+    - A glass app-download card; the NASBA mark sits on a white tile.
+    - A faded wordmark in the bottom padding.
+  - **Gates (local macOS, not CI):**
+    - `pnpm lint` 0 errors (107 warnings), structure check passed.
+    - `build:prod` green, initial 244.03 kB, only the `ai-labs.css` warning.
+    - `build-storybook` 0.
+  - **Browser (4101):**
+    - Rows aligned at 320–1440, en and ar.
+    - No horizontal scroll; the last row clears the overlay card.
+    - The sweep was measured moving.
+    - 375 height 1,651px (Phase A was 1,658).
+- ⚠️ The `<<<<<<< HEAD` / `>>>>>>> 9f90195` markers below were committed to `master` unresolved; left for the
+  owner.
+- 🔧 **2026-10-10, NON-REFACTOR — P0 list from the taste audit. DONE, UNCOMMITTED**, in two places.
+  - **Folded into ticket E, at the user's choice** (`header.html`, `nav-menu-item.html`, `user-avatar-menu.html`):
+    - Desktop nav links and menu triggers lose `outline-none focus:outline-none`, which had left them with no
+      focus style at all, and get the footer's focus-visible ring.
+    - Every header transition and entrance animation (pill morph, dropdown, sub-menu, drawer, avatar menu,
+      hamburger) gets `motion-reduce:`.
+    - Verified in headless Chrome with real Tab presses: solid 2px white/60 ring, offset 2px, none on a mouse
+      click. Under emulated `prefers-reduced-motion: reduce`, all wrapper transitions and menu animations
+      compute to `none`.
+  - **New branch `fix/MIL-XXX-p0-accessibility`** (from `feat/MIL-47-footer-finish`), checked out in a scratch
+    worktree because E is uncommitted in the main tree:
+    - **Focus rings:** Tailwind v4 `outline-none` (and `outline-hidden`) set `--tw-outline-style: none`, so
+      every `[data-]focus-visible:outline-2` in the ngp kit rendered `none`. Fixed by adding
+      `outline-solid` under the same variant: 26 class lists in 23 `shared/ui` files.
+    - **Skip link:** a button in `main-layout`, not an `href="#…"` (the base href would send it home), with a
+      `#contentStart` focus target, not a `<main>` (some pages render their own); new `header.skipToContent`
+      key in 5 languages.
+    - **Store captions:** `FooterLink.caption` per store, with a new `footer.getItOn` key (Google's localized
+      badge wording) in 5 languages.
+    - Gates (local macOS): lint 0 errors (107 warnings), structure check passed, `build:prod` 244.19 kB,
+      `build-storybook` 0.
+    - Verified (4002 prod SSR, stopped):
+      - The skip link is the first Tab stop and visible; Enter moves focus past the header with no navigation;
+        the next Tab lands on page content.
+      - Sign Up and `app-input` are now solid 2px.
+      - The captions read "Download on the" and "Get it on".
+- 🔧 **2026-10-10, NON-REFACTOR — nav sub-menus open one at a time (user bug report). DONE, UNCOMMITTED**, on
+  top of ticket E on `feat/MIL-XXX-header-finish` in separate files (`nav-menu-item.ts`, `header.ts`), so it
+  commits on its own.
+  - **Cause:** every `NavMenuItem` kept its own `subPanelOpen`, so sibling sub-menus could both be open. It
+    surfaced in ticket D, where guest Resources gained sibling sub-menus (Learning Modes, Library).
+  - **Fix:**
+    - A `NavMenuGroup` (`@Service({ autoProvided: false })`) per sibling list, provided by the header and by each
+      `NavMenuItem` for its own children; each item joins its parent's group via `skipSelf`.
+    - `subPanelOpen` is a `linkedSignal` on the group, keyed by label because the header rebuilds its items on
+      session change.
+    - Closing or destroying an item releases the group, so the drawer reopens collapsed, as before.
+  - **Gates (local macOS):** lint 0 errors, structure check passed, `build:prod` 244.10 kB.
+  - **Browser (4000 prod SSR, stopped):** on desktop and in the 375 drawer, opening Library closes Learning Modes
+    and vice versa; the reopened drawer starts collapsed.
+- 🔧 **2026-10-10, NON-REFACTOR — header glass-and-glow finish, ticket E of `prompts/header-redesign.md`
+  (approved). DONE, UNCOMMITTED** on `feat/MIL-XXX-header-finish` (from `826294f`, ticket D). No refactor phase
+  moved.
+  - **What changed:**
+    - The scrolled pill is glass, with a masked gradient ring and an accent hairline. A one-shot sweep
+      (`--animate-header-sweep`, reusing the `progress-indeterminate` keyframes) runs each time the bar becomes the
+      pill.
+    - Active links get a glowing dot; highlighted items keep their underline.
+    - New `shadow-glass` token for the dropdowns, sub-menus, avatar menu and drawer.
+    - Sign Up gets a primary → accent gradient; the avatar gets a gradient ring.
+    - The global `.header` rule is deleted.
+  - **Avatar menu:** ng-primitives sets `left`/`top` but not `position`, so it had been opening at the bottom of
+    the page. Fixed in this ticket with `absolute` plus `ngpMenuTriggerScrollBehavior="close"`; `block` pins
+    `<html>` and drops the header out of pill mode. The same missing class on three other menus (reel card,
+    orders, admin sidebar) is flagged as a separate task.
+  - **Gates (local macOS, not CI):**
+    - `pnpm lint` 0 errors (109 warnings), structure check passed.
+    - `build:prod` green, initial 244.26 kB.
+    - `build-storybook` 0.
+  - **Browser (4000 prod SSR, stopped afterwards):**
+    - The sweep crosses once (−381 → 1164px in about 1.2s), rests off-screen, and fires again on the next
+      transition.
+    - The dropdowns are not clipped.
+    - The dot moves between links with the nav row a constant 517px.
+    - The drawer and Sign Up checked at 375.
+    - Signed in (dummy cookie, removed): the avatar menu opens 8px under the avatar, the pill stays, and scrolling
+      closes the menu.
+  - **Follow-up 2026-10-10 (bleed-through):** the desktop dropdown, the sub-menus and the drawer are now solid
+    `bg-popover` with no blur of their own. Once scrolled, the pill's backdrop-filter is their backdrop root, so
+    the /95 panels showed the page through unblurred. Confirmed in a headless capture and in the browser; lint and
+    `build:prod` green (244.33 kB). The taste-skill review is published as an artifact (screens + scorecard),
+    with its screenshots from `a0f5c52` (footer) and this tree (header).
+  - **RTL:** only the server render was checked (it mirrors and the items fit). The `local` build fails hydration
+    at `App` (NG0500, `app-consent-banner` vs `app-notification`), so its client never runs. That is pre-existing
+    and unrelated to this ticket.
+  - ✅ Ticket D was committed by the user as `826294f`.
+- 🔧 **2026-10-09, NON-REFACTOR — header nav order and labels, ticket D of `prompts/header-redesign.md`
+  (approved). DONE, UNCOMMITTED** on `feat/MIL-XXX-header-nav-order` (from `feat/MIL-48-ai-labs-underline` at
+  `bf79068`). No refactor phase moved.
+  - **What changed:**
+    - `nav.config.ts` follows the user's 2026-10-09 order: the guest nav loses CPE Solutions and gains Home and
+      Plans at the top level; in the member nav, AI Lab moves to second.
+    - The route stays `ai-labs`.
+  - **i18n** (`en`/`ar`/`de`/`es`/`fr`):
+    - `nav.aiLabs` → "AI Lab", `nav.masterClass` → "Masterclasses", `nav.podcast` → "Podcasts".
+    - New keys: `nav.home` (from `footer.home`) and `nav.plans` (from `nav.plan`; en "Plans").
+    - The ar/de/es/fr drafts for Masterclasses and Podcasts need a native check.
+    - The footer's Explore list picks up the new wording, as intended.
+  - **Gates (local macOS, not CI):**
+    - `pnpm lint` 0 errors (109 warnings), structure check passed.
+    - `build:prod` green, initial 244.27 kB.
+    - `build-storybook` 0.
+  - **Browser (4000 prod SSR, stopped afterwards):**
+    - Guest and member order verified at 1024 and 1440, plus the guest drawer at 375.
+    - Both navs fit one row at 1024.
+    - All 12 nav routes return 200.
+    - The dummy cookie was removed.
+  - **Next:** ticket E (glass-and-glow header finish), cut from D.
+  - ✅ Ticket C was committed by the user as `bf79068` on `feat/MIL-48-ai-labs-underline`.
+- 🔧 **2026-10-09, NON-REFACTOR — AI Labs header underline, ticket C of `prompts/footer-redesign.md`
+  (approved). DONE, UNCOMMITTED** on `feat/MIL-XXX-ai-labs-underline` (from `master` at `7ba1b62`). No refactor
+  phase moved.
+  - **What changed:**
+    - AI Labs is a `type: 'link'` with `highlight: true` in both navs, no longer the `demo` pill.
+    - Link items render their badge.
+    - A shared `#navUnderline` SVG draws in once (`navUnderlineDraw` in animation.css).
+  - **Gates (local macOS, not CI):**
+    - `pnpm lint` 0 errors (109 warnings, master's baseline), structure check passed.
+    - `build:prod` green, initial 243.80 kB, no NG8002.
+    - `build-storybook` 0.
+  - **Browser (4000 prod SSR, stopped afterwards):**
+    - Signed out and signed in (dummy cookie, removed): the underline matches the label width on desktop
+      (90px) and in the drawer (95px, not the 256px row).
+    - The dashoffset runs 1px → 0px by 840ms.
+    - The click lands on `/us/accounting/ai-labs` with `aria-current`.
+  - **4101 dev server:** stale after the branch switches. NG0500 hydration mismatch in the footer breaks in-app
+    navigation. It needs a restart; this is not a code fault.
+  - The footer tickets A (`a403a83`) and B (`a0f5c52`) are committed by the user on their own branches; their
+    STATE lines live there.
+  - **Merge:** B and C both append to `animation.css`, so keep both blocks.
+
+<<<<<<< HEAD
+
+- 🔧 **2026-10-09, NON-REFACTOR — production deploys on release, not on every merge
+  (`prompts/deploy-on-release.md`, approved). DONE, UNCOMMITTED** on `ci/MIL-44-deploy-on-release` (from
+  `master`). No refactor phase moved.
+  - `vercel.json` `ignoreCommand`: if `VERCEL_ENV` is not production, build; otherwise build only if HEAD
+    changes `.release-please-manifest.json`. versioning.md §4, git-workflow.md and git-playbook.md updated.
+  - Tested locally: master HEAD in production → 0 (skip); in preview → 1; `248bc2b` in production → 1.
+  - Gates (local macOS, not CI): Prettier clean; `pnpm lint` 0 errors (109 legacy warnings), structure passed.
+  - ✅ Unblocked 2026-10-09: `RELEASE_PLEASE_TOKEN` set 11:09 UTC; the next `release` run opened Release
+    PR #86 `chore(master): release 3.1.0` (author me-sachin-singh, label `autorelease: pending`). It
+    changes `.release-please-manifest.json`, so the `ignoreCommand` will build it. All four required
+    checks triggered on it. The PAT needs Issues write too, for the labels; versioning.md §2 now says so.
+  - #86 merged 11:40 UTC by me-sachin-singh → `v3.1.0` tag + GitHub Release (label `autorelease: tagged`).
+    `www.milesmasterclass.com/version.json` reports sha `a674eeca`, which isn't in this repo, so that domain
+    isn't serving this project; the domain this project actually serves in production is unconfirmed.
+    \=======
+- 🔧 **2026-10-09, NON-REFACTOR — MIL-43 webinar live join: ALL 3 PHASES DONE, UNCOMMITTED; GATES GREEN;
+  BROWSER-VERIFIED AS FAR AS A DOWN UAT ALLOWS** (`prompts/webinar-live-join.md`), on
+  `feat/MIL-43-webinar-live-join` from `master` at `741d0f7`. No refactor phase moved. The user did not commit
+  between phases, so P1–P3 go in as one commit.
+  - **P1 (refactor):** `LiveSessionFacade` on `:id/live` owns the join flow. The page and `MeetingStage` inject
+    it, and `MeetingStage` lost its 3 inputs and 1 output. Config moved to `constants/live-session.ts`, types to
+    the model.
+  - **P2 (bind):**
+    - **Routes:** `LIVE_SESSION_ROUTES` through `ApiClient.call()`.
+    - **Contract:**
+      - `parseClaim`, `parseSignature`, `parseLeaseHolder`
+      - `device_label` sent with the claim
+      - `lease_expires_at` optional on the signature
+    - **Release and timers:**
+      - the beacon sends a `text/plain` string
+      - the heartbeat interval is accepted only between 5 and 30 s
+      - bfcache restore after a beacon evicts as `connection-lost`
+    - **Room states:**
+      - a refusal room for each case: not-registered, not-open (with `joinOpensAt`), ended, not-found,
+        signed-out, failed
+      - `exit` covers host-ended (final) and connection-lost (Rejoin)
+      - the webinar lookup is reactive, falling back to `showDetail`
+    - **Zoom:**
+      - the SDK is typed via `import type`
+      - **G16, found in the work:** the SDK has `leaveMeeting()`, not `leave()`, so Leave used to throw and get
+        swallowed
+      - a resolved `ExecutedFailure` counts as a failed join
+      - empty `user_name` falls back to the email's local part
+    - **Buttons:** the page and stage use the shared `app-button`.
+  - **P3 (turn on):**
+    - `liveEnabled: true` in `development` and `local`; production stays `false`.
+    - Stale comments are fixed.
+    - `WEBINAR_API_QUESTIONS.md` marks Q3 and Q6 answered and notes the new `web-api/v1/events/all-bookings/`.
+  - Gates (local macOS, Node 24.18, not CI):
+    - tsc 0
+    - `pnpm lint` 0 errors (109 legacy warnings)
+    - Prettier clean
+    - structure check passed
+    - `build:prod` green, initial 243.64 kB, with only the known `ai-labs.css` warning
+    - Zoom `embedded` is a lazy chunk, 767 kB transfer
+  - Browser, 4101 `local` config, UAT down (503, no CORS headers):
+    - Signed out, `/live` matches and redirects to `/auth/login?redirect=…/live`.
+    - With a dummy `ACCESS_TOKEN` cookie on localhost (removed afterwards):
+      - the claim POST carries exactly `webinar_id`, `session_id`, `takeover`, `surface`, `device_label`
+        ("Chrome on macOS")
+      - the room shows "We could not connect you" with Try again, not the old endless spinner
+      - Try again re-claims
+      - 0 unhandled rejections
+  - NOT verified until UAT is back and the backend shares its `route_to_web_lms` test user:
+    - an actual Zoom join
+    - conflicts across tabs and devices
+    - takeover
+    - the tab-close beacon
+    - CSP on a Vercel preview
+  - Dev server: started by Claude in terminal tab "dev server 4101" (`pnpm start`).
+  - **Revision 2 (after UAT came back):** the webinar list and detail failed the contract check on
+    `master` too. Fixed in MIL-43 per the user:
+    - paginated buckets: `bucketCards()` reads `results`
+    - `duration_seconds`
+    - nullable `short_description`, `vertical_thumbnail` and the product images
+    - the live-session parsers and errors accept the `{success, message, data}` wrapper
+    - a code-less 401 means signed out (UAT answers a bad token with 401, not 403)
+
+    Browser:
+    - the list renders the hero and 4 cards
+    - the detail page renders "Webinar Duration: 2 hours" and the details description
+    - with a dummy cookie, the live room shows the signed-out state from a real UAT 401
+
+    Gates after the revision:
+    - `pnpm lint` 0 errors (109 warnings)
+    - structure check passed, Prettier clean
+    - `build:prod` green, initial 243.78 kB, only the `ai-labs.css` warning
+
+  - Next: a signed-in learner (the backend's `route_to_web_lms` test user) runs the real join, two-browser
+    conflict, takeover and tab-close checks.
+
+> > > > > > > 9f90195 (feat(offerings): join live webinars in the app, one session at a time)
+
+- 🔧 **2026-10-08, NON-REFACTOR — home cards get the "i" course-info button (`prompts/home-course-info.md`,
+  approved). DONE, BROWSER-VERIFIED, UNCOMMITTED** on `feat/MIL-XXX-home-course-info` (from `master`). No
+  refactor phase moved. Ticket B of the same request (global loading bar, `prompts/global-loading-bar.md`)
+  starts from `master` after this one is committed: both edit `app.config.ts`.
+  - New `MASTERCLASS_COURSE_INFO_DIALOG` in `core/services/dialog/feature-dialog-tokens.ts`, bound in
+    `app.config.ts` to the offerings dialog's `import()`; `MasterclassCourseInfoDialogData` moved to
+    `core/models/masterclass-home.model.ts`; home passes `[showInfo]="true" (info)="openCourseInfo($event)"`.
+  - Gates (local macOS, Node 24.15, not CI): `pnpm lint` 0 errors (109 legacy warnings), structure check
+    passed; `build:prod` green, only the `ai-labs.css` budget warning; the dialog is its own 5.7 kB chunk.
+  - Browser: the `build:prod` SSR server on 4000, headless Chromium (visible page), signed out:
+    - 21 home cards, each with an "i"
+    - the dialog opens with the card header, then the About from `course-detail/`
+    - Watch Now → `/us/accounting/masterclass/<id>/<slug>`
+    - 0 console errors
+  - Your 4101 dev server serves a stale `MasterclassCourseCard` (inputs `course`/`layout`/`priority`, no
+    `showInfo`). The 4100 server shares its `.angular` cache and deleted it on start. Restart 4101 to
+    see the change there.
+  - Your uncommitted edits are untouched and not part of this ticket: `slider.html`, `masterclass.html`,
+    `swiper.config.ts`, `caira-level-stack.css`. They are still changing, which trips the stop gate on its
+    own.
+
+- 🔧 **2026-10-08, NON-REFACTOR — production points at the UAT API. DONE, BUILD GREEN, UNCOMMITTED** on
+  `master` (branch `chore/MIL-XXX-prod-uses-uat-api` proposed). No refactor phase moved.
+  - `environment.ts` `BASE_API_URL` is `https://uat-api.milescaira.com/`, with a `why:` comment to switch back
+    when the live API is up. No other tracked file names the API host.
+  - Gates (local macOS, not CI): Prettier and ESLint clean on the file; `build:prod` green with the two known
+    CSS budget warnings; the browser and server bundles carry only the UAT host.
+  - Open: `/ai-labs` `catalogueCourses` (440/442) are production-only, so that catalogue renders empty;
+    `MILESVERSE_API_URL` is still production; the UAT API must allow the `www.milesmasterclass.com` origin (CORS).
+
+- 🔧 **2026-10-08, NON-REFACTOR — global loading bar: visible, robust, skippable per request
+  (`prompts/global-loading-bar.md`, approved). DONE, BROWSER-VERIFIED, UNCOMMITTED** on
+  `fix/MIL-XXX-global-loading-bar` (from `master`, after MIL-40). No refactor phase moved. This entry sits
+  below the top one, so it merges with MIL-40's STATE edit without a conflict.
+  - New `SKIP_LOADING` token and `core/interceptors/loading/loading-interceptor.ts`, registered first.
+    `LoadingService` is rewritten:
+    - browser-only
+    - an idempotent stop
+    - a 150 ms show delay and a 400 ms minimum visible time
+    - one `visible` signal
+  - `appInterceptor` lost its loading code.
+  - The bar: `accent` variant, a sliding third (`animate-progress-indeterminate`, keyframes in
+    `animation.css`), and a static full bar under reduced motion.
+  - Opted out:
+    - token refresh
+    - `myclassactivity` (chapter and reel)
+    - webinar heartbeats
+    - registration polling
+    - global search
+    - location autocomplete
+    - UTM capture
+    - `user-details`
+  - AGENTS.md §4.2 states the rule.
+  - Gates (local macOS, Node 24.15, not CI): `tsc` 0; `pnpm lint` 0 errors (109 legacy warnings); structure
+    passed; `build:prod` green, 243.72 kB initial, only the `ai-labs.css` warning.
+  - Browser: `build:prod` SSR on 4000, headless Chromium, signed out.
+    - The SSR HTML has no `app-progress`.
+    - Home → `/masterclass` unthrottled: the bar showed 401 ms.
+    - At 400 ms latency it showed exactly 400 ms, and released on the UAT 404 for `v2/dashboard/?filter=popular`.
+    - Global-search typing mounted no bar (its request ran and 404s on UAT).
+    - Reduced motion: `animation: none`, full width.
+    - The bar is `rgb(42,133,255)`, 4 px, `pointer-events: none`, `role=progressbar`, `aria-label=Loading`.
+  - Follow-up ticket (not here): the per-page loading UI.
+    - the `Spinner`'s dynamic colour classes
+    - the dead `/masterclass` hero skeleton (`popular.items()` is always an array)
+    - the podcast / micro-learning rail skeletons gated behind data
+    - manual flags without `finalize`
+
+- 🔧 **2026-10-08, NON-REFACTOR — PR #67 review, Revision 3 IMPLEMENTED (you approved), BROWSER-VERIFIED,
+  UNCOMMITTED.** No refactor phase moved.
+  - **Verified on your restarted `start:dev` (4101), signed out, headless Chromium (visible page):**
+    - SSR HTML carries the course and About
+    - the hero shows Watch Now / Trailer / Bookmark / Share / Download; the trailer plays muted, faded in by 8 s
+    - 8 chapter rows; Resource (Glossary) opens `HtmlContentDialog`
+    - About renders; Related shows "Related Courses" and "More by Chris Stegh" (4 cards)
+    - Bookmark → `/auth/login?redirect=…`
+    - the legacy `442/<slug>` link resolves
+    - the "i" dialog on `/masterclass` shows the clicked course's About through its own facade instance
+    - 0 console errors
+  - In the in-app browser pane, which is hidden (`visibilityState: hidden`), the trailer stays paused and
+    `@defer (on viewport)` never fires. That is the pane, not the code.
+  - **Moved to `features/offerings/`:**
+    - `services/course-detail-facade.ts` (`CourseDetailFacade`, from `masterclass/services/masterclass-course-facade.ts`)
+    - `models/course-detail.model.ts` (the `course-detail/` contract, plus `CourseOffering`, `CourseDetailApi`,
+      `CourseDetailParams` and `CourseLoginType`)
+    - `utils/contract-guards.ts`
+    - new `constants/course-detail.ts`: `COURSE_DETAIL_API` (masterclass only), the chapter page size and
+      `COURSE_ID_PATTERN`
+  - **The facade:**
+    - `connect(offering, params)`
+    - every URL, the URL segment and the analytics `course_type` come from `COURSE_DETAIL_API[offering]`
+    - no "masterclass" literal remains
+  - **The page:** hero, About, chapter list, resources and related inject the facade, with 0
+    `input()`/`output()`; the page keeps the section `@if`s; the dialog's About injects the dialog's own instance.
+  - **Stayed in `masterclass/`:** the hero trailer constants, `MasterclassCourseInfoDialogData`,
+    `MasterclassDurationParts` and `duration-parts.ts`.
+  - **Gates** (local macOS, not CI): `tsc` 0; `pnpm lint` 0 errors (109 legacy warnings); Prettier clean;
+    structure check passed; `build:prod` green, 243.85 kB initial, with the two known CSS budget warnings.
+  - **Your dev server's watcher stopped** on a mid-edit error after the file moves, and does not rebuild
+    (`touch` didn't wake it); `build:prod` has also staled its cache, so it needs a restart before the
+    browser check.
+  - **Comment 1:** move the course facade to the offerings level and share it offering-wide.
+    → `features/offerings/services/course-detail-facade.ts` (`CourseDetailFacade`), with the contract model,
+    guards and endpoints beside it. Per-offering URLs are keyed by `CourseOffering` (`'masterclass'` only).
+    The web API has `course-detail/` under `masterclass/` only; podcast is still on
+    `v2/:course_type/details/` and micro-learning on `v2/nano-learning/`.
+  - **Comment 2:** the components inject the facade instead of taking inputs/outputs. → hero, About,
+    chapter list, resources and related inject it; the page keeps the section `@if`s. Payment, webinar and
+    uae-caira already do this.
+  - **R3-5 DONE (you chose it), uncommitted:** AGENTS.md §3 makes two changes. The tree line now reads
+    "Presentational. On a facade page they inject that facade". The "Components display, facades decide"
+    boundary adds the rule: inject the page's facade, no input/output relay, and `shared/` components stay
+    inputs/outputs. Prettier is clean.
+  - Branch state: #68 merged (`bca3ad8`), and master is merged into MIL-25 (`4b9cf0f`, pushed, in sync).
+
+- 🔧 **2026-10-08, NON-REFACTOR — per-page loading UI (`prompts/page-loading-ui.md`, approved). DONE,
+  BROWSER-VERIFIED, UNCOMMITTED** on `fix/MIL-XXX-page-loading-ui` (from `master`). It follows MIL-41
+  (global bar). No refactor phase moved. This entry sits third, so it merges with MIL-40's (top) and MIL-41's
+  (second) STATE edits without a conflict.
+  - `app-spinner`:
+    - literal class maps instead of runtime `fill-${color}`, which Tailwind never emitted
+    - default arc = text colour, track = text colour at 25% (you chose this)
+    - typed `color` / `trackColor`, with no invalid `fill="currentFill"`
+    - the stories are updated
+  - `FeatureResource.isPending` (`!isBrowser || isLoading()`) drives first-load skeletons:
+    - the `/masterclass` hero (`@if (popular.items())` was always true)
+    - the podcast / micro-learning track `@for` `@empty`
+  - `PartnerCode.apply()`: `loading` is set on subscribe and cleared in `finalize`. Closing the dialog
+    mid-request no longer locks it on "Applying…".
+  - Not bugs, left alone:
+    - `selectCpeMode` / `proceedToPayment` clear on both paths
+    - `global-search-dialog` and `partnership-content` catch errors
+  - Gates (local macOS, Node 24.15, not CI):
+    - `tsc` 0
+    - `pnpm lint` 0 errors (109 legacy warnings); structure passed
+    - `build:prod` green, 243.47 kB, only the `ai-labs.css` warning
+    - `build-storybook` green
+  - Browser (SSR on 4000, headless Chromium):
+    - the SSR HTML carries the `/masterclass` slider skeleton and the podcast (square) / micro-learning
+      (9:16) track skeletons
+    - with 400 ms latency on a dev build, the track skeleton holds through `loading=true` and clears when
+      the read settles
+    - on UAT, `/tracks/?page=1`, `v2/dashboard/?filter=popular` and `coming_soon` answer 404, so all three
+      settle empty and show nothing (no empty slider). The success path could not be exercised on UAT.
+    - the `/payment/plan` loading screen: white arc on a 25% track, `animation: spin`
+  - Not browser-verified: the partner-code fix needs a signed-in account.
+
+- 🔧 **2026-10-08, NON-REFACTOR — MilesVerse removed (`prompts/remove-milesverse.md`, you approved). DONE,
+  BROWSER-VERIFIED, UNCOMMITTED** on `chore/MIL-XXX-remove-milesverse` (from `master`). No refactor phase moved.
+  - Deleted `features/milesverse/` (17 files) and its four `simulation*` routes, the `LOGGED_IN_NAV` entry,
+    the `nav.simulation*` keys in all five locales, the `MILESVERSE_*` env blocks, `@milesverse/sdk` (package,
+    lockfile, `pnpm-workspace.yaml` exclude) and the seven structure-baseline entries (`--prune`).
+    `IMMERSIVE_ROUTE` matches `ai-labs` only.
+  - Docs: AGENTS.md §4.5 heavy-library list and §9 (one known CSS budget warning now), and the scope lists in
+    `git-workflow.md` / `git-playbook.md`.
+  - Gates (local macOS, not CI): Prettier clean; `pnpm lint` 0 errors (109 warnings); structure check passed;
+    `build:prod` green, 243.44 kB initial, only the `ai-labs.css` budget warning; `dist/` has no
+    `milesverse` / `esm.sh/@anam` / `pravatar` string.
+  - Browser (your `start:dev`, 4101, signed out, hidden pane): `/us/cpa/simulation` → `/page-not-found`; the
+    header has no Simulation entry. The `InvalidStateError: Transition was aborted` console error also appears
+    on any unknown URL in the hidden pane, so it's not from this change.
+  - Not touched: `docs/refactor/PROMPT.md:34, 216` and the root `PROMPT.md` copy (yours), and the
+    commented-out scope in `.github/workflows/pr-title.yml:73` (CI gate file).
+  - The UAT-API change is committed separately (`6010aa2` on `chore/MIL-XXX-prod-uses-uat-api`). This entry
+    sits below the top one so the two STATE.md edits merge without a conflict.
+
+- 🔧 **2026-10-07, NON-REFACTOR — PR #67 (`feat/MIL-25-masterclass-details-page-binding`) made mergeable:
+  `origin/master` merged into the branch, conflicts resolved, awaiting the merge commit and push.** No refactor
+  phase moved.
+  - Cause: #68 (MIL-28, the course-info dialog) was built on MIL-25's first commit and merged first, so master
+    held an older copy of the course model, facade, guards and About component. Twelve of the conflicted files
+    were byte-identical on master to that first commit and take the branch's version. The model gains #68's
+    `MasterclassCourseInfoDialogData`; the facade gains `openCoursePage()`, the explicit share URL and a
+    `coursePagePath()` built from the connected slug (`course-detail/` sends none), which `watch()` also uses so
+    the dialog's Watch Now reaches the right course. The dialog template drops its `web_background_video_url`
+    branch (no such field on `course-detail/`) and keeps the poster. STATE kept both sides.
+  - Gates (local macOS, Node 24.15, **not CI**): lint 0 errors (109 legacy warnings), structure check passed,
+    `build:prod` 243.81 kB initial. Browser check of the dialog and course page pending: the UAT API answered
+    503 from the load balancer for every route at 17:20 IST.
+
+- 🔧 **2026-10-07, NON-REFACTOR — `feat/MIL-25-…` rebased onto `origin/master` (65c6e2f) as `1d02d65` +
+  `d5a7517`. DONE, BUILD GREEN; the force-push is yours.** No refactor phase moved.
+  - `pnpm build:prod` (local macOS, not CI) is green: only the two known CSS budget warnings
+    (`ai-labs.css`, `briefing-session.css`), initial transfer 243.87 kB. `tsc`, eslint on the branch's
+    files, Prettier and the structure check are clean.
+  - Not re-checked in a browser after the rebase: restart `pnpm run start:dev` and load a course page and
+    `/masterclass`.
+  - After `df515e0` (the docs commit), GitHub Desktop's "Pull origin" began merging the old remote
+    `433dfb0`; you aborted it. `tsc` exits 0 again and no conflict markers remain. The remote branch is
+    still at `433dfb0` until your force-push.
+  - Master's #69 moved three things into core and deleted `constants/masterclass.ts`:
+    - the home model → `core/models/`
+    - `with-previous-value` → `core/utils/`
+    - the home-page read → `core/services/masterclass-home-facade/`
+
+    #78 already carries the `tracks-page/` fix.
+
+  - **Commit 1 resolved:**
+    - `core/models/masterclass-home.model.ts` is master's. The auto-merge had pulled in the feature's
+      `contract-guards` import, which breaks the core → features boundary. `utils/contract-guards.ts`
+      now serves only the course model.
+    - `constants/masterclass.ts` is kept with the course endpoints only; the home-page constants live
+      in core.
+    - The course model imports the field-of-study and thumbnail types from
+      `@core/models/masterclass-home.model`.
+    - `postman/` stays tracked, as master's `.gitignore` decided, using master's copies of the exports.
+      Your local `Merged Masterclass App 2` copy (same 209 requests, different bytes) is backed up in
+      the session scratchpad.
+  - `tsc -p tsconfig.app.json` exits 0 at commit 1. `pnpm exec` installed master's four `@fontsource`
+    packages on the way; no tracked file changed.
+  - **Commit 2 (`433dfb0`) resolved:**
+    - `pages/masterclass/masterclass.ts` and the core model are master's; #78 already made this commit's
+      `tracks-page/` edits there, so they drop out.
+    - `constants/masterclass.ts` keeps `course-detail/`, the bookmark route, the chapter page size and
+      the hero trailer config, without the home-page constants.
+    - The facade imports `withPreviousValue` from `@core/utils/`.
+- 🔧 **2026-10-07, NON-REFACTOR — MIL-28 course-info dialog: the close button matches production. DONE,
+  BROWSER-VERIFIED, UNCOMMITTED** on `fix/MIL-28-…` (force-pushed as `1000ba8` before this).
+  - Production's close button (read live) is `bg-background/80 backdrop-blur-sm` with
+    `hover:bg-destructive hover:text-destructive-foreground`. Ours was a transparent ghost button with a grey hover.
+  - Ours now uses the same classes, with `data-hover:` (ngpButton) so `cn()` replaces the ghost
+    variant's `data-hover:bg-muted`.
+  - **Verified on 4101 (`/in/accounting/masterclass`, signed out):**
+    - 68 cards with "i"; the dialog opens
+    - at rest: the same computed background as production (`oklab(0.1637… / 0.8)`) and `blur(8px)`
+    - on hover: `rgb(239, 68, 68)` with a white ✕
+  - Home (`/in/accounting/home`) renders no course cards signed out (0 `app-masterclass-course-card`).
+    In code, home never sets `showInfo`.
+  - prettier, eslint and the structure check are clean.
+
+- 🔧 **2026-10-07, NON-REFACTOR — `fix/MIL-28-…` (PR #68) rebased onto `origin/master` (65c6e2f).
+  Both commits resolved; the force-push is yours, from GitHub Desktop, before any new commit.** No
+  refactor phase moved.
+  - **Commit 1** is the old first course-page commit (`eadf218`) that MIL-28 was built on. It is resolved
+    exactly as on MIL-25: the replayed `3e7408d` has the same tree as MIL-25's `1d02d65`, apart from this file.
+  - **Commit 2** (`c7fd37b`, the "i" dialog):
+    - master moved the course card to `shared/components/cards/` and the home page renders it too, so
+      the "i" button is now opt-in: `showInfo` input, default off, set only by `/masterclass`
+    - `openCourseInfo` was re-added to master's rewritten `pages/masterclass/masterclass.ts` (the
+      core `MasterclassHomeFacade` version)
+    - the dialog and the facade's `share()` / `openCoursePage()` came over unchanged
+  - **Gates** (local macOS): `tsc` 0, eslint 0 on the branch's files, Prettier clean, structure check passed.
+  - The dialog still reads the `about-course/` facade from commit 1. #67 replaced that facade with
+    `course-detail/`, so whichever of #67 / #68 merges second will conflict in the facade, model and About.
+  - Not re-checked in a browser after the rebase.
+
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign PR1 (#69, `refactor/MIL-27-promote-masterclass-home-read`)
+  rebased onto `master` after the MIL-37 fix (#78). Conflicts resolved in the replayed commit, awaiting
+  `git rebase --continue` and the force-push.** No refactor phase moved.
+  - `masterclass.ts` takes #69's side (the page no longer owns the read); `constants/masterclass.ts` stays
+    deleted; the two STATE entries are kept. The root `MasterclassHomeFacade` now calls `tracks-page/` with
+    `tracks.page_size=100` and `tracks.courses.page_size=100` (`HOME_PAGE_LIST_PAGE_SIZE`), so the whole
+    stack (#69 → #77) reads the live route; stale `home-page/` comment mentions updated.
+  - Gates on the rebased tree (local macOS, Node 24.15, **not CI**): lint 0 errors (110 legacy warnings),
+    structure check passed, `build:prod` 242.57 kB initial; the dev server's client-side navigation sent
+    `tracks-page/?login_type=pre_login&tracks.page_size=100&tracks.courses.page_size=100` → 200, three rails.
+  - **#69 merged (d582514). Step 3 done the same way:** PR2's commit `179c6d7` replayed onto `master` on the
+    temporary branch `mil29-rebased` (only `STATE.md` conflicted; both entry sets kept), facade and home page
+    merged cleanly; lint 0 errors, `build:prod` 242.62 kB, home rails load through
+    `tracks-page/?…&tracks.page_size=100&tracks.courses.page_size=100` → 200. Awaiting the commit, the ref move
+    onto `feat/MIL-29-home-sections` and the force-push. Because each merged branch is rewritten before its
+    squash, the later rebases use the OLD tip SHA as upstream (#70: `179c6d7`, #71: `2eadb8a`, …).
+- 📝 **2026-10-07, NON-REFACTOR — home redesign delivery doc (`docs/home-redesign-delivery.md`): the filled
+  Jira tickets for the parent and all nine branches (PR1–PR5, F8, F4, F1, F2 — MIL-27, MIL-29–35, F2 pending),
+  the backend asks, the stacked-PR guide (Flow E rebase after each squash merge, UAT sign-off for PR2–PR4) and
+  the ready-to-run `gh pr create` blocks. The combined F1 + F2 commit was split (Recipe 5): the ring commit on
+  `feat/MIL-35-ai-labs-ring-v3`, the CAIRA stack commit on its own branch stacked on it. Docs only.** No
+  refactor phase moved.
+
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign follow-up F2 (`prompts/home-redesign.md`): the CAIRA stack's
+  v3 cross-fade. DONE, UNCOMMITTED (unstaged; F1 is staged on the same tree), for branch
+  `feat/MIL-XXX-caira-stack-v3` stacked on F1.** No refactor phase moved.
+  - `shared/components/caira-level-stack`: one pinned grid with a scrubbed cross-fade on md+ (1700 px of
+    scroll), a snap carousel with dots below md, the "more below" cue, "Be a Certified". Data layer unchanged
+    (`v2/caira-badges/`, fallback copy while that host 404s). Home's placeholder re-measured (539 / 351 / 336).
+  - Verified in headless Chrome (pin spacer, recede transforms, dots); gates: lint 0 errors (109 legacy),
+    tsc, `build:prod` 243.78 kB; `verify.mjs` on the combined F1+F2 tree **7/7 GREEN** (three.js and gsap
+    still lazy, SSR smoke no drift).
+
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign follow-up F1 (`prompts/home-redesign.md`): the AI Labs ring's
+  v3 visuals. DONE, UNCOMMITTED and STAGED, on branch `feat/MIL-XXX-ai-labs-ring-v3` (stacked on F4's branch;
+  rename once the ticket exists).** No refactor phase moved.
+  - `shared/components/surround-carousel`: `RingShape` in the engine (convex / flat / concave camera seats,
+    FOV from card size, `BAND_LIFT`, `NoColorSpace` textures), `shape` input, the design's header and three
+    proof-point cards, the 4:3 / 16:9 / 2:1 stage. Data layer unchanged (`v2/tracks/7/courses/`). Home passes
+    `shape="convex"` with a two-part placeholder at the measured heights.
+  - **Finding:** every `v2/` path 404s on `(uat-)api.milescaira.com` and answers on the previous host
+    `(uat-)api.milesmasterclass.com/api/`; in UAT and production the ring is empty and the CAIRA stack shows
+    its fallback. Verified the ring with a mocked response in headless Chrome instead. Decision needed on the
+    v2 base URL (API flags table).
+  - Gates (local macOS, Node 24.15, **not CI**): `verify.mjs` **7/7 GREEN** (engine chunk still lazy), lint 0
+    errors (109 legacy warnings), `build:prod` 243.75 kB initial.
+
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign follow-up F4 (`prompts/home-redesign.md`): fonts self-hosted.
+  DONE, UNCOMMITTED, on branch `perf/MIL-XXX-self-host-fonts` (stacked on F8's branch; rename once the
+  ticket exists).** No refactor phase moved.
+  - Four `@fontsource-variable` dependencies (OFL); new global `src/styles/fonts.css` (latin + latin-ext,
+    the weight ranges Google served, `Inter Fallback` with Inter's metrics) registered in angular.json;
+    `--font-sans` / `--font-numeric` list the fallback; the Google Fonts link and its preconnects are gone
+    from `index.html`. Arabic still loads Noto Sans Arabic from Google at runtime.
+  - Measured (UAT builds, Lighthouse vs F8): desktop observed FCP 1.1–1.2 s → 0.43–0.55 s, perf 74–76 → 78,
+    Google font requests 1 → 0; initial 243.78 kB.
+  - Gates (local macOS, Node 24.15, **not CI**): lint 0 errors (109 legacy warnings) + structure check,
+    `build:prod` green with eight hashed woff2 files; `verify.mjs` full run **7/7 GREEN** (Storybook included).
+
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign follow-up F8 (`prompts/home-redesign.md`): Carousel
+  pre-Swiper flood and layout shifts. DONE, UNCOMMITTED, on branch `perf/MIL-XXX-carousel-init-flood`
+  (stacked on PR5's branch; rename once the ticket exists).** No refactor phase moved.
+  - `shared/components/carousel`: the Swiper import starts when the rail renders; slides render only once
+    `swiper/element` is registered; the skeleton stays in flow until `initialize()`; one shared skeleton
+    template; the root `div` is `block` (was `inline` since the baseline). `home.html`: placeholders carry the
+    rail's bottom margin as padding, and the two wrappers use flex `gap` instead of `space-y` (v4's margin
+    on all-but-last children shifts the first rail 80px while the HTML streams).
+  - Measured (UAT builds, Lighthouse): home mobile first-rail thumbnails 9 / 3.9 MB → 3 / 0.5 MB, images
+    4.4 → 1.0 MB; desktop CLS 0.024 → 0.001; rail height unchanged for all eight consumers.
+  - Gates (local macOS, Node 24.15, **not CI**): `verify.mjs` **7/7 GREEN** before the final `gap` edit;
+    lint, UAT build and `build:prod` (243.30 kB initial) after it.
+
+- 🔧 **2026-10-07, NON-REFACTOR — masterclass tracks read moved to `web-api/v1/masterclass/tracks-page/`
+  (`prompts/masterclass-tracks-rebind.md`, contract change of 2026-10-07). DONE, MERGED as #78 from
+  `fix/MIL-37-masterclass-tracks-page`, together with the regenerated Postman export.** No refactor phase moved.
+  - The backend retired `home-page/` (404 on UAT and production, so the merged masterclass page showed its
+    error state on UAT). `tracks-page/` has the same envelope and keys; `tracks` is now a paginated block, so
+    the page sends `tracks.page_size=100` next to `tracks.courses.page_size=100` (`HOME_PAGE_LIST_PAGE_SIZE`).
+    Types and `parseHomePage` unchanged.
+  - The home-redesign stack (#69 → #77) carries the same read in `core/services/masterclass-home-facade/`;
+    #69 must take the route and parameter when it is rebased onto this fix.
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign follow-up F8 (`prompts/home-redesign.md`): Carousel
+  pre-Swiper flood and layout shifts. DONE, UNCOMMITTED, on branch `perf/MIL-XXX-carousel-init-flood`
+  (stacked on PR5's branch; rename once the ticket exists).** No refactor phase moved.
+  - `shared/components/carousel`: the Swiper import starts when the rail renders; slides render only once
+    `swiper/element` is registered; the skeleton stays in flow until `initialize()`; one shared skeleton
+    template; the root `div` is `block` (was `inline` since the baseline). `home.html`: placeholders carry the
+    rail's bottom margin as padding, and the two wrappers use flex `gap` instead of `space-y` (v4's margin
+    on all-but-last children shifts the first rail 80px while the HTML streams).
+  - Measured (UAT builds, Lighthouse): home mobile first-rail thumbnails 9 / 3.9 MB → 3 / 0.5 MB, images
+    4.4 → 1.0 MB; desktop CLS 0.024 → 0.001; rail height unchanged for all eight consumers.
+  - Gates (local macOS, Node 24.15, **not CI**): `verify.mjs` **7/7 GREEN** before the final `gap` edit;
+    lint, UAT build and `build:prod` (243.30 kB initial) after it.
+
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign PR5 (`prompts/home-redesign.md`): the live-webinar ticket.
+  DONE, UNCOMMITTED, on branch `feat/MIL-XXX-home-webinar-ticket` (stacked on PR4's branch; rename once
+  the ticket exists). The five-PR series is complete with it.** No refactor phase moved.
+  - New `features/home/components/home-webinar-ticket/` (presentational, required `webinar` input, two
+    outputs, CSS ticket mask with a `structure-baseline.json` entry — yours to review; story in three
+    states) + `HomeWebinar` model + mock. Home holds `webinar = signal(null)` with the API flag: the section
+    and its sidenav entry are absent until a web-api highlight endpoint exists; both actions navigate to
+    the webinar page until the registration dialog is promoted (F5).
+  - Gates (local macOS, Node 24.15, **not CI**): lint 0 errors (109 legacy warnings) + structure check, tsc,
+    `build:prod` 243.25 kB initial; `verify.mjs` full run **7/7 GREEN**; dev SSR unchanged for visitors (no
+    `#webinar`); Storybook renders the
+    ticket at 1440 / 375 and the pricing card with figures.
+  - Open after the series: F1–F9 in the prompt, the three backend asks (prod 404 on `home-page/`, card
+    projection, thumbnail sizing), the `webinar-banner.webp` upload, and your baseline re-records.
+
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign PR4 (`prompts/home-redesign.md`): the pricing card and the
+  app-download redesign. DONE, UNCOMMITTED, on branch `feat/MIL-XXX-home-pricing-app-download` (stacked
+  on PR3's branch; rename once the ticket exists).** No refactor phase moved.
+  - New `features/home/components/home-pricing/` (presentational, `price` input unbound — the figure block
+    waits for the plan-price source; story in three states) + `models/home-sections.model.ts` +
+    `testing/mocks/home.mock.ts`; `shared/components/app-download` redesigned in place (`uae-caira`
+    inherits, wrapped in its gutter); three `@theme` animation tokens; `app-download.ts` left
+    `LEGACY_ANY_FILES`; the plan-benefits section and `goToPlan` are gone from home.
+  - Gates (local macOS, Node 24.15, **not CI**): `verify.mjs` full run **7/7 GREEN** (Storybook built the new
+    story), lint 0 errors (109 legacy warnings) + structure check, tsc, `build:prod` 243.18 kB initial.
+    Browser on the UAT build: both sections at 375 / 768 / 1440, no overflow; placeholders re-measured.
+  - Next: PR5 (live-webinar ticket, presentational + story, section absent until its endpoint exists).
+
+- 🔧 **2026-10-07, NON-REFACTOR — Jira ticket drafted (chat only) for the masterclass card "More info"
+  button and course-info dialog: step PR3 "about-course" of `prompts/masterclass-tracks-rebind.md` (MIL-23).
+  No source changed; no refactor phase moved.** Next: once the ticket number exists, write
+  `prompts/masterclass-course-info.md` for approval before building. Assumptions to confirm: the shared card
+  also shows the button on the home rails, no Figma yet, and `about-course` is not yet checked on production.
+
+- 🔧 **2026-10-07, NON-REFACTOR — home redesign PR3 (`prompts/home-redesign.md`): the CAIRA hero and the
+  scrolling course grid. DONE, UNCOMMITTED, on branch `feat/MIL-XXX-home-hero-grid` (stacked on PR2's
+  branch; rename once the ticket exists).** No refactor phase moved.
+  - New `features/home/components/home-hero-grid/` (plain `<img>`, 64 cards, `vw` geometry, tiered
+    `fetchpriority`; CSS file with a `structure-baseline.json` entry — yours to review) and
+    `constants/home-assets.ts`; `home-hero` rewritten (logo `priority`, one `<h1>`, `<a>` CTAs to `ai-labs`
+    and `caira`); `MasterclassCourseCard` gains a `priority` input, set on the first rail's first three cards.
+  - Gates (local macOS, Node 24.15, **not CI**): lint 0 errors (110 legacy warnings) + structure check, tsc,
+    `build:prod` 242.79 kB initial, the two known CSS budget warnings; `verify.mjs` full run **7/7 GREEN**
+    (bundle 243.9 KB gzip, stale-baseline warning; SSR smoke no drift). Lighthouse (UAT builds, interleaved vs
+    PR2): desktop total 8.1 → 4.1 MB, SI 2.7 → 1.6 s, CLS 0.015 → 0.024 (the grid's scrollbar shift of 0.05
+    fixed with `vw`; the rest is the Carousel's own skeleton), LCP 3.0 → 4.1 s because the LCP is now a
+    716 KB first-rail original; mobile SI 9.9 → 7.9 s, CLS 0.008–0.010, LCP element a 30 KB grid card.
+  - **Follow-ups filed:** F8 Carousel (pre-init slide flood: 15 thumbnails for 1.1 visible slides on phones;
+    `inline` root), F9 `scrollbar-gutter: stable`; the course-thumbnail sizing ask stands.
+
+- 🔧 **2026-10-06, NON-REFACTOR — home redesign PR2 (`prompts/home-redesign.md`): the home sections rebuilt on
+  the `home-page/` tracks. DONE, UNCOMMITTED, on branch `feat/MIL-XXX-home-sections` (stacked on PR1's
+  branch; rename once the ticket exists).** No refactor phase moved.
+  - `pages/home/home.{ts,html}` rewritten: hero (old, PR3 replaces it) → rails from `MasterclassHomeFacade` +
+    `MasterclassCourseCard` horizontal, every rail `@defer (on viewport)` with a geometry-matching placeholder
+    → AI Labs ring → CAIRA stack (now `hydrate on viewport`, so gsap stops loading on every page load) → plan
+    (still `app-plan-benefits`) → app download → FAQ (`hydrate on viewport`). Offerings, coming soon,
+    premiere and the `FeatureFacade` reads are gone from home; nothing shared deleted.
+  - Facade: `fetchOnServer` opt-in (default off). Measured on home with the server fetch on: HTML 104 KB gzip
+    and Lighthouse mobile FCP 4.8–8.8 s, versus 49 KB / 3.6–7.7 s without. The masterclass page opts in and
+    keeps its MIL-23 behaviour. `isSettled` holds the SSR skeleton through the browser fetch.
+  - Gates (local macOS, Node 24.15, **not CI**): lint 0 errors (110 legacy warnings) + structure check, tsc,
+    `build:prod` 242.69 kB initial (+0.16 kB), the two known CSS budget warnings; `verify.mjs` full run **7/7
+    GREEN** (bundle 243.8 KB gzip, stale-baseline warning; SSR smoke no drift). Lighthouse (UAT builds,
+    interleaved): desktop perf 71 → 74, CLS 0.037 → 0.015, total 13.1 → 10.0 MB; mobile perf 62 → 58 with
+    LCP 19 → 18 s (the old hero's posters; PR3) and simulated FCP 3.6 → 4.8 s while observed FCP is within
+    ~100 ms. Full numbers in the prompt.
+  - **Backend flags:** `api.milescaira.com` returns 404 for `web-api/v1/masterclass/home-page/` (production
+    shows the error state on both pages; UAT serves it); the cards read 13 KB gzip of the 54 KB body
+    (`description` alone is 102 KB raw); course thumbnails are 240–716 KB originals.
+
+- 🔧 **2026-10-06, NON-REFACTOR — home redesign PR1 (`prompts/home-redesign.md`): the `home-page/` read
+  promoted for the home page. DONE, UNCOMMITTED, on branch `refactor/MIL-XXX-promote-masterclass-home-read`
+  (rename it once the Jira ticket exists).** No refactor phase moved.
+  - Moves: `masterclass-home.model.ts` → `core/models/`; `with-previous-value.ts` → `core/utils/` (14 imports
+    rewritten); the course card → `shared/components/cards/masterclass-course-card/` (+ a story) with absolute
+    links; `constants/masterclass.ts` folded into the new root `core/services/masterclass-home-facade/`. The
+    masterclass page injects the facade; its hero, nav and `openTrailer` stay in the page.
+  - Why: `features/home` may not import `features/offerings`, and home is now the second reader of the tracks.
+    The facade is root (precedent `FeatureFacade`) so home → masterclass reuses the parsed page: verified, no
+    `home-page/` request after a client round trip.
+  - Gates (local macOS, Node 24, **not CI**): lint 0 errors (110 legacy `any` warnings) + structure check,
+    tsc, `build:prod` initial 242.56 kB transfer (+0.03 kB vs 242.53), only the two known CSS budget warnings.
+    `verify.mjs` full run: **7/7 GREEN**, bundle 243.7 KB gzip (unchanged; the +173% warning is the stale
+    baseline), SSR smoke no drift (the known 9 "not in baseline" routes).
+    Browser on your `pnpm start` (4101): `/us/accounting/masterclass` 3 rails 21/34/13, card hrefs
+    `/us/accounting/masterclass/<uuid>/<slug>`, trailer dialog opens.
+  - Next: PR2–PR5 in the prompt; its API-flags table is the backend ask.
+    git push --force-with-lease origin feat/MIL-35-ai-labs-ring-v3
+
+- 🔧 **2026-10-07, NON-REFACTOR — MIL-25 course hero: Created/Updated line, Bookmark and Download added
+  (your review). DONE, BROWSER-VERIFIED (signed out), UNCOMMITTED** on `feat/MIL-25-…`.
+  - **Dates:** `nasba_section.created_on/updated_on | date`, in the legacy markup.
+  - **Download:** disabled until `masterclass_certificate_url` is set; then the facade opens it in a new
+    tab. It is `null` for signed-out visitors, so greyed out, as on production.
+  - **Bookmark:**
+    - `MASTERCLASS_COURSE_ROUTES.bookmark` (`POST web-api/v1/masterclass/bookmark/:id/`) through
+      `ApiClient.call()`
+    - an optimistic flip (`linkedSignal` that resets on the next `course()`), then
+      `detailResource.reload()`; a failure flips back
+    - signed out → `/auth/login?redirect=<course>`, like `authGuard`
+    - `aria-pressed` on the button
+  - **Sample:** still hidden; `sample_video_url` is null on all 64 courses (logged).
+  - **Verified on 4101 (signed out):** "Created At Jun 21, 2026 | Updated At Jun 21, 2026"; Trailer /
+    Bookmark / Share / Download (disabled); Bookmark redirected to login with the redirect.
+    eslint, structure and `tsc` are clean.
+  - **NOT verified:** the signed-in Bookmark POST (I can't sign in), and the response shape is uncaptured,
+    hence the re-read.
+
+- 🔧 **2026-10-07, NON-REFACTOR — MIL-25 Revision 2, Phases B–D: Masterclass (chapters), Resource and Related
+  sections from `course-detail/`. DONE, BROWSER-VERIFIED, UNCOMMITTED** on `feat/MIL-25-…`, on top of Phase A
+  and the `tracks-page` fix. No refactor phase moved.
+  - **Model:**
+    - chapters: name, mini_description, order, duration, quiz count, thumbnail
+    - `miscellaneous_data`: glossary HTML, navigation video, exercise files, AI Kit
+    - `related_courses` and `instructor_related_courses`
+    - the parser accepts 64/64 live courses
+  - **Facade:**
+    - `chapters()` with name-based slugs
+    - `relatedRails()`: Related + one "More by" per instructor, current course and empty rails dropped
+    - `hasResources()`
+    - `openGlossary()` (`HtmlContentDialog` via `import()`) and `openNavigationVideo()`
+  - **New sections, class for class from the shared ones:**
+    - `masterclass-chapter-list`: rows are `routerLink`s, not `role="button"`
+    - `masterclass-course-resources`: files and AI Kit are plain links
+    - `masterclass-course-related`: inline horizontal cards, the section `@defer (on viewport)`, its own
+      8.9 kB chunk
+  - **Section nav:** Masterclass / Resource / About / Related / FAQ, each shown only when it has content.
+  - **Verified on your `start:dev` (4101), headless Chromium:**
+    - the nav order matches production
+    - chapter rows match your production screenshot
+    - the glossary dialog opens; AI Kit and exercise files link out (`_blank`)
+    - Related and "More by" rails render, and a card navigates to its course (page reloads data, scroll top)
+    - no horizontal scroll
+  - **Gates:** prettier, eslint, structure check and `tsc` are clean. `verify.mjs` was not run (your dev
+    server is up).
+  - **Backend issues logged** (`docs/MASTERCLASS_API_QUESTIONS.md` Q6–Q7):
+    - GCS `miles-usp-bed` 403s on 227/387 chapter and 19/42 related thumbnails
+    - CloudFront cached `Access-Control-Allow-Origin: http://localhost:3000` on an HLS segment
+  - **Not in these phases:** chapter progress/completed/lock states and CPE gating, which wait for Phase E
+    (post_login).
+
+- 🔧 **2026-10-07, NON-REFACTOR — MIL-25 Revision 2, Phase A: the course page reads `course-detail/`. DONE,
+  BROWSER-VERIFIED, UNCOMMITTED** on `feat/MIL-25-…`, next to the uncommitted `tracks-page` fix. No refactor
+  phase moved.
+  - **Model:** `MasterclassCourseDetail` + `parseCourseDetail`, typed from a live survey of 64/64 courses;
+    `parseAboutCourseId` for legacy slugs.
+  - **Facade:**
+    - `course-detail/<uuid>/?login_type=pre_login|post_login&chapters.page_size=100`
+    - `post_login` is skipped on the server, with `withPreviousValue` plus an id check across sign-in
+    - old numeric links resolve through `about-course?slug=`
+  - **Hero:**
+    - `trailer_thumbnail_url` poster (SSR, LCP)
+    - after 3 s, the HLS `trailer_video_url` through the shared `app-video-js`: muted, looping, fading in on
+      `playing`
+    - the VideoPoster-style play/pause and mute buttons; it pauses when a dialog opens
+    - the CAIRA level badge
+  - **About:** expiration, sponsor id, delivery method and program level from the API; created / reviewed /
+    updated dates (DatePipe); Video Duration = `masterclass_duration_seconds | duration:'medium'`.
+  - **Shared:** `courseToSeoConfig` reads the course-detail keys; `detectVideoMimeType` is exported from
+    `shared/services/utils.ts`.
+  - **Verified on your `start:dev` (4101) with headless Chromium:**
+    - poster only at 0–1.5 s; trailer playing, muted, by 7.5 s
+    - cover fit at 1440 (1191 × 670) and 375 (370 × 658)
+    - pause/play, mute/unmute and pause-on-dialog work
+    - 0 browser API calls (transfer cache)
+    - the legacy `442/<slug>` link resolves; an unknown id or UUID shows not-found
+    - SSR HTML has the new fields
+  - **Gates:** prettier, eslint and the structure check pass, `tsc` is clean. `verify.mjs` was not run, so
+    as not to break your running dev server.
+  - **Dev-only NG0201 `TOAST_COMPONENT`, once:** a Vite SSR module-reload artifact after editing
+    `shared/services/utils.ts`. It did not recur on later requests; a server restart clears it.
+  - **Backend questions** (`docs/MASTERCLASS_API_QUESTIONS.md`): the preview clip, Credly
+    `show_credly_icon`, the duration fields, the missing slugs.
+
+- ⚠️ **2026-10-07, NON-REFACTOR — Postman export replaced (`~/Downloads/Merged Masterclass App 2`, local
+  only).** The collection grows from 191 to 209 requests; the env files gain 7 empty keys.
+  - Two backend changes, checked against live UAT on 2026-10-07:
+    1. **`web-api/v1/masterclass/home-page/` is now a 404 on UAT**; it is renamed `tracks-page/` with the
+       same params. The `/masterclass` landing page (on `master` since #64) therefore shows its error
+       state on UAT.
+       - The existing `parseHomePage` accepts the live `tracks-page/` body unchanged (21/34/0/13), so the
+         fix is the `MASTERCLASS_ENDPOINTS.homePage` URL.
+       - **FIXED on `feat/MIL-25-…`** (your choice), uncommitted:
+         - `constants/masterclass.ts` now points at `tracks-page/`
+         - the model's contract-error label and the page's log name the new route
+       - Verified on your `start:dev` (4101): no error state, 3 rails / 68 cards, and no browser call (SSR
+         transfer cache). The server log is clean. Prettier, eslint and `tsc` are clean.
+       - `master`, MIL-28, MIL-27 and MIL-29 still call the old path until they take this commit.
+    2. **`course-detail/<id>/` is now `AllowAny` with a required `?login_type=pre_login|post_login`.**
+       - Pre-login it returns 60 keys, including the chapters, related and instructor rails, the NASBA
+         block, program level, sponsor id and expiration.
+       - This unblocks MIL-25's PR4 (D3) and would let the course page bind it instead of
+         `about-course/`. It is a plan revision, awaiting your call.
+  - `top-section/` was removed and `highlight/` added (pinned courses). `coming_soon` is gone from the
+    landing payload.
+- 🔧 **2026-10-07, NON-REFACTOR — MIL-23 PR3: the landing page's "i" button and course-info dialog. DONE,
+  BROWSER-VERIFIED, UNCOMMITTED** on `fix/MIL-28-MasterclassHomePage-MoreInfoDialog-Logic-fix`, which you
+  fast-forwarded to `eadf218` (MIL-25) on 2026-10-07. No refactor phase moved.
+  - **Branch fix:** the branch was first cut from `master`, so the carried changes conflicted and could
+    not typecheck.
+    - You ran `git reset --hard` and `git merge --ff-only feat/MIL-25-…`; I restored the 9 files from
+      backup.
+    - The fast-forward deleted the untracked-by-MIL-25 `postman/` from disk. I restored it from
+      `~/Downloads/MergedMasterclassApp2`, plus the two YAMLs from `2698d0d`; it is ignored, so no git
+      change.
+  - **PR base:** `feat/MIL-25-…` until MIL-25 merges.
+  - **`verify.mjs` on the MIL-28 branch** (local macOS, Node 24.18, **not CI**): **7/7 GREEN**, with only
+    the known baseline warnings. `tsc` is clean, and your `start:dev` rebuilt green.
+  - **`verify.mjs`** (local macOS, Node 24.18, **not CI**): **7/7 GREEN**.
+    - lint: 0 errors, 110 legacy warnings
+    - build:prod: only the two known CSS budgets; initial 242.45 kB transfer
+    - bundle report: the known stale-baseline warning
+    - SSR smoke: the 9 known "not in baseline" routes
+    - The dialog is its own 5.9 KB lazy chunk, reached only by a dynamic `import()`.
+  - **Card:** the course card gains the "i" button on both layouts. It is a real `<button>` with the shared
+    cards' classes, emitting `info`.
+    - Plus `outline-solid` (your 2026-10-07 review): `app-button`'s base `outline-none` was overriding the
+      ring, because tailwind-merge keeps bare `outline` (width group) next to `outline-none` (style
+      group).
+    - It now computes to `solid 1px white/40` on both layouts, like production.
+  - **Page:** the landing page's `openCourseInfo()` opens the dialog with `import()`.
+  - **Dialog:** the new `dialogs/masterclass-course-info-dialog` copies the shared `CourseInfo` design class
+    for class.
+    - Its header paints from the card. The body is `masterclass-course-about`, read through its own
+      `MasterclassCourseFacade` in component `providers`.
+    - It has loading, not-found and retry states.
+    - Bookmark is held back.
+  - **Facade:** `share()` now passes the course page URL (the share dialog otherwise shares the current
+    page). `watch()` and the new `openCoursePage()` build the course path from the course instead of
+    `router.url`.
+  - **Panel:** `p-0 w-auto max-w-none` with the content in vw (`w-[84vw] sm:w-[70vw]`).
+    - At 1024 it measures 722 × 691, centred and scrollable, the same as production. At 375 it is 304 px
+      wide (production: 300).
+    - Production clips the title above the 16:9 header at 375, and so does ours, by parity.
+  - **Verified on 4101:**
+    - 55 rendered cards, each with "i"
+    - the dialog loads About and "By <instructor>"
+    - Share gives the course URL, from both the dialog and the course page
+    - dialog Watch Now opens the course page; hero Watch Now opens `chapter/<uuid>/<slug>`
+  - **Resource timing** (the pane's network log misses cross-origin calls):
+    - the course page makes 0 API calls in the browser
+    - the landing page makes `v2/dashboard` (the hero, unchanged) plus one `about-course` per dialog open
+
+- 🔧 **2026-10-06, NON-REFACTOR — MIL-25 masterclass course page rebind (`prompts/masterclass-course-rebind.md`):
+  PR1–PR3 DONE, BROWSER-VERIFIED, UNCOMMITTED.** No refactor phase moved. Plan approved with D1, D2,
+  D4, D5 and D6 as recommended.
+  - **`verify.mjs` full run** (local macOS, Node 24.18, **not CI**): **7/7 GREEN**. Lint has 0 errors and
+    110 legacy `any` warnings; the only warnings are the known baseline ones (two CSS budgets, the stale
+    bundle baseline, 9 SSR routes "not in baseline"). The SSR smoke course title `{{title}}` matches
+    `baseline/ssr.json`.
+  - **Commit 1 builds on its own:** the data layer alone passes `ng build` (production) in a temp worktree.
+  - **Verified on `pnpm start` (4101, after `pnpm clean`):**
+    - SSR renders the hero and About for the UUID link and for an old numeric link (`442/<slug>`, via slug)
+    - an unknown course shows not-found, linking to `/masterclass`
+    - the browser makes no API call (transfer cache), and none to legacy or `app-api/`
+    - Trailer and Share open; Watch Now goes to `chapter/<uuid>/<slug>`
+    - no horizontal scroll at 375 / 768 / 1440
+  - **Fixed during the check: a hydration mismatch.** The page set the lookup from an `effect()`, one CD pass
+    late, so the client's first render had no course and the section nav came out "FAQ, About". The facade
+    now derives the lookup from the page's inputs via `connect()`.
+  - **Not ours, logged:**
+    - the Supabase SEO pattern row's raw `{{title}}` title
+    - the SSR `<title>` falling back to the brand, because `setupCourseSeo` releases its gate when phase 1
+      is aborted
+    - a view-transition `InvalidStateError`, also on `/masterclass`
+    - a preconnect hint for the S3 thumbnail host
+  - **D3 is still open.** PR4 (chapters, signed-in state) is blocked until you send a signed-in
+    `course-detail/<uuid>/` capture; PR5 (bookmark) is not started.
+  - **PR1, data layer:**
+    - `about-course/` endpoint and a UUID pattern (`constants/masterclass.ts`)
+    - `models/masterclass-course.model.ts` with the `parseAboutCourse` guard, typed from a live survey of
+      all 64 UAT courses
+    - route-scoped `services/masterclass-course-facade.ts`, in the route's `providers`
+    - the guard primitives promoted to `utils/contract-guards.ts`, shared with the home model
+    - old numeric links resolve by slug
+  - **PR2, page + hero:**
+    - page and hero rewritten onto the facade; hero markup kept
+    - held back: CPE mode, price/cart, dates, bookmark, download, resources, related
+    - not-found and error states added
+    - `courseToSeoConfig` gained a structural web-API branch
+  - **PR3, About:**
+    - new `masterclass-course-about`, the masterclass branch of the shared `CourseAbout` copied class for
+      class
+    - `CategoriesList` reads `cpe_credit` as well as `cpe_credits`
+    - `docs/MASTERCLASS_API_QUESTIONS.md` lists the backend gaps
+  - **Gates (local macOS, not CI):**
+    - eslint on the touched files: 0
+    - structure check: passed
+    - `pnpm build:prod`: green, with the two known CSS budget warnings; initial transfer 242.50 kB
+    - `verify.mjs`: not yet run
+  - `MasterclassFacade` and the shared children are untouched; podcast and the chapter player still use
+    them.
+  - The `postman/` untracking is staged as its own commit.
+
+- 🔧 **2026-10-06, NON-REFACTOR — unit tests removed (`prompts/remove-unit-tests.md`). DONE, UNCOMMITTED;
+  you applied `harness-no-tests.patch`.** No refactor phase moved. `verify.mjs` full run (local macOS,
+  Node 24.15, **not CI**): **7/7 GREEN**. The only warnings are the known stale-baseline ones: bundle +3%
+  vs `baseline/bundle.json`, and 9 SSR routes "not in baseline". Both are yours to re-record.
+  - Also deleted (your instruction): five components that only their specs imported. They are
+    `document-chapter`, `plan-card`, `layout/blog-layout`, `badge-claim-upsell-dialog` and
+    `badge-info-dialog`.
+    - The dangling `/blog` route comment in `app.routes.ts` is removed (the route went in `9208e60`).
+    - The `BadgeItem` doc comment and the AGENTS.md §3 layout list are updated.
+    - PROMPT.md:89 still lists `blog-layout`. That spec is yours.
+  - Your decision: the repo has no unit tests. All 208 specs, `src/test-setup.ts`,
+    `scripts/check-structure.test.mjs`, four spec-only `testing/` helpers and `.agents/skills/vitest/` are
+    deleted. `vitest` + `jsdom` are uninstalled. The `ng test` target, `tsconfig.spec.json`, the `test` /
+    `pretest` / `test:scripts` scripts and both CI test steps are gone. `ng generate` now skips specs.
+  - `check-structure.mjs` hard-fails on any `*.spec.*` / `*.test.*` under `src/` or `scripts/`, which covers
+    pre-commit and CI.
+  - **Apply the patch:** it drops `verify.mjs`'s `unit tests` gate, so full runs are **7 gates** from now on
+    and older "8/8" entries are historical. It also makes `guard-edit.mjs` block spec/test files and
+    updates the reviewer/import-auditor agents, the git-workflow skill and `docs/refactor/PROMPT.md`. The
+    root `PROMPT.md` copy is already edited to match.
+  - Gates (local macOS, Node 24.15, **not CI**): lint 0 errors (110 legacy `any` warnings), structure check,
+    tsc, format, build, build:prod (the two known CSS budget warnings; initial 242.53 kB transfer) and
+    build-storybook are all green. `pnpm install --frozen-lockfile` is OK.
+  - vitest/jsdom stay in the lockfile only as `@angular/build`'s optional peer and are not installed.
+
+- 🔧 **2026-10-06, NON-REFACTOR — MIL-23: facade folded into the page + trailer dialog fixed. DONE,
+  UNCOMMITTED (with the pagination fix below).** No refactor phase moved.
+  - Your instruction: the `MasterclassHomeFacade` logic now lives in `pages/masterclass/masterclass.ts`;
+    `services/masterclass-home-facade.{ts,spec.ts}` and the route `providers` are gone; `EMPTY_HOME_PAGE`
+    is in `constants/masterclass.ts`. Departs from AGENTS.md §3 (precedent: `instructor-details`,
+    `webinar-badges`). The facade's cases are page tests now (`app-carousel` stubbed: Swiper can't render
+    in jsdom).
+  - Trailer dialog: `VideoDialog` `panelClass` `p-0 max-w-full` → `p-0 w-auto max-w-none`. The panel was
+    viewport-wide with the 50vw player in its left half; now a centred 512 × 361 panel at 1024 px, the
+    same as production `/in/accounting/home` (measured both). Shared, so every trailer is fixed.
+  - Verified in headless Playwright on your `pnpm start` (4101): 68 cards, dialog matches production.
+    Masterclass specs 38/38, no unhandled errors. `verify.mjs` (local macOS, Node 24.18, **not CI**): 7/8 on the first run — format failed on `masterclass.html` (the `reload()` rename let Prettier collapse the Try again button); fixed with `prettier --write`, `pnpm format` + masterclass specs then green. Other gates: lint 0 errors, tests 208 files / 987 passed + 1 skipped, both builds, Storybook, bundle and SSR smoke all at the known baseline.
+
+- 🔧 **2026-10-06, NON-REFACTOR — MIL-23 fix: UAT `home-page/` turned paginated overnight. FIXED,
+  UNCOMMITTED.** No refactor phase moved.
+  - Symptom: the masterclass page showed its error state, and the SSR log printed `[masterclass]
+home-page response does not match the contract`; the parse guard worked as designed.
+  - Root cause: `data.tracks`, each track's `courses` and `coming_soon` are now `{ count, page,
+page_size, has_next, next, …, results[] }`, with 6 courses per track by default. Paging past page 1
+    needs `?track=<slug>`; the server's `next` link omits it (400) and is `http://` (backend bug).
+  - Fix (you chose one call, all courses): the facade sends `tracks.courses.page_size=100`
+    (`HOME_PAGE_COURSES_PER_TRACK`, the server cap); the parser unwraps `results` at both levels and
+    rejects the old flat arrays; the mock wraps the same way.
+  - Verified: the real parser accepts the live response (21/34/0/13). On `pnpm start` (4101): 3 rails of
+    21/34/13 cards, hero unchanged, no browser home-page call. The response is 216.6 KB (~54 KB gzip),
+    the same as 2026-10-05. Masterclass specs 40/40 green. `verify.mjs` full run (local macOS, Node 24.18, **not CI**): 8/8 GREEN, tests 209 files / 989 passed + 1 skipped, only the known baseline warnings.
+
+- 🔧 **2026-10-05, NON-REFACTOR — MIL-23 (`prompts/masterclass-tracks-rebind.md`): PR1 data layer + PR2
+  page DONE, committed by you as ONE commit `10a5b18` and pushed (with the Postman export swap, 841
+  files); PR3 (about-course) and PR4 (bookmark) not started.** No refactor phase moved. Plan approved
+  with D1–D4 as recommended. `verify.mjs` full run on that tree (local macOS, Node 24.18, **not CI**):
+  all 8 gates GREEN. Its bundle report warns initial gzip +174% vs `baseline/bundle.json` (2026-09-24):
+  the baseline is stale (it predates counting `styles-*.css`); the MIL-23 code is only in lazy chunks and
+  Angular's own initial transfer moved +0.04 kB. SSR smoke lists 9 routes "not in baseline", and the
+  masterclass DETAIL page's SSR title is a raw `{{title}}` (same in the baseline). Both are for you to
+  re-record or ticket.
+  - PR1: `MASTERCLASS_ENDPOINTS` (`constants/masterclass.ts`), typed model + `parseHomePage` guard,
+    route-scoped `MasterclassHomeFacade` (`httpResource`, `loginType` from `isAuthenticated()`, `post_login`
+    skipped on the server, `withPreviousValue`, empty tracks dropped, `openTrailer`), a live-shaped mock in
+    `testing/mocks/`.
+  - PR2: `masterclass-course-card` (vertical/horizontal, shared designs class-for-class, links by uuid +
+    slug, trailer output; bookmark / AI Kit / "i" held back), page rewritten onto the facade (the old
+    rails removed), `MASTERCLASS_SECTION_NAV`, route `providers`, `CategoriesList` input widened to the
+    structural `CategoryListItem` (type-only). Route file now aliased.
+  - **The hero is kept exactly as it was** (your instruction): same markup, still on
+    `FeatureFacade.getResource('popular', …)`, whose `v2/dashboard/` 404s on UAT, so it is empty there as on
+    `master`. All track rails stay deferred on viewport; no card takes image `priority`.
+  - Browser-verified on the dev server against UAT (`/us/accounting/masterclass`): 3 rails (21/34/13; the
+    0-course track skipped) under the hero, single `#masterclass-tracks`, no browser home-page call (transfer cache), Trailer
+    opens the video dialog, 375/768/1440 no horizontal scroll. **Backend:** 24 of 68 courses' thumbnails
+    are on GCS `miles-usp-bed`, which answers 403 — those cards show a broken image.
+  - Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy warnings) + structure check,
+    format, tests **209 files / 986 passed + 1 skipped**, build:prod (two pre-existing CSS budget
+    warnings; initial 242.68 kB transfer, unchanged).
+  - ⚠️ Size: PR1 610 lines (327 spec/mock) + the plan; PR2 +492 / −319.
+  - The Postman refresh (old YAML export deleted, JSON added) is yours and belongs in neither PR.
+
+- 🔧 **2026-10-03, NON-REFACTOR — language L5b (`prompts/language-l5-features.md`): sign-in messages and
+  the profile page in five languages. DONE and verified, UNCOMMITTED; stacked on L5a
+  (`feat/MIL-24-i18n-auth-login`, committed by you as `16fcb89`).** No refactor phase moved.
+  - Facade: the 11 login/OTP validation messages and the organisation-SSO message, translated with params
+    (`{{ min }}`, `{{ max }}`, `{{ length }}`).
+  - Profile: headings, load error, select placeholders, Continue/Save Changes, required/choose messages, the
+    save toasts ("Still to answer" as a `one`/`other` ternary) and the leave-without-saving dialog.
+  - Not translated: questionnaire text and options (from Django), server error messages, and `toAuthFailure`
+    fallbacks (assumption 3).
+  - 32 keys × 5 languages. A new facade spec asserts the messages resolve to the dictionary's English, and a
+    one-off scan found every `auth.*` key the code references in `en.json` with none unused.
+  - Browser-verified: French validation messages on real typing ("Chiffres uniquement", "Longueur minimale :
+    10"). **The profile page is NOT browser-verified:** it is behind `authGuard`, and I don't sign in to the
+    real SSO.
+  - Initial bundle unchanged by L5b (all lazy, 242.65 kB without the flag).
+  - Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy warnings), tests **206 files / 953
+    passed + 1 skipped**, build:prod (two pre-existing CSS budget warnings) + build:dev + check:structure +
+    format green. 387 changed lines (250 JSON).
+  - **Next:** the ⚑ shared home-page components (root dictionary, initial-bundle cost to measure).
+
+- 🔧 **2026-10-03, NON-REFACTOR — language L5a (`prompts/language-l5-features.md`): the login page in five
+  languages. Committed by you as `16fcb89` on `feat/MIL-24-i18n-auth-login`.** No refactor phase moved. `featureTranslations(feature, en, lazy)` in
+  `core/services/translation-loader/` is a route resolver that merges `src/i18n/<feature>/<lang>.json` under
+  `<feature>.*` before the route renders. English is static in the feature chunk; other languages are lazy
+  chunks handed over via TransferState (`i18n.<feature>.<lang>`). On `auth`'s parent route: the shell, both
+  login steps, and the facade's `otpSentTo` (one phrase per channel, unknown channel → `other`) and
+  `consentLabel`. Link sentences are fragments, with no `[innerHTML]`. Tab values stay English. The parity spec
+  now loops over sets (`root`, `auth`). Browser-verified on the dev server: fr (both steps, SMS/attempts/
+  cooldown/lockout/Email tab), ar (rtl; clicking the translated tab still switches the method), and en
+  word-for-word the old copy. No raw keys, no missing-key warnings. Each non-English auth dictionary is its own
+  2.5–3.2 KB chunk; none is initial. Initial bundle +0.19 kB transfer vs `origin/master` + flag
+  (242.51 → 242.70 kB). Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy warnings), tests
+  **206 files / 952 passed + 1 skipped**, build:prod (two pre-existing CSS budget warnings) + build:dev +
+  check:structure + format green. ⚠️ 628 changed lines (290 JSON, 134 spec). The drafts and the SMS consent
+  text need native and compliance review. **Next:** L5b (validation messages + profile).
+
+- 🔧 **2026-10-03, NON-REFACTOR — stack LANDED; language master switch added, UNCOMMITTED; L5 prompt drafted.
+  No refactor phase moved.** All nine PRs are merged: #48–#56 on `origin/master` (`3587bf1`), and the old
+  `fix/MIL-22` tip has the same tree, so the entry below is history. New: `environment.I18N.enabled` (like
+  `ANALYTICS.enabled`), checked only in the `ENABLED_LANGUAGES` factory; off = `['en']`, so no switcher,
+  `lang="en"`, `Accept-Language: en` whatever the cookie says. Production `false` (output unchanged), UAT +
+  local `true`. Browser-verified both positions on the dev server (cookie `fr`: off → English, no switcher;
+  on → French + switcher). Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy warnings),
+  tests 205 files / 933 passed + 1 skipped, build:prod green (two pre-existing CSS budget warnings).
+  **Next (you):** branch `feat/MIL-23-language-flag` from `origin/master`, commit the 4 flag files + this file
+  (not the staged L5 prompt), PR. Then approve `prompts/language-l5-features.md` (and say whether JSON counts toward
+  the ~400 lines). Still open: #47's `webinar-hero.html:38` `left-3` → `start-3`.
+
+- 🔧 **2026-10-03, NON-REFACTOR — landing the country + language stack (MIL-14 → MIL-22). No refactor phase
+  moved.** The nine branches were restacked onto #47 and opened as #48–#56; #48 (MIL-14) and #49 (MIL-15) are
+  merged, and master's tree equals the old MIL-15 tip. #50 showed DIRTY because nothing rebased the stack
+  between the two squash merges. `stack.sh land` (session scratchpad, copied to `~/stack`) now cuts above
+  every merged bottom PR, not just one. #56 `verify` failed on Prettier: the restack resolver added
+  `rtl:` gradients to `webinar-rail.html`, which made two lines too long. They are re-wrapped, and
+  `pnpm format` passes (local macOS, Node 24, **not CI**). **Next (you):** commit the format fix plus this file
+  on `fix/MIL-22`, `land`, then merge #50–#56 one at a time with a `land` after each. Follow-up: #47's
+  `webinar-hero.html:38` `left-3` → `start-3`.
+
+- 🔧 **2026-10-03, NON-REFACTOR — language L4 (`prompts/language-l4-rtl.md`): right-to-left done, Arabic on
+  UAT. DONE and verified, UNCOMMITTED; you commit as three stacked PRs** (split helper `split-l4.sh` in the
+  session scratchpad). L4a LTR islands (PDF host, players, invoice, typed inputs via `:dir(rtl) > input`,
+  OTP, coupon row, postal code, dial-code combobox `dir` input, marquee, surround controls, ai-labs fan,
+  milesverse row nav; `/admin` always English). L4b mirrors shared UI (icons `rtl:-scale-x-100`, disclosure
+  chevrons `rtl:-rotate-90`, switch knobs, drawer slide, start/end-anchored gradients, slider keys + dots,
+  nav flyout flip measures the inline end, toast start/end swap, RTL route transition, Noto Sans Arabic only
+  on Arabic pages, caira-level-stack CSS logical). L4c mirrors features (home hero disc `start-0` +
+  `rtl:translate-x-[55%]`, 22 icons + 3 text arrows, course-hero/webinar/audio gradients, hover underline,
+  final-assessment toggle + chevron, ai-labs + milesverse CSS logical, gsap direction) and adds `ar` to UAT.
+  English parity: 30 views × 3 widths, no property L4 sets differed (remaining diffs = UAT data 404s and
+  scroll-spy state). Arabic verified in the browser (hero, header/flyout, login inputs, mobile drawer, admin
+  stays English, rtl overrides win). Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy
+  warnings), tests **204 files / 920 passed + 1 skipped**, build:prod + build:dev + build-storybook +
+  check:structure green; L4a and L4a+L4b also checked standalone. CSS +0.34 kB, initial +0.55 kB. **Next:**
+  L5 (translate features); Arabic copy needs native review before production enables `ar`.
+
+- 🔧 **2026-10-01, NON-REFACTOR — language L3 (`prompts/language-l3-logical-utilities.md`): logical
+  start/end utilities, DONE and verified, UNCOMMITTED; you commit as two PRs.** (L2a/L2b were committed by you
+  as `505428e` / `97b126d`.) One-off codemod (not committed): L3a shared+layout+app.html 220 tokens / 66 files,
+  L3b features 150 tokens / 58 files; admin and the PDF templates (invoice, payment-status) excluded; 28 centring/
+  translate strings kept physical. Tailwind 4.3.3 emits logical before physical and tailwind-merge doesn't dedupe
+  the pair, so shared converts first (L3a merges before L3b). **Parity proven by a computed-style diff**: 27
+  captures (8 pages × 375/768/1440 + nav dropdown, search dialog, mobile drawer), ~30,000 elements, zero diffs
+  after two fixes: (1) `<th>` centres when its parent's text-align is the initial `start`, so `text-start` was
+  added to the th cells in faq-content / utils-dialog / ai-lab-terms-dialog; (2) two `start-1/2 -translate-1/2`
+  reverted to `left-1/2`. CSS +0.23 kB transfer (admin still physical). Gates (local macOS, Node 24, **not CI**):
+  lint 0 errors, tests 203 files / 906 passed + 1 skipped, build:prod + build-storybook + check:structure green.
+  Arabic header/dropdown mirror correctly. **Next (L4):** Swiper `dir` (home hero blank under RTL), icon
+  mirroring, nav-menu-item flip logic, kept-physical strings, pin admin + PDFs LTR, enable `ar` on UAT.
+
+- 🔧 **2026-10-01, NON-REFACTOR — language L1 (`prompts/language-i18n.md`): resolve the visitor's language
+  and send it to Django. UNCOMMITTED, you commit. No refactor phase moved.** Approved by the user. Locked: en
+  (default) + ar fr de es; NOT in the URL; Transloco (L2); JSON in repo; switcher + auto default; any language
+  in any country; switching reloads (LOCALE_ID can't change after bootstrap). New `LanguageContext`
+  (server: `lang` cookie → `Accept-Language` → en, into TransferState; browser: TransferState → cookie →
+  `navigator.languages` → en), `provideLanguage()` (`LOCALE_ID`, lazy locale data, `<html lang dir>`),
+  `Accept-Language` from `appInterceptor`, `environment.I18N.languages` (prod `en`, UAT `en fr de es`, local
+  all five). Production unchanged and SEO identical to master; initial bundle +0.76 kB transfer; locale data
+  ~2 KB lazy per language. UAT build and the dev browser verified (fr/de/es resolve, Django gets the header,
+  ar → rtl). Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy warnings), tests **201 files /
+  880 passed + 1 skipped**, build:prod + build:dev + check:structure green. ⚠️ Pre-existing, chip raised:
+  `app-interceptor.spec.ts` alone fails to compile (`Buffer` in `auth-session.ts`). The country work was
+  committed by you as `5d21d72` on `feat/MIL-14-country-resolution`; L1 doesn't touch any of its files, so
+  it can go on its own branch from `master`. **Next:** L2 (Transloco + switcher) needs its own prompt.
+
+- 🔧 **2026-10-01, NON-REFACTOR — country resolution rebuilt from scratch (Ticket 1 of
+  `prompts/country-resolution.md`). UNCOMMITTED, you commit. No refactor phase moved.** Plan approved in
+  plan mode. Timezone-based detection is REMOVED: the URL country always wins, otherwise Vercel's
+  `x-vercel-ip-country`, then `us`. One list + one validator (`core/constants/countries.ts`,
+  `core/utils/country.ts` `toCountry`) shared by Angular and Express: `us in ae ca au` + UN M49 Europe + `cy`.
+  `CountryContext` (`core/services/country-context/`) replaces `LocationService`; `Utils.country` delegates
+  to it. `src/geo-country.ts`: Express answers `/` in ONE hop to `/<cc>/accounting/home` (`private,
+no-store`, query kept) and sets the `geo_country` cookie on HTML only, only when it changes. Guard swaps
+  only an unsupported/upper-case country segment, keeping the deep link. Legacy redirects keep their
+  status codes; geo-filled ones get `private, max-age=86400`. Deleted `location.ts` (service),
+  `timezone.ts` (93 KB), `constants/country.ts`, and the `location.ts` entry in `LEGACY_ANY_FILES`.
+  **Measured against a `master` build of the same commit:** SEO output (title/OG/Twitter/canonical/
+  robots/sitemap) byte-identical; initial bundle 1.08 MB / 241.28 kB → 1.02 MB / 235.24 kB. The first
+  probe showed `/` costing an extra hop (`/in/accounting` → `/home`) — fixed by targeting `/home`.
+  Browser-checked on the dev server: logo on `/ae/...` stays `ae`; `/auth/login` with `geo_country=in`
+  links to `/in/...`; no NG0500. Three 404s logged on the UAE page were NOT traced.
+  Gates (local macOS, Node 24, **not CI**): lint 0 errors (123 legacy `any` warnings), tests
+  **198 files / 857 passed + 1 skipped**, `build:prod` green (two pre-existing CSS budget warnings),
+  `check:structure` passed. **Open for you:** RU/BY in the Europe list need a sanctions check.
+  **Ticket 2** (`X-Country-Code` from `appInterceptor`) is BLOCKED on backend CORS +
+  `Access-Control-Max-Age: 7200` + checkout re-derivation of country; not started.
+- 🔧 **2026-10-01, NON-REFACTOR — third batch of MIL-13 review comments, both on
+  `webinar-card.ts`. UNCOMMITTED, you commit. No refactor phase moved.**
+  **(1) "use @alias import" — already covered** by the alias entry below: every relative import in
+  `webinar-card.ts` is now `@features/offerings/webinar/…`, and the new spec uses aliases too.
+  **(2) "remove this and use Date Pipe in html direct" on `monthLong` — done.** The `monthLong`
+  computed and the now-unused `SESSION_TIMEZONE` import are gone; the guest pill's month is
+  `{{ w.start_date_time | date: 'MMMM' : parts.zone }}` and `DatePipe` is in the component's `imports`.
+  ⚠️ **The pipe's zone argument cannot be `SESSION_TIMEZONE`.** Angular 22.2's `timezoneToOffset` runs
+  `Date.parse('Jan 01, 1970 00:00:00 ' + tz)`, and an IANA name such as `America/New_York` parses to
+  `NaN`, so the pipe **silently falls back to the viewer's (or the SSR server's) zone**. Verified:
+  `Date.parse` gives NaN for the IANA name, 300 for `EST`, 240 for `EDT`. That would put a session
+  at 7 PM ET on 31 Oct in "November" for a viewer in India or UTC, next to a day of "31" (the day and
+  year come from `sessionParts`, which does resolve in ET). So the template passes `parts.zone`, the
+  `EST`/`EDT` abbreviation `sessionParts` already computes **for that very date**: DST-correct, one
+  source for the whole pill, no new TS. If `SESSION_TIMEZONE` ever stops being a US zone, `parts.zone`
+  will not be an abbreviation the pipe can parse and this needs revisiting.
+  **New spec `webinar-card/webinar-card.spec.ts`** (there was none): 3 tests on the guest pill, full
+  month name plus the two boundary cases, 03:30Z on 1 Nov (EDT, still 31 Oct) and 1 Dec (EST, still 30
+  Nov). **Mutation-checked under `TZ=UTC`:** passes with `parts.zone`; with the IANA name in its place
+  2 of 3 fail ("November" for "October", "December" for "November"), so the spec does catch the
+  fallback. Its fixture carries `duration_minutes: 60` like the other three specs, so **the
+  `duration_seconds` revert in the blocker below now also touches this file**.
+  Gates (local macOS, Node 24.18, **not CI**): lint 0 errors on the touched files, `check:structure`
+  passed, Prettier clean, webinar specs 8 files / 94 passed. Not run: `build:prod` (template and
+  import change only), and **not looked at in a browser**: the guest row needs the upcoming feed, which
+  the `duration_minutes` blocker still rejects.
+  Note: a spec run narrowed to ONLY `webinar-card/**` fails to build (`TS2591 Buffer` in
+  `core/services/auth-session/auth-session.ts:339`, not touched here); use the whole `webinar/**` glob
+  with `--filter`.
+
+- 🔧 **2026-10-01, NON-REFACTOR — second MIL-13 review comment: "Use @alias import" on
+  `seat-form.ts`. UNCOMMITTED, you commit. No refactor phase moved.** The flagged line was
+  `import { GuestRegistration } from '../../services/guest-registration'`. It is the same ask as the
+  `join-cta.ts` comment on #43, so I did not fix one line and wait for the next. Converted **every
+  relative import in the three files where this PR adds one** — `seat-form.ts` (1),
+  `webinar-card.ts` (7) and `webinar-hero.ts` (9) — to `@features/offerings/webinar/…`, so each file
+  is uniform and not half aliased. Prettier re-wrapped the long lines in the card and the hero; no
+  logic changed. Lint clean on the three files, `check:structure` passed, webinar specs 7 files / 91
+  passed (local, Node 24.18, **not CI**); `build:prod` not re-run for an import-path-only change.
+  ⚠️ **Same-folder `./x` imports are untouched (they are not cross-folder).** 44 `../` imports
+  remain across the feature's non-spec files, 14 of them in files this PR modifies but whose imports
+  it did not add (`webinar-list.ts` 7, `webinar-rail.ts` 5, `webinar-countdown.ts` 2). Relative
+  is still legal (PROMPT §3 requires an alias only across a top-level folder), so lint does not
+  catch it. If the reviewer wants the whole feature swept, do it as its own change.
+
+- 🔧 **2026-10-01, NON-REFACTOR — one review comment on the MIL-13 PR, fixed. UNCOMMITTED, you
+  commit. No refactor phase moved.** me-sachin-singh on `webinar-about.html`: the section heading
+  "Course Description" should read **"Webinar Description"**. Changed the `<h2>` in
+  `webinar/components/webinar-about/webinar-about.html` (one string; the page is a webinar, not a
+  course). The plan `prompts/webinar-v3-parity.md` quoted v3's "Course Description" in two places
+  (§ webinar-about, and the expected-behaviour line); both now say "Webinar Description" so the plan
+  does not contradict the code. **Left alone on purpose:** `shared/components/course-about` and the
+  AI-lab dialog also say "Course Description", but they are real courses and not part of this branch.
+  No spec asserts the heading (grep: 0 hits in the webinar feature), so no test changed. Prettier
+  clean on both files. **Not verified in a browser:** the detail page needs a feed card, and the UAT
+  feed is still rejected by the `duration_minutes` blocker below, so the about section cannot render
+  until that is fixed. The change is a literal string in a template.
+
+- 🔧 **2026-09-30 (evening), MIL-13 PRE-COMMIT FAILURE FIXED, AND A BLOCKER STILL OPEN. UNCOMMITTED,
+  you commit.** The commit from Git Desktop stopped in `check-structure`: the new
+  `webinar-hero/webinar-hero.css` is a component stylesheet with no §4.6 reason. Its header said
+  Tailwind cannot express the two rules in it; **Tailwind 4.3 can**, so it is converted, not baselined
+  (a baseline entry would have weakened the check). The guest ticket's punched notches are now the
+  utilities `mask-subtract` + an arbitrary `mask-image` on the `<article>`; the member artwork's glow is
+  the `before:` layer on its wrapper (`before:inset-[-12%_-14%] before:rounded-[50%]
+before:bg-[radial-gradient(…)] before:blur-[40px]`). `styleUrl` removed and the `.css` deleted; the
+  template comments say what each utility is for.
+  **Verified in the running app** (real UAT feed loaded into the page): ticket mask image, size (420×562
+  at 1024px) and appearance identical before and after; all 14 computed `::before` properties identical
+  between the old rules and the utilities on the same box; at 375px the ticket is 343 wide, notch
+  present, no horizontal scroll. One computed string differs, `mask-composite` now reads `subtract` where
+  it read `source-out`: the legacy `-webkit-` spelling of the same operation, same rendering. Not checked:
+  768px and 1440px, and the member glow inside the real member hero (no signed-in session).
+  Gates (local macOS, Node 24.18, **not CI**): `check:structure` passed, lint 0 errors (124 pre-existing
+  `any` warnings, none in the hero), Prettier clean, `build:prod` green (the same two CSS budget
+  warnings), webinar specs 7 files / 91 passed.
+  🚨 **BLOCKER, NOT FIXED — needs your call: the tree still renames `duration_seconds` back to
+  `duration_minutes`** (model + its response check + `effectiveEndAt` + three specs). UAT sends
+  `duration_seconds` on **all 29 cards and `duration_minutes` on none** (fetched today), so the response
+  check rejects the feed and **the live page shows "We could not load the webinars. … response does not
+  match the Events contract"**. Reproduced in the running app and in the dev-server log. The specs still
+  pass because their fixtures use minutes. `prompts/webinar-v3-parity.md` §3.7 #1 says the same thing:
+  confirm what UAT emits, and if it is seconds, fix Postman, not the client. The staged commit message
+  says "Keep duration_seconds", which the code does not do. Fix = revert those five places to the
+  committed `duration_seconds` form; not done here because it is another session's work.
+
+- 🔧 **2026-09-30 (evening), HANDOFF NOTE — the only source change from this session since the #43
+  work is the `webinar-hero` stylesheet conversion in the entry above.**
+  #43 was squash-merged as `bc3385f` (12:48) and its entry below is already on this branch
+  (`feat/MIL-13-webinar-v3-design-parity`). **The uncommitted tree is NOT from this session:** 22
+  modified + 3 new files under `offerings/webinar` (`seat-form/`, `guest-registration.ts` and
+  `webinar-hero.css`, the last since converted and deleted), newest 17:06, are the MIL-13
+  design-parity work of another session or tool
+  (plan: `prompts/`, commit `16372fa`). The refactor stop gate compares file times and reads those as
+  this session's, which is why this note exists. **Stray files:** 48 empty `_tmp_<pid>_*` entries (pids 16, 29
+  and 31) at the repo root, created 17:03:19–24 (42 files + 6 folders each holding one empty file), untracked and not
+  in `.gitignore`. Not from a pnpm install (its records and the store were last touched 11:27) and not
+  from this session; the creator is unidentified. Safe to delete (`rm -rf _tmp_*` from the root);
+  do not commit them. **Environment, outside the repo:** `~/.config/husky/init.sh` now loads nvm so
+  GitHub Desktop's commit hooks can find `pnpm`. Never run `husky --version` here: Husky 9 takes the
+  argument as the hooks folder and rewrites `core.hooksPath` (fix: `git config core.hooksPath .husky/_`).
+
+- 🔧 **2026-09-30, NON-REFACTOR — PR #43 review comments fixed, and this file restored after the
+  master merge. UNCOMMITTED, you commit. No refactor phase moved.** Four inline comments from
+  me-sachin-singh on MilesEducation-Tech/miles-masterclass#43.
+  **(1) "Remove webinar previews" — done.** Deleted `utils/webinar-preview.ts` (243 lines) and
+  everything that hung off it: `PREVIEW_ENABLED`, `queryParams` / `previewBaseTime` / `isPreview` and the
+  `visibleFeed` indirection in `webinar-facade.ts` (its readers now read `feedData` directly, and
+  `feedError` became the public `loadError`), and `!facade.isPreview()` in `webinar-list.ts`.
+  `ActivatedRoute` and `toSignal` left the facade with it, and the facade spec's two `ActivatedRoute`
+  mocks, which existed only to feed the preview, went too.
+  ⚠️ **`?preview=design` no longer works**, so the hero and the upcoming rail can only be seen with real
+  UAT data. The historical mentions in `prompts/webinar-fixes.md`, `prompts/webinar-typing.md` and
+  `reports/phase-09-offerings.md` are left as records.
+  **(2)+(3) host `[class]` bindings on `webinar-rail` and `webinar-faq` — removed, but NOT a plain
+  deletion.** They were the second half of the 2026-09-28 layout-hole fix below: a component's host is
+  created even when its template draws nothing, and as a flex item it still takes a `gap`. So the `@if`
+  had to move to where the element is CREATED. **Rail:** `webinar-list.html` now wraps each of the four
+  rails in `@if (<bucket>.length > 0)` (via `@let`), so an empty rail never exists; `hasContent` is gone
+  and the rail's docblock says why a page should do this. **FAQ:** binding removed with no parent guard.
+  The page cannot see emptiness (the list is resolved inside the component) and `FAQ_DATA` is a constant
+  that is never empty (the per-market override map is empty), so the component's own
+  `@if (faqs.length > 0)` is the guard. If an override ever returned `[]` the FAQ host would take one
+  trailing gap; a test now pins the empty case.
+  **(4) "Check for the aliases" on `join-cta.ts` — done, read literally:** its three `../../` imports
+  (`models/webinar.model`, `utils/webinar-status`, `utils/session-time`) now use
+  `@features/offerings/webinar/…`. ⚠️ Relative was already legal (PROMPT §3 requires an alias only across
+  a top-level folder) and lint accepts either; **about 40 more `../../` imports in this feature's other
+  files are untouched**. Say if the reviewer wants them swept, as its own change.
+  **STATE.md restore:** the `master` merge (`a8487a6`) resolved the one conflict in "Now" (both sides had
+  inserted at the top) to master's side and dropped the six 2026-09-28 webinar entries below (125 lines);
+  only their step-log lines survived. Rebuilt with a three-way merge against the fork point `59b38c4` and
+  put back verbatim under master's two 2026-09-29 bullets. Verified: 0 lines removed, every line of both
+  parents present.
+  **Verified in the browser** (dev server, signed out, live UAT): hero and FAQ render, the sign-in block
+  shows, and there are **zero** `app-webinar-rail` hosts in the DOM (before this change they existed with a
+  `hidden` class). Feeding the running page a synthetic feed created the rail with 2 rows and removed it
+  again when the hero de-duplication left nothing. Not verified: the three signed-in rails, since there is
+  no OTP session to sign in with; they use the identical `@if`. The console shows a View Transitions
+  `InvalidStateError` that also appears on an unrelated route, so it is not from this change.
+  Gates (local macOS, Node 24.18, **not CI**): lint 0 errors (124 pre-existing `any` warnings, none in a
+  webinar file), tests **194 files / 825 passed + 1 skipped**, `build:prod` green (two CSS budget
+  warnings, `briefing-session.css` +131 B and `ai-labs.css` +3.6 kB, in files this change does not
+  touch), `check:structure` passed.
+
+- 🟡 **Callers migrated to the kit (2026-09-29, same session), UNCOMMITTED — all gates green again.** 150 files rewritten by a one-off codemod (not committed) plus hand fixes: `button[app-button]` (375), `app-dialog` (47), `app-field` + `input[app-input]` / `textarea` / `app-checkbox` (119), `app-select` (30+36), `app-combobox` (17), native `<form (submit)>` (17), `app-tabs` (10), `app-progress` (7), `app-input-otp` (3), `app-listbox` (4). Kit fixes from your review: overlays now carry `absolute`/`fixed` (select, combobox, popover, tooltip, menu), accordion `overflow-hidden`, tab panels hide when inactive (`not-data-active:hidden`; the primitive only sets `aria-hidden`); extensions the callers needed: object options `{ value, label }` for select/combobox/listbox, `app-dialog` `closable` / `width` / `maxWidth`, `app-field [errors]` rendering the schema messages, indeterminate `app-progress`, `autoFocus` on the OTP, `icon` button size, and both button and field merge their own `class` through `cn()`. Buttons keep both looks: `default` (white, the input's default, restored on every original call site from git) and `primary` (blue). `pnpm build:prod` green (2 pre-existing CSS-budget warnings), `pnpm ng test` 194 files / 823 tests green (+1 skipped), lint 0 errors (124 legacy `any` warnings), Prettier clean, `pnpm build-storybook` green, `.storybook` narrowing removed again; the `shared/ui/dialog` finding is resolved: `scripts/check-structure.mjs` now recognises a component folder named after its own file (`dialog/dialog.ts`) as the v20 shape, with a test; the pre-commit hook passes. Browser-checked: login page on the dev server (tabs, combobox anchored under its input, email error after blur) and the Storybook overlays (select, menu, popover, tooltip, accordion hover). Commit as one PR per area: `src/app/shared/ui` + kit tooling, then `src/app/shared` + `layout` + `core`, `src/app/features`, `src/app/admin`.
+
+- 🟡 **shared/ui regenerated as an ng-primitives kit (2026-09-29), plan `prompts/ngp-ui-kit.md`, approved by you, UNCOMMITTED on `refactor/MIL-XXX-ngp-ui-regenerate` — you commit, as six stacked PRs (file lists in the session summary).** All 32 CLI primitives generated with `ng g ng-primitives:primitive … --prefix app --styles unstyled`, styled with the Tailwind tokens, bound to Signal Forms only (a scoped `no-restricted-imports` block in `eslint.config.mjs` bans `@angular/forms` and CVA helpers in `shared/ui`). Gates (macOS, Node 24.15): `pnpm ng test --include 'src/app/shared/ui/**'` 19 files / 112 tests green, `pnpm lint` 0 errors, `pnpm format` clean, Storybook a11y panel clean on every story except the button's destructive variant (token pair, see below). **⛔ Known blocker, by your decision ("new API only, migrate later"): `pnpm build:prod` and `tsc -p tsconfig.app.json` are red** (778 errors, every one an unmigrated caller importing a deleted `@shared/ui/{dialog-shell,forms,otp,aria/*,…}` path or using `<app-button>`; none inside `shared/ui` or `testing`). They stay red until the per-feature migration PRs land. **Decisions for you:** (1) `scripts/check-structure.mjs` flags `shared/ui/dialog` as a singular category folder — refine the rule (a folder named after its own `<name>.ts` is a component folder) or rename; (2) `--destructive` rgb(239,68,68) with white text is 3.76:1, below AA — a darker fill token for solid destructive surfaces is the fix. **Next:** per-feature migration PRs to the new selectors (`button[app-button]`, `app-dialog`, `app-field` + `input[app-input]`, `app-select`, …), then delete `.storybook/tsconfig.ui.json` + the `STORIES` env in `.storybook/main.ts`.
+
+- ⏸ **2026-09-28, STOPPED MID-CHANGE ON USER INSTRUCTION ("leave it, its okay") — the `join-cta`
+  spinner swap is IN THE TREE BUT UNVERIFIED. User to keep or drop.** The "Registering…" button drew a
+  faint, barely visible ring. **Root cause is a real bug in the SHARED `shared/ui/spinner`:** it builds
+  its colours by string interpolation — `text-${trackColor} fill-${color}` — and **Tailwind cannot see
+  runtime-built class names.** Its default `trackColor` is `neutral-tertiary`, which is **not a token in
+  this project and is NOT emitted at all** (`text-neutral-tertiary` count = 0 in the built CSS), so the
+  track falls back to `currentColor` while the arc uses `fill-primary` (rgb 4,72,170 navy). Two dark
+  tones on a greyed-out white button.
+  ⚠️ **This affects EVERY `app-spinner` in the app — 20+ call sites**, and several admin tables pass
+  `color="white" trackColor="neutral-600"`, which are equally invisible to the scanner. Fixing the
+  shared component would ripple app-wide and, per the Team Guide, needs 2 approvals for `shared/`.
+  **Worth its own ticket; deliberately NOT done here.**
+  What IS in the tree, scoped to `join-cta` only: `<app-spinner size="xs" />` replaced by an inline
+  bordered circle (`animate-spin rounded-full border-2 border-current border-t-transparent` — all
+  literals, so Tailwind emits them, and `border-current` takes the button's own text colour so it reads
+  on both the white and primary variants), and the now-unused `Spinner` import dropped.
+  **Lint passed (0 errors); tests and `build:prod` were NOT run before stopping.** Revert with
+  `git checkout -- src/app/features/offerings/webinar/components/join-cta/`, which leaves the rest of
+  the change set intact.
+  ❓ **Never resolved:** the user also said "spinner is before the registering word", which may have
+  been about ORDER rather than contrast. Position is unchanged (spinner leads, as loading buttons
+  conventionally do). Ask before moving it.
+
+- ↩️ **2026-09-28, REVERTED ON USER DECISION — `'registration-pending'` is gone; `'registering'` again
+  covers both cases.** The entry below proposed splitting a server-reported `PENDING` out from an
+  in-flight request, because the two shared a state and rendered a spinner with nothing running behind
+  it. **The user decided against it**, so `ctaFor` returns `'registering'` for both and the spinner runs
+  until the attempt resolves, as before. `join-cta.ts` is back to untouched; `webinar-status.ts` now
+  carries ONLY the `duration_seconds` change.
+  The test added for that path was **kept, rewritten to assert the chosen behaviour** — it covers a
+  branch that had no coverage at all, and its comment records that the split was tried and rejected so
+  nobody re-derives it later.
+  ⚠️ **Consequence, stated plainly and accepted:** a webinar whose attempt the backend leaves at
+  `PENDING` shows "Registering…" with a spinner indefinitely, with no explanation and no retry. That is
+  a deliberate product choice now, not an oversight. **Why the server reports PENDING forever is STILL
+  undiagnosed** and needs a token — see the entry below.
+
+- 🔧 **2026-09-28, NON-REFACTOR — "coming soon" banner now full-bleed. UNCOMMITTED, you commit. No
+  refactor phase moved.** When nothing is scheduled the standing banner was rendered inside the real
+  hero's frame — `container mx-auto px-4`, `max-w-4xl`, rounded corners, `ring` — which exist to frame
+  artwork sitting ABOVE a title, session line and CTA. In this state there is nothing beneath it, so the
+  banner is the whole section and takes the full width. **Found while measuring the assets: the two are
+  DIFFERENT CROPS, not one image scaled** — desktop `2400×1300` (1.85:1 landscape, matching the Figma
+  frame exactly) and mobile `720×1394` (0.52:1 **portrait**). `<picture>` was already swapping them, but
+  the old markup forced both into the same `aspect-video`/`aspect-21/10` box, so a phone got a portrait
+  composition squashed into a landscape frame. Each now renders at its own ratio.
+  `md:max-h-[85vh]` + `object-cover` so an ultra-wide screen crops rather than growing a 1.85:1 image
+  into a ~1,400px-tall wall. Verified emitted: `aspect-ratio:720/1394`, `aspect-ratio:2400/1300`,
+  `max-height:85vh`.
+  ⏸ **One judgement call left open:** kept `pt-10 md:pt-16 lg:pt-20`. The header is `fixed` and floats
+  over content, so zero top padding puts the banner's top edge under it. The Figma frame shows the
+  banner in isolation and does not settle this. Removing one class makes it edge-to-edge if the user
+  prefers the header floating over the dark curtain area.
+  Gates: lint 0 errors (133 pre-existing warnings), tests 184 files / 755 passed + 1 skipped,
+  `build:prod` green, `check:structure` passed.
+
+- 🔧 **2026-09-28, NON-REFACTOR — unreadable "Missed" tag + an endless "Registering…" spinner.
+  UNCOMMITTED, you commit. No refactor phase moved.** Two unrelated reports, both in the webinar cards.
+  **(1) The status tag looked like it had no background.** The binding was NOT at fault — verified by
+  rendering the card and reading the element: Angular DOES merge a static `class` with a `[class]`
+  binding (`… uppercase bg-success text-white`), and all four colours emit in the CSS. The real cause is
+  WHICH tag is visible: three buckets use solid colours (`bg-success`, `bg-accent-premium`,
+  `bg-destructive`) but `missed` used **`bg-black/70` — translucent** — and `missed_webinar` is the ONLY
+  past bucket the live feed populates (completed 0, absent 0, missed 4), so the single pill anyone could
+  see was the one letting dark artwork through. Now `bg-surface-control`, a solid neutral.
+  **(2) Registration showed "Registering…" forever.** Real frontend defect: `ctaFor` returned
+  `'registering'` BOTH for this surface's in-flight request AND for a server-reported `PENDING`, and
+  `JoinCta` renders that as a **disabled spinner** — so once the request finished and the feed still
+  said PENDING, the spinner ran with nothing behind it, no explanation and no way forward. Split out
+  `'registration-pending'` ("Setting up your seat", no spinner, note saying the pipeline continues
+  server-side); the in-flight state still wins while genuinely running. **That path had NO test at all,
+  which is why changing it broke nothing** — added one covering both directions.
+  ⚠️ **NOT DIAGNOSED — needs a token.** Why the server still reports PENDING is a backend question: the
+  facade already calls `reload()` after every registration outcome, so this is a fresh feed, not stale
+  UI. `register-via-zoom-status/<attempt_id>/` would say whether it is `ZOOM_RETRYING` or stuck at
+  `PENDING`. The user's bearer token had expired, so this was inferred from the state machine, not
+  observed. **Ask for a fresh token before claiming a cause.**
+  Gates: lint 0 errors (133 pre-existing warnings), **tests 184 files / 755 passed + 1 skipped** (+1
+  new), `build:prod` green, `check:structure` passed.
+
+- 🔧 **2026-09-28, NON-REFACTOR LAYOUT FIX — empty webinar sections left a ~320px hole. UNCOMMITTED,
+  you commit. No refactor phase moved.** Reported with a screenshot: signed in with no attendance, a
+  huge blank band sat between the "1:1 Google Meet" band and "Webinars Missed". Cause: **a component's
+  host element is always created even when its template renders nothing**, so the `completed` and
+  `absent` rails were still zero-height boxes — and `space-y-*` margins every child but the last
+  whether or not it draws anything. Two of them × 160px = the hole.
+  **Two changes, and the second is the general fix:** (1) both page wrappers `space-y-*` → `gap-*` —
+  they were ALREADY `flex flex-col`, and the two differ exactly here: `gap` applies only BETWEEN
+  laid-out flex items, and a `display:none` child is not a flex item at all; (2) `webinar-rail` and
+  `webinar-faq` now bind their host display to the same condition their template already guards on, so
+  a section that renders nothing removes itself from layout. Together the page adapts to whichever
+  sections a given learner has, rather than reserving space for all of them.
+  Used `[class]` with a ternary, NOT `[class.hidden]` beside a static `block` — with both classes
+  present, which wins depends on stylesheet order, which is not a coin worth flipping on a layout rule.
+  Verified per state: `empty="hidden"`, `emptyShown="block"` (so `showWhenEmpty` still works),
+  `populated="block"`.
+  ⚠️ **Process note worth keeping:** three verification specs produced NO output and nearly passed as
+  "fine" — they failed to COMPILE because `ServerClock` moved to `services/` in the restructure, and a
+  build failure prints nothing through a grep filter. After the refactor, check a quiet spec's import
+  paths before believing it.
+  Gates: lint 0 errors (133 pre-existing warnings, untouched files), **tests 184 files / 754 passed +
+  1 skipped**, `build:prod` green, `check:structure` passed.
+
+- 🔧 **2026-09-28, NON-REFACTOR API FIX — `duration_minutes` → `duration_seconds`. UNCOMMITTED, you
+  commit. No refactor phase moved.** Symptom the user reported: signed in, auth working, Postman shows
+  3 upcoming + 3 missed webinars, **the page renders nothing**. Cause is NOT the login — `loginType`
+  already derives from a real `auth.isAuthenticated()` and `post_login` was being sent correctly. The
+  feed renamed `duration_minutes` to `duration_seconds`, and `isWebinarCard` checks every contract key,
+  so ONE missing key failed the WHOLE response into `error()` and emptied every rail. **Proved against
+  the user's exact card, not inferred:** `accepted: false` raw, `acceptedIfRenamed: true` — that one key
+  was sufficient and necessary. The guard behaved correctly; this is the second time it has caught a
+  silent rename (`cpe_credits` → `total_cpe_credits` was the first, and is why it exists).
+  🚨 **THE UNIT CHANGED TOO, AND THAT WAS THE DANGEROUS HALF.** `effectiveEndAt` did `duration * 60_000`.
+  Left alone it still compiles and still returns a number — a **60× wrong** one. Measured on the live
+  card (start 06:30Z, 2 h): new `* 1_000` → 08:30Z, matching `end_date_time` exactly; old `* 60_000` →
+  **2026-10-06, five days late**, which would have kept finished webinars showing a live Join button.
+  Changed: the model field + its guard entry, the one arithmetic site in `webinar-status.ts`,
+  `webinar-preview.ts`, and 4 fixtures (`60` minutes → `3600` seconds — leaving `60` would have turned an
+  hour-long fixture into a one-minute one and stopped the "earlier of" assertion testing anything).
+  ⚠️ `duration_seconds` is **`null` on every card** in both live feeds, so nothing may depend on it
+  being present; `effectiveEndAt` falls back to `end_date_time`. Anonymous feed now also has content
+  (1 upcoming, 4 missed), so SSR and signed-out visitors get the hero + rail too, not the fallback banner.
+  Gates: lint 0 errors (warnings are pre-existing `no-explicit-any` in `core/models/{feature,http}.model.ts`,
+  untouched), **tests 184 files / 754 passed + 1 skipped**, `build:prod` green, `check:structure` passed.
+
 - 🟡 **MIL-10 PR ready to commit (2026-09-28).** OTP a11y + signed-in shell + `PROFILE_STATUS` cookie are all on `fix/MIL-10-auth-minor-fixes`, with the placeholder change included (your call). The OTP length and the legacy cookie name moved to `environment.AUTH` (`otpLength`, `legacyProfileStatus`). Everything is staged; the guard hook blocked Claude's commit. **You run** the commit, push and `gh pr create` from the session summary. Gates green (macOS, Node 24.15): lint 0 errors, tests 184/754 (+1 skipped), build:prod, check:structure.
 
 - 🟡 **Signed-in shell + cookie rename (2026-09-28), both approved and implemented, UNCOMMITTED — you commit, one branch each.** Shell (`prompts/session-shell.md`): header/footer read `isAuthenticated()` + `AccountApi.user`; the drawer's Sign out now really calls `AuthSession.logout()` (it only navigated before); name/initials helpers moved to `account.model.ts`. Cookie (`prompts/profile-status-cookie.md`): `USER_DATA` → `PROFILE_STATUS`; the legacy cookie is deleted on load, write and logout. Lint 0 errors (133 warnings), tests 184/754 (+1 skipped), build:prod + check:structure green (macOS, Node 24.15); browser-checked with a seeded fake session (SSR renders the avatar, 375 drawer, sign-out clears cookies). Found, not fixed: `cart-store` / `feature-facade` hit 6 legacy endpoints that 404 on UAT once signed in.
@@ -2380,6 +3750,112 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-10 · NON-REFACTOR · **P0 accessibility fixes** (uncommitted): header focus rings + reduced motion folded into ticket E; new `fix/MIL-XXX-p0-accessibility` (scratch worktree) fixes the kit-wide `outline-none` focus-ring trap in 23 `shared/ui` files, adds a skip link and Google's "Get it on" caption · lint 0 errors, structure ✔, build:prod, storybook ✔ (local) · verified in headless Chrome with real key presses
+
+- 2026-10-10 · NON-REFACTOR · **Nav sub-menus single-open** (uncommitted, on `feat/MIL-XXX-header-finish`, separate files): `NavMenuGroup` per sibling list, `linkedSignal` open state, released on close/destroy · lint 0 errors, structure ✔, build:prod 244.10 kB (local) · verified on the 4000 prod SSR build, desktop + drawer
+
+- 2026-10-10 · NON-REFACTOR · **Header glass-and-glow finish** (uncommitted, `feat/MIL-XXX-header-finish`): glass pill + gradient ring + hairline with one-shot sweep, active dot, `shadow-glass` panels, gradient Sign Up, ringed avatar, `.header` deleted; avatar menu positioned (`absolute`, scroll `close`) · lint 0 errors, structure ✔, build:prod 244.26 kB, storybook ✔ (local) · verified on the 4000 prod SSR build, signed out and in
+
+- 2026-10-09 · NON-REFACTOR · **Header nav order + labels** (uncommitted, `feat/MIL-XXX-header-nav-order`): user's new guest/member order, AI Lab / Masterclasses / Podcasts / Plans / Home copy in 5 languages · lint 0 errors, structure ✔, build:prod 244.27 kB, storybook ✔ (local) · verified on the 4000 prod SSR build, signed out and in, 12 routes 200
+
+- 2026-10-09 · NON-REFACTOR · **AI Labs header underline** (uncommitted, `feat/MIL-XXX-ai-labs-underline`): AI Labs nav pill → highlighted link with badge, SVG draw-in underline (desktop + drawer) · lint 0 errors, structure ✔, build:prod 243.80 kB, storybook ✔ (local) · verified on the 4000 prod SSR build, signed out and in
+
+- 2026-10-09 · NON-REFACTOR · **Footer glass-and-glow finish** (committed `a0f5c52`, `feat/MIL-47-footer-finish`) and **footer layout fix** (committed `a403a83`, `fix/MIL-46-footer-layout`) · gates green (local) · verified on 4101 at 320–1440, en and ar
+
+- 2026-10-08 · NON-REFACTOR · **Home "i" course-info button** (uncommitted, `feat/MIL-XXX-home-course-info`): dialog token bound in `app.config.ts`, data type moved to core · lint 0 errors, structure ✔, build:prod green (local) · verified on the 4000 SSR build, headless · next: global loading bar from master
+
+- 2026-10-08 · NON-REFACTOR · **Production `BASE_API_URL` → UAT** (uncommitted, live API not up yet) · Prettier/ESLint clean, build:prod green (local) · open: ai-labs course ids, MilesVerse URL, CORS
+
+- 2026-10-08 · NON-REFACTOR · **Global loading bar** (uncommitted, `fix/MIL-XXX-global-loading-bar`): `SKIP_LOADING`, `loadingInterceptor` first, `LoadingService` with show delay + minimum, sliding accent bar, 8 background opt-outs · lint 0 errors, structure ✔, build:prod 243.72 kB (local) · verified on the 4000 SSR build, headless
+
+- 2026-10-08 · NON-REFACTOR · **MIL-25 Revision 3 implemented** (uncommitted): `CourseDetailFacade` at the offerings level, keyed by offering; the sections inject it · tsc 0, lint 0 errors, structure ✔, build:prod 243.85 kB (local) · browser-verified on 4101 (page, legacy link, "i" dialog)
+
+- 2026-10-08 · NON-REFACTOR · **Per-page loading UI** (uncommitted, `fix/MIL-XXX-page-loading-ui`): spinner class maps (default = text colour), `FeatureResource.isPending` skeletons on /masterclass hero + podcast/micro-learning tracks, partner-code `finalize` · lint 0 errors, build:prod 243.47 kB, storybook ✔ (local) · verified on the 4000 SSR build, headless
+
+- 2026-10-08 · NON-REFACTOR · **MIL-39 lockfile fix** (uncommitted): `24699e7` carried a Prettier-reformatted `pnpm-lock.yaml` (8.8k lines) and `pnpm-workspace.yaml` quotes, from my own `prettier --write` pass; restored from master and regenerated by pnpm → net 8 `@milesverse/sdk` lines + 1 pnpm `deprecated:` note · frozen install ✔ · PRs for MIL-38/39 wait on your push
+
+- 2026-10-08 · NON-REFACTOR · **MilesVerse removed** (uncommitted, `chore/MIL-XXX-remove-milesverse`): feature, routes, nav, i18n, env, SDK, baseline entries · lint 0 errors, structure ✔, build:prod 243.44 kB, 1 CSS warning (local) · `/simulation` → 404 on 4101
+
+- 2026-10-08 · NON-REFACTOR · ⏸ **MIL-25 Revision 3 planned** for the #67 review: `CourseDetailFacade` at the offerings level, keyed by offering; the components inject it. Awaiting approval
+
+- 2026-10-07 · NON-REFACTOR · **MIL-25: accidental Pull merge aborted**; `tsc` 0, no conflict markers; force-push still pending (remote at `433dfb0`)
+
+- 2026-10-07 · NON-REFACTOR · **MIL-25 rebased onto master (65c6e2f), build:prod green** (local): both commits resolved (core model and masterclass page kept as master's, constants trimmed to the course endpoints, `withPreviousValue` from core, postman kept tracked)
+
+- 2026-10-07 · NON-REFACTOR · **MIL-25 hero actions**: Created/Updated line, Bookmark (POST + re-read, login redirect signed out), Download (certificate URL); verified signed out on 4101
+
+- 2026-10-07 · NON-REFACTOR · **MIL-25 Rev 2 Phases B–D done** (uncommitted): chapters, resources, related rails from `course-detail/`; browser-verified on 4101; prettier/eslint/structure/tsc clean
+
+- 2026-10-07 · NON-REFACTOR · **MIL-25 Rev 2 Phase A done** (uncommitted): course page on `course-detail/`, hero plays the HLS trailer after the poster; browser-verified on 4101; prettier/eslint/structure/tsc clean
+
+- 2026-10-07 · NON-REFACTOR · ⏸ **MIL-25 Revision 2 planned** (`prompts/masterclass-course-rebind.md`, end): course page → `course-detail` (hero HLS trailer + poster first). Surveyed 64/64 courses live; awaiting your approval of R1–R5
+
+- 2026-10-07 · NON-REFACTOR · **`home-page/` → `tracks-page/` fixed on MIL-25** (uncommitted): the landing page loads again on UAT data; prettier/eslint/tsc clean, browser-verified on 4101
+- 2026-10-07 · NON-REFACTOR · **MIL-28 dialog close button turns red on hover**, as on production (classes read live); verified on 4101
+
+- 2026-10-07 · NON-REFACTOR · **MIL-28 rebased onto master (65c6e2f)**: commit 1 as on MIL-25; the "i" button is opt-in (`showInfo`) on the now-shared course card; `tsc`/eslint/Prettier/structure clean
+
+- 2026-10-07 · NON-REFACTOR · **MIL-28 `verify.mjs` 7/7 GREEN** (local, Node 24.18) on the fast-forwarded branch
+
+- 2026-10-07 · NON-REFACTOR · **MIL-28 unblocked**: branch fast-forwarded to `eadf218`, dialog files restored (diff = dialog work only), `postman/` restored locally
+
+- 2026-10-07 · NON-REFACTOR · **MIL-23 PR3 "i" dialog** (uncommitted): card button, course-info dialog on the course facade, panel matches production at 1024/375 · `verify.mjs` 7/7 GREEN (local, Node 24.18); dialog is a lazy chunk
+
+- 2026-10-06 · NON-REFACTOR · **MIL-25 `verify.mjs` 7/7 GREEN** (local, Node 24.18); split into 2 commits, the first builds alone
+
+- 2026-10-06 · NON-REFACTOR · **MIL-25 PR1–PR3 browser-verified** on 4101 (SSR, transfer cache, 3 widths); hydration mismatch fixed (`connect()` replaces the effect)
+
+- 2026-10-06 · NON-REFACTOR · **MIL-25 PR1–PR3 written** (uncommitted): `about-course/` facade, page, hero, About · eslint 0, structure ✔, build:prod green (local); PR4 blocked on the D3 capture
+
+- 2026-10-06 · NON-REFACTOR · **MIL-23: facade folded into the page; trailer dialog sized like production** (uncommitted) — masterclass specs 38/38
+
+- 2026-10-06 · NON-REFACTOR · **MIL-23 fix: paginated `home-page/`** (uncommitted) — parser unwraps `results`, facade asks `tracks.courses.page_size=100`; browser-verified on 4101 · `verify.mjs` 8/8 GREEN (local, Node 24.18)
+
+- 2026-10-05 · NON-REFACTOR · **MIL-23 committed by you as `10a5b18`** (one commit, pushed, incl. Postman swap) · `verify.mjs` 8/8 GREEN (local, Node 24.18); bundle-baseline warning is a stale baseline
+
+- 2026-10-05 · NON-REFACTOR · **MIL-23 PR1 + PR2 done** (uncommitted) — masterclass page on `web-api/v1/masterclass/home-page/`: typed model + parse, route-scoped facade, course card, page rewrite (hero kept as-is); browser-verified on UAT · lint 0 errors, tests 209 files / 986 passed + 1 skipped, build:prod + format + structure green (local, Node 24)
+
+- 2026-10-05 · NON-REFACTOR · **MIL-23 masterclass plan drafted** (`prompts/masterclass-tracks-rebind.md`) — home-page tracks + about-course rebind, 3 stacked PRs; no code, no gates run
+
+- 2026-10-03 · NON-REFACTOR · **language L5b done** (uncommitted, stacked on L5a) — sign-in validation/SSO messages + profile page (32 keys × 5); French messages browser-verified, profile not (auth-gated) · lint 0 errors, tests 206 files / 953 passed + 1 skipped, build:prod/dev + check:structure + format green (local, Node 24)
+
+- 2026-10-03 · NON-REFACTOR · **language L5a done** (uncommitted) — `featureTranslations` resolver + auth dictionary (40 keys × 5) + shell and login page; fr/ar/en browser-verified, initial +0.19 kB · lint 0 errors, tests 206 files / 952 passed + 1 skipped, build:prod/dev + check:structure + format green (local, Node 24)
+
+- 2026-10-03 · NON-REFACTOR · **stack landing** — #48 + #49 merged; #50 DIRTY (no restack between merges), `land` now handles several merged PRs; #56 Prettier failure in `webinar-rail.html` (resolver-added classes) re-wrapped, `pnpm format` green (local, Node 24)
+
+- 2026-10-03 · NON-REFACTOR · **language L4 done** (uncommitted, 3 PRs) — LTR islands, mirrored shared + feature UI, Arabic font, `ar` on UAT; English parity across 30 views (only data/state diffs), Arabic browser-verified · lint 0 errors, tests 204 files / 920 passed + 1 skipped, build:prod/dev + build-storybook + check:structure green (local, Node 24)
+
+- 2026-10-01 · NON-REFACTOR · **language L3 done** (uncommitted) — logical start/end utilities via one-off codemod, 370 tokens / 124 files; computed-style diff 27 captures, zero diffs after fixing the `<th>` text-start quirk and two centring idioms; CSS +0.23 kB · lint 0 errors, tests 203 files / 906 passed + 1 skipped, build:prod + build-storybook + check:structure green (local, Node 24)
+
+- 2026-10-01 · NON-REFACTOR · **language L2a + L2b done** (uncommitted) — Transloco + switcher + translated header/footer (5 languages); prod output identical to HEAD, +5.1 kB initial for L1+L2, dictionaries lazy · lint 0 errors, tests 203 files / 906 passed + 1 skipped, build:prod/dev + build-storybook + check:structure green (local, Node 24)
+
+- 2026-10-01 · NON-REFACTOR · **language L1** (uncommitted, `prompts/language-i18n.md`) — `LanguageContext` + `provideLanguage()` + `Accept-Language` on Django calls + `environment.I18N.languages`; prod unchanged, SEO identical, +0.76 kB initial, locale data lazy · UAT + browser verified · lint 0 errors, tests 201 files / 880 passed + 1 skipped, build:prod/dev + check:structure green (local, Node 24)
+
+- 2026-10-01 · NON-REFACTOR · **country resolution rebuilt** (uncommitted, plan `prompts/country-resolution.md`) — timezone detection removed; URL country → `x-vercel-ip-country` → `us`; one `SUPPORTED_COUNTRIES` list + `toCountry` shared by Angular and Express; `CountryContext` replaces `LocationService`; Express `/` one-hop redirect + `geo_country` cookie; deep links survive an unsupported country; legacy redirect statuses unchanged, geo ones cache-bounded · SEO output byte-identical to master, initial bundle −60 kB raw / −6 kB transfer · lint 0 errors, tests 198 files / 857 passed + 1 skipped, build:prod + check:structure green (local, Node 24) · Ticket 2 (API header) blocked on backend CORS
+- 2026-10-01 · MIL-13 · **review comment: "remove this and use Date Pipe in html direct" on `webinar-card` `monthLong`** (uncommitted) — `monthLong` computed deleted; the guest pill uses `date: 'MMMM' : parts.zone` (an IANA name makes the pipe fall back to the viewer's zone, `parts.zone` is the date's own EST/EDT) · new `webinar-card.spec.ts`, 3 tests, mutation-checked under `TZ=UTC` · lint + check:structure + webinar specs 94 passed (local, Node 24.18) · not checked in a browser
+
+- 2026-10-01 · MIL-13 · **review comment: "Use @alias import" on `seat-form.ts`** (uncommitted) — all relative imports in `seat-form.ts`, `webinar-card.ts` and `webinar-hero.ts` now use `@features/offerings/webinar/…` (the three files where this PR adds relative imports) · other files' `../../` imports left for a separate sweep · lint + check:structure + webinar specs 91 passed (local, Node 24.18)
+
+- 2026-10-01 · MIL-13 · **review comment: `webinar-about` heading "Course Description" → "Webinar Description"** (uncommitted) — one template string, plus the two matching lines in `prompts/webinar-v3-parity.md` · no spec covers the heading · Prettier clean · not checked in a browser (the UAT feed is still rejected by the `duration_minutes` blocker, so the about section cannot render)
+
+- 2026-09-30 · MIL-13 · **`webinar-hero.css` converted to Tailwind utilities so the pre-commit structure check passes** (uncommitted) — the ticket mask is `mask-subtract` + an arbitrary `mask-image`, the artwork glow is a `before:` layer, the stylesheet and its `styleUrl` are gone, and no baseline entry was added · parity checked in the running app (mask + size identical, 14/14 `::before` properties identical, 375px ok; 768/1440 not checked) · 🚨 still open: the tree renames `duration_seconds` to `duration_minutes`, UAT sends seconds on 29/29 cards, and the live page shows "We could not load the webinars" · check:structure, lint 0 errors, build:prod, webinar specs 91 passed (local, Node 24.18)
+
+- 2026-09-30 · HANDOFF · **source changes from this session: only the `webinar-hero` stylesheet conversion above** (uncommitted) — the 22 modified + 3 new `offerings/webinar` files in the tree are another session's MIL-13 work · 48 empty `_tmp_<pid>_*` files (pids 16, 29, 31) at the repo root (17:03, creator unidentified, not pnpm) are safe to delete and must not be committed · Git Desktop hooks need `~/.config/husky/init.sh` (nvm) and must never be probed with `husky --version` · #43 merged as `bc3385f`
+
+- 2026-09-30 · NON-REFACTOR · **PR #43 review fixes + STATE.md restored after the master merge** (uncommitted) — deleted `webinar-preview.ts` and its facade/page wiring (`?preview=design` is gone) · host `[class]` bindings on `webinar-rail` / `webinar-faq` removed; the rails' `@if` moved to `webinar-list.html` because the bindings were the layout-hole fix's second half (FAQ relies on its own template guard, empty case now tested) · `join-cta` imports → `@features/offerings/webinar/…` · restored the six 09-28 "Now" entries the merge dropped (125 lines, three-way against `59b38c4`, 0 lines removed) · dev-verified signed out + a synthetic feed, signed-in rails not verifiable · lint 0 errors, tests 194 files / 825 passed + 1 skipped, build:prod + check:structure green (local, Node 24.18)
+
+- 2026-09-28 · NON-REFACTOR · **STOPPED MID-CHANGE on "leave it, its okay" — `join-cta` spinner swap is in the tree, UNVERIFIED, user to keep or drop** · the "Registering…" button drew a faint barely-visible ring; root cause is a REAL BUG IN THE SHARED `shared/ui/spinner`: it builds colours by string interpolation (`text-${trackColor} fill-${color}`) and **Tailwind cannot see runtime-built class names** — its default `neutral-tertiary` is not a token here and `text-neutral-tertiary` is emitted 0 times, so the track falls back to `currentColor` while the arc is `fill-primary` navy: two dark tones on a greyed-out white button · ⚠️ affects EVERY `app-spinner`, 20+ call sites, and several admin tables pass `color="white" trackColor="neutral-600"` which are equally invisible to the scanner — fixing the shared component ripples app-wide and needs 2 approvals per the Team Guide, so it is DELIBERATELY NOT DONE here and wants its own ticket · in the tree, scoped to `join-cta`: `<app-spinner size="xs" />` → inline bordered circle (`animate-spin rounded-full border-2 border-current border-t-transparent`, all literals so Tailwind emits them, `border-current` reads on both button variants), unused `Spinner` import dropped · **lint 0 errors; tests and build:prod NOT run before stopping** · revert: `git checkout -- src/app/features/offerings/webinar/components/join-cta/` · ❓ unresolved: the user also said "spinner is before the registering word" which may have meant ORDER not contrast — position left unchanged, ask before moving it
+
+- 2026-09-28 · NON-REFACTOR · **REVERTED `'registration-pending'` on user decision** (uncommitted) — the split of a server-reported `PENDING` from an in-flight request is undone; `ctaFor` returns `'registering'` for both again and the spinner runs until the attempt resolves · `join-cta.ts` back to untouched, `webinar-status.ts` now carries ONLY the `duration_seconds` change · the test for that path was KEPT and rewritten to assert the chosen behaviour — it covers a branch that previously had NO coverage, and its comment records that the split was tried and rejected so it is not re-derived later · ⚠️ consequence stated and accepted: an attempt the backend leaves at `PENDING` shows "Registering…" with a spinner indefinitely, no explanation, no retry — a product choice now, not an oversight · WHY the server reports PENDING forever remains UNDIAGNOSED and needs a token (`register-via-zoom-status/<attempt_id>/`) · lint 0 errors (133 pre-existing warnings), tests **184 files / 755 passed + 1 skipped**, build:prod + check:structure green
+
+- 2026-09-28 · NON-REFACTOR · **"coming soon" banner full-bleed** (uncommitted) — with nothing scheduled the standing banner was rendered inside the REAL hero's frame (`container mx-auto px-4`, `max-w-4xl`, rounded, `ring`), which exists to frame artwork sitting ABOVE a title/session line/CTA; in this state there is nothing beneath it, so it is the whole section and takes the full width · **measured the assets and found they are DIFFERENT CROPS, not one image scaled** — desktop `2400×1300` (1.85:1 landscape, exactly the Figma frame) vs mobile `720×1394` (0.52:1 PORTRAIT); `<picture>` was already swapping them but the old markup forced both into the same `aspect-video`/`aspect-21/10` box, so a phone got a portrait composition squashed into a landscape frame — each now renders at its own ratio · `md:max-h-[85vh]` + `object-cover` so an ultra-wide screen crops instead of growing a 1.85:1 image into a ~1,400px-tall wall · verified emitted: `aspect-ratio:720/1394`, `aspect-ratio:2400/1300`, `max-height:85vh` · ⏸ kept `pt-10 md:pt-16 lg:pt-20` — the header is `fixed` and floats over content, so zero top padding puts the banner's top edge under it; the Figma frame shows the banner in isolation and does not settle it, one class removes it if edge-to-edge is wanted · lint 0 errors (133 pre-existing warnings), tests **184 files / 755 passed + 1 skipped**, build:prod + check:structure green
+
+- 2026-09-28 · NON-REFACTOR · **unreadable "Missed" tag + endless "Registering…" spinner** (uncommitted) — two unrelated card reports · (1) tag "had no background": the BINDING was innocent — rendered the card and read the element, Angular DOES merge static `class` with `[class]` (`… uppercase bg-success text-white`) and all four colours emit in the CSS; the cause was WHICH tag is visible — three buckets are solid (`bg-success`/`bg-accent-premium`/`bg-destructive`) but `missed` was **`bg-black/70`, translucent**, and `missed_webinar` is the ONLY past bucket the live feed fills (completed 0, absent 0, missed 4), so the one pill anyone saw was the one letting dark artwork through → now `bg-surface-control` · (2) `ctaFor` returned `'registering'` for BOTH this surface's in-flight request AND a server-reported `PENDING`, and `JoinCta` renders that as a DISABLED SPINNER — so after the request finished with the feed still PENDING, the spinner ran with nothing behind it, no explanation, no way out → split `'registration-pending'` ("Setting up your seat", no spinner, note that the pipeline continues server-side), in-flight still wins while genuinely running · **that path had NO test, which is why the change broke nothing** — added one asserting both directions · ⚠️ WHY the server still says PENDING is UNDIAGNOSED and needs a token: the facade already `reload()`s after every outcome so the feed is fresh, not stale; `register-via-zoom-status/<attempt_id>/` would say `ZOOM_RETRYING` vs stuck `PENDING`. Inferred from the state machine, NOT observed — the user's token had expired · lint 0 errors (133 pre-existing warnings), tests **184 files / 755 passed + 1 skipped**, build:prod + check:structure green
+
+- 2026-09-28 · NON-REFACTOR · **empty webinar sections collapse instead of reserving space** (uncommitted) — signed-in learner with no attendance saw a ~320px blank band between the 1:1 booking band and "Webinars Missed" · cause: a component HOST element is always created even when its template renders nothing, so the `completed` + `absent` rails were zero-height boxes, and `space-y-*` margins every child but the last regardless of whether it draws · fix (1) both page wrappers `space-y-*` → `gap-*`, which they could take because they were ALREADY `flex flex-col` and `gap` applies only BETWEEN laid-out flex items — a `display:none` child is not a flex item at all; fix (2) `webinar-rail` + `webinar-faq` bind host display to the same condition their template already guards on, so the page now adapts to whichever sections a learner actually has · used `[class]` ternary NOT `[class.hidden]` beside a static `block` (both present → winner decided by stylesheet order) · verified per state: `empty="hidden"`, `emptyShown="block"`, `populated="block"` · ⚠️ THREE verification specs printed NOTHING and nearly passed as fine — they failed to COMPILE because `ServerClock` moved to `services/` in the restructure and a build error prints nothing through a grep filter; after the refactor, check a quiet spec's import paths before trusting it · lint 0 errors (133 pre-existing warnings), tests **184 files / 754 passed + 1 skipped**, build:prod + check:structure green
+
+- 2026-09-28 · NON-REFACTOR · **`duration_minutes` → `duration_seconds` on the webinar feed** (uncommitted) — user signed in, Postman showed 3 upcoming + 3 missed, page rendered NOTHING · cause was NOT auth (`loginType` already reads a real `auth.isAuthenticated()`, `post_login` was sent correctly): the feed renamed the key, and `isWebinarCard` checks every contract key, so ONE missing key failed the WHOLE response into `error()` and emptied every rail · PROVED on the user's exact card — `accepted: false` raw, `acceptedIfRenamed: true`, so that key was necessary and sufficient · second silent rename this guard has caught (`cpe_credits` → `total_cpe_credits` was the first, and is why it exists) · 🚨 **THE UNIT CHANGED TOO — the dangerous half**: `effectiveEndAt`'s `* 60_000` still compiles and still returns a number, just 60× wrong; measured on the live card (start 06:30Z, 2 h) new `* 1_000` → 08:30Z matching `end_date_time`, old `* 60_000` → **2026-10-06, five days late**, i.e. a live Join button long after the session ended · changed model field + guard entry, the one arithmetic site, `webinar-preview.ts`, and 4 fixtures (60 min → 3600 s; leaving `60` would have made an hour-long fixture one minute and neutered the "earlier of" assertion) · ⚠️ `duration_seconds` is `null` on every card in both live feeds so nothing may depend on it; anonymous feed now has 1 upcoming + 4 missed, so SSR/signed-out get the hero + rail too · lint 0 errors (warnings pre-existing in `core/models/{feature,http}.model.ts`, untouched), tests **184 files / 754 passed + 1 skipped**, build:prod + check:structure green
 
 - 2026-09-28 · MIL-10 · OTP length + legacy cookie name → environment.AUTH; all session work staged on fix/MIL-10; commit blocked by guard → handed to user
 - 2026-09-28 · Signed-in shell + PROFILE_STATUS cookie implemented; gates green; browser-checked with a seeded session · uncommitted

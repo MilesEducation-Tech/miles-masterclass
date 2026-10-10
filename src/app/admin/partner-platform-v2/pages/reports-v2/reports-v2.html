@@ -7,32 +7,38 @@
     </div>
     @if (canViewReports()) {
       <div class="flex items-center gap-2">
-        <app-button
+        <button
+          app-button
+          type="button"
+          class="text-white"
           variant="outline"
           size="sm"
-          class="text-white"
           [disabled]="facade.isExporting() || facade.needsScope()"
-          (clicked)="exportSummary()"
+          (click)="exportSummary()"
         >
           {{ facade.isExporting() ? 'Exporting…' : 'Export CSV' }}
-        </app-button>
-        <app-button
+        </button>
+        <button
+          app-button
+          type="button"
+          class="text-white"
           variant="outline"
           size="sm"
-          class="text-white"
           [disabled]="facade.isDownloading() || facade.needsScope()"
-          (clicked)="downloadAllCertificates()"
+          (click)="downloadAllCertificates()"
         >
           {{ facade.isDownloading() ? 'Downloading…' : 'Download certificates' }}
-        </app-button>
-        <app-button
+        </button>
+        <button
+          app-button
+          type="button"
           variant="primary"
           size="sm"
           [disabled]="facade.needsScope()"
-          (clicked)="openPreview()"
+          (click)="openPreview()"
         >
           Preview report
-        </app-button>
+        </button>
       </div>
     }
   </header>
@@ -52,49 +58,64 @@
   } @else {
     <!-- Filters -->
     <div class="flex flex-col gap-4">
-      <app-tab-strip
-        [options]="tabLabels"
-        [selected]="activeTabLabel()"
-        (selectionChange)="onTabChange($event)"
+      <app-tabs
         aria-label="Report subject"
-      />
+        [value]="activeTabLabel() ?? ''"
+        (valueChange)="onTabChange($event)"
+      >
+        @for (tab of tabLabels; track tab) {
+          <app-tab [value]="tab" [label]="tab" />
+        }
+      </app-tabs>
 
       <div class="flex flex-wrap items-end gap-4">
         <!-- Scope picker — supers only; panel admins are scoped server-side -->
         @if (facade.isSuper()) {
-          <app-aria-select
-            id="report-scope-v2"
-            label="Scope"
-            placeholder="Select a network or firm…"
-            class="w-64"
-            [options]="scopeOptions()"
-            [value]="scopeValue() || null"
-            (valueChange)="onScopeChange($any($event))"
-          />
+          <app-field class="w-64">
+            <label ngpLabel for="report-scope-v2">Scope</label>
+
+            <app-select
+              id="report-scope-v2"
+              placeholder="Select a network or firm…"
+              [options]="scopeOptions()"
+              [value]="scopeValue() || null"
+              (valueChange)="onScopeChange($any($event))"
+            />
+          </app-field>
         }
 
-        <app-aria-input
-          id="report-v2-date-from"
-          type="date"
-          label="From"
-          class="w-44"
-          [(value)]="facade.dateFrom"
-        />
-        <app-aria-input
-          id="report-v2-date-to"
-          type="date"
-          label="To"
-          class="w-44"
-          [(value)]="facade.dateTo"
-        />
-        <app-aria-select
-          id="report-v2-page-size"
-          label="Rows per page"
-          class="w-36"
-          [options]="pageSizeOptions"
-          [value]="facade.pageSize()"
-          (valueChange)="onPageSizeChange($any($event))"
-        />
+        <app-field class="w-44">
+          <label ngpLabel for="report-v2-date-from">From</label>
+
+          <input
+            app-input
+            id="report-v2-date-from"
+            type="date"
+            [value]="facade.dateFrom()"
+            (input)="facade.dateFrom.set($any($event.target).value)"
+          />
+        </app-field>
+        <app-field class="w-44">
+          <label ngpLabel for="report-v2-date-to">To</label>
+
+          <input
+            app-input
+            id="report-v2-date-to"
+            type="date"
+            [value]="facade.dateTo()"
+            (input)="facade.dateTo.set($any($event.target).value)"
+          />
+        </app-field>
+        <app-field class="w-36">
+          <label ngpLabel for="report-v2-page-size">Rows per page</label>
+
+          <app-select
+            id="report-v2-page-size"
+            [options]="pageSizeOptions"
+            [value]="facade.pageSize()"
+            (valueChange)="onPageSizeChange($any($event))"
+          />
+        </app-field>
       </div>
     </div>
 

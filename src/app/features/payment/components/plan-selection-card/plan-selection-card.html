@@ -1,6 +1,6 @@
 <button
   type="button"
-  class="group relative w-full h-full text-left rounded-2xl border bg-surface-deep px-5 py-4 transition-colors cursor-pointer"
+  class="group relative w-full h-full text-start rounded-2xl border bg-surface-deep px-5 py-4 transition-colors cursor-pointer"
   [class]="
     selected()
       ? 'border-(--accent) ring-1 ring-(--accent)'
@@ -11,7 +11,7 @@
 >
   @if (selected()) {
     <span
-      class="absolute -top-2 -right-2 grid h-6 w-6 place-items-center rounded-full bg-(--accent) text-white shadow-md"
+      class="absolute -top-2 -end-2 grid h-6 w-6 place-items-center rounded-full bg-(--accent) text-white shadow-md"
       aria-hidden="true"
     >
       <svg
@@ -40,7 +40,7 @@
       {{ priceDisplay().label }}
     } @else {
       @if (priceDisplay().baseAmount! > priceDisplay().amount!) {
-        <span class="mr-2 text-base font-normal text-neutral-500 line-through">
+        <span class="me-2 text-base font-normal text-neutral-500 line-through">
           {{ priceDisplay().baseAmount | currency: priceDisplay().currency! : 'symbol' : '1.0-0' }}
         </span>
       }
@@ -62,7 +62,7 @@
         </span>
         <span
           role="tooltip"
-          class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-56 -translate-x-1/2 rounded-lg bg-[#0B0F14] p-2 text-left text-xs leading-relaxed text-neutral-300 opacity-0 shadow-lg ring-1 ring-white/15 transition-opacity duration-150 group-hover:opacity-100"
+          class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-56 -translate-x-1/2 rounded-lg bg-[#0B0F14] p-2 text-start text-xs leading-relaxed text-neutral-300 opacity-0 shadow-lg ring-1 ring-white/15 transition-opacity duration-150 group-hover:opacity-100"
         >
           {{ note }}
         </span>

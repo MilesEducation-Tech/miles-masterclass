@@ -5,10 +5,10 @@ import { CanMatchFn, Router } from '@angular/router';
  * Country segments (ISO2, lower-cased) that should see the UAE CAIRA marketing
  * landing page at `/<country>/accounting/home` instead of the default `Home`.
  *
- * NOTE: `validateProfessionCountryGuard` validates `country` against the ISO2
- * codes in `timezone.ts`, where the UAE entry is `AE`. So the canonical URL is
- * `/ae/accounting/home`. If a `uae` vanity URL is required, add a `uae` alias
- * to `timezone.ts` (or a `/uae → /ae` redirect) and append `'uae'` here.
+ * NOTE: `validateProfessionCountryGuard` only admits the ISO2 codes in
+ * `SUPPORTED_COUNTRIES` (`core/constants/countries.ts`), where the UAE is `ae`,
+ * so the canonical URL is `/ae/accounting/home`. A `uae` vanity URL would need a
+ * `/uae → /ae` redirect, not a new entry here.
  */
 const UAE_CAIRA_COUNTRIES = ['ae'];
 const UAE_CAIRA_PROFESSION = 'accounting';

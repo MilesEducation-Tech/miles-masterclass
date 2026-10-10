@@ -1,14 +1,10 @@
 <div class="mx-auto flex max-w-2xl flex-col gap-6 md:p-6">
   <div class="flex flex-col gap-2">
     <p class="text-2xl font-bold text-white">
-      {{ isOnboarding() ? 'Tell us about yourself' : 'Your Profile' }}
+      {{ (isOnboarding() ? 'auth.profile.titleOnboarding' : 'auth.profile.title') | transloco }}
     </p>
     <p class="text-gray-400">
-      {{
-        isOnboarding()
-          ? 'A few questions so we can tailor what you see.'
-          : 'Manage your personal information'
-      }}
+      {{ (isOnboarding() ? 'auth.profile.introOnboarding' : 'auth.profile.intro') | transloco }}
     </p>
   </div>
 
@@ -16,7 +12,7 @@
     <div class="flex justify-center py-12"><app-spinner /></div>
   } @else if (loadError()) {
     <p class="text-sm text-destructive" role="alert">
-      We couldn't load your profile. Please refresh and try again.
+      {{ 'auth.profile.loadError' | transloco }}
     </p>
   } @else {
     <!-- Every field below is server-driven: `questions/` decides which exist,
@@ -83,17 +79,19 @@
                     <app-select
                       [id]="question.code"
                       [options]="entry.options"
-                      [placeholder]="question.placeholder || 'Select an option'"
+                      [placeholder]="question.placeholder || ('auth.profile.selectOne' | transloco)"
                       [formField]="field.choices"
                     />
                   }
                   @case ('multi') {
                     <app-select
-                      multiple
                       [id]="question.code"
                       [options]="entry.options"
-                      [placeholder]="question.placeholder || 'Select any that apply'"
+                      [placeholder]="
+                        question.placeholder || ('auth.profile.selectMany' | transloco)
+                      "
                       [formField]="field.choices"
+                      [multiple]="true"
                     />
                   }
                   @case ('boolean') {
@@ -147,12 +145,12 @@
         </div>
       }
 
-      <app-button class="w-full" type="submit" variant="default" [disabled]="isSaving()">
+      <button app-button class="w-full" type="submit" variant="default" [disabled]="isSaving()">
         @if (isSaving()) {
           <app-spinner />
         }
-        {{ isOnboarding() ? 'Continue' : 'Save Changes' }}
-      </app-button>
+        {{ (isOnboarding() ? 'auth.profile.continue' : 'auth.profile.saveChanges') | transloco }}
+      </button>
     </form>
   }
 </div>

@@ -28,6 +28,10 @@ export interface LevelTab {
  * "no absences" and "not signed in" both arrive as `[]`, and a heading over an
  * empty grid reads as a fault rather than good news.
  *
+ * "Nothing" is the CONTENT, though: the host element is still created, and in a
+ * flex or grid parent it still takes a `gap`. A page that lays rails out that
+ * way wraps each one in `@if`, so an empty rail is never created at all.
+ *
  * Two presentations, picked with `layout`:
  * - `rows` — full-width rows, what the upcoming section uses.
  * - `strip` — a horizontally scrolling Swiper rail of cards, which is how the
@@ -41,7 +45,6 @@ export interface LevelTab {
  */
 @Component({
   selector: 'app-webinar-rail',
-  host: { class: 'block' },
   imports: [SwiperStrip, WebinarCard],
   templateUrl: './webinar-rail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -59,6 +62,13 @@ export class WebinarRail {
 
   /** Lead the heading with the CAIRA wordmark, as the upcoming section does. */
   readonly withCairaMark = input(false);
+  /**
+   * `member` (default): the v3 CAIRA header — line ornaments, wordmark, big
+   * uppercase heading, optional level tabs. `guest`: v3's plainer
+   * "Webinar's This Month" header — heading and sub-copy only, no ornaments
+   * and no tabs (a guest is not filtering a CAIRA pathway).
+   */
+  readonly variant = input<'member' | 'guest'>('member');
   /** Offer the Level 1/2/3 filter, built from whatever levels the feed carries. */
   readonly withLevelTabs = input(false);
   /** Rows to show before "Show more". `0` shows everything and hides the button. */
@@ -81,7 +91,7 @@ export class WebinarRail {
    * an empty month.
    */
   protected readonly levels = computed<LevelTab[]>(() => {
-    if (!this.withLevelTabs()) return [];
+    if (!this.withLevelTabs() || this.variant() === 'guest') return [];
 
     const byNumber = new Map<number, string>();
     for (const webinar of this.webinars()) {

@@ -24,8 +24,10 @@ import {
   withIncrementalHydration,
 } from '@angular/platform-browser';
 import { provideIconsProvider } from './configuration/ng-icon';
+import { provideLanguage } from './configuration/language';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { appInterceptor } from '@core/interceptors/app/app-interceptor';
+import { loadingInterceptor } from '@core/interceptors/loading/loading-interceptor';
 import { adminTokenInterceptor } from '@admin/core/interceptors/admin-token-interceptor';
 import { devInterceptors } from '@core/interceptors/dev/dev-interceptors';
 import { Network } from '@core/services/network/network';
@@ -34,9 +36,10 @@ import { Analytics } from '@core/services/analytics/analytics';
 import { TOAST_COMPONENT } from '@core/services/notification/notification';
 import {
   CART_DRAWER_DIALOG,
+  MASTERCLASS_COURSE_INFO_DIALOG,
   SUBSCRIPTION_DIALOG,
 } from '@core/services/dialog/feature-dialog-tokens';
-import { ToastComponent } from '@shared/ui/toast/toast';
+import { Toast } from '@shared/ui/toast/toast';
 
 /**
  * Last-resort recovery from version skew, the third layer in
@@ -86,7 +89,14 @@ export const appConfig: ApplicationConfig = {
       // local/development builds still short-circuits only fully-prepared
       // requests; it no-ops unless localStorage.partnerMock is set. In
       // production the array is empty, so nothing mock-related is reachable.
-      withInterceptors([appInterceptor, adminTokenInterceptor, ...devInterceptors]),
+      // loadingInterceptor is first, so the loading bar also covers the token
+      // refresh appInterceptor waits on before sending.
+      withInterceptors([
+        loadingInterceptor,
+        appInterceptor,
+        adminTokenInterceptor,
+        ...devInterceptors,
+      ]),
     ),
     provideClientHydration(
       withEventReplay(),
@@ -105,13 +115,15 @@ export const appConfig: ApplicationConfig = {
       withNavigationErrorHandler(recoverFromStaleChunk),
     ),
     provideIconsProvider(),
+    // The visitor's language: LOCALE_ID, its locale data, and <html lang dir>.
+    provideLanguage(),
     // ng-primitives closes open dialogs on every navigation by default; the hand-rolled
     // Dialog service never did, and several dialogs change the route or query params
     // themselves. Kept as it was (Phase 10 decision, STATE.md).
     provideDialogConfig({ closeOnNavigation: false }),
     // Binds the core NotificationService to the shared toast component. Only the
     // composition root may name both sides — see TOAST_COMPONENT.
-    { provide: TOAST_COMPONENT, useValue: ToastComponent },
+    { provide: TOAST_COMPONENT, useValue: Toast },
     // Lets shared/core code open the payment cart drawer without importing the
     // payment feature. The import() stays here, so the dialog stays lazy.
     {
@@ -126,6 +138,15 @@ export const appConfig: ApplicationConfig = {
       useValue: () =>
         import('@features/payment/dialogs/subscription-dialog/subscription-dialog').then(
           (m) => m.SubscriptionDialog,
+        ),
+    },
+    // The masterclass "i" dialog, for the home page's cards (features/home may not
+    // import features/offerings).
+    {
+      provide: MASTERCLASS_COURSE_INFO_DIALOG,
+      useValue: () =>
+        import('@features/offerings/masterclass/dialogs/masterclass-course-info-dialog/masterclass-course-info-dialog').then(
+          (m) => m.MasterclassCourseInfoDialog,
         ),
     },
     // `Network` is `providedIn: 'root'` but only does its job once instantiated

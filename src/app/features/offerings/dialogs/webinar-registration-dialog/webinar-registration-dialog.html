@@ -1,4 +1,4 @@
-<app-dialog-shell ariaLabel="Reserve your seat">
+<app-dialog ariaLabel="Reserve your seat" panelClass="p-0">
   <div
     class="bg-card text-card-foreground w-[min(480px,92vw)] p-5 md:p-6 flex flex-col gap-4 border border-border"
   >
@@ -10,7 +10,18 @@
           <strong class="text-foreground">"{{ webinar().webinar_title }}"</strong>.
         </p>
       </div>
-      <app-button variant="close" size="sm" (clicked)="close()" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        size="sm"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <app-webinar-registration-form
@@ -24,4 +35,4 @@
       Once you're registered, the Zoom link and calendar invite are on their way to your inbox.
     </p>
   </div>
-</app-dialog-shell>
+</app-dialog>

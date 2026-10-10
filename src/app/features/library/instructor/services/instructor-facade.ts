@@ -14,7 +14,7 @@ import { FeatureApiResponse } from '@core/models/feature.model';
 import { InstructorListItem } from '@core/models/library.model';
 import { apiUrl } from '@core/services/api-client/api-client';
 import { parseNextPage } from '@core/utils/parse-next-page';
-import { withPreviousValue } from '@shared/utils/with-previous-value';
+import { withPreviousValue } from '@core/utils/with-previous-value';
 
 /**
  * Owns instructor-listing state for `/library/instructor-library`. Lazy by

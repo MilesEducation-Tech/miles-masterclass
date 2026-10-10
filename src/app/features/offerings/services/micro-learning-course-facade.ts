@@ -25,6 +25,7 @@ import {
   RouteRequest,
   RouteResponse,
   SKIP_ERROR_NOTIFICATION,
+  SKIP_LOADING,
 } from '@core/models/http.model';
 import {
   ChapterQuizResponse,
@@ -390,13 +391,17 @@ export class MicroLearningCourseFacade {
     this.updateLocalProgress(chapterId, timeStatus, event);
 
     const body = { chapter_id: chapterId, time_status: timeStatus, event };
-    return this.http.post<CommonResponse<void>>(MASTERCLASS_ROUTES.myClassActivity.path, body).pipe(
-      catchError((err) => {
-        this.logger.error('Failed to track reel activity', err);
-        return of(null);
-      }),
-      takeUntilDestroyed(this.destroyRef),
-    );
+    // Sent by the player on its own clock, so it never drives the loading bar.
+    const context = new HttpContext().set(SKIP_LOADING, true);
+    return this.http
+      .post<CommonResponse<void>>(MASTERCLASS_ROUTES.myClassActivity.path, body, { context })
+      .pipe(
+        catchError((err) => {
+          this.logger.error('Failed to track reel activity', err);
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      );
   }
 
   /** Details that arrived before their reel — applied by `hydrateFromArray`. */

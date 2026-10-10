@@ -15,14 +15,16 @@
         flagged rows inline, then confirm. Existing slugs are overwritten.
       </p>
     </div>
-    <app-button
-      variant="outline"
+    <button
+      app-button
+      type="button"
       class="gap-2 rounded-xl bg-slate-800/80 border-slate-700/60 text-slate-200 font-semibold hover:bg-slate-700/80"
-      (clicked)="downloadTemplate()"
+      variant="outline"
+      (click)="downloadTemplate()"
     >
       <ng-icon name="heroDocumentArrowDown" class="text-lg"></ng-icon>
       Download template
-    </app-button>
+    </button>
   </div>
 
   <!-- Upload control -->
@@ -150,36 +152,47 @@
                   }
                 </td>
                 <td class="px-3 py-2">
-                  <app-aria-input
-                    [id]="'bulk-slug-' + $index"
-                    type="text"
-                    label="Page slug"
-                    class="font-mono"
-                    [value]="row.page.page_slug"
-                    (valueChange)="updateText($index, 'page_slug', str($event))"
-                  />
+                  <app-field class="font-mono">
+                    <label ngpLabel [for]="'bulk-slug-' + $index">Page slug</label>
+
+                    <input
+                      app-input
+                      [id]="'bulk-slug-' + $index"
+                      type="text"
+                      [value]="row.page.page_slug"
+                      (input)="updateText($index, 'page_slug', str($any($event.target).value))"
+                    />
+                  </app-field>
                 </td>
                 <td class="px-3 py-2">
-                  <app-aria-input
-                    [id]="'bulk-name-' + $index"
-                    type="text"
-                    label="Page name"
-                    [value]="row.page.page_name"
-                    (valueChange)="updateText($index, 'page_name', str($event))"
-                  />
+                  <app-field>
+                    <label ngpLabel [for]="'bulk-name-' + $index">Page name</label>
+
+                    <input
+                      app-input
+                      [id]="'bulk-name-' + $index"
+                      type="text"
+                      [value]="row.page.page_name"
+                      (input)="updateText($index, 'page_name', str($any($event.target).value))"
+                    />
+                  </app-field>
                 </td>
                 <td class="px-3 py-2">
-                  <app-aria-select
-                    [id]="'bulk-type-' + $index"
-                    label="Page type"
-                    class="w-32"
-                    [options]="pageTypeOptions"
-                    [value]="row.page.page_type"
-                    (valueChange)="updateType($index, str($event))"
-                  />
+                  <app-field class="w-32">
+                    <label ngpLabel [for]="'bulk-type-' + $index">Page type</label>
+
+                    <app-select
+                      [id]="'bulk-type-' + $index"
+                      [options]="pageTypeOptions"
+                      [value]="row.page.page_type"
+                      (valueChange)="updateType($index, str($event))"
+                    />
+                  </app-field>
                 </td>
                 <td class="px-3 py-2 text-center">
-                  <app-button
+                  <button
+                    app-button
+                    type="button"
                     variant="outline"
                     size="sm"
                     [class]="
@@ -188,62 +201,76 @@
                         : 'h-auto px-2 py-1 rounded-lg text-[0.65rem] font-bold text-slate-400 border-slate-700/50 bg-slate-900/50'
                     "
                     [attr.aria-pressed]="row.page.is_active"
-                    (clicked)="toggleActive($index)"
+                    (click)="toggleActive($index)"
                   >
                     {{ row.page.is_active ? 'On' : 'Off' }}
-                  </app-button>
+                  </button>
                 </td>
                 <td class="px-3 py-2">
-                  <app-aria-input
-                    [id]="'bulk-title-' + $index"
-                    type="text"
-                    label="Title"
-                    [value]="row.page.title"
-                    (valueChange)="updateText($index, 'title', str($event))"
-                  />
+                  <app-field>
+                    <label ngpLabel [for]="'bulk-title-' + $index">Title</label>
+
+                    <input
+                      app-input
+                      [id]="'bulk-title-' + $index"
+                      type="text"
+                      [value]="row.page.title"
+                      (input)="updateText($index, 'title', str($any($event.target).value))"
+                    />
+                  </app-field>
                 </td>
                 <td class="px-3 py-2">
-                  <app-aria-input
-                    [id]="'bulk-description-' + $index"
-                    type="textarea"
-                    label="Description"
-                    [rows]="2"
-                    [value]="row.page.description"
-                    (valueChange)="updateText($index, 'description', str($event))"
-                  />
+                  <app-field>
+                    <label ngpLabel [for]="'bulk-description-' + $index">Description</label>
+
+                    <textarea
+                      app-textarea
+                      [id]="'bulk-description-' + $index"
+                      [value]="row.page.description"
+                      (input)="updateText($index, 'description', str($any($event.target).value))"
+                      [rows]="2"
+                    ></textarea>
+                  </app-field>
                 </td>
                 <td class="px-3 py-2">
-                  <app-aria-input
-                    [id]="'bulk-keywords-' + $index"
-                    type="text"
-                    label="Keywords"
-                    [value]="row.page.keywords.join(' | ')"
-                    (valueChange)="updateKeywords($index, str($event))"
-                  />
+                  <app-field>
+                    <label ngpLabel [for]="'bulk-keywords-' + $index">Keywords</label>
+
+                    <input
+                      app-input
+                      [id]="'bulk-keywords-' + $index"
+                      type="text"
+                      [value]="row.page.keywords.join(' | ')"
+                      (input)="updateKeywords($index, str($any($event.target).value))"
+                    />
+                  </app-field>
                 </td>
                 <td class="px-3 py-2">
-                  <app-aria-input
-                    [id]="'bulk-jsonld-' + $index"
-                    type="textarea"
-                    label="JSON-LD"
-                    class="font-mono"
-                    [rows]="2"
-                    placeholder="{}"
-                    [invalid]="row.error === 'Invalid JSON-LD'"
-                    [value]="row.jsonLdText"
-                    (valueChange)="updateJsonLd($index, str($event))"
-                  />
+                  <app-field class="font-mono">
+                    <label ngpLabel [for]="'bulk-jsonld-' + $index">JSON-LD</label>
+
+                    <textarea
+                      app-textarea
+                      [id]="'bulk-jsonld-' + $index"
+                      placeholder="{}"
+                      [value]="row.jsonLdText"
+                      (input)="updateJsonLd($index, str($any($event.target).value))"
+                      [rows]="2"
+                    ></textarea>
+                  </app-field>
                 </td>
                 <td class="px-3 py-2 text-center">
-                  <app-button
+                  <button
+                    app-button
+                    type="button"
+                    class="text-red-400 hover:bg-red-500/20 rounded-lg"
                     variant="ghost"
                     size="icon"
-                    class="text-red-400 hover:bg-red-500/20 rounded-lg"
-                    [ariaLabel]="'Remove row ' + ($index + 1)"
-                    (clicked)="removeRow($index)"
+                    [attr.aria-label]="'Remove row ' + ($index + 1)"
+                    (click)="removeRow($index)"
                   >
                     <ng-icon name="heroTrash" class="text-base"></ng-icon>
-                  </app-button>
+                  </button>
                 </td>
               </tr>
             }
@@ -260,11 +287,13 @@
       >
         Cancel
       </a>
-      <app-button
-        variant="primary"
+      <button
+        app-button
+        type="button"
         class="gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 font-semibold shadow-lg"
+        variant="primary"
         [disabled]="!canImport()"
-        (clicked)="confirmImport()"
+        (click)="confirmImport()"
       >
         @if (importing()) {
           <div
@@ -274,7 +303,7 @@
         } @else {
           Confirm Import ({{ summary().valid }})
         }
-      </app-button>
+      </button>
     </div>
   }
 </section>

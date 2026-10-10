@@ -13,14 +13,16 @@
     <!-- Firm selector (network admins only; firm admins are pinned server-side) -->
     @if (facade.firms().length) {
       <div class="flex items-center gap-2">
-        <app-aria-select
-          id="firm-select-v2"
-          label="Sub-company"
-          class="w-64"
-          [options]="firmOptions()"
-          [value]="facade.selectedFirmId()"
-          (valueChange)="facade.selectFirm($any($event))"
-        />
+        <app-field class="w-64">
+          <label ngpLabel for="firm-select-v2">Sub-company</label>
+
+          <app-select
+            id="firm-select-v2"
+            [options]="firmOptions()"
+            [value]="facade.selectedFirmId()"
+            (valueChange)="facade.selectFirm($any($event))"
+          />
+        </app-field>
       </div>
     }
   </header>
@@ -48,22 +50,29 @@
       <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h2 class="text-xl font-bold">Seats</h2>
         <div class="flex w-full max-w-md items-center md:w-auto">
-          <app-aria-input
-            id="seat-search-v2"
-            type="search"
-            label="Search code or email"
-            class="w-full"
-            [(value)]="searchInput"
-          />
+          <app-field class="w-full">
+            <label ngpLabel for="seat-search-v2">Search code or email</label>
+
+            <input
+              app-input
+              id="seat-search-v2"
+              type="search"
+              [value]="searchInput()"
+              (input)="searchInput.set($any($event.target).value)"
+            />
+          </app-field>
         </div>
       </div>
 
-      <app-tab-strip
-        [options]="tabLabels"
-        [selected]="activeTabLabel()"
-        (selectionChange)="onTabChange($event)"
+      <app-tabs
         aria-label="Seat status filter"
-      />
+        [value]="activeTabLabel() ?? ''"
+        (valueChange)="onTabChange($event)"
+      >
+        @for (tab of tabLabels; track tab) {
+          <app-tab [value]="tab" [label]="tab" />
+        }
+      </app-tabs>
 
       @if (facade.error()) {
         <div class="px-3 py-2 text-sm rounded-md bg-danger-bg text-danger-foreground" role="alert">

@@ -1,8 +1,10 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { Service, PLATFORM_ID, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpContext } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+import { SKIP_LOADING } from '../../models/http.model';
 import { ApiClient } from '../api-client/api-client';
 import { Storage } from '../storage/storage';
 import { Logger } from '../logger/logger';
@@ -92,7 +94,10 @@ export class Utm {
     });
   }
 
+  /** Fire-and-forget on first paint, so it never drives the loading bar. */
   private passUtmData(body: PassUtmDataRequest): Observable<unknown> {
-    return this.http.post<unknown>(TRACK_UTM_URL, body);
+    return this.http.post<unknown>(TRACK_UTM_URL, body, {
+      context: new HttpContext().set(SKIP_LOADING, true),
+    });
   }
 }

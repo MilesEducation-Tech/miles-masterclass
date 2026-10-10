@@ -25,6 +25,8 @@ export interface NavItem {
   style?: NavButtonStyle;
   /** Small pill rendered next to the label, e.g. `'Beta'`. */
   badge?: string;
+  /** Draws the hand-drawn accent underline under a nav link (desktop + mobile drawer). */
+  highlight?: boolean;
   /** Hides the item unless the corresponding capability is satisfied. */
   requires?: NavRequirement;
   icon?: string;

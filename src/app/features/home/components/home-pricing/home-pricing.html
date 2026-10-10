@@ -1,0 +1,93 @@
+<div class="grid items-center gap-12 md:grid-cols-[1fr_minmax(0,498px)] md:gap-[8%]">
+  <div class="flex flex-col gap-12">
+    <h2 class="text-3xl leading-tight font-bold md:text-[42px] md:leading-[48px]">
+      AI-Readiness Plan. Unlimited CPE Credits
+    </h2>
+
+    <div class="space-y-3">
+      <p class="text-muted-foreground text-xs font-bold uppercase">What's included:</p>
+      <ul class="space-y-3">
+        @for (item of included; track item) {
+          <li class="flex items-start gap-3 text-sm leading-[22px]">
+            <ng-icon name="lucideCheck" class="mt-1 size-4 shrink-0" aria-hidden="true" />
+            {{ item }}
+          </li>
+        }
+      </ul>
+    </div>
+  </div>
+
+  <div class="flex flex-col items-center gap-7">
+    <div class="relative flex h-[302px] w-[304px] max-w-full items-center justify-center">
+      <!-- The design's rotating blue halo (Figma 2175:26188): an ellipse, so the
+           spin reads. `animate-home-pricing-glow` is a @theme token in styles.css. -->
+      <span
+        class="animate-home-pricing-glow motion-reduce:animate-none bg-accent/40 absolute h-[45%] w-[70%] rounded-full blur-3xl"
+        aria-hidden="true"
+      ></span>
+      <img
+        [ngSrc]="appIcon"
+        alt=""
+        fill
+        draggable="false"
+        class="object-contain mask-radial-from-60% mask-radial-to-95% animate-[bounce_3s_infinite] motion-reduce:animate-none"
+      />
+    </div>
+
+    <div class="flex w-full flex-col items-center gap-6 text-center">
+      @if (price(); as p) {
+        <div>
+          <p class="text-[40px] leading-10 font-bold">
+            @if (p.primary.discountPercent > 0 && p.primary.baseAmount !== null) {
+              <span class="mr-2 text-xl font-normal text-neutral-500 line-through">
+                {{ p.primary.baseAmount | currency: p.primary.currency : 'symbol' : '1.0-0' }}
+              </span>
+            }
+            {{ p.primary.amount | currency: p.primary.currency : 'symbol' : '1.0-0'
+            }}{{ p.primary.suffix }}
+          </p>
+          @if (p.primary.commitmentMonths > 0) {
+            <p class="text-muted-foreground mt-1 text-xs">
+              {{ p.primary.commitmentMonths }}-month commitment
+            </p>
+          }
+          <!-- Where a Monthly plan exists the design shows both figures
+               ("$79 / month", "Or", "$948 / Yearly"); elsewhere the one card's own
+               label explains the term. -->
+          @if (p.secondary; as alt) {
+            <p class="text-muted-foreground mt-2 text-sm">Or</p>
+            <p class="mt-1 text-xl font-bold">
+              {{ alt.amount | currency: alt.currency : 'symbol' : '1.0-0' }}{{ alt.suffix }}
+            </p>
+          } @else {
+            <p class="text-muted-foreground mt-1 text-sm">{{ p.primary.label }}</p>
+          }
+        </div>
+        <p class="text-muted-foreground text-xs">Prices in {{ p.currencies }}.</p>
+      }
+
+      <a
+        [routerLink]="planLink()"
+        class="inline-flex h-11 w-full max-w-[334px] items-center justify-center rounded-xl bg-white px-5 text-sm font-bold whitespace-nowrap text-black transition-colors duration-200 hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 motion-reduce:transition-none"
+      >
+        Subscribe Now
+      </a>
+
+      <!-- Becomes a link to the live-webinar section once that section has a
+           row to show (follow-up F5). -->
+      <p class="text-accent text-sm leading-[22px]">
+        Join the free 101 webinar to build your AI agent and get 25% off.
+      </p>
+
+      <p class="text-muted-foreground text-sm">
+        Rolling it out to your firm? Let's connect on enterprise pricing.
+        <a
+          [routerLink]="contactLink()"
+          class="font-bold text-white underline-offset-4 hover:underline"
+        >
+          Talk to us <span aria-hidden="true">→</span>
+        </a>
+      </p>
+    </div>
+  </div>
+</div>

@@ -1,15 +1,25 @@
-<app-dialog-shell maxWidth="100%" ariaLabel="Miles AI Labs participant agreement">
+<app-dialog ariaLabel="Miles AI Labs participant agreement" panelClass="p-0 max-w-full">
   <!-- Dark card matching the AI Labs page, built from site tokens rather than a
      second palette — same reasoning as the page itself. -->
   <div
     class="relative flex max-h-[85vh] w-[min(640px,92vw)] flex-col overflow-hidden rounded-2xl border border-border bg-muted"
   >
-    <div class="absolute top-3 right-3 z-10">
-      <app-button variant="close" (clicked)="dialogRef.close()" />
+    <div class="absolute top-3 end-3 z-10">
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="dialogRef.close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <div class="shrink-0 px-6 pt-6 pb-4">
-      <h2 id="ai-lab-terms-title" class="pr-10 text-lg font-semibold text-foreground">
+      <h2 id="ai-lab-terms-title" class="pe-10 text-lg font-semibold text-foreground">
         Miles AI Labs — Participant Agreement
       </h2>
       <p class="mt-2 text-sm text-muted-foreground">
@@ -59,11 +69,13 @@
             </ul>
           }
           @case ('table') {
-            <table class="w-full border-collapse text-left text-sm">
+            <table class="w-full border-collapse text-start text-sm">
               <thead>
                 <tr>
                   @for (cell of block.head; track cell) {
-                    <th class="border-b border-border py-2 pr-4 font-medium text-foreground">
+                    <th
+                      class="border-b border-border py-2 pe-4 text-start font-medium text-foreground"
+                    >
                       {{ cell }}
                     </th>
                   }
@@ -73,7 +85,7 @@
                 @for (row of block.rows; track $index) {
                   <tr>
                     @for (cell of row; track $index) {
-                      <td class="border-b border-border py-2 pr-4 align-top text-muted-foreground">
+                      <td class="border-b border-border py-2 pe-4 align-top text-muted-foreground">
                         {{ cell }}
                       </td>
                     }
@@ -95,14 +107,20 @@
         </p>
       }
 
-      <app-aria-input
-        id="ai-lab-terms-consent"
-        type="checkbox"
-        [required]="true"
-        [disabled]="!atBottom()"
-        label="I have read and agree to these terms, and consent to registration with the University and to the processing of my personal data as described."
-        [(value)]="accepted"
-      />
+      <app-field class="flex-row items-start gap-3">
+        <app-checkbox
+          id="ai-lab-terms-consent"
+          [required]="true"
+          [disabled]="!atBottom()"
+          [(checked)]="accepted"
+        />
+        <div class="flex flex-col gap-0.5">
+          <span ngpLabel
+            >I have read and agree to these terms, and consent to registration with the University
+            and to the processing of my personal data as described.</span
+          >
+        </div>
+      </app-field>
 
       <!-- Spacing goes on the wrapper, never on `app-button`: its `class` is both a
          host attribute and an input merged into the inner <button>, so a margin
@@ -111,15 +129,17 @@
          lands on the host, so the button's own `disabled:opacity-50` is painted
          over by an undimmed host and the button reads as enabled. -->
       <div class="mt-5" [class.opacity-50]="accepted() !== true">
-        <app-button
+        <button
+          app-button
+          type="button"
           class="h-12 w-full rounded-xl bg-accent text-base hover:bg-accent/90"
           variant="primary"
           [disabled]="accepted() !== true"
-          (clicked)="launch()"
+          (click)="launch()"
         >
           Launch the Lab
-        </app-button>
+        </button>
       </div>
     </div>
   </div>
-</app-dialog-shell>
+</app-dialog>

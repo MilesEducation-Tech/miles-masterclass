@@ -1,7 +1,7 @@
 <div class="w-full aspect-9/16 overflow-hidden rounded-lg flex flex-col relative group/card">
   <button
     type="button"
-    class="absolute top-3 right-3 z-30 size-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center pointer-events-auto cursor-pointer transition-colors"
+    class="absolute top-3 end-3 z-30 size-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center pointer-events-auto cursor-pointer transition-colors"
     [attr.aria-label]="card().added_bookmark ? 'Remove bookmark' : 'Add bookmark'"
     (click)="toggleBookmark($event)"
   >
@@ -40,7 +40,7 @@
     }
   </div>
   <div
-    class="absolute left-0 bottom-0 w-full h-full flex flex-col justify-end bg-linear-to-t from-background from-20% via-background/70 via-30% to-50% to-transparent z-10 group-hover/card:opacity-100 transition-opacity duration-300 opacity-0 p-4 space-y-2 pointer-events-none"
+    class="absolute start-0 bottom-0 w-full h-full flex flex-col justify-end bg-linear-to-t from-background from-20% via-background/70 via-30% to-50% to-transparent z-10 group-hover/card:opacity-100 transition-opacity duration-300 opacity-0 p-4 space-y-2 pointer-events-none"
   >
     <div class="flex flex-col items-center justify-end gap-2">
       <app-categories-list
@@ -71,14 +71,16 @@
     <div class="flex justify-between items-center space-x-2 pointer-events-auto">
       @if (card().has_additional_resources) {
         <!-- Compact icon-only Trailer makes room for the AI Kit CTA -->
-        <app-button
-          size="icon"
+        <button
+          app-button
+          type="button"
           class="shrink-0 bg-white text-black rounded-full! hover:bg-white hover:text-black"
-          ariaLabel="Watch trailer"
-          (clicked)="openVideoDialog()"
+          size="icon"
+          aria-label="Watch trailer"
+          (click)="openVideoDialog()"
         >
           <ng-icon [svg]="icons().faSolidPlay" class="size-4" />
-        </app-button>
+        </button>
         <div
           class="flex flex-1 rounded-full justify-center items-center bg-linear-to-r from-white to-transparent to-70% p-px overflow-hidden"
           role="button"
@@ -87,19 +89,26 @@
           (keydown.enter)="openAdditionalResources()"
           (keydown.space)="openAdditionalResources(); $event.preventDefault()"
         >
-          <app-button variant="ghost" class="w-full bg-background rounded-full! gap-2">
+          <button
+            app-button
+            type="button"
+            class="w-full bg-background rounded-full! gap-2"
+            variant="ghost"
+          >
             <ng-icon [svg]="icons().faSolidRobot" class="size-4" />
             AI Kit
-          </app-button>
+          </button>
         </div>
       } @else {
-        <app-button
+        <button
+          app-button
+          type="button"
           class="w-full bg-white text-black rounded-md hover:bg-white hover:text-black gap-2"
-          (clicked)="openVideoDialog()"
+          (click)="openVideoDialog()"
         >
           <ng-icon [svg]="icons().faSolidPlay" class="size-4" />
           Trailer
-        </app-button>
+        </button>
       }
       <div
         class="flex items-center justify-center size-10 aspect-square bg-secondary rounded-full outline outline-white/40 cursor-pointer shrink-0"

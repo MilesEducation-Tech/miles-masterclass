@@ -12,7 +12,9 @@ export const environment = {
    */
   SITE_URL: 'https://www.milesmasterclass.com',
 
-  BASE_API_URL: 'https://api.milescaira.com/',
+  // why: the live API isn't up yet, so production points at UAT for now.
+  // Switch back to 'https://api.milescaira.com/' once it is.
+  BASE_API_URL: 'https://uat-api.milescaira.com/',
 
   /**
    * Dev-only key for the Miles SSO support OTP-reveal endpoint, used by the
@@ -47,11 +49,11 @@ export const environment = {
      * Whether "Join" opens the in-app `/live` page (Zoom Meeting SDK + session
      * lease) or the registrant's own `join_url` in Zoom.
      *
-     * OFF until the backend ships it. `EVENTS_API_CONTRACT_V1` has no
-     * `attendance-session/*` and no `meeting-sdk-signature` route, so the
-     * embedded page cannot acquire a lease or mint a signature — it would show
-     * a spinner and a 404. The page, the SDK and the lease client all ship
-     * inert behind this; flipping it to `true` is the whole cutover.
+     * OFF in production until QA signs off on a preview (MIL-43). The backend
+     * routes exist (`attendance-session/*`, `meeting-sdk-signature/`) and the
+     * development and local builds turn this on. Flipping it to `true` here is
+     * the whole production cutover; each webinar still needs the backend's own
+     * `registration.route_to_web_lms` switch.
      */
     liveEnabled: false,
     /** Custom (non-Zoom) poll surface. Flip on once the poll API ships. */
@@ -63,15 +65,6 @@ export const environment = {
      * terminal but reports as `PENDING`, so an uncapped loop spins forever.
      */
     registrationPollCapSeconds: 45,
-  },
-
-  // MilesVerse API origin. Empty = MilesVerse pages show not-connected.
-  MILESVERSE_API_URL: 'https://api.milesverse.ai',
-
-  MILESVERSE_SSO: {
-    token: '',
-    orgId: 'daad80f2-95ee-47db-b65c-6e029b4f710d',
-    applicationId: 'f701288a-f040-471f-bd83-8d33e8f15f3c',
   },
 
   /**
@@ -252,4 +245,16 @@ export const environment = {
   },
 
   PAYMENT_TEST_SSN: '207646057',
+
+  /**
+   * Languages this build may resolve a visitor to (`LanguageContext`). Anything else in a cookie or
+   * `Accept-Language` is skipped, so a half-translated language never reaches real users.
+   * Production lists a language only once it is fully translated (prompts/language-i18n.md).
+   * `enabled: false` turns the feature off without editing the list: every visitor gets English
+   * and no switcher renders, exactly as with `languages: ['en']`.
+   */
+  I18N: {
+    enabled: false, // master switch for this environment
+    languages: ['en'],
+  },
 };

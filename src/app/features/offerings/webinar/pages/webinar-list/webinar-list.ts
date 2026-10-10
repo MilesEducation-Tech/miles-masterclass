@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DOCUMENT, computed, inject } from '
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { NotificationService } from '@core/services/notification/notification';
-import { WebinarFaq } from '../../components/webinar-faq/webinar-faq';
+import { Faq } from '@shared/components/faq/faq';
 import { WebinarHero } from '../../components/webinar-hero/webinar-hero';
 import { WebinarMeetCta } from '../../components/webinar-meet-cta/webinar-meet-cta';
 import { WebinarRail } from '../../components/webinar-rail/webinar-rail';
@@ -20,7 +20,7 @@ import { WebinarRegistration } from '../../services/webinar-registration';
  */
 @Component({
   selector: 'app-webinar-list',
-  imports: [WebinarFaq, WebinarHero, WebinarMeetCta, WebinarRail],
+  imports: [Faq, WebinarHero, WebinarMeetCta, WebinarRail],
   templateUrl: './webinar-list.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -42,15 +42,25 @@ export class WebinarList {
    * It has to be the SESSION that decides this, not whether those buckets have
    * rows: `missed_webinar` comes back populated for an anonymous caller too,
    * and a visitor with no account has not "missed" anything — every past
-   * session would qualify. `isPreview` is always false outside a development
-   * build, and the branch is stripped from production bundles.
+   * session would qualify.
    */
-  protected readonly isSignedOut = computed(
-    () => !this.auth.isAuthenticated() && !this.facade.isPreview(),
-  );
+  protected readonly isSignedOut = computed(() => !this.auth.isAuthenticated());
 
   protected onRegister(webinarId: string): void {
+    // A guest's seat is booked from the hero card (sign in + register), so
+    // "Book Now" on a row takes them there rather than to a dialog. With no
+    // hero on the page the facade's sign-in prompt is still the fallback.
+    if (this.isSignedOut() && this.facade.heroWebinar() && this.focusSeatForm()) return;
     void this.facade.register(webinarId);
+  }
+
+  /** Scroll the guest hero's seat form into view and focus it. */
+  private focusSeatForm(): boolean {
+    const field = this.window.document.getElementById('seat-identifier');
+    if (!field) return false;
+    field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    field.focus({ preventScroll: true });
+    return true;
   }
 
   protected onJoin(webinarId: string): void {

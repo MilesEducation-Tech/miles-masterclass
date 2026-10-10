@@ -20,16 +20,16 @@
     @if (!embedded) {
       <aside class="hidden lg:block lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-6rem)]">
         <nav
-          class="overflow-y-auto pr-3 max-h-[calc(100vh-7rem)]"
+          class="overflow-y-auto pe-3 max-h-[calc(100vh-7rem)]"
           role="navigation"
           aria-label="Document sections"
         >
-          <ul class="space-y-1 border-l border-white/10">
+          <ul class="space-y-1 border-s border-white/10">
             @for (item of navItems(); track item.id) {
               <li>
                 <button
                   type="button"
-                  class="block w-full text-left px-4 py-2 text-sm transition-colors border-l-2 -ml-px"
+                  class="block w-full text-start px-4 py-2 text-sm transition-colors border-s-2 -ms-px"
                   [class.border-primary]="activeSection() === item.id"
                   [class.text-white]="activeSection() === item.id"
                   [class.bg-primary]="activeSection() === item.id"

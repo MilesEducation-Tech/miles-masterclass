@@ -12,9 +12,12 @@ import { Spinner } from '@shared/ui/spinner/spinner';
 import { AdminAuth } from '@admin/core/services/admin-auth';
 import { PERM } from '@admin/core/models/admin-rbac.model';
 import { FirmInquiry, LEAD_STATUSES, LeadStatus } from '@admin/leads/models/firm-inquiry.model';
-import { AriaInput } from '@shared/ui/aria/aria-input/aria-input';
-import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+
 import { AriaSelectOption } from '@core/models/aria.model';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Textarea } from '@shared/ui/textarea/textarea';
+import { Select } from '@shared/ui/select/select';
 
 /** bg/fg CSS-var pair per status for the badge. */
 const STATUS_STYLE: Record<LeadStatus, { bg: string; fg: string }> = {
@@ -31,11 +34,13 @@ const STATUS_STYLE: Record<LeadStatus, { bg: string; fg: string }> = {
     Button,
     Spinner,
     NgIcon,
-    AriaInput,
-    AriaSelect,
     NgpCollapsible,
     NgpCollapsibleContent,
     NgpCollapsibleTrigger,
+    Field,
+    NgpLabel,
+    Textarea,
+    Select,
   ],
   providers: [provideIcons({ lucideChevronDown, lucideChevronRight })],
   templateUrl: './leads-table.html',
@@ -100,6 +105,17 @@ export class LeadsTable {
   }
 
   /** `app-aria-input` emits `unknown` — coerce before it reaches the PATCH body. */
+  /** Unsaved note text per row; the textarea is native, so the draft lives here. */
+  private readonly drafts = signal<Record<number, string>>({});
+
+  protected draft(id: number, saved: string | null | undefined): string {
+    return this.drafts()[id] ?? saved ?? '';
+  }
+
+  protected onNotesInput(id: number, value: string): void {
+    this.drafts.update((drafts) => ({ ...drafts, [id]: value }));
+  }
+
   protected onNotesSave(id: number, value: unknown): void {
     this.notesChange.emit({ id, notes: String(value ?? '') });
   }

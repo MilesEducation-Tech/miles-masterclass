@@ -80,15 +80,15 @@
                 [ngpCollapsibleOpen]="isExpanded(key)"
                 (ngpCollapsibleOpenChange)="toggleExpand(key)"
                 class="overflow-hidden rounded-lg border border-border bg-muted transition-all duration-200"
-                [class.border-l-4]="!step.passed"
-                [class.border-l-destructive]="!step.passed"
+                [class.border-s-4]="!step.passed"
+                [class.border-s-destructive]="!step.passed"
               >
                 <button
                   type="button"
                   ngpCollapsibleTrigger
-                  class="flex w-full cursor-pointer items-center justify-between gap-4 p-4 text-left hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  class="flex w-full cursor-pointer items-center justify-between gap-4 p-4 text-start hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
-                  <span class="flex flex-1 items-center gap-4 pr-2">
+                  <span class="flex flex-1 items-center gap-4 pe-2">
                     <span class="w-6 shrink-0 text-gray-400">{{ i + 1 }}.</span>
                     <span
                       class="line-clamp-2 font-medium text-gray-200 select-none md:line-clamp-1"
@@ -115,12 +115,13 @@
                       [svg]="icons().chevron"
                       class="text-gray-400 transition-transform duration-200"
                       [class.rotate-90]="isExpanded(key)"
+                      [class.rtl:-rotate-90]="isExpanded(key)"
                     />
                   </span>
                 </button>
 
                 <!-- `data-[closed]:grid!` beats the global display:none on closed collapsibles
-                     (styles.css) so the 0fr/1fr animation survives, as in `faq-item`. -->
+                     (styles.css) so the 0fr/1fr animation survives, as in `app-faq`. -->
                 <div
                   ngpCollapsibleContent
                   class="grid data-[closed]:grid! transition-[grid-template-rows] duration-300 ease-out"
@@ -163,7 +164,7 @@
               >
                 <span
                   ngpSwitchThumb
-                  class="inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white transition-transform data-[checked]:translate-x-6"
+                  class="inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white transition-transform data-[checked]:translate-x-6 rtl:-translate-x-1 rtl:data-[checked]:-translate-x-6"
                 ></span>
               </button>
               <span class="text-xs text-gray-400 md:text-sm">Wrong only</span>
@@ -178,15 +179,15 @@
                 [ngpCollapsibleOpen]="isExpanded(key)"
                 (ngpCollapsibleOpenChange)="toggleExpand(key)"
                 class="overflow-hidden rounded-lg border border-border bg-muted transition-all duration-200"
-                [class.border-l-4]="!item.isCorrect"
-                [class.border-l-destructive]="!item.isCorrect"
+                [class.border-s-4]="!item.isCorrect"
+                [class.border-s-destructive]="!item.isCorrect"
               >
                 <button
                   type="button"
                   ngpCollapsibleTrigger
-                  class="flex w-full cursor-pointer items-center justify-between gap-4 p-4 text-left hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  class="flex w-full cursor-pointer items-center justify-between gap-4 p-4 text-start hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
-                  <span class="flex flex-1 items-center gap-4 pr-2">
+                  <span class="flex flex-1 items-center gap-4 pe-2">
                     <span class="w-6 shrink-0 text-gray-400">{{ i + 1 }}.</span>
                     <span
                       class="line-clamp-2 font-medium text-gray-200 select-none md:line-clamp-1"
@@ -216,13 +217,14 @@
                       [svg]="icons().chevron"
                       class="text-gray-400 transition-transform duration-200"
                       [class.rotate-90]="isExpanded(key)"
+                      [class.rtl:-rotate-90]="isExpanded(key)"
                     />
                   </span>
                 </button>
 
                 <!-- Expanded details. The 0fr/1fr grid trick animates to auto height. -->
                 <!-- `data-[closed]:grid!` beats the global display:none on closed collapsibles
-                     (styles.css) so the 0fr/1fr animation survives, as in `faq-item`. -->
+                     (styles.css) so the 0fr/1fr animation survives, as in `app-faq`. -->
                 <div
                   ngpCollapsibleContent
                   class="grid data-[closed]:grid! transition-[grid-template-rows] duration-300 ease-out"
@@ -322,20 +324,20 @@
             </li>
             <li class="md:text-base text-sm">
               Instructional Delivery Method:
-              <span class="text-white font-medium ml-2">{{ card().int_delivery_method }}</span>
+              <span class="text-white font-medium ms-2">{{ card().int_delivery_method }}</span>
             </li>
             <li class="md:text-base text-sm">
               Program Level:
-              <span class="text-white font-medium ml-2">{{ card().program_level }}</span>
+              <span class="text-white font-medium ms-2">{{ card().program_level }}</span>
             </li>
             <li class="md:text-base text-sm">
               Prerequisite Education:
-              <span class="text-white font-medium ml-2">{{ card().prerequisite_education }}</span>
+              <span class="text-white font-medium ms-2">{{ card().prerequisite_education }}</span>
             </li>
             @if (card().advance_preparation) {
               <li class="md:text-base text-sm">
                 Advanced Preparation:
-                <span class="text-white font-medium ml-2">{{ card().advance_preparation }}</span>
+                <span class="text-white font-medium ms-2">{{ card().advance_preparation }}</span>
               </li>
             }
           </ul>
@@ -377,7 +379,7 @@
             <h4 class="text-white md:text-lg text-base font-medium">
               To earn CPE credits, the learner is expected to:
             </h4>
-            <ul class="flex flex-col gap-2 text-gray-400 list-disc pl-5">
+            <ul class="flex flex-col gap-2 text-gray-400 list-disc ps-5">
               <li class="md:text-base text-sm">Complete all videos and chapter quizzes</li>
               <li class="md:text-base text-sm">
                 Complete the final exam within one year from completing the course

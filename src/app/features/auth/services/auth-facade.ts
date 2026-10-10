@@ -2,6 +2,7 @@ import { environment } from '@env/environment';
 import { DestroyRef, Service, computed, inject, signal } from '@angular/core';
 import { email, form, required, validate, validateHttp } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslocoService } from '@jsverse/transloco';
 
 import { CountryCodeOption, dialCodeWithLength } from '@core/constants/dial-code';
 import {
@@ -73,7 +74,7 @@ const IDENTIFY_DEBOUNCE_MS = 400;
 @Service({ autoProvided: false })
 export class AuthFacade {
   /**
-   * How many boxes `<app-otp>` renders AND what the validator demands — one
+   * How many boxes `<app-input-otp>` renders AND what the validator demands — one
    * value for both, so they cannot disagree.
    *
    * ponytail: the contract says the length is set server-side at the SSO, but
@@ -86,6 +87,10 @@ export class AuthFacade {
   private readonly auth = inject(AuthSession);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  // Synchronous: the route's resolver merged the `auth.*` dictionary before this facade was created.
+  private readonly transloco = inject(TranslocoService);
+  private readonly t = (key: string, params?: Record<string, unknown>): string =>
+    this.transloco.translate(key, params);
 
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
@@ -102,7 +107,10 @@ export class AuthFacade {
   /** Which login method the tab strip has selected. */
   readonly loginMethod = signal<'PHONE' | 'EMAIL'>('PHONE');
 
-  /** Tab labels rendered by `app-tab-strip` on the login form. */
+  /**
+   * Tab values for `app-tabs` on the login form. They stay English because `selectLoginMethod`
+   * keys off them; the template translates the visible label (`auth.login.tabs.<value>`).
+   */
   readonly loginMethodTabs = ['Mobile', 'Email'] as const;
 
   /** The tab label that maps to the current `loginMethod`. */
@@ -157,17 +165,15 @@ export class AuthFacade {
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
   });
 
-  readonly otpDeliveryNote = computed(() => {
-    switch (this.channel()) {
-      case 'email':
-        return 'by email';
-      case 'whatsapp':
-        return 'on WhatsApp';
-      case 'sms':
-        return 'by SMS';
-      default:
-        return '';
-    }
+  /**
+   * "Code sent by SMS to", ahead of the identifier. A whole phrase per channel, not a channel word
+   * dropped into one sentence, so each language can place it where its grammar wants. `channel` is
+   * open-ended (`OtpChannel`), so anything unknown gets the channel-free phrase, never a raw key.
+   */
+  readonly otpSentTo = computed(() => {
+    const channel = this.channel();
+    const known = channel === 'email' || channel === 'whatsapp' || channel === 'sms';
+    return this.t(`auth.otp.sentTo.${known ? channel : 'other'}`);
   });
 
   readonly authModel = signal<AuthModel>({ identifier: '', country_code: '+1', consent: false });
@@ -220,9 +226,9 @@ export class AuthFacade {
    * template's `labelLink` slot, which sits immediately after this text.
    */
   readonly consentLabel = computed(() =>
-    this.loginMethod() === 'PHONE'
-      ? 'I agree to receive recurring informational and promotional messages from Miles Masterclass via SMS and WhatsApp, including webinar registration confirmations, reminders, joining instructions, educational updates, course information and offers, sent using automated technology. Message frequency may vary. Message and data rates may apply. Reply STOP to opt out or HELP for assistance, or contact'
-      : "I'd like to receive promotional and informational emails from Miles Masterclass, including invitations to upcoming events, program updates, and offers. I can unsubscribe at any time using the link in any email.",
+    this.t(
+      this.loginMethod() === 'PHONE' ? 'auth.login.consent.phone' : 'auth.login.consent.email',
+    ),
   );
 
   /** Support address surfaced in the Mobile consent copy. */
@@ -255,7 +261,7 @@ export class AuthFacade {
 
       if (this.loginMethod() === 'PHONE') {
         if (!/^\d+$/.test(value())) {
-          return { kind: 'pattern', message: 'Must be digits' };
+          return { kind: 'pattern', message: this.t('auth.login.errors.digitsOnly') };
         }
         const selectedCode = this.countryCodes().find(
           (c) => c.CountryCode === this.authModel().country_code,
@@ -264,10 +270,10 @@ export class AuthFacade {
           const min = selectedCode.phLengthMin ?? 7;
           const max = selectedCode.phLengthMax ?? 18;
           if (value().length < min) {
-            return { kind: 'minlength', message: `Minimum length is ${min}` };
+            return { kind: 'minlength', message: this.t('auth.login.errors.minLength', { min }) };
           }
           if (value().length > max) {
-            return { kind: 'maxlength', message: `Maximum length is ${max}` };
+            return { kind: 'maxlength', message: this.t('auth.login.errors.maxLength', { max }) };
           }
         }
       }
@@ -277,19 +283,23 @@ export class AuthFacade {
     // Built-in, and only while the Email tab is showing.
     email(loginSchema.identifier, {
       when: () => this.loginMethod() === 'EMAIL',
-      message: 'Invalid Email Address',
+      message: this.t('auth.login.errors.invalidEmail'),
     });
 
     validate(loginSchema.country_code, ({ value }) => {
       if (this.loginMethod() !== 'PHONE') return null;
-      if (!value()) return { kind: 'required', message: 'Country code is required' };
+      if (!value()) {
+        return { kind: 'required', message: this.t('auth.login.errors.countryCodeRequired') };
+      }
       const selectedCode = this.countryCodes().find(
         (c) => c.CountryCode === this.authModel().country_code,
       );
-      return selectedCode ? null : { kind: 'required', message: 'Invalid Country code' };
+      return selectedCode
+        ? null
+        : { kind: 'required', message: this.t('auth.login.errors.countryCodeInvalid') };
     });
 
-    required(loginSchema.identifier, { message: 'Please enter your email or phone number' });
+    required(loginSchema.identifier, { message: this.t('auth.login.errors.identifierRequired') });
 
     /**
      * `auth-identify/` — "how does this person authenticate?" — as an async
@@ -329,8 +339,7 @@ export class AuthFacade {
         if (methods.length && !methods.some(isOtpMethod)) {
           return {
             kind: 'sso_only',
-            message:
-              'This account signs in through your organisation. Please use your company sign-in page.',
+            message: this.t('auth.login.errors.ssoOnly'),
           };
         }
         // Nothing positive is reported: identify answers identically for a known
@@ -345,16 +354,21 @@ export class AuthFacade {
   });
 
   readonly otpForm = form<OtpModel>(this.otpModel, (otpSchema) => {
-    required(otpSchema.otp, { message: 'Please enter the OTP' });
-    // Must match `[length]` on `<app-otp>` in login.html — the input renders
+    required(otpSchema.otp, { message: this.t('auth.otp.errors.required') });
+    // Must match `[length]` on `<app-input-otp>` in login.html — the input renders
     // that many boxes, and a shorter minimum here would enable Verify on a
     // half-typed code.
     validate(otpSchema.otp, ({ value }) => {
       const code = value();
       if (!code) return null;
-      if (!/^\d+$/.test(code)) return { kind: 'pattern', message: 'Digits only' };
+      if (!/^\d+$/.test(code)) {
+        return { kind: 'pattern', message: this.t('auth.otp.errors.digitsOnly') };
+      }
       if (code.length !== this.otpLength) {
-        return { kind: 'minlength', message: `OTP must be ${this.otpLength} digits` };
+        return {
+          kind: 'minlength',
+          message: this.t('auth.otp.errors.length', { length: this.otpLength }),
+        };
       }
       return null;
     });

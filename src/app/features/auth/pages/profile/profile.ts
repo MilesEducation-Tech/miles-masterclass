@@ -2,6 +2,7 @@ import { Component, computed, inject, linkedSignal, signal } from '@angular/core
 import { Router } from '@angular/router';
 import { FormField, applyEach, form, hidden, required, validate } from '@angular/forms/signals';
 import { Observable, from, map, switchMap } from 'rxjs';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 
 import { NgpCheckbox } from 'ng-primitives/checkbox';
 import { NgpDescription, NgpFormField, NgpLabel } from 'ng-primitives/form-field';
@@ -168,6 +169,7 @@ export function rowDefaults(user: UserDetails | null): Record<string, string> {
     Select,
     Button,
     Spinner,
+    TranslocoPipe,
   ],
   templateUrl: './profile.html',
   host: {
@@ -183,6 +185,10 @@ export class Profile {
   private readonly notify = inject(NotificationService);
   private readonly logger = inject(Logger);
   private readonly dialogs = inject(NgpDialogManager);
+  // Synchronous: the auth route's resolver merged the `auth.*` dictionary before this page rendered.
+  private readonly transloco = inject(TranslocoService);
+  private readonly t = (key: string, params?: Record<string, unknown>): string =>
+    this.transloco.translate(key, params);
 
   readonly isSaving = signal(false);
   /** Per-question messages from a 400, which this API keys by question code. */
@@ -301,7 +307,7 @@ export class Profile {
 
       required(item.text, {
         when: ({ valueOf }) => this.requiresSlot(valueOf(item.code), 'text'),
-        message: 'This answer is required.',
+        message: this.t('auth.profile.errors.required'),
       });
 
       // `choices` needs BOTH rules, and neither is redundant:
@@ -318,7 +324,7 @@ export class Profile {
       });
       validate(item.choices, ({ valueOf, value }) =>
         this.requiresSlot(valueOf(item.code), 'choices') && value().length === 0
-          ? { kind: 'required', message: 'Choose an option.' }
+          ? { kind: 'required', message: this.t('auth.profile.errors.chooseOption') }
           : null,
       );
 
@@ -464,9 +470,10 @@ export class Profile {
       // required, shown question has an answer. A non-empty `missing` is NOT an
       // error — it is a partial save, which is a supported thing to do.
       if (result.missing.length) {
+        const count = result.missing.length;
         this.notify.info(
-          'Saved',
-          `Still to answer: ${result.missing.length} question${result.missing.length === 1 ? '' : 's'}.`,
+          this.t('auth.profile.toast.saved'),
+          this.t(`auth.profile.toast.stillToAnswer.${count === 1 ? 'one' : 'other'}`, { count }),
         );
         return;
       }
@@ -485,7 +492,7 @@ export class Profile {
         await this.auth.forceRefresh();
       }
 
-      this.notify.success('Saved', 'Your profile has been updated.');
+      this.notify.success(this.t('auth.profile.toast.saved'), this.t('auth.profile.toast.updated'));
       if (this.isOnboarding()) await this.router.navigateByUrl('/');
     } catch (err) {
       this.applyFieldErrors(err);
@@ -515,16 +522,19 @@ export class Profile {
     const opened = import('@shared/dialogs/utils-dialog/utils-dialog').then(({ UtilsDialog }) =>
       this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
         data: {
-          title: 'Leave without saving?',
-          content: [
-            {
-              type: 'text',
-              value: 'Your answers have not been saved yet and will be lost if you leave now.',
-            },
-          ],
+          title: this.t('auth.profile.leave.title'),
+          content: [{ type: 'text', value: this.t('auth.profile.leave.body') }],
           buttons: [
-            { label: 'Keep editing', variant: 'outline', action: 'close' },
-            { label: 'Leave', variant: 'destructive', action: 'confirm' },
+            {
+              label: this.t('auth.profile.leave.keepEditing'),
+              variant: 'outline',
+              action: 'close',
+            },
+            {
+              label: this.t('auth.profile.leave.confirm'),
+              variant: 'destructive',
+              action: 'confirm',
+            },
           ],
         },
       }),
@@ -553,13 +563,13 @@ export class Profile {
       const orphan = Object.entries(parsed.fields).find(([code]) => !shown.has(code));
       if (!orphan) return;
       this.logger.error('Profile save failed', err);
-      this.notify.error('Save failed', orphan[1]);
+      this.notify.error(this.t('auth.profile.toast.saveFailed'), orphan[1]);
       return;
     }
     this.logger.error('Profile save failed', err);
     this.notify.error(
-      'Save failed',
-      parsed.message ?? 'Could not save your profile. Please try again.',
+      this.t('auth.profile.toast.saveFailed'),
+      parsed.message ?? this.t('auth.profile.toast.couldNotSave'),
     );
   }
 }

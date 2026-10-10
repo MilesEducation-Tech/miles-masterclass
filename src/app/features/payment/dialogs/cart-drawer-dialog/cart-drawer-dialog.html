@@ -1,9 +1,20 @@
-<app-dialog-shell position="right" width="500px" maxWidth="90vw" height="100vh" ariaLabel="Cart">
+<app-dialog position="right" ariaLabel="Cart" panelClass="p-0 w-[500px] max-w-[90vw] h-full">
   <div class="flex flex-col h-full bg-linear-to-br/srgb from-[#0d1a2d] to-[#1a2332]">
     <!-- Header -->
     <div class="flex items-center justify-between p-5 border-b border-border">
       <h2 class="text-lg font-semibold text-white">Your Cart</h2>
-      <app-button variant="close" size="sm" (clicked)="close()" />
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        size="sm"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
     </div>
 
     <!-- Cart Items -->
@@ -64,4 +75,4 @@
       </div>
     }
   </div>
-</app-dialog-shell>
+</app-dialog>

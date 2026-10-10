@@ -34,7 +34,7 @@
   <!-- Top-right status pill (always visible) -->
   @if (statusLabel()) {
     <span
-      class="absolute top-2 right-2 z-20 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border backdrop-blur-sm"
+      class="absolute top-2 end-2 z-20 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border backdrop-blur-sm"
       [class]="statusTone()"
     >
       {{ statusLabel() }}

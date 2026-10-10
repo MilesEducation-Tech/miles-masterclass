@@ -1,8 +1,11 @@
 import { afterNextRender, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Logger } from '@core/services/logger/logger';
 import { Button } from '../../ui/button/button';
+import { Dialog } from '@shared/ui/dialog/dialog';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroXMark } from '@ng-icons/heroicons/outline';
 
 export interface CalendlyDialogData {
   /** Accessible name for the dialog, e.g. "Schedule a demo". */
@@ -48,7 +51,8 @@ const CALENDLY_SCRIPT_SRC = 'https://assets.calendly.com/assets/external/widget.
 
 @Component({
   selector: 'app-calendly-dialog',
-  imports: [Button, DialogShell],
+  imports: [Button, Dialog, NgIcon],
+  providers: [provideIcons({ heroXMark })],
   templateUrl: './calendly-dialog.html',
   styleUrl: './calendly-dialog.css',
   host: { class: 'block' },

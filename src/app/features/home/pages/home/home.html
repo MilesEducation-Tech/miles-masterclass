@@ -1,180 +1,196 @@
 <app-section-nav [items]="sectionNavItems()" mode="sidenav" [shareWithHeader]="false" />
-<div class="overflow-clip flex flex-col md:space-y-20 space-y-10">
+<!-- `gap`, not `space-y`: v4's space-y is a margin on every child but the last,
+     so while the HTML still streams the hero is briefly the last child with no
+     gap, and the first rail jumps 80px when the next section arrives (a 0.024
+     layout shift at ~450ms, measured). A flex gap exists from a child's first
+     layout. -->
+<div class="overflow-clip flex flex-col gap-10 md:gap-20">
   <!-- Hero Section -->
   <section id="home-hero">
     <app-home-hero />
   </section>
 
-  <!--Master Classes Section -->
+  <!-- Master Classes: one rail per track from `home-page/`, through the root
+       facade `/masterclass` shares. Every rail is horizontal cards (the design);
+       there is no filter button, because `v2/filters/` is not adopted, and no
+       load-more, because the one call already carries every course. -->
   <section id="home-masterclasses" class="w-11/12 mx-auto scroll-mt-20">
-    <div class="flex flex-col space-y-4">
-      <div class="flex flex-col space-y-1.5 max-md:hidden">
-        <h2 class="md:text-[42px] text-3xl font-bold leading-none max-md:text-center">
-          Expert-led Master Classes on AI in Accounting
-        </h2>
-        <p class="md:text-base text-sm text-[#A8A8A8] max-md:text-center sr-only">
-          Learn real-world AI applications in accounting from the best in the profession.
-        </p>
+    @if (home.loadError()) {
+      <div role="alert" class="flex flex-col items-center gap-4 py-16 text-center">
+        <p class="text-muted-foreground">We couldn't load the masterclasses. Please try again.</p>
+        <button app-button type="button" variant="outline" (click)="home.reload()">
+          Try again
+        </button>
       </div>
-      <div class="md:space-y-20 space-y-10 flex flex-col mt-0!">
-        @for (item of track.items(); track $index) {
-          @if (item.content.length) {
-            @defer (on viewport; prefetch on idle) {
-              <app-carousel
-                [cards]="item.content"
-                [heading]="{ text: item.title, subText: item.description }"
-                [swiperConfig]="$even ? swiperConfigOdd : swiperConfigEven"
-                [filterConfig]="{
-                  filterEnabled: true,
-                  courseType: 'masterclass',
-                  section: 'track',
-                  trackId: item.ids[0],
-                }"
-                (loadMore)="track.loadNextTrackPage(item.ids[0])"
-                (filtersChanged)="track.setTrackFilters(item.ids[0], $event)"
-              >
-                <ng-template let-card>
-                  @if ($even) {
-                    <app-vertical [card]="card" />
-                  } @else if ($odd) {
-                    <app-horizontal [card]="card" />
-                  }
-                </ng-template>
-              </app-carousel>
-            } @placeholder {
-              <div
-                class="flex items-center justify-center min-w-28"
-                [class]="$odd ? 'aspect-video' : 'aspect-9/16'"
-              >
-                <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
+    } @else {
+      <div class="flex flex-col gap-10 md:gap-20">
+        @for (track of home.tracks(); track track.id; let first = $first) {
+          <!-- The tracks arrive in the browser (the facade fetches them after
+               hydration here), so the server HTML carries the skeleton below
+               either way and nothing is lost by deferring every rail: the first
+               one is already in view and renders as soon as it exists; the rest
+               wait for the scroll, keeping 40+ cards of DOM and their Swiper
+               instances off the first render. -->
+          @defer (on viewport) {
+            <!-- `skeletonClass` gives the carousel's own idle-time skeleton the
+                 slide's geometry (16:9 art at the slides-per-view width, plus
+                 the card's 140px text block as margin), so the row keeps one
+                 height from this placeholder through Swiper's start. The first
+                 rail's three leading cards take image priority: on desktop one
+                 of them is the LCP element. -->
+            <app-carousel
+              [cards]="track.courses"
+              [heading]="{ text: track.name, subText: track.description ?? '' }"
+              [swiperConfig]="swiperConfigEven"
+              skeletonClass="aspect-video mb-[140px] basis-[calc((100%-3px)/1.1)] md:basis-[calc((100%-30px)/2)] lg:basis-[calc((100%-54px)/2.8)]"
+            >
+              <ng-template let-course let-index="$index">
+                <app-masterclass-course-card
+                  [course]="course"
+                  layout="horizontal"
+                  [priority]="first && index < 3"
+                  [showInfo]="true"
+                  (trailer)="openTrailer($event)"
+                  (info)="openCourseInfo($event)"
+                />
+              </ng-template>
+            </app-carousel>
+          } @placeholder {
+            <!-- Mirrors the rail's geometry (heading, then 1.1 / 2 / 2.8 slides
+                 per view of 16:9 art over the card's 140px text block, 30px
+                 apart, and the carousel's bottom margin as padding — the carousel
+                 host is a flex column, where that margin does not collapse), so
+                 the real rail lands on the same height at every width and nothing
+                 below it moves. -->
+            <div class="animate-pulse" aria-hidden="true">
+              <div class="h-11 md:h-[54px] w-72 max-w-full rounded bg-white/5"></div>
+              <div class="mt-4 pb-10 flex gap-[30px] overflow-hidden">
+                @for (i of [1, 2, 3]; track i) {
+                  <div
+                    class="shrink-0 basis-[calc((100%-3px)/1.1)] md:basis-[calc((100%-30px)/2)] lg:basis-[calc((100%-54px)/2.8)]"
+                  >
+                    <div class="aspect-video rounded-lg bg-muted"></div>
+                    <div class="h-[140px]"></div>
+                  </div>
+                }
               </div>
-            }
+            </div>
+          }
+        } @empty {
+          @if (!home.isSettled()) {
+            <!-- The tracks are fetched in the browser (the facade's
+                 `fetchOnServer` is off here), so this skeleton is in the server
+                 HTML and stays until the response lands. Same geometry as a
+                 rail, so the first rail replaces it without a shift. -->
+            <div class="animate-pulse" aria-hidden="true">
+              <div class="h-11 md:h-[54px] w-72 max-w-full rounded bg-white/5"></div>
+              <div class="mt-4 pb-10 flex gap-[30px] overflow-hidden">
+                @for (i of [1, 2, 3]; track i) {
+                  <div
+                    class="shrink-0 basis-[calc((100%-3px)/1.1)] md:basis-[calc((100%-30px)/2)] lg:basis-[calc((100%-54px)/2.8)]"
+                  >
+                    <div class="aspect-video rounded-lg bg-muted"></div>
+                    <div class="h-[140px]"></div>
+                  </div>
+                }
+              </div>
+            </div>
           }
         }
       </div>
-    </div>
-  </section>
-
-  <!-- CAIRA Levels Section -->
-  <section id="caira-levels" class="container mx-auto scroll-mt-20">
-    <app-caira-level-stack />
-  </section>
-
-  <!-- Surround Carousel Section -->
-  <!-- Full-bleed: the ring is the only section that runs edge to edge, so the
-       cards can be cropped by the viewport the way the reference crops them.
-       Its own header keeps the 11/12 gutter the rest of the page uses. -->
-  <section id="model-carousel" class="scroll-mt-20">
-    <!-- `on viewport` is load-bearing, not a nicety: it is what keeps the
-         three.js chunk out of the first paint. The placeholder holds the
-         stage's aspect so nothing below it reflows when the ring arrives. -->
-    @defer (on viewport; prefetch on idle) {
-      <app-surround-carousel />
-    } @placeholder {
-      <div class="w-full animate-pulse bg-white/5 aspect-4/3 lg:aspect-21/9"></div>
     }
   </section>
 
-  <!-- Offerings Section -->
-  <section id="offerings" class="w-11/12 mx-auto scroll-mt-20">
-    <app-partner-content-list
-      [content]="[
-        {
-          subHeading: 'CPE for the AI-Powered Accountant',
-          paragraph:
-            'Master AI and Analytics with insights from top industry experts. Learn practical tools and strategies while earning your CPE credits.',
-          subHeadingClass: 'text-accent md:text-5xl text-3xl font-bold ',
-          itemClass: 'text-center py-4 md:w-2/3 w-full mx-auto leading-relaxed',
-          paragraphClass: 'text-white md:text-lg text-base font-normal mt-2',
-        },
-      ]"
-    />
-    <div class="container mx-auto">
-      <app-offerings />
-    </div>
-  </section>
-
-  <!-- Premiere Section (commented out) -->
-  @if (premiere.items().length) {
-    <!-- <section class="w-11/12 mx-auto ">
-    <div class="flex flex-col space-y-6">
-      <app-section-heading
-        heading="Live Premieres – Be Part of the Conversation"
-        subHeading="Experience the excitement of watching newMaster Classes go live - together."
-      />
-      <div class="md:w-[70%] w-11/12 h-full mx-auto my-10">
-        <app-upcoming-premiere [card]="premiere.items()[0]" />
-      </div>
-    </div>
-  </section> -->
-  }
-
-  <!-- App Download Section -->
-  <section id="app-download" class="w-11/12 mx-auto scroll-mt-20">
-    <!-- §4.4 always-defer. `hydrate on viewport` keeps it in the SSR HTML (SEO, and no
-         shift on a server-rendered load); the placeholder only shows on client-side
-         navigation, sized to the section's measured height (773 / 715 / 493 px at
-         375 / 768 / 1440). -->
-    @defer (on viewport; prefetch on idle; hydrate on viewport) {
-      <app-app-download />
-    } @placeholder {
-      <div class="h-[773px] md:h-[715px] lg:h-[493px]"></div>
-    }
-  </section>
-
-  <!-- Coming Soon Section -->
-  @if (comingSoon.items().length) {
-    <section class="w-11/12 mx-auto">
-      <div class="flex flex-col space-y-6">
-        @defer (on viewport; prefetch on idle) {
-          <app-partner-content-list
-            [content]="[
-              {
-                subHeading: 'Coming Soon on Master Class',
-                paragraph: 'Hit the bell icon for updates and never miss a new CPE course drop!',
-                subHeadingClass: 'text-white md:text-5xl text-3xl font-bold ',
-                itemClass: 'text-center py-4 md:w-2/3 w-full mx-auto leading-relaxed',
-                paragraphClass: 'text-white md:text-lg text-base font-normal mt-2',
-              },
-            ]"
-          />
-          <app-carousel
-            [cards]="comingSoon.items()"
-            [heading]="{ text: '', subText: '' }"
-            [swiperConfig]="swiperConfigComingSoon"
-            [filterConfig]="{ filterEnabled: false }"
-            (loadMore)="comingSoon.loadNextPage()"
-          >
-            <ng-template let-card let-index="$index">
-              <app-coming-soon [card]="card" [index]="index" />
-            </ng-template>
-          </app-carousel>
-        } @placeholder {
-          <div class="flex items-center justify-center min-w-28 aspect-9/16">
-            <div class="animate-pulse rounded-md bg-gray-200 w-full h-full"></div>
-          </div>
-        }
+  <!-- Live Webinar: the admin-curated highlight webinar as a ticket. Absent
+       until `webinar` has a row (API flag in home.ts), so there is no placeholder
+       and nothing to shift. -->
+  @if (webinar(); as w) {
+    <section id="webinar" class="w-11/12 mx-auto scroll-mt-20">
+      <div class="flex flex-col space-y-4">
+        <h2 class="md:text-[42px] text-3xl font-bold leading-none text-center">Live Webinar</h2>
+        <app-home-webinar-ticket
+          [webinar]="w"
+          (register)="openWebinar(w)"
+          (knowMore)="openWebinar(w)"
+        />
       </div>
     </section>
   }
-  <section id="plan" class="flex container mx-auto flex-col space-y-10 scroll-mt-20">
-    <app-plan-benefits heading="Unlimited CPE. One Subscription." [planPointers]="planPointers">
-      <p class="text-gray-400 md:text-lg text-sm">
-        Access our full library of AI-powered CPE content, along with certificates, CPE tracking,
-        and LinkedIn-ready digital badges.
-      </p>
-      <div class="flex gap-3">
-        <app-button
-          variant="ghost"
-          class="bg-white text-black rounded-md"
-          (clicked)="router.navigate(['/auth/login'])"
-          >Get Started</app-button
-        >
-        <app-button variant="secondary" (clicked)="goToPlan()">Subscribe Now</app-button>
+
+  <!-- AI Labs ring. Full-bleed: the only section that runs edge to edge, so the
+       cards can be cropped by the viewport the way the reference crops them. -->
+  <section id="model-carousel" class="scroll-mt-20">
+    <!-- `on viewport` is load-bearing, not a nicety: it is what keeps the
+         three.js chunk out of the first paint. The placeholder holds the ring's
+         own height so nothing below reflows when it arrives; the convex shape
+         is the design's (Figma 2175:26040). -->
+    @defer (on viewport; prefetch on idle) {
+      <app-surround-carousel shape="convex" />
+    } @placeholder {
+      <!-- The stage (header + row + controls in flow on phones; 4:3 / 16:9 / 2:1
+           from md, where they overlay it) plus the proof-point cards below it,
+           at their measured heights (444 + 566 / 576 + 298 / 720 + 183 px at
+           375 / 768 / 1440, rendered with the convex ring). -->
+      <div class="w-full animate-pulse">
+        <div
+          class="bg-white/5 h-[444px] md:h-auto md:aspect-4/3 md:max-h-[88vh] lg:aspect-video xl:aspect-2/1"
+        ></div>
+        <div
+          class="mx-auto mt-10 h-[566px] w-11/12 max-w-6xl rounded-2xl bg-white/5 md:h-[298px] lg:h-[230px] xl:h-[183px]"
+        ></div>
       </div>
-    </app-plan-benefits>
+    }
   </section>
+
+  <!-- CAIRA Levels. `hydrate on viewport` keeps the server frame, which the
+       pinned scroll animation needs to equal its first frame, but holds the
+       component (and the gsap it imports) until the section nears the viewport,
+       so gsap is no longer fetched on every page load. The placeholder only
+       shows on client-side navigation: the section's measured height at
+       375 / 768 / 1440 (one card tall from md, the carousel and its dots
+       below). -->
+  <section id="caira-levels" class="container mx-auto scroll-mt-20">
+    @defer (on viewport; prefetch on idle; hydrate on viewport) {
+      <app-caira-level-stack />
+    } @placeholder {
+      <div class="h-[539px] md:h-[351px] lg:h-[336px]"></div>
+    }
+  </section>
+
+  <!-- Pricing card. API flag: it shows no figures until the web source of truth
+       for plan prices is confirmed (v3 read `v2/plans/`, not adopted); the card
+       takes them through its `price` input, and its story shows the full design.
+       `hydrate on viewport` keeps the copy in the SSR HTML; the placeholder only
+       shows on client-side navigation, at the card's measured height
+       (973 / 742 / 464 px at 375 / 768 / 1440, without the figure block). -->
+  <section id="plan" class="container mx-auto scroll-mt-20">
+    @defer (on viewport; prefetch on idle; hydrate on viewport) {
+      <app-home-pricing />
+    } @placeholder {
+      <div class="h-[973px] md:h-[742px] lg:h-[464px]"></div>
+    }
+  </section>
+
+  <!-- App Download. `hydrate on viewport` keeps it in the SSR HTML (SEO, and no
+       shift on a server-rendered load); the placeholder only shows on client-side
+       navigation, sized to the redesigned section's measured height
+       (643 / 620 / 592 px at 375 / 768 / 1440). -->
+  <section id="app-download" class="container mx-auto scroll-mt-20">
+    @defer (on viewport; prefetch on idle; hydrate on viewport) {
+      <app-app-download />
+    } @placeholder {
+      <div class="h-[643px] md:h-[620px] lg:h-[592px]"></div>
+    }
+  </section>
+
+  <!-- FAQ. Same hydrate shape; its 76 KB question bank leaves the home chunk.
+       The placeholder is the embedded, collapsed list measured at 375 / 640 /
+       768+ px (430 / 434 / 446). -->
   <section id="faq" class="scroll-mt-20">
-    <app-faq [standalone]="false" />
+    @defer (on viewport; prefetch on idle; hydrate on viewport) {
+      <app-faq [standalone]="false" />
+    } @placeholder {
+      <div class="h-[430px] sm:h-[434px] md:h-[446px]"></div>
+    }
   </section>
 </div>

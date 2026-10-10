@@ -116,22 +116,31 @@
         </span>
       }
       @case ('claimable') {
-        <app-button
+        <button
+          app-button
+          type="button"
           variant="default"
           size="lg"
-          ariaLabel="Share badge on LinkedIn"
+          aria-label="Share badge on LinkedIn"
           [class]="progressGradient()"
-          (clicked)="onClaim()"
+          (click)="onClaim()"
         >
           Share Badge on &nbsp;
           <ng-icon name="phosphorLinkedinLogo" aria-hidden="true" />
-        </app-button>
+        </button>
       }
       @case ('claimed') {
-        <app-button variant="primary" size="lg" ariaLabel="Share on LinkedIn" (clicked)="onShare()">
+        <button
+          app-button
+          type="button"
+          variant="primary"
+          size="lg"
+          aria-label="Share on LinkedIn"
+          (click)="onShare()"
+        >
           Share on &nbsp;
           <ng-icon name="phosphorLinkedinLogo" aria-hidden="true" />
-        </app-button>
+        </button>
       }
       @case ('locked') {
         @if (b.is_coming_soon) {
@@ -144,7 +153,7 @@
           <div class="flex w-full max-w-sm flex-col items-center gap-2">
             <div class="relative h-2 w-full overflow-hidden rounded-full bg-white/10">
               <div
-                class="absolute inset-y-0 left-0 rounded-full bg-linear-to-r transition-[width] duration-500"
+                class="absolute inset-y-0 start-0 rounded-full bg-linear-to-r rtl:bg-linear-to-l transition-[width] duration-500"
                 [class]="progressGradient()"
                 [style.width.%]="progress()"
               ></div>
@@ -159,7 +168,7 @@
         <div class="flex w-full max-w-sm flex-col items-center gap-2">
           <div class="relative h-2 w-full overflow-hidden rounded-full bg-white/10">
             <div
-              class="absolute inset-y-0 left-0 rounded-full bg-linear-to-r transition-[width] duration-500"
+              class="absolute inset-y-0 start-0 rounded-full bg-linear-to-r rtl:bg-linear-to-l transition-[width] duration-500"
               [class]="progressGradient()"
               [style.width.%]="progress()"
             ></div>

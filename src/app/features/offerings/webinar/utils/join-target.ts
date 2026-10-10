@@ -1,5 +1,5 @@
 import { environment } from '@env/environment';
-import { FeedCard, registrationOf } from '../models/webinar.model';
+import { FeedCard, registrationOf } from '@features/offerings/webinar/models/webinar.model';
 
 /**
  * Where "Join Now" actually sends the learner.
@@ -15,13 +15,11 @@ import { FeedCard, registrationOf } from '../models/webinar.model';
  *
  * `embedded` requires BOTH the backend and the row to agree:
  *
- *  1. `environment.WEBINAR.liveEnabled`. `EVENTS_API_CONTRACT_V1` (see
- *     `postman/`) carries no `attendance-session/claim|heartbeat|release` and no
- *     `meeting-sdk-signature` route — all four are plan A1, unshipped. Until
- *     they exist the embedded page cannot acquire a lease or mint a signature,
- *     so routing anyone into it means a spinner and a 404. Flip this to `true`
- *     in an environment the day those endpoints deploy there; nothing else has
- *     to change.
+ *  1. `environment.WEBINAR.liveEnabled`, the ship gate for the in-app room.
+ *     The backend routes it needs (`attendance-session/claim|heartbeat|release`
+ *     and `meeting-sdk-signature`) are in the Events v1 contract; the flag is
+ *     on in the development and local builds and off in production until QA
+ *     signs off.
  *  2. `registration.route_to_web_lms`, the backend's own per-row switch. Even
  *     once the endpoints ship, a row can say "send this one to Zoom".
  */

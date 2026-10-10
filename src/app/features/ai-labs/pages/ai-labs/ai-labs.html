@@ -91,21 +91,23 @@
          from the original; every path still runs through activate(). -->
         <div class="mt-4 w-full max-w-md sm:mt-10">
           @if (!hasLabAccount() && accountRequested()) {
-            <div class="rounded-xl border border-border bg-muted p-5 text-left">
+            <div class="rounded-xl border border-border bg-muted p-5 text-start">
               <p class="text-sm text-foreground">Check your email</p>
               <p class="mt-2 text-sm text-muted-foreground">
                 We've sent you a link to set your Miles AI Lab password. It can take up to a minute
                 to arrive. Once you've set it, come back here and continue.
               </p>
               <div class="mt-4">
-                <app-button
-                  variant="ghost"
+                <button
+                  app-button
+                  type="button"
                   class="h-12 w-full rounded-xl bg-accent text-base"
+                  variant="ghost"
                   [disabled]="milesAuth.isLoadingProfile()"
-                  (clicked)="refreshStatus()"
+                  (click)="refreshStatus()"
                 >
                   {{ milesAuth.isLoadingProfile() ? 'Checking…' : "I've set my password" }}
-                </app-button>
+                </button>
               </div>
               @if (stillPending()) {
                 <p class="mt-3 text-center text-xs text-muted-foreground" role="status">
@@ -117,39 +119,38 @@
             @let showResend = hasLabAccount() && !auth.isSignedIn();
 
             <div class="flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <app-button
-                variant="ghost"
+              <button
+                app-button
+                type="button"
                 class="h-11 flex-1 gap-2 rounded-xl bg-accent text-sm sm:h-14 sm:text-base"
+                variant="ghost"
                 ngxPress
                 [disabled]="submitting()"
-                (clicked)="activate()"
+                (click)="activate()"
               >
                 @if (!auth.isSignedIn()) {
                   <ng-icon [svg]="copilotIcon" class="text-xl" />
                 }
                 <span>{{ ctaLabel() }}</span>
-              </app-button>
+              </button>
 
               @if (showResend) {
-                <app-button
-                  variant="outline"
+                <button
+                  app-button
+                  type="button"
                   class="h-14 w-full shrink-0 rounded-xl text-sm sm:w-[9.5rem]"
+                  variant="outline"
                   [disabled]="submitting()"
-                  (clicked)="confirmResend()"
+                  (click)="confirmResend()"
                 >
                   {{ submitting() ? 'Sending…' : 'Resend email' }}
-                </app-button>
+                </button>
               } @else {
                 <!-- Secondary CTA only when it doesn't crowd the resend action. -->
-                <!-- <app-button
-                  variant="outline"
-                  class="h-14 gap-2 rounded-xl text-base"
-                  ngxPress
-                  (clicked)="scrollTo('showcase')"
-                >
+                <!-- <button app-button type="button" class="h-14 gap-2 rounded-xl text-base" variant="outline" ngxPress (click)="scrollTo('showcase')">
                   <ng-icon name="lucidePlay" class="text-lg" />
                   <span>See it in action</span>
-                </app-button> -->
+                </button> -->
               }
             </div>
 
@@ -174,9 +175,16 @@
               </p>
             }
             <div class="mt-2 flex items-center justify-center gap-2">
-              <app-button variant="outline" size="sm" class="text-xs" (clicked)="signOut()">
+              <button
+                app-button
+                type="button"
+                class="text-xs"
+                variant="outline"
+                size="sm"
+                (click)="signOut()"
+              >
                 Log out
-              </app-button>
+              </button>
             </div>
           }
         </div>
@@ -256,7 +264,8 @@
 
       <!-- Row 1 — the Microsoft 365 tools. -->
       <div class="ai-marquee-mask mt-8 overflow-hidden">
-        <div ngxMarquee [speed]="55" class="flex items-center gap-4 whitespace-nowrap">
+        <!-- dir="ltr": ngxMarquee scrolls by xPercent, which assumes a left-to-right track. -->
+        <div ngxMarquee [speed]="55" dir="ltr" class="flex items-center gap-4 whitespace-nowrap">
           @for (tool of tools; track tool) {
             <span
               class="mx-2 inline-flex items-center rounded-xl border border-border bg-card/40 px-5 py-2.5 text-[0.9rem] font-semibold text-muted-foreground"
@@ -338,7 +347,7 @@
                 <ng-icon [name]="step.icon" />
               </div>
               <!-- <span
-                class="absolute top-5 right-6 text-[2rem] leading-none font-bold text-accent/25 [text-shadow:0_0_18px_rgb(var(--accent-rgb)/0.25)]"
+                class="absolute top-5 end-6 text-[2rem] leading-none font-bold text-accent/25 [text-shadow:0_0_18px_rgb(var(--accent-rgb)/0.25)]"
                 >{{ i + 1 }}</span
               > -->
               <h3 class="mt-4 text-base font-semibold text-foreground text-center">
@@ -640,7 +649,8 @@
            than a different component. buildCardFan() writes the vars from scroll
            on desktop; stepFan() writes the same vars from a swipe on mobile. -->
       <ng-template #fanDeck>
-        <div class="ai-fan" #cardFan [style.--items]="fanCards().length || 1">
+        <!-- dir="ltr": the fan is drawn and stepped physically (left:50% + --x offsets, swipe, arrow keys). -->
+        <div class="ai-fan" #cardFan dir="ltr" [style.--items]="fanCards().length || 1">
           @for (entry of fanCards(); track entry.section + entry.card.name; let i = $index) {
             <article
               class="ai-fan-item"
@@ -805,7 +815,7 @@
                   ></div> -->
                   @if (report) {
                     <span
-                      class="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full border border-accent/40 bg-background/70 px-2.5 py-1 text-xs font-semibold text-accent backdrop-blur-sm"
+                      class="absolute top-3 end-3 inline-flex items-center gap-1 rounded-full border border-accent/40 bg-background/70 px-2.5 py-1 text-xs font-semibold text-accent backdrop-blur-sm"
                     >
                       <ng-icon name="lucideCircleCheck" class="text-sm" />
                       {{ report.scorePercent }}%
@@ -852,15 +862,17 @@
                   </div>
 
                   <div class="mt-auto pt-5">
-                    <app-button
+                    <button
+                      app-button
+                      type="button"
                       class="h-11 w-full gap-2"
                       ngxPress
-                      [ariaLabel]="(report ? 'View score for ' : 'More about ') + agent.name"
-                      (clicked)="openAgent(agent)"
+                      [attr.aria-label]="(report ? 'View score for ' : 'More about ') + agent.name"
+                      (click)="openAgent(agent)"
                     >
                       <span>{{ report ? 'View score' : 'More info' }}</span>
                       <ng-icon [svg]="sparkleIcon" class="text-base" />
-                    </app-button>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1005,16 +1017,18 @@
           <p class="max-w-xl text-muted-foreground" ngxInView preset="fade-up" [delay]="0.1">
             Included with your Miles Masterclass plan. Lab data, no setup, no extra cost.
           </p>
-          <app-button
-            variant="ghost"
+          <button
+            app-button
+            type="button"
             class="h-14 gap-2 rounded-xl bg-accent px-8 text-base"
+            variant="ghost"
             ngxPress
             [disabled]="submitting()"
-            (clicked)="activate()"
+            (click)="activate()"
           >
             <span>{{ ctaLabel() }}</span>
-            <ng-icon name="lucideArrowRight" class="text-lg" />
-          </app-button>
+            <ng-icon name="lucideArrowRight" class="text-lg rtl:-scale-x-100" />
+          </button>
         </div>
       </div>
     </section>

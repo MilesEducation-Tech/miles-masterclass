@@ -100,8 +100,9 @@ and you must change the other, or releases stop being immutable.
      "pending" forever, and it could only be merged by bypassing the very gates this setup exists to
      enforce.
 
-   Use a fine-grained PAT with `contents: write` and `pull-requests: write` on this repo. Until the secret
-   exists the workflow **skips with a notice** rather than failing, so pushes to `master` stay green.
+   Use a fine-grained PAT with `contents: write`, `pull-requests: write` and `issues: write` on this repo
+   (the last one for the `autorelease:` labels; release-please-action's README lists all three). Until the
+   secret exists the workflow **skips with a notice** rather than failing, so pushes to `master` stay green.
 
    > **Prefer a GitHub App token to a personal one** if the org allows it (`actions/create-github-app-token`
    > mints one per run). A PAT ties the release pipeline to one person's account, so it breaks when they
@@ -122,7 +123,7 @@ The rest of this document works either way.
 
 ## 3. The build stamps identity into the bundle
 
-**Shipped.** `scripts/generate-version.mjs` runs in the `prebuild`, `prestart`, `pretest` and `prelint`
+**Shipped.** `scripts/generate-version.mjs` runs in the `prebuild`, `prestart` and `prelint`
 hooks — and once after install via `prepare` — and writes two files that must agree per deploy. Both are
 **gitignored**, precisely because every one of those paths regenerates them:
 
@@ -176,8 +177,18 @@ The SSR server bundle and the browser bundle come from the same `ng build`. They
 
 On Vercel that means:
 
+- **Production deploys on release, not on merge.** `ignoreCommand` in `vercel.json` cancels a production
+  build unless the commit changes `.release-please-manifest.json`. Only the merged Release PR does that.
+  Non-production deploys (UAT) always build. Why: lint + build is the only gate before production, and
+  every deploy makes `UpdateChecker` force a reload on every open tab. One release, one interruption.
+  - A run of `refactor:` / `chore:` / `docs:` merges opens no Release PR, so production waits for the next
+    `feat` / `fix`. To ship sooner: Deployments → the canceled `master` deployment → **Redeploy**, and
+    untick "Use project's Ignore Build Step".
+  - Canceled builds still count toward Vercel's deployment quota and build slots.
 - **Rollback = Instant Rollback** to the previous deployment in the dashboard. No rebuild, no re-tag.
-  (In a container setup the equivalent is pointing back at `app:3.0.2`.)
+  (In a container setup the equivalent is pointing back at `app:3.0.2`.) It also turns off auto-assignment
+  of the production domain, so the next release builds but doesn't go live until someone clicks
+  **Undo Rollback** and promotes it.
 - **Each deployment is immutable**, but the production domain always routes to the newest one. That's the
   part that bites: an old tab asking for an old chunk hits the new deployment, where that filename no longer exists.
 - **`TODO` Enable Skew Protection** (Vercel Pro/Enterprise) in Settings → Advanced. It pins a client's
@@ -283,6 +294,7 @@ scary, you're using versions to do a flag's job.
 - [x] Entry-point HTML is `no-cache` and `/version.json` is `no-store` — both set in `src/server.ts`
       rather than `vercel.json`, to avoid ordering a broad `Cache-Control` rule against the hashed-asset
       `immutable` rule. `/assets/*` is still uncovered
+- [x] Production deploys only when a Release PR merges (`ignoreCommand` in `vercel.json`, §4)
 - [ ] Vercel Skew Protection enabled, and the deployment ID wired into requests
 - [x] Update checker compares versions and prompts on mismatch
 - [x] `withNavigationErrorHandler` added to `provideRouter`, scoped to chunk-load failures and guarded

@@ -15,7 +15,7 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideSearch, lucideX } from '@ng-icons/lucide';
 import { debounceTime, distinctUntilChanged, switchMap, startWith, tap } from 'rxjs/operators';
 import { injectDialogRef } from 'ng-primitives/dialog';
-import { DialogShell } from '@shared/ui/dialog-shell/dialog-shell';
+
 import { Utils } from '@shared/services/utils';
 import { GlobalSearch } from '@core/services/global-search/global-search';
 import { Analytics } from '@core/services/analytics/analytics';
@@ -24,6 +24,7 @@ import {
   SearchCourseType,
   SearchSuggestion,
 } from '@core/models/search.model';
+import { Dialog } from '@shared/ui/dialog/dialog';
 
 interface SuggestionGroup {
   type: SearchCourseType;
@@ -49,7 +50,7 @@ const TYPE_ORDER: SearchCourseType[] = [
 
 @Component({
   selector: 'app-global-search-dialog',
-  imports: [ReactiveFormsModule, NgIcon, DialogShell],
+  imports: [ReactiveFormsModule, NgIcon, Dialog],
   providers: [provideIcons({ lucideSearch, lucideX })],
   templateUrl: './global-search-dialog.html',
   host: { class: 'block' },

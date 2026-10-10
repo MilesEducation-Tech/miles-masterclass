@@ -42,6 +42,15 @@ export const SKIP_AUDIT_LOG = new HttpContextToken<boolean>(() => false);
  */
 export const IS_EXTERNAL_REQUEST = new HttpContextToken<boolean>(() => false);
 
+/**
+ * When set to `true` on a request's HttpContext, the request does NOT drive the
+ * global loading bar (`loadingInterceptor`). Every other request does. Set it on
+ * traffic the learner didn't ask for and shouldn't watch: polling, heartbeats,
+ * progress tracking, typeahead, token refresh, boot-time background reads, and
+ * any call that already shows its own inline indicator.
+ */
+export const SKIP_LOADING = new HttpContextToken<boolean>(() => false);
+
 export interface RequestOptions {
   body?: any;
   headers?: HttpHeaders | Record<string, string | string[]>;

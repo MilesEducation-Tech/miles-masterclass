@@ -8,13 +8,16 @@
     <div class="flex flex-col justify-center">
       <h2 class="title">{{ current().chapter_name }}</h2>
     </div>
-    <div class="ml-auto flex items-center gap-2">
-      <app-button
-        variant="link"
+    <div class="ms-auto flex items-center gap-2">
+      <button
+        app-button
+        type="button"
         class="underline text-accent"
-        (clicked)="togglePreviewMode.emit('video')"
-        >Watch Again</app-button
+        variant="link"
+        (click)="togglePreviewMode.emit('video')"
       >
+        Watch Again
+      </button>
     </div>
   </div>
   <!-- Progress -->
@@ -32,7 +35,7 @@
     @for (option of ['a', 'b', 'c', 'd']; track option) {
       @if (getOptionText(currentQuestion(), option)) {
         <button
-          class="flex items-start gap-4 p-3 rounded-lg border text-left transition-all"
+          class="flex items-start gap-4 p-3 rounded-lg border text-start transition-all"
           [class.border-quiz-line]="selectedOption() !== option"
           [class.bg-transparent]="selectedOption() !== option"
           [class.border-blue-500]="selectedOption() === option && !isSubmitted()"
@@ -60,7 +63,7 @@
 
             <!-- Description (Visible on submission) -->
             @if (isSubmitted() && getDescription(currentQuestion(), option)) {
-              <div class="ml-9 text-sm text-gray-400 border-t border-gray-700 pt-2 mt-1">
+              <div class="ms-9 text-sm text-gray-400 border-t border-gray-700 pt-2 mt-1">
                 <span
                   class="font-semibold text-xs uppercase tracking-wider mb-1 block"
                   [class.text-green-400]="option === currentQuestion().correct_option"
@@ -109,7 +112,7 @@
         </span>
         @if (isLastQuestion() && autoNavTimer() !== null) {
           <div
-            class="absolute top-0 bottom-0 left-0 h-full bg-white transition-all duration-1000 ease-linear z-0"
+            class="absolute top-0 bottom-0 start-0 h-full bg-white transition-all duration-1000 ease-linear z-0"
             [style.width.%]="(10 - autoNavTimer()!) * 10"
           ></div>
         }

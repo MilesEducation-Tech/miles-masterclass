@@ -1,5 +1,6 @@
 import type { Express, NextFunction, Request, Response } from 'express';
-import { timezone } from './app/core/constants/timezone';
+import { DEFAULT_COUNTRY, GEO_COUNTRY_HEADER } from './app/core/constants/countries';
+import { toCountry } from './app/core/utils/country';
 
 /**
  * Server-side 30x redirects from the legacy `CPE-Masterclass` URL shape to the
@@ -20,13 +21,6 @@ import { timezone } from './app/core/constants/timezone';
  * acts on known legacy patterns; every other path passes straight through.
  */
 
-/**
- * Valid ISO2 country codes, sourced from the SAME `timezone` constant that
- * `validateProfessionCountryGuard` validates against — so a country we redirect
- * to can never be rejected by the guard on arrival.
- */
-const LEGACY_ISO2: ReadonlySet<string> = new Set(timezone.map((t) => t.iso2.toLowerCase()));
-
 /** Profession segment is fixed for the accounting product. */
 const PROFESSION = 'accounting';
 
@@ -44,12 +38,13 @@ const COURSE_TITLE: Record<string, string> = {
 
 /**
  * Pick the country for a premiere URL that may already carry one. If the URL
- * captured a valid ISO2 (`/in/accounting/premiere/...`) we preserve it;
+ * captured a supported country (`/in/accounting/premiere/...`) we preserve it;
  * otherwise we emit the `{c}` placeholder so the geo-resolved country is filled
  * in (matches the legacy `/accounting/premiere/...` shape with no country).
+ * Validated by the same `toCountry` the route guard uses, so a country we
+ * redirect to can never be rejected by the guard on arrival.
  */
-const pickCountry = (captured?: string): string =>
-  captured && LEGACY_ISO2.has(captured) ? captured : '{c}';
+const pickCountry = (captured?: string): string => toCountry(captured) ?? '{c}';
 
 /**
  * Specific rename / reshape rules, evaluated in order BEFORE the generic
@@ -221,16 +216,15 @@ function isLegacyPath(path: string): boolean {
   );
 }
 
-/** Resolve a Vercel geo country header to a valid lowercased ISO2, default `us`. */
-function resolveCountry(ipCountryHeader: string | undefined): string {
-  const c = (ipCountryHeader ?? '').toLowerCase();
-  return LEGACY_ISO2.has(c) ? c : 'us';
-}
-
 export interface LegacyRedirect {
   target: string;
   /** 308 (permanent) or 307 (temporary). */
   status: 307 | 308;
+  /**
+   * True when the target's country came from the visitor's geo, not the URL. The target then
+   * differs per visitor, so the handler bounds how long a browser may cache the redirect.
+   */
+  geo: boolean;
 }
 
 /**
@@ -243,13 +237,15 @@ export interface LegacyRedirect {
 export function mapLegacyPath(path: string, ipCountry?: string): LegacyRedirect | null {
   if (!isLegacyPath(path)) return null;
 
-  const country = resolveCountry(ipCountry);
+  const country = toCountry(ipCountry) ?? DEFAULT_COUNTRY;
   const fill = (s: string) => s.replace('{c}', country).replace('{p}', PROFESSION);
 
   // Specific rules first.
   for (const [re, build, permanent] of RULES) {
     const m = path.match(re);
-    if (m) return { target: fill(build(m)), status: permanent ? 308 : 307 };
+    if (!m) continue;
+    const template = build(m);
+    return { target: fill(template), status: permanent ? 308 : 307, geo: template.includes('{c}') };
   }
 
   // Generic prefix rule: /accounting/<rest> → /<country>/accounting/<rest>.
@@ -257,7 +253,7 @@ export function mapLegacyPath(path: string, ipCountry?: string): LegacyRedirect 
   if (/^\/accounting(\/|$)/.test(path)) {
     const target = `/${country}` + path; // path already begins with `/accounting`
     const permanent = !/^\/accounting\/(payment|cpe-tracker)(\/|$)/.test(path);
-    return { target, status: permanent ? 308 : 307 };
+    return { target, status: permanent ? 308 : 307, geo: true };
   }
 
   return null;
@@ -280,8 +276,14 @@ export function registerLegacyRedirects(app: Express): void {
 export function legacyRedirectHandler(req: Request, res: Response, next: NextFunction): void {
   if (req.method !== 'GET' && req.method !== 'HEAD') return next();
 
-  const hit = mapLegacyPath(req.path, asHeader(req.headers['x-vercel-ip-country']));
+  const hit = mapLegacyPath(req.path, asHeader(req.headers[GEO_COUNTRY_HEADER]));
   if (!hit) return next();
+
+  // The status stays permanent where it was (SEO equity flows to the target), but a browser
+  // caches a 308 forever by default. When the country came from geo that would pin a visitor
+  // who once came through a VPN to the wrong country, so bound it to a day and keep it out of
+  // shared caches, which must never hand one visitor's country to another.
+  if (hit.geo) res.setHeader('Cache-Control', 'private, max-age=86400');
 
   const qIndex = req.originalUrl.indexOf('?');
   const qs = qIndex === -1 ? '' : req.originalUrl.slice(qIndex);
@@ -289,6 +291,6 @@ export function legacyRedirectHandler(req: Request, res: Response, next: NextFun
 }
 
 /** Normalize a possibly-array header to a single string. */
-function asHeader(value: string | string[] | undefined): string | undefined {
+export function asHeader(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }

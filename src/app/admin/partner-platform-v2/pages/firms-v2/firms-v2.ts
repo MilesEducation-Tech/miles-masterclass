@@ -13,7 +13,7 @@ import { take } from 'rxjs';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { withPreviousValue } from '@shared/utils/with-previous-value';
+import { withPreviousValue } from '@core/utils/with-previous-value';
 import {
   CreateFirmResponse,
   Firm,
@@ -23,9 +23,12 @@ import { PartnerSuperAdminFacade } from '@admin/core/services/partner-superadmin
 // Type-only: dialog components below load with `import()` when opened (PROMPT.md §4.4).
 import type { AllocateSeatsDialogData } from '@admin/partner-platform-v2/dialogs/allocate-seats-dialog/allocate-seats-dialog';
 import type { FirmFormDialogData } from '@admin/partner-platform-v2/dialogs/firm-form-dialog/firm-form-dialog';
-import { AriaSelect } from '@shared/ui/aria/aria-select/aria-select';
+
 import { AriaSelectOption } from '@core/models/aria.model';
 import { AdminAuth } from '@admin/core/services/admin-auth';
+import { Field } from '@shared/ui/field/field';
+import { NgpLabel } from 'ng-primitives/form-field';
+import { Select } from '@shared/ui/select/select';
 
 /** Scope filter encoded as one select value: all | standalone | network:<id>. */
 type FirmScopeFilter = string;
@@ -38,7 +41,7 @@ type FirmScopeFilter = string;
  */
 @Component({
   selector: 'app-firms-v2',
-  imports: [Button, Spinner, AriaSelect],
+  imports: [Button, Spinner, Field, NgpLabel, Select],
   templateUrl: './firms-v2.html',
   host: { class: 'block w-full' },
 })

@@ -69,7 +69,7 @@
                     {{ cat.title }}
                     @if (cat.locked) {
                       <span
-                        class="ml-2 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-300"
+                        class="ms-2 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-300"
                         >Always on</span
                       >
                     }
@@ -89,7 +89,7 @@
                 >
                   <span
                     ngpSwitchThumb
-                    class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform translate-x-0.5 data-[checked]:translate-x-5"
+                    class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform translate-x-0.5 data-[checked]:translate-x-5 rtl:-translate-x-0.5 rtl:data-[checked]:-translate-x-5"
                   ></span>
                 </button>
               </li>

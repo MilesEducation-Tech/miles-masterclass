@@ -1,187 +1,111 @@
-import { Component, inject, computed } from '@angular/core';
-import { environment } from '@env/environment';
-import { Carousel } from '@shared/components/carousel/carousel';
-import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
-import { Vertical } from '@shared/components/cards/vertical/vertical';
-import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
-import { ComingSoon } from '@shared/components/cards/coming-soon/coming-soon';
+import { Component, computed, inject, signal } from '@angular/core';
+import { swiperConfigEven } from '@core/config/swiper.config';
 import {
-  swiperConfigComingSoon,
-  swiperConfigEven,
-  swiperConfigOdd,
-} from '@core/config/swiper.config';
+  MasterclassCourse,
+  MasterclassCourseInfoDialogData,
+} from '@core/models/masterclass-home.model';
+import { MASTERCLASS_COURSE_INFO_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
+import { MasterclassHomeFacade } from '@core/services/masterclass-home-facade/masterclass-home-facade';
+import { NgpDialogManager } from 'ng-primitives/dialog';
 import { AppDownload } from '@shared/components/app-download/app-download';
-import { HomeHero } from '../../components/home-hero/home-hero';
-import { Offering } from '@shared/components/offerings/offerings';
-import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
-import { PartnerContentList } from '@shared/components/partner-content-list/partner-content-list';
-import { Faq } from '@shared/components/faq/faq';
-import { PlanBenefits, PlanPointer } from '@shared/components/plan-benefits/plan-benefits';
-import { Button } from '@shared/ui/button/button';
-import { Router } from '@angular/router';
-import { Utils } from '@shared/services/utils';
 import { CairaLevelStack } from '@shared/components/caira-level-stack/caira-level-stack';
+import { MasterclassCourseCard } from '@shared/components/cards/masterclass-course-card/masterclass-course-card';
+import { Carousel } from '@shared/components/carousel/carousel';
+import { Faq } from '@shared/components/faq/faq';
+import { SectionNav, SectionNavItem } from '@shared/components/section-nav/section-nav';
 import { SurroundCarousel } from '@shared/components/surround-carousel/surround-carousel';
+import { Utils } from '@shared/services/utils';
+import { Button } from '@shared/ui/button/button';
+import { HomeHero } from '../../components/home-hero/home-hero';
+import { HomePricing } from '../../components/home-pricing/home-pricing';
+import { HomeWebinarTicket } from '../../components/home-webinar-ticket/home-webinar-ticket';
+import { HomeWebinar } from '../../models/home-sections.model';
 
+/**
+ * The home page, in the v3 section order: hero, the masterclass track rails,
+ * the live-webinar ticket, the AI Labs ring, the CAIRA levels, the pricing card,
+ * the app download and the FAQ.
+ * The rails come from the root `MasterclassHomeFacade`, the same read `/masterclass`
+ * renders, so moving between the two pages never refetches.
+ *
+ * Two sections wait for data (see prompts/home-redesign.md): the webinar ticket
+ * is absent until a web-api highlight endpoint exists, and the pricing card
+ * shows no figures until the plan-price source is confirmed. Flagged, not v2.
+ */
 @Component({
   selector: 'app-home',
   imports: [
-    Carousel,
-    Horizontal,
-    Vertical,
-    ComingSoon,
     AppDownload,
-    HomeHero,
-    Offering,
-    SectionNav,
-    PartnerContentList,
-    Faq,
-    PlanBenefits,
     Button,
     CairaLevelStack,
+    Carousel,
+    Faq,
+    HomeHero,
+    HomePricing,
+    HomeWebinarTicket,
+    MasterclassCourseCard,
+    SectionNav,
     SurroundCarousel,
   ],
   templateUrl: './home.html',
 })
 export class Home {
-  S3_BUCKET_URL = environment.S3_BUCKET_URL;
-  readonly feature: FeatureFacade = inject(FeatureFacade);
-  readonly router = inject(Router);
   private readonly utils = inject(Utils);
+  private readonly dialogs = inject(NgpDialogManager);
+  private readonly courseInfoDialog = inject(MASTERCLASS_COURSE_INFO_DIALOG);
+
+  protected readonly home = inject(MasterclassHomeFacade);
+
+  // Every rail is horizontal cards, so one swiper preset serves them all.
+  protected readonly swiperConfigEven = swiperConfigEven;
 
   /**
-   * Navigate to the subscription-plan picker. Builds the absolute path from
-   * `Utils.country()` / `Utils.profession()` instead of relative `../..` since
-   * `router.navigate` without a `relativeTo: ActivatedRoute` resolves
-   * `..` against the route root, which produced a broken path.
+   * The highlighted webinar for the ticket. API flag: nothing sets it yet — v3
+   * read `v2/webinar/home_section/?section=highlight`, which this app does not
+   * adopt. When the web-api highlight endpoint exists this becomes a facade
+   * read, and the section and its sidenav entry appear by themselves.
    */
-  goToPlan(): void {
-    this.router.navigate(['/', this.utils.country(), this.utils.profession(), 'payment', 'plan']);
+  protected readonly webinar = signal<HomeWebinar | null>(null);
+
+  /** The sidenav; "Live Webinar" shows only with a ticket to jump to. */
+  protected readonly sectionNavItems = computed<SectionNavItem[]>(() => [
+    { id: 'home-hero', label: 'Home', visible: true, icon: 'lucideHome' },
+    { id: 'home-masterclasses', label: 'Master Classes', visible: true, icon: 'lucidePlay' },
+    {
+      id: 'webinar',
+      label: 'Live Webinar',
+      visible: this.webinar() !== null,
+      icon: 'lucideCalendarClock',
+    },
+    { id: 'model-carousel', label: 'AI Labs', visible: true, icon: 'lucideLayers' },
+    { id: 'caira-levels', label: 'CAIRA', visible: true, icon: 'lucideGraduationCap' },
+    { id: 'plan', label: 'Pricing', visible: true, icon: 'lucideStar' },
+    { id: 'app-download', label: 'Download App', visible: true, icon: 'lucideLink' },
+    { id: 'faq', label: 'FAQ', visible: true, icon: 'lucideHelpCircle' },
+  ]);
+
+  /**
+   * Both ticket actions go to the webinar's page for now: registration lives
+   * there, and the registration dialog belongs to the offerings feature, which
+   * home may not import (its promotion to `shared/dialogs` is follow-up F5).
+   */
+  protected openWebinar(webinar: HomeWebinar): void {
+    this.utils.navigateToCourse('webinar', webinar.id, webinar.title);
   }
 
-  // Swiper configurations for templates
-  readonly swiperConfigEven = swiperConfigEven;
-  readonly swiperConfigOdd = swiperConfigOdd;
-  readonly swiperConfigComingSoon = swiperConfigComingSoon;
+  /** The shared video dialog; it toasts "Trailer Not Found" for a course with none. */
+  protected openTrailer(course: MasterclassCourse): void {
+    void this.utils.openVideoDialog(course.trailer_url, course.title);
+  }
 
-  filterConfig = {
-    filterEnabled: true,
-  };
-
-  readonly track = this.feature.getResource('track', 'masterclass');
-  readonly premiere = this.feature.getResource('premiere', 'masterclass');
-  readonly comingSoon = this.feature.getResource('comingSoon', 'masterclass');
-
-  readonly sectionNavItems = computed<SectionNavItem[]>(() => {
-    return [
-      {
-        id: 'home-hero',
-        label: 'Home',
-        visible: true,
-        icon: 'lucideHome',
-      },
-      {
-        id: 'home-masterclasses',
-        label: 'Miles Masterclass',
-        visible: true,
-        icon: 'lucidePlay',
-      },
-      {
-        id: 'model-carousel',
-        label: 'AI Labs',
-        visible: true,
-        icon: 'lucideLayers',
-      },
-      {
-        id: 'offerings',
-        label: 'Offerings',
-        visible: true,
-        icon: 'lucideBookOpen',
-      },
-      {
-        id: 'app-download',
-        label: 'Download App',
-        visible: true,
-        icon: 'lucideLink',
-      },
-      {
-        id: 'plan',
-        label: 'Plans',
-        visible: true,
-        icon: 'lucideStar',
-      },
-      {
-        id: 'faq',
-        label: 'FAQ',
-        visible: true,
-        icon: 'lucideHelpCircle',
-      },
-    ];
-  });
-  planPointers: PlanPointer[] = [
-    {
-      id: 1,
-      planfeature: {
-        name: 'Full access to 22+ categories: Master Classes, Podcast, and Micro-learning Reels',
-        description: null,
-        icon: null,
-      },
-    },
-    {
-      id: 2,
-      planfeature: {
-        name: 'Watch on Desktop and Mobile Devices',
-        description: null,
-        icon: null,
-      },
-    },
-    {
-      id: 3,
-      planfeature: {
-        name: 'New Courses Added Every Month',
-        description: null,
-        icon: null,
-      },
-    },
-    {
-      id: 4,
-      planfeature: {
-        name: 'Pay Securely Using Major Credit Cards',
-        description: null,
-        icon: null,
-      },
-    },
-    {
-      id: 5,
-      planfeature: {
-        name: 'NASBA-Approved CPE Certificates',
-        description: null,
-        icon: null,
-      },
-    },
-    {
-      id: 6,
-      planfeature: {
-        name: 'Credly Digital Badge* to Share on LinkedIn',
-        description: null,
-        icon: null,
-      },
-    },
-    {
-      id: 7,
-      planfeature: {
-        name: 'Certified AI Ready Accountant Digital Badge',
-        description: null,
-        icon: null,
-      },
-    },
-    {
-      id: 8,
-      planfeature: {
-        name: 'Track Compliance with CPE Tracker',
-        description: null,
-        icon: null,
-      },
-    },
-  ];
+  /**
+   * The "i" dialog `/masterclass` opens: the course's About, read when it
+   * opens. It belongs to the offerings feature, so it comes through the token
+   * `app.config.ts` binds, and loads on first use.
+   */
+  protected async openCourseInfo(course: MasterclassCourse): Promise<void> {
+    this.dialogs.open<MasterclassCourseInfoDialogData>(await this.courseInfoDialog(), {
+      data: { course },
+    });
+  }
 }
