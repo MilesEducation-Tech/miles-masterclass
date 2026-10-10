@@ -21,15 +21,6 @@ export const FOOTER_OVERLAY_ROUTES = [
 ] as const;
 
 /**
- * Routes where the "Continue Learning" card is allowed. Intentionally
- * narrower than `FOOTER_OVERLAY_ROUTES`: matched via exact-equality (see
- * `isExactRoute`) so the card only appears on the listing/home page of each
- * offering — never on course detail (`masterclass/:id/:title`), chapter
- * deeplinks, or final-assessment routes.
- */
-export const CONTINUE_CARD_ROUTES = ['masterclass', 'podcast', 'micro-learning'] as const;
-
-/**
  * Route where the subscribe upsell is swapped for the B2B "bring it to your
  * firm" CTA. Matched via exact-equality (see `isExactRoute`) — the corporate
  * landing page has no child routes.
@@ -68,8 +59,8 @@ export function isAllowedRoute(url: string, allow: readonly string[]): boolean {
 
 /**
  * Like `isAllowedRoute` but exact-only — no prefix match. Used by the
- * Continue Learning card so it doesn't bleed into course detail / deeplink
- * routes that sit under the same offering segment.
+ * corporate card so it doesn't bleed into routes that sit under the same
+ * segment.
  */
 export function isExactRoute(url: string, allow: readonly string[]): boolean {
   if (!url) return false;

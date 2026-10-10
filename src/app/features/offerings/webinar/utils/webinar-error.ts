@@ -167,10 +167,13 @@ export function toWebinarError(err: unknown): WebinarError {
   // Read key by key rather than cast to a body type: this is untrusted input,
   // and a refusal that is not even an object still has to become a WebinarError.
   const body: Record<string, unknown> = isRecord(err.error) ? err.error : {};
-  // The live-session routes wrap their own answers as `{success, message,
-  // data}`, so a refusal's `code` may sit on the body or inside `data`.
+  // Every route wraps its answers as `{success, message, data}` (UAT,
+  // 2026-10-10), so a refusal's fields sit inside `data`. The bare body is still
+  // read first, for any route that answers the older shape.
   const inner: Record<string, unknown> = isRecord(body['data']) ? body['data'] : {};
   const bodyCode = stringOr(body['code']) ?? stringOr(inner['code']);
+  const errors = body['errors'] ?? inner['errors'];
+  const retryAfter = body['retry_after_seconds'] ?? inner['retry_after_seconds'];
 
   let code: WebinarErrorCode = bodyCode ?? 'unknown_error';
   // `detail ?? message` — the one documented inconsistency in the envelope.
@@ -194,9 +197,8 @@ export function toWebinarError(err: unknown): WebinarError {
     code,
     message: serverText || FALLBACK_MESSAGES[code] || UNKNOWN_COPY,
     status: err.status,
-    errors: isFieldErrors(body['errors']) ? body['errors'] : undefined,
-    retryAfterSeconds:
-      typeof body['retry_after_seconds'] === 'number' ? body['retry_after_seconds'] : undefined,
+    errors: isFieldErrors(errors) ? errors : undefined,
+    retryAfterSeconds: typeof retryAfter === 'number' ? retryAfter : undefined,
     joinOpensAt: stringOr(body['join_opens_at']) ?? stringOr(inner['join_opens_at']),
     isProfileProblem: PROFILE_CODES.has(code),
     isRetryable: RETRYABLE_CODES.has(code),

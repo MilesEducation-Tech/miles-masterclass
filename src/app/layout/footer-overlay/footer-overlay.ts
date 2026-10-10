@@ -1,35 +1,21 @@
 import { isPlatformBrowser } from '@angular/common';
-import {
-  Component,
-  DestroyRef,
-  PLATFORM_ID,
-  computed,
-  effect,
-  inject,
-  signal,
-  untracked,
-} from '@angular/core';
+import { Component, DestroyRef, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { animationFrameScheduler, fromEvent } from 'rxjs';
 import { auditTime, filter, map } from 'rxjs/operators';
 
 import { Consent } from '@core/services/consent/consent';
-import { Analytics } from '@core/services/analytics/analytics';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Utils } from '@shared/services/utils';
-import { FeatureFacade, FeatureResource } from '@core/services/feature-facade/feature-facade';
 import { CartStore } from '@core/services/cart/cart-store';
 // Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
-import { Content } from '@core/models/course.model';
 
 import { SubscribeCard } from './components/subscribe-card/subscribe-card';
-import { ContinueLearningCard } from './components/continue-learning-card/continue-learning-card';
 import { UtilsIconCluster } from './components/utils-icon-cluster/utils-icon-cluster';
 import {
-  CONTINUE_CARD_ROUTES,
   CORPORATE_CARD_COPY,
   CORPORATE_CARD_ROUTES,
   FOOTER_OVERLAY_ROUTES,
@@ -40,11 +26,9 @@ import {
   isExactRoute,
 } from './footer-overlay.config';
 
-type InProgressType = 'masterclass' | 'podcast' | 'micro_learning';
-
 @Component({
   selector: 'app-footer-overlay',
-  imports: [SubscribeCard, ContinueLearningCard, UtilsIconCluster],
+  imports: [SubscribeCard, UtilsIconCluster],
   templateUrl: './footer-overlay.html',
   host: {
     class: 'contents z-50',
@@ -58,10 +42,7 @@ export class FooterOverlay {
   // Suppress the overlay while the cookie-consent banner is open so the two
   // fixed bottom UIs don't overlap (no-op unless consent is active in prod).
   protected readonly consent = inject(Consent);
-  private readonly analytics = inject(Analytics);
-  private readonly feature = inject(FeatureFacade);
-  // Cart state and its loader live in core, so layout does not import a
-  // feature (PROMPT.md §3).
+  // Cart state lives in core, so layout does not import a feature (PROMPT.md §3).
   private readonly cart = inject(CartStore);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -71,14 +52,6 @@ export class FooterOverlay {
   private readonly isScrolled = signal(false);
   protected readonly routeAllowed = computed(() =>
     isAllowedRoute(this.utils.currentUrl(), FOOTER_OVERLAY_ROUTES),
-  );
-  /**
-   * Tighter check than `routeAllowed` — matches only the listing/home pages
-   * of each offering (exact equality, no prefix). Used to gate the Continue
-   * Learning card so it doesn't appear on course detail / chapter deeplinks.
-   */
-  protected readonly continueRouteAllowed = computed(() =>
-    isExactRoute(this.utils.currentUrl(), CONTINUE_CARD_ROUTES),
   );
   /**
    * `true` on the corporate landing page (`/cpe-for-corporate`), where the
@@ -98,42 +71,21 @@ export class FooterOverlay {
   // "no plan" stays the answer and the subscribe upsell shows to everyone.
   protected readonly subscribed = signal<boolean | null>(false);
 
-  // ── In-progress data (auth-gated; reuses FeatureFacade cache) ──────────
-  private readonly activeInProgressType = computed<InProgressType>(() => {
-    const url = this.utils.currentUrl();
-    if (url.includes('/podcast')) return 'podcast';
-    if (url.includes('/micro-learning')) return 'micro_learning';
-    return 'masterclass';
-  });
-
-  /**
-   * Holds the current `FeatureResource` for the in-progress carousel. Set via
-   * `effect()` rather than `computed()` because `FeatureFacade.getResource()`
-   * triggers a `refresh()` (signal writes) on cache hits — which is illegal
-   * inside `computed()` (NG0600).
-   */
-  private readonly inProgressResource = signal<FeatureResource | null>(null);
-
-  protected readonly inProgressCourse = computed<Content | null>(() => {
-    const resource = this.inProgressResource();
-    if (!resource) return null;
-    const list = resource.items() as Content[];
-    return list?.[0] ?? null;
-  });
-
   // ── Cart count ─────────────────────────────────────────────────────────
+  // ponytail: nothing here loads the cart. `user/cart/mybucket/` answers 404 on
+  // MilesCAIRA, so a load on every signed-in page only made noise; the count is
+  // whatever the payment flow last loaded. Load it here again once the cart is
+  // rebound to `api/v1/commerce/cart/`.
   protected readonly cartCount = computed(() => this.cart.cartData()?.cartitem_data.length ?? 0);
 
   // ── State machine: what to render in the bar ───────────────────────────
-  protected readonly cardKind = computed<'continue' | 'subscribe' | 'corporate' | 'none'>(() => {
+  // The "continue learning" card is gone: `v2/user/last_viewed/` answers 404
+  // and the web API has no replacement (docs/MASTERCLASS_API_QUESTIONS.md Q8).
+  protected readonly cardKind = computed<'subscribe' | 'corporate' | 'none'>(() => {
     if (!this.isOverlayVisible()) return 'none';
     // On the corporate landing page the subscribe upsell is replaced by the
     // B2B "bring it to your firm" CTA — shown to everyone, independent of plan.
     if (this.corporateRouteAllowed()) return 'corporate';
-    // `continue` is restricted to the offering home pages (see
-    // CONTINUE_CARD_ROUTES). On detail / deeplink pages we fall through to
-    // the subscribe upsell (or hide if already subscribed).
-    if (this.continueRouteAllowed() && this.inProgressCourse()) return 'continue';
     if (this.subscribed() === false) return 'subscribe';
     return 'none';
   });
@@ -168,32 +120,6 @@ export class FooterOverlay {
           }
         });
     }
-
-    // Lazy cart load. Gate only on `isLoggedIn()` — the facade handles
-    // idempotency via `cartFetched`. Reading `cartData()`/`loading()` here
-    // would re-fire this effect during the load lifecycle and could loop
-    // forever if the API resolved with null/error.
-    effect(() => {
-      if (this.isLoggedIn()) {
-        untracked(() => this.cart.loadMyBucket());
-      }
-    });
-
-    // Resolve the in-progress FeatureResource reactively. `getResource()` may
-    // mutate facade-internal signals on cache hits (calls `refresh()`), so it
-    // runs inside `untracked()` here — and never inside a `computed()`.
-    effect(() => {
-      const loggedIn = this.isLoggedIn();
-      const type = this.activeInProgressType();
-      if (!loggedIn) {
-        untracked(() => this.inProgressResource.set(null));
-        return;
-      }
-      untracked(() => {
-        const resource = this.feature.getResource('lastViewed', type, { requiresAuth: true });
-        this.inProgressResource.set(resource);
-      });
-    });
   }
 
   // ── Handlers ───────────────────────────────────────────────────────────
@@ -217,22 +143,6 @@ export class FooterOverlay {
         closeAction: true,
       } satisfies CalendlyDialogData,
     });
-  }
-
-  protected onResume(course: Content): void {
-    this.analytics.trackEvent('continue_learning_click', {
-      course_id: course.id,
-      course_type: course.course_type,
-    });
-    const urlSegment =
-      course.course_type.toLocaleLowerCase() === 'video'
-        ? 'masterclass'
-        : course.course_type.toLocaleLowerCase() === 'micro_learning'
-          ? 'micro-learning'
-          : course.course_type.toLocaleLowerCase() === 'nano_learning'
-            ? 'micro-learning'
-            : course.course_type.toLocaleLowerCase();
-    this.utils.navigateToCourse(urlSegment, course.id, course.title);
   }
 
   protected onCartClick(): void {

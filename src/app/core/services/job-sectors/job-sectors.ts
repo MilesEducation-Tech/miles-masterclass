@@ -8,7 +8,7 @@ import { AutoCompleteOption } from '../../models/form.model';
 /** Empty envelope, so `sectors()` is always a real array and callers need no guard. */
 const EMPTY_SECTORS: CommonResponse<JobSector[]> = {
   data: [],
-  status: false,
+  success: false,
   message: '',
 };
 

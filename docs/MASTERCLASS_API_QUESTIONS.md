@@ -68,6 +68,14 @@ An HLS trailer segment (`…_720p_00002.ts` on `d2eoseju8m2c1y.cloudfront.net`) 
 which can stall the hero trailer and the trailer dialog. Please forward `Origin` in the cache key, or send
 `Access-Control-Allow-Origin: *`, for the video distribution.
 
+### Q8. The learner's last-viewed course (asked 2026-10-10)
+
+The footer showed a "continue learning" card with the course the learner last watched, read from the legacy
+`v2/user/last_viewed/`. That route now answers 404, and neither `api/v1/` nor `web-api/v1/` has a twin.
+The only resume data is the per-course `continue_watching` block on `course-section/` cards. The card has
+been removed. Can a route return the single most recently watched course (any offering), with its
+`continue_watching` block?
+
 ## Still missing from the web API
 
 | Production page shows               | Web API today                                                           | Ask                                                |

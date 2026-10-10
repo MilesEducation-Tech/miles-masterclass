@@ -313,6 +313,7 @@ export interface RegisterAcceptedResponse {
   /** `fe_registration_status(attempt_status)` — `PENDING` in practice, but the
    *  contract types it as the three-state value, so it is not narrowed here. */
   registration_status: RegistrationStatus;
+  /** The envelope's `message`, merged in by `WebinarRegistration`: `data` carries none. */
   message: string;
   attempt_id: string;
   /** Built server-side off the URLconf. Prefer following it. */
@@ -323,6 +324,7 @@ export interface RegisterAcceptedResponse {
 export interface AlreadyRegisteredResponse {
   status: 'already_registered';
   code: 'already_registered';
+  /** The envelope's `message`, merged in by `WebinarRegistration`: `data` carries none. */
   message: string;
   booking_id: string;
 }
