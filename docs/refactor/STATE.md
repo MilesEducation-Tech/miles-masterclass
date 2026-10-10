@@ -25,6 +25,24 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - The last row clears the overlay card.
     - 375 height 1,804 → 1,658px.
   - **Next:** ticket B (glass-and-glow finish), then C (AI Labs underline).
+  - ✅ Committed by the user as `a403a83` on `fix/MIL-46-footer-layout`.
+- 🔧 **2026-10-09, NON-REFACTOR — footer glass-and-glow finish, ticket B of `prompts/footer-redesign.md`.
+  DONE, UNCOMMITTED** on `feat/MIL-XXX-footer-finish` (from `fix/MIL-46-footer-layout`). No refactor phase moved.
+  - **What changed:**
+    - An accent hairline with a light sweep (`--animate-footer-sweep`, hidden under reduce-motion) and a radial
+      glow across the top.
+    - Small uppercase section labels with glowing dots; gradient-ring social chips.
+    - A glass app-download card; the NASBA mark sits on a white tile.
+    - A faded wordmark in the bottom padding.
+  - **Gates (local macOS, not CI):**
+    - `pnpm lint` 0 errors (107 warnings), structure check passed.
+    - `build:prod` green, initial 244.03 kB, only the `ai-labs.css` warning.
+    - `build-storybook` 0.
+  - **Browser (4101):**
+    - Rows aligned at 320–1440, en and ar.
+    - No horizontal scroll; the last row clears the overlay card.
+    - The sweep was measured moving.
+    - 375 height 1,651px (Phase A was 1,658).
 - ⚠️ The `<<<<<<< HEAD` / `>>>>>>> 9f90195` markers below were committed to `master` unresolved; left for the
   owner.
 
