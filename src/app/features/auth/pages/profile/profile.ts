@@ -15,7 +15,6 @@ import {
   AnswerMap,
   AnswerValue,
   Question,
-  QuestionOption,
   UserDetails,
   readAccountError,
 } from '@core/models/account.model';
@@ -42,7 +41,7 @@ interface Entry {
   index: number;
   question: Question;
   control: Control;
-  /** Options as the aria controls want them — `value` is the option KEY. */
+  /** Options as the select wants them — `value` is the option's stored value. */
   options: { label: string; value: string }[];
 }
 
@@ -57,35 +56,25 @@ interface Entry {
 interface AnswerField {
   /** The question `code` — the key this answer is stored under. */
   code: string;
-  /** Text, textarea, number and date, plus the chosen KEY of a single-select. */
+  /** Text, textarea, number and date. */
   text: string;
-  /** The chosen KEYS of a multi-select. */
-  choices: string[];
+  /**
+   * The chosen option values of a select. `app-select` writes a LIST in
+   * `multiple` mode but ONE value otherwise, so read it through `asList()`.
+   */
+  choices: string[] | string;
   /** Boolean formats. */
   flag: boolean;
 }
 
 /**
- * The aria controls speak in single string values; `questions/` speaks in value
- * LISTS (`value: ["licensed_accountant"]`, even for a single-select). The key
- * bridges the two, and an option is always looked up by it rather than the key
- * being split apart — so a value containing the separator cannot corrupt the
- * answer that goes back to the API.
+ * The stored answer's values that are still offered, in option order. An option
+ * the backend has since retired would otherwise sit in the select unrendered and
+ * be written straight back.
  */
-export function optionKey(option: QuestionOption): string {
-  return option.value.join('|');
-}
-
-export function keysToValues(question: Question, keys: readonly string[]): string[] {
-  const byKey = new Map((question.options ?? []).map((o) => [optionKey(o), o.value]));
-  return keys.flatMap((key) => byKey.get(key) ?? []);
-}
-
-export function valuesToKeys(question: Question, values: readonly string[]): string[] {
+function knownValues(question: Question, values: readonly string[]): string[] {
   const given = new Set(values);
-  return (question.options ?? [])
-    .filter((o) => o.value.length > 0 && o.value.every((v) => given.has(v)))
-    .map(optionKey);
+  return (question.options ?? []).map((o) => o.value).filter((v) => given.has(v));
 }
 
 /** An answer is a list for the select formats and a scalar for the rest. */
@@ -120,22 +109,13 @@ export function controlOf(question: Question): Control {
 /**
  * Codes the user record can answer on the learner's behalf.
  *
- * The questionnaire OWNS the form — `first_name` and `last_name` are questions
- * like any other and render from `questions/` alone. This only decides what a
- * blank one starts out showing, so a learner whose name is already known is not
- * asked to type it again.
- *
- * `user-details/` carries only `first_name` and `full_name`. `last_name` is
- * taken from `full_name` only when it is exactly two words — a longer name has
- * no safe split, and a blank the learner fills beats a wrong guess.
+ * The questionnaire OWNS the form — `full_name` is a question like any other
+ * and renders from `questions/` alone. This only decides what a blank one
+ * starts out showing, so a learner whose name is already known is not asked to
+ * type it again.
  */
 export function rowDefaults(user: UserDetails | null): Record<string, string> {
-  if (!user) return {};
-  const words = user.full_name.split(/\s+/).filter(Boolean);
-  return {
-    first_name: user.first_name,
-    last_name: words.length === 2 ? words[1] : '',
-  };
+  return user?.full_name ? { full_name: user.full_name } : {};
 }
 
 /**
@@ -234,14 +214,14 @@ export class Profile {
       : [],
   );
 
-  /** Control + option keys, derived from `questions/` alone so they stay stable
+  /** Control + options, derived from `questions/` alone so they stay stable
    *  while the learner types. */
   private readonly entries = computed<Entry[]>(() =>
     this.questions().map((question, index) => ({
       index,
       question,
       control: controlOf(question),
-      options: (question.options ?? []).map((o) => ({ label: o.text, value: optionKey(o) })),
+      options: (question.options ?? []).map((o) => ({ label: o.text, value: o.value })),
     })),
   );
 
@@ -270,11 +250,11 @@ export class Profile {
 
       switch (control) {
         case 'multi':
-          return { ...blank, choices: valuesToKeys(question, asList(stored)) };
+          return { ...blank, choices: knownValues(question, asList(stored)) };
         case 'single':
-          // One key, in the same slot as a multi-select — the only difference
-          // is that the primitive is not in `multiple` mode.
-          return { ...blank, choices: valuesToKeys(question, asList(stored)).slice(0, 1) };
+          // One value, in the same slot as a multi-select — the primitive is
+          // not in `multiple` mode, so it holds a scalar (`''` = none chosen).
+          return { ...blank, choices: knownValues(question, asList(stored))[0] ?? '' };
         case 'boolean':
           return { ...blank, flag: stored === true };
         default:
@@ -318,7 +298,7 @@ export class Profile {
       //    `'' | false | null | undefined | NaN` — an empty ARRAY is not empty
       //    to it.
       //  - `validate` is therefore the rule that actually fires, for BOTH
-      //    select kinds, since a single-select holds its one key in this slot.
+      //    select kinds, since a single-select holds its one value in this slot.
       required(item.choices, {
         when: ({ valueOf }) => this.requiresSlot(valueOf(item.code), 'choices'),
       });
@@ -344,7 +324,7 @@ export class Profile {
     return Array.from(groups, ([title, entries]) => ({ title, entries }));
   });
 
-  /** The current answer VALUES (not keys) per code — what gating reads. */
+  /** The current answer values per code — what gating reads. */
   private readonly currentValues = computed<Map<string, string[]>>(() => {
     const rows = this.model();
     const out = new Map<string, string[]>();
@@ -354,7 +334,7 @@ export class Profile {
       switch (control) {
         case 'multi':
         case 'single':
-          out.set(question.code, keysToValues(question, row.choices));
+          out.set(question.code, asList(row.choices));
           break;
         case 'boolean':
           out.set(question.code, [String(row.flag)]);
@@ -395,8 +375,8 @@ export class Profile {
   // ── Save ──────────────────────────────────────────────────────────────────
 
   /**
-   * The model back in the API's shape: selects give the option's value LIST
-   * verbatim, booleans give a boolean, numbers give a number.
+   * The model back in the API's shape: selects give a LIST of option values
+   * (even a single-select), booleans give a boolean, numbers give a number.
    *
    * A hidden question is never sent — its answer is not one the learner was
    * asked for. An untouched blank is omitted too, since PATCH is partial and an
@@ -416,7 +396,8 @@ export class Profile {
       switch (control) {
         case 'multi':
         case 'single': {
-          const values = keysToValues(question, row.choices);
+          // A select answer is a LIST on the wire, even for a single-select.
+          const values = asList(row.choices);
           if (values.length || code in stored) out[code] = values;
           break;
         }

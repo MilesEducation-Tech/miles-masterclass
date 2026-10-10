@@ -1,6 +1,6 @@
 import { PLATFORM_ID, Service, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map } from 'rxjs';
 
 import { environment } from '@env/environment';
 import {
@@ -123,13 +123,19 @@ export class AuthSession {
 
   /** Send a one-time code. Read `channel` and `cooldownSeconds` off the result. */
   sendOtp(identifier: string): Promise<OtpSendResponse> {
-    return firstValueFrom(this.api.call(AUTH_ROUTES.sendOtp, { identifier }, { context: QUIET }));
+    return firstValueFrom(
+      this.api
+        .call(AUTH_ROUTES.sendOtp, { identifier }, { context: QUIET })
+        .pipe(map((res) => res.data)),
+    );
   }
 
   /** Exchange the code for a session, and store it. */
   async verifyOtp(identifier: string, code: string): Promise<SessionResponse> {
     const session = await firstValueFrom(
-      this.api.call(AUTH_ROUTES.verifyOtp, { identifier, code }, { context: QUIET }),
+      this.api
+        .call(AUTH_ROUTES.verifyOtp, { identifier, code }, { context: QUIET })
+        .pipe(map((res) => res.data)),
     );
     this.store(session);
     return session;
@@ -211,11 +217,13 @@ export class AuthSession {
   private async doRefresh(): Promise<void> {
     try {
       const session = await firstValueFrom(
-        this.api.call(
-          AUTH_ROUTES.refresh,
-          { refreshToken: this._refreshToken() },
-          { context: QUIET_BACKGROUND },
-        ),
+        this.api
+          .call(
+            AUTH_ROUTES.refresh,
+            { refreshToken: this._refreshToken() },
+            { context: QUIET_BACKGROUND },
+          )
+          .pipe(map((res) => res.data)),
       );
       this.store(session);
     } catch (err) {

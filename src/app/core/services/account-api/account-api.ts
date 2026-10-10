@@ -2,7 +2,7 @@ import { HttpContext, httpResource } from '@angular/common/http';
 import { Service, effect, inject } from '@angular/core';
 
 import { ACCOUNT_ROUTES, parseUserDetails } from '../../models/account.model';
-import { SKIP_LOADING } from '../../models/http.model';
+import { CommonResponse, SKIP_LOADING } from '../../models/http.model';
 import { apiUrl } from '../api-client/api-client';
 import { AuthSession } from '../auth-session/auth-session';
 
@@ -48,7 +48,7 @@ export class AccountApi {
             context: new HttpContext().set(SKIP_LOADING, true),
           }
         : undefined,
-    { parse: parseUserDetails },
+    { parse: (raw) => parseUserDetails((raw as CommonResponse<unknown> | null)?.data) },
   );
 
   constructor() {

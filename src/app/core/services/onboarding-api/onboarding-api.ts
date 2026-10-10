@@ -1,6 +1,6 @@
 import { httpResource } from '@angular/common/http';
 import { Service, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map } from 'rxjs';
 
 import {
   ACCOUNT_ROUTES,
@@ -9,6 +9,7 @@ import {
   QuestionsResponse,
   SaveAnswersResponse,
 } from '../../models/account.model';
+import { CommonResponse } from '../../models/http.model';
 import { ApiClient, apiUrl } from '../api-client/api-client';
 import { AuthSession } from '../auth-session/auth-session';
 
@@ -31,18 +32,23 @@ export class OnboardingApi {
   /** Which questionnaire is in scope. Changing it re-fetches `questions`. */
   readonly form = signal<ProfileForm>('onboarding');
 
-  readonly questions = httpResource<QuestionsResponse>(() =>
-    this.auth.isAuthenticated()
-      ? { url: apiUrl(ACCOUNT_ROUTES.questions.path), params: { form: this.form() } }
-      : undefined,
+  readonly questions = httpResource(
+    () =>
+      this.auth.isAuthenticated()
+        ? { url: apiUrl(ACCOUNT_ROUTES.questions.path), params: { form: this.form() } }
+        : undefined,
+    { parse: (raw) => (raw as CommonResponse<QuestionsResponse>).data },
   );
 
   /**
-   * A bare flat map keyed by question code. `{}` is a normal empty state, not a
-   * 404 — having answered nothing is a legitimate position.
+   * A flat map keyed by question code. `{}` is a normal empty state, not a
+   * 404 — having answered nothing is a legitimate position. Three derived keys
+   * ride along (`country_name`, `show_referral_code`, `profile_picture`); they
+   * are not questions, so the profile page never renders or sends them back.
    */
-  readonly answers = httpResource<AnswerMap>(() =>
-    this.auth.isAuthenticated() ? apiUrl(ACCOUNT_ROUTES.answers.path) : undefined,
+  readonly answers = httpResource(
+    () => (this.auth.isAuthenticated() ? apiUrl(ACCOUNT_ROUTES.answers.path) : undefined),
+    { parse: (raw) => (raw as CommonResponse<AnswerMap>).data },
   );
 
   /**
@@ -65,7 +71,9 @@ export class OnboardingApi {
    */
   async saveAnswers(patch: AnswerMap): Promise<SaveAnswersResponse> {
     const result = await firstValueFrom(
-      this.api.call(ACCOUNT_ROUTES.saveAnswers, patch, { params: { form: this.form() } }),
+      this.api
+        .call(ACCOUNT_ROUTES.saveAnswers, patch, { params: { form: this.form() } })
+        .pipe(map((res) => res.data)),
     );
     this.answers.reload();
     return result;
