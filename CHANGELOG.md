@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.3.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.2.0...v3.3.0) (2026-10-10)
+
+
+### Features
+
+* **layout:** draw a hand-drawn underline under the AI Labs link ([#94](https://github.com/MilesEducation-Tech/miles-masterclass/issues/94)) ([fd16030](https://github.com/MilesEducation-Tech/miles-masterclass/commit/fd16030d366d69915115b56b2301f8ccc182603a))
+* **layout:** give the footer a glass-and-glow finish ([#93](https://github.com/MilesEducation-Tech/miles-masterclass/issues/93)) ([469cbcb](https://github.com/MilesEducation-Tech/miles-masterclass/commit/469cbcb703a0a5da17116c106d418eac33f42562))
+* **layout:** give the header a glass-and-glow finish ([#97](https://github.com/MilesEducation-Tech/miles-masterclass/issues/97)) ([5d3ada0](https://github.com/MilesEducation-Tech/miles-masterclass/commit/5d3ada071d55631e9029654f674f03ab7489c78c))
+* **layout:** reorder the header nav for guests and members ([#96](https://github.com/MilesEducation-Tech/miles-masterclass/issues/96)) ([d05ed98](https://github.com/MilesEducation-Tech/miles-masterclass/commit/d05ed9829b202372359e238ec260a4ff45693eaf))
+
+
+### Bug Fixes
+
+* **layout:** align the footer at every breakpoint ([#92](https://github.com/MilesEducation-Tech/miles-masterclass/issues/92)) ([4416262](https://github.com/MilesEducation-Tech/miles-masterclass/commit/441626265e71088cee63f0c59a2c3558bd960bbb))
+* **layout:** remove conflict markers left in animation.css ([#99](https://github.com/MilesEducation-Tech/miles-masterclass/issues/99)) ([739fccf](https://github.com/MilesEducation-Tech/miles-masterclass/commit/739fccfcf40b936e54941f5c8f61250f585ce996))
+* **shared:** restore focus rings, add a skip link, fix the Play caption ([#95](https://github.com/MilesEducation-Tech/miles-masterclass/issues/95)) ([1903522](https://github.com/MilesEducation-Tech/miles-masterclass/commit/19035229d36a214602818435710a43c4cd691254))
+
 ## [3.2.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.1.0...v3.2.0) (2026-10-09)
 
 
