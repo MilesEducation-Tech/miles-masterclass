@@ -16,7 +16,7 @@ import { NgpRovingFocusItem } from 'ng-primitives/roving-focus';
   host: {
     type: 'button',
     class:
-      'inline-flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground outline-none data-hover:bg-muted data-hover:text-foreground data-press:bg-secondary data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50',
+      'inline-flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground outline-none data-hover:bg-muted data-hover:text-foreground data-press:bg-secondary data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-2 data-focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50',
   },
   template: ` <ng-content /> `,
 })

@@ -31,6 +31,7 @@
   },
   "header": {
     "home": "Zur Startseite",
+    "skipToContent": "Zum Inhalt springen",
     "primaryNav": "Hauptmenü",
     "toggleMenu": "Navigationsmenü ein- oder ausblenden",
     "siteNav": "Seitennavigation",
@@ -56,6 +57,7 @@
     "compliance": "Compliance",
     "termsOfService": "Nutzungsbedingungen",
     "downloadOnThe": "Erhältlich bei",
+    "getItOn": "Jetzt bei",
     "scanToDownload": "Scannen, um die App herunterzuladen",
     "scanMe": "Scan mich",
     "ourLocation": "Unsere Standorte",

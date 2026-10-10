@@ -26,7 +26,7 @@ import { NgpFileUpload } from 'ng-primitives/file-upload';
   host: {
     type: 'button',
     class:
-      'flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-background px-6 py-8 text-center text-sm text-muted-foreground outline-none transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring data-dragover:border-primary data-dragover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50',
+      'flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-background px-6 py-8 text-center text-sm text-muted-foreground outline-none transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring data-dragover:border-primary data-dragover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50',
     '[attr.disabled]': 'upload.disabled() ? "" : null',
   },
   template: ` <ng-content>Drop files here or click to upload</ng-content> `,

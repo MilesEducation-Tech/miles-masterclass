@@ -48,7 +48,7 @@ const OPTION =
   imports: [NgpSelectDropdown, NgpSelectOption, NgpSelectPortal, NgIcon],
   host: {
     class:
-      'flex h-10 w-full cursor-pointer items-center justify-between rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-open:border-ring data-disabled:cursor-not-allowed data-disabled:opacity-50 data-invalid:data-touched:border-destructive',
+      'flex h-10 w-full cursor-pointer items-center justify-between rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-open:border-ring data-disabled:cursor-not-allowed data-disabled:opacity-50 data-invalid:data-touched:border-destructive',
     '[attr.aria-label]': 'ariaLabel() || null',
     // The primitive reflects disabled as `data-disabled` only; assistive technology needs this.
     '[attr.aria-disabled]': 'state().disabled() || null',

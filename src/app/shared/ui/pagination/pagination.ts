@@ -17,7 +17,7 @@ import {
 } from 'ng-primitives/pagination';
 
 const BUTTON =
-  'inline-flex size-9 cursor-pointer items-center justify-center rounded-lg text-sm text-foreground outline-none data-hover:bg-muted data-press:bg-secondary data-selected:bg-primary data-selected:text-primary-foreground data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:opacity-50';
+  'inline-flex size-9 cursor-pointer items-center justify-center rounded-lg text-sm text-foreground outline-none data-hover:bg-muted data-press:bg-secondary data-selected:bg-primary data-selected:text-primary-foreground data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:opacity-50';
 
 /**
  * Page navigation driven by `page` / `pageChange`; not a form control. The primitive makes the

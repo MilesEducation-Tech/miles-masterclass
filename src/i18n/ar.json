@@ -31,6 +31,7 @@
   },
   "header": {
     "home": "الانتقال إلى الصفحة الرئيسية",
+    "skipToContent": "تخطَّ إلى المحتوى",
     "primaryNav": "رئيسي",
     "toggleMenu": "فتح قائمة التنقل أو إغلاقها",
     "siteNav": "التنقل في الموقع",
@@ -56,6 +57,7 @@
     "compliance": "الامتثال",
     "termsOfService": "شروط الخدمة",
     "downloadOnThe": "متوفر على",
+    "getItOn": "احصل عليه من",
     "scanToDownload": "امسح الرمز لتحميل التطبيق",
     "scanMe": "امسحني",
     "ourLocation": "مواقعنا",

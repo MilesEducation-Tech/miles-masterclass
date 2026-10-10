@@ -17,10 +17,10 @@ import {
 import { NgpFormControl } from 'ng-primitives/form-field';
 
 const NAV =
-  'inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none data-hover:bg-muted data-hover:text-foreground data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:opacity-50';
+  'inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none data-hover:bg-muted data-hover:text-foreground data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:opacity-50';
 
 const DAY =
-  'inline-flex size-9 cursor-pointer items-center justify-center rounded-md text-sm text-foreground outline-none data-hover:bg-muted data-press:bg-secondary data-selected:bg-primary data-selected:text-primary-foreground data-today:font-semibold data-today:underline data-today:decoration-accent data-today:decoration-2 data-today:underline-offset-4 data-outside-month:text-muted-foreground data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:text-muted-foreground data-disabled:line-through';
+  'inline-flex size-9 cursor-pointer items-center justify-center rounded-md text-sm text-foreground outline-none data-hover:bg-muted data-press:bg-secondary data-selected:bg-primary data-selected:text-primary-foreground data-today:font-semibold data-today:underline data-today:decoration-accent data-today:decoration-2 data-today:underline-offset-4 data-outside-month:text-muted-foreground data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:text-muted-foreground data-disabled:line-through';
 
 /**
  * A month calendar bound to signal forms through its own `value` model (`Date | null`; start the

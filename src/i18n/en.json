@@ -31,6 +31,7 @@
   },
   "header": {
     "home": "Go to homepage",
+    "skipToContent": "Skip to content",
     "primaryNav": "Primary",
     "toggleMenu": "Toggle navigation menu",
     "siteNav": "Site navigation",
@@ -56,6 +57,7 @@
     "compliance": "Compliance",
     "termsOfService": "Terms of Service",
     "downloadOnThe": "Download on the",
+    "getItOn": "Get it on",
     "scanToDownload": "Scan to Download App",
     "scanMe": "Scan Me",
     "ourLocation": "Our Location",

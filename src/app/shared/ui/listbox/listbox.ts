@@ -35,7 +35,7 @@ import { NgpListbox, provideListboxState } from 'ng-primitives/listbox';
     <div
       ngpListbox
       ngpFormControl
-      class="flex max-h-60 flex-col gap-0.5 overflow-y-auto outline-none data-focus-visible:outline-2 data-focus-visible:outline-ring"
+      class="flex max-h-60 flex-col gap-0.5 overflow-y-auto outline-none data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-ring"
       [ngpListboxMode]="mode()"
       [ngpListboxDisabled]="disabled()"
       [ngpListboxCompareWith]="compareWith()"

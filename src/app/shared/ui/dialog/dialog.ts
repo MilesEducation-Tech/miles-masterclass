@@ -67,7 +67,7 @@ const PANEL: Record<DialogPosition, string> = {
         <button
           ngpButton
           type="button"
-          class="absolute top-3 end-3 z-10 inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none data-hover:bg-muted data-hover:text-foreground data-focus-visible:outline-2 data-focus-visible:outline-ring"
+          class="absolute top-3 end-3 z-10 inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none data-hover:bg-muted data-hover:text-foreground data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-ring"
           aria-label="Close"
           (click)="dialogRef.close()"
         >

@@ -13,7 +13,7 @@ import { NgpNativeSelect } from 'ng-primitives/select';
   ],
   host: {
     class:
-      'h-10 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none [color-scheme:dark] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 data-invalid:data-touched:border-destructive',
+      'h-10 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none [color-scheme:dark] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 data-invalid:data-touched:border-destructive',
   },
   template: ` <ng-content /> `,
 })

@@ -29,7 +29,7 @@ import { NgpButton } from 'ng-primitives/button';
       ngpAccordionTrigger
       ngpButton
       type="button"
-      class="group flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-start text-sm font-medium text-foreground outline-none data-hover:bg-muted data-focus-visible:outline-2 data-focus-visible:-outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:opacity-50"
+      class="group flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-start text-sm font-medium text-foreground outline-none data-hover:bg-muted data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:-outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:opacity-50"
     >
       {{ heading() }}
       <ng-icon

@@ -71,7 +71,7 @@ const OPTION =
       <button
         ngpComboboxButton
         type="button"
-        class="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none data-hover:bg-muted data-hover:text-foreground data-focus-visible:outline-2 data-focus-visible:outline-ring"
+        class="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none data-hover:bg-muted data-hover:text-foreground data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-ring"
         aria-label="Toggle options"
       >
         <ng-icon name="heroChevronDown" aria-hidden="true" />
