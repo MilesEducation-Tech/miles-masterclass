@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.3.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.3.0...v3.3.1) (2026-10-10)
+
+
+### Bug Fixes
+
+* **auth:** read the {success, message, data} envelope on sign-in and profile ([#101](https://github.com/MilesEducation-Tech/miles-masterclass/issues/101)) ([2b498d6](https://github.com/MilesEducation-Tech/miles-masterclass/commit/2b498d61f41e6b9c26e7b440ad0be881fdcaf104))
+* **offerings:** read the {success, message, data} envelope on webinar registration ([#103](https://github.com/MilesEducation-Tech/miles-masterclass/issues/103)) ([92e4aef](https://github.com/MilesEducation-Tech/miles-masterclass/commit/92e4aef71bdad80a1f55734ebb6d99371c775ff4))
+
 ## [3.3.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.2.0...v3.3.0) (2026-10-10)
 
 
