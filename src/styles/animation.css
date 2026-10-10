@@ -152,7 +152,6 @@
   }
 }
 
-<<<<<<< HEAD
 /* `--animate-footer-sweep`: the highlight on the footer's top hairline is a third of the line, so
    -100% → 300% carries it fully across. It crosses in the first 60% of the cycle and rests for the
    rest, so the line reads as a slow pulse rather than a constant scroll. */
@@ -163,7 +162,9 @@
   60%,
   to {
     translate: 300%;
-=======
+  }
+}
+
 /* Header nav underline draw-in (NavItem.highlight). Global for the same
    reason as dropdownFadeIn — the header has no component stylesheet. */
 @keyframes navUnderlineDraw {
@@ -172,6 +173,5 @@
   }
   to {
     stroke-dashoffset: 0;
->>>>>>> bf79068 (feat(layout): draw a hand-drawn underline under the AI Labs link)
   }
 }
