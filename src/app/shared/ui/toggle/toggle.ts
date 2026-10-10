@@ -22,7 +22,7 @@ import { NgpToggle } from 'ng-primitives/toggle';
   ],
   host: {
     class:
-      'inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-4 text-sm font-medium text-foreground outline-none transition-colors data-hover:bg-muted data-press:bg-secondary data-selected:border-primary data-selected:bg-primary data-selected:text-primary-foreground data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 data-invalid:data-touched:border-destructive',
+      'inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-4 text-sm font-medium text-foreground outline-none transition-colors data-hover:bg-muted data-press:bg-secondary data-selected:border-primary data-selected:bg-primary data-selected:text-primary-foreground data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-2 data-focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 data-invalid:data-touched:border-destructive',
     '(focusout)': 'touch.emit()',
   },
   template: ` <ng-content /> `,

@@ -31,6 +31,7 @@
   },
   "header": {
     "home": "Aller à l'accueil",
+    "skipToContent": "Aller au contenu",
     "primaryNav": "Principale",
     "toggleMenu": "Ouvrir ou fermer le menu de navigation",
     "siteNav": "Navigation du site",
@@ -56,6 +57,7 @@
     "compliance": "Conformité",
     "termsOfService": "Conditions d'utilisation",
     "downloadOnThe": "Disponible sur",
+    "getItOn": "Disponible sur",
     "scanToDownload": "Scannez pour télécharger l'application",
     "scanMe": "Scannez-moi",
     "ourLocation": "Nos bureaux",

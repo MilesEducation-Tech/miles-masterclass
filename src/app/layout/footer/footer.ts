@@ -119,11 +119,14 @@ export class Footer {
       label: 'App Store',
       url: 'https://apps.apple.com/in/app/miles-masterclass-ai-cpe/id6736642042',
       icon: appStoreIcon,
+      caption: 'footer.downloadOnThe',
     },
     {
       label: 'Google Play',
       url: 'https://play.google.com/store/apps/details?id=com.miles.masterclass&hl=en',
       icon: googlePlayIcon,
+      // Each store prescribes its badge wording: Apple's "Download on the", Google's "Get it on".
+      caption: 'footer.getItOn',
     },
   ];
 

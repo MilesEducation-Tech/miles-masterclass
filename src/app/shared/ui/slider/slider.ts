@@ -42,7 +42,7 @@ import {
     </div>
     <div
       ngpSliderThumb
-      class="absolute block size-5 -translate-x-1/2 rounded-full border border-primary bg-foreground shadow outline-none data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-ring"
+      class="absolute block size-5 -translate-x-1/2 rounded-full border border-primary bg-foreground shadow outline-none data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-2 data-focus-visible:outline-ring"
       [ariaLabel]="ariaLabel()"
       [attr.aria-disabled]="state().disabled() || null"
     ></div>

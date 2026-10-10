@@ -19,7 +19,7 @@ import { NgpSwitch, NgpSwitchThumb } from 'ng-primitives/switch';
   imports: [NgpSwitchThumb],
   host: {
     class:
-      'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border border-border bg-secondary outline-none transition-colors data-checked:border-primary data-checked:bg-primary data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:opacity-50 data-invalid:data-touched:border-destructive',
+      'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border border-border bg-secondary outline-none transition-colors data-checked:border-primary data-checked:bg-primary data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:opacity-50 data-invalid:data-touched:border-destructive',
     '(focusout)': 'touch.emit()',
   },
   template: `

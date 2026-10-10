@@ -28,7 +28,7 @@ import { NgpRating, NgpRatingItem } from 'ng-primitives/rating';
   providers: [provideIcons({ heroStarSolid })],
   host: {
     class:
-      'inline-flex gap-0.5 rounded-md text-2xl outline-none data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:opacity-50 data-readonly:cursor-default',
+      'inline-flex gap-0.5 rounded-md text-2xl outline-none data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:opacity-50 data-readonly:cursor-default',
     '(focusout)': 'touch.emit()',
   },
   template: `

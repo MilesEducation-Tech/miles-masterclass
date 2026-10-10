@@ -24,7 +24,7 @@ export type ButtonVariant =
 // behave the same for mouse, touch and keyboard; `disabled:` is the native attribute the
 // primitive reflects.
 const BASE =
-  'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-medium whitespace-nowrap outline-none transition-colors duration-200 motion-reduce:transition-none data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-medium whitespace-nowrap outline-none transition-colors duration-200 motion-reduce:transition-none data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-2 data-focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50';
 
 const VARIANTS: Record<ButtonVariant, string> = {
   // The design's main CTA: white on the dark page. `primary` is the blue accent button.

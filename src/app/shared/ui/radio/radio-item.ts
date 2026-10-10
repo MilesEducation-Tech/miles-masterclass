@@ -14,7 +14,7 @@ import { NgpRadioIndicator, NgpRadioItem } from 'ng-primitives/radio';
   imports: [NgpRadioIndicator],
   host: {
     class:
-      'group flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background p-3 text-sm text-foreground outline-none transition-colors data-hover:bg-muted data-press:bg-secondary data-checked:border-primary data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:text-muted-foreground',
+      'group flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background p-3 text-sm text-foreground outline-none transition-colors data-hover:bg-muted data-press:bg-secondary data-checked:border-primary data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:text-muted-foreground',
   },
   template: `
     <span

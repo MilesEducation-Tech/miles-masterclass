@@ -41,7 +41,7 @@ const TYPES: Record<ToastType, string> = {
       <button
         ngpButton
         type="button"
-        class="col-start-2 row-span-2 inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none data-hover:bg-muted data-hover:text-foreground data-focus-visible:outline-2 data-focus-visible:outline-ring"
+        class="col-start-2 row-span-2 inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none data-hover:bg-muted data-hover:text-foreground data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-ring"
         aria-label="Dismiss notification"
         (click)="dismiss()"
       >

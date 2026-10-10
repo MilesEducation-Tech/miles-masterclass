@@ -30,7 +30,7 @@ import { injectCheckboxState, NgpCheckbox } from 'ng-primitives/checkbox';
   imports: [NgIcon],
   host: {
     class:
-      'inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-input bg-background text-sm text-primary-foreground outline-none transition-colors data-hover:bg-muted data-checked:border-primary data-checked:bg-primary data-indeterminate:border-primary data-indeterminate:bg-primary data-focus-visible:outline-2 data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:opacity-50 data-invalid:data-touched:border-destructive',
+      'inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-input bg-background text-sm text-primary-foreground outline-none transition-colors data-hover:bg-muted data-checked:border-primary data-checked:bg-primary data-indeterminate:border-primary data-indeterminate:bg-primary data-focus-visible:outline-2 data-focus-visible:outline-solid data-focus-visible:outline-offset-2 data-focus-visible:outline-ring data-disabled:cursor-not-allowed data-disabled:opacity-50 data-invalid:data-touched:border-destructive',
     '(focusout)': 'touch.emit()',
   },
   template: `
