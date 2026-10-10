@@ -45,6 +45,29 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - 375 height 1,651px (Phase A was 1,658).
 - ⚠️ The `<<<<<<< HEAD` / `>>>>>>> 9f90195` markers below were committed to `master` unresolved; left for the
   owner.
+- 🔧 **2026-10-09, NON-REFACTOR — header nav order and labels, ticket D of `prompts/header-redesign.md`
+  (approved). DONE, UNCOMMITTED** on `feat/MIL-XXX-header-nav-order` (from `feat/MIL-48-ai-labs-underline` at
+  `bf79068`). No refactor phase moved.
+  - **What changed:**
+    - `nav.config.ts` follows the user's 2026-10-09 order: the guest nav loses CPE Solutions and gains Home and
+      Plans at the top level; in the member nav, AI Lab moves to second.
+    - The route stays `ai-labs`.
+  - **i18n** (`en`/`ar`/`de`/`es`/`fr`):
+    - `nav.aiLabs` → "AI Lab", `nav.masterClass` → "Masterclasses", `nav.podcast` → "Podcasts".
+    - New keys: `nav.home` (from `footer.home`) and `nav.plans` (from `nav.plan`; en "Plans").
+    - The ar/de/es/fr drafts for Masterclasses and Podcasts need a native check.
+    - The footer's Explore list picks up the new wording, as intended.
+  - **Gates (local macOS, not CI):**
+    - `pnpm lint` 0 errors (109 warnings), structure check passed.
+    - `build:prod` green, initial 244.27 kB.
+    - `build-storybook` 0.
+  - **Browser (4000 prod SSR, stopped afterwards):**
+    - Guest and member order verified at 1024 and 1440, plus the guest drawer at 375.
+    - Both navs fit one row at 1024.
+    - All 12 nav routes return 200.
+    - The dummy cookie was removed.
+  - **Next:** ticket E (glass-and-glow header finish), cut from D.
+  - ✅ Ticket C was committed by the user as `bf79068` on `feat/MIL-48-ai-labs-underline`.
 - 🔧 **2026-10-09, NON-REFACTOR — AI Labs header underline, ticket C of `prompts/footer-redesign.md`
   (approved). DONE, UNCOMMITTED** on `feat/MIL-XXX-ai-labs-underline` (from `master` at `7ba1b62`). No refactor
   phase moved.
@@ -3651,6 +3674,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-09 · NON-REFACTOR · **Header nav order + labels** (uncommitted, `feat/MIL-XXX-header-nav-order`): user's new guest/member order, AI Lab / Masterclasses / Podcasts / Plans / Home copy in 5 languages · lint 0 errors, structure ✔, build:prod 244.27 kB, storybook ✔ (local) · verified on the 4000 prod SSR build, signed out and in, 12 routes 200
 
 - 2026-10-09 · NON-REFACTOR · **AI Labs header underline** (uncommitted, `feat/MIL-XXX-ai-labs-underline`): AI Labs nav pill → highlighted link with badge, SVG draw-in underline (desktop + drawer) · lint 0 errors, structure ✔, build:prod 243.80 kB, storybook ✔ (local) · verified on the 4000 prod SSR build, signed out and in
 

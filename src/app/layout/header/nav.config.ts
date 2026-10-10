@@ -22,10 +22,12 @@ export const LOGGED_IN_NAV: readonly NavItem[] = [
     type: 'link',
     route: 'masterclass',
   },
+  { label: 'nav.aiLabs', type: 'link', route: 'ai-labs', badge: 'nav.beta', highlight: true },
   // { label: 'CAIRA', type: 'link', route: 'caira' },
   { label: 'nav.webinar', subLabel: 'nav.webinarSub', type: 'link', route: 'webinar' },
   { label: 'nav.reels', subLabel: 'nav.reelsSub', type: 'link', route: 'micro-learning' },
   { label: 'nav.podcast', subLabel: 'nav.podcastSub', type: 'link', route: 'podcast' },
+  // { label: 'Simulation', subLabel: '(AI Role-play)', type: 'link', route: 'simulation' },
   {
     label: 'nav.resources',
     type: 'menu',
@@ -40,43 +42,44 @@ export const LOGGED_IN_NAV: readonly NavItem[] = [
       },
     ],
   },
-  { label: 'nav.aiLabs', type: 'link', route: 'ai-labs', badge: 'nav.beta', highlight: true },
 ];
 
 /** Nav for unauthenticated visitors. */
 export const GUEST_NAV: readonly NavItem[] = [
-  {
-    label: 'nav.cpeSolutions',
-    type: 'menu',
-    children: [
-      { label: 'nav.individualLearners', type: 'link', route: 'home' },
-      { label: 'nav.enterpriseSolutions', type: 'link', route: 'cpe-for-corporate' },
-    ],
-  },
-  // { label: 'CAIRA', type: 'link', route: 'caira' },
+  { label: 'nav.home', type: 'link', route: 'home' },
+  { label: 'nav.aiLabs', type: 'link', route: 'ai-labs', badge: 'nav.beta', highlight: true },
   { label: 'nav.webinar', subLabel: 'nav.webinarSub', type: 'link', route: 'webinar' },
-  {
-    label: 'nav.learningModes',
-    type: 'menu',
-    children: [
-      {
-        label: 'nav.masterClass',
-        subLabel: 'nav.masterClassSub',
-        type: 'link',
-        route: 'masterclass',
-      },
-      { label: 'nav.reels', subLabel: 'nav.reelsSub', type: 'link', route: 'micro-learning' },
-      { label: 'nav.podcast', subLabel: 'nav.podcastSub', type: 'link', route: 'podcast' },
-    ],
-  },
+  { label: 'nav.plans', type: 'link', route: 'payment/plan' },
+  // {
+  //   label: 'nav.cpeSolutions',
+  //   type: 'menu',
+  //   children: [
+  //     { label: 'nav.individualLearners', type: 'link', route: 'home' },
+  //     { label: 'nav.enterpriseSolutions', type: 'link', route: 'cpe-for-corporate' },
+  //   ],
+  // },
+  // { label: 'CAIRA', type: 'link', route: 'caira' },
   {
     label: 'nav.resources',
     type: 'menu',
     children: [
-      { label: 'nav.plan', type: 'link', route: 'payment/plan' },
+      { label: 'nav.enterpriseSolutions', type: 'link', route: 'cpe-for-corporate' },
+      {
+        label: 'nav.learningModes',
+        type: 'menu',
+        children: [
+          {
+            label: 'nav.masterClass',
+            subLabel: 'nav.masterClassSub',
+            type: 'link',
+            route: 'masterclass',
+          },
+          { label: 'nav.reels', subLabel: 'nav.reelsSub', type: 'link', route: 'micro-learning' },
+          { label: 'nav.podcast', subLabel: 'nav.podcastSub', type: 'link', route: 'podcast' },
+        ],
+      },
       { label: 'nav.library', type: 'menu', children: LIBRARY_CHILDREN },
     ],
   },
-  { label: 'nav.aiLabs', type: 'link', route: 'ai-labs', badge: 'nav.beta', highlight: true },
   { label: 'nav.signUp', type: 'button', actionKind: 'signup', style: 'signup' },
 ];
