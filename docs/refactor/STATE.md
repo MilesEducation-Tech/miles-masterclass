@@ -45,6 +45,82 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - 375 height 1,651px (Phase A was 1,658).
 - ⚠️ The `<<<<<<< HEAD` / `>>>>>>> 9f90195` markers below were committed to `master` unresolved; left for the
   owner.
+- 🔧 **2026-10-10, NON-REFACTOR — P0 list from the taste audit. DONE, UNCOMMITTED**, in two places.
+  - **Folded into ticket E, at the user's choice** (`header.html`, `nav-menu-item.html`, `user-avatar-menu.html`):
+    - Desktop nav links and menu triggers lose `outline-none focus:outline-none`, which had left them with no
+      focus style at all, and get the footer's focus-visible ring.
+    - Every header transition and entrance animation (pill morph, dropdown, sub-menu, drawer, avatar menu,
+      hamburger) gets `motion-reduce:`.
+    - Verified in headless Chrome with real Tab presses: solid 2px white/60 ring, offset 2px, none on a mouse
+      click. Under emulated `prefers-reduced-motion: reduce`, all wrapper transitions and menu animations
+      compute to `none`.
+  - **New branch `fix/MIL-XXX-p0-accessibility`** (from `feat/MIL-47-footer-finish`), checked out in a scratch
+    worktree because E is uncommitted in the main tree:
+    - **Focus rings:** Tailwind v4 `outline-none` (and `outline-hidden`) set `--tw-outline-style: none`, so
+      every `[data-]focus-visible:outline-2` in the ngp kit rendered `none`. Fixed by adding
+      `outline-solid` under the same variant: 26 class lists in 23 `shared/ui` files.
+    - **Skip link:** a button in `main-layout`, not an `href="#…"` (the base href would send it home), with a
+      `#contentStart` focus target, not a `<main>` (some pages render their own); new `header.skipToContent`
+      key in 5 languages.
+    - **Store captions:** `FooterLink.caption` per store, with a new `footer.getItOn` key (Google's localized
+      badge wording) in 5 languages.
+    - Gates (local macOS): lint 0 errors (107 warnings), structure check passed, `build:prod` 244.19 kB,
+      `build-storybook` 0.
+    - Verified (4002 prod SSR, stopped):
+      - The skip link is the first Tab stop and visible; Enter moves focus past the header with no navigation;
+        the next Tab lands on page content.
+      - Sign Up and `app-input` are now solid 2px.
+      - The captions read "Download on the" and "Get it on".
+- 🔧 **2026-10-10, NON-REFACTOR — nav sub-menus open one at a time (user bug report). DONE, UNCOMMITTED**, on
+  top of ticket E on `feat/MIL-XXX-header-finish` in separate files (`nav-menu-item.ts`, `header.ts`), so it
+  commits on its own.
+  - **Cause:** every `NavMenuItem` kept its own `subPanelOpen`, so sibling sub-menus could both be open. It
+    surfaced in ticket D, where guest Resources gained sibling sub-menus (Learning Modes, Library).
+  - **Fix:**
+    - A `NavMenuGroup` (`@Service({ autoProvided: false })`) per sibling list, provided by the header and by each
+      `NavMenuItem` for its own children; each item joins its parent's group via `skipSelf`.
+    - `subPanelOpen` is a `linkedSignal` on the group, keyed by label because the header rebuilds its items on
+      session change.
+    - Closing or destroying an item releases the group, so the drawer reopens collapsed, as before.
+  - **Gates (local macOS):** lint 0 errors, structure check passed, `build:prod` 244.10 kB.
+  - **Browser (4000 prod SSR, stopped):** on desktop and in the 375 drawer, opening Library closes Learning Modes
+    and vice versa; the reopened drawer starts collapsed.
+- 🔧 **2026-10-10, NON-REFACTOR — header glass-and-glow finish, ticket E of `prompts/header-redesign.md`
+  (approved). DONE, UNCOMMITTED** on `feat/MIL-XXX-header-finish` (from `826294f`, ticket D). No refactor phase
+  moved.
+  - **What changed:**
+    - The scrolled pill is glass, with a masked gradient ring and an accent hairline. A one-shot sweep
+      (`--animate-header-sweep`, reusing the `progress-indeterminate` keyframes) runs each time the bar becomes the
+      pill.
+    - Active links get a glowing dot; highlighted items keep their underline.
+    - New `shadow-glass` token for the dropdowns, sub-menus, avatar menu and drawer.
+    - Sign Up gets a primary → accent gradient; the avatar gets a gradient ring.
+    - The global `.header` rule is deleted.
+  - **Avatar menu:** ng-primitives sets `left`/`top` but not `position`, so it had been opening at the bottom of
+    the page. Fixed in this ticket with `absolute` plus `ngpMenuTriggerScrollBehavior="close"`; `block` pins
+    `<html>` and drops the header out of pill mode. The same missing class on three other menus (reel card,
+    orders, admin sidebar) is flagged as a separate task.
+  - **Gates (local macOS, not CI):**
+    - `pnpm lint` 0 errors (109 warnings), structure check passed.
+    - `build:prod` green, initial 244.26 kB.
+    - `build-storybook` 0.
+  - **Browser (4000 prod SSR, stopped afterwards):**
+    - The sweep crosses once (−381 → 1164px in about 1.2s), rests off-screen, and fires again on the next
+      transition.
+    - The dropdowns are not clipped.
+    - The dot moves between links with the nav row a constant 517px.
+    - The drawer and Sign Up checked at 375.
+    - Signed in (dummy cookie, removed): the avatar menu opens 8px under the avatar, the pill stays, and scrolling
+      closes the menu.
+  - **Follow-up 2026-10-10 (bleed-through):** the desktop dropdown, the sub-menus and the drawer are now solid
+    `bg-popover` with no blur of their own. Once scrolled, the pill's backdrop-filter is their backdrop root, so
+    the /95 panels showed the page through unblurred. Confirmed in a headless capture and in the browser; lint and
+    `build:prod` green (244.33 kB). The taste-skill review is published as an artifact (screens + scorecard),
+    with its screenshots from `a0f5c52` (footer) and this tree (header).
+  - **RTL:** only the server render was checked (it mirrors and the items fit). The `local` build fails hydration
+    at `App` (NG0500, `app-consent-banner` vs `app-notification`), so its client never runs. That is pre-existing
+    and unrelated to this ticket.
+  - ✅ Ticket D was committed by the user as `826294f`.
 - 🔧 **2026-10-09, NON-REFACTOR — header nav order and labels, ticket D of `prompts/header-redesign.md`
   (approved). DONE, UNCOMMITTED** on `feat/MIL-XXX-header-nav-order` (from `feat/MIL-48-ai-labs-underline` at
   `bf79068`). No refactor phase moved.
@@ -3674,6 +3750,12 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-10 · NON-REFACTOR · **P0 accessibility fixes** (uncommitted): header focus rings + reduced motion folded into ticket E; new `fix/MIL-XXX-p0-accessibility` (scratch worktree) fixes the kit-wide `outline-none` focus-ring trap in 23 `shared/ui` files, adds a skip link and Google's "Get it on" caption · lint 0 errors, structure ✔, build:prod, storybook ✔ (local) · verified in headless Chrome with real key presses
+
+- 2026-10-10 · NON-REFACTOR · **Nav sub-menus single-open** (uncommitted, on `feat/MIL-XXX-header-finish`, separate files): `NavMenuGroup` per sibling list, `linkedSignal` open state, released on close/destroy · lint 0 errors, structure ✔, build:prod 244.10 kB (local) · verified on the 4000 prod SSR build, desktop + drawer
+
+- 2026-10-10 · NON-REFACTOR · **Header glass-and-glow finish** (uncommitted, `feat/MIL-XXX-header-finish`): glass pill + gradient ring + hairline with one-shot sweep, active dot, `shadow-glass` panels, gradient Sign Up, ringed avatar, `.header` deleted; avatar menu positioned (`absolute`, scroll `close`) · lint 0 errors, structure ✔, build:prod 244.26 kB, storybook ✔ (local) · verified on the 4000 prod SSR build, signed out and in
 
 - 2026-10-09 · NON-REFACTOR · **Header nav order + labels** (uncommitted, `feat/MIL-XXX-header-nav-order`): user's new guest/member order, AI Lab / Masterclasses / Podcasts / Plans / Home copy in 5 languages · lint 0 errors, structure ✔, build:prod 244.27 kB, storybook ✔ (local) · verified on the 4000 prod SSR build, signed out and in, 12 routes 200
 

@@ -309,6 +309,10 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
+  /* Glass panels: the header dropdowns, the nav sub-menus, the avatar menu and the mobile drawer. */
+  --shadow-glass:
+    0 10px 40px rgb(0 0 0 / 0.45), 0 0 0 1px rgb(255 255 255 / 0.1),
+    0 0 24px rgb(var(--accent-rgb) / 0.08);
 
   /* Header dropdown entrances. The keyframes live in animation.css (a separate
      global sheet, so unscoped); these name the exact timings header.html
@@ -329,6 +333,10 @@
   --animate-progress-indeterminate: progress-indeterminate 1.1s ease-in-out infinite;
   /* The light crossing the footer's top hairline every 6s. Keyframes in animation.css. */
   --animate-footer-sweep: footer-sweep 6s ease-in-out infinite;
+  /* One light crossing the header pill's hairline when the bar turns into the pill. It reuses the
+     progress bar's keyframes (a third-wide highlight, -100% → 300%) and runs once; `both` keeps it
+     off-screen before and after. */
+  --animate-header-sweep: progress-indeterminate 1.2s ease-out both;
 }
 
 * {
@@ -407,10 +415,6 @@ input::-webkit-inner-spin-button {
 
 .auth-card {
   @apply max-w-xl w-full m-auto h-auto rounded-xl bg-black/10 backdrop-blur-sm sm:p-6 p-3 shadow-2xl flex border-2 border-transparent flex-col space-y-4;
-}
-
-.header {
-  @apply rounded-full bg-black/50 backdrop-blur-sm  shadow-2xl flex border-2 border-transparent transition-all duration-600 ease-in-out;
 }
 
 router-outlet {
