@@ -45,6 +45,32 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - 375 height 1,651px (Phase A was 1,658).
 - ⚠️ The `<<<<<<< HEAD` / `>>>>>>> 9f90195` markers below were committed to `master` unresolved; left for the
   owner.
+- 🔧 **2026-10-10, NON-REFACTOR — P0 list from the taste audit. DONE, UNCOMMITTED**, in two places.
+  - **Folded into ticket E, at the user's choice** (`header.html`, `nav-menu-item.html`, `user-avatar-menu.html`):
+    - Desktop nav links and menu triggers lose `outline-none focus:outline-none`, which had left them with no
+      focus style at all, and get the footer's focus-visible ring.
+    - Every header transition and entrance animation (pill morph, dropdown, sub-menu, drawer, avatar menu,
+      hamburger) gets `motion-reduce:`.
+    - Verified in headless Chrome with real Tab presses: solid 2px white/60 ring, offset 2px, none on a mouse
+      click. Under emulated `prefers-reduced-motion: reduce`, all wrapper transitions and menu animations
+      compute to `none`.
+  - **New branch `fix/MIL-XXX-p0-accessibility`** (from `feat/MIL-47-footer-finish`), checked out in a scratch
+    worktree because E is uncommitted in the main tree:
+    - **Focus rings:** Tailwind v4 `outline-none` (and `outline-hidden`) set `--tw-outline-style: none`, so
+      every `[data-]focus-visible:outline-2` in the ngp kit rendered `none`. Fixed by adding
+      `outline-solid` under the same variant: 26 class lists in 23 `shared/ui` files.
+    - **Skip link:** a button in `main-layout`, not an `href="#…"` (the base href would send it home), with a
+      `#contentStart` focus target, not a `<main>` (some pages render their own); new `header.skipToContent`
+      key in 5 languages.
+    - **Store captions:** `FooterLink.caption` per store, with a new `footer.getItOn` key (Google's localized
+      badge wording) in 5 languages.
+    - Gates (local macOS): lint 0 errors (107 warnings), structure check passed, `build:prod` 244.19 kB,
+      `build-storybook` 0.
+    - Verified (4002 prod SSR, stopped):
+      - The skip link is the first Tab stop and visible; Enter moves focus past the header with no navigation;
+        the next Tab lands on page content.
+      - Sign Up and `app-input` are now solid 2px.
+      - The captions read "Download on the" and "Get it on".
 - 🔧 **2026-10-10, NON-REFACTOR — nav sub-menus open one at a time (user bug report). DONE, UNCOMMITTED**, on
   top of ticket E on `feat/MIL-XXX-header-finish` in separate files (`nav-menu-item.ts`, `header.ts`), so it
   commits on its own.
@@ -3724,6 +3750,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-10 · NON-REFACTOR · **P0 accessibility fixes** (uncommitted): header focus rings + reduced motion folded into ticket E; new `fix/MIL-XXX-p0-accessibility` (scratch worktree) fixes the kit-wide `outline-none` focus-ring trap in 23 `shared/ui` files, adds a skip link and Google's "Get it on" caption · lint 0 errors, structure ✔, build:prod, storybook ✔ (local) · verified in headless Chrome with real key presses
 
 - 2026-10-10 · NON-REFACTOR · **Nav sub-menus single-open** (uncommitted, on `feat/MIL-XXX-header-finish`, separate files): `NavMenuGroup` per sibling list, `linkedSignal` open state, released on close/destroy · lint 0 errors, structure ✔, build:prod 244.10 kB (local) · verified on the 4000 prod SSR build, desktop + drawer
 

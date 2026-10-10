@@ -1,7 +1,7 @@
 <header
   [class]="
     cn(
-      'fixed left-1/2 -translate-x-1/2 z-1000 transition-[top,max-width,padding,background] duration-600 ease-[cubic-bezier(0.175,0.885,0.32,2.2)]',
+      'fixed left-1/2 -translate-x-1/2 z-1000 transition-[top,max-width,padding,background] duration-600 ease-[cubic-bezier(0.175,0.885,0.32,2.2)] motion-reduce:transition-none',
       isScrolled()
         ? 'top-4 container mx-auto bg-none px-4'
         : 'top-0 pt-2 w-full max-w-none bg-linear-to-b from-background to-transparent md:px-10'
@@ -11,7 +11,7 @@
   <div
     [class]="
       cn(
-        'relative transition-all duration-600 ease-[cubic-bezier(0.175,0.885,0.32,2.2)] border-0',
+        'relative transition-all duration-600 ease-[cubic-bezier(0.175,0.885,0.32,2.2)] motion-reduce:transition-none border-0',
         isScrolled()
           ? 'shadow-[0_6px_6px_rgba(0,0,0,0.2),0_0_10px_rgba(0,0,0,0.1)] rounded-[999px] bg-transparent'
           : 'shadow-none rounded-none bg-transparent'
@@ -21,7 +21,7 @@
     <div
       [class]="
         cn(
-          'relative flex flex-col items-center justify-between w-full mx-auto transition-all duration-600 ease-in-out rounded-full border-2 border-transparent',
+          'relative flex flex-col items-center justify-between w-full mx-auto transition-all duration-600 ease-in-out motion-reduce:transition-none rounded-full border-2 border-transparent',
           isScrolled() &&
             'bg-background/60 backdrop-blur-xl shadow-[0_8px_32px_rgb(0_0_0/0.45),inset_0_1px_0_rgb(255_255_255/0.08)] before:pointer-events-none before:absolute before:-inset-0.5 before:rounded-[inherit] before:p-px before:bg-linear-to-br before:from-white/40 before:via-white/5 before:to-white/40 before:[mask:linear-gradient(#000_0_0)_content-box_exclude,linear-gradient(#000_0_0)]'
         )
@@ -42,7 +42,7 @@
         </span>
       }
       <div
-        class="flex items-center justify-between w-full rounded-[50px] px-2 py-2 transition-all duration-500! ease-in-out lg:px-4 lg:py-2.5 md:px-3 md:py-2 z-20 relative"
+        class="flex items-center justify-between w-full rounded-[50px] px-2 py-2 transition-all duration-500! ease-in-out motion-reduce:transition-none lg:px-4 lg:py-2.5 md:px-3 md:py-2 z-20 relative"
       >
         <!-- Logo -->
         <a routerLink="/" class="flex items-center" [attr.aria-label]="'header.home' | transloco">
@@ -74,7 +74,7 @@
                       ariaCurrentWhenActive="page"
                       [class]="
                         cn(
-                          'relative flex items-center gap-1 px-2 py-1.5 no-underline text-sm font-semibold rounded-3xl transition-all duration-200 whitespace-nowrap cursor-pointer border-0 bg-transparent outline-none focus:outline-none hover:bg-white/5',
+                          'relative flex items-center gap-1 px-2 py-1.5 no-underline text-sm font-semibold rounded-3xl transition-all duration-200 whitespace-nowrap cursor-pointer border-0 bg-transparent hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60',
                           rla.isActive &&
                             !item.highlight &&
                             'after:absolute after:bottom-0 after:left-1/2 after:size-1 after:-translate-x-1/2 after:rounded-full after:bg-current after:shadow-[0_0_6px_currentColor]',
@@ -164,7 +164,7 @@
                       ngpAccordionTrigger
                       [class]="
                         cn(
-                          'flex items-center gap-1 px-2 py-1.5 text-sm font-semibold text-foreground rounded-3xl hover:bg-white/5 hover:text-accent transition-all duration-200 cursor-pointer border-0 bg-transparent outline-none focus:outline-none',
+                          'flex items-center gap-1 px-2 py-1.5 text-sm font-semibold text-foreground rounded-3xl hover:bg-white/5 hover:text-accent transition-all duration-200 cursor-pointer border-0 bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60',
                           hasActiveChild(item) && hasActivePlan()
                             ? 'text-accent-premium'
                             : hasActiveChild(item) && !hasActivePlan()
@@ -190,7 +190,7 @@
                          and any transparency shows the page through unblurred. -->
                     <div
                       ngpAccordionContent
-                      class="absolute top-[calc(100%+8px)] end-0 min-w-[220px] max-w-[300px] bg-popover rounded-xl p-2 shadow-glass before:absolute before:inset-x-6 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-accent/50 before:to-transparent z-1000 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)] origin-top-center"
+                      class="absolute top-[calc(100%+8px)] end-0 min-w-[220px] max-w-[300px] bg-popover rounded-xl p-2 shadow-glass before:absolute before:inset-x-6 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-accent/50 before:to-transparent z-1000 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)] motion-reduce:animate-none origin-top-center"
                     >
                       @for (child of item.children; track child.label) {
                         <app-nav-menu-item [item]="child" (navigated)="closeNavDropdown()" />
@@ -222,7 +222,7 @@
               <span
                 [class]="
                   cn(
-                    'w-[25px] h-[2px] bg-foreground inline-block relative transition-all duration-300',
+                    'w-[25px] h-[2px] bg-foreground inline-block relative transition-all duration-300 motion-reduce:transition-none',
                     isMobileMenuOpen() && 'rotate-45 top-[6px]'
                   )
                 "
@@ -231,7 +231,7 @@
               <span
                 [class]="
                   cn(
-                    'w-[25px] h-[2px] bg-foreground inline-block relative transition-all duration-300',
+                    'w-[25px] h-[2px] bg-foreground inline-block relative transition-all duration-300 motion-reduce:transition-none',
                     isMobileMenuOpen() && 'opacity-0'
                   )
                 "
@@ -240,7 +240,7 @@
               <span
                 [class]="
                   cn(
-                    'w-[25px] h-[2px] bg-foreground inline-block relative transition-all duration-300',
+                    'w-[25px] h-[2px] bg-foreground inline-block relative transition-all duration-300 motion-reduce:transition-none',
                     isMobileMenuOpen() && '-rotate-45 top-[-6px]'
                   )
                 "
@@ -256,7 +256,7 @@
                 aria-modal="true"
                 [attr.aria-label]="'header.siteNav' | transloco"
                 ngpFocusTrap
-                class="absolute top-[calc(100%+12px)] end-0 min-w-[280px] max-w-[90vw] max-h-[calc(100vh-120px)] overflow-y-auto bg-popover rounded-2xl p-3 shadow-glass before:absolute before:inset-x-6 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-accent/50 before:to-transparent z-1000 animate-[mobileMenuSlideIn_0.3s_cubic-bezier(0.4,0,0.2,1)] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-[10px]"
+                class="absolute top-[calc(100%+12px)] end-0 min-w-[280px] max-w-[90vw] max-h-[calc(100vh-120px)] overflow-y-auto bg-popover rounded-2xl p-3 shadow-glass before:absolute before:inset-x-6 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-accent/50 before:to-transparent z-1000 animate-[mobileMenuSlideIn_0.3s_cubic-bezier(0.4,0,0.2,1)] motion-reduce:animate-none [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-[10px]"
               >
                 <!-- Logged-in user info + profile actions -->
                 @if (isLoggedIn()) {
@@ -426,7 +426,7 @@
                         </button>
                         <div
                           ngpCollapsibleContent
-                          class="mt-1 mb-1 ms-2 bg-muted rounded-lg p-2 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)]"
+                          class="mt-1 mb-1 ms-2 bg-muted rounded-lg p-2 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)] motion-reduce:animate-none"
                         >
                           @for (child of item.children; track child.label) {
                             <app-nav-menu-item [item]="child" (navigated)="closeMobileMenu()" />

@@ -49,7 +49,7 @@
       ngpCollapsibleContent
       [class]="
         cn(
-          'mt-1 ms-3 bg-muted rounded-lg p-2 z-1010 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)]',
+          'mt-1 ms-3 bg-muted rounded-lg p-2 z-1010 animate-[dropdownFadeIn_0.2s_cubic-bezier(0.4,0,0.2,1)] motion-reduce:animate-none',
           'lg:mt-0 lg:ms-0 lg:absolute lg:top-0 lg:min-w-[220px] lg:max-w-[300px] lg:bg-popover lg:rounded-xl lg:p-2 lg:shadow-glass',
           flipped() ? 'lg:end-full lg:me-1' : 'lg:start-full lg:ms-1'
         )
