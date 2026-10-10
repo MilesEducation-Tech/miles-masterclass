@@ -8,7 +8,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 ## Now
 
 - 🔧 **2026-10-10, NON-REFACTOR — sign-in and profile against the enveloped Accounts API
-  (`prompts/auth-envelope-fix.md`, approved). DONE, UNCOMMITTED** on `fix/MIL-XXX-auth-envelope` (from
+  (`prompts/auth-envelope-fix.md`, approved). ✅ Committed by the user as `f877623` (Postman) + `803bc1d` (fix)
+  on `fix/MIL-52-auth-envelope`** (from
   `master`, carrying the regenerated Postman files). No refactor phase moved.
   - **Cause:** the backend now wraps every body in `{success, message, data}` (live on UAT). `isSessionResponse`
     rejected the wrapped verify body, so a correct OTP never signed in, and every refresh cleared the session.
@@ -44,6 +45,25 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       `auth/**` is `RenderMode.Client` by design.
   - **Backend gap:** the `full_name` answer does not update the row, so `user-details/` stays `null` and the
     avatar shows "U".
+  - **Follow-up, UNCOMMITTED, same branch: `GET profile/` is no longer read** (user decision 2026-10-10, "drop
+    it everywhere").
+    - **Behaviour:**
+      - The form pre-fills from `user-details/` only, which means the name.
+      - A re-seed (`user-details/` reloads after every save) keeps typed rows.
+      - Blanks are never sent, and a checkbox is sent only when ticked, so a save cannot erase answers it
+        cannot show.
+    - **Trade-off, accepted:**
+      - Saved answers do not show on return.
+      - A saved "yes" cannot be unset from the form.
+    - **Gates (local):**
+      - lint 0 errors (107 warnings), structure check passed.
+      - `build:prod` 244.75 kB.
+    - **Verified, dev with an in-memory dummy session:** UAT stopped delivering OTP mail to the temp domains
+      (`forexzig.com`, `denipl.com`), even though every send answered 200.
+      - Reads are only `user-details/` + `questions/` (no `profile/`) on both forms.
+      - The name is pre-filled; values survive a `user-details/` reload.
+      - The PATCH body carries only the filled fields; ticked → `true`, unticked → omitted.
+      - A live run still needs a deliverable inbox.
   - **Out of scope, flagged:**
     - The app-wide `response.status` reads (`faculty.ts`, `podcast-course-hero.ts`).
     - The option `description` line and `?login_via=`.
@@ -3793,6 +3813,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-10 · NON-REFACTOR · **Profile form pre-fills from `user-details/` only** (uncommitted, `fix/MIL-52-auth-envelope`): `GET profile/` dropped (user decision); re-seed keeps typed rows; no blanks or unticked booleans sent · lint 0 errors, structure ✔, build:prod 244.75 kB (local) · verified in dev with a dummy session (UAT OTP mail to temp domains stopped arriving)
 
 - 2026-10-10 · NON-REFACTOR · **Auth envelope fix** (uncommitted, `fix/MIL-XXX-auth-envelope`): unwrap `{success, message, data}` across sign-in, refresh, `user-details/`, questions/profile; `UserDetails` cut to the keys read (names nullable); string option values; single-select scalar → list · lint 0 errors, structure ✔, tsc ✔ (local) · sign-in, onboarding, profile save, rotation, guards, logout returning-user sign-in, logout 204 verified live on UAT; build:prod 244.80 kB; prod SSR clean
 

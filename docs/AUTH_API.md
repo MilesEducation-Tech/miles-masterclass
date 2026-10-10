@@ -49,7 +49,7 @@ a caller must not be able to claim to be another one.
 | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET user-details/`                       | 8 routing fields (names, milestones, `Pathway`, enrolment). **GET only** — the old `user_details/` row and its PATCH were deleted 2026-09-24. |
 | `GET questions/?form=onboarding\|profile` | `{Questions: [...]}`, flat, sorted by `display_order`.                                                                                        |
-| `GET/PATCH profile/?form=…`               | Questionnaire answers **only**. See §4.                                                                                                       |
+| `GET/PATCH profile/?form=…`               | Questionnaire answers **only**. See §4. The app writes (`PATCH`) but does **not read** it — the form pre-fills from `user-details/` only.     |
 | `GET web/maintainance-status/`            | Public. `{is_maintenance, force_logout_all_user}`. Not bound yet — the old `web/app-status/` had no reader and was removed.                   |
 
 ---
@@ -178,6 +178,10 @@ the top (401/429/502/503), a `code` for the two 403s (read off the top level or 
 `api/v1/account/profile/` **changed meaning on 2026-09-09.** It used to serve the user row; it now
 serves questionnaire answers and nothing else, and `PATCH profile/` is the only profile write. The user record is the read-only `user-details/`.
 
+- **This app does not call `GET profile/`** (product decision 2026-10-10). The onboarding and profile
+  forms pre-fill from `user-details/`, which carries the name and nothing else, so a saved answer does not
+  show when the learner returns. To keep a save from erasing what it cannot see, the form never sends a
+  blank and sends a checkbox only when it is ticked (a saved "yes" cannot be taken back from the form).
 - `GET profile/` is a **bare flat map keyed by question code** — the value is the answer itself, not
   an object describing it. `{}` is a normal empty state, not a 404. Key order is display order.
   Flattened on 2026-09-10, so `type` is no longer reported here — join `questions/` on `code`.
@@ -260,7 +264,7 @@ buckets (the legacy `Screen1`/`Screen2` keying is gone). `visibility: "both"` ap
 | -------------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
 | The five sign-in POSTs, token state, refresh | `core/services/auth-session/`              | `@Service()` + `ApiClient.call`                 |
 | `user-details/`                              | `core/services/account-api/`               | `@Service()` + `httpResource`                   |
-| `questions/`, `profile/`                     | `core/services/onboarding-api/`            | `@Service()` + `httpResource` (+ PATCH methods) |
+| `questions/`, `PATCH profile/`               | `core/services/onboarding-api/`            | `@Service()` + `httpResource` (+ PATCH methods) |
 | Login screen state                           | `features/auth/services/auth-facade.ts`    | `@Service({autoProvided: false})`, route-scoped |
 | Bearer + rotation                            | `core/interceptors/app/app-interceptor.ts` |                                                 |
 | Route gating                                 | `core/guards/auth/`                        | functional `CanMatchFn`                         |

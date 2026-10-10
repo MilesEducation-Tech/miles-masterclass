@@ -103,15 +103,13 @@ export function parseUserDetails(body: unknown): UserDetails {
 export type AnswerValue = string | number | boolean | string[];
 
 /**
- * `GET profile/` returns a BARE FLAT MAP keyed by question code — the value is
- * the answer itself, not an object describing it. Text gives a string, select
- * formats give a list, booleans give `true`/`false`, numbers give a number.
+ * The body of `PATCH profile/` (and its response's `answers`): a FLAT MAP keyed
+ * by question code — the value is the answer itself, not an object describing
+ * it. Text gives a string, select formats give a list, booleans give
+ * `true`/`false`, numbers give a number.
  *
- * An empty answer set is `{}`, not a 404: having answered nothing is normal.
- * Key order is display order; there is no separate ordering field.
- *
- * Flattened on 2026-09-10 — `type` is no longer reported here. Join
- * `questions/` on `code` if you need it.
+ * `GET profile/` serves the same map, but this app does not read it (product
+ * decision 2026-10-10: the form is pre-filled from `user-details/` only).
  */
 export type AnswerMap = Record<string, AnswerValue>;
 
@@ -259,11 +257,6 @@ export const ACCOUNT_ROUTES = {
     Record<string, never>,
     { form: ProfileForm }
   >,
-
-  answers: {
-    path: 'api/v1/account/profile/',
-    method: 'GET',
-  } as RouteConfig<void, CommonResponse<AnswerMap>>,
 
   saveAnswers: {
     path: 'api/v1/account/profile/',

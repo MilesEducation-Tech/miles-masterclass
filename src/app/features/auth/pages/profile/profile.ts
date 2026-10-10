@@ -67,17 +67,8 @@ interface AnswerField {
   flag: boolean;
 }
 
-/**
- * The stored answer's values that are still offered, in option order. An option
- * the backend has since retired would otherwise sit in the select unrendered and
- * be written straight back.
- */
-function knownValues(question: Question, values: readonly string[]): string[] {
-  const given = new Set(values);
-  return (question.options ?? []).map((o) => o.value).filter((v) => given.has(v));
-}
-
-/** An answer is a list for the select formats and a scalar for the rest. */
+/** A select's slot as the list the API wants: `app-select` writes one value
+ *  unless it is in `multiple` mode. */
 function asList(value: AnswerValue | undefined): string[] {
   if (value === undefined || value === null || value === '') return [];
   return Array.isArray(value) ? value : [String(value)];
@@ -107,12 +98,14 @@ export function controlOf(question: Question): Control {
 }
 
 /**
- * Codes the user record can answer on the learner's behalf.
+ * Codes the user record can answer on the learner's behalf — the ONLY pre-fill
+ * this form has, because `GET profile/` is not read (product decision
+ * 2026-10-10). `user-details/` carries the name and nothing else, so every other
+ * question starts blank, including ones the learner answered before.
  *
  * The questionnaire OWNS the form — `full_name` is a question like any other
  * and renders from `questions/` alone. This only decides what a blank one
- * starts out showing, so a learner whose name is already known is not asked to
- * type it again.
+ * starts out showing.
  */
 export function rowDefaults(user: UserDetails | null): Record<string, string> {
   return user?.full_name ? { full_name: user.full_name } : {};
@@ -127,10 +120,8 @@ export function rowDefaults(user: UserDetails | null): Record<string, string> {
  * which are required and which are revealed by an earlier answer.
  *
  *   - `questions/` says what to render.
- *   - `profile/` says what has been answered. The two join on `code`.
- *   - `user-details/` is not a second form and cannot be written; it only
- *     seeds blank name fields (see `rowDefaults`). Every write is `PATCH
- *     profile/`.
+ *   - `user-details/` pre-fills the name (see `rowDefaults`) and nothing else;
+ *     `GET profile/` is not read. Every write is `PATCH profile/`.
  *
  * Built on signal forms: the model is one row per question, the schema is
  * applied per item by `applyEach`, and `required` / `hidden` are driven by the
@@ -183,21 +174,16 @@ export class Profile {
   // ── Loading state ─────────────────────────────────────────────────────────
 
   readonly isLoading = computed(
-    () =>
-      this.onboarding.questions.isLoading() ||
-      this.onboarding.answers.isLoading() ||
-      this.account.user.isLoading(),
+    () => this.onboarding.questions.isLoading() || this.account.user.isLoading(),
   );
 
   /**
    * `hasValue()` first: reading `value()` on a resource in its error state throws.
    *
-   * The user record is NOT here: it only seeds blank name fields, so the
-   * questionnaire must still load and save when that one read fails.
+   * The user record is NOT here: it only seeds the name, so the questionnaire
+   * must still load and save when that one read fails.
    */
-  readonly loadError = computed(
-    () => this.onboarding.questions.error() ?? this.onboarding.answers.error(),
-  );
+  readonly loadError = computed(() => this.onboarding.questions.error());
 
   readonly isOnboarding = computed(() => this.onboarding.form() === 'onboarding');
 
@@ -229,41 +215,31 @@ export class Profile {
     () => new Map(this.entries().map((entry) => [entry.question.code, entry])),
   );
 
-  /** What `profile/` already holds. */
-  private readonly saved = computed<AnswerMap>(() =>
-    this.onboarding.answers.hasValue() ? (this.onboarding.answers.value() ?? {}) : {},
-  );
-
   /**
-   * The form model: one row per question, re-seeded whenever either resource
-   * reloads but written straight through by the form in between — which is
-   * exactly `linkedSignal`, and it means a reload after save does not strand
-   * what the learner typed.
+   * The form model: one row per question, written straight through by the form
+   * — which is `linkedSignal`.
+   *
+   * It re-seeds when `questions/` or `user-details/` reloads, and `user-details/`
+   * reloads after EVERY save. With nothing else to seed from, a plain re-seed
+   * would blank what the learner just saved; so an existing row is KEPT, and the
+   * user record only fills a name that is still blank.
    */
-  private readonly model = linkedSignal<AnswerField[]>(() => {
-    const answers = this.saved();
-    const defaults = rowDefaults(this.user());
-    return this.entries().map(({ question, control }) => {
-      const code = question.code;
-      const stored = answers[code];
-      const blank: AnswerField = { code, text: '', choices: [], flag: false };
-
-      switch (control) {
-        case 'multi':
-          return { ...blank, choices: knownValues(question, asList(stored)) };
-        case 'single':
-          // One value, in the same slot as a multi-select — the primitive is
-          // not in `multiple` mode, so it holds a scalar (`''` = none chosen).
-          return { ...blank, choices: knownValues(question, asList(stored))[0] ?? '' };
-        case 'boolean':
-          return { ...blank, flag: stored === true };
-        default:
-          return {
-            ...blank,
-            text: stored === undefined || stored === null ? (defaults[code] ?? '') : String(stored),
-          };
-      }
-    });
+  private readonly model = linkedSignal({
+    source: () => ({ entries: this.entries(), defaults: rowDefaults(this.user()) }),
+    computation: ({ entries, defaults }, previous?: { value: AnswerField[] }): AnswerField[] => {
+      const kept = new Map(previous?.value.map((row) => [row.code, row]));
+      return entries.map(({ question, control }) => {
+        const code = question.code;
+        // A single-select holds one value (`''` = none chosen), a multi-select a list.
+        const row = kept.get(code) ?? {
+          code,
+          text: '',
+          choices: control === 'single' ? '' : [],
+          flag: false,
+        };
+        return row.text || !defaults[code] ? row : { ...row, text: defaults[code] };
+      });
+    },
   });
 
   /**
@@ -379,13 +355,14 @@ export class Profile {
    * (even a single-select), booleans give a boolean, numbers give a number.
    *
    * A hidden question is never sent — its answer is not one the learner was
-   * asked for. An untouched blank is omitted too, since PATCH is partial and an
-   * omitted code keeps whatever it had; a blank that CLEARS a stored answer is
-   * sent, because omitting it would silently ignore the edit.
+   * asked for. A blank is NEVER sent: the form does not read what is already
+   * saved (no `GET profile/`), so a blank here may sit over a stored answer the
+   * learner cannot see, and PATCH is partial — an omitted code keeps its value.
+   * The same goes for a checkbox: it shows unticked even when `true` is stored,
+   * so only a tick is sent — a saved "yes" can be set but not taken back here.
    */
   private toAnswerMap(): AnswerMap {
     const rows = this.model();
-    const stored = this.saved();
     const out: AnswerMap = {};
 
     for (const { index, question, control } of this.entries()) {
@@ -398,11 +375,11 @@ export class Profile {
         case 'single': {
           // A select answer is a LIST on the wire, even for a single-select.
           const values = asList(row.choices);
-          if (values.length || code in stored) out[code] = values;
+          if (values.length) out[code] = values;
           break;
         }
         case 'boolean':
-          out[code] = row.flag;
+          if (row.flag) out[code] = true;
           break;
         case 'number': {
           const text = row.text.trim();
@@ -411,7 +388,7 @@ export class Profile {
         }
         default: {
           const text = row.text.trim();
-          if (text !== '' || code in stored) out[code] = text;
+          if (text !== '') out[code] = text;
         }
       }
     }
