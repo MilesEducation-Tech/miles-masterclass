@@ -71,7 +71,18 @@
                       @if (first && hasActivePlan()) {
                         <ng-icon [svg]="crownIcon" class="w-4! h-4!" aria-hidden="true" />
                       }
-                      {{ item.label }}
+                      <span class="relative">
+                        {{ item.label }}
+                        @if (item.highlight) {
+                          <ng-container [ngTemplateOutlet]="navUnderline" />
+                        }
+                      </span>
+                      @if (item.badge) {
+                        <span
+                          class="rounded-full bg-accent/20 text-accent px-1.5 py-px text-[10px] font-bold uppercase tracking-wide leading-4"
+                          >{{ item.badge }}</span
+                        >
+                      }
                     </a>
                   }
 
@@ -294,7 +305,18 @@
                         @if (first && hasActivePlan()) {
                           <ng-icon [svg]="crownIcon" class="w-4! h-4!" aria-hidden="true" />
                         }
-                        {{ item.label }}
+                        <span class="relative">
+                          {{ item.label }}
+                          @if (item.highlight) {
+                            <ng-container [ngTemplateOutlet]="navUnderline" />
+                          }
+                        </span>
+                        @if (item.badge) {
+                          <span
+                            class="rounded-full bg-accent/20 text-accent px-1.5 py-px text-[10px] font-bold uppercase tracking-wide leading-4"
+                            >{{ item.badge }}</span
+                          >
+                        }
                       </a>
                     }
 
@@ -406,3 +428,24 @@
     </div>
   </div>
 </header>
+
+<!-- Hand-drawn underline for NavItem.highlight. pathLength="1" lets a 1-unit
+     dash draw in from offset 1 → 0. Host span must be `relative`. -->
+<ng-template #navUnderline>
+  <svg
+    class="absolute inset-x-0 -bottom-1.5 h-1.5 w-full overflow-visible text-accent pointer-events-none"
+    viewBox="0 0 100 12"
+    preserveAspectRatio="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M3 8 Q 25 2 50 6 T 97 4"
+      pathLength="1"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="5"
+      stroke-linecap="round"
+      class="[stroke-dasharray:1] animate-[navUnderlineDraw_0.48s_cubic-bezier(0.25,0.46,0.45,0.94)_0.3s_backwards] motion-reduce:animate-none"
+    />
+  </svg>
+</ng-template>

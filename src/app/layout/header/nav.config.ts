@@ -40,7 +40,7 @@ export const LOGGED_IN_NAV: readonly NavItem[] = [
       },
     ],
   },
-  { label: 'nav.aiLabs', type: 'button', route: 'ai-labs', style: 'demo', badge: 'nav.beta' },
+  { label: 'nav.aiLabs', type: 'link', route: 'ai-labs', badge: 'nav.beta', highlight: true },
 ];
 
 /** Nav for unauthenticated visitors. */
@@ -77,6 +77,6 @@ export const GUEST_NAV: readonly NavItem[] = [
       { label: 'nav.library', type: 'menu', children: LIBRARY_CHILDREN },
     ],
   },
-  { label: 'nav.aiLabs', type: 'button', route: 'ai-labs', style: 'demo', badge: 'nav.beta' },
+  { label: 'nav.aiLabs', type: 'link', route: 'ai-labs', badge: 'nav.beta', highlight: true },
   { label: 'nav.signUp', type: 'button', actionKind: 'signup', style: 'signup' },
 ];
