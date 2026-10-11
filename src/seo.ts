@@ -6,9 +6,11 @@
  *   - `robots.txt` is **host-aware** — only the production hostnames advertise
  *     themselves as indexable; every preview / UAT / localhost host returns
  *     `Disallow: /` so Google never indexes a `*.vercel.app` duplicate.
- *   - `sitemap.xml` is **generated from the live course catalog** so newly
- *     published masterclasses / podcasts / webinars / micro-learning reels show
- *     up without a redeploy (cached in-memory, see `SITEMAP_TTL_MS`).
+ *   - `sitemap.xml` lists the static pages plus the **live webinars** from the
+ *     web API, so a newly scheduled webinar shows up without a redeploy
+ *     (cached in-memory, see `SITEMAP_TTL_MS`). Course and instructor URLs are
+ *     not listed: their legacy feeds (`v2/library/`, `instructor/`) are gone,
+ *     and the web replacements are a follow-up (docs/LEGACY_API_ROADMAP.md).
  *
  * Both routes are registered before `express.static` + the Angular catch-all so
  * they win over the SPA shell (which is why the SEO audit saw HTML at these
@@ -92,31 +94,6 @@ const STATIC_PATHS = [
   'partners/cpacanada',
 ];
 
-/**
- * Catalog feeds that back a public `:courseId/:courseTitle` detail page. `type`
- * is the API `course_type`; `segment` is the URL segment (note `micro_learning`
- * → `micro-learning`, mirroring `Utils.buildCourseUrl`).
- */
-const CATALOG: { type: string; segment: string }[] = [
-  { type: 'masterclass', segment: 'masterclass' },
-  { type: 'podcast', segment: 'podcast' },
-  { type: 'micro_learning', segment: 'micro-learning' },
-];
-
-/**
- * Slug used in course URLs. Kept byte-for-byte in sync with `Utils.slugify`
- * (src/app/core/services/utils/utils.ts) so generated links match what
- * the Angular router produces — if one changes, change both.
- */
-function slugify(text: string): string {
-  return String(text)
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w-]+/g, '')
-    .replace(/--+/g, '-');
-}
-
 function xmlEscape(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -126,14 +103,9 @@ function xmlEscape(value: string): string {
     .replace(/'/g, '&apos;');
 }
 
-/** Static page URLs — always available even if the catalog API is unreachable. */
+/** Static page URLs — always available even if the webinar API is unreachable. */
 function staticLocs(): string[] {
   return STATIC_PATHS.map((path) => `${SITE_ORIGIN}${PREFIX}/${path}`);
-}
-
-interface CatalogItem {
-  id: number;
-  title: string;
 }
 
 /**
@@ -144,63 +116,8 @@ interface WebinarLoc {
   id: string;
 }
 
-type ApiRow = Record<string, unknown>;
-
-/**
- * Follow an API's absolute `pagination_data.next_page` links from `firstUrl`,
- * mapping each row via `pick` (rows that map to `null` are skipped). Bounded by
- * a page guard so a malformed `next_page` loop can't run forever; returns
- * whatever was gathered before any non-OK page.
- */
-async function fetchPaginated(
-  firstUrl: string,
-  pick: (row: ApiRow) => CatalogItem | null,
-): Promise<CatalogItem[]> {
-  const items: CatalogItem[] = [];
-  let next: string | null = firstUrl;
-  let guard = 0;
-
-  while (next && guard++ < 100) {
-    const response: globalThis.Response = await fetch(next, {
-      headers: { accept: 'application/json' },
-    });
-    if (!response.ok) break;
-    const json = (await response.json()) as {
-      data?: ApiRow[];
-      pagination_data?: { next_page?: string | null };
-    };
-    for (const row of json.data ?? []) {
-      const item = pick(row);
-      if (item) items.push(item);
-    }
-    next = json.pagination_data?.next_page ?? null;
-  }
-
-  return items;
-}
-
-/** Course catalog row (`v2/library/`) → `{ id, title }`. */
-function pickCourse(row: ApiRow): CatalogItem | null {
-  const { id, title } = row;
-  return typeof id === 'number' && typeof title === 'string' && title ? { id, title } : null;
-}
-
-/** Instructor row (`instructor/`) → `{ id, title: "First Last" }`. */
-function pickInstructor(row: ApiRow): CatalogItem | null {
-  const { id, first_name, last_name } = row;
-  const name = `${(first_name as string) ?? ''} ${(last_name as string) ?? ''}`.trim();
-  return typeof id === 'number' && name ? { id, title: name } : null;
-}
-
-/** All published courses of a type, paged through `v2/library/`. */
-function fetchCatalog(courseType: string): Promise<CatalogItem[]> {
-  return fetchPaginated(`${API_BASE}/v2/library/?course_type=${courseType}&page=1`, pickCourse);
-}
-
-/** Public instructor detail pages, paged through `instructor/`. */
-function fetchInstructors(): Promise<CatalogItem[]> {
-  return fetchPaginated(`${API_BASE}/instructor/?page=1`, pickInstructor);
-}
+/** A feed bucket: the paginated block (`results` holds the rows), or a bare list. */
+type WebinarBucket = { id?: string }[] | { results?: { id?: string }[] };
 
 /**
  * Crawlable webinars, from the Events v1 landing feed.
@@ -217,36 +134,30 @@ function fetchInstructors(): Promise<CatalogItem[]> {
  */
 async function fetchWebinars(): Promise<WebinarLoc[]> {
   const response = await fetch(
-    `${API_BASE}/web-api/v1/events/webinar-main-page/?login_type=pre_login`,
+    // Each bucket is paged at 6 by default; ask for the ceiling so none is cut.
+    `${API_BASE}/web-api/v1/events/webinar-main-page/?login_type=pre_login` +
+      '&highlight_webinars.page_size=100&upcoming_webinars.page_size=100',
     { headers: { accept: 'application/json' } },
   );
   if (!response.ok) return [];
-  const json = (await response.json()) as {
-    data?: Record<string, { id?: string }[] | undefined>;
-  };
+  const json = (await response.json()) as { data?: Record<string, WebinarBucket | undefined> };
   const buckets = [json.data?.['highlight_webinars'], json.data?.['upcoming_webinars']];
 
   const ids = new Set<string>();
   for (const bucket of buckets) {
-    for (const row of bucket ?? []) {
+    // Every bucket is a paginated block since 2026-10-09; iterating the block
+    // itself threw, and the `.catch` in `collectLocs` dropped every webinar.
+    const rows = Array.isArray(bucket) ? bucket : (bucket?.results ?? []);
+    for (const row of rows) {
       if (typeof row?.id === 'string' && row.id) ids.add(row.id);
     }
   }
   return [...ids].map((id) => ({ id }));
 }
 
-/** Gather every crawlable absolute URL. Catalog failures degrade gracefully. */
+/** Gather every crawlable absolute URL. A webinar API failure degrades gracefully. */
 async function collectLocs(): Promise<string[]> {
   const locs = new Set<string>(staticLocs());
-
-  const catalogResults = await Promise.allSettled(CATALOG.map((c) => fetchCatalog(c.type)));
-  catalogResults.forEach((result, index) => {
-    if (result.status !== 'fulfilled') return;
-    const { segment } = CATALOG[index];
-    for (const item of result.value) {
-      locs.add(`${SITE_ORIGIN}${PREFIX}/${segment}/${item.id}/${slugify(item.title)}`);
-    }
-  });
 
   // One segment, no title slug: `webinar/:id` is the canonical detail URL the
   // page itself emits. The two-segment form still resolves, but only via a 302,
@@ -254,11 +165,6 @@ async function collectLocs(): Promise<string[]> {
   const webinars = await fetchWebinars().catch(() => [] as WebinarLoc[]);
   for (const webinar of webinars) {
     locs.add(`${SITE_ORIGIN}${PREFIX}/webinar/${webinar.id}`);
-  }
-
-  const instructors = await fetchInstructors().catch(() => [] as CatalogItem[]);
-  for (const instructor of instructors) {
-    locs.add(`${SITE_ORIGIN}${PREFIX}/instructor/${instructor.id}/${slugify(instructor.title)}`);
   }
 
   return [...locs];
@@ -295,7 +201,7 @@ function buildSitemapIndexXml(generatedAt: string): string {
 }
 
 // In-memory cache + single-flight guard so concurrent crawler hits trigger at
-// most one catalog crawl. Reset on every cold start, which is fine — the first
+// most one sitemap build. Reset on every cold start, which is fine — the first
 // request after a deploy simply repopulates it. `generatedAt` (ISO) backs the
 // sitemap-index `<lastmod>`.
 let cache: { xml: string; expires: number; generatedAt: string } | null = null;
