@@ -2,7 +2,6 @@
 // ^ Loads GSAP's ambient global `gsap` namespace for the `gsap.MatchMedia` type
 // without a runtime import — gsap is `sideEffects:false`, so a real top-level
 // import would be tree-shaken and warn. Type-surface only.
-import { httpResource } from '@angular/common/http';
 import {
   afterNextRender,
   Component,
@@ -10,15 +9,15 @@ import {
   DestroyRef,
   ElementRef,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { Button } from '../../ui/button/button';
-import { apiUrl } from '@core/services/api-client/api-client';
+import { MasterclassLevel } from '@core/models/masterclass-home.model';
 import { Utils } from '@shared/services/utils';
 import { Viewport } from '@core/services/viewport/viewport';
-import { BadgeV2Response, CairaLadderItem } from '@core/models/caira-badge.model';
 
 const CAIRA_LOGO =
   'https://d1pp0977rsxmiq.cloudfront.net/static-assests/web-app/commons/caira-logo-white.webp';
@@ -46,11 +45,11 @@ export interface CairaLevelCard {
   rank: number;
   /** "Level 1" — rendered uppercase by CSS to match the design. */
   levelLabel: string;
-  /** The API's `sub_text`, which is the design's card title verbatim. */
+  /** The level's editorial title, `level_actual_name`. */
   title: string;
-  /** Design-only copy; the ladder endpoint has no equivalent field. */
+  /** The level's `description` when it has one, else the design's copy. */
   subtitle: string;
-  /** The API's `icon_url` — the hexagonal medal. */
+  /** The level's `image_url` — the medal. */
   medalUrl: string;
   tone: 'bronze' | 'silver' | 'gold';
   /**
@@ -63,10 +62,9 @@ export interface CairaLevelCard {
 
 /**
  * Per-level styling and the small tools line under each title. Keyed by
- * `level_rank`. These are design decisions, not content: `v2/caira-badges/`
- * carries no equivalent of the design's subtitle (its `description` is longer
- * prose and is retrieve-only, one extra request per level), and the gradient
- * and tilt are presentation.
+ * `level_number`. The gradient and tilt are presentation; the subtitle is the
+ * design's copy, used while `levels/` sends `description: null` (every level
+ * on UAT, 2026-10-11).
  */
 const LEVEL_PRESENTATION: Record<
   number,
@@ -90,49 +88,13 @@ const LEVEL_PRESENTATION: Record<
 };
 
 /**
- * Rendered when the ladder request fails. This is a guest marketing section —
- * it must never collapse to an empty column. Titles mirror the live payload;
- * the medal slot stays empty and collapses.
- */
-const FALLBACK_LEVELS: CairaLevelCard[] = [
-  {
-    rank: 1,
-    levelLabel: 'Level 1',
-    title: 'Foundations of AI in Accounting',
-    medalUrl: '',
-    ...LEVEL_PRESENTATION[1],
-  },
-  {
-    rank: 2,
-    levelLabel: 'Level 2',
-    title: 'Advanced AI Applications in Accounting',
-    medalUrl: '',
-    ...LEVEL_PRESENTATION[2],
-  },
-  {
-    rank: 3,
-    levelLabel: 'Level 3',
-    title: 'AI Strategy & Leadership in Accounting',
-    medalUrl: '',
-    ...LEVEL_PRESENTATION[3],
-  },
-];
-
-/**
- * The CAIRA ladder list. A bare literal rather than a `*_ROUTES` entry because
- * that is what it was before this conversion; promoting it to the registry would
- * mean touching the tracker's readers too, which belongs to the `features/tracker`
- * row rather than here.
- */
-const CAIRA_LADDER_URL = 'v2/caira-badges/';
-
-const EMPTY_LADDER: BadgeV2Response<CairaLadderItem[]> = { data: [] };
-
-/**
  * The CAIRA three-level pitch: copy on the left, cards on the right. On md+ the
  * whole grid pins once it is centred in the viewport and the cards cross-fade
  * in place as the user scrolls — the outgoing card dims and recedes, the next
  * one fades in on the same rectangle. Below md it is a snap carousel.
+ *
+ * Presentational: the page passes the CAIRA rows of `levels/` and decides
+ * whether the section shows at all.
  */
 @Component({
   selector: 'app-caira-level-stack',
@@ -150,40 +112,26 @@ export class CairaLevelStack {
 
   protected readonly cairaLogo = CAIRA_LOGO;
 
-  /**
-   * The same ladder the CAIRA tracker's badge page reads. Despite the comment on
-   * `caira-level-hero`, the LIST endpoint answers anonymously (200, every level
-   * `locked` with zero progress), so a guest home page can use it — and because
-   * it needs no token there is no reason to skip it on the server. Params are
-   * unconditional so this renders into the SSR HTML and hydrates from the
-   * transfer cache rather than refetching — `httpResource` goes through
-   * `HttpClient`, so the global `withHttpTransferCacheOptions` in `app.config.ts`
-   * still covers it and no per-resource option is needed.
-   */
-  private readonly ladder = httpResource<BadgeV2Response<CairaLadderItem[]>>(
-    () => apiUrl(CAIRA_LADDER_URL),
-    { defaultValue: EMPTY_LADDER },
+  /** The CAIRA ladder, from `levels/`. */
+  readonly ladder = input.required<readonly MasterclassLevel[]>();
+
+  /** One card per styled level (1–3), in ladder order. `filter` copies, so the sort is safe. */
+  protected readonly levels = computed<CairaLevelCard[]>(() =>
+    this.ladder()
+      .filter((level) => LEVEL_PRESENTATION[level.level_number])
+      .sort((a, b) => a.level_number - b.level_number)
+      .map((level) => {
+        const { subtitle, ...style } = LEVEL_PRESENTATION[level.level_number];
+        return {
+          rank: level.level_number,
+          levelLabel: level.name,
+          title: level.level_actual_name ?? level.name,
+          subtitle: level.description ?? subtitle,
+          medalUrl: level.image_url ?? '',
+          ...style,
+        };
+      }),
   );
-
-  /**
-   * `hasValue()` first: reading `.value()` on an errored resource throws and
-   * would take the whole page down over a marketing section.
-   */
-  protected readonly levels = computed<CairaLevelCard[]>(() => {
-    const rows = this.ladder.hasValue() ? (this.ladder.value()?.data ?? []) : [];
-    if (!rows.length) return FALLBACK_LEVELS;
-
-    return rows
-      .filter((row) => LEVEL_PRESENTATION[row.badge.level_rank])
-      .sort((a, b) => a.badge.level_rank - b.badge.level_rank)
-      .map((row) => ({
-        rank: row.badge.level_rank,
-        levelLabel: row.badge.level_name ?? `Level ${row.badge.level_rank}`,
-        title: row.badge.sub_text ?? row.badge.name,
-        medalUrl: row.badge.icon_url ?? '',
-        ...LEVEL_PRESENTATION[row.badge.level_rank],
-      }));
-  });
 
   private readonly localePrefix = computed(
     () => `/${this.utils.country()}/${this.utils.profession()}`,
