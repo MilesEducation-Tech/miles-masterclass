@@ -7,6 +7,31 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-11, NON-REFACTOR — highlight, levels and AI Labs APIs; non-Postman calls removed
+  (`prompts/highlight-and-levels-apis.md`, approved). DONE, COMMITTED on six branches from `master`
+  `ca87d50`, one commit and one PR each** (branch names in the prompt). No refactor phase moved.
+  - **PR 1, hero:** the `/masterclass` hero reads `highlight/` (SSR) and the shared slider takes
+    `MasterclassCourse`. The home AI Labs ring reads `ai-labs/` and links to `/masterclass/:uuid/:slug`.
+  - **PR 2, home:**
+    - The home webinar ticket reads `highlight-webinars/`.
+    - The CAIRA stack takes `levels/` as input, signed in only; guests get no section (decision).
+  - **PR 3, sitemap:** it lists webinars again (it listed 0 because a Page object was iterated), and
+    the `v2/library/` and `instructor/` reads are gone.
+  - **PR 4, utm:** UTM capture is deleted.
+  - **PR 5, mybucket:** the `mybucket` read is deleted; the cart comes from mutation responses only
+    (decision).
+  - **PR 6, roadmap:** `docs/LEGACY_API_ROADMAP.md` lists every remaining non-Postman call.
+  - **Webinar landing unchanged (decision):** its hero already uses the feed's `highlight_webinars`.
+  - **Gates (local macOS):** every PR has lint at 0 errors and the structure check passing; `build:prod`
+    is green at 245.1–245.3 kB with only `ai-labs.css`. `build-storybook` is green for PRs 2 and 5.
+  - **Browser:**
+    - 4102–4104 dev, plus the 4010/4011/4013 prod SSR, against UAT.
+    - The hero is in the server HTML, and 375 hydrates with no errors.
+    - The ring, ticket, cart and sitemap are verified.
+    - The CAIRA stack was verified with the captured live signed-in payload. The signed-in `levels/`
+      network call still needs a live session.
+  - **Backend asks:** 5 of 10 pinned artworks are 403 on GCS; the S3 asset bucket has no CORS (ring
+    textures); `levels/` has no guest variant.
 - 🔧 **2026-10-10, NON-REFACTOR — envelope fallout (`prompts/envelope-fallout.md`, approved with D1–D3 as
   recommended). DONE, PR #103** on `fix/MIL-54-envelope-fallout` (from `master`), in the sibling
   worktree `/Users/SACHIN.SINGH/Documents/GitHub/miles-masterclass-envelope`. The edit guard refuses
