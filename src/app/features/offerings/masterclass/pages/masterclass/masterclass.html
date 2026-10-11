@@ -2,12 +2,12 @@
   <app-section-nav [items]="sectionNavItems()" mode="sidenav" [shareWithHeader]="false" />
 
   <section id="masterclass-home" class="scroll-mt-20">
-    <!-- `items()` is always an array, so test its length. The skeleton is in the
-         server HTML and stays while the read runs; a failed or empty read shows
-         nothing rather than an empty slider. -->
-    @if (popular.items().length) {
-      <app-slider [items]="popular.items()" />
-    } @else if (popular.isPending()) {
+    <!-- The admin-pinned courses, read during SSR as well, so the server HTML
+         carries the hero. The skeleton covers client-side navigation; a failed
+         or empty read shows nothing rather than an empty slider. -->
+    @if (highlight.courses().length) {
+      <app-slider [items]="highlight.courses()" (info)="openCourseInfo($event)" />
+    } @else if (highlight.isLoading()) {
       <app-slider-skeleton />
     }
   </section>

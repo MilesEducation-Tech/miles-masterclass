@@ -1,25 +1,29 @@
 import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
-import { Component, computed, DestroyRef, inject, model, PLATFORM_ID, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  input,
+  output,
+  PLATFORM_ID,
+  signal,
+} from '@angular/core';
+import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   matArrowForwardIosRound,
   matArrowBackIosRound,
   matPlayArrowRound,
 } from '@ng-icons/material-icons/round';
-import { Content } from '@core/models/course.model';
+import { matInfoOutline } from '@ng-icons/material-icons/outline';
+import { MasterclassCourse } from '@core/models/masterclass-home.model';
 import { LanguageContext } from '@core/services/language-context/language-context';
-import { VideoPoster } from '../video-poster/video-poster';
+import { Viewport } from '@core/services/viewport/viewport';
+import { Utils } from '@shared/services/utils';
 import { MilesSlug } from '../miles-slug/miles-slug';
 import { Button } from '../../ui/button/button';
 import { CairaCredlyBadge } from '../cards/caira-credly-badge/caira-credly-badge';
-import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits-pipe';
-import { matInfoOutline } from '@ng-icons/material-icons/outline';
-import { Utils } from '@shared/services/utils';
-import { Router } from '@angular/router';
-import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
-import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Viewport } from '@core/services/viewport/viewport';
 
 /**
  * A responsive image slider component with animated transitions.
@@ -31,9 +35,12 @@ import { Viewport } from '@core/services/viewport/viewport';
  * - Interface Segregation: SliderItem has only required properties
  * - Dependency Inversion: Uses Angular DI for platform detection
  *
+ * Renders `MasterclassCourse` cards (`highlight/`) and decides nothing about
+ * them: "Learn More" goes up as `info`, so the page opens its own dialog.
+ *
  * @example
  * ```html
- * <app-slider [items]="sliderItems" />
+ * <app-slider [items]="courses" (info)="openCourseInfo($event)" />
  * ```
  */
 /*
@@ -63,15 +70,7 @@ const CONTENT_HIDDEN = `${CONTENT_BASE} hidden`;
 
 @Component({
   selector: 'app-slider',
-  imports: [
-    NgIcon,
-    VideoPoster,
-    NgOptimizedImage,
-    MilesSlug,
-    Button,
-    CairaCredlyBadge,
-    TotalCpeCreditsPipe,
-  ],
+  imports: [NgIcon, NgOptimizedImage, MilesSlug, Button, CairaCredlyBadge],
   templateUrl: './slider.html',
   styleUrl: './slider.css',
   providers: [
@@ -93,15 +92,16 @@ export class Slider {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly utils = inject(Utils);
   private readonly router = inject(Router);
-  private readonly feature = inject(FeatureFacade);
-  private readonly dialogs = inject(NgpDialogManager);
   private readonly destroyRef = inject(DestroyRef);
   private readonly viewport = inject(Viewport);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private animationTimerId: ReturnType<typeof setTimeout> | null = null;
 
-  /** The items to display in the slider */
-  readonly items = model.required<readonly Content[]>();
+  /** The courses to display in the slider */
+  readonly items = input.required<readonly MasterclassCourse[]>();
+
+  /** "Learn More" on a slide: the page opens the course-info dialog. */
+  readonly info = output<MasterclassCourse>();
 
   /** Current active slide index (0-based, represents the "hero" slide) */
   protected readonly activeIndex = signal(0);
@@ -198,45 +198,23 @@ export class Slider {
     }, this.animationDuration);
   }
 
-  baseRoute = computed<string>(() => {
-    const { country, profession } = this.utils.getRouteParams();
-    return `/${country}/${profession}`;
-  });
-
-  navigateToCourse(id: number, title: string) {
-    const titleSlug = this.utils.slugify(title);
-    this.router.navigate([this.baseRoute(), 'masterclass', id, titleSlug]);
+  /**
+   * Artwork for a slide, falling back across orientations: portrait for the
+   * 9:16 slots (the hero on phones, the thumbnails from `md`), landscape for
+   * the rest. The facade drops courses with none, so this never returns ''.
+   */
+  protected art({ thumbnails: t }: MasterclassCourse, portrait: boolean): string {
+    return (portrait ? t.vertical || t.horizontal : t.horizontal || t.vertical) || t.square || '';
   }
 
-  openCourseInfo(card: Content) {
-    if (!card.allDataFetched) {
-      this.feature
-        .getAbout(card.id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((res: any) => {
-          const updatedCard = {
-            ...card,
-            ...res.data,
-            allDataFetched: true,
-            learning_objective_list: res.data.learning_objectives.split('\r\n'),
-          };
-          this.items.update((items) => {
-            const updatedItems = [...items];
-            updatedItems[this.activeIndex()] = updatedCard;
-            return updatedItems;
-          });
-          this.openCourseInfoDialog(updatedCard);
-        });
-    } else {
-      this.openCourseInfoDialog(card);
-    }
-  }
-
-  async openCourseInfoDialog(card: Content) {
-    // Loaded on open, so the dialog is not part of this component's chunk (§4.4).
-    const { CourseInfo } = await import('../../dialogs/course-info/course-info');
-    const dialogRef = this.dialogs.open(CourseInfo, { data: card });
-
-    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+  protected watch(course: MasterclassCourse): void {
+    void this.router.navigate([
+      '/',
+      this.utils.country(),
+      this.utils.profession(),
+      'masterclass',
+      course.id,
+      course.slug,
+    ]);
   }
 }

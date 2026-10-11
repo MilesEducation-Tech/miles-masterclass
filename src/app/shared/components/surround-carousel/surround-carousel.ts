@@ -11,13 +11,13 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft, lucideArrowRight } from '@ng-icons/lucide';
 
+import { environment } from '@env/environment';
 import { apiUrl } from '@core/services/api-client/api-client';
-import { Content } from '@core/models/course.model';
-import { ContentResponse, TRACK_ROUTES } from '@core/models/track.model';
+import { MasterclassCourse, parseCoursePage } from '@core/models/masterclass-home.model';
 import { Logger } from '@core/services/logger/logger';
 import { Utils } from '@shared/services/utils';
 import { Viewport } from '@core/services/viewport/viewport';
@@ -27,9 +27,9 @@ import { Viewport } from '@core/services/viewport/viewport';
 // header comment in surround-carousel.engine.ts.
 import type { RingShape, SurroundEngine } from './surround-carousel.engine';
 
-/** One panel on the ring, flattened from `Content` so the engine never sees the API model. */
+/** One panel on the ring, flattened from the course card so the engine never sees the API model. */
 export interface CarouselCard {
-  id: number;
+  id: string;
   title: string;
   /** Absolute CDN URL, or `''` when the course has no artwork. */
   image: string;
@@ -43,20 +43,17 @@ export interface CarouselCard {
   link: string[];
 }
 
-/** The AI Lab track. Its courses are what this rail shows. */
-const AI_LAB_TRACK_ID = 7;
-
 /**
- * The API's `course_type` (snake_case) and the URL's segment (kebab-case) are
- * different strings for the same thing, and `Utils` maps between them in half a
- * dozen places. Both are named here so neither is guessed at the use site.
+ * Every masterclass course that has an AI Lab, as the `tracks-page/` card
+ * (Postman `web-masterclass-ai-labs-v1`). Replaced `v2/tracks/7/courses/`, a 404
+ * on every host. `pre_login` always: that branch ignores the token, and the
+ * ring reads nothing per-user, so signing in never refetches it.
  */
-const AI_LAB_API_TYPE = 'ai_lab';
-const AI_LAB_ROUTE_SEGMENT = 'ai-labs';
+const AI_LABS_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/ai-labs/`;
 
 /**
- * Below this there is no ring to build. Deliberately low because the track is
- * small: at the time of writing `v2/tracks/7/courses/` returns 2 rows on UAT,
+ * Below this there is no ring to build. Deliberately low because the list is
+ * small: at the time of writing `ai-labs/` returns 2 rows on UAT,
  * and the engine repeats the set to fill the ring rather than us paginating for
  * rows that do not exist.
  *
@@ -71,8 +68,6 @@ const MAX_CARDS = 8;
 
 /** Gap between cards in the fallback row, in px. Mirrors the template's `gap-4`. */
 const FALLBACK_GAP = 16;
-
-const EMPTY_RESPONSE: ContentResponse = { status_code: 200, data: [] };
 
 /**
  * The AI Lab rail: course cards on the wall of a cylinder that turns forever.
@@ -111,6 +106,7 @@ export class SurroundCarousel {
   private readonly viewport = inject(Viewport);
   private readonly logger = inject(Logger);
   private readonly utils = inject(Utils);
+  private readonly router = inject(Router);
 
   private readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('stage');
   private readonly listRef = viewChild<ElementRef<HTMLElement>>('list');
@@ -118,21 +114,20 @@ export class SurroundCarousel {
   /**
    * One `httpResource` — same shape as `caira-level-stack`, which is the
    * precedent for a shared marketing component that needs a single endpoint and
-   * has no facade of its own. The request-object overload rather than the plain
-   * URL one, because the course type is a query param.
+   * has no facade of its own.
    *
-   * The track endpoint answers anonymously (verified: 200 with no token), so
-   * this renders for guests and needs no auth gate. Params are unconditional so
+   * The endpoint answers anonymously (`AllowAny`), so this renders for guests
+   * and needs no auth gate. Params are unconditional so
    * it renders into the SSR HTML and hydrates from the transfer cache rather
    * than refetching — `httpResource` goes through `HttpClient`, so the global
    * `withHttpTransferCacheOptions` in `app.config.ts` still covers it.
    */
-  private readonly courses = httpResource<ContentResponse>(
+  private readonly courses = httpResource<MasterclassCourse[]>(
     () => ({
-      url: apiUrl(TRACK_ROUTES.trackContent.path.replace(':id', String(AI_LAB_TRACK_ID))),
-      params: { course_type: AI_LAB_API_TYPE },
+      url: apiUrl(AI_LABS_URL),
+      params: { login_type: 'pre_login', page_size: MAX_CARDS },
     }),
-    { defaultValue: EMPTY_RESPONSE },
+    { defaultValue: [], parse: parseCoursePage('ai-labs') },
   );
 
   private readonly localePrefix = computed(
@@ -145,18 +140,20 @@ export class SurroundCarousel {
    * home page down.
    */
   protected readonly cards = computed<CarouselCard[]>(() => {
-    const rows = this.courses.hasValue() ? (this.courses.value()?.data ?? []) : [];
+    const rows = this.courses.hasValue() ? this.courses.value() : [];
     const prefix = this.localePrefix();
 
-    return (rows as Content[])
-      .filter((row) => !!(row.horizontal_thumbnail || row.thumbnail))
+    return rows
+      .filter(({ thumbnails: t }) => !!(t.horizontal || t.vertical))
       .slice(0, MAX_CARDS)
       .map((row) => ({
         id: row.id,
         title: row.title,
-        image: row.horizontal_thumbnail || row.thumbnail,
-        caption: creditLabel(row.class_credits),
-        link: [prefix, AI_LAB_ROUTE_SEGMENT, String(row.id), this.utils.slugify(row.title)],
+        image: row.thumbnails.horizontal || row.thumbnails.vertical || '',
+        caption: creditLabel(row.total_cpe_credits),
+        // The course page, as every other `tracks-page/` card links: there is
+        // no AI Lab detail route.
+        link: [prefix, 'masterclass', row.id, row.slug],
       }));
   });
 
@@ -287,9 +284,7 @@ export class SurroundCarousel {
   private openCard(index: number): void {
     const card = this.cards()[index];
     if (!card) return;
-    // `navigateToCourse` uses the segment verbatim — it does not map
-    // `ai_lab` → `ai-labs` the way `buildCourseUrl` does, so pass the URL form.
-    this.utils.navigateToCourse(AI_LAB_ROUTE_SEGMENT, card.id, card.title);
+    void this.router.navigate(card.link);
   }
 
   private async initEngine(canvas: HTMLCanvasElement): Promise<void> {

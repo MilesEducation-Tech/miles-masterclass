@@ -4,7 +4,6 @@ import {
   MasterclassCourse,
   MasterclassCourseInfoDialogData,
 } from '@core/models/masterclass-home.model';
-import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { MasterclassHomeFacade } from '@core/services/masterclass-home-facade/masterclass-home-facade';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Carousel } from '@shared/components/carousel/carousel';
@@ -19,11 +18,13 @@ import {
   MASTERCLASS_SECTION_NAV,
   MASTERCLASS_TRACKS_SECTION_ID,
 } from '@features/offerings/masterclass/constants/masterclass-nav';
+import { MasterclassHighlightFacade } from '@features/offerings/masterclass/services/masterclass-highlight-facade';
 
 /**
- * The masterclass landing page: the hero, then one carousel per track from
- * `tracks-page/`. The tracks come from the root `MasterclassHomeFacade`, which
- * the home page shares, so navigating between the two does not refetch.
+ * The masterclass landing page: the hero over the admin-pinned courses from
+ * `highlight/`, then one carousel per track from `tracks-page/`. The tracks come
+ * from the root `MasterclassHomeFacade`, which the home page shares, so
+ * navigating between the two does not refetch.
  */
 @Component({
   selector: 'app-masterclass',
@@ -34,13 +35,7 @@ export class Masterclass {
   private readonly utils = inject(Utils);
   private readonly dialogs = inject(NgpDialogManager);
 
-  /**
-   * The hero is deliberately left exactly as it was, on its legacy feed — it
-   * is out of this rebind's scope. Move it with its own ticket.
-   */
-  private readonly feature = inject(FeatureFacade);
-  protected readonly popular = this.feature.getResource('popular', 'masterclass');
-
+  protected readonly highlight = inject(MasterclassHighlightFacade);
   protected readonly home = inject(MasterclassHomeFacade);
 
   constructor() {

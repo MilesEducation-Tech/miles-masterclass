@@ -290,7 +290,6 @@ export default [
         'src/app/shared/components/carousel/carousel.ts',
         'src/app/shared/components/laptop/laptop.ts',
         'src/app/shared/components/marquee/marquee.ts',
-        'src/app/shared/components/slider/slider.ts',
         'src/app/shared/dialogs/filter-dialog/filter-dialog.ts',
         'src/app/shared/dialogs/utils-dialog/utils-dialog.ts',
         'src/app/testing/mocks/services.mock.ts',
