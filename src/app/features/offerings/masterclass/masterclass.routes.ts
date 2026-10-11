@@ -5,9 +5,10 @@ import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { Masterclass } from '@features/offerings/masterclass/pages/masterclass/masterclass';
+import { MasterclassHighlightFacade } from '@features/offerings/masterclass/services/masterclass-highlight-facade';
 
 export const masterclassRoutes: Route[] = [
-  { path: '', component: Masterclass },
+  { path: '', component: Masterclass, providers: [MasterclassHighlightFacade] },
   {
     path: ':courseId/:courseTitle',
     children: [

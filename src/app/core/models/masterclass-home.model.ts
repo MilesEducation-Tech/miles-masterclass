@@ -1,6 +1,8 @@
 /**
- * Types for the web masterclass API (`web-api/v1/masterclass/`), read by
- * `MasterclassHomeFacade` for the home page and the masterclass page.
+ * Types for the web masterclass API (`web-api/v1/masterclass/`): `tracks-page/`
+ * (read by `MasterclassHomeFacade` for the home page and the masterclass page),
+ * and the flat course lists `highlight/` and `ai-labs/`, which serve the same
+ * card.
  *
  * These are the keys those pages READ, not a mirror of the payload. The legacy
  * shapes in `masterclass.model.ts` and `course.model.ts` next door (`Content`,
@@ -201,3 +203,16 @@ export function parseHomePage(raw: unknown): MasterclassHomePage {
   }
   throw contractError('tracks-page');
 }
+
+/**
+ * `parse` for a flat course list whose `data` IS the paginated block:
+ * `highlight/` (the admin-pinned courses) and `ai-labs/` (every course with a
+ * lab). Both serve the `tracks-page/` card, checked live on UAT 2026-10-11.
+ */
+export const parseCoursePage =
+  (route: string) =>
+  (raw: unknown): MasterclassCourse[] => {
+    const data = isObject(raw) ? raw['data'] : undefined;
+    if (pageOf(isCourse)(data)) return data.results;
+    throw contractError(route);
+  };

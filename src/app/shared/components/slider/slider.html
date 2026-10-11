@@ -14,75 +14,42 @@
       [attr.aria-roledescription]="'slide'"
       [attr.aria-label]="'Slide ' + (i + 1) + ' of ' + totalSlides()"
     >
-      <!-- Video with poster delay (only for hero item) -->
+      <!-- The hero takes the full slot (landscape from md, portrait on phones);
+           the rest are the thumbnail strip (portrait from md, landscape on phones).
+           Separate elements per branch: NgOptimizedImage rejects a changed
+           `priority` after init. Only the hero is priority, because the server
+           preloads every priority image and the strip can hold ten. Empty alt:
+           the title is the slide's heading, and thumbnail slides are aria-hidden. -->
       @if (i === 1) {
         <div
           class="absolute inset-0 w-full h-full z-1 bg-linear-to-t from-background via-background/60 to-transparent to-50% from-10% via-30%"
         ></div>
-        <!-- Desktop/Tablet video (sm and up) -->
-        @if (!isMobile()) {
-          <app-video-poster
-            class="absolute inset-0 w-full h-full"
-            [videoSrc]="item.thumbnail_gif"
-            [posterSrc]="item.horizontal_thumbnail"
-            [posterDelay]="4000"
-            videoClass="object-cover"
-            [showControls]="true"
-            [controlsPosition]="'bottom-right'"
-          />
-        } @else {
-          <!-- Mobile video (below sm) -->
-          <app-video-poster
-            class="absolute inset-0 w-full h-full"
-            [videoSrc]="item.mobile_thumbnail_gif"
-            [posterSrc]="item.thumbnail"
-            [posterDelay]="4000"
-            videoClass="object-cover"
-            [showControls]="true"
-            [controlsPosition]="'top-left'"
-          />
-        }
+        <img [ngSrc]="art(item, isMobile())" [priority]="true" fill class="object-cover" alt="" />
       } @else {
         <div class="relative inset-0 w-full h-full">
-          @if (!isMobile()) {
-            <img
-              [ngSrc]="item.thumbnail"
-              [priority]="true"
-              fill
-              class="object-cover"
-              [alt]="item.title"
-            />
-          } @else {
-            <img
-              [ngSrc]="item.horizontal_thumbnail"
-              [priority]="true"
-              fill
-              class="object-cover"
-              [alt]="item.title"
-            />
-          }
+          <img [ngSrc]="art(item, !isMobile())" fill class="object-cover" alt="" />
         </div>
       }
 
       <div [class]="contentClass(i === 1)">
         <app-miles-slug slug="miles masterclass" ngSkipHydration />
         <h2 class="text-2xl font-bold tracking-tight uppercase md:text-4xl">{{ item.title }}</h2>
-        <h2 class="text-xl font-semibold tracking-widest text-accent md:text-3xl">
-          By {{ item.instructor_details.first_name }} {{ item.instructor_details.last_name }}
-        </h2>
-        <p class="text-sm text-neutral-400 md:text-base">{{ item.course_short_overview }}</p>
+        @if (item.short_description) {
+          <p class="text-sm text-neutral-400 md:text-base">{{ item.short_description }}</p>
+        }
         <div class="flex items-center space-x-2">
-          <h3
-            class="font-semibold tracking-widest text-accent md:text-3xl bg-transparent border border-input rounded-lg px-2 py-1 text-sm!"
-          >
-            {{ item.fields_of_study | totalCpeCredits: item.class_credits }} CPE
-          </h3>
+          <!-- The course total, summed by the API: rendered as sent. -->
+          @if (item.total_cpe_credits !== null) {
+            <h3
+              class="font-semibold tracking-widest text-accent md:text-3xl bg-transparent border border-input rounded-lg px-2 py-1 text-sm!"
+            >
+              {{ item.total_cpe_credits }} CPE
+            </h3>
+          }
           <app-caira-credly-badge
             variant="inline"
             [includedForCaira]="item.included_for_caira"
             [hasIndividualBadge]="item.has_individual_badge"
-            [cairaLevel]="item.caira_level"
-            variant="inline"
           />
         </div>
         <div class="flex space-x-4 items-center">
@@ -91,7 +58,7 @@
             type="button"
             class="bg-white text-black rounded-lg gap-1"
             variant="ghost"
-            (click)="navigateToCourse(item.id, item.title)"
+            (click)="watch(item)"
           >
             <ng-icon name="matPlayArrowRound" size="24" aria-hidden="true" />Watch Now
           </button>
@@ -100,7 +67,7 @@
             type="button"
             class="bg-input text-white rounded-lg gap-1"
             variant="ghost"
-            (click)="openCourseInfo(item)"
+            (click)="info.emit(item)"
           >
             <ng-icon name="matInfoOutline" size="24" aria-hidden="true" />Learn More
           </button>
