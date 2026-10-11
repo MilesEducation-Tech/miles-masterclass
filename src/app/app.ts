@@ -1,4 +1,4 @@
-import { Component, inject, signal, PendingTasks, afterNextRender } from '@angular/core';
+import { Component, inject, signal, PendingTasks } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
@@ -9,7 +9,6 @@ import { Progress } from '@shared/ui/progress/progress';
 import { SeoManager } from '@core/services/seo/seo-manager';
 import { Analytics } from '@core/services/analytics/analytics';
 import { EngagementDialog } from '@shared/services/engagement-dialog';
-import { Utm } from '@core/services/utm/utm';
 import {
   isDynamicSlug,
   routeUrlToCanonicalUrl,
@@ -30,7 +29,6 @@ export class App {
   private readonly seoManager = inject(SeoManager);
   private readonly engagement = inject(EngagementDialog);
   private readonly analytics = inject(Analytics);
-  private readonly utm = inject(Utm);
   private readonly doc = inject(DOCUMENT);
 
   private readonly pendingTasks = inject(PendingTasks);
@@ -74,10 +72,6 @@ export class App {
 
   constructor() {
     // this.engagement.start();
-
-    // Capture the `?dXRt=` campaign token on first browser paint (browser-only
-    // via afterNextRender) → cookie + backend report + URL cleanup.
-    afterNextRender(() => this.utm.capture());
 
     // Listen to route changes and update SEO. The leaf component owns SEO
     // for any "dynamic" prefix listed in DYNAMIC_SLUG_PREFIXES — those pages
