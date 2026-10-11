@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { PaymentFacade } from '../../services/payment-facade';
@@ -171,16 +171,6 @@ export class Plan {
   constructor() {
     this.facade.loadSubscriptionPlans();
 
-    // The plan page is a sibling of the Payment shell, so its `cartResolver`
-    // doesn't run here — load the bucket ourselves so the cart lock has data.
-    // Gate only on `isLoggedIn()` (facade dedupes via `cartFetched`; reading
-    // cart signals here would loop the effect — see footer-overlay).
-    effect(() => {
-      if (this.isLoggedIn()) {
-        untracked(() => this.facade.loadMyBucket());
-      }
-    });
-
     // Snap the selection to the subscription already in the cart (plan + cycle
     // are locked to it) — re-applies whenever plans or cart arrive, since the
     // cart can load after the plan list. With no cart lock, auto-select the
@@ -224,7 +214,6 @@ export class Plan {
     }
 
     if (this.selectedPlanInCart()) {
-      this.facade.loadMyBucket({ force: true });
       this.goToCart();
       return;
     }

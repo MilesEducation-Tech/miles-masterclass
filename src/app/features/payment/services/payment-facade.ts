@@ -43,7 +43,8 @@ import type {
 import type { PartnerCodePromptResult } from '@features/payment/dialogs/partner-code-prompt-dialog/partner-code-prompt-dialog';
 import { Analytics } from '@core/services/analytics/analytics';
 
-type MyBucketResponse = RouteResponse<typeof PAYMENT_ROUTES.myBucket>;
+/** Every cart mutation answers with the cart, enveloped. */
+type CartResponse = RouteResponse<typeof PAYMENT_ROUTES.addBucketItem>;
 type ListAddressResponse = RouteResponse<typeof PAYMENT_ROUTES.listAddress>;
 type AddAddressResponse = RouteResponse<typeof PAYMENT_ROUTES.addAddress>;
 type CheckoutResponse = RouteResponse<typeof PAYMENT_ROUTES.proceedToPayment>;
@@ -111,37 +112,20 @@ export class PaymentFacade {
     const err = this.ordersResource.error();
     if (err) this.logger.error('Failed to load orders', err);
   });
-  readonly cartFetched = this.cart.cartFetched;
 
   /**
-   * `loading` / `error` are NOT cart-only, and that only became visible when the
-   * cart fetch moved to an `httpResource` in Phase 9.
-   *
-   * They used to be plain writable signals owned by `CartStore`, and this facade
-   * wrote them for things that have nothing to do with the cart bucket:
-   * `proceedToPayment()` and the order-detail read both drive them. `CartStore`'s half
-   * is now derived from its resource and therefore read-only, so this facade keeps
-   * its own writable pair for the checkout POST, and the order read (now a resource
-   * too) joins the OR below.
-   *
-   * The OR is what preserves existing behaviour rather than quietly narrowing it:
-   * `paymentGuard` and `cartResolver` wait on `loading`, so today they also wait
-   * out a checkout POST. Deriving `loading` from the cart resource alone would have
-   * silently stopped that. If that wait turns out to be unwanted, it is a separate,
-   * deliberate change — not a side effect of a data-layer refactor.
+   * `loading` / `error` cover the checkout POST (`opLoading` / `opError`) and the
+   * order-detail read. There is no cart read any more (`user/cart/mybucket/`
+   * was removed 2026-10-11, see `CartStore`); `paymentGuard` still waits on
+   * `loading`, so it waits out a checkout POST as before.
    */
   private readonly opLoading = signal(false);
   private readonly opError = signal<string | null>(null);
-  // The order read joins the OR too: it used to drive `opLoading`/`opError` by hand,
-  // and the invoice skeleton, `cartResolver` and `paymentGuard` all read these.
-  readonly loading = computed(
-    () => this.cart.loading() || this.opLoading() || this.orderResource.isLoading(),
-  );
+  // The order read joins the OR: it used to drive `opLoading`/`opError` by hand,
+  // and the invoice skeleton and `paymentGuard` both read these.
+  readonly loading = computed(() => this.opLoading() || this.orderResource.isLoading());
   readonly error = computed(
-    () =>
-      this.cart.error() ??
-      this.opError() ??
-      (this.orderResource.error() ? 'Failed to load order details' : null),
+    () => this.opError() ?? (this.orderResource.error() ? 'Failed to load order details' : null),
   );
   /**
    * Billing addresses. OPT-IN like the orders read: the billing page calls
@@ -311,11 +295,6 @@ export class PaymentFacade {
     this.cart.setCartData(cart);
   }
 
-  /** Delegates to `CartStore`; see the note on `cartData`. */
-  loadMyBucket(options: { force?: boolean } = {}): void {
-    this.cart.loadMyBucket(options);
-  }
-
   loadBillingAddress() {
     if (this.cartState().isMixedCart) {
       this.notification.info(
@@ -382,7 +361,7 @@ export class PaymentFacade {
     const removedItem = this.cartData()?.cartitem_data?.find((item) => item.id === cartitemId);
 
     this.http
-      .post<MyBucketResponse>(PAYMENT_ROUTES.removeBucketItem.path, { cartitem_id: cartitemId })
+      .post<CartResponse>(PAYMENT_ROUTES.removeBucketItem.path, { cartitem_id: cartitemId })
       .subscribe({
         next: (res) => {
           this.setCartData(res?.data ?? null);
@@ -422,7 +401,7 @@ export class PaymentFacade {
 
   applyCoupon(couponCode: string) {
     return this.http
-      .post<MyBucketResponse>(PAYMENT_ROUTES.applyCoupon.path, { coupon_code: couponCode })
+      .post<CartResponse>(PAYMENT_ROUTES.applyCoupon.path, { coupon_code: couponCode })
       .pipe(
         tap({
           next: (res) => {
@@ -441,7 +420,7 @@ export class PaymentFacade {
 
   removeCoupon(couponCode: string) {
     this.http
-      .post<MyBucketResponse>(PAYMENT_ROUTES.removeCoupon.path, { coupon_code: couponCode })
+      .post<CartResponse>(PAYMENT_ROUTES.removeCoupon.path, { coupon_code: couponCode })
       .subscribe({
         next: (res) => {
           this.setCartData(res?.data ?? null);
@@ -598,7 +577,7 @@ export class PaymentFacade {
     onAdded?: () => void,
   ) {
     this.http
-      .post<MyBucketResponse>(PAYMENT_ROUTES.addBucketItem.path, {
+      .post<CartResponse>(PAYMENT_ROUTES.addBucketItem.path, {
         item_id: itemId,
         item_type: itemType,
         pay_method: paymentType,
@@ -628,9 +607,6 @@ export class PaymentFacade {
             plans.map((p) => (p.id === itemId ? { ...p, is_added_to_cart: true } : p)),
           );
 
-          // Force-refresh so the drawer/cart reflects server-side totals (taxes,
-          // discounts, etc.) that the add-item response may not include.
-          this.loadMyBucket({ force: true });
           if (onAdded) onAdded();
           else this.openCartDrawer();
         },
@@ -703,7 +679,6 @@ export class PaymentFacade {
   ): Promise<void> {
     const paymentType = options.paymentType ?? 'yearly';
     if (plan.is_added_to_cart) {
-      this.loadMyBucket({ force: true });
       if (options.onAdded) options.onAdded();
       else this.openCartDrawer();
       return;

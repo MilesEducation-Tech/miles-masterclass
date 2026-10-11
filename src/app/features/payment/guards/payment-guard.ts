@@ -12,6 +12,10 @@ import { Utils } from '@shared/services/utils';
  * Cart-state guard for `/payment/billing` and `/payment/review`. Reads the
  * required path via `route.data['pathType']` (set on every leaf route).
  *
+ * The cart is known only from this session's own cart mutations (there is no
+ * cart read — see `CartStore`), so on a fresh load the cart is empty and both
+ * pages send the user back to `/cart`.
+ *
  * Implementation notes:
  * - Uses `toObservable(facade.loading)` rather than `effect + new Promise`. The
  *   router subscribes to the returned observable; if the user navigates away
@@ -60,7 +64,7 @@ function evaluate(
   const pathType = (route.data['pathType'] as string | undefined) ?? '';
   const basePath = ['/', utils.country(), utils.profession(), 'payment'];
 
-  // Bucket failed to load — kick the user back to /cart to retry.
+  // A checkout or order read failed — send the user back to /cart.
   if (facade.error()) {
     return router.createUrlTree([...basePath, 'cart']);
   }

@@ -1,14 +1,6 @@
 <div class="min-h-screen flex flex-col pt-28 sm:space-y-14 space-y-10">
   <h1 class="text-white text-6xl font-semibold text-center">Your Cart</h1>
-  <!-- @if (loading()) {
-    <app-page-loading message="Loading your cart..." />
-  } @else if (error()) {
-    <app-error-state
-      title="Failed to load cart"
-      [message]="error()!"
-      (retry)="retryLoad()"
-    />
-  } @else if (cartCount() > 0) { -->
+  <!-- @if (cartCount() > 0) { -->
   <div class="flex justify-center items-center sm:space-x-4">
     @for (step of cartSteps(); track step.id) {
       <div class="relative min-w-20">

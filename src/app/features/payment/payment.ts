@@ -28,14 +28,11 @@ export class Payment {
   private readonly router = inject(Router);
   protected readonly facade = inject(PaymentFacade);
 
-  // No constructor-time fetch — the `cartResolver` on this route guarantees
-  // the cart bucket is loaded before any child activates. Keeps the shell
-  // pure and prevents a duplicate request after the resolver settled it.
-
-  /** Number of items currently in the cart (0 when no cart loaded yet). */
+  /**
+   * Number of items currently in the cart (0 until this session's own cart
+   * mutations answer; there is no cart read — see `CartStore`).
+   */
   protected readonly cartCount = computed(() => this.facade.cartData()?.cartitem_data.length ?? 0);
-  protected readonly loading = computed(() => this.facade.loading());
-  protected readonly error = computed(() => this.facade.error());
 
   private readonly pathType = toSignal(
     this.router.events.pipe(
@@ -61,9 +58,4 @@ export class Payment {
       active: step.id <= activeStepId,
     }));
   });
-
-  /** Re-fetch the cart after a failed load (Retry button on the error state). */
-  retryLoad(): void {
-    this.facade.loadMyBucket({ force: true });
-  }
 }
