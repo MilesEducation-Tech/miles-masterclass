@@ -2,6 +2,7 @@ import { Route } from '@angular/router';
 import { DynamicLayout } from '@layout/dynamic-layout/dynamic-layout';
 import { uaeCairaMatchGuard } from '@core/guards/uae-caira-match-guard';
 import { UaeCairaFacade } from '@features/uae-caira/services/uae-caira-facade';
+import { HomeFacade } from '@features/home/services/home-facade';
 import { Faq } from '@shared/components/faq/faq';
 import { TermsOfService } from '@features/legal/pages/terms-of-service/terms-of-service';
 import { PrivacyPolicy } from '@features/legal/pages/privacy-policy/privacy-policy';
@@ -39,6 +40,7 @@ export const featuresRoutes: Route[] = [
       },
       {
         path: 'home',
+        providers: [HomeFacade],
         loadComponent: () => import('@features/home/pages/home/home').then((m) => m.Home),
       },
       {

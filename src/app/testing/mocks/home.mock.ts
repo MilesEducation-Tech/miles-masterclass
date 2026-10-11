@@ -40,7 +40,7 @@ export const MOCK_HOME_PRICE_YEARLY_DISCOUNT: HomePrice = {
 
 /** The highlighted "AI in Accounting 101" webinar with a session next week. */
 export const MOCK_HOME_WEBINAR: HomeWebinar = {
-  id: 101,
+  id: '79ad8a23-3ece-485c-b001-7fc9a0bc3527',
   title: 'AI in Accounting 101: Build Your First AI Agent',
   overview:
     'A free, hands-on hour: pick an accounting workflow, build an agent for it on Miles AI Labs, and leave with 1 CPE credit.',

@@ -102,9 +102,9 @@
   </section>
 
   <!-- Live Webinar: the admin-curated highlight webinar as a ticket. Absent
-       until `webinar` has a row (API flag in home.ts), so there is no placeholder
-       and nothing to shift. -->
-  @if (webinar(); as w) {
+       until `highlight-webinars/` has a row, so there is no placeholder and
+       nothing to shift. -->
+  @if (facade.webinar(); as w) {
     <section id="webinar" class="w-11/12 mx-auto scroll-mt-20">
       <div class="flex flex-col space-y-4">
         <h2 class="md:text-[42px] text-3xl font-bold leading-none text-center">Live Webinar</h2>
@@ -142,20 +142,20 @@
     }
   </section>
 
-  <!-- CAIRA Levels. `hydrate on viewport` keeps the server frame, which the
-       pinned scroll animation needs to equal its first frame, but holds the
-       component (and the gsap it imports) until the section nears the viewport,
-       so gsap is no longer fetched on every page load. The placeholder only
-       shows on client-side navigation: the section's measured height at
-       375 / 768 / 1440 (one card tall from md, the carousel and its dots
-       below). -->
-  <section id="caira-levels" class="container mx-auto scroll-mt-20">
-    @defer (on viewport; prefetch on idle; hydrate on viewport) {
-      <app-caira-level-stack />
-    } @placeholder {
-      <div class="h-[539px] md:h-[351px] lg:h-[336px]"></div>
-    }
-  </section>
+  <!-- CAIRA Levels: signed-in only, because `levels/` has no guest variant,
+       so the section is never in the server HTML. `on viewport` holds the
+       component (and the gsap it imports) until the section nears the viewport;
+       the placeholder is the section's measured height at 375 / 768 / 1440 (one
+       card tall from md, the carousel and its dots below). -->
+  @if (facade.cairaLevels().length) {
+    <section id="caira-levels" class="container mx-auto scroll-mt-20">
+      @defer (on viewport; prefetch on idle) {
+        <app-caira-level-stack [ladder]="facade.cairaLevels()" />
+      } @placeholder {
+        <div class="h-[539px] md:h-[351px] lg:h-[336px]"></div>
+      }
+    </section>
+  }
 
   <!-- Pricing card. API flag: it shows no figures until the web source of truth
        for plan prices is confirmed (v3 read `v2/plans/`, not adopted); the card

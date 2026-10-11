@@ -10,12 +10,8 @@ import { HomeWebinar } from '../../models/home-sections.model';
 /**
  * The live-webinar "ticket" (Figma 2175:21750): the highlighted webinar, its
  * next session, and two actions. Presentational — the row comes in through
- * `webinar`, the actions go up as outputs.
- *
- * API flag: the home page has no row to bind yet. v3 read
- * `v2/webinar/home_section/?section=highlight`, which this app does not adopt;
- * the section renders once a web-api highlight endpoint exists
- * (prompts/home-redesign.md). The Storybook story shows the ticket.
+ * `webinar`, the actions go up as outputs. The home page feeds it the first
+ * row of `web-api/v1/events/highlight-webinars/` (`HomeFacade`).
  */
 @Component({
   selector: 'app-home-webinar-ticket',

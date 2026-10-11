@@ -88,6 +88,27 @@ export interface MasterclassHomePage {
   tracks: MasterclassTrack[];
 }
 
+// ---- CAIRA levels ----------------------------------------------------------
+
+/**
+ * One rung of a programme's level ladder, from `levels/` (sign-in only; a
+ * guest is a 401). Every programme's ladder comes back in one list, so
+ * `subject_name` says which one a row belongs to. Checked live on UAT
+ * 2026-10-11 (signed in): three CAIRA rows, `description` null on all three.
+ */
+export interface MasterclassLevel {
+  id: string;
+  /** "Level 1". */
+  name: string;
+  /** The level's editorial title, e.g. "AI Mindset, Skillset & Toolset". */
+  level_actual_name: string | null;
+  level_number: number;
+  description: string | null;
+  /** The level's medal artwork. */
+  image_url: string | null;
+  subject_name: string;
+}
+
 // ---- Wire shapes -----------------------------------------------------------
 
 /**
@@ -174,6 +195,26 @@ function isApiTrack(v: unknown): v is ApiTrack {
     isNum(v['priority']) &&
     pageOf(isCourse)(v['courses'])
   );
+}
+
+function isLevel(v: unknown): v is MasterclassLevel {
+  return (
+    isObject(v) &&
+    isStr(v['id']) &&
+    isStr(v['name']) &&
+    isStrOrNull(v['level_actual_name']) &&
+    isNum(v['level_number']) &&
+    isStrOrNull(v['description']) &&
+    isStrOrNull(v['image_url']) &&
+    isStr(v['subject_name'])
+  );
+}
+
+/** `parse` for `levels/`: `data` is a bare list (the ladder is not paginated). */
+export function parseLevels(raw: unknown): MasterclassLevel[] {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  if (listOf(isLevel)(data)) return data;
+  throw contractError('levels');
 }
 
 /** Rebuilt rather than spread, so the paging metadata stays at the boundary. */
