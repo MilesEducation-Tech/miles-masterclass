@@ -46,7 +46,6 @@ import { Viewport, ScreenInfo } from '@core/services/viewport/viewport';
 // eagerly instantiated (injected by the header/footer chrome), so a static
 // import would pull the dialog and its `@angular/forms` dependency into the
 // initial bundle.
-import { CartStore } from '@core/services/cart/cart-store';
 import {
   CART_DRAWER_DIALOG,
   SUBSCRIPTION_DIALOG,
@@ -119,9 +118,6 @@ export class Utils {
   private readonly storage = inject(Storage);
   private readonly injector = inject(Injector);
   private readonly notification = inject(NotificationService);
-  // Cart state and its loader live in core, so this shared service does not
-  // import the payment feature (PROMPT.md §3).
-  private readonly cart = inject(CartStore);
   private readonly cartDrawerDialog = inject(CART_DRAWER_DIALOG);
   private readonly subscriptionDialog = inject(SUBSCRIPTION_DIALOG);
   private readonly featureFacade = inject(FeatureFacade);
@@ -736,7 +732,6 @@ export class Utils {
   }
 
   async openCartDrawer(): Promise<void> {
-    this.cart.loadMyBucket({ force: true });
     const CartDrawerDialog = await this.cartDrawerDialog();
     this.dialogs.open(CartDrawerDialog, { injector: this.injector });
   }

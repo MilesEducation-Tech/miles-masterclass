@@ -26,10 +26,6 @@ export interface CartSteps {
 }
 
 export const PAYMENT_ROUTES = {
-  myBucket: {
-    path: 'user/cart/mybucket/',
-    method: 'GET',
-  } as RouteConfig<void, CommonResponse<CartDetails>>,
   addBucketItem: {
     path: 'user/cart/',
     method: 'POST',

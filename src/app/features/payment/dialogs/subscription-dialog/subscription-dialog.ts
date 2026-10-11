@@ -92,7 +92,6 @@ export class SubscriptionDialog {
     if (!plan || this.subscribeDisabled()) return;
 
     if (plan.is_added_to_cart) {
-      this.facade.loadMyBucket({ force: true });
       this.facade.openCartDrawer();
     } else if (plan.is_recommended) {
       // Recommended plan funnels through the partner-code prompt; the

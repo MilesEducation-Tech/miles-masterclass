@@ -1,52 +1,5 @@
-import { isPlatformBrowser } from '@angular/common';
-import { inject, PLATFORM_ID } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { ResolveFn, Routes } from '@angular/router';
-import { filter, map, take } from 'rxjs/operators';
+import { Routes } from '@angular/router';
 import { paymentGuard } from '@features/payment/guards/payment-guard';
-import { PaymentFacade } from './services/payment-facade';
-
-/**
- * Ensures the cart bucket is loaded before any child route activates.
- *
- * Parent-route resolvers run **before** any child route's `canActivate`, so by
- * the time `paymentGuard` evaluates on `/billing` or `/review`, the cart state
- * is guaranteed populated — even on hard refresh / deep-link where the
- * `Payment` shell component hasn't been constructed yet (guards run before
- * components instantiate).
- *
- * Skipped during SSR: the bucket endpoint is authenticated and cart state is a
- * browser-session concept; the protected pages are configured as
- * `RenderMode.Client` in `app.routes.server.ts`.
- */
-const cartResolver: ResolveFn<boolean> = () => {
-  if (!isPlatformBrowser(inject(PLATFORM_ID))) return true;
-
-  const facade = inject(PaymentFacade);
-
-  // Always fetch fresh on entry to the payment flow — the cart can change
-  // outside the shell (e.g. add-to-cart on the plan page, which is a sibling
-  // route), so a cached `cartData` would show stale items/totals. The resolver
-  // runs once per shell activation, so this is at most one fetch per entry.
-  facade.loadMyBucket({ force: true });
-
-  // Wait for the in-flight request to settle, then unblock activation.
-  // `take(1)` completes the stream so the router doesn't hold an open
-  // subscription after navigation.
-  //
-  // `loading` is derived from an `httpResource` since Phase 9, and this wait is
-  // only safe because of one measured fact: `reload()` flips the resource's status
-  // to `reloading` SYNCHRONOUSLY, so by the time `toObservable` samples, `loading`
-  // is already true and the filter cannot pass on a stale settled state. The
-  // resource reaching `error` also clears `loading`, so a failed cart unblocks
-  // navigation and `paymentGuard` then redirects on `facade.error()` — it must not
-  // hang here waiting for a success that will never come.
-  return toObservable(facade.loading).pipe(
-    filter((loading) => !loading),
-    take(1),
-    map(() => true),
-  );
-};
 
 /**
  * Payment feature routes. Lazy-loaded from `features.ts` via
@@ -77,9 +30,6 @@ export const PAYMENT_ROUTES: Routes = [
   },
   {
     path: '',
-    // Load the cart bucket once per shell activation. Children's guards rely
-    // on this data being present.
-    resolve: { cart: cartResolver },
     loadComponent: () => import('./payment').then((m) => m.Payment),
     children: [
       {
