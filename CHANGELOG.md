@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.4.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.3.1...v3.4.0) (2026-10-11)
+
+
+### Features
+
+* **home:** show the highlight webinar and the CAIRA levels from web-api ([#106](https://github.com/MilesEducation-Tech/miles-masterclass/issues/106)) ([bd13cf2](https://github.com/MilesEducation-Tech/miles-masterclass/commit/bd13cf22cc89d1435fd1e9cd5f6dc0f1554a6259))
+* **shared:** feed the masterclass hero and the AI Labs ring from web-api ([#105](https://github.com/MilesEducation-Tech/miles-masterclass/issues/105)) ([a4bf47e](https://github.com/MilesEducation-Tech/miles-masterclass/commit/a4bf47ec60c057fc64f7b11a44352ff4afdaeeed))
+
+
+### Bug Fixes
+
+* **seo:** list webinars from the paginated feed and drop the legacy catalog reads ([#107](https://github.com/MilesEducation-Tech/miles-masterclass/issues/107)) ([00fb780](https://github.com/MilesEducation-Tech/miles-masterclass/commit/00fb7806de7be219a2ac73e2a4232c7c5371991c))
+
 ## [3.3.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.3.0...v3.3.1) (2026-10-10)
 
 
