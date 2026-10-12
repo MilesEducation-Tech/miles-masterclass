@@ -7,8 +7,17 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🔧 **2026-10-12, NON-REFACTOR — CAIRA levels before login. DONE, UNCOMMITTED** on
+- 🔧 **2026-10-12, NON-REFACTOR — CAIRA levels before login. ✅ Committed by the user as `b495aa4`** on
   `feat/MIL-61-caira-levels-pre-login` (from `master`). No refactor phase moved.
+  - **Open, same PR (user asked): the AI Labs WebGL ring shows no thumbnails (⏸ awaiting decision).**
+    - **Cause:** the `ai-labs/` thumbnails are on S3 `milesone-backend-assets`, which sends no
+      `Access-Control-Allow-Origin` (preflight 403). WebGL textures need CORS, so `loadCorsImage` fails and
+      the cards draw chrome-only. The phone row is plain `<img>`, which needs no CORS, so it shows them.
+      Seen in dev at 1440: the browser's CORS error and the engine's `onTextureBlocked` warning.
+    - **Options put to the user:** the backend adds an S3 CORS policy (recommended, no frontend code), or a
+      same-origin proxy (Vercel rewrite + `proxy.conf.json`).
+  - **Not mine:** uncommitted edits in `layout/main-layout/` (`focus:start-4` → `focus:inset-s-4`,
+    footer overlay commented out) are the user's own work in progress.
   - **What changed:** `HomeFacade` no longer gates `web-api/v1/masterclass/levels/` on `isAuthenticated()`,
     so guests request it too (the user chose "the backend opens `levels/`" over a hard-coded guest copy).
     Comments updated; Q9 added to `docs/MASTERCLASS_API_QUESTIONS.md`.
@@ -3855,7 +3864,9 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
-- 2026-10-12 · NON-REFACTOR · **CAIRA levels for guests** (uncommitted, `feat/MIL-61-caira-levels-pre-login`): `HomeFacade` reads `levels/` without the `isAuthenticated()` gate; backend asked to make it `AllowAny` (MASTERCLASS Q9) · lint 0 errors, structure ✔, prettier ✔, build:prod ✔ (local) · signed-out dev on 3000: `levels/` requested, UAT 401 logged, section hidden, no redirect
+- 2026-10-12 · NON-REFACTOR · **AI Labs ring thumbnails** (MIL-61, no code yet): S3 `milesone-backend-assets` sends no CORS, so the WebGL ring cannot upload the `ai-labs/` thumbnails; the `<img>` row is unaffected · confirmed in dev at 1440 (browser CORS error + `onTextureBlocked`) · ⏸ user to choose S3 CORS (backend) or a same-origin proxy
+
+- 2026-10-12 · NON-REFACTOR · **CAIRA levels for guests** (`b495aa4`, `feat/MIL-61-caira-levels-pre-login`): `HomeFacade` reads `levels/` without the `isAuthenticated()` gate; backend asked to make it `AllowAny` (MASTERCLASS Q9) · lint 0 errors, structure ✔, prettier ✔, build:prod ✔ (local) · signed-out dev on 3000: `levels/` requested, UAT 401 logged, section hidden, no redirect
 
 - 2026-10-10 · NON-REFACTOR · **Envelope fallout** (PR #103, `fix/MIL-54-envelope-fallout`, sibling worktree `../miles-masterclass-envelope`): webinar register/status unwrap `data`, `toWebinarError` reads `data.errors`/`retry_after_seconds`, `CommonResponse.success`, footer drops the `last_viewed` card and the eager cart load · lint 0 errors, structure ✔, tsc ✔, build:prod 244.61 kB (local) · signed-out (4102) and signed-in (4103 = MIL-52 + this diff) verified on UAT: no 404s on home; register 202 → status polls read `data`; UAT attempts stuck `PENDING` (WEBINAR Q13)
 
