@@ -31,17 +31,24 @@ All under `{BASE_API_URL}api/v1/account/`. Every path has a trailing slash; omit
 
 ### Sign-in — no auth, `AllowAny`
 
-| Route                      | Body                           | 200                                                         |
-| -------------------------- | ------------------------------ | ----------------------------------------------------------- |
-| `POST auth-identify/`      | `{identifier}`                 | `{methods, defaultMethod, communicationId, …masks}`         |
-| `POST auth-otp-send/`      | `{identifier}`                 | `{channel, cooldownSeconds}`                                |
-| `POST auth-otp-verify/`    | `{identifier, code}`           | `{accessToken, refreshToken, profile_status, is_test_user}` |
-| `POST auth-token-refresh/` | `{refreshToken}` _or_ `{}`     | same four keys, **rotated**                                 |
-| `POST auth-logout/`        | _(none — bearer **required**)_ | 2xx; 401 without a bearer                                   |
+| Route                      | Body                                    | 200                                                         |
+| -------------------------- | --------------------------------------- | ----------------------------------------------------------- |
+| `POST auth-identify/`      | `{identifier}`                          | `{methods, defaultMethod, communicationId, …masks}`         |
+| `POST auth-otp-send/`      | `{email}` _or_ `{mobile, country_code}` | `{channel, cooldownSeconds}`                                |
+| `POST auth-otp-verify/`    | the same, plus `code`                   | `{accessToken, refreshToken, profile_status, is_test_user}` |
+| `POST auth-token-refresh/` | `{refreshToken}` _or_ `{}`              | same four keys, **rotated**                                 |
+| `POST auth-logout/`        | _(none — bearer **required**)_          | 2xx; 401 without a bearer                                   |
 
-`identifier` is an email, phone number or username — the SSO works out which. `appCode` is **not**
-accepted from the client; it is added server-side, because it names which application is asking and
-a caller must not be able to claim to be another one.
+On identify, `identifier` is an email, phone number (E.164) or username — the SSO works out which.
+
+**Send and verify no longer take `identifier`** (live on UAT 2026-10-12; both reject it as an
+undeclared field). They take exactly one of `email`, or `mobile` + `country_code`
+(`{"mobile": "7501223507", "country_code": "+91"}`): both is a 400 "never both", neither is a 400,
+and `mobile` without `country_code` is a 400. The client types this as `OtpContact`. Both routes
+also declare an optional `communication` (example `"dev"`); the app never sends it.
+
+`appCode` is **not** accepted from the client; it is added server-side, because it names which
+application is asking and a caller must not be able to claim to be another one.
 
 ### Account — JWT, `IsAuthenticated`
 
@@ -131,6 +138,9 @@ The sequence is: verify → `profile_status: "new_user"` → complete the profil
      As of 2026-09-08 **every country resolves to `sms`, India included.**
    - `cooldownSeconds` is how long the resend button stays disabled. Read it; do not hardcode one.
    - `channel` is **not an accepted input** — sending it is a 400.
+   - A number the SSO cannot send to answers **401** "Unable to send a code to that identifier".
+     `toAuthFailure` files it as `bad_code` and renders that copy; it does not count toward the
+     verify attempt tally.
    - A **503 means nothing was sent and nothing will be.** Advance the user to a retry, never to a
      code-entry screen. It says our mailer is broken; it never says anything about the account.
 3. **`auth-otp-verify/`** — exchanges the code for a session. `code` is a string; the contract
@@ -321,15 +331,15 @@ deployed there yet).
 The auth folder saves 19 example responses, **none of them a 200** — every success shape in this
 document is contract prose, not a captured payload.
 
-| #   | Item                                                                        | Current assumption                                                                                                                                                                                                          | Where to change it                    |
-| --- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| 1   | Phone identifier format                                                     | E.164 — `country_code + phone`, e.g. `+919876543210`                                                                                                                                                                        | `AuthFacade.toIdentifier()`, one line |
-| 2   | `miles_sso_refresh` cookie attributes                                       | Not used; body-token path instead                                                                                                                                                                                           | `AuthSession.store()` / `doRefresh()` |
-| 3   | OTP code length                                                             | 6; no route returns it. **Backend ask:** `codeLength` on otp-send                                                                                                                                                           | `AuthFacade.otpLength`                |
-| 4   | The two 502s                                                                | Told apart by copy (`/new code/i`). **Backend ask:** a `code` field                                                                                                                                                         | `toAuthFailure()` in `auth.model.ts`  |
-| 5   | Email for the account menu                                                  | Not shown. **Backend ask:** `email` on `user-details/`                                                                                                                                                                      | `UserAvatarMenu`                      |
-| 6   | Does a name answer update `full_name`?                                      | **No** (live UAT, 2026-10-10): after `PATCH profile/` saves `full_name`, `user-details/` still answers `null`, so the avatar shows "U". **Backend ask:** write the answer to the row, or the client also calls `POST name/` | `Profile.save()`                      |
-| 7   | `country_code` / `phone_number` / `communication` on identify, send, verify | Declared by the serializers, undocumented. Not sent; `identifier` alone, as the contract's example                                                                                                                          | `AuthFacade.toIdentifier()`           |
+| #   | Item                                   | Current assumption                                                                                                                                                                                                          | Where to change it                                        |
+| --- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| 1   | Phone format                           | Identify: E.164, e.g. `+919876543210`. Send/verify: `mobile` + `country_code` with its `+` (UAT also accepts `91`)                                                                                                          | `AuthFacade.toContact()`, identify request in `loginForm` |
+| 2   | `miles_sso_refresh` cookie attributes  | Not used; body-token path instead                                                                                                                                                                                           | `AuthSession.store()` / `doRefresh()`                     |
+| 3   | OTP code length                        | 6; no route returns it. **Backend ask:** `codeLength` on otp-send                                                                                                                                                           | `AuthFacade.otpLength`                                    |
+| 4   | The two 502s                           | Told apart by copy (`/new code/i`). **Backend ask:** a `code` field                                                                                                                                                         | `toAuthFailure()` in `auth.model.ts`                      |
+| 5   | Email for the account menu             | Not shown. **Backend ask:** `email` on `user-details/`                                                                                                                                                                      | `UserAvatarMenu`                                          |
+| 6   | Does a name answer update `full_name`? | **No** (live UAT, 2026-10-10): after `PATCH profile/` saves `full_name`, `user-details/` still answers `null`, so the avatar shows "U". **Backend ask:** write the answer to the row, or the client also calls `POST name/` | `Profile.save()`                                          |
+| 7   | `communication` on send / verify       | Optional, example `"dev"`, undocumented. Never sent. Postman still shows the old `identifier` + `phone_number` bodies; UAT is the source (2026-10-12)                                                                       | `AuthFacade.toContact()`, `toOtpContact()`                |
 
 When a real token is obtainable, capture `identify`, `otp-send`, `otp-verify`, `user-details/` and
 `questions/` into `docs/contracts/` and tighten the items above.

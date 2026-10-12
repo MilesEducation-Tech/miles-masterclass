@@ -12,7 +12,10 @@ import { Field } from '@shared/ui/field/field';
 import { Input } from '@shared/ui/input/input';
 import { InputOtp } from '@shared/ui/input-otp/input-otp';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { GuestRegistration } from '@features/offerings/webinar/services/guest-registration';
+import {
+  GuestRegistration,
+  toOtpContact,
+} from '@features/offerings/webinar/services/guest-registration';
 
 interface IdentifyModel {
   identifier: string;
@@ -47,10 +50,9 @@ export class SeatForm {
   protected readonly identifyForm = form<IdentifyModel>(this.identifyModel, (schema) => {
     required(schema.identifier, { message: 'Enter your email or phone number' });
     validate(schema.identifier, ({ value }) => {
-      const v = value().trim();
-      if (!v) return null;
-      // An email, or an E.164 phone — the SSO takes either in one field.
-      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || /^\+?\d{7,15}$/.test(v)) return null;
+      if (!value().trim()) return null;
+      // The same parse the send uses, so the two cannot disagree.
+      if (toOtpContact(value())) return null;
       return { kind: 'pattern', message: 'Enter a valid email or phone with country code' };
     });
   });

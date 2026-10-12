@@ -7,6 +7,25 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-12, NON-REFACTOR — OTP send/verify take `email` or `mobile` + `country_code`
+  (`prompts/auth-otp-contact-fields.md`, approved). DONE, UNCOMMITTED** on
+  `fix/MIL-63-otp-contact-fields` (from `master`). No refactor phase moved.
+  - **Cause:** UAT now rejects `identifier` on `auth-otp-send/` and `auth-otp-verify/` (400
+    "Unrecognised field"), so sign-in was broken. `auth-identify/` still takes `identifier`.
+  - **What changed:** `OtpContact` in `auth.model.ts`. `AuthSession.sendOtp` and `verifyOtp` take it.
+    `AuthFacade.toContact()` replaces `toIdentifier()`. The webinar seat card splits its one field with
+    `toOtpContact()` (a phone needs a `+`). `communication` is never sent. `docs/AUTH_API.md` is updated.
+  - **Gates (local macOS):** lint 0 errors (106 warnings), structure check passed, prettier clean,
+    `build:prod` 245.41 kB with only the `ai-labs.css` warning.
+  - **Browser (dev, 3000, UAT, signed out):**
+    - **Login, email:** `probe@example.com` → send 200 (channel email) → verify posted `{email, code}` → 401
+      "Invalid or expired code", tally shown.
+    - **Login, mobile:** send posted `{mobile: "5550100123", country_code: "+1"}`; identify still
+      `{identifier: "+15550100123"}`.
+    - **Seat card:** `9876543210` refused; `+1 555 010 0123` posted the same phone body.
+    - **Not done:** a successful sign-in, which needs a real inbox or phone.
+  - **Backend:** Postman still shows the old bodies; ask for a regenerated collection. Prod must take
+    the new contract before this ships.
 - 🔧 **2026-10-12, NON-REFACTOR — CAIRA levels before login. ✅ Committed by the user as `b495aa4`** on
   `feat/MIL-61-caira-levels-pre-login` (from `master`). No refactor phase moved.
   - **Open, same PR (user asked): the AI Labs WebGL ring shows no thumbnails (⏸ awaiting decision).**

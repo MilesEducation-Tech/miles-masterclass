@@ -5,6 +5,7 @@ import { firstValueFrom, map } from 'rxjs';
 import { environment } from '@env/environment';
 import {
   AUTH_ROUTES,
+  OtpContact,
   OtpSendResponse,
   ProfileStatus,
   SessionResponse,
@@ -122,19 +123,17 @@ export class AuthSession {
   // ── Commands ──────────────────────────────────────────────────────────────
 
   /** Send a one-time code. Read `channel` and `cooldownSeconds` off the result. */
-  sendOtp(identifier: string): Promise<OtpSendResponse> {
+  sendOtp(contact: OtpContact): Promise<OtpSendResponse> {
     return firstValueFrom(
-      this.api
-        .call(AUTH_ROUTES.sendOtp, { identifier }, { context: QUIET })
-        .pipe(map((res) => res.data)),
+      this.api.call(AUTH_ROUTES.sendOtp, contact, { context: QUIET }).pipe(map((res) => res.data)),
     );
   }
 
   /** Exchange the code for a session, and store it. */
-  async verifyOtp(identifier: string, code: string): Promise<SessionResponse> {
+  async verifyOtp(contact: OtpContact, code: string): Promise<SessionResponse> {
     const session = await firstValueFrom(
       this.api
-        .call(AUTH_ROUTES.verifyOtp, { identifier, code }, { context: QUIET })
+        .call(AUTH_ROUTES.verifyOtp, { ...contact, code }, { context: QUIET })
         .pipe(map((res) => res.data)),
     );
     this.store(session);
