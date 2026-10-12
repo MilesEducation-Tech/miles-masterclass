@@ -297,8 +297,8 @@ importers:
         specifier: ~7.8.0
         version: 7.8.2
       swiper:
-        specifier: ^14.2.0
-        version: 14.2.0
+        specifier: ^14.3.0
+        version: 14.3.0
       tailwind-merge:
         specifier: ^3.7.0
         version: 3.7.0
@@ -6523,8 +6523,8 @@ packages:
     resolution: {integrity: sha512-qsjeeq5YjBZ5eMdFuUa4ZosMLxgr5RZ+F+Y1OrDhuOCEInRMA3x74XdBtggJcj9kOeInz0WE+LgCPDkZFlBYJw==}
     engines: {node: '>=12.0.0'}
 
-  swiper@14.2.0:
-    resolution: {integrity: sha512-GsL4M9Fq7Sg22OyL3SjdNj/0bxTfIxPJJHHW394Li0u5vYtExi0a09iBUc8CuLafJi5pAlH2AHUe1PocxHl45g==}
+  swiper@14.3.0:
+    resolution: {integrity: sha512-qw0Xv1+sylM8KCQxWxV2iYAK2G6XjFGPZ/8F1baEsY8DK4A3sTnLx6jUJ0G71rDbVQ05JHMWkcWmJ5NvlxZO0w==}
     engines: {node: '>= 4.7.0'}
 
   sync-child-process@1.0.2:
@@ -13319,7 +13319,7 @@ snapshots:
   svg-pathdata@6.0.3:
     optional: true
 
-  swiper@14.2.0: {}
+  swiper@14.3.0: {}
 
   sync-child-process@1.0.2:
     dependencies:
