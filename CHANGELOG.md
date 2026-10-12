@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.5.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.4.0...v3.5.0) (2026-10-12)
+
+
+### Features
+
+* **home:** show the CAIRA levels to signed-out visitors ([#117](https://github.com/MilesEducation-Tech/miles-masterclass/issues/117)) ([2e536ad](https://github.com/MilesEducation-Tech/miles-masterclass/commit/2e536adbf22aa9f82f3b70835743b0e0b2bb5af6))
+
 ## [3.4.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.3.1...v3.4.0) (2026-10-11)
 
 
