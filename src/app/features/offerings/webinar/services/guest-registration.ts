@@ -2,12 +2,33 @@ import { DestroyRef, Service, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '@env/environment';
-import { AuthFailure, OtpChannel, toAuthFailure } from '@core/models/auth.model';
+import { dialCodeWithLength } from '@core/constants/dial-code';
+import { AuthFailure, OtpChannel, OtpContact, toAuthFailure } from '@core/models/auth.model';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { WebinarFacade } from './webinar-facade';
 
 /** Used only until a send response tells us the real `cooldownSeconds`. */
 const FALLBACK_COOLDOWN_SECONDS = 60;
+
+const DIAL_CODES = [...new Set(dialCodeWithLength.map((row) => String(row.CountryCode ?? '')))];
+
+/**
+ * The seat card's one field as send/verify want it: an email as typed, or a
+ * `+`-prefixed phone split into `mobile` and `country_code`. `null` when it is
+ * neither, which is what the seat form's validator refuses.
+ *
+ * Dial codes are prefix-free (ITU E.164), so the first code the number starts
+ * with is the only one. Spaces are dropped because the placeholder itself
+ * shows them.
+ */
+export function toOtpContact(value: string): OtpContact | null {
+  const trimmed = value.trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return { email: trimmed };
+  const phone = trimmed.replace(/\s+/g, '');
+  if (!/^\+\d{7,15}$/.test(phone)) return null;
+  const code = DIAL_CODES.find((c) => c && phone.startsWith(c));
+  return code ? { mobile: phone.slice(code.length), country_code: code } : null;
+}
 
 export type SeatStep = 'identify' | 'otp';
 
@@ -21,8 +42,8 @@ export type SeatStep = 'identify' | 'otp';
  * email and first name — so the only honest guest flow is: sign in by OTP
  * (which is also sign-up), then register with the session that produced.
  *
- * Two steps, one identifier, no dial-code picker: the SSO accepts an email
- * or an E.164 phone in the same field, and the full login page (with its
+ * Two steps, one identifier, no dial-code picker: the field takes an email
+ * or an E.164 phone, split by `toOtpContact`, and the full login page (with its
  * country codes, consent and lockout tally) is one click away for anyone who
  * needs it. Anything longer-lived than this card lives in `AuthSession`.
  *
@@ -38,7 +59,9 @@ export class GuestRegistration {
   private readonly router = inject(Router);
 
   readonly step = signal<SeatStep>('identify');
+  /** As typed, for the confirmation line. `contact` is what the API gets. */
   readonly identifier = signal('');
+  private contact: OtpContact | null = null;
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   /** `channel` from the send RESPONSE — never inferred from what was typed. */
@@ -79,14 +102,16 @@ export class GuestRegistration {
   /** Step one: send the code and move to the OTP step. */
   async sendCode(identifier: string): Promise<void> {
     if (this.isLoading()) return;
-    const trimmed = identifier.trim();
-    if (!trimmed) return;
+    // The seat form's validator has already said why when this is null.
+    const contact = toOtpContact(identifier);
+    if (!contact) return;
 
     this.isLoading.set(true);
     this.error.set(null);
     try {
-      await this.send(trimmed);
-      this.identifier.set(trimmed);
+      await this.send(contact);
+      this.contact = contact;
+      this.identifier.set(identifier.trim());
       this.step.set('otp');
     } catch (err) {
       this.renderFailure(err);
@@ -106,12 +131,12 @@ export class GuestRegistration {
    * to `post_login`, and the hero re-renders as a member with the seat booked.
    */
   async verifyAndRegister(webinarId: string, code: string): Promise<void> {
-    if (this.isLoading()) return;
+    if (this.isLoading() || !this.contact) return;
 
     this.isLoading.set(true);
     this.error.set(null);
     try {
-      const session = await this.auth.verifyOtp(this.identifier(), code);
+      const session = await this.auth.verifyOtp(this.contact, code);
       this.stopTicker();
 
       if (session.profile_status === 'new_user') {
@@ -135,12 +160,12 @@ export class GuestRegistration {
   }
 
   async resend(): Promise<void> {
-    if (!this.canResend()) return;
+    if (!this.canResend() || !this.contact) return;
 
     this.isLoading.set(true);
     this.error.set(null);
     try {
-      await this.send(this.identifier());
+      await this.send(this.contact);
     } catch (err) {
       this.renderFailure(err);
     } finally {
@@ -158,6 +183,7 @@ export class GuestRegistration {
     this.stopTicker();
     this.step.set('identify');
     this.identifier.set('');
+    this.contact = null;
     this.error.set(null);
     this.channel.set(null);
     this.cooldownUntil.set(0);
@@ -165,8 +191,8 @@ export class GuestRegistration {
 
   // ── Internals ─────────────────────────────────────────────────────────────
 
-  private async send(identifier: string): Promise<void> {
-    const sent = await this.auth.sendOtp(identifier);
+  private async send(contact: OtpContact): Promise<void> {
+    const sent = await this.auth.sendOtp(contact);
     this.channel.set(sent.channel ?? null);
     // Read the cooldown off the response; never hardcode one.
     const seconds = sent.cooldownSeconds ?? FALLBACK_COOLDOWN_SECONDS;

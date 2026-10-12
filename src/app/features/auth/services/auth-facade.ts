@@ -10,6 +10,7 @@ import {
   AuthFailure,
   IdentifyResponse,
   OtpChannel,
+  OtpContact,
   isOtpMethod,
   isTerminalFailure,
   toAuthFailure,
@@ -385,18 +386,14 @@ export class AuthFacade {
   // ── Actions ───────────────────────────────────────────────────────────────
 
   /**
-   * The identifier as the API wants it: one string, email as typed, phone as
-   * E.164.
-   *
-   * ponytail: E.164 is an ASSUMPTION, not a verified fact — every `auth-*`
-   * route on UAT answers 503 ("Sign-in is not configured on this environment")
-   * as of 2026-09-22, so no live call could confirm the format. It is isolated
-   * here so correcting it is a one-line change.
+   * Who the code goes to, as send and verify want it: the email as typed, or
+   * the national digits and the dial code apart. Identify still takes the
+   * single E.164 string — see its request in `loginForm`.
    */
-  private toIdentifier(): string {
+  private toContact(): OtpContact {
     const model = this.authModel();
-    if (this.loginMethod() !== 'PHONE') return model.identifier.trim();
-    return `${model.country_code}${model.identifier}`.replace(/\s+/g, '');
+    if (this.loginMethod() !== 'PHONE') return { email: model.identifier.trim() };
+    return { mobile: model.identifier.replace(/\s+/g, ''), country_code: model.country_code };
   }
 
   /**
@@ -415,7 +412,7 @@ export class AuthFacade {
     this.error.set(null);
 
     try {
-      await this.send(this.toIdentifier());
+      await this.send(this.toContact());
       this.otpModel.set({ identifier: this.displayIdentifier(), otp: '' });
       this.loginStep.set('OTP');
     } catch (err) {
@@ -433,7 +430,7 @@ export class AuthFacade {
     this.error.set(null);
 
     try {
-      const session = await this.auth.verifyOtp(this.toIdentifier(), this.otpModel().otp);
+      const session = await this.auth.verifyOtp(this.toContact(), this.otpModel().otp);
       this.failedAttempts.set(0);
 
       // Rule 4: the milestone, not a token claim.
@@ -464,7 +461,7 @@ export class AuthFacade {
     this.isLoading.set(true);
     this.error.set(null);
     try {
-      await this.send(this.toIdentifier());
+      await this.send(this.toContact());
     } catch (err) {
       this.renderFailure(err);
     } finally {
@@ -474,8 +471,8 @@ export class AuthFacade {
 
   // ── Internals ─────────────────────────────────────────────────────────────
 
-  private async send(identifier: string): Promise<void> {
-    const sent = await this.auth.sendOtp(identifier);
+  private async send(contact: OtpContact): Promise<void> {
+    const sent = await this.auth.sendOtp(contact);
     this.channel.set(sent.channel ?? null);
     this.sendCount.update((n) => n + 1);
     // Read the cooldown off the response; never hardcode one.

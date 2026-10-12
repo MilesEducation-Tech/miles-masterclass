@@ -100,9 +100,20 @@ export function isOtpMethod(method: AuthMethod): boolean {
   return method.endsWith('_otp');
 }
 
-export interface OtpSendRequest {
-  identifier: string;
-}
+/**
+ * Who the code goes to, on `auth-otp-send/` and `auth-otp-verify/` — NOT
+ * `identifier`, which both now reject as undeclared (live on UAT 2026-10-12;
+ * `auth-identify/` still takes `identifier`). Exactly one of the two shapes:
+ * both is a 400 ("never both"), neither is a 400, and the union makes either
+ * unrepresentable. `country_code` keeps its `+` (`'+91'`), as the dial-code
+ * table writes it.
+ *
+ * The routes also declare an optional `communication` (example value `"dev"`).
+ * It is deliberately never sent: a dev switch has no business reaching prod.
+ */
+export type OtpContact = { email: string } | { mobile: string; country_code: string };
+
+export type OtpSendRequest = OtpContact;
 
 export interface OtpSendResponse {
   channel: OtpChannel;
@@ -110,12 +121,11 @@ export interface OtpSendResponse {
   cooldownSeconds: number;
 }
 
-export interface OtpVerifyRequest {
-  identifier: string;
+export type OtpVerifyRequest = OtpContact & {
   /** A string, and its length is NOT validated client-side — the code length is
    *  set server-side at the SSO. */
   code: string;
-}
+};
 
 /** Optional by design: a browser may send `{}` and let the httpOnly
  *  `miles_sso_refresh` cookie be forwarded upstream instead. */
