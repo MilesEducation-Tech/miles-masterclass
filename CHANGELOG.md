@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.5.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.5.0...v3.5.1) (2026-10-12)
+
+
+### Bug Fixes
+
+* **auth:** send email or mobile + country_code on OTP send and verify ([#119](https://github.com/MilesEducation-Tech/miles-masterclass/issues/119)) ([cecfcd3](https://github.com/MilesEducation-Tech/miles-masterclass/commit/cecfcd336a1e358254abf698d250aa2603056773))
+
 ## [3.5.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.4.0...v3.5.0) (2026-10-12)
 
 
