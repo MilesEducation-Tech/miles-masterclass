@@ -7,6 +7,17 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-12, NON-REFACTOR — CAIRA levels before login. DONE, UNCOMMITTED** on
+  `feat/MIL-61-caira-levels-pre-login` (from `master`). No refactor phase moved.
+  - **What changed:** `HomeFacade` no longer gates `web-api/v1/masterclass/levels/` on `isAuthenticated()`,
+    so guests request it too (the user chose "the backend opens `levels/`" over a hard-coded guest copy).
+    Comments updated; Q9 added to `docs/MASTERCLASS_API_QUESTIONS.md`.
+  - **Waiting on the backend (in progress, 2026-10-12):** UAT still answers a guest 401, so guests see no
+    CAIRA section until `levels/` is `AllowAny`. No further frontend change is needed then.
+  - **Gates (local macOS):** lint 0 errors (106 warnings), structure check passed, prettier clean,
+    `build:prod` green with only the `ai-labs.css` warning.
+  - **Browser (dev, 3000, UAT, signed out):** `levels/` is requested, the 401 is logged, the section and its
+    sidenav entry stay hidden, and the page does not redirect.
 - 🔧 **2026-10-10, NON-REFACTOR — envelope fallout (`prompts/envelope-fallout.md`, approved with D1–D3 as
   recommended). DONE, PR #103** on `fix/MIL-54-envelope-fallout` (from `master`), in the sibling
   worktree `/Users/SACHIN.SINGH/Documents/GitHub/miles-masterclass-envelope`. The edit guard refuses
@@ -3843,6 +3854,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-12 · NON-REFACTOR · **CAIRA levels for guests** (uncommitted, `feat/MIL-61-caira-levels-pre-login`): `HomeFacade` reads `levels/` without the `isAuthenticated()` gate; backend asked to make it `AllowAny` (MASTERCLASS Q9) · lint 0 errors, structure ✔, prettier ✔, build:prod ✔ (local) · signed-out dev on 3000: `levels/` requested, UAT 401 logged, section hidden, no redirect
 
 - 2026-10-10 · NON-REFACTOR · **Envelope fallout** (PR #103, `fix/MIL-54-envelope-fallout`, sibling worktree `../miles-masterclass-envelope`): webinar register/status unwrap `data`, `toWebinarError` reads `data.errors`/`retry_after_seconds`, `CommonResponse.success`, footer drops the `last_viewed` card and the eager cart load · lint 0 errors, structure ✔, tsc ✔, build:prod 244.61 kB (local) · signed-out (4102) and signed-in (4103 = MIL-52 + this diff) verified on UAT: no 404s on home; register 202 → status polls read `data`; UAT attempts stuck `PENDING` (WEBINAR Q13)
 

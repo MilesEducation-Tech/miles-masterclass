@@ -76,6 +76,15 @@ The only resume data is the per-course `continue_watching` block on `course-sect
 been removed. Can a route return the single most recently watched course (any offering), with its
 `continue_watching` block?
 
+### Q9. The CAIRA levels for signed-out visitors (asked 2026-10-12)
+
+The home page's CAIRA section reads `web-api/v1/masterclass/levels/` for every visitor now. Signed in it
+answers 200 with the three CAIRA levels. Signed out it answers **401** ("Authentication credentials were
+not provided."), so guests get no CAIRA section. The ladder is the same for everyone. Can `levels/` be
+`AllowAny`? No frontend change is needed when it is.
+
+**Status (2026-10-12):** the backend is making `levels/` callable without a session (MIL-61).
+
 ## Still missing from the web API
 
 | Production page shows               | Web API today                                                           | Ask                                                |
