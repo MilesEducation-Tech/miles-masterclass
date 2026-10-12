@@ -2,7 +2,7 @@
      `href="#…"` link: the app's `<base href="/">` resolves a bare fragment to the home page. -->
 <button
   type="button"
-  class="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-1001 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-white/60"
+  class="sr-only focus:not-sr-only focus:fixed focus:inset-s-4 focus:top-4 focus:z-1001 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-white/60"
   (click)="skipToContent()"
 >
   {{ 'header.skipToContent' | transloco }}
@@ -14,9 +14,9 @@
 <!-- The overlay is a fixed-position floating bar (§4.4 always-defer), so it takes no
      layout space: an empty placeholder causes no shift, and it stays out of the
      initial bundle. -->
-@defer (on idle) {
+<!-- @defer (on idle) {
   <app-footer-overlay />
 } @placeholder {
   <span class="hidden"></span>
-}
+} -->
 <app-footer />

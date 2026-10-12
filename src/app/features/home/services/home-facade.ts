@@ -4,7 +4,6 @@ import { computed, effect, inject, PLATFORM_ID, Service } from '@angular/core';
 import { environment } from '@env/environment';
 import { MasterclassLevel, parseLevels } from '@core/models/masterclass-home.model';
 import { apiUrl } from '@core/services/api-client/api-client';
-import { AuthSession } from '@core/services/auth-session/auth-session';
 import { Logger } from '@core/services/logger/logger';
 import { HomeWebinar, parseHighlightWebinar } from '../models/home-sections.model';
 
@@ -17,9 +16,12 @@ import { HomeWebinar, parseHighlightWebinar } from '../models/home-sections.mode
 const HIGHLIGHT_WEBINARS_URL = `${environment.BASE_API_URL}web-api/v1/events/highlight-webinars/`;
 
 /**
- * The level ladder (Postman `web-masterclass-levels-v1`). Sign-in only — a
- * guest is a 401 — and there is no pre-login variant, so guests get no CAIRA
- * section at all (decided 2026-10-11). Not paginated.
+ * The level ladder (Postman `web-masterclass-levels-v1`). Not paginated. Read
+ * by guests too (decided 2026-10-12): the ladder is the same for everyone, and
+ * the interceptor attaches the bearer only when there is one. UAT still
+ * answers a guest 401 until the backend opens the route (Q9 in
+ * `docs/MASTERCLASS_API_QUESTIONS.md`); until then the section stays hidden
+ * for guests and the failure is logged.
  */
 const LEVELS_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/levels/`;
 
@@ -37,7 +39,6 @@ const CAIRA_SUBJECT = 'CAIRA';
  */
 @Service({ autoProvided: false })
 export class HomeFacade {
-  private readonly auth = inject(AuthSession);
   private readonly logger = inject(Logger);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -50,13 +51,9 @@ export class HomeFacade {
     { defaultValue: null, parse: parseHighlightWebinar },
   );
 
-  /**
-   * Gated on the session's boolean, never the token, so a token rotation does
-   * not refetch. Signing out makes the request `undefined`: the resource goes
-   * idle, falls back to `[]`, and the section disappears by itself.
-   */
+  // Not gated on the session: signing in or out does not change the ladder.
   private readonly levelsResource = httpResource<MasterclassLevel[]>(
-    () => (this.isBrowser && this.auth.isAuthenticated() ? apiUrl(LEVELS_URL) : undefined),
+    () => (this.isBrowser ? apiUrl(LEVELS_URL) : undefined),
     { defaultValue: [], parse: parseLevels },
   );
 

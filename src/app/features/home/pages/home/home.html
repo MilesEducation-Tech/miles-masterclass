@@ -142,8 +142,8 @@
     }
   </section>
 
-  <!-- CAIRA Levels: signed-in only, because `levels/` has no guest variant,
-       so the section is never in the server HTML. `on viewport` holds the
+  <!-- CAIRA Levels: signed in or not, once `levels/` answers (a browser-only
+       read, so the section is never in the server HTML). `on viewport` holds the
        component (and the gsap it imports) until the section nears the viewport;
        the placeholder is the section's measured height at 375 / 768 / 1440 (one
        card tall from md, the carousel and its dots below). -->

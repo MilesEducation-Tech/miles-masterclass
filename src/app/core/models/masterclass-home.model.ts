@@ -91,10 +91,11 @@ export interface MasterclassHomePage {
 // ---- CAIRA levels ----------------------------------------------------------
 
 /**
- * One rung of a programme's level ladder, from `levels/` (sign-in only; a
- * guest is a 401). Every programme's ladder comes back in one list, so
- * `subject_name` says which one a row belongs to. Checked live on UAT
- * 2026-10-11 (signed in): three CAIRA rows, `description` null on all three.
+ * One rung of a programme's level ladder, from `levels/` (read by guests and
+ * signed-in users alike; UAT still answers a guest 401 as of 2026-10-12).
+ * Every programme's ladder comes back in one list, so `subject_name` says which
+ * one a row belongs to. Checked live on UAT 2026-10-11 (signed in): three
+ * CAIRA rows, `description` null on all three.
  */
 export interface MasterclassLevel {
   id: string;
