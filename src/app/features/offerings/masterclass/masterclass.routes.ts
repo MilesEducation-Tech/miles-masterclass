@@ -1,4 +1,5 @@
 import { Route } from '@angular/router';
+import { authGuard } from '@core/guards/auth/auth-guard';
 import { ChapterFacade } from '@features/offerings/services/chapter-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
@@ -7,6 +8,12 @@ import { CourseDetailFacade } from '@features/offerings/services/course-detail-f
 import { Masterclass } from '@features/offerings/masterclass/pages/masterclass/masterclass';
 import { MasterclassHighlightFacade } from '@features/offerings/masterclass/services/masterclass-highlight-facade';
 
+/**
+ * The landing and course pages are public. Everything a learner does inside a
+ * course (chapters, the final assessment, feedback) needs a session, so those
+ * routes carry `authGuard`: a visitor is sent to sign-in and back, and the
+ * page's chunk never loads.
+ */
 export const masterclassRoutes: Route[] = [
   { path: '', component: Masterclass, providers: [MasterclassHighlightFacade] },
   {
@@ -22,6 +29,7 @@ export const masterclassRoutes: Route[] = [
       },
       {
         path: 'chapter/:chapterId/:chapterTitle',
+        canMatch: [authGuard],
         providers: [ChapterFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
@@ -31,6 +39,7 @@ export const masterclassRoutes: Route[] = [
       },
       {
         path: 'final-assessment/:sessionId/exam',
+        canMatch: [authGuard],
         providers: [FinalAssessmentFacade],
         canDeactivate: [canDeactivateExamGuard],
         data: { layout: 'plain' },
@@ -41,6 +50,7 @@ export const masterclassRoutes: Route[] = [
       },
       {
         path: 'final-assessment/:sessionId/report',
+        canMatch: [authGuard],
         providers: [FinalAssessmentFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
@@ -50,6 +60,7 @@ export const masterclassRoutes: Route[] = [
       },
       {
         path: 'feedback',
+        canMatch: [authGuard],
         providers: [FeedbackFacade],
         loadComponent: () =>
           import('@features/offerings/pages/course-feedback/course-feedback').then(

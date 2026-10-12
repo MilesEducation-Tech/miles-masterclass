@@ -414,6 +414,63 @@ data-press:bg-transparent` in a static `class`; the auto-renew dialog's Close is
     - **Not done:** a successful sign-in, which needs a real inbox or phone.
   - **Backend:** Postman still shows the old bodies; ask for a regenerated collection. Prod must take
     the new contract before this ships.
+- 🔧 **2026-10-12, NON-REFACTOR — require sign-in for learner pages and webinar Join
+  (`prompts/require-sign-in.md`, approved). DONE, UNCOMMITTED** on `fix/MIL-62-require-sign-in` (Bug MIL-62,
+  from `master`). No refactor phase moved.
+  - **Guarded (17 routes, `canMatch: [authGuard]`):**
+    - masterclass and podcast chapter, exam, report and feedback
+    - micro-learning exam, report and feedback
+    - webinar feedback
+    - the `cpe-tracker` and `caira-tracker` mounts
+    - payment `invoice`, `order-history` and the cart/billing/review shell (`plan` stays public)
+  - **Join:** `WebinarFacade.join()` owns it now and asks a signed-out user to sign in ("Sign in to join").
+    Before, a stale detail or feed row could open the Zoom `join_url` with no session. The prompt copy for
+    Register and Join is in `webinar/constants/sign-in-prompts.ts`.
+  - **Left public on purpose:** the micro-learning course page. It is that course's only page and guests
+    browsed it in v3; this is a product call.
+  - **Gates (local macOS):** tsc 0; `pnpm lint` 0 errors (106 warnings); structure check passed; Prettier
+    clean; `build:prod` green, initial 245.54 kB, with only the `ai-labs.css` warning.
+  - **SSR (prod build, 4000):**
+    - Signed out, the server-rendered guarded routes answer 302 to `/auth/login?redirect=…`; the
+      client-rendered ones send an empty `<app-root>`.
+    - With a dummy `ACCESS_TOKEN` cookie, a chapter answers 200.
+    - All 16 public pages checked answer 200 signed out.
+  - **Browser (the user's dev server, 4101):**
+    - **Signed out:** all 22 guarded URLs land on sign-in with the right `redirect`, and no page chunk loads.
+      The public podcast course page does load `podcast-course-*.js`, which shows the check can see page
+      chunks.
+    - **Join, signed out:** the prompt shows on the list and detail pages, with no `/live` navigation and no
+      Zoom tab. "Sign in" goes to `/auth/login?redirect=/us/accounting/webinar`; "Not now" closes it.
+      Register still says "Sign in to register".
+    - **Dummy cookie (removed afterwards):** the guarded pages open, and Join reaches the "not ready yet"
+      toast.
+  - **Not verified:**
+    - The real return after signing in, because UAT sends no OTP mail to temp domains.
+    - A real Join (embedded or Zoom).
+  - **Found in review, fixed:** "Back to Home" on `/auth/login` navigated to `redirect`, which is now a
+    guarded page, so it bounced back to the login page. `Auth.handleBackOrLogout()` now returns to the page
+    sign-in was asked from (`currentNavigation().previousNavigation`, recorded when the shell opens), or `/`.
+    - **Verified (dev 4101, plus headless Playwright once the browser pane was hidden):**
+      - Course page → Watch Now → sign-in → Back returns to the course page.
+      - A direct chapter link → Back goes to home.
+      - The webinar Join prompt → Sign in → Back returns to the webinar page.
+      - A session ended on a guarded page → Back falls through to home. This case logs one harmless
+        `AbortError` for a skipped view transition.
+  - **Same PR, user's call: a guest's "Book Now" opens that webinar's page with its seat form focused**
+    (`prompts/webinar-book-now-detail.md`, approved).
+    - **Bug fixed:** the list page focused the hero's seat form, which belongs to the hero webinar. A row's
+      Book Now therefore booked the hero, not the row.
+    - **How:** `WebinarFacade.book()`: a member registers in place; a guest gets a one-shot `seatFocusFor`
+      and navigates to the detail page. `SeatForm` calls `takeSeatFocus()` after its first render, then
+      scrolls to the field and focuses it. `webinarPath()` is shared with `join()`.
+    - **Verified (dev 4101 via headless Playwright):**
+      - At 1440, 768 and 375, Book Now on a row opens that webinar's page. Its seat form carries that id, and
+        the field is focused and in view for 2 s after arrival.
+      - A direct load and More Info do not focus the field.
+    - **Not clicked signed in:** that would POST a registration. The member branch is the unchanged
+      `register()`.
+  - **Follow-up, own ticket:** `payment/pages/plan/plan.ts:61` hardcodes `isLoggedIn = signal(false)`, so a
+    signed-in learner picking a plan is sent to sign-in.
 - 🔧 **2026-10-12, NON-REFACTOR — CAIRA levels before login. ✅ Committed by the user as `b495aa4`** on
   `feat/MIL-61-caira-levels-pre-login` (from `master`). No refactor phase moved.
   - **Open, same PR (user asked): the AI Labs WebGL ring shows no thumbnails (⏸ awaiting decision).**

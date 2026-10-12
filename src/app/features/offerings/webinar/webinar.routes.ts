@@ -95,8 +95,10 @@ export const webinarRoutes: Routes = [
         // segments, so it cannot collide with `:id` above — and the legacy
         // `premiere/:courseId/feedback/:feedbackType` redirect in
         // `features.routes.ts` still lands here, as do the CPE tracker's
-        // feedback actions.
+        // feedback actions. Feedback is the learner's own, so it needs a
+        // session; the list and detail above stay public.
         path: ':courseId/:courseTitle/feedback',
+        canMatch: [authGuard],
         providers: [FeedbackFacade],
         loadComponent: () =>
           import('@features/offerings/pages/course-feedback/course-feedback').then(

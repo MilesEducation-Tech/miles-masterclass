@@ -622,3 +622,14 @@ function isProduct(v: unknown): v is WebinarProduct {
     isStrOrNull(v['square_image'])
   );
 }
+
+// ---- Sign-in prompt ---------------------------------------------------------
+
+/** The action a signed-out visitor tried, which picks the sign-in prompt's copy. */
+export type SignInPromptAction = 'register' | 'join';
+
+/** The sign-in prompt's copy; the values live in `SIGN_IN_PROMPTS`. */
+export interface SignInPrompt {
+  title: string;
+  body: string;
+}

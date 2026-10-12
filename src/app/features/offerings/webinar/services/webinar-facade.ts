@@ -3,6 +3,7 @@ import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import {
   computed,
   DestroyRef,
+  DOCUMENT,
   effect,
   inject,
   Service,
@@ -22,18 +23,22 @@ import { NotificationService } from '@core/services/notification/notification';
 // Type-only: UtilsDialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { withPreviousValue } from '@core/utils/with-previous-value';
+import { Utils } from '@shared/services/utils';
+import { SIGN_IN_PROMPTS } from '@features/offerings/webinar/constants/sign-in-prompts';
 import {
   FeedCard,
   LoginType,
   parseDetail,
   parseMainPage,
+  SignInPromptAction,
   UpcomingWebinarCard,
   WebinarMainPageData,
   WEBINAR_ENDPOINTS,
   WebinarDetail,
-} from '../models/webinar.model';
-import { toWebinarError, WebinarError } from '../utils/webinar-error';
-import type { WebinarBucket } from '../utils/webinar-status';
+} from '@features/offerings/webinar/models/webinar.model';
+import { resolveJoinTarget } from '@features/offerings/webinar/utils/join-target';
+import { toWebinarError, WebinarError } from '@features/offerings/webinar/utils/webinar-error';
+import type { WebinarBucket } from '@features/offerings/webinar/utils/webinar-status';
 import { WebinarRegistration } from './webinar-registration';
 
 /**
@@ -66,6 +71,9 @@ export class WebinarFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(AuthSession);
   private readonly registration = inject(WebinarRegistration);
+  private readonly utils = inject(Utils);
+  /** Injected rather than reached for, so the external hop is testable. */
+  private readonly document = inject(DOCUMENT);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /**
@@ -323,6 +331,12 @@ export class WebinarFacade {
 
   // ---- Actions -------------------------------------------------------------
 
+  /**
+   * The webinar whose seat form should take focus when it renders, set by a
+   * guest's "Book Now" (`book`) and cleared by `takeSeatFocus`.
+   */
+  private readonly seatFocusFor = signal<string | null>(null);
+
   isRegistering(webinarId: string): boolean {
     return this.registration.isRegistering(webinarId);
   }
@@ -339,7 +353,7 @@ export class WebinarFacade {
    */
   async register(webinarId: string): Promise<void> {
     if (!this.auth.isAuthenticated()) {
-      await this.promptSignIn();
+      await this.promptSignIn('register');
       return;
     }
 
@@ -385,6 +399,94 @@ export class WebinarFacade {
   }
 
   /**
+   * Join a live session: sign-in first, then wherever `resolveJoinTarget`
+   * sends this webinar.
+   *
+   * The sign-in check is not cosmetic. A signed-out visitor normally sees
+   * Register, because the `pre_login` feed carries no `registration` block. But
+   * the detail row is keyed on the webinar id alone, so after a sign-out it
+   * still holds the signed-in `registration`, `join_url` included, and so does
+   * the feed's last good value when its refetch fails. Without this check, that
+   * stale row opened Zoom for a visitor with no session.
+   */
+  async join(webinarId: string): Promise<void> {
+    if (!this.auth.isAuthenticated()) {
+      await this.promptSignIn('join');
+      return;
+    }
+
+    const target = resolveJoinTarget(this.joinCardFor(webinarId));
+
+    switch (target.kind) {
+      case 'embedded':
+        // The live room is its own route: it is client-rendered, holds the
+        // session lease for exactly as long as it is mounted, and tears the SDK
+        // down on navigation away. Opening the meeting in place would tie all
+        // of that to the lifetime of the feed.
+        void this.router.navigate(this.webinarPath(webinarId, 'live'));
+        break;
+      case 'external':
+        // `noopener` is not optional on a `_blank` to a third party: without it
+        // Zoom's tab gets a handle on `window.opener` and can navigate us.
+        this.document.defaultView?.open(target.url, '_blank', 'noopener,noreferrer');
+        break;
+      case 'unavailable':
+        this.notification.error(
+          'That session is not ready yet',
+          'We could not find a join link for this webinar. Refresh in a moment, or contact support if it persists.',
+        );
+        break;
+    }
+  }
+
+  /**
+   * The row the page shows for this webinar: the detail row on its own detail
+   * page (it wins once it lands, as on the page), otherwise the feed row.
+   */
+  private joinCardFor(webinarId: string): FeedCard | null {
+    const detail = this.detailId() === webinarId ? this.detailWebinar() : null;
+    return detail ?? this.findById(webinarId);
+  }
+
+  /**
+   * "Book Now" on a list row.
+   *
+   * A member registers in place. A guest books through the seat form, which
+   * signs them in and registers in one flow, so they are taken to this
+   * webinar's page with that form focused. The list has a seat form of its own,
+   * but it belongs to the hero webinar: focusing it booked the hero, not the
+   * row that was clicked.
+   */
+  async book(webinarId: string): Promise<void> {
+    if (this.auth.isAuthenticated()) {
+      await this.register(webinarId);
+      return;
+    }
+    this.seatFocusFor.set(webinarId);
+    await this.router.navigate(this.webinarPath(webinarId));
+  }
+
+  /**
+   * `true` exactly once, for the seat form of the webinar a guest just chose
+   * to book; `SeatForm` asks after its first render. One-shot, so a refresh, a
+   * shared link or a later visit to that page never steals focus.
+   */
+  takeSeatFocus(webinarId: string): boolean {
+    if (this.seatFocusFor() !== webinarId) return false;
+    this.seatFocusFor.set(null);
+    return true;
+  }
+
+  /**
+   * An absolute path into this feature. Absolute because this facade lives on
+   * the feature's parent route, with no `ActivatedRoute` for the page that
+   * asked.
+   */
+  private webinarPath(webinarId: string, ...rest: string[]): string[] {
+    return ['/', this.utils.country(), this.utils.profession(), 'webinar', webinarId, ...rest];
+  }
+
+  /**
    * Ask the learner to sign in, and send them back here afterwards.
    *
    * `redirect` is the same query parameter `authGuard` uses, so the two routes
@@ -392,17 +494,12 @@ export class WebinarFacade {
    * The dialog is `UtilsDialog` rather than a webinar-specific component —
    * a title, a line of copy and two buttons is exactly what it is for.
    */
-  private async promptSignIn(): Promise<void> {
+  private async promptSignIn(action: SignInPromptAction): Promise<void> {
+    const prompt = SIGN_IN_PROMPTS[action];
     const data: UtilsDialogData = {
-      title: 'Sign in to register',
+      title: prompt.title,
       containerClass: 'max-w-md text-start!',
-      content: [
-        {
-          type: 'text',
-          value:
-            'Registering for a webinar reserves your seat and tracks your attendance for CPE credit, so we need to know who you are. Sign in and we will bring you straight back here.',
-        },
-      ],
+      content: [{ type: 'text', value: prompt.body }],
       buttons: [
         { label: 'Not now', variant: 'ghost', action: 'cancel' },
         { label: 'Sign in', variant: 'default', action: 'confirm' },
