@@ -1,5 +1,13 @@
-import { CartSteps } from '@core/models/payment.model';
 import type { UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
+
+/** One step of the cart → billing → review progress bar. */
+export interface CartSteps {
+  id: number;
+  name: string | null;
+  step: number;
+  icon: string | null;
+  active: boolean;
+}
 
 export const SIGNUP_DIALOG_DATA: UtilsDialogData = {
   containerClass: 'py-12 px-6',

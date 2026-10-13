@@ -164,6 +164,13 @@ export interface CheckoutResult {
 export type PaymentSessionResult =
   PaymentSession | { free: true; order_id: string; order_status: OrderStatus };
 
+/** A paginated CAIRA list (`next`/`previous` are absolute URLs or `null`). */
+export interface PagedResult<T> {
+  count: number;
+  next: string | null;
+  results: T[];
+}
+
 /** An unpaginated CAIRA list. */
 export interface ListResult<T> {
   count: number;
@@ -224,6 +231,24 @@ export function parseOrder(body: unknown): Order {
   const order = isObject(body) ? body['data'] : undefined;
   if (!isOrder(order)) throw new Error('commerce/order/ response does not match the contract.');
   return order;
+}
+
+/** `httpResource` `parse` for `commerce/orders/`: the page's orders, newest first. */
+export function parseOrdersPage(body: unknown): PagedResult<Order> {
+  const page = isObject(body) ? body['data'] : undefined;
+  if (
+    !isObject(page) ||
+    typeof page['count'] !== 'number' ||
+    !Array.isArray(page['results']) ||
+    !page['results'].every(isOrder)
+  ) {
+    throw new Error('commerce/orders/ response does not match the contract.');
+  }
+  return {
+    count: page['count'],
+    next: typeof page['next'] === 'string' ? page['next'] : null,
+    results: page['results'],
+  };
 }
 
 /** `httpResource` `parse` for `commerce/addresses/` (default address first). */
@@ -314,6 +339,16 @@ export const COMMERCE_ROUTES = {
     path: 'api/v1/commerce/payment/session/',
     method: 'POST',
   } as RouteConfig<{ order_id: string }, CommonResponse<PaymentSessionResult>>,
+  /** K3: the learner's orders, newest first. `page_size` is clamped to 50; `payments` is always `[]`. */
+  orders: {
+    path: 'api/v1/commerce/orders/',
+    method: 'GET',
+  } as RouteConfig<
+    void,
+    CommonResponse<PagedResult<Order>>,
+    Record<string, never>,
+    { page?: number; page_size?: number; order_status?: OrderStatus }
+  >,
   /** K4: one of the learner's orders, with its payment attempts. Another learner's is a 404. */
   order: {
     path: 'api/v1/commerce/order/:order_id/',

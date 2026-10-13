@@ -10,9 +10,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import { NgIconComponent } from '@ng-icons/core';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
-import { CartSteps } from '@core/models/payment.model';
 import { CartStore } from '@core/services/cart/cart-store';
-import { CART_STEP_DATA, PATH_TYPE_TO_STEP_ID } from '@features/payment/constants/payment';
+import {
+  CART_STEP_DATA,
+  CartSteps,
+  PATH_TYPE_TO_STEP_ID,
+} from '@features/payment/constants/payment';
 
 /** Walk to the deepest activated route — `pathType` lives on the leaf. */
 function deepestChild(snapshot: ActivatedRouteSnapshot): ActivatedRouteSnapshot {
