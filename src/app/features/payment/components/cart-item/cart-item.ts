@@ -1,6 +1,7 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { CurrencyPipe, NgOptimizedImage } from '@angular/common';
-import { CartLine, Decimal } from '@core/models/commerce.model';
+import { CartLine, Decimal, hasAmount } from '@core/models/commerce.model';
+import { OrderLine } from '@features/payment/models/commerce.model';
 import { OrderItem } from '@core/models/payment.model';
 import { environment } from '@env/environment';
 import { NgIcon } from '@ng-icons/core';
@@ -10,11 +11,11 @@ import { RouterLink } from '@angular/router';
 import { Utils } from '@shared/services/utils';
 
 /**
- * A commerce cart line, or a legacy order item. The order pages (invoice, order history)
- * still pass `OrderItem` until PR5/PR6 of `prompts/commerce-api-rebind.md` move them onto
- * CAIRA orders; the legacy branch goes with them.
+ * A commerce cart line, a commerce order line, or a legacy order item. Order history still
+ * passes `OrderItem` until PR6 of `prompts/commerce-api-rebind.md` moves it onto CAIRA
+ * orders; the legacy branch goes with it.
  */
-export type CartDisplayItem = CartLine | OrderItem;
+export type CartDisplayItem = CartLine | OrderLine | OrderItem;
 
 export interface CartItemConfig {
   showThumbnail?: boolean;
@@ -33,7 +34,8 @@ const DEFAULT_CONFIG: Required<CartItemConfig> = {
   stacked: false,
 };
 
-const isCartLine = (item: CartDisplayItem): item is CartLine => 'money' in item;
+/** A CAIRA line (cart or order): both carry `money` and their own title and image. */
+const isCommerceLine = (item: CartDisplayItem): item is CartLine | OrderLine => 'money' in item;
 
 @Component({
   selector: 'app-cart-item',
@@ -85,12 +87,17 @@ export class CartItem {
   /** What the line costs: CAIRA's `final_amount` (after discounts and tax). */
   readonly amount = computed<Decimal | number>(() => {
     const item = this.item();
-    return isCartLine(item) ? item.money.final_amount : item.selling_price;
+    return isCommerceLine(item) ? item.money.final_amount : item.selling_price;
   });
   /** The list price, struck through, only when the line is discounted. */
   readonly listAmount = computed<Decimal | number | null>(() => {
     const item = this.item();
-    if (isCartLine(item)) return item.money.unit_discount_price ? item.money.unit_price : null;
+    if (isCommerceLine(item)) {
+      if ('unit_price' in item.money) {
+        return item.money.unit_discount_price ? item.money.unit_price : null;
+      }
+      return hasAmount(item.money.discount_amount) ? item.money.price_before_discount : null;
+    }
     return item.base_price > 0 ? item.base_price : null;
   });
 
@@ -101,11 +108,11 @@ export class CartItem {
   });
   readonly title = computed(() => {
     const item = this.item();
-    return isCartLine(item) ? item.title : item.item_details.subscription_name;
+    return isCommerceLine(item) ? item.title : item.item_details.subscription_name;
   });
   readonly description = computed(() => {
     const item = this.item();
-    return isCartLine(item) ? item.description : item.item_details.description;
+    return isCommerceLine(item) ? item.description : item.item_details.description;
   });
 
   readonly icons = { delete: matDeleteOutline, edit: matEditOutline };
@@ -125,7 +132,7 @@ export class CartItem {
   thumbnail = computed(() => {
     const item = this.item();
     const fallback = this.S3_BUCKET_URL + 'static-assests/web-app/payment/cart-subscription.webp';
-    return (isCartLine(item) && item.image_url) || fallback;
+    return (isCommerceLine(item) && item.image_url) || fallback;
   });
 
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

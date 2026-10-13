@@ -89,6 +89,18 @@
       <span class="sr-only" role="status">Loading your invoice…</span>
     } @else if (isInvoice()) {
       <app-payment-status [status]="paymentStatus()" />
+      @if (canRetry()) {
+        <button
+          app-button
+          type="button"
+          variant="default"
+          class="no-print"
+          [disabled]="paying()"
+          (click)="retry()"
+        >
+          {{ paying() ? 'Opening payment…' : 'Try again' }}
+        </button>
+      }
       <div
         class="flex w-full flex-col space-y-4 bg-linear-to-tl from-plan-1 via-plan-2 to-plan-5 rounded-2xl p-6"
       >
@@ -111,15 +123,15 @@
         </div>
         <div class="flex w-full justify-between">
           <p>Transaction Number</p>
-          <p>{{ orderData()?.transcation_details?.payment_id }}</p>
+          <p>{{ payment()?.reference }}</p>
         </div>
         <div class="flex w-full justify-between">
           <p>Transaction Date</p>
-          <p>{{ orderData()?.created_at | date: 'medium' }}</p>
+          <p>{{ order()?.created_at | date: 'medium' }}</p>
         </div>
         <div class="flex w-full justify-between">
           <p>Payment Mode</p>
-          <p>{{ orderData()?.transcation_details?.payment_mode }}</p>
+          <p class="capitalize">{{ payment()?.gateway }}</p>
         </div>
       </div>
     }
@@ -149,15 +161,14 @@
       <div class="flex w-full flex-col space-y-4">
         <p class="text-2xl text-white font-semibold">Customer Details</p>
         <div class="flex w-full sm:space-x-6 space-y-4 max-sm:flex-col">
-          <div class="basis-1/2 space-y-1.5 flex flex-col">
-            <p class="text-gray-300 font-semibold">Contact details</p>
-            <p class="font-normal">Email Id: {{ userData().email }}</p>
-            <p class="font-normal">Phone No: {{ userData().mobile }}</p>
-          </div>
-          @if (formattedAddress()) {
+          @if (billingAddress(); as address) {
+            <div class="basis-1/2 space-y-1.5 flex flex-col">
+              <p class="text-gray-300 font-semibold">Contact details</p>
+              <p class="font-normal">Phone No: {{ address.phone }}</p>
+            </div>
             <div class="basis-1/2 space-y-1.5 flex flex-col">
               <p class="text-gray-300 font-semibold">Billing address</p>
-              <p class="font-normal">{{ userData().name }}</p>
+              <p class="font-normal">{{ address.name }}</p>
               <p class="font-normal">{{ formattedAddress() }}</p>
             </div>
           }
@@ -204,7 +215,7 @@
           app-button
           type="button"
           variant="default"
-          [disabled]="!termsAccepted()"
+          [disabled]="!termsAccepted() || paying()"
           (click)="proceedToPayment()"
         >
           Proceed to Payment

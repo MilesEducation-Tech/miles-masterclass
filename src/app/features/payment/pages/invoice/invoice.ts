@@ -16,7 +16,9 @@ import { map } from 'rxjs';
 import { PaymentStatus } from '@features/payment/components/payment-status/payment-status';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { CartStore } from '@core/services/cart/cart-store';
+import { AuthSession } from '@core/services/auth-session/auth-session';
 import { formatAddress } from '@features/payment/utils/address-format';
+import { paymentDisplayStatus } from '@features/payment/utils/order-status';
 import { CartDisplayItem, CartItem } from '@features/payment/components/cart-item/cart-item';
 import { PriceOverview } from '@features/payment/components/price-overview/price-overview';
 import { Utils } from '@shared/services/utils';
@@ -41,6 +43,7 @@ import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-d
 })
 export class Invoice {
   private readonly facade = inject(PaymentFacade);
+  private readonly auth = inject(AuthSession);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly analytics = inject(Analytics);
@@ -68,78 +71,65 @@ export class Invoice {
   protected readonly faqRoute = computed(() => `${this.basePath()}/faq`);
   protected readonly cartRoute = computed(() => `${this.basePath()}/payment/cart`);
 
-  /** Review mode lists the commerce cart; invoice mode still lists the legacy order (PR5). */
+  /** Review mode shows the cart; invoice mode shows the order (K4). */
   private readonly cart = inject(CartStore).cart;
-  readonly orderData = computed(() => this.facade.orderData());
+  protected readonly order = this.facade.order;
+  protected readonly paying = this.facade.paying;
 
   /**
-   * Shimmer while the order fetch is in flight. Also covers the gap before
-   * `loadOrderById` flips `loading` — otherwise the empty invoice paints for a
-   * frame first. Errors fall through so the page renders instead of shimmering
-   * forever.
+   * Shimmer while the order read is in flight, and in the gap before it starts, so the
+   * empty invoice never paints for a frame. An error falls through to the page.
    */
   readonly showSkeleton = computed(
     () =>
       this.isInvoice() &&
-      !this.facade.error() &&
-      (this.facade.loading() || this.orderData() === null),
+      !this.facade.orderError() &&
+      (this.facade.orderLoading() || this.order() === null),
   );
 
-  readonly itemCount = computed(() => {
-    if (this.isInvoice()) {
-      return this.facade.invoiceItemCount();
-    }
-    return this.cart()?.lines.length ?? 0;
+  readonly itemCount = computed(() =>
+    this.isInvoice() ? (this.order()?.lines.length ?? 0) : (this.cart()?.lines.length ?? 0),
+  );
+
+  readonly cartItems = computed<CartDisplayItem[]>(() =>
+    this.isInvoice() ? (this.order()?.lines ?? []) : (this.cart()?.lines ?? []),
+  );
+
+  /** The billing address on the order (invoice) or on the cart (review), from the learner's list. */
+  readonly billingAddress = computed(() => {
+    const id = this.isInvoice()
+      ? this.order()?.billing_address_id
+      : this.cart()?.billing_address_id;
+    return this.facade.addresses().find((a) => a.id === id) ?? null;
   });
-
-  readonly cartItems = computed<CartDisplayItem[]>(() => {
-    if (this.isInvoice()) {
-      return this.facade.invoiceItems();
-    }
-    return this.cart()?.lines ?? [];
-  });
-
-  // ponytail: was the signed-in user's name/email/mobile on the invoice.
-  readonly userData = computed(() => ({ name: '', email: '', mobile: '' }));
-
   readonly formattedAddress = computed(() => {
-    if (this.isInvoice()) {
-      return this.facade.invoiceFormattedAddress();
-    }
-    const id = this.cart()?.billing_address_id;
-    const address = this.facade.addresses().find((a) => a.id === id);
+    const address = this.billingAddress();
     return address ? formatAddress(address) : '';
   });
 
-  readonly currencyCode = computed(() => {
-    if (this.isInvoice()) {
-      return this.facade.invoiceCurrency();
-    }
-    return this.cart()?.currency ?? '';
+  readonly currencyCode = computed(() =>
+    this.isInvoice() ? (this.order()?.currency ?? '') : (this.cart()?.currency ?? ''),
+  );
+
+  /** The payment attempt the invoice cites: the successful one, else the latest. */
+  readonly payment = computed(() => {
+    const payments = this.order()?.payments ?? [];
+    return payments.find((p) => p.status === 'succeeded') ?? payments[0] ?? null;
   });
 
-  /** ?status= query param from the URL (e.g. /invoice/3098?status=Success) */
+  /** `?status=` from the URL: our Stripe-return redirect's hint, used until the order loads. */
   private readonly urlStatus = toSignal(
     this.route.queryParamMap.pipe(map((params) => params.get('status'))),
   );
 
-  readonly paymentStatus = computed<'success' | 'pending' | 'cancelled'>(() => {
-    const apiStatus = this.facade.invoicePaymentStatus();
-    // API is the source of truth; URL param is only used while API hasn't loaded yet
-    const raw = apiStatus ?? this.urlStatus();
+  readonly paymentStatus = computed(() =>
+    paymentDisplayStatus(this.order()?.status ?? this.urlStatus()),
+  );
 
-    switch (raw?.toLowerCase()) {
-      case 'success':
-      case 'completed':
-        return 'success';
-      case 'failed':
-        return 'cancelled';
-      case 'pending':
-        return 'pending';
-      default:
-        // No URL param and API hasn't loaded yet — show pending until API responds
-        return 'pending';
-    }
+  /** An order still waiting for money can start a new Stripe session (K2). */
+  readonly canRetry = computed(() => {
+    const status = this.order()?.status;
+    return this.isInvoice() && (status === 'pending' || status === 'failed');
   });
 
   readonly termsAccepted = signal(false);
@@ -148,26 +138,28 @@ export class Invoice {
   protected readonly skeletonRows = [0, 1, 2];
 
   constructor() {
-    // Review shows the billing address on the cart, by id, so it needs the address list.
-    if (!this.isInvoice()) this.facade.loadAddresses();
+    // Both modes show the billing address by id, so both need the learner's address list.
+    this.facade.loadAddresses();
 
     effect(() => {
       const orderId = this.orderId();
-      if (orderId) {
-        this.facade.loadOrderById(orderId);
+      if (!orderId) return;
+      // An order is the learner's own: signed out (say, a session that lapsed during Stripe
+      // checkout), sign in first and come straight back, instead of an endless skeleton.
+      if (!this.auth.isAuthenticated()) {
+        void this.router.navigate(['/auth/login'], { queryParams: { redirect: this.router.url } });
+        return;
       }
+      this.facade.loadOrder(orderId);
     });
 
-    // Sync API payment_status → URL ?status= when not already present.
-    // Effect is always registered (survives SSR → hydration), but
-    // router.navigate is guarded to only run in the browser.
+    // Keep `?status=` in step with the order, so a shared or refreshed URL reads right.
     effect(() => {
-      const apiStatus = this.facade.invoicePaymentStatus();
-      if (!apiStatus) return;
-
+      const status = this.order()?.status;
+      if (!status) return;
       this.router.navigate([], {
         relativeTo: this.route,
-        queryParams: { status: apiStatus.toLowerCase() },
+        queryParams: { status },
         queryParamsHandling: 'merge',
         replaceUrl: true,
       });
@@ -177,34 +169,27 @@ export class Invoice {
     // user home on logout, the other refreshed the current plan on the
     // payment-success edge so the header's `hasActivePlan` flipped at once.
 
-    // Fire GA4/Netcore `purchase` once the order is confirmed paid (success
-    // edge + order data loaded). trackPurchase dedupes by transaction_id, so a
-    // refresh of the success URL can't double-count revenue.
+    // Fire GA4/Netcore `purchase` once the order is paid. trackPurchase dedupes by
+    // transaction_id, so a refresh of the success URL can't double-count revenue.
     let purchaseSent: string | null = null;
     effect(() => {
-      const status = this.paymentStatus();
-      const orderId = this.orderId();
-      const order = this.orderData();
-      if (status !== 'success' || !orderId || !order) return;
-      const key = `${orderId}:purchase`;
-      if (purchaseSent === key) return;
-      purchaseSent = key;
+      const order = this.order();
+      if (!order || order.status !== 'paid' || purchaseSent === order.id) return;
+      purchaseSent = order.id;
+      // GA needs numbers; the server's figures are converted here and nothing is summed.
       this.analytics.trackPurchase({
-        transaction_id: String(orderId),
-        value: this.facade.invoiceGrandTotal(),
-        currency: this.currencyCode(),
-        base_price: this.facade.invoiceSubTotal(),
-        selling_price: this.facade.invoiceGrandTotal(),
-        product_discount: this.facade.invoiceTotalDiscount(),
-        paid_amount: this.facade.invoiceTransactionDetails()?.paid_amount ?? 0,
-        items: this.cartItems().map((it) => {
-          const i = it as unknown as { id?: number; item_type?: string; paid_amount?: number };
-          return {
-            course_id: String(i.id ?? ''),
-            course_type: i.item_type ?? '',
-            price: i.paid_amount ?? 0,
-          };
-        }),
+        transaction_id: order.id,
+        value: Number(order.money.price_after_gst),
+        currency: order.currency,
+        base_price: Number(order.money.price_before_discount),
+        selling_price: Number(order.money.price_after_gst),
+        product_discount: Number(order.money.discount_amount),
+        paid_amount: Number(order.money.amount_paid),
+        items: order.lines.map((line) => ({
+          course_id: line.product_id,
+          course_type: 'subscription',
+          price: Number(line.money.final_amount),
+        })),
       });
     });
   }
@@ -221,7 +206,7 @@ export class Invoice {
     }
 
     if (!this.hasSubscriptionItem()) {
-      this.facade.proceedToPayment();
+      this.pay();
       return;
     }
 
@@ -253,9 +238,21 @@ export class Invoice {
 
     ref.afterClosed.subscribe((result) => {
       if (result?.action === 'confirm' && result.result) {
-        this.facade.proceedToPayment();
+        this.pay();
       }
     });
+  }
+
+  /** K1. Stripe takes over from here, or the order's own page opens (free, or no session). */
+  private pay(): void {
+    this.facade.checkout((orderId) =>
+      this.router.navigate([`${this.basePath()}/payment/invoice`, orderId]),
+    );
+  }
+
+  protected retry(): void {
+    const id = this.order()?.id;
+    if (id) this.facade.retryPayment(id);
   }
 
   async downloadInvoice() {

@@ -26,19 +26,6 @@ export interface CartSteps {
 }
 
 export const PAYMENT_ROUTES = {
-  proceedToPayment: {
-    path: 'user/order/proceed_checkout/',
-    method: 'POST',
-  } as RouteConfig<
-    void,
-    CommonResponse<CheckoutResponseData>,
-    {},
-    { cart_id: number; address_id: number; is_trial?: boolean }
-  >,
-  getOrderById: {
-    path: 'user/order/order_details/',
-    method: 'GET',
-  } as RouteConfig<void, CommonResponse<OrderByIdResponseData>, { order_id: string }, {}>,
   getOrders: {
     path: 'user/order/my_orders/',
     method: 'GET',
@@ -51,18 +38,6 @@ export const PAYMENT_ROUTES = {
     path: 'promotion/subscription/cancel/',
     method: 'POST',
   } as RouteConfig<{ order_id: number }, SubscriptionActionResponse>,
-  forcePurchase: {
-    path: 'stripe/force-subscription/',
-    method: 'POST',
-  } as RouteConfig<{ order_id: number }, SubscriptionActionResponse>,
-  retryPayment: {
-    path: 'user/order/create_customer_portal/',
-    method: 'POST',
-  } as RouteConfig<{ order_id: number }, StripePortalResponse>,
-  checkAndSubscribe: {
-    path: 'lms/check-and-subscribe/',
-    method: 'GET',
-  } as RouteConfig<void, SubscriptionActionResponse>,
   navigateToStripeCustomerDashboard: {
     path: 'user/order/create_customer_portal/',
     method: 'POST',
@@ -115,36 +90,6 @@ export interface AppliedCoupon {
   applicable_country: string | null;
 }
 
-export interface OrderDetails {
-  id: number;
-  total_amount: number;
-  sub_total: number;
-  total_discount: number;
-  total_discount_percent: number;
-  total_tax: number;
-  billing_address_id: number;
-  payment_status: 'Pending' | 'Completed' | 'Failed';
-}
-
-export interface OrderItemDetails {
-  id: number;
-  plan_name: string;
-  details: string;
-  category_name: string;
-  delivery_mode: 'Subscription' | 'masterclass' | 'podcast' | 'nano-learning' | 'webinar';
-  cpe_credits: number;
-  date_of_completion: string;
-}
-
-export interface OrderItemData {
-  id: number;
-  cart_id: number;
-  item_type: string | null;
-  item_details: OrderItemDetails;
-  base_price: number;
-  selling_price: number;
-}
-
 export interface TransactionDetails {
   id: number;
   paid_amount: number;
@@ -159,17 +104,6 @@ export interface TransactionDetails {
   transaction_mode: string;
   created_at: string;
   order: number;
-}
-
-export interface CheckoutResponseData {
-  order_id: number;
-  order_details: OrderDetails;
-  applied_coupon: AppliedCoupon | null;
-  orderitem_data: OrderItemData[];
-  selected_country: SelectedCountry;
-  billing_address: UserAddress;
-  transcation_details: TransactionDetails;
-  approval_url: string;
 }
 
 export interface OrderSubscriptionItemDetails {
