@@ -21,7 +21,7 @@ import type {
 } from '@features/offerings/dialogs/select-cpe-mode/select-cpe-mode';
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { CourseChapter } from '@core/models/course.model';
-import { courseLoad, CourseLoadParams } from '../utils/course-load';
+import { courseLoad, CourseLoadParams } from '@features/offerings/utils/course-load';
 import { CourseContentResponse, MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { NgpDialogManager } from 'ng-primitives/dialog';

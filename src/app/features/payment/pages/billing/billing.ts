@@ -8,7 +8,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { PaymentFacade } from '../../services/payment-facade';
+import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { NotificationService } from '@core/services/notification/notification';
 import {
   disabled,
@@ -22,7 +22,7 @@ import {
 import { Button } from '@shared/ui/button/button';
 
 import { BillingAddressPayload, UserAddress } from '@core/models/payment.model';
-import { Address } from '../../components/address/address';
+import { Address } from '@features/payment/components/address/address';
 import { Field } from '@shared/ui/field/field';
 import { NgpLabel, NgpDescription } from 'ng-primitives/form-field';
 import { Input } from '@shared/ui/input/input';

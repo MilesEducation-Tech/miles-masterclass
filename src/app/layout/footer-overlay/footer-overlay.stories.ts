@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { FooterOverlay } from './footer-overlay';
+import { FooterOverlay } from '@layout/footer-overlay/footer-overlay';
 
 /**
  * The host component pulls in Router, Auth, PaymentFacade and FeatureFacade,

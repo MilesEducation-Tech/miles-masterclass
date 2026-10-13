@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
-import { PaymentFacade } from '../../services/payment-facade';
-import { CartItem } from '../../components/cart-item/cart-item';
-import { EmptyCart } from '../../components/empty-cart/empty-cart';
+import { PaymentFacade } from '@features/payment/services/payment-facade';
+import { CartItem } from '@features/payment/components/cart-item/cart-item';
+import { EmptyCart } from '@features/payment/components/empty-cart/empty-cart';
 
 @Component({
   selector: 'app-cart',

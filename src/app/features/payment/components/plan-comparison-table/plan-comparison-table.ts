@@ -1,7 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
 import { PlanFeatureDetail, SubscriptionPlan } from '@core/models/payment.model';
-import { proCrownIcon } from '../../constants/plan-icons';
+import { proCrownIcon } from '@features/payment/constants/plan-icons';
 
 interface ComparisonColumn {
   plan: SubscriptionPlan;

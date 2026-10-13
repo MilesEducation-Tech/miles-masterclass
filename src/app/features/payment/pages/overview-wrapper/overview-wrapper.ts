@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { PriceOverview } from '../price-overview/price-overview';
+import { PriceOverview } from '@features/payment/components/price-overview/price-overview';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
