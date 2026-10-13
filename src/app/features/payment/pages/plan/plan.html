@@ -19,9 +19,7 @@
           </p>
         </div>
 
-        @if (!hasActivePlan()) {
-          <app-promo-offer class="w-full lg:max-w-lg lg:shrink-0" (login)="openSignupDialog()" />
-        }
+        <app-promo-offer class="w-full lg:max-w-lg lg:shrink-0" (login)="openSignupDialog()" />
       </div>
 
       <!-- Two-column layout -->
@@ -48,61 +46,37 @@
           @if (plans().length > 0) {
             <app-plan-comparison-table [plans]="plans()" [selectedPlanId]="selectedPlanId()" />
 
-            <!-- Billing cards: Enterprise / Monthly / Yearly, equal width -->
+            <!-- One card per plan (term), equal width; the selected one grows -->
             <div class="flex flex-col sm:flex-row items-stretch gap-3 mt-4">
-              @for (card of displayCards(); track card.plan.id + '-' + card.kind) {
+              @for (plan of plans(); track plan.id) {
                 <div
                   class="min-w-0 h-full transition-all duration-300 ease-out"
-                  [style.flex]="isCardSelected(card) ? 1.3 : 1"
+                  [style.flex]="plan.id === selectedPlanId() ? 1.3 : 1"
                 >
                   <app-plan-selection-card
-                    [plan]="card.plan"
-                    [selected]="isCardSelected(card)"
-                    [billingCycle]="card.kind === 'monthly' ? 'monthly' : 'yearly'"
-                    (select)="onSelectCard(card)"
+                    [plan]="plan"
+                    [selected]="plan.id === selectedPlanId()"
+                    (select)="onSelect($event)"
                   />
                 </div>
               }
             </div>
 
-            <!-- CTAs -->
-            <div class="flex flex-col gap-3 mt-1">
-              <button
-                type="button"
-                class="w-full py-3.5 rounded-xl bg-white text-black font-semibold text-sm transition-colors hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                [disabled]="subscribeDisabled()"
-                (click)="onSubscribe()"
-              >
-                {{ subscribeLabel() }}
-              </button>
-              @if (canGetAlternativeFunding()) {
-                <!-- The two alternative funding routes sit side by side as
-                     equal-weight secondary options under Subscribe. They stack
-                     below sm: two 3.5-unit-tall buttons don't fit one phone row
-                     without the labels wrapping. -->
-                <div class="flex flex-col sm:flex-row gap-3">
-                  <button
-                    type="button"
-                    class="flex-1 py-3.5 rounded-xl bg-(--accent) text-white font-semibold text-sm transition-colors hover:bg-(--accent)/90 cursor-pointer"
-                    (click)="onFirmSponsorship()"
-                  >
-                    Get Firm Sponsorship
-                  </button>
-                  <button
-                    type="button"
-                    class="flex-1 py-3.5 rounded-xl border border-white/25 bg-transparent text-white font-semibold text-sm transition-colors hover:bg-white/10 cursor-pointer"
-                    (click)="onApplyPartnerCode()"
-                  >
-                    Apply Partner Code
-                  </button>
-                </div>
-              }
-            </div>
+            <button
+              type="button"
+              class="w-full py-3.5 mt-1 rounded-xl bg-white text-black font-semibold text-sm transition-colors hover:bg-neutral-100 cursor-pointer"
+              (click)="onSubscribe()"
+            >
+              {{ subscribeLabel() }}
+            </button>
 
-            <!-- Post-login coupon offers (hidden for active subscribers; self-hides when signed out / no coupons) -->
-            @if (!hasActivePlan()) {
-              <app-promo-coupons (login)="openSignupDialog()" />
-            }
+            <app-promo-coupons (login)="openSignupDialog()" />
+          } @else {
+            <p
+              class="rounded-2xl border border-white/10 bg-surface-deep px-5 py-6 text-sm text-neutral-300"
+            >
+              Subscriptions aren't available in your region yet.
+            </p>
           }
         </div>
       </div>

@@ -36,21 +36,17 @@
     class="mt-1 font-semibold text-white transition-all"
     [class]="selected() ? 'text-4xl' : 'text-2xl'"
   >
-    @if (priceDisplay().label) {
-      {{ priceDisplay().label }}
-    } @else {
-      @if (priceDisplay().baseAmount! > priceDisplay().amount!) {
-        <span class="me-2 text-base font-normal text-neutral-500 line-through">
-          {{ priceDisplay().baseAmount | currency: priceDisplay().currency! : 'symbol' : '1.0-0' }}
-        </span>
-      }
-      {{ priceDisplay().amount | currency: priceDisplay().currency! : 'symbol' : '1.0-0'
-      }}<span class="text-base font-normal text-neutral-400">/{{ priceDisplay().duration }}</span>
+    @if (plan().price.discount_price) {
+      <span class="me-2 text-base font-normal text-neutral-500 line-through">
+        {{ plan().price.price | currency: plan().price.currency : 'symbol' : '1.0-2' }}
+      </span>
     }
+    {{ amount() | currency: plan().price.currency : 'symbol' : '1.0-2'
+    }}<span class="text-base font-normal text-neutral-400">/{{ per() }}</span>
   </p>
 
   <p class="mt-1 flex items-center gap-1 text-xs text-neutral-400">
-    <span>{{ subtitle() }}</span>
+    <span>Pay upfront. All you pay to be AI-ready.</span>
     @if (infoNote(); as note) {
       <span class="group relative inline-flex shrink-0">
         <span

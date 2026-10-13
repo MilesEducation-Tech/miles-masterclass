@@ -29,18 +29,9 @@
         <app-page-loading message="Loading plan..." />
       } @else if (error()) {
         <app-error-state title="Failed to Load Plan" [message]="error()!" (retry)="retryLoad()" />
-      } @else if (recommendedPlan(); as plan) {
+      } @else if (plan(); as plan) {
         <div class="mx-auto flex max-w-md flex-col gap-4">
-          <div class="flex flex-col gap-3">
-            @for (cycle of cycles(); track cycle) {
-              <app-plan-selection-card
-                [plan]="plan"
-                [billingCycle]="cycle"
-                [selected]="effectiveCycle() === cycle"
-                (select)="selectedCycle.set(cycle)"
-              />
-            }
-          </div>
+          <app-plan-selection-card [plan]="plan" [selected]="true" />
 
           @if (plan.features.length > 0) {
             <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -49,50 +40,26 @@
 
               <ul class="mt-4 flex flex-col gap-3">
                 @for (feature of plan.features; track feature.id) {
-                  @if (feature.planfeature; as planfeature) {
-                    <li class="flex items-start gap-3 text-sm text-white">
-                      <ng-icon
-                        name="lucideCheck"
-                        class="mt-0.5 shrink-0 text-base text-accent"
-                        aria-hidden="true"
-                      />
-                      <span>
-                        {{ planfeature.name }}
-                        @if (planfeature.has_conditions) {
-                          <span class="text-red-400">*</span>
-                        }
-                      </span>
-                    </li>
-                  }
+                  <li class="flex items-start gap-3 text-sm text-white">
+                    <ng-icon
+                      name="lucideCheck"
+                      class="mt-0.5 shrink-0 text-base text-accent"
+                      aria-hidden="true"
+                    />
+                    <span>{{ feature.name }}</span>
+                  </li>
                 }
               </ul>
-
-              @if (hasConditions()) {
-                <p class="text-muted-foreground mt-4 text-center text-xs">
-                  *Refer to the Credits &amp; Reporting and CAIRA sections in the FAQs to learn more
-                </p>
-              }
             </div>
           }
 
           <button
             type="button"
-            class="w-full cursor-pointer rounded-xl bg-white py-3.5 text-sm font-semibold text-black transition-colors hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
-            [disabled]="subscribeDisabled()"
+            class="w-full cursor-pointer rounded-xl bg-white py-3.5 text-sm font-semibold text-black transition-colors hover:bg-neutral-100"
             (click)="onSubscribe()"
           >
             {{ subscribeLabel() }}
           </button>
-
-          @if (canGetSponsorship()) {
-            <button
-              type="button"
-              class="w-full cursor-pointer rounded-xl bg-(--accent) py-3.5 text-sm font-semibold text-white transition-colors hover:bg-(--accent)/90"
-              (click)="onFirmSponsorship()"
-            >
-              Get Firm Sponsorship
-            </button>
-          }
         </div>
 
         <div class="mt-10 text-center">

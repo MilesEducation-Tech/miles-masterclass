@@ -144,17 +144,4 @@ export const PROFILE_ROUTES = {
     path: 'apply-partner-code/',
     method: 'POST',
   } as RouteConfig<{ partner_code: string }, CommonResponse<unknown>>,
-
-  applyFirmSponsorship: {
-    path: 'promotion/subscription/firm-sponsorship/',
-    method: 'POST',
-  } as RouteConfig<
-    {
-      company_id: number;
-      consent_given: boolean;
-      subscription_id: number;
-      ld_spoc_email: string | null;
-    },
-    CommonResponse<unknown>
-  >,
 } as const;

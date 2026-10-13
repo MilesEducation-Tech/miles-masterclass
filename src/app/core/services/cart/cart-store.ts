@@ -1,6 +1,6 @@
 import { httpResource } from '@angular/common/http';
 import { Service, computed, inject, signal } from '@angular/core';
-import { CART_ROUTES, parseCart } from '@core/models/commerce.model';
+import { CART_ROUTES, Cart, parseCart } from '@core/models/commerce.model';
 import { CartDetails } from '@core/models/payment.model';
 import { apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
@@ -55,6 +55,15 @@ export class CartStore {
   load(): void {
     if (this.wanted()) this.cartResource.reload();
     else this.wanted.set(true);
+  }
+
+  /**
+   * A cart write answered with the whole cart, so no follow-up read is needed.
+   * A `cancelled` cart (its last line was removed) is gone: drop it, and the
+   * next `load()` starts a new one.
+   */
+  set(cart: Cart): void {
+    this.cartResource.set(cart.status === 'open' ? cart : undefined);
   }
 
   /** The id of the course last removed from the cart, for consumers that need to react. */
