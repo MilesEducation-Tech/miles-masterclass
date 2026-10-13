@@ -1,4 +1,13 @@
-import { inject, Service, signal, computed, effect, linkedSignal, Injector } from '@angular/core';
+import {
+  DOCUMENT,
+  inject,
+  Service,
+  signal,
+  computed,
+  effect,
+  linkedSignal,
+  Injector,
+} from '@angular/core';
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import { Observable, catchError, map, tap, throwError } from 'rxjs';
 import { RouteResponse } from '@core/models/http.model';
@@ -15,6 +24,7 @@ import {
   COMMERCE_ROUTES,
   Plan,
   parseAddresses,
+  parseOrder,
   parsePlans,
 } from '@features/payment/models/commerce.model';
 import { AuthSession } from '@core/services/auth-session/auth-session';
@@ -26,8 +36,6 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 // import-only (erased at build time); the runtime class comes from `import()`.
 import { Analytics } from '@core/services/analytics/analytics';
 
-type CheckoutResponse = RouteResponse<typeof PAYMENT_ROUTES.proceedToPayment>;
-type OrderByIdResponse = RouteResponse<typeof PAYMENT_ROUTES.getOrderById>;
 type OrdersResponse = RouteResponse<typeof PAYMENT_ROUTES.getOrders>;
 type CancelAutoRenewalResponse = RouteResponse<typeof PAYMENT_ROUTES.cancelAutoRenewal>;
 type ReactivateAutoRenewalResponse = RouteResponse<typeof PAYMENT_ROUTES.reactivateAutoRenewal>;
@@ -57,6 +65,21 @@ function commerceErrorOf(err: unknown): { reason?: string; message: string } {
   };
 }
 
+/** Only Stripe's hosted checkout may receive the learner, even though the URL comes from our API. */
+const STRIPE_CHECKOUT_ORIGIN = 'https://checkout.stripe.com/';
+
+/** The learner-facing reason K1 started no payment (`payment_error`). */
+function paymentErrorMessage(code: string | null): string {
+  switch (code) {
+    case 'payment_unavailable_for_currency':
+      return "Online payment isn't available for this currency yet.";
+    case 'gateway_not_configured':
+      return 'Payments are temporarily unavailable. Try again shortly.';
+    default:
+      return "We couldn't start the payment. Try again from your order.";
+  }
+}
+
 @Service()
 export class PaymentFacade {
   private readonly logger = inject(Logger);
@@ -66,6 +89,7 @@ export class PaymentFacade {
   private readonly injector = inject(Injector);
   private readonly country = inject(CountryContext).current;
   private readonly analytics = inject(Analytics);
+  private readonly document = inject(DOCUMENT);
 
   /** The commerce cart. `CartStore` (core) owns it because the footer badge reads it too. */
   private readonly cart = inject(CartStore);
@@ -81,22 +105,35 @@ export class PaymentFacade {
     }
   });
 
-  /** The order the invoice page shows; `null` idles the read. Set through `loadOrderById()`. */
+  /**
+   * The order the invoice page shows (K4); `null` idles the read. Set through `loadOrder()`.
+   * Gated on the boolean `isAuthenticated()`.
+   */
   private readonly orderId = signal<string | null>(null);
-  private readonly orderResource = httpResource<OrderByIdResponse>(() => {
-    const id = this.orderId();
-    return id
-      ? { url: apiUrl(PAYMENT_ROUTES.getOrderById.path), params: { order_id: id } }
-      : undefined;
-  });
+  private readonly orderResource = httpResource(
+    () => {
+      const id = this.orderId();
+      return id && this.auth.isAuthenticated()
+        ? apiUrl(COMMERCE_ROUTES.order.path.replace(':order_id', id))
+        : undefined;
+    },
+    { parse: parseOrder },
+  );
   /** Guarded: `value()` throws on an errored resource. */
-  readonly orderData = computed<OrderByIdResponseData | null>(() =>
-    this.orderResource.hasValue() ? (this.orderResource.value()?.data ?? null) : null,
+  readonly order = computed(() =>
+    this.orderResource.hasValue() ? this.orderResource.value() : null,
+  );
+  readonly orderLoading = computed(() => this.orderResource.isLoading());
+  readonly orderError = computed(() =>
+    this.orderResource.error() ? "We couldn't load this order." : null,
   );
   private readonly orderErrorLog = effect(() => {
     const err = this.orderResource.error();
-    if (err) this.logger.error('Failed to load order details', err);
+    if (err) this.logger.error('Failed to load the order', err);
   });
+
+  /** A checkout or payment session is starting: Pay and Try again stay disabled meanwhile. */
+  readonly paying = signal(false);
 
   /**
    * Order history. OPT-IN, because this facade is root-provided and built on every
@@ -119,20 +156,6 @@ export class PaymentFacade {
     if (err) this.logger.error('Failed to load orders', err);
   });
 
-  /**
-   * `loading` / `error` cover the checkout POST (`opLoading` / `opError`) and the
-   * order-detail read. There is no cart read any more (`user/cart/mybucket/`
-   * was removed 2026-10-11, see `CartStore`); `paymentGuard` still waits on
-   * `loading`, so it waits out a checkout POST as before.
-   */
-  private readonly opLoading = signal(false);
-  private readonly opError = signal<string | null>(null);
-  // The order read joins the OR: it used to drive `opLoading`/`opError` by hand,
-  // and the invoice skeleton and `paymentGuard` both read these.
-  readonly loading = computed(() => this.opLoading() || this.orderResource.isLoading());
-  readonly error = computed(
-    () => this.opError() ?? (this.orderResource.error() ? 'Failed to load order details' : null),
-  );
   /**
    * The learner's addresses (A1). OPT-IN like the orders read: the billing and review
    * pages call `loadAddresses()`. Gated on the boolean `isAuthenticated()`.
@@ -216,58 +239,6 @@ export class PaymentFacade {
   private readonly plansErrorLog = effect(() => {
     const err = this.plansResource.error();
     if (err) this.logger.error('Failed to load subscription plans', err);
-  });
-
-  // Invoice-related computed signals
-  readonly invoiceItems = computed(() => this.orderData()?.order_items ?? []);
-  readonly invoiceItemCount = computed(() => this.invoiceItems().length);
-  readonly invoiceBillingAddress = computed(() => this.orderData()?.billing_address ?? null);
-  readonly invoiceFormattedAddress = computed(() => {
-    const a = this.invoiceBillingAddress();
-    if (!a) return '';
-    return [a.address1, a.locality, a.landmark, a.city, a.state, a.country, a.zipcode]
-      .filter(Boolean)
-      .join(', ');
-  });
-  readonly invoiceUserData = computed(() => {
-    const addr = this.invoiceBillingAddress();
-    return {
-      name: addr?.email_id ?? '',
-      email: addr?.email_id ?? '',
-      mobile: addr?.phone_no ?? '',
-    };
-  });
-  readonly invoiceCurrency = computed(() => this.orderData()?.country_details?.currency ?? 'USD');
-  readonly invoiceCurrencySymbol = computed(
-    () => this.orderData()?.country_details?.currency_symbol ?? '$',
-  );
-  readonly invoicePaymentStatus = computed(() => this.orderData()?.payment_status ?? null);
-  readonly invoiceTransactionDetails = computed(
-    () => this.orderData()?.transcation_details ?? null,
-  );
-
-  // Invoice price-related computed signals
-  readonly invoiceSubTotal = computed(() => this.orderData()?.sub_total ?? 0);
-  readonly invoiceTotalDiscount = computed(() => this.orderData()?.total_discount ?? 0);
-  readonly invoiceTotalDiscountPercent = computed(
-    () => this.orderData()?.total_discount_percent ?? 0,
-  );
-  // Grand total is the net payable AFTER discounts/coupon (`adjusted_total_amount`),
-  // not the gross `total_amount` — otherwise a full-coupon order shows the pre-
-  // discount price instead of what was actually charged.
-  readonly invoiceGrandTotal = computed(() => this.orderData()?.adjusted_total_amount ?? 0);
-  readonly invoiceTaxAmount = computed(() => this.orderData()?.total_tax ?? 0);
-  readonly invoiceCouponDetails = computed(() => this.orderData()?.coupon_details ?? null);
-  readonly invoiceProductDiscount = computed(() => {
-    const items = this.invoiceItems();
-    if (!items.length) return 0;
-    let totalBase = 0;
-    let totalSelling = 0;
-    for (const item of items) {
-      totalBase += item.base_price;
-      totalSelling += item.selling_price;
-    }
-    return totalBase - totalSelling;
   });
 
   /** The first call opts the addresses in; later calls re-read them. */
@@ -417,42 +388,82 @@ export class PaymentFacade {
     this.dialogs.open(CouponDialog, { injector: this.injector });
   }
 
-  proceedToPayment(isTrial = false) {
+  /**
+   * K1: turns the reviewed cart into a pending order and starts its first Stripe session.
+   * Exactly one outcome comes back, tested in this order:
+   * - `free_order`: a coupon covered it and the order is already paid;
+   * - `payment`: the browser goes to Stripe's hosted checkout;
+   * - `payment_error`: the order exists but no session started. The learner lands on the
+   *   order with the reason and a "Try again" (K2); retrying here would fail the same way.
+   * `onOrder` opens the order's page; the facade doesn't know the route.
+   */
+  checkout(onOrder: (orderId: string) => void): void {
     const cartId = this.cart.cart()?.id;
-    const addressId = this.selectedAddressId();
+    if (!cartId || this.paying()) return;
+    this.paying.set(true);
 
-    if (!cartId || !addressId) {
-      this.notification.error('Error', 'Please select a billing address to proceed.');
+    this.http.call(COMMERCE_ROUTES.checkout, { cart_id: cartId }).subscribe({
+      next: ({ data }) => {
+        this.analytics.trackEvent('begin_checkout', {
+          cart_id: cartId,
+          ...this.cartAnalyticsParams(),
+        });
+        if (data.free_order) {
+          this.paying.set(false);
+          onOrder(data.result.id);
+        } else if (data.payment) {
+          this.redirectToStripe(data.payment.url);
+        } else {
+          this.paying.set(false);
+          this.notification.error('Payment not started', paymentErrorMessage(data.payment_error));
+          onOrder(data.result.id);
+        }
+      },
+      error: (err) => {
+        this.paying.set(false);
+        this.logger.error('Checkout failed', err);
+        this.notification.error('Checkout failed', commerceErrorOf(err).message);
+      },
+    });
+  }
+
+  /**
+   * K2: a new Stripe session for an order that is still payable (after a cancel, an expired
+   * session, or a `payment_error`). CAIRA expires any older session first, so the learner
+   * can't pay twice. A coupon-zeroed order completes without Stripe, so the order is re-read.
+   */
+  retryPayment(orderId: string): void {
+    if (this.paying()) return;
+    this.paying.set(true);
+    this.http.call(COMMERCE_ROUTES.paymentSession, { order_id: orderId }).subscribe({
+      next: ({ data }) => {
+        if ('url' in data) {
+          this.redirectToStripe(data.url);
+          return;
+        }
+        this.paying.set(false);
+        this.loadOrder(orderId);
+      },
+      error: (err) => {
+        this.paying.set(false);
+        this.logger.error('Could not start the payment', err);
+        this.notification.error('Payment not started', commerceErrorOf(err).message);
+        // The order moved on (paid, cancelled) since this page read it.
+        if (commerceErrorOf(err).reason === 'order_not_payable') this.loadOrder(orderId);
+      },
+    });
+  }
+
+  /** The URL comes from our API, but it is still a redirect target: Stripe's hosted checkout only. */
+  private redirectToStripe(url: string): void {
+    if (!url.startsWith(STRIPE_CHECKOUT_ORIGIN)) {
+      this.paying.set(false);
+      this.logger.error('Refused a payment redirect outside Stripe checkout', url);
+      this.notification.error('Payment not started', "We couldn't open the payment page.");
       return;
     }
-
-    this.opLoading.set(true);
-
-    this.http
-      .post<CheckoutResponse>(PAYMENT_ROUTES.proceedToPayment.path, {
-        cart_id: cartId,
-        address_id: addressId,
-        is_trial: isTrial,
-      })
-      .subscribe({
-        next: (res) => {
-          this.opLoading.set(false);
-          if (res?.data?.approval_url) {
-            this.analytics.trackEvent('begin_checkout', {
-              cart_id: cartId,
-              is_trial: isTrial,
-              ...this.cartAnalyticsParams(),
-            });
-            window.location.href = res.data.approval_url;
-          } else {
-            this.notification.error('Error', 'Payment URL not available. Please try again.');
-          }
-        },
-        error: (err) => {
-          this.opLoading.set(false);
-          this.logger.error('Failed to proceed to payment', err);
-        },
-      });
+    // `paying` stays set: the page is leaving.
+    this.document.location.assign(url);
   }
 
   /**
@@ -541,8 +552,8 @@ export class PaymentFacade {
     else this.ordersWanted.set(true);
   }
 
-  /** Point the order read at `orderId`; the same id again refetches, as the old call did. */
-  loadOrderById(orderId: string) {
+  /** Points the order read at `orderId`; the same id again re-reads it. */
+  loadOrder(orderId: string): void {
     if (this.orderId() === orderId) this.orderResource.reload();
     else this.orderId.set(orderId);
   }

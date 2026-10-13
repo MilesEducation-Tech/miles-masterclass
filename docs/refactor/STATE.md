@@ -131,6 +131,41 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       - ⚠️ The script's step 02 left one extra "PR4 capture" address on the user's UAT account.
         `cleanup-capture-addresses.sh` (scratchpad) deletes it.
     - **Not verified:** the form and attach in the browser (guarded, and blocked by CORS).
+  - **Committed by the user:** PR4 `9419fc2`.
+  - **PR5 `feat(payment): checkout, Stripe return and payment retry` — DONE, UNCOMMITTED** on
+    `feat/MIL-XXX-commerce-checkout` (stacked on PR4). The diff is +431 / −307.
+    - **Model:** `Order`, `OrderLine`, `OrderPayment`, `PaymentSession`, `CheckoutResult`,
+      `PaymentSessionResult` and `parseOrder`, plus the K1/K2/K4 routes. New
+      `utils/order-status.ts`.
+    - **Facade:**
+      - `checkout(onOrder)` tests `free_order`, then `payment`, then `payment_error`;
+      - `retryPayment` (K2) re-reads the order when it comes back free, or on `order_not_payable`;
+      - `redirectToStripe` only allows `https://checkout.stripe.com/` and goes through `DOCUMENT`;
+      - the K4 `order` resource is auth-gated, with `paying` disabling Pay and Try again.
+      - **Deleted:** the legacy order resource, the 15 invoice computeds, `loading`/`error`,
+        `proceedToPayment` and `loadOrderById`.
+    - **Invoice:** order lines, payment reference and gateway, "Try again", `purchase` from the order's own
+      figures, the address from the A1 list, and sign-in when signed out.
+    - **Price overview:** invoice mode reads the order, so there is no legacy arithmetic left.
+    - **`app.routes.ts`:** `checkout/:result`, which redirects to the invoice, listed before the locale
+      route.
+    - **Legacy deleted:**
+      - the `proceedToPayment`, `getOrderById`, `forcePurchase`, `retryPayment` and `checkAndSubscribe`
+        routes;
+      - the `CheckoutResponseData`, `OrderDetails`, `OrderItemData` and `OrderItemDetails` types.
+    - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔, prettier ✔, `build:prod`
+      245.28 kB with only `ai-labs.css`.
+    - **Dev on 3000:**
+      - **Stripe return** (`curl`, a server-side 302 in one hop):
+        - success+paid → `/us/…/invoice/<id>?status=paid`; cancel → `?status=cancelled`;
+        - a missing or `<script>` status → `pending`;
+        - a non-UUID, `/../` or unknown `result` → `/payment/cart`;
+        - `geo_country=ae` → `/ae/…`.
+      - **Stripe allow-list:** `evil.example.com`, `checkout.stripe.com.evil.example` and `http://` were
+        all refused (stayed on the page, toast, logged).
+      - **Signed out**, the invoice → `/auth/login?redirect=<invoice>`.
+    - **Not verifiable on UAT:** the real pay/return round trip. Stripe isn't configured there (Q11), and
+      browser sign-in is blocked by CORS.
   - **Facts from the user:**
     - Only subscriptions are sold: no single courses, no books.
     - Alias imports everywhere, even inside one feature.
@@ -4064,6 +4099,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-13 · NON-REFACTOR · **Commerce PR5, checkout + Stripe return** (uncommitted, `feat/MIL-XXX-commerce-checkout`): K1/K2/K4 bound, Stripe allow-list, `checkout/:result` redirect, invoice on the order, legacy checkout/order-detail code deleted (+431/−307) · lint 0 errors, structure ✔, build:prod 245.28 kB (local) · redirect matrix + allow-list + signed-out sign-in redirect verified in dev
 
 - 2026-10-13 · NON-REFACTOR · **PR4 address capture checked**: `""` stored as null (blanks now sent as `""`), delete clears the cart's address (mirrored locally), C5 billing-only · one leftover test address (cleanup script) · build:prod 245.17 kB
 
