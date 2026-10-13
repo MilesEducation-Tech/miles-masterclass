@@ -37,6 +37,15 @@ export const COURSE_DETAIL_API: Record<CourseOffering, CourseDetailApi> = {
      */
     bookmark: { path: `${ROOT}web-api/v1/masterclass/bookmark/:id/`, method: 'POST' },
 
+    /**
+     * `IsAuthenticated`, no body: the FIRST write of the learning flow. The
+     * learner has no enrolment until it runs, and the `mode=` switch is stored
+     * on that enrolment. Idempotent. Its guards answer distinctly: `403
+     * chapter_locked` / `caira_access_required`, `409` for an AI Lab lock or the
+     * 7DC partner flow, and `200 reset_required` for an expired window.
+     */
+    chapterStart: { path: `${ROOT}web-api/v1/masterclass/chapter-start/:id/`, method: 'POST' },
+
     urlSegment: 'masterclass',
     analyticsType: 'masterclass',
   },
@@ -48,6 +57,35 @@ export const COURSE_DETAIL_API: Record<CourseOffering, CourseDetailApi> = {
  * for the server's cap. The longest UAT masterclass has 11.
  */
 export const COURSE_DETAIL_CHAPTERS_PAGE_SIZE = 100;
+
+/** Watched this far, a chapter's video counts as watched: the legacy player's rule. */
+export const CHAPTER_WATCHED_PERCENT = 95;
+
+/** `video_progress` fires once per chapter at each of these; `video_start` and `video_complete` bracket them. */
+export const VIDEO_PROGRESS_MILESTONES = [25, 50, 75, 90] as const;
+
+/**
+ * The chapter player's own copy, used when the server sends no message of its
+ * own (`course_pop_up_remark`, or a refusal's `message`).
+ */
+export const CHAPTER_COPY = {
+  courseLocked: { title: 'Course locked', body: 'Subscribe to watch this course.' },
+  chapterLocked: {
+    title: 'Chapter locked',
+    body: 'Finish the previous chapter to unlock this one.',
+  },
+  chapterNotFound: { title: 'Chapter not found', body: 'That chapter is not part of this course.' },
+  cannotStart: { title: 'Could not open the chapter', body: 'Please try again in a moment.' },
+  enrolmentReset: {
+    title: 'Your enrolment restarted',
+    body: 'Your access window had ended, so your progress on this course was reset.',
+  },
+  modeNotChanged: { title: 'Mode not changed', body: 'Please try again in a moment.' },
+  switchToCpe: {
+    title: 'Switch to CPE Mode?',
+    body: 'You have completed the first chapter in Preview Mode. Switch to CPE Mode to earn your certificate and track your progress with quizzes.',
+  },
+} as const;
 
 /**
  * A course id on this API: a UUID, any version. The legacy numeric ids still

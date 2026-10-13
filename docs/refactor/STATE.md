@@ -154,6 +154,88 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       `CI=true pnpm build:prod` green: initial 245.14 kB, only the `ai-labs.css` warning.
   - **Postman:** `postman/` is untracked and ignored since `71ce016`; the local export is the 2026-10-12 one.
 
+- 🔧 **2026-10-13, NON-REFACTOR — `course_type` on the masterclass list routes. DONE, UNCOMMITTED** on
+  `feat/MIL-65-masterclass-chapter-page-binding` (the user's call: fix it now, its own commit).
+  - **Cause:** UAT made `course_type` required on `highlight/`, `tracks-page/` and `ai-labs/`, with no contract update
+    (Postman still omits it). Every call answered `400 invalid_query` "Field required", so the home page's tracks and
+    AI Labs ring and the masterclass page's hero and tracks were empty. The server render logged both failures.
+  - **Fix:** `core/constants/masterclass.ts` `MASTERCLASS_COURSE_TYPE = 'course'`, sent by `MasterclassHomeFacade`,
+    `MasterclassHighlightFacade` and `surround-carousel`. The response shapes are unchanged.
+  - **Verified (dev 4101):** a fresh server render of home, masterclass, the course page and a chapter page each
+    answer 200 with the courses in the HTML. The browser sees no 4xx; `tracks-page` and `ai-labs` both 200.
+  - **Gates:** tsc 0, lint clean, structure check passed.
+
+- 🔧 **2026-10-13, NON-REFACTOR — bind the masterclass chapter page to the web API (Story MIL-65)** on
+  `feat/MIL-65-masterclass-chapter-page-binding` (from `master`, before MIL-62 merged). Two subtasks, one PR. No
+  refactor phase moved.
+  - **MIL-66, remove the v2 bindings (`prompts/masterclass-chapter-remove-v2.md`, approved). DONE, UNCOMMITTED.**
+    - **Why:** every route the page used answers Django's "Page not found" HTML on UAT, so the routes are gone, not
+      the records. That covers `v2/…/details`, `v2/chapters`, `v2/user/myclassactivity`,
+      `user/customaction/set_cpe_mode`, `masterclass/report_summary`, `user-quiz-details` and `v2/course-content`.
+      The reads also went out as `id=NaN`, because the page ran the UUID through `Number()`.
+    - **What changed:** the page keeps its route inputs, "Back to Course" and an unbound `<app-video-chapter>`, which
+      renders the skeleton. The chapter route no longer provides `ChapterFacade`. `ChapterFacade`, the shared player
+      and `ChapterQuiz` are unchanged, because podcast, micro-learning and AI Labs still use them.
+    - **Verified (dev 4101, headless Playwright, signed out; this branch has no route guard yet):**
+      - Before: `GET v2/masterclass/details/?id=NaN` and `v2/chapters/?id=NaN…`, both 404, plus a logged "Failed to
+        load course".
+      - After, at 1440 and 375: no API request, no console error, back link and skeleton shown. The back link lands
+        on the course page.
+    - **Gates:** tsc 0, lint 0 errors (106 warnings), structure check passed, Prettier clean. `build:prod` not run yet
+      (it stales the running dev server's Vite cache).
+    - **Merge note:** MIL-62 adds `canMatch: [authGuard]` and an import next to the lines this removes in
+      `masterclass.routes.ts`. On sync, keep the guard and drop `ChapterFacade`.
+  - **MIL-67, bind to `course-detail` (`prompts/masterclass-chapter-binding.md`, revised 2026-10-13 and approved; the
+    user chose the new player and `chapter-start` in scope). DONE, UNCOMMITTED.** The user commits MIL-66 and MIL-67
+    together.
+    - **What changed:**
+      - `CourseDetailFacade` moved to the `:courseId/:courseTitle` parent and gained `setMode`, `startChapter`,
+        `coursePath`, `chapterPath` and `analyticsType`.
+      - New route-scoped `CourseChapterFacade`: navigation, the lock redirects, `chapter-start`, the mode dialog, the
+        CPE offer, seek and resume, the transcript and video analytics.
+      - New offering-wide `course-chapter-player`. `video-chapter` stays for podcast.
+      - The model gained the chapter's stream, transcript, lock and progress, and the course's `course_is_locked`,
+        `course_mode` and `course_pop_up_remark`, all with guards.
+      - A `player-card` token replaces `#18232f` in its two existing uses.
+    - **Verified (dev 4101, headless Playwright, dummy cookie):**
+      - **How it was tested:** `course-detail` was served from the live pre-login payload edited to signed-in values,
+        with the course's real HLS trailer as the stream. `chapter-start` was served from the Postman example and each
+        refusal.
+      - **Entitled, CPE:** the stream plays, resumes at the saved 12 s, the player is in CPE mode, "Up Next · Locked"
+        shows with "3 Quiz Questions", and the transcript opens with no request.
+      - **One read:** course page → Watch Now → Next → Previous made one `course-detail` read and three
+        `chapter-start` calls.
+      - **Preview:** seeks freely. After chapter 1, "Switch to CPE Mode?" → `mode=cpe` → CPE rules, rewound and
+        paused. After chapter 2, the next chapter is locked and the "Chapter locked" toast shows.
+      - **CPE seeking:** watched to 95 %, seeking opens.
+      - **Mode `null`:** the dialog shows, the pick is sent as `mode=`, and dismissing it goes back to the course page.
+        A `409 course_mode_locked` shows the server's message.
+      - **Back to the course page with a toast:** a locked course (no `chapter-start`), an unknown chapter, a locked
+        chapter in the payload, `403 chapter_locked`, and a `409` AI Lab lock (server message).
+      - **Stays on the chapter:** `500` (warning toast), and `reset_required` (toast and re-read).
+      - **Layout:** 1440, 768 and 375, with no horizontal scroll and no page errors.
+    - **Gates (local macOS):**
+      - tsc 0; `pnpm lint` 0 errors (106 warnings); structure check passed; Prettier clean.
+      - `CI=true pnpm build:prod` green: initial 245.53 kB, only the `ai-labs.css` warning.
+      - `CI=true` turns off the CLI's persistent cache, so the running dev server's Vite deps were untouched. The dev
+        server served the masterclass page afterwards with no 5xx.
+    - **Found on UAT, backend:** every chapter `horizontal_thumbnail_url` (`storage.googleapis.com/miles-usp-bed/…`)
+      answers 403, so the thumbnails and the poster show as broken images. The course page's chapter list shows the
+      same.
+    - **Not verified:** a real signed-in round trip (no OTP mail on UAT).
+    - **Code size:** +817 / −305 across MIL-66 and MIL-67 (one commit, per the user), over the ~400 guide.
+    - **Added at the user's request: Watch Now is gated on the course page** (`CourseDetailFacade.watch()`), as the
+      legacy launch flow was. Before, a locked course opened the chapter only to bounce back with "Course locked".
+      - Signed out: Watch Now goes to sign-in and back to the course page.
+      - Locked to the learner (`course_is_locked`): the subscription dialog opens through `SUBSCRIPTION_DIALOG`, and
+        no chapter is opened.
+      - **Verified (dev 4101):** signed out → `/auth/login?redirect=<course>`; locked → the dialog, still on the course
+        page, 0 `chapter-start`; entitled → the chapter and 1 `chapter-start`.
+      - **Not covered:** the chapter rows on the course page are still plain links, so they bounce as before.
+    - **Found, payment, own ticket:** the subscription dialog itself shows "Failed to Load Plan" for everyone. It calls
+      `promotion/subscription/?is_recommended=true`, which is gone on UAT (Django "Page not found"). Postman's
+      replacements are `GET api/v1/subscriptions/plans/` and `GET api/v1/subscriptions/my-plans/`.
+
 - 🔧 **2026-10-13, NON-REFACTOR — commerce API rebind (`prompts/commerce-api-rebind.md`). Approved by the
   user ("use this plan"); D1–D6 = A. The old backend is gone, so no legacy binding, logic or type survives in
   the payment flow; partner code and firm sponsorship leave it too.**

@@ -15,12 +15,14 @@
  * chapter name.
  */
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { MasterclassFieldOfStudy } from '@core/models/masterclass-home.model';
 import { RouteConfig } from '@core/models/http.model';
 import {
   contractError,
   isBool,
   isNum,
+  isNumOrNull,
   isObject,
   isStr,
   isStrOrNull,
@@ -42,6 +44,8 @@ export interface CourseDetailApi {
   aboutCourse: string;
   /** `POST`, `:id` is the course UUID: toggles the learner's bookmark. */
   bookmark: RouteConfig<void, unknown>;
+  /** `POST`, `:id` is the chapter UUID: begins a chapter, creating the enrolment if needed. */
+  chapterStart: RouteConfig<void, unknown>;
   /** The course page's URL segment: `/:country/:profession/<segment>/:id/:slug`. */
   urlSegment: string;
   /** `course_type` on the analytics events. */
@@ -81,6 +85,17 @@ export interface MasterclassTopic {
   name: string;
 }
 
+/**
+ * The learner's progress on one chapter, as the chapter player reads it. Every
+ * field is `null` until the learner starts the chapter, and always pre-login.
+ */
+export interface MasterclassChapterProgress {
+  is_video_completed: boolean | null;
+  /** CPE mode only lets the learner seek once this is true. */
+  is_video_seekable: boolean | null;
+  last_watched_position_seconds: number | null;
+}
+
 /** One chapter of the course; the list shows them in the API's `order`. */
 export interface MasterclassChapter {
   id: string;
@@ -90,10 +105,32 @@ export interface MasterclassChapter {
   duration_seconds: number;
   total_quiz_questions: number;
   horizontal_thumbnail_url: string | null;
+  /** The stream. `null` whenever the course is locked to the caller, so always pre-login. */
+  hls_video_url: string | null;
+  /** HTML from the admin; empty on a chapter the ladder hasn't unlocked. */
+  transcript_text: string | null;
+  /** The server's chapter ladder: a locked chapter can't be started. */
+  is_locked: boolean;
+  user_chapter_progress: MasterclassChapterProgress;
 }
+
+/**
+ * How the learner takes the course, stored on their enrolment: `cpe` earns
+ * credit and gates seeking, `preview` is video only. `null` until they choose.
+ */
+export type CourseMode = 'cpe' | 'preview';
 
 /** A chapter with the URL slug the API doesn't send, made from its name. */
 export type MasterclassChapterLink = MasterclassChapter & { slug: string };
+
+/** The chapter in the URL and its neighbours, in the API's `order`. */
+export interface ChapterNavigation {
+  /** Position of `current` in the list; `-1` when the URL names no chapter of this course. */
+  index: number;
+  previous: MasterclassChapterLink | null;
+  current: MasterclassChapterLink | null;
+  next: MasterclassChapterLink | null;
+}
 
 export interface MasterclassExerciseFile {
   name: string;
@@ -193,6 +230,29 @@ export interface MasterclassCourseDetail {
   is_bookmarked: boolean;
   /** Set once the learner's certificate exists; `null` pre-login and until then. */
   masterclass_certificate_url: string | null;
+  /** No entitlement (always pre-login): every `hls_video_url` is stripped. */
+  course_is_locked: boolean;
+  course_mode: CourseMode | null;
+  /** The server's own words for why the course is locked, when it has some. */
+  course_pop_up_remark: string | null;
+}
+
+/** `chapter-start/`'s `data`, as far as the chapter page reads it. */
+export interface ChapterStartResult {
+  /**
+   * The 365-day enrolment window had expired: the server already reset the
+   * learner's progress and started a new one. A state to show, not an error.
+   */
+  reset_required: boolean;
+}
+
+/** A refused chapter step (`chapter-start/`, and the course-detail `mode=` switch). */
+export interface CourseStepRefusal {
+  status: number;
+  /** `chapter_locked`, `caira_access_required`, `course_mode_locked`…; `null` when the body has none. */
+  reason: string | null;
+  /** The server's own message, when it sent one. */
+  message: string | null;
 }
 
 // ---- Trust boundary --------------------------------------------------------
@@ -232,6 +292,17 @@ function isTopic(v: unknown): v is MasterclassTopic {
   return isObject(v) && isStr(v['id']) && isStr(v['name']);
 }
 
+const isBoolOrNull = (v: unknown): v is boolean | null => v === null || isBool(v);
+
+function isChapterProgress(v: unknown): v is MasterclassChapterProgress {
+  return (
+    isObject(v) &&
+    isBoolOrNull(v['is_video_completed']) &&
+    isBoolOrNull(v['is_video_seekable']) &&
+    isNumOrNull(v['last_watched_position_seconds'])
+  );
+}
+
 function isChapter(v: unknown): v is MasterclassChapter {
   return (
     isObject(v) &&
@@ -241,9 +312,16 @@ function isChapter(v: unknown): v is MasterclassChapter {
     isNum(v['order']) &&
     isNum(v['duration_seconds']) &&
     isNum(v['total_quiz_questions']) &&
-    isStrOrNull(v['horizontal_thumbnail_url'])
+    isStrOrNull(v['horizontal_thumbnail_url']) &&
+    isStrOrNull(v['hls_video_url']) &&
+    isStrOrNull(v['transcript_text']) &&
+    isBool(v['is_locked']) &&
+    isChapterProgress(v['user_chapter_progress'])
   );
 }
+
+const isCourseMode = (v: unknown): v is CourseMode | null =>
+  v === null || v === 'cpe' || v === 'preview';
 
 function isExerciseFile(v: unknown): v is MasterclassExerciseFile {
   return isObject(v) && isStr(v['name']) && isNum(v['order']) && isStr(v['url']);
@@ -327,7 +405,10 @@ function isApiCourseDetail(v: unknown): v is ApiCourseDetail {
     listOf(isRelatedCourse)(v['related_courses']) &&
     listOf(isInstructorCourses)(v['instructor_related_courses']) &&
     isBool(v['is_bookmarked']) &&
-    isStrOrNull(v['masterclass_certificate_url'])
+    isStrOrNull(v['masterclass_certificate_url']) &&
+    isBool(v['course_is_locked']) &&
+    isCourseMode(v['course_mode']) &&
+    isStrOrNull(v['course_pop_up_remark'])
   );
 }
 
@@ -340,6 +421,29 @@ export function parseCourseDetail(raw: unknown): MasterclassCourseDetail {
   const course = isObject(data) ? data['course_details'] : undefined;
   if (isApiCourseDetail(course)) return { ...course, chapters: course.chapters.results };
   throw contractError('course-detail');
+}
+
+/** `chapter-start/`'s `{ success, message, data }` envelope. */
+export function parseChapterStart(raw: unknown): ChapterStartResult {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  if (isObject(data) && isBool(data['reset_required'])) {
+    return { reset_required: data['reset_required'] };
+  }
+  throw contractError('chapter-start');
+}
+
+/**
+ * A refused step's body: `{ success: false, message, data: { reason } }`.
+ * Anything else (a network error, an HTML 500) still yields the status, with
+ * no reason or message, so the caller falls back to its own copy.
+ */
+export function readCourseStepRefusal(error: unknown): CourseStepRefusal {
+  if (!(error instanceof HttpErrorResponse)) return { status: 0, reason: null, message: null };
+  const body: unknown = error.error;
+  const data = isObject(body) ? body['data'] : undefined;
+  const reason = isObject(data) && isStr(data['reason']) ? data['reason'] : null;
+  const message = isObject(body) && isStr(body['message']) ? body['message'] : null;
+  return { status: error.status, reason, message };
 }
 
 /**
