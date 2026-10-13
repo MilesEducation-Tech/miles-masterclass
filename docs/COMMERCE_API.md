@@ -1,0 +1,65 @@
+# CAIRA commerce API: what UAT actually returns
+
+The contract is the CAIRA _Commerce & Catalogue API_ front-end guide (12 Oct 2026), plus the Postman folders
+"10. Commerce" and "09. Catalogue". This file records only what we **observed** on UAT, and where it differs
+from those sources. The plan is `prompts/commerce-api-rebind.md`.
+
+**Capture, 2026-10-13:**
+
+- **Who and where:** a signed-in UAT test learner, `X-Country-Code: US`, using the scratchpad script
+  `capture-commerce.sh`.
+- **Sequence:** cart → add the US plan → coupon → checkout → order → remove the line.
+- **Not captured:**
+  - C5 (attach address) and A2–A5 (address writes);
+  - a `free_order`;
+  - a paid order and the Stripe return.
+
+  None of these can be reached until the backend issues below are fixed.
+
+## Confirmed
+
+- **The envelope** is `{success, message, data}` everywhere. A 4xx carries `data: {status: "error", reason}`.
+  Show `message` and branch on `reason`.
+- **Money** is a decimal string (`"948.00"`) and ids are UUID strings, as the guide says.
+- **Cart:** every key `Cart` types (`core/models/commerce.model.ts`) is present, and all six captured carts
+  pass `isCart`. Lines also carry `quantity`, `booking` and `enrollment_form`, which the app doesn't read.
+
+## Endpoint by endpoint
+
+| Call                                  | Status | Observed                                                                                                                          |
+| ------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| C1 `GET commerce/cart/`               | 200    | Creates an empty cart when none exists. **An empty US cart reports `currency: "INR"`** (see below).                               |
+| C2 `POST commerce/cart/lines/`        | 201    | `data: {status, created: true, line_id, result: Cart}`; the cart's currency becomes `USD`.                                        |
+| C2, same plan again                   | 200    | `created: false`, with the same `line_id`. Re-adding is harmless.                                                                 |
+| D1 `POST commerce/cart/coupon/`       | 409    | `code_invalid`, "That code is not valid for this cart." An **empty** cart gives the same, not `cart_empty`.                       |
+| D2 `DELETE commerce/cart/coupon/`     | 200    | **The whole cart**, "Removed successfully.". Postman's `data: {}` is wrong; the guide is right.                                   |
+| A1 `GET commerce/addresses/`          | 200    | `{status, count, results}`, unpaginated.                                                                                          |
+| K1 `POST commerce/checkout/`          | 201    | Order `pending`, `payment: null`, **`payment_error: "gateway_not_configured"`**, `free_order: null`.                              |
+| K4 `GET commerce/order/{id}/`         | 200    | Matches the guide. `payments: []` while unpaid. Postman's hand-built example was accurate.                                        |
+| K3 `GET commerce/orders/?page_size=2` | 200    | `{status, count, page, page_size, next, previous, results}`. Rows are full orders with `payments: []`.                            |
+| K2 `POST commerce/payment/session/`   | 503    | `gateway_not_configured`, "Payments are temporarily unavailable. Try again shortly."                                              |
+| C4 `DELETE commerce/cart/line/{id}/`  | 200    | **The whole cart** with `status: "cancelled"`. Postman's `data: {}` is wrong.                                                     |
+| C1 after C4                           | 200    | A **new** cart id, `open` and empty.                                                                                              |
+| K4 after C4                           | 200    | The order is now `cancelled`. Its line keeps `status: "pending"`, with `cancellation_reason: "Cart emptied by the buyer (D-L4)."` |
+
+**Checkout with no billing address succeeds**, so the server doesn't require one for a subscription. D1-A
+(require it in our UI) is a product choice, not a contract rule.
+
+## Backend issues found by the capture
+
+1. **Stripe is not configured on UAT.** K1 returns `payment_error: "gateway_not_configured"`, a value the
+   guide doesn't list, and K2 answers 503. No payment can be started, so PR5 can't be verified end to end.
+2. **An empty cart's currency is wrong.** A fresh US cart reports `currency: "INR"` until a line is added.
+   The UI shows no totals for an empty cart, so nothing renders wrongly, but the value is wrong.
+3. **Postman's examples for D2 and C4 (`data: {}`) are wrong.** Both return the whole cart. Ask for a
+   regenerated collection.
+
+## Client rules these observations add
+
+- **Treat any `payment_error` as "no session".**
+  - Show the message, and keep the learner on the order.
+  - Offer "Try again", which calls K2, rather than calling K2 automatically: K2 fails the same way while the
+    gateway is down.
+- **A C4 response with `status: "cancelled"` means the cart is gone.** Show the empty cart; the next C1
+  creates a fresh one.
+- **Never show `currency` or totals for a cart with no lines.**

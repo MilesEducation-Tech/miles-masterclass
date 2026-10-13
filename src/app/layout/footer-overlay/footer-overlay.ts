@@ -72,11 +72,9 @@ export class FooterOverlay {
   protected readonly subscribed = signal<boolean | null>(false);
 
   // ── Cart count ─────────────────────────────────────────────────────────
-  // ponytail: nothing here loads the cart. `user/cart/mybucket/` answers 404 on
-  // MilesCAIRA, so a load on every signed-in page only made noise; the count is
-  // whatever the payment flow last loaded. Load it here again once the cart is
-  // rebound to `api/v1/commerce/cart/`.
-  protected readonly cartCount = computed(() => this.cart.cartData()?.cartitem_data.length ?? 0);
+  // Deliberately never loads the cart: CAIRA's cart read creates an empty cart,
+  // so only payment pages ask for it (`CartStore`). Until one has, the count is 0.
+  protected readonly cartCount = this.cart.lineCount;
 
   // ── State machine: what to render in the bar ───────────────────────────
   // The "continue learning" card is gone: `v2/user/last_viewed/` answers 404
