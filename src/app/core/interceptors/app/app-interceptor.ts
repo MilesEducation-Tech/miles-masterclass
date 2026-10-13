@@ -1,10 +1,12 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { environment } from '@env/environment';
 import { from, switchMap } from 'rxjs';
-import { AuthSession } from '../../services/auth-session/auth-session';
-import { LanguageContext } from '../../services/language-context/language-context';
-import { IS_ADMIN_REQUEST, IS_EXTERNAL_REQUEST, SKIP_AUTH_TOKEN } from '../../models/http.model';
-import { SESSION_MINTING_PATHS } from '../../models/auth.model';
+import { AuthSession } from '@core/services/auth-session/auth-session';
+import { CountryContext } from '@core/services/country-context/country-context';
+import { LanguageContext } from '@core/services/language-context/language-context';
+import { IS_ADMIN_REQUEST, IS_EXTERNAL_REQUEST, SKIP_AUTH_TOKEN } from '@core/models/http.model';
+import { SESSION_MINTING_PATHS } from '@core/models/auth.model';
 
 /**
  * The four session-minting routes must never be preceded by a refresh:
@@ -24,20 +26,30 @@ export const appInterceptor: HttpInterceptorFn = (original, next) => {
   // must never leak off-platform. (`loadingInterceptor` skips them too.)
   if (original.context.get(IS_EXTERNAL_REQUEST)) return next(original);
 
-  // Django answers in the visitor's language (`LanguageContext`): the browser's own header would
-  // ignore the switcher's choice, and SSR calls from Node would send none at all. For a bare
-  // language like `fr` this is a CORS-safelisted header, so it never costs a preflight.
+  // `X-Accept-Language` is the visitor's language (`LanguageContext`), the one Django answers in.
+  // It is our own header, not the browser's `Accept-Language`, which ignores the switcher's choice
+  // and is absent on SSR calls from Node.
+  //
+  // `X-Country-Code` is the market that prices the catalogue, plans, cart and checkout: the
+  // visitor's country (`CountryContext`, the same one the URL shows), upper-case ISO2. It is
+  // client-controlled, so Django must re-derive the country at checkout rather than trust it.
+  // `X-Platform` / `X-App-Type` say which client is calling.
+  //
+  // None of the four is CORS-safelisted, so every cross-origin request preflights, and each must be
+  // in MilesCAIRA's `Access-Control-Allow-Headers` or the browser blocks the request outright.
+  // As of 2026-10-13, UAT lists all but `x-accept-language`, so every browser request fails until
+  // the backend adds it, and production `api.milescaira.com` lists none of them. SSR is unaffected,
+  // because Node sends no preflight.
   const req = original.clone({
-    setHeaders: { 'Accept-Language': inject(LanguageContext).current },
+    setHeaders: {
+      'X-Accept-Language': inject(LanguageContext).current,
+      'X-Country-Code': inject(CountryContext).current().toUpperCase(),
+      'X-Platform': environment.platform,
+      'X-App-Type': environment.appType,
+    },
   });
 
   const auth = inject(AuthSession);
-
-  // `x-app-type`, `x-platform` and `x-country-code` used to be set here. They
-  // are gone deliberately: MilesCAIRA's `Access-Control-Allow-Headers` does not
-  // list any of the three (verified against UAT on 2026-09-22), so every
-  // preflighted request carrying them would fail CORS. The API reads none of
-  // them either — there is no country or profession dimension behind it.
 
   // The admin panel authenticates against a different identity provider
   // entirely; `adminTokenInterceptor` owns those requests.
