@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { HttpContext } from '@angular/common/http';
 import { Router, NavigationEnd, Event as RouterEvent } from '@angular/router';
-import { EMPTY, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { filter, tap } from 'rxjs/operators';
 import { DynamicRouteParams, ProfessionType } from '@core/models/route-params.model';
 import { CountryContext } from '@core/services/country-context/country-context';
@@ -25,12 +25,7 @@ import type { ShareDialogData } from '@shared/dialogs/share-dialog/share-dialog'
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Analytics } from '@core/services/analytics/analytics';
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
-import {
-  RouteParams,
-  RouteResponse,
-  RouteRequest,
-  SKIP_ERROR_NOTIFICATION,
-} from '@core/models/http.model';
+import { RouteParams, RouteResponse, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
 import {
   Content,
   ContentDetails,
@@ -42,14 +37,7 @@ import type { CertificateDialogData } from '@shared/dialogs/certificate-download
 import type { VideoDialogData } from '@shared/dialogs/video-dialog/video-dialog';
 import { NotificationService } from '@core/services/notification/notification';
 import { Viewport, ScreenInfo } from '@core/services/viewport/viewport';
-// CartDrawerDialog is loaded lazily in openCartDrawer() — this service is
-// eagerly instantiated (injected by the header/footer chrome), so a static
-// import would pull the dialog and its `@angular/forms` dependency into the
-// initial bundle.
-import {
-  CART_DRAWER_DIALOG,
-  SUBSCRIPTION_DIALOG,
-} from '@core/services/dialog/feature-dialog-tokens';
+import { SUBSCRIPTION_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Logger } from '@core/services/logger/logger';
 import { canAccessCpeMode, CpeModeGateContent } from '@shared/utils/cpe-mode-access';
@@ -118,7 +106,6 @@ export class Utils {
   private readonly storage = inject(Storage);
   private readonly injector = inject(Injector);
   private readonly notification = inject(NotificationService);
-  private readonly cartDrawerDialog = inject(CART_DRAWER_DIALOG);
   private readonly subscriptionDialog = inject(SUBSCRIPTION_DIALOG);
   private readonly featureFacade = inject(FeatureFacade);
   private readonly analytics = inject(Analytics);
@@ -433,50 +420,19 @@ export class Utils {
   }
 
   async openCertificateDownloadDialog(content: ContentDetails) {
-    // ponytail: was `auth.currentPlan()`; no session layer, so the
-    // subscription branch below falls back to the content's own flags.
-    const userPlan = null;
-
-    // Course is excluded from subscription — must be purchased individually.
+    // Only subscriptions are sold (no single courses), so without an active plan the way to a
+    // certificate is the plan page. A course the subscription excludes can't be unlocked that
+    // way, so it says so instead of offering a purchase that doesn't exist.
     if (content.is_subscription_excluded && !content.active_plan) {
       this.openPurchaseGateDialog({
-        title: 'Purchase Required',
-        message:
-          'This course is not included in any subscription plan and must be purchased individually to download the certificate.',
-        buttons: [
-          { label: 'Close', variant: 'outline', action: 'close' },
-          { label: 'Add to Cart', variant: 'default', action: 'confirm' },
-        ],
-        onConfirm: () =>
-          this.addCourseToCart(content.id, content.is_added_to_cart)
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe(),
+        title: 'Not Included in the Subscription',
+        message: "This course isn't part of the subscription, so its certificate isn't available.",
+        buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
       });
       return;
     }
 
-    // Course can be purchased individually — user needs subscription or purchase.
-    if (content.can_purchase_individually && !userPlan && !content.active_plan) {
-      this.openPurchaseGateDialog({
-        title: 'Purchase Required',
-        message:
-          'You need an active subscription or to purchase this course individually to download the certificate.',
-        buttons: [
-          { label: 'Subscribe', variant: 'outline', action: 'cancel' },
-          { label: 'Add to Cart', variant: 'default', action: 'confirm' },
-        ],
-        onConfirm: () =>
-          this.addCourseToCart(content.id, content.is_added_to_cart)
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe(),
-        onCancel: () =>
-          this.router.navigate(['/', this.country(), this._profession(), 'payment', 'plan']),
-      });
-      return;
-    }
-
-    // User has no active subscription — must subscribe.
-    if (!userPlan && !content.active_plan) {
+    if (!content.active_plan) {
       this.openPurchaseGateDialog({
         title: 'Subscription Required',
         message:
@@ -548,14 +504,14 @@ export class Utils {
   }
 
   /**
-   * Open a purchase/subscription confirmation dialog. Centralises the three
-   * near-identical gating dialogs used by `openCertificateDownloadDialog`.
+   * Open a subscription gate dialog. Centralises the gating dialogs used by
+   * `openCertificateDownloadDialog`; an informational one has no confirm action.
    */
   private async openPurchaseGateDialog(config: {
     title: string;
     message: string;
     buttons: UtilsDialogData['buttons'];
-    onConfirm: () => void;
+    onConfirm?: () => void;
     onCancel?: () => void;
   }): Promise<void> {
     const data: UtilsDialogData = {
@@ -572,7 +528,7 @@ export class Utils {
 
     ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!result?.result) return;
-      if (result.action === 'confirm') config.onConfirm();
+      if (result.action === 'confirm') config.onConfirm?.();
       else if (result.action === 'cancel') config.onCancel?.();
     });
   }
@@ -703,37 +659,6 @@ export class Utils {
           }
         }),
       );
-  }
-
-  addCourseToCart(courseId: number, isAddedToCart: boolean) {
-    if (isAddedToCart) {
-      this.notification.info('Already in Cart', 'This course is already in your cart.');
-      this.openCartDrawer();
-      return EMPTY;
-    }
-    const courseType = this.getApiCourseType();
-    const body: RouteRequest<typeof MASTERCLASS_ROUTES.addToCart> = {
-      item_id: courseId,
-      item_type: courseType,
-    };
-    return this.http
-      .post<RouteResponse<typeof MASTERCLASS_ROUTES.addToCart>>(
-        MASTERCLASS_ROUTES.addToCart.path,
-        body,
-      )
-      .pipe(
-        tap((response) => {
-          if (response.status) {
-            this.notification.success('Added to Cart', response.message);
-            this.openCartDrawer();
-          }
-        }),
-      );
-  }
-
-  async openCartDrawer(): Promise<void> {
-    const CartDrawerDialog = await this.cartDrawerDialog();
-    this.dialogs.open(CartDrawerDialog, { injector: this.injector });
   }
 
   openAdditionalResources(courseId: number): void {

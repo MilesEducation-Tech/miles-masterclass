@@ -35,7 +35,6 @@ import { UpdateChecker } from '@shared/services/update-checker';
 import { Analytics } from '@core/services/analytics/analytics';
 import { TOAST_COMPONENT } from '@core/services/notification/notification';
 import {
-  CART_DRAWER_DIALOG,
   MASTERCLASS_COURSE_INFO_DIALOG,
   SUBSCRIPTION_DIALOG,
 } from '@core/services/dialog/feature-dialog-tokens';
@@ -124,15 +123,6 @@ export const appConfig: ApplicationConfig = {
     // Binds the core NotificationService to the shared toast component. Only the
     // composition root may name both sides — see TOAST_COMPONENT.
     { provide: TOAST_COMPONENT, useValue: Toast },
-    // Lets shared/core code open the payment cart drawer without importing the
-    // payment feature. The import() stays here, so the dialog stays lazy.
-    {
-      provide: CART_DRAWER_DIALOG,
-      useValue: () =>
-        import('@features/payment/dialogs/cart-drawer-dialog/cart-drawer-dialog').then(
-          (m) => m.CartDrawerDialog,
-        ),
-    },
     {
       provide: SUBSCRIPTION_DIALOG,
       useValue: () =>

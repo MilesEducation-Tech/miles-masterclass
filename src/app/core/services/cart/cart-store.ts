@@ -69,11 +69,4 @@ export class CartStore {
   set(cart: Cart): void {
     this.cartResource.set(cart.status === 'open' ? cart : undefined);
   }
-
-  /**
-   * The id of the course last removed from the legacy cart. Nothing writes it any
-   * more; the offerings facades still read it until PR7 of
-   * `prompts/commerce-api-rebind.md` sends their buy buttons to the plan page.
-   */
-  readonly cartItemRemoved = signal<number | null>(null);
 }

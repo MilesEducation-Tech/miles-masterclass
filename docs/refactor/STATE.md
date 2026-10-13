@@ -186,6 +186,31 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - **Dev on 3000, signed out:** `/payment/order-history` shows "No orders found", with no request and
       no Stripe button.
     - **Contract:** the captured `11-orders.json` passes `parseOrdersPage`, and K4 bodies pass `parseOrder`.
+  - **Committed by the user:** PR6 `1d092bf`.
+  - **PR7 `feat(offerings): send course buy buttons to the plan page` — DONE, UNCOMMITTED** on
+    `feat/MIL-XXX-offerings-buy-to-plan` (stacked on PR6). The diff is +42 / −206.
+    - **Buy buttons:** the podcast hero's and micro-learning reel card's cart buttons are now `routerLink`
+      buttons to `/<country>/<profession>/payment/plan`. `cartToggled` and `facade.addToCart()` are gone.
+    - **Certificate gate:** "Subscription Required" → Subscribe → plan page; a subscription-excluded course
+      shows a Close-only "Not Included". `openPurchaseGateDialog`'s `onConfirm` is now optional.
+    - **Deleted:**
+      - `Utils.addCourseToCart` and `Utils.openCartDrawer`;
+      - `CART_DRAWER_DIALOG`, with its token, provider and import;
+      - `MASTERCLASS_ROUTES.addToCart` (`v2/user/cart/`);
+      - `CartStore.cartItemRemoved`, plus both facade effects and the `CartStore` injections in the offerings
+        facades.
+    - **Sweep:** no legacy cart or payment identifier or path remains in `src/`.
+    - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔, prettier ✔, `build:prod`
+      245.29 kB with only `ai-labs.css`.
+    - **Dev on 3000, after a restart** (a failed mid-edit rebuild had left it stale again): through
+      `Utils`, the excluded course shows "Not Included…" with Close only; with no plan, "Subscription
+      Required" → Subscribe → `/us/accounting/payment/plan`.
+    - **Not rendered:** the podcast hero and reel card buttons, which need legacy course data that's
+      unreachable (CORS).
+  - **Epic status:** all eight PRs implemented. Remaining:
+    - backend Q1 (CORS), Q2 (the Stripe return base), Q3 (subscription status/manage) and Q11 (Stripe on
+      UAT);
+    - then a signed-in run of the full flow with Stripe test card 4242.
   - **Facts from the user:**
     - Only subscriptions are sold: no single courses, no books.
     - Alias imports everywhere, even inside one feature.
@@ -4119,6 +4144,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-13 · NON-REFACTOR · **Commerce PR7, buy buttons → plan** (uncommitted, `feat/MIL-XXX-offerings-buy-to-plan`): `addCourseToCart`, `v2/user/cart/`, `cartItemRemoved`, `CART_DRAWER_DIALOG` deleted; certificate gate subscriptions-only (+42/−206) · lint 0 errors, structure ✔, build:prod 245.29 kB (local) · gate dialogs verified in dev; legacy sweep of `src/` empty · epic code-complete
 
 - 2026-10-13 · NON-REFACTOR · **Commerce PR6, order history** (uncommitted, `feat/MIL-XXX-commerce-orders`): K3 bound (page_size 50), auto-renew/portal/receipt actions and all legacy order types deleted, `payment.model.ts` → `CurrentPlanData` only (+157/−583) · lint 0 errors, structure ✔, build:prod 245.34 kB (local) · signed-out empty state checked; captured K3/K4 pass the parsers
 

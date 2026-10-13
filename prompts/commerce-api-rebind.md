@@ -1,9 +1,14 @@
 # Commerce API rebind: subscriptions on `api/v1/commerce`
 
-**Status:** approved 2026-10-13 ("use this plan"). D1–D6 are taken as the recommended **A** options. The
-old backend is gone, so **no legacy binding, logic or type survives in the payment flow** (see "Legacy
-removal" below). **PR0 is done (uncommitted).** It also moved `overview-wrapper` into `pages/`, and kept
-`import('./payment')` for the root shell, because `check-structure.mjs` only accepts that form.
+**Status:** approved 2026-10-13 ("use this plan", D1–D6 = **A**). The old backend is gone, so **no legacy
+binding, logic or type survives in the payment flow** (see "Legacy removal" below).
+
+- **Implemented:** all eight PRs, on 2026-10-13. PR0–PR6 are committed; PR7 awaits its commit.
+- **The sweep of `src/`** finds no legacy payment code.
+- **Open:**
+  - the backend questions below;
+  - a signed-in browser run, once UAT CORS allows `x-accept-language` and Stripe is configured on UAT.
+
 **Epic branch prefix:** `feat/MIL-XXX-…`, one ticket per PR (see Jira below).
 **Contract:** _Miles Platform, Commerce & Catalogue API, front-end integration guide_ (12 Oct 2026), plus
 `postman/Merged_Masterclass_Backend_All_APIs.postman_collection.json` folders "09. Catalogue" and
@@ -575,8 +580,17 @@ with PR2, and `status` with PR3's guard, for the same reason.
   certificate access policy and the engagement dialog still use, and move `CartSteps` to
   `features/payment/constants/`.
 
-**PR7: `feat(offerings): send course buy buttons to the plan page`** (about 200 lines; can land any time
-after PR1)
+**PR7: `feat(offerings): send course buy buttons to the plan page`** (implemented 2026-10-13: +42 / −206)
+
+**What shipped differs from the bullets below in three places:**
+
+- **The certificate gate has two cases.** No plan shows "Subscription Required", whose Subscribe goes to
+  the plan page. A subscription-excluded course shows a Close-only "Not Included in the Subscription",
+  because there is nothing to buy.
+- **The podcast hero and reel card keep their icon button**, now a `routerLink` to the plan page. The
+  shared `app-button` only matches `<button>`.
+- **Also deleted:** `Utils.openCartDrawer` and the now-dead `CART_DRAWER_DIALOG` token and provider. The
+  podcast hero's per-course price display is left for a follow-up.
 
 - **Delete `Utils.addCourseToCart`**, `MASTERCLASS_ROUTES.addToCart`, both `cartItemRemoved` effects and
   `CartStore.cartItemRemoved`.

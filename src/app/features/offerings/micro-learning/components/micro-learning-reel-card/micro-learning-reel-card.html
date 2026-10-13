@@ -123,13 +123,10 @@
           class="rounded-full bg-background/60 backdrop-blur-sm hover:bg-background/80"
           variant="ghost"
           size="icon"
-          (click)="cartToggled.emit()"
+          aria-label="Subscribe to unlock"
+          [routerLink]="planRoute()"
         >
-          <ng-icon
-            [name]="cartIcon()"
-            size="20"
-            [attr.aria-label]="data.is_added_to_cart ? 'In cart' : 'Add to cart'"
-          />
+          <ng-icon name="matAddShoppingCartRound" size="20" aria-hidden="true" />
         </button>
       }
 
