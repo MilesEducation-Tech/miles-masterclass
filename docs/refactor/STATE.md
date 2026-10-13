@@ -469,6 +469,40 @@ data-press:bg-transparent` in a static `class`; the auto-renew dialog's Close is
       - A direct load and More Info do not focus the field.
     - **Not clicked signed in:** that would POST a registration. The member branch is the unchanged
       `register()`.
+  - **Second commit, same branch: complete the profile before webinar registration**
+    (`prompts/profile-before-register.md`, approved). DONE, UNCOMMITTED.
+    - **Scope:** only `register-via-zoom` refuses an incomplete profile (checked in Postman), and every caller goes
+      through `WebinarFacade.register()`.
+    - **What changed:**
+      - **The gate:** when `AuthSession.isProfileCompleted() === false`, Register Now toasts "Complete your profile
+        first" and opens `/auth/profile?redirect=<page>`, with no call.
+      - **The fallback:** the API's own profile refusal does the same, with the server's copy.
+      - **The profile page:** after a complete save, it goes to an in-app `redirect`.
+      - **Sign-in:** a `new_user` keeps `redirect` on the way to `/auth/profile`.
+    - **Verified (dev 4101, headless Playwright, dummy cookies; the save and the refusal intercepted, test-only):**
+      - Incomplete: the toast, `/auth/profile?redirect=/us/accounting/webinar/<id>`, and 0 register calls.
+      - Complete, but the API refuses with `missing_first_name`: 1 call, the server copy, then the profile page.
+      - A complete save lands on the webinar detail; a partial save stays, with "Still to answer: 1 question".
+      - A `//evil…` redirect is ignored.
+    - **Gates:** tsc 0, lint 0 errors (106 warnings), structure check passed, `build:prod` green.
+    - **Needs the user's real round trip.** If the backend still doesn't set `first_name` from the profile's name
+      answer (MIL-52 note), a complete profile keeps getting `missing_first_name`. That is a backend fix.
+    - **Same commit, the user's report: Save Changes did nothing with a required question unanswered.**
+      - **Cause:** the form had two validators. `[formField]` puts a native `required` attribute on the text inputs, so
+        the browser blocked the submit before `save()` ran. Once those were filled, `save()` refused because of an empty
+        select, and the browser couldn't see selects. Its error sat out of view in the scrolling card.
+      - **Second cause:** a required single-select's error line was blank, because the `required` rule fires first on
+        `''` and had no message.
+      - **Fix:** the form is `novalidate`. `save()` marks every field and calls `revealFirstError()`, which scrolls the
+        first unanswered question in display order to the centre of the card and focuses it. The rule now has the
+        "Choose an option." message. The text input and textarea now take the shared controls'
+        `data-invalid:data-touched:border-destructive`, so they turn red like the select (the user asked for this).
+      - **Verified (dev 4101, headless Playwright, stubbed `questions/` with sections out of order and a gated child):**
+        - Every case went to the right question, including a select and a child question revealed by a "Yes".
+        - Every error showed its message. A complete form sent one PATCH.
+        - At 1440, 768 and 375, the question, its label and its error are in view, with no horizontal scroll.
+      - **Gates:** tsc 0, lint 0 errors (106 warnings), structure check passed, Prettier clean. `build:prod` was not
+        run, because it breaks the running dev server's Vite cache.
   - **Follow-up, own ticket:** `payment/pages/plan/plan.ts:61` hardcodes `isLoggedIn = signal(false)`, so a
     signed-in learner picking a plan is sent to sign-in.
 - 🔧 **2026-10-12, NON-REFACTOR — CAIRA levels before login. ✅ Committed by the user as `b495aa4`** on

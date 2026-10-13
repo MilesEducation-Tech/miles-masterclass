@@ -24,7 +24,10 @@ import { NotificationService } from '@core/services/notification/notification';
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { withPreviousValue } from '@core/utils/with-previous-value';
 import { Utils } from '@shared/services/utils';
-import { SIGN_IN_PROMPTS } from '@features/offerings/webinar/constants/sign-in-prompts';
+import {
+  PROFILE_REQUIRED_PROMPT,
+  SIGN_IN_PROMPTS,
+} from '@features/offerings/webinar/constants/sign-in-prompts';
 import {
   FeedCard,
   LoginType,
@@ -350,6 +353,11 @@ export class WebinarFacade {
    * Now" to everyone — but posting it without a token is a `401` and a generic
    * error toast, which tells the learner nothing about what to do next. They
    * get the sign-in prompt instead, and come back to this webinar afterwards.
+   *
+   * A signed-in learner with an incomplete profile is sent to finish it the
+   * same way, and comes back here once it is complete. This is the only place
+   * the app registers, so the list, the detail page and the guest seat form
+   * all get it.
    */
   async register(webinarId: string): Promise<void> {
     if (!this.auth.isAuthenticated()) {
@@ -357,15 +365,26 @@ export class WebinarFacade {
       return;
     }
 
+    // `register-via-zoom` refuses a learner with no name or email on file, and
+    // it is the only route that does. Known incomplete → finish the profile
+    // first instead of earning that 400. `null` (the row has not arrived yet)
+    // goes ahead, and the refusal below is the backstop.
+    if (this.auth.isProfileCompleted() === false) {
+      await this.sendToProfile(PROFILE_REQUIRED_PROMPT.title, PROFILE_REQUIRED_PROMPT.body);
+      return;
+    }
+
     const outcome = await this.registration.register(webinarId);
 
     if ('code' in outcome) {
       // A profile problem is not retryable and its `detail` already names what
-      // to fix, so surface the server's own copy rather than a generic message.
-      this.notification.error(
-        outcome.isProfileProblem ? 'Update your profile first' : 'Registration failed',
-        outcome.message,
-      );
+      // to fix, so the server's own copy goes on the toast, and the learner goes
+      // where they can fix it.
+      if (outcome.isProfileProblem) {
+        await this.sendToProfile(PROFILE_REQUIRED_PROMPT.title, outcome.message);
+        return;
+      }
+      this.notification.error('Registration failed', outcome.message);
       return;
     }
 
@@ -516,6 +535,17 @@ export class WebinarFacade {
       void this.router.navigate(['/auth/login'], {
         queryParams: { redirect: this.router.url },
       });
+    });
+  }
+
+  /**
+   * Say why, then open the profile page; once the profile is complete it brings
+   * the learner back to this page. Same `redirect` convention as `promptSignIn`.
+   */
+  private async sendToProfile(title: string, body: string): Promise<void> {
+    this.notification.info(title, body);
+    await this.router.navigate(['/auth/profile'], {
+      queryParams: { redirect: this.router.url },
     });
   }
 
