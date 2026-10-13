@@ -207,6 +207,42 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       Required" → Subscribe → `/us/accounting/payment/plan`.
     - **Not rendered:** the podcast hero and reel card buttons, which need legacy course data that's
       unreachable (CORS).
+  - **Committed by the user:** PR7 `196618c`.
+  - **Jira tickets written, 2026-10-13: `prompts/commerce-jira-tickets.md`.** One epic and nine stories
+    (headers + PR0–PR7), with an end-to-end UAT test plan and a UAT → production release checklist.
+    - **Created: epic MIL-69, stories MIL-70 to MIL-78.**
+    - **Local branches renamed:** `feat/MIL-70-api-request-headers` (created at `d0968a8`),
+      `refactor/MIL-71-payment-alias-imports`, `feat/MIL-72-commerce-cart-read`, `feat/MIL-73-commerce-plans`,
+      `feat/MIL-74-commerce-cart-coupons`, `feat/MIL-75-commerce-addresses`, `feat/MIL-76-commerce-checkout`,
+      `feat/MIL-77-commerce-orders`, `feat/MIL-78-offerings-buy-to-plan`.
+    - ⚠️ `origin/feat/MIL-XXX-api-request-headers` was at `5ce38e9` (master), not the headers commit. The
+      user pushes the new names and deletes the old remote branches.
+    - **Not pushed:** `refactor/MIL-XXX-payment-alias-imports` and `feat/MIL-XXX-offerings-buy-to-plan`.
+      `feat/MIL-XXX-api-request-headers` exists only on origin.
+    - **The production build's `BASE_API_URL`** (`environment.ts`) is still `uat-api`, and is flagged in the
+      release checklist.
+    - **Pushed by the user (checked 2026-10-13):** all nine new branches are on origin and the old `MIL-XXX`
+      ones are gone. No PRs are open yet; the `needs-uat` label exists.
+  - **Release guide written, 2026-10-13: `prompts/commerce-release-guide.md`.** It covers the rebase onto
+    master (`--update-refs`), the stacked draft PRs, UAT via MIL-78's head (playbook Flow B), fixups during
+    UAT, the bottom-up `--onto` merges, and production through the release-please Release PR.
+    - The PR bodies and `open-prs.sh` are in the session scratchpad, not the repo.
+    - ⚠️ The stray local branch `feat/MIL-65-api-request-headers` sits at `d0968a8`. The user deletes it
+      before rebasing.
+  - **PRs opened by the user, 2026-10-13:** #123–#131, stacked drafts with `needs-uat`. The stack sits on
+    `f7e73c0`; CI is 36/36 green. #131 is bound to this session.
+    - **UAT isn't set up:**
+      - there's no `uat` branch and no uat ruleset;
+      - the real host is `uat.milesmasterclass.com` (`.us` 301s to production);
+      - it serves orphan build `b6307ecd` from 2026-10-09.
+    - UAT CORS still lacks `x-accept-language`.
+    - **User decision: UAT runs on a Vercel URL for now**, not `uat.milesmasterclass.com`.
+      - Previews are off by policy (`github-setup.md` §7).
+      - So the URL is the UAT custom environment's `vercel.app` alias, built from a `uat` branch that the
+        user creates at MIL-78's head (guide §4.2).
+    - The guide (§1, §4, §5, §7, §9), the tickets doc and the #123/#129 bodies now say `<UAT_URL>`.
+    - The app is host-agnostic: cookies are host-only, and `SITE_URL` feeds SEO tags only.
+    - **MIL-78 head is `ae49192`** after the second docs amend; CI is re-running.
   - **Epic status:** all eight PRs implemented. Remaining:
     - backend Q1 (CORS), Q2 (the Stripe return base), Q3 (subscription status/manage) and Q11 (Stripe on
       UAT);
