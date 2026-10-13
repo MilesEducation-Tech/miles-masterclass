@@ -16,6 +16,14 @@ import { CommonResponse, RouteConfig } from '@core/models/http.model';
  */
 export type Decimal = string;
 
+/**
+ * Whether an amount is worth a row ("Coupon discount −$94.80"). A comparison for display,
+ * not arithmetic: the figure itself is still CAIRA's string.
+ */
+export function hasAmount(amount: Decimal | number | null | undefined): boolean {
+  return amount != null && Number(amount) > 0;
+}
+
 /** `abandoned` is reserved by the backend and not yet written. */
 export type CartStatus = 'open' | 'purchased' | 'cancelled' | 'abandoned';
 
@@ -32,6 +40,7 @@ export interface CartLine {
   id: string;
   product_id: string;
   title: string;
+  description: string | null;
   image_url: string | null;
   money: { unit_price: Decimal; unit_discount_price: Decimal | null; final_amount: Decimal };
 }

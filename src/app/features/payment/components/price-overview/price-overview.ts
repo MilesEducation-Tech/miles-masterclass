@@ -1,19 +1,30 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronLeft, heroChevronRight, heroXMark } from '@ng-icons/heroicons/outline';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
+import { CartStore } from '@core/services/cart/cart-store';
+import { Decimal, hasAmount } from '@core/models/commerce.model';
 
 import { Button } from '@shared/ui/button/button';
 import { svglStripe } from '@ng-icons/svgl';
 import { Router } from '@angular/router';
 import { Utils } from '@shared/services/utils';
-import { CouponList } from '@core/models/payment.model';
+
+/** What the price card shows. Every figure is the server's; the card only displays it. */
+interface PriceSummary {
+  count: number;
+  currency: string;
+  subtotal: Decimal | number;
+  productDiscount: Decimal | number;
+  couponDiscount: Decimal | number;
+  tax: Decimal | number;
+  total: Decimal | number;
+}
 
 @Component({
   selector: 'app-price-overview',
   imports: [CurrencyPipe, NgIcon, Button],
-  providers: [CurrencyPipe],
   viewProviders: [provideIcons({ heroChevronLeft, heroChevronRight, heroXMark, svglStripe })],
   templateUrl: './price-overview.html',
 })
@@ -21,34 +32,9 @@ export class PriceOverview {
   readonly facade = inject(PaymentFacade);
   readonly router = inject(Router);
   readonly utils = inject(Utils);
-  private readonly currencyPipe = inject(CurrencyPipe);
+  private readonly cart = inject(CartStore).cart;
 
-  // ponytail: the constructor fetched coupons once signed in. Coupons are a
-  // user-scoped endpoint and there is no session to scope them to, so the
-  // inline strip stays empty.
-
-  /** First directly-applicable coupon shown inline; the rest live behind "Show more". */
-  readonly firstCoupon = computed(
-    () => this.facade.coupons().find((c) => c.coupon_applicable) ?? null,
-  );
-  readonly applyingCoupon = signal(false);
-  readonly round = Math.round;
-
-  applyFirst(code: string): void {
-    if (this.applyingCoupon()) return;
-    this.applyingCoupon.set(true);
-    // Facade sets cart data + toasts on success/error; we just track the button state.
-    this.facade.applyCoupon(code).subscribe({
-      next: () => this.applyingCoupon.set(false),
-      error: () => this.applyingCoupon.set(false),
-    });
-  }
-
-  discountLabel(coupon: CouponList): string {
-    const discount = Math.round(coupon.discount);
-    if (coupon.discount_type === 'percent') return `${discount}% Off`;
-    return `${this.currencyPipe.transform(discount, 'USD', 'symbol', '1.0-0')} Off`;
-  }
+  protected readonly hasAmount = hasAmount;
 
   readonly isBilling = computed(() => this.utils.currentUrl()?.includes('/billing') ?? false);
   readonly isCart = computed(() => this.utils.currentUrl()?.includes('/cart') ?? false);
@@ -73,99 +59,37 @@ export class PriceOverview {
     }
   }
 
-  readonly cartData = this.facade.cartData;
-  readonly orderData = this.facade.orderData;
-
-  readonly itemCount = computed(() => {
+  /**
+   * `null` hides the card: a cart with no lines shows no totals (CAIRA reports a fresh
+   * cart's currency wrongly until a line is added; `docs/COMMERCE_API.md`).
+   */
+  readonly summary = computed<PriceSummary | null>(() => {
     if (this.isInvoice()) {
-      return this.facade.invoiceItemCount();
+      // The invoice still reads the legacy order until PR5 of prompts/commerce-api-rebind.md.
+      const f = this.facade;
+      return {
+        count: f.invoiceItemCount(),
+        currency: f.invoiceCurrency(),
+        subtotal: f.invoiceSubTotal(),
+        productDiscount: f.invoiceProductDiscount(),
+        couponDiscount: f.invoiceTotalDiscount() - f.invoiceProductDiscount(),
+        tax: f.invoiceTaxAmount(),
+        total: f.invoiceGrandTotal(),
+      };
     }
-    return this.cartData()?.cartitem_data.length ?? 0;
+    const cart = this.cart();
+    if (!cart || cart.lines.length === 0) return null;
+    return {
+      count: cart.lines.length,
+      currency: cart.currency,
+      subtotal: cart.money.price_before_discount,
+      productDiscount: cart.money.discount_amount,
+      couponDiscount: cart.money.coupon_discount_amount,
+      tax: cart.money.gst_amount,
+      total: cart.money.checkout_amount,
+    };
   });
 
-  readonly currencySymbol = computed(() => {
-    if (this.isInvoice()) {
-      return this.facade.invoiceCurrencySymbol();
-    }
-    return this.cartData()?.selected_country.currency_symbol ?? '$';
-  });
-
-  readonly currencyCode = computed(() => {
-    if (this.isInvoice()) {
-      return this.facade.invoiceCurrency();
-    }
-    return this.cartData()?.selected_country.currency ?? 'USD';
-  });
-
-  readonly subAmount = computed(() => {
-    if (this.isInvoice()) {
-      return this.facade.invoiceSubTotal();
-    }
-    return this.cartData()?.sub_amount ?? 0;
-  });
-
-  readonly totalDiscountAmount = computed(() => {
-    if (this.isInvoice()) {
-      return this.facade.invoiceTotalDiscount();
-    }
-    return this.cartData()?.total_discount_amount ?? 0;
-  });
-
-  readonly totalDiscountPercent = computed(() => {
-    if (this.isInvoice()) {
-      return this.facade.invoiceTotalDiscountPercent();
-    }
-    return this.cartData()?.total_discount_percent ?? 0;
-  });
-
-  readonly grandTotal = computed(() => {
-    if (this.isInvoice()) {
-      return this.facade.invoiceGrandTotal();
-    }
-    return this.cartData()?.total_amount ?? 0;
-  });
-
-  readonly taxAmount = computed(() => {
-    if (this.isInvoice()) {
-      return this.facade.invoiceTaxAmount();
-    }
-    return this.cartData()?.tax_amount ?? 0;
-  });
-
-  readonly appliedCoupon = computed(() => {
-    if (this.isInvoice()) {
-      return this.facade.invoiceCouponDetails();
-    }
-    return this.cartData()?.applied_coupon;
-  });
-
-  readonly productDiscount = computed(() => {
-    if (this.isInvoice()) {
-      return this.facade.invoiceProductDiscount();
-    }
-    const data = this.cartData();
-    if (!data) return 0;
-    let totalBase = 0;
-    let totalSelling = 0;
-    for (const item of data.cartitem_data) {
-      totalBase += item.base_price;
-      totalSelling += item.selling_price;
-    }
-    return totalBase - totalSelling;
-  });
-
-  readonly couponDiscount = computed(() => {
-    return this.totalDiscountAmount() - this.productDiscount();
-  });
-
-  // Monthly (EMI): if any cart item was added with pay_method 'monthly', show the
-  // monthly payable alongside the annual grand total.
-  // ponytail: derive as grandTotal ÷ 12 per the agreed contract — assumes monthly
-  // carts are subscription-only. Revisit if mixed monthly + one-time carts ship.
-  readonly hasMonthly = computed(() => {
-    if (this.isInvoice()) return false;
-    return this.cartData()?.cartitem_data.some((i) => i.pay_method === 'monthly') ?? false;
-  });
-
-  readonly monthlyPayable = computed(() => this.grandTotal() / 12);
+  /** The cart's applied coupon (the Savings Corner never shows on review or invoice). */
+  readonly coupon = computed(() => this.cart()?.coupon ?? null);
 }

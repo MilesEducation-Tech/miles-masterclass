@@ -1,7 +1,6 @@
 import { httpResource } from '@angular/common/http';
 import { Service, computed, inject, signal } from '@angular/core';
 import { CART_ROUTES, Cart, parseCart } from '@core/models/commerce.model';
-import { CartDetails } from '@core/models/payment.model';
 import { apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { CountryContext } from '@core/services/country-context/country-context';
@@ -50,11 +49,16 @@ export class CartStore {
   /** The cart, or `null` until a payment page has read it (and while signed out). */
   readonly cart = computed(() => (this.cartResource.hasValue() ? this.cartResource.value() : null));
   readonly lineCount = computed(() => this.cart()?.lines.length ?? 0);
+  /** `paymentGuard` waits on this, not on `isLoading()`: an idle resource is not loading either. */
+  readonly status = this.cartResource.status;
 
-  /** The first call opts the read in; later calls re-read the cart. */
+  /**
+   * Opts the read in. Idempotent: the guard and the payment shell both call it on
+   * the same navigation, and only one request goes out. Writes keep the cart
+   * current (`set`), so there is no forced re-read.
+   */
   load(): void {
-    if (this.wanted()) this.cartResource.reload();
-    else this.wanted.set(true);
+    this.wanted.set(true);
   }
 
   /**
@@ -66,17 +70,10 @@ export class CartStore {
     this.cartResource.set(cart.status === 'open' ? cart : undefined);
   }
 
-  /** The id of the course last removed from the cart, for consumers that need to react. */
-  readonly cartItemRemoved = signal<number | null>(null);
-
   /**
-   * The legacy cart, as the last legacy cart call returned it. Its endpoints
-   * answer 404; it goes when PR3 of `prompts/commerce-api-rebind.md` moves the
-   * payment pages onto `cart`.
+   * The id of the course last removed from the legacy cart. Nothing writes it any
+   * more; the offerings facades still read it until PR7 of
+   * `prompts/commerce-api-rebind.md` sends their buy buttons to the plan page.
    */
-  readonly cartData = signal<CartDetails | null>(null);
-
-  setCartData(cart: CartDetails | null): void {
-    this.cartData.set(cart);
-  }
+  readonly cartItemRemoved = signal<number | null>(null);
 }

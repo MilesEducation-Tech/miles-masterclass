@@ -5,6 +5,7 @@ import { injectDialogRef } from 'ng-primitives/dialog';
 
 import { Utils } from '@shared/services/utils';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
+import { CartStore } from '@core/services/cart/cart-store';
 import { CartItem } from '@features/payment/components/cart-item/cart-item';
 import { Button } from '@shared/ui/button/button';
 import { Dialog } from '@shared/ui/dialog/dialog';
@@ -21,19 +22,17 @@ export class CartDrawerDialog {
   private readonly dialogRef = injectDialogRef();
 
   private readonly facade = inject(PaymentFacade);
+  private readonly cartStore = inject(CartStore);
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
 
-  readonly cartData = computed(() => this.facade.cartData());
-  readonly cartItems = computed(() => this.cartData()?.cartitem_data ?? []);
-  readonly currencyCode = computed(() => this.cartData()?.selected_country?.currency ?? 'USD');
-  readonly totalAmount = computed(() => this.cartData()?.total_amount ?? 0);
-  readonly loading = computed(() => this.facade.loading());
+  readonly cart = this.cartStore.cart;
+  readonly lines = computed(() => this.cart()?.lines ?? []);
 
-  // Monthly (EMI): show the monthly payable alongside the annual total when any
-  // item was added with pay_method 'monthly'. Derived as total ÷ 12.
-  readonly hasMonthly = computed(() => this.cartItems().some((i) => i.pay_method === 'monthly'));
-  readonly monthlyAmount = computed(() => this.totalAmount() / 12);
+  constructor() {
+    // The drawer opens from any page (after an add, or from the header), so it asks for the cart itself.
+    this.cartStore.load();
+  }
 
   close(): void {
     this.dialogRef.close();
@@ -44,8 +43,7 @@ export class CartDrawerDialog {
     this.router.navigate(['/', this.utils.country(), this.utils.profession(), 'payment', 'cart']);
   }
 
-  removeItem(itemId?: number): void {
-    if (!itemId) return;
-    this.facade.removeCartItem(itemId);
+  removeLine(lineId: string): void {
+    this.facade.removeLine(lineId);
   }
 }
