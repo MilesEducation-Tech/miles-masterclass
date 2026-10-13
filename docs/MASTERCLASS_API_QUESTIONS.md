@@ -83,7 +83,49 @@ answers 200 with the three CAIRA levels. Signed out it answers **401** ("Authent
 not provided."), so guests get no CAIRA section. The ladder is the same for everyone. Can `levels/` be
 `AllowAny`? No frontend change is needed when it is.
 
-**Status (2026-10-12):** the backend is making `levels/` callable without a session (MIL-61).
+**Status (2026-10-13): DONE.** `GET web-api/v1/masterclass/levels/` with no Authorization header
+answers **200** with the three levels. MIL-61 is live on UAT; nothing is pending on the frontend.
+
+### Q10. The CAIRA tracker's badge states (asked 2026-10-13)
+
+`GET web-api/v1/badges/page/` replaced `v2/caira-badges/`, `v2/caira-badges/:id/`,
+`v2/course-badges/` and `v2/webinar-badges/`, all four of which now answer 404. The page is
+rebound to it (MIL-62). Three of its fields are enums we can only half see, because the only
+account we can read it with has zero progress — every row comes back `LOCKED` or
+`COMING_SOON`, every `badge_claim.state` is `NOT_ISSUED`, every `cta.action` is `NONE` or
+`OPEN_COURSE`.
+
+Please send the full vocabulary for `state`, `cta.action` and `badge_claim.state`, or a UAT
+account that has earned and claimed a badge. Until then the frontend's guards accept any
+string for those three and derive the UI from `badge_claim.awarded` / `claimed` and
+`cta.enabled` instead, so an unseen value renders as a disabled card rather than failing the
+whole response.
+
+### Q11. How does a learner claim a badge now? (asked 2026-10-13)
+
+The old flow was `GET user-badges/:id/claim/`, keyed on `user_badge.id`. That route answers
+**404**, and the block that replaced `user_badge` — `badge_claim` — carries no id, only
+`{state, awarded, claimed, status_raw, accept_url, assertion_id}`.
+
+We have assumed the server now mints the Credly acceptance URL itself and the client only
+opens `badge_claim.accept_url` once it is populated. Please confirm. If a claim request still
+has to be made, what is the route and what identifies the badge?
+
+### Q12. `badges/page/` gaps (asked 2026-10-13)
+
+1. **`next_session` is `{}`** on every webinar badge, and `upcoming_sessions_count` is 0. The
+   card used to show "Nov 12, 2026 • 7:00 PM EST" from v2's `session.start_time`. Is
+   `next_session` meant to be populated, and what is its shape?
+2. **No `podcast` or `nano_learning` section.** The tracker used to draw a row for each,
+   from `v2/course-badges/?course_type=`. Both rows are removed. Gone for good, or coming?
+3. **Masterclass badge rows carry no credits**, while webinar rows carry
+   `total_cpe_credits` + `credits_label`. Intentional?
+4. **No `description` or `content`** on a level badge. v2's `caira-badges/:id/` served the
+   ⓘ modal's three tabs (`what_you_will_learn` / `how_will_you_learn` / `what_will_you_get`);
+   with no source the modal has been removed. Is that content coming back anywhere?
+5. **Paging parameters are namespaced** (`?webinar_badges.page=2&webinar_badges.page_size=6`).
+   Confirmed working, just noting it differs from every other list on this API — worth
+   documenting in Postman, since the obvious `?page=2` is silently ignored.
 
 ## Still missing from the web API
 

@@ -812,6 +812,86 @@ data-press:bg-transparent` in a static `class`; the auto-renew dialog's Close is
     a real ICO with 16/32/48 PNG frames (7 KB), the padding trimmed and the transparency kept.
   - **Gates (local macOS):** lint 0 errors, structure check passed, prettier clean, `build:prod` 245.51 kB
     with only the `ai-labs.css` warning. Dev on 3000 served it as `image/x-icon`, byte-identical.
+- 🔧 **2026-10-13, NON-REFACTOR — CAIRA tracker rebound to `web-api/v1/badges/page/`
+  (`prompts/caira-tracker-rebind.md`, approved). DONE, STAGED, UNCOMMITTED** on
+  `feat/MIL-62-caira-tracker-rebind` (from `master` `f7e73c0`). No refactor phase moved.
+  - **Cause:** the feature was BROKEN, not merely unbound. All four v2 badge routes
+    (`v2/caira-badges/`, `v2/caira-badges/:id/`, `v2/course-badges/`, `v2/webinar-badges/`) and
+    `user-badges/:id/claim/` answer **404** on UAT. `BadgeRow` and `CairaLevelHero` treat a failed
+    fetch as "no data" and hide themselves, so the page rendered an empty shell with no error.
+    The user's pasted curl answers **401** without a token — their capture was authenticated.
+  - **What changed:** five per-component `httpResource` calls collapse into one route-scoped
+    `CairaBadgesFacade` (`services/caira-badges-facade.ts`) over the single `badges/page/` read,
+    with `models/caira-badge-page.model.ts` carrying the wire types, guards and `parse`.
+    `caira-tracker.routes.ts` gains `canMatch: [authGuard]` + `providers: [CairaBadgesFacade]`.
+    Podcast and Nano-Learning rows dropped (no section on the endpoint). The ⓘ dialog,
+    `utils/badge-action.ts` and `core/models/caira-badge.model.ts` are deleted; `UserBadgeStatus`
+    moved to `features/tracker/cpe/models/cpe-credit.model.ts`, its only remaining consumer.
+  - **Design call (A3):** `state`, `cta.action` and `badge_claim.state` are typed as open `string`.
+    The only payload available is a zero-progress learner (everything `LOCKED`/`COMING_SOON`/
+    `NOT_ISSUED`), so closing those unions would make the first learner who earns a badge trip
+    `contractError` and lose the whole page. The UI derives from `badge_claim.awarded`/`claimed`
+    and `cta.enabled` instead. Close them when Q10 is answered.
+  - **Paging:** namespaced per section (`?webinar_badges.page=2`), so `core/utils/parse-next-page.ts`
+    returns `null` for these URLs and is NOT reused — `nextSectionPage()` reads `has_next` + `page`.
+    One request carries every section's page, so the accumulators are keyed by page number
+    (`mergeSection`); a plain append duplicated a page when the other section advanced.
+  - **Gates (local macOS, not CI):** tsc 0; lint **0 errors** (106 warnings); structure check passed;
+    prettier clean; `build:prod` green, initial **245.32 kB vs master's 245.48 kB** (measured by
+    stashing — the 243.44 kB figure in older entries here is stale), only the `ai-labs.css` warning.
+  - **Browser (own `ng serve` on 4199, signed out):** all three routes redirect with the deep link
+    intact, e.g. `/us/accounting/caira-tracker/webinar-badges` →
+    `/auth/login?redirect=%2Fus%2Faccounting%2Fcaira-tracker%2Fwebinar-badges`.
+  - **Contract proof:** compiled the model to plain JS and ran `parseBadgesPage` against the real
+    payload — accepted; `nextSectionPage` → 2 / null / null; invented future values
+    (`EARNED`/`CLAIM_BADGE`/`ISSUED`) accepted and painted as an amber claim card; five contract
+    breaks (renamed key, missing `cta.enabled`, retyped `level.number`, non-array `results`,
+    missing `cpe_summary`) all rejected, each naming its section.
+  - **NOT verified:** the signed-in render and anything involving an earned badge — no credentials.
+    User to check one `badges/page/` request, hero + exactly two rows, and webinar 6 → 10 on scroll.
+  - **Note:** the user's dev server on 4101 was serving STALE code (rendered 4 badge rows, the
+    pre-change build). It needs a restart before they verify.
+  - **2026-10-13 follow-up — silent-blank fix.** User reported "page is still empty, for a moment I
+    could see UI but again it's blank". Reproduced both paths in headless Chrome against a local
+    `ng serve` on 4199 (auth cookie planted from a helper origin on 8099, since cookies are not
+    port-scoped): with a token present and UAT answering 401 the page renders its **error state**,
+    not a blank, and signed out it still redirects to login. So a failed request was never the
+    cause. The real hole was `idle`: a refresh that fails calls `AuthSession.clear()`, the request
+    function then returns `undefined`, and idle is neither loading nor an error — so the hero and
+    both rails hide themselves and the page goes blank with no way out, with `authGuard` (`CanMatch`)
+    not re-running on an already-matched route. `CairaBadgesFacade` now has a second `effect` that
+    redirects to `/auth/login?redirect=…` when the session disappears mid-page. Re-verified both
+    paths after the fix. **Most likely cause of what the user saw is the stale dev server on 4101**
+    (it rendered 4 badge rows, i.e. the pre-change build, whose five dead 404 reads show skeletons
+    and then hide every section — exactly "UI for a moment, then blank"). Gates re-run: lint 0
+    errors (106 warnings), structure ✔, prettier ✔, `build:prod` 245.37 kB, `ai-labs.css` only.
+  - **2026-10-13 follow-up — cards are links, plus a hover highlight bar.** User asked that
+    clicking a badge card open its webinar/course page, and that the title get a highlight line
+    on hover. Cause of the first: `cta.enabled` was gating navigation as well as the CTA, and
+    **every** webinar badge in UAT is `Coming Soon`/`Locked` with `enabled: false`, so every
+    webinar card was a `[disabled]` button — inert, despite `cta.webinar_id` being set on all
+    ten. Navigation no longer consults `cta.enabled`; the destination page owns its own gating.
+    **Matched two existing repo conventions rather than inventing:** the hover bar is the
+    `bg-size-[0%_3px] → group-hover/card:bg-size-[100%_3px]` gradient from
+    `masterclass-chapter-list.html` (`group-hover:underline` is used **zero** times repo-wide),
+    which also solves the fixed `min-h-12` title box because `box-decoration-clone` paints on
+    the text, not the container; and the whole-card link is the `absolute inset-0 z-0` stretched
+    anchor + higher-layer action row from `masterclass-course-card.html` (template
+    `stopPropagation()` appears exactly once repo-wide and is the legacy fallback). Webinar card
+    root is now a plain `<a>` (no nested button, so no overlay needed) and **lost its `activate`
+    output** — when Q11 lands it will need an explicit claim affordance, noted in its doc
+    comment. `localePrefix()` added to `tracker-links.ts`, consolidating the tracker's three
+    inline copies. **Proof beyond the build:** the emitted stylesheet carries
+    `.group-hover\/card\:bg-size-\[100\%_3px\]:is(:where(.group\/card):hover *)` next to the
+    existing `group/title` rule, and an `elementFromPoint` probe of the real markup against the
+    built CSS returns the stretched anchor at the card centre and in the title area but the
+    button at the CTA centre — so the card navigates and the CTA is not swallowed. Gates: lint 0
+    errors (106 warnings), structure ✔, prettier ✔, `build:prod` 245.31 kB, `ai-labs.css` only.
+    **Not verified:** the cards rendering with real data — still no credentials.
+  - **Backend:** Q10 (full enums / an earned-badge sample), Q11 (how a badge is claimed now — no id
+    on `badge_claim`), Q12 (empty `next_session`, no podcast/nano sections, no masterclass credits,
+    no level `content`, namespaced paging) appended to `docs/MASTERCLASS_API_QUESTIONS.md`.
+    **Q9 marked DONE there** — `masterclass/levels/` now answers 200 anonymously (MIL-61 is live).
 
 - 🔧 **2026-10-12, NON-REFACTOR — OTP send/verify take `email` or `mobile` + `country_code`
   (`prompts/auth-otp-contact-fields.md`, approved). DONE, UNCOMMITTED** on
@@ -4765,6 +4845,11 @@ These are environment and product observations the repair surfaced. None changed
 - 2026-10-13 · NON-REFACTOR · **API request headers** (`feat/MIL-XXX-api-request-headers`, uncommitted): `appInterceptor` sends `X-Country-Code` (URL country, upper-case), `X-Platform: masterclass`, `X-App-Type: WA`; its imports are now `@core/*` aliases (user: aliases everywhere) · lint 0 errors, structure ✔, prettier ✔, build:prod 245.63 kB (local) · dev on 3000: `/in` → `IN`, `/ae` → `AE`, all 200; Supabase untouched · prod `api.milescaira.com` CORS still lacks the headers · commerce implementation prompt in progress (`prompts/commerce-api-rebind.md`)
 
 - 2026-10-13 · NON-REFACTOR · **Favicon** (PR #121, `chore/MIL-64-favicon`, `a207d49`): `public/favicon.ico` is now a real 16/32/48 ICO of the mountain mark · lint 0 errors, structure ✔, prettier ✔, build:prod 245.51 kB (local) · dev on 3000 serves it as `image/x-icon`
+- 2026-10-13 · NON-REFACTOR · **CAIRA badge cards link + hover bar** (same branch): navigation stops depending on `cta.enabled`, which had made every webinar card inert; whole card is a link (stretched `absolute inset-0 z-0` anchor on the masterclass card so its CTA keeps its own click, plain `<a>` root on the webinar card); title gains the repo's existing `bg-size-[0%_3px]→[100%_3px]` accent gradient on `group-hover/card`; webinar card loses `activate` (needs a claim affordance when Q11 lands); `localePrefix()` consolidates three inline copies · lint 0 errors, structure ✔, build:prod 245.31 kB · emitted CSS carries the new `group/card` rule; `elementFromPoint` probe confirms card+title hit the link and the CTA does not
+
+- 2026-10-13 · NON-REFACTOR · **CAIRA tracker silent-blank fix** (same branch): a failed refresh clears the token, the read goes `idle` (not loading, not error), every section hides itself and the page blanks; `authGuard` is `CanMatch` so it never re-runs · facade now redirects to login when the session disappears mid-page · reproduced in headless Chrome with a planted cookie: junk token → error state (never blank), signed out → login · lint 0 errors, structure ✔, build:prod 245.37 kB
+
+- 2026-10-13 · NON-REFACTOR · **CAIRA tracker rebind** (staged, `feat/MIL-62-caira-tracker-rebind`): all four v2 badge routes + the claim route are 404, so the feature was broken, not unbound; five component resources collapse into one route-scoped `CairaBadgesFacade` over `web-api/v1/badges/page/`, `authGuard` on the route, Podcast/Nano rows and the ⓘ dialog removed, enums left open (A3), paging keyed by page number because the sections share one request · tsc ✔, lint 0 errors, structure ✔, prettier ✔, build:prod 245.32 kB vs master 245.48 kB (local) · signed-out redirect verified on all three routes with the deep link intact; guard proved against the real payload (accepts it, tolerates unseen enums, rejects five contract breaks); signed-in render NOT verified — no credentials
 
 - 2026-10-12 · NON-REFACTOR · **AI Labs ring thumbnails** (MIL-61, no code yet): S3 `milesone-backend-assets` sends no CORS, so the WebGL ring cannot upload the `ai-labs/` thumbnails; the `<img>` row is unaffected · confirmed in dev at 1440 (browser CORS error + `onTextureBlocked`) · ⏸ user to choose S3 CORS (backend) or a same-origin proxy
 

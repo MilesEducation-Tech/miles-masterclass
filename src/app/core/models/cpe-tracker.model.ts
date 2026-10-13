@@ -36,7 +36,8 @@ export interface UserFeedbackDetails {
 
 /**
  * Credly badge as the v1 badge surfaces model it. Still consumed by
- * `badge-hero-card`; the CAIRA tracker uses the v2 shapes in `caira-badge.model.ts` instead.
+ * `badge-hero-card`; the CAIRA tracker uses the `badges/page/` shapes in
+ * `features/tracker/caira/models/caira-badge-page.model.ts` instead.
  */
 export interface BadgeItem {
   id: number;

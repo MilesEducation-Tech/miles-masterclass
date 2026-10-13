@@ -1,4 +1,3 @@
-import { UserBadgeStatus } from '@core/models/caira-badge.model';
 import { BadgePaginationData } from '@core/models/badge.model';
 import { FieldOfStudy } from '@core/models/course.model';
 import { TransactionType } from '@core/models/cpe-tracker.model';
@@ -20,6 +19,15 @@ export type CpeLedger = 'caira' | 'others';
 
 /** `nano_learning` is labelled "Reels" in the UI and excludes AI Lab on the list endpoint. */
 export type CpeCourseType = 'masterclass' | 'podcast' | 'nano_learning' | 'ai_lab' | 'webinar';
+
+/**
+ * Lifecycle of the learner's row for a badge. It used to live in
+ * `core/models/caira-badge.model.ts` beside the CAIRA tracker's v2 types; those endpoints
+ * answer 404 since 2026-10-13 and that file went with them, so the only remaining consumer
+ * now owns it. The CAIRA tracker's replacement spells its states in UPPER_CASE on
+ * `badge_claim.state`, which is a different vocabulary — do not merge the two.
+ */
+export type UserBadgeStatus = 'locked' | 'unlocked' | 'earned' | 'revoked';
 
 export interface CpeCreditBadge {
   id: number;

@@ -1,13 +1,17 @@
 <section class="min-h-screen bg-background pt-32 text-white">
   <div class="mx-auto container py-10 sm:px-6">
-    <app-caira-level-hero />
+    @if (hasError()) {
+      <app-error-state message="We couldn't load your CAIRA progress." (retry)="retry()" />
+    } @else {
+      <app-caira-level-hero />
 
-    @for (row of rows; track row.courseType) {
-      <app-badge-row
-        [heading]="row.heading"
-        [courseType]="row.courseType"
-        [viewAllLink]="row.viewAllLink"
-      />
+      @for (row of rows; track row.section) {
+        <app-badge-row
+          [heading]="row.heading"
+          [section]="row.section"
+          [viewAllLink]="row.viewAllLink"
+        />
+      }
     }
   </div>
 </section>
