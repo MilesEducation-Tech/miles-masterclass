@@ -14,8 +14,8 @@
 
 <!-- Address details -->
 <div class="flex-1 min-w-0">
-  @if (userName()) {
-    <p class="text-lg font-bold text-white m-0 mb-1 leading-tight">{{ userName() }}</p>
+  @if (address().name; as name) {
+    <p class="text-lg font-bold text-white m-0 mb-1 leading-tight">{{ name }}</p>
   }
   <p class="text-sm text-gray-400 m-0 leading-relaxed truncate">{{ formattedAddress() }}</p>
 </div>

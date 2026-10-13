@@ -46,7 +46,8 @@ export class PriceOverview {
     if (this.isCart()) {
       this.router.navigate([...basePath, 'billing']);
     } else if (this.isBilling()) {
-      this.router.navigate([...basePath, 'review']);
+      // The picked address goes onto the cart first: checkout copies the cart's address.
+      this.facade.attachBillingAddress(() => this.router.navigate([...basePath, 'review']));
     }
   }
 

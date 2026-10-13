@@ -1,32 +1,81 @@
-import {
-  Component,
-  computed,
-  effect,
-  inject,
-  linkedSignal,
-  resource,
-  signal,
-  untracked,
-} from '@angular/core';
+import { Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { NotificationService } from '@core/services/notification/notification';
 import {
-  disabled,
   form,
   required,
   FormField as AngularFormField,
-  minLength,
   maxLength,
+  disabled,
 } from '@angular/forms/signals';
 
 import { Button } from '@shared/ui/button/button';
 
-import { BillingAddressPayload, UserAddress } from '@core/models/payment.model';
+import {
+  ADDRESS_LIMITS,
+  Address as AddressModel,
+  AddressInput,
+} from '@features/payment/models/commerce.model';
 import { Address } from '@features/payment/components/address/address';
 import { Field } from '@shared/ui/field/field';
 import { NgpLabel, NgpDescription } from 'ng-primitives/form-field';
 import { Input } from '@shared/ui/input/input';
 import { Combobox } from '@shared/ui/combobox/combobox';
+
+/** The form's own shape: every field a string, blanks included. */
+interface AddressForm {
+  name: string;
+  phone: string;
+  line1: string;
+  line2: string;
+  landmark: string;
+  country: string;
+  state: string;
+  city: string;
+  postal_code: string;
+}
+
+const EMPTY_FORM: AddressForm = {
+  name: '',
+  phone: '',
+  line1: '',
+  line2: '',
+  landmark: '',
+  country: '',
+  state: '',
+  city: '',
+  postal_code: '',
+};
+
+/** CAIRA sends a blank optional field as `null`; the form edits it as `''`. */
+function toForm(a: AddressModel): AddressForm {
+  return {
+    name: a.name ?? '',
+    phone: a.phone ?? '',
+    line1: a.line1,
+    line2: a.line2 ?? '',
+    landmark: a.landmark ?? '',
+    country: a.country,
+    state: a.state,
+    city: a.city,
+    postal_code: a.postal_code,
+  };
+}
+
+/** Every field trimmed. A blank optional field goes as `""`, which CAIRA stores as `null`. */
+function toInput(f: AddressForm): AddressInput {
+  return {
+    name: f.name.trim(),
+    phone: f.phone.trim(),
+    line1: f.line1.trim(),
+    line2: f.line2.trim(),
+    landmark: f.landmark.trim(),
+    city: f.city.trim(),
+    state: f.state.trim(),
+    postal_code: f.postal_code.trim(),
+    country: f.country.trim(),
+  };
+}
 
 @Component({
   selector: 'app-billing',
@@ -40,62 +89,41 @@ export class Billing {
   readonly facade = inject(PaymentFacade);
   readonly notification = inject(NotificationService);
 
-  readonly billingAddress = computed(() => this.facade.billingAddress());
+  readonly addresses = this.facade.addresses;
   readonly selectedAddressId = this.facade.selectedAddressId;
 
-  // ponytail: was the signed-in user's name. Nothing to read it from, so the
-  // billing form opens blank instead of prefilled.
-  readonly userName = computed(() => '');
-
   readonly showForm = this.facade.isEditingAddress;
-  readonly editingAddressId = signal<number | null>(null);
+  readonly editingAddressId = signal<string | null>(null);
 
-  readonly initialFormState = linkedSignal<
-    { name: string } & Omit<BillingAddressPayload, 'zipcode'> & { zipcode: string }
-  >(() => {
-    // ponytail: name/email/phone were prefilled from the profile.
-    return {
-      name: '',
-      email_id: '',
-      phone_no: '',
-      address1: '',
-      locality: '',
-      landmark: '',
-      country: '',
-      state: '',
-      city: '',
-      zipcode: '',
-    };
-  });
+  readonly initialFormState = linkedSignal<AddressForm>(() => ({ ...EMPTY_FORM }));
 
-  readonly billingForm = form<
-    { name: string } & Omit<BillingAddressPayload, 'zipcode'> & { zipcode: string }
-  >(this.initialFormState, (s) => {
+  readonly billingForm = form<AddressForm>(this.initialFormState, (s) => {
     required(s.name, { message: 'Name is required' });
-    required(s.email_id, { message: 'Email is required' });
-    required(s.phone_no, { message: 'Phone Number is required' });
-    required(s.address1, { message: 'Address line 1 is required' });
+    required(s.phone, { message: 'Phone Number is required' });
+    required(s.line1, { message: 'Address line 1 is required' });
     required(s.country, { message: 'Country is required' });
     required(s.state, { message: 'State is required' });
     required(s.city, { message: 'City is required' });
-    required(s.zipcode, { message: 'Pin Code/Zip Code is required' });
+    required(s.postal_code, { message: 'Pin Code/Zip Code is required' });
 
-    minLength(s.zipcode, 4, { message: 'Pin Code/Zip Code must be 6 digits' });
-    maxLength(s.zipcode, 8, { message: 'Pin Code/Zip Code must be 8 digits' });
-
-    disabled(s.name, { when: () => !!this.initialFormState().name });
-    disabled(s.email_id, { when: () => !!this.initialFormState().email_id });
-    disabled(s.phone_no, { when: () => !!this.initialFormState().phone_no });
+    // CAIRA's own limits (A2), so a too-long value fails here rather than as a 400.
+    const L = ADDRESS_LIMITS;
+    maxLength(s.name, L.name, { message: `At most ${L.name} characters` });
+    maxLength(s.phone, L.phone, { message: `At most ${L.phone} characters` });
+    maxLength(s.line1, L.line, { message: `At most ${L.line} characters` });
+    maxLength(s.line2, L.line, { message: `At most ${L.line} characters` });
+    maxLength(s.landmark, L.line, { message: `At most ${L.line} characters` });
+    maxLength(s.city, L.city, { message: `At most ${L.city} characters` });
+    maxLength(s.state, L.state, { message: `At most ${L.state} characters` });
+    maxLength(s.country, L.country, { message: `At most ${L.country} characters` });
+    maxLength(s.postal_code, L.postalCode, {
+      message: `At most ${L.postalCode} characters`,
+    });
 
     // Cascading disabled fields
     disabled(s.state, { when: ({ valueOf }) => !valueOf(s.country) });
-
     disabled(s.city, {
-      when: ({ valueOf }) => {
-        const country = valueOf(s.country);
-        const state = valueOf(s.state);
-        return !country || !state;
-      },
+      when: ({ valueOf }) => !valueOf(s.country) || !valueOf(s.state),
     });
   });
 
@@ -110,6 +138,7 @@ export class Billing {
     this.locations.hasValue() ? this.locations.value() : [],
   );
 
+  // Option values are country, state and city NAMES: CAIRA stores the country as a name.
   readonly countryOptions = computed(() =>
     this.locationData().map((c) => ({ label: c.name, value: c.name })),
   );
@@ -123,50 +152,32 @@ export class Billing {
   );
 
   readonly stateOptions = computed(() => {
-    const countryIso2 = this.initialFormState().country;
-    if (!countryIso2) return [];
-    const country = this.locationData().find((c) => c.name === countryIso2);
+    const countryName = this.initialFormState().country;
+    if (!countryName) return [];
+    const country = this.locationData().find((c) => c.name === countryName);
     return country?.states?.map((s) => ({ label: s.name, value: s.name })) || [];
   });
 
   readonly cityOptions = computed(() => {
-    const countryIso2 = this.initialFormState().country;
-    const stateCode = this.initialFormState().state;
-    if (!countryIso2 || !stateCode) return [];
+    const countryName = this.initialFormState().country;
+    const stateName = this.initialFormState().state;
+    if (!countryName || !stateName) return [];
 
-    const country = this.locationData().find((c) => c.name === countryIso2);
-    const state = country?.states?.find((s) => s.name === stateCode);
+    const country = this.locationData().find((c) => c.name === countryName);
+    const state = country?.states?.find((s) => s.name === stateName);
     return state?.cities?.map((c) => ({ label: c.name, value: c.name })) || [];
   });
 
   constructor() {
-    // Billing addresses used to be fetched inside `paymentGuard` — that was a
-    // side-effect inside a route guard (anti-pattern). Loading the data is now
-    // the page's responsibility; the guard only verifies cart preconditions.
-    this.facade.loadBillingAddress();
-
-    effect(() => {
-      const currentCountry = this.initialFormState().country;
-      if (currentCountry) {
-        untracked(() => {
-          // You do untracked mutations if really necessary,
-          // though typically user selection just clears visually if options mismatch.
-        });
-      }
-    });
-
-    effect(() => {
-      // Touch `initialFormState().state` so the effect stays subscribed —
-      // downstream `stateOptions` / `cityOptions` rely on the dependency.
-      void this.initialFormState().state;
-    });
+    // Loading the data is the page's job; the guard only checks cart preconditions.
+    this.facade.loadAddresses();
   }
 
-  selectAddress(address: UserAddress): void {
+  selectAddress(address: AddressModel): void {
     this.selectedAddressId.set(address.id);
   }
 
-  onEditAddress(address: UserAddress): void {
+  onEditAddress(address: AddressModel): void {
     if (this.showForm()) {
       this.notification.info(
         'Action Blocked',
@@ -175,22 +186,11 @@ export class Billing {
       return;
     }
     this.editingAddressId.set(address.id);
-    this.initialFormState.set({
-      name: this.userName(),
-      email_id: address.email_id,
-      phone_no: address.phone_no,
-      address1: address.address1,
-      locality: address.locality,
-      landmark: address.landmark,
-      country: address.country,
-      state: address.state,
-      city: address.city,
-      zipcode: String(address.zipcode),
-    });
+    this.initialFormState.set(toForm(address));
     this.showForm.set(true);
   }
 
-  onDeleteAddress(address: UserAddress): void {
+  onDeleteAddress(address: AddressModel): void {
     if (this.showForm()) {
       this.notification.info(
         'Action Blocked',
@@ -204,44 +204,19 @@ export class Billing {
   cancelEditing(): void {
     this.showForm.set(false);
     this.editingAddressId.set(null);
-    this.initialFormState.set({
-      name: '',
-      email_id: '',
-      phone_no: '',
-      address1: '',
-      locality: '',
-      landmark: '',
-      country: '',
-      state: '',
-      city: '',
-      zipcode: '',
-    });
+    this.initialFormState.set({ ...EMPTY_FORM });
   }
 
+  /** The form closes only once the server accepted it, so a failed save keeps what was typed. */
   save() {
     if (this.billingForm().invalid()) return;
 
-    const formValue = this.billingForm().value();
-    const payload: BillingAddressPayload = {
-      phone_no: formValue.phone_no,
-      email_id: formValue.email_id,
-      address1: formValue.address1,
-      locality: formValue.locality,
-      landmark: formValue.landmark,
-      country: formValue.country,
-      state: formValue.state,
-      city: formValue.city,
-      zipcode: Number(formValue.zipcode),
-    };
-
+    const input = toInput(this.billingForm().value());
     const editingId = this.editingAddressId();
     if (editingId) {
-      this.facade.updateBillingAddress(editingId, payload);
+      this.facade.updateAddress(editingId, input, () => this.cancelEditing());
     } else {
-      this.facade.saveBillingAddress(payload);
+      this.facade.saveAddress(input, () => this.cancelEditing());
     }
-
-    // Clear form and reset state
-    this.cancelEditing();
   }
 }

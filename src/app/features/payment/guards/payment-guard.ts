@@ -4,7 +4,6 @@ import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRouteSnapshot, CanActivateFn, Router, UrlTree } from '@angular/router';
 import { filter, map, take } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { CartStore } from '@core/services/cart/cart-store';
 import { NotificationService } from '@core/services/notification/notification';
@@ -32,7 +31,6 @@ export const paymentGuard: CanActivateFn = (
   if (!isPlatformBrowser(inject(PLATFORM_ID))) return true;
 
   const cart = inject(CartStore);
-  const facade = inject(PaymentFacade);
   const router = inject(Router);
   const notification = inject(NotificationService);
   const utils = inject(Utils);
@@ -47,7 +45,7 @@ export const paymentGuard: CanActivateFn = (
   if (!inject(AuthSession).isAuthenticated()) return cartTree;
 
   cart.load();
-  const check = (): boolean | UrlTree => evaluate(route, cart, facade, router, notification, utils);
+  const check = (): boolean | UrlTree => evaluate(route, cart, router, notification, utils);
   const settled = (s: string) => s === 'resolved' || s === 'local' || s === 'error';
 
   if (settled(cart.status())) return check();
@@ -57,7 +55,6 @@ export const paymentGuard: CanActivateFn = (
 function evaluate(
   route: ActivatedRouteSnapshot,
   cart: CartStore,
-  facade: PaymentFacade,
   router: Router,
   notification: NotificationService,
   utils: Utils,
@@ -70,9 +67,8 @@ function evaluate(
     return router.createUrlTree([...basePath, 'cart']);
   }
 
-  // ponytail: review still checks the legacy address selection; PR4 of
-  // prompts/commerce-api-rebind.md moves it to the cart's `billing_address_id`.
-  if (pathType === 'review' && !facade.selectedAddressId()) {
+  // Review needs the billing address on the cart itself: checkout copies it from there.
+  if (pathType === 'review' && !cart.cart()?.billing_address_id) {
     notification.error('Action Required', 'Please select a billing address to proceed.');
     return router.createUrlTree([...basePath, 'billing']);
   }

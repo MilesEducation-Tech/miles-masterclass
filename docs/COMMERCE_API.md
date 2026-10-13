@@ -10,11 +10,13 @@ from those sources. The plan is `prompts/commerce-api-rebind.md`.
   `capture-commerce.sh`.
 - **Sequence:** cart → add the US plan → coupon → checkout → order → remove the line.
 - **Not captured:**
-  - C5 (attach address) and A2–A5 (address writes);
   - a `free_order`;
   - a paid order and the Stripe return.
 
   None of these can be reached until the backend issues below are fixed.
+
+**Address capture, 2026-10-13** (scratchpad script `capture-addresses.sh`): A1–A5 and C5. See "Addresses"
+below.
 
 ## Confirmed
 
@@ -63,3 +65,27 @@ from those sources. The plan is `prompts/commerce-api-rebind.md`.
 - **A C4 response with `status: "cancelled"` means the cart is gone.** Show the empty cart; the next C1
   creates a fresh one.
 - **Never show `currency` or totals for a cart with no lines.**
+
+## Addresses
+
+Every captured address passes `parseAddresses` and carries the keys `Address` types
+(`features/payment/models/commerce.model.ts`). The API also sends `label` and `updated_at`, which the app
+doesn't read.
+
+| Call                                     | Status | Observed                                                                                                       |
+| ---------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------- |
+| A2 `POST commerce/addresses/`            | 201    | The address, `is_default: false`. A `postal_code` of `"07301"` keeps its leading zero.                         |
+| A2 with `""` for `line2`/`landmark`      | 201    | **Accepted; stored as `null`.** Sending `""` is how an edit clears an optional field.                          |
+| A2 missing `line1`/`state`/`postal_code` | 400    | `invalid_query`, with `errors: [{field, message: "Field required"}]` per field.                                |
+| A1 `GET commerce/addresses/`             | 200    | `{status, count, results}`.                                                                                    |
+| A4 `PATCH commerce/address/{id}/`        | 200    | The updated address, "Saved successfully.".                                                                    |
+| A4 with `{}`                             | 400    | "No fields to update." No `reason`.                                                                            |
+| C5 `PATCH commerce/cart/` (billing only) | 200    | The whole cart, with `billing_address_id` set. `shipping_address_id` stays `null`. Works on an empty cart too. |
+| A5 `DELETE commerce/address/{id}/`       | 204    | Empty body. **The cart's `billing_address_id` is cleared server-side.**                                        |
+
+**What the client does about it:**
+
+- **Blank optional fields go as `""`.**
+- **Deleting the cart's address** clears `billing_address_id` from the local cart, as the server does.
+- **Proceed on billing always re-attaches the selected address**, so a stale attachment can't reach
+  checkout.

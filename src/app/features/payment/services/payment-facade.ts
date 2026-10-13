@@ -2,19 +2,22 @@ import { inject, Service, signal, computed, effect, linkedSignal, Injector } fro
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import { Observable, catchError, map, tap, throwError } from 'rxjs';
 import { RouteResponse } from '@core/models/http.model';
-import {
-  PAYMENT_ROUTES,
-  BillingAddressPayload,
-  UserAddress,
-  OrderByIdResponseData,
-} from '@core/models/payment.model';
+import { PAYMENT_ROUTES, OrderByIdResponseData } from '@core/models/payment.model';
 import { NotificationService } from '@core/services/notification/notification';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { Cart } from '@core/models/commerce.model';
 import { CartStore } from '@core/services/cart/cart-store';
 import { CountryContext } from '@core/services/country-context/country-context';
-import { COMMERCE_ROUTES, Plan, parsePlans } from '@features/payment/models/commerce.model';
+import {
+  Address,
+  AddressInput,
+  COMMERCE_ROUTES,
+  Plan,
+  parseAddresses,
+  parsePlans,
+} from '@features/payment/models/commerce.model';
+import { AuthSession } from '@core/services/auth-session/auth-session';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 // Dialog components are loaded lazily (dynamic import in the open* methods below)
 // so they — and their `@angular/forms` dependency — stay out of the initial
@@ -23,8 +26,6 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 // import-only (erased at build time); the runtime class comes from `import()`.
 import { Analytics } from '@core/services/analytics/analytics';
 
-type ListAddressResponse = RouteResponse<typeof PAYMENT_ROUTES.listAddress>;
-type AddAddressResponse = RouteResponse<typeof PAYMENT_ROUTES.addAddress>;
 type CheckoutResponse = RouteResponse<typeof PAYMENT_ROUTES.proceedToPayment>;
 type OrderByIdResponse = RouteResponse<typeof PAYMENT_ROUTES.getOrderById>;
 type OrdersResponse = RouteResponse<typeof PAYMENT_ROUTES.getOrders>;
@@ -68,6 +69,7 @@ export class PaymentFacade {
 
   /** The commerce cart. `CartStore` (core) owns it because the footer badge reads it too. */
   private readonly cart = inject(CartStore);
+  private readonly auth = inject(AuthSession);
   /**
    * Tells the learner once when a cart read found their stored coupon no longer valid
    * (it expired or stopped qualifying). The cart that comes back already has it removed.
@@ -132,36 +134,47 @@ export class PaymentFacade {
     () => this.opError() ?? (this.orderResource.error() ? 'Failed to load order details' : null),
   );
   /**
-   * Billing addresses. OPT-IN like the orders read: the billing page calls
-   * `loadBillingAddress()`, so the guard only ever sees addresses once that page asked.
+   * The learner's addresses (A1). OPT-IN like the orders read: the billing and review
+   * pages call `loadAddresses()`. Gated on the boolean `isAuthenticated()`.
    */
   private readonly addressesWanted = signal(false);
-  private readonly addressResource = httpResource<ListAddressResponse>(() =>
-    this.addressesWanted() ? apiUrl(PAYMENT_ROUTES.listAddress.path) : undefined,
+  private readonly addressesResource = httpResource(
+    () =>
+      this.addressesWanted() && this.auth.isAuthenticated()
+        ? apiUrl(COMMERCE_ROUTES.addresses.path)
+        : undefined,
+    { parse: parseAddresses },
   );
   /**
    * `linkedSignal`, not `computed`: saving, editing and deleting an address patch this
    * list in place with the server's answer; a reload replaces it. Guarded, since
    * `value()` throws on an errored resource.
    */
-  readonly billingAddress = linkedSignal<UserAddress[]>(() =>
-    this.addressResource.hasValue() ? (this.addressResource.value()?.data ?? []) : [],
+  readonly addresses = linkedSignal<Address[]>(() =>
+    this.addressesResource.hasValue() ? this.addressesResource.value() : [],
   );
   private readonly addressErrorLog = effect(() => {
-    const err = this.addressResource.error();
-    if (err) this.logger.error('Failed to load billing address', err);
+    const err = this.addressesResource.error();
+    if (err) this.logger.error('Failed to load addresses', err);
   });
   /**
-   * User's selected address, linked to `billingAddress`: the selection is kept
-   * while that address is still in the list, otherwise it falls back to the
-   * first address (or null when the list is empty).
+   * The address picked on the billing page. It keeps the learner's pick while that
+   * address exists, otherwise starts on the one already on the cart, then the default,
+   * then the first. It reaches the cart only on Proceed (`attachBillingAddress`).
    */
-  selectedAddressId = linkedSignal<UserAddress[], number | null>({
-    source: this.billingAddress,
-    computation: (addresses, previous) => {
-      const prev = previous?.value ?? null;
-      if (prev != null && addresses.some((a) => a.id === prev)) return prev;
-      return addresses[0]?.id ?? null;
+  readonly selectedAddressId = linkedSignal<
+    { list: Address[]; attached: string | null },
+    string | null
+  >({
+    source: () => ({
+      list: this.addresses(),
+      attached: this.cart.cart()?.billing_address_id ?? null,
+    }),
+    computation: ({ list, attached }, previous) => {
+      const has = (id: string | null | undefined) => !!id && list.some((a) => a.id === id);
+      if (previous && has(previous.value)) return previous.value;
+      if (has(attached)) return attached;
+      return (list.find((a) => a.is_default) ?? list[0])?.id ?? null;
     },
   });
   isEditingAddress = signal<boolean>(false);
@@ -257,55 +270,87 @@ export class PaymentFacade {
     return totalBase - totalSelling;
   });
 
-  loadBillingAddress() {
-    if (this.addressesWanted()) this.addressResource.reload();
+  /** The first call opts the addresses in; later calls re-read them. */
+  loadAddresses(): void {
+    if (this.addressesWanted()) this.addressesResource.reload();
     else this.addressesWanted.set(true);
   }
 
-  saveBillingAddress(payload: BillingAddressPayload) {
-    this.http.post<AddAddressResponse>(PAYMENT_ROUTES.addAddress.path, payload).subscribe({
-      next: (res) => {
-        this.notification.success('Success', 'Address saved successfully');
-        const currentAddresses = this.billingAddress() || [];
-        if (res?.data) {
-          this.billingAddress.set([...currentAddresses, res.data]);
-        }
+  /** A2. Selects the new address, then `onDone` (the form closes only on success). */
+  saveAddress(input: AddressInput, onDone: () => void): void {
+    this.http.call(COMMERCE_ROUTES.createAddress, input).subscribe({
+      next: ({ data }) => {
+        this.addresses.update((list) => [...list, data]);
+        this.selectedAddressId.set(data.id);
+        this.notification.success('Address saved', 'Your billing address was added.');
+        onDone();
       },
       error: (err) => {
-        this.logger.error('Failed to save address', err);
+        this.logger.error('Failed to save the address', err);
+        this.notification.error('Could not save the address', commerceErrorOf(err).message);
       },
     });
   }
 
-  updateBillingAddress(id: number, payload: BillingAddressPayload) {
-    const path = PAYMENT_ROUTES.updateAddress.path.replace(':id', String(id));
-    this.http.put<RouteResponse<typeof PAYMENT_ROUTES.updateAddress>>(path, payload).subscribe({
-      next: (res) => {
-        this.notification.success('Success', 'Address updated successfully');
-        if (res?.data) {
-          this.billingAddress.update((addresses) =>
-            addresses.map((addr) => (addr.id === id ? res.data : addr)),
-          );
-        }
+  /** A4 (partial update), then `onDone`. */
+  updateAddress(id: string, input: AddressInput, onDone: () => void): void {
+    const route = COMMERCE_ROUTES.updateAddress;
+    this.http.call({ ...route, path: route.path.replace(':address_id', id) }, input).subscribe({
+      next: ({ data }) => {
+        this.addresses.update((list) => list.map((a) => (a.id === id ? data : a)));
+        this.notification.success('Address updated', 'Your billing address was updated.');
+        onDone();
       },
       error: (err) => {
-        this.logger.error('Failed to update address', err);
+        this.logger.error('Failed to update the address', err);
+        this.notification.error('Could not update the address', commerceErrorOf(err).message);
       },
     });
   }
 
-  deleteAddress(id: number) {
-    const path = PAYMENT_ROUTES.deleteAddress.path.replace(':id', String(id));
-    this.http.delete(path).subscribe({
+  /** A5. An address any order uses can't be deleted (409); the learner sees why. */
+  deleteAddress(id: string): void {
+    const route = COMMERCE_ROUTES.deleteAddress;
+    this.http.call({ ...route, path: route.path.replace(':address_id', id) }).subscribe({
       next: () => {
-        // selectedAddressId is linked to billingAddress and auto-clears here.
-        this.billingAddress.update((addresses) => addresses.filter((a) => a.id !== id));
-        this.notification.success('Success', 'Address deleted successfully');
+        // `selectedAddressId` is linked to the list and moves off a deleted address by itself.
+        this.addresses.update((list) => list.filter((a) => a.id !== id));
+        // CAIRA clears the address from any cart that used it; mirror that, or the review
+        // guard would pass on an address the server no longer has.
+        const cart = this.cart.cart();
+        if (cart?.billing_address_id === id) this.cart.set({ ...cart, billing_address_id: null });
+        this.notification.success('Address deleted', 'The address was removed.');
       },
       error: (err) => {
-        this.logger.error('Failed to delete address', err);
+        this.logger.error('Failed to delete the address', err);
+        this.notification.error('Could not delete the address', commerceErrorOf(err).message);
       },
     });
+  }
+
+  /**
+   * C5: puts the selected address on the cart as its billing address, then `onAttached`
+   * (the billing page moves on to review). Checkout copies it onto the order.
+   */
+  attachBillingAddress(onAttached: () => void): void {
+    const cartId = this.cart.cart()?.id;
+    const addressId = this.selectedAddressId();
+    if (!cartId || !addressId) {
+      this.notification.error('Billing address needed', 'Select or add a billing address.');
+      return;
+    }
+    this.http
+      .call(COMMERCE_ROUTES.attachAddress, { cart_id: cartId, billing_address_id: addressId })
+      .subscribe({
+        next: ({ data }) => {
+          this.cart.set(data);
+          onAttached();
+        },
+        error: (err) => {
+          this.logger.error('Failed to attach the billing address', err);
+          this.notification.error('Could not use this address', commerceErrorOf(err).message);
+        },
+      });
   }
 
   /**
