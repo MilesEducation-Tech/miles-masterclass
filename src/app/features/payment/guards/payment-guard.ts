@@ -5,6 +5,8 @@ import { ActivatedRouteSnapshot, CanActivateFn, Router, UrlTree } from '@angular
 import { filter, map, take } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
+import { AuthSession } from '@core/services/auth-session/auth-session';
+import { CartStore } from '@core/services/cart/cart-store';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
 
@@ -12,19 +14,16 @@ import { Utils } from '@shared/services/utils';
  * Cart-state guard for `/payment/billing` and `/payment/review`. Reads the
  * required path via `route.data['pathType']` (set on every leaf route).
  *
- * The cart is known only from this session's own cart mutations (there is no
- * cart read — see `CartStore`), so on a fresh load the cart is empty and both
- * pages send the user back to `/cart`.
- *
  * Implementation notes:
- * - Uses `toObservable(facade.loading)` rather than `effect + new Promise`. The
- *   router subscribes to the returned observable; if the user navigates away
- *   mid-load the router unsubscribes — no leaked effects, no orphaned promises.
- * - Stays pure: no HTTP fetches kicked off here. The Billing page owns its own
- *   `loadBillingAddress()` call from its constructor.
+ * - Guards run before the payment shell is created, so this asks `CartStore` for
+ *   the cart itself. `load()` is idempotent, so the shell's own call adds no
+ *   second request.
+ * - Waits on the cart read's `status`, not on `isLoading()`: an idle resource is
+ *   not loading either, and the router would read a cart that was never fetched.
+ *   `local` is a cart a write just stored.
+ * - Signed out, the read never runs, so the answer is immediate: back to the cart.
  * - SSR returns `true` because both protected pages are configured as
- *   `RenderMode.Client` in `app.routes.server.ts`; the server skeleton is
- *   harmless, the real check runs in the browser.
+ *   `RenderMode.Client` in `app.routes.server.ts`; the real check runs in the browser.
  */
 export const paymentGuard: CanActivateFn = (
   route,
@@ -32,30 +31,32 @@ export const paymentGuard: CanActivateFn = (
 ): Observable<boolean | UrlTree> | boolean | UrlTree => {
   if (!isPlatformBrowser(inject(PLATFORM_ID))) return true;
 
+  const cart = inject(CartStore);
   const facade = inject(PaymentFacade);
   const router = inject(Router);
   const notification = inject(NotificationService);
   const utils = inject(Utils);
+  const cartTree = router.createUrlTree([
+    '/',
+    utils.country(),
+    utils.profession(),
+    'payment',
+    'cart',
+  ]);
 
-  const checkCartState = (): boolean | UrlTree =>
-    evaluate(route, facade, router, notification, utils);
+  if (!inject(AuthSession).isAuthenticated()) return cartTree;
 
-  // Already loaded — answer synchronously, no observable subscription needed.
-  if (!facade.loading()) {
-    return checkCartState();
-  }
+  cart.load();
+  const check = (): boolean | UrlTree => evaluate(route, cart, facade, router, notification, utils);
+  const settled = (s: string) => s === 'resolved' || s === 'local' || s === 'error';
 
-  // Wait for the first non-loading emission, then evaluate. `take(1)` completes
-  // the stream so the router doesn't hold an open subscription.
-  return toObservable(facade.loading).pipe(
-    filter((loading) => !loading),
-    take(1),
-    map(() => checkCartState()),
-  );
+  if (settled(cart.status())) return check();
+  return toObservable(cart.status).pipe(filter(settled), take(1), map(check));
 };
 
 function evaluate(
   route: ActivatedRouteSnapshot,
+  cart: CartStore,
   facade: PaymentFacade,
   router: Router,
   notification: NotificationService,
@@ -64,43 +65,17 @@ function evaluate(
   const pathType = (route.data['pathType'] as string | undefined) ?? '';
   const basePath = ['/', utils.country(), utils.profession(), 'payment'];
 
-  // A checkout or order read failed — send the user back to /cart.
-  if (facade.error()) {
+  if (cart.lineCount() === 0) {
+    notification.error('Empty Cart', 'Add a plan to your cart to continue.');
     return router.createUrlTree([...basePath, 'cart']);
   }
 
-  if (pathType === 'billing') {
-    if (facade.cartState().isMixedCart) {
-      notification.info(
-        'Cart contains a subscription along with other courses',
-        'After purchasing a subscription, most courses will be accessible at no additional cost. Please remove either all courses or the subscription to proceed.',
-      );
-      return router.createUrlTree([...basePath, 'cart']);
-    }
-
-    if (!facade.hasCartItems()) {
-      notification.error('Empty Cart', 'Please add items to your cart to proceed to billing.');
-      return router.createUrlTree([...basePath, 'cart']);
-    }
-
-    return true;
+  // ponytail: review still checks the legacy address selection; PR4 of
+  // prompts/commerce-api-rebind.md moves it to the cart's `billing_address_id`.
+  if (pathType === 'review' && !facade.selectedAddressId()) {
+    notification.error('Action Required', 'Please select a billing address to proceed.');
+    return router.createUrlTree([...basePath, 'billing']);
   }
 
-  if (pathType === 'review') {
-    if (!facade.hasCartItems()) {
-      notification.error('Empty Cart', 'Please add items to your cart to proceed to review.');
-      return router.createUrlTree([...basePath, 'cart']);
-    }
-
-    if (!facade.selectedAddressId()) {
-      notification.error('Action Required', 'Please select a billing address to proceed.');
-      return router.createUrlTree([...basePath, 'billing']);
-    }
-
-    return true;
-  }
-
-  // Any other route this guard is attached to (defensive — `data.pathType`
-  // should always be one of the two cases above).
   return true;
 }

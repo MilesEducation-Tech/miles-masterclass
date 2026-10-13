@@ -1,12 +1,9 @@
 import { inject, Service, signal, computed, effect, linkedSignal, Injector } from '@angular/core';
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
-import { tap } from 'rxjs';
+import { Observable, catchError, map, tap, throwError } from 'rxjs';
 import { RouteResponse } from '@core/models/http.model';
 import {
-  CartDetails,
   PAYMENT_ROUTES,
-  CouponList,
-  CouponListResponse,
   BillingAddressPayload,
   UserAddress,
   OrderByIdResponseData,
@@ -14,6 +11,7 @@ import {
 import { NotificationService } from '@core/services/notification/notification';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
+import { Cart } from '@core/models/commerce.model';
 import { CartStore } from '@core/services/cart/cart-store';
 import { CountryContext } from '@core/services/country-context/country-context';
 import { COMMERCE_ROUTES, Plan, parsePlans } from '@features/payment/models/commerce.model';
@@ -23,11 +21,8 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 // bundle. This facade is eagerly instantiated via the root `Utils` service, so a
 // static import would drag every dialog into the initial chunk. Types are
 // import-only (erased at build time); the runtime class comes from `import()`.
-import type { CouponDialogData } from '@features/payment/dialogs/coupon-dialog/coupon-dialog';
 import { Analytics } from '@core/services/analytics/analytics';
 
-/** Every legacy cart mutation answers with the legacy cart, enveloped (gone in PR3). */
-type CartResponse = RouteResponse<typeof PAYMENT_ROUTES.removeBucketItem>;
 type ListAddressResponse = RouteResponse<typeof PAYMENT_ROUTES.listAddress>;
 type AddAddressResponse = RouteResponse<typeof PAYMENT_ROUTES.addAddress>;
 type CheckoutResponse = RouteResponse<typeof PAYMENT_ROUTES.proceedToPayment>;
@@ -42,7 +37,12 @@ type StripePortalResponse = RouteResponse<typeof PAYMENT_ROUTES.navigateToStripe
  * (`data.reason`, stable to branch on). Some refusals carry only a message.
  */
 function commerceErrorOf(err: unknown): { reason?: string; message: string } {
-  const body: unknown = err instanceof HttpErrorResponse ? err.error : null;
+  // Status 0 never reached the API (offline, CORS); its `error` is the browser's own
+  // TypeError, whose message ("Failed to fetch") is not for the learner.
+  if (!(err instanceof HttpErrorResponse) || err.status === 0) {
+    return { message: "We couldn't reach the server. Check your connection and try again." };
+  }
+  const body: unknown = err.error;
   const fields = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {};
   const data = fields['data'];
   const reason =
@@ -66,15 +66,18 @@ export class PaymentFacade {
   private readonly country = inject(CountryContext).current;
   private readonly analytics = inject(Analytics);
 
-  /**
-   * Cart state lives in `CartStore` (core) because the footer overlay (layout)
-   * and two offerings facades (feature) read it, and PROMPT.md §3 lets neither
-   * import this feature. These are aliases, not copies — same signal objects —
-   * so every existing call site here and in the payment pages is unchanged.
-   */
+  /** The commerce cart. `CartStore` (core) owns it because the footer badge reads it too. */
   private readonly cart = inject(CartStore);
-  readonly cartItemRemoved = this.cart.cartItemRemoved;
-  readonly cartData = this.cart.cartData;
+  /**
+   * Tells the learner once when a cart read found their stored coupon no longer valid
+   * (it expired or stopped qualifying). The cart that comes back already has it removed.
+   */
+  private readonly couponRemovedNotice = effect(() => {
+    const removed = this.cart.cart()?.coupon_removed;
+    if (removed) {
+      this.notification.info('Coupon removed', `Your code ${removed.code} no longer applies.`);
+    }
+  });
 
   /** The order the invoice page shows; `null` idles the read. Set through `loadOrderById()`. */
   private readonly orderId = signal<string | null>(null);
@@ -202,11 +205,6 @@ export class PaymentFacade {
     if (err) this.logger.error('Failed to load subscription plans', err);
   });
 
-  hasCartItems = computed(() => {
-    const data = this.cartData();
-    return data ? data.cartitem_data.length > 0 : false;
-  });
-
   // Invoice-related computed signals
   readonly invoiceItems = computed(() => this.orderData()?.order_items ?? []);
   readonly invoiceItemCount = computed(() => this.invoiceItems().length);
@@ -259,43 +257,7 @@ export class PaymentFacade {
     return totalBase - totalSelling;
   });
 
-  cartState = computed(() => {
-    const data = this.cartData();
-    if (!data) return { hasCourses: false, hasSubscription: false, isMixedCart: false };
-
-    let hasCourses = false;
-    let hasSubscription = false;
-
-    for (const item of data.cartitem_data) {
-      if (item.item_details.delivery_mode === 'subscription') {
-        hasSubscription = true;
-      } else {
-        hasCourses = true;
-      }
-
-      if (hasCourses && hasSubscription) break; // Optimization: Stop checking if both are true
-    }
-
-    return {
-      hasCourses,
-      hasSubscription,
-      isMixedCart: hasCourses && hasSubscription,
-    };
-  });
-
-  /** Single write-point for the cart signal; the signal itself is `CartStore`'s. */
-  private setCartData(cart: CartDetails | null): void {
-    this.cart.setCartData(cart);
-  }
-
   loadBillingAddress() {
-    if (this.cartState().isMixedCart) {
-      this.notification.info(
-        'Cart contains a subscription along with other courses.',
-        'After purchasing a subscription, most courses will be accessible at no additional cost. Please remove either all courses or the subscription to proceed.',
-      );
-      return;
-    }
     if (this.addressesWanted()) this.addressResource.reload();
     else this.addressesWanted.set(true);
   }
@@ -346,99 +308,72 @@ export class PaymentFacade {
     });
   }
 
-  removeCoursesFromCart() {
-    // Placeholder for API call to remove all course items
-  }
-
-  removeCartItem(cartitemId: number) {
-    const removedItem = this.cartData()?.cartitem_data?.find((item) => item.id === cartitemId);
-
-    this.http
-      .post<CartResponse>(PAYMENT_ROUTES.removeBucketItem.path, { cartitem_id: cartitemId })
-      .subscribe({
-        next: (res) => {
-          this.setCartData(res?.data ?? null);
-          this.notification.success('Success', 'Item removed from cart');
-
-          if (removedItem) {
-            this.cartItemRemoved.set(removedItem.item_details.id);
-          }
-        },
-        error: (err) => {
-          this.logger.error('Failed to remove cart item', err);
-        },
-      });
-  }
-
-  getCoupons() {
-    return this.http.get<CouponListResponse>(PAYMENT_ROUTES.listCoupon.path);
-  }
-
-  /** Cached coupon list backing the cart's inline "first coupon" strip. */
-  readonly coupons = signal<CouponList[]>([]);
-  private couponsLoaded = false;
-
-  loadCoupons(): void {
-    if (this.couponsLoaded) return;
-    this.couponsLoaded = true;
-    this.getCoupons().subscribe({
-      next: (res) => this.coupons.set(res.data ?? []),
-      error: () => this.coupons.set([]),
+  /**
+   * Removes a cart line (C4). The answer is the whole cart; removing the last line
+   * answers it `cancelled`, which `CartStore.set` drops so the next read starts fresh.
+   */
+  removeLine(lineId: string): void {
+    const route = COMMERCE_ROUTES.removeLine;
+    this.http.call({ ...route, path: route.path.replace(':line_id', lineId) }).subscribe({
+      next: ({ data }) => {
+        this.cart.set(data);
+        this.notification.success('Removed', 'The plan was removed from your cart.');
+      },
+      error: (err) => {
+        this.logger.error('Failed to remove the cart line', err);
+        this.notification.error('Could not remove', commerceErrorOf(err).message);
+      },
     });
   }
 
-  applyCoupon(couponCode: string) {
+  /**
+   * Applies a coupon code to the cart (D1); the server works out the discount. Emits the
+   * updated cart, or errors with the API's `message`, which the caller shows under its field.
+   */
+  applyCoupon(code: string): Observable<Cart> {
+    const cartId = this.cart.cart()?.id;
     return this.http
-      .post<CartResponse>(PAYMENT_ROUTES.applyCoupon.path, { coupon_code: couponCode })
+      .call(COMMERCE_ROUTES.applyCoupon, { code, ...(cartId ? { cart_id: cartId } : {}) })
       .pipe(
-        tap({
-          next: (res) => {
-            this.setCartData(res?.data ?? null);
-            this.notification.success(
-              'Coupon Applied',
-              'The coupon has been applied to your cart.',
-            );
-          },
-          error: (err) => {
-            this.logger.error('Failed to apply coupon', err);
-          },
+        map(({ data }) => data),
+        tap((cart) => {
+          this.cart.set(cart);
+          this.notification.success(
+            'Coupon applied',
+            `${cart.coupon?.code ?? code} is on your cart.`,
+          );
+        }),
+        catchError((err: unknown) => {
+          this.logger.error('Failed to apply the coupon', err);
+          return throwError(() => commerceErrorOf(err).message);
         }),
       );
   }
 
-  removeCoupon(couponCode: string) {
+  /** Removes the cart's coupon (D2). Removing when none is applied is still a 200. */
+  removeCoupon(): void {
+    const cartId = this.cart.cart()?.id;
     this.http
-      .post<CartResponse>(PAYMENT_ROUTES.removeCoupon.path, { coupon_code: couponCode })
+      .call(COMMERCE_ROUTES.removeCoupon, undefined, cartId ? { params: { cart_id: cartId } } : {})
       .subscribe({
-        next: (res) => {
-          this.setCartData(res?.data ?? null);
-          this.notification.success('Success', 'Coupon removed successfully');
+        next: ({ data }) => {
+          this.cart.set(data);
+          this.notification.success('Coupon removed', 'The coupon was removed from your cart.');
         },
         error: (err) => {
-          this.logger.error('Failed to remove coupon', err);
+          this.logger.error('Failed to remove the coupon', err);
+          this.notification.error('Could not remove the coupon', commerceErrorOf(err).message);
         },
       });
   }
 
   async openCouponDialog(): Promise<void> {
-    const cartData = this.cartData();
-    if (!cartData) return;
-
     const { CouponDialog } = await import('@features/payment/dialogs/coupon-dialog/coupon-dialog');
-    const dialogRef = this.dialogs.open<CouponDialogData, CartDetails | undefined>(CouponDialog, {
-      data: { cartData },
-      injector: this.injector,
-    });
-
-    dialogRef.afterClosed.subscribe((updatedCart) => {
-      if (updatedCart) {
-        this.setCartData(updatedCart);
-      }
-    });
+    this.dialogs.open(CouponDialog, { injector: this.injector });
   }
 
   proceedToPayment(isTrial = false) {
-    const cartId = this.cartData()?.cart_id;
+    const cartId = this.cart.cart()?.id;
     const addressId = this.selectedAddressId();
 
     if (!cartId || !addressId) {
@@ -516,22 +451,22 @@ export class PaymentFacade {
   }
 
   /**
-   * Pricing + items snapshot of the current cart, shared by the `cart_view`
-   * and `begin_checkout` events. `base_price`/`selling_price` are summed across
-   * cart items; `product_discount` is the cart-level discount total.
+   * Pricing + items snapshot of the cart, shared by the `cart_view` and `begin_checkout`
+   * events. GA needs numbers, so the server's figures are converted here and only here;
+   * nothing is summed.
    */
   private cartAnalyticsParams(pageName?: string): Record<string, unknown> {
-    const cart = this.cartData();
-    const items = cart?.cartitem_data ?? [];
+    const cart = this.cart.cart();
     return {
       ...(pageName ? { page_name: pageName } : {}),
-      base_price: items.reduce((sum, i) => sum + (i.base_price ?? 0), 0),
-      selling_price: items.reduce((sum, i) => sum + (i.selling_price ?? 0), 0),
-      product_discount: cart?.total_discount_amount ?? 0,
-      items: items.map((i) => ({
-        course_id: String(i.id),
-        course_type: i.item_type ?? '',
-        price: i.selling_price,
+      currency: cart?.currency,
+      base_price: Number(cart?.money.price_before_discount ?? 0),
+      selling_price: Number(cart?.money.checkout_amount ?? 0),
+      product_discount: Number(cart?.money.discount_amount ?? 0),
+      items: (cart?.lines ?? []).map((line) => ({
+        course_id: line.product_id,
+        course_type: 'subscription',
+        price: Number(line.money.final_amount),
       })),
     };
   }

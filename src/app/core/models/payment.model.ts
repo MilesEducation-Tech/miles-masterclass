@@ -26,22 +26,6 @@ export interface CartSteps {
 }
 
 export const PAYMENT_ROUTES = {
-  removeBucketItem: {
-    path: 'user/cart/remove_item/',
-    method: 'POST',
-  } as RouteConfig<void, CommonResponse<CartDetails>, {}, { cartitem_id: number }>,
-  listCoupon: {
-    path: 'promotion/coupons/',
-    method: 'GET',
-  } as RouteConfig<void, CouponListResponse>,
-  applyCoupon: {
-    path: 'promotion/coupons/apply_coupon/',
-    method: 'POST',
-  } as RouteConfig<void, CommonResponse<CartDetails>, {}, { coupon_code: string }>,
-  removeCoupon: {
-    path: 'promotion/coupons/remove_coupon/',
-    method: 'POST',
-  } as RouteConfig<void, CommonResponse<CartDetails>, {}, { coupon_code: string }>,
   listAddress: {
     path: 'user/address/',
     method: 'GET',
@@ -135,49 +119,6 @@ export interface SelectedCountry {
   currency_symbol: string;
 }
 
-export interface CartInstructor {
-  id: number;
-  first_name: string;
-  last_name: string;
-  horizontal_thumbnail: string;
-}
-
-export interface BaseCartItemDetails {
-  id: number;
-  title: string;
-  description: string;
-  category_name: string;
-  cpe_credits: number;
-  date_of_completion: string;
-}
-
-export interface CartSubscriptionItemDetails extends BaseCartItemDetails {
-  delivery_mode: 'subscription';
-  free_trial_days: number;
-}
-
-export interface CartCourseItemDetails extends BaseCartItemDetails {
-  delivery_mode: 'masterclass' | 'podcast' | 'nano-learning' | 'webinar';
-  horizontal_thumbnail: string;
-  instructor_first_name: string;
-  instructor_last_name: string;
-  instructors: CartInstructor[];
-}
-
-export type CartItemDetails = CartSubscriptionItemDetails | CartCourseItemDetails;
-
-export interface CartItemData {
-  id: number;
-  cart_id: number;
-  item_type: string | null;
-  item_details: CartItemDetails;
-  base_price: number;
-  selling_price: number;
-  // Chosen billing cycle for this item (subscriptions only). When 'monthly' the
-  // UI shows the monthly figure (price ÷ 12) alongside the annual total.
-  pay_method?: 'monthly' | 'yearly';
-}
-
 export interface AppliedCoupon {
   id: number;
   coupon_name: string;
@@ -188,49 +129,6 @@ export interface AppliedCoupon {
   max_user_apply: number;
   description: string;
   applicable_country: string | null;
-}
-
-export interface CartDetails {
-  cart_id: number;
-  total_amount: number;
-  sub_amount: number;
-  tax_amount: number;
-  total_discount_amount: number;
-  cartitem_data: CartItemData[];
-  total_discount_percent: number;
-  applied_coupon: AppliedCoupon | null;
-  selected_country: SelectedCountry;
-  coupon_applicable: boolean | null;
-  applied_coupon_id: number | null;
-  is_old_subscriber: boolean;
-}
-
-export interface CouponList {
-  id: number;
-  coupon_name: string;
-  coupon_code: string;
-  coupon_applicable: boolean;
-  discount: number;
-  discount_type: 'percent' | 'fixed'; // Assuming these are the possible values
-  description: string;
-  valid_from: string; // ISO date string
-  valid_to: string; // ISO date string
-  max_user_apply: number;
-  terms_and_conditions: string;
-  applicable_for: 'All' | string; // You can expand this based on possible values
-  coupon_category: 'all' | string; // You can expand this based on possible values
-  status: boolean;
-  applicable_country: string | null;
-  coupon_scope: 'specific' | 'all';
-}
-
-// If you want to type the entire API response
-export interface CouponListResponse {
-  success: boolean;
-  message: string | null;
-  status: number;
-  data: CouponList[];
-  safe: boolean;
 }
 
 export interface BillingAddressPayload {

@@ -19,14 +19,14 @@
 
     <!-- Cart Items -->
     <div class="flex-1 overflow-y-auto p-5 space-y-4">
-      @if (cartItems().length > 0) {
-        @for (item of cartItems(); track item.id) {
+      @if (lines().length > 0) {
+        @for (line of lines(); track line.id) {
           <div class="bg-card rounded-lg p-4 border border-border">
             <app-cart-item
-              [item]="item"
-              [currencyCode]="currencyCode()"
+              [item]="line"
+              [currencyCode]="cart()?.currency ?? ''"
               [config]="{ showThumbnail: true, showDelete: true, stacked: true }"
-              (removeItem)="removeItem($event)"
+              (removeItem)="removeLine($event)"
             />
           </div>
         }
@@ -38,41 +38,23 @@
     </div>
 
     <!-- Footer -->
-    @if (cartItems().length > 0) {
-      <div class="p-5 border-t border-border space-y-4">
-        @if (hasMonthly()) {
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-muted-foreground">Payable monthly</span>
-            <span class="text-lg font-bold text-white">
-              {{ monthlyAmount() | currency: currencyCode() : 'symbol' : '1.2-2'
-              }}<span class="text-sm font-normal text-muted-foreground">/mo*</span>
-            </span>
-          </div>
-          <div class="flex items-center justify-between -mt-2">
-            <span class="text-xs text-muted-foreground">Total · billed annually</span>
-            <span class="text-xs text-muted-foreground">
-              {{ totalAmount() | currency: currencyCode() : 'symbol' : '1.2-2' }}
-            </span>
-          </div>
-          <p class="text-xs text-muted-foreground -mt-2">
-            * Indicative amount (12-month split). Tenures 3 / 6 / 12 / 18 months and final EMI shown
-            at checkout. T&amp;C apply.
-          </p>
-        } @else {
+    @if (cart(); as cart) {
+      @if (cart.lines.length > 0) {
+        <div class="p-5 border-t border-border space-y-4">
           <div class="flex items-center justify-between">
             <span class="text-sm text-muted-foreground">Total</span>
             <span class="text-lg font-bold text-white">
-              {{ totalAmount() | currency: currencyCode() : 'symbol' : '1.2-2' }}
+              {{ cart.money.checkout_amount | currency: cart.currency : 'symbol' : '1.2-2' }}
             </span>
           </div>
-        }
-        <button
-          class="w-full py-3 rounded-lg text-white font-semibold text-sm cursor-pointer bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all"
-          (click)="proceedToCart()"
-        >
-          Proceed to Cart
-        </button>
-      </div>
+          <button
+            class="w-full py-3 rounded-lg text-white font-semibold text-sm cursor-pointer bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all"
+            (click)="proceedToCart()"
+          >
+            Proceed to Cart
+          </button>
+        </div>
+      }
     }
   </div>
 </app-dialog>

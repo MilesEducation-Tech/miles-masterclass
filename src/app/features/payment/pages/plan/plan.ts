@@ -7,7 +7,6 @@ import { PlanScrollingGallery } from '@shared/components/plan-scrolling-gallery/
 import { PlanComparisonTable } from '@features/payment/components/plan-comparison-table/plan-comparison-table';
 import { PlanSelectionCard } from '@features/payment/components/plan-selection-card/plan-selection-card';
 import { PromoOffer } from '@features/payment/components/promo-offer/promo-offer';
-import { PromoCoupons } from '@features/payment/components/promo-coupons/promo-coupons';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { AuthSession } from '@core/services/auth-session/auth-session';
@@ -25,7 +24,6 @@ import { SIGNUP_DIALOG_DATA } from '@features/payment/constants/payment';
     PlanComparisonTable,
     PlanSelectionCard,
     PromoOffer,
-    PromoCoupons,
     PageLoading,
     ErrorState,
   ],
