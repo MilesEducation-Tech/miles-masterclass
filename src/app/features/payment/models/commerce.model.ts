@@ -38,6 +38,53 @@ export interface Plan {
   features: PlanFeature[];
 }
 
+/**
+ * One of the learner's addresses. `country` is a country NAME (free text), not the market
+ * code. CAIRA sends a blank optional field as `null`.
+ */
+export interface Address {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  line1: string;
+  line2: string | null;
+  landmark: string | null;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  is_default: boolean;
+}
+
+/**
+ * The body of A2 (create) and A4 (edit). CAIRA requires `line1`, `city`, `state` and
+ * `postal_code`; the billing form also requires a name, phone and country. A blank optional
+ * field is sent as `""`: CAIRA stores it as `null`, which is how an edit clears it (checked
+ * on UAT 2026-10-13, `docs/COMMERCE_API.md`).
+ */
+export interface AddressInput {
+  name: string;
+  phone: string;
+  line1: string;
+  line2: string;
+  landmark: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+}
+
+/** Field limits from the CAIRA guide (A2); the billing form enforces them before sending. */
+export const ADDRESS_LIMITS = {
+  name: 120,
+  phone: 20,
+  line: 255,
+  city: 100,
+  state: 100,
+  country: 100,
+  postalCode: 20,
+} as const;
+
 /** An unpaginated CAIRA list. */
 export interface ListResult<T> {
   count: number;
@@ -67,6 +114,26 @@ function isPlan(v: unknown): v is Plan {
     typeof v['price']['price'] === 'string' &&
     Array.isArray(v['features'])
   );
+}
+
+function isAddress(v: unknown): v is Address {
+  return (
+    isObject(v) &&
+    typeof v['id'] === 'string' &&
+    typeof v['line1'] === 'string' &&
+    typeof v['city'] === 'string' &&
+    typeof v['state'] === 'string' &&
+    typeof v['postal_code'] === 'string'
+  );
+}
+
+/** `httpResource` `parse` for `commerce/addresses/` (default address first). */
+export function parseAddresses(body: unknown): Address[] {
+  const results = isObject(body) && isObject(body['data']) ? body['data']['results'] : undefined;
+  if (!Array.isArray(results) || !results.every(isAddress)) {
+    throw new Error('commerce/addresses/ response does not match the contract.');
+  }
+  return results;
 }
 
 /**
@@ -114,4 +181,28 @@ export const COMMERCE_ROUTES = {
     path: 'api/v1/commerce/cart/coupon/',
     method: 'DELETE',
   } as RouteConfig<void, CommonResponse<Cart>, Record<string, never>, { cart_id?: string }>,
+  /** Unpaginated, default address first. */
+  addresses: {
+    path: 'api/v1/commerce/addresses/',
+    method: 'GET',
+  } as RouteConfig<void, CommonResponse<ListResult<Address>>>,
+  createAddress: {
+    path: 'api/v1/commerce/addresses/',
+    method: 'POST',
+  } as RouteConfig<AddressInput, CommonResponse<Address>>,
+  /** Partial: only the fields sent change. Another learner's address is a 404. */
+  updateAddress: {
+    path: 'api/v1/commerce/address/:address_id/',
+    method: 'PATCH',
+  } as RouteConfig<Partial<AddressInput>, CommonResponse<Address>>,
+  /** 204, or 409 (with a showable `message`) when any order references the address. */
+  deleteAddress: {
+    path: 'api/v1/commerce/address/:address_id/',
+    method: 'DELETE',
+  } as RouteConfig<void, null>,
+  /** C5: attaches the billing address to the cart; checkout copies it onto the order. */
+  attachAddress: {
+    path: 'api/v1/commerce/cart/',
+    method: 'PATCH',
+  } as RouteConfig<{ cart_id: string; billing_address_id: string }, CommonResponse<Cart>>,
 } as const;

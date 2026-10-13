@@ -496,7 +496,19 @@ with PR2, and `status` with PR3's guard, for the same reason.
 - **Delete** `CartStore.cartData`, `PaymentFacade.cartState`, `hasCartItems`, `removeCoursesFromCart`,
   `getCoupons`, `loadCoupons`, `coupons`, and the legacy cart and coupon types.
 
-**PR4: `feat(payment): bind billing addresses to the commerce API`** (about 300 lines; D1-A only)
+**PR4: `feat(payment): bind billing addresses to the commerce API`** (implemented 2026-10-13: +335 / −263; contract checked on UAT)
+
+**What shipped differs from the bullets below in five places:**
+
+- **No `label` or `is_default` inputs.** The form keeps its fields minus email. The default address
+  pre-selects.
+- **Optional blanks go as `""`.** The address capture showed CAIRA stores `""` as `null`, so an edit can
+  clear `line2` or `landmark`. Deleting the cart's address also clears it from the local cart, as the
+  server does.
+- **Save and edit close the form only on success**, so a failed save keeps what was typed.
+- **Proceed on billing sends C5, then navigates.** The guard's review step checks `cart.billing_address_id`
+  and no longer needs `PaymentFacade`.
+- **Review loads the address list** and shows the cart's billing address by id.
 
 - **Calls:** A1, A2, A4 and A5, then C5 on "Continue". A5's 409 shows "This address is used by an order".
 - **Form fields:**

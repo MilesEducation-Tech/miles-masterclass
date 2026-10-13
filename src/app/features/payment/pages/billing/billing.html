@@ -1,9 +1,8 @@
 <p class="text-xl text-white font-semibold">Billing Address</p>
 <hr class="border-gray-800" />
-@for (address of billingAddress(); track address.id) {
+@for (address of addresses(); track address.id) {
   <app-address
     [address]="address"
-    [userName]="userName()"
     [selected]="selectedAddressId() === address.id"
     [actionsDisabled]="!!editingAddressId()"
     (selectedChange)="selectAddress($event)"
@@ -86,31 +85,24 @@
 
         <input app-input id="name" type="text" [formField]="billingForm.name" />
       </app-field>
-      <app-field [errors]="billingForm.email_id().errors()">
-        <label ngpLabel for="email">Email</label>
-
-        <input app-input id="email" type="email" [formField]="billingForm.email_id" />
-      </app-field>
-      <app-field [errors]="billingForm.phone_no().errors()">
+      <app-field [errors]="billingForm.phone().errors()">
         <label ngpLabel for="phone">Phone Number</label>
 
-        <input app-input id="phone" type="tel" [formField]="billingForm.phone_no" />
+        <input app-input id="phone" type="tel" [formField]="billingForm.phone" />
       </app-field>
 
-      <!-- Standard two-line postal layout. The payload has no `address2`
-           field, so line 2 maps onto `locality` — same meaning (street / area),
-           no backend change. Line 2 and landmark stay optional, which is why
-           only line 1 carries a `required` rule. -->
-      <app-field [errors]="billingForm.address1().errors()">
-        <label ngpLabel for="address1">Address line 1</label>
+      <!-- Standard two-line postal layout (CAIRA's line1 / line2). Line 2 and landmark
+           stay optional, which is why only line 1 carries a `required` rule. -->
+      <app-field [errors]="billingForm.line1().errors()">
+        <label ngpLabel for="line1">Address line 1</label>
         <p ngpDescription>Flat / house no, floor, building</p>
-        <input app-input id="address1" type="text" [formField]="billingForm.address1" />
+        <input app-input id="line1" type="text" [formField]="billingForm.line1" />
       </app-field>
 
-      <app-field [errors]="billingForm.locality().errors()">
-        <label ngpLabel for="locality">Address line 2 (optional)</label>
+      <app-field [errors]="billingForm.line2().errors()">
+        <label ngpLabel for="line2">Address line 2 (optional)</label>
         <p ngpDescription>Street, area or locality</p>
-        <input app-input id="locality" type="text" [formField]="billingForm.locality" />
+        <input app-input id="line2" type="text" [formField]="billingForm.line2" />
       </app-field>
 
       <app-field [errors]="billingForm.landmark().errors()">
@@ -153,7 +145,7 @@
             [formField]="billingForm.city"
           />
         </app-field>
-        <app-field [errors]="billingForm.zipcode().errors()">
+        <app-field [errors]="billingForm.postal_code().errors()">
           <label ngpLabel for="postal_code">Pin Code/ Zip code</label>
 
           <input
@@ -161,7 +153,7 @@
             id="postal_code"
             type="text"
             dir="ltr"
-            [formField]="billingForm.zipcode"
+            [formField]="billingForm.postal_code"
           />
         </app-field>
       </div>

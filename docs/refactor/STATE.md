@@ -102,6 +102,35 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       entangled with the facade and price overview, so it is kept as one PR. ⏸ The user may still ask for
       a split.
     - **Not verified in the browser:** signed-in cart, remove and coupon (CORS on `x-accept-language`).
+  - **Committed by the user:** PR3 `28e9592`.
+  - **PR4 `feat(payment): bind billing addresses to the commerce API` — DONE, UNCOMMITTED** on
+    `feat/MIL-XXX-commerce-addresses` (stacked on PR3). The diff is +335 / −263.
+    - **Model:** `Address`, `AddressInput`, `ADDRESS_LIMITS`, `parseAddresses`, and the A1/A2/A4/A5/C5
+      routes. Plus `utils/address-format.ts`.
+    - **Facade:**
+      - an auth-gated address resource, `addresses`, and `selectedAddressId` (the learner's pick, then
+        the cart's address, then the default, then the first);
+      - `saveAddress` and `updateAddress` with `onDone`, so the form closes only on success;
+      - `deleteAddress`, where a 409 shows its message;
+      - `attachBillingAddress` (C5), called from billing's Proceed.
+    - **Billing form:** the email field is gone; `line1`/`line2`/`postal_code` are strings with CAIRA's
+      length limits; the no-op effects are deleted.
+    - **Guard:** review checks `cart.billing_address_id`.
+    - **Review:** shows that address.
+    - **Deleted:** the legacy `BillingAddressPayload` and the four address routes. `UserAddress` stays for
+      the legacy order types until PR5.
+    - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔, prettier ✔, `build:prod`
+      245.14 kB with only `ai-labs.css`. The dev server rebuilt clean at 10:33 UTC.
+    - **Address contract checked, 2026-10-13:** the user ran `capture-addresses.sh` (10 calls). Results are
+      in `docs/COMMERCE_API.md` "Addresses".
+      - Shapes pass `parseAddresses`/`isCart`; `"07301"` keeps its zero; C5 sets only billing.
+      - **`""` is accepted and stored as `null`**, so blanks are now sent as `""` and an edit can clear a
+        field.
+      - **A5 clears the cart's `billing_address_id` server-side**, so `deleteAddress` now mirrors it locally.
+      - Re-gated: lint 0 errors, `build:prod` 245.17 kB.
+      - ⚠️ The script's step 02 left one extra "PR4 capture" address on the user's UAT account.
+        `cleanup-capture-addresses.sh` (scratchpad) deletes it.
+    - **Not verified:** the form and attach in the browser (guarded, and blocked by CORS).
   - **Facts from the user:**
     - Only subscriptions are sold: no single courses, no books.
     - Alias imports everywhere, even inside one feature.
@@ -4035,6 +4064,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-13 · NON-REFACTOR · **PR4 address capture checked**: `""` stored as null (blanks now sent as `""`), delete clears the cart's address (mirrored locally), C5 billing-only · one leftover test address (cleanup script) · build:prod 245.17 kB
+
+- 2026-10-13 · NON-REFACTOR · **Commerce PR4, addresses** (uncommitted, `feat/MIL-XXX-commerce-addresses`): A1/A2/A4/A5 + C5 bound, form on CAIRA fields/limits, closes only on success, guard review → `billing_address_id` (+335/−263) · lint 0 errors, structure ✔, build:prod 245.14 kB (local) · ⏸ `capture-addresses.sh` for the contract
 
 - 2026-10-13 · NON-REFACTOR · **Commerce PR3, cart + coupons** (uncommitted, `feat/MIL-XXX-commerce-cart-coupons`): C4/D1/D2 bound, code-only coupon dialog, guard on `CartStore.status`, `promo-coupons` + legacy cart/coupon types deleted (+481/−1202) · lint 0 errors, structure ✔ (pruned), build:prod 245.20 kB (local) · signed out: guard → cart, empty cart without totals, coupon dialog validation + network-error copy fixed
 

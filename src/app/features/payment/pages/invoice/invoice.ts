@@ -16,6 +16,7 @@ import { map } from 'rxjs';
 import { PaymentStatus } from '@features/payment/components/payment-status/payment-status';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { CartStore } from '@core/services/cart/cart-store';
+import { formatAddress } from '@features/payment/utils/address-format';
 import { CartDisplayItem, CartItem } from '@features/payment/components/cart-item/cart-item';
 import { PriceOverview } from '@features/payment/components/price-overview/price-overview';
 import { Utils } from '@shared/services/utils';
@@ -105,12 +106,9 @@ export class Invoice {
     if (this.isInvoice()) {
       return this.facade.invoiceFormattedAddress();
     }
-    const a = this.facade
-      .billingAddress()
-      .find((addr) => addr.id === this.facade.selectedAddressId());
-    return [a?.address1, a?.locality, a?.landmark, a?.city, a?.state, a?.country, a?.zipcode]
-      .filter(Boolean)
-      .join(', ');
+    const id = this.cart()?.billing_address_id;
+    const address = this.facade.addresses().find((a) => a.id === id);
+    return address ? formatAddress(address) : '';
   });
 
   readonly currencyCode = computed(() => {
@@ -150,6 +148,9 @@ export class Invoice {
   protected readonly skeletonRows = [0, 1, 2];
 
   constructor() {
+    // Review shows the billing address on the cart, by id, so it needs the address list.
+    if (!this.isInvoice()) this.facade.loadAddresses();
+
     effect(() => {
       const orderId = this.orderId();
       if (orderId) {
