@@ -21,11 +21,6 @@ import { InjectionToken, Type } from '@angular/core';
  * chunks and never reach the initial bundle.
  */
 
-/** The payment cart drawer, opened from `shared/services/utils.ts`. */
-export const CART_DRAWER_DIALOG = new InjectionToken<() => Promise<Type<unknown>>>(
-  'CART_DRAWER_DIALOG',
-);
-
 /**
  * The payment subscription dialog, opened from `shared/services/utils.ts` and
  * `shared/services/engagement-dialog.ts`.

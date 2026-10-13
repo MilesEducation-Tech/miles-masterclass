@@ -28,7 +28,6 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
-import { CartStore } from '@core/services/cart/cart-store';
 import { Analytics } from '@core/services/analytics/analytics';
 
 // Extract types from routes for type safety
@@ -49,7 +48,6 @@ export class MasterclassFacade {
   private readonly utils = inject(Utils);
   // Only the cart-removal signal is needed here, and it lives in core so this
   // feature does not have to import the payment feature (PROMPT.md §3).
-  private readonly cart = inject(CartStore);
   private readonly analytics = inject(Analytics);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -64,17 +62,6 @@ export class MasterclassFacade {
   readonly error = this.course.error;
   /** True while an exercise-file download is in flight (drives the resource-row spinner). */
   readonly downloadingExerciseFiles = signal(false);
-
-  private readonly cartItemRemovedEffect = effect(() => {
-    const removedCourseId = this.cart.cartItemRemoved();
-    untracked(() => {
-      if (removedCourseId && this.courseDetails()?.id === removedCourseId) {
-        this.courseDetails.update((course) =>
-          course ? { ...course, is_added_to_cart: false } : course,
-        );
-      }
-    });
-  });
 
   // ... (currentProgress computed) ...
   /**

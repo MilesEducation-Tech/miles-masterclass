@@ -244,19 +244,10 @@
               type="button"
               class="text-white flex p-1 aspect-square flex-col justify-center items-center bg-card rounded-2xl"
               variant="ghost"
-              [attr.aria-label]="courseDetails.is_added_to_cart ? 'Open cart' : 'Add to cart'"
-              (click)="addToCart(courseDetails.id, courseDetails.is_added_to_cart)"
+              aria-label="Subscribe to unlock"
+              [routerLink]="planRoute()"
             >
-              <ng-icon
-                [name]="
-                  courseDetails.is_added_to_cart
-                    ? 'matShoppingCartRound'
-                    : 'matAddShoppingCartRound'
-                "
-                size="24"
-                aria-hidden="true"
-              />
-              <!-- <span>Add To Cart</span> -->
+              <ng-icon name="matAddShoppingCartRound" size="24" aria-hidden="true" />
             </button>
           }
           <button

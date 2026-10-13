@@ -8,13 +8,13 @@ import { Progress } from '@shared/ui/progress/progress';
 import { RatingStar } from '@shared/components/rating-star/rating-star';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import {
   matAddShoppingCartRound,
   matBookmarkBorderRound,
   matBookmarkRound,
   matPlayArrowRound,
   matRestartAltRound,
-  matShoppingCartRound,
 } from '@ng-icons/material-icons/round';
 import { phosphorShareFatFill, phosphorDownloadSimpleFill } from '@ng-icons/phosphor-icons/fill';
 import { phosphorCards } from '@ng-icons/phosphor-icons/regular';
@@ -36,6 +36,7 @@ import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/ca
     CategoriesList,
     TotalCpeCreditsPipe,
     CairaCredlyBadge,
+    RouterLink,
   ],
   templateUrl: './podcast-course-hero.html',
   providers: [
@@ -48,7 +49,6 @@ import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/ca
       phosphorDownloadSimpleFill,
       matRestartAltRound,
       matAddShoppingCartRound,
-      matShoppingCartRound,
     }),
   ],
 })
@@ -60,6 +60,11 @@ export class PodcastCourseHero {
 
   courseId = input<string>();
   courseTitle = input<string>();
+
+  /** Only subscriptions are sold: a course's buy button opens the plan page. */
+  protected readonly planRoute = computed(
+    () => `/${this.utils.country()}/${this.utils.profession()}/payment/plan`,
+  );
 
   protected readonly instructor = computed(
     () => this.masterclass.courseDetails()?.instructor_details,
@@ -96,25 +101,6 @@ export class PodcastCourseHero {
         if (response.status) {
           this.masterclass.courseDetails.update((course) =>
             course ? { ...course, added_bookmark: response.is_bookmarked } : course,
-          );
-        }
-      });
-  }
-
-  /**
-   * Mirrors `MasterclassCourseHero.addToCart`. `Utils.addCourseToCart` handles
-   * the API call, the "already in cart" short-circuit + cart-drawer open, and
-   * toasts; we just patch the local `courseDetails` signal so the icon flips
-   * without re-fetching the whole course payload.
-   */
-  addToCart(courseId: number, isAddedToCart: boolean) {
-    this.utils
-      .addCourseToCart(courseId, isAddedToCart)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
-        if (response.status) {
-          this.masterclass.courseDetails.update((course) =>
-            course ? { ...course, is_added_to_cart: response.in_cart } : course,
           );
         }
       });
