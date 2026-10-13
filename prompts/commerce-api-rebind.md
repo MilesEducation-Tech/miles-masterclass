@@ -9,7 +9,7 @@ binding, logic or type survives in the payment flow** (see "Legacy removal" belo
   - the backend questions below;
   - a signed-in browser run, once UAT CORS allows `x-accept-language` and Stripe is configured on UAT.
 
-**Epic branch prefix:** `feat/MIL-XXX-…`, one ticket per PR (see Jira below).
+**Jira:** epic MIL-69; stories MIL-70 to MIL-78, one per PR (`prompts/commerce-jira-tickets.md`).
 **Contract:** _Miles Platform, Commerce & Catalogue API, front-end integration guide_ (12 Oct 2026), plus
 `postman/Merged_Masterclass_Backend_All_APIs.postman_collection.json` folders "09. Catalogue" and
 "10. Commerce" (generated 2026-10-09).
@@ -27,7 +27,7 @@ binding, logic or type survives in the payment flow** (see "Legacy removal" belo
 2. **Payment is already broken on UAT.** Every legacy path the feature calls (`user/cart/`, `promotion/*`,
    `user/address/`, `user/order/*`, `stripe/*`) answers 404 (STATE, 2026-10-10). Stacked PRs therefore can't
    regress a working flow.
-3. **Request headers come from `feat/MIL-XXX-api-request-headers`.** That branch adds `X-Country-Code`,
+3. **Request headers come from `feat/MIL-70-api-request-headers`.** That branch adds `X-Country-Code`,
    `X-Platform`, `X-App-Type` and `X-Accept-Language`, and this work branches from `master` after it merges.
    **While UAT CORS rejects `x-accept-language`, every browser API call fails**, so browser verification of
    PR1 onward waits on the backend.
@@ -765,16 +765,16 @@ needs UAT CORS to allow `x-accept-language` first. Watch DevTools → Network.
 Postman folders "10. Commerce" and "09. Catalogue". It is blocked by `feat(core): send X-Country-Code,
 X-Platform and X-App-Type on every API request`.
 
-| Ticket | Summary (= PR title)                                                 | Type      | Scope     | Branch                                   | Blocked by      | Estimate |
-| ------ | -------------------------------------------------------------------- | --------- | --------- | ---------------------------------------- | --------------- | -------- |
-| PR0    | `refactor(payment): use path aliases for every import`               | Tech debt | payment   | `refactor/MIL-XXX-payment-alias-imports` | none            | S        |
-| PR1    | `feat(payment): read the cart from the commerce API`                 | Story     | payment   | `feat/MIL-XXX-commerce-cart-read`        | PR0, headers PR | M        |
-| PR2    | `feat(payment): bind plans and add-to-cart to the subscriptions API` | Story     | payment   | `feat/MIL-XXX-commerce-plans`            | PR1             | M        |
-| PR3    | `feat(payment): bind the cart and coupons to the commerce API`       | Story     | payment   | `feat/MIL-XXX-commerce-cart-coupons`     | PR2             | M        |
-| PR4    | `feat(payment): bind billing addresses to the commerce API`          | Story     | payment   | `feat/MIL-XXX-commerce-addresses`        | PR3, D1         | M        |
-| PR5    | `feat(payment): checkout, Stripe return and payment retry`           | Story     | payment   | `feat/MIL-XXX-commerce-checkout`         | PR4, Q2         | M        |
-| PR6    | `feat(payment): bind order history to the commerce API`              | Story     | payment   | `feat/MIL-XXX-commerce-orders`           | PR5, D2         | M        |
-| PR7    | `feat(offerings): send course buy buttons to the plan page`          | Story     | offerings | `feat/MIL-XXX-offerings-buy-to-plan`     | PR1             | S        |
+| Ticket | Summary (= PR title)                                                 | Type      | Scope     | Branch                                  | Blocked by      | Estimate |
+| ------ | -------------------------------------------------------------------- | --------- | --------- | --------------------------------------- | --------------- | -------- |
+| PR0    | `refactor(payment): use path aliases for every import`               | Tech debt | payment   | `refactor/MIL-71-payment-alias-imports` | none            | S        |
+| PR1    | `feat(payment): read the cart from the commerce API`                 | Story     | payment   | `feat/MIL-72-commerce-cart-read`        | PR0, headers PR | M        |
+| PR2    | `feat(payment): bind plans and add-to-cart to the subscriptions API` | Story     | payment   | `feat/MIL-73-commerce-plans`            | PR1             | M        |
+| PR3    | `feat(payment): bind the cart and coupons to the commerce API`       | Story     | payment   | `feat/MIL-74-commerce-cart-coupons`     | PR2             | M        |
+| PR4    | `feat(payment): bind billing addresses to the commerce API`          | Story     | payment   | `feat/MIL-75-commerce-addresses`        | PR3, D1         | M        |
+| PR5    | `feat(payment): checkout, Stripe return and payment retry`           | Story     | payment   | `feat/MIL-76-commerce-checkout`         | PR4, Q2         | M        |
+| PR6    | `feat(payment): bind order history to the commerce API`              | Story     | payment   | `feat/MIL-77-commerce-orders`           | PR5, D2         | M        |
+| PR7    | `feat(offerings): send course buy buttons to the plan page`          | Story     | offerings | `feat/MIL-78-offerings-buy-to-plan`     | PR1             | S        |
 
 Every ticket uses the same template:
 
