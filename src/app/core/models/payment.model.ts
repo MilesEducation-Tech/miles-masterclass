@@ -26,19 +26,6 @@ export interface CartSteps {
 }
 
 export const PAYMENT_ROUTES = {
-  addBucketItem: {
-    path: 'user/cart/',
-    method: 'POST',
-  } as RouteConfig<
-    void,
-    CommonResponse<CartDetails>,
-    {},
-    {
-      item_id: number;
-      item_type: 'subscription' | 'masterclass' | 'podcast' | 'nano-learning' | 'webinar';
-      pay_method: 'monthly' | 'yearly';
-    }
-  >,
   removeBucketItem: {
     path: 'user/cart/remove_item/',
     method: 'POST',
@@ -112,10 +99,6 @@ export const PAYMENT_ROUTES = {
     path: 'user/order/create_customer_portal/',
     method: 'POST',
   } as RouteConfig<{ order_id: number }, StripePortalResponse>,
-  getSubscriptionPlans: {
-    path: 'promotion/subscription/',
-    method: 'GET',
-  } as RouteConfig<void, SubscriptionPlansResponse>,
 } as const;
 
 export interface SubscriptionActionResponse {
@@ -125,102 +108,6 @@ export interface SubscriptionActionResponse {
 
 export interface StripePortalResponse {
   session_url: string;
-}
-
-export interface SubscriptionPlansResponse {
-  status_code: number;
-  data: SubscriptionPlan[];
-  message: string;
-}
-
-export interface PlanFeatureDetail {
-  id: number;
-  name: string;
-  description: string | null;
-  icon: string;
-  has_conditions?: boolean;
-}
-
-export interface PlanFeature {
-  id: number;
-  planfeature: PlanFeatureDetail | null;
-}
-
-export interface PlanPriceDetail {
-  base_price: number;
-  selling_price: number;
-  currency_code: string;
-  discount: number;
-  currency_symbol: string;
-  discount_percent: number;
-  discount_type: string;
-  // Country-dependent: when true, the plan can be paid monthly (EMI). The
-  // monthly amount is derived client-side as the yearly price ÷ 12.
-  emi_available: boolean;
-}
-
-export interface PlanIapDetails {
-  apple_product_id: string | null;
-  google_product_id: string | null;
-}
-
-export interface PlanMyOrder {
-  id: number;
-  remaining_days: number;
-  paid_amount: number;
-  transaction_mode: string;
-  subscription_status: string;
-  trial_duration: number | null;
-  current_time: string;
-  platform: string;
-  item_type: string;
-  base_price: number;
-  selling_price: number;
-  discount: number;
-  discount_type: string;
-  valid_from: string;
-  valid_to: string;
-  is_unlimited: boolean;
-  status: boolean;
-  subscription_type: string | null;
-  created_at: string;
-  order: number;
-  subscription: number;
-  masterclass: number | null;
-  nano_learning: number | null;
-  webinar: number | null;
-}
-
-export interface SubscriptionPlan {
-  id: number;
-  features: PlanFeature[];
-  is_added_to_cart: boolean;
-  is_in_myorder: PlanMyOrder | null;
-  min_remaining_days: number;
-  price_detail: PlanPriceDetail | null;
-  is_old_subscriber: boolean;
-  iap_details: PlanIapDetails;
-  is_partner_code_applied: boolean;
-  is_firm_sponsorship_applied: boolean;
-  created_at: string;
-  subscription_name: string;
-  plan_duration: number;
-  free_trial_days: number;
-  subscription_type: string | null;
-  is_unlimited_trial_enabled: boolean;
-  valid_from: string | null;
-  valid_to: string | null;
-  description: string;
-  plan_sorting_order: number;
-  is_active: boolean;
-  is_recommended: boolean;
-  apple_inapp_product_id: string | null;
-  stripe_price_id_year1: string | null;
-  stripe_price_id_year2: string | null;
-  google_inapp_product_id: string | null;
-  is_trial_activated_on_android: boolean;
-  is_trial_activated_on_ios: boolean;
-  updated_by: number;
 }
 
 export interface UserAddress {

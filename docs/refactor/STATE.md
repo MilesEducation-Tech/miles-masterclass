@@ -46,6 +46,36 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       - An empty US cart reports `currency: INR` (Q12).
     - **Still open:** a browser check of the signed-in read, which waits on UAT allowing
       `x-accept-language` in CORS.
+  - **Committed by the user:** PR1 `8faacd2`.
+  - **PR2 `feat(payment): bind plans and add-to-cart to the subscriptions API` — DONE, UNCOMMITTED** on
+    `feat/MIL-XXX-commerce-plans` (stacked on PR1). The diff is +224 / −1325.
+    - New `features/payment/models/commerce.model.ts`: `Plan`, `PlanPrice`, `PlanFeature`, `ListResult`,
+      `AddLineResult`, a `parsePlans` trust boundary that also sorts by `sort_order`, and
+      `COMMERCE_ROUTES.plans` / `addLine`.
+    - New `features/payment/utils/plan-term.ts`.
+    - `CartStore.set()` drops a cancelled cart.
+    - **Facade:** one plans resource keyed on `X-Country-Code`, plus `defaultPlan`, `loadPlans()`,
+      `addPlanToCart(plan)` (C2 with `cart_id`, then `CartStore.set`), and `commerceErrorOf` (failures toast
+      the API's `message`).
+    - **Plan page:** one card per plan, signed-in state from `AuthSession`, and an empty state.
+    - **Subscription dialog:** the default plan only.
+    - **Deleted:**
+      - the partner-code prompt and firm-sponsorship dialogs;
+      - the plan page's sponsorship, partner-code and enterprise paths;
+      - EMI/monthly arithmetic;
+      - the legacy plan types (113 lines of `payment.model.ts`);
+      - the `addBucketItem` and `getSubscriptionPlans` routes and `PROFILE_ROUTES.applyFirmSponsorship`.
+    - **Gates (local macOS):** lint 0 errors (105 warnings; one `any` removed), structure ✔, prettier ✔,
+      `build:prod` 245.50 kB with only `ai-labs.css`.
+    - **Dev on 3000, signed out:**
+      - `/us/…/payment/plan` renders on the server: an "Annual Plan $948/year" card, an "Annual" column with
+        5 CAIRA features, and "Subscribe Now". The browser sends no plans request (transfer cache).
+      - Subscribe opens the sign-in prompt, with no cart call.
+      - `/in` shows "Subscriptions aren't available in your region yet."
+    - **Gotcha:** after a run of failed rebuilds, the dev server kept serving the last good bundle. Restart
+      it with `preview_stop` / `preview_start` before trusting a render.
+    - **Not verified in the browser:** signed-in add-to-cart (CORS). The C2 contract is covered by the
+      capture.
   - **Facts from the user:**
     - Only subscriptions are sold: no single courses, no books.
     - Alias imports everywhere, even inside one feature.
@@ -3979,6 +4009,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-13 · NON-REFACTOR · **Commerce PR2, plans** (uncommitted, `feat/MIL-XXX-commerce-plans`): S1 + C2 bound; partner-code/firm-sponsorship dialogs, EMI maths and legacy plan types deleted (+224/−1325) · lint 0 errors, structure ✔, build:prod 245.50 kB (local) · dev on 3000: SSR plan card $948/year, signed-out Subscribe → sign-in prompt, `/in` empty state
 
 - 2026-10-13 · NON-REFACTOR · **Commerce capture checked** (PR1): 15 signed-in UAT calls; carts match `Cart`/`isCart`; D2/C4 return the whole cart; Stripe unconfigured on UAT (`gateway_not_configured`, K2 503); empty US cart `currency: INR` · new `docs/COMMERCE_API.md`; plan Assumption 4 resolved, backend Q11–Q12 added
 

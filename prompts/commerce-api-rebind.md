@@ -427,7 +427,17 @@ entries are added by the PR that first uses each one (PR2 plans, PR3 cart writes
 addresses, PR5 checkout and orders), not all up front, so no PR ships unused types. `CartStore.set()` comes
 with PR2, and `status` with PR3's guard, for the same reason.
 
-**PR2: `feat(payment): bind plans and add-to-cart to the subscriptions API`** (about 350 lines)
+**PR2: `feat(payment): bind plans and add-to-cart to the subscriptions API`** (implemented 2026-10-13: +224 / −1325, mostly deletions)
+
+**What shipped differs from the bullets below in four places:**
+
+- **No Enterprise card.** CAIRA has no such plan, so the "Contact Sales" card and its route go. The firm
+  CTA lives on `/cpe-for-corporate` and in the footer's corporate card.
+- **No "Already Subscribed" state.** There is no subscription-status endpoint (Q3); C2 refuses with
+  `subscription_stack_full`, and the learner sees that message.
+- **"Go to Cart" shows once this session knows the cart has a line.** The plan page doesn't read the cart
+  (D4); re-adding the same plan is harmless anyway.
+- **The `hasActivePlan` stub is gone**, so the promo offer always shows.
 
 - **Facade:**
   - an S1 resource with `defaultValue: []`, sorted by `sort_order`;
