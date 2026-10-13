@@ -5,20 +5,16 @@
     </div>
   }
   <div class="flex flex-col space-y-2">
-    <p class="text-white font-semibold">{{ title() }} Subscription</p>
-    @if (description()) {
-      <p class="text-white text-sm">{{ description() }}</p>
+    <p class="text-white font-semibold">{{ item().title }} Subscription</p>
+    @if (item().description; as description) {
+      <p class="text-white text-sm">{{ description }}</p>
     }
-    @if (showValidity() && validityText()) {
-      <p class="text-accent text-sm">{{ validityText() }}</p>
-    } @else {
-      <p
-        class="text-accent mt-auto text-sm hover:underline transition-all cursor-pointer"
-        [routerLink]="planRoute()"
-      >
-        Know More
-      </p>
-    }
+    <p
+      class="text-accent mt-auto text-sm hover:underline transition-all cursor-pointer"
+      [routerLink]="planRoute()"
+    >
+      Know More
+    </p>
   </div>
 </div>
 <div class="flex sm:space-x-4 space-x-2 items-center h-max justify-end">
@@ -33,12 +29,6 @@
         </p>
       }
     </div>
-    @let paid = paidAmount();
-    @if (paid !== null) {
-      <p class="text-accent text-sm whitespace-nowrap">
-        Paid: {{ paid | currency: currencyCode() : 'symbol' : '1.2-2' }}
-      </p>
-    }
   </div>
   @if (showEdit()) {
     <button

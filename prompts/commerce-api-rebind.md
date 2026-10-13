@@ -555,7 +555,16 @@ with PR2, and `status` with PR3's guard, for the same reason.
 - **`purchase`:** the event is built from `order.money` and `order.lines` and keeps its localStorage dedupe.
 - **Delete** `proceedToPayment`, `is_trial` and the legacy checkout and order-detail types.
 
-**PR6: `feat(payment): bind order history to the commerce API`** (about 250 lines)
+**PR6: `feat(payment): bind order history to the commerce API`** (implemented 2026-10-13: +157 / −583)
+
+**What shipped differs from the bullets below in four places:**
+
+- **No "Load more".** One K3 read with `page_size=50` (CAIRA's maximum), since only subscriptions are
+  sold. The ceiling is noted in a `ponytail:` comment.
+- **The per-order Actions menu is now a single "View invoice" button**; with one action, a menu was
+  overkill.
+- **`cart-item` takes only `CartLine | OrderLine`.** The validity and paid rows (legacy-only) are gone.
+- **`payment.model.ts` holds only `CurrentPlanData`.** `CartSteps` moved to `constants/payment.ts`.
 
 - **Orders page:** K3 with `page_size: 20` and a "Load more" button driven by `next`.
   - Row figures are `money.price_after_gst`, with the status and `created_at`.

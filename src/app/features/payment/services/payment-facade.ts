@@ -10,8 +10,6 @@ import {
 } from '@angular/core';
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import { Observable, catchError, map, tap, throwError } from 'rxjs';
-import { RouteResponse } from '@core/models/http.model';
-import { PAYMENT_ROUTES, OrderByIdResponseData } from '@core/models/payment.model';
 import { NotificationService } from '@core/services/notification/notification';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
@@ -25,21 +23,14 @@ import {
   Plan,
   parseAddresses,
   parseOrder,
+  parseOrdersPage,
   parsePlans,
 } from '@features/payment/models/commerce.model';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-// Dialog components are loaded lazily (dynamic import in the open* methods below)
-// so they — and their `@angular/forms` dependency — stay out of the initial
-// bundle. This facade is eagerly instantiated via the root `Utils` service, so a
-// static import would drag every dialog into the initial chunk. Types are
-// import-only (erased at build time); the runtime class comes from `import()`.
+// Dialog components load lazily (dynamic `import()` in the open* methods below), so
+// they stay out of whichever chunk first injects this root facade.
 import { Analytics } from '@core/services/analytics/analytics';
-
-type OrdersResponse = RouteResponse<typeof PAYMENT_ROUTES.getOrders>;
-type CancelAutoRenewalResponse = RouteResponse<typeof PAYMENT_ROUTES.cancelAutoRenewal>;
-type ReactivateAutoRenewalResponse = RouteResponse<typeof PAYMENT_ROUTES.reactivateAutoRenewal>;
-type StripePortalResponse = RouteResponse<typeof PAYMENT_ROUTES.navigateToStripeCustomerDashboard>;
 
 /**
  * The CAIRA error envelope's human message (safe to show) and machine reason
@@ -136,16 +127,27 @@ export class PaymentFacade {
   readonly paying = signal(false);
 
   /**
-   * Order history. OPT-IN, because this facade is root-provided and built on every
-   * page (via `Utils`): nothing is fetched until the orders page calls `loadOrders()`.
+   * Order history (K3), newest first. OPT-IN: nothing is fetched until the orders page
+   * calls `loadOrders()`. Gated on the boolean `isAuthenticated()`.
+   *
+   * ponytail: one page of 50 (CAIRA's maximum), no paging UI. Only subscriptions are sold,
+   * so 50 orders is decades of renewals; add "Load more" on `next` if `ordersCount()`
+   * ever exceeds `orders().length`.
    */
   private readonly ordersWanted = signal(false);
-  private readonly ordersResource = httpResource<OrdersResponse>(() =>
-    this.ordersWanted() ? apiUrl(PAYMENT_ROUTES.getOrders.path) : undefined,
+  private readonly ordersResource = httpResource(
+    () =>
+      this.ordersWanted() && this.auth.isAuthenticated()
+        ? { url: apiUrl(COMMERCE_ROUTES.orders.path), params: { page_size: 50 } }
+        : undefined,
+    { parse: parseOrdersPage },
   );
   /** Guarded: `value()` throws on an errored resource. */
-  readonly ordersData = computed<OrderByIdResponseData[]>(() =>
-    this.ordersResource.hasValue() ? (this.ordersResource.value()?.data ?? []) : [],
+  readonly orders = computed(() =>
+    this.ordersResource.hasValue() ? this.ordersResource.value().results : [],
+  );
+  readonly ordersCount = computed(() =>
+    this.ordersResource.hasValue() ? this.ordersResource.value().count : 0,
   );
   readonly ordersLoading = computed(() => this.ordersResource.isLoading());
   readonly ordersError = computed(() =>
@@ -544,8 +546,6 @@ export class PaymentFacade {
     else this.plansWanted.set(true);
   }
 
-  readonly ordersCount = computed(() => this.ordersData().length);
-
   /** First call opts the orders page in; later calls (retry, after a mutation) refetch. */
   loadOrders() {
     if (this.ordersWanted()) this.ordersResource.reload();
@@ -556,82 +556,5 @@ export class PaymentFacade {
   loadOrder(orderId: string): void {
     if (this.orderId() === orderId) this.orderResource.reload();
     else this.orderId.set(orderId);
-  }
-
-  cancelAutoRenewal(orderId: number) {
-    this.http
-      .post<CancelAutoRenewalResponse>(PAYMENT_ROUTES.cancelAutoRenewal.path, {
-        order_id: orderId,
-      })
-      .subscribe({
-        next: (res) => {
-          this.notification.success('Success', res?.message ?? 'Auto renewal has been cancelled.');
-          this.loadOrders();
-        },
-        error: (err) => {
-          this.logger.error('Failed to cancel auto renewal', err);
-        },
-      });
-  }
-
-  reactivateAutoRenewal(orderId: number) {
-    this.http
-      .post<ReactivateAutoRenewalResponse>(PAYMENT_ROUTES.reactivateAutoRenewal.path, {
-        order_id: orderId,
-      })
-      .subscribe({
-        next: (res) => {
-          this.notification.success(
-            'Success',
-            res?.message ?? 'Auto renewal has been reactivated.',
-          );
-          this.loadOrders();
-        },
-        error: (err) => {
-          this.logger.error('Failed to reactivate auto renewal', err);
-        },
-      });
-  }
-
-  navigateToStripeCustomerDashboard(orderId: number) {
-    this.http
-      .post<StripePortalResponse>(PAYMENT_ROUTES.navigateToStripeCustomerDashboard.path, {
-        order_id: orderId,
-      })
-      .subscribe({
-        next: (res) => {
-          if (res?.session_url) {
-            window.open(res.session_url, '_blank');
-          } else {
-            this.notification.error('Error', 'Could not open Stripe dashboard.');
-          }
-        },
-        error: (err) => {
-          this.logger.error('Failed to open Stripe customer dashboard', err);
-        },
-      });
-  }
-
-  /**
-   * Open the user-scoped Stripe Customer Portal — no order context. Hits the
-   * same `create_customer_portal/` endpoint as the per-order flow, but with
-   * an empty body so the backend issues a portal session bound to the
-   * authenticated user rather than a specific order's payment.
-   */
-  openStripeCustomerPortal() {
-    this.http
-      .post<StripePortalResponse>(PAYMENT_ROUTES.navigateToStripeCustomerDashboard.path, {})
-      .subscribe({
-        next: (res) => {
-          if (res?.session_url) {
-            window.open(res.session_url, '_blank');
-          } else {
-            this.notification.error('Error', 'Could not open Stripe dashboard.');
-          }
-        },
-        error: (err) => {
-          this.logger.error('Failed to open Stripe customer portal', err);
-        },
-      });
   }
 }
