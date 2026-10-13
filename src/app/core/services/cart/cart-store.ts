@@ -1,5 +1,5 @@
 import { Service, signal } from '@angular/core';
-import { CartDetails } from '../../models/payment.model';
+import { CartDetails } from '@core/models/payment.model';
 
 /**
  * The cart state that non-payment code reads.

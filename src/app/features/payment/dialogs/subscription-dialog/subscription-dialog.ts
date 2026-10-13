@@ -3,8 +3,8 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCheck } from '@ng-icons/lucide';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
-import { PaymentFacade } from '../../services/payment-facade';
-import { PlanSelectionCard } from '../../components/plan-selection-card/plan-selection-card';
+import { PaymentFacade } from '@features/payment/services/payment-facade';
+import { PlanSelectionCard } from '@features/payment/components/plan-selection-card/plan-selection-card';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { Button } from '@shared/ui/button/button';

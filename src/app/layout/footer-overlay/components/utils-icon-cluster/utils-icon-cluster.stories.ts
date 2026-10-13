@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { UtilsIconCluster } from './utils-icon-cluster';
+import { UtilsIconCluster } from '@layout/footer-overlay/components/utils-icon-cluster/utils-icon-cluster';
 
 const meta: Meta<UtilsIconCluster> = {
   title: 'Layout/FooterOverlay/UtilsIconCluster',

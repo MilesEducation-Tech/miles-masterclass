@@ -35,7 +35,7 @@ import {
 import { ContentDetails } from '@core/models/course.model';
 // Type-only: both dialogs load with `import()` when opened (PROMPT.md §4.4).
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
-import type { MicroLearningQuizDialogData } from '../micro-learning/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog';
+import type { MicroLearningQuizDialogData } from '@features/offerings/micro-learning/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog';
 import { CartStore } from '@core/services/cart/cart-store';
 import {
   ActionStatus,
@@ -1076,7 +1076,7 @@ export class MicroLearningCourseFacade {
     // effect when the value flips.
     this.pauseRequest.set({ id: reel.id, token: ++this.tokenSeq });
     const { MicroLearningQuizDialog } =
-      await import('../micro-learning/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog');
+      await import('@features/offerings/micro-learning/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog');
     this.dialogs.open<MicroLearningQuizDialogData>(MicroLearningQuizDialog, {
       data: { reel },
       injector: this.injector,

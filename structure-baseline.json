@@ -1,8 +1,6 @@
 {
   "$comment": "Ratchet baseline for scripts/check-structure.mjs (MIL-240). Only shrink it: run the script with --prune after fixing. Adding an entry needs a reason and a CODEOWNERS review.",
-  "routedOutsidePages": {
-    "src/app/features/payment/payment.routes.ts → ./components/overview-wrapper/overview-wrapper": "overview-wrapper is a routed layout shell for the payment pages; move to pages/ or layout"
-  },
+  "routedOutsidePages": {},
   "componentStylesheets": {
     "src/app/admin/layout/admin-sidebar/admin-sidebar.css": ".active-nav-item, applied by routerLinkActive; kept lazy (Phase 12 decision b)",
     "src/app/admin/partner-platform-v2/dialogs/partner-report-preview-dialog/partner-report-preview-dialog.css": "PDF DOM captured by html2canvas-pro, which cannot parse color-mix()/oklch",

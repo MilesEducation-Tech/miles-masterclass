@@ -13,10 +13,10 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
-import { PaymentStatus } from '../../components/payment-status/payment-status';
-import { PaymentFacade } from '../../services/payment-facade';
-import { CartItem } from '../../components/cart-item/cart-item';
-import { PriceOverview } from '../../components/price-overview/price-overview';
+import { PaymentStatus } from '@features/payment/components/payment-status/payment-status';
+import { PaymentFacade } from '@features/payment/services/payment-facade';
+import { CartItem } from '@features/payment/components/cart-item/cart-item';
+import { PriceOverview } from '@features/payment/components/price-overview/price-overview';
 import { Utils } from '@shared/services/utils';
 import { Analytics } from '@core/services/analytics/analytics';
 import { Button } from '@shared/ui/button/button';
