@@ -107,6 +107,51 @@
               Use a different code
               <span class="text-blue-400">&#9654;</span>
             </button>
+          } @else if (facade.couponsLoading()) {
+            <!-- Holds the offer's height, so the card doesn't jump when the list arrives. -->
+            <div class="h-16 animate-pulse rounded-lg bg-white/5" aria-hidden="true"></div>
+          } @else if (firstCoupon(); as offer) {
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <p class="font-mono text-sm font-semibold text-white">{{ offer.code }}</p>
+                <p class="text-sm text-green-400">
+                  Save {{ offer.discount_amount | currency: offer.currency : 'symbol' : '1.2-2' }}
+                </p>
+                @if (offer.description; as description) {
+                  <p class="mt-0.5 line-clamp-2 text-xs text-gray-400">{{ description }}</p>
+                }
+              </div>
+              <button
+                app-button
+                type="button"
+                size="sm"
+                class="shrink-0"
+                [disabled]="applyingCoupon()"
+                [attr.aria-label]="'Apply coupon ' + offer.code"
+                (click)="applyFirstCoupon(offer.code)"
+              >
+                {{ applyingCoupon() ? 'Applying…' : 'Apply' }}
+              </button>
+            </div>
+            @if (couponError(); as message) {
+              <p role="alert" class="mt-2 text-sm text-red-400">{{ message }}</p>
+            }
+            <!-- The dialog lists every coupon and still takes a typed code. -->
+            <button
+              app-button
+              type="button"
+              variant="link"
+              class="mt-3 h-auto p-0 gap-1 text-sm font-medium text-gray-400 data-hover:text-white"
+              (click)="facade.openCouponDialog()"
+            >
+              {{ facade.coupons().length > 1 ? 'View all coupons' : 'Have another code?' }}
+              <ng-icon
+                class="rtl:-scale-x-100"
+                name="heroChevronRight"
+                size="16"
+                aria-hidden="true"
+              />
+            </button>
           } @else {
             <button
               app-button

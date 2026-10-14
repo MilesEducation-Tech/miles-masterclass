@@ -185,8 +185,44 @@ export interface AddLineResult {
   result: Cart;
 }
 
+/**
+ * A coupon the learner can apply (`GET commerce/coupons/`, captured on UAT 2026-10-14, not in
+ * Postman yet). Only the keys the cart shows; the API also sends `discount_type`/`discount_value`,
+ * limits, `applies_to` and per-line splits.
+ */
+export interface Coupon {
+  code: string;
+  description: string | null;
+  /** What this coupon takes off THIS cart, worked out by CAIRA. */
+  discount_amount: Decimal;
+  currency: string;
+  /** ISO timestamp; `null` when it never expires. */
+  valid_to: string | null;
+}
+
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
+
+function isCoupon(v: unknown): v is Coupon {
+  return (
+    isObject(v) &&
+    typeof v['code'] === 'string' &&
+    typeof v['discount_amount'] === 'string' &&
+    typeof v['currency'] === 'string'
+  );
+}
+
+/**
+ * `httpResource` `parse` for `commerce/coupons/`: `data.results`, in CAIRA's order. A market with
+ * no cart answers `cart_id: null` and an empty list.
+ */
+export function parseCoupons(body: unknown): Coupon[] {
+  const results = isObject(body) && isObject(body['data']) ? body['data']['results'] : undefined;
+  if (!Array.isArray(results) || !results.every(isCoupon)) {
+    throw new Error('commerce/coupons/ response does not match the contract.');
+  }
+  return results;
+}
 
 function isPlan(v: unknown): v is Plan {
   return (
@@ -297,6 +333,19 @@ export const COMMERCE_ROUTES = {
     method: 'DELETE',
   } as RouteConfig<void, CommonResponse<Cart>>,
   /** One coupon per cart; a new code replaces the old. A refusal is a 409 with a showable `message`. */
+  /**
+   * The coupons the learner can apply to the cart, each with what it would save. Learner token
+   * required; unknown query keys are a 400 (`invalid_query`). Read through `httpResource`.
+   */
+  coupons: {
+    path: 'api/v1/commerce/coupons/',
+    method: 'GET',
+  } as RouteConfig<
+    void,
+    CommonResponse<ListResult<Coupon> & { cart_id: string | null }>,
+    Record<string, never>,
+    { cart_id?: string }
+  >,
   applyCoupon: {
     path: 'api/v1/commerce/cart/coupon/',
     method: 'POST',

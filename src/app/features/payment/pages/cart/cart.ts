@@ -28,6 +28,11 @@ export class Cart {
   );
   protected readonly failed = computed(() => this.store.status() === 'error');
 
+  constructor() {
+    // The Savings Corner (price card) offers these only on the cart step.
+    this.facade.loadCoupons();
+  }
+
   protected retry(): void {
     this.store.reload();
   }
