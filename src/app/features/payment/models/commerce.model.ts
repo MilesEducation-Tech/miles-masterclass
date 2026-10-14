@@ -100,4 +100,18 @@ export const COMMERCE_ROUTES = {
     { product_id: string; plan_id: string; cart_id?: string },
     CommonResponse<AddLineResult>
   >,
+  /** Answers with the whole cart; removing the last line answers it `cancelled`. */
+  removeLine: {
+    path: 'api/v1/commerce/cart/line/:line_id/',
+    method: 'DELETE',
+  } as RouteConfig<void, CommonResponse<Cart>>,
+  /** One coupon per cart; a new code replaces the old. A refusal is a 409 with a showable `message`. */
+  applyCoupon: {
+    path: 'api/v1/commerce/cart/coupon/',
+    method: 'POST',
+  } as RouteConfig<{ code: string; cart_id?: string }, CommonResponse<Cart>>,
+  removeCoupon: {
+    path: 'api/v1/commerce/cart/coupon/',
+    method: 'DELETE',
+  } as RouteConfig<void, CommonResponse<Cart>, Record<string, never>, { cart_id?: string }>,
 } as const;

@@ -458,7 +458,22 @@ with PR2, and `status` with PR3's guard, for the same reason.
 - **Delete** the legacy plan types: `SubscriptionPlan`, `PlanPriceDetail`, `PlanFeature`,
   `PlanFeatureDetail` and `PlanIapDetails`.
 
-**PR3: `feat(payment): bind the cart and coupons to the commerce API`** (about 380 lines)
+**PR3: `feat(payment): bind the cart and coupons to the commerce API`** (implemented 2026-10-13: +481 / −1202)
+
+**What shipped differs from the bullets below in six places:**
+
+- **`promo-coupons` is deleted outright.** It only listed `promotion/coupons/`, which has no CAIRA
+  equivalent.
+- **`cart-item` takes `CartLine | OrderItem`.** Orders and invoice still pass the legacy `OrderItem` until
+  PR5/PR6, and that branch goes with them. Course-only rendering and monthly ÷12 are gone.
+- **The price card hides for an empty cart**, so the INR currency of a fresh cart never renders.
+  Invoice mode keeps the legacy order figures until PR5.
+- **`CartStore.load()` is an idempotent opt-in.** The guard and the shell both call it with one request.
+  The cart drawer calls it too.
+- **The guard's review step still checks the legacy `selectedAddressId`**; PR4 moves it to
+  `billing_address_id`. Signed-out visitors go straight back to the cart.
+- **`commerceErrorOf` treats status 0 (offline/CORS) as "couldn't reach the server"** instead of surfacing
+  the browser's "Failed to fetch".
 
 - **Cart page, `cart-item` and the cart drawer** read `CartStore.cart()`: one line showing its `title` and
   `money.final_amount`; the totals come from `cart.money`.

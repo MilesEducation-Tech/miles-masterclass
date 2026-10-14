@@ -15,7 +15,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { PaymentStatus } from '@features/payment/components/payment-status/payment-status';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
-import { CartItem } from '@features/payment/components/cart-item/cart-item';
+import { CartStore } from '@core/services/cart/cart-store';
+import { CartDisplayItem, CartItem } from '@features/payment/components/cart-item/cart-item';
 import { PriceOverview } from '@features/payment/components/price-overview/price-overview';
 import { Utils } from '@shared/services/utils';
 import { Analytics } from '@core/services/analytics/analytics';
@@ -66,7 +67,8 @@ export class Invoice {
   protected readonly faqRoute = computed(() => `${this.basePath()}/faq`);
   protected readonly cartRoute = computed(() => `${this.basePath()}/payment/cart`);
 
-  readonly cartData = computed(() => this.facade.cartData());
+  /** Review mode lists the commerce cart; invoice mode still lists the legacy order (PR5). */
+  private readonly cart = inject(CartStore).cart;
   readonly orderData = computed(() => this.facade.orderData());
 
   /**
@@ -86,14 +88,14 @@ export class Invoice {
     if (this.isInvoice()) {
       return this.facade.invoiceItemCount();
     }
-    return this.cartData()?.cartitem_data.length ?? 0;
+    return this.cart()?.lines.length ?? 0;
   });
 
-  readonly cartItems = computed(() => {
+  readonly cartItems = computed<CartDisplayItem[]>(() => {
     if (this.isInvoice()) {
       return this.facade.invoiceItems();
     }
-    return this.cartData()?.cartitem_data ?? [];
+    return this.cart()?.lines ?? [];
   });
 
   // ponytail: was the signed-in user's name/email/mobile on the invoice.
@@ -115,7 +117,7 @@ export class Invoice {
     if (this.isInvoice()) {
       return this.facade.invoiceCurrency();
     }
-    return this.cartData()?.selected_country?.currency ?? 'USD';
+    return this.cart()?.currency ?? '';
   });
 
   /** ?status= query param from the URL (e.g. /invoice/3098?status=Success) */
@@ -206,8 +208,9 @@ export class Invoice {
     });
   }
 
-  readonly hasSubscriptionItem = computed(() =>
-    this.cartItems().some((item) => item.item_type === 'subscription'),
+  /** Only subscriptions are sold, so any cart line means the auto-renewal terms apply. */
+  readonly hasSubscriptionItem = computed(
+    () => !this.isInvoice() && (this.cart()?.lines.length ?? 0) > 0,
   );
 
   async proceedToPayment() {

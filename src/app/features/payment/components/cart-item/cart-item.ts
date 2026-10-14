@@ -1,6 +1,7 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { CurrencyPipe, NgOptimizedImage } from '@angular/common';
-import { CartItemData, OrderItem } from '@core/models/payment.model';
+import { CartLine, Decimal } from '@core/models/commerce.model';
+import { OrderItem } from '@core/models/payment.model';
 import { environment } from '@env/environment';
 import { NgIcon } from '@ng-icons/core';
 import { matDeleteOutline, matEditOutline } from '@ng-icons/material-icons/outline';
@@ -8,7 +9,12 @@ import { Button } from '@shared/ui/button/button';
 import { RouterLink } from '@angular/router';
 import { Utils } from '@shared/services/utils';
 
-export type CartDisplayItem = CartItemData | OrderItem;
+/**
+ * A commerce cart line, or a legacy order item. The order pages (invoice, order history)
+ * still pass `OrderItem` until PR5/PR6 of `prompts/commerce-api-rebind.md` move them onto
+ * CAIRA orders; the legacy branch goes with them.
+ */
+export type CartDisplayItem = CartLine | OrderItem;
 
 export interface CartItemConfig {
   showThumbnail?: boolean;
@@ -26,6 +32,8 @@ const DEFAULT_CONFIG: Required<CartItemConfig> = {
   showValidity: false,
   stacked: false,
 };
+
+const isCartLine = (item: CartDisplayItem): item is CartLine => 'money' in item;
 
 @Component({
   selector: 'app-cart-item',
@@ -74,69 +82,50 @@ export class CartItem {
     return `Valid till - ${diffDays} day${diffDays !== 1 ? 's' : ''}`;
   });
 
-  // Monthly (EMI) subscriptions: show the price ÷ 12 with a /mo suffix and the
-  // annual total as microcopy. `pay_method` exists on cart items only (not order
-  // items), so guard the access.
-  readonly isMonthly = computed(() => {
+  /** What the line costs: CAIRA's `final_amount` (after discounts and tax). */
+  readonly amount = computed<Decimal | number>(() => {
     const item = this.item();
-    return 'pay_method' in item && item.pay_method === 'monthly';
+    return isCartLine(item) ? item.money.final_amount : item.selling_price;
   });
-  readonly sellingDisplay = computed(() =>
-    this.isMonthly() ? this.item().selling_price / 12 : this.item().selling_price,
-  );
-  readonly baseDisplay = computed(() =>
-    this.isMonthly() ? this.item().base_price / 12 : this.item().base_price,
-  );
+  /** The list price, struck through, only when the line is discounted. */
+  readonly listAmount = computed<Decimal | number | null>(() => {
+    const item = this.item();
+    if (isCartLine(item)) return item.money.unit_discount_price ? item.money.unit_price : null;
+    return item.base_price > 0 ? item.base_price : null;
+  });
 
-  // Computed display values that work with both item types
-  readonly isOrderItem = computed(() => 'order' in this.item());
   /** Actual amount paid for this line — present on order-history items only; null for cart items. */
   readonly paidAmount = computed<number | null>(() => {
     const item = this.item();
     return 'paid_amount' in item ? item.paid_amount : null;
   });
-  readonly deliveryMode = computed(() => {
-    const item = this.item();
-    if (item.item_type) return item.item_type;
-    if ('delivery_mode' in item.item_details) return item.item_details.delivery_mode;
-    return 'subscription';
-  });
-  readonly isSubscription = computed(() => {
-    const mode = this.deliveryMode();
-    return mode === 'subscription' || mode === 'Subscription';
-  });
   readonly title = computed(() => {
-    const details = this.item().item_details;
-    if ('subscription_name' in details) {
-      return details.subscription_name;
-    }
-    return 'title' in details ? details.title : '';
+    const item = this.item();
+    return isCartLine(item) ? item.title : item.item_details.subscription_name;
   });
-  readonly description = computed(() => this.item().item_details.description);
+  readonly description = computed(() => {
+    const item = this.item();
+    return isCartLine(item) ? item.description : item.item_details.description;
+  });
 
   readonly icons = { delete: matDeleteOutline, edit: matEditOutline };
 
   // Outputs
-  removeItem = output<number>();
-  editItem = output<number>();
+  removeItem = output<string>();
+  editItem = output<string>();
 
   onDelete(): void {
-    this.removeItem.emit(this.item().id);
+    this.removeItem.emit(String(this.item().id));
   }
 
   onEdit(): void {
-    this.editItem.emit(this.item().id);
+    this.editItem.emit(String(this.item().id));
   }
 
   thumbnail = computed(() => {
     const item = this.item();
-    if (this.isSubscription()) {
-      return this.S3_BUCKET_URL + 'static-assests/web-app/payment/cart-subscription.webp';
-    }
-    if ('horizontal_thumbnail' in item.item_details) {
-      return item.item_details.horizontal_thumbnail;
-    }
-    return this.S3_BUCKET_URL + 'static-assests/web-app/payment/cart-subscription.webp';
+    const fallback = this.S3_BUCKET_URL + 'static-assests/web-app/payment/cart-subscription.webp';
+    return (isCartLine(item) && item.image_url) || fallback;
   });
 
   S3_BUCKET_URL = environment.S3_BUCKET_URL;

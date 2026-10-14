@@ -5,39 +5,19 @@
     </div>
   }
   <div class="flex flex-col space-y-2">
-    @let details = item().item_details;
-    @if (isSubscription()) {
-      <p class="text-white font-semibold">{{ title() }} Subscription</p>
+    <p class="text-white font-semibold">{{ title() }} Subscription</p>
+    @if (description()) {
       <p class="text-white text-sm">{{ description() }}</p>
-      @if (showValidity() && validityText()) {
-        <p class="text-accent text-sm">{{ validityText() }}</p>
-      } @else {
-        <p
-          class="text-accent mt-auto text-sm hover:underline transition-all cursor-pointer"
-          [routerLink]="planRoute()"
-        >
-          Know More
-        </p>
-      }
+    }
+    @if (showValidity() && validityText()) {
+      <p class="text-accent text-sm">{{ validityText() }}</p>
     } @else {
-      <div class="flex">
-        @if ('category_name' in details) {
-          <p class="text-white">{{ details.category_name }}</p>
-          &nbsp;|&nbsp;
-          <p class="text-white text-sm">{{ details.cpe_credits }} CPE</p>
-        }
-      </div>
-      <p class="text-white font-semibold">{{ title() }}</p>
-      <p class="text-white text-sm">
-        @if ('instructors' in details) {
-          @for (instructor of details.instructors; track instructor.id; let isLast = $last) {
-            {{ instructor.first_name }} {{ instructor.last_name }}{{ isLast ? '' : ', ' }}
-          }
-        }
+      <p
+        class="text-accent mt-auto text-sm hover:underline transition-all cursor-pointer"
+        [routerLink]="planRoute()"
+      >
+        Know More
       </p>
-      @if (showValidity() && validityText()) {
-        <p class="text-accent text-sm">{{ validityText() }}</p>
-      }
     }
   </div>
 </div>
@@ -45,23 +25,14 @@
   <div class="flex flex-col sm:items-end gap-0.5">
     <div class="flex space-x-2 items-center">
       <p class="font-semibold max-sm:text-sm">
-        {{ sellingDisplay() | currency: currencyCode() : 'symbol' : '1.2-2' }}
-        @if (isMonthly()) {
-          <span class="text-sm font-normal text-gray-400">/mo*</span>
-        }
+        {{ amount() | currency: currencyCode() : 'symbol' : '1.2-2' }}
       </p>
-      @if (baseDisplay() > 0) {
+      @if (listAmount(); as list) {
         <p class="line-through text-destructive max-sm:text-sm">
-          {{ baseDisplay() | currency: currencyCode() : 'symbol' : '1.2-2' }}
+          {{ list | currency: currencyCode() : 'symbol' : '1.2-2' }}
         </p>
       }
     </div>
-    @if (isMonthly()) {
-      <p class="text-xs text-gray-400 whitespace-nowrap">
-        Billed annually · {{ item().selling_price | currency: currencyCode() : 'symbol' : '1.2-2' }}
-        total
-      </p>
-    }
     @let paid = paidAmount();
     @if (paid !== null) {
       <p class="text-accent text-sm whitespace-nowrap">
@@ -88,6 +59,7 @@
       class="p-0! m-0"
       variant="ghost"
       size="icon"
+      aria-label="Remove from cart"
       (click)="onDelete()"
     >
       <ng-icon [svg]="icons.delete" class="w-6! h-6! text-blue-400" />

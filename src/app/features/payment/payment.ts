@@ -34,12 +34,6 @@ export class Payment {
     inject(CartStore).load();
   }
 
-  /**
-   * Number of items currently in the cart (0 until this session's own cart
-   * mutations answer; there is no cart read — see `CartStore`).
-   */
-  protected readonly cartCount = computed(() => this.facade.cartData()?.cartitem_data.length ?? 0);
-
   private readonly pathType = toSignal(
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),

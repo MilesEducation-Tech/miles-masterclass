@@ -76,6 +76,32 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       it with `preview_stop` / `preview_start` before trusting a render.
     - **Not verified in the browser:** signed-in add-to-cart (CORS). The C2 contract is covered by the
       capture.
+  - **Committed by the user:** PR2 `63e3147`.
+  - **PR3 `feat(payment): bind the cart and coupons to the commerce API` — DONE, UNCOMMITTED** on
+    `feat/MIL-XXX-commerce-cart-coupons` (stacked on PR2). The diff is +481 / −1202.
+    - **Facade:** `removeLine` (C4), `applyCoupon` (D1, an Observable that errors with the API message),
+      `removeCoupon` (D2), a code-only `openCouponDialog`, a `coupon_removed` notice, and analytics from the
+      cart's own figures. The aliases, `hasCartItems`, `cartState`, the coupon list, `removeCartItem` and
+      the mixed-cart rule are deleted.
+    - **`CartStore`:** `status`; `load()` is now an idempotent opt-in; legacy `cartData` is deleted.
+    - **Cart page, drawer, `cart-item` and price overview** run on `Cart`. The card hides for an empty cart.
+    - **Coupon dialog:** a single field with an inline error and ARIA wiring. 6 hard-coded colours went;
+      the baseline was pruned.
+    - **`promo-coupons`** is deleted, and **`paymentGuard`** waits on `CartStore.status`.
+    - **Invoice review mode** lists the cart.
+    - **Legacy cart and coupon types and routes:** −102 lines.
+    - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔ (pruned), prettier ✔,
+      `build:prod` 245.20 kB with only `ai-labs.css`.
+    - **Dev on 3000, signed out (restarted server):**
+      - `/payment/billing` redirects to `/payment/cart`, which shows the empty cart, no price card and no cart
+        read.
+      - The coupon dialog: an empty submit shows "Enter a coupon code."; typing clears the error; a failed
+        apply showed "Failed to fetch". Fixed: status 0 now reads "We couldn't reach the server…", and the
+        field gets `aria-invalid` + `aria-describedby`.
+    - **Size:** additions (481) are over the ~400 guideline. The plan allowed splitting coupons out; they're
+      entangled with the facade and price overview, so it is kept as one PR. ⏸ The user may still ask for
+      a split.
+    - **Not verified in the browser:** signed-in cart, remove and coupon (CORS on `x-accept-language`).
   - **Facts from the user:**
     - Only subscriptions are sold: no single courses, no books.
     - Alias imports everywhere, even inside one feature.
@@ -4009,6 +4035,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-13 · NON-REFACTOR · **Commerce PR3, cart + coupons** (uncommitted, `feat/MIL-XXX-commerce-cart-coupons`): C4/D1/D2 bound, code-only coupon dialog, guard on `CartStore.status`, `promo-coupons` + legacy cart/coupon types deleted (+481/−1202) · lint 0 errors, structure ✔ (pruned), build:prod 245.20 kB (local) · signed out: guard → cart, empty cart without totals, coupon dialog validation + network-error copy fixed
 
 - 2026-10-13 · NON-REFACTOR · **Commerce PR2, plans** (uncommitted, `feat/MIL-XXX-commerce-plans`): S1 + C2 bound; partner-code/firm-sponsorship dialogs, EMI maths and legacy plan types deleted (+224/−1325) · lint 0 errors, structure ✔, build:prod 245.50 kB (local) · dev on 3000: SSR plan card $948/year, signed-out Subscribe → sign-in prompt, `/in` empty state
 
