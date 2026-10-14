@@ -1,7 +1,7 @@
 import { inject, PLATFORM_ID } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
-import { ActivatedRouteSnapshot, CanActivateFn, Router, UrlTree } from '@angular/router';
+import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { filter, map, take } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { AuthSession } from '@core/services/auth-session/auth-session';
@@ -10,8 +10,8 @@ import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
 
 /**
- * Cart-state guard for `/payment/billing` and `/payment/review`. Reads the
- * required path via `route.data['pathType']` (set on every leaf route).
+ * Cart-state guard for `/payment/review`: a non-empty cart. The billing address is
+ * collected on the review page itself, so it is not a precondition here.
  *
  * Implementation notes:
  * - Guards run before the payment shell is created, so this asks `CartStore` for
@@ -24,10 +24,8 @@ import { Utils } from '@shared/services/utils';
  * - SSR returns `true` because both protected pages are configured as
  *   `RenderMode.Client` in `app.routes.server.ts`; the real check runs in the browser.
  */
-export const paymentGuard: CanActivateFn = (
-  route,
-  _state,
-): Observable<boolean | UrlTree> | boolean | UrlTree => {
+export const paymentGuard: CanActivateFn = ():
+  Observable<boolean | UrlTree> | boolean | UrlTree => {
   if (!isPlatformBrowser(inject(PLATFORM_ID))) return true;
 
   const cart = inject(CartStore);
@@ -45,7 +43,7 @@ export const paymentGuard: CanActivateFn = (
   if (!inject(AuthSession).isAuthenticated()) return cartTree;
 
   cart.load();
-  const check = (): boolean | UrlTree => evaluate(route, cart, router, notification, utils);
+  const check = (): boolean | UrlTree => evaluate(cart, router, notification, utils);
   const settled = (s: string) => s === 'resolved' || s === 'local' || s === 'error';
 
   if (settled(cart.status())) return check();
@@ -53,25 +51,14 @@ export const paymentGuard: CanActivateFn = (
 };
 
 function evaluate(
-  route: ActivatedRouteSnapshot,
   cart: CartStore,
   router: Router,
   notification: NotificationService,
   utils: Utils,
 ): boolean | UrlTree {
-  const pathType = (route.data['pathType'] as string | undefined) ?? '';
-  const basePath = ['/', utils.country(), utils.profession(), 'payment'];
-
   if (cart.lineCount() === 0) {
     notification.error('Empty Cart', 'Add a plan to your cart to continue.');
-    return router.createUrlTree([...basePath, 'cart']);
+    return router.createUrlTree(['/', utils.country(), utils.profession(), 'payment', 'cart']);
   }
-
-  // Review needs the billing address on the cart itself: checkout copies it from there.
-  if (pathType === 'review' && !cart.cart()?.billing_address_id) {
-    notification.error('Action Required', 'Please select a billing address to proceed.');
-    return router.createUrlTree([...basePath, 'billing']);
-  }
-
   return true;
 }

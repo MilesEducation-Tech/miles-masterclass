@@ -1,5 +1,3 @@
-<p class="text-xl text-white font-semibold">Billing Address</p>
-<hr class="border-gray-800" />
 @for (address of addresses(); track address.id) {
   <app-address
     [address]="address"
@@ -17,8 +15,11 @@
 
        Hidden once the form is open — it has done its job, and leaving a
        "no address saved" placard above the form the user is filling in reads
-       as an error rather than a prompt. -->
-  @if (!showForm()) {
+       as an error rather than a prompt. While the list loads a one-line status
+       stands in, or every learner would see "no address saved" for a moment. -->
+  @if (facade.addressesLoading()) {
+    <p class="text-sm text-gray-400 animate-pulse" role="status">Loading your addresses…</p>
+  } @else if (!showForm()) {
     <button
       type="button"
       class="no-file-found flex w-full flex-col items-center justify-center py-8 px-4 text-center bg-surface-state rounded-lg shadow-md cursor-pointer border border-transparent transition-colors hover:border-action hover:bg-[#1a2634] focus-visible:outline-none focus-visible:border-action focus-visible:ring-2 focus-visible:ring-action/40"
@@ -58,21 +59,21 @@
   }
 }
 
-<div class="pt-4 border-t border-gray-800 flex">
-  <button
-    app-button
-    type="button"
-    class="w-auto text-action hover:bg-transparent"
-    variant="ghost"
-    (click)="showForm() ? cancelEditing() : showForm.set(true)"
-  >
-    {{
-      showForm() && !editingAddressId()
-        ? '- Cancel Adding Billing Address'
-        : '+ Add new billing address'
-    }}
-  </button>
-</div>
+<!-- Hidden while the empty-state card is the only CTA (it opens the same form) and while
+     editing (that form has its own Cancel). -->
+@if (!editingAddressId() && (addresses().length > 0 || showForm())) {
+  <div class="pt-4 border-t border-gray-800 flex">
+    <button
+      app-button
+      type="button"
+      class="w-auto text-action hover:bg-transparent"
+      variant="ghost"
+      (click)="showForm() ? cancelEditing() : showForm.set(true)"
+    >
+      {{ showForm() ? '- Cancel Adding Billing Address' : '+ Add new billing address' }}
+    </button>
+  </div>
+}
 
 @if (showForm()) {
   <div class="auth-card max-w-full!">
@@ -165,6 +166,7 @@
             type="button"
             class="w-full"
             variant="destructive"
+            [disabled]="facade.savingAddress()"
             (click)="cancelEditing()"
           >
             Cancel
@@ -175,9 +177,9 @@
           class="w-full"
           type="submit"
           variant="default"
-          [disabled]="billingForm().invalid()"
+          [disabled]="billingForm().invalid() || facade.savingAddress()"
         >
-          Save Address
+          {{ facade.savingAddress() ? 'Saving…' : 'Save Address' }}
         </button>
       </div>
     </form>

@@ -87,6 +87,13 @@
       </div>
 
       <span class="sr-only" role="status">Loading your invoice…</span>
+    } @else if (loadError(); as message) {
+      <app-error-state
+        class="no-print"
+        title="Couldn't load this order"
+        [message]="message"
+        (retry)="retryLoadOrder()"
+      />
     } @else if (isInvoice()) {
       <app-payment-status [status]="paymentStatus()" />
       @if (canRetry()) {
@@ -117,29 +124,31 @@
             Download Invoice
           </button>
         </div>
-        <div class="flex w-full justify-between">
-          <p>Order Number</p>
-          <p>#{{ orderId() }}</p>
+        <!-- Labels never wrap; a UUID or long reference breaks on the right instead. -->
+        <div class="flex w-full justify-between gap-4">
+          <p class="shrink-0">Order Number</p>
+          <p class="text-end break-all">#{{ orderId() }}</p>
         </div>
-        <div class="flex w-full justify-between">
-          <p>Transaction Number</p>
-          <p>{{ payment()?.reference }}</p>
+        <!-- A coupon-covered order has no payment attempt, so these read "—" rather than blank. -->
+        <div class="flex w-full justify-between gap-4">
+          <p class="shrink-0">Transaction Number</p>
+          <p class="text-end break-all">{{ payment()?.reference || '—' }}</p>
         </div>
-        <div class="flex w-full justify-between">
-          <p>Transaction Date</p>
-          <p>{{ order()?.created_at | date: 'medium' }}</p>
+        <div class="flex w-full justify-between gap-4">
+          <p class="shrink-0">Transaction Date</p>
+          <p class="text-end">{{ order()?.created_at | date: 'medium' }}</p>
         </div>
-        <div class="flex w-full justify-between">
-          <p>Payment Mode</p>
-          <p class="capitalize">{{ payment()?.gateway }}</p>
+        <div class="flex w-full justify-between gap-4">
+          <p class="shrink-0">Payment Mode</p>
+          <p class="text-end capitalize">{{ payment()?.gateway || '—' }}</p>
         </div>
       </div>
     }
-    @if (!showSkeleton()) {
+    @if (!showSkeleton() && !loadError()) {
       <div class="w-full space-y-4">
         <p class="text-2xl text-white font-semibold">
           @if (isInvoice()) {
-            Courses Purchased
+            Items Purchased
           } @else {
             {{ itemCount() > 1 ? `${itemCount()} Items` : `${itemCount()} Item` }} Added
           }
@@ -159,20 +168,27 @@
         <app-price-overview />
       </div>
       <div class="flex w-full flex-col space-y-4">
-        <p class="text-2xl text-white font-semibold">Customer Details</p>
-        <div class="flex w-full sm:space-x-6 space-y-4 max-sm:flex-col">
-          @if (billingAddress(); as address) {
-            <div class="basis-1/2 space-y-1.5 flex flex-col">
-              <p class="text-gray-300 font-semibold">Contact details</p>
-              <p class="font-normal">Phone No: {{ address.phone }}</p>
-            </div>
-            <div class="basis-1/2 space-y-1.5 flex flex-col">
-              <p class="text-gray-300 font-semibold">Billing address</p>
-              <p class="font-normal">{{ address.name }}</p>
-              <p class="font-normal">{{ formattedAddress() }}</p>
-            </div>
-          }
-        </div>
+        @if (isInvoice()) {
+          <p class="text-2xl text-white font-semibold">Customer Details</p>
+          <div class="flex w-full sm:space-x-6 space-y-4 max-sm:flex-col">
+            @if (billingAddress(); as address) {
+              <div class="basis-1/2 space-y-1.5 flex flex-col">
+                <p class="text-gray-300 font-semibold">Contact details</p>
+                <p class="font-normal">Phone No: {{ address.phone }}</p>
+              </div>
+              <div class="basis-1/2 space-y-1.5 flex flex-col">
+                <p class="text-gray-300 font-semibold">Billing address</p>
+                <p class="font-normal">{{ address.name }}</p>
+                <p class="font-normal">{{ formattedAddress() }}</p>
+              </div>
+            }
+          </div>
+        } @else {
+          <!-- Review collects the billing address (there is no separate step). Checkout copies
+               the cart's address onto the order, so Pay puts the pick on the cart first. -->
+          <p class="text-2xl text-white font-semibold">Billing Address</p>
+          <app-billing-address />
+        }
       </div>
     }
     @if (!isInvoice()) {
@@ -215,10 +231,10 @@
           app-button
           type="button"
           variant="default"
-          [disabled]="!termsAccepted() || paying()"
+          [disabled]="!canPay()"
           (click)="proceedToPayment()"
         >
-          Proceed to Payment
+          {{ paying() ? 'Redirecting to payment…' : 'Proceed to Payment' }}
         </button>
       </div>
     } @else {}

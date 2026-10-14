@@ -46,10 +46,10 @@ export class Payment {
     { initialValue: 'cart' },
   );
 
-  // Fire `cart_view` whenever the journey step changes (cart → billing → review).
+  // Fire `cart_view` whenever the journey step changes (cart → review).
   private readonly trackPageView = effect(() => {
     const step = this.pathType();
-    if (step === 'cart' || step === 'billing' || step === 'review') {
+    if (step === 'cart' || step === 'review') {
       this.facade.trackCartView(step);
     }
   });
