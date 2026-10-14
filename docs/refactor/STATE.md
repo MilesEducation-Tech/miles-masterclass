@@ -71,6 +71,21 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     only `ai-labs.css`. Negative tests: a new relative import fails the structure check; a re-added OnPush fails
     ESLint.
 
+- 🔧 **2026-10-14, NON-REFACTOR — `course-detail/` trailer fields renamed on UAT. DONE, UNCOMMITTED** on
+  `feat/MIL-65-masterclass-chapter-page-binding` (the user's call: its own commit here, since this branch owns the
+  course-detail model).
+  - **Cause:** UAT renamed `trailer_video_url` → `horizontal_trailer_url` and `trailer_thumbnail_url` →
+    `trailer_horizontal_thumbnail_image_url` on 2026-10-14; Postman still has the old names. The parser rejected every
+    answer, so the course page and every course-info ("i") dialog showed their error state. Replaying the guard on
+    three live courses found only these two keys.
+  - **Fix:** `MasterclassCourseDetail` and its guard, the hero's poster and trailer, `openTrailer`, and the shared
+    `WebCourseSeoSource` (the og:video tag).
+  - **Verified (dev 4101):** the Advanced Excel course page renders (title, chapters, `ADVANCED_horri.jpg` poster) and
+    the hero's HLS trailer loads (`readyState` 4), with no console error.
+  - **Gates:** tsc 0; `pnpm lint` 0 errors (106 warnings); structure check passed; Prettier clean.
+  - **Not here:** the web course card's own rename (`trailer_url` → `horizontal_trailer_url`) is MIL-82 (#136),
+    merged on 2026-10-15. This branch was rebased on it the same day, so the home and masterclass rails load.
+
 - 🔧 **2026-10-14, NON-REFACTOR — bind the course library page to the web filter API (Story MIL-82)** on
   `feat/MIL-82-course-library-binding` (from `master`). Two subtasks, one PR. No refactor phase moved.
   - **Why:** the page's two reads, `v2/library-filters/` and `v2/library/`, answer Django's 404 HTML on UAT, so the
@@ -4549,6 +4564,8 @@ These are environment and product observations the repair surfaced. None changed
 - 2026-10-15 · NON-REFACTOR · **Explicit OnPush dropped** (uncommitted, 75 components + `eslint.config.mjs` + CLAUDE.md): Angular 22 defaults to OnPush, so every `changeDetection: ChangeDetectionStrategy.OnPush` and its import went; `no-restricted-syntax` now rejects a re-added OnPush · lint 0 errors (105 warnings), structure ✔, build:prod 245.32 kB (local) · TransferState reviewed, no change (the 3 manual uses carry non-HttpClient data) · facade audit of the rebound flows running
 
 - 2026-10-14 · NON-REFACTOR · **Alias-import ratchet** (uncommitted, `check-structure.mjs` + `structure-baseline.json` + AGENTS.md + CLAUDE.md): per-file `relativeImports` count rule seeded with 191 files / 381 imports; both rule docs say aliases everywhere · structure ✔ after seeding, a new relative import fails it, ng lint 0 errors (local)
+
+- 2026-10-14 · NON-REFACTOR · **course-detail trailer rename** (`feat/MIL-65-…`, uncommitted): `horizontal_trailer_url` / `trailer_horizontal_thumbnail_image_url` in the model, guard, hero, `openTrailer` and the SEO source · tsc 0, lint 0 errors, structure ✔, prettier ✔ · dev 4101: course page and hero trailer load
 
 - 2026-10-14 · NON-REFACTOR · **MIL-84, course library bound to `filter/`** (`feat/MIL-82-course-library-binding`, uncommitted) plus the `horizontal_trailer_url` rename (own commit): sidebar, pill tabs, grid, paging, states · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod ✔ (local) · dev 4101 headless: 64 courses over 6 pages, each filter and tab narrows, error + retry, 375/768/1440 no horizontal scroll
 
