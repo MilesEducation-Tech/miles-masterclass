@@ -7,6 +7,25 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-14, NON-REFACTOR — bind the course library page to the web filter API (Story MIL-82)** on
+  `feat/MIL-82-course-library-binding` (from `master`). Two subtasks, one PR. No refactor phase moved.
+  - **Why:** the page's two reads, `v2/library-filters/` and `v2/library/`, answer Django's 404 HTML on UAT, so the
+    sidebar is empty and every tab says "No courses found". Production still serves them. The replacement is
+    `GET web-api/v1/masterclass/filter/`: filter options, the applied selection and paginated cards in one read.
+    `course_type` is required.
+  - **MIL-83, remove the v2 bindings (`prompts/course-library-remove-v2.md`, approved). DONE, UNCOMMITTED.**
+    - **What changed:** `CourseFacade` keeps only the tab state (`courseType`, `selectCourseType`). Both resources,
+      the paging, and the selection keyed by the v2 param names are gone. The page keeps its frame, the tabs and the
+      empty state. `course-filters` and `course-filters-drawer` are unchanged and unused until MIL-84.
+      `core/models/library-filters.model.ts` is untouched, because the carousel filter dialog still uses it.
+    - **Verified (dev 4101, headless Playwright, signed out):** at 1440 and 375, no `uat-api` or `v2/` request and no
+      console error. The tabs switch Podcast → Micro Learning → Master Class with no request, and there's no
+      horizontal scroll at 375. The instructor and badge libraries still make their own (404) reads, unchanged.
+    - **Gates (local macOS):** tsc 0; `pnpm lint` 0 errors (106 warnings); structure check passed; Prettier clean.
+      `CI=true pnpm build:prod` green: initial 245.34 kB, only the `ai-labs.css` warning.
+  - **MIL-84, bind the filters and course list to `filter/`.** Not started.
+  - **Postman:** `postman/` is untracked and ignored since `71ce016`; the local export is the 2026-10-12 one.
+
 - 🔧 **2026-10-13, NON-REFACTOR — commerce API rebind (`prompts/commerce-api-rebind.md`). Approved by the
   user ("use this plan"); D1–D6 = A. The old backend is gone, so no legacy binding, logic or type survives in
   the payment flow; partner code and firm sponsorship leave it too.**
@@ -395,6 +414,7 @@ data-press:bg-transparent` in a static `class`; the auto-renew dialog's Close is
     a real ICO with 16/32/48 PNG frames (7 KB), the padding trimmed and the transparency kept.
   - **Gates (local macOS):** lint 0 errors, structure check passed, prettier clean, `build:prod` 245.51 kB
     with only the `ai-labs.css` warning. Dev on 3000 served it as `image/x-icon`, byte-identical.
+
 - 🔧 **2026-10-12, NON-REFACTOR — OTP send/verify take `email` or `mobile` + `country_code`
   (`prompts/auth-otp-contact-fields.md`, approved). DONE, UNCOMMITTED** on
   `fix/MIL-63-otp-contact-fields` (from `master`). No refactor phase moved.
@@ -4270,6 +4290,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-14 · NON-REFACTOR · **MIL-83, course library v2 bindings removed** (`feat/MIL-82-course-library-binding`, uncommitted): `CourseFacade` reduced to the tab state; the page keeps its frame, tabs and empty state · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod ✔ (local) · dev 4101 headless: no `v2/` request at 1440 and 375, tabs switch with no request
 
 - 2026-10-14 · NON-REFACTOR · **Payment UI/UX pass + billing step removed** (uncommitted, local `uat`, 22 files +281/−167): gallery capped at 80vh, empty-cart copy + CTA, cart loading/error states, auth guard on invoice/orders, invoice error state/fallbacks/row wrap, `savingAddress`, Cart → Review with the address collected on review (`components/billing-address`), `sm:px-4` gutters, pending copy · lint 0 errors, structure ✔, prettier ✔, build:prod 245.15 kB (local) · signed-in flow verified in dev against UAT at 1440/768/375 up to K1 `payment_error` (no Stripe on UAT)
 - 2026-10-13 · NON-REFACTOR · **Commerce PR7, buy buttons → plan** (uncommitted, `feat/MIL-XXX-offerings-buy-to-plan`): `addCourseToCart`, `v2/user/cart/`, `cartItemRemoved`, `CART_DRAWER_DIALOG` deleted; certificate gate subscriptions-only (+42/−206) · lint 0 errors, structure ✔, build:prod 245.29 kB (local) · gate dialogs verified in dev; legacy sweep of `src/` empty · epic code-complete
