@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronRight, heroXMark } from '@ng-icons/heroicons/outline';
@@ -78,4 +78,22 @@ export class PriceOverview {
 
   /** The cart's applied coupon (the Savings Corner never shows on review or invoice). */
   readonly coupon = computed(() => this.cart()?.coupon ?? null);
+
+  /** The coupon offered right in the card: CAIRA's first. The dialog lists them all. */
+  readonly firstCoupon = computed(() => this.facade.coupons()[0] ?? null);
+  readonly applyingCoupon = signal(false);
+  readonly couponError = signal<string | null>(null);
+
+  applyFirstCoupon(code: string): void {
+    if (this.applyingCoupon()) return;
+    this.applyingCoupon.set(true);
+    this.couponError.set(null);
+    this.facade.applyCoupon(code).subscribe({
+      next: () => this.applyingCoupon.set(false),
+      error: (message: string) => {
+        this.applyingCoupon.set(false);
+        this.couponError.set(message);
+      },
+    });
+  }
 }

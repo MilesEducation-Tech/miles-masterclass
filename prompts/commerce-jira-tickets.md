@@ -1,6 +1,6 @@
 # Jira tickets: commerce rebind (subscriptions on CAIRA)
 
-One epic and nine stories, one per PR (`docs/engineering/jira-ticket-template.md`).
+One epic and ten stories, one per PR (`docs/engineering/jira-ticket-template.md`).
 
 **Created 2026-10-13:** epic **MIL-69**, stories **MIL-70 to MIL-78** in table order. The local branches
 are renamed to match.
@@ -95,12 +95,11 @@ Run as a UAT test learner, with DevTools → Network open.
    - An invalid code shows "That code is not valid for this cart." under the field.
    - The UAT percentage code updates the coupon discount and total.
    - Removing it restores the total.
-4. **Billing:**
-   - Add an address with postal code `07301`. It keeps the leading zero.
-   - Edit it and clear line 2.
-   - Proceed sends `PATCH …/commerce/cart/` with `billing_address_id` and takes you to review.
-5. **Review:** tick the terms, then Proceed to Payment. Accept the auto-renew terms and you land on
-   `checkout.stripe.com`.
+4. **Review, billing address** (MIL-80 moved this onto the review page): with no saved address the
+   "No billing address saved" card shows. Add one with postal code `07301` (it keeps the leading zero);
+   it appears selected. Edit it and clear line 2.
+5. **Review, pay:** tick the terms, then Proceed to Payment. Accept the auto-renew terms:
+   `PATCH …/commerce/cart/` carries `billing_address_id`, then you land on `checkout.stripe.com`.
 6. **Pay** with `4242 4242 4242 4242`, any future date and any CVC. You return through
    `/checkout/success` to `/us/accounting/payment/invoice/<id>`, which shows **paid**, the Stripe
    reference and `stripe`. `purchase` fires once; check GTM/GA4.
@@ -123,9 +122,9 @@ Run as a UAT test learner, with DevTools → Network open.
 1. **Draft PRs with the `needs-uat` label.** Open one PR per story, as a stack: MIL-70 targets `master`,
    MIL-71 targets MIL-70's branch, and so on. Start each description with
    `⚠️ Needs UAT sign-off — do not merge`.
-2. **UAT.** Once CI is green on all nine, the release owner puts **MIL-78's head commit** (`feat/MIL-78-offerings-buy-to-plan`) on `uat`
-   (`git-playbook.md` §5). It contains all nine stories, so one deploy tests the whole flow. Run the UAT
-   test plan.
+2. **UAT.** Once CI is green on all ten, `uat` points at **MIL-80's head commit**
+   (`feat/MIL-80-billing-on-review`), the top of the stack. It contains all ten stories, so one deploy
+   tests the whole flow. Run the UAT test plan.
    - Fixes go on the branch that owns the code. Rebase the branches above it, then the release owner puts
      the new top commit on UAT.
 3. **Sign-off.** Each PR gets "UAT approved by …, commit `<sha>`", the label comes off, and it is marked
@@ -134,7 +133,7 @@ Run as a UAT test learner, with DevTools → Network open.
    - Merge MIL-70.
    - Then for each next PR, retarget it to `master` and drop the already-merged parent commit:
      `git rebase --onto origin/master <parent-sha> <branch>`, then force-push.
-   - CI goes green, then merge. Repeat up to MIL-78.
+   - CI goes green, then merge. Repeat up to MIL-80.
 5. **Production** (`docs/engineering/versioning.md`):
    - The `feat:` merges open a Release PR (minor bump); merging it deploys production.
    - **Before that Release PR merges:**
@@ -553,3 +552,116 @@ The podcast hero still shows a per-course price for courses flagged as individua
 follow-up, if product wants it hidden.
 
 **Estimate:** S
+
+---
+
+## MIL-80. `feat(payment): collect the billing address on review and fix the checkout UI states`
+
+**Issue type:** Story · **Component / scope:** payment
+**Jira:** MIL-80 · **Branch:** `feat/MIL-80-billing-on-review`
+**Links:** epic MIL-69 · blocked by MIL-78 · relates to MIL-73 to MIL-77 · `PATCH commerce/cart/`
+
+### Context
+
+Product wants the billing step out of checkout: the review page asks for the address when the cart has
+none. A strict UI/UX pass over the flow at 1440 / 768 / 375 px, run 2026-10-14 in dev against the UAT
+API, found the rest.
+
+### Current behaviour
+
+- Cart → Billing → Review, and review bounces back to billing without an attached address.
+- Plan page: the gallery's image columns size the page (gallery 4,729 px, page 6,115 px at 1440).
+- Cart: "Your cart is empty" shows while the cart loads, and the empty state carries the billing-address
+  copy.
+- Invoice: a failed order read shows a blank invoice; a coupon-covered order shows a blank reference and
+  gateway; the order id wraps the labels at 375 px; "Payment Pending" says a payment is being processed
+  when none started.
+- Signed out, order history shows "No orders found" and the invoice an endless skeleton.
+- Address form: Save can be double-clicked; the add toggle shows while editing.
+- Between 640 and 1279 px the cart touches both edges.
+
+### Expected behaviour
+
+- **Cart → Review.** Review shows the address list with the cart's (or default) address preselected, or
+  the "No billing address saved" card and the form. Pay needs the terms, a picked address, a closed form
+  and no checkout in flight; it puts the pick on the cart (`PATCH commerce/cart/`) only when it differs,
+  then checks out. `/payment/billing` redirects to review.
+- Gallery at most 80vh (min 480 px). Cart has loading and error states. Invoice has an error card with
+  retry, "—" fallbacks, non-wrapping labels and pending copy that covers both cases. Order pages need
+  sign-in. Save and Cancel wait on the request. A 16 px gutter from 640 to 1279 px.
+
+### Scope
+
+- In: the above, in `features/payment`, plus `shared/components/plan-scrolling-gallery` and
+  `CartStore.reload()`.
+- Out: the signed-in plan page's post-hydration "Loading plans…" flash (a transfer-cache policy call);
+  the app-wide view-transition `InvalidStateError` noise; the cart thumbnail's LCP `priority` warning.
+
+### Acceptance criteria
+
+- [ ] The stepper reads Cart · Review, and `/payment/billing` lands on `/payment/review`.
+- [ ] Review with no address shows the card and the form; saving one selects it; Pay stays disabled until
+      the terms are ticked.
+- [ ] Pay sends `PATCH …/commerce/cart/` with `billing_address_id` only when the pick changed, then
+      `POST …/commerce/checkout/`.
+- [ ] The plan gallery is at most 80vh at 1440 and 768, and the page is not thousands of pixels long.
+- [ ] Reloading the cart shows a spinner, never the empty state, while it loads.
+- [ ] Signed out, order history and the invoice go to sign-in and come back.
+- [ ] Invoice at 375 px: Order Details labels stay on one line; "—" where a payment has no reference.
+- [ ] `pnpm lint`, `pnpm build:prod` green (local macOS: 245.15 kB, only `ai-labs.css`).
+
+### How to verify
+
+UAT test plan steps 2–5 and 9, and the PR's "How to test".
+
+### Risks / assumptions / open questions
+
+- Checkout still runs with an address on the cart. Whether CAIRA accepts K1 without one is untested, so
+  the page keeps requiring one.
+- The test plan's old step 4 (the billing page) now happens on review.
+
+**Estimate:** M (281 / 167 lines)
+
+---
+
+## MIL-81. `feat(payment): list the learner's coupons in the cart and coupon dialog`
+
+**Issue type:** Story · **Component / scope:** payment
+**Jira:** MIL-81 (use the issued key if different) · **Branch:** `feat/MIL-81-coupon-list`
+**Links:** epic MIL-69 · blocked by MIL-80 · `GET commerce/coupons/` (captured in `docs/COMMERCE_API.md`;
+not in Postman yet)
+
+### Context
+
+Learners had to know a code to get a discount. The backend added a coupon list for the cart.
+
+### Expected behaviour
+
+- **Savings Corner (cart page):** with no coupon applied, the first coupon (code, "Save $…" for this
+  cart, description) with **Apply**, then "View all coupons" (or "Have another code?" for one). A
+  placeholder holds the height while loading; no coupons → the "Apply Coupon" row.
+- **Coupon dialog:** every coupon with code, saving, description and expiry (formatted in UTC), each with
+  **Apply**, or **Applied** for the cart's current one; the code field stays; a refusal shows under the
+  coupon tried.
+- **The read:** opt-in from the cart page, keyed on the cart's id, off the loading bar; a failed read
+  falls back to the code field.
+
+### Acceptance criteria
+
+- [ ] US cart: the Savings Corner offers `MMC250` "Save $250.00"; Apply takes $250 off the total.
+- [ ] The dialog lists every coupon; the applied one reads **Applied**; applying another from the list
+      closes the dialog and updates the totals.
+- [ ] Expiry reads "Dec 31, 2026" for `2026-12-31T23:59:59Z`, in any time zone.
+- [ ] No coupons (India): the plain "Apply Coupon" row.
+- [ ] A failed list read leaves the code field working; no toast.
+- [ ] `pnpm lint`, `pnpm build:prod` green (state the environment).
+
+### Risks / assumptions / open questions
+
+- **The order is CAIRA's.** "First coupon" is the API's first; ask the backend to sort best-first if
+  that's the intent.
+- **UAT CORS doesn't allow `DELETE`,** so removing a coupon fails in the browser until the backend adds
+  it (it also breaks remove-from-cart and delete-address).
+- The endpoint isn't in Postman; ask for it to be added with an example.
+
+**Estimate:** M (~200 lines)

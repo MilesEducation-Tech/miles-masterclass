@@ -8,7 +8,8 @@ import {
   linkedSignal,
   Injector,
 } from '@angular/core';
-import { HttpErrorResponse, httpResource } from '@angular/common/http';
+import { HttpContext, HttpErrorResponse, httpResource } from '@angular/common/http';
+import { SKIP_LOADING } from '@core/models/http.model';
 import { Observable, catchError, map, tap, throwError } from 'rxjs';
 import { NotificationService } from '@core/services/notification/notification';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
@@ -20,8 +21,10 @@ import {
   Address,
   AddressInput,
   COMMERCE_ROUTES,
+  Coupon,
   Plan,
   parseAddresses,
+  parseCoupons,
   parseOrder,
   parseOrdersPage,
   parsePlans,
@@ -245,6 +248,50 @@ export class PaymentFacade {
     const err = this.plansResource.error();
     if (err) this.logger.error('Failed to load subscription plans', err);
   });
+
+  /**
+   * The coupons the learner can apply (`commerce/coupons/`), each with what it saves on this cart,
+   * in CAIRA's order. OPT-IN: the cart page calls `loadCoupons()`. Gated on the boolean
+   * `isAuthenticated()` and on a cart with a line.
+   *
+   * Keyed on the cart's id (null while it has no line), not on the cart object: applying a coupon
+   * or an address replaces the cart but changes nothing this list depends on. It is optional UI, so
+   * it stays off the loading bar, and a failed read only logs: the code field still works.
+   */
+  private readonly couponsWanted = signal(false);
+  private readonly couponCartId = computed(() => {
+    const cart = this.cart.cart();
+    return cart && cart.lines.length > 0 ? cart.id : null;
+  });
+  private readonly couponsResource = httpResource(
+    () => {
+      const cartId = this.couponCartId();
+      return this.couponsWanted() && this.auth.isAuthenticated() && cartId
+        ? {
+            url: apiUrl(COMMERCE_ROUTES.coupons.path),
+            params: { cart_id: cartId },
+            headers: { 'X-Country-Code': this.country().toUpperCase() },
+            context: new HttpContext().set(SKIP_LOADING, true),
+          }
+        : undefined;
+    },
+    { parse: parseCoupons },
+  );
+  /** Guarded: `value()` throws on an errored resource. */
+  readonly coupons = computed<Coupon[]>(() =>
+    this.couponsResource.hasValue() ? this.couponsResource.value() : [],
+  );
+  readonly couponsLoading = computed(() => this.couponsResource.isLoading());
+  private readonly couponsErrorLog = effect(() => {
+    const err = this.couponsResource.error();
+    if (err) this.logger.error('Failed to load coupons', err);
+  });
+
+  /** The first call opts the coupon list in; later calls re-read it. */
+  loadCoupons(): void {
+    if (this.couponsWanted()) this.couponsResource.reload();
+    else this.couponsWanted.set(true);
+  }
 
   /** The first call opts the addresses in; later calls re-read them. */
   loadAddresses(): void {
