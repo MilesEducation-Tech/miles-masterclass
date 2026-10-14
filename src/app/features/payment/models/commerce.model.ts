@@ -85,6 +85,85 @@ export const ADDRESS_LIMITS = {
   postalCode: 20,
 } as const;
 
+/**
+ * Every order status CAIRA writes. A cart becomes `purchased` only when payment is captured;
+ * until then its order stays `pending` and payable (K2).
+ */
+export type OrderStatus =
+  | 'pending'
+  | 'processing'
+  | 'paid'
+  | 'partial_paid'
+  | 'failed'
+  | 'refunded'
+  | 'partial_refunded'
+  | 'cancelled'
+  | 'partial_cancelled';
+
+/** An order line: the order's own snapshot, not a join to the live catalogue. */
+export interface OrderLine {
+  id: string;
+  product_id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  money: { price_before_discount: Decimal; discount_amount: Decimal; final_amount: Decimal };
+}
+
+/** One payment attempt. `reference` is the Stripe Checkout Session id (`cs_…`). */
+export interface OrderPayment {
+  id: string;
+  gateway: string;
+  reference: string;
+  amount: Decimal;
+  status: string;
+  captured_at: string | null;
+}
+
+export interface Order {
+  id: string;
+  status: OrderStatus;
+  currency: string;
+  money: {
+    price_before_discount: Decimal;
+    discount_amount: Decimal;
+    coupon_discount_amount: Decimal;
+    gst_amount: Decimal;
+    /** The order total. */
+    price_after_gst: Decimal;
+    amount_paid: Decimal;
+  };
+  billing_address_id: string | null;
+  created_at: string;
+  lines: OrderLine[];
+  /** Filled by K4 only; always `[]` in the orders list (K3). */
+  payments: OrderPayment[];
+}
+
+/** A Stripe Checkout Session: the browser goes to `url`. */
+export interface PaymentSession {
+  session_id: string;
+  url: string;
+  amount: Decimal;
+  currency: string;
+}
+
+/**
+ * K1. Exactly one of `free_order`, `payment` and `payment_error` is set. `free_order` means a
+ * coupon covered the whole amount and the order is already paid, so test it first.
+ */
+export interface CheckoutResult {
+  result: Order;
+  payment: PaymentSession | null;
+  /** e.g. `payment_unavailable_for_currency`, `gateway_not_configured`. */
+  payment_error: string | null;
+  free_order: { order_status: OrderStatus } | null;
+}
+
+/** K2: a new session (201), or a coupon-zeroed order completing with no payment (200). */
+export type PaymentSessionResult =
+  PaymentSession | { free: true; order_id: string; order_status: OrderStatus };
+
 /** An unpaginated CAIRA list. */
 export interface ListResult<T> {
   count: number;
@@ -125,6 +204,26 @@ function isAddress(v: unknown): v is Address {
     typeof v['state'] === 'string' &&
     typeof v['postal_code'] === 'string'
   );
+}
+
+function isOrder(v: unknown): v is Order {
+  return (
+    isObject(v) &&
+    typeof v['id'] === 'string' &&
+    typeof v['status'] === 'string' &&
+    typeof v['currency'] === 'string' &&
+    isObject(v['money']) &&
+    typeof v['money']['price_after_gst'] === 'string' &&
+    Array.isArray(v['lines']) &&
+    Array.isArray(v['payments'])
+  );
+}
+
+/** `httpResource` `parse` for `commerce/order/{id}/`. */
+export function parseOrder(body: unknown): Order {
+  const order = isObject(body) ? body['data'] : undefined;
+  if (!isOrder(order)) throw new Error('commerce/order/ response does not match the contract.');
+  return order;
 }
 
 /** `httpResource` `parse` for `commerce/addresses/` (default address first). */
@@ -205,4 +304,19 @@ export const COMMERCE_ROUTES = {
     path: 'api/v1/commerce/cart/',
     method: 'PATCH',
   } as RouteConfig<{ cart_id: string; billing_address_id: string }, CommonResponse<Cart>>,
+  /** K1: the cart becomes a pending order (the same order on a repeat). Always 201 once it exists. */
+  checkout: {
+    path: 'api/v1/commerce/checkout/',
+    method: 'POST',
+  } as RouteConfig<{ cart_id: string }, CommonResponse<CheckoutResult>>,
+  /** K2: a new Stripe session for a payable order; `order_id` goes in the body, never the query. */
+  paymentSession: {
+    path: 'api/v1/commerce/payment/session/',
+    method: 'POST',
+  } as RouteConfig<{ order_id: string }, CommonResponse<PaymentSessionResult>>,
+  /** K4: one of the learner's orders, with its payment attempts. Another learner's is a 404. */
+  order: {
+    path: 'api/v1/commerce/order/:order_id/',
+    method: 'GET',
+  } as RouteConfig<void, CommonResponse<Order>>,
 } as const;

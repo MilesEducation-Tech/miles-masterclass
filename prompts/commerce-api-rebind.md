@@ -524,7 +524,18 @@ with PR2, and `status` with PR3's guard, for the same reason.
 - **Delete** `UserAddress`, `BillingAddressPayload` and `selectedAddressId`. The selection becomes
   `cart.billing_address_id`.
 
-**PR5: `feat(payment): checkout, Stripe return and payment retry`** (about 350 lines)
+**PR5: `feat(payment): checkout, Stripe return and payment retry`** (implemented 2026-10-13: +431 / −307)
+
+**What shipped differs from the bullets below in four places:**
+
+- **`checkout(onOrder)` and `retryPayment` live on the facade, but the page owns navigation.** A
+  `payment_error` lands the learner on the order with the reason, and "Try again" shows for `pending` or
+  `failed` orders. There is no automatic K2, because it fails the same way while the gateway is down.
+- **No A3 read.** Both review and invoice find the billing address in the A1 list. The invoice's email row
+  is gone, since there's no source for it; name and phone come from the address.
+- **The invoice sends a signed-out visitor to sign-in** with `redirect` back to the invoice, so a session
+  that lapsed during Stripe checkout never sees an endless skeleton.
+- **`cart-item` now takes `CartLine | OrderLine | OrderItem`.** The legacy branch leaves with PR6.
 
 - **Review "Pay"** calls `checkout()` and handles the outcomes in order: `free_order`, then `payment`, then
   `payment_error`. It includes the Stripe URL allow-list.

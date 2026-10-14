@@ -15,11 +15,11 @@ import { Utils } from '@shared/services/utils';
 interface PriceSummary {
   count: number;
   currency: string;
-  subtotal: Decimal | number;
-  productDiscount: Decimal | number;
-  couponDiscount: Decimal | number;
-  tax: Decimal | number;
-  total: Decimal | number;
+  subtotal: Decimal;
+  productDiscount: Decimal;
+  couponDiscount: Decimal;
+  tax: Decimal;
+  total: Decimal;
 }
 
 @Component({
@@ -61,21 +61,22 @@ export class PriceOverview {
   }
 
   /**
-   * `null` hides the card: a cart with no lines shows no totals (CAIRA reports a fresh
-   * cart's currency wrongly until a line is added; `docs/COMMERCE_API.md`).
+   * The invoice shows its order; every other step shows the cart. `null` hides the card: a
+   * cart with no lines shows no totals (CAIRA reports a fresh cart's currency wrongly until a
+   * line is added; `docs/COMMERCE_API.md`).
    */
   readonly summary = computed<PriceSummary | null>(() => {
     if (this.isInvoice()) {
-      // The invoice still reads the legacy order until PR5 of prompts/commerce-api-rebind.md.
-      const f = this.facade;
+      const order = this.facade.order();
+      if (!order) return null;
       return {
-        count: f.invoiceItemCount(),
-        currency: f.invoiceCurrency(),
-        subtotal: f.invoiceSubTotal(),
-        productDiscount: f.invoiceProductDiscount(),
-        couponDiscount: f.invoiceTotalDiscount() - f.invoiceProductDiscount(),
-        tax: f.invoiceTaxAmount(),
-        total: f.invoiceGrandTotal(),
+        count: order.lines.length,
+        currency: order.currency,
+        subtotal: order.money.price_before_discount,
+        productDiscount: order.money.discount_amount,
+        couponDiscount: order.money.coupon_discount_amount,
+        tax: order.money.gst_amount,
+        total: order.money.price_after_gst,
       };
     }
     const cart = this.cart();

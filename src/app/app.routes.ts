@@ -1,7 +1,13 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
 import { validateProfessionCountryGuard } from '@core/guards/validate-profession-country-guard';
 import { rootRedirectGuard } from '@core/guards/root-redirect-guard';
 import { onboardingGuard } from '@core/guards/auth/onboarding-guard';
+import { CountryContext } from '@core/services/country-context/country-context';
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** An order-status-shaped hint (`paid`, `partial_paid`…); anything else is ignored. */
+const STATUS = /^[a-z_]{1,32}$/;
 
 export const routes: Routes = [
   {
@@ -32,6 +38,27 @@ export const routes: Routes = [
     path: 'compliance',
     loadComponent: () =>
       import('@features/legal/pages/compliance/compliance').then((m) => m.Compliance),
+  },
+  {
+    // Stripe → CAIRA (which settles the payment) → 303 here, with `order_id` and the order's
+    // status. CAIRA doesn't know the locale, so this lands the learner on the order's invoice
+    // in their country. Listed before `:country/:profession_type`, which `checkout/success`
+    // would otherwise match as country "checkout".
+    path: 'checkout/:result',
+    redirectTo: ({ params, queryParams }) => {
+      const router = inject(Router);
+      const base = ['/', inject(CountryContext).current(), 'accounting', 'payment'];
+      // Untrusted query: only a UUID becomes part of a URL, and only a known result counts.
+      const orderId = String(queryParams['order_id'] ?? '');
+      const result = params['result'];
+      if (!UUID.test(orderId) || (result !== 'success' && result !== 'cancel')) {
+        return router.createUrlTree([...base, 'cart']);
+      }
+      // A hint for the invoice until it reads the order itself.
+      const hint = String(queryParams['status'] ?? '');
+      const status = result === 'cancel' ? 'cancelled' : STATUS.test(hint) ? hint : 'pending';
+      return router.createUrlTree([...base, 'invoice', orderId], { queryParams: { status } });
+    },
   },
   {
     // `onboardingGuard` is the backstop for a first-time learner who navigates
