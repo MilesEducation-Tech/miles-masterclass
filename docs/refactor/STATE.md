@@ -262,7 +262,11 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 data-press:bg-transparent` in a static `class`; the auto-renew dialog's Close is `link`. Also
         the shared `utils-dialog` close button (one class line; it serves every dialog). Verified in
         dev: computed background stays transparent on hover for every button in the flow.
-      - **Coupon list: BUILT (proposed MIL-81, `feat/MIL-81-coupon-list`, stacked on MIL-80).** The
+      - **Committed by the user 2026-10-14:** hover fix `7eb6a9a` on MIL-80 (#133); coupon list
+        `983efca` on `feat/MIL-81-coupon-list`, **PR #134** (draft, `needs-uat`, base MIL-80; bound
+        to this session). `uat` = `983efca`; CI green on #133 and #134. The release guide now names
+        MIL-81 as the top of the stack (eleven PRs, eleven merge rounds) — uncommitted.
+      - **Coupon list: BUILT (MIL-81, `feat/MIL-81-coupon-list`, stacked on MIL-80).** The
         user gave `GET api/v1/commerce/coupons/` as a curl (not in Postman). Captured on UAT with the
         test learner's token (contract in `docs/COMMERCE_API.md` § Coupon list). Facade
         `couponsResource` (opt-in `loadCoupons()` from the cart page, keyed on the cart id, `cart_id` +
