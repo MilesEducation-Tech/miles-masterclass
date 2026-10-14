@@ -1,7 +1,8 @@
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matEditOutline, matDeleteOutline } from '@ng-icons/material-icons/outline';
-import { UserAddress } from '@core/models/payment.model';
+import { Address as AddressModel } from '@features/payment/models/commerce.model';
+import { formatAddress } from '@features/payment/utils/address-format';
 
 @Component({
   selector: 'app-address',
@@ -21,21 +22,15 @@ import { UserAddress } from '@core/models/payment.model';
   },
 })
 export class Address {
-  readonly address = input.required<UserAddress>();
-  readonly userName = input<string>('');
+  readonly address = input.required<AddressModel>();
   readonly selected = input<boolean>(false);
   readonly actionsDisabled = input<boolean>(false);
 
-  readonly selectedChange = output<UserAddress>();
-  readonly edit = output<UserAddress>();
-  readonly delete = output<UserAddress>();
+  readonly selectedChange = output<AddressModel>();
+  readonly edit = output<AddressModel>();
+  readonly delete = output<AddressModel>();
 
-  readonly formattedAddress = computed(() => {
-    const a = this.address();
-    return [a.address1, a.locality, a.landmark, a.city, a.state, a.country, a.zipcode]
-      .filter(Boolean)
-      .join(', ');
-  });
+  readonly formattedAddress = computed(() => formatAddress(this.address()));
 
   onSelect(event?: Event): void {
     event?.preventDefault();

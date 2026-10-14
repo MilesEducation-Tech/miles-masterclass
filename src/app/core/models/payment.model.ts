@@ -26,22 +26,6 @@ export interface CartSteps {
 }
 
 export const PAYMENT_ROUTES = {
-  listAddress: {
-    path: 'user/address/',
-    method: 'GET',
-  } as RouteConfig<void, CommonResponse<UserAddress[]>>,
-  addAddress: {
-    path: 'user/address/',
-    method: 'POST',
-  } as RouteConfig<void, CommonResponse<UserAddress>, {}, BillingAddressPayload>,
-  updateAddress: {
-    path: 'user/address/:id/',
-    method: 'PUT',
-  } as RouteConfig<void, CommonResponse<UserAddress>>,
-  deleteAddress: {
-    path: 'user/address/:id/',
-    method: 'DELETE',
-  } as RouteConfig<void, CommonResponse<UserAddress>>,
   proceedToPayment: {
     path: 'user/order/proceed_checkout/',
     method: 'POST',
@@ -129,19 +113,6 @@ export interface AppliedCoupon {
   max_user_apply: number;
   description: string;
   applicable_country: string | null;
-}
-
-export interface BillingAddressPayload {
-  id?: string;
-  phone_no: string;
-  email_id: string;
-  address1: string;
-  locality: string;
-  landmark: string;
-  country: string;
-  state: string;
-  city: string;
-  zipcode: number;
 }
 
 export interface OrderDetails {
