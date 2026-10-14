@@ -23,7 +23,29 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       with only `ai-labs.css`. `location-min` and `html-to-pdf` are still lazy.
     - **Dev on 3000:** `/us/…/payment/cart` renders `app-payment` → `app-overview-wrapper` → `app-cart`;
       `/payment/plan` renders `app-plan`, with no module errors.
-  - **Next:** PR1 (models, registries, cart read), after the user commits the headers work and PR0.
+  - **Committed by the user:** headers `d0968a8`, PR0 `aed7237` (`refactor/MIL-XXX-payment-alias-imports`).
+  - **PR1 `feat(payment): read the cart from the commerce API` — CODE DONE, UNCOMMITTED** on
+    `feat/MIL-XXX-commerce-cart-read` (stacked on PR0).
+    - New `core/models/commerce.model.ts`: `Decimal`, `Cart`, `CartLine`, `CartMoney`, `CartCoupon`, an
+      `isCart`/`parseCart` trust boundary, and `CART_ROUTES.cart`.
+    - `CartStore`: an opt-in `httpResource` gated on `isAuthenticated()`, keyed on `X-Country-Code`, with
+      `cart`, `lineCount` and `load()`. The legacy `cartData` and `cartItemRemoved` stay until PR3/PR7.
+    - The payment shell calls `load()`. The footer badge is `lineCount` and never loads (D4).
+    - **Plan deviation:** payment-side types and registry entries arrive with the PR that first uses them.
+    - **Gates (local macOS):** lint 0 errors (106 warnings), structure ✔, prettier ✔, `build:prod` 245.45 kB
+      with only `ai-labs.css`.
+    - **Dev on 3000, signed out:** `/us/…/payment/cart` renders the shell and sends **no** cart read.
+    - **Signed-in contract check, done 2026-10-13:** the user ran `capture-commerce.sh` (15 calls, UAT,
+      US). Results are in the new `docs/COMMERCE_API.md`.
+      - All six captured carts pass `isCart` and carry every typed key, so the types are unchanged.
+      - D2 and C4 return the whole cart (Postman's `data: {}` is wrong).
+      - Removing the last line returns a `cancelled` cart, and the next read creates a new one.
+      - Re-adding the same plan returns 200 with `created: false`.
+      - **Stripe is not configured on UAT:** K1 returns `payment_error: gateway_not_configured` and K2
+        answers 503, which blocks PR5 verification (backend Q11).
+      - An empty US cart reports `currency: INR` (Q12).
+    - **Still open:** a browser check of the signed-in read, which waits on UAT allowing
+      `x-accept-language` in CORS.
   - **Facts from the user:**
     - Only subscriptions are sold: no single courses, no books.
     - Alias imports everywhere, even inside one feature.
@@ -3957,6 +3979,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-13 · NON-REFACTOR · **Commerce capture checked** (PR1): 15 signed-in UAT calls; carts match `Cart`/`isCart`; D2/C4 return the whole cart; Stripe unconfigured on UAT (`gateway_not_configured`, K2 503); empty US cart `currency: INR` · new `docs/COMMERCE_API.md`; plan Assumption 4 resolved, backend Q11–Q12 added
+
+- 2026-10-13 · NON-REFACTOR · **Commerce PR1, cart read** (uncommitted, `feat/MIL-XXX-commerce-cart-read`): `Cart` model + `parseCart`, opt-in `CartStore` resource (auth-gated, `X-Country-Code`), shell `load()`, footer `lineCount` · lint 0 errors, structure ✔, build:prod 245.45 kB (local) · signed out: no cart read · ⏸ signed-in capture via `capture-commerce.sh`
 
 - 2026-10-13 · NON-REFACTOR · **Commerce PR0, alias imports** (uncommitted): 43 specifiers → `@features/@core/@layout`; `overview-wrapper` → `pages/` (baseline pruned); root shell stays `./payment` (the gate requires it) · lint 0 errors, structure ✔, build:prod 245.49 kB (local) · dev on 3000: cart and plan routes render
 

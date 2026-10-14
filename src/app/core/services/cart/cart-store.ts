@@ -1,38 +1,72 @@
-import { Service, signal } from '@angular/core';
+import { httpResource } from '@angular/common/http';
+import { Service, computed, inject, signal } from '@angular/core';
+import { CART_ROUTES, parseCart } from '@core/models/commerce.model';
 import { CartDetails } from '@core/models/payment.model';
+import { apiUrl } from '@core/services/api-client/api-client';
+import { AuthSession } from '@core/services/auth-session/auth-session';
+import { CountryContext } from '@core/services/country-context/country-context';
 
 /**
- * The cart state that non-payment code reads.
+ * The learner's CAIRA commerce cart (`GET api/v1/commerce/cart/`).
  *
  * It lives in `core/` rather than in `PaymentFacade` because the cart is
- * genuinely cross-cutting: the footer overlay shows a count on every page, and
- * two offerings facades watch for removals to refresh their purchased state.
- * Those are `layout` and `feature` respectively, and PROMPT.md §3 lets neither
- * import `features/payment` — so the state they share has to sit below all of
- * them, not inside one of them.
+ * genuinely cross-cutting: the footer overlay shows its count on every page,
+ * and PROMPT.md §3 doesn't let layout import `features/payment`, so the state
+ * has to sit below both of them.
  *
- * Only the *state* lives here. Everything that decides cart behaviour — add,
- * remove, coupons, checkout, the mixed-cart rules — stays in `PaymentFacade`.
- *
- * There is no cart READ (removed 2026-10-11). `user/cart/mybucket/` is not in
- * the backend's API (Postman) and answers 404; its replacement is
- * `GET api/v1/commerce/cart/`, which lands with the commerce rebind
- * (docs/LEGACY_API_ROADMAP.md). Until then the cart is whatever this session's
- * own mutations answered with: add, remove, coupon and checkout responses all
- * carry the cart, and `PaymentFacade` writes it here. A fresh load starts empty.
+ * Only the read and the state live here. Everything that decides cart
+ * behaviour (add, remove, coupons, checkout) stays in `PaymentFacade`.
  */
 @Service()
 export class CartStore {
+  private readonly auth = inject(AuthSession);
+  private readonly country = inject(CountryContext).current;
+
+  /**
+   * Opt-in: the read CREATES an empty cart when the learner has none, so only
+   * pages that show a cart ask for it (`load()`). Reading on every page would
+   * leave an empty cart per learner per market. The footer badge shows the
+   * count once a payment page has read the cart.
+   */
+  private readonly wanted = signal(false);
+
+  /**
+   * Gated on the boolean `isAuthenticated()`, never on the token, so a token
+   * rotation doesn't re-fire the read. The market goes in `X-Country-Code`.
+   * `appInterceptor` sets the same value, but naming it here makes the country
+   * a dependency, so switching markets reads that market's cart.
+   */
+  private readonly cartResource = httpResource(
+    () =>
+      this.wanted() && this.auth.isAuthenticated()
+        ? {
+            url: apiUrl(CART_ROUTES.cart.path),
+            headers: { 'X-Country-Code': this.country().toUpperCase() },
+          }
+        : undefined,
+    { parse: parseCart },
+  );
+
+  /** The cart, or `null` until a payment page has read it (and while signed out). */
+  readonly cart = computed(() => (this.cartResource.hasValue() ? this.cartResource.value() : null));
+  readonly lineCount = computed(() => this.cart()?.lines.length ?? 0);
+
+  /** The first call opts the read in; later calls re-read the cart. */
+  load(): void {
+    if (this.wanted()) this.cartResource.reload();
+    else this.wanted.set(true);
+  }
+
   /** The id of the course last removed from the cart, for consumers that need to react. */
   readonly cartItemRemoved = signal<number | null>(null);
 
-  /** The cart, as the last cart mutation in this session returned it. */
+  /**
+   * The legacy cart, as the last legacy cart call returned it. Its endpoints
+   * answer 404; it goes when PR3 of `prompts/commerce-api-rebind.md` moves the
+   * payment pages onto `cart`.
+   */
   readonly cartData = signal<CartDetails | null>(null);
 
-  /**
-   * Single write-point for the cart signal so any cart-wide massaging happens
-   * in one place.
-   */
   setCartData(cart: CartDetails | null): void {
     this.cartData.set(cart);
   }

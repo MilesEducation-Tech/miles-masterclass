@@ -26,10 +26,11 @@ removal" below). **PR0 is done (uncommitted).** It also moved `overview-wrapper`
    `X-Platform`, `X-App-Type` and `X-Accept-Language`, and this work branches from `master` after it merges.
    **While UAT CORS rejects `x-accept-language`, every browser API call fails**, so browser verification of
    PR1 onward waits on the backend.
-4. **Several Postman examples are hand-built**: order detail, checkout, cart lines, and Stripe success/cancel.
-   Coupon apply/remove and line DELETE only show `data: {}`. The guide says every cart write returns the
-   whole cart, and this plan follows the guide. PR1 captures real signed-in responses first and corrects the
-   types.
+4. **Contract checked against UAT on 2026-10-13** (`docs/COMMERCE_API.md`).
+   - The cart, order, orders-list and error shapes match the guide.
+   - D2 and C4 return the whole cart, so Postman's `data: {}` examples are wrong.
+   - **Stripe is not configured on UAT:** K1 returns `payment_error: "gateway_not_configured"` and K2
+     answers 503. PR5 can be built, but not verified end to end, until that changes (Q11).
 5. **Alias imports everywhere** (user, 2026-10-13), including inside `features/payment` and `core/`. Every
    new or edited file uses `@core/*`, `@shared/*`, `@layout/*`, `@features/*` and `@env/*`. This is stricter
    than AGENTS.md §3, which only _allows_ relative imports within a feature. Converting the existing ones is
@@ -263,14 +264,14 @@ Query>`.
 - 4xx responses show `message` through `NotificationService`.
 - Branch on `data.reason` only where the screen changes:
 
-  | Reason                                           | Screen change                                    |
-  | ------------------------------------------------ | ------------------------------------------------ |
-  | `subscription_already_in_cart`                   | Show it on the plan card                         |
-  | `coupon_no_longer_valid`                         | Call D2, then ask the learner to check out again |
-  | `not_open`, `cart_not_open`, or a cancelled cart | `CartStore.reset()`                              |
-  | `payment_unavailable_for_currency`               | Message only, no K2 loop                         |
-  | `order_not_payable`                              | Reload K4                                        |
-  | `gateway_error`, `gateway_not_configured`        | "Try again shortly"                              |
+  | Reason                                                                                   | Screen change                                                      |
+  | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+  | `subscription_already_in_cart`                                                           | Show it on the plan card                                           |
+  | `coupon_no_longer_valid`                                                                 | Call D2, then ask the learner to check out again                   |
+  | `not_open`, `cart_not_open`, or a cancelled cart                                         | `CartStore.reset()`                                                |
+  | any K1 `payment_error` (`payment_unavailable_for_currency`, `gateway_not_configured`, …) | Message, stay on the order, "Try again" sends K2. Never auto-retry |
+  | `order_not_payable`                                                                      | Reload K4                                                          |
+  | `gateway_error`, `gateway_not_configured`                                                | "Try again shortly"                                                |
 
 **Code style**
 
@@ -405,14 +406,26 @@ Stripe's return (D3-A) goes in `app.routes.ts`, outside the locale tree:
     `micro-learning-course-facade.ts`.
 - 34 imports in 19 files. No behaviour change. Prettier sorts nothing, so the diff is import lines only.
 
-**PR1: `feat(payment): add commerce models, route registries and the cart read`** (about 300 lines)
+**PR1: `feat(payment): read the cart from the commerce API`** (about 150 lines; implemented 2026-10-13)
 
-1. **Capture real responses first.** As a UAT test learner, call C1, C2, C4, D1, D2, K1 and K4 and record
-   the bodies in the PR description. Correct the hand-built shapes before typing them.
-2. **Add both models,** `core/models/commerce.model.ts` and `features/payment/models/commerce.model.ts`.
-3. **`CartStore`:** add the resource, `cart`, `lineCount`, `status`, `load`, `set` and `reset`. The legacy
-   `cartData` and `cartItemRemoved` stay until PR3 and PR7 remove their readers.
-4. **Footer overlay:** `cartCount = cart.lineCount()`. It never calls `load()` (D4).
+1. **Capture real responses** as a UAT test learner, using the scratchpad script `capture-commerce.sh`.
+   It records C1, C2, D1, D2, A1, K1, K4, K3, K2 and C4, and the results go into `docs/COMMERCE_API.md`.
+2. **`core/models/commerce.model.ts`:**
+   - `Decimal`, `Cart`, `CartLine`, `CartMoney`, `CartCoupon`;
+   - an `isCart` / `parseCart` trust boundary (the `isUserDetails` precedent);
+   - `CART_ROUTES.cart`.
+3. **`CartStore`:**
+   - an opt-in `httpResource` gated on `isAuthenticated()`, with `X-Country-Code` from `CountryContext`;
+   - `cart`, `lineCount` and `load()`.
+   - The legacy `cartData` and `cartItemRemoved` stay until PR3 and PR7 remove their readers.
+4. **Readers:**
+   - The payment shell (`payment.ts`, parent of cart, billing and review) calls `load()`.
+   - The footer badge is `cart.lineCount` and never loads (D4).
+
+**Deviation from the first draft:** `features/payment/models/commerce.model.ts` and the `COMMERCE_ROUTES`
+entries are added by the PR that first uses each one (PR2 plans, PR3 cart writes and coupons, PR4
+addresses, PR5 checkout and orders), not all up front, so no PR ships unused types. `CartStore.set()` comes
+with PR2, and `status` with PR3's guard, for the same reason.
 
 **PR2: `feat(payment): bind plans and add-to-cart to the subscriptions API`** (about 350 lines)
 
@@ -521,7 +534,7 @@ after PR1)
 | PR  | Files                                                                                                                                                                                                                                                                                                                                                    |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | PR0 | import lines only, in the files listed under PR0                                                                                                                                                                                                                                                                                                         |
-| PR1 | **new** `core/models/commerce.model.ts`, **new** `features/payment/models/commerce.model.ts`, `core/services/cart/cart-store.ts`, `layout/footer-overlay/footer-overlay.ts`                                                                                                                                                                              |
+| PR1 | **new** `core/models/commerce.model.ts`, `core/services/cart/cart-store.ts`, `layout/footer-overlay/footer-overlay.ts`, `features/payment/payment.ts`                                                                                                                                                                                                    |
 | PR2 | `features/payment/services/payment-facade.ts`, `pages/plan/plan.ts\|html`, `components/plan-selection-card/*`, `components/plan-comparison-table/*`, `dialogs/subscription-dialog/*`, **deleted** `dialogs/partner-code-prompt-dialog/*` and `dialogs/firm-sponsorship-dialog/*`, `core/models/profile.model.ts`, `core/models/payment.model.ts`         |
 | PR3 | facade, `pages/cart/*`, `components/cart-item/*`, `dialogs/cart-drawer-dialog/*`, `components/price-overview/*`, `dialogs/coupon-dialog/*`, `components/promo-coupons/*`, `guards/payment-guard.ts`, `core/services/cart/cart-store.ts`, `core/models/payment.model.ts`                                                                                  |
 | PR4 | facade, `pages/billing/*`, `components/address/*`, `core/models/payment.model.ts`                                                                                                                                                                                                                                                                        |
@@ -672,22 +685,25 @@ needs UAT CORS to allow `x-accept-language` first. Watch DevTools → Network.
 9. **`Vary: X-Country-Code`** on S1 responses.
 10. **A UAT coupon code** we can test with: one percentage code and one 100% code.
 
+11. **Configure Stripe on UAT.** Checkout returns `payment_error: "gateway_not_configured"`, and K2 answers 503. Until it's set up, no payment can start.
+12. **A fresh empty US cart reports `currency: "INR"`** until a line is added. Should it be `USD`?
+
 ## Jira
 
 **Epic:** `Commerce API rebind (subscriptions only)`. Links: this prompt, the guide (12 Oct 2026), and
 Postman folders "10. Commerce" and "09. Catalogue". It is blocked by `feat(core): send X-Country-Code,
 X-Platform and X-App-Type on every API request`.
 
-| Ticket | Summary (= PR title)                                                     | Type      | Scope     | Branch                                   | Blocked by      | Estimate |
-| ------ | ------------------------------------------------------------------------ | --------- | --------- | ---------------------------------------- | --------------- | -------- |
-| PR0    | `refactor(payment): use path aliases for every import`                   | Tech debt | payment   | `refactor/MIL-XXX-payment-alias-imports` | none            | S        |
-| PR1    | `feat(payment): add commerce models, route registries and the cart read` | Story     | payment   | `feat/MIL-XXX-commerce-models-cart-read` | PR0, headers PR | M        |
-| PR2    | `feat(payment): bind plans and add-to-cart to the subscriptions API`     | Story     | payment   | `feat/MIL-XXX-commerce-plans`            | PR1             | M        |
-| PR3    | `feat(payment): bind the cart and coupons to the commerce API`           | Story     | payment   | `feat/MIL-XXX-commerce-cart-coupons`     | PR2             | M        |
-| PR4    | `feat(payment): bind billing addresses to the commerce API`              | Story     | payment   | `feat/MIL-XXX-commerce-addresses`        | PR3, D1         | M        |
-| PR5    | `feat(payment): checkout, Stripe return and payment retry`               | Story     | payment   | `feat/MIL-XXX-commerce-checkout`         | PR4, Q2         | M        |
-| PR6    | `feat(payment): bind order history to the commerce API`                  | Story     | payment   | `feat/MIL-XXX-commerce-orders`           | PR5, D2         | M        |
-| PR7    | `feat(offerings): send course buy buttons to the plan page`              | Story     | offerings | `feat/MIL-XXX-offerings-buy-to-plan`     | PR1             | S        |
+| Ticket | Summary (= PR title)                                                 | Type      | Scope     | Branch                                   | Blocked by      | Estimate |
+| ------ | -------------------------------------------------------------------- | --------- | --------- | ---------------------------------------- | --------------- | -------- |
+| PR0    | `refactor(payment): use path aliases for every import`               | Tech debt | payment   | `refactor/MIL-XXX-payment-alias-imports` | none            | S        |
+| PR1    | `feat(payment): read the cart from the commerce API`                 | Story     | payment   | `feat/MIL-XXX-commerce-cart-read`        | PR0, headers PR | M        |
+| PR2    | `feat(payment): bind plans and add-to-cart to the subscriptions API` | Story     | payment   | `feat/MIL-XXX-commerce-plans`            | PR1             | M        |
+| PR3    | `feat(payment): bind the cart and coupons to the commerce API`       | Story     | payment   | `feat/MIL-XXX-commerce-cart-coupons`     | PR2             | M        |
+| PR4    | `feat(payment): bind billing addresses to the commerce API`          | Story     | payment   | `feat/MIL-XXX-commerce-addresses`        | PR3, D1         | M        |
+| PR5    | `feat(payment): checkout, Stripe return and payment retry`           | Story     | payment   | `feat/MIL-XXX-commerce-checkout`         | PR4, Q2         | M        |
+| PR6    | `feat(payment): bind order history to the commerce API`              | Story     | payment   | `feat/MIL-XXX-commerce-orders`           | PR5, D2         | M        |
+| PR7    | `feat(offerings): send course buy buttons to the plan page`          | Story     | offerings | `feat/MIL-XXX-offerings-buy-to-plan`     | PR1             | S        |
 
 Every ticket uses the same template:
 

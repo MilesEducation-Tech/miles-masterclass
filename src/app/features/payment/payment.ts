@@ -11,6 +11,7 @@ import { filter, map, startWith } from 'rxjs';
 import { NgIconComponent } from '@ng-icons/core';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { CartSteps } from '@core/models/payment.model';
+import { CartStore } from '@core/services/cart/cart-store';
 import { CART_STEP_DATA, PATH_TYPE_TO_STEP_ID } from '@features/payment/constants/payment';
 
 /** Walk to the deepest activated route — `pathType` lives on the leaf. */
@@ -27,6 +28,11 @@ export class Payment {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly facade = inject(PaymentFacade);
+
+  constructor() {
+    // The cart, billing and review steps all show the cart, so the shell reads it once for them.
+    inject(CartStore).load();
+  }
 
   /**
    * Number of items currently in the cart (0 until this session's own cart
