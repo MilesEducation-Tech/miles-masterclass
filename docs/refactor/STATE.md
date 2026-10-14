@@ -252,6 +252,38 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - ✅ **2026-10-14, UI/UX pass on the payment flow — DONE, UNCOMMITTED on the local `uat` branch**
     (the user's call: fix on `uat` first, then split into the ticket branches from local). 22 files,
     +281/−167.
+    - **Committed by the user as `01cf946`, PR #133** (draft, `needs-uat`, base MIL-78; bound to this
+      session). `uat` = `01cf946`.
+    - **2026-10-14, UAT feedback round (uncommitted on `feat/MIL-80-billing-on-review`):**
+      - **Ghost-button hover fill fixed.** Cause: the variants hover through ng-primitives'
+        `data-hover` (`data-hover:bg-muted`, navy `#15324f`), and call sites tried `hover:bg-transparent`
+        (a different selector) or passed classes through `[class]="'…'"` (skips the button's `cn()`
+        merge). Text actions are now `variant="link"`; icon buttons carry `data-hover:bg-transparent
+data-press:bg-transparent` in a static `class`; the auto-renew dialog's Close is `link`. Also
+        the shared `utils-dialog` close button (one class line; it serves every dialog). Verified in
+        dev: computed background stays transparent on hover for every button in the flow.
+      - **Coupon list: BUILT (proposed MIL-81, `feat/MIL-81-coupon-list`, stacked on MIL-80).** The
+        user gave `GET api/v1/commerce/coupons/` as a curl (not in Postman). Captured on UAT with the
+        test learner's token (contract in `docs/COMMERCE_API.md` § Coupon list). Facade
+        `couponsResource` (opt-in `loadCoupons()` from the cart page, keyed on the cart id, `cart_id` +
+        `X-Country-Code`, `SKIP_LOADING`, failures only log) → `coupons`, `couponsLoading`. Savings
+        Corner offers the first coupon with Apply; the dialog lists all with Apply / Applied plus the
+        code field; expiry formatted in UTC. +244/−9 in src. Verified in dev at 1440/375: list renders,
+        apply from the dialog takes $250 off, applied badge, UTC date.
+      - ⚠️ **UAT CORS has no `DELETE`** (`GET, OPTIONS, PATCH, POST, PUT`), so remove coupon, remove
+        from cart and delete address all fail in browsers (status 0). Backend fix. Because of it,
+        `MMC250` is stuck on the test learner's US cart.
+      - **Commit split:** the hover fix and the coupon list overlap in two files. The coupon-only diff is
+        `coupons.patch` in the scratchpad (`git apply -R --check` passes); the user reverses it, commits
+        the hover fix on MIL-80, re-applies it on the new branch.
+      - The new Postman export (+35 requests, none commerce) is uncommitted and belongs in its own
+        commit.
+      - **Gates (local macOS):** `pnpm lint` 0 errors, structure ✔, prettier ✔, `build:prod` 245.29 kB
+        with only `ai-labs.css`.
+    - **Lands as MIL-80, `feat/MIL-80-billing-on-review`, PR 10 of 10 stacked on MIL-78** (decided
+      2026-10-14 instead of splitting into the nine tickets). The Jira draft is in
+      `prompts/commerce-jira-tickets.md`; the PR body is `commerce-prs/MIL-80.md` in the scratchpad; the
+      release guide and the UAT test plan (steps 4–5) now name MIL-80 as the top of the stack.
     - **Flow change (user's ask): the billing step is gone.** Cart → Review. `pages/billing` moved to
       `components/billing-address` (`app-billing-address`, resets `isEditingAddress` on destroy, shows
       "Loading your addresses…" while the list loads). Review renders it under "Billing Address";

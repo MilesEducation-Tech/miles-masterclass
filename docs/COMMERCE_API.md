@@ -55,6 +55,11 @@ below.
    The UI shows no totals for an empty cart, so nothing renders wrongly, but the value is wrong.
 3. **Postman's examples for D2 and C4 (`data: {}`) are wrong.** Both return the whole cart. Ask for a
    regenerated collection.
+4. **UAT CORS doesn't allow `DELETE`** (checked 2026-10-14, from localhost and the UAT Vercel URL):
+   preflight answers `access-control-allow-methods: GET, OPTIONS, PATCH, POST, PUT`. In a browser, D2
+   (remove coupon), C4 (remove from cart) and A5 (delete address) all fail as status 0, which the app
+   shows as "We couldn't reach the server". The calls are right; the backend must add `DELETE`.
+5. **`GET commerce/coupons/` isn't in Postman** (the 2026-10-14 export has only D1/D2). Captured below.
 
 ## Client rules these observations add
 
@@ -89,3 +94,41 @@ doesn't read.
 - **Deleting the cart's address** clears `billing_address_id` from the local cart, as the server does.
 - **Proceed on billing always re-attaches the selected address**, so a stale attachment can't reach
   checkout.
+
+## Coupon list
+
+Captured on UAT 2026-10-14 with the test learner's token. The endpoint came from the backend as a curl;
+it isn't in Postman yet.
+
+| Call                                          | Status | Observed                                                                                  |
+| --------------------------------------------- | ------ | ----------------------------------------------------------------------------------------- |
+| `GET commerce/coupons/`, no token             | 401    | "Authentication credentials were not provided."                                           |
+| `GET commerce/coupons/`, US, cart with a line | 200    | `data: {status: "ok", count: 1, cart_id, results: [Coupon]}`.                             |
+| `GET commerce/coupons/`, IN, no cart          | 200    | `cart_id: null`, `count: 0`, `results: []`. It does **not** create a cart (C1 does).      |
+| `GET commerce/coupons/?cart_id=<id>`          | 200    | Same list; `cart_id` is accepted.                                                         |
+| `GET commerce/coupons/?foo=bar`               | 400    | `reason: "invalid_query"`, "Extra inputs are not permitted". Strict query, like the rest. |
+
+One coupon, as returned:
+
+```json
+{
+  "code": "MMC250",
+  "description": null,
+  "discount_type": "flat",
+  "discount_value": "250.00",
+  "max_discount_amount": null,
+  "min_order_amount": null,
+  "currency": "USD",
+  "applies_to": "eligible_items",
+  "applicable_to_all_products": true,
+  "valid_to": "2026-12-31T23:59:59Z",
+  "discount_amount": "250.00",
+  "lines": [{ "line_id": "…", "discount_amount": "250.00" }]
+}
+```
+
+- **`discount_amount` is the saving on this cart**, worked out by CAIRA; the UI shows it, not
+  `discount_value`.
+- **`valid_to` is the end of a UTC day.** Formatted in the viewer's zone, IST reads it as the next day,
+  so the dialog formats it in UTC.
+- **Applying is D1 as before.** The list only offers codes; the cart's `coupon` says which one is applied.
