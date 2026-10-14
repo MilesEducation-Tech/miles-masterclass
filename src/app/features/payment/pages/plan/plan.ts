@@ -1,12 +1,12 @@
 import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { PaymentFacade } from '../../services/payment-facade';
+import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { PlanScrollingGallery } from '@shared/components/plan-scrolling-gallery/plan-scrolling-gallery';
-import { PlanComparisonTable } from '../../components/plan-comparison-table/plan-comparison-table';
-import { PlanSelectionCard } from '../../components/plan-selection-card/plan-selection-card';
-import { PromoOffer } from '../../components/promo-offer/promo-offer';
-import { PromoCoupons } from '../../components/promo-coupons/promo-coupons';
+import { PlanComparisonTable } from '@features/payment/components/plan-comparison-table/plan-comparison-table';
+import { PlanSelectionCard } from '@features/payment/components/plan-selection-card/plan-selection-card';
+import { PromoOffer } from '@features/payment/components/promo-offer/promo-offer';
+import { PromoCoupons } from '@features/payment/components/promo-coupons/promo-coupons';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { SubscriptionPlan } from '@core/models/payment.model';

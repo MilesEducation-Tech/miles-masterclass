@@ -2,8 +2,8 @@ import { Routes } from '@angular/router';
 import { paymentGuard } from '@features/payment/guards/payment-guard';
 
 /**
- * Payment feature routes. Lazy-loaded from `features.ts` via
- * `loadChildren: () => import('./payment/payment.routes').then(m => m.PAYMENT_ROUTES)`.
+ * Payment feature routes. Lazy-loaded from `features.routes.ts` via
+ * `loadChildren: () => import('@features/payment/payment.routes').then(m => m.PAYMENT_ROUTES)`.
  *
  * Route tree:
  *   /payment/plan                  ← subscription plan picker
@@ -18,15 +18,15 @@ import { paymentGuard } from '@features/payment/guards/payment-guard';
 export const PAYMENT_ROUTES: Routes = [
   {
     path: 'plan',
-    loadComponent: () => import('./pages/plan/plan').then((m) => m.Plan),
+    loadComponent: () => import('@features/payment/pages/plan/plan').then((m) => m.Plan),
   },
   {
     path: 'invoice/:orderId',
-    loadComponent: () => import('./pages/invoice/invoice').then((m) => m.Invoice),
+    loadComponent: () => import('@features/payment/pages/invoice/invoice').then((m) => m.Invoice),
   },
   {
     path: 'order-history',
-    loadComponent: () => import('./pages/orders/orders').then((m) => m.Orders),
+    loadComponent: () => import('@features/payment/pages/orders/orders').then((m) => m.Orders),
   },
   {
     path: '',
@@ -35,18 +35,21 @@ export const PAYMENT_ROUTES: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./components/overview-wrapper/overview-wrapper').then((m) => m.OverviewWrapper),
+          import('@features/payment/pages/overview-wrapper/overview-wrapper').then(
+            (m) => m.OverviewWrapper,
+          ),
         children: [
           { path: '', redirectTo: 'cart', pathMatch: 'full' },
           {
             path: 'cart',
-            loadComponent: () => import('./pages/cart/cart').then((m) => m.Cart),
+            loadComponent: () => import('@features/payment/pages/cart/cart').then((m) => m.Cart),
             data: { pathType: 'cart' },
           },
           {
             path: 'billing',
             canActivate: [paymentGuard],
-            loadComponent: () => import('./pages/billing/billing').then((m) => m.Billing),
+            loadComponent: () =>
+              import('@features/payment/pages/billing/billing').then((m) => m.Billing),
             data: { pathType: 'billing' },
           },
         ],
@@ -57,7 +60,8 @@ export const PAYMENT_ROUTES: Routes = [
         // TODO(payment): /review currently re-renders the Invoice component as
         // a checkout-review screen. Replace with a dedicated `Review` page when
         // the design lands; the route name and component shouldn't disagree.
-        loadComponent: () => import('./pages/invoice/invoice').then((m) => m.Invoice),
+        loadComponent: () =>
+          import('@features/payment/pages/invoice/invoice').then((m) => m.Invoice),
         data: { pathType: 'review' },
       },
     ],

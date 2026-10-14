@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { SubscribeCard } from './subscribe-card';
-import { SUBSCRIBE_CARD_COPY } from '../../footer-overlay.config';
+import { SubscribeCard } from '@layout/footer-overlay/components/subscribe-card/subscribe-card';
+import { SUBSCRIBE_CARD_COPY } from '@layout/footer-overlay/footer-overlay.config';
 
 const meta: Meta<SubscribeCard> = {
   title: 'Layout/FooterOverlay/SubscribeCard',

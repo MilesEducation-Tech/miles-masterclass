@@ -7,6 +7,47 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-13, NON-REFACTOR — commerce API rebind (`prompts/commerce-api-rebind.md`). Approved by the
+  user ("use this plan"); D1–D6 = A. The old backend is gone, so no legacy binding, logic or type survives in
+  the payment flow; partner code and firm sponsorship leave it too.**
+  - **PR0 `refactor(payment): use path aliases for every import` — DONE, UNCOMMITTED**, in the working tree on
+    top of the staged headers work.
+    - 43 relative specifiers in 20 files became aliases: `features/payment/**`, `cart-store`,
+      `layout/footer-overlay/**` with its stories, the podcast hero, and the masterclass and micro-learning
+      facades.
+    - `components/overview-wrapper` moved to `pages/overview-wrapper`, which fixes the routed-outside-pages
+      violation; the baseline was pruned by one entry.
+    - **Exception:** the root shell stays `import('./payment')`. `check-structure.mjs:134` accepts a feature
+      root shell only in that relative form, and editing the gate is the user's call.
+    - **Gates (local macOS):** lint 0 errors (106 warnings), structure ✔, prettier ✔, `build:prod` 245.49 kB
+      with only `ai-labs.css`. `location-min` and `html-to-pdf` are still lazy.
+    - **Dev on 3000:** `/us/…/payment/cart` renders `app-payment` → `app-overview-wrapper` → `app-cart`;
+      `/payment/plan` renders `app-plan`, with no module errors.
+  - **Next:** PR1 (models, registries, cart read), after the user commits the headers work and PR0.
+  - **Facts from the user:**
+    - Only subscriptions are sold: no single courses, no books.
+    - Alias imports everywhere, even inside one feature.
+  - **The plan:**
+    - Eight stacked PRs:
+      - PR0: alias imports;
+      - PR1: models, registries and the cart read;
+      - PR2: plans;
+      - PR3: cart and coupons;
+      - PR4: addresses;
+      - PR5: checkout and the Stripe return;
+      - PR6: orders;
+      - PR7: offerings buy buttons → plan page.
+    - Legacy payment paths already 404, so no stacked PR can regress a working flow.
+  - **Backend gaps found:**
+    - no coupon list;
+    - no learner subscription status, cancel, reactivate or portal;
+    - no invoice PDF;
+    - the Stripe return base URL is undocumented;
+    - INR is not payable through Stripe;
+    - D1, D2 and C4 responses are only `data: {}` in Postman.
+  - **Blocked on the backend:** UAT CORS must allow `x-accept-language`, or no browser verification is
+    possible.
+
 - 🔧 **2026-10-13, NON-REFACTOR — `X-Country-Code`, `X-Platform`, `X-App-Type` on every API request
   (`prompts/country-resolution.md` Ticket 2, extended at the user's request). DONE, UNCOMMITTED** on
   `feat/MIL-XXX-api-request-headers` (from `master`; rename once the ticket exists). No refactor phase moved.
@@ -3916,6 +3957,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-13 · NON-REFACTOR · **Commerce PR0, alias imports** (uncommitted): 43 specifiers → `@features/@core/@layout`; `overview-wrapper` → `pages/` (baseline pruned); root shell stays `./payment` (the gate requires it) · lint 0 errors, structure ✔, build:prod 245.49 kB (local) · dev on 3000: cart and plan routes render
+
+- 2026-10-13 · NON-REFACTOR · **Commerce rebind prompt** (`prompts/commerce-api-rebind.md`, 676 lines): subscriptions only, PR0–PR7, D1–D6 to confirm, 10 backend questions · researched with two agents (payment impact map, Postman commerce folders) plus live UAT `subscriptions/plans/` · ⏸ awaiting approval
 
 - 2026-10-13 · NON-REFACTOR · **`X-Accept-Language` breaks CORS** (user edit on `feat/MIL-XXX-api-request-headers`): UAT doesn't allow `x-accept-language`, so every browser API call is blocked (dev on 3000: 4/4 reads status 0) · ⏸ revert, or the backend allows the header
 

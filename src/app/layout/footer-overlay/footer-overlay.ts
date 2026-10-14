@@ -13,8 +13,8 @@ import { CartStore } from '@core/services/cart/cart-store';
 // Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
 
-import { SubscribeCard } from './components/subscribe-card/subscribe-card';
-import { UtilsIconCluster } from './components/utils-icon-cluster/utils-icon-cluster';
+import { SubscribeCard } from '@layout/footer-overlay/components/subscribe-card/subscribe-card';
+import { UtilsIconCluster } from '@layout/footer-overlay/components/utils-icon-cluster/utils-icon-cluster';
 import {
   CORPORATE_CARD_COPY,
   CORPORATE_CARD_ROUTES,
@@ -24,7 +24,7 @@ import {
   isAllowedRoute,
   isEditableTarget,
   isExactRoute,
-} from './footer-overlay.config';
+} from '@layout/footer-overlay/footer-overlay.config';
 
 @Component({
   selector: 'app-footer-overlay',

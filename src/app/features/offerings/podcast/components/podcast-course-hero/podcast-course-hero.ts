@@ -1,6 +1,6 @@
 import { Component, computed, DestroyRef, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MasterclassFacade } from '../../../services/masterclass-facade';
+import { MasterclassFacade } from '@features/offerings/services/masterclass-facade';
 import { Utils } from '@shared/services/utils';
 import { cn } from '@shared/utils/cn';
 import { Button } from '@shared/ui/button/button';
