@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.6.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.5.1...v3.6.0) (2026-10-14)
+
+
+### Features
+
+* **core:** send country, platform, app and language headers to the API ([#123](https://github.com/MilesEducation-Tech/miles-masterclass/issues/123)) ([a7c2ab4](https://github.com/MilesEducation-Tech/miles-masterclass/commit/a7c2ab4877f971cc9f4d968993dc95dc11d89a85))
+* **offerings:** send course buy buttons to the plan page ([#131](https://github.com/MilesEducation-Tech/miles-masterclass/issues/131)) ([0e1b896](https://github.com/MilesEducation-Tech/miles-masterclass/commit/0e1b8965f8d8e486752c39e6f99272f923d69bc7))
+* **payment:** bind billing addresses to the commerce API ([#128](https://github.com/MilesEducation-Tech/miles-masterclass/issues/128)) ([78f6ec8](https://github.com/MilesEducation-Tech/miles-masterclass/commit/78f6ec8830b8759ad5d10cb1395fad08510758aa))
+* **payment:** bind order history to the commerce API ([#130](https://github.com/MilesEducation-Tech/miles-masterclass/issues/130)) ([287ee58](https://github.com/MilesEducation-Tech/miles-masterclass/commit/287ee580db39263b2bab03be695da52cb2b609bd))
+* **payment:** bind plans and add-to-cart to the subscriptions API ([#126](https://github.com/MilesEducation-Tech/miles-masterclass/issues/126)) ([827672e](https://github.com/MilesEducation-Tech/miles-masterclass/commit/827672eb0a0fb02742b0c468301a816dd0ac2800))
+* **payment:** bind the cart and coupons to the commerce API ([#127](https://github.com/MilesEducation-Tech/miles-masterclass/issues/127)) ([796533d](https://github.com/MilesEducation-Tech/miles-masterclass/commit/796533d94df94e0bbb2685466be2493328527450))
+* **payment:** checkout, Stripe return and payment retry ([#129](https://github.com/MilesEducation-Tech/miles-masterclass/issues/129)) ([9a58dd6](https://github.com/MilesEducation-Tech/miles-masterclass/commit/9a58dd669f4190541c8730a1abd40b9ee6184dc0))
+* **payment:** collect the billing address on review and fix the checkout UI states ([#133](https://github.com/MilesEducation-Tech/miles-masterclass/issues/133)) ([dab7c7a](https://github.com/MilesEducation-Tech/miles-masterclass/commit/dab7c7ad0407ec4e1b3e3f085de79be0f3752f8d))
+* **payment:** list the learner's coupons in the cart and coupon dialog ([#134](https://github.com/MilesEducation-Tech/miles-masterclass/issues/134)) ([38b993f](https://github.com/MilesEducation-Tech/miles-masterclass/commit/38b993fe32229b4b5b8cbfedb23a38c0e8b720de))
+* **payment:** read the cart from the commerce API ([#125](https://github.com/MilesEducation-Tech/miles-masterclass/issues/125)) ([2400392](https://github.com/MilesEducation-Tech/miles-masterclass/commit/24003922022f6d59966474ac1c4fab5e9133bcd9))
+
 ## [3.5.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.5.0...v3.5.1) (2026-10-12)
 
 
