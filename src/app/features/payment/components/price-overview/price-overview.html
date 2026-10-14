@@ -125,29 +125,12 @@
         </div>
       </div>
 
-      <!-- Back Chevron -->
       <div class="flex justify-center flex-col space-y-2 pt-2">
-        @if (isBilling()) {
-          <button
-            app-button
-            type="button"
-            variant="ghost"
-            [class]="' hover:bg-transparent text-white p-0'"
-            aria-label="Go back"
-            [disabled]="facade.isEditingAddress()"
-            (click)="goBack()"
-          >
-            <ng-icon class="rtl:-scale-x-100" name="heroChevronLeft" size="20" aria-hidden="true" />
-            Back to Cart
-          </button>
-        }
-
         <!-- Proceed Button -->
         <button
           app-button
           type="button"
           [class]="'w-full rounded-xl py-3.5 px-6 text-base font-semibold shadow-lg shadow-blue-900/40 transition-all'"
-          [disabled]="facade.isEditingAddress()"
           (click)="onProceed()"
         >
           Proceed

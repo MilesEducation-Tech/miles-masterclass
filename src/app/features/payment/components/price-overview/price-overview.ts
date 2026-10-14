@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroChevronLeft, heroChevronRight, heroXMark } from '@ng-icons/heroicons/outline';
+import { heroChevronRight, heroXMark } from '@ng-icons/heroicons/outline';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { CartStore } from '@core/services/cart/cart-store';
 import { Decimal, hasAmount } from '@core/models/commerce.model';
@@ -25,7 +25,7 @@ interface PriceSummary {
 @Component({
   selector: 'app-price-overview',
   imports: [CurrencyPipe, NgIcon, Button],
-  viewProviders: [provideIcons({ heroChevronLeft, heroChevronRight, heroXMark, svglStripe })],
+  viewProviders: [provideIcons({ heroChevronRight, heroXMark, svglStripe })],
   templateUrl: './price-overview.html',
 })
 export class PriceOverview {
@@ -36,28 +36,12 @@ export class PriceOverview {
 
   protected readonly hasAmount = hasAmount;
 
-  readonly isBilling = computed(() => this.utils.currentUrl()?.includes('/billing') ?? false);
-  readonly isCart = computed(() => this.utils.currentUrl()?.includes('/cart') ?? false);
   readonly isReview = computed(() => this.utils.currentUrl()?.includes('/review') ?? false);
   readonly isInvoice = computed(() => this.utils.currentUrl()?.includes('/invoice') ?? false);
 
+  /** The card's Proceed only shows on the cart step; review collects the address and pays. */
   onProceed() {
-    const basePath = ['/', this.utils.country(), this.utils.profession(), 'payment'];
-    if (this.isCart()) {
-      this.router.navigate([...basePath, 'billing']);
-    } else if (this.isBilling()) {
-      // The picked address goes onto the cart first: checkout copies the cart's address.
-      this.facade.attachBillingAddress(() => this.router.navigate([...basePath, 'review']));
-    }
-  }
-
-  goBack() {
-    const basePath = ['/', this.utils.country(), this.utils.profession(), 'payment'];
-    if (this.isBilling()) {
-      this.router.navigate([...basePath, 'cart']);
-    } else if (this.isReview()) {
-      this.router.navigate([...basePath, 'billing']);
-    }
+    this.router.navigate(['/', this.utils.country(), this.utils.profession(), 'payment', 'review']);
   }
 
   /**

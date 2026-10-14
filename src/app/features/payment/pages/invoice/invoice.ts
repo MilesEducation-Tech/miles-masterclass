@@ -21,6 +21,8 @@ import { formatAddress } from '@features/payment/utils/address-format';
 import { paymentDisplayStatus } from '@features/payment/utils/order-status';
 import { CartDisplayItem, CartItem } from '@features/payment/components/cart-item/cart-item';
 import { PriceOverview } from '@features/payment/components/price-overview/price-overview';
+import { BillingAddress } from '@features/payment/components/billing-address/billing-address';
+import { ErrorState } from '@shared/ui/error-state/error-state';
 import { Utils } from '@shared/services/utils';
 import { Analytics } from '@core/services/analytics/analytics';
 import { Button } from '@shared/ui/button/button';
@@ -34,7 +36,17 @@ import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-d
 
 @Component({
   selector: 'app-invoice',
-  imports: [PaymentStatus, CartItem, PriceOverview, Button, NgIconComponent, DatePipe, RouterLink],
+  imports: [
+    PaymentStatus,
+    CartItem,
+    PriceOverview,
+    BillingAddress,
+    ErrorState,
+    Button,
+    NgIconComponent,
+    DatePipe,
+    RouterLink,
+  ],
   templateUrl: './invoice.html',
   providers: [provideIcons({ heroChevronLeft, heroArrowDownTray })],
   host: {
@@ -86,6 +98,11 @@ export class Invoice {
       !this.facade.orderError() &&
       (this.facade.orderLoading() || this.order() === null),
   );
+  /**
+   * The order read failed (invoice mode only: the root facade keeps the last order read's
+   * state, and review shows the cart, not an order).
+   */
+  readonly loadError = computed(() => (this.isInvoice() ? this.facade.orderError() : null));
 
   readonly itemCount = computed(() =>
     this.isInvoice() ? (this.order()?.lines.length ?? 0) : (this.cart()?.lines.length ?? 0),
@@ -133,6 +150,18 @@ export class Invoice {
   });
 
   readonly termsAccepted = signal(false);
+
+  /**
+   * Pay waits for the terms, a billing address (picked or saved on this page), a closed
+   * address form, and no checkout already in flight.
+   */
+  readonly canPay = computed(
+    () =>
+      this.termsAccepted() &&
+      !this.paying() &&
+      !this.facade.isEditingAddress() &&
+      !!this.facade.selectedAddressId(),
+  );
 
   /** Placeholder row count for the loading skeleton — no meaning beyond "a few". */
   protected readonly skeletonRows = [0, 1, 2];
@@ -243,16 +272,31 @@ export class Invoice {
     });
   }
 
-  /** K1. Stripe takes over from here, or the order's own page opens (free, or no session). */
+  /**
+   * K1, once the picked address is on the cart (checkout copies it onto the order). Stripe
+   * takes over from there, or the order's own page opens (free, or no session).
+   */
   private pay(): void {
-    this.facade.checkout((orderId) =>
-      this.router.navigate([`${this.basePath()}/payment/invoice`, orderId]),
-    );
+    const checkout = () =>
+      this.facade.checkout((orderId) =>
+        this.router.navigate([`${this.basePath()}/payment/invoice`, orderId]),
+      );
+    const picked = this.facade.selectedAddressId();
+    if (picked && picked !== this.cart()?.billing_address_id) {
+      this.facade.attachBillingAddress(checkout);
+    } else {
+      checkout();
+    }
   }
 
   protected retry(): void {
     const id = this.order()?.id;
     if (id) this.facade.retryPayment(id);
+  }
+
+  protected retryLoadOrder(): void {
+    const id = this.orderId();
+    if (id) this.facade.loadOrder(id);
   }
 
   async downloadInvoice() {

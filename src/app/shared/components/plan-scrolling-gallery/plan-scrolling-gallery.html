@@ -1,8 +1,10 @@
+<!-- The columns are absolute so their full image stacks never size the page: the gallery
+     fills the row it sits in (min 480px) and stops at 80vh. -->
 <div
-  class="gallery relative h-full min-h-[480px] w-full overflow-hidden rounded-2xl"
+  class="gallery relative h-full min-h-[480px] max-h-[80vh] w-full overflow-hidden rounded-2xl"
   aria-hidden="true"
 >
-  <div class="grid h-full grid-cols-2 lg:grid-cols-3 gap-3">
+  <div class="absolute inset-0 grid grid-cols-2 lg:grid-cols-3 gap-3">
     @for (col of columns(); track $index; let i = $index) {
       <div class="overflow-hidden" [class.hidden]="i === 2" [class.lg:block]="i === 2">
         <div class="float-up flex flex-col gap-3" [style.animation-delay]="col.delay">

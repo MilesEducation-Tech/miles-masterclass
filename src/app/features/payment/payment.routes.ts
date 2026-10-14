@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from '@core/guards/auth/auth-guard';
 import { paymentGuard } from '@features/payment/guards/payment-guard';
 
 /**
@@ -12,20 +13,22 @@ import { paymentGuard } from '@features/payment/guards/payment-guard';
  *   /payment/                      ← Payment shell (header + breadcrumb)
  *     /                            ← OverviewWrapper (sidebar layout)
  *       /cart                      ← cart contents
- *       /billing                   ← guarded: non-empty, non-mixed cart
- *     /review                      ← guarded: cart + selected address
+ *     /review                      ← guarded: non-empty cart; collects the billing address
  */
 export const PAYMENT_ROUTES: Routes = [
   {
     path: 'plan',
     loadComponent: () => import('@features/payment/pages/plan/plan').then((m) => m.Plan),
   },
+  // Orders are the learner's own: signed out, both go to sign-in and come straight back.
   {
     path: 'invoice/:orderId',
+    canMatch: [authGuard],
     loadComponent: () => import('@features/payment/pages/invoice/invoice').then((m) => m.Invoice),
   },
   {
     path: 'order-history',
+    canMatch: [authGuard],
     loadComponent: () => import('@features/payment/pages/orders/orders').then((m) => m.Orders),
   },
   {
@@ -45,13 +48,8 @@ export const PAYMENT_ROUTES: Routes = [
             loadComponent: () => import('@features/payment/pages/cart/cart').then((m) => m.Cart),
             data: { pathType: 'cart' },
           },
-          {
-            path: 'billing',
-            canActivate: [paymentGuard],
-            loadComponent: () =>
-              import('@features/payment/pages/billing/billing').then((m) => m.Billing),
-            data: { pathType: 'billing' },
-          },
+          // The old `billing` step lives on as a redirect: review collects the address now.
+          { path: 'billing', redirectTo: '../review' },
         ],
       },
       {

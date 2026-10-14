@@ -15,7 +15,10 @@ export class PaymentStatus {
       case 'pending':
         return {
           title: 'Payment Pending',
-          message: 'Your payment is currently being processed. Please wait a moment.',
+          // Covers both faces of `pending`: a Stripe return the webhook hasn't settled yet, and an
+          // order whose payment never started (the invoice offers Try again).
+          message:
+            'Your order is waiting for payment. If you just paid, this updates in a moment; otherwise, try again below.',
           icon: paymentPending,
           color: 'orange',
         };

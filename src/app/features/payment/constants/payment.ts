@@ -22,10 +22,10 @@ export const SIGNUP_DIALOG_DATA: UtilsDialogData = {
   buttons: [{ label: 'Signup', variant: 'default', action: 'confirm' }],
 };
 
+/** Two steps: the review step collects the billing address itself. */
 export const PATH_TYPE_TO_STEP_ID: Record<string, number> = {
   cart: 1,
-  billing: 3,
-  review: 5,
+  review: 3,
 };
 
 export const CART_STEP_DATA: Omit<CartSteps, 'active'>[] = [
@@ -47,23 +47,8 @@ export const CART_STEP_DATA: Omit<CartSteps, 'active'>[] = [
   },
   {
     id: 3,
-    name: 'Billing Details',
-    step: 3,
-    icon: `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M27 6H5C4.20435 6 3.44129 6.31607 2.87868 6.87868C2.31607 7.44129 2 8.20435 2 9V23C2 23.7956 2.31607 24.5587 2.87868 25.1213C3.44129 25.6839 4.20435 26 5 26H27C27.7956 26 28.5587 25.6839 29.1213 25.1213C29.6839 24.5587 30 23.7956 30 23V9C30 8.20435 29.6839 7.44129 29.1213 6.87868C28.5587 6.31607 27.7956 6 27 6ZM5 8H27C27.2652 8 27.5196 8.10536 27.7071 8.29289C27.8946 8.48043 28 8.73478 28 9V12H4V9C4 8.73478 4.10536 8.48043 4.29289 8.29289C4.48043 8.10536 4.73478 8 5 8ZM27 24H5C4.73478 24 4.48043 23.8946 4.29289 23.7071C4.10536 23.5196 4 23.2652 4 23V14H28V23C28 23.2652 27.8946 23.5196 27.7071 23.7071C27.5196 23.8946 27.2652 24 27 24Z" fill="white"/>
-        <path d="M11 16H7C6.73478 16 6.48043 16.1054 6.29289 16.2929C6.10536 16.4804 6 16.7348 6 17C6 17.2652 6.10536 17.5196 6.29289 17.7071C6.48043 17.8946 6.73478 18 7 18H11C11.2652 18 11.5196 17.8946 11.7071 17.7071C11.8946 17.5196 12 17.2652 12 17C12 16.7348 11.8946 16.4804 11.7071 16.2929C11.5196 16.1054 11.2652 16 11 16Z" fill="white"/>
-        </svg>`,
-  },
-  {
-    id: 4,
-    name: null,
-    step: 4,
-    icon: null,
-  },
-  {
-    id: 5,
     name: 'Review',
-    step: 5,
+    step: 3,
     icon: `<svg width="32" height="32" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g>
     <path d="M3.33203 5.66406C3.33203 3.45492 5.12289 1.66406 7.33203 1.66406H12.5085C13.5694 1.66406 14.5868 2.08549 15.3369 2.83564L17.1605 4.65916C17.9106 5.4093 18.332 6.42672 18.332 7.48758V14.3307C18.332 16.5399 16.5412 18.3307 14.332 18.3307H7.33203C5.12289 18.3307 3.33203 16.5399 3.33203 14.3307V5.66406Z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>

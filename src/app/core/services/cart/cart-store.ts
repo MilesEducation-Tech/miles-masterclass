@@ -61,6 +61,11 @@ export class CartStore {
     this.wanted.set(true);
   }
 
+  /** Re-reads after a failed read (the cart page's Try again). Writes never need it. */
+  reload(): void {
+    this.cartResource.reload();
+  }
+
   /**
    * A cart write answered with the whole cart, so no follow-up read is needed.
    * A `cancelled` cart (its last line was removed) is gone: drop it, and the

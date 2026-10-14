@@ -178,6 +178,7 @@ export class PaymentFacade {
   readonly addresses = linkedSignal<Address[]>(() =>
     this.addressesResource.hasValue() ? this.addressesResource.value() : [],
   );
+  readonly addressesLoading = computed(() => this.addressesResource.isLoading());
   private readonly addressErrorLog = effect(() => {
     const err = this.addressesResource.error();
     if (err) this.logger.error('Failed to load addresses', err);
@@ -203,6 +204,8 @@ export class PaymentFacade {
     },
   });
   isEditingAddress = signal<boolean>(false);
+  /** An address save or update is in flight: the form waits for the answer, so a double click can't add two. */
+  readonly savingAddress = signal(false);
 
   /**
    * The subscription plans (`GET api/v1/subscriptions/plans/`), shared by the plan
@@ -251,14 +254,18 @@ export class PaymentFacade {
 
   /** A2. Selects the new address, then `onDone` (the form closes only on success). */
   saveAddress(input: AddressInput, onDone: () => void): void {
+    if (this.savingAddress()) return;
+    this.savingAddress.set(true);
     this.http.call(COMMERCE_ROUTES.createAddress, input).subscribe({
       next: ({ data }) => {
+        this.savingAddress.set(false);
         this.addresses.update((list) => [...list, data]);
         this.selectedAddressId.set(data.id);
         this.notification.success('Address saved', 'Your billing address was added.');
         onDone();
       },
       error: (err) => {
+        this.savingAddress.set(false);
         this.logger.error('Failed to save the address', err);
         this.notification.error('Could not save the address', commerceErrorOf(err).message);
       },
@@ -267,14 +274,18 @@ export class PaymentFacade {
 
   /** A4 (partial update), then `onDone`. */
   updateAddress(id: string, input: AddressInput, onDone: () => void): void {
+    if (this.savingAddress()) return;
+    this.savingAddress.set(true);
     const route = COMMERCE_ROUTES.updateAddress;
     this.http.call({ ...route, path: route.path.replace(':address_id', id) }, input).subscribe({
       next: ({ data }) => {
+        this.savingAddress.set(false);
         this.addresses.update((list) => list.map((a) => (a.id === id ? data : a)));
         this.notification.success('Address updated', 'Your billing address was updated.');
         onDone();
       },
       error: (err) => {
+        this.savingAddress.set(false);
         this.logger.error('Failed to update the address', err);
         this.notification.error('Could not update the address', commerceErrorOf(err).message);
       },
