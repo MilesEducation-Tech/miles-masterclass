@@ -21,7 +21,8 @@ master ── MIL-70 ── MIL-71 ── MIL-72 ── MIL-73 ── MIL-74 ─
 
 **Rules to know before you start:**
 
-- **MIL-78's head contains all nine changes.** So one UAT deploy, of MIL-78, tests the whole epic.
+- **MIL-80's head contains all ten changes** (it sits on MIL-78, which sits on the rest). So one UAT
+  deploy, of MIL-80, tests the whole epic.
 - **`uat` is a slot, not a branch you merge into.** It is pointed at MIL-78's exact head commit (§4), and
   Vercel's UAT environment builds it. Code never travels `uat → master`; every ticket still reaches
   `master` through its own PR.
@@ -33,7 +34,7 @@ master ── MIL-70 ── MIL-71 ── MIL-72 ── MIL-73 ── MIL-74 ─
 - **Squash creates a new commit**, so after MIL-70 merges, MIL-71's branch still carries the original
   MIL-70 commit, which `master` doesn't have under that id. Before MIL-71 can merge, it is rebased with
   `--onto`, which drops the already-merged commit. The content is identical, so this never conflicts.
-- **One rebase moves all nine branches.** Git ≥ 2.38's `git rebase --update-refs`, run on the top branch,
+- **One rebase moves all ten branches.** Git ≥ 2.38's `git rebase --update-refs`, run on the top branch,
   rebases the whole stack and moves every branch name with it. You never rebase nine branches one by one.
 - **Why no conflicts are expected (checked 2026-10-13):** since the stack was cut from `5ce38e9`, `master`
   gained one commit (#121, favicon), which only changed `public/favicon.ico`. No file in the stack touches
@@ -142,7 +143,7 @@ git push --force-with-lease -u origin feat/MIL-70-api-request-headers refactor/M
 
 ---
 
-## 3. Open the nine PRs (drafts, stacked, `needs-uat`)
+## 3. Open the ten PRs (drafts, stacked, `needs-uat`)
 
 The PR descriptions (one `MIL-7x.md` each, from `.github/pull_request_template.md`) and `open-prs.sh` were
 prepared alongside this guide. The script runs, in order:
@@ -161,7 +162,7 @@ gh pr create --draft --label needs-uat --base feat/MIL-77-commerce-orders       
 
 **Then:**
 
-- **CI:** wait for it to go green on all nine. CI (`verify`, `pr-title`, `commitlint`, `branch-name`) runs
+- **CI:** wait for it to go green on all ten. CI (`verify`, `pr-title`, `commitlint`, `branch-name`) runs
   on every pull request, whatever its base.
 - **Jira:** link each PR in its ticket.
 - **Code review** can start now. Don't approve yet: the merge-time rebases dismiss approvals (§7).
@@ -170,7 +171,7 @@ gh pr create --draft --label needs-uat --base feat/MIL-77-commerce-orders       
 
 ## 4. Put the epic on UAT (a Vercel URL)
 
-**When:** CI is green on all nine (green since 2026-10-13: PRs #123–#131).
+**When:** CI is green on all ten (green since 2026-10-13: PRs #123–#131).
 
 **How UAT is wired** (`github-setup.md` §7):
 
@@ -188,18 +189,18 @@ Vercel → Project → Settings → Environments → **UAT**:
 
 If it tracks another branch, set it to `uat`. Don't enable Preview deployments; that would build every PR.
 
-### 4.2 Put MIL-78's head on `uat`
+### 4.2 Put MIL-80's head (the top of the stack) on `uat`
 
 `uat` doesn't exist yet, so the first push creates it. No force is needed:
 
 ```bash
-git fetch origin && git push origin origin/feat/MIL-78-offerings-buy-to-plan:refs/heads/uat
+git fetch origin && git push origin origin/feat/MIL-80-billing-on-review:refs/heads/uat
 ```
 
 **Every later update** (after a fix, §5) needs a force, but only if nobody else moved `uat`:
 
 ```bash
-git fetch origin && git push --force-with-lease=uat origin origin/feat/MIL-78-offerings-buy-to-plan:refs/heads/uat
+git fetch origin && git push --force-with-lease=uat origin origin/feat/MIL-80-billing-on-review:refs/heads/uat
 ```
 
 Vercel builds the UAT environment within a few minutes (Deployments, filtered by UAT).
@@ -211,7 +212,7 @@ Vercel builds the UAT environment within a few minutes (Deployments, filtered by
      domain. It survives every redeploy.
    - **Never** the per-deployment URL (`<project>-<hash>-<team>.vercel.app`), which changes on every
      push. The backend configures CORS and the Stripe return against this one address.
-2. **Check the version.** `version` must start with MIL-78's head:
+2. **Check the version.** `version` must start with MIL-80's head:
 
    ```bash
    curl -s https://<UAT_URL>/version.json
@@ -220,7 +221,7 @@ Vercel builds the UAT environment within a few minutes (Deployments, filtered by
    Compare with:
 
    ```bash
-   git rev-parse --short origin/feat/MIL-78-offerings-buy-to-plan
+   git rev-parse --short origin/feat/MIL-80-billing-on-review
    ```
 
    **Deployment Protection:** if Vercel Authentication is on, `curl` sees a login page; check in the
@@ -288,7 +289,7 @@ rebuilt in one go.
    GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash --update-refs origin/master
    ```
 
-4. Run the gates, then push all nine with the §2.5 command (`--force-with-lease`).
+4. Run the gates, then push all ten with the §2.5 command (`--force-with-lease`).
 5. Move `uat` to the new MIL-78 head with the §4.2 "every later update" command. UAT doesn't follow
    MIL-78 on its own. Once `version.json` shows the new head (§4.3), re-test.
 
@@ -299,7 +300,7 @@ rebuilt in one go.
 
 ## 6. Sign-off
 
-When the whole plan passes, do the following on **each** of the nine PRs:
+When the whole plan passes, do the following on **each** of the ten PRs:
 
 1. Comment **"UAT approved by `<name>` on `<date>`, commit `<sha on UAT>`"**.
 2. Remove the `needs-uat` label.
@@ -318,7 +319,7 @@ because each rebase dismisses earlier approvals.
 
 ## 7. Merge into master, one PR at a time, bottom-up
 
-Nine rounds. Keep `master` otherwise quiet during the run if you can, so every round stays a fast
+Ten rounds. Keep `master` otherwise quiet during the run if you can, so every round stays a fast
 rebase.
 
 **Round 1 (MIL-70):**
@@ -360,7 +361,8 @@ Approve that round's PR, then **Squash and merge**.
 | 6     | MIL-75   | `feat/MIL-75-commerce-addresses`          | MIL-76 … MIL-78 |
 | 7     | MIL-76   | `feat/MIL-76-commerce-checkout`           | MIL-77, MIL-78  |
 | 8     | MIL-77   | `feat/MIL-77-commerce-orders`             | MIL-78          |
-| 9     | MIL-78   | (none: last one)                          | (none)          |
+| 9     | MIL-78   | `feat/MIL-78-offerings-buy-to-plan`       | MIL-80          |
+| 10    | MIL-80   | (none: last one)                          | (none)          |
 
 **Why `--onto origin/master <merged>`:**
 
@@ -370,7 +372,7 @@ Approve that round's PR, then **Squash and merge**.
 - It can't conflict unless someone else changed the same lines on `master` in between. If they did,
   resolve the conflict as in §2.2.
 
-**When all nine are in:**
+**When all ten are in:**
 
 - **Reset UAT to production**, so the next epic starts clean:
 

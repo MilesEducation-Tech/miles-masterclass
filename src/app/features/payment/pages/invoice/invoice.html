@@ -224,7 +224,13 @@
         </div>
       </div>
       <div class="flex justify-between w-full items-center mt-auto">
-        <button app-button type="button" variant="ghost" [routerLink]="cartRoute()">
+        <button
+          app-button
+          type="button"
+          variant="link"
+          class="px-0 text-foreground"
+          [routerLink]="cartRoute()"
+        >
           <ng-icon name="heroChevronLeft" size="18" /> Back to Cart
         </button>
         <button

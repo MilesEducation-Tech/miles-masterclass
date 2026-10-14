@@ -66,8 +66,8 @@
     <button
       app-button
       type="button"
-      class="w-auto text-action hover:bg-transparent"
-      variant="ghost"
+      class="w-auto px-0 text-action"
+      variant="link"
       (click)="showForm() ? cancelEditing() : showForm.set(true)"
     >
       {{ showForm() ? '- Cancel Adding Billing Address' : '+ Add new billing address' }}
