@@ -137,14 +137,6 @@ export const MASTERCLASS_ROUTES = {
     { status: boolean; is_bookmarked: boolean; message: string }
   >,
 
-  addToCart: {
-    path: 'v2/user/cart/',
-    method: 'POST',
-  } as RouteConfig<
-    { item_id: number; item_type: 'masterclass' | 'podcast' | 'micro_learning' },
-    { status: boolean; in_cart: boolean; message: string }
-  >,
-
   getCourseContent: {
     path: 'v2/course-content/',
     method: 'GET',

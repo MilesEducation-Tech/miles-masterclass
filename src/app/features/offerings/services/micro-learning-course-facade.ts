@@ -36,7 +36,6 @@ import { ContentDetails } from '@core/models/course.model';
 // Type-only: both dialogs load with `import()` when opened (PROMPT.md §4.4).
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import type { MicroLearningQuizDialogData } from '@features/offerings/micro-learning/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog';
-import { CartStore } from '@core/services/cart/cart-store';
 import {
   ActionStatus,
   deriveActionStatus,
@@ -134,7 +133,6 @@ export class MicroLearningCourseFacade {
   private readonly analytics = inject(Analytics);
   // Only the cart-removal signal is needed here, and it lives in core so this
   // feature does not have to import the payment feature (PROMPT.md §3).
-  private readonly cart = inject(CartStore);
   private readonly destroyRef = inject(DestroyRef);
 
   /**
@@ -223,17 +221,6 @@ export class MicroLearningCourseFacade {
   private readonly autoInitedReelIds = new Set<number>();
 
   constructor() {
-    // Sync local cart state when a reel is removed via the cart drawer.
-    effect(() => {
-      const removedId = this.cart.cartItemRemoved();
-      untracked(() => {
-        if (removedId == null) return;
-        this.detailsList.update((list) =>
-          list.map((r) => (r.id === removedId ? { ...r, is_added_to_cart: false } : r)),
-        );
-      });
-    });
-
     // Per product spec: when the user lands on a reel that has no cpe_mode
     // decision yet (`cpe_mode_details === null`), auto-initialize it to
     // Preview mode server-side.
@@ -688,20 +675,6 @@ export class MicroLearningCourseFacade {
           list.map((r) =>
             r.id === reel.id ? { ...r, added_bookmark: response.is_bookmarked } : r,
           ),
-        );
-      });
-  }
-
-  addToCart(): void {
-    const reel = this.activeReel();
-    if (!reel) return;
-    this.utils
-      .addCourseToCart(reel.id, !!reel.is_added_to_cart)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
-        if (!response?.status) return;
-        this.detailsList.update((list) =>
-          list.map((r) => (r.id === reel.id ? { ...r, is_added_to_cart: response.in_cart } : r)),
         );
       });
   }

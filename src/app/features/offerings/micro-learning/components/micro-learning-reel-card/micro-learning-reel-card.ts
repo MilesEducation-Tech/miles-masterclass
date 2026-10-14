@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import {
   Component,
   computed,
@@ -22,7 +23,6 @@ import {
   matMoreVertRound,
   matPlayArrowRound,
   matSendRound,
-  matShoppingCartRound,
   matVolumeOffRound,
   matVolumeUpRound,
 } from '@ng-icons/material-icons/round';
@@ -55,7 +55,16 @@ const PREVIEW_LIMIT_SECONDS = 60;
 
 @Component({
   selector: 'app-micro-learning-reel-card',
-  imports: [NgIcon, Button, VideoJs, TotalCpeCreditsPipe, NgpMenu, NgpMenuItem, NgpMenuTrigger],
+  imports: [
+    NgIcon,
+    Button,
+    VideoJs,
+    TotalCpeCreditsPipe,
+    NgpMenu,
+    NgpMenuItem,
+    NgpMenuTrigger,
+    RouterLink,
+  ],
   templateUrl: './micro-learning-reel-card.html',
   styleUrl: './micro-learning-reel-card.css',
   host: {
@@ -71,7 +80,6 @@ const PREVIEW_LIMIT_SECONDS = 60;
       matFavoriteBorderRound,
       matFavoriteRound,
       matAddShoppingCartRound,
-      matShoppingCartRound,
       matInfoRound,
       matLinkRound,
       matMenuBookRound,
@@ -100,7 +108,6 @@ export class MicroLearningReelCard {
   /** Emits the clicked reel's id so the facade acts on this card, not the stale active reel. */
   readonly actionInvoked = output<number>();
   readonly bookmarkToggled = output<void>();
-  readonly cartToggled = output<void>();
   /** Raw timeupdate from the underlying player — the page derives heartbeat/completion. */
   readonly timeUpdate = output<ReelActivityPayload>();
   /** Fired on deactivation/destroy with the last known playhead for the exit ping. */
@@ -128,12 +135,13 @@ export class MicroLearningReelCard {
   readonly bookmarkIcon = computed(() =>
     this.episode().added_bookmark ? 'matFavoriteRound' : 'matFavoriteBorderRound',
   );
-  readonly cartIcon = computed(() =>
-    this.episode().is_added_to_cart ? 'matShoppingCartRound' : 'matAddShoppingCartRound',
+  /** Only subscriptions are sold: the reel's buy button opens the plan page. */
+  readonly planRoute = computed(
+    () => `/${this.utils.country()}/${this.utils.profession()}/payment/plan`,
   );
 
   /**
-   * Cart CTA visibility — mirrors the masterclass-course-hero rule:
+   * Buy CTA visibility — mirrors the masterclass-course-hero rule:
    *   !active_plan && (is_subscription_excluded || can_purchase_individually)
    * ponytail: the live `Auth.currentPlan()` read is gone, so the card assumes
    * no plan and falls back to the reel's own purchase flags.
