@@ -7,6 +7,40 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-13, NON-REFACTOR — `X-Country-Code`, `X-Platform`, `X-App-Type` on every API request
+  (`prompts/country-resolution.md` Ticket 2, extended at the user's request). DONE, UNCOMMITTED** on
+  `feat/MIL-XXX-api-request-headers` (from `master`; rename once the ticket exists). No refactor phase moved.
+  - **What changed:**
+    - `appInterceptor` sets the three headers next to `Accept-Language`. The country comes from
+      `CountryContext.current()`, upper-cased; the other two come from `environment` (`masterclass`, `WA`,
+      the pre-strip values).
+    - `docs/AUTH_API.md` §CORS is rewritten. The `PaymentFacade` plan re-fetch was dropped, because that
+      endpoint is legacy and answers 404.
+    - The interceptor's imports are now `@core/*` aliases, because the user wants alias imports everywhere,
+      even inside one folder. Re-linted clean.
+  - **⚠️ User edit after the gates (2026-10-13):** `Accept-Language` was renamed to `X-Accept-Language` in
+    `appInterceptor`. UAT's `Access-Control-Allow-Headers` does not list `x-accept-language`, so every
+    browser request fails CORS. Dev on 3000, `/in` → webinar: all four reads blocked (status 0), 0 webinar
+    cards, console "Request header field x-accept-language is not allowed". **The user chose to keep
+    `X-Accept-Language`**, so the backend must add `x-accept-language` to CORS on UAT and production. The
+    interceptor comment and `docs/AUTH_API.md` §CORS now say so. ⛔ Browser API calls stay broken until then.
+  - **Next:** the commerce implementation prompt, `prompts/commerce-api-rebind.md`, is being researched.
+  - **Backend (checked 2026-10-13):** UAT allows all three headers (max-age 86400). **Production
+    `api.milescaira.com` allows none**, so it must change before `BASE_API_URL` points there. Plans send
+    no `Vary: X-Country-Code`.
+  - **Gates (local macOS):** lint 0 errors (106 warnings), structure check passed, prettier clean,
+    `build:prod` 245.63 kB with only the `ai-labs.css` warning.
+  - **Browser (dev, 3000, UAT, signed out):**
+    - `/in` → webinar list: `webinar-main-page/` sent `IN` / `masterclass` / `WA` and answered 200.
+    - `/ae` → masterclass list: both reads sent `AE` and answered 200.
+    - The Supabase `seo_pages` read carried none of the three.
+    - SSR-side calls were not observed directly; they run through the same interceptor.
+- 🔧 **2026-10-13, NON-REFACTOR — favicon replaced with the Miles mountain mark. PR #121** on
+  `chore/MIL-64-favicon` (`a207d49`, committed and pushed by the user). No refactor phase moved.
+  - **What changed:** `public/favicon.ico` only. The old file was a 1024×1024 PNG with an `.ico` name; it's now
+    a real ICO with 16/32/48 PNG frames (7 KB), the padding trimmed and the transparency kept.
+  - **Gates (local macOS):** lint 0 errors, structure check passed, prettier clean, `build:prod` 245.51 kB
+    with only the `ai-labs.css` warning. Dev on 3000 served it as `image/x-icon`, byte-identical.
 - 🔧 **2026-10-12, NON-REFACTOR — OTP send/verify take `email` or `mobile` + `country_code`
   (`prompts/auth-otp-contact-fields.md`, approved). DONE, UNCOMMITTED** on
   `fix/MIL-63-otp-contact-fields` (from `master`). No refactor phase moved.
@@ -3882,6 +3916,12 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-13 · NON-REFACTOR · **`X-Accept-Language` breaks CORS** (user edit on `feat/MIL-XXX-api-request-headers`): UAT doesn't allow `x-accept-language`, so every browser API call is blocked (dev on 3000: 4/4 reads status 0) · ⏸ revert, or the backend allows the header
+
+- 2026-10-13 · NON-REFACTOR · **API request headers** (`feat/MIL-XXX-api-request-headers`, uncommitted): `appInterceptor` sends `X-Country-Code` (URL country, upper-case), `X-Platform: masterclass`, `X-App-Type: WA`; its imports are now `@core/*` aliases (user: aliases everywhere) · lint 0 errors, structure ✔, prettier ✔, build:prod 245.63 kB (local) · dev on 3000: `/in` → `IN`, `/ae` → `AE`, all 200; Supabase untouched · prod `api.milescaira.com` CORS still lacks the headers · commerce implementation prompt in progress (`prompts/commerce-api-rebind.md`)
+
+- 2026-10-13 · NON-REFACTOR · **Favicon** (PR #121, `chore/MIL-64-favicon`, `a207d49`): `public/favicon.ico` is now a real 16/32/48 ICO of the mountain mark · lint 0 errors, structure ✔, prettier ✔, build:prod 245.51 kB (local) · dev on 3000 serves it as `image/x-icon`
 
 - 2026-10-12 · NON-REFACTOR · **AI Labs ring thumbnails** (MIL-61, no code yet): S3 `milesone-backend-assets` sends no CORS, so the WebGL ring cannot upload the `ai-labs/` thumbnails; the `<img>` row is unaffected · confirmed in dev at 1440 (browser CORS error + `onTextureBlocked`) · ⏸ user to choose S3 CORS (backend) or a same-origin proxy
 

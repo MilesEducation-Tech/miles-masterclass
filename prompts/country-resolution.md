@@ -1,6 +1,7 @@
 # Country resolution, rebuilt from scratch
 
-Status: plan approved 2026-10-01. Ticket 1 is implemented and uncommitted. Ticket 2 is blocked on the backend.
+Status: plan approved 2026-10-01. Ticket 1 is implemented. Ticket 2 is implemented (2026-10-13, extended with
+`X-Platform` and `X-App-Type`); production CORS is still open on the backend.
 
 ## Context
 
@@ -147,19 +148,39 @@ CountryContext.current ┤
 
 **Estimate:** M
 
-### Ticket 2: send the country to the API (blocked on backend)
+### Ticket 2: send the country and client headers to the API (implemented 2026-10-13)
 
-**Summary:** `feat(core): send X-Country-Code on every API request`
-**Branch:** `feat/MIL-<n>-country-api-header`
+**Summary:** `feat(core): send X-Country-Code, X-Platform and X-App-Type on every API request`
+**Issue type:** Story · **Component / scope:** core
+**Branch:** `feat/MIL-XXX-api-request-headers` (rename to the real ticket with `git branch -m`)
 
 **What it does:**
 
-- `appInterceptor` sets `X-Country-Code: <UPPER ISO2>` from `CountryContext.current()` on every non-external request.
-- The retired-header comment and its spec are rewritten.
-- `PaymentFacade` plan requests read `country()` so they re-fetch when the country changes.
+- `appInterceptor` sets three headers on every non-external request:
+  - `X-Country-Code: <UPPER ISO2>` from `CountryContext.current()`;
+  - `X-Platform: environment.platform` (`masterclass`);
+  - `X-App-Type: environment.appType` (`WA`).
+    The last two were added on 2026-10-13 at the user's request. Their values are the ones the pre-strip
+    interceptor sent (`98532b5`), because Postman documents neither header.
+- The retired-header comment is rewritten, and so is `docs/AUTH_API.md` §CORS. Unit tests were removed on
+  2026-10-06, so there is no spec to rewrite.
+- **Dropped:** making `PaymentFacade` plan requests read `country()`. The endpoint is legacy
+  `promotion/subscription/`, which answers 404, so a re-fetch would buy nothing. The commerce rebind keys
+  its resources on the country instead.
 
-**The PR description starts with:** `⚠️ Needs UAT sign-off — do not merge` until the backend CORS change is live
-everywhere.
+**Backend status (checked 2026-10-13):**
+
+- [x] UAT `Access-Control-Allow-Headers` lists all three.
+- [ ] **UAT does not list `x-accept-language`.** The user renamed `Accept-Language` to `X-Accept-Language`
+      on 2026-10-13 and chose to keep it. Until the backend allows it, every browser request fails CORS
+      (verified in dev). **Blocks merge.**
+- [x] Preflight `Access-Control-Max-Age` is 86400 (≥ 7200; Chrome caps it at 7200).
+- [ ] Production `api.milescaira.com` lists none of the four. No build points there yet, since every
+      `environment*.ts` uses UAT, but this must land before `BASE_API_URL` switches.
+- [ ] `Vary: X-Country-Code` on plan and price responses. Plans currently send `Vary: Accept, origin, Accept-Encoding`.
+- [ ] Checkout re-derives the country from the billing address or card (Payment safety 1).
+
+**The PR description starts with:** `⚠️ Do not merge until UAT CORS allows x-accept-language. Production CORS lacks all four headers — do not switch BASE_API_URL to prod`.
 
 **Estimate:** S
 

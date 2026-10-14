@@ -309,15 +309,26 @@ non-wildcard origin.
 
 ### CORS
 
-`x-app-type`, `x-platform` and `x-country-code` used to go on every request. They are **gone**.
-MilesCAIRA's `Access-Control-Allow-Headers` lists none of the three, so every preflighted request
-carrying them fails CORS — and the API reads none of them anyway. The allowed set is:
+`appInterceptor` sends four headers on every non-external request:
 
-```
-content-type, authorization, x-csrftoken, x-requested-with, Access-Control-Allow-Origin,
-X_LMS_OPEN_API_KEY (+ casings), x_enrollment_form_vendor_token (+ casings),
-X_VENDOR_TOKEN, x_vendor_token, skip
-```
+- `X-Accept-Language`, the language from `LanguageContext`. It replaced the standard `Accept-Language`
+  on 2026-10-13.
+- `X-Country-Code`, upper-case ISO2 from `CountryContext`. The commerce, catalogue and plans APIs price by
+  it.
+- `X-Platform`, from `environment.platform`.
+- `X-App-Type`, from `environment.appType`.
+
+None of the four is CORS-safelisted, so each must be listed in `Access-Control-Allow-Headers`, or the
+browser blocks the request. Checked 2026-10-13:
+
+- **UAT `uat-api.milescaira.com`:** allows `x-country-code`, `x-platform` and `x-app-type` (with
+  `access-control-max-age: 86400`), but **not `x-accept-language`**. Until the backend adds it, every browser
+  request fails CORS. Seen in dev: "Request header field x-accept-language is not allowed by
+  Access-Control-Allow-Headers".
+- **Production `api.milescaira.com`:** allows none of the four.
+
+SSR is unaffected, because Node sends no preflight. `X-Country-Code`, `X-Platform` and `X-App-Type` were
+removed on 2026-09-22, when UAT did not allow them either, and restored on 2026-10-13.
 
 ---
 
