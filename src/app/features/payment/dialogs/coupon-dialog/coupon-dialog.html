@@ -8,7 +8,7 @@
       <button
         app-button
         type="button"
-        class="rounded-full"
+        class="rounded-full text-gray-300 data-hover:bg-transparent data-press:bg-transparent data-hover:text-white"
         aria-label="Close dialog"
         variant="ghost"
         size="icon"
@@ -40,8 +40,8 @@
         <button
           app-button
           type="button"
-          variant="ghost"
-          [class]="'absolute end-1.5 h-auto top-1/2 -translate-y-1/2 px-3 text-xs font-bold text-blue-500 hover:bg-transparent hover:text-blue-400'"
+          variant="link"
+          class="absolute end-1.5 top-1/2 -translate-y-1/2 h-auto px-3 text-xs font-bold text-blue-500 data-hover:text-blue-400"
           [disabled]="applying()"
           (click)="apply(codeInput.value)"
         >

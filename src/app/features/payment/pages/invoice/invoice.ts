@@ -255,7 +255,8 @@ export class Invoice {
         },
       ],
       buttons: [
-        { label: 'Close', variant: 'ghost', action: 'close' },
+        // `link`, not `ghost`: no hover fill (the ghost variant paints a navy `bg-muted` block).
+        { label: 'Close', variant: 'link', action: 'close' },
         { label: 'Proceed to Payment', variant: 'default', action: 'confirm' },
       ],
     };
