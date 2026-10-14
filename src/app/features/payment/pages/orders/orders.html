@@ -3,8 +3,8 @@
 
   @if (loading()) {
     <app-page-loading message="Loading orders..." />
-  } @else if (error()) {
-    <app-error-state title="Failed to Load Orders" [message]="error()!" (retry)="retryLoad()" />
+  } @else if (error(); as message) {
+    <app-error-state title="Failed to Load Orders" [message]="message" (retry)="retryLoad()" />
   } @else {
     <!-- Summary bar -->
     <div class="flex flex-col justify-between mb-6 container mx-auto space-y-1">
@@ -13,27 +13,11 @@
         <span class="bg-muted text-white text-sm font-medium px-2.5 py-0.5 rounded-md">
           {{ ordersCount() }}
         </span>
-        <button
-          app-button
-          type="button"
-          class="ms-auto"
-          variant="default"
-          size="sm"
-          (click)="openStripeDashboard()"
-        >
-          <ng-icon name="matReceiptLongOutline" size="18" class="me-1" />
-          Access Stripe Dashboard
-        </button>
       </div>
-      <!-- <p class="text-xl text-white font-semibold">
-        All Orders<span class="bg-muted text-white text-sm font-medium px-2.5 py-0.5 rounded-md">
-          {{ ordersCount() }}
-        </span>
-      </p> -->
       <hr />
     </div>
 
-    @if (ordersCount() === 0) {
+    @if (orders().length === 0) {
       <div class="flex flex-col items-center justify-center min-h-64 text-center">
         <p class="text-white text-lg">No orders found</p>
         <p class="text-muted-foreground text-sm mt-2">Your order history will appear here.</p>
@@ -42,16 +26,14 @@
       <!-- Order Cards -->
       <div class="flex flex-col gap-6 container mx-auto">
         @for (order of orders(); track order.id) {
-          <!-- No overflow-hidden: it would clip the actions menu. The header is the
-               only child with its own background, so it carries the top rounding. -->
-          <div class="order-card rounded-xl border border-border bg-[#283543]">
+          <div class="order-card overflow-hidden rounded-xl border border-border bg-[#283543]">
             <!-- Order Header -->
             <div
-              class="order-header bg-[#1C2A37] rounded-t-xl flex flex-wrap items-center gap-x-8 gap-y-2 px-5 py-4"
+              class="order-header bg-[#1C2A37] flex flex-wrap items-center gap-x-8 gap-y-2 px-5 py-4"
             >
-              <div>
+              <div class="min-w-0">
                 <p class="text-muted-foreground text-xs">Order ID</p>
-                <p class="text-white font-semibold text-sm">#{{ order.id }}</p>
+                <p class="text-white font-semibold text-sm break-all">#{{ order.id }}</p>
               </div>
               <div>
                 <p class="text-muted-foreground text-xs">Order Placed</p>
@@ -62,111 +44,37 @@
               <div>
                 <p class="text-muted-foreground text-xs">Total</p>
                 <p class="text-white font-semibold text-sm">
-                  {{ order.adjusted_total_amount | currency: 'USD' : 'symbol' : '1.2-2' }}
+                  {{ order.money.price_after_gst | currency: order.currency : 'symbol' : '1.2-2' }}
                 </p>
               </div>
-              @if (order.payment_status) {
-                <div>
-                  <p class="text-muted-foreground text-xs">Payment Status</p>
-                  <p
-                    class="font-semibold text-sm"
-                    [class]="paymentStatusClassMap().get(order.id) ?? 'text-white'"
-                  >
-                    {{ order.payment_status }}
-                  </p>
-                </div>
-              }
-              <!-- Actions Menu. `#orderMenu` must stay in this @for scope so each
-                   trigger binds its own menu — a viewChildren list only ever holds
-                   the menus that are already instantiated, so indexing it by row
-                   left every row but the first with no menu at all. -->
-              <div class="ms-auto relative">
-                <button
-                  app-button
-                  type="button"
-                  [ngpMenuTrigger]="orderMenu"
-                  ngpMenuTriggerPlacement="bottom-end"
-                  variant="outline"
-                  size="sm"
-                >
-                  <ng-icon name="matMoreVertOutline" size="18" class="me-1" />
-                  Actions
-                </button>
-
-                <!-- Portalled and positioned by the primitive, so the absolute
-                     positioning and the visible() toggle are gone. -->
-                <ng-template #orderMenu>
-                  <div
-                    ngpMenu
-                    class="z-30 rounded-lg border border-border bg-[#1C2A37] shadow-xl py-1 flex flex-col"
-                  >
-                    <!-- Payment Confirmation - always visible -->
-                    <button
-                      app-button
-                      type="button"
-                      class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
-                      ngpMenuItem
-                      variant="ghost"
-                      (click)="paymentConfirmation(order.id, order.payment_status)"
-                    >
-                      <ng-icon name="matFileDownloadOutline" size="18" />
-                      Payment Confirmation
-                    </button>
-
-                    <!-- Stripe Receipt - only for stripe orders -->
-                    @if (orderActionsMap().get(order.id)?.hasStripeReceipt) {
-                      <button
-                        app-button
-                        type="button"
-                        class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
-                        ngpMenuItem
-                        variant="ghost"
-                        (click)="downloadStripeReceipt(order.id)"
-                      >
-                        <ng-icon name="matReceiptLongOutline" size="18" />
-                        Stripe Receipt
-                      </button>
-                    }
-
-                    <!-- Cancel Auto Renewal - stripe subscription with Active/ReSubscribe status -->
-                    @if (orderActionsMap().get(order.id)?.showCancelAutoRenewal) {
-                      <button
-                        app-button
-                        type="button"
-                        class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
-                        ngpMenuItem
-                        variant="ghost"
-                        (click)="cancelAutoRenewal(order.id)"
-                      >
-                        <ng-icon name="matBlockOutline" size="18" />
-                        Cancel Auto Renewal
-                      </button>
-                    }
-
-                    <!-- Reactivate Auto Renewal - stripe subscription with Deactivate status -->
-                    @if (orderActionsMap().get(order.id)?.showReactivateAutoRenewal) {
-                      <button
-                        app-button
-                        type="button"
-                        class="flex items-center gap-2 w-max text-sm text-white transition-colors cursor-pointer outline-none"
-                        ngpMenuItem
-                        variant="ghost"
-                        (click)="reactivateAutoRenewal(order.id)"
-                      >
-                        <ng-icon name="matAutorenewOutline" size="18" />
-                        Reactivate Auto Renewal
-                      </button>
-                    }
-                  </div>
-                </ng-template>
+              <div>
+                <p class="text-muted-foreground text-xs">Payment Status</p>
+                <p class="font-semibold text-sm capitalize" [class]="statusClass(order)">
+                  {{ statusLabel(order) }}
+                </p>
               </div>
+              <button
+                app-button
+                type="button"
+                class="ms-auto gap-2"
+                variant="outline"
+                size="sm"
+                (click)="viewInvoice(order)"
+              >
+                <ng-icon name="matFileDownloadOutline" size="18" aria-hidden="true" />
+                View invoice
+              </button>
             </div>
 
-            <!-- Order Items -->
+            <!-- Order Lines -->
             <div class="flex flex-col divide-y divide-border">
-              @for (item of order.order_items; track item.id) {
+              @for (line of order.lines; track line.id) {
                 <div class="px-5 py-4">
-                  <app-cart-item [item]="item" [currencyCode]="'USD'" [config]="orderItemConfig" />
+                  <app-cart-item
+                    [item]="line"
+                    [currencyCode]="order.currency"
+                    [config]="lineConfig"
+                  />
                 </div>
               }
             </div>

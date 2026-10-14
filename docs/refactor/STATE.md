@@ -166,6 +166,26 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       - **Signed out**, the invoice → `/auth/login?redirect=<invoice>`.
     - **Not verifiable on UAT:** the real pay/return round trip. Stripe isn't configured there (Q11), and
       browser sign-in is blocked by CORS.
+  - **Committed by the user:** PR5 `184959c`.
+  - **PR6 `feat(payment): bind order history to the commerce API` — DONE, UNCOMMITTED** on
+    `feat/MIL-XXX-commerce-orders` (stacked on PR5). The diff is +157 / −583.
+    - **Model:** `PagedResult`, `parseOrdersPage` and the K3 route.
+    - **Facade:** an auth-gated K3 read with `page_size=50`, giving `orders` and `ordersCount`. **Deleted:**
+      cancel/reactivate auto-renew, the Stripe receipt and customer portal (no CAIRA endpoints, Q3), and
+      the last `PAYMENT_ROUTES` use.
+    - **Orders page:** order id, date, total in the order's currency, status (coloured by
+      `paymentDisplayStatus`), a "View invoice" button, and lines via `cart-item`. The menu and the Stripe
+      dashboard button are gone.
+    - **`cart-item`:** commerce lines only.
+    - **`payment.model.ts`:** only `CurrentPlanData` (still read by analytics, the certificate policy and
+      the engagement dialog). `CartSteps` moved to constants. The stale facade comment is fixed.
+    - **Sweep:** the only legacy payment path left in `src/` is `v2/user/cart/` (PR7). `PAYMENT_ROUTES` is
+      only the Angular `Routes`.
+    - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔, prettier ✔, `build:prod`
+      245.34 kB with only `ai-labs.css`.
+    - **Dev on 3000, signed out:** `/payment/order-history` shows "No orders found", with no request and
+      no Stripe button.
+    - **Contract:** the captured `11-orders.json` passes `parseOrdersPage`, and K4 bodies pass `parseOrder`.
   - **Facts from the user:**
     - Only subscriptions are sold: no single courses, no books.
     - Alias imports everywhere, even inside one feature.
@@ -4099,6 +4119,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-13 · NON-REFACTOR · **Commerce PR6, order history** (uncommitted, `feat/MIL-XXX-commerce-orders`): K3 bound (page_size 50), auto-renew/portal/receipt actions and all legacy order types deleted, `payment.model.ts` → `CurrentPlanData` only (+157/−583) · lint 0 errors, structure ✔, build:prod 245.34 kB (local) · signed-out empty state checked; captured K3/K4 pass the parsers
 
 - 2026-10-13 · NON-REFACTOR · **Commerce PR5, checkout + Stripe return** (uncommitted, `feat/MIL-XXX-commerce-checkout`): K1/K2/K4 bound, Stripe allow-list, `checkout/:result` redirect, invoice on the order, legacy checkout/order-detail code deleted (+431/−307) · lint 0 errors, structure ✔, build:prod 245.28 kB (local) · redirect matrix + allow-list + signed-out sign-in redirect verified in dev
 
