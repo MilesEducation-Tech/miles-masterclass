@@ -9,7 +9,7 @@
       class="relative flex items-center justify-center pt-7 pb-4"
       [class]="col.isSelected ? 'bg-[#1A1F26] border-x border-t border-white/5 rounded-t-2xl' : ''"
     >
-      @if (col.isRecommended) {
+      @if (col.isDefault) {
         <ng-icon
           [svg]="proCrownIcon"
           class="absolute -top-2 left-1 -translate-x-1/2 -translate-y-1/2 w-6! h-6! -rotate-12"
@@ -18,10 +18,10 @@
       <span
         class="px-1 text-sm md:text-base font-semibold tracking-wide whitespace-nowrap"
         [class]="
-          col.isRecommended ? 'text-[#FFCF00]' : col.isSelected ? 'text-white' : 'text-neutral-400'
+          col.isDefault ? 'text-[#FFCF00]' : col.isSelected ? 'text-white' : 'text-neutral-400'
         "
       >
-        {{ col.plan.subscription_name }}
+        {{ col.name }}
       </span>
     </div>
   }
@@ -40,7 +40,7 @@
             : ''
         "
       >
-        @if (planHasFeature(col.plan, row.id)) {
+        @if (col.featureIds.has(row.id)) {
           <svg
             viewBox="0 0 20 20"
             class="w-5 h-5"

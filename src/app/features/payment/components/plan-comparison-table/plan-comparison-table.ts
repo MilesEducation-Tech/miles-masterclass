@@ -1,12 +1,15 @@
 import { Component, computed, input } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
-import { PlanFeatureDetail, SubscriptionPlan } from '@core/models/payment.model';
+import { Plan, PlanFeature } from '@features/payment/models/commerce.model';
 import { proCrownIcon } from '@features/payment/constants/plan-icons';
+import { planTermName } from '@features/payment/utils/plan-term';
 
 interface ComparisonColumn {
-  plan: SubscriptionPlan;
-  isRecommended: boolean;
+  plan: Plan;
+  name: string;
+  isDefault: boolean;
   isSelected: boolean;
+  featureIds: ReadonlySet<string>;
 }
 
 @Component({
@@ -16,44 +19,33 @@ interface ComparisonColumn {
   host: { class: 'block' },
 })
 export class PlanComparisonTable {
-  readonly plans = input.required<SubscriptionPlan[]>();
-  readonly selectedPlanId = input<number | null>(null);
+  /** Already in CAIRA's `sort_order`. */
+  readonly plans = input.required<Plan[]>();
+  readonly selectedPlanId = input<string | null>(null);
 
   protected readonly proCrownIcon = proCrownIcon;
 
-  // Recommended plan anchors the row order so the Pro column reads top-to-bottom
-  // exactly as designed; features only present on other plans append below.
-  protected readonly rows = computed<PlanFeatureDetail[]>(() => {
-    const ordered = [...this.plans()].sort(
-      (a, b) => Number(b.is_recommended) - Number(a.is_recommended),
-    );
-    const map = new Map<number, PlanFeatureDetail>();
-    for (const plan of ordered) {
-      for (const f of plan.features) {
-        if (f.planfeature) map.set(f.planfeature.id, f.planfeature);
-      }
-    }
-    return Array.from(map.values());
+  // The default plan anchors the row order, so its column reads top to bottom as
+  // designed; features only other plans have append below.
+  protected readonly rows = computed<PlanFeature[]>(() => {
+    const ordered = [...this.plans()].sort((a, b) => Number(b.is_default) - Number(a.is_default));
+    const byId = new Map<string, PlanFeature>();
+    for (const plan of ordered) for (const f of plan.features) byId.set(f.id, f);
+    return [...byId.values()];
   });
 
-  protected readonly columns = computed<ComparisonColumn[]>(() => {
-    const ordered = [...this.plans()].sort(
-      (a, b) => Number(b.is_recommended) - Number(a.is_recommended),
-    );
-    const selectedId = this.selectedPlanId();
-    return ordered.map((plan) => ({
+  protected readonly columns = computed<ComparisonColumn[]>(() =>
+    this.plans().map((plan) => ({
       plan,
-      isRecommended: plan.is_recommended,
-      isSelected: plan.id === selectedId,
-    }));
-  });
+      name: planTermName(plan.duration_months),
+      isDefault: plan.is_default,
+      isSelected: plan.id === this.selectedPlanId(),
+      featureIds: new Set(plan.features.map((f) => f.id)),
+    })),
+  );
 
   protected readonly gridTemplate = computed(() => {
     const planCount = this.columns().length;
     return `1fr ${'6.5rem '.repeat(planCount).trim()}`;
   });
-
-  protected planHasFeature(plan: SubscriptionPlan, featureId: number): boolean {
-    return plan.features.some((f) => f.planfeature?.id === featureId);
-  }
 }

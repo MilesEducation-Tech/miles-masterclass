@@ -1,16 +1,6 @@
-import {
-  DestroyRef,
-  inject,
-  Service,
-  signal,
-  computed,
-  effect,
-  linkedSignal,
-  Injector,
-} from '@angular/core';
-import { httpResource } from '@angular/common/http';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, catchError, switchMap, tap } from 'rxjs';
+import { inject, Service, signal, computed, effect, linkedSignal, Injector } from '@angular/core';
+import { HttpErrorResponse, httpResource } from '@angular/common/http';
+import { tap } from 'rxjs';
 import { RouteResponse } from '@core/models/http.model';
 import {
   CartDetails,
@@ -20,15 +10,13 @@ import {
   BillingAddressPayload,
   UserAddress,
   OrderByIdResponseData,
-  PlanPriceDetail,
-  SubscriptionPlan,
 } from '@core/models/payment.model';
-import { PROFILE_ROUTES, ProfileFormState } from '@core/models/profile.model';
-import { User } from '@core/models/profile.model';
 import { NotificationService } from '@core/services/notification/notification';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { CartStore } from '@core/services/cart/cart-store';
+import { CountryContext } from '@core/services/country-context/country-context';
+import { COMMERCE_ROUTES, Plan, parsePlans } from '@features/payment/models/commerce.model';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 // Dialog components are loaded lazily (dynamic import in the open* methods below)
 // so they — and their `@angular/forms` dependency — stay out of the initial
@@ -36,15 +24,10 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 // static import would drag every dialog into the initial chunk. Types are
 // import-only (erased at build time); the runtime class comes from `import()`.
 import type { CouponDialogData } from '@features/payment/dialogs/coupon-dialog/coupon-dialog';
-import type {
-  FirmSponsorshipDialogData,
-  FirmSponsorshipResult,
-} from '@features/payment/dialogs/firm-sponsorship-dialog/firm-sponsorship-dialog';
-import type { PartnerCodePromptResult } from '@features/payment/dialogs/partner-code-prompt-dialog/partner-code-prompt-dialog';
 import { Analytics } from '@core/services/analytics/analytics';
 
-/** Every cart mutation answers with the cart, enveloped. */
-type CartResponse = RouteResponse<typeof PAYMENT_ROUTES.addBucketItem>;
+/** Every legacy cart mutation answers with the legacy cart, enveloped (gone in PR3). */
+type CartResponse = RouteResponse<typeof PAYMENT_ROUTES.removeBucketItem>;
 type ListAddressResponse = RouteResponse<typeof PAYMENT_ROUTES.listAddress>;
 type AddAddressResponse = RouteResponse<typeof PAYMENT_ROUTES.addAddress>;
 type CheckoutResponse = RouteResponse<typeof PAYMENT_ROUTES.proceedToPayment>;
@@ -53,7 +36,25 @@ type OrdersResponse = RouteResponse<typeof PAYMENT_ROUTES.getOrders>;
 type CancelAutoRenewalResponse = RouteResponse<typeof PAYMENT_ROUTES.cancelAutoRenewal>;
 type ReactivateAutoRenewalResponse = RouteResponse<typeof PAYMENT_ROUTES.reactivateAutoRenewal>;
 type StripePortalResponse = RouteResponse<typeof PAYMENT_ROUTES.navigateToStripeCustomerDashboard>;
-type SubscriptionPlansResponse = RouteResponse<typeof PAYMENT_ROUTES.getSubscriptionPlans>;
+
+/**
+ * The CAIRA error envelope's human message (safe to show) and machine reason
+ * (`data.reason`, stable to branch on). Some refusals carry only a message.
+ */
+function commerceErrorOf(err: unknown): { reason?: string; message: string } {
+  const body: unknown = err instanceof HttpErrorResponse ? err.error : null;
+  const fields = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {};
+  const data = fields['data'];
+  const reason =
+    typeof data === 'object' && data !== null ? (data as Record<string, unknown>)['reason'] : null;
+  return {
+    reason: typeof reason === 'string' ? reason : undefined,
+    message:
+      typeof fields['message'] === 'string'
+        ? fields['message']
+        : 'Something went wrong. Please try again.',
+  };
+}
 
 @Service()
 export class PaymentFacade {
@@ -62,7 +63,7 @@ export class PaymentFacade {
   private readonly http = inject(ApiClient);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly injector = inject(Injector);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly country = inject(CountryContext).current;
   private readonly analytics = inject(Analytics);
 
   /**
@@ -163,49 +164,41 @@ export class PaymentFacade {
   isEditingAddress = signal<boolean>(false);
 
   /**
-   * Subscription plans: the plan page's full list and the subscription dialog's
-   * recommended-only slice, as two OPT-IN resources so neither clobbers the other.
+   * The subscription plans (`GET api/v1/subscriptions/plans/`), shared by the plan
+   * page and the subscription dialog. OPT-IN: nothing is fetched until one of them
+   * calls `loadPlans()`.
    *
-   * SSR: the plan page renders on the server. Angular's HTTP transfer cache hands
-   * an anonymous server fetch to the browser; a signed-in one carries
-   * `Authorization`, which that cache skips, so the browser fetches the plans once
-   * more. That replaced a hand-rolled TransferState handoff, a trade-off accepted
-   * in docs/refactor/STATE.md "Decisions" (Phase 9 payment).
+   * Priced for the URL market: `X-Country-Code` is named here as well as by
+   * `appInterceptor`, so a country change re-reads the plans. A signed-in learner
+   * may get a personal price, so the response is never stored. SSR: the plan page
+   * renders on the server, and Angular's transfer cache hands an anonymous fetch to
+   * the browser; a signed-in one carries `Authorization`, which the cache skips.
    */
   private readonly plansWanted = signal(false);
-  private readonly recommendedWanted = signal(false);
-  private readonly plansResource = httpResource<SubscriptionPlansResponse>(() =>
-    this.plansWanted() ? apiUrl(PAYMENT_ROUTES.getSubscriptionPlans.path) : undefined,
+  private readonly plansResource = httpResource(
+    () =>
+      this.plansWanted()
+        ? {
+            url: apiUrl(COMMERCE_ROUTES.plans.path),
+            headers: { 'X-Country-Code': this.country().toUpperCase() },
+          }
+        : undefined,
+    { parse: parsePlans },
   );
-  private readonly recommendedResource = httpResource<SubscriptionPlansResponse>(() =>
-    this.recommendedWanted()
-      ? {
-          url: apiUrl(PAYMENT_ROUTES.getSubscriptionPlans.path),
-          params: { is_recommended: 'true' },
-        }
-      : undefined,
+  /** In `sort_order`. Guarded, since `value()` throws on an errored resource. */
+  readonly plans = computed<Plan[]>(() =>
+    this.plansResource.hasValue() ? this.plansResource.value() : [],
   );
-  /**
-   * `linkedSignal`, not `computed`: adding a plan to the cart and removing it patch
-   * `is_added_to_cart` in place; a reload replaces the list. Guarded, since `value()`
-   * throws on an errored resource.
-   */
-  readonly subscriptionPlans = linkedSignal<SubscriptionPlan[]>(() =>
-    this.plansResource.hasValue() ? (this.plansResource.value()?.data ?? []) : [],
+  /** The plan to pre-select: CAIRA's `is_default`, otherwise the first. */
+  readonly defaultPlan = computed<Plan | null>(
+    () => this.plans().find((p) => p.is_default) ?? this.plans()[0] ?? null,
   );
   readonly plansLoading = computed(() => this.plansResource.isLoading());
   readonly plansError = computed(() =>
     this.plansResource.error() ? 'Failed to load subscription plans' : null,
   );
-  readonly recommendedPlans = computed<SubscriptionPlan[]>(() =>
-    this.recommendedResource.hasValue() ? (this.recommendedResource.value()?.data ?? []) : [],
-  );
-  readonly recommendedPlansLoading = computed(() => this.recommendedResource.isLoading());
-  readonly recommendedPlansError = computed(() =>
-    this.recommendedResource.error() ? 'Failed to load subscription plans' : null,
-  );
   private readonly plansErrorLog = effect(() => {
-    const err = this.plansResource.error() ?? this.recommendedResource.error();
+    const err = this.plansResource.error();
     if (err) this.logger.error('Failed to load subscription plans', err);
   });
 
@@ -370,11 +363,6 @@ export class PaymentFacade {
           if (removedItem) {
             this.cartItemRemoved.set(removedItem.item_details.id);
           }
-
-          // Reset is_added_to_cart on subscription plans if the removed item was a subscription
-          this.subscriptionPlans.update((plans) =>
-            plans.map((p) => (p.is_added_to_cart ? { ...p, is_added_to_cart: false } : p)),
-          );
         },
         error: (err) => {
           this.logger.error('Failed to remove cart item', err);
@@ -449,86 +437,6 @@ export class PaymentFacade {
     });
   }
 
-  async openFirmSponsorshipDialog(
-    plan: SubscriptionPlan,
-    paymentType: 'monthly' | 'yearly' = 'yearly',
-  ): Promise<void> {
-    const { FirmSponsorshipDialog } =
-      await import('@features/payment/dialogs/firm-sponsorship-dialog/firm-sponsorship-dialog');
-    const dialogRef = this.dialogs.open<
-      FirmSponsorshipDialogData,
-      FirmSponsorshipResult | undefined
-    >(FirmSponsorshipDialog, {
-      data: { planId: plan.id, planName: plan.subscription_name },
-      injector: this.injector,
-    });
-
-    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
-      if (!result) return;
-
-      if (result.skipped) {
-        this.addToCart(plan.id, 'subscription', plan.price_detail, paymentType);
-        return;
-      }
-
-      // Only patch the profile when the user picked a different company than the
-      // one already on their profile (or had none before).
-      // ponytail: the existing company came from the removed session service,
-      // so any pick now counts as a change.
-      const existingCompanyId: number | null = null;
-      const companyChanged = !!result.companyId && result.companyId !== existingCompanyId;
-
-      // Step 1 — submit the sponsorship request. Step 2 (optional) — patch
-      // profile with the new company. Each stage has its own catchError so a
-      // profile-patch failure can't masquerade as a sponsorship failure (and
-      // vice versa); sponsorship success toast is independent of whether the
-      // follow-up profile update succeeds.
-      this.http
-        .post<unknown>(PROFILE_ROUTES.applyFirmSponsorship.path, {
-          company_id: result.companyId,
-          consent_given: result.consent,
-          subscription_id: plan.id,
-          ld_spoc_email: result.spocEmail,
-        })
-        .pipe(
-          catchError((err) => {
-            this.logger.error('Failed to submit firm sponsorship', err);
-            this.notification.error(
-              'Sponsorship Failed',
-              'We could not submit your sponsorship request. Please try again.',
-            );
-            return EMPTY;
-          }),
-          tap(() =>
-            this.notification.success(
-              'Sponsorship Request Submitted',
-              "We'll reach out to your firm's L&D team on your behalf.",
-            ),
-          ),
-          switchMap(() => {
-            if (!companyChanged) return EMPTY;
-            const payload: Partial<ProfileFormState> = { company_id: result.companyId };
-            return this.http
-              .patch<{
-                user: User;
-                message: string;
-                status: boolean;
-              }>(PROFILE_ROUTES.saveProfile.path, payload)
-              .pipe(
-                catchError((err) => {
-                  // Sponsorship already succeeded — don't undo that toast.
-                  this.logger.error('Profile update after sponsorship failed', err);
-                  return EMPTY;
-                }),
-              );
-          }),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        // ponytail: pushed the patched profile back into the session service.
-        .subscribe();
-    });
-  }
-
   proceedToPayment(isTrial = false) {
     const cartId = this.cartData()?.cart_id;
     const addressId = this.selectedAddressId();
@@ -567,51 +475,42 @@ export class PaymentFacade {
       });
   }
 
-  addToCart(
-    itemId: number,
-    itemType: 'subscription' | 'masterclass' | 'podcast' | 'nano-learning' | 'webinar',
-    priceDetail?: PlanPriceDetail | null,
-    paymentType: 'monthly' | 'yearly' = 'yearly',
-    // Runs after a successful add instead of opening the cart drawer. The plan
-    // page passes a navigate-to-cart-page callback; other callers get the drawer.
-    onAdded?: () => void,
-  ) {
+  /**
+   * Adds a plan to the cart (C2), then runs `onAdded` (the plan page goes to the
+   * cart page) or opens the cart drawer. The answer is the whole cart, so it goes
+   * straight into `CartStore`. Re-adding the plan already in the cart is harmless
+   * (200, `created: false`); a different plan, an unpriced market or a full
+   * subscription stack is a 409 whose `message` the learner sees.
+   */
+  addPlanToCart(plan: Plan, onAdded?: () => void): void {
+    const cartId = this.cart.cart()?.id;
     this.http
-      .post<CartResponse>(PAYMENT_ROUTES.addBucketItem.path, {
-        item_id: itemId,
-        item_type: itemType,
-        pay_method: paymentType,
+      .call(COMMERCE_ROUTES.addLine, {
+        product_id: plan.product.id,
+        plan_id: plan.id,
+        ...(cartId ? { cart_id: cartId } : {}),
       })
       .subscribe({
-        next: (res) => {
-          const cartData = res?.data ?? null;
-          this.setCartData(cartData);
-          this.notification.success('Success', 'Item added to cart');
+        next: ({ data }) => {
+          this.cart.set(data.result);
+          this.notification.success('Added to cart', `${plan.product.title} is in your cart.`);
+          // GA needs numbers; this is the only place a price leaves its string.
+          const listPrice = Number(plan.price.price);
+          const sellingPrice = Number(plan.price.discount_price ?? plan.price.price);
           this.analytics.trackEvent('add_to_cart', {
-            course_id: itemId,
-            course_type: itemType,
-            base_price: priceDetail?.base_price,
-            selling_price: priceDetail?.selling_price,
-            product_discount: priceDetail?.discount,
-            items: [
-              {
-                course_id: String(itemId),
-                course_type: itemType,
-                price: priceDetail?.selling_price,
-              },
-            ],
+            course_id: plan.id,
+            course_type: 'subscription',
+            currency: plan.price.currency,
+            base_price: listPrice,
+            selling_price: sellingPrice,
+            items: [{ course_id: plan.id, course_type: 'subscription', price: sellingPrice }],
           });
-
-          // Update is_added_to_cart on the matching plan
-          this.subscriptionPlans.update((plans) =>
-            plans.map((p) => (p.id === itemId ? { ...p, is_added_to_cart: true } : p)),
-          );
-
           if (onAdded) onAdded();
           else this.openCartDrawer();
         },
         error: (err) => {
-          this.logger.error('Failed to add item to cart', err);
+          this.logger.error('Failed to add the plan to the cart', err);
+          this.notification.error('Could not add to cart', commerceErrorOf(err).message);
         },
       });
   }
@@ -648,73 +547,10 @@ export class PaymentFacade {
     this.dialogs.open(CartDrawerDialog, { injector: this.injector });
   }
 
-  /**
-   * Subscribe-flow entry for the recommended plan. Opens the partner-code
-   * prompt and dispatches based on the user's choice:
-   *  - `subscribe`              → proceed with the normal add-to-cart flow.
-   *  - `partner-code-applied`   → the PartnerCode service already refreshed the
-   *                                profile (and, through it, the active plan)
-   *                                and showed a success toast. When the caller
-   *                                is showing the subscription plan list (the
-   *                                plan page), `refreshPlansOnApply` re-fetches
-   *                                it so partner-driven eligibility/pricing
-   *                                changes are reflected in place.
-   *  - `closed`                 → no-op (user dismissed the prompt).
-   *
-   * `refreshPlansOnApply` is opt-in because this method is shared with the
-   * onboarding subscription dialog, which loads a `recommendedOnly` slice and
-   * closes itself on subscribe — an unconditional full-list refresh would
-   * clobber that slice in the shared `subscriptionPlans` signal.
-   *
-   * If the plan is already in the cart, skip the prompt and just open the
-   * cart drawer — matches the existing non-recommended path.
-   */
-  async promptPartnerCodeOrSubscribe(
-    plan: SubscriptionPlan,
-    options: {
-      refreshPlansOnApply?: boolean;
-      paymentType?: 'monthly' | 'yearly';
-      onAdded?: () => void;
-    } = {},
-  ): Promise<void> {
-    const paymentType = options.paymentType ?? 'yearly';
-    if (plan.is_added_to_cart) {
-      if (options.onAdded) options.onAdded();
-      else this.openCartDrawer();
-      return;
-    }
-
-    // A partner code already applied to this plan makes the prompt pointless —
-    // skip it and go straight to the normal flow.
-    // ponytail: also skipped on an active subscription, read from the removed
-    // session service.
-    if (plan.is_partner_code_applied) {
-      this.addToCart(plan.id, 'subscription', plan.price_detail, paymentType, options.onAdded);
-      return;
-    }
-
-    const { PartnerCodePromptDialog } =
-      await import('@features/payment/dialogs/partner-code-prompt-dialog/partner-code-prompt-dialog');
-    const ref = this.dialogs.open<undefined, PartnerCodePromptResult>(PartnerCodePromptDialog, {
-      injector: this.injector,
-    });
-
-    ref.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
-      if (result?.action === 'subscribe') {
-        this.addToCart(plan.id, 'subscription', plan.price_detail, paymentType, options.onAdded);
-      } else if (result?.action === 'partner-code-applied' && options.refreshPlansOnApply) {
-        this.loadSubscriptionPlans();
-      }
-    });
-  }
-
-  /** First call opts a list in; later calls (retry, partner code applied) refetch it. */
-  loadSubscriptionPlans(options: { recommendedOnly?: boolean } = {}) {
-    const [wanted, resource] = options.recommendedOnly
-      ? [this.recommendedWanted, this.recommendedResource]
-      : [this.plansWanted, this.plansResource];
-    if (wanted()) resource.reload();
-    else wanted.set(true);
+  /** The first call opts the plans in; later calls (retry, re-entering the plan page) re-read them. */
+  loadPlans(): void {
+    if (this.plansWanted()) this.plansResource.reload();
+    else this.plansWanted.set(true);
   }
 
   readonly ordersCount = computed(() => this.ordersData().length);
