@@ -46,6 +46,8 @@ export interface CourseDetailApi {
   bookmark: RouteConfig<void, unknown>;
   /** `POST`, `:id` is the chapter UUID: begins a chapter, creating the enrolment if needed. */
   chapterStart: RouteConfig<void, unknown>;
+  /** `POST`, `:id` is the course UUID: saves a chapter's progress, answers the whole course's. */
+  courseProgressUpdate: RouteConfig<CourseProgressUpdate, unknown>;
   /** The course page's URL segment: `/:country/:profession/<segment>/:id/:slug`. */
   urlSegment: string;
   /** `course_type` on the analytics events. */
@@ -93,7 +95,11 @@ export interface MasterclassChapterProgress {
   is_video_completed: boolean | null;
   /** CPE mode only lets the learner seek once this is true. */
   is_video_seekable: boolean | null;
+  /** The chapter quiz. The server's ladder opens the next chapter only after it. */
+  is_mcq_completed: boolean | null;
   last_watched_position_seconds: number | null;
+  /** The furthest point the server has been told was played. */
+  max_watched_duration_seconds: number | null;
 }
 
 /** One chapter of the course; the list shows them in the API's `order`. */
@@ -111,6 +117,8 @@ export interface MasterclassChapter {
   transcript_text: string | null;
   /** The server's chapter ladder: a locked chapter can't be started. */
   is_locked: boolean;
+  /** The chapter's quiz is open to the learner (after its video, in CPE mode). */
+  show_quiz: boolean;
   user_chapter_progress: MasterclassChapterProgress;
 }
 
@@ -246,6 +254,53 @@ export interface ChapterStartResult {
   reset_required: boolean;
 }
 
+/**
+ * `course-progress-update/`'s body, single-chapter form. Strict: any other key
+ * is a 400. Whole seconds, because the server's fields are integers.
+ */
+export interface CourseProgressUpdate {
+  chapter_id: string;
+  /** Where the playhead is: the resume point. */
+  last_watched_position_seconds: number;
+  /** The edge of what has been watched straight through; skipping ahead doesn't move it. */
+  max_watched_duration_seconds: number;
+}
+
+/** One chapter of `course-progress-update/`'s answer, as far as the page reads it. */
+export interface CourseProgressChapter {
+  chapter_id: string;
+  is_locked: boolean;
+  show_quiz: boolean;
+  progress: MasterclassChapterProgress;
+}
+
+/** `course-progress-update/`'s `data`: the whole course's progress after the write. */
+export interface CourseProgress {
+  /** The enrolment window had expired and was reset, as on `chapter-start/`. */
+  reset_required: boolean;
+  chapters: CourseProgressChapter[];
+}
+
+/**
+ * What the chapter page knows about the chapter on screen between saves. The
+ * furthest point only grows while the video plays forward, so a seek ahead is
+ * never reported as watched.
+ */
+export interface ChapterProgressTracker {
+  chapterId: string;
+  /** The playhead, in seconds. */
+  position: number;
+  /**
+   * The edge of what has been watched straight through, in seconds: play moves
+   * it only when it starts at or before it, so a skipped stretch never counts.
+   */
+  furthest: number;
+  /** The previous `timeupdate`'s time, to tell playing from seeking. */
+  lastTime: number | null;
+  /** Seconds played since the last save. */
+  sincePlayedSave: number;
+}
+
 /** A refused chapter step (`chapter-start/`, and the course-detail `mode=` switch). */
 export interface CourseStepRefusal {
   status: number;
@@ -299,7 +354,19 @@ function isChapterProgress(v: unknown): v is MasterclassChapterProgress {
     isObject(v) &&
     isBoolOrNull(v['is_video_completed']) &&
     isBoolOrNull(v['is_video_seekable']) &&
-    isNumOrNull(v['last_watched_position_seconds'])
+    isBoolOrNull(v['is_mcq_completed']) &&
+    isNumOrNull(v['last_watched_position_seconds']) &&
+    isNumOrNull(v['max_watched_duration_seconds'])
+  );
+}
+
+function isProgressChapter(v: unknown): v is CourseProgressChapter {
+  return (
+    isObject(v) &&
+    isStr(v['chapter_id']) &&
+    isBool(v['is_locked']) &&
+    isBool(v['show_quiz']) &&
+    isChapterProgress(v['progress'])
   );
 }
 
@@ -316,6 +383,7 @@ function isChapter(v: unknown): v is MasterclassChapter {
     isStrOrNull(v['hls_video_url']) &&
     isStrOrNull(v['transcript_text']) &&
     isBool(v['is_locked']) &&
+    isBool(v['show_quiz']) &&
     isChapterProgress(v['user_chapter_progress'])
   );
 }
@@ -430,6 +498,25 @@ export function parseChapterStart(raw: unknown): ChapterStartResult {
     return { reset_required: data['reset_required'] };
   }
   throw contractError('chapter-start');
+}
+
+/**
+ * `course-progress-update/`'s `{ success, message, data }` envelope. An expired
+ * window (`reset_required`) may come without the chapter list, so that case
+ * alone accepts its absence.
+ */
+export function parseCourseProgress(raw: unknown): CourseProgress {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  if (isObject(data) && isBool(data['reset_required'])) {
+    const chapters = data['chapters'];
+    if (listOf(isProgressChapter)(chapters)) {
+      return { reset_required: data['reset_required'], chapters };
+    }
+    if (data['reset_required'] && chapters === undefined) {
+      return { reset_required: true, chapters: [] };
+    }
+  }
+  throw contractError('course-progress-update');
 }
 
 /**

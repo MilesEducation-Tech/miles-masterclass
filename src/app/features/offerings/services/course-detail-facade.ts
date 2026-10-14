@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { HttpErrorResponse, httpResource } from '@angular/common/http';
+import { HttpContext, HttpErrorResponse, httpResource } from '@angular/common/http';
 import {
   computed,
   DOCUMENT,
@@ -15,6 +15,7 @@ import {
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
+import { SKIP_LOADING } from '@core/models/http.model';
 import { Analytics } from '@core/services/analytics/analytics';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
@@ -31,6 +32,9 @@ import {
 } from '@features/offerings/constants/course-detail';
 import {
   ChapterStartResult,
+  CourseProgress,
+  CourseProgressChapter,
+  CourseProgressUpdate,
   CourseDetailParams,
   CourseLoginType,
   CourseMode,
@@ -42,6 +46,7 @@ import {
   parseAboutCourseId,
   parseChapterStart,
   parseCourseDetail,
+  parseCourseProgress,
   readCourseStepRefusal,
 } from '@features/offerings/models/course-detail.model';
 // Type-only: the dialog loads with `import()` when opened (AGENTS.md §4.4).
@@ -367,6 +372,51 @@ export class CourseDetailFacade {
       this.api.call({ ...route, path: route.path.replace(':id', chapterId) }),
     );
     return parseChapterStart(raw);
+  }
+
+  /**
+   * Save one chapter's progress (`course-progress-update/`). Sent on the
+   * player's own clock, so it never drives the loading bar. Resolves the whole
+   * course's progress after the write; rejects with the `HttpErrorResponse` of
+   * a refusal, for the caller to read with `readCourseStepRefusal`.
+   */
+  async saveProgress(update: CourseProgressUpdate): Promise<CourseProgress> {
+    const route = this.routes()?.courseProgressUpdate;
+    const id = this.courseId();
+    if (!route || !id) throw new Error('[CourseDetail] saveProgress before the course loaded');
+    const raw = await firstValueFrom(
+      this.api.call({ ...route, path: route.path.replace(':id', id) }, update, {
+        context: new HttpContext().set(SKIP_LOADING, true),
+      }),
+    );
+    return parseCourseProgress(raw);
+  }
+
+  /**
+   * Merge the server's per-chapter progress into the held course, so the lock
+   * ladder, `show_quiz` and the progress move in place: the chapter page's next
+   * card and the course page's list both read them from here.
+   */
+  applyProgress(chapters: CourseProgressChapter[]): void {
+    const byId = new Map(chapters.map((chapter) => [chapter.chapter_id, chapter]));
+    this.detailResource.update((course) =>
+      course
+        ? {
+            ...course,
+            chapters: course.chapters.map((chapter) => {
+              const saved = byId.get(chapter.id);
+              return saved
+                ? {
+                    ...chapter,
+                    is_locked: saved.is_locked,
+                    show_quiz: saved.show_quiz,
+                    user_chapter_progress: saved.progress,
+                  }
+                : chapter;
+            }),
+          }
+        : course,
+    );
   }
 
   /**

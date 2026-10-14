@@ -2,7 +2,6 @@ import { Route } from '@angular/router';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
-import { CourseChapterFacade } from '@features/offerings/services/course-chapter-facade';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { Masterclass } from '@features/offerings/masterclass/pages/masterclass/masterclass';
 import { MasterclassHighlightFacade } from '@features/offerings/masterclass/services/masterclass-highlight-facade';
@@ -24,7 +23,6 @@ export const masterclassRoutes: Route[] = [
       },
       {
         path: 'chapter/:chapterId/:chapterTitle',
-        providers: [CourseChapterFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
           import('@features/offerings/masterclass/pages/masterclass-chapter/masterclass-chapter').then(

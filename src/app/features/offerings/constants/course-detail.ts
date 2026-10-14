@@ -46,6 +46,18 @@ export const COURSE_DETAIL_API: Record<CourseOffering, CourseDetailApi> = {
      */
     chapterStart: { path: `${ROOT}web-api/v1/masterclass/chapter-start/:id/`, method: 'POST' },
 
+    /**
+     * `IsAuthenticated`, strict body: saves one chapter's progress and answers
+     * the whole course's, lock ladder included. `400` "Not enrolled" before a
+     * `chapter-start/`; `403 caira_access_required`; `409` for an AI Lab lock;
+     * `200 reset_required` for an expired window; a locked or unknown chapter is
+     * reported under `skipped`, not refused.
+     */
+    courseProgressUpdate: {
+      path: `${ROOT}web-api/v1/masterclass/course-progress-update/:id/`,
+      method: 'POST',
+    },
+
     urlSegment: 'masterclass',
     analyticsType: 'masterclass',
   },
@@ -58,8 +70,20 @@ export const COURSE_DETAIL_API: Record<CourseOffering, CourseDetailApi> = {
  */
 export const COURSE_DETAIL_CHAPTERS_PAGE_SIZE = 100;
 
-/** Watched this far, a chapter's video counts as watched: the legacy player's rule. */
-export const CHAPTER_WATCHED_PERCENT = 95;
+/**
+ * Seconds of playback between progress saves. The legacy player saved at every
+ * 5 %, which is 15 s on a 5-minute chapter; it also saves on pause, at the end,
+ * on a chapter change and on leaving the page. Closing the tab loses at most
+ * this much, because the XHR backend can't keep a request alive past unload.
+ */
+export const PROGRESS_SAVE_INTERVAL_SECONDS = 15;
+
+/**
+ * A playhead move larger than this between two `timeupdate`s is a seek, not
+ * play, so it doesn't count as watched. Updates arrive about 4 times a second,
+ * so even 2× speed moves well under it.
+ */
+export const SEEK_JUMP_SECONDS = 3;
 
 /** `video_progress` fires once per chapter at each of these; `video_start` and `video_complete` bracket them. */
 export const VIDEO_PROGRESS_MILESTONES = [25, 50, 75, 90] as const;
@@ -75,7 +99,15 @@ export const CHAPTER_COPY = {
     body: 'Finish the previous chapter to unlock this one.',
   },
   chapterNotFound: { title: 'Chapter not found', body: 'That chapter is not part of this course.' },
+  quizLocked: {
+    title: 'Chapter locked',
+    body: "Complete this chapter's quiz to unlock the next one.",
+  },
   cannotStart: { title: 'Could not open the chapter', body: 'Please try again in a moment.' },
+  progressNotSaved: {
+    title: 'Progress not saved',
+    body: "We couldn't save your progress. We'll keep trying as you watch.",
+  },
   enrolmentReset: {
     title: 'Your enrolment restarted',
     body: 'Your access window had ended, so your progress on this course was reset.',

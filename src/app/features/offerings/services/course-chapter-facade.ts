@@ -19,11 +19,15 @@ import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import {
   CHAPTER_COPY,
-  CHAPTER_WATCHED_PERCENT,
+  PROGRESS_SAVE_INTERVAL_SECONDS,
+  SEEK_JUMP_SECONDS,
   VIDEO_PROGRESS_MILESTONES,
 } from '@features/offerings/constants/course-detail';
 import {
   ChapterNavigation,
+  ChapterProgressTracker,
+  CourseProgressChapter,
+  CourseProgressUpdate,
   MasterclassChapterLink,
   readCourseStepRefusal,
 } from '@features/offerings/models/course-detail.model';
@@ -36,18 +40,23 @@ import type {
 } from '@features/offerings/dialogs/select-cpe-mode/select-cpe-mode';
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 
+/** A save's positions, to tell a repeat from a change. */
+const saveKey = (update: CourseProgressUpdate): string =>
+  `${update.last_watched_position_seconds}/${update.max_watched_duration_seconds}`;
+
 /**
  * State and actions for one chapter page of a course on the offerings' web API.
  *
- * Route-scoped, on the chapter route, over the `CourseDetailFacade` its parent
- * route provides: the course and its chapters come from that one
- * `course-detail/` read, shared with the course page, so opening a chapter or
- * moving between chapters costs no new read. The player injects this facade and
- * calls it; it never calls the API itself.
+ * Page-scoped (the chapter page's own `providers`, which says why), over the
+ * `CourseDetailFacade` the parent route provides: the course and its chapters
+ * come from that one `course-detail/` read, shared with the course page, so
+ * opening a chapter or moving between chapters costs no new read. The player
+ * injects this facade and calls it; it never calls the API itself.
  *
- * What it does NOT do yet, each its own ticket: save progress
- * (`course-progress-update/`), so the server's chapter ladder only moves once
- * that lands; the chapter quiz; the final assessment.
+ * Progress is saved as the learner watches (`course-progress-update/`), and
+ * the server's answer moves the lock ladder in place. In CPE mode the next
+ * chapter still opens only after this one's quiz, and the quiz and the final
+ * assessment are their own tickets.
  */
 @Service({ autoProvided: false })
 export class CourseChapterFacade {
@@ -85,24 +94,14 @@ export class CourseChapterFacade {
   readonly isCpeMode = computed(() => this.detail.course()?.course_mode === 'cpe');
 
   /**
-   * Chapters watched to `CHAPTER_WATCHED_PERCENT` on this visit. Nothing saves
-   * it yet, so it lasts until the page reloads; it only frees seeking.
-   */
-  private readonly watchedHere = signal<ReadonlySet<string>>(new Set());
-
-  /**
    * CPE mode lets the learner seek only once the server says the video is
-   * seekable or watched, or once they've watched it here. Preview seeks freely.
+   * seekable or watched; the saves below are what tell it. Preview seeks freely.
    */
   readonly canSeek = computed(() => {
     const chapter = this.current();
     if (!chapter || !this.isCpeMode()) return true;
     const progress = chapter.user_chapter_progress;
-    return (
-      !!progress.is_video_seekable ||
-      !!progress.is_video_completed ||
-      this.watchedHere().has(chapter.id)
-    );
+    return !!progress.is_video_seekable || !!progress.is_video_completed;
   });
 
   /** Where the video picks up: the saved position, unless the chapter is finished. */
@@ -124,18 +123,48 @@ export class CourseChapterFacade {
     return course && chapterId ? `${course.id}/${chapterId}` : null;
   });
 
+  // ── Progress ───────────────────────────────────────────────────────────────
+  /** The chapter on screen, between saves. */
+  private tracker: ChapterProgressTracker | null = null;
+  /** The latest unsent save per chapter; the newest positions win. */
+  private readonly unsent = new Map<string, CourseProgressUpdate>();
+  /**
+   * Saves that failed, held for the next save rather than retried at once, so
+   * a server that keeps failing isn't sent a request in a loop.
+   */
+  private readonly failed = new Map<string, CourseProgressUpdate>();
+  /** What each chapter last saved, so the same positions aren't sent twice (pause, then end). */
+  private readonly lastSaved = new Map<string, string>();
+  /** The queue being sent, one request at a time; `null` when idle. */
+  private draining: Promise<void> | null = null;
+  /** Chapters `chapter-start/` accepted: a save before that is a 400 "Not enrolled". */
+  private readonly started = new Set<string>();
+  /** Chapters already warned about a failed save, so a flaky connection warns once. */
+  private readonly warned = new Set<string>();
+
   // Analytics dedup: each milestone fires once per chapter.
   private trackedChapterId: string | null = null;
   private readonly firedMilestones = new Set<number>();
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => (this.destroyed = true));
+    // Leaving the page saves where the learner got to. The request outlives the
+    // page; only its UI (toasts, navigation) is skipped once `destroyed` is set.
+    inject(DestroyRef).onDestroy(() => {
+      this.destroyed = true;
+      this.queueSave();
+    });
 
     // `chapter-start/` and the dialogs are browser work; the server renders
-    // the skeleton (the signed-in read never runs there anyway).
+    // the skeleton (the signed-in read never runs there anyway). Moving to
+    // another chapter first saves the one being left.
     effect(() => {
       const key = this.openKey();
-      if (key && this.isBrowser) untracked(() => void this.open(key));
+      if (!key || !this.isBrowser) return;
+      untracked(() => {
+        this.queueSave();
+        this.tracker = null;
+        void this.open(key);
+      });
     });
   }
 
@@ -148,10 +177,18 @@ export class CourseChapterFacade {
     this.detail.reload();
   }
 
-  /** Open a neighbouring chapter, unless the server's ladder still locks it. */
+  /**
+   * Open a neighbouring chapter, unless the server's ladder still locks it. A
+   * next chapter held back by this chapter's quiz says so.
+   */
   goTo(chapter: MasterclassChapterLink): void {
     if (chapter.is_locked) {
-      this.notification.info(CHAPTER_COPY.chapterLocked.title, CHAPTER_COPY.chapterLocked.body);
+      const current = this.current();
+      const copy =
+        current?.show_quiz && !current.user_chapter_progress.is_mcq_completed
+          ? CHAPTER_COPY.quizLocked
+          : CHAPTER_COPY.chapterLocked;
+      this.notification.info(copy.title, copy.body);
       return;
     }
     const path = this.detail.chapterPath(chapter);
@@ -169,34 +206,61 @@ export class CourseChapterFacade {
     });
   }
 
-  /** The player's progress, as a percentage of the video: analytics, and "watched". */
-  videoProgress(percent: number): void {
+  /**
+   * The player's clock. A forward step of under `SEEK_JUMP_SECONDS` is play;
+   * anything else is a seek, which moves the resume point and nothing more.
+   * Play counts towards the next save, and it moves the furthest point watched
+   * only when it starts inside what has already been watched: playing on after
+   * a seek ahead doesn't credit the part that was skipped.
+   */
+  videoTime(currentTime: number, duration: number): void {
     const chapter = this.current();
-    if (!chapter || percent <= 0) return;
+    if (!chapter || duration <= 0) return;
 
-    this.track('video_start', chapter.id, 0);
+    const tracker = this.trackerFor(chapter);
+    const from = tracker.lastTime ?? currentTime;
+    const step = currentTime - from;
+    if (step > 0 && step < SEEK_JUMP_SECONDS) {
+      if (from <= tracker.furthest + SEEK_JUMP_SECONDS) {
+        tracker.furthest = Math.max(tracker.furthest, currentTime);
+      }
+      tracker.sincePlayedSave += step;
+    }
+    tracker.lastTime = currentTime;
+    tracker.position = currentTime;
+
+    const percent = (currentTime / duration) * 100;
+    if (percent > 0) this.track('video_start', chapter.id, 0);
     for (const milestone of VIDEO_PROGRESS_MILESTONES) {
       if (percent >= milestone) this.track('video_progress', chapter.id, milestone);
     }
-    if (percent >= CHAPTER_WATCHED_PERCENT && !this.watchedHere().has(chapter.id)) {
-      this.watchedHere.update((ids) => new Set(ids).add(chapter.id));
-    }
+
+    if (tracker.sincePlayedSave >= PROGRESS_SAVE_INTERVAL_SECONDS) this.queueSave();
+  }
+
+  videoPaused(): void {
+    this.queueSave();
   }
 
   /**
-   * The video ended. Preview mode moves on: after chapter 1 it first offers CPE
-   * mode, and after the last chapter it rewinds. CPE mode stays put, because
-   * the chapter quiz comes next and that is its own ticket.
+   * The video ended. Its progress is saved first, so the server's answer can
+   * open the next chapter before the page tries it. Then preview mode moves
+   * on: after chapter 1 it first offers CPE mode, and after the last chapter it
+   * rewinds. CPE mode stays put, because the chapter quiz comes next and that
+   * is its own ticket.
    *
    * Resolves `true` when the player should rewind and pause: after the last
    * chapter, and after a switch to CPE mode, whose rules start the chapter over.
    */
   async videoEnded(): Promise<boolean> {
-    const { current, next, index } = this.navigation();
-    if (!current) return false;
-    this.track('video_complete', current.id, 100);
+    const ended = this.current();
+    if (!ended) return false;
+    this.track('video_complete', ended.id, 100);
+    this.queueSave();
+    await this.drain();
 
-    if (this.isCpeMode()) return false;
+    const { current, next, index } = this.navigation();
+    if (this.isCpeMode() || current?.id !== ended.id) return false;
     if (!next) return true;
     if (index === 0 && (await this.offerCpeMode())) return true;
     this.goTo(next);
@@ -237,6 +301,8 @@ export class CourseChapterFacade {
         this.detail.reload();
         return;
       }
+      this.started.add(chapter.id);
+      void this.drain();
     } catch (error) {
       this.logger.error('[CourseChapter] chapter-start failed', error);
       if (this.isStill(key)) this.refuse(error);
@@ -247,7 +313,7 @@ export class CourseChapterFacade {
   }
 
   /**
-   * A refused `chapter-start/`. A 4xx is the server saying no (the ladder, the
+   * A refused chapter step. A 4xx is the server saying no (the ladder, the
    * entitlement, an AI Lab or partner lock), so the learner goes back to the
    * course page; its generic "could not be completed" message is replaced by
    * ours where the reason is known. A 5xx or a dropped connection only warns:
@@ -264,6 +330,146 @@ export class CourseChapterFacade {
     } else {
       this.notification.error(CHAPTER_COPY.cannotStart.title, CHAPTER_COPY.cannotStart.body);
     }
+  }
+
+  /** The tracker for `chapter`, starting from what the server already has. */
+  private trackerFor(chapter: MasterclassChapterLink): ChapterProgressTracker {
+    if (this.tracker?.chapterId !== chapter.id) {
+      this.queueSave();
+      const saved = chapter.user_chapter_progress;
+      this.tracker = {
+        chapterId: chapter.id,
+        position: saved.last_watched_position_seconds ?? 0,
+        furthest: saved.max_watched_duration_seconds ?? 0,
+        lastTime: null,
+        sincePlayedSave: 0,
+      };
+    }
+    return this.tracker;
+  }
+
+  /**
+   * Queue the chapter on screen for saving, with any earlier failed saves,
+   * then send what's queued. Positions already saved aren't sent again.
+   */
+  private queueSave(): void {
+    for (const [chapterId, update] of this.failed) {
+      if (!this.unsent.has(chapterId)) this.unsent.set(chapterId, update);
+    }
+    this.failed.clear();
+
+    const tracker = this.tracker;
+    if (tracker && tracker.position > 0) {
+      // Whole seconds: the server's fields are integers.
+      const update: CourseProgressUpdate = {
+        chapter_id: tracker.chapterId,
+        last_watched_position_seconds: Math.floor(tracker.position),
+        max_watched_duration_seconds: Math.floor(tracker.furthest),
+      };
+      if (this.lastSaved.get(update.chapter_id) !== saveKey(update)) {
+        this.unsent.set(update.chapter_id, update);
+      }
+      tracker.sincePlayedSave = 0;
+    }
+    void this.drain();
+  }
+
+  /**
+   * Send the queue, one request at a time. Resolves once it's empty, so the
+   * end of a video can wait for the server's answer. A chapter whose
+   * `chapter-start/` hasn't answered yet keeps its save until it does.
+   */
+  private drain(): Promise<void> {
+    this.draining ??= this.sendQueued().finally(() => {
+      this.draining = null;
+      // A save queued in the gap between the last send and this line.
+      if (this.nextUnsent()) void this.drain();
+    });
+    return this.draining;
+  }
+
+  private async sendQueued(): Promise<void> {
+    for (let update = this.nextUnsent(); update; update = this.nextUnsent()) {
+      this.unsent.delete(update.chapter_id);
+      // Counted as saved while in flight, so the same positions queued again
+      // meanwhile (a pause, then the end) aren't sent twice; undone on failure.
+      this.lastSaved.set(update.chapter_id, saveKey(update));
+      try {
+        const progress = await this.detail.saveProgress(update);
+        if (progress.reset_required) {
+          if (!this.destroyed) {
+            this.notification.info(
+              CHAPTER_COPY.enrolmentReset.title,
+              CHAPTER_COPY.enrolmentReset.body,
+            );
+          }
+          this.detail.reload();
+        } else {
+          // Applied even after the page has gone: the course page reads the
+          // same course, so its chapter list shows the new locks too.
+          this.trackCompletion(progress.chapters);
+          this.detail.applyProgress(progress.chapters);
+        }
+      } catch (error) {
+        this.logger.error('[CourseChapter] course-progress-update failed', error);
+        this.lastSaved.delete(update.chapter_id);
+        this.saveFailed(error, update);
+      }
+    }
+  }
+
+  private nextUnsent(): CourseProgressUpdate | null {
+    return [...this.unsent.values()].find((u) => this.started.has(u.chapter_id)) ?? null;
+  }
+
+  /**
+   * A failed save. A 403 or 409 is the server closing the course to the
+   * learner (entitlement, an AI Lab lock), handled as on `chapter-start/`.
+   * Anything else (a 400 "Not enrolled", a 5xx, a dropped connection) warns
+   * once per chapter and is held for the next save, never retried at once.
+   */
+  private saveFailed(error: unknown, update: CourseProgressUpdate): void {
+    const refusal = readCourseStepRefusal(error);
+    if (refusal.status === 403 || refusal.status === 409) {
+      if (!this.destroyed) this.refuse(error);
+      return;
+    }
+    this.failed.set(update.chapter_id, update);
+    if (this.destroyed || this.warned.has(update.chapter_id)) return;
+    this.warned.add(update.chapter_id);
+    this.notification.error(
+      CHAPTER_COPY.progressNotSaved.title,
+      CHAPTER_COPY.progressNotSaved.body,
+    );
+  }
+
+  /**
+   * `chapter_complete` the first time the server reports a chapter's video
+   * complete, and `course_complete` once it reports every chapter's: compared
+   * with the course as held before the answer is applied.
+   */
+  private trackCompletion(saved: CourseProgressChapter[]): void {
+    const before = new Map(
+      this.detail
+        .chapters()
+        .map((chapter) => [chapter.id, !!chapter.user_chapter_progress.is_video_completed]),
+    );
+    const params = {
+      course_id: this.detail.course()?.id,
+      course_type: this.detail.analyticsType(),
+    };
+    for (const chapter of saved) {
+      if (chapter.progress.is_video_completed && before.get(chapter.chapter_id) === false) {
+        this.analytics.trackEvent('chapter_complete', {
+          ...params,
+          chapter_id: chapter.chapter_id,
+        });
+      }
+    }
+    const wasComplete = before.size > 0 && [...before.values()].every(Boolean);
+    const isComplete =
+      saved.length > 0 && saved.every((chapter) => !!chapter.progress.is_video_completed);
+    if (isComplete && !wasComplete) this.analytics.trackEvent('course_complete', params);
   }
 
   /** No mode stored yet: ask, as the legacy launch flow did. No answer, no chapter. */

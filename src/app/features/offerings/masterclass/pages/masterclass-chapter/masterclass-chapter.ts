@@ -18,6 +18,12 @@ import { CourseDetailFacade } from '@features/offerings/services/course-detail-f
   selector: 'app-masterclass-chapter',
   imports: [Backward, Button, CourseChapterPlayer, RouterLink],
   templateUrl: './masterclass-chapter.html',
+  // Here, not in the route's `providers`: a route's injector lives for the whole
+  // session (the router doesn't clean injectors up), so a route-scoped instance
+  // would outlive the page, keep its effect running, and react to the next
+  // course the shared `CourseDetailFacade` loads. On the page it is created and
+  // destroyed with it, which is also when the last progress save goes out.
+  providers: [CourseChapterFacade],
 })
 export class MasterclassChapter {
   // Route params, bound by `withComponentInputBinding`.

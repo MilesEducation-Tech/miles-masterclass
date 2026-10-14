@@ -11,7 +11,8 @@
           [config]="videoConfig()"
           [videoSource]="videoSource()"
           [mode]="playerMode()"
-          (timeUpdate)="onTimeUpdate($event)"
+          (timeUpdate)="facade.videoTime($event.currentTime, $event.duration)"
+          (paused)="facade.videoPaused()"
           (metadataLoaded)="onMetadataLoaded()"
           (ended)="onEnded()"
         />

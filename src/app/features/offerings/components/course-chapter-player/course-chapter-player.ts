@@ -53,10 +53,6 @@ export class CourseChapterPlayer {
     if (at > 0) this.player()?.seek(at, true);
   }
 
-  protected onTimeUpdate(event: { currentTime: number; duration: number }): void {
-    if (event.duration > 0) this.facade.videoProgress((event.currentTime / event.duration) * 100);
-  }
-
   protected async onEnded(): Promise<void> {
     if (!(await this.facade.videoEnded())) return;
     this.player()?.seek(0, true);

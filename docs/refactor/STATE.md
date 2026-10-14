@@ -235,6 +235,47 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - **Found, payment, own ticket:** the subscription dialog itself shows "Failed to Load Plan" for everyone. It calls
       `promotion/subscription/?is_recommended=true`, which is gone on UAT (Django "Page not found"). Postman's
       replacements are `GET api/v1/subscriptions/plans/` and `GET api/v1/subscriptions/my-plans/`.
+    - **✅ Committed by the user as `5ccc7df`:** MIL-66, MIL-67, the Watch Now check and the `course_type` fix, in one
+      commit.
+    - **Temporary free seek for testing (the user asked for it), removed before the MIL-79 commit:** for a while
+      `playerMode` was always `PlayerMode.DEFAULT`, so CPE mode could seek and change speed. The CPE line,
+      `this.facade.canSeek() ? PlayerMode.DEFAULT : PlayerMode.CPE`, is back as committed in `5ccc7df`.
+      - **No skip buttons:** the shared `VideoJs` never configures `skipButtons` in any mode, so "Skip Forward" stays
+        hidden.
+  - **MIL-79, save chapter progress (`prompts/masterclass-chapter-progress.md`, approved; the third subtask, same
+    branch and PR). DONE, UNCOMMITTED.**
+    - **What changed:**
+      - `POST course-progress-update/{course_id}/` with `{chapter_id, last_watched_position_seconds,
+max_watched_duration_seconds}`, without the loading bar.
+      - It saves every 15 s of playback, on pause, at the end, on a chapter change and on leaving the page.
+      - The answer merges each chapter's lock state, `show_quiz` and progress into the held course
+        (`CourseDetailFacade.applyProgress`), so the next card and the course page's list update in place.
+      - A locked next chapter says "Complete this chapter's quiz…" when the quiz is what's holding it.
+      - `chapter_complete` and `course_complete` fire on the server's answer.
+      - The page-only `watchedHere` is gone; seeking opens on the server's `is_video_seekable`.
+    - **Fixed in MIL-67, found while building this:**
+      - `CourseChapterFacade` was route-provided, and the router never destroys route injectors. So it outlived the
+        page, and opening another course's page in the app showed a stray "Chapter not found" toast (reproduced).
+      - It is now provided by the chapter page component. That also makes the save on leaving the page work.
+    - **Verified (dev 4101, headless Playwright, fixtures, every request body recorded):**
+      - **Saves:** one at 15 s of play at 2×, on pause, on chapter change, and on leaving.
+      - **Watched:** a seek from 18 s to 120 s plus play kept `max=17`; seeking back to 15 s and playing raised it
+        to 20.
+      - **Merging:** an unlocking answer turned "Next chapter, locked" into "Go to next chapter" with no reload.
+      - **CPE end:** one save, stays on the chapter, `chapter_complete` once, and the quiz message on Next.
+      - **Failures:** a persistent 500 sends one request per trigger (no loop) and warns once. A 403 goes back to the
+        course page. `reset_required` shows a toast and re-reads. A save before `chapter-start` answers is held, then
+        sent.
+      - **The bug fix:** no toast on another course's page after leaving a chapter.
+    - **Gates (local macOS):** tsc 0; lint 0 errors (106 warnings); structure check passed; Prettier clean;
+      `CI=true build:prod` green at 245.43 kB, with only the `ai-labs.css` warning.
+    - **Not verified:** a real signed-in round trip, including whether UAT accepts the single-chapter body, and the
+      server's threshold for `is_video_completed`.
+    - **Still true:** in CPE mode, chapter 2 stays locked until the chapter quiz (`quiz-questions` / `quiz-submit`),
+      the suggested next subtask.
+    - **Found, not fixed (pre-existing, MIL-25):** the masterclass course page's browser title reads `{{title}} |
+Master Class | Miles Masterclass`, even on a direct signed-out load. `setupCourseSeo` doesn't fill the
+      placeholder from the new course shape. Its own ticket.
 
 - 🔧 **2026-10-13, NON-REFACTOR — commerce API rebind (`prompts/commerce-api-rebind.md`). Approved by the
   user ("use this plan"); D1–D6 = A. The old backend is gone, so no legacy binding, logic or type survives in
@@ -4512,6 +4553,12 @@ These are environment and product observations the repair surfaced. None changed
 - 2026-10-14 · NON-REFACTOR · **MIL-84, course library bound to `filter/`** (`feat/MIL-82-course-library-binding`, uncommitted) plus the `horizontal_trailer_url` rename (own commit): sidebar, pill tabs, grid, paging, states · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod ✔ (local) · dev 4101 headless: 64 courses over 6 pages, each filter and tab narrows, error + retry, 375/768/1440 no horizontal scroll
 
 - 2026-10-14 · NON-REFACTOR · **MIL-83, course library v2 bindings removed** (`feat/MIL-82-course-library-binding`, uncommitted): `CourseFacade` reduced to the tab state; the page keeps its frame, tabs and empty state · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod ✔ (local) · dev 4101 headless: no `v2/` request at 1440 and 375, tabs switch with no request
+
+- 2026-10-13 · NON-REFACTOR · **MIL-79 save chapter progress** (uncommitted, `feat/MIL-65-masterclass-chapter-page-binding`): `course-progress-update` saves (interval, pause, end, chapter change, leave), watched straight through only, answer merged in place; MIL-67 fix: `CourseChapterFacade` page-provided (route injectors outlive the page; stray toast reproduced and gone) · tsc ✔, lint 0 errors, structure ✔, `CI=true build:prod` 245.43 kB (local) · dev 4101 headless with recorded bodies: cadence, seek rule, merge, end, failures, held-until-start
+
+- 2026-10-13 · NON-REFACTOR · **Temporary: CPE mode seeks for testing** (uncommitted, discard before the PR): `course-chapter-player` always uses `PlayerMode.DEFAULT` · verified in dev 4101 with a CPE fixture: progress-bar seek 12 s → 125 s, speed 2× · tsc ✔, lint ✔, prettier ✔
+
+- 2026-10-13 · NON-REFACTOR · **MIL-65 chapter page binding** (`5ccc7df`, `feat/MIL-65-masterclass-chapter-page-binding`): v2 bindings removed (MIL-66); `course-detail` + `chapter-start`, `CourseChapterFacade`, `course-chapter-player` (MIL-67); Watch Now access check; `course_type` on `highlight/`, `tracks-page/`, `ai-labs/` · tsc ✔, lint 0 errors, structure ✔, `CI=true build:prod` 245.53 kB (local) · dev 4101 headless with fixtures from the live payload: play and resume, CPE lock, locks and refusals, mode dialog, one shared read
 
 - 2026-10-14 · NON-REFACTOR · **Payment UI/UX pass + billing step removed** (uncommitted, local `uat`, 22 files +281/−167): gallery capped at 80vh, empty-cart copy + CTA, cart loading/error states, auth guard on invoice/orders, invoice error state/fallbacks/row wrap, `savingAddress`, Cart → Review with the address collected on review (`components/billing-address`), `sm:px-4` gutters, pending copy · lint 0 errors, structure ✔, prettier ✔, build:prod 245.15 kB (local) · signed-in flow verified in dev against UAT at 1440/768/375 up to K1 `payment_error` (no Stripe on UAT)
 - 2026-10-13 · NON-REFACTOR · **Commerce PR7, buy buttons → plan** (uncommitted, `feat/MIL-XXX-offerings-buy-to-plan`): `addCourseToCart`, `v2/user/cart/`, `cartItemRemoved`, `CART_DRAWER_DIALOG` deleted; certificate gate subscriptions-only (+42/−206) · lint 0 errors, structure ✔, build:prod 245.29 kB (local) · gate dialogs verified in dev; legacy sweep of `src/` empty · epic code-complete
