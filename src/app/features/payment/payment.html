@@ -1,5 +1,5 @@
 <div class="min-h-screen flex flex-col pt-28 sm:space-y-14 space-y-10">
-  <h1 class="text-white text-6xl font-semibold text-center">Your Cart</h1>
+  <h1 class="text-white text-4xl sm:text-6xl font-semibold text-center">Your Cart</h1>
   <!-- @if (cartCount() > 0) { -->
   <div class="flex justify-center items-center sm:space-x-4">
     @for (step of cartSteps(); track step.id) {
@@ -27,7 +27,9 @@
       </div>
     }
   </div>
-  <div class="container mx-auto">
+  <!-- sm:px-4: between 640 and 1279px `.container` is as wide as the viewport, so without it
+       the cart touches both edges (below sm the container is 11/12 wide and needs no gutter). -->
+  <div class="container mx-auto sm:px-4">
     <router-outlet />
   </div>
   <!-- } @else {

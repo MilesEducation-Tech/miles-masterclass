@@ -1,4 +1,12 @@
-import { Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  linkedSignal,
+  resource,
+  signal,
+} from '@angular/core';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { NotificationService } from '@core/services/notification/notification';
 import {
@@ -77,15 +85,20 @@ function toInput(f: AddressForm): AddressInput {
   };
 }
 
+/**
+ * The billing address picker + form, shown on the review step (there is no separate
+ * billing step). The pick lives in `PaymentFacade.selectedAddressId`; the review page
+ * puts it on the cart when the learner pays.
+ */
 @Component({
-  selector: 'app-billing',
+  selector: 'app-billing-address',
   imports: [Button, AngularFormField, Address, Field, NgpLabel, NgpDescription, Input, Combobox],
-  templateUrl: './billing.html',
+  templateUrl: './billing-address.html',
   host: {
     class: 'space-y-4 flex flex-col',
   },
 })
-export class Billing {
+export class BillingAddress {
   readonly facade = inject(PaymentFacade);
   readonly notification = inject(NotificationService);
 
@@ -169,8 +182,11 @@ export class Billing {
   });
 
   constructor() {
-    // Loading the data is the page's job; the guard only checks cart preconditions.
+    // Loading the data is this component's job; the guard only checks cart preconditions.
     this.facade.loadAddresses();
+    // `isEditingAddress` lives on the root facade: an open form must not keep Pay disabled
+    // after the learner has left this step.
+    inject(DestroyRef).onDestroy(() => this.cancelEditing());
   }
 
   selectAddress(address: AddressModel): void {

@@ -242,7 +242,61 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
         user creates at MIL-78's head (guide §4.2).
     - The guide (§1, §4, §5, §7, §9), the tickets doc and the #123/#129 bodies now say `<UAT_URL>`.
     - The app is host-agnostic: cookies are host-only, and `SITE_URL` feeds SEO tags only.
-    - **MIL-78 head is `ae49192`** after the second docs amend; CI is re-running.
+    - **On UAT since 2026-10-13: `uat` = MIL-78 head `d045047`** (the third docs amend).
+      - The Vercel environment `uat-stagging` deployed it successfully.
+      - The URL is `https://miles-masterclass-env-uat-stagging-miles-x-s-team.vercel.app` (environment
+        alias, stable).
+      - It sits behind Vercel Authentication.
+      - UAT CORS echoes any origin, so the origin is fine. **`x-accept-language` is allowed since
+        2026-10-14**, so signed-in flows can be tested in a browser.
+  - ✅ **2026-10-14, UI/UX pass on the payment flow — DONE, UNCOMMITTED on the local `uat` branch**
+    (the user's call: fix on `uat` first, then split into the ticket branches from local). 22 files,
+    +281/−167.
+    - **Flow change (user's ask): the billing step is gone.** Cart → Review. `pages/billing` moved to
+      `components/billing-address` (`app-billing-address`, resets `isEditingAddress` on destroy, shows
+      "Loading your addresses…" while the list loads). Review renders it under "Billing Address";
+      `canPay` = terms + a picked address + no open form + not paying; `pay()` attaches the pick (C5)
+      only when it differs from the cart's, then K1. `billing` is a `redirectTo: '../review'`;
+      `paymentGuard` only checks a non-empty cart; the stepper is two steps; `price-overview` lost the
+      billing branch and back button.
+    - **Signed-in run in dev (UAT API, CORS fixed 2026-10-14):** Subscribe → cart → coupon dialog
+      (409 → inline error) → review → add address inline (comboboxes need a real click to open) →
+      terms → auto-renew dialog → K1 answered `payment_error` (no Stripe on UAT) → invoice "Payment
+      Pending" + Try again → order history lists it. Checked at 1440/768/375.
+    - **More fixes from the run:** cart page loading/error states (`CartStore.reload()` added, so the
+      empty state no longer flashes while the cart loads); `sm:px-4` on the payment shell and orders
+      containers (`.container` is viewport-wide from 640 to 1279px); invoice Order Details labels
+      `shrink-0` + values `break-all`; the "pending" copy covers both faces (webhook lag, payment never
+      started).
+    - **Gates (local macOS):** `pnpm lint` 0 errors, structure ✔, prettier ✔, `build:prod` 245.15 kB
+      with only `ai-labs.css`.
+    - **Not done / to flag:** the signed-in plan page flashes "Loading plans…" after hydration (the
+      transfer cache skips the authorised request by design); `InvalidStateError` view-transition
+      noise on every navigation; NG02955 (LCP `ngSrc` without `priority`) on the cart thumbnail in dev;
+      the Jira test plan's steps 4–5 (billing page) now happen on review. A UAT test order
+      `01a13941-…` (pending) and one address exist on the test learner.
+    - **Plan page:** the scrolling gallery's image columns sized the page (gallery 4,729px, page 6,115px
+      at 1440). The columns are now `absolute inset-0`, and the gallery is `max-h-[80vh]` (min 480px):
+      480px at 1440, 551px at 768, hidden at 375.
+    - **Empty cart:** copy was the billing-address text; now "Your cart is empty" + a **View plans**
+      button (EmptyCart injects `Utils` for the route).
+    - **Payment shell:** "Your Cart" is `text-4xl sm:text-6xl`.
+    - **Routes:** `canMatch: [authGuard]` on `invoice/:orderId` and `order-history` (signed out, both
+      went blank or showed "No orders found").
+    - **Invoice:** `loadError` + `app-error-state` with retry (invoice mode only), "—" for a missing
+      payment reference/gateway, "Items Purchased", review's back link → billing, Pay reads
+      "Redirecting to payment…" while `paying()`.
+    - **Billing:** facade `savingAddress` signal (Save/Cancel wait, Save reads "Saving…"); the add
+      toggle hides while editing and beside the empty-state card.
+    - **Orders:** empty state gets a **View plans** button.
+    - **Verified signed out in dev (3000):** plan at 1440/768/375, empty cart at 1440/375,
+      order-history and invoice → `/auth/login?redirect=`, `checkout/success?order_id=bad` → cart.
+      Lint 0 errors on the touched dirs, prettier ✔. `build:prod` not yet run.
+    - **Next:** the user signs in in the browser pane, then cart → coupon → billing → review → Stripe →
+      invoice → order history at the three widths. Note: dev hydration takes 9s+, so wait before
+      judging a redirect.
+    - **Seen, not touched:** `InvalidStateError: Transition was aborted` on every navigation
+      (`withViewTransitions`, app-wide).
   - **Epic status:** all eight PRs implemented. Remaining:
     - backend Q1 (CORS), Q2 (the Stripe return base), Q3 (subscription status/manage) and Q11 (Stripe on
       UAT);
@@ -4181,6 +4235,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-10-14 · NON-REFACTOR · **Payment UI/UX pass + billing step removed** (uncommitted, local `uat`, 22 files +281/−167): gallery capped at 80vh, empty-cart copy + CTA, cart loading/error states, auth guard on invoice/orders, invoice error state/fallbacks/row wrap, `savingAddress`, Cart → Review with the address collected on review (`components/billing-address`), `sm:px-4` gutters, pending copy · lint 0 errors, structure ✔, prettier ✔, build:prod 245.15 kB (local) · signed-in flow verified in dev against UAT at 1440/768/375 up to K1 `payment_error` (no Stripe on UAT)
 - 2026-10-13 · NON-REFACTOR · **Commerce PR7, buy buttons → plan** (uncommitted, `feat/MIL-XXX-offerings-buy-to-plan`): `addCourseToCart`, `v2/user/cart/`, `cartItemRemoved`, `CART_DRAWER_DIALOG` deleted; certificate gate subscriptions-only (+42/−206) · lint 0 errors, structure ✔, build:prod 245.29 kB (local) · gate dialogs verified in dev; legacy sweep of `src/` empty · epic code-complete
 
 - 2026-10-13 · NON-REFACTOR · **Commerce PR6, order history** (uncommitted, `feat/MIL-XXX-commerce-orders`): K3 bound (page_size 50), auto-renew/portal/receipt actions and all legacy order types deleted, `payment.model.ts` → `CurrentPlanData` only (+157/−583) · lint 0 errors, structure ✔, build:prod 245.34 kB (local) · signed-out empty state checked; captured K3/K4 pass the parsers

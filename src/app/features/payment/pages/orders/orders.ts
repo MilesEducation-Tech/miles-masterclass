@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Utils } from '@shared/services/utils';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { CartItem, CartItemConfig } from '@features/payment/components/cart-item/cart-item';
 import { Order } from '@features/payment/models/commerce.model';
@@ -20,7 +21,7 @@ const STATUS_CLASS = {
 
 @Component({
   selector: 'app-orders',
-  imports: [CartItem, PageLoading, ErrorState, Button, NgIcon, CurrencyPipe, DatePipe],
+  imports: [CartItem, PageLoading, ErrorState, Button, NgIcon, CurrencyPipe, DatePipe, RouterLink],
   templateUrl: './orders.html',
   viewProviders: [provideIcons({ matFileDownloadOutline })],
 })
@@ -28,6 +29,12 @@ export class Orders {
   private readonly facade = inject(PaymentFacade);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly utils = inject(Utils);
+
+  /** Where an empty history sends the learner: only subscriptions are sold. */
+  protected readonly planRoute = computed(
+    () => `/${this.utils.country()}/${this.utils.profession()}/payment/plan`,
+  );
 
   protected readonly orders = this.facade.orders;
   protected readonly ordersCount = this.facade.ordersCount;

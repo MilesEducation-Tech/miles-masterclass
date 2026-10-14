@@ -82,12 +82,14 @@
               </p>
               <div class="flex space-x-1">
                 <span class="shrink-0 text-sm font-semibold text-blue-400">Applied</span>
+                <!-- Ghost hover paints `data-hover:bg-muted`; only a `data-hover:` class, in the static
+                     `class` the button merges, overrides it (`hover:` and `[class]` don't). -->
                 <button
                   app-button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  [class]="'shrink-0 size-6 rounded-full text-gray-400 hover:bg-white/10 hover:text-white'"
+                  class="shrink-0 size-6 rounded-full text-gray-400 data-hover:bg-transparent data-press:bg-transparent data-hover:text-white"
                   aria-label="Remove coupon"
                   (click)="facade.removeCoupon()"
                 >
@@ -98,8 +100,8 @@
             <button
               app-button
               type="button"
-              variant="ghost"
-              [class]="'mt-2 h-auto p-0 flex items-center gap-1 text-sm font-medium text-gray-400 hover:bg-transparent hover:text-white'"
+              variant="link"
+              class="mt-2 h-auto p-0 gap-1 text-sm font-medium text-gray-400 data-hover:text-white"
               (click)="facade.openCouponDialog()"
             >
               Use a different code
@@ -109,8 +111,8 @@
             <button
               app-button
               type="button"
-              variant="ghost"
-              [class]="'flex w-full h-auto p-0 items-center justify-between text-base font-light text-gray-300 hover:bg-transparent hover:text-white'"
+              variant="link"
+              class="w-full h-auto p-0 justify-between text-base font-light text-gray-300 data-hover:text-white"
               (click)="facade.openCouponDialog()"
             >
               Apply Coupon
@@ -125,29 +127,12 @@
         </div>
       </div>
 
-      <!-- Back Chevron -->
       <div class="flex justify-center flex-col space-y-2 pt-2">
-        @if (isBilling()) {
-          <button
-            app-button
-            type="button"
-            variant="ghost"
-            [class]="' hover:bg-transparent text-white p-0'"
-            aria-label="Go back"
-            [disabled]="facade.isEditingAddress()"
-            (click)="goBack()"
-          >
-            <ng-icon class="rtl:-scale-x-100" name="heroChevronLeft" size="20" aria-hidden="true" />
-            Back to Cart
-          </button>
-        }
-
         <!-- Proceed Button -->
         <button
           app-button
           type="button"
-          [class]="'w-full rounded-xl py-3.5 px-6 text-base font-semibold shadow-lg shadow-blue-900/40 transition-all'"
-          [disabled]="facade.isEditingAddress()"
+          class="w-full rounded-xl py-3.5 px-6 text-base font-semibold shadow-lg shadow-blue-900/40"
           (click)="onProceed()"
         >
           Proceed

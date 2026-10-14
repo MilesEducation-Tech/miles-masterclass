@@ -359,6 +359,9 @@
       fill="none"
     ></path>
   </svg>
-  <h3 class="text-xl font-medium mt-4 text-gray-200">Billing Address not found</h3>
-  <p class="text-gray-400 mt-2">To proceed, please add a new billing address</p>
+  <h3 class="text-xl font-medium mt-4 text-gray-200">Your cart is empty</h3>
+  <p class="text-gray-400 mt-2">Choose a plan to get started.</p>
+  <button app-button type="button" variant="default" class="mt-6" [routerLink]="planRoute()">
+    View plans
+  </button>
 </div>
