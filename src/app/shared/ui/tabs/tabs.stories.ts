@@ -29,3 +29,17 @@ type Story = StoryObj<Tabs>;
 
 /** Arrow keys move between tabs; the panel follows the selected tab. */
 export const Default: Story = {};
+
+/** A rounded track with the active tab filled, as on the course library. */
+export const Pill: Story = {
+  render: () => ({
+    moduleMetadata: { imports: [Tabs, Tab] },
+    template: `
+      <app-tabs variant="pill" value="masterclasses">
+        <app-tab value="masterclasses" label="Masterclasses" />
+        <app-tab value="podcast" label="Podcast" />
+        <app-tab value="micro-learning" label="Micro Learning" />
+      </app-tabs>
+    `,
+  }),
+};

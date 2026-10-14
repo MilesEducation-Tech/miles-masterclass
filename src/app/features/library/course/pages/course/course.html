@@ -2,20 +2,75 @@
   <!-- Sidebar (desktop only) -->
   <aside
     class="hidden md:block sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto pe-2"
-  ></aside>
+  >
+    @if (facade.groups().length) {
+      <app-course-filters
+        [groups]="facade.groups()"
+        [selection]="facade.selection()"
+        (selectionChange)="facade.setSelection($event)"
+        (clear)="facade.clearSelection()"
+      />
+    } @else if (facade.isLoading()) {
+      <div class="text-sm text-muted-foreground">Loading filters…</div>
+    }
+  </aside>
 
   <!-- Main column -->
   <div class="flex flex-col gap-6 min-w-0">
     <div
-      class="sticky top-24 z-10 -mx-4 px-4 py-2 bg-background/95 backdrop-blur-sm flex items-center justify-between gap-4 flex-wrap"
+      class="sticky top-24 z-10 py-2 bg-background/95 backdrop-blur-sm flex items-center justify-between gap-4 flex-wrap"
     >
-      <app-tabs [value]="currentLabel() ?? ''" (valueChange)="onTabChange($event)">
+      <app-tabs variant="pill" [value]="currentLabel()" (valueChange)="onTabChange($event)">
         @for (tab of tabLabels(); track tab) {
           <app-tab [value]="tab" [label]="tab" />
         }
       </app-tabs>
+      <button
+        type="button"
+        class="md:hidden inline-flex items-center gap-2 h-10 px-4 rounded-full bg-secondary/60 border border-border/40 text-sm font-medium hover:bg-secondary/80 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        (click)="openMobileFilters()"
+      >
+        <ng-icon name="heroFunnel" size="16" />
+        Filter
+        @if (facade.selectedCount()) {
+          <span
+            class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-accent text-white text-[10px] font-semibold"
+          >
+            {{ facade.selectedCount() }}
+          </span>
+        }
+      </button>
     </div>
 
-    <p class="text-center text-muted-foreground py-8">No courses found.</p>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 z-0">
+      @for (course of facade.courses(); track course.id) {
+        <!-- The first row is in the first viewport, and one of its images is the LCP. -->
+        <app-masterclass-course-card
+          [course]="course"
+          [priority]="$index < 4"
+          [showInfo]="true"
+          [showAiKit]="true"
+          (trailer)="openTrailer($event)"
+          (info)="openCourseInfo($event)"
+          (aiKit)="facade.openAiKit($event)"
+        />
+      }
+    </div>
+
+    @if (!facade.courses().length && !facade.isLoading() && !facade.error()) {
+      <p class="text-center text-muted-foreground py-8">No courses found.</p>
+    }
+
+    @if (facade.error()) {
+      <app-error-state
+        title="Failed to Load Courses"
+        message="We couldn't load the courses. Please try again."
+        (retry)="facade.reload()"
+      />
+    } @else if (facade.isLoading()) {
+      <div class="text-center py-6 text-muted-foreground">Loading…</div>
+    } @else if (facade.hasNext()) {
+      <div #sentinel class="h-1 w-full"></div>
+    }
   </div>
 </div>
