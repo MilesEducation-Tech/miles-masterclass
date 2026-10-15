@@ -4,7 +4,7 @@ import { ApiClient } from '@core/services/api-client/api-client';
 import { NotificationService } from '@core/services/notification/notification';
 import { Analytics } from '@core/services/analytics/analytics';
 import { HttpContext } from '@angular/common/http';
-import { RouteParams, RouteResponse, RouteRequest, SKIP_LOADING } from '@core/models/http.model';
+import { RouteResponse, RouteRequest, SKIP_LOADING } from '@core/models/http.model';
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
 import { courseLoad, CourseLoadParams } from '../utils/course-load';
 import { catchError, of, tap } from 'rxjs';
@@ -15,12 +15,6 @@ type SetCpeModeResponse = RouteResponse<typeof MASTERCLASS_ROUTES.setCpeMode>;
 
 type MyClassActivityRequest = RouteRequest<typeof MASTERCLASS_ROUTES.myClassActivity>;
 type MyClassActivityResponse = RouteResponse<typeof MASTERCLASS_ROUTES.myClassActivity>;
-
-type SubmitQuizAnswerRequest = RouteRequest<typeof MASTERCLASS_ROUTES.submitQuizAnswer>;
-type SubmitQuizAnswerResponse = RouteResponse<typeof MASTERCLASS_ROUTES.submitQuizAnswer>;
-
-type ChapterQuizReportResponse = RouteResponse<typeof MASTERCLASS_ROUTES.chapterQuizReport>;
-type ChapterQuizReportParams = RouteParams<typeof MASTERCLASS_ROUTES.chapterQuizReport>;
 
 @Service({ autoProvided: false })
 export class ChapterFacade {
@@ -122,18 +116,6 @@ export class ChapterFacade {
     return request;
   }
 
-  /**
-   * Submit quiz answer
-   */
-  submitQuizAnswer(answer: string, quizQuestionId: number) {
-    const body: SubmitQuizAnswerRequest = {
-      answer,
-      quiz_question: quizQuestionId,
-    };
-
-    return this.http.post<SubmitQuizAnswerResponse>(MASTERCLASS_ROUTES.submitQuizAnswer.path, body);
-  }
-
   private updateLocalChapterCompletion(chapterId: number) {
     this.courseChapters.update((chapters) =>
       chapters.map((chapter) => {
@@ -181,73 +163,6 @@ export class ChapterFacade {
     });
   }
 
-  fetchQuizReport(chapterId: number) {
-    const details = this.courseDetails();
-    const chapters = this.courseChapters();
-
-    if (!details || !chapters.length) return;
-
-    const chapter = chapters.find((c) => c.id === chapterId);
-    if (!chapter) return;
-
-    // Identify eligible chapter: completed (play_history) AND unlocked (chapter_wise_details)
-    const isCompleted = chapter.play_history?.is_completed;
-    const statusDetail = details.chapter_wise_details.find((cd) => cd.chapter_id === chapterId);
-
-    if (isCompleted && statusDetail?.status) {
-      const params: ChapterQuizReportParams = { chapter_id: chapterId };
-      this.http
-        .get<ChapterQuizReportResponse>(MASTERCLASS_ROUTES.chapterQuizReport.path, {
-          params,
-        })
-        .pipe(
-          catchError(() => of(null)),
-          tap((response) => {
-            if (response && response.data) {
-              this.updateChapterQuestions(chapterId, response.data);
-            }
-          }),
-        )
-        .subscribe();
-    }
-  }
-
-  private updateChapterQuestions(chapterId: number, reportItems: any[]) {
-    this.courseChapters.update((currentChapters) => {
-      return currentChapters.map((chapter) => {
-        if (chapter.id !== chapterId) return chapter;
-
-        const newQuestions = reportItems.map((item) => ({
-          id: 0,
-          updated_at: '',
-          question: item.question,
-          user_selected_option: item.user_selected_option,
-          option_a: item.option_a,
-          description_option_a: item.option_description_a,
-          option_b: item.option_b,
-          description_option_b: item.option_description_b,
-          option_c: item.option_c,
-          description_option_c: item.option_description_c,
-          option_d: item.option_d,
-          description_option_d: item.option_description_d,
-          correct_option: item.correct_option,
-          status: true,
-          updated_by: null,
-          chapter: item.chapter_id,
-        }));
-
-        return {
-          ...chapter,
-          quiz_details: {
-            ...chapter.quiz_details,
-            questions: newQuestions,
-            total_questions: newQuestions.length,
-            overall_chapter_questions: newQuestions.length,
-          },
-        };
-      });
-    });
-  }
   selectCpeMode(cpeModeStatus: boolean) {
     const course = this.courseDetails();
     if (!course) {
@@ -296,26 +211,6 @@ export class ChapterFacade {
         this.opLoading.set(false);
         this.logger.error('Failed to set CPE mode', err);
         return of(null);
-      }),
-    );
-  }
-
-  updateUserSelectedOption(chapterId: number, questionId: number, selectedOption: string) {
-    this.courseChapters.update((chapters) =>
-      chapters.map((chapter) => {
-        if (chapter.id !== chapterId) return chapter;
-
-        const updatedQuestions = chapter.quiz_details.questions.map((q) =>
-          q.id === questionId ? { ...q, user_selected_option: selectedOption } : q,
-        );
-
-        return {
-          ...chapter,
-          quiz_details: {
-            ...chapter.quiz_details,
-            questions: updatedQuestions,
-          },
-        };
       }),
     );
   }

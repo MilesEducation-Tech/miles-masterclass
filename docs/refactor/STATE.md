@@ -4625,6 +4625,10 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-10-15 · NON-REFACTOR · **MIL-65 rebase on `master` 3.7.0 (`c2a1194`), paused at `54dd174`**: tsc fails here by design — that commit left out `chapter-facade.ts` (still naming the removed `submitQuizAnswer` / `chapterQuizReport` routes); the next commit `4e85322` adds it. Gates run once the rebase finishes.
+
+<<<<<<< HEAD
+
 - 2026-10-15 · NON-REFACTOR · **Library rebind re-planned on `master` (`d470717`)**: course library already bound by #136; `prompts/library-rebind.md` rev 2 = instructor library, instructor page, badge library retirement · live UAT probe: `course_type` now required on `all-instructors-page/` · MIL-85 needs `master` merged (tabs.ts + STATE.md conflicts, 6 relative-import ratchet failures) · no `src/` changes
 
 - 2026-10-15 · NON-REFACTOR · **MIL-85: `master` (`d470717`, #136) merged in, conflicts resolved** (uncommitted merge): `tabs.ts` = master's `variant` file without OnPush; #136's relative imports → aliases in 6 files; baseline pruned (3 entries); STATE.md kept both sides · lint 0 errors (105 warnings), structure ✔, prettier ✔ (local)
@@ -4632,6 +4636,10 @@ These are environment and product observations the repair surfaced. None changed
 - 2026-10-15 · NON-REFACTOR · **Explicit OnPush dropped** (uncommitted, 75 components + `eslint.config.mjs` + CLAUDE.md): Angular 22 defaults to OnPush, so every `changeDetection: ChangeDetectionStrategy.OnPush` and its import went; `no-restricted-syntax` now rejects a re-added OnPush · lint 0 errors (105 warnings), structure ✔, build:prod 245.32 kB (local) · TransferState reviewed, no change (the 3 manual uses carry non-HttpClient data) · facade audit of the rebound flows running
 
 - 2026-10-14 · NON-REFACTOR · **Alias-import ratchet** (uncommitted, `check-structure.mjs` + `structure-baseline.json` + AGENTS.md + CLAUDE.md): per-file `relativeImports` count rule seeded with 191 files / 381 imports; both rule docs say aliases everywhere · structure ✔ after seeding, a new relative import fails it, ng lint 0 errors (local)
+  \=======
+- 2026-10-15 · NON-REFACTOR · **MIL-87 follow-up** (`feat/MIL-65-…`): `54dd174` left out `chapter-facade.ts` (still calling the removed routes; `verify` failed on #137) and took in the local testing line in `course-chapter-facade.ts`; the fix-up commit adds the first and restores the second (`max_watched_duration_seconds` = the continuously watched edge) · tsc 0, lint 0 errors
+
+> > > > > > > 4e85322 (refactor(offerings): finish dropping the retired chapter quiz binding)
 
 - 2026-10-15 · NON-REFACTOR · **Chapter quiz step 1: legacy binding removed** (uncommitted, `feat/MIL-65-…`): `chapter-quiz` unbound; podcast quiz panel + report fetch, micro-learning quiz dialog + `chapter-quiz` read, `ChapterFacade` quiz methods and three 404 routes removed; ML quiz entry points toast · tsc 0, lint 0 errors (101 warnings), structure ✔ (pruned), prettier ✔, build:prod 244.94 kB
 
