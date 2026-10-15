@@ -8,7 +8,30 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 ## Now
 
 - 🔧 **2026-10-15, NON-REFACTOR — MIL-95, instructor library and page (`prompts/library-rebind.md` rev 3,
-  approved). SUBTASK 1 DONE, UNCOMMITTED** on `feat/MIL-95-instructor-library-binding` (from `master` `e3fc330`).
+  approved). SUBTASK 1 COMMITTED (`51abea3`), SUBTASK 2 DONE, UNCOMMITTED** on
+  `feat/MIL-95-instructor-library-binding` (from `master` `e3fc330`).
+  - **Subtask 2, `feat(library): bind the instructor library to all-instructors-page`:** new
+    `instructor/models/instructor-library.model.ts` (`InstructorRow`, `parseInstructorLibrary`),
+    `constants/instructor-library.ts`, `utils/instructor-socials.ts` (`socialLinksOf`, shared with the hero in
+    subtask 3), `InstructorFacade` (root, `// why:`; search + page → one `httpResource`, pages in a `linkedSignal`,
+    page 1 on the loading bar), `components/instructor-card` (a real link; LinkedIn chip above it; photo vertical →
+    square → horizontal, then initials when missing **or when it fails to load**). The page says "Loading…" until the
+    first answer, on the server too, so "No instructors found." never shows while loading; the search box is seeded
+    from the facade, so Back keeps the term; Clear applies at once.
+  - **Found: 32 of 63 photos answer 403** from `storage.googleapis.com/miles-usp-bed/`
+    (`UserProjectAccountProblem`: the bucket's billing account is disabled). None has a working S3 alternative, so
+    the card falls back to initials. Backend/devops to fix (prompt Q5).
+  - **Verified (dev 4101, headless, signed out):** 20 cards, then pages 2–4 on scroll to 63 and the sentinel goes,
+    every request with `course_type=course,podcast,micro_learning&page_size=20`; "Loading…" while page 1 is held,
+    never the empty state; "adam" → one request after the debounce, 1 card; Clear → page 1 again, 20 cards; a card
+    opens `/us/accounting/instructor/<uuid>/<slug>`, LinkedIn opens in a new tab; Back keeps "alex" and its card with
+    no new request; a faked 500 → error state, Try Again recovers; SSR HTML carries "Loading…", not the empty
+    state; stubbed row with no photo and an unknown social → initials and the API's icon; 2 / 4 / 5 columns at
+    375 / 768 / 1440, no horizontal scroll, no console error besides the 403 images and the faked 500.
+  - **Known, not changed:** an instant jump past the sentinel (End key) doesn't load the next page; normal
+    scrolling does. Same as the course library.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 244.65 kB,
+    only `ai-labs.css`.
   - **Subtask 1, `refactor(library): drop the retired instructor bindings`:** deleted `core/models/library.model.ts`
     (`InstructorListItem`), `shared/components/cards/instructor-card`, `InstructorFacade` and `instructor-hero`, all
     typed on the legacy `instructor/` contract (404 on UAT). The library page keeps its heading, search box and
@@ -21,7 +44,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - **`postman/` refreshed** from the 2026-10-15 export (gitignored). It carries a live-captured `instructor-detail/`
     200, so the prompt's detail shape is no longer a guess. `docs/AUTH_API.md:5` and `docs/WEBINAR_API_QUESTIONS.md:5`
     still point at the old folder layout; a docs follow-up.
-  - **Next:** subtask 2 (bind the library to `all-instructors-page/`) after the user commits subtask 1.
+  - **Next:** subtask 3 (bind the instructor page to `instructor-detail/` + `filter/` tabs) after the user commits
+    subtask 2.
 
 - 🔧 **2026-10-15, NON-REFACTOR — PR #132 review (MIL-62): rebased onto `master` and reshaped off the
   facade. CODE DONE, GATES GREEN, BROWSER CHECK OPEN, UNCOMMITTED** on `feat/MIL-62-caira-tracker-rebind`.

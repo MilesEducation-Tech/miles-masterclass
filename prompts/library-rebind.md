@@ -182,12 +182,14 @@ templates, and only the data changes. Nothing on production is used as data.
 features/library/instructor/
   models/instructor-library.model.ts   InstructorSocial, InstructorRow, InstructorLibraryPage, InstructorProfile,
                                        InstructorCourseTab; parseInstructorLibrary, parseInstructorProfile,
-                                       parseInstructorCourses; socialLinksOf(), photoOf(), firstNameOf()
+                                       parseInstructorCourses; InstructorSocialLink
   constants/instructor-library.ts      INSTRUCTOR_LIBRARY_URL, INSTRUCTOR_DETAIL_URL, INSTRUCTOR_COURSES_URL,
-                                       INSTRUCTOR_LIBRARY_PAGE_SIZE = 20, INSTRUCTOR_COURSE_TYPES,
-                                       INSTRUCTOR_COURSE_TABS, INSTRUCTOR_SOCIAL_ICONS, copy
+                                       INSTRUCTOR_LIBRARY_PAGE_SIZE = 20, INSTRUCTOR_LIBRARY_COURSE_TYPES,
+                                       INSTRUCTOR_COURSE_TABS, INSTRUCTOR_SOCIAL_ICONS
+  utils/instructor-socials.ts          socialLinksOf(): card + hero. In utils, not the model, because it reads
+                                       INSTRUCTOR_SOCIAL_ICONS and constants already import the model.
   services/instructor-facade.ts        root (D7): search + page → one httpResource, pages accumulated, reload
-  components/instructor-card/          new path (D4)
+  components/instructor-card/          new path (D4); photo, then initials when it is missing or fails to load
   components/instructor-hero/          retyped to InstructorProfile
   pages/instructor/                    loading / empty / error states; cards link to /instructor/<uuid>/<slug>
   pages/instructor-details/            profile + active-tab courses; tabs; promo video
@@ -319,6 +321,10 @@ CI=true pnpm build:prod
 - **Q3:** Should the list include instructors with no courses (20 of 63 on UAT)?
 - **Q4:** Is `filter/?instructor=<uuid>` the intended source for an instructor's courses, or will `instructor-detail/`
   carry them? The export's `instructor-detail/` example has no courses.
+- **Q5 (found while building subtask 2):** 32 of 63 instructors' photos answer **403** from
+  `storage.googleapis.com/miles-usp-bed/` with `UserProjectAccountProblem`: "The billing account for the owning project
+  is disabled". Every image in that bucket is blocked, and none of those instructors has a working S3 photo instead. The
+  card shows initials meanwhile; the bucket's billing needs fixing.
 
 ## Risks
 
@@ -330,6 +336,9 @@ CI=true pnpm build:prod
 - **Podcast and Micro Learning cards are unseen** on UAT. The cards share `isMasterclassCourse` with the course library,
   where those tabs are also empty.
 - **PR size** (Assumption 4).
+- **An instant jump past the scroll trigger doesn't load the next page** (End key, or dragging the scrollbar into the
+  footer): an IntersectionObserver never fires for an element skipped without being on screen. Normal scrolling
+  loads all 63 at 375 and 1440. The course library shares the pattern; not changed here.
 
 ## Not in MIL-95
 
