@@ -1,24 +1,25 @@
 <div
   class="flex w-full max-md:overflow-auto min-h-svh flex-col md:px-11 md:pt-8 p-5 space-y-4 md:overflow-hidden"
 >
-  <app-backward label="Back to Course" fallback="/" [routePath]="courseNavigation()" />
-  <app-video-chapter
-    [current]="navigation().current"
-    [previous]="navigation().prev"
-    [next]="navigation().next"
-    [activeIndex]="navigation().currentIndex"
-    [cpeMode]="cpeMode()"
-    [courseId]="chapterFacade.courseDetails()?.id ?? null"
-    [courseType]="'masterclass'"
-    [chapterWiseDetails]="chapterWiseDetails()"
-    [userAssessmentDetails]="chapterFacade.courseDetails()?.user_assessment_details"
-    (navigate)="handleNavigation($event)"
-    (paused)="handleVideoEvent('exit')"
-    (ended)="handleVideoCompleted()"
-    (firstChapterEnded)="handleFirstChapterEnded()"
-    (videoExit)="handleVideoEvent('exit', $event)"
-    (timeUpdate)="updateTime($event)"
-    (startFinalAssessment)="startFinalAssessment()"
-    (viewFinalAssessmentReport)="handleViewReport()"
-  />
+  <app-backward label="Back to Course" fallback="/" routePath="../../.." />
+
+  @if (facade.notFound()) {
+    <div role="alert" class="container mx-auto flex flex-col items-center gap-4 py-24 text-center">
+      <p class="text-muted-foreground">We couldn't find this masterclass.</p>
+      <a routerLink="../../../../.." class="text-accent underline underline-offset-4"
+        >Browse masterclasses</a
+      >
+    </div>
+  } @else if (facade.loadError()) {
+    <div role="alert" class="container mx-auto flex flex-col items-center gap-4 py-24 text-center">
+      <p class="text-muted-foreground">We couldn't load this chapter. Please try again.</p>
+      <button app-button type="button" variant="outline" (click)="facade.reload()">
+        Try again
+      </button>
+    </div>
+  } @else {
+    <!-- The skeleton until the course and its chapter are in; the facade sends a
+         locked or unknown chapter back to the course page. -->
+    <app-course-chapter-player />
+  }
 </div>

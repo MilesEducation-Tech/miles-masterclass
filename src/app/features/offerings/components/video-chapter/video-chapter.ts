@@ -20,8 +20,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { VideoJs } from '@shared/components/video-js/video-js';
 import { PlayerMode, VideoConfig, VideoSource } from '@core/models/video-player.model';
 import { ChapterSkeleton } from '@shared/components/skeleton/chapter-skeleton/chapter-skeleton';
-
-import { ChapterQuiz } from '../chapter-quiz/chapter-quiz';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faClipboard } from '@ng-icons/font-awesome/regular';
 import { NgpDialogManager } from 'ng-primitives/dialog';
@@ -32,7 +30,7 @@ import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-con
 
 @Component({
   selector: 'app-video-chapter',
-  imports: [VideoJs, ChapterSkeleton, ChapterQuiz, NgIcon],
+  imports: [VideoJs, ChapterSkeleton, NgIcon],
   templateUrl: './video-chapter.html',
   providers: [provideIcons({ faClipboard })],
   host: {
@@ -98,25 +96,7 @@ export class VideoChapter {
       const chapter = this.current();
 
       if (chapter) {
-        // Only run mode initialization if chapter has changed
-        if (chapter.id !== this.lastChapterId) {
-          this.lastChapterId = chapter.id;
-
-          // Reset video ended state when chapter changes
-          this.videoEnded.set(false);
-
-          // Handle Preview Mode - if completed and quiz pending, show quiz
-          if (
-            this.cpeMode() &&
-            chapter.play_history?.is_completed &&
-            chapter.quiz_details?.questions?.length &&
-            !chapter.quiz_details.questions.every((q) => q.user_selected_option)
-          ) {
-            this.previewMode.set('quiz');
-          } else {
-            this.previewMode.set('video');
-          }
-        }
+        if (chapter.id !== this.lastChapterId) this.lastChapterId = chapter.id;
 
         // Handle Progress (Always update this, even if same chapter)
         if (chapter.play_history && chapter.video_duration) {
@@ -130,8 +110,6 @@ export class VideoChapter {
         this.lastTime = 0;
         this.lastDuration = 0;
         this.lastChapterId = 0;
-        this.previewMode.set('video');
-        this.videoEnded.set(false);
       }
     });
 
@@ -237,20 +215,7 @@ export class VideoChapter {
     controls: true,
   }));
 
-  readonly previewMode = signal<'video' | 'quiz'>('video');
-
-  readonly videoEnded = signal(false);
-
-  readonly isQuizEnabled = computed(() => {
-    return (
-      this.current()?.play_history?.is_completed ||
-      this.chapterWiseDetails()?.status ||
-      this.videoEnded()
-    );
-  });
-
   handleVideoEnded() {
-    this.videoEnded.set(true);
     this.ended.emit();
     this.syncVideoTracking();
     if (!this.firedVideoMilestones.has(100)) {
@@ -258,14 +223,9 @@ export class VideoChapter {
       this.analytics.trackEvent('video_complete', this.videoEventParams());
     }
 
-    const chapter = this.current();
-    if (
-      this.cpeMode() &&
-      chapter?.quiz_details?.questions?.length &&
-      !chapter.quiz_details.questions.every((q) => q.user_selected_option)
-    ) {
-      this.previewMode.set('quiz');
-    } else if (!this.cpeMode()) {
+    // The chapter quiz that followed in CPE mode is unbound until the web API's
+    // quiz is wired in, so CPE mode stays on the chapter.
+    if (!this.cpeMode()) {
       const isFirstChapter = this.activeIndex() === 0;
       const nextChapter = this.next();
 
@@ -278,43 +238,17 @@ export class VideoChapter {
         // Last chapter — reset player to start
         this.videoPlayer()?.seek(0);
         this.videoPlayer()?.pause();
-        this.videoEnded.set(false);
       }
     }
   }
-
-  handleQuizNext() {
-    // Navigate to next chapter
-    const currentChapter = this.current();
-    if (currentChapter) {
-      // We might need to find the index and emit the next ID.
-      // But the parent handles navigation via `navigate` output with chapter ID.
-      // We need the NEXT chapter ID.
-      // The `next` input holds the next chapter.
-      const nextChapter = this.next();
-      if (nextChapter) {
-        this.navigate.emit(nextChapter.id);
-      } else {
-        this.startFinalAssessment.emit();
-      }
-    }
-  }
-
-  readonly isLastChapter = computed(() => !this.next());
 
   resetPlayer() {
-    this.videoEnded.set(false);
     this.currentProgress.set(0);
     this.lastTime = 0;
     this.lastDuration = 0;
-    this.previewMode.set('video');
     // Force seek to bypass CPE mode seek guard, since mode may have already switched
     this.videoPlayer()?.seek(0, true);
     this.videoPlayer()?.pause();
-  }
-
-  handleTrackQuiz() {
-    this.previewMode.set('quiz');
   }
 
   openTranscript() {

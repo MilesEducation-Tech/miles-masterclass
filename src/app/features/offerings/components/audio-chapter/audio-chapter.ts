@@ -19,8 +19,6 @@ import {
 import { AudioJs } from '@shared/components/audio-js/audio-js';
 import { PlayerMode, VideoConfig, VideoSource } from '@core/models/video-player.model';
 import { ChapterSkeleton } from '@shared/components/skeleton/chapter-skeleton/chapter-skeleton';
-
-import { ChapterQuiz } from '../chapter-quiz/chapter-quiz';
 import { RecordDisk } from '@shared/components/record-disk/record-disk';
 import { Analytics } from '@core/services/analytics/analytics';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -28,7 +26,7 @@ import { faClipboard } from '@ng-icons/font-awesome/regular';
 
 @Component({
   selector: 'app-audio-chapter',
-  imports: [AudioJs, ChapterSkeleton, ChapterQuiz, NgIcon, RecordDisk],
+  imports: [AudioJs, ChapterSkeleton, NgIcon, RecordDisk],
   templateUrl: './audio-chapter.html',
   providers: [provideIcons({ faClipboard })],
   host: {
@@ -115,16 +113,6 @@ export class AudioChapter {
     controls: true,
   }));
 
-  readonly previewMode = signal<'audio' | 'quiz'>('audio');
-  readonly audioEnded = signal(false);
-
-  readonly isQuizEnabled = computed(
-    () =>
-      this.current()?.play_history?.is_completed ||
-      this.chapterWiseDetails()?.status ||
-      this.audioEnded(),
-  );
-
   /**
    * Whether the Next Chapter card is actionable. Outside CPE mode the next
    * chapter is always open; inside it, the current chapter has to be done
@@ -140,27 +128,11 @@ export class AudioChapter {
     () => !!this.chapterWiseDetails()?.status && this.cpeMode(),
   );
 
-  readonly isLastChapter = computed(() => !this.next());
-
   constructor() {
     effect(() => {
       const chapter = this.current();
       if (chapter) {
-        if (chapter.id !== this.lastChapterId) {
-          this.lastChapterId = chapter.id;
-          this.audioEnded.set(false);
-
-          if (
-            this.cpeMode() &&
-            chapter.play_history?.is_completed &&
-            chapter.quiz_details?.questions?.length &&
-            !chapter.quiz_details.questions.every((q) => q.user_selected_option)
-          ) {
-            this.previewMode.set('quiz');
-          } else {
-            this.previewMode.set('audio');
-          }
-        }
+        if (chapter.id !== this.lastChapterId) this.lastChapterId = chapter.id;
 
         if (chapter.play_history && chapter.video_duration) {
           const progress = ((chapter.play_history.time_status ?? 0) / chapter.video_duration) * 100;
@@ -173,8 +145,6 @@ export class AudioChapter {
         this.lastTime = 0;
         this.lastDuration = 0;
         this.lastChapterId = 0;
-        this.previewMode.set('audio');
-        this.audioEnded.set(false);
       }
     });
 
@@ -243,7 +213,6 @@ export class AudioChapter {
   }
 
   handleAudioEnded() {
-    this.audioEnded.set(true);
     this.ended.emit();
     this.syncMediaTracking();
     if (!this.firedMediaMilestones.has(100)) {
@@ -251,33 +220,11 @@ export class AudioChapter {
       this.analytics.trackEvent('video_complete', this.mediaEventParams());
     }
 
-    const chapter = this.current();
-    if (
-      this.cpeMode() &&
-      chapter?.quiz_details?.questions?.length &&
-      !chapter.quiz_details.questions.every((q) => q.user_selected_option)
-    ) {
-      this.previewMode.set('quiz');
-    } else if (!this.cpeMode()) {
+    // The chapter quiz that followed in CPE mode is unbound until the web API's
+    // quiz is wired in, so CPE mode stays on the chapter.
+    if (!this.cpeMode()) {
       this.audioPlayer()?.seek(0);
       this.audioPlayer()?.pause();
-      this.audioEnded.set(false);
     }
-  }
-
-  handleQuizNext() {
-    const currentChapter = this.current();
-    if (currentChapter) {
-      const nextChapter = this.next();
-      if (nextChapter) {
-        this.navigate.emit(nextChapter.id);
-      } else {
-        this.startFinalAssessment.emit();
-      }
-    }
-  }
-
-  handleTrackQuiz() {
-    this.previewMode.set('quiz');
   }
 }

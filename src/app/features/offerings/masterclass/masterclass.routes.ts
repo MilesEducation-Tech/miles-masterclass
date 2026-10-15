@@ -1,5 +1,4 @@
 import { Route } from '@angular/router';
-import { ChapterFacade } from '@features/offerings/services/chapter-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
@@ -11,10 +10,12 @@ export const masterclassRoutes: Route[] = [
   { path: '', component: Masterclass, providers: [MasterclassHighlightFacade] },
   {
     path: ':courseId/:courseTitle',
+    // One instance for the course page and its chapters, so Watch Now and moving
+    // between chapters reuse the course read instead of fetching it again.
+    providers: [CourseDetailFacade],
     children: [
       {
         path: '',
-        providers: [CourseDetailFacade],
         loadComponent: () =>
           import('@features/offerings/masterclass/pages/masterclass-course/masterclass-course').then(
             (m) => m.MasterclassCourse,
@@ -22,7 +23,6 @@ export const masterclassRoutes: Route[] = [
       },
       {
         path: 'chapter/:chapterId/:chapterTitle',
-        providers: [ChapterFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
           import('@features/offerings/masterclass/pages/masterclass-chapter/masterclass-chapter').then(

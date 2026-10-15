@@ -77,21 +77,6 @@ export interface QuizQuestion {
   chapter: number;
 }
 
-export interface QuizReportItem {
-  user_selected_option: string;
-  correct_option: string;
-  chapter_id: number;
-  question: string;
-  option_description_a: string;
-  option_description_b: string;
-  option_description_c: string;
-  option_description_d: string;
-  option_a: string;
-  option_b: string;
-  option_c: string;
-  option_d: string;
-}
-
 export interface QuizDetails {
   questions: QuizQuestion[];
   already_attended: number;
