@@ -34,7 +34,7 @@
             <app-course-badge-card
               class="w-64 shrink-0 snap-start"
               [badge]="card"
-              (activate)="onCourse($event)"
+              (activate)="activate.emit($event)"
             />
           }
         }

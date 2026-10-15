@@ -178,10 +178,6 @@
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/core/models/caira-badge.model.ts": {
-      "count": 2,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/core/models/cpe-tracker.model.ts": {
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
@@ -564,34 +560,6 @@
     },
     "src/app/features/partners/pages/partner-showcase/partner-showcase.ts": {
       "count": 3,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/tracker/caira/components/badge-row/badge-row.ts": {
-      "count": 4,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/tracker/caira/components/caira-level-hero/caira-level-hero.ts": {
-      "count": 3,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/tracker/caira/pages/caira-tracker/caira-tracker.ts": {
-      "count": 2,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/tracker/caira/pages/course-badges/course-badges.ts": {
-      "count": 4,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/tracker/caira/pages/webinar-badges/webinar-badges.ts": {
-      "count": 4,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/tracker/caira/services/badge-actions.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/tracker/caira/utils/badge-action.ts": {
-      "count": 2,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/features/tracker/cpe/components/tracker-table/tracker-table.ts": {

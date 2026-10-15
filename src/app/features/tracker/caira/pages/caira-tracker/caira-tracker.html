@@ -3,13 +3,22 @@
     @if (hasError()) {
       <app-error-state message="We couldn't load your CAIRA progress." (retry)="retry()" />
     } @else {
-      <app-caira-level-hero />
+      <app-caira-level-hero
+        [levels]="levels()"
+        [earnedCredits]="earnedCredits()"
+        [focusLevel]="focusLevel()"
+        [isLoading]="isLoading()"
+      />
 
       @for (row of rows; track row.section) {
         <app-badge-row
           [heading]="row.heading"
           [section]="row.section"
           [viewAllLink]="row.viewAllLink"
+          [isLoading]="isLoading()"
+          [webinarBadges]="webinarBadges()"
+          [courseBadges]="masterclassBadges()"
+          (activate)="onActivate($event)"
         />
       }
     }

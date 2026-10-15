@@ -4,8 +4,8 @@ import { Analytics } from '@core/services/analytics/analytics';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
-import { BadgeClaim, BadgeCta } from '../models/caira-badge-page.model';
-import { toSlug } from '../../utils/slug.util';
+import { BadgeClaim, BadgeCta } from '@features/tracker/caira/models/caira-badge-page.model';
+import { toSlug } from '@features/tracker/utils/slug.util';
 
 /** Everything a CTA needs. Every row shape on `badges/page/` satisfies it structurally. */
 export interface BadgeActionSource {

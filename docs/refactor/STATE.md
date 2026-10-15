@@ -7,6 +7,49 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-15, NON-REFACTOR — PR #132 review (MIL-62): rebased onto `master` and reshaped off the
+  facade. CODE DONE, GATES GREEN, BROWSER CHECK OPEN, UNCOMMITTED** on `feat/MIL-62-caira-tracker-rebind`.
+  - **Review (me-sachin-singh, CHANGES_REQUESTED, 5 points):** alias imports everywhere; rebase onto
+    master; don't use the facade pattern, keep a simple service; logic in the component; parent/child
+    via input and output.
+  - **Why most of it is not preference:** the branch sat 23 commits behind and the rules changed under
+    it. #139 made imports alias-only even inside a feature and added a `relativeImports` ratchet; #140
+    added a facade harness and skill, then **#145 reverted it**, deleted `profile-facade.ts` and the
+    skill, and added AGENTS.md §3's fourth hard boundary ("A facade only where state is shared"). The
+    stale branch reported lint 0 errors; rebased it reported **5** (explicit `OnPush`, which ESLint now
+    rejects — a rule the review did not mention and CI would have failed on).
+  - **Comment 4 read against #145's own example, not literally:** that commit moved the API call INTO a
+    new `core/services/onboarding-api/onboarding-api.ts` while deleting the facade, and only the page
+    injects it. So "logic in the component" = orchestration in the page, resource still in a service.
+    User chose this reading.
+  - **Done:** rebase (conflicts were master's OnPush removal plus a STATE.md both-sides append; a stray
+    `<<<<<<< HEAD` at STATE.md:917 is **pre-existing on master**, left alone).
+    `CairaBadgesFacade` → `CairaBadgesApi`, a root `@Service()` exposing the resource and the two page
+    signals; route `providers` dropped; paging, filtering, retry and the session redirect moved into the
+    three pages; `redirectOnSessionLoss()` extracted to `caira/utils/` because a root service would
+    redirect from anywhere; hero/rows/cards back on inputs and outputs; every import aliased; explicit
+    `OnPush` stripped; `structure-baseline.json` pruned (−32 lines, removals only).
+  - **Gates (local macOS):** tsc 0; lint **0 errors** (105 warnings); structure ✔ after `--prune`;
+    Prettier ✔; `build:prod` 244.87 kB, only the `ai-labs.css` warning.
+  - **Listing-page render: investigated, NOT a proven regression.** A headless check showed the two
+    listing pages returning a bare 5,439-byte shell (Angular boots, `<router-outlet>` empty, nothing
+    logged) while the home page rendered. A bisect appeared to pin it on `this.api.<section>Page.set(1)`
+    in the page constructor. **That conclusion did not hold up:** re-running the SAME url against
+    UNCHANGED code gave 5,439 twice then 32,176 three times, so the harness is ~60% reliable and every
+    earlier data point sat inside that noise. The cause is environmental — headless Chrome aborts the
+    first navigation in a hidden document (`InvalidStateError: Transition was aborted … Document hidden`
+    is in the dev-server log), which STATE already records for the in-app pane.
+  - **The reset was still moved from the constructor to `DestroyRef.onDestroy`,** on its own merits:
+    writing a signal that re-keys the resource the page's own `linkedSignal` reads, during construction,
+    is worth avoiding regardless, and destroy-time achieves the same thing (leave the shared page at 1
+    so a revisit does not seed the accumulator from page 2). The comment says so without claiming a bug
+    it cannot prove.
+  - **⚠️ Browser verification is therefore OPEN.** Headless is too flaky for this feature and no
+    credentials exist for a signed-in run. The user must confirm: hero + two rows, one `badges/page/`
+    request, webinar list 6 → 10 on scroll, and that leaving and re-entering a listing still shows the
+    full first page.
+  - Not pushed. The rebase is already on origin (`f3b32dd`); the reshape is not.
+
 - 🔧 **2026-10-15, NON-REFACTOR — masterclass homepage on the 2026-10-13 contract** (`prompts/masterclass-course-type.md`,
   approved). On `fix/MIL-XXX-masterclass-course-type` (from `master` `c2a1194`), uncommitted, three commits' worth:
   - **A, `course_type`:** `highlight/`, `tracks-page/` and `ai-labs/` answer `400 invalid_query` without it since
@@ -4845,6 +4888,8 @@ These are environment and product observations the repair surfaced. None changed
 - 2026-10-13 · NON-REFACTOR · **API request headers** (`feat/MIL-XXX-api-request-headers`, uncommitted): `appInterceptor` sends `X-Country-Code` (URL country, upper-case), `X-Platform: masterclass`, `X-App-Type: WA`; its imports are now `@core/*` aliases (user: aliases everywhere) · lint 0 errors, structure ✔, prettier ✔, build:prod 245.63 kB (local) · dev on 3000: `/in` → `IN`, `/ae` → `AE`, all 200; Supabase untouched · prod `api.milescaira.com` CORS still lacks the headers · commerce implementation prompt in progress (`prompts/commerce-api-rebind.md`)
 
 - 2026-10-13 · NON-REFACTOR · **Favicon** (PR #121, `chore/MIL-64-favicon`, `a207d49`): `public/favicon.ico` is now a real 16/32/48 ICO of the mountain mark · lint 0 errors, structure ✔, prettier ✔, build:prod 245.51 kB (local) · dev on 3000 serves it as `image/x-icon`
+- 2026-10-15 · NON-REFACTOR · **PR #132 review: rebase + facade→service reshape** (uncommitted, `feat/MIL-62-caira-tracker-rebind`): branch was 23 behind and the rules changed under it (#139 alias ratchet + OnPush ban, #145 reverted the facade harness and added "a facade only where state is shared"); stale branch linted 0 errors, rebased it linted 5 · `CairaBadgesApi` root `@Service()`, orchestration into the three pages, children back on inputs/outputs, all imports aliased, OnPush stripped, baseline pruned · tsc ✔, lint 0 errors, structure ✔, build:prod 244.87 kB · listing-page empty-render chased and NOT confirmed: the same url on unchanged code gave 5,439 twice then 32,176 three times, so the headless harness (~60% reliable, View Transitions aborting in a hidden document) produced every data point the bisect rested on; the page reset moved constructor → `DestroyRef.onDestroy` on its own merits, not as a proven fix · browser verification OPEN
+
 - 2026-10-13 · NON-REFACTOR · **CAIRA badge cards link + hover bar** (same branch): navigation stops depending on `cta.enabled`, which had made every webinar card inert; whole card is a link (stretched `absolute inset-0 z-0` anchor on the masterclass card so its CTA keeps its own click, plain `<a>` root on the webinar card); title gains the repo's existing `bg-size-[0%_3px]→[100%_3px]` accent gradient on `group-hover/card`; webinar card loses `activate` (needs a claim affordance when Q11 lands); `localePrefix()` consolidates three inline copies · lint 0 errors, structure ✔, build:prod 245.31 kB · emitted CSS carries the new `group/card` rule; `elementFromPoint` probe confirms card+title hit the link and the CTA does not
 
 - 2026-10-13 · NON-REFACTOR · **CAIRA tracker silent-blank fix** (same branch): a failed refresh clears the token, the read goes `idle` (not loading, not error), every section hides itself and the page blanks; `authGuard` is `CanMatch` so it never re-runs · facade now redirects to login when the session disappears mid-page · reproduced in headless Chrome with a planted cookie: junk token → error state (never blank), signed out → login · lint 0 errors, structure ✔, build:prod 245.37 kB

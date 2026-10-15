@@ -1,31 +1,27 @@
 import { NgOptimizedImage } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  linkedSignal,
-  untracked,
-} from '@angular/core';
+import { Component, computed, input, linkedSignal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideChevronUp } from '@ng-icons/lucide';
 import { Button } from '@shared/ui/button/button';
 import { Progress } from '@shared/ui/progress/progress';
 import { badgeHaloHex } from '@shared/utils/badge-level';
-import { LevelBadge } from '../../models/caira-badge-page.model';
-import { CairaBadgesFacade } from '../../services/caira-badges-facade';
-import { localeLink } from '../../../utils/tracker-links';
-import { levelPercentage, levelProgressHint, seedLevelRank } from '../../utils/level-progress';
-import { levelSlides } from '../../utils/level-carousel';
+import { LevelBadge } from '@features/tracker/caira/models/caira-badge-page.model';
+import { levelSlides } from '@features/tracker/caira/utils/level-carousel';
+import {
+  levelPercentage,
+  levelProgressHint,
+  seedLevelRank,
+} from '@features/tracker/caira/utils/level-progress';
+import { localeLink } from '@features/tracker/utils/tracker-links';
 
 const CAIRA_LOGO =
   'https://d1pp0977rsxmiq.cloudfront.net/static-assests/web-app/commons/caira-logo-white.webp';
 
 /**
- * The CAIRA ladder hero. It injects the tracker's facade rather than fetching: the ladder
- * arrives as `level_badges` on the same `badges/page/` response the rows below read, so
- * stepping the chevrons costs nothing.
+ * The CAIRA ladder hero. Pure presentation: the page passes the rungs and the learner's credit
+ * standing in, and this renders them. The ladder arrives as `level_badges` on the same
+ * `badges/page/` response the rows below read, so stepping the chevrons costs nothing.
  *
  * The badges render as a vertical carousel: the selected rung centred at full size, its
  * neighbours peeking above and below. Stepping `selectedRank` re-derives the transforms and
@@ -33,44 +29,37 @@ const CAIRA_LOGO =
  *
  * The ⓘ modal that used to sit beside "CPE Tracker" is gone. Its three tabs came from
  * `v2/caira-badges/:id/`'s retrieve-only `badge.content`; that route answers 404 and
- * `badges/page/` ships no `description` or `content` on a level row, so the button could
- * only ever have opened an empty dialog. Restore both the day the field appears.
+ * `badges/page/` ships no `description` or `content` on a level row, so the button could only
+ * ever have opened an empty dialog. Restore both the day the field appears.
  */
 @Component({
   selector: 'app-caira-level-hero',
   imports: [Button, NgIcon, NgOptimizedImage, Progress, RouterLink],
   providers: [provideIcons({ lucideChevronUp, lucideChevronDown })],
   templateUrl: './caira-level-hero.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class CairaLevelHero {
-  private readonly facade = inject(CairaBadgesFacade);
+  readonly levels = input.required<LevelBadge[]>();
+  /** CAIRA-only credits, which is what a rung's threshold is measured in. */
+  readonly earnedCredits = input.required<number>();
+  /** The rung to open on — the learner's current level, else the one they work toward. */
+  readonly focusLevel = input.required<number>();
+  readonly isLoading = input(false);
 
   protected readonly cairaLogo = CAIRA_LOGO;
   protected readonly cpeTrackerLink = localeLink('cpe-tracker');
 
-  protected readonly levels = this.facade.levels;
-  protected readonly isLoading = this.facade.isLoading;
-
-  /** CAIRA-only credits, which is what a rung's threshold is measured in. */
-  protected readonly earned = computed(() => this.facade.cpeSummary().caira_cpe_credits);
-
   /**
    * Which rung the chevrons are parked on. Seeded from the ladder but freely writable — a
-   * `linkedSignal` rather than a `signal` + reset `effect`. The focus level is read
-   * untracked: it is the seed, not a dependency, and letting it re-fire would yank the rung
-   * out from under a learner who had stepped away from it.
+   * `linkedSignal` rather than a `signal` + reset `effect`. `focusLevel` is read untracked:
+   * it is the seed, not a dependency, and letting it re-fire would yank the rung out from
+   * under a learner who had stepped away from it.
    */
   protected readonly selectedRank = linkedSignal<LevelBadge[], number>({
     source: this.levels,
     computation: (levels, previous) =>
-      seedLevelRank(
-        levels,
-        previous?.source,
-        previous?.value,
-        untracked(this.facade.focusLevelNumber),
-      ),
+      seedLevelRank(levels, previous?.source, previous?.value, untracked(this.focusLevel)),
   });
 
   protected readonly activeLevel = computed(
@@ -90,7 +79,7 @@ export class CairaLevelHero {
 
   protected readonly percentage = computed(() => {
     const level = this.activeLevel();
-    return level ? levelPercentage(level, this.earned()) : 0;
+    return level ? levelPercentage(level, this.earnedCredits()) : 0;
   });
 
   protected readonly haloHex = computed(() => badgeHaloHex(this.activeLevel()?.level.number ?? 1));
@@ -116,7 +105,7 @@ export class CairaLevelHero {
 
   protected readonly progressHint = computed(() => {
     const level = this.activeLevel();
-    return level ? levelProgressHint(level, this.nextLevel(), this.earned()) : '';
+    return level ? levelProgressHint(level, this.nextLevel(), this.earnedCredits()) : '';
   });
 
   // ---- Actions -----------------------------------------------------------

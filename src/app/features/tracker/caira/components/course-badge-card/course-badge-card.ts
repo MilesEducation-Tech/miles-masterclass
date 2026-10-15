@@ -1,11 +1,14 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Button } from '@shared/ui/button/button';
 import { cn } from '@shared/utils/cn';
-import { badgeCtaUi, MasterclassBadge } from '../../models/caira-badge-page.model';
-import { localePrefix } from '../../../utils/tracker-links';
-import { toSlug } from '../../../utils/slug.util';
+import {
+  badgeCtaUi,
+  MasterclassBadge,
+} from '@features/tracker/caira/models/caira-badge-page.model';
+import { localePrefix } from '@features/tracker/utils/tracker-links';
+import { toSlug } from '@features/tracker/utils/slug.util';
 
 /**
  * A masterclass course badge, used both in the tracker's horizontal rail and in the Course
@@ -28,7 +31,6 @@ import { toSlug } from '../../../utils/slug.util';
   selector: 'app-course-badge-card',
   imports: [Button, NgOptimizedImage, RouterLink],
   templateUrl: './course-badge-card.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   // Fixed height, not `h-full`: stretching only equalised cards *within* one rail, so the
   // rail and the grid still disagreed. Every block inside is a fixed box (two-line title,
   // one-line course, no status line), so the card measures 14rem regardless of content or

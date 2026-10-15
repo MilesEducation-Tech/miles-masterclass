@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { cn } from '@shared/utils/cn';
-import { badgeCtaUi, WebinarBadge } from '../../models/caira-badge-page.model';
-import { localePrefix } from '../../../utils/tracker-links';
+import { badgeCtaUi, WebinarBadge } from '@features/tracker/caira/models/caira-badge-page.model';
+import { localePrefix } from '@features/tracker/utils/tracker-links';
 
 /**
  * A webinar badge, used both in the tracker's horizontal rail and in the Webinar Badges grid
@@ -31,7 +31,6 @@ import { localePrefix } from '../../../utils/tracker-links';
   selector: 'app-webinar-badge-card',
   imports: [NgOptimizedImage, RouterLink],
   templateUrl: './webinar-badge-card.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   // Fixed height for the same reason as the course card — see its host comment.
   // The horizontal layout needs less room than the vertical one.
   host: { class: 'block h-32' },

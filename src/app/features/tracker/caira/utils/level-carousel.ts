@@ -1,4 +1,4 @@
-import { LevelBadge } from '../models/caira-badge-page.model';
+import { LevelBadge } from '@features/tracker/caira/models/caira-badge-page.model';
 
 /** How far a neighbouring badge sits from the centre, as a % of the rail height. */
 const STEP_PERCENT = 38;

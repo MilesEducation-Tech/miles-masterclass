@@ -1,4 +1,4 @@
-import { LevelBadge } from '../models/caira-badge-page.model';
+import { LevelBadge } from '@features/tracker/caira/models/caira-badge-page.model';
 
 /**
  * Which rung the hero's chevrons park on, given a freshly-emitted ladder and the previous

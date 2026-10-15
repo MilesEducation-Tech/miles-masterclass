@@ -1,11 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { BadgeSection, MasterclassBadge, WebinarBadge } from '../../models/caira-badge-page.model';
-import { BadgeActions } from '../../services/badge-actions';
-import { CairaBadgesFacade } from '../../services/caira-badges-facade';
-import { trackerLinks } from '../../../utils/tracker-links';
-import { CourseBadgeCard } from '../course-badge-card/course-badge-card';
-import { WebinarBadgeCard } from '../webinar-badge-card/webinar-badge-card';
+import { CourseBadgeCard } from '@features/tracker/caira/components/course-badge-card/course-badge-card';
+import { WebinarBadgeCard } from '@features/tracker/caira/components/webinar-badge-card/webinar-badge-card';
+import {
+  BadgeSection,
+  MasterclassBadge,
+  WebinarBadge,
+} from '@features/tracker/caira/models/caira-badge-page.model';
+import { trackerLinks } from '@features/tracker/utils/tracker-links';
 
 /** The two sections that render as a rail. The ladder has the hero instead. */
 export type BadgeRowSection = Exclude<BadgeSection, 'level_badges'>;
@@ -13,9 +15,12 @@ export type BadgeRowSection = Exclude<BadgeSection, 'level_badges'>;
 /**
  * One heading + "View All" + horizontally scrolling rail of badges on the tracker home.
  *
- * It injects the tracker's facade rather than fetching. Each row used to own its own
- * request — four rows, four requests — but `badges/page/` returns every section at once, so
- * there is nothing left to fetch per row and nothing that can make one row lag another.
+ * Pure presentation: the page passes the badges in and handles the CTA. Each row used to own
+ * its own request — four rows, four requests — but `badges/page/` returns every section at
+ * once, so there is nothing left to fetch per row.
+ *
+ * `section` picks which list renders; the other input is simply ignored, which keeps each card
+ * component on a single concrete type instead of widening its input to a union.
  *
  * The rail is CSS scroll-snap, not Swiper: the initial bundle sits within a few kB of its
  * 2 MB budget and `no-scrollbar` is already a project utility.
@@ -24,7 +29,6 @@ export type BadgeRowSection = Exclude<BadgeSection, 'level_badges'>;
   selector: 'app-badge-row',
   imports: [CourseBadgeCard, WebinarBadgeCard, RouterLink],
   templateUrl: './badge-row.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class BadgeRow {
@@ -32,9 +36,12 @@ export class BadgeRow {
   readonly section = input.required<BadgeRowSection>();
   /** Route for "View All", relative to the tracker (e.g. `course-badges`). */
   readonly viewAllLink = input.required<string>();
+  readonly isLoading = input(false);
+  readonly webinarBadges = input<WebinarBadge[]>([]);
+  readonly courseBadges = input<MasterclassBadge[]>([]);
 
-  private readonly facade = inject(CairaBadgesFacade);
-  private readonly actions = inject(BadgeActions);
+  /** A course card's CTA. The page decides what it does; webinar cards navigate themselves. */
+  readonly activate = output<MasterclassBadge>();
 
   private readonly links = trackerLinks();
 
@@ -42,27 +49,17 @@ export class BadgeRow {
 
   protected readonly viewAllCommands = computed(() => [...this.links.home(), this.viewAllLink()]);
 
-  protected readonly isLoading = this.facade.isLoading;
-
-  // The rail renders whatever the facade holds, which is the first page unless the learner
-  // has already scrolled the matching listing — the rail scrolls either way, so more rows
-  // cost nothing. Each `computed` returns `[]` for the other section so neither card
-  // component has to widen its input to a union.
-  protected readonly webinarItems = computed<WebinarBadge[]>(() =>
-    this.isWebinar() ? this.facade.webinarBadges() : [],
-  );
-  protected readonly courseItems = computed<MasterclassBadge[]>(() =>
-    this.isWebinar() ? [] : this.facade.masterclassBadges(),
-  );
+  protected readonly webinarItems = computed(() => (this.isWebinar() ? this.webinarBadges() : []));
+  protected readonly courseItems = computed(() => (this.isWebinar() ? [] : this.courseBadges()));
 
   private readonly itemCount = computed(
     () => this.webinarItems().length + this.courseItems().length,
   );
 
   /**
-   * A row with no badges is left out of the DOM entirely rather than rendering a heading
-   * over an empty rail. A failed fetch counts as "no data" too — the page above owns the
-   * visible error state, so a broken endpoint costs the user a section, not a double error.
+   * A row with no badges is left out of the DOM entirely rather than rendering a heading over
+   * an empty rail. A failed fetch counts as "no data" too — the page above owns the visible
+   * error state, so a broken endpoint costs the user a section, not a double error.
    */
   protected readonly isHidden = computed(() => !this.isLoading() && !this.itemCount());
 
@@ -71,8 +68,4 @@ export class BadgeRow {
    * whether any exist means the heading can vanish a moment later.
    */
   protected readonly showHeading = computed(() => this.itemCount() > 0);
-
-  protected onCourse(card: MasterclassBadge): void {
-    void this.actions.run(card);
-  }
 }
