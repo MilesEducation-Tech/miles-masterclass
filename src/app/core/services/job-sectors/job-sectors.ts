@@ -20,7 +20,7 @@ const EMPTY_SECTORS: CommonResponse<JobSector[]> = {
  *
  * Three things worth knowing:
  *
- *  1. **No auth gate, deliberately.** Unlike `AccountApi`/`OnboardingApi`, this
+ *  1. **No auth gate, deliberately.** Unlike `AccountApi` and `ProfileFacade`, this
  *     endpoint is not user-scoped, so the request function is unconditional and
  *     there is no `isAuthenticated()` check to add. Do not "fix" that by adding
  *     one — it would stop the list loading for signed-out visitors, who see it

@@ -1,16 +1,20 @@
 <div class="mx-auto flex max-w-2xl flex-col gap-6 md:p-6">
   <div class="flex flex-col gap-2">
     <p class="text-2xl font-bold text-white">
-      {{ (isOnboarding() ? 'auth.profile.titleOnboarding' : 'auth.profile.title') | transloco }}
+      {{
+        (facade.isOnboarding ? 'auth.profile.titleOnboarding' : 'auth.profile.title') | transloco
+      }}
     </p>
     <p class="text-gray-400">
-      {{ (isOnboarding() ? 'auth.profile.introOnboarding' : 'auth.profile.intro') | transloco }}
+      {{
+        (facade.isOnboarding ? 'auth.profile.introOnboarding' : 'auth.profile.intro') | transloco
+      }}
     </p>
   </div>
 
-  @if (isLoading()) {
+  @if (facade.isLoading()) {
     <div class="flex justify-center py-12"><app-spinner /></div>
-  } @else if (loadError()) {
+  } @else if (facade.loadError()) {
     <p class="text-sm text-destructive" role="alert">
       {{ 'auth.profile.loadError' | transloco }}
     </p>
@@ -136,7 +140,7 @@
 
                 <!-- A 400 from `PATCH profile/` is keyed by question code, one
                      message per bad answer — so it renders against its own field. -->
-                @if (fieldErrors()[question.code]; as message) {
+                @if (facade.fieldErrors()[question.code]; as message) {
                   <p class="text-xs text-red-400" role="alert">{{ message }}</p>
                 }
               </div>
@@ -145,11 +149,19 @@
         </div>
       }
 
-      <button app-button class="w-full" type="submit" variant="default" [disabled]="isSaving()">
-        @if (isSaving()) {
+      <button
+        app-button
+        class="w-full"
+        type="submit"
+        variant="default"
+        [disabled]="facade.isSaving()"
+      >
+        @if (facade.isSaving()) {
           <app-spinner />
         }
-        {{ (isOnboarding() ? 'auth.profile.continue' : 'auth.profile.saveChanges') | transloco }}
+        {{
+          (facade.isOnboarding ? 'auth.profile.continue' : 'auth.profile.saveChanges') | transloco
+        }}
       </button>
     </form>
   }
