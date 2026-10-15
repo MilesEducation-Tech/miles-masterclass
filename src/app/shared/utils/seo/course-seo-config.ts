@@ -30,7 +30,7 @@ export interface WebCourseSeoSource {
   name: string;
   mini_description: string;
   horizontal_thumbnail_url: string | null;
-  trailer_video_url: string | null;
+  horizontal_trailer_url: string | null;
   instructors: readonly { name: string }[];
 }
 
@@ -85,7 +85,7 @@ function webCourseToSeoConfig(course: WebCourseSeoSource, kind: CourseSeoKind): 
       title: course.name,
       description,
       image,
-      video: course.trailer_video_url || undefined,
+      video: course.horizontal_trailer_url || undefined,
       type: 'website',
     },
     twitter: {
