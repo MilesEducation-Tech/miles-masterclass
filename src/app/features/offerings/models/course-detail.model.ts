@@ -97,6 +97,8 @@ export interface MasterclassChapterProgress {
   is_video_seekable: boolean | null;
   /** The chapter quiz. The server's ladder opens the next chapter only after it. */
   is_mcq_completed: boolean | null;
+  /** The whole chapter is done, as the server decides it (the video, plus the quiz in CPE mode). */
+  is_chapter_completed: boolean | null;
   last_watched_position_seconds: number | null;
   /** The furthest point the server has been told was played. */
   max_watched_duration_seconds: number | null;
@@ -130,6 +132,22 @@ export type CourseMode = 'cpe' | 'preview';
 
 /** A chapter with the URL slug the API doesn't send, made from its name. */
 export type MasterclassChapterLink = MasterclassChapter & { slug: string };
+
+/**
+ * The chapter's video is done, which is what the course page's "Completed" badge
+ * shows (as the old list did). In CPE mode the quiz can still be open after it.
+ */
+export function isChapterWatched(chapter: MasterclassChapter): boolean {
+  const progress = chapter.user_chapter_progress;
+  return !!progress.is_video_completed || !!progress.is_chapter_completed;
+}
+
+/** How much of the chapter's video the server has been told was watched, as a whole 0–100. */
+export function watchedPercent(chapter: MasterclassChapter): number {
+  const watched = chapter.user_chapter_progress.max_watched_duration_seconds ?? 0;
+  if (chapter.duration_seconds <= 0 || watched <= 0) return 0;
+  return Math.min(100, Math.round((watched / chapter.duration_seconds) * 100));
+}
 
 /** The chapter in the URL and its neighbours, in the API's `order`. */
 export interface ChapterNavigation {
@@ -355,6 +373,7 @@ function isChapterProgress(v: unknown): v is MasterclassChapterProgress {
     isBoolOrNull(v['is_video_completed']) &&
     isBoolOrNull(v['is_video_seekable']) &&
     isBoolOrNull(v['is_mcq_completed']) &&
+    isBoolOrNull(v['is_chapter_completed']) &&
     isNumOrNull(v['last_watched_position_seconds']) &&
     isNumOrNull(v['max_watched_duration_seconds'])
   );

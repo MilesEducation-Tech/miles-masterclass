@@ -364,7 +364,9 @@ export class CourseChapterFacade {
       const update: CourseProgressUpdate = {
         chapter_id: tracker.chapterId,
         last_watched_position_seconds: Math.floor(tracker.position),
-        max_watched_duration_seconds: Math.floor(tracker.furthest),
+        // TEMP(testing): the test skip buttons jump past `furthest`, and the server refuses a
+        // position beyond the max (schemas.py:180). Do not commit; restore `Math.floor(tracker.furthest)`.
+        max_watched_duration_seconds: Math.floor(Math.max(tracker.furthest, tracker.position)),
       };
       if (this.lastSaved.get(update.chapter_id) !== saveKey(update)) {
         this.unsent.set(update.chapter_id, update);

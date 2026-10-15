@@ -71,6 +71,74 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     only `ai-labs.css`. Negative tests: a new relative import fails the structure check; a re-added OnPush fails
     ESLint.
 
+- 🔧 **2026-10-15, NON-REFACTOR — chapter quiz step 1: legacy quiz binding removed everywhere
+  (`prompts/chapter-quiz-remove-legacy.md`, approved). DONE, UNCOMMITTED** on
+  `feat/MIL-65-masterclass-chapter-page-binding` (its own commit, before the rebind).
+  - **Why:** `user-quiz-details/`, `chapter-quiz?chapter_id=` and `masterclass/report_summary/` answer Django's 404
+    on UAT (checked with and without `api/v1/`), so every quiz failed.
+  - **What changed:**
+    - `chapter-quiz` is an unbound frame (same folder and selector); nothing renders it until step 2.
+    - Podcast: `video-chapter` and `audio-chapter` lost the quiz panel, the open-on-load/on-end switch,
+      `isQuizEnabled`, "Track Quiz" and their unread `videoEnded` / `audioEnded` flags; `podcast-chapter` no longer
+      fetches the quiz report. Playback and chapter moves are unchanged.
+    - Micro-learning: `MicroLearningQuizDialog` deleted; `openChapterQuiz`, `launchQuizDialog`, the unused
+      `submitQuizAnswer` and the route's `ChapterFacade` provider removed. `TAKE_QUIZ`, the CPE completed-reel
+      fallback and the end of a `micro_learning` / `ai_lab` reel toast `CHAPTER_QUIZ_UNAVAILABLE` (new
+      `offerings/constants/micro-learning.ts`) and make no request.
+    - `ChapterFacade`: `submitQuizAnswer`, `updateUserSelectedOption`, `fetchQuizReport`, `updateChapterQuestions`
+      removed (`updateChapterStatus` stays for preview completion). `MASTERCLASS_ROUTES` lost the three routes;
+      `ChapterQuizResponse` and `QuizReportItem` deleted. `QuizQuestion` stays (final assessment).
+    - Ratchets tightened: `chapter-quiz.ts` and `chapter-facade.ts` left `LEGACY_ANY_FILES` (no `any` left), and
+      `check-structure --prune` dropped `chapter-quiz.html`'s `tokenHex` entry.
+  - **Verified (dev 4101, Playwright):** the micro-learning and podcast list pages and a micro-learning course
+    route load with no injection error and no quiz request; nothing renders `app-chapter-quiz`. The grep for the
+    three routes and the removed methods finds only explanatory comments.
+  - **Gates (local macOS):** tsc 0, Storybook tsc 0, `pnpm lint` 0 errors (101 warnings, from 105), structure ✔
+    after the prune, Prettier ✔, `CI=true build:prod` 244.94 kB with only `ai-labs.css`.
+
+- 🔧 **2026-10-15, NON-REFACTOR — chapter progress and "Completed" on the course page. DONE, UNCOMMITTED** on
+  `feat/MIL-65-masterclass-chapter-page-binding` (the user asked for it).
+  - `MasterclassChapterProgress` gains `is_chapter_completed` (`boolean | null`), which `course-detail/` and
+    `course-progress-update/` both send; the guard checks it. New `watchedPercent(chapter)`:
+    `max_watched_duration_seconds / duration_seconds`, whole, capped at 100.
+  - `masterclass-chapter-list`: a chapter whose video is done shows the old list's green "Completed" badge (top
+    start, `bg-success/90`); a started one shows a `primary` `app-progress` bar along the thumbnail's foot. The
+    status is also in the title link as `sr-only` text, because the thumbnail is `aria-hidden`. The old list's "In
+    Progress" badge is not ported.
+  - **Revised the same day (the user):** the badge follows the video, `isChapterWatched()` =
+    `is_video_completed || is_chapter_completed`, not `is_chapter_completed` alone. A CPE chapter with its quiz
+    still open had shown a full bar and no badge.
+  - **Next, planned, awaiting approval:** the chapter quiz, in two commits on this branch and PR #137 (the user's
+    choice, 2026-10-15): step 1 removes the dead legacy binding everywhere (`prompts/chapter-quiz-remove-legacy.md`;
+    `user-quiz-details/`, `chapter-quiz?chapter_id=` and `masterclass/report_summary/` all answer Django's 404 on
+    UAT), step 2 rebinds the same `chapter-quiz` to `quiz-questions` / `quiz-submit`
+    (`prompts/masterclass-chapter-quiz.md`).
+  - **Verified (dev 4101, Playwright, `course-detail` edited in flight, client-side navigation so the browser makes
+    the read):** chapter 1 completed → badge, no bar; chapter 2 at 25 % → bar `aria-valuenow` 25; chapter 3 video
+    done, chapter not → full bar; chapter 4 untouched → nothing. 1440 and 375, no horizontal scroll.
+  - **Gates:** tsc 0, Storybook tsc 0, ESLint clean on the three files, Prettier clean, structure check passed.
+
+- 🔧 **2026-10-15, NON-REFACTOR — TEMPORARY testing controls on the chapter player (the user asked for them). LOCAL
+  ONLY, DO NOT COMMIT** on `feat/MIL-65-masterclass-chapter-page-binding`.
+  - `course-chapter-player.ts`: `playerMode` is always `PlayerMode.DEFAULT`, so CPE chapters show the scrubber and the
+    speed menu. Restore `this.facade.canSeek() ? PlayerMode.DEFAULT : PlayerMode.CPE`.
+  - `shared/components/video-js/video-js.ts`: `skipButtons: { forward: 10, backward: 10 }` in every player, and
+    `playbackRates` gains `4` and `8`. Restore `[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]` and drop the skip line.
+  - `course-chapter-facade.ts` `queueSave()`: `max_watched_duration_seconds` is `max(furthest, position)`. A skip
+    past `furthest` otherwise sends a position above the max, which the server refuses with a 400 (`schemas.py:180`,
+    per the backend on 2026-10-15; Postman doesn't document the rule). Restore `Math.floor(tracker.furthest)`.
+    Learners have no skip control after sign-in (the user, 2026-10-15), so the committed code stays as it is.
+  - All three are marked `TEMP(testing)`. Revert with `git checkout --` on the three files before any commit.
+  - **Testing note:** a skip or scrub (a jump of `SEEK_JUMP_SECONDS` = 3 or more) only moves the resume point; 4× and
+    8× play still counts as watched.
+  - **Verified (dev 4101, signed out):** the course page's trailer player shows −10/+10 and 0.5×–8×. The chapter page
+    sends a signed-out visitor back with "Course locked", so the chapter player itself needs a signed-in check.
+  - **Gates:** tsc 0, ESLint clean on both files, Prettier clean.
+  - **Also on 2026-10-15:** this branch was rebased on `master` after MIL-82 (#136) merged (now `1d472ce`, pushed).
+    Gates on the rebased tree: tsc 0, Storybook tsc 0, lint 0 errors (105 warnings), structure ✔, Prettier ✔,
+    `CI=true build:prod` 244.96 kB with only `ai-labs.css`. The masterclass page's tracks and hero load again, and
+    the Advanced Excel course page renders 14 chapters.
+
 - 🔧 **2026-10-14, NON-REFACTOR — `course-detail/` trailer fields renamed on UAT. DONE, UNCOMMITTED** on
   `feat/MIL-65-masterclass-chapter-page-binding` (the user's call: its own commit here, since this branch owns the
   course-detail model).
@@ -4564,6 +4632,16 @@ These are environment and product observations the repair surfaced. None changed
 - 2026-10-15 · NON-REFACTOR · **Explicit OnPush dropped** (uncommitted, 75 components + `eslint.config.mjs` + CLAUDE.md): Angular 22 defaults to OnPush, so every `changeDetection: ChangeDetectionStrategy.OnPush` and its import went; `no-restricted-syntax` now rejects a re-added OnPush · lint 0 errors (105 warnings), structure ✔, build:prod 245.32 kB (local) · TransferState reviewed, no change (the 3 manual uses carry non-HttpClient data) · facade audit of the rebound flows running
 
 - 2026-10-14 · NON-REFACTOR · **Alias-import ratchet** (uncommitted, `check-structure.mjs` + `structure-baseline.json` + AGENTS.md + CLAUDE.md): per-file `relativeImports` count rule seeded with 191 files / 381 imports; both rule docs say aliases everywhere · structure ✔ after seeding, a new relative import fails it, ng lint 0 errors (local)
+
+- 2026-10-15 · NON-REFACTOR · **Chapter quiz step 1: legacy binding removed** (uncommitted, `feat/MIL-65-…`): `chapter-quiz` unbound; podcast quiz panel + report fetch, micro-learning quiz dialog + `chapter-quiz` read, `ChapterFacade` quiz methods and three 404 routes removed; ML quiz entry points toast · tsc 0, lint 0 errors (101 warnings), structure ✔ (pruned), prettier ✔, build:prod 244.94 kB
+
+- 2026-10-15 · NON-REFACTOR · **Chapter quiz planned in two steps** (`feat/MIL-65-…`): remove the dead legacy quiz binding everywhere (podcast, micro-learning, `ChapterFacade`, three 404 routes), then rebind `chapter-quiz` to the web API · plans: `prompts/chapter-quiz-remove-legacy.md`, `prompts/masterclass-chapter-quiz.md` (awaiting approval)
+
+- 2026-10-15 · NON-REFACTOR · **Completed badge follows the video** (uncommitted, `feat/MIL-65-…`): `isChapterWatched` = video or chapter completed · ESLint ✔, tsc 0, prettier ✔ · quiz plan written: `prompts/masterclass-chapter-quiz.md` (awaiting approval)
+
+- 2026-10-15 · NON-REFACTOR · **Course page chapter progress + Completed badge** (uncommitted, `feat/MIL-65-…`): `is_chapter_completed` in the model, `watchedPercent`, badge/bar in `masterclass-chapter-list` · tsc 0, ESLint ✔, prettier ✔, structure ✔ · Playwright with an edited `course-detail` at 1440/375
+
+- 2026-10-15 · NON-REFACTOR · **TEMP chapter-player testing controls** (local only, `feat/MIL-65-…`, do not commit): always DEFAULT mode, ±10 s skip, 4×/8×, save max = max(furthest, position) · tsc 0, ESLint ✔, prettier ✔ · trailer player shows them in dev; also MIL-65 rebased on #136 (`1d472ce`), build:prod 244.96 kB
 
 - 2026-10-14 · NON-REFACTOR · **course-detail trailer rename** (`feat/MIL-65-…`, uncommitted): `horizontal_trailer_url` / `trailer_horizontal_thumbnail_image_url` in the model, guard, hero, `openTrailer` and the SEO source · tsc 0, lint 0 errors, structure ✔, prettier ✔ · dev 4101: course page and hero trailer load
 

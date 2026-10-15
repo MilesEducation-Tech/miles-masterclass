@@ -88,10 +88,6 @@
     }
   },
   "tokenHex": {
-    "src/app/features/offerings/components/chapter-quiz/chapter-quiz.html": {
-      "count": 1,
-      "reason": "panel colour used as text; the token name would mislead"
-    },
     "src/app/shared/components/skeleton/chapter-skeleton/chapter-skeleton.html": {
       "count": 4,
       "reason": "CONVERT: player skeleton → bg-player-panel / bg-player-thumb (found by MIL-240)"

@@ -47,13 +47,12 @@ export interface AiLabAssessmentReport {
  *   1. **AI agent flow on Copilot** — the agent the learner actually built,
  *      graded step by step. No endpoint exists for this yet; it needs one that
  *      returns the submitted agent's name and a pass/fail per evaluated step.
- *   2. **MCQ** — `MASTERCLASS_ROUTES.chapterQuizReport`
- *      (`masterclass/report_summary/?chapter_id=`) already returns this as
- *      `QuizReportItem[]`: `question`, `option_a`–`option_d`,
- *      `option_description_a`–`_d`, `user_selected_option`, `correct_option`.
- *      Mapping into `AiLabReportQuestion` is the whole job — pick the option
- *      text by letter, and `isCorrect` is
- *      `user_selected_option === correct_option`.
+ *   2. **MCQ** — the legacy `masterclass/report_summary/` that once served
+ *      this answers 404 and was removed on 2026-10-15. Its web successor is
+ *      `web-api/v1/masterclass/quiz-questions/<chapter_id>/`, which returns
+ *      the questions already answered graded (`is_correct`, the explanation,
+ *      every option's `is_correct`); mapping those into
+ *      `AiLabReportQuestion` is the job.
  *
  * The copy below is real content from chapter 1113 ("Receivables on Autopilot")
  * so the layout is exercised at realistic text lengths, with one failed check

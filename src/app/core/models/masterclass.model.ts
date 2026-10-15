@@ -1,17 +1,5 @@
-import {
-  ContentDetails,
-  CourseChapter,
-  FinalAssessmentExamResponse,
-  QuizDetails,
-  QuizReportItem,
-} from './course.model';
+import { ContentDetails, CourseChapter, FinalAssessmentExamResponse } from './course.model';
 import { CommonResponse, RouteConfig } from './http.model';
-
-export interface ChapterQuizResponse {
-  status_code: number;
-  data: QuizDetails;
-  message: string;
-}
 
 /**
  * One row from `user-assessment/download_certificate/`. Multiple rows are
@@ -97,21 +85,6 @@ export const MASTERCLASS_ROUTES = {
     {},
     {}
   >,
-
-  submitQuizAnswer: {
-    path: 'user-quiz-details/',
-    method: 'POST',
-  } as RouteConfig<{ answer: string; quiz_question: number }, CommonResponse<void>, {}, {}>,
-
-  chapterQuizReport: {
-    path: 'masterclass/report_summary/',
-    method: 'GET',
-  } as RouteConfig<void, CommonResponse<QuizReportItem[]>, {}, { chapter_id: number }>,
-
-  getChapterQuiz: {
-    path: 'chapter-quiz',
-    method: 'GET',
-  } as RouteConfig<void, ChapterQuizResponse, {}, { chapter_id: number }>,
 
   startFinalAssessment: {
     path: 'user-assessment/start_assessment/',

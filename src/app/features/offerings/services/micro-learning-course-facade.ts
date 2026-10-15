@@ -1,13 +1,4 @@
-import {
-  computed,
-  DestroyRef,
-  effect,
-  inject,
-  Service,
-  Injector,
-  signal,
-  untracked,
-} from '@angular/core';
+import { computed, DestroyRef, effect, inject, Service, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Location } from '@angular/common';
 import { HttpContext } from '@angular/common/http';
@@ -27,15 +18,11 @@ import {
   SKIP_ERROR_NOTIFICATION,
   SKIP_LOADING,
 } from '@core/models/http.model';
-import {
-  ChapterQuizResponse,
-  CourseContentResponse,
-  MASTERCLASS_ROUTES,
-} from '@core/models/masterclass.model';
+import { CourseContentResponse, MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
 import { ContentDetails } from '@core/models/course.model';
 // Type-only: both dialogs load with `import()` when opened (PROMPT.md §4.4).
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
-import type { MicroLearningQuizDialogData } from '@features/offerings/micro-learning/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog';
+import { CHAPTER_QUIZ_UNAVAILABLE } from '@features/offerings/constants/micro-learning';
 import {
   ActionStatus,
   deriveActionStatus,
@@ -52,8 +39,6 @@ import {
 type ActivityEvent = 'heartbeat' | 'completed' | 'exit';
 type SetCpeModeRequest = RouteRequest<typeof MASTERCLASS_ROUTES.setCpeMode>;
 type SetCpeModeResponse = RouteResponse<typeof MASTERCLASS_ROUTES.setCpeMode>;
-type SubmitQuizAnswerRequest = RouteRequest<typeof MASTERCLASS_ROUTES.submitQuizAnswer>;
-type SubmitQuizAnswerResponse = RouteResponse<typeof MASTERCLASS_ROUTES.submitQuizAnswer>;
 type CourseContentParams = RouteParams<typeof MASTERCLASS_ROUTES.getCourseContent>;
 
 /** Window (ms) after a programmatic scroll during which scroll events are ignored. */
@@ -145,13 +130,6 @@ export class MicroLearningCourseFacade {
   private pendingHandoff: NanoLearningPage | null =
     (this.router.getCurrentNavigation()?.extras?.state?.[NANO_LEARNING_HANDOFF_KEY] as
       NanoLearningPage | undefined) ?? null;
-  /**
-   * Route-scoped injector passed to `NgpDialogManager.open` so the opened dialog can
-   * resolve route-level providers (e.g., `ChapterFacade`, which `ChapterQuiz`
-   * injects).
-   */
-  private readonly injector = inject(Injector);
-
   readonly detailsList = signal<MicroLearningReel[]>([]);
   readonly selectedReelId = signal<number | null>(null);
   readonly loading = signal(false);
@@ -180,7 +158,7 @@ export class MicroLearningCourseFacade {
   private tokenSeq = 0;
   readonly scrollToIdRequest = signal<{ id: number; token: number } | null>(null);
   readonly rewatchRequest = signal<{ id: number; token: number } | null>(null);
-  /** Reel-card pauses its player when this token changes (e.g. quiz dialog opened). */
+  /** Reel-card pauses its player when this token changes. */
   readonly pauseRequest = signal<{ id: number; token: number } | null>(null);
 
   /** Timestamp of the last programmatic scroll — guards `onReelScroll` from overwriting. */
@@ -821,13 +799,6 @@ export class MicroLearningCourseFacade {
 
   // ─── Quiz / assessment / feedback / download ──────────────────────────────
 
-  submitQuizAnswer(answer: string, quizQuestionId: number): Observable<SubmitQuizAnswerResponse> {
-    const body: SubmitQuizAnswerRequest = { answer, quiz_question: quizQuestionId };
-    return this.http
-      .post<SubmitQuizAnswerResponse>(MASTERCLASS_ROUTES.submitQuizAnswer.path, body)
-      .pipe(takeUntilDestroyed(this.destroyRef));
-  }
-
   startFinalAssessment(): void {
     const reel = this.activeReel();
     if (!reel) return;
@@ -890,7 +861,7 @@ export class MicroLearningCourseFacade {
     // canonical rules-dialog + /user-assessment/start_assessment flow).
     switch (this.actionStatus()) {
       case ActionStatus.TAKE_QUIZ:
-        this.openChapterQuiz();
+        this.chapterQuizUnavailable();
         return;
       case ActionStatus.TAKE_EXAM:
       case ActionStatus.RETAKE_EXAM:
@@ -925,16 +896,16 @@ export class MicroLearningCourseFacade {
     //  • Otherwise → launch flow (login / CPE-mode upgrade).
     const active = this.activeReel();
     if (active?.cpe_mode_details?.cpe_mode && isReelCompleted(active)) {
-      this.openChapterQuiz();
+      this.chapterQuizUnavailable();
       return;
     }
     this.launchCourse();
   }
 
   /**
-   * Locally override the active reel's `action_status`. Used by the quiz
-   * dialog when the user submits the last question — flips the CTA to
-   * "Take Final Assessment" immediately, ahead of the next server fetch.
+   * Locally override the active reel's `action_status`, ahead of the next
+   * server fetch: the end of a reel that hands straight to the exam flips the
+   * CTA to "Take Final Assessment".
    */
   markActiveReelActionStatus(status: ActionStatus | null): void {
     const reel = this.activeReel();
@@ -946,10 +917,8 @@ export class MicroLearningCourseFacade {
 
   /**
    * Handle natural end-of-video for the active reel:
-   *  • `nano_learning` (micro-learning) → open the chapter quiz dialog.
-   *    `action_status` is flipped to TAKE_QUIZ inside `openChapterQuiz`,
-   *    only once the quiz is confirmed available — empty-quiz responses
-   *    don't leave the CTA stuck on a "Take Quiz" that opens nothing.
+   *  • `micro_learning` / `ai_lab` → the chapter quiz, which is unbound for
+   *    now (`chapterQuizUnavailable`).
    *  • Anything else → set TAKE_EXAM + start the final assessment flow.
    *
    * Defensive `else` branch: production data in this module is always
@@ -968,7 +937,7 @@ export class MicroLearningCourseFacade {
     // Response-driven: AI Lab courses come back as `ai_lab` and carry the same
     // chapter quiz as a micro-learning reel.
     if (reel.course_type === 'micro_learning' || reel.course_type === 'ai_lab') {
-      this.openChapterQuiz();
+      this.chapterQuizUnavailable();
       return;
     }
     this.markActiveReelActionStatus(ActionStatus.TAKE_EXAM);
@@ -976,84 +945,14 @@ export class MicroLearningCourseFacade {
   }
 
   /**
-   * Open the chapter quiz for the active reel. Invoked from:
-   *  • the reel card CTA when a reel is locally completed in CPE mode
-   *  • the page `handleVideoEnded` when the video ends in CPE mode
-   *
-   * Fetches quiz data from `/chapter-quiz?chapter_id=<id>` (if not already
-   * cached on the reel), caches it on the reel, then opens the shared
-   * `ChapterQuiz` component inside `MicroLearningQuizDialog` — a thin
-   * adapter that maps the reel → CourseChapter shape ChapterQuiz expects.
-   * The route-scoped `injector` is passed so `ChapterQuiz` can resolve
-   * `ChapterFacade`.
+   * The chapter quiz's entry points: the `TAKE_QUIZ` CTA, a reel finished
+   * locally in CPE mode, and the end of a micro-learning or AI Lab reel. The
+   * quiz they opened read `chapter-quiz` and answered on `user-quiz-details/`,
+   * both of which answer 404, so they say so until the web API's quiz is wired
+   * in. No request is made.
    */
-  openChapterQuiz(): void {
-    const reel = this.activeReel();
-    if (!reel) return;
-
-    if (reel.quiz_details?.questions?.length) {
-      this.markActiveReelActionStatus(ActionStatus.TAKE_QUIZ);
-      void this.launchQuizDialog(reel);
-      return;
-    }
-
-    this.ctaLoading.set(true);
-    this.http
-      .get<ChapterQuizResponse>(MASTERCLASS_ROUTES.getChapterQuiz.path, {
-        params: { chapter_id: reel.chapter_id },
-      })
-      .pipe(
-        tap((res) => {
-          const quiz = res?.data;
-          if (!quiz?.questions?.length) {
-            // An AI Lab course without a quiz goes straight to the exam — the
-            // same hand-off `handleVideoEnded` makes for non-reel content.
-            // Without it the CTA sits on "Continue" and every click re-toasts.
-            if (reel.course_type === 'ai_lab') {
-              this.markActiveReelActionStatus(ActionStatus.TAKE_EXAM);
-              this.startFinalAssessment();
-              return;
-            }
-            // Empty quiz — leave action_status untouched so the CTA doesn't
-            // get stuck on "Take Quiz" that opens nothing.
-            this.notification.info('Quiz', 'No quiz questions are available for this reel yet.');
-            return;
-          }
-          // Cache the quiz on the reel so reopening is instant and the CTA
-          // label keeps rendering against up-to-date data.
-          this.detailsList.update((list) =>
-            list.map((r) => (r.id === reel.id ? { ...r, quiz_details: quiz } : r)),
-          );
-          // Use the freshly-merged reel from state to avoid passing a stale ref.
-          const fresh = this.detailsList().find((r) => r.id === reel.id) ?? {
-            ...reel,
-            quiz_details: quiz,
-          };
-          this.markActiveReelActionStatus(ActionStatus.TAKE_QUIZ);
-          void this.launchQuizDialog(fresh);
-        }),
-        catchError((err) => {
-          this.logger.error('Failed to fetch chapter quiz', err);
-          this.notification.error('Quiz', 'Unable to load the chapter quiz. Please try again.');
-          return of(null);
-        }),
-        finalize(() => this.ctaLoading.set(false)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-  }
-
-  private async launchQuizDialog(reel: MicroLearningReel): Promise<void> {
-    // Pause the active reel's player before the modal mounts so audio doesn't
-    // continue behind the dialog. Token-based — reel card pauses inside an
-    // effect when the value flips.
-    this.pauseRequest.set({ id: reel.id, token: ++this.tokenSeq });
-    const { MicroLearningQuizDialog } =
-      await import('@features/offerings/micro-learning/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog');
-    this.dialogs.open<MicroLearningQuizDialogData>(MicroLearningQuizDialog, {
-      data: { reel },
-      injector: this.injector,
-    });
+  private chapterQuizUnavailable(): void {
+    this.notification.info(CHAPTER_QUIZ_UNAVAILABLE.title, CHAPTER_QUIZ_UNAVAILABLE.body);
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────
