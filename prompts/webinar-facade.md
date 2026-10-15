@@ -40,7 +40,7 @@ Estimate: S
 
 ## Found, not fixed here (pre-existing)
 
-- **The landing feed fails its contract check on UAT.** Six `missed_webinar` rows carry `horizontal_thumbnail: null`
+- **Fixed in its own commit (`fix/MIL-XXX-webinar-null-thumbnails`). The landing feed failed its contract check on UAT.** Six `missed_webinar` rows carry `horizontal_thumbnail: null`
   and `square_image: null`; `isWebinarCard` requires both to be strings, so one row fails the whole feed and the list
   page shows "We could not load the webinars". The card and hero already fall back across the three images, so the
   fix is `isStrOrNull` on both keys and `string | null` on the type, in its own `fix(offerings)` commit.
