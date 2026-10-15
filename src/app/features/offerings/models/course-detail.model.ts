@@ -153,10 +153,16 @@ export interface MasterclassCourseDetail {
   mini_description: string;
   description: string;
   horizontal_thumbnail_url: string | null;
-  /** The hero's poster, before the trailer starts. */
-  trailer_thumbnail_url: string | null;
-  /** An HLS (`.m3u8`) stream on every UAT course, so it needs the video.js player. */
-  trailer_video_url: string | null;
+  /**
+   * The hero's poster, before the trailer starts. Was `trailer_thumbnail_url`
+   * until UAT renamed it on 2026-10-14 (Postman not updated yet).
+   */
+  trailer_horizontal_thumbnail_image_url: string | null;
+  /**
+   * An HLS (`.m3u8`) stream on every UAT course, so it needs the video.js
+   * player. Was `trailer_video_url` until the same rename.
+   */
+  horizontal_trailer_url: string | null;
   sample_video_url: string | null;
   fields_of_study: MasterclassFieldOfStudy[];
   /** The course total, summed by the API. Render it as sent; never re-sum. */
@@ -296,8 +302,8 @@ function isApiCourseDetail(v: unknown): v is ApiCourseDetail {
     isStr(v['mini_description']) &&
     isStr(v['description']) &&
     isStrOrNull(v['horizontal_thumbnail_url']) &&
-    isStrOrNull(v['trailer_thumbnail_url']) &&
-    isStrOrNull(v['trailer_video_url']) &&
+    isStrOrNull(v['trailer_horizontal_thumbnail_image_url']) &&
+    isStrOrNull(v['horizontal_trailer_url']) &&
     isStrOrNull(v['sample_video_url']) &&
     listOf(isFieldOfStudy)(v['fields_of_study']) &&
     isNum(v['total_cpe_credits']) &&

@@ -85,11 +85,13 @@ export class MasterclassCourseHero {
 
   protected readonly poster = computed(() => {
     const course = this.course();
-    return course ? course.trailer_thumbnail_url || course.horizontal_thumbnail_url : null;
+    return course
+      ? course.trailer_horizontal_thumbnail_image_url || course.horizontal_thumbnail_url
+      : null;
   });
 
   protected readonly trailerSource = computed<VideoSource | null>(() => {
-    const src = this.course()?.trailer_video_url;
+    const src = this.course()?.horizontal_trailer_url;
     return src ? { src, type: detectVideoMimeType(src) } : null;
   });
 

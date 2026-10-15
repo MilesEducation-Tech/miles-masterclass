@@ -2,6 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 import { computed, effect, inject, PLATFORM_ID, Service, signal } from '@angular/core';
 import { environment } from '@env/environment';
+import { MASTERCLASS_COURSE_TYPE } from '@core/constants/masterclass';
 import {
   MasterclassHomePage,
   MasterclassLoginType,
@@ -24,7 +25,8 @@ import { withPreviousValue } from '@core/utils/with-previous-value';
  * old route is a 404 on every host.
  *
  * `login_type` is required and strict — leaving it out, or sending any other
- * key, is a 400 `invalid_query`. An anonymous `post_login` is a 401, and so
+ * key, is a 400 `invalid_query`. So is `course_type`, since 2026-10-13
+ * (`MASTERCLASS_COURSE_TYPE`). An anonymous `post_login` is a 401, and so
  * is a bad or expired token on either branch (the backend rechecked this on
  * 2026-10-07; it used to be a 403).
  */
@@ -101,6 +103,7 @@ export class MasterclassHomeFacade {
         url: apiUrl(TRACKS_PAGE_URL),
         params: {
           login_type: loginType,
+          course_type: MASTERCLASS_COURSE_TYPE,
           // Every track and every course in one response; the API pages both
           // lists 6 rows at a time.
           'tracks.page_size': HOME_PAGE_LIST_PAGE_SIZE,

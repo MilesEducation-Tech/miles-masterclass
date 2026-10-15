@@ -1,6 +1,7 @@
 import { httpResource } from '@angular/common/http';
 import { computed, effect, inject, Service } from '@angular/core';
 import { environment } from '@env/environment';
+import { MASTERCLASS_COURSE_TYPE } from '@core/constants/masterclass';
 import { MasterclassCourse, parseCoursePage } from '@core/models/masterclass-home.model';
 import { apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
@@ -35,7 +36,10 @@ export class MasterclassHighlightFacade {
   private readonly highlight = httpResource<MasterclassCourse[]>(
     () => ({
       url: apiUrl(HIGHLIGHT_URL),
-      params: { 'all_courses.page_size': HIGHLIGHT_PAGE_SIZE },
+      params: {
+        'all_courses.page_size': HIGHLIGHT_PAGE_SIZE,
+        course_type: MASTERCLASS_COURSE_TYPE,
+      },
     }),
     { defaultValue: [], parse: parseCoursePage('highlight') },
   );

@@ -270,7 +270,7 @@ export class CourseDetailFacade {
   /** The shared video dialog; it toasts "Trailer Not Found" for a course with none. */
   openTrailer(): void {
     const course = this.course();
-    if (course) void this.utils.openVideoDialog(course.trailer_video_url, course.name);
+    if (course) void this.utils.openVideoDialog(course.horizontal_trailer_url, course.name);
   }
 
   openSample(): void {
