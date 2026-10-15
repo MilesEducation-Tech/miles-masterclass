@@ -7,6 +7,22 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-15, NON-REFACTOR — MIL-95, instructor library and page (`prompts/library-rebind.md` rev 3,
+  approved). SUBTASK 1 DONE, UNCOMMITTED** on `feat/MIL-95-instructor-library-binding` (from `master` `e3fc330`).
+  - **Subtask 1, `refactor(library): drop the retired instructor bindings`:** deleted `core/models/library.model.ts`
+    (`InstructorListItem`), `shared/components/cards/instructor-card`, `InstructorFacade` and `instructor-hero`, all
+    typed on the legacy `instructor/` contract (404 on UAT). The library page keeps its heading, search box and
+    "No instructors found."; the instructor page keeps its Back link. `structure-baseline.json` pruned (−12, three
+    relative-import entries).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 244.63 kB,
+    only the `ai-labs.css` warning.
+  - **Verified (dev 4101, headless, signed out, 1440):** both routes render, no console error, no request to
+    `instructor/`, no horizontal scroll; the search box takes input and Clear resets it.
+  - **`postman/` refreshed** from the 2026-10-15 export (gitignored). It carries a live-captured `instructor-detail/`
+    200, so the prompt's detail shape is no longer a guess. `docs/AUTH_API.md:5` and `docs/WEBINAR_API_QUESTIONS.md:5`
+    still point at the old folder layout; a docs follow-up.
+  - **Next:** subtask 2 (bind the library to `all-instructors-page/`) after the user commits subtask 1.
+
 - 🔧 **2026-10-15, NON-REFACTOR — PR #132 review (MIL-62): rebased onto `master` and reshaped off the
   facade. CODE DONE, GATES GREEN, BROWSER CHECK OPEN, UNCOMMITTED** on `feat/MIL-62-caira-tracker-rebind`.
   - **Review (me-sachin-singh, CHANGES_REQUESTED, 5 points):** alias imports everywhere; rebase onto
