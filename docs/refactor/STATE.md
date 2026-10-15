@@ -7,6 +7,31 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-15, NON-REFACTOR — masterclass homepage on the 2026-10-13 contract** (`prompts/masterclass-course-type.md`,
+  approved). On `fix/MIL-XXX-masterclass-course-type` (from `master` `c2a1194`), uncommitted, three commits' worth:
+  - **A, `course_type`:** `highlight/`, `tracks-page/` and `ai-labs/` answer `400 invalid_query` without it since
+    2026-10-13, so `/masterclass` lost its hero and rails and `/home` its rails and AI Labs ring.
+    `MASTERCLASS_COURSE_TYPE = 'course'` (`core/constants/masterclass.ts`) and the three call sites are #137's
+    lines word for word, so #137 (MIL-65) rebases cleanly.
+  - **B, trailer keys:** `course-detail/` renamed them on 2026-10-14. This is #137's `1d472cea` without its STATE
+    hunk, and it brings back the "i" dialog and the course page.
+  - **C, docs:** `docs/MASTERCLASS_PODCAST_AND_REELS.md` (podcast/reel contract, live UAT snapshot, the gap list for
+    the podcast/reel rebind) and the prompt.
+  - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔, Prettier ✔, `build:prod` 245.04 kB with only
+    `ai-labs.css`.
+  - **Verified on the prod SSR build (:4000), headless, signed out, 375/768/1440:**
+    - `/masterclass`: 13 hero slides and rails of 21/34/13; the SSR HTML carries the track names.
+    - `/home`: the same rails and the AI Labs ring.
+    - All three reads send `course_type=course` and get a 200. The "i" dialog renders. The course page has its
+      poster and trailer. No horizontal scroll.
+  - **Found, not fixed:**
+    - UAT answers `content-encoding: zstd` with a leading skippable frame. The old headless shell (chromium 1217)
+      fails to decode it (`ERR_CONTENT_DECODING_FAILED`, or the guards reject the body); Chrome 152 and the `zstd`
+      CLI decode it fine. Headless runs force `accept-encoding: gzip, deflate, br`.
+    - The browser pane is hidden here, and `withViewTransitions()` then never finishes the first navigation, so
+      pages hang there. Verify headless.
+    - The course page's title is the literal `{{title}} | Master Class | Miles Masterclass`, from a Supabase
+      `seo_pages` row (not in `src/`). The row wins over the course fallback, so there is no `og:video`.
 - ⏸ **2026-10-15, NON-REFACTOR — library rebind, revision 2, awaiting approval** (`prompts/library-rebind.md`). Working
   tree moved to `master` at `d470717` (#136 bound the course library), so the prompt now covers only what is left:
   PR1 instructor library on `all-instructors-page/`, PR2 instructor page on `instructor-detail/` + `filter/?instructor=`,
