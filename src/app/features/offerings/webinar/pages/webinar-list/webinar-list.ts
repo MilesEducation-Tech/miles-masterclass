@@ -1,14 +1,11 @@
 import { Component, DOCUMENT, computed, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { AuthSession } from '@core/services/auth-session/auth-session';
-import { NotificationService } from '@core/services/notification/notification';
 import { Faq } from '@shared/components/faq/faq';
-import { WebinarHero } from '../../components/webinar-hero/webinar-hero';
-import { WebinarMeetCta } from '../../components/webinar-meet-cta/webinar-meet-cta';
-import { WebinarRail } from '../../components/webinar-rail/webinar-rail';
-import { WebinarFacade } from '../../services/webinar-facade';
-import { resolveJoinTarget } from '../../utils/join-target';
-import { WebinarRegistration } from '../../services/webinar-registration';
+import { WebinarHero } from '@features/offerings/webinar/components/webinar-hero/webinar-hero';
+import { WebinarMeetCta } from '@features/offerings/webinar/components/webinar-meet-cta/webinar-meet-cta';
+import { WebinarRail } from '@features/offerings/webinar/components/webinar-rail/webinar-rail';
+import { WebinarFacade } from '@features/offerings/webinar/services/webinar-facade';
 
 /**
  * The webinar landing page: a highlighted hero over four rails.
@@ -26,14 +23,8 @@ import { WebinarRegistration } from '../../services/webinar-registration';
 export class WebinarList {
   protected readonly facade = inject(WebinarFacade);
   protected readonly auth = inject(AuthSession);
-  private readonly registration = inject(WebinarRegistration);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly notification = inject(NotificationService);
-  /** Injected rather than reached for, so the external hop is testable. */
   private readonly window = inject(DOCUMENT).defaultView!;
-
-  protected readonly registeringIds = computed(() => this.registration.inFlight());
 
   /**
    * Signed out: the three per-user rails cannot be populated, so say why.
@@ -63,27 +54,6 @@ export class WebinarList {
   }
 
   protected onJoin(webinarId: string): void {
-    const target = resolveJoinTarget(this.facade.findById(webinarId));
-
-    switch (target.kind) {
-      case 'embedded':
-        // The live room is its own route: it is client-rendered, holds the
-        // session lease for exactly as long as it is mounted, and tears the SDK
-        // down on navigation away. Opening the meeting in place would tie all
-        // of that to the lifetime of the feed.
-        void this.router.navigate([webinarId, 'live'], { relativeTo: this.route });
-        break;
-      case 'external':
-        // `noopener` is not optional on a `_blank` to a third party: without it
-        // Zoom's tab gets a handle on `window.opener` and can navigate us.
-        this.window.open(target.url, '_blank', 'noopener,noreferrer');
-        break;
-      case 'unavailable':
-        this.notification.error(
-          'That session is not ready yet',
-          'We could not find a join link for this webinar. Refresh in a moment, or contact support if it persists.',
-        );
-        break;
-    }
+    this.facade.join(webinarId, this.route);
   }
 }

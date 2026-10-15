@@ -60,7 +60,6 @@ export class WebinarHero {
    * past webinar's CTA (attended / absent / missed) is decided by its bucket.
    */
   readonly bucket = input<WebinarBucket>('highlight');
-  readonly isRegistering = input(false);
   readonly isLockedElsewhere = input(false);
 
   readonly register = output<string>();
@@ -80,7 +79,8 @@ export class WebinarHero {
     ctaFor(this.webinar(), {
       now: this.now(),
       bucket: this.bucket(),
-      isRegistering: this.isRegistering(),
+      // Read from the facade for this webinar, rather than relayed by the page.
+      isRegistering: this.facade.isRegistering(this.webinar().id),
       isLockedElsewhere: this.isLockedElsewhere(),
     }),
   );

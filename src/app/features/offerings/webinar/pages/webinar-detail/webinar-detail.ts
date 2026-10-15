@@ -1,15 +1,11 @@
-import { Component, DestroyRef, DOCUMENT, computed, effect, inject, input } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { NotificationService } from '@core/services/notification/notification';
+import { Component, DestroyRef, computed, effect, inject, input } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Faq } from '@shared/components/faq/faq';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { WebinarAbout } from '../../components/webinar-about/webinar-about';
-import { WebinarHero } from '../../components/webinar-hero/webinar-hero';
-import { eligibleOf } from '../../models/webinar.model';
-import { WebinarFacade } from '../../services/webinar-facade';
-import { WebinarRegistration } from '../../services/webinar-registration';
-import { resolveJoinTarget } from '../../utils/join-target';
-import { setupWebinarDetailSeo } from '../../utils/webinar-seo';
+import { WebinarAbout } from '@features/offerings/webinar/components/webinar-about/webinar-about';
+import { WebinarHero } from '@features/offerings/webinar/components/webinar-hero/webinar-hero';
+import { WebinarFacade } from '@features/offerings/webinar/services/webinar-facade';
+import { setupWebinarDetailSeo } from '@features/offerings/webinar/utils/webinar-seo';
 
 /**
  * One webinar in full: the landing page's banner over this session, the NASBA
@@ -35,13 +31,8 @@ export class WebinarDetail {
   readonly id = input.required<string>();
 
   private readonly facade = inject(WebinarFacade);
-  private readonly registration = inject(WebinarRegistration);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly notification = inject(NotificationService);
-  /** Injected rather than reached for, so the external hop is testable. */
-  private readonly window = inject(DOCUMENT).defaultView!;
 
   constructor() {
     // Tell the facade which webinar this page is showing. An `effect` rather
@@ -54,24 +45,10 @@ export class WebinarDetail {
     setupWebinarDetailSeo({ webinar: this.webinar, isMissing: this.isMissing });
   }
 
-  /**
-   * Prefer the feed row when it is already in memory — arriving from a rail
-   * then renders instantly instead of flashing a spinner — and fall back to the
-   * detail endpoint, which is the only source on a deep link or for a crawler.
-   * The detail row wins once it lands: it carries four keys the card does not.
-   */
-  protected readonly webinar = computed(() => {
-    const fromFeed = this.facade.findById(this.id());
-    const detail = this.facade.detailWebinar();
-    if (!detail) return fromFeed;
-    // `eligible` exists only on `completed_webinar` rows and never on the
-    // details payload — without it, an attended session reads "Not eligible".
-    const eligible = eligibleOf(fromFeed);
-    return eligible === undefined ? detail : { ...detail, eligible };
-  });
-
-  /** The feed's bucket, or `highlight` until the feed places it. */
-  protected readonly bucket = computed(() => this.facade.bucketOf(this.id()) ?? 'highlight');
+  /** Which row to show and which bucket decides its CTA: `WebinarFacade.detailFor`. */
+  private readonly view = computed(() => this.facade.detailFor(this.id()));
+  protected readonly webinar = computed(() => this.view().webinar);
+  protected readonly bucket = computed(() => this.view().bucket);
 
   protected readonly isLoading = computed(
     () => (this.facade.isLoading() || this.facade.isDetailLoading()) && !this.webinar(),
@@ -80,30 +57,11 @@ export class WebinarDetail {
   /** The endpoint answered "no such webinar", as opposed to "not loaded yet". */
   protected readonly isMissing = computed(() => !this.webinar() && this.facade.isDetailMissing());
 
-  protected readonly isRegistering = computed(() => this.registration.isRegistering(this.id()));
-
   protected onRegister(): void {
     void this.facade.register(this.id());
   }
 
   protected onJoin(): void {
-    const target = resolveJoinTarget(this.webinar());
-
-    switch (target.kind) {
-      case 'embedded':
-        void this.router.navigate(['live'], { relativeTo: this.route });
-        break;
-      case 'external':
-        // `noopener` is not optional on a `_blank` to a third party: without it
-        // Zoom's tab gets a handle on `window.opener` and can navigate us.
-        this.window.open(target.url, '_blank', 'noopener,noreferrer');
-        break;
-      case 'unavailable':
-        this.notification.error(
-          'That session is not ready yet',
-          'We could not find a join link for this webinar. Refresh in a moment, or contact support if it persists.',
-        );
-        break;
-    }
+    this.facade.join(this.id(), this.route);
   }
 }
