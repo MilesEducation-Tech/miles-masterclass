@@ -854,5 +854,95 @@
       "count": 2,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     }
+  },
+  "misplacedFacades": {
+    "src/app/admin/core/services/partner-network-facade.ts": "admin-wide partner state used by several admin areas; not reviewed yet",
+    "src/app/admin/core/services/partner-superadmin-facade.ts": "admin-wide partner state used by several admin areas; not reviewed yet",
+    "src/app/core/services/feature-facade/feature-facade.ts": "legacy exception named in AGENTS.md §3; retires with the micro-learning / podcast rebind",
+    "src/app/core/services/masterclass-home-facade/masterclass-home-facade.ts": "one read shared by the home and masterclass features, so core is right; rename it without \"facade\" (prompts/facade-audit.md)",
+    "src/app/core/services/section-filters-facade/section-filters-facade.ts": "only consumer is shared/components/carousel, on legacy v2/filters/; fold into the carousel when it is rebound (prompts/facade-audit.md)"
+  },
+  "facadeImports": {
+    "src/app/shared/components/cards/horizontal/horizontal.ts": "shared code reading the legacy FeatureFacade; pass the data in as an input when the cards are rebound (prompts/facade-audit.md)",
+    "src/app/shared/components/cards/hover/hover.ts": "shared code reading the legacy FeatureFacade; pass the data in as an input when the cards are rebound (prompts/facade-audit.md)",
+    "src/app/shared/components/cards/vertical/vertical.ts": "shared code reading the legacy FeatureFacade; pass the data in as an input when the cards are rebound (prompts/facade-audit.md)",
+    "src/app/shared/components/carousel/carousel.ts": "SectionFiltersFacade on legacy v2/filters/; goes with the carousel rebind (prompts/facade-audit.md)",
+    "src/app/shared/services/engagement-dialog.ts": "shared code reading the legacy FeatureFacade; pass the data in as an input when the cards are rebound (prompts/facade-audit.md)",
+    "src/app/shared/services/utils.ts": "shared code reading the legacy FeatureFacade; pass the data in as an input when the cards are rebound (prompts/facade-audit.md)"
+  },
+  "rootFacades": {
+    "src/app/core/services/feature-facade/feature-facade.ts": "deliberate root exception named in AGENTS.md §3; add the // why: line",
+    "src/app/core/services/masterclass-home-facade/masterclass-home-facade.ts": "root on purpose: home -> masterclass reuses one ~216 KB read; add the // why: line",
+    "src/app/core/services/section-filters-facade/section-filters-facade.ts": "cache shared by every carousel; goes with the carousel rebind",
+    "src/app/features/library/badge/services/badge-facade.ts": "library list state survives back-navigation (prompts/library-rebind.md D7); add the // why: line in the library rebind",
+    "src/app/features/library/course/services/course-facade.ts": "library list state survives back-navigation (prompts/library-rebind.md D7); add the // why: line in the library rebind",
+    "src/app/features/library/instructor/services/instructor-facade.ts": "library list state survives back-navigation (prompts/library-rebind.md D7); add the // why: line in the library rebind",
+    "src/app/features/payment/services/payment-facade.ts": "deliberate root exception named in AGENTS.md §3; add the // why: line"
+  },
+  "componentHttp": {
+    "src/app/features/ai-labs/pages/ai-labs/ai-labs.ts": {
+      "count": 1,
+      "reason": "pre-harness (2026-10-15): move into the page facade when this flow is rebound"
+    },
+    "src/app/features/faculty/pages/faculty/faculty.ts": {
+      "count": 1,
+      "reason": "pre-harness (2026-10-15): move into the page facade when this flow is rebound"
+    },
+    "src/app/features/library/instructor/pages/instructor-details/instructor-details.ts": {
+      "count": 2,
+      "reason": "moves into a route-scoped facade in the library rebind (prompts/library-rebind.md PR2)"
+    },
+    "src/app/features/offerings/micro-learning/pages/micro-learning/micro-learning.ts": {
+      "count": 1,
+      "reason": "pre-harness (2026-10-15): move into the page facade when this flow is rebound"
+    },
+    "src/app/features/partners/components/partnership-content/partnership-content.ts": {
+      "count": 1,
+      "reason": "pre-harness (2026-10-15): move into the page facade when this flow is rebound"
+    },
+    "src/app/features/tracker/caira/components/badge-row/badge-row.ts": {
+      "count": 1,
+      "reason": "the CAIRA / CPE tracker rebind moves these reads into a tracker facade"
+    },
+    "src/app/features/tracker/caira/components/caira-level-hero/caira-level-hero.ts": {
+      "count": 1,
+      "reason": "the CAIRA / CPE tracker rebind moves these reads into a tracker facade"
+    },
+    "src/app/features/tracker/caira/dialogs/caira-badge-info-dialog/caira-badge-info-dialog.ts": {
+      "count": 1,
+      "reason": "the CAIRA / CPE tracker rebind moves these reads into a tracker facade"
+    },
+    "src/app/features/tracker/caira/pages/course-badges/course-badges.ts": {
+      "count": 1,
+      "reason": "the CAIRA / CPE tracker rebind moves these reads into a tracker facade"
+    },
+    "src/app/features/tracker/caira/pages/webinar-badges/webinar-badges.ts": {
+      "count": 1,
+      "reason": "the CAIRA / CPE tracker rebind moves these reads into a tracker facade"
+    },
+    "src/app/features/tracker/cpe/pages/cpe-tracker/cpe-tracker.ts": {
+      "count": 2,
+      "reason": "the CAIRA / CPE tracker rebind moves these reads into a tracker facade"
+    },
+    "src/app/shared/components/course-related-section/course-related-section.ts": {
+      "count": 2,
+      "reason": "shared component doing HTTP; the caller should pass the data in (prompts/facade-audit.md)"
+    },
+    "src/app/shared/components/surround-carousel/surround-carousel.ts": {
+      "count": 1,
+      "reason": "shared component doing HTTP; the caller should pass the data in (prompts/facade-audit.md)"
+    },
+    "src/app/shared/dialogs/ai-lab-agent-dialog/ai-lab-agent-dialog.ts": {
+      "count": 1,
+      "reason": "shared component doing HTTP; the caller should pass the data in (prompts/facade-audit.md)"
+    },
+    "src/app/shared/dialogs/certificate-download-dialog/certificate-download-dialog.ts": {
+      "count": 1,
+      "reason": "shared component doing HTTP; the caller should pass the data in (prompts/facade-audit.md)"
+    },
+    "src/app/shared/dialogs/profile-completion-dialog/profile-completion-dialog.ts": {
+      "count": 1,
+      "reason": "unreachable dialog on a legacy route; delete it (prompts/facade-audit.md)"
+    }
   }
 }

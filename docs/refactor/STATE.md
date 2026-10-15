@@ -7,6 +7,19 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-15, NON-REFACTOR — facade harness and skill, UNCOMMITTED** on `chore/MIL-XXX-facade-harness`
+  (stacked on `refactor/MIL-85-drop-explicit-onpush` at `92bf342`, because it extends that branch's ratchet).
+  - **Skill:** `.agents/skills/facade-pattern/SKILL.md` (decide, shape, consumers, anti-patterns from this repo, what
+    the harness enforces, review checklist). It lives in `.agents/skills/` because every tool reads it through
+    AGENTS.md §10, and the Claude-only skills folder belongs to the user.
+  - **Harness:** four ratchets in `scripts/check-structure.mjs`, seeded in `structure-baseline.json` with a reason per
+    entry: `misplacedFacades` (5), `facadeImports` (6), `rootFacades` (7), `componentHttp` (16 files). A probe file
+    per rule failed it; a route-scoped facade and a root one with `// why:` passed.
+  - **Docs:** AGENTS.md §3 bullet "A facade only where state is shared" (four hard boundaries), a §9 row, a §10 row;
+    CLAUDE.md pointer. The §3 hunk overlaps `docs/MIL-86-library-plan`'s: keep this branch's wording.
+  - **Library plan impact:** `prompts/library-rebind.md` D5 (instructor page with two `httpResource`s and no facade)
+    now fails `componentHttp`; it becomes a small route-scoped `InstructorDetailFacade` when the plan runs.
+
 - ✅ **2026-10-14/15, NON-REFACTOR — repo hygiene (MIL-85). Committed as `c7d205f` on
   `refactor/MIL-85-drop-explicit-onpush`; `master` (`d470717`, #136) merged in on 2026-10-15.**
   - **Merge resolution:** `shared/ui/tabs/tabs.ts` is `master`'s file (the `variant` input) without OnPush. #136's
@@ -4381,6 +4394,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-15 · NON-REFACTOR · **Facade harness + skill** (uncommitted, `chore/MIL-XXX-facade-harness`): `.agents/skills/facade-pattern/SKILL.md`; 4 ratchets in `check-structure.mjs` seeded (5 + 6 + 7 + 16 entries); AGENTS.md §3/§9/§10 + CLAUDE.md pointers · structure ✔, probes fail as expected, lint 0 errors (local)
 
 - 2026-10-15 · NON-REFACTOR · **MIL-85: `master` (`d470717`, #136) merged in, conflicts resolved** (uncommitted merge): `tabs.ts` = master's `variant` file without OnPush; #136's relative imports → aliases in 6 files; baseline pruned (3 entries); STATE.md kept both sides · lint 0 errors (105 warnings), structure ✔, prettier ✔ (local)
 
