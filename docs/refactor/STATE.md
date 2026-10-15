@@ -7,6 +7,19 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- ⏸ **2026-10-15, NON-REFACTOR — library rebind, revision 2, awaiting approval** (`prompts/library-rebind.md`). Working
+  tree moved to `master` at `d470717` (#136 bound the course library), so the prompt now covers only what is left:
+  PR1 instructor library on `all-instructors-page/`, PR2 instructor page on `instructor-detail/` + `filter/?instructor=`,
+  PR3 badge library retired into a `caira-tracker` redirect. D1–D9, Q1–Q6.
+  - **Live UAT, signed out, read-only:** `all-instructors-page/` now **requires `course_type`** and rejects
+    `login_type` (not in the 2026-10-12 export); 63 instructors, 20 with no courses; `instructor-detail/` 401;
+    legacy `instructor/`, `badge-categories/`, `course-badges/` and the tracker's `v2/*-badges/` all 404.
+  - **`refactor/MIL-85-drop-explicit-onpush` (`c7d205f`) is not on `master`** and needs `master` merged in: conflicts
+    in `shared/ui/tabs/tabs.ts` and this file, and #136's relative imports in 6 files fail its ratchet until they are
+    aliases. Merging is the user's step (the git guard blocks it here).
+  - **Uncommitted on `master`:** the facade-warranted bullet in AGENTS.md §3 (re-applied; four hard boundaries) and
+    the prompt. `postman/` is ignored on `master`; the local export was kept.
+
 - 🔧 **2026-10-14, NON-REFACTOR — bind the course library page to the web filter API (Story MIL-82)** on
   `feat/MIL-82-course-library-binding` (from `master`). Two subtasks, one PR. No refactor phase moved.
   - **Why:** the page's two reads, `v2/library-filters/` and `v2/library/`, answer Django's 404 HTML on UAT, so the
@@ -4354,6 +4367,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-15 · NON-REFACTOR · **Library rebind re-planned on `master` (`d470717`)**: course library already bound by #136; `prompts/library-rebind.md` rev 2 = instructor library, instructor page, badge library retirement · live UAT probe: `course_type` now required on `all-instructors-page/` · MIL-85 needs `master` merged (tabs.ts + STATE.md conflicts, 6 relative-import ratchet failures) · no `src/` changes
 
 - 2026-10-14 · NON-REFACTOR · **MIL-84, course library bound to `filter/`** (`feat/MIL-82-course-library-binding`, uncommitted) plus the `horizontal_trailer_url` rename (own commit): sidebar, pill tabs, grid, paging, states · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod ✔ (local) · dev 4101 headless: 64 courses over 6 pages, each filter and tab narrows, error + retry, 375/768/1440 no horizontal scroll
 

@@ -127,7 +127,7 @@ src/app/
 | Domain types                   | `core/models/` when shared; `features/<f>/models/` when one feature owns them        | Move a model up only when a second feature needs it.                                                 |
 | Reusable UI                    | `shared/ui/`, `shared/components/`, `shared/dialogs/`                                | Generic only. A dialog one feature opens lives in that feature's `dialogs/`.                         |
 
-Three hard boundaries:
+Four hard boundaries:
 
 - **Components display, facades decide.** If a component grows an `if` about business rules, that `if` belongs in a
   facade. On a facade-backed page, each component injects that facade and reads its signals and calls its methods
@@ -136,6 +136,10 @@ Three hard boundaries:
 - **Facades are route-scoped by default.** Most are `@Service({ autoProvided: false })` and listed in the route's
   `providers`, so two feature trees get independent instances. Root facades such as `PaymentFacade` and
   `FeatureFacade`, and the core singletons, are the deliberate exceptions.
+- **A facade only where state is shared.** A route tree gets a facade when two or more components, sibling routes
+  or a dialog share its state or rules. A page with one read and no rules injects the core API service that exposes
+  the resource and keeps its children on inputs and outputs. A component either injects the page's facade or takes
+  inputs, never both. Nothing in `core/` or `shared/` is a facade; `FeatureFacade` is the legacy exception.
 - **The browser is untrusted.** Secrets, service-role keys and privileged operations never reach client code (see §7).
 
 **Reference examples. Copy their shape.**
