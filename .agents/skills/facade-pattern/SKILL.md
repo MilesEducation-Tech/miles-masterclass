@@ -39,7 +39,9 @@ smallest complete admin slice).
 
 - **File:** `features/<f>/services/<name>-facade.ts`, or `admin/<a>/services/`. Flat file, aliased imports.
 - **Scope:** `@Service({ autoProvided: false })`, listed in the route's `providers` (a dialog opened outside that
-  route lists it in its own `providers`). Sibling route trees get their own instances.
+  route lists it in its own `providers`). Sibling route trees get their own instances. The router keeps a route's
+  injector after you leave (`withAutoCleanupInjectors` is not enabled), so a one-page facade whose state must start
+  fresh on every visit goes in that page component's `providers` instead, with a `// why:` (`ProfileFacade`).
 - **Root `@Service()`** only when state must outlive the route: a list whose filters and loaded pages survive a
   visit to a detail page and back (the library facades), or one read shared across features
   (`MasterclassHomeFacade`). Put a `// why:` comment on it. `PaymentFacade` and `FeatureFacade` are the standing

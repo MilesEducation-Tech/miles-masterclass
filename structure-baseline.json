@@ -298,10 +298,6 @@
       "count": 2,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/core/services/onboarding-api/onboarding-api.ts": {
-      "count": 4,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/core/services/partner-code/partner-code.ts": {
       "count": 4,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"

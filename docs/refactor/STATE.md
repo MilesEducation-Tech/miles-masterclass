@@ -7,6 +7,22 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-15, NON-REFACTOR — profile page onto a `ProfileFacade` (`prompts/profile-facade.md`), UNCOMMITTED** on
+  `refactor/MIL-XXX-profile-facade` (stacked on `chore/MIL-86-facade-harness`, `c553339`). Audit P1 item 1.
+  - New `features/auth/services/profile-facade.ts` absorbs `core/services/onboarding-api` (deleted, no other consumer):
+    the `questions/` resource, `PATCH profile/`, the questionnaire kind (fixed per visit), the save and what follows it
+    (user reload, toasts, milestones, refresh before navigating, redirect, field errors) and the leave dialog.
+  - Provided by the `Profile` component: Angular 22.2 keeps a route's injector after you leave
+    (`withAutoCleanupInjectors` is opt-in and off), so a route-provided facade would show a returning learner the
+    onboarding questionnaire again. The skill's "Scope" bullet now says so.
+  - `profile.ts` 533 → 379 lines: the signal form, gating and the answer map only; it injects the facade and Transloco.
+  - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔ (pruned the deleted file's entry), prettier ✔,
+    `CI=true pnpm build:prod` 245.06 kB with only `ai-labs.css`.
+  - **Dev on 3000, signed in, no save:** `questions/?form=profile` + `user-details/`, "Your Profile", 24 fields; the leave
+    dialog opens and "Keep editing" stays. The save path was not run (it writes to the real UAT account).
+  - **Pre-existing bug found, not fixed (own `fix(auth)` commit):** the leave dialog asks twice when the destination
+    redirects (`/` → `rootRedirectGuard` → a second navigation re-runs `canDeactivate`). Same on the original code.
+
 - 🔧 **2026-10-15, NON-REFACTOR — facade harness and skill, UNCOMMITTED** on `chore/MIL-XXX-facade-harness`
   (stacked on `refactor/MIL-85-drop-explicit-onpush` at `92bf342`, because it extends that branch's ratchet).
   - **Skill:** `.agents/skills/facade-pattern/SKILL.md` (decide, shape, consumers, anti-patterns from this repo, what
@@ -4394,6 +4410,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-15 · NON-REFACTOR · **Profile → `ProfileFacade`** (uncommitted, `refactor/MIL-XXX-profile-facade`): `OnboardingApi` folded into a component-provided facade; page keeps the form (533 → 379 lines) · lint 0 errors, structure ✔ (pruned), prettier ✔, build:prod 245.06 kB (local)
 
 - 2026-10-15 · NON-REFACTOR · **Facade harness + skill** (uncommitted, `chore/MIL-XXX-facade-harness`): `.agents/skills/facade-pattern/SKILL.md`; 4 ratchets in `check-structure.mjs` seeded (5 + 6 + 7 + 16 entries); AGENTS.md §3/§9/§10 + CLAUDE.md pointers · structure ✔, probes fail as expected, lint 0 errors (local)
 

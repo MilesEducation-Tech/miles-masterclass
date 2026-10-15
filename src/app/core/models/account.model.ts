@@ -16,7 +16,7 @@ import { CommonResponse, RouteConfig } from './http.model';
  *    read with a routing summary and has NO write (a PATCH is 405).
  *
  * Every body arrives inside `{success, message, data}` (2026-10-10). The types
- * below describe `data`; `AccountApi` / `OnboardingApi` unwrap it.
+ * below describe `data`; `AccountApi` and the profile page's facade unwrap it.
  */
 
 /** Which questionnaire is in scope. An unrecognised value is a 400 naming the
