@@ -7,79 +7,18 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🔧 **2026-10-15, NON-REFACTOR — webinar feed failed on null thumbnails, FIXED, UNCOMMITTED** on
-  `fix/MIL-XXX-webinar-null-thumbnails` (stacked on `refactor/MIL-89-webinar-facade`, `d8432a7`).
-  - **Cause:** six UAT `missed_webinar` rows send `horizontal_thumbnail: null` and `square_image: null`; `isWebinarCard`
-    required strings, so one row failed the whole `webinar-main-page` parse and the landing page showed its error banner.
-  - **Fix:** both keys are `string | null` in `WebinarCard` and `isStrOrNull` in the guard, like `vertical_thumbnail`.
-    The three readers (hero, card, `webinar-seo`) already fall through on a falsy value, and the templates guard the
-    image with `@if`.
-  - **Verified (dev on 3000):** the server-rendered landing page has no error banner, renders the hero and the
-    "Webinar's This Month" rail (2 cards). The browser pane was hidden, which stalls the router's view transition, so
-    the signed-in "missed" rail was not checked in the browser.
-  - **Gates (local macOS):** tsc 0, lint 0 errors (105 warnings), structure ✔, prettier ✔, `CI=true pnpm build:prod`
-    245.09 kB with only `ai-labs.css`.
-
-- 🔧 **2026-10-15, NON-REFACTOR — webinar pages through `WebinarFacade` (`prompts/webinar-facade.md`), UNCOMMITTED** on
-  `refactor/MIL-XXX-webinar-facade` (stacked on `fix/MIL-88-profile-leave-dialog`, `45f4829`). Audit P1 item 3.
-  - `WebinarFacade` gains `join(id, from)` (replaces two page copies) and `detailFor(id)` (the detail page's merge,
-    now ignoring a detail row for another id); `isEmpty` deleted. Card and hero read `isRegistering(id)` themselves;
-    the pages no longer inject `WebinarRegistration`, and the rail no longer relays `registeringIds`.
-  - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔ (pruned 3), prettier ✔, `CI=true pnpm build:prod`
-    245.16 kB with only `ai-labs.css`.
-  - **Dev on 3000, signed in, nothing sent:** detail page SSR + browser render from the detail row; registering state
-    drives the hero's CTA through the facade ("Booking…"); `join` on an unknown id toasts; the live URL is the same
-    from both pages.
-  - **Gotcha again:** after `build:prod` the dev server stopped hydrating every route (initial navigation stuck, no
-    API calls); `preview_stop` / `preview_start` fixed it.
-  - **Pre-existing, not fixed:** UAT's landing feed fails `isWebinarCard` (six `missed_webinar` rows with null
-    `horizontal_thumbnail` / `square_image`), so the list page shows its error banner. Own `fix(offerings)` commit.
-
-- 🔧 **2026-10-15, NON-REFACTOR — leave dialog asked twice, FIXED, UNCOMMITTED** on `fix/MIL-XXX-profile-leave-dialog`
-  (stacked on `refactor/MIL-87-profile-facade`, `90bc473`).
-  - **Cause:** "Back to Home" goes to `/`; `rootRedirectGuard` starts a second navigation, which runs `canDeactivate`
-    again on the still-dirty form and opened a second dialog.
-  - **Fix:** `ProfileFacade` remembers a confirmed leave and answers `of(true)` while redirects of that leave run. It
-    clears the flag once the navigation settles anywhere but a redirect or a newer navigation (`NavigationEnd`,
-    `NavigationError`, `NavigationSkipped`, or `NavigationCancel` with another code), so a leave that ends back on the
-    page asks again. The router subscription is `takeUntilDestroyed()` on the page's injector.
-  - **Dev on 3000, signed in, no save:** "Keep editing" stays with the answer kept and the flag false; one "Leave" goes
-    `/` → cancel (redirect) → `/us/accounting` → home, no second dialog. Two in-app round trips to the page left the
-    router's subscriber count unchanged (8 on the page, 15 on home), so the subscription ends with the page.
-  - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔, prettier ✔, `CI=true pnpm build:prod`
-    245.06 kB with only `ai-labs.css`.
-  - **Seen, not this change:** UAT's `tracks-page/` now answers 400 without `course_type`, so the home tracks fail;
-    `origin/feat/MIL-65-masterclass-chapter-page-binding` (`cc949ce`) already touches that facade for it.
-
-- 🔧 **2026-10-15, NON-REFACTOR — profile page onto a `ProfileFacade` (`prompts/profile-facade.md`), UNCOMMITTED** on
-  `refactor/MIL-XXX-profile-facade` (stacked on `chore/MIL-86-facade-harness`, `c553339`). Audit P1 item 1.
-  - New `features/auth/services/profile-facade.ts` absorbs `core/services/onboarding-api` (deleted, no other consumer):
-    the `questions/` resource, `PATCH profile/`, the questionnaire kind (fixed per visit), the save and what follows it
-    (user reload, toasts, milestones, refresh before navigating, redirect, field errors) and the leave dialog.
-  - Provided by the `Profile` component: Angular 22.2 keeps a route's injector after you leave
-    (`withAutoCleanupInjectors` is opt-in and off), so a route-provided facade would show a returning learner the
-    onboarding questionnaire again. The skill's "Scope" bullet now says so.
-  - `profile.ts` 533 → 379 lines: the signal form, gating and the answer map only; it injects the facade and Transloco.
-  - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔ (pruned the deleted file's entry), prettier ✔,
-    `CI=true pnpm build:prod` 245.06 kB with only `ai-labs.css`.
-  - **Dev on 3000, signed in, no save:** `questions/?form=profile` + `user-details/`, "Your Profile", 24 fields; the leave
-    dialog opens and "Keep editing" stays. The save path was not run (it writes to the real UAT account).
-  - **Pre-existing bug found, not fixed (own `fix(auth)` commit):** the leave dialog asks twice when the destination
-    redirects (`/` → `rootRedirectGuard` → a second navigation re-runs `canDeactivate`). Same on the original code.
-
-- 🔧 **2026-10-15, NON-REFACTOR — facade harness and skill, UNCOMMITTED** on `chore/MIL-XXX-facade-harness`
-  (stacked on `refactor/MIL-85-drop-explicit-onpush` at `92bf342`, because it extends that branch's ratchet).
-  - **Skill:** `.agents/skills/facade-pattern/SKILL.md` (decide, shape, consumers, anti-patterns from this repo, what
-    the harness enforces, review checklist). It lives in `.agents/skills/` because every tool reads it through
-    AGENTS.md §10, and the Claude-only skills folder belongs to the user.
-  - **Harness:** four ratchets in `scripts/check-structure.mjs`, seeded in `structure-baseline.json` with a reason per
-    entry: `misplacedFacades` (5), `facadeImports` (6), `rootFacades` (7), `componentHttp` (16 files). A probe file
-    per rule failed it; a route-scoped facade and a root one with `// why:` passed.
-  - **Docs:** AGENTS.md §3 bullet "A facade only where state is shared" (four hard boundaries), a §9 row, a §10 row;
-    CLAUDE.md pointer. The §3 hunk overlaps `docs/MIL-86-library-plan`'s: keep this branch's wording.
-  - **Library plan impact:** `prompts/library-rebind.md` D5 (instructor page with two `httpResource`s and no facade)
-    now fails `componentHttp`; it becomes a small route-scoped `InstructorDetailFacade` when the plan runs.
-
+- ⏸ **2026-10-15, NON-REFACTOR — library rebind, revision 2, awaiting approval** (`prompts/library-rebind.md`). Working
+  tree moved to `master` at `d470717` (#136 bound the course library), so the prompt now covers only what is left:
+  PR1 instructor library on `all-instructors-page/`, PR2 instructor page on `instructor-detail/` + `filter/?instructor=`,
+  PR3 badge library retired into a `caira-tracker` redirect. D1–D9, Q1–Q6.
+  - **Live UAT, signed out, read-only:** `all-instructors-page/` now **requires `course_type`** and rejects
+    `login_type` (not in the 2026-10-12 export); 63 instructors, 20 with no courses; `instructor-detail/` 401;
+    legacy `instructor/`, `badge-categories/`, `course-badges/` and the tracker's `v2/*-badges/` all 404.
+  - **`refactor/MIL-85-drop-explicit-onpush` (`c7d205f`) is not on `master`** and needs `master` merged in: conflicts
+    in `shared/ui/tabs/tabs.ts` and this file, and #136's relative imports in 6 files fail its ratchet until they are
+    aliases. Merging is the user's step (the git guard blocks it here).
+  - **Uncommitted on `master`:** the facade-warranted bullet in AGENTS.md §3 (re-applied; four hard boundaries) and
+    the prompt. `postman/` is ignored on `master`; the local export was kept.
 - ✅ **2026-10-14/15, NON-REFACTOR — repo hygiene (MIL-85). Committed as `c7d205f` on
   `refactor/MIL-85-drop-explicit-onpush`; `master` (`d470717`, #136) merged in on 2026-10-15.**
   - **Merge resolution:** `shared/ui/tabs/tabs.ts` is `master`'s file (the `variant` input) without OnPush. #136's
@@ -4455,15 +4394,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
-- 2026-10-15 · NON-REFACTOR · **Webinar feed null thumbnails** (uncommitted, `fix/MIL-XXX-webinar-null-thumbnails`): `horizontal_thumbnail` / `square_image` nullable in type + guard · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod 245.09 kB (local) · SSR landing page renders hero + rail, no error banner
-
-- 2026-10-15 · NON-REFACTOR · **Webinar through `WebinarFacade`** (uncommitted, `refactor/MIL-XXX-webinar-facade`): `join` + `detailFor` in the facade, registration state read by card/hero, relays and `isEmpty` removed · lint 0 errors, structure ✔ (pruned), prettier ✔, build:prod 245.16 kB (local) · dev: detail page + registering CTA + join toast verified; UAT feed contract failure found (null thumbnails)
-
-- 2026-10-15 · NON-REFACTOR · **Profile leave dialog asked twice, fixed** (uncommitted, `fix/MIL-XXX-profile-leave-dialog`): a confirmed leave survives the redirects it causes and clears when the navigation settles · lint 0 errors, structure ✔, prettier ✔, build:prod 245.06 kB (local) · dev: one Leave reaches home; no subscription leak
-
-- 2026-10-15 · NON-REFACTOR · **Profile → `ProfileFacade`** (uncommitted, `refactor/MIL-XXX-profile-facade`): `OnboardingApi` folded into a component-provided facade; page keeps the form (533 → 379 lines) · lint 0 errors, structure ✔ (pruned), prettier ✔, build:prod 245.06 kB (local)
-
-- 2026-10-15 · NON-REFACTOR · **Facade harness + skill** (uncommitted, `chore/MIL-XXX-facade-harness`): `.agents/skills/facade-pattern/SKILL.md`; 4 ratchets in `check-structure.mjs` seeded (5 + 6 + 7 + 16 entries); AGENTS.md §3/§9/§10 + CLAUDE.md pointers · structure ✔, probes fail as expected, lint 0 errors (local)
+- 2026-10-15 · NON-REFACTOR · **Library rebind re-planned on `master` (`d470717`)**: course library already bound by #136; `prompts/library-rebind.md` rev 2 = instructor library, instructor page, badge library retirement · live UAT probe: `course_type` now required on `all-instructors-page/` · MIL-85 needs `master` merged (tabs.ts + STATE.md conflicts, 6 relative-import ratchet failures) · no `src/` changes
 
 - 2026-10-15 · NON-REFACTOR · **MIL-85: `master` (`d470717`, #136) merged in, conflicts resolved** (uncommitted merge): `tabs.ts` = master's `variant` file without OnPush; #136's relative imports → aliases in 6 files; baseline pruned (3 entries); STATE.md kept both sides · lint 0 errors (105 warnings), structure ✔, prettier ✔ (local)
 

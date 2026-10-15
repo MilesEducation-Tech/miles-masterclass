@@ -46,6 +46,7 @@ export class WebinarRail {
   readonly description = input<string | null>(null);
   readonly webinars = input.required<readonly FeedCard[]>();
   readonly bucket = input.required<WebinarBucket>();
+  readonly registeringIds = input<ReadonlySet<string>>(new Set());
   /** `rows` for the upcoming section, `strip` for the three past ones. */
   readonly layout = input<'rows' | 'strip'>('rows');
   readonly showWhenEmpty = input(false);

@@ -1,6 +1,7 @@
-import { Component, computed, inject, linkedSignal } from '@angular/core';
+import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormField, applyEach, form, hidden, required, validate } from '@angular/forms/signals';
-import { Observable } from 'rxjs';
+import { Observable, from, map, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 
 import { NgpCheckbox } from 'ng-primitives/checkbox';
@@ -10,8 +11,21 @@ import { NgpTextarea } from 'ng-primitives/textarea';
 import { Select } from '@shared/ui/select/select';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { AnswerMap, AnswerValue, Question, UserDetails } from '@core/models/account.model';
-import { ProfileFacade } from '@features/auth/services/profile-facade';
+import {
+  AnswerMap,
+  AnswerValue,
+  Question,
+  UserDetails,
+  readAccountError,
+} from '@core/models/account.model';
+import { AccountApi } from '@core/services/account-api/account-api';
+import { AuthSession } from '@core/services/auth-session/auth-session';
+import { OnboardingApi } from '@core/services/onboarding-api/onboarding-api';
+import { NotificationService } from '@core/services/notification/notification';
+import { Logger } from '@core/services/logger/logger';
+import { NgpDialogManager } from 'ng-primitives/dialog';
+// Type-only: the dialog loads with `import()` when the leave guard fires (§4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 
 /** Which control a question renders as. */
 export type Control = 'text' | 'textarea' | 'number' | 'boolean' | 'date' | 'single' | 'multi';
@@ -112,14 +126,9 @@ export function rowDefaults(user: UserDetails | null): Record<string, string> {
  * Built on signal forms: the model is one row per question, the schema is
  * applied per item by `applyEach`, and `required` / `hidden` are driven by the
  * payload's own `is_required` and `parent_question` fields.
- *
- * The page owns the form; `ProfileFacade` owns the data, the save and what follows it.
  */
 @Component({
   selector: 'app-profile',
-  // why: here and not on the route. The router keeps a route's injector after you leave, and the facade's state
-  // (which questionnaire, saving, field errors) must start fresh on every visit.
-  providers: [ProfileFacade],
   imports: [
     FormField,
     NgpCheckbox,
@@ -140,15 +149,56 @@ export function rowDefaults(user: UserDetails | null): Record<string, string> {
   },
 })
 export class Profile {
-  protected readonly facade = inject(ProfileFacade);
+  private readonly onboarding = inject(OnboardingApi);
+  private readonly account = inject(AccountApi);
+  private readonly auth = inject(AuthSession);
+  private readonly router = inject(Router);
+  private readonly notify = inject(NotificationService);
+  private readonly logger = inject(Logger);
+  private readonly dialogs = inject(NgpDialogManager);
   // Synchronous: the auth route's resolver merged the `auth.*` dictionary before this page rendered.
   private readonly transloco = inject(TranslocoService);
   private readonly t = (key: string, params?: Record<string, unknown>): string =>
     this.transloco.translate(key, params);
 
+  readonly isSaving = signal(false);
+  /** Per-question messages from a 400, which this API keys by question code. */
+  readonly fieldErrors = signal<Record<string, string>>({});
+
+  constructor() {
+    // A first-time learner is filling the onboarding questionnaire; everyone
+    // else is editing their profile. The two are different question sets.
+    this.onboarding.form.set(this.auth.needsOnboarding() ? 'onboarding' : 'profile');
+  }
+
+  // ── Loading state ─────────────────────────────────────────────────────────
+
+  readonly isLoading = computed(
+    () => this.onboarding.questions.isLoading() || this.account.user.isLoading(),
+  );
+
+  /**
+   * `hasValue()` first: reading `value()` on a resource in its error state throws.
+   *
+   * The user record is NOT here: it only seeds the name, so the questionnaire
+   * must still load and save when that one read fails.
+   */
+  readonly loadError = computed(() => this.onboarding.questions.error());
+
+  readonly isOnboarding = computed(() => this.onboarding.form() === 'onboarding');
+
+  private readonly user = computed(() =>
+    this.account.user.hasValue() ? this.account.user.value() : null,
+  );
+
   // ── The questionnaire ─────────────────────────────────────────────────────
 
-  private readonly questions = this.facade.questions;
+  /** Already sorted by `display_order` server-side; no client ordering. */
+  private readonly questions = computed<Question[]>(() =>
+    this.onboarding.questions.hasValue()
+      ? (this.onboarding.questions.value()?.Questions ?? [])
+      : [],
+  );
 
   /** Control + options, derived from `questions/` alone so they stay stable
    *  while the learner types. */
@@ -175,7 +225,7 @@ export class Profile {
    * user record only fills a name that is still blank.
    */
   private readonly model = linkedSignal({
-    source: () => ({ entries: this.entries(), defaults: rowDefaults(this.facade.user()) }),
+    source: () => ({ entries: this.entries(), defaults: rowDefaults(this.user()) }),
     computation: ({ entries, defaults }, previous?: { value: AnswerField[] }): AnswerField[] => {
       const kept = new Map(previous?.value.map((row) => [row.code, row]));
       return entries.map(({ question, control }) => {
@@ -347,33 +397,137 @@ export class Profile {
 
   onSubmit(event: Event): void {
     event.preventDefault();
-    this.save();
+    void this.save();
   }
 
-  save(): void {
-    if (this.facade.isSaving()) return;
+  async save(): Promise<void> {
+    if (this.isSaving()) return;
 
     // Errors only show on a touched field, so an untouched required question
     // would otherwise reject the submit with nothing on screen to explain it.
     this.form().markAsTouched();
     if (this.form().invalid()) return;
 
-    void this.facade.save(this.toAnswerMap());
+    this.isSaving.set(true);
+    this.fieldErrors.set({});
+
+    try {
+      const answers = this.toAnswerMap();
+
+      // The ONLY write. The user record's PATCH was deleted; name and every
+      // other profile field are answers in this map.
+      //
+      // `null` is REFUSED by this endpoint rather than read as "clear", so no
+      // code is ever sent as null. PATCH is partial by definition: a code left
+      // out keeps whatever it had.
+      const result = await this.onboarding.saveAnswers(answers);
+      // Name answers may have changed what `user-details/` reports.
+      this.account.user.reload();
+
+      // The write always succeeds; the milestone advances only when every
+      // required, shown question has an answer. A non-empty `missing` is NOT an
+      // error — it is a partial save, which is a supported thing to do.
+      if (result.missing.length) {
+        const count = result.missing.length;
+        this.notify.info(
+          this.t('auth.profile.toast.saved'),
+          this.t(`auth.profile.toast.stillToAnswer.${count === 1 ? 'one' : 'other'}`, { count }),
+        );
+        return;
+      }
+
+      // The save response carries the milestones, so the gate can move before
+      // the user row reloads — otherwise the redirect below races the reload
+      // and `onboardingGuard` sends the learner straight back here.
+      this.auth.setMilestones(result.is_onboarding_completed, result.is_profile_completed);
+
+      // RULE 5, and the single most common integration bug on this surface:
+      // `miles.onboarding_required` is minted INTO the access token, so if the
+      // milestone just advanced we must rotate BEFORE navigating. Skipping this
+      // re-reads a stale claim and bounces the user straight back into the
+      // onboarding they just finished.
+      if (result.profile_status !== this.auth.profileStatus()) {
+        await this.auth.forceRefresh();
+      }
+
+      this.notify.success(this.t('auth.profile.toast.saved'), this.t('auth.profile.toast.updated'));
+      if (this.isOnboarding()) await this.router.navigateByUrl('/');
+    } catch (err) {
+      this.applyFieldErrors(err);
+    } finally {
+      this.isSaving.set(false);
+    }
   }
 
   // ── Unsaved-changes protection ────────────────────────────────────────────
 
-  /** What the leave protection asks about; the dialog itself is `ProfileFacade.confirmLeave`. */
+  /**
+   * Onboarding is the case that matters: several answers typed and then a stray
+   * back-navigation loses all of them, and the API has no draft state to
+   * recover from — a partial `PATCH profile/` is the only thing that persists.
+   */
   readonly isDirty = computed(() => this.form().dirty());
 
   onBeforeUnload(event: BeforeUnloadEvent): void {
-    if (!this.isDirty() || this.facade.isSaving()) return;
+    if (!this.isDirty() || this.isSaving()) return;
     event.preventDefault();
   }
 
   /** Wired by `canDeactivateExamGuard` on the profile route. */
   canDeactivate(): Observable<boolean> | boolean {
-    if (!this.isDirty() || this.facade.isSaving()) return true;
-    return this.facade.confirmLeave();
+    if (!this.isDirty() || this.isSaving()) return true;
+
+    const opened = import('@shared/dialogs/utils-dialog/utils-dialog').then(({ UtilsDialog }) =>
+      this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+        data: {
+          title: this.t('auth.profile.leave.title'),
+          content: [{ type: 'text', value: this.t('auth.profile.leave.body') }],
+          buttons: [
+            {
+              label: this.t('auth.profile.leave.keepEditing'),
+              variant: 'outline',
+              action: 'close',
+            },
+            {
+              label: this.t('auth.profile.leave.confirm'),
+              variant: 'destructive',
+              action: 'confirm',
+            },
+          ],
+        },
+      }),
+    );
+
+    return from(opened).pipe(
+      switchMap((ref) => ref.afterClosed),
+      map((result) => result?.action === 'confirm'),
+    );
+  }
+
+  /**
+   * A 400 here is keyed by question code, one message per bad answer. Every
+   * other body is an envelope (`{status, message}`, `{message, status}`,
+   * `{detail}`) and gets a toast — reading those as field errors put them under
+   * questions named `status` and `message` that do not exist, so the learner
+   * saw nothing at all.
+   */
+  private applyFieldErrors(err: unknown): void {
+    const parsed = readAccountError(err);
+    if (parsed.kind === 'fields') {
+      this.fieldErrors.set(parsed.fields);
+      // A key no rendered question owns (e.g. a strict-input refusal) has
+      // nowhere to show — say it rather than fail silently.
+      const shown = new Set(this.entries().map((e) => e.question.code));
+      const orphan = Object.entries(parsed.fields).find(([code]) => !shown.has(code));
+      if (!orphan) return;
+      this.logger.error('Profile save failed', err);
+      this.notify.error(this.t('auth.profile.toast.saveFailed'), orphan[1]);
+      return;
+    }
+    this.logger.error('Profile save failed', err);
+    this.notify.error(
+      this.t('auth.profile.toast.saveFailed'),
+      parsed.message ?? this.t('auth.profile.toast.couldNotSave'),
+    );
   }
 }

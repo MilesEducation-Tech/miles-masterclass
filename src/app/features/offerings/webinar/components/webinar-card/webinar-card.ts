@@ -46,6 +46,7 @@ export class WebinarCard {
   readonly webinar = input.required<FeedCard>();
   readonly bucket = input.required<WebinarBucket>();
   readonly layout = input<WebinarCardLayout>('responsive');
+  readonly isRegistering = input(false);
   readonly isLockedElsewhere = input(false);
 
   readonly register = output<string>();
@@ -164,8 +165,7 @@ export class WebinarCard {
       // "Join Now" on its own, without a refresh.
       now: (this.clock.tick(), this.clock.now()),
       bucket: this.bucket(),
-      // This card's own row, read from the facade rather than relayed by the page and the rail.
-      isRegistering: this.facade.isRegistering(this.webinar().id),
+      isRegistering: this.isRegistering(),
       isLockedElsewhere: this.isLockedElsewhere(),
     }),
   );

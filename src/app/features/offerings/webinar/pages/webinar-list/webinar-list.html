@@ -16,6 +16,7 @@
     <app-webinar-hero
       [webinar]="hero"
       [linkToDetail]="true"
+      [isRegistering]="registeringIds().has(hero.id)"
       (register)="onRegister($event)"
       (join)="onJoin($event)"
     />
@@ -110,6 +111,7 @@
           [pageSize]="6"
           [webinars]="upcoming"
           bucket="upcoming"
+          [registeringIds]="registeringIds()"
           (register)="onRegister($event)"
           (join)="onJoin($event)"
         />
@@ -122,6 +124,7 @@
           [pageSize]="3"
           [webinars]="upcoming"
           bucket="upcoming"
+          [registeringIds]="registeringIds()"
           (register)="onRegister($event)"
           (join)="onJoin($event)"
         />

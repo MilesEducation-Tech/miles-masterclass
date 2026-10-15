@@ -136,11 +136,10 @@ Four hard boundaries:
 - **Facades are route-scoped by default.** Most are `@Service({ autoProvided: false })` and listed in the route's
   `providers`, so two feature trees get independent instances. Root facades such as `PaymentFacade` and
   `FeatureFacade`, and the core singletons, are the deliberate exceptions.
-- **A facade only where state is shared.** One facade per routed page tree that holds state, rules or actions.
-  A page whose one read a core service already exposes injects that service instead of a facade that forwards it,
-  and code in `core/`, `shared/` or `layout/` never imports a facade. A component reads page state from the facade
-  or from inputs, not both; a list item taking its own row as an input is the exception. How to decide, the shape
-  and the review checklist: `.agents/skills/facade-pattern/SKILL.md`.
+- **A facade only where state is shared.** A route tree gets a facade when two or more components, sibling routes
+  or a dialog share its state or rules. A page with one read and no rules injects the core API service that exposes
+  the resource and keeps its children on inputs and outputs. A component either injects the page's facade or takes
+  inputs, never both. Nothing in `core/` or `shared/` is a facade; `FeatureFacade` is the legacy exception.
 - **The browser is untrusted.** Secrets, service-role keys and privileged operations never reach client code (see §7).
 
 **Reference examples. Copy their shape.**
@@ -455,7 +454,6 @@ The rules in this file hold for every contributor and every tool (Claude Code, C
 | Conventional Commits                                                                                                                                                                                                   | `commit-msg` → commitlint                    | `commitlint`, `pr-title` (the squash title) |
 | Import boundaries, `inject()`, `@if`/`@for`, `DestroyRef`, no `any`, no `@angular/aria` / `Injectable` / `NgClass` / `NgStyle` / `app-api/`                                                                            | `lint-staged` → ESLint (staged files)        | `verify` → `pnpm lint`                      |
 | No spec/test files, naming, plural folders, no `shared/` in a feature, routed components in `pages/`, component CSS reasons, static styles, `@defer` placeholders, colours equal to a `@theme` token, relative imports | `pre-commit` → `scripts/check-structure.mjs` | `verify` → `pnpm lint`                      |
-| Facades: placement, imports from shared code, HTTP in components, root facades without a `// why:`                                                                                                                     | `pre-commit` → `scripts/check-structure.mjs` | `verify` → `pnpm lint`                      |
 | Formatting, AOT build + bundle budget, Storybook                                                                                                                                                                       | `lint-staged` → Prettier                     | `verify`                                    |
 | One reviewed, squash-merged PR per change; protected tags; releases                                                                                                                                                    | —                                            | rulesets, `CODEOWNERS`, release-please      |
 
@@ -478,7 +476,6 @@ Tool and module knowledge lives in `.claude/skills/`, not here. Name the ones yo
 | --------------------- | --------------------------------------------------------------------------------------- |
 | `tech-stack`          | Versions, scripts, build configs, environments, adding or upgrading a dependency.       |
 | `angular-conventions` | Writing any component, service, signal, effect, or template in this repo.               |
-| `facade-pattern`      | Facades, and where a read or mutation lives: `.agents/skills/facade-pattern/`.          |
 | `core-services`       | ApiClient, Auth, Storage, Dialog, Notification, Logger, Utils, Analytics, interceptors. |
 | `routing-and-guards`  | Adding a route, guard, redirect, or changing an SSR render mode.                        |
 | `seo`                 | Meta tags, canonical, JSON-LD, the Supabase `seo_pages` table, the admin SEO console.   |

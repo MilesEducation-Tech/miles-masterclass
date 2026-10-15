@@ -95,6 +95,7 @@
                 layout="card"
                 [webinar]="webinar"
                 [bucket]="bucket()"
+                [isRegistering]="registeringIds().has(webinar.id)"
                 (register)="register.emit($event)"
                 (join)="join.emit($event)"
               />
@@ -114,6 +115,7 @@
               class="block w-[85%] shrink-0 snap-start md:w-full md:shrink"
               [webinar]="webinar"
               [bucket]="bucket()"
+              [isRegistering]="registeringIds().has(webinar.id)"
               (register)="register.emit($event)"
               (join)="join.emit($event)"
             />

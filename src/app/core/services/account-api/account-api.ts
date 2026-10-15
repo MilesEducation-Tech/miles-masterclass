@@ -10,7 +10,7 @@ import { AuthSession } from '../auth-session/auth-session';
  * The caller's own user record — `GET user-details/`.
  *
  * Read-only by contract: the old `user_details/` PATCH was deleted, and profile
- * fields are written through `PATCH profile/` (the profile page's `ProfileFacade.save`).
+ * fields are written through `PATCH profile/` (`OnboardingApi.saveAnswers`).
  *
  * A read, so an `httpResource` rather than a method: it fetches itself when the
  * user signs in and goes idle when the user signs out, with no `effect`, no
