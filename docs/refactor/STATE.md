@@ -7,6 +7,89 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-14, NON-REFACTOR — bind the course library page to the web filter API (Story MIL-82)** on
+  `feat/MIL-82-course-library-binding` (from `master`). Two subtasks, one PR. No refactor phase moved.
+  - **Why:** the page's two reads, `v2/library-filters/` and `v2/library/`, answer Django's 404 HTML on UAT, so the
+    sidebar is empty and every tab says "No courses found". Production still serves them. The replacement is
+    `GET web-api/v1/masterclass/filter/`: filter options, the applied selection and paginated cards in one read.
+    `course_type` is required.
+  - **MIL-83, remove the v2 bindings (`prompts/course-library-remove-v2.md`, approved). ✅ Committed by the user as `77968679`.**
+    - **What changed:** `CourseFacade` keeps only the tab state (`courseType`, `selectCourseType`). Both resources,
+      the paging, and the selection keyed by the v2 param names are gone. The page keeps its frame, the tabs and the
+      empty state. `course-filters` and `course-filters-drawer` are unchanged and unused until MIL-84.
+      `core/models/library-filters.model.ts` is untouched, because the carousel filter dialog still uses it.
+    - **Verified (dev 4101, headless Playwright, signed out):** at 1440 and 375, no `uat-api` or `v2/` request and no
+      console error. The tabs switch Podcast → Micro Learning → Master Class with no request, and there's no
+      horizontal scroll at 375. The instructor and badge libraries still make their own (404) reads, unchanged.
+    - **Gates (local macOS):** tsc 0; `pnpm lint` 0 errors (106 warnings); structure check passed; Prettier clean.
+      `CI=true pnpm build:prod` green: initial 245.34 kB, only the `ai-labs.css` warning.
+  - **UAT contract change, own commit (the user's call): `trailer_url` → `horizontal_trailer_url`** on every web
+    course card (`filter/`, `highlight/`, `tracks-page/`, `ai-labs/`), live on 2026-10-14 and not in Postman. Nothing
+    else on the card changed. The shared guard rejected every answer, so the library showed its error state, and the
+    home tracks, masterclass hero and AI Labs ring will too once MIL-65's `course_type` fix lands.
+    - **Fix:** `MasterclassCourse.horizontal_trailer_url` and its guard, read by the home, masterclass and library
+      pages' `openTrailer`, and the card story.
+  - **MIL-84, bind the filters and course list to `filter/` (`prompts/course-library-binding.md`, approved). DONE,
+    UNCOMMITTED.**
+    - **What changed:**
+      - New `course/models/course-library.model.ts` (types, guards, `parseCourseLibrary`) and
+        `course/constants/course-library.ts` (route, page size 12, tabs, group labels).
+      - `CourseFacade`: one `httpResource` on `filter/` (`course_type`, the selection with the new param names, `page`,
+        `page_size`), the sidebar groups in production's order (empty groups hidden; content types reduced to AI Kit),
+        pages accumulated, later pages on `SKIP_LOADING`.
+      - The page: sidebar, pill tabs (Masterclasses → `course`, Podcast → `podcast`, Micro Learning →
+        `micro_learning`; no Nano Learning), mobile Filter button and drawer, `app-masterclass-course-card` grid
+        (first row `priority`), "Loading…", `app-error-state` with retry, and the empty state.
+      - **Matched to production at the user's request** (their screenshots of milesmasterclass.com):
+        - The host is `block py-6`: production's 24px above and below and no side padding, so the sidebar and grid use
+          the container's full width. The tab bar lost `-mx-4 px-4`, which scrolled the page sideways at 768.
+        - The pill tabs are left-aligned with the grid, not centred.
+        - The filter options are production's checkbox rows in a 288px scroll area, on `ngpListbox` directly, instead
+          of the shared `app-listbox` (a bordered popover-style box).
+        - Measured against production at 1000 and 1440: the filter heading, group rows, tabs, grid, card size,
+          checkbox boxes and list height all land on the same pixels.
+      - `course-filters` and the drawer retyped to the library model.
+      - Shared `app-tabs` gained `variant: 'line' | 'pill'` (default `line`, unchanged) and a `Pill` story.
+      - Core: `isMasterclassCourse` exported; `COURSE_TYPE_TABS`, `CourseTypeTab` and `CourseFilterGroup` removed.
+      - Category is gone (no API counterpart). No bookmark and no "i" button on the cards.
+    - **Verified (dev 4101, headless Playwright, signed out, live UAT):**
+      - 12 cards, then pages 2–6 on scroll to all 64, then the sentinel goes. Every answer 200, no `v2/` request.
+      - Groups: Instructor, Field of Study, CAIRA Level, CPE Credits, Track, AI Kit (Additional Category has no options).
+      - AI Kit → 5; + CPE under 2 → 0 and the empty state; Adam Tahir → 1; + a track → 0; Clear all → 12. Each change
+        requests page 1 with exactly the declared params.
+      - Podcast and Micro Learning send `podcast` / `micro_learning` and show "No courses found." (UAT has none).
+      - A faked 500 shows "Failed to Load Courses"; "Try Again" recovers.
+      - 375: Filter button, drawer with the same groups, badge "Filter 1", Done closes, 5 AI Kit cards. No horizontal
+        scroll at 375, 768 or 1440. The active pill stays white on hover.
+      - The login page's line tabs have exactly the old classes.
+      - Left from production, on purpose: no bookmark on the cards (own ticket), no Category group (no API
+        counterpart), and the open group's chevron turns up.
+      - **Added at the user's request (plan revision approved): the "i" and AI Kit buttons.**
+        - "i" opens the course-info dialog through `MASTERCLASS_COURSE_INFO_DIALOG`, as the home page does.
+        - `MasterclassCourse.has_additional_resources` (four booleans, sent by every card route) and the shared card's
+          `showAiKit` / `aiKit`: on an AI Kit course the row is play, AI Kit and "i", as on production.
+        - AI Kit reads `course-detail/{id}/?login_type=pre_login` once and lists the kit's PDF and any exercise files in
+          the "Additional Resources" dialog, as the legacy button did (its `v2/dashboard/…/additional-resources/` is a
+          404). Home and masterclass don't turn it on.
+        - **Verified (dev 4101):** plain card → Trailer and "i"; AI Kit card → play, AI Kit, "i"; AI Kit → one
+          `course-detail` call and the PDF link (new tab); "i" → the dialog. Gates green again, build 245.26 kB.
+      - **Found, UAT, not fixed here:** `course-detail/` renamed `trailer_video_url` → `horizontal_trailer_url` and
+        `trailer_thumbnail_url` → `trailer_horizontal_thumbnail_image_url` on 2026-10-14. The offerings parser rejects
+        it, so the course page and every "i" dialog (home, masterclass, library) show their error state. Readers:
+        `course-detail.model.ts`, `masterclass-course-hero.ts`, `course-detail-facade.ts`, `course-seo-config.ts`.
+        The user's call: fix it in its own commit on `feat/MIL-65-masterclass-chapter-page-binding`, which rewrote
+        those files, once MIL-82's commits are in.
+      - **Found, site-wide, own ticket:** `.container` in `styles.css` only narrows below 640px (`max-sm:w-11/12`);
+        production keeps ~5% side margins up to 1024px. So at 768 every `container` page, this one included, runs
+        to the screen edges, where production has 38px margins.
+      - Found while building, fixed: an `@if` inside `@for … @empty` rendered "No courses found." twice; the empty
+        state now sits outside the loop.
+    - **Found on UAT, backend:** several vertical thumbnails on `storage.googleapis.com/miles-usp-bed` answer 403, as
+      the chapter thumbnails did in MIL-67, so those cards show their alt text.
+    - **Gates (local macOS):** tsc 0; `pnpm lint` 0 errors (106 warnings); structure check passed; Prettier clean.
+      `CI=true pnpm build:prod` green: initial 245.14 kB, only the `ai-labs.css` warning.
+  - **Postman:** `postman/` is untracked and ignored since `71ce016`; the local export is the 2026-10-12 one.
+
 - 🔧 **2026-10-13, NON-REFACTOR — commerce API rebind (`prompts/commerce-api-rebind.md`). Approved by the
   user ("use this plan"); D1–D6 = A. The old backend is gone, so no legacy binding, logic or type survives in
   the payment flow; partner code and firm sponsorship leave it too.**
@@ -395,6 +478,7 @@ data-press:bg-transparent` in a static `class`; the auto-renew dialog's Close is
     a real ICO with 16/32/48 PNG frames (7 KB), the padding trimmed and the transparency kept.
   - **Gates (local macOS):** lint 0 errors, structure check passed, prettier clean, `build:prod` 245.51 kB
     with only the `ai-labs.css` warning. Dev on 3000 served it as `image/x-icon`, byte-identical.
+
 - 🔧 **2026-10-12, NON-REFACTOR — OTP send/verify take `email` or `mobile` + `country_code`
   (`prompts/auth-otp-contact-fields.md`, approved). DONE, UNCOMMITTED** on
   `fix/MIL-63-otp-contact-fields` (from `master`). No refactor phase moved.
@@ -4270,6 +4354,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-14 · NON-REFACTOR · **MIL-84, course library bound to `filter/`** (`feat/MIL-82-course-library-binding`, uncommitted) plus the `horizontal_trailer_url` rename (own commit): sidebar, pill tabs, grid, paging, states · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod ✔ (local) · dev 4101 headless: 64 courses over 6 pages, each filter and tab narrows, error + retry, 375/768/1440 no horizontal scroll
+
+- 2026-10-14 · NON-REFACTOR · **MIL-83, course library v2 bindings removed** (`feat/MIL-82-course-library-binding`, uncommitted): `CourseFacade` reduced to the tab state; the page keeps its frame, tabs and empty state · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod ✔ (local) · dev 4101 headless: no `v2/` request at 1440 and 375, tabs switch with no request
 
 - 2026-10-14 · NON-REFACTOR · **Payment UI/UX pass + billing step removed** (uncommitted, local `uat`, 22 files +281/−167): gallery capped at 80vh, empty-cart copy + CTA, cart loading/error states, auth guard on invoice/orders, invoice error state/fallbacks/row wrap, `savingAddress`, Cart → Review with the address collected on review (`components/billing-address`), `sm:px-4` gutters, pending copy · lint 0 errors, structure ✔, prettier ✔, build:prod 245.15 kB (local) · signed-in flow verified in dev against UAT at 1440/768/375 up to K1 `payment_error` (no Stripe on UAT)
 - 2026-10-13 · NON-REFACTOR · **Commerce PR7, buy buttons → plan** (uncommitted, `feat/MIL-XXX-offerings-buy-to-plan`): `addCourseToCart`, `v2/user/cart/`, `cartItemRemoved`, `CART_DRAWER_DIALOG` deleted; certificate gate subscriptions-only (+42/−206) · lint 0 errors, structure ✔, build:prod 245.29 kB (local) · gate dialogs verified in dev; legacy sweep of `src/` empty · epic code-complete

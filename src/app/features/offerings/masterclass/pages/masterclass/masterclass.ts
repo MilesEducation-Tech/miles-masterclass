@@ -58,7 +58,7 @@ export class Masterclass {
 
   /** The shared video dialog; it toasts "Trailer Not Found" for a course with none. */
   protected openTrailer(course: MasterclassCourse): void {
-    void this.utils.openVideoDialog(course.trailer_url, course.title);
+    void this.utils.openVideoDialog(course.horizontal_trailer_url, course.title);
   }
 
   /** The "i" dialog: the course's About, read when it opens. Loaded on first use. */

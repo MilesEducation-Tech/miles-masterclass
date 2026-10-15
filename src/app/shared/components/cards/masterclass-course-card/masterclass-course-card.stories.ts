@@ -25,7 +25,7 @@ const course: MasterclassCourse = {
       'https://milesmasterclass-assets.s3.us-west-1.amazonaws.com/static-assests/credly-badges/AI+Prompting+Essentials+for+Accountants.png',
     square: null,
   },
-  trailer_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+  horizontal_trailer_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
   fields_of_study: [
     { id: '1', name: 'Information Technology', cpe_credit: 1.5 },
     { id: '2', name: 'Accounting', cpe_credit: 1 },
@@ -33,6 +33,12 @@ const course: MasterclassCourse = {
   total_cpe_credits: 2.5,
   has_individual_badge: true,
   included_for_caira: true,
+  has_additional_resources: {
+    has_exercise_files: false,
+    has_ai_kit: false,
+    has_ai_labs: false,
+    has_tools: false,
+  },
 };
 
 const meta: Meta<MasterclassCourseCard> = {
@@ -50,6 +56,8 @@ const meta: Meta<MasterclassCourseCard> = {
   argTypes: {
     layout: { control: 'select', options: ['vertical', 'horizontal'] },
     trailer: { action: 'trailer' },
+    info: { action: 'info' },
+    aiKit: { action: 'aiKit' },
   },
 };
 export default meta;
@@ -71,5 +79,18 @@ export const NoArtwork: Story = {
   args: {
     course: { ...course, thumbnails: { horizontal: null, vertical: null, square: null } },
     layout: 'horizontal',
+  },
+};
+
+/** A course with an AI Kit, on a page that opens it (the course library): play, AI Kit and "i". */
+export const VerticalWithAiKit: Story = {
+  args: {
+    course: {
+      ...course,
+      has_additional_resources: { ...course.has_additional_resources, has_ai_kit: true },
+    },
+    layout: 'vertical',
+    showInfo: true,
+    showAiKit: true,
   },
 };

@@ -41,15 +41,38 @@
       </button>
 
       <div ngpAccordionContent class="mt-1">
-        <app-listbox
-          mode="multiple"
-          [value]="selectedFor(group.key)"
-          (valueChange)="update(group.key, $event)"
+        <!-- Checkbox rows in a scroll area, as production. The primitive reflects selection
+             as data-selected only, so aria-selected is bound from each option's state. -->
+        <div
+          ngpListbox
+          ngpListboxMode="multiple"
+          [ngpListboxValue]="selectedFor(group.key)"
+          (ngpListboxValueChange)="update(group.key, $event)"
+          [attr.aria-label]="group.label"
+          class="flex max-h-72 flex-col gap-1 overflow-y-auto pe-1 outline-none"
         >
           @for (option of group.options; track option.value) {
-            <app-listbox-option [value]="option.value">{{ option.label }}</app-listbox-option>
+            <div
+              ngpListboxOption
+              #item="ngpListboxOption"
+              [ngpListboxOptionValue]="option.value"
+              [attr.aria-selected]="item.selected()"
+              class="group/option flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none select-none data-hover:bg-secondary/40 data-active:bg-secondary/60"
+            >
+              <span
+                class="inline-flex size-4 shrink-0 items-center justify-center rounded border border-border/60 bg-secondary/30 transition-colors group-data-selected/option:border-accent group-data-selected/option:bg-accent"
+                aria-hidden="true"
+              >
+                <ng-icon
+                  name="heroCheck"
+                  size="12"
+                  class="text-white opacity-0 group-data-selected/option:opacity-100"
+                />
+              </span>
+              <span class="truncate">{{ option.label }}</span>
+            </div>
           }
-        </app-listbox>
+        </div>
       </div>
     </section>
   }
