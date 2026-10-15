@@ -3,6 +3,7 @@ import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import {
   computed,
   DestroyRef,
+  DOCUMENT,
   effect,
   inject,
   Service,
@@ -12,7 +13,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '@env/environment';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { apiUrl } from '@core/services/api-client/api-client';
@@ -23,6 +24,7 @@ import { NotificationService } from '@core/services/notification/notification';
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { withPreviousValue } from '@core/utils/with-previous-value';
 import {
+  eligibleOf,
   FeedCard,
   LoginType,
   parseDetail,
@@ -31,10 +33,11 @@ import {
   WebinarMainPageData,
   WEBINAR_ENDPOINTS,
   WebinarDetail,
-} from '../models/webinar.model';
-import { toWebinarError, WebinarError } from '../utils/webinar-error';
-import type { WebinarBucket } from '../utils/webinar-status';
-import { WebinarRegistration } from './webinar-registration';
+} from '@features/offerings/webinar/models/webinar.model';
+import { resolveJoinTarget } from '@features/offerings/webinar/utils/join-target';
+import { toWebinarError, WebinarError } from '@features/offerings/webinar/utils/webinar-error';
+import type { WebinarBucket } from '@features/offerings/webinar/utils/webinar-status';
+import { WebinarRegistration } from '@features/offerings/webinar/services/webinar-registration';
 
 /**
  * Owns the webinar landing feed and the registration action.
@@ -67,6 +70,8 @@ export class WebinarFacade {
   private readonly auth = inject(AuthSession);
   private readonly registration = inject(WebinarRegistration);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  /** `null` on the server; only `join`, a click handler, reads it. */
+  private readonly window = inject(DOCUMENT).defaultView;
 
   /**
    * `pre_login` / `post_login` are the literal values the backend stores and
@@ -165,19 +170,6 @@ export class WebinarFacade {
   readonly absentWebinars = computed(() => this.feedData().absent_webinar);
   /** Past webinars in the window the user never booked at all. */
   readonly missedWebinars = computed(() => this.feedData().missed_webinar);
-
-  /** True when there is genuinely nothing to show — not merely still loading. */
-  readonly isEmpty = computed(() => {
-    const data = this.feedData();
-    return (
-      !this.isLoading() &&
-      data.highlight_webinars.length === 0 &&
-      data.upcoming_webinars.length === 0 &&
-      data.completed_webinar.length === 0 &&
-      data.absent_webinar.length === 0 &&
-      data.missed_webinar.length === 0
-    );
-  });
 
   // ---- Bookings: DELIBERATELY NOT FETCHED ----------------------------------
   //
@@ -305,6 +297,27 @@ export class WebinarFacade {
     return this.locate(id)?.bucket ?? null;
   }
 
+  /**
+   * What the detail page shows for `id`: the webinar and the bucket that decides its CTA.
+   *
+   * Prefers the feed row when it is already in memory — arriving from a rail then renders instantly instead of
+   * flashing a spinner — and falls back to the detail endpoint, which is the only source on a deep link or for a
+   * crawler. The detail row wins once it lands: it carries four keys the card does not. A detail row for another id
+   * (the previous one, while the page is reused for the next) is ignored.
+   *
+   * The bucket is the feed's, or `highlight` until the feed places it.
+   */
+  detailFor(id: string): { webinar: FeedCard | null; bucket: WebinarBucket } {
+    const fromFeed = this.findById(id);
+    const bucket = this.bucketOf(id) ?? 'highlight';
+    const detail = this.detailWebinar();
+    if (!detail || detail.id !== id) return { webinar: fromFeed, bucket };
+    // `eligible` exists only on `completed_webinar` rows and never on the
+    // details payload — without it, an attended session reads "Not eligible".
+    const eligible = eligibleOf(fromFeed);
+    return { webinar: eligible === undefined ? detail : { ...detail, eligible }, bucket };
+  }
+
   private locate(id: string): { card: FeedCard; bucket: WebinarBucket } | null {
     const data = this.feedData();
     const buckets: [WebinarBucket, readonly FeedCard[]][] = [
@@ -323,8 +336,41 @@ export class WebinarFacade {
 
   // ---- Actions -------------------------------------------------------------
 
+  /** A registration for this webinar is in flight. Cards and the hero read it for their own row's spinner. */
   isRegistering(webinarId: string): boolean {
     return this.registration.isRegistering(webinarId);
+  }
+
+  /**
+   * "Join Now", from a rail card, the landing hero or the detail page.
+   *
+   * `from` is the calling page's route. Both pages are children of this feature's root, so the live room is
+   * `[id, 'live']` relative to `from.parent` wherever the learner clicked.
+   */
+  join(webinarId: string, from: ActivatedRoute): void {
+    // The detail row when the detail page has it (a deep link has no feed row), else the feed's.
+    const target = resolveJoinTarget(this.detailFor(webinarId).webinar);
+
+    switch (target.kind) {
+      case 'embedded':
+        // The live room is its own route: it is client-rendered, holds the
+        // session lease for exactly as long as it is mounted, and tears the SDK
+        // down on navigation away. Opening the meeting in place would tie all
+        // of that to the lifetime of the feed.
+        void this.router.navigate([webinarId, 'live'], { relativeTo: from.parent });
+        break;
+      case 'external':
+        // `noopener` is not optional on a `_blank` to a third party: without it
+        // Zoom's tab gets a handle on `window.opener` and can navigate us.
+        this.window?.open(target.url, '_blank', 'noopener,noreferrer');
+        break;
+      case 'unavailable':
+        this.notification.error(
+          'That session is not ready yet',
+          'We could not find a join link for this webinar. Refresh in a moment, or contact support if it persists.',
+        );
+        break;
+    }
   }
 
   /**

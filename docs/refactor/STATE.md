@@ -7,6 +7,21 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-15, NON-REFACTOR — webinar pages through `WebinarFacade` (`prompts/webinar-facade.md`), UNCOMMITTED** on
+  `refactor/MIL-XXX-webinar-facade` (stacked on `fix/MIL-88-profile-leave-dialog`, `45f4829`). Audit P1 item 3.
+  - `WebinarFacade` gains `join(id, from)` (replaces two page copies) and `detailFor(id)` (the detail page's merge,
+    now ignoring a detail row for another id); `isEmpty` deleted. Card and hero read `isRegistering(id)` themselves;
+    the pages no longer inject `WebinarRegistration`, and the rail no longer relays `registeringIds`.
+  - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔ (pruned 3), prettier ✔, `CI=true pnpm build:prod`
+    245.16 kB with only `ai-labs.css`.
+  - **Dev on 3000, signed in, nothing sent:** detail page SSR + browser render from the detail row; registering state
+    drives the hero's CTA through the facade ("Booking…"); `join` on an unknown id toasts; the live URL is the same
+    from both pages.
+  - **Gotcha again:** after `build:prod` the dev server stopped hydrating every route (initial navigation stuck, no
+    API calls); `preview_stop` / `preview_start` fixed it.
+  - **Pre-existing, not fixed:** UAT's landing feed fails `isWebinarCard` (six `missed_webinar` rows with null
+    `horizontal_thumbnail` / `square_image`), so the list page shows its error banner. Own `fix(offerings)` commit.
+
 - 🔧 **2026-10-15, NON-REFACTOR — leave dialog asked twice, FIXED, UNCOMMITTED** on `fix/MIL-XXX-profile-leave-dialog`
   (stacked on `refactor/MIL-87-profile-facade`, `90bc473`).
   - **Cause:** "Back to Home" goes to `/`; `rootRedirectGuard` starts a second navigation, which runs `canDeactivate`
@@ -4426,6 +4441,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-15 · NON-REFACTOR · **Webinar through `WebinarFacade`** (uncommitted, `refactor/MIL-XXX-webinar-facade`): `join` + `detailFor` in the facade, registration state read by card/hero, relays and `isEmpty` removed · lint 0 errors, structure ✔ (pruned), prettier ✔, build:prod 245.16 kB (local) · dev: detail page + registering CTA + join toast verified; UAT feed contract failure found (null thumbnails)
 
 - 2026-10-15 · NON-REFACTOR · **Profile leave dialog asked twice, fixed** (uncommitted, `fix/MIL-XXX-profile-leave-dialog`): a confirmed leave survives the redirects it causes and clears when the navigation settles · lint 0 errors, structure ✔, prettier ✔, build:prod 245.06 kB (local) · dev: one Leave reaches home; no subscription leak
 
