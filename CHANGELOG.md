@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.7.0...v3.7.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **offerings:** send course_type on the masterclass list reads ([#146](https://github.com/MilesEducation-Tech/miles-masterclass/issues/146)) ([06412a4](https://github.com/MilesEducation-Tech/miles-masterclass/commit/06412a48ec66fe3c7ade972e902be95ec7043989))
+
 ## [3.7.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.6.0...v3.7.0) (2026-10-15)
 
 
