@@ -56,6 +56,7 @@
             [attr.aria-label]="'header.primaryNav' | transloco"
           >
             <ul
+              #navList
               class="flex items-center gap-2 list-none m-0 p-0"
               ngpAccordion
               ngpAccordionType="single"
@@ -64,7 +65,12 @@
               (ngpAccordionValueChange)="onNavOpenChange($event)"
             >
               @for (item of navItems(); track item.label; let first = $first) {
-                <li class="relative" ngpAccordionItem [ngpAccordionItemValue]="item.label">
+                <li
+                  class="relative"
+                  ngpAccordionItem
+                  [ngpAccordionItemValue]="item.label"
+                  [attr.data-nav-item]="item.label"
+                >
                   @if (item.type === 'link') {
                     <a
                       [routerLink]="utils.localePath(item.route)"
@@ -162,6 +168,7 @@
                     <button
                       type="button"
                       ngpAccordionTrigger
+                      data-nav-trigger
                       [class]="
                         cn(
                           'flex items-center gap-1 px-2 py-1.5 text-sm font-semibold text-foreground rounded-3xl hover:bg-white/5 hover:text-accent transition-all duration-200 cursor-pointer border-0 bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60',
