@@ -7,6 +7,22 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-15, NON-REFACTOR — leave dialog asked twice, FIXED, UNCOMMITTED** on `fix/MIL-XXX-profile-leave-dialog`
+  (stacked on `refactor/MIL-87-profile-facade`, `90bc473`).
+  - **Cause:** "Back to Home" goes to `/`; `rootRedirectGuard` starts a second navigation, which runs `canDeactivate`
+    again on the still-dirty form and opened a second dialog.
+  - **Fix:** `ProfileFacade` remembers a confirmed leave and answers `of(true)` while redirects of that leave run. It
+    clears the flag once the navigation settles anywhere but a redirect or a newer navigation (`NavigationEnd`,
+    `NavigationError`, `NavigationSkipped`, or `NavigationCancel` with another code), so a leave that ends back on the
+    page asks again. The router subscription is `takeUntilDestroyed()` on the page's injector.
+  - **Dev on 3000, signed in, no save:** "Keep editing" stays with the answer kept and the flag false; one "Leave" goes
+    `/` → cancel (redirect) → `/us/accounting` → home, no second dialog. Two in-app round trips to the page left the
+    router's subscriber count unchanged (8 on the page, 15 on home), so the subscription ends with the page.
+  - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔, prettier ✔, `CI=true pnpm build:prod`
+    245.06 kB with only `ai-labs.css`.
+  - **Seen, not this change:** UAT's `tracks-page/` now answers 400 without `course_type`, so the home tracks fail;
+    `origin/feat/MIL-65-masterclass-chapter-page-binding` (`cc949ce`) already touches that facade for it.
+
 - 🔧 **2026-10-15, NON-REFACTOR — profile page onto a `ProfileFacade` (`prompts/profile-facade.md`), UNCOMMITTED** on
   `refactor/MIL-XXX-profile-facade` (stacked on `chore/MIL-86-facade-harness`, `c553339`). Audit P1 item 1.
   - New `features/auth/services/profile-facade.ts` absorbs `core/services/onboarding-api` (deleted, no other consumer):
@@ -4410,6 +4426,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-15 · NON-REFACTOR · **Profile leave dialog asked twice, fixed** (uncommitted, `fix/MIL-XXX-profile-leave-dialog`): a confirmed leave survives the redirects it causes and clears when the navigation settles · lint 0 errors, structure ✔, prettier ✔, build:prod 245.06 kB (local) · dev: one Leave reaches home; no subscription leak
 
 - 2026-10-15 · NON-REFACTOR · **Profile → `ProfileFacade`** (uncommitted, `refactor/MIL-XXX-profile-facade`): `OnboardingApi` folded into a component-provided facade; page keeps the form (533 → 379 lines) · lint 0 errors, structure ✔ (pruned), prettier ✔, build:prod 245.06 kB (local)
 

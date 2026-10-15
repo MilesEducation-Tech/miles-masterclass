@@ -75,7 +75,8 @@ sent to the API.
 
 ## Risks
 
-- Found while verifying, not fixed here (it predates this change; the original page does the same): the leave dialog asks twice when the destination redirects. "Back to Home" goes to `/`, whose `rootRedirectGuard` starts a second navigation to `/us/accounting`; that navigation runs `canDeactivate` again on the still-dirty form and opens a second dialog. Fix, as its own `fix(auth)` commit: `ProfileFacade.confirmLeave()` remembers a confirmed leave for the rest of the visit and answers `of(true)` after that.
+- Found while verifying and fixed in its own commit (`fix/MIL-XXX-profile-leave-dialog`): the leave dialog asked
+  twice when the destination redirects. A confirmed leave now survives the redirects it causes.
 - Checked in dev (port 3000) with the browser pane's existing signed-in session, without saving: the profile
   questionnaire loads (`questions/?form=profile`, `user-details/`, 24 fields), and the leave dialog opens and "Keep
   editing" stays. The save path was not exercised, because it writes to the real UAT account.

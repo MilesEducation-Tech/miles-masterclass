@@ -1,9 +1,17 @@
 import { httpResource } from '@angular/common/http';
 import { Service, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  NavigationCancel,
+  NavigationCancellationCode,
+  NavigationEnd,
+  NavigationError,
+  NavigationSkipped,
+  Router,
+} from '@angular/router';
 import { TranslocoService } from '@jsverse/transloco';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Observable, firstValueFrom, from, map, switchMap } from 'rxjs';
+import { Observable, filter, firstValueFrom, from, map, of, switchMap, tap } from 'rxjs';
 
 import {
   ACCOUNT_ROUTES,
@@ -22,6 +30,24 @@ import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 // Type-only: the dialog loads with `import()` when the leave guard fires (§4.4).
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
+
+/**
+ * A router event after which no redirect of the navigation is still to come: it landed, failed, was skipped, or was
+ * cancelled for a reason other than a redirect or a newer navigation.
+ */
+function settlesNavigation(event: unknown): boolean {
+  if (event instanceof NavigationCancel) {
+    return (
+      event.code !== NavigationCancellationCode.Redirect &&
+      event.code !== NavigationCancellationCode.SupersededByNewNavigation
+    );
+  }
+  return (
+    event instanceof NavigationEnd ||
+    event instanceof NavigationError ||
+    event instanceof NavigationSkipped
+  );
+}
 
 /**
  * The profile / onboarding questionnaire page: which questionnaire, its questions, the save and everything that
@@ -153,11 +179,27 @@ export class ProfileFacade {
   }
 
   /**
+   * Set when the learner confirms leaving, and kept through the redirects that leave causes. "Back to Home" goes to
+   * `/`, whose redirect guard starts a second navigation, and that one runs the leave guard again: without this the
+   * dialog asked twice. Cleared when the navigation settles anywhere but a redirect, so a leave that ends back on this
+   * page (an onboarding learner sent here again by `onboardingGuard`) asks again next time.
+   */
+  private leaveConfirmed = false;
+
+  constructor() {
+    this.router.events
+      .pipe(filter(settlesNavigation), takeUntilDestroyed())
+      .subscribe(() => (this.leaveConfirmed = false));
+  }
+
+  /**
    * Ask before leaving with unsaved answers. Onboarding is the case that matters: several answers typed and then a
    * stray back-navigation loses all of them, and the API has no draft state to recover from — a partial
    * `PATCH profile/` is the only thing that persists.
    */
   confirmLeave(): Observable<boolean> {
+    if (this.leaveConfirmed) return of(true);
+
     const opened = import('@shared/dialogs/utils-dialog/utils-dialog').then(({ UtilsDialog }) =>
       this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
         data: {
@@ -182,6 +224,7 @@ export class ProfileFacade {
     return from(opened).pipe(
       switchMap((ref) => ref.afterClosed),
       map((result) => result?.action === 'confirm'),
+      tap((confirmed) => (this.leaveConfirmed = confirmed)),
     );
   }
 
