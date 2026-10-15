@@ -7,6 +7,19 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-15, NON-REFACTOR — webinar feed failed on null thumbnails, FIXED, UNCOMMITTED** on
+  `fix/MIL-XXX-webinar-null-thumbnails` (stacked on `refactor/MIL-89-webinar-facade`, `d8432a7`).
+  - **Cause:** six UAT `missed_webinar` rows send `horizontal_thumbnail: null` and `square_image: null`; `isWebinarCard`
+    required strings, so one row failed the whole `webinar-main-page` parse and the landing page showed its error banner.
+  - **Fix:** both keys are `string | null` in `WebinarCard` and `isStrOrNull` in the guard, like `vertical_thumbnail`.
+    The three readers (hero, card, `webinar-seo`) already fall through on a falsy value, and the templates guard the
+    image with `@if`.
+  - **Verified (dev on 3000):** the server-rendered landing page has no error banner, renders the hero and the
+    "Webinar's This Month" rail (2 cards). The browser pane was hidden, which stalls the router's view transition, so
+    the signed-in "missed" rail was not checked in the browser.
+  - **Gates (local macOS):** tsc 0, lint 0 errors (105 warnings), structure ✔, prettier ✔, `CI=true pnpm build:prod`
+    245.09 kB with only `ai-labs.css`.
+
 - 🔧 **2026-10-15, NON-REFACTOR — webinar pages through `WebinarFacade` (`prompts/webinar-facade.md`), UNCOMMITTED** on
   `refactor/MIL-XXX-webinar-facade` (stacked on `fix/MIL-88-profile-leave-dialog`, `45f4829`). Audit P1 item 3.
   - `WebinarFacade` gains `join(id, from)` (replaces two page copies) and `detailFor(id)` (the detail page's merge,
@@ -4441,6 +4454,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-15 · NON-REFACTOR · **Webinar feed null thumbnails** (uncommitted, `fix/MIL-XXX-webinar-null-thumbnails`): `horizontal_thumbnail` / `square_image` nullable in type + guard · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod 245.09 kB (local) · SSR landing page renders hero + rail, no error banner
 
 - 2026-10-15 · NON-REFACTOR · **Webinar through `WebinarFacade`** (uncommitted, `refactor/MIL-XXX-webinar-facade`): `join` + `detailFor` in the facade, registration state read by card/hero, relays and `isEmpty` removed · lint 0 errors, structure ✔ (pruned), prettier ✔, build:prod 245.16 kB (local) · dev: detail page + registering CTA + join toast verified; UAT feed contract failure found (null thumbnails)
 
