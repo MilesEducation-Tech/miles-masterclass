@@ -17,6 +17,7 @@ import { lucideArrowLeft, lucideArrowRight } from '@ng-icons/lucide';
 
 import { environment } from '@env/environment';
 import { apiUrl } from '@core/services/api-client/api-client';
+import { MASTERCLASS_COURSE_TYPE } from '@core/constants/masterclass';
 import { MasterclassCourse, parseCoursePage } from '@core/models/masterclass-home.model';
 import { Logger } from '@core/services/logger/logger';
 import { Utils } from '@shared/services/utils';
@@ -125,7 +126,11 @@ export class SurroundCarousel {
   private readonly courses = httpResource<MasterclassCourse[]>(
     () => ({
       url: apiUrl(AI_LABS_URL),
-      params: { login_type: 'pre_login', page_size: MAX_CARDS },
+      params: {
+        login_type: 'pre_login',
+        page_size: MAX_CARDS,
+        course_type: MASTERCLASS_COURSE_TYPE,
+      },
     }),
     { defaultValue: [], parse: parseCoursePage('ai-labs') },
   );
