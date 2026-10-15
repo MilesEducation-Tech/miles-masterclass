@@ -7,6 +7,20 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-15, NON-REFACTOR — webinar feed rejected over null thumbnails. DONE, UNCOMMITTED** on
+  `fix/MIL-62-require-sign-in` (the user's call: its own commit here, so MIL-62 can be tested on the webinar pages).
+  - **Cause:** UAT added `Test webinar-2` (`missed_webinar`, 2026-10-13) with `horizontal_thumbnail` and
+    `square_image` both `null`. Postman says `''` and "never null", so `isWebinarCard` required strings, and the one
+    card failed the whole `webinar-main-page/` and `webinar-details-page/`. The list and detail pages showed "We could
+    not load the webinars". Replaying the guard on the live feed found only these two keys, on that one card. It is
+    on `master` too.
+  - **Fix:** both are `string | null` in `WebinarCard` and its guard, like `vertical_thumbnail`. Every reader already
+    falls through on a falsy value (`webinar-card`, `webinar-hero`, `webinar-seo`).
+  - **Verified (dev 4101):** the webinar list renders, and `Test webinar-2`'s detail page renders with an empty image
+    box.
+  - **Gates:** tsc 0, Storybook tsc 0, ESLint clean on the file, Prettier clean.
+  - **Backend:** send `''` as the contract says, or update Postman to `string | null`.
+
 - 🔧 **2026-10-13, NON-REFACTOR — commerce API rebind (`prompts/commerce-api-rebind.md`). Approved by the
   user ("use this plan"); D1–D6 = A. The old backend is gone, so no legacy binding, logic or type survives in
   the payment flow; partner code and firm sponsorship leave it too.**
@@ -4362,6 +4376,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-10-15 · NON-REFACTOR · **Webinar feed: null `horizontal_thumbnail` / `square_image` accepted** (uncommitted, `fix/MIL-62-require-sign-in`): one UAT card with both null failed the whole feed · tsc 0, Storybook tsc 0, ESLint ✔, prettier ✔ · list + `Test webinar-2` detail render in dev
 - 2026-10-14 · NON-REFACTOR · **Payment UI/UX pass + billing step removed** (uncommitted, local `uat`, 22 files +281/−167): gallery capped at 80vh, empty-cart copy + CTA, cart loading/error states, auth guard on invoice/orders, invoice error state/fallbacks/row wrap, `savingAddress`, Cart → Review with the address collected on review (`components/billing-address`), `sm:px-4` gutters, pending copy · lint 0 errors, structure ✔, prettier ✔, build:prod 245.15 kB (local) · signed-in flow verified in dev against UAT at 1440/768/375 up to K1 `payment_error` (no Stripe on UAT)
 - 2026-10-13 · NON-REFACTOR · **Commerce PR7, buy buttons → plan** (uncommitted, `feat/MIL-XXX-offerings-buy-to-plan`): `addCourseToCart`, `v2/user/cart/`, `cartItemRemoved`, `CART_DRAWER_DIALOG` deleted; certificate gate subscriptions-only (+42/−206) · lint 0 errors, structure ✔, build:prod 245.29 kB (local) · gate dialogs verified in dev; legacy sweep of `src/` empty · epic code-complete
 
