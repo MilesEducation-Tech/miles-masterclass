@@ -4,6 +4,7 @@ import { Backward } from '@shared/components/backward/backward';
 import { Button } from '@shared/ui/button/button';
 import { CourseChapterPlayer } from '@features/offerings/components/course-chapter-player/course-chapter-player';
 import { CourseChapterFacade } from '@features/offerings/services/course-chapter-facade';
+import { CourseChapterQuizFacade } from '@features/offerings/services/course-chapter-quiz-facade';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 
 /**
@@ -22,8 +23,9 @@ import { CourseDetailFacade } from '@features/offerings/services/course-detail-f
   // session (the router doesn't clean injectors up), so a route-scoped instance
   // would outlive the page, keep its effect running, and react to the next
   // course the shared `CourseDetailFacade` loads. On the page it is created and
-  // destroyed with it, which is also when the last progress save goes out.
-  providers: [CourseChapterFacade],
+  // destroyed with it, which is also when the last progress save goes out. The
+  // quiz facade sits beside it for the same reason.
+  providers: [CourseChapterFacade, CourseChapterQuizFacade],
 })
 export class MasterclassChapter {
   // Route params, bound by `withComponentInputBinding`.

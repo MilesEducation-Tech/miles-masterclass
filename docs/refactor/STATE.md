@@ -71,6 +71,48 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     only `ai-labs.css`. Negative tests: a new relative import fails the structure check; a re-added OnPush fails
     ESLint.
 
+- 🔧 **2026-10-15, NON-REFACTOR — MIL-88, chapter quiz rebound to `quiz-questions` / `quiz-submit`
+  (`prompts/masterclass-chapter-quiz.md`, approved). DONE, UNCOMMITTED** on
+  `feat/MIL-65-masterclass-chapter-page-binding` (PR #137, after MIL-87 `54dd174` + `4e85322`).
+  - **What changed:**
+    - New `models/chapter-quiz.model.ts`: types, `parseChapterQuiz` / `parseQuizSubmit` (extra keys pass; options
+      sorted by `order`; `reset_required` accepted alone), `gradeOfAnswered` / `gradeOfResult`.
+    - `COURSE_DETAIL_API.masterclass` gains `quizQuestions` / `quizSubmit`; `QUIZ_COPY` and
+      `QUIZ_AUTO_ADVANCE_SECONDS` (10). `CourseDetailFacade` gains `quizQuestionsUrl` and `submitQuizAnswer`
+      (`SKIP_LOADING`). `CourseChapterFacade.refuse()` / `backToCourse()` are public.
+    - New page-provided `CourseChapterQuizFacade`: CPE only; opens by itself once per chapter when the video is
+      done and the quiz isn't, again on the video's end, or from "Take the quiz"; resumes at the first unanswered
+      question; one `quiz-submit` per answer; the last answer re-reads `course-detail`, then a 10 s countdown moves
+      on (or back to the course after the last chapter); every refusal per the plan's table.
+    - `chapter-quiz` rebound (same selector): header + "Watch again", "Question n of m", options, the verdict
+      (`role="status"`) and each option's explanation, Back / Next / Proceed with the countdown fill.
+    - `course-chapter-player`: the quiz takes the video's place (the video stays mounted, hidden and paused);
+      sidebar "Take the quiz · N questions".
+  - **Added at the user's request:** Watch Now opens `resumeChapter` (the first chapter not done, via
+    `isChapterDone`); a locked chapter redirects there with the quiz toast and its pending quiz opens; Up Next on a
+    chapter the quiz holds opens the quiz. Verified: chapter 1 done → Watch Now → chapter 2; quiz pending → Watch
+    Now → chapter 1 + quiz; a chapter-2 row → chapter 1 + quiz + toast (no `chapter-start` for 2), then finishing
+    → chapter 2; Up Next (locked) → the quiz.
+  - **Plan deviation:** `single` options are buttons that answer on click/Enter, not an `ngpRadioGroup` — a
+    group that answers on selection would answer on arrow keys. `multiple` is `app-checkbox` + Submit.
+  - **Gates (local macOS):** tsc 0, Storybook tsc 0, `pnpm lint` 0 errors (101 warnings), structure ✔,
+    Prettier ✔, `CI=true build:prod` 245.25 kB with only `ai-labs.css`.
+  - **Verified (dev 4101 after the user restarted it, Playwright, dummy `ACCESS_TOKEN`, `course-detail` edited in
+    flight, quiz routes from Postman-shaped fixtures):**
+    - **Full run:** a chapter with its video done and quiz pending opens on the quiz (video hidden), options in
+      `order`; a wrong answer shows "Not quite" (wrong / correct states), Next focuses the question; the last answer
+      shows "Correct · Quiz complete", one `course-detail` re-read unlocks Up Next, and after 10 s the page moves
+      to chapter 2 (`chapter-start` for it), quiz closed.
+    - **Video end:** a pending quiz with the video not done doesn't auto-open; the video's `ended` opens it.
+      "Watch again" brings the video back and "Take the quiz" reopens it.
+    - **Resume:** an answered question is skipped (starts at "Question 2 of 2"); Back shows it graded.
+    - **Refusals:** `404` → "No quiz" toast, stays; `already_completed` → closes and re-reads; `chapter_locked` →
+      back to the course page with "Chapter locked"; a `500` submit → "Answer not saved", options stay enabled.
+    - **Preview mode:** no quiz, no "Take the quiz", no quiz request.
+    - **Layout:** 375, 768 and 1440 with no horizontal scroll. Fixed on the way: the header title vanished at 375
+      (now `min-w-0 flex-1`, thumbnail hidden below `sm`), and the countdown fill was white on the white button
+      (now `bg-black/15`).
+
 - 🔧 **2026-10-15, NON-REFACTOR — chapter quiz step 1: legacy quiz binding removed everywhere
   (`prompts/chapter-quiz-remove-legacy.md`, approved). DONE, UNCOMMITTED** on
   `feat/MIL-65-masterclass-chapter-page-binding` (its own commit, before the rebind).
@@ -118,8 +160,11 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     done, chapter not → full bar; chapter 4 untouched → nothing. 1440 and 375, no horizontal scroll.
   - **Gates:** tsc 0, Storybook tsc 0, ESLint clean on the three files, Prettier clean, structure check passed.
 
-- 🔧 **2026-10-15, NON-REFACTOR — TEMPORARY testing controls on the chapter player (the user asked for them). LOCAL
-  ONLY, DO NOT COMMIT** on `feat/MIL-65-masterclass-chapter-page-binding`.
+- 🔧 **2026-10-15, NON-REFACTOR — TEMPORARY testing controls on the chapter player (the user asked for them).
+  ✅ REMOVED the same day (the user asked); never committed** on `feat/MIL-65-masterclass-chapter-page-binding`.
+  `video-js.ts` is back to its committed form; `course-chapter-player.ts` (`playerMode`) and
+  `course-chapter-facade.ts` (`max_watched_duration_seconds` = the continuously watched edge) keep only MIL-88's
+  changes.
   - `course-chapter-player.ts`: `playerMode` is always `PlayerMode.DEFAULT`, so CPE chapters show the scrubber and the
     speed menu. Restore `this.facade.canSeek() ? PlayerMode.DEFAULT : PlayerMode.CPE`.
   - `shared/components/video-js/video-js.ts`: `skipButtons: { forward: 10, backward: 10 }` in every player, and
@@ -4625,10 +4670,6 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
-- 2026-10-15 · NON-REFACTOR · **MIL-65 rebase on `master` 3.7.0 (`c2a1194`), paused at `54dd174`**: tsc fails here by design — that commit left out `chapter-facade.ts` (still naming the removed `submitQuizAnswer` / `chapterQuizReport` routes); the next commit `4e85322` adds it. Gates run once the rebase finishes.
-
-<<<<<<< HEAD
-
 - 2026-10-15 · NON-REFACTOR · **Library rebind re-planned on `master` (`d470717`)**: course library already bound by #136; `prompts/library-rebind.md` rev 2 = instructor library, instructor page, badge library retirement · live UAT probe: `course_type` now required on `all-instructors-page/` · MIL-85 needs `master` merged (tabs.ts + STATE.md conflicts, 6 relative-import ratchet failures) · no `src/` changes
 
 - 2026-10-15 · NON-REFACTOR · **MIL-85: `master` (`d470717`, #136) merged in, conflicts resolved** (uncommitted merge): `tabs.ts` = master's `variant` file without OnPush; #136's relative imports → aliases in 6 files; baseline pruned (3 entries); STATE.md kept both sides · lint 0 errors (105 warnings), structure ✔, prettier ✔ (local)
@@ -4636,10 +4677,18 @@ These are environment and product observations the repair surfaced. None changed
 - 2026-10-15 · NON-REFACTOR · **Explicit OnPush dropped** (uncommitted, 75 components + `eslint.config.mjs` + CLAUDE.md): Angular 22 defaults to OnPush, so every `changeDetection: ChangeDetectionStrategy.OnPush` and its import went; `no-restricted-syntax` now rejects a re-added OnPush · lint 0 errors (105 warnings), structure ✔, build:prod 245.32 kB (local) · TransferState reviewed, no change (the 3 manual uses carry non-HttpClient data) · facade audit of the rebound flows running
 
 - 2026-10-14 · NON-REFACTOR · **Alias-import ratchet** (uncommitted, `check-structure.mjs` + `structure-baseline.json` + AGENTS.md + CLAUDE.md): per-file `relativeImports` count rule seeded with 191 files / 381 imports; both rule docs say aliases everywhere · structure ✔ after seeding, a new relative import fails it, ng lint 0 errors (local)
-  \=======
-- 2026-10-15 · NON-REFACTOR · **MIL-87 follow-up** (`feat/MIL-65-…`): `54dd174` left out `chapter-facade.ts` (still calling the removed routes; `verify` failed on #137) and took in the local testing line in `course-chapter-facade.ts`; the fix-up commit adds the first and restores the second (`max_watched_duration_seconds` = the continuously watched edge) · tsc 0, lint 0 errors
 
-> > > > > > > 4e85322 (refactor(offerings): finish dropping the retired chapter quiz binding)
+- 2026-10-15 · NON-REFACTOR · **MIL-88 plan audit** (`feat/MIL-65-…`): also verified the last chapter ("Back to course", then the course page after 10 s), submit `reset_required` (toast + re-read), submit `400` (one re-read, no loop), read `409` and `caira_access_required` (back to the course page) · open: a real signed-in round trip, `multiple` questions (unseen on UAT); `VIDEOJS: Invalid target for null#trigger` only when the page bounces to the course page mid-load
+
+- 2026-10-15 · NON-REFACTOR · **MIL-88: resume chapter + quiz-first** (`feat/MIL-65-…`): Watch Now → first chapter not done; a locked chapter → the chapter holding it, quiz open; Up Next (locked) → the quiz · Playwright: 4 cases pass
+
+- 2026-10-15 · NON-REFACTOR · **MIL-88 verified** (`feat/MIL-65-…`): Playwright full run (auto-open, grade, resume, re-read, 10 s move-on), video end, Watch again / Take the quiz, refusals (404, already_completed, chapter_locked, 500), preview, 375/768/1440 · two layout fixes (mobile header title, countdown fill)
+
+- 2026-10-15 · NON-REFACTOR · **Testing controls removed** (`feat/MIL-65-…`): CPE `playerMode` gating, the 0.5×–2× rate list and the save's `max_watched_duration_seconds` restored; no skip buttons · no `TEMP(testing)` left in `src/`
+
+- 2026-10-15 · NON-REFACTOR · **MIL-88 chapter quiz rebound** (uncommitted, `feat/MIL-65-…`): `chapter-quiz.model`, `CourseChapterQuizFacade`, `chapter-quiz` bound, player swap + "Take the quiz" · tsc 0, lint 0 errors (101 warnings), structure ✔, prettier ✔, build:prod 245.25 kB · browser check waits on a dev-server restart (504 Outdated Optimize Dep)
+
+- 2026-10-15 · NON-REFACTOR · **MIL-87 follow-up** (`feat/MIL-65-…`): `54dd174` left out `chapter-facade.ts` (still calling the removed routes; `verify` failed on #137) and took in the local testing line in `course-chapter-facade.ts`; the fix-up commit adds the first and restores the second (`max_watched_duration_seconds` = the continuously watched edge) · tsc 0, lint 0 errors
 
 - 2026-10-15 · NON-REFACTOR · **Chapter quiz step 1: legacy binding removed** (uncommitted, `feat/MIL-65-…`): `chapter-quiz` unbound; podcast quiz panel + report fetch, micro-learning quiz dialog + `chapter-quiz` read, `ChapterFacade` quiz methods and three 404 routes removed; ML quiz entry points toast · tsc 0, lint 0 errors (101 warnings), structure ✔ (pruned), prettier ✔, build:prod 244.94 kB
 

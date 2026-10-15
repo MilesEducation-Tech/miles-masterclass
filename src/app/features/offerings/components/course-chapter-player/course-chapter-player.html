@@ -1,10 +1,14 @@
 @let nav = facade.navigation();
 @if (nav.current; as chapter) {
   <div class="flex w-full mx-auto h-full overflow-hidden gap-4 max-lg:flex-col">
-    <!-- Video -->
+    <!-- Video, or the chapter quiz in its place -->
     <div class="max-lg:w-full lg:w-3/4 h-full rounded-lg overflow-hidden flex flex-col gap-4">
+      @if (quiz.isOpen()) {
+        <app-chapter-quiz class="min-h-96" />
+      }
       <div
         class="flex w-full aspect-video rounded-lg overflow-hidden justify-center bg-player-panel"
+        [class.hidden]="quiz.isOpen()"
       >
         <app-video-js
           [class.invisible]="!videoSource().length"
@@ -18,7 +22,7 @@
         />
       </div>
 
-      <div class="flex w-full rounded-lg px-2 py-1 flex-col gap-1">
+      <div class="flex w-full rounded-lg px-2 py-1 flex-col gap-1" [class.hidden]="quiz.isOpen()">
         <h1 class="lg:text-xl text-lg text-white">{{ nav.index + 1 }}. {{ chapter.name }}</h1>
         @if (chapter.mini_description) {
           <p class="description">{{ chapter.mini_description }}</p>
@@ -67,7 +71,7 @@
             [attr.aria-label]="
               (next.is_locked ? 'Next chapter, locked: ' : 'Go to next chapter: ') + next.name
             "
-            (click)="facade.goTo(next)"
+            (click)="quiz.goTo(next)"
           >
             <span class="w-[90px] m-2 flex items-center">
               <span class="relative block w-full h-14 bg-player-thumb rounded-md overflow-hidden">
@@ -120,6 +124,21 @@
             (click)="facade.openTranscript()"
           >
             Transcript
+          </button>
+        }
+
+        @if (quiz.isPending() && !quiz.isOpen()) {
+          <button
+            type="button"
+            class="bg-player-panel p-2 rounded-lg flex flex-col w-full cursor-pointer text-start"
+            (click)="quiz.open()"
+          >
+            <span>{{ quizCopy.takeQuiz }}</span>
+            @if (chapter.total_quiz_questions) {
+              <span class="text-xs text-gray-500">
+                {{ chapter.total_quiz_questions }} questions
+              </span>
+            }
           </button>
         }
       </div>

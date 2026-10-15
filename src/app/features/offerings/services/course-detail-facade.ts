@@ -39,6 +39,7 @@ import {
   CourseLoginType,
   CourseMode,
   CourseOffering,
+  isChapterDone,
   MasterclassChapterLink,
   MasterclassCourseDetail,
   MasterclassRelatedCourse,
@@ -49,6 +50,11 @@ import {
   parseCourseProgress,
   readCourseStepRefusal,
 } from '@features/offerings/models/course-detail.model';
+import {
+  parseQuizSubmit,
+  QuizAnswer,
+  QuizSubmitOutcome,
+} from '@features/offerings/models/chapter-quiz.model';
 // Type-only: the dialog loads with `import()` when opened (AGENTS.md §4.4).
 import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 
@@ -184,6 +190,17 @@ export class CourseDetailFacade {
       slug: this.utils.slugify(chapter.name),
     })),
   );
+
+  /**
+   * Where the learner picks up: the first chapter not yet done, so Watch Now
+   * skips what's finished and a chapter whose quiz is still open comes before
+   * the chapters it locks. With every chapter done, the first one.
+   */
+  readonly resumeChapter = computed<MasterclassChapterLink | null>(() => {
+    const chapters = this.chapters();
+    const cpe = this.course()?.course_mode === 'cpe';
+    return chapters.find((chapter) => !isChapterDone(chapter, cpe)) ?? chapters[0] ?? null;
+  });
 
   /**
    * The Related section: "Related Courses", then one "More by" rail per
@@ -329,7 +346,7 @@ export class CourseDetailFacade {
    */
   watch(): void {
     const course = this.course();
-    const chapter = this.chapters()[0];
+    const chapter = this.resumeChapter();
     if (!course || !chapter) return;
 
     if (!this.auth.isAuthenticated()) {
@@ -390,6 +407,28 @@ export class CourseDetailFacade {
       }),
     );
     return parseCourseProgress(raw);
+  }
+
+  /** `quiz-questions/` for one chapter; `null` before `connect()`. */
+  quizQuestionsUrl(chapterId: string): string | null {
+    const base = this.routes()?.quizQuestions;
+    return base ? `${base}${chapterId}/` : null;
+  }
+
+  /**
+   * Grade one quiz answer (`quiz-submit/`). The quiz shows its own pending
+   * state, so it skips the loading bar. Rejects with the `HttpErrorResponse` of
+   * a refusal, for the caller to read with `readCourseStepRefusal`.
+   */
+  async submitQuizAnswer(chapterId: string, answer: QuizAnswer): Promise<QuizSubmitOutcome> {
+    const route = this.routes()?.quizSubmit;
+    if (!route) throw new Error('[CourseDetail] submitQuizAnswer before connect()');
+    const raw = await firstValueFrom(
+      this.api.call({ ...route, path: route.path.replace(':id', chapterId) }, answer, {
+        context: new HttpContext().set(SKIP_LOADING, true),
+      }),
+    );
+    return parseQuizSubmit(raw);
   }
 
   /**

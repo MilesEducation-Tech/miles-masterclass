@@ -18,6 +18,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { MasterclassFieldOfStudy } from '@core/models/masterclass-home.model';
 import { RouteConfig } from '@core/models/http.model';
+import { QuizAnswer } from '@features/offerings/models/chapter-quiz.model';
 import {
   contractError,
   isBool,
@@ -48,6 +49,10 @@ export interface CourseDetailApi {
   chapterStart: RouteConfig<void, unknown>;
   /** `POST`, `:id` is the course UUID: saves a chapter's progress, answers the whole course's. */
   courseProgressUpdate: RouteConfig<CourseProgressUpdate, unknown>;
+  /** `GET <url><chapter uuid>/`: the chapter's quiz for this learner. */
+  quizQuestions: string;
+  /** `POST`, `:id` is the chapter UUID: grades one answer. */
+  quizSubmit: RouteConfig<QuizAnswer, unknown>;
   /** The course page's URL segment: `/:country/:profession/<segment>/:id/:slug`. */
   urlSegment: string;
   /** `course_type` on the analytics events. */
@@ -140,6 +145,16 @@ export type MasterclassChapterLink = MasterclassChapter & { slug: string };
 export function isChapterWatched(chapter: MasterclassChapter): boolean {
   const progress = chapter.user_chapter_progress;
   return !!progress.is_video_completed || !!progress.is_chapter_completed;
+}
+
+/**
+ * Done as far as the chapter ladder goes: the server's `is_chapter_completed`
+ * (the video, plus the quiz in CPE mode). Outside CPE mode there is no quiz, so
+ * the video alone counts there too.
+ */
+export function isChapterDone(chapter: MasterclassChapter, cpeMode: boolean): boolean {
+  const progress = chapter.user_chapter_progress;
+  return !!progress.is_chapter_completed || (!cpeMode && !!progress.is_video_completed);
 }
 
 /** How much of the chapter's video the server has been told was watched, as a whole 0–100. */

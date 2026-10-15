@@ -55,8 +55,8 @@ const saveKey = (update: CourseProgressUpdate): string =>
  *
  * Progress is saved as the learner watches (`course-progress-update/`), and
  * the server's answer moves the lock ladder in place. In CPE mode the next
- * chapter still opens only after this one's quiz, and the quiz and the final
- * assessment are their own tickets.
+ * chapter opens only after this one's quiz, which `CourseChapterQuizFacade`
+ * runs over this facade; the final assessment is its own ticket.
  */
 @Service({ autoProvided: false })
 export class CourseChapterFacade {
@@ -246,8 +246,8 @@ export class CourseChapterFacade {
    * The video ended. Its progress is saved first, so the server's answer can
    * open the next chapter before the page tries it. Then preview mode moves
    * on: after chapter 1 it first offers CPE mode, and after the last chapter it
-   * rewinds. CPE mode stays put, because the chapter quiz comes next and that
-   * is its own ticket.
+   * rewinds. CPE mode stays put, because the chapter quiz comes next
+   * (`CourseChapterQuizFacade`).
    *
    * Resolves `true` when the player should rewind and pause: after the last
    * chapter, and after a switch to CPE mode, whose rules start the chapter over.
@@ -289,7 +289,7 @@ export class CourseChapterFacade {
       return;
     }
     if (chapter.is_locked) {
-      this.leave(CHAPTER_COPY.chapterLocked.title, CHAPTER_COPY.chapterLocked.body);
+      this.redirectLocked(chapter);
       return;
     }
 
@@ -319,7 +319,7 @@ export class CourseChapterFacade {
    * ours where the reason is known. A 5xx or a dropped connection only warns:
    * the stream doesn't depend on this call.
    */
-  private refuse(error: unknown): void {
+  refuse(error: unknown): void {
     const refusal = readCourseStepRefusal(error);
     if (refusal.reason === 'chapter_locked') {
       this.leave(CHAPTER_COPY.chapterLocked.title, CHAPTER_COPY.chapterLocked.body);
@@ -510,6 +510,29 @@ export class CourseChapterFacade {
       : false;
   }
 
+  /**
+   * A locked chapter (a course-page row, a deep link): open the chapter that
+   * holds it instead, where the learner left off. When that one's quiz is what's
+   * holding it, its quiz opens there (`CourseChapterQuizFacade`), and finishing
+   * it moves on. With nowhere open to go, back to the course page.
+   */
+  private redirectLocked(chapter: MasterclassChapterLink): void {
+    const resume = this.detail.resumeChapter();
+    const path =
+      resume && resume.id !== chapter.id && !resume.is_locked
+        ? this.detail.chapterPath(resume)
+        : null;
+    if (!resume || !path) {
+      this.leave(CHAPTER_COPY.chapterLocked.title, CHAPTER_COPY.chapterLocked.body);
+      return;
+    }
+    const quizHolds =
+      this.isCpeMode() && resume.show_quiz && !resume.user_chapter_progress.is_mcq_completed;
+    const copy = quizHolds ? CHAPTER_COPY.quizLocked : CHAPTER_COPY.chapterLocked;
+    this.notification.info(copy.title, copy.body);
+    void this.router.navigateByUrl(path, { replaceUrl: true });
+  }
+
   /** Whether the chapter `key` named is still the one on screen. */
   private isStill(key: string): boolean {
     return !this.destroyed && this.openKey() === key;
@@ -521,7 +544,7 @@ export class CourseChapterFacade {
     this.backToCourse();
   }
 
-  private backToCourse(): void {
+  backToCourse(): void {
     const path = this.detail.coursePath();
     if (path) void this.router.navigateByUrl(path, { replaceUrl: true });
   }

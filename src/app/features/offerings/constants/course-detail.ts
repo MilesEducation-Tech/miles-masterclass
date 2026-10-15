@@ -58,6 +58,24 @@ export const COURSE_DETAIL_API: Record<CourseOffering, CourseDetailApi> = {
       method: 'POST',
     },
 
+    /**
+     * `IsAuthenticated`: one chapter's quiz. Append `<chapter uuid>/`. Its guards,
+     * in order: `409` AI Lab lock, `403 caira_access_required`, `403
+     * chapter_locked`, `404` with no quiz configured (not an empty 200), `403
+     * already_completed`, and `403 preview_mode` (the quiz is CPE only).
+     * Unanswered questions carry no answer; a resumed attempt's answered ones
+     * come back graded.
+     */
+    quizQuestions: `${ROOT}web-api/v1/masterclass/quiz-questions/`,
+
+    /**
+     * `IsAuthenticated`, strict body `{question_id, selected_option_ids}`: grades
+     * ONE answer server-side. The same guards, plus `200 reset_required` for an
+     * expired window and `400` for a question outside the bank or one already
+     * answered in this attempt.
+     */
+    quizSubmit: { path: `${ROOT}web-api/v1/masterclass/quiz-submit/:id/`, method: 'POST' },
+
     urlSegment: 'masterclass',
     analyticsType: 'masterclass',
   },
@@ -118,6 +136,35 @@ export const CHAPTER_COPY = {
     body: 'You have completed the first chapter in Preview Mode. Switch to CPE Mode to earn your certificate and track your progress with quizzes.',
   },
 } as const;
+
+/** The chapter quiz's own copy, used when the server sends no message of its own. */
+export const QUIZ_COPY = {
+  takeQuiz: 'Take the quiz',
+  watchAgain: 'Watch again',
+  back: 'Back',
+  next: 'Next',
+  submit: 'Submit answer',
+  proceed: 'Proceed to next chapter',
+  backToCourse: 'Back to course',
+  correctAnswer: 'Correct answer',
+  yourAnswer: 'Your answer',
+  explanation: 'Explanation',
+  correct: 'Correct',
+  incorrect: 'Not quite',
+  complete: 'Quiz complete',
+  loadFailed: {
+    title: 'Quiz unavailable',
+    body: "We couldn't load this chapter's quiz. Please try again.",
+  },
+  answerFailed: {
+    title: 'Answer not saved',
+    body: "We couldn't save that answer. Please try again.",
+  },
+  noQuiz: { title: 'No quiz', body: "This chapter doesn't have a quiz." },
+} as const;
+
+/** Seconds the finished quiz waits before moving on to the next chapter. */
+export const QUIZ_AUTO_ADVANCE_SECONDS = 10;
 
 /**
  * A course id on this API: a UUID, any version. The legacy numeric ids still
