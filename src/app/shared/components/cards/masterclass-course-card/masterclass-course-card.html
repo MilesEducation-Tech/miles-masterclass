@@ -49,15 +49,44 @@
         {{ c.short_description }}
       </p>
       <div class="flex justify-between items-center space-x-2 pointer-events-auto">
-        <button
-          app-button
-          type="button"
-          class="w-full bg-white text-black rounded-md hover:bg-white hover:text-black gap-2"
-          (click)="trailer.emit(c)"
-        >
-          <ng-icon [svg]="icons.faSolidPlay" class="size-4" />
-          Trailer
-        </button>
+        @if (hasAiKit()) {
+          <!-- An icon-only trailer makes room for the AI Kit button, as on `app-vertical`. -->
+          <button
+            app-button
+            type="button"
+            class="shrink-0 bg-white text-black rounded-full hover:bg-white hover:text-black"
+            size="icon"
+            aria-label="Watch trailer"
+            (click)="trailer.emit(c)"
+          >
+            <ng-icon [svg]="icons.faSolidPlay" class="size-4" />
+          </button>
+          <!-- The gradient ring is the wrapper's 1px padding; the button inside is the control. -->
+          <div
+            class="flex flex-1 rounded-full justify-center items-center bg-linear-to-r from-white to-transparent to-70% p-px overflow-hidden"
+          >
+            <button
+              app-button
+              type="button"
+              class="w-full bg-background rounded-full gap-2"
+              variant="ghost"
+              (click)="aiKit.emit(c)"
+            >
+              <ng-icon [svg]="icons.faSolidRobot" class="size-4" />
+              AI Kit
+            </button>
+          </div>
+        } @else {
+          <button
+            app-button
+            type="button"
+            class="w-full bg-white text-black rounded-md hover:bg-white hover:text-black gap-2"
+            (click)="trailer.emit(c)"
+          >
+            <ng-icon [svg]="icons.faSolidPlay" class="size-4" />
+            Trailer
+          </button>
+        }
         @if (showInfo()) {
           <!-- `outline-solid` is what keeps the ring: `app-button`'s base sets `outline-none`,
                and tailwind-merge drops it only for a class in the same (style) group. -->

@@ -56,8 +56,10 @@ export const FEATURE_KEY_TO_SECTION: Partial<Record<FeatureApiKey, SectionApiKey
 };
 
 /**
- * Query-param keys sent to `v2/library/`. The keys are used as both the
- * accordion section id (in the UI) and the literal HTTP param name in the
+ * Query-param keys the carousel filter dialog sends to the legacy `v2/filters/`
+ * family. The course library has its own, from `web-api/v1/masterclass/filter/`
+ * (`features/library/course/models/course-library.model.ts`). The keys are used
+ * as both the group id (in the UI) and the literal HTTP param name in the
  * request. Backend conventions:
  * - `*_ids` for id-based groups (instructor, category, etc.)
  * - `caira_levels` (plural, no `_ids` suffix)
@@ -117,14 +119,6 @@ export const FILTER_KEY_TO_GROUP: Partial<Record<CourseFilterKey, SectionFilterG
     Record<CourseFilterKey, SectionFilterGroupKey>
   >;
 
-/** A single multi-select group rendered in the sidebar. */
-export interface CourseFilterGroup {
-  /** Stable key used as both the accordion section id and the query-param name. */
-  key: CourseFilterKey;
-  label: string;
-  options: readonly { value: string | number; label: string }[];
-}
-
 /**
  * Course type tokens sent to backend APIs. Note both `micro_learning` (used by
  * `v2/library/`) and `nano_learning` (used by `v2/filters/` and other newer
@@ -133,32 +127,10 @@ export interface CourseFilterGroup {
  */
 export type ApiCourseType = 'masterclass' | 'podcast' | 'micro_learning' | 'nano_learning';
 
-export interface CourseTypeTab {
-  /** Sent to `v2/library/?type=`. */
-  apiType: ApiCourseType;
-  /** Slug used by `Utils.navigateToCourse` and `app-vertical`'s `type` input. */
-  routeType: 'masterclass' | 'podcast' | 'micro-learning';
-  label: string;
-}
-
-/**
- * `COURSE_TYPE_TABS` predates the `nano_learning` token and intentionally lists
- * only `micro_learning` for the micro-learning slot — the `v2/library/`
- * endpoint that consumes this list expects `micro_learning`. The newer
- * `nano_learning` token is used by other endpoints (e.g. `v2/filters/`) and is
- * not a separate tab. If you iterate `COURSE_TYPE_TABS` to populate UI,
- * remember it's deliberately a strict subset of `ApiCourseType`.
- */
-export const COURSE_TYPE_TABS: readonly CourseTypeTab[] = [
-  { apiType: 'masterclass', routeType: 'masterclass', label: 'Master Class' },
-  { apiType: 'podcast', routeType: 'podcast', label: 'Podcast' },
-  { apiType: 'micro_learning', routeType: 'micro-learning', label: 'Micro Learning' },
-] as const;
-
 // ---------------------------------------------------------------------------
 // Filter <-> dialog <-> query-param helpers.
 // Kept in this file alongside the contract types so any future consumer
-// (carousel, library sidebar, drawer, …) hits one source of truth.
+// (carousel, filter dialog, …) hits one source of truth.
 // ---------------------------------------------------------------------------
 
 /**

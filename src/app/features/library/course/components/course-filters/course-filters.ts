@@ -6,15 +6,14 @@ import {
 } from 'ng-primitives/accordion';
 import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroChevronDown } from '@ng-icons/heroicons/outline';
+import { heroCheck, heroChevronDown } from '@ng-icons/heroicons/outline';
+import { NgpListbox, NgpListboxOption } from 'ng-primitives/listbox';
 
 import {
-  CourseFilterGroup,
-  CourseFilterKey,
-  CourseFilterSelection,
-} from '@core/models/library-filters.model';
-import { Listbox } from '@shared/ui/listbox/listbox';
-import { ListboxOption } from '@shared/ui/listbox/listbox-option';
+  LibraryFilterGroup,
+  LibraryFilterKey,
+  LibraryFilterSelection,
+} from '@features/library/course/models/course-library.model';
 
 @Component({
   selector: 'app-course-filters',
@@ -23,29 +22,30 @@ import { ListboxOption } from '@shared/ui/listbox/listbox-option';
     NgpAccordionItem,
     NgpAccordionTrigger,
     NgpAccordionContent,
+    NgpListbox,
+    NgpListboxOption,
     NgIcon,
-    Listbox,
-    ListboxOption,
   ],
-  providers: [provideIcons({ heroChevronDown })],
+  providers: [provideIcons({ heroCheck, heroChevronDown })],
   templateUrl: './course-filters.html',
 })
 export class CourseFilters {
-  readonly groups = input.required<readonly CourseFilterGroup[]>();
-  readonly selection = input.required<CourseFilterSelection>();
-  readonly selectionChange = output<CourseFilterSelection>();
+  readonly groups = input.required<readonly LibraryFilterGroup[]>();
+  readonly selection = input.required<LibraryFilterSelection>();
+  readonly selectionChange = output<LibraryFilterSelection>();
   readonly clear = output<void>();
 
   readonly hasActiveFilters = computed(() => {
     const sel = this.selection();
-    return (Object.keys(sel) as CourseFilterKey[]).some((k) => sel[k].length > 0);
+    return Object.values(sel).some((values) => values.length > 0);
   });
 
-  selectedFor(key: CourseFilterKey): readonly (string | number)[] {
-    return this.selection()[key];
+  /** A fresh copy: the listbox primitive takes a mutable array. */
+  selectedFor(key: LibraryFilterKey): string[] {
+    return [...this.selection()[key]];
   }
 
-  update(key: CourseFilterKey, values: readonly (string | number)[]) {
+  update(key: LibraryFilterKey, values: readonly string[]) {
     this.selectionChange.emit({ ...this.selection(), [key]: values });
   }
 
