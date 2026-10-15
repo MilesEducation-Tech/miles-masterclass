@@ -1,10 +1,13 @@
+import { isMasterclassCourse, MasterclassCourse } from '@core/models/masterclass-home.model';
+
 /**
  * Types for the instructor library's read, `GET web-api/v1/masterclass/all-instructors-page/`
- * (Postman `web-masterclass-all-instructors-page-v1`, checked live on UAT 2026-10-15).
+ * (Postman `web-masterclass-all-instructors-page-v1`, checked live on UAT 2026-10-15),
+ * and the instructor page's two: `instructor-detail/<id>/` and `filter/?instructor=`.
  *
- * These are the keys the library READS, not a mirror of the payload. A row also
- * carries `bio`, `video_url`, `courses`, `course_count` and `created_at`, and the
- * answer carries paging metadata beyond `page` / `has_next`; none is read here.
+ * These are the keys the pages READ, not a mirror of the payload. A library row
+ * also carries `bio`, `video_url`, `courses`, `course_count` and `created_at`,
+ * and the answers carry paging metadata beyond `page` / `has_next`; none is read.
  */
 
 // ---- Rows ------------------------------------------------------------------
@@ -45,6 +48,26 @@ export interface InstructorLibraryPage {
   /** The page this answer is, 1-based. */
   page: number;
   hasNext: boolean;
+}
+
+// ---- Instructor page -------------------------------------------------------
+
+/**
+ * `instructor-detail/<id>/` (sign-in only): a library row without its courses,
+ * plus the two fields only the instructor page shows. Checked against the
+ * Postman export's live-captured 200 (2026-10-15).
+ */
+export interface InstructorProfile extends InstructorRow {
+  bio: string | null;
+  video_url: string | null;
+}
+
+/** The `course_type` each tab sends to `filter/`. */
+export type InstructorCourseType = 'course' | 'podcast' | 'micro_learning';
+
+export interface InstructorCourseTab {
+  courseType: InstructorCourseType;
+  label: string;
 }
 
 // ---- Trust boundary --------------------------------------------------------
@@ -92,4 +115,32 @@ export function parseInstructorLibrary(raw: unknown): InstructorLibraryPage {
     return { instructors: data['results'], page: data['page'], hasNext: data['has_next'] };
   }
   throw new Error('[library] all-instructors-page response does not match the contract.');
+}
+
+const isInstructorProfile = (v: unknown): v is InstructorProfile =>
+  isObject(v) && isStrOrNull(v['bio']) && isStrOrNull(v['video_url']) && isInstructorRow(v);
+
+/** `parse` for `instructor-detail/<id>/`: the envelope and the profile. */
+export function parseInstructorProfile(raw: unknown): InstructorProfile {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  if (isInstructorProfile(data)) return data;
+  throw new Error('[library] instructor-detail response does not match the contract.');
+}
+
+/**
+ * `parse` for the instructor page's `filter/` read: only the course cards, the
+ * same `tracks-page/` cards the course library checks. Its filter options and
+ * paging are not read: one page of 100 holds everything an instructor teaches.
+ */
+export function parseInstructorCourses(raw: unknown): MasterclassCourse[] {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  const courses = isObject(data) ? data['courses'] : undefined;
+  if (
+    isObject(courses) &&
+    Array.isArray(courses['results']) &&
+    courses['results'].every(isMasterclassCourse)
+  ) {
+    return courses['results'];
+  }
+  throw new Error('[library] filter response for an instructor does not match the contract.');
 }

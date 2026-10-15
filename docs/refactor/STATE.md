@@ -8,8 +8,31 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 ## Now
 
 - 🔧 **2026-10-15, NON-REFACTOR — MIL-95, instructor library and page (`prompts/library-rebind.md` rev 3,
-  approved). SUBTASK 1 COMMITTED (`51abea3`), SUBTASK 2 DONE, UNCOMMITTED** on
+  approved). SUBTASKS 1–2 COMMITTED (`51abea3`, `73f8095`), SUBTASK 3 + BACK FIX DONE, UNCOMMITTED** on
   `feat/MIL-95-instructor-library-binding` (from `master` `e3fc330`).
+  - **Subtask 3, `feat(library): bind the instructor page to instructor-detail`:** the page reads
+    `instructor-detail/<uuid>/` (gated on the boolean `isAuthenticated()`) and `filter/?course_type=<tab>&instructor=`
+    (one read per tab, `SKIP_LOADING`), both parsed at the boundary; no facade. Masterclass / Podcast / Micro Learning
+    tabs with horizontal `app-masterclass-course-card`s (Trailer, "i"). `instructor-hero` back, retyped, `block` host
+    (the page's `space-y-10` never applied to the inline element: production's gap bug), images left out when they
+    fail. Route `canMatch: [authGuard]`. Old numeric ids are refused before any request; the promo shows only for a
+    playable file; "Courses by …" skips "Dr.". `view_instructor` once per instructor (keyed on a `computed` id).
+  - **Back fix, `fix(shared)`, user-requested:** `app-backward` read in-app history from `document.referrer`, which only
+    a full page load sets, so Back after in-app navigation went to `/`. Now `navigation.canGoBack` (Navigation API,
+    this origin only), else the router's previous navigation; `Location.back()`. Only the library shell and the
+    instructor page use history mode; the rest pass `routePath`. Instructor page fallback: the instructor library.
+  - **Found (prompt Q6):** neither UAT promo video plays — Agnes's `video_url` is a Google Drive viewer page, Michelle's
+    `.mp4` is 403 from `masterclass-bucket-usa2`. Browser title for the page deferred to when it is public (SEO).
+  - **Verified (dev 4101, headless; signed in = dummy `ACCESS_TOKEN`, `instructor-detail/` stubbed from the real list
+    row in the export's shape, `filter/` live with the dummy token stripped):** signed out → `/auth/login?redirect=…`,
+    also as a server 302; webinar → footer Instructor Library → Back lands on `/webinar` (was home); library → Adam →
+    hero, About, LinkedIn, "Courses by Adam", 1 card linking `/masterclass/<uuid>/<slug>`; Podcast / Micro Learning →
+    one request each, "No … courses yet."; Trailer and "i" open; Back → library with its cards; Dr. Roger Mayer →
+    "Courses by Roger", 403 images hidden; Agnes → no Promo; Michelle → Promo shown; `/instructor/3665/…` → "Instructor
+    not found", no API request; unknown UUID → error with Try Again; 375 / 768 / 1440 no horizontal scroll.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 244.79 kB,
+    only `ai-labs.css`.
+  - **Seen, not in scope:** `/webinar` logs "webinar-main-page response does not match the Events contract" again on UAT.
   - **Subtask 2, `feat(library): bind the instructor library to all-instructors-page`:** new
     `instructor/models/instructor-library.model.ts` (`InstructorRow`, `parseInstructorLibrary`),
     `constants/instructor-library.ts`, `utils/instructor-socials.ts` (`socialLinksOf`, shared with the hero in
@@ -44,8 +67,7 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - **`postman/` refreshed** from the 2026-10-15 export (gitignored). It carries a live-captured `instructor-detail/`
     200, so the prompt's detail shape is no longer a guess. `docs/AUTH_API.md:5` and `docs/WEBINAR_API_QUESTIONS.md:5`
     still point at the old folder layout; a docs follow-up.
-  - **Next:** subtask 3 (bind the instructor page to `instructor-detail/` + `filter/` tabs) after the user commits
-    subtask 2.
+  - **Next:** the user commits the Back fix and subtask 3, then the PR (Story MIL-95).
 
 - 🔧 **2026-10-15, NON-REFACTOR — PR #132 review (MIL-62): rebased onto `master` and reshaped off the
   facade. CODE DONE, GATES GREEN, BROWSER CHECK OPEN, UNCOMMITTED** on `feat/MIL-62-caira-tracker-rebind`.

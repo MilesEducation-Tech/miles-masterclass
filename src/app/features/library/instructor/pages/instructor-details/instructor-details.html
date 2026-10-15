@@ -1,3 +1,83 @@
 <div class="container mx-auto px-4 py-6 space-y-10 pt-24">
-  <app-backward label="Back" fallback="/" />
+  <app-backward label="Back" [fallback]="backFallback()" />
+
+  @if (isOldLink()) {
+    <app-error-state
+      title="Instructor not found"
+      message="This link is out of date. Find the instructor in the instructor library."
+      [showRetry]="false"
+    />
+  } @else if (profileError()) {
+    <app-error-state
+      title="Couldn't load instructor"
+      message="We hit a snag fetching this profile. Try again in a moment."
+      (retry)="reloadProfile()"
+    />
+  } @else if (profile(); as i) {
+    <app-instructor-hero [instructor]="i" />
+
+    @if (i.bio) {
+      <section class="max-w-5xl space-y-3">
+        <h2 class="text-2xl font-semibold text-foreground">About</h2>
+        <p class="text-base text-muted-foreground whitespace-pre-line leading-relaxed">
+          {{ i.bio }}
+        </p>
+      </section>
+    }
+
+    @if (promoSources().length) {
+      <section class="space-y-3">
+        <h2 class="text-2xl font-semibold text-foreground">Promo</h2>
+        <div class="w-full max-w-5xl aspect-video rounded-lg overflow-hidden bg-black">
+          <!-- The box above is already aspect-video, so the placeholder fills it: no shift. -->
+          @defer (on viewport; prefetch on idle) {
+            <app-video-js [videoSource]="promoSources()" [config]="promoConfig()" />
+          } @placeholder {
+            <div class="w-full h-full bg-black"></div>
+          } @error {
+            <p class="flex w-full h-full items-center justify-center text-sm text-white/70">
+              The promo video couldn't load.
+            </p>
+          }
+        </div>
+      </section>
+    }
+
+    <section class="space-y-4">
+      <h2 class="text-2xl font-semibold text-foreground">Courses by {{ firstName() }}</h2>
+
+      <app-tabs [value]="activeLabel()" (valueChange)="onTabChange($event)">
+        @for (tab of tabLabels; track tab) {
+          <app-tab [value]="tab" [label]="tab" />
+        }
+      </app-tabs>
+
+      @if (coursesError()) {
+        <app-error-state
+          title="Couldn't load courses"
+          message="We couldn't load these courses. Please try again."
+          (retry)="reloadCourses()"
+        />
+      } @else if (isCoursesLoading()) {
+        <div class="text-center py-6 text-muted-foreground">Loading…</div>
+      } @else if (courses().length) {
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-8">
+          @for (course of courses(); track course.id) {
+            <app-masterclass-course-card
+              [course]="course"
+              layout="horizontal"
+              [showInfo]="true"
+              (trailer)="openTrailer($event)"
+              (info)="openCourseInfo($event)"
+            />
+          }
+        </div>
+      } @else {
+        <p class="text-center text-muted-foreground py-8">No {{ activeLabel() }} courses yet.</p>
+      }
+    </section>
+  } @else {
+    <!-- Loading, and the server render, which never reads (browser-only). -->
+    <app-page-loading message="Loading instructor…" [fullScreen]="false" />
+  }
 </div>

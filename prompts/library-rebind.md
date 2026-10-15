@@ -80,7 +80,9 @@ templates, and only the data changes. Nothing on production is used as data.
 - Promo (video)
 - "Courses by {first name}", with **Masterclass / Podcast / Micro Learning** tabs and course cards showing Trailer,
   "i" and CPE
-- **Production bug, not copied:** the browser title is the generic site title.
+- **Production bug, deferred:** the browser title is the generic site title. Setting it means joining the SEO system
+  (`DYNAMIC_SLUG_PREFIXES`, `SeoManager`), which matters once the page is public and indexable (Q1), so it waits for
+  that.
 
 ## What it read
 
@@ -233,6 +235,15 @@ rather than imported from a sibling sub-feature. If a third caller appears, both
 - The model's profile and courses half, `instructor-hero` retyped, and `pages/instructor-details` per D5.
 - The route guard and string param (D6).
 - `view_instructor` fires once per instructor, with the UUID and `name`.
+- **Built beyond the plan:**
+  - An old numeric id is refused before any request ("Instructor not found", no retry).
+  - The Promo shows only for a playable file (`.m3u8`, `.mp4`, `.m4v`, `.webm`).
+  - Hero images that fail to load are left out.
+  - "Courses by …" skips a title such as "Dr.".
+- **Back, asked for while building (its own `fix(shared)` commit):** `app-backward` decided "is there in-app history"
+  from `document.referrer`, which only a full page load sets, so after in-app navigation Back fell through to `/`. It now
+  uses the Navigation API's `canGoBack` (only this origin's entries), falling back to the router's previous navigation.
+  The instructor page's fallback is the instructor library.
 
 ## Security
 
@@ -325,6 +336,9 @@ CI=true pnpm build:prod
   `storage.googleapis.com/miles-usp-bed/` with `UserProjectAccountProblem`: "The billing account for the owning project
   is disabled". Every image in that bucket is blocked, and none of those instructors has a working S3 photo instead. The
   card shows initials meanwhile; the bucket's billing needs fixing.
+- **Q6 (found while building subtask 3):** neither UAT promo video plays. Agnes Malatinszky's `video_url` is a Google
+  Drive viewer page (`text/html`), not a file; Michelle Voyer's `.mp4` answers 403 from `masterclass-bucket-usa2`.
+  The page shows no Promo for the first; the player reports the second. `video_url` should be a direct media file.
 
 ## Risks
 
