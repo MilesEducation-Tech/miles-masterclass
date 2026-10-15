@@ -1,10 +1,26 @@
 <article
-  class="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-muted/60 p-4"
+  class="group/card relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-muted/60 p-4"
   [class]="ui().ring"
 >
+  <!-- Stretched link. Positioned with `z-0`, so it paints above the in-flow content and takes
+       a click anywhere on the card; the CTA row below is `z-10` and keeps its own. The name
+       comes from `aria-label`, since the title itself stays outside the anchor. -->
+  <a
+    [routerLink]="link()"
+    [attr.aria-label]="badge().badge_name"
+    class="absolute inset-0 z-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  ></a>
+
   <div class="flex items-start justify-between gap-3">
     @if (iconUrl(); as src) {
-      <img [ngSrc]="src" alt="" width="44" height="44" class="size-11 rounded-full object-cover" />
+      <img
+        [ngSrc]="src"
+        alt=""
+        width="44"
+        height="44"
+        draggable="false"
+        class="size-11 rounded-full object-cover"
+      />
     } @else {
       <span class="size-11 rounded-full bg-secondary" aria-hidden="true"></span>
     }
@@ -12,11 +28,25 @@
   </div>
 
   <!-- Fixed two-line box: a one-line title reserves the same space as a two-line
-       one, so cards can't disagree on height. -->
-  <h3 class="mt-4 line-clamp-2 min-h-12 text-base font-semibold text-white">{{ title() }}</h3>
-  <p class="mt-1 line-clamp-1 text-sm text-muted-foreground">Course: {{ badge().course.title }}</p>
+       one, so cards can't disagree on height.
 
-  <div class="mt-auto pt-4">
+       The hover bar is a background on the TEXT rather than a box under it, so it hugs the
+       words, and `box-decoration-clone` carries it onto the second line of a wrapped title —
+       which a bar sized to this fixed box could not do. Same classes as the chapter lists'
+       title underline; only the group name differs, because this one answers to hovering the
+       card rather than the title. -->
+  <h3 class="mt-4 line-clamp-2 min-h-12 text-base font-semibold text-white">
+    <span
+      class="box-decoration-clone bg-linear-to-r from-accent to-accent bg-size-[0%_3px] bg-bottom-left bg-no-repeat transition-all duration-500 ease-out group-hover/card:bg-size-[100%_3px] rtl:bg-bottom-right"
+    >
+      {{ badge().badge_name }}
+    </span>
+  </h3>
+  @if (courseLine(); as line) {
+    <p class="mt-1 line-clamp-1 text-sm text-muted-foreground">{{ line }}</p>
+  }
+
+  <div class="relative z-10 mt-auto pt-4">
     <button
       app-button
       type="button"
@@ -25,7 +55,7 @@
       [disabled]="ui().disabled"
       (click)="activate.emit(badge())"
     >
-      {{ ui().label }}
+      {{ badge().cta.label }}
     </button>
   </div>
 </article>

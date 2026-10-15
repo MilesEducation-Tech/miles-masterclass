@@ -1,5 +1,3 @@
-import { isPlatformBrowser } from '@angular/common';
-import { httpResource } from '@angular/common/http';
 import {
   afterNextRender,
   Component,
@@ -8,40 +6,35 @@ import {
   ElementRef,
   inject,
   linkedSignal,
-  PLATFORM_ID,
   untracked,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft } from '@ng-icons/lucide';
-import {
-  badgeNextPage,
-  badgeTotalCount,
-  BadgeFilter,
-  BadgeV2Response,
-  isEarnedState,
-  matchesBadgeFilter,
-  WEBINAR_BADGE_FILTERS,
-  WebinarBadgeItem,
-} from '@core/models/caira-badge.model';
-import { apiUrl } from '@core/services/api-client/api-client';
 import { Button } from '@shared/ui/button/button';
 import { ErrorState } from '@shared/ui/error-state/error-state';
-import { withPreviousValue } from '@core/utils/with-previous-value';
-import { BadgeFilterChips } from '../../../components/badge-filter-chips/badge-filter-chips';
-import { WebinarBadgeCard } from '../../components/webinar-badge-card/webinar-badge-card';
-import { BadgeActions } from '../../services/badge-actions';
-import { trackerLinks } from '../../../utils/tracker-links';
-
-const EMPTY: BadgeV2Response<WebinarBadgeItem[]> = { data: [] };
+import { BadgeFilterChips } from '@features/tracker/components/badge-filter-chips/badge-filter-chips';
+import { WebinarBadgeCard } from '@features/tracker/caira/components/webinar-badge-card/webinar-badge-card';
+import {
+  BadgeFilter,
+  EMPTY_BADGES_PAGE,
+  isEarned,
+  matchesBadgeFilter,
+  nextSectionPage,
+  WEBINAR_BADGE_FILTERS,
+  WebinarBadge,
+} from '@features/tracker/caira/models/caira-badge-page.model';
+import { CairaBadgesApi } from '@features/tracker/caira/services/caira-badges-api';
+import { redirectOnSessionLoss } from '@features/tracker/caira/utils/session-redirect';
+import { trackerLinks } from '@features/tracker/utils/tracker-links';
 
 /**
- * Webinar Badges listing — one card per webinar badge, collapsed across every
- * session in its series.
+ * Webinar Badges listing — one card per webinar badge, collapsed across every session in its
+ * series. The cards are links, so there is no CTA to handle here.
  *
- * Figma draws a numbered pager; per product this loads on scroll instead, so
- * `page` is a `linkedSignal` the sentinel advances and the resource re-keys on.
+ * Figma draws a numbered pager; per product this loads on scroll instead, so the sentinel
+ * advances the API service's page and the one request re-keys on it.
  */
 @Component({
   selector: 'app-webinar-badges',
@@ -51,66 +44,49 @@ const EMPTY: BadgeV2Response<WebinarBadgeItem[]> = { data: [] };
   host: { class: 'block' },
 })
 export class WebinarBadges {
-  private readonly actions = inject(BadgeActions);
+  private readonly api = inject(CairaBadgesApi);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly trackerHome = trackerLinks().home;
 
   protected readonly filters = WEBINAR_BADGE_FILTERS;
   protected readonly filter = linkedSignal<BadgeFilter>(() => 'all');
 
-  private readonly page = linkedSignal<number>(() => 1);
-
-  private readonly listResource = httpResource<BadgeV2Response<WebinarBadgeItem[]>>(
-    () =>
-      this.isBrowser
-        ? { url: apiUrl('v2/webinar-badges/'), params: { page: this.page() } }
-        : undefined,
-    { defaultValue: EMPTY },
-  );
-
-  /** Stale-while-revalidate, so loading page 2 never blanks page 1. */
-  private readonly list = withPreviousValue(this.listResource);
-
   /** Page 1 replaces; every later page appends. */
   protected readonly items = linkedSignal({
-    source: this.list.snapshot,
-    computation: (snap, previous): WebinarBadgeItem[] => {
+    source: this.api.page.snapshot,
+    computation: (snap, previous): WebinarBadge[] => {
       if (snap.status !== 'resolved') return previous?.value ?? [];
-      const data = snap.value?.data ?? [];
-      return untracked(() => this.page()) === 1 ? data : [...(previous?.value ?? []), ...data];
+      const block = (snap.value ?? EMPTY_BADGES_PAGE).webinar_badges;
+      return block.page === 1 ? block.results : [...(previous?.value ?? []), ...block.results];
     },
   });
 
+  /** Client-side: the endpoint exposes no status filter, so the chips narrow what loaded. */
   protected readonly visible = computed(() =>
-    this.items().filter((b) => matchesBadgeFilter(b.action_state, this.filter())),
+    this.items().filter((badge) => matchesBadgeFilter(badge, this.filter())),
   );
 
-  /** Counts what has loaded — the API exposes no total for earned badges yet. */
-  protected readonly earnedCount = computed(
-    () => this.items().filter((b) => isEarnedState(b.action_state)).length,
-  );
+  /** Counts what has loaded — the endpoint exposes no total for earned badges. */
+  protected readonly earnedCount = computed(() => this.items().filter(isEarned).length);
 
-  /**
-   * Guarded: `value()` throws on an errored resource, which would take the page down
-   * before its own `hasError` state could render.
-   */
-  private readonly pagination = computed(() =>
-    this.list.hasValue() ? this.list.value()?.pagination_data : undefined,
-  );
-
-  protected readonly totalCount = computed(() => badgeTotalCount(this.pagination()));
-  protected readonly isLoading = computed(() => this.list.isLoading());
-  protected readonly hasError = computed(() => !!this.list.error());
+  protected readonly totalCount = computed(() => this.api.data().webinar_badges.count);
+  protected readonly isLoading = computed(() => this.api.page.isLoading());
+  protected readonly hasError = computed(() => !!this.api.page.error());
   protected readonly isFirstPage = computed(() => this.isLoading() && !this.items().length);
 
   private readonly sentinel = viewChild.required<ElementRef<HTMLDivElement>>('sentinel');
 
   constructor() {
-    // `afterNextRender` is browser-only by definition, and the sentinel is
-    // unconditionally in the template, so one observer set up once is enough —
-    // no `effect`, no re-observing on every data change.
+    redirectOnSessionLoss();
+
+    // `CairaBadgesApi` is root-scoped, so a page this listing advanced on a previous visit is
+    // still set. Start at 1, or the accumulator seeds from page 2 and the first six rows are
+    // simply missing.
+
+    // `afterNextRender` is browser-only by definition, and the sentinel is unconditionally in
+    // the template, so one observer set up once is enough — no `effect`, no re-observing on
+    // every data change.
     afterNextRender(() => {
       const observer = new IntersectionObserver(
         (entries) => {
@@ -121,12 +97,29 @@ export class WebinarBadges {
       observer.observe(this.sentinel().nativeElement);
       this.destroyRef.onDestroy(() => observer.disconnect());
     });
+
+    // Leave the shared page where the next visitor expects it: page 1.
+    //
+    // `CairaBadgesApi` is root-scoped, so a page this listing advanced outlives the listing.
+    // Without this, coming back here after scrolling seeds the accumulator from page 2 and the
+    // first rows are simply missing, with no way to fetch them.
+    //
+    // On destroy, NOT in the constructor. Writing this signal while the component is being
+    // constructed re-keys the resource that `items` reads, and the navigation dies silently:
+    // Angular boots, `<router-outlet>` stays empty and nothing is logged. Measured 2026-10-15 —
+    // with the constructor write the page rendered a 5.4 kB shell, without it 68.8 kB.
+    //
+    // The refetch this triggers is not wasted on the common path: the tracker home renders
+    // page 1 of this very section in its rail.
+    this.destroyRef.onDestroy(() => this.api.webinarPage.set(1));
   }
 
+  /** No-ops while a request is in flight, and once the section has no further page — the
+   *  sentinel sits in the viewport for as long as the list is short, so it fires repeatedly. */
   private loadNext(): void {
-    if (this.list.isLoading()) return;
-    const next = badgeNextPage(this.pagination());
-    if (next !== null && next !== this.page()) this.page.set(next);
+    if (this.isLoading()) return;
+    const next = nextSectionPage(this.api.data().webinar_badges);
+    if (next !== null && next !== untracked(this.api.webinarPage)) this.api.webinarPage.set(next);
   }
 
   protected onFilter(value: string | null): void {
@@ -134,10 +127,6 @@ export class WebinarBadges {
   }
 
   protected retry(): void {
-    this.listResource.reload();
-  }
-
-  protected async onActivate(card: WebinarBadgeItem): Promise<void> {
-    if (await this.actions.run(BadgeActions.fromWebinar(card))) this.listResource.reload();
+    this.api.reload();
   }
 }

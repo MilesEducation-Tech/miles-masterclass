@@ -44,8 +44,8 @@
       </div>
     } @else {
       <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        @for (card of visible(); track card.id) {
-          <app-webinar-badge-card [badge]="card" (activate)="onActivate($event)" />
+        @for (card of visible(); track card.badge_template_id) {
+          <app-webinar-badge-card [badge]="card" />
         } @empty {
           <p class="col-span-full py-8 text-center text-muted-foreground">
             No webinar badges match this filter.
