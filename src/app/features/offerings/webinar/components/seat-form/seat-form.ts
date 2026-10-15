@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import {
   FormField as AngularFormField,
   form,
@@ -37,7 +37,6 @@ interface OtpModel {
   selector: 'app-seat-form',
   imports: [AngularFormField, Button, Field, Input, InputOtp, NgpLabel, Spinner],
   templateUrl: './seat-form.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SeatForm {
   readonly webinarId = input.required<string>();

@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
 import { MASTERCLASS_APP_STORE_URL, MASTERCLASS_PLAY_STORE_URL } from '@core/constants/app-store';
 import { appStoreIcon, googlePlayIcon } from '@core/constants/icon';
@@ -24,7 +24,6 @@ interface StoreLink {
   selector: 'app-app-download',
   imports: [NgIcon, NgOptimizedImage],
   templateUrl: './app-download.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppDownload {
   protected readonly phoneSrc = PHONE_RENDER;

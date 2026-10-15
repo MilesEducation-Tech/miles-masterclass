@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { NgpRadioIndicator, NgpRadioItem } from 'ng-primitives/radio';
 
 /** One choice inside an `app-radio-group`; its content is the visible label. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-radio-item',
   hostDirectives: [
     {

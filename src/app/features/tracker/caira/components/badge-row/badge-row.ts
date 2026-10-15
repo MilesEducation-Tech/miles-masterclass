@@ -1,13 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { httpResource } from '@angular/common/http';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  input,
-  PLATFORM_ID,
-} from '@angular/core';
+import { Component, computed, inject, input, PLATFORM_ID } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   BadgeCourseType,
@@ -38,7 +31,6 @@ const EMPTY: BadgeV2Response<RowItem[]> = { data: [] };
   selector: 'app-badge-row',
   imports: [CourseBadgeCard, WebinarBadgeCard, RouterLink],
   templateUrl: './badge-row.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class BadgeRow {

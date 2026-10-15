@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { BadgeRow } from '../../components/badge-row/badge-row';
 import { CairaLevelHero } from '../../components/caira-level-hero/caira-level-hero';
 import { BadgeCourseType } from '@core/models/caira-badge.model';
@@ -20,7 +20,6 @@ interface RowConfig {
   selector: 'app-caira-tracker',
   imports: [BadgeRow, CairaLevelHero],
   templateUrl: './caira-tracker.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class CairaTracker {

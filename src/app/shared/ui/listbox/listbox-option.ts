@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroCheck } from '@ng-icons/heroicons/outline';
 import { NgpListboxOption } from 'ng-primitives/listbox';
@@ -8,7 +8,6 @@ import { NgpListboxOption } from 'ng-primitives/listbox';
  * selection as `data-selected` only, so `aria-selected` is added here for assistive technology.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-listbox-option',
   hostDirectives: [
     {

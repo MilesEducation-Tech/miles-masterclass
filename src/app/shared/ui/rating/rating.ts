@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+import { Component, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroStarSolid } from '@ng-icons/heroicons/solid';
 import { NgpRating, NgpRatingItem } from 'ng-primitives/rating';
@@ -8,7 +8,6 @@ import { NgpRating, NgpRatingItem } from 'ng-primitives/rating';
  * Arrow keys, pointer and half steps are the primitive's. Name it with a `ngpLabel` in an `app-field`.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-rating',
   hostDirectives: [
     {

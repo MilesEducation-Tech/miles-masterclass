@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { NgpMenu } from 'ng-primitives/menu';
 
 /**
@@ -6,7 +6,6 @@ import { NgpMenu } from 'ng-primitives/menu';
  * `<button [ngpMenuTrigger]="menu">` with `<ng-template #menu><app-menu>…</app-menu></ng-template>`.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-menu',
   hostDirectives: [NgpMenu],
   host: {

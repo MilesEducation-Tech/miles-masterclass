@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { NgpTextarea } from 'ng-primitives/textarea';
 
 /** A native `<textarea>`; bind it with `[formField]` directly. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'textarea[app-textarea]',
   hostDirectives: [{ directive: NgpTextarea, inputs: ['id', 'disabled'] }],
   host: {

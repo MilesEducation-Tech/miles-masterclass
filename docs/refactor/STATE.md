@@ -7,6 +7,28 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-14/15, NON-REFACTOR — repo hygiene the user asked for, all UNCOMMITTED on `master`.**
+  - **Alias-import ratchet (`chore(core): ratchet relative imports in check-structure`):** `check-structure.mjs`
+    counts static relative `from` specifiers per `.ts` file against a new `relativeImports` map in
+    `structure-baseline.json`, seeded with the 191 files / 381 imports that exist today. AGENTS.md §3/§9 and the
+    CLAUDE.md code rule now say aliases everywhere. Dynamic `import('./x')` is exempt (the root-shell rule needs it).
+  - **Explicit OnPush removed (`refactor(core): drop the redundant OnPush change detection`):** Angular 22
+    defaults to OnPush (`Default` is now an alias of `Eager`; the CLI omits the property), so the 75 explicit
+    `changeDetection: ChangeDetectionStrategy.OnPush` lines and their imports are gone. A `no-restricted-syntax`
+    selector in `eslint.config.mjs` rejects a re-added OnPush; `Eager` stays legal. CLAUDE.md rule updated.
+  - **TransferState review:** no change. The three manual uses (`translation-loader`, `language-context`,
+    `seo-manager`) carry data the HTTP transfer cache cannot see (lazy JSON chunks, the request's language,
+    Supabase `fetch`). `withHttpTransferCacheOptions({ includePostRequests: false })` only restates the default.
+  - **Facade audit of the rebound flows (auth/profile, home, masterclass, CAIRA, webinar):** ✅ findings in
+    `prompts/facade-audit.md` (no code changed). P1: the profile page needs a route-scoped `ProfileFacade` absorbing
+    `OnboardingApi`; the chapter page holds the rules while `VideoChapter` injects a second `MasterclassFacade`
+    instance; webinar pages bypass `WebinarFacade` for registration/join; `UaeCairaFacade` is RxJS on legacy
+    `v2/library/`; `ProfileCompletionDialog` is unreachable and PATCHes a legacy route; five `v2/` masterclass
+    route entries are still registered.
+  - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔, prettier ✔, `build:prod` 245.32 kB with
+    only `ai-labs.css`. Negative tests: a new relative import fails the structure check; a re-added OnPush fails
+    ESLint.
+  - **Staging note:** CLAUDE.md carries one hunk from each change; split it with `git add -p`.
 - 🔧 **2026-10-13, NON-REFACTOR — commerce API rebind (`prompts/commerce-api-rebind.md`). Approved by the
   user ("use this plan"); D1–D6 = A. The old backend is gone, so no legacy binding, logic or type survives in
   the payment flow; partner code and firm sponsorship leave it too.**
@@ -4270,6 +4292,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-15 · NON-REFACTOR · **Explicit OnPush dropped** (uncommitted, 75 components + `eslint.config.mjs` + CLAUDE.md): Angular 22 defaults to OnPush, so every `changeDetection: ChangeDetectionStrategy.OnPush` and its import went; `no-restricted-syntax` now rejects a re-added OnPush · lint 0 errors (105 warnings), structure ✔, build:prod 245.32 kB (local) · TransferState reviewed, no change (the 3 manual uses carry non-HttpClient data) · facade audit of the rebound flows running
+
+- 2026-10-14 · NON-REFACTOR · **Alias-import ratchet** (uncommitted, `check-structure.mjs` + `structure-baseline.json` + AGENTS.md + CLAUDE.md): per-file `relativeImports` count rule seeded with 191 files / 381 imports; both rule docs say aliases everywhere · structure ✔ after seeding, a new relative import fails it, ng lint 0 errors (local)
 
 - 2026-10-14 · NON-REFACTOR · **Payment UI/UX pass + billing step removed** (uncommitted, local `uat`, 22 files +281/−167): gallery capped at 80vh, empty-cart copy + CTA, cart loading/error states, auth guard on invoice/orders, invoice error state/fallbacks/row wrap, `savingAddress`, Cart → Review with the address collected on review (`components/billing-address`), `sm:px-4` gutters, pending copy · lint 0 errors, structure ✔, prettier ✔, build:prod 245.15 kB (local) · signed-in flow verified in dev against UAT at 1440/768/375 up to K1 `payment_error` (no Stripe on UAT)
 - 2026-10-13 · NON-REFACTOR · **Commerce PR7, buy buttons → plan** (uncommitted, `feat/MIL-XXX-offerings-buy-to-plan`): `addCourseToCart`, `v2/user/cart/`, `cartItemRemoved`, `CART_DRAWER_DIALOG` deleted; certificate gate subscriptions-only (+42/−206) · lint 0 errors, structure ✔, build:prod 245.29 kB (local) · gate dialogs verified in dev; legacy sweep of `src/` empty · epic code-complete

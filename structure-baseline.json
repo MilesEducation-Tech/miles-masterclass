@@ -100,5 +100,771 @@
       "count": 2,
       "reason": "CONVERT: the payment sheet gradient → from-sheet-top to-sheet-bottom (found by MIL-240)"
     }
+  },
+  "relativeImports": {
+    "src/app/admin/core/interceptors/admin-token-interceptor.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/admin/core/services/admin-auth.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/admin/core/services/audit-log.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/admin/core/services/partner-network-facade.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/admin/layout/admin-layout/admin-layout.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/admin/partner-platform-v2/dialogs/partner-report-preview-dialog/partner-report-preview-dialog.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/app.config.server.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/app.config.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/config/feature.config.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/constants/faq.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/constants/video-player.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/guards/auth/auth-guard.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/guards/auth/guest-guard.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/guards/auth/onboarding-guard.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/guards/root-redirect-guard.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/guards/validate-profession-country-guard.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/interceptors/loading/loading-interceptor.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/account.model.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/auth.model.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/badge.model.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/caira-badge.model.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/cpe-tracker.model.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/feature.model.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/language.model.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/library-filters.model.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/library.model.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/masterclass.model.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/profile.model.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/related-content.model.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/route-params.model.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/search.model.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/seo.models.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/models/track.model.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/account-api/account-api.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/analytics/analytics.ts": {
+      "count": 7,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/api-client/api-client.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/auth-session/auth-session.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/consent/consent.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/country-context/country-context.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/enquiry/enquiry.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/global-search/global-search.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/html-to-pdf/html-to-pdf.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/job-sectors/job-sectors.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/language-context/language-context.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/location-autocomplete/location-autocomplete.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/logger/logger.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/miles-activity/miles-activity.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/network/network.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/notification/notification.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/onboarding-api/onboarding-api.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/partner-code/partner-code.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/salesforce-lead/salesforce-lead.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/section-nav/section-nav.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/seo/seo-manager.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/seo/supabase-seo.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/storage/storage.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/services/translation-loader/translation-loader.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/utils/country.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/core/utils/language.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/ai-labs/pages/ai-labs/ai-labs.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/auth/auth.routes.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/auth/pages/login/login.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/home/components/home-hero-grid/home-hero-grid.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/home/components/home-hero/home-hero.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/home/components/home-pricing/home-pricing.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/home/components/home-webinar-ticket/home-webinar-ticket.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/home/pages/home/home.ts": {
+      "count": 5,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/home/services/home-facade.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/legal/components/legal-doc/legal-doc.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/legal/components/legal-section/legal-section.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/legal/constants/privacy-policy.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/legal/constants/terms-of-service.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/legal/pages/privacy-policy/privacy-policy.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/legal/pages/terms-of-service/terms-of-service.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/library/badge/components/badge-library-hero/badge-library-hero.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/library/badge/pages/badge/badge.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/library/course/components/course-filters-drawer/course-filters-drawer.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/library/course/pages/course/course.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/library/instructor/pages/instructor-details/instructor-details.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/library/instructor/pages/instructor/instructor.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/library/library.routes.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/components/audio-chapter/audio-chapter.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/components/chapter-quiz/chapter-quiz.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/components/course-chapter-list/course-chapter-list.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/components/course-resources/course-resources.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/components/video-chapter/video-chapter.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/masterclass/pages/masterclass-chapter/masterclass-chapter.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/micro-learning/components/micro-learning-quiz-dialog/micro-learning-quiz-dialog.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/micro-learning/micro-learning.routes.ts": {
+      "count": 5,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/micro-learning/pages/micro-learning-course/micro-learning-course.ts": {
+      "count": 5,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/micro-learning/pages/micro-learning/micro-learning.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/pages/course-feedback/course-feedback.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/pages/final-assessment-exam/final-assessment-exam.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/pages/final-assessment-report/final-assessment-report.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/podcast/pages/podcast-chapter/podcast-chapter.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/podcast/pages/podcast-course/podcast-course.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/podcast/pages/podcast/podcast.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/podcast/podcast.routes.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/services/chapter-facade.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/webinar/components/join-cta/join-cta.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/webinar/components/webinar-countdown/webinar-countdown.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/webinar/components/webinar-rail/webinar-rail.ts": {
+      "count": 5,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/webinar/pages/webinar-detail/webinar-detail.ts": {
+      "count": 7,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/webinar/pages/webinar-list/webinar-list.ts": {
+      "count": 6,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/webinar/services/guest-registration.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/webinar/services/webinar-facade.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/webinar/services/webinar-registration.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/webinar/utils/webinar-seo.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/offerings/webinar/utils/webinar-status.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/data/allinial-global.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/data/bkn.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/data/corporate.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/data/cpa-canada.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/data/ctcpa.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/data/dscpa.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/data/hawaii.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/data/illinois.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/data/mgi-north-america.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/data/mgi-world.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/models/partner-showcase.model.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/pages/caira-landing/caira-landing.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/pages/partner-landing/partner-landing.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/partners/pages/partner-showcase/partner-showcase.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/tracker/caira/components/badge-row/badge-row.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/tracker/caira/components/caira-level-hero/caira-level-hero.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/tracker/caira/pages/caira-tracker/caira-tracker.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/tracker/caira/pages/course-badges/course-badges.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/tracker/caira/pages/webinar-badges/webinar-badges.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/tracker/caira/services/badge-actions.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/tracker/caira/utils/badge-action.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/tracker/cpe/components/tracker-table/tracker-table.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/tracker/cpe/pages/cpe-tracker/cpe-tracker.ts": {
+      "count": 8,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/tracker/cpe/services/certificate-download.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/tracker/cpe/utils/credit-row.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/uae-caira/components/caira-levels-section/caira-levels-section.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/features/uae-caira/pages/uae-caira/uae-caira.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/layout/dynamic-layout/dynamic-layout.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/layout/footer/footer.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/layout/header/header.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/caira-level-stack/caira-level-stack.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/cards/badge-card/badge-card.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/cards/badge-hero-card/badge-hero-card.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/cards/coming-soon/coming-soon.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/cards/horizontal/horizontal.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/cards/hover/hover.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/cards/square/square.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/cards/vertical/vertical.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/carousel/carousel.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/course-about/course-about.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/course-related-section/course-related-section.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/enquiry-form/enquiry-form.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/laptop/laptop.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/micro-learning-hero-phone-mockup/micro-learning-hero-phone-mockup.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/nav-menu-item/nav-menu-item.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/offerings/offerings.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/plan-benefits/plan-benefits.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/slider/slider.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/surround-carousel/surround-carousel.engine.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/surround-carousel/surround-carousel.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/components/user-avatar-menu/user-avatar-menu.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/ai-lab-agent-dialog/ai-lab-agent-dialog.ts": {
+      "count": 3,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/ai-lab-dialog/ai-lab-dialog.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/ai-lab-terms-dialog/ai-lab-terms-dialog.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/app-download-dialog/app-download-dialog.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/apply-partner-code-dialog/apply-partner-code-dialog.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/block-status-dialog/block-status-dialog.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/calendly-dialog/calendly-dialog.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/certificate-download-dialog/certificate-download-dialog.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/course-info/course-info.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/filter-dialog/filter-dialog.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/profile-completion-dialog/profile-completion-dialog.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/share-dialog/share-dialog.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/utils-dialog/utils-dialog.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/video-dialog/video-dialog.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/dialogs/webinar-details-dialog/webinar-details-dialog.ts": {
+      "count": 4,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/ui/button/button.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/ui/combobox/combobox.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/ui/dialog/dialog.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/ui/error-state/error-state.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/ui/field/field.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/ui/page-loading/page-loading.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/ui/popover/popover-trigger.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/ui/progress/progress.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/ui/tabs/tabs.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/ui/toast/toast.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/ui/tooltip/tooltip-trigger.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/shared/utils/seo/course-seo-setup.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/testing/partner-mock/dev-interceptors.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/testing/partner-mock/partner-mock-handlers.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/testing/partner-mock/partner-mock-interceptor.ts": {
+      "count": 1,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    },
+    "src/app/testing/transloco.ts": {
+      "count": 2,
+      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
+    }
   }
 }

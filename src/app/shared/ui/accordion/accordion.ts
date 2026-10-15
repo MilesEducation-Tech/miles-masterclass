@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { NgpAccordion } from 'ng-primitives/accordion';
 
 /** A stack of `app-accordion-item`s; `type="multiple"` lets several stay open. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-accordion',
   hostDirectives: [
     {

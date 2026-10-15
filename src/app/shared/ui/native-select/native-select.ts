@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { NgpNativeSelect } from 'ng-primitives/select';
 
 /**
@@ -6,7 +6,6 @@ import { NgpNativeSelect } from 'ng-primitives/select';
  * `color-scheme: dark` keeps the option list on the site's dark palette.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'select[app-select]',
   hostDirectives: [
     { directive: NgpNativeSelect, inputs: ['id', 'ngpNativeSelectDisabled:disabled'] },

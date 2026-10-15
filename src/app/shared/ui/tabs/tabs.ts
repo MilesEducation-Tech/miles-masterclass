@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, contentChildren, model } from '@angular/core';
+import { Component, contentChildren, model } from '@angular/core';
 import { NgpTabButton, NgpTabList, NgpTabPanel, NgpTabset } from 'ng-primitives/tabs';
 import { Tab } from './tab';
 
@@ -8,7 +8,6 @@ import { Tab } from './tab';
  * primitive only marks inactive panels (`aria-hidden`, no `data-active`); hiding them is ours.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-tabs',
   imports: [NgpTabset, NgpTabButton, NgpTabList, NgpTabPanel, NgTemplateOutlet],
   host: { class: 'block' },

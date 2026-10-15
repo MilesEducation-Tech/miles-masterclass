@@ -1,5 +1,5 @@
 import { DatePipe, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { BADGE_ACTION_UI, WebinarBadgeItem } from '@core/models/caira-badge.model';
 import { cn } from '@shared/utils/cn';
 import { easternAbbrevFor } from '@shared/utils/eastern-time';
@@ -16,7 +16,6 @@ import { easternAbbrevFor } from '@shared/utils/eastern-time';
   selector: 'app-webinar-badge-card',
   imports: [DatePipe, NgOptimizedImage],
   templateUrl: './webinar-badge-card.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   // Fixed height for the same reason as the course card — see its host comment.
   // The horizontal layout needs less room than the vertical one.
   host: { class: 'block h-32' },
