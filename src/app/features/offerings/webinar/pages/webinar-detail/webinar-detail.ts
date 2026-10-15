@@ -2,23 +2,20 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  DOCUMENT,
   computed,
   effect,
   inject,
   input,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { NotificationService } from '@core/services/notification/notification';
+import { RouterLink } from '@angular/router';
 import { Faq } from '@shared/components/faq/faq';
 import { Spinner } from '@shared/ui/spinner/spinner';
-import { WebinarAbout } from '../../components/webinar-about/webinar-about';
-import { WebinarHero } from '../../components/webinar-hero/webinar-hero';
-import { eligibleOf } from '../../models/webinar.model';
-import { WebinarFacade } from '../../services/webinar-facade';
-import { WebinarRegistration } from '../../services/webinar-registration';
-import { resolveJoinTarget } from '../../utils/join-target';
-import { setupWebinarDetailSeo } from '../../utils/webinar-seo';
+import { WebinarAbout } from '@features/offerings/webinar/components/webinar-about/webinar-about';
+import { WebinarHero } from '@features/offerings/webinar/components/webinar-hero/webinar-hero';
+import { eligibleOf } from '@features/offerings/webinar/models/webinar.model';
+import { WebinarFacade } from '@features/offerings/webinar/services/webinar-facade';
+import { WebinarRegistration } from '@features/offerings/webinar/services/webinar-registration';
+import { setupWebinarDetailSeo } from '@features/offerings/webinar/utils/webinar-seo';
 
 /**
  * One webinar in full: the landing page's banner over this session, the NASBA
@@ -46,12 +43,7 @@ export class WebinarDetail {
 
   private readonly facade = inject(WebinarFacade);
   private readonly registration = inject(WebinarRegistration);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly notification = inject(NotificationService);
-  /** Injected rather than reached for, so the external hop is testable. */
-  private readonly window = inject(DOCUMENT).defaultView!;
 
   constructor() {
     // Tell the facade which webinar this page is showing. An `effect` rather
@@ -96,24 +88,8 @@ export class WebinarDetail {
     void this.facade.register(this.id());
   }
 
+  /** Sign-in, then the live room or Zoom: the facade owns the whole decision. */
   protected onJoin(): void {
-    const target = resolveJoinTarget(this.webinar());
-
-    switch (target.kind) {
-      case 'embedded':
-        void this.router.navigate(['live'], { relativeTo: this.route });
-        break;
-      case 'external':
-        // `noopener` is not optional on a `_blank` to a third party: without it
-        // Zoom's tab gets a handle on `window.opener` and can navigate us.
-        this.window.open(target.url, '_blank', 'noopener,noreferrer');
-        break;
-      case 'unavailable':
-        this.notification.error(
-          'That session is not ready yet',
-          'We could not find a join link for this webinar. Refresh in a moment, or contact support if it persists.',
-        );
-        break;
-    }
+    void this.facade.join(this.id());
   }
 }

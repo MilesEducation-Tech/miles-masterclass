@@ -7,6 +7,20 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-15, NON-REFACTOR — webinar feed rejected over null thumbnails. DONE, UNCOMMITTED** on
+  `fix/MIL-62-require-sign-in` (the user's call: its own commit here, so MIL-62 can be tested on the webinar pages).
+  - **Cause:** UAT added `Test webinar-2` (`missed_webinar`, 2026-10-13) with `horizontal_thumbnail` and
+    `square_image` both `null`. Postman says `''` and "never null", so `isWebinarCard` required strings, and the one
+    card failed the whole `webinar-main-page/` and `webinar-details-page/`. The list and detail pages showed "We could
+    not load the webinars". Replaying the guard on the live feed found only these two keys, on that one card. It is
+    on `master` too.
+  - **Fix:** both are `string | null` in `WebinarCard` and its guard, like `vertical_thumbnail`. Every reader already
+    falls through on a falsy value (`webinar-card`, `webinar-hero`, `webinar-seo`).
+  - **Verified (dev 4101):** the webinar list renders, and `Test webinar-2`'s detail page renders with an empty image
+    box.
+  - **Gates:** tsc 0, Storybook tsc 0, ESLint clean on the file, Prettier clean.
+  - **Backend:** send `''` as the contract says, or update Postman to `string | null`.
+
 - 🔧 **2026-10-13, NON-REFACTOR — commerce API rebind (`prompts/commerce-api-rebind.md`). Approved by the
   user ("use this plan"); D1–D6 = A. The old backend is gone, so no legacy binding, logic or type survives in
   the payment flow; partner code and firm sponsorship leave it too.**
@@ -414,6 +428,97 @@ data-press:bg-transparent` in a static `class`; the auto-renew dialog's Close is
     - **Not done:** a successful sign-in, which needs a real inbox or phone.
   - **Backend:** Postman still shows the old bodies; ask for a regenerated collection. Prod must take
     the new contract before this ships.
+- 🔧 **2026-10-12, NON-REFACTOR — require sign-in for learner pages and webinar Join
+  (`prompts/require-sign-in.md`, approved). DONE, UNCOMMITTED** on `fix/MIL-62-require-sign-in` (Bug MIL-62,
+  from `master`). No refactor phase moved.
+  - **Guarded (17 routes, `canMatch: [authGuard]`):**
+    - masterclass and podcast chapter, exam, report and feedback
+    - micro-learning exam, report and feedback
+    - webinar feedback
+    - the `cpe-tracker` and `caira-tracker` mounts
+    - payment `invoice`, `order-history` and the cart/billing/review shell (`plan` stays public)
+  - **Join:** `WebinarFacade.join()` owns it now and asks a signed-out user to sign in ("Sign in to join").
+    Before, a stale detail or feed row could open the Zoom `join_url` with no session. The prompt copy for
+    Register and Join is in `webinar/constants/sign-in-prompts.ts`.
+  - **Left public on purpose:** the micro-learning course page. It is that course's only page and guests
+    browsed it in v3; this is a product call.
+  - **Gates (local macOS):** tsc 0; `pnpm lint` 0 errors (106 warnings); structure check passed; Prettier
+    clean; `build:prod` green, initial 245.54 kB, with only the `ai-labs.css` warning.
+  - **SSR (prod build, 4000):**
+    - Signed out, the server-rendered guarded routes answer 302 to `/auth/login?redirect=…`; the
+      client-rendered ones send an empty `<app-root>`.
+    - With a dummy `ACCESS_TOKEN` cookie, a chapter answers 200.
+    - All 16 public pages checked answer 200 signed out.
+  - **Browser (the user's dev server, 4101):**
+    - **Signed out:** all 22 guarded URLs land on sign-in with the right `redirect`, and no page chunk loads.
+      The public podcast course page does load `podcast-course-*.js`, which shows the check can see page
+      chunks.
+    - **Join, signed out:** the prompt shows on the list and detail pages, with no `/live` navigation and no
+      Zoom tab. "Sign in" goes to `/auth/login?redirect=/us/accounting/webinar`; "Not now" closes it.
+      Register still says "Sign in to register".
+    - **Dummy cookie (removed afterwards):** the guarded pages open, and Join reaches the "not ready yet"
+      toast.
+  - **Not verified:**
+    - The real return after signing in, because UAT sends no OTP mail to temp domains.
+    - A real Join (embedded or Zoom).
+  - **Found in review, fixed:** "Back to Home" on `/auth/login` navigated to `redirect`, which is now a
+    guarded page, so it bounced back to the login page. `Auth.handleBackOrLogout()` now returns to the page
+    sign-in was asked from (`currentNavigation().previousNavigation`, recorded when the shell opens), or `/`.
+    - **Verified (dev 4101, plus headless Playwright once the browser pane was hidden):**
+      - Course page → Watch Now → sign-in → Back returns to the course page.
+      - A direct chapter link → Back goes to home.
+      - The webinar Join prompt → Sign in → Back returns to the webinar page.
+      - A session ended on a guarded page → Back falls through to home. This case logs one harmless
+        `AbortError` for a skipped view transition.
+  - **Same PR, user's call: a guest's "Book Now" opens that webinar's page with its seat form focused**
+    (`prompts/webinar-book-now-detail.md`, approved).
+    - **Bug fixed:** the list page focused the hero's seat form, which belongs to the hero webinar. A row's
+      Book Now therefore booked the hero, not the row.
+    - **How:** `WebinarFacade.book()`: a member registers in place; a guest gets a one-shot `seatFocusFor`
+      and navigates to the detail page. `SeatForm` calls `takeSeatFocus()` after its first render, then
+      scrolls to the field and focuses it. `webinarPath()` is shared with `join()`.
+    - **Verified (dev 4101 via headless Playwright):**
+      - At 1440, 768 and 375, Book Now on a row opens that webinar's page. Its seat form carries that id, and
+        the field is focused and in view for 2 s after arrival.
+      - A direct load and More Info do not focus the field.
+    - **Not clicked signed in:** that would POST a registration. The member branch is the unchanged
+      `register()`.
+  - **Second commit, same branch: complete the profile before webinar registration**
+    (`prompts/profile-before-register.md`, approved). DONE, UNCOMMITTED.
+    - **Scope:** only `register-via-zoom` refuses an incomplete profile (checked in Postman), and every caller goes
+      through `WebinarFacade.register()`.
+    - **What changed:**
+      - **The gate:** when `AuthSession.isProfileCompleted() === false`, Register Now toasts "Complete your profile
+        first" and opens `/auth/profile?redirect=<page>`, with no call.
+      - **The fallback:** the API's own profile refusal does the same, with the server's copy.
+      - **The profile page:** after a complete save, it goes to an in-app `redirect`.
+      - **Sign-in:** a `new_user` keeps `redirect` on the way to `/auth/profile`.
+    - **Verified (dev 4101, headless Playwright, dummy cookies; the save and the refusal intercepted, test-only):**
+      - Incomplete: the toast, `/auth/profile?redirect=/us/accounting/webinar/<id>`, and 0 register calls.
+      - Complete, but the API refuses with `missing_first_name`: 1 call, the server copy, then the profile page.
+      - A complete save lands on the webinar detail; a partial save stays, with "Still to answer: 1 question".
+      - A `//evil…` redirect is ignored.
+    - **Gates:** tsc 0, lint 0 errors (106 warnings), structure check passed, `build:prod` green.
+    - **Needs the user's real round trip.** If the backend still doesn't set `first_name` from the profile's name
+      answer (MIL-52 note), a complete profile keeps getting `missing_first_name`. That is a backend fix.
+    - **Same commit, the user's report: Save Changes did nothing with a required question unanswered.**
+      - **Cause:** the form had two validators. `[formField]` puts a native `required` attribute on the text inputs, so
+        the browser blocked the submit before `save()` ran. Once those were filled, `save()` refused because of an empty
+        select, and the browser couldn't see selects. Its error sat out of view in the scrolling card.
+      - **Second cause:** a required single-select's error line was blank, because the `required` rule fires first on
+        `''` and had no message.
+      - **Fix:** the form is `novalidate`. `save()` marks every field and calls `revealFirstError()`, which scrolls the
+        first unanswered question in display order to the centre of the card and focuses it. The rule now has the
+        "Choose an option." message. The text input and textarea now take the shared controls'
+        `data-invalid:data-touched:border-destructive`, so they turn red like the select (the user asked for this).
+      - **Verified (dev 4101, headless Playwright, stubbed `questions/` with sections out of order and a gated child):**
+        - Every case went to the right question, including a select and a child question revealed by a "Yes".
+        - Every error showed its message. A complete form sent one PATCH.
+        - At 1440, 768 and 375, the question, its label and its error are in view, with no horizontal scroll.
+      - **Gates:** tsc 0, lint 0 errors (106 warnings), structure check passed, Prettier clean. `build:prod` was not
+        run, because it breaks the running dev server's Vite cache.
+  - **Follow-up, own ticket:** `payment/pages/plan/plan.ts:61` hardcodes `isLoggedIn = signal(false)`, so a
+    signed-in learner picking a plan is sent to sign-in.
 - 🔧 **2026-10-12, NON-REFACTOR — CAIRA levels before login. ✅ Committed by the user as `b495aa4`** on
   `feat/MIL-61-caira-levels-pre-login` (from `master`). No refactor phase moved.
   - **Open, same PR (user asked): the AI Labs WebGL ring shows no thumbnails (⏸ awaiting decision).**
@@ -4271,6 +4376,7 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-10-15 · NON-REFACTOR · **Webinar feed: null `horizontal_thumbnail` / `square_image` accepted** (uncommitted, `fix/MIL-62-require-sign-in`): one UAT card with both null failed the whole feed · tsc 0, Storybook tsc 0, ESLint ✔, prettier ✔ · list + `Test webinar-2` detail render in dev
 - 2026-10-14 · NON-REFACTOR · **Payment UI/UX pass + billing step removed** (uncommitted, local `uat`, 22 files +281/−167): gallery capped at 80vh, empty-cart copy + CTA, cart loading/error states, auth guard on invoice/orders, invoice error state/fallbacks/row wrap, `savingAddress`, Cart → Review with the address collected on review (`components/billing-address`), `sm:px-4` gutters, pending copy · lint 0 errors, structure ✔, prettier ✔, build:prod 245.15 kB (local) · signed-in flow verified in dev against UAT at 1440/768/375 up to K1 `payment_error` (no Stripe on UAT)
 - 2026-10-13 · NON-REFACTOR · **Commerce PR7, buy buttons → plan** (uncommitted, `feat/MIL-XXX-offerings-buy-to-plan`): `addCourseToCart`, `v2/user/cart/`, `cartItemRemoved`, `CART_DRAWER_DIALOG` deleted; certificate gate subscriptions-only (+42/−206) · lint 0 errors, structure ✔, build:prod 245.29 kB (local) · gate dialogs verified in dev; legacy sweep of `src/` empty · epic code-complete
 

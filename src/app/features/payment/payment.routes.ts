@@ -7,13 +7,16 @@ import { paymentGuard } from '@features/payment/guards/payment-guard';
  * `loadChildren: () => import('@features/payment/payment.routes').then(m => m.PAYMENT_ROUTES)`.
  *
  * Route tree:
- *   /payment/plan                  ← subscription plan picker
- *   /payment/invoice/:orderId      ← standalone invoice
- *   /payment/order-history         ← past orders list
- *   /payment/                      ← Payment shell (header + breadcrumb)
+ *   /payment/plan                  ← subscription plan picker (public: pricing)
+ *   /payment/invoice/:orderId      ← standalone invoice          [signed in]
+ *   /payment/order-history         ← past orders list            [signed in]
+ *   /payment/                      ← Payment shell (header + breadcrumb) [signed in]
  *     /                            ← OverviewWrapper (sidebar layout)
  *       /cart                      ← cart contents
  *     /review                      ← guarded: non-empty cart; collects the billing address
+ *
+ * `authGuard` sits on each signed-in route rather than on the `payment` mount
+ * in `features.routes.ts`, because `plan` must stay open to visitors.
  */
 export const PAYMENT_ROUTES: Routes = [
   {
@@ -33,6 +36,7 @@ export const PAYMENT_ROUTES: Routes = [
   },
   {
     path: '',
+    canMatch: [authGuard],
     loadComponent: () => import('./payment').then((m) => m.Payment),
     children: [
       {
