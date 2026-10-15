@@ -4670,6 +4670,8 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-10-15 · NON-REFACTOR · **MIL-65 rebased on `master` 3.7.0 (`c2a1194`)** (force-pushed as `9fcb4dc`): `STATE.md` conflicts kept both sides (the replayed `98c2e56` alone carries a garbled step-log block; the tip is clean, squash drops it); `verify` failed only on the relative-import ratchet (#139) now being better than its baseline, so `check-structure --prune` dropped/lowered 6 entries · tsc 0, Storybook tsc 0, lint 0 errors (101 warnings), structure ✔, prettier ✔, build:prod 245.12 kB
+
 - 2026-10-15 · NON-REFACTOR · **Library rebind re-planned on `master` (`d470717`)**: course library already bound by #136; `prompts/library-rebind.md` rev 2 = instructor library, instructor page, badge library retirement · live UAT probe: `course_type` now required on `all-instructors-page/` · MIL-85 needs `master` merged (tabs.ts + STATE.md conflicts, 6 relative-import ratchet failures) · no `src/` changes
 
 - 2026-10-15 · NON-REFACTOR · **MIL-85: `master` (`d470717`, #136) merged in, conflicts resolved** (uncommitted merge): `tabs.ts` = master's `variant` file without OnPush; #136's relative imports → aliases in 6 files; baseline pruned (3 entries); STATE.md kept both sides · lint 0 errors (105 warnings), structure ✔, prettier ✔ (local)
