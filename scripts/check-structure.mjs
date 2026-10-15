@@ -214,6 +214,69 @@ export function relativeImportCounts(sourceFiles) {
   return counts;
 }
 
+// ---------------------------------------------------------------- facades
+// The rules a script can see. The judgement calls (is a facade warranted, is a page relaying facade state as
+// inputs) are in .agents/skills/facade-pattern/SKILL.md, which every agent reads through AGENTS.md §10.
+
+const FACADE_FILE = /-facade\.ts$/;
+
+/** A facade lives in a feature's or admin area's `services/`. Never in core/, shared/, layout/ or admin/core/. */
+export function misplacedFacades(files) {
+  return files
+    .filter(
+      (f) =>
+        FACADE_FILE.test(f) &&
+        !/^src\/app\/(?:features|admin)\/(?!core\/).+\/services\/[^/]+-facade\.ts$/.test(f),
+    )
+    .sort();
+}
+
+/**
+ * shared/, core/ and layout/ never import a facade (static, dynamic or type-only). Shared components stay inputs
+ * and outputs, and core sits below every feature. A facade importing another is not counted here.
+ */
+export function facadeImportsOutsideFeatures(sourceFiles) {
+  return sourceFiles
+    .filter(
+      ([f, src]) =>
+        /^src\/app\/(?:shared|core|layout)\/.+\.ts$/.test(f) &&
+        !FACADE_FILE.test(f) &&
+        /(?:\bfrom\s+|\bimport\(\s*)'[^']*-facade'/.test(src),
+    )
+    .map(([f]) => f)
+    .sort();
+}
+
+/**
+ * HTTP in a component, counted per file: `httpResource(…)`, `inject(HttpClient)` or `inject(ApiClient)`. Reads and
+ * mutations live in a service (AGENTS.md §3, "Components display, facades decide").
+ */
+export function componentHttpCounts(sourceFiles) {
+  const counts = {};
+  for (const [file, src] of sourceFiles) {
+    if (!file.endsWith('.ts') || !/@Component\(/.test(src)) continue;
+    const n = (
+      src.match(/\bhttpResource\s*(?:<[^(]*>)?\s*\(|\binject\(\s*(?:HttpClient|ApiClient)\s*\)/g) ??
+      []
+    ).length;
+    if (n) counts[file] = n;
+  }
+  return counts;
+}
+
+/**
+ * A facade is route-scoped: `@Service({ autoProvided: false })`, listed in its route's `providers`. A root
+ * `@Service()` is the deliberate exception (state that must outlive the route) and says so in a `// why:` comment.
+ */
+export function rootFacadesWithoutReason(sourceFiles) {
+  return sourceFiles
+    .filter(
+      ([f, src]) => FACADE_FILE.test(f) && /@Service\(\s*\)/.test(src) && !/\/\/\s*why:/.test(src),
+    )
+    .map(([f]) => f)
+    .sort();
+}
+
 // ---------------------------------------------------------------- baseline comparison
 
 /** A list rule: findings must be baseline keys; baseline keys must still be findings. */
@@ -282,6 +345,21 @@ export function check(root = ROOT, baseline = readBaseline(root)) {
       componentStylesheets(files),
       baseline.componentStylesheets,
     ),
+    compareList(
+      'Facade outside a feature or admin area services/ folder (.agents/skills/facade-pattern/SKILL.md)',
+      misplacedFacades(files),
+      baseline.misplacedFacades,
+    ),
+    compareList(
+      'shared/, core/ or layout/ imports a facade: take inputs and emit outputs instead (.agents/skills/facade-pattern/SKILL.md)',
+      facadeImportsOutsideFeatures(sources),
+      baseline.facadeImports,
+    ),
+    compareList(
+      'Root @Service() facade without a // why: comment: use @Service({ autoProvided: false }) in the route providers (.agents/skills/facade-pattern/SKILL.md)',
+      rootFacadesWithoutReason(sources),
+      baseline.rootFacades,
+    ),
   ];
   const counts = [
     compareCounts(
@@ -298,6 +376,11 @@ export function check(root = ROOT, baseline = readBaseline(root)) {
       'Relative import (use a path alias: @core/*, @shared/*, @layout/*, @features/*, @admin/*)',
       relativeImportCounts(sources),
       baseline.relativeImports,
+    ),
+    compareCounts(
+      'HTTP in a component (httpResource / HttpClient / ApiClient): move the read or mutation into the page facade (.agents/skills/facade-pattern/SKILL.md)',
+      componentHttpCounts(sources),
+      baseline.componentHttp,
     ),
   ];
 
@@ -330,6 +413,10 @@ export function prune(root = ROOT) {
     inlineStyles: lower(baseline.inlineStyles, inlineStyleCounts(html)),
     tokenHex: lower(baseline.tokenHex, tokenHexCounts(sources, tokens)),
     relativeImports: lower(baseline.relativeImports, relativeImportCounts(sources)),
+    misplacedFacades: keep(baseline.misplacedFacades, misplacedFacades(files)),
+    facadeImports: keep(baseline.facadeImports, facadeImportsOutsideFeatures(sources)),
+    rootFacades: keep(baseline.rootFacades, rootFacadesWithoutReason(sources)),
+    componentHttp: lower(baseline.componentHttp, componentHttpCounts(sources)),
   };
   writeFileSync(path.join(root, BASELINE), JSON.stringify(next, null, 2) + '\n');
 }

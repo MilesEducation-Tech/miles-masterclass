@@ -127,7 +127,7 @@ src/app/
 | Domain types                   | `core/models/` when shared; `features/<f>/models/` when one feature owns them        | Move a model up only when a second feature needs it.                                                 |
 | Reusable UI                    | `shared/ui/`, `shared/components/`, `shared/dialogs/`                                | Generic only. A dialog one feature opens lives in that feature's `dialogs/`.                         |
 
-Three hard boundaries:
+Four hard boundaries:
 
 - **Components display, facades decide.** If a component grows an `if` about business rules, that `if` belongs in a
   facade. On a facade-backed page, each component injects that facade and reads its signals and calls its methods
@@ -136,6 +136,11 @@ Three hard boundaries:
 - **Facades are route-scoped by default.** Most are `@Service({ autoProvided: false })` and listed in the route's
   `providers`, so two feature trees get independent instances. Root facades such as `PaymentFacade` and
   `FeatureFacade`, and the core singletons, are the deliberate exceptions.
+- **A facade only where state is shared.** One facade per routed page tree that holds state, rules or actions.
+  A page whose one read a core service already exposes injects that service instead of a facade that forwards it,
+  and code in `core/`, `shared/` or `layout/` never imports a facade. A component reads page state from the facade
+  or from inputs, not both; a list item taking its own row as an input is the exception. How to decide, the shape
+  and the review checklist: `.agents/skills/facade-pattern/SKILL.md`.
 - **The browser is untrusted.** Secrets, service-role keys and privileged operations never reach client code (see §7).
 
 **Reference examples. Copy their shape.**
@@ -450,6 +455,7 @@ The rules in this file hold for every contributor and every tool (Claude Code, C
 | Conventional Commits                                                                                                                                                                                                   | `commit-msg` → commitlint                    | `commitlint`, `pr-title` (the squash title) |
 | Import boundaries, `inject()`, `@if`/`@for`, `DestroyRef`, no `any`, no `@angular/aria` / `Injectable` / `NgClass` / `NgStyle` / `app-api/`                                                                            | `lint-staged` → ESLint (staged files)        | `verify` → `pnpm lint`                      |
 | No spec/test files, naming, plural folders, no `shared/` in a feature, routed components in `pages/`, component CSS reasons, static styles, `@defer` placeholders, colours equal to a `@theme` token, relative imports | `pre-commit` → `scripts/check-structure.mjs` | `verify` → `pnpm lint`                      |
+| Facades: placement, imports from shared code, HTTP in components, root facades without a `// why:`                                                                                                                     | `pre-commit` → `scripts/check-structure.mjs` | `verify` → `pnpm lint`                      |
 | Formatting, AOT build + bundle budget, Storybook                                                                                                                                                                       | `lint-staged` → Prettier                     | `verify`                                    |
 | One reviewed, squash-merged PR per change; protected tags; releases                                                                                                                                                    | —                                            | rulesets, `CODEOWNERS`, release-please      |
 
@@ -472,6 +478,7 @@ Tool and module knowledge lives in `.claude/skills/`, not here. Name the ones yo
 | --------------------- | --------------------------------------------------------------------------------------- |
 | `tech-stack`          | Versions, scripts, build configs, environments, adding or upgrading a dependency.       |
 | `angular-conventions` | Writing any component, service, signal, effect, or template in this repo.               |
+| `facade-pattern`      | Facades, and where a read or mutation lives: `.agents/skills/facade-pattern/`.          |
 | `core-services`       | ApiClient, Auth, Storage, Dialog, Notification, Logger, Utils, Analytics, interceptors. |
 | `routing-and-guards`  | Adding a route, guard, redirect, or changing an SSR render mode.                        |
 | `seo`                 | Meta tags, canonical, JSON-LD, the Supabase `seo_pages` table, the admin SEO console.   |

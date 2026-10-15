@@ -40,6 +40,8 @@ Detailed docs — read them when the task touches them, don't inline them here:
   inside one feature. `check-structure` ratchets the remaining relative imports; converting them is its own refactor PR.
 - Services: `@Service()` with `inject()`. Keep `@Injectable` only where the provider needs it, with a `// why:` comment.
 - Data: `httpResource` (or `resource()` for Supabase) for reads; `HttpClient` for mutations, then `.reload()`.
+- Facades: follow `.agents/skills/facade-pattern/SKILL.md`. `check-structure` ratchets facade placement, facade imports from shared code,
+  HTTP in components and root facades without a `// why:`.
 - Headless UI: ng-primitives only. Never `@angular/aria`, and no hand-rolled a11y widgets.
 - Styling: Tailwind utilities in templates. New component CSS only for keyframes, third-party overrides,
   or `:host`/pseudo-element rules. No `NgClass`/`NgStyle` — use `[class]` or `cn()`.
