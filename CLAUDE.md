@@ -36,8 +36,8 @@ Detailed docs — read them when the task touches them, don't inline them here:
 - Place code at the lowest level that uses it. Respect the import boundaries in `AGENTS.md`:
   core imports nothing from shared/features/admin; shared imports nothing from features/admin;
   features never import from other features.
-- Use path aliases (`@core/*`, `@shared/*`, `@layout/*`, `@features/*`, `@admin/*`) across top-level folders;
-  relative imports only within a feature.
+- Use path aliases (`@core/*`, `@shared/*`, `@layout/*`, `@features/*`, `@admin/*`) for every import, even
+  inside one feature. `check-structure` ratchets the remaining relative imports; converting them is its own refactor PR.
 - Services: `@Service()` with `inject()`. Keep `@Injectable` only where the provider needs it, with a `// why:` comment.
 - Data: `httpResource` (or `resource()` for Supabase) for reads; `HttpClient` for mutations, then `.reload()`.
 - Headless UI: ng-primitives only. Never `@angular/aria`, and no hand-rolled a11y widgets.
@@ -45,7 +45,8 @@ Detailed docs — read them when the task touches them, don't inline them here:
   or `:host`/pseudo-element rules. No `NgClass`/`NgStyle` — use `[class]` or `cn()`.
 - Lazy-load heavy work: `@defer` (never above the fold, always with a sized `@placeholder`) and
   `injectAsync` for services that pull heavy libraries or serve rare flows.
-- Don't change a component's `changeDetection`.
+- Don't set `changeDetection`: OnPush is Angular 22's default and ESLint rejects an explicit OnPush. Use `Eager`
+  only when a component needs it, with a `// why:` comment.
 
 ## Versioning (detail in docs/engineering/versioning.md)
 

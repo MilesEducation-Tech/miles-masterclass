@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  inject,
-  input,
-} from '@angular/core';
+import { Component, computed, DestroyRef, inject, input } from '@angular/core';
 import { ServerClock } from '../../services/server-clock';
 import { formatCountdown, formatCountdownLong, splitDuration } from '../../utils/session-time';
 
@@ -21,7 +14,6 @@ import { formatCountdown, formatCountdownLong, splitDuration } from '../../utils
   selector: 'app-webinar-countdown',
   imports: [],
   templateUrl: './webinar-countdown.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WebinarCountdown {
   /** Epoch ms of the moment being counted down to. */

@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { NgpSeparator } from 'ng-primitives/separator';
 
 /** `<div app-separator>` or `<div app-separator orientation="vertical">`; ngpSeparator sets the role. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: '[app-separator]',
   hostDirectives: [{ directive: NgpSeparator, inputs: ['ngpSeparatorOrientation:orientation'] }],
   host: {

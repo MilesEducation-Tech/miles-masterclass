@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, model, output } from '@angular/core';
+import { Component, computed, effect, model, output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronLeft, heroChevronRight } from '@ng-icons/heroicons/outline';
@@ -30,7 +30,6 @@ const DAY =
  * the field's `aria-*` / `data-*` state.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-date-picker',
   hostDirectives: [
     {

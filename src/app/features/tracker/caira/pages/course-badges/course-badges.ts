@@ -2,7 +2,6 @@ import { isPlatformBrowser } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 import {
   afterNextRender,
-  ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
@@ -54,7 +53,6 @@ const VALID_TYPES = COURSE_BADGE_TYPES.map((t) => t.value).filter(
   imports: [BadgeFilterChips, Button, CourseBadgeCard, ErrorState, NgIcon, RouterLink],
   providers: [provideIcons({ lucideArrowLeft })],
   templateUrl: './course-badges.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class CourseBadges {

@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { BADGE_ACTION_UI, CourseBadgeItem } from '@core/models/caira-badge.model';
 import { Button } from '@shared/ui/button/button';
 import { cn } from '@shared/utils/cn';
@@ -17,7 +17,6 @@ import { cn } from '@shared/utils/cn';
   selector: 'app-course-badge-card',
   imports: [Button, NgOptimizedImage],
   templateUrl: './course-badge-card.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   // Fixed height, not `h-full`: stretching only equalised cards *within* one
   // rail, so a masterclass row and a podcast row still disagreed. Every block
   // inside is a fixed box (two-line title, one-line course, no status line), so

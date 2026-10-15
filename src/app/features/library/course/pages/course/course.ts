@@ -23,10 +23,10 @@ import { Utils } from '@shared/services/utils';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { Tabs } from '@shared/ui/tabs/tabs';
 import { Tab } from '@shared/ui/tabs/tab';
-import { CourseFilters } from '../../components/course-filters/course-filters';
-import { COURSE_LIBRARY_TABS } from '../../constants/course-library';
-import { LibraryFilterSelection } from '../../models/course-library.model';
-import { CourseFacade } from '../../services/course-facade';
+import { CourseFilters } from '@features/library/course/components/course-filters/course-filters';
+import { COURSE_LIBRARY_TABS } from '@features/library/course/constants/course-library';
+import { LibraryFilterSelection } from '@features/library/course/models/course-library.model';
+import { CourseFacade } from '@features/library/course/services/course-facade';
 
 @Component({
   selector: 'app-course',
@@ -117,7 +117,7 @@ export class Course {
   async openMobileFilters() {
     // Loaded on open: the drawer is mobile-only and user-initiated (§4.4).
     const { CourseFiltersDrawer } =
-      await import('../../components/course-filters-drawer/course-filters-drawer');
+      await import('@features/library/course/components/course-filters-drawer/course-filters-drawer');
     this.dialogs.open(CourseFiltersDrawer, {
       data: {
         groups: () => this.facade.groups(),

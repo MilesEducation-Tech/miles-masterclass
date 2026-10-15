@@ -13,7 +13,7 @@ import {
   LibraryFilterGroup,
   LibraryFilterKey,
   LibraryFilterSelection,
-} from '../../models/course-library.model';
+} from '@features/library/course/models/course-library.model';
 
 @Component({
   selector: 'app-course-filters',

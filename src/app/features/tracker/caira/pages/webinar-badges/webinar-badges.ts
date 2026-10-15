@@ -2,7 +2,6 @@ import { isPlatformBrowser } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 import {
   afterNextRender,
-  ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
@@ -49,7 +48,6 @@ const EMPTY: BadgeV2Response<WebinarBadgeItem[]> = { data: [] };
   imports: [BadgeFilterChips, Button, ErrorState, NgIcon, RouterLink, WebinarBadgeCard],
   providers: [provideIcons({ lucideArrowLeft })],
   templateUrl: './webinar-badges.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class WebinarBadges {

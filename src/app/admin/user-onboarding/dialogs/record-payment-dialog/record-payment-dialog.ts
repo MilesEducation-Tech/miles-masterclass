@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 
 import { Button } from '@shared/ui/button/button';
 import { injectDialogRef } from 'ng-primitives/dialog';
@@ -45,7 +45,6 @@ export interface RecordPaymentDialogResult {
   imports: [Button, Dialog, Field, NgpLabel, Textarea, NgIcon],
   providers: [provideIcons({ heroXMark })],
   templateUrl: './record-payment-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecordPaymentDialog {
   private readonly dialogRef = injectDialogRef<

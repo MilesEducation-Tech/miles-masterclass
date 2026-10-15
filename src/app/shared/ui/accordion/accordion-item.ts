@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroChevronDown } from '@ng-icons/heroicons/outline';
 import {
@@ -13,7 +13,6 @@ import { NgpButton } from 'ng-primitives/button';
  * is hidden by the global `[ngpAccordionContent][data-closed]` rule in styles.css.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-accordion-item',
   hostDirectives: [
     {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+import { Component, output } from '@angular/core';
 import { NgpFormControl } from 'ng-primitives/form-field';
 import { NgpToggleGroup } from 'ng-primitives/toggle-group';
 
@@ -8,7 +8,6 @@ import { NgpToggleGroup } from 'ng-primitives/toggle-group';
  * state the primitive does not set itself. Name it with a `ngpLabel` in an `app-field`.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-toggle-group',
   hostDirectives: [
     {

@@ -1,6 +1,6 @@
 import { NgOptimizedImage } from '@angular/common';
 import { HttpContext, httpResource } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, linkedSignal, signal } from '@angular/core';
+import { Component, computed, linkedSignal, signal } from '@angular/core';
 import { NgpTabButton, NgpTabList, NgpTabPanel, NgpTabset } from 'ng-primitives/tabs';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
@@ -66,7 +66,6 @@ const EMPTY_DETAIL: BadgeV2Response<CairaLadderItem | null> = { data: null };
   ],
   providers: [provideIcons({ heroXMark })],
   templateUrl: './caira-badge-info-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CairaBadgeInfoDialog {
   private readonly dialogRef = injectDialogRef<

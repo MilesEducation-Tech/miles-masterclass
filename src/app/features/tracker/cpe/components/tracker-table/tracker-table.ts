@@ -1,5 +1,5 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideAlignLeft,
@@ -66,7 +66,6 @@ export interface TrackerRowView {
     }),
   ],
   templateUrl: './tracker-table.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block w-full' },
 })
 export class TrackerTable {

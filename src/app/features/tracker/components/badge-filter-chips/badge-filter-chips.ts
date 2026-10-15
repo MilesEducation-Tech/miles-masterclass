@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { cn } from '@shared/utils/cn';
 
 export interface BadgeChipOption {
@@ -18,7 +18,6 @@ export interface BadgeChipOption {
 @Component({
   selector: 'app-badge-filter-chips',
   templateUrl: './badge-filter-chips.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { role: 'group' },
 })
 export class BadgeFilterChips {

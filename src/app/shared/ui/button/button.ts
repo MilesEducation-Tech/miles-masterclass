@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  ElementRef,
-  inject,
-  input,
-} from '@angular/core';
+import { Component, computed, ElementRef, inject, input } from '@angular/core';
 import { NgpButton } from 'ng-primitives/button';
 import { cn } from '../../utils/cn';
 
@@ -49,7 +42,6 @@ const SIZES: Record<ButtonSize, string> = {
 };
 
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'button[app-button]',
   hostDirectives: [{ directive: NgpButton, inputs: ['disabled'] }],
   template: `

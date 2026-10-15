@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
 import { logo } from '@core/constants/icon';
 import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
@@ -27,7 +27,6 @@ const NASBA_LOGO = 'https://asset.milesmasterclass.com/media/web-app/home/nasba.
   imports: [NgIcon, DurationPipe],
   templateUrl: './webinar-about.html',
   host: { class: 'block' },
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WebinarAbout {
   /** A feed card until the detail row lands; only the detail row has `description`. */

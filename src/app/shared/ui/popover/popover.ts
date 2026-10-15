@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { injectPopoverContext, NgpPopover } from 'ng-primitives/popover';
 
 /** The panel `[appPopoverTrigger]` opens; it renders the trigger's string content. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-popover',
   hostDirectives: [NgpPopover],
   host: {

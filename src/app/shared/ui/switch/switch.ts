@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+import { Component, output } from '@angular/core';
 import { NgpSwitch, NgpSwitchThumb } from 'ng-primitives/switch';
 
 /** Bound to signal forms through `checked` / `checkedChange`. Name it with a `ngpLabel` in an `app-field`. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-switch',
   hostDirectives: [
     {

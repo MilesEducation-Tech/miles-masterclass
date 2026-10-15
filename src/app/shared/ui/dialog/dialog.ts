@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input } from '@angular/core';
+import { Component, computed, effect, input } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroXMark } from '@ng-icons/heroicons/outline';
 import { NgpButton } from 'ng-primitives/button';
@@ -36,7 +36,6 @@ const PANEL: Record<DialogPosition, string> = {
  * `MyDialog`'s template wraps its content in `<app-dialog>` and reads `injectDialogRef()`.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-dialog',
   hostDirectives: [NgpDialogOverlay],
   imports: [NgpDialog, NgpDialogTitle, NgpDialogDescription, NgpButton, NgIcon],

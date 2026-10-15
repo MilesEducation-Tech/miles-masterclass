@@ -103,8 +103,8 @@ src/app/
 
 **Aliases:** `@core/*`, `@shared/*`, `@layout/*`, `@features/*`, `@admin/*`, `@testing/*`, `@env/*`.
 
-- Any import that crosses a top-level folder uses an alias.
-- Relative imports are allowed only inside the same feature.
+- Every import uses an alias, even inside the same feature. ESLint bans a relative import that crosses a
+  top-level folder; `check-structure` ratchets the remaining same-folder ones (`relativeImports` in the baseline).
 
 **Naming:**
 
@@ -444,14 +444,14 @@ The gates run inside the required `verify` check on `master`, next to `pr-title`
 
 The rules in this file hold for every contributor and every tool (Claude Code, Cursor, Copilot, Codex, Gemini, or none), because they are checked where all of them pass through: git hooks locally, required CI checks on the PR, and branch rulesets on `master`. Agent instruction files (`CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`) only point here.
 
-| What                                                                                                                                                                                                 | Local (Husky)                                | CI (required on `master`)                   |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------- |
-| Branch name `type/TICKET-description`                                                                                                                                                                | `pre-commit`                                 | `branch-name`                               |
-| Conventional Commits                                                                                                                                                                                 | `commit-msg` → commitlint                    | `commitlint`, `pr-title` (the squash title) |
-| Import boundaries, `inject()`, `@if`/`@for`, `DestroyRef`, no `any`, no `@angular/aria` / `Injectable` / `NgClass` / `NgStyle` / `app-api/`                                                          | `lint-staged` → ESLint (staged files)        | `verify` → `pnpm lint`                      |
-| No spec/test files, naming, plural folders, no `shared/` in a feature, routed components in `pages/`, component CSS reasons, static styles, `@defer` placeholders, colours equal to a `@theme` token | `pre-commit` → `scripts/check-structure.mjs` | `verify` → `pnpm lint`                      |
-| Formatting, AOT build + bundle budget, Storybook                                                                                                                                                     | `lint-staged` → Prettier                     | `verify`                                    |
-| One reviewed, squash-merged PR per change; protected tags; releases                                                                                                                                  | —                                            | rulesets, `CODEOWNERS`, release-please      |
+| What                                                                                                                                                                                                                   | Local (Husky)                                | CI (required on `master`)                   |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------- |
+| Branch name `type/TICKET-description`                                                                                                                                                                                  | `pre-commit`                                 | `branch-name`                               |
+| Conventional Commits                                                                                                                                                                                                   | `commit-msg` → commitlint                    | `commitlint`, `pr-title` (the squash title) |
+| Import boundaries, `inject()`, `@if`/`@for`, `DestroyRef`, no `any`, no `@angular/aria` / `Injectable` / `NgClass` / `NgStyle` / `app-api/`                                                                            | `lint-staged` → ESLint (staged files)        | `verify` → `pnpm lint`                      |
+| No spec/test files, naming, plural folders, no `shared/` in a feature, routed components in `pages/`, component CSS reasons, static styles, `@defer` placeholders, colours equal to a `@theme` token, relative imports | `pre-commit` → `scripts/check-structure.mjs` | `verify` → `pnpm lint`                      |
+| Formatting, AOT build + bundle budget, Storybook                                                                                                                                                                       | `lint-staged` → Prettier                     | `verify`                                    |
+| One reviewed, squash-merged PR per change; protected tags; releases                                                                                                                                                    | —                                            | rulesets, `CODEOWNERS`, release-please      |
 
 **When a check fails:**
 

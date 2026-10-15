@@ -1,12 +1,5 @@
 import { DatePipe } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  inject,
-  input,
-  untracked,
-} from '@angular/core';
+import { Component, effect, inject, input, untracked } from '@angular/core';
 import { Button } from '@shared/ui/button/button';
 import { MeetingStage } from '@features/offerings/webinar/components/meeting-stage/meeting-stage';
 import { LiveSessionFacade } from '@features/offerings/webinar/services/live-session-facade';
@@ -22,7 +15,6 @@ import { LiveSessionFacade } from '@features/offerings/webinar/services/live-ses
   selector: 'app-webinar-live',
   imports: [DatePipe, Button, MeetingStage],
   templateUrl: './webinar-live.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WebinarLive {
   /** Bound from the `:id` route param by `withComponentInputBinding()`. */

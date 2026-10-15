@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 // Type-only: CalendlyDialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
 import { Button } from '@shared/ui/button/button';
@@ -26,7 +26,6 @@ const BOOKING_URL = 'https://calendly.com/rohan-singhai-milesmasterclass/30min';
   host: { class: 'block' },
   imports: [Button],
   templateUrl: './webinar-meet-cta.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WebinarMeetCta {
   readonly heading = input('1:1 Google Meet');

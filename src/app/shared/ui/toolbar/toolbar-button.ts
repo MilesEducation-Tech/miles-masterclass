@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { NgpButton } from 'ng-primitives/button';
 import { NgpRovingFocusItem } from 'ng-primitives/roving-focus';
 
 /** One action inside an `app-toolbar`. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'button[app-toolbar-button]',
   hostDirectives: [
     { directive: NgpButton, inputs: ['disabled'] },

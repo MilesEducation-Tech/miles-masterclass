@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroCheck, heroChevronDown } from '@ng-icons/heroicons/outline';
 import {
@@ -29,7 +29,6 @@ const OPTION =
  * `ngpLabel` in an `app-field`, or pass `ariaLabel`.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-select',
   hostDirectives: [
     {
