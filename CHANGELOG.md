@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.7.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.6.0...v3.7.0) (2026-10-15)
+
+
+### Features
+
+* **library:** bind the course library page to the web filter API ([#136](https://github.com/MilesEducation-Tech/miles-masterclass/issues/136)) ([d470717](https://github.com/MilesEducation-Tech/miles-masterclass/commit/d47071772d70179b65c3a1f9afe05d6fb0b83a9b))
+
+
+### Bug Fixes
+
+* **auth:** ask once before leaving the profile with unsaved answers ([#142](https://github.com/MilesEducation-Tech/miles-masterclass/issues/142)) ([55c7599](https://github.com/MilesEducation-Tech/miles-masterclass/commit/55c7599e8cd79c450f48df8261f1f392229471b7))
+* **offerings:** accept webinars without thumbnails in the feed ([#144](https://github.com/MilesEducation-Tech/miles-masterclass/issues/144)) ([07eb0e0](https://github.com/MilesEducation-Tech/miles-masterclass/commit/07eb0e08120c3698254beb19e23ae7e10ebeb9e5))
+
 ## [3.6.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.5.1...v3.6.0) (2026-10-14)
 
 
