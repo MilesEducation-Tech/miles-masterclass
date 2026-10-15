@@ -1,7 +1,6 @@
 import { BooleanInput } from '@angular/cdk/coercion';
 import {
   booleanAttribute,
-  ChangeDetectionStrategy,
   Component,
   computed,
   input,
@@ -37,7 +36,6 @@ const OPTION =
  * `ngpLabel` in an `app-field`.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-combobox',
   imports: [
     NgpCombobox,

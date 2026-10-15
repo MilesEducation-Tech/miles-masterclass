@@ -1,12 +1,5 @@
 import { formatDate } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
@@ -43,7 +36,6 @@ import { Input } from '@shared/ui/input/input';
   selector: 'app-onboarding-v2',
   imports: [Button, UserOnboardingTable, Field, NgpLabel, Input],
   templateUrl: './onboarding-v2.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block w-full' },
 })
 export class OnboardingV2 {

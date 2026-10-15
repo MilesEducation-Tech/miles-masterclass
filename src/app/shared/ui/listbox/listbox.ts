@@ -1,13 +1,5 @@
 import { BooleanInput } from '@angular/cdk/coercion';
-import {
-  booleanAttribute,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  model,
-  output,
-} from '@angular/core';
+import { booleanAttribute, Component, computed, input, model, output } from '@angular/core';
 import { NgpSelectionMode } from 'ng-primitives/common';
 import { NgpFormControl } from 'ng-primitives/form-field';
 import { NgpListbox, provideListboxState } from 'ng-primitives/listbox';
@@ -19,7 +11,6 @@ import { NgpListbox, provideListboxState } from 'ng-primitives/listbox';
  * technology reads. Name it with a `ngpLabel` in an `app-field`, or pass `ariaLabel`.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-listbox',
   providers: [
     // Hoisted so the projected `app-listbox-option`s can find the listbox state.

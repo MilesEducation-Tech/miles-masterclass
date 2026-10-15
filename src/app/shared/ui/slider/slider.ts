@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import {
   injectSliderState,
   NgpSlider,
@@ -12,7 +12,6 @@ import {
  * Give it a width; the thumb is the focusable, keyboard-driven element and carries `ariaLabel`.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-slider',
   hostDirectives: [
     {

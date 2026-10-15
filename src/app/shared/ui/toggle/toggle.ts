@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+import { Component, output } from '@angular/core';
 import { NgpButton } from 'ng-primitives/button';
 import { NgpFormControl } from 'ng-primitives/form-field';
 import { NgpToggle } from 'ng-primitives/toggle';
@@ -9,7 +9,6 @@ import { NgpToggle } from 'ng-primitives/toggle';
  * adds the field's `aria-*` and `data-*` state the toggle primitive does not set itself.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'button[app-toggle]',
   hostDirectives: [
     {

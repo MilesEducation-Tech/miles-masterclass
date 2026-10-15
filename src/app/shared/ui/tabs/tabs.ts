@@ -1,15 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  contentChildren,
-  input,
-  model,
-} from '@angular/core';
+import { Component, computed, contentChildren, input, model } from '@angular/core';
 import { NgpTabButton, NgpTabList, NgpTabPanel, NgpTabset } from 'ng-primitives/tabs';
-import { cn } from '../../utils/cn';
-import { Tab } from './tab';
+import { cn } from '@shared/utils/cn';
+import { Tab } from '@shared/ui/tabs/tab';
 
 /**
  * How the tab list looks: `line` underlines the active tab; `pill` is a rounded
@@ -36,7 +29,6 @@ const BUTTON: Record<TabsVariant, string> = {
  * primitive only marks inactive panels (`aria-hidden`, no `data-active`); hiding them is ours.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-tabs',
   imports: [NgpTabset, NgpTabButton, NgpTabList, NgpTabPanel, NgTemplateOutlet],
   host: { class: 'block' },

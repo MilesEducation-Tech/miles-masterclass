@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroXMark } from '@ng-icons/heroicons/outline';
 import { NgpButton } from 'ng-primitives/button';
@@ -18,7 +18,6 @@ const TYPES: Record<ToastType, string> = {
  * maths and keyframes that utilities cannot express.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-toast',
   imports: [NgpButton, NgIcon],
   providers: [provideIcons({ heroXMark })],

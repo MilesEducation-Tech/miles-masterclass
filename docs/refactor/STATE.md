@@ -19,6 +19,32 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     aliases. Merging is the user's step (the git guard blocks it here).
   - **Uncommitted on `master`:** the facade-warranted bullet in AGENTS.md §3 (re-applied; four hard boundaries) and
     the prompt. `postman/` is ignored on `master`; the local export was kept.
+- ✅ **2026-10-14/15, NON-REFACTOR — repo hygiene (MIL-85). Committed as `c7d205f` on
+  `refactor/MIL-85-drop-explicit-onpush`; `master` (`d470717`, #136) merged in on 2026-10-15.**
+  - **Merge resolution:** `shared/ui/tabs/tabs.ts` is `master`'s file (the `variant` input) without OnPush. #136's
+    relative imports became aliases in six files (`course-facade`, `course`, `course-filters`, `course-filters-drawer`,
+    `constants/course-library`, `tabs`), including the drawer's dynamic import, and the baseline was pruned. This file
+    kept both sides of its two conflicts.
+  - **Alias-import ratchet (`chore(core): ratchet relative imports in check-structure`):** `check-structure.mjs`
+    counts static relative `from` specifiers per `.ts` file against a new `relativeImports` map in
+    `structure-baseline.json`, seeded with the 191 files / 381 imports that exist today. AGENTS.md §3/§9 and the
+    CLAUDE.md code rule now say aliases everywhere. Dynamic `import('./x')` is exempt (the root-shell rule needs it).
+  - **Explicit OnPush removed (`refactor(core): drop the redundant OnPush change detection`):** Angular 22
+    defaults to OnPush (`Default` is now an alias of `Eager`; the CLI omits the property), so the 75 explicit
+    `changeDetection: ChangeDetectionStrategy.OnPush` lines and their imports are gone. A `no-restricted-syntax`
+    selector in `eslint.config.mjs` rejects a re-added OnPush; `Eager` stays legal. CLAUDE.md rule updated.
+  - **TransferState review:** no change. The three manual uses (`translation-loader`, `language-context`,
+    `seo-manager`) carry data the HTTP transfer cache cannot see (lazy JSON chunks, the request's language,
+    Supabase `fetch`). `withHttpTransferCacheOptions({ includePostRequests: false })` only restates the default.
+  - **Facade audit of the rebound flows (auth/profile, home, masterclass, CAIRA, webinar):** ✅ findings in
+    `prompts/facade-audit.md` (no code changed). P1: the profile page needs a route-scoped `ProfileFacade` absorbing
+    `OnboardingApi`; the chapter page holds the rules while `VideoChapter` injects a second `MasterclassFacade`
+    instance; webinar pages bypass `WebinarFacade` for registration/join; `UaeCairaFacade` is RxJS on legacy
+    `v2/library/`; `ProfileCompletionDialog` is unreachable and PATCHes a legacy route; five `v2/` masterclass
+    route entries are still registered.
+  - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔, prettier ✔, `build:prod` 245.32 kB with
+    only `ai-labs.css`. Negative tests: a new relative import fails the structure check; a re-added OnPush fails
+    ESLint.
 
 - 🔧 **2026-10-14, NON-REFACTOR — bind the course library page to the web filter API (Story MIL-82)** on
   `feat/MIL-82-course-library-binding` (from `master`). Two subtasks, one PR. No refactor phase moved.
@@ -4369,6 +4395,12 @@ These are environment and product observations the repair surfaced. None changed
 ## Step log (latest first; keep the last 30 lines)
 
 - 2026-10-15 · NON-REFACTOR · **Library rebind re-planned on `master` (`d470717`)**: course library already bound by #136; `prompts/library-rebind.md` rev 2 = instructor library, instructor page, badge library retirement · live UAT probe: `course_type` now required on `all-instructors-page/` · MIL-85 needs `master` merged (tabs.ts + STATE.md conflicts, 6 relative-import ratchet failures) · no `src/` changes
+
+- 2026-10-15 · NON-REFACTOR · **MIL-85: `master` (`d470717`, #136) merged in, conflicts resolved** (uncommitted merge): `tabs.ts` = master's `variant` file without OnPush; #136's relative imports → aliases in 6 files; baseline pruned (3 entries); STATE.md kept both sides · lint 0 errors (105 warnings), structure ✔, prettier ✔ (local)
+
+- 2026-10-15 · NON-REFACTOR · **Explicit OnPush dropped** (uncommitted, 75 components + `eslint.config.mjs` + CLAUDE.md): Angular 22 defaults to OnPush, so every `changeDetection: ChangeDetectionStrategy.OnPush` and its import went; `no-restricted-syntax` now rejects a re-added OnPush · lint 0 errors (105 warnings), structure ✔, build:prod 245.32 kB (local) · TransferState reviewed, no change (the 3 manual uses carry non-HttpClient data) · facade audit of the rebound flows running
+
+- 2026-10-14 · NON-REFACTOR · **Alias-import ratchet** (uncommitted, `check-structure.mjs` + `structure-baseline.json` + AGENTS.md + CLAUDE.md): per-file `relativeImports` count rule seeded with 191 files / 381 imports; both rule docs say aliases everywhere · structure ✔ after seeding, a new relative import fails it, ng lint 0 errors (local)
 
 - 2026-10-14 · NON-REFACTOR · **MIL-84, course library bound to `filter/`** (`feat/MIL-82-course-library-binding`, uncommitted) plus the `horizontal_trailer_url` rename (own commit): sidebar, pill tabs, grid, paging, states · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod ✔ (local) · dev 4101 headless: 64 courses over 6 pages, each filter and tab narrows, error + retry, 375/768/1440 no horizontal scroll
 

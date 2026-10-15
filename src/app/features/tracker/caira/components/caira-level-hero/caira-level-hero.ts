@@ -1,13 +1,6 @@
 import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
 import { httpResource } from '@angular/common/http';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  linkedSignal,
-  PLATFORM_ID,
-} from '@angular/core';
+import { Component, computed, inject, linkedSignal, PLATFORM_ID } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideChevronUp, lucideInfo } from '@ng-icons/lucide';
@@ -42,7 +35,6 @@ const EMPTY_LADDER: BadgeV2Response<CairaLadderItem[]> = { data: [] };
   imports: [Button, NgIcon, NgOptimizedImage, Progress, RouterLink],
   providers: [provideIcons({ lucideChevronUp, lucideChevronDown, lucideInfo })],
   templateUrl: './caira-level-hero.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class CairaLevelHero {

@@ -4,7 +4,7 @@ import {
   CourseLibraryTab,
   LibraryFilterKey,
   LibraryFilterSelection,
-} from '../models/course-library.model';
+} from '@features/library/course/models/course-library.model';
 
 /**
  * The course library's one read: filter options and a page of cards. Public

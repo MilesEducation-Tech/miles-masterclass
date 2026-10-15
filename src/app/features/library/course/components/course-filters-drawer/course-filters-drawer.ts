@@ -3,8 +3,11 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroXMark } from '@ng-icons/heroicons/outline';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
-import { LibraryFilterGroup, LibraryFilterSelection } from '../../models/course-library.model';
-import { CourseFilters } from '../course-filters/course-filters';
+import {
+  LibraryFilterGroup,
+  LibraryFilterSelection,
+} from '@features/library/course/models/course-library.model';
+import { CourseFilters } from '@features/library/course/components/course-filters/course-filters';
 import { Dialog } from '@shared/ui/dialog/dialog';
 
 export interface CourseFiltersDrawerData {

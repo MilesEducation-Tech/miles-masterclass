@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  DOCUMENT,
-  computed,
-  effect,
-  inject,
-  input,
-} from '@angular/core';
+import { Component, DestroyRef, DOCUMENT, computed, effect, inject, input } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NotificationService } from '@core/services/notification/notification';
 import { Faq } from '@shared/components/faq/faq';
@@ -38,7 +29,6 @@ import { setupWebinarDetailSeo } from '../../utils/webinar-seo';
   selector: 'app-webinar-detail',
   imports: [Faq, RouterLink, Spinner, WebinarAbout, WebinarHero],
   templateUrl: './webinar-detail.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WebinarDetail {
   /** Bound from the `:id` route param by `withComponentInputBinding()`. */

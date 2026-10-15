@@ -27,7 +27,7 @@ import {
   COURSE_RESOURCES_ROUTE,
   EMPTY_LIBRARY_SELECTION,
   LIBRARY_FILTER_GROUPS,
-} from '../constants/course-library';
+} from '@features/library/course/constants/course-library';
 import {
   CourseLibraryPage,
   CourseResources,
@@ -36,7 +36,7 @@ import {
   LibraryFilterSelection,
   parseCourseLibrary,
   parseCourseResources,
-} from '../models/course-library.model';
+} from '@features/library/course/models/course-library.model';
 
 /**
  * Owns course-listing state for `/library/course-library`. Lazy by

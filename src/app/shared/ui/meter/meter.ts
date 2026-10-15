@@ -1,5 +1,5 @@
 import { NumberInput } from '@angular/cdk/coercion';
-import { ChangeDetectionStrategy, Component, input, numberAttribute } from '@angular/core';
+import { Component, input, numberAttribute } from '@angular/core';
 import {
   NgpMeter,
   NgpMeterIndicator,
@@ -10,7 +10,6 @@ import {
 
 /** A static measurement (a level, a score), as opposed to `app-progress` for a running task. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-meter',
   hostDirectives: [
     { directive: NgpMeter, inputs: ['ngpMeterValue:value', 'ngpMeterMin:min', 'ngpMeterMax:max'] },

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
 import { Button } from '@shared/ui/button/button';
 import { ButtonVariant } from '@core/models/button.model';
@@ -23,7 +23,6 @@ import { WebinarCountdown } from '../webinar-countdown/webinar-countdown';
   selector: 'app-join-cta',
   imports: [Button, NgIcon, WebinarCountdown],
   templateUrl: './join-cta.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JoinCta {
   readonly webinar = input.required<FeedCard>();

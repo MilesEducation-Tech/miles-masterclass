@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs';
@@ -34,7 +27,6 @@ import { Input } from '@shared/ui/input/input';
   selector: 'app-user-onboarding',
   imports: [Button, UserOnboardingTable, DeprecationBanner, Field, NgpLabel, Input],
   templateUrl: './user-onboarding.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block w-full' },
 })
 export class UserOnboarding {

@@ -2,7 +2,6 @@ import { BooleanInput, NumberInput } from '@angular/cdk/coercion';
 import {
   afterNextRender,
   booleanAttribute,
-  ChangeDetectionStrategy,
   Component,
   computed,
   ElementRef,
@@ -25,7 +24,6 @@ const SLOT =
  * presentational.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-input-otp',
   imports: [NgpInputOtp, NgpInputOtpInput, NgpInputOtpSlot, NgpFormControl],
   // dir: a code is entered left-to-right in every language, so slot 1 is always on the left.

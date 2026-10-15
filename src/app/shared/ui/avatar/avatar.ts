@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { NgpAvatar, NgpAvatarFallback, NgpAvatarImage } from 'ng-primitives/avatar';
 
 /** A round picture with initials shown until the image loads, or if it fails. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-avatar',
   hostDirectives: [NgpAvatar],
   imports: [NgpAvatarImage, NgpAvatarFallback],

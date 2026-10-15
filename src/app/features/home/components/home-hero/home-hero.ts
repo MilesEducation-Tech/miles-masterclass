@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Utils } from '@shared/services/utils';
 import { HOME_ASSETS } from '../../constants/home-assets';
@@ -14,7 +14,6 @@ import { HomeHeroGrid } from '../home-hero-grid/home-hero-grid';
   selector: 'app-home-hero',
   imports: [NgOptimizedImage, RouterLink, HomeHeroGrid],
   templateUrl: './home-hero.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeHero {
   private readonly utils = inject(Utils);

@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { injectTooltipContext, NgpTooltip } from 'ng-primitives/tooltip';
 
 /** The bubble `[appTooltipTrigger]` shows on hover and focus; ng-primitives sets `role="tooltip"`. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-tooltip',
   hostDirectives: [NgpTooltip],
   host: {

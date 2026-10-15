@@ -1,7 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   inject,
@@ -75,7 +74,6 @@ type CourseTypeChoice = CpeCourseType | 'all';
   ],
   providers: [provideIcons({ lucideArrowLeft })],
   templateUrl: './cpe-tracker.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CpeTracker {
   private readonly utils = inject(Utils);

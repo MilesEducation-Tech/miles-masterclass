@@ -1,7 +1,6 @@
 import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import {
   afterNextRender,
-  ChangeDetectionStrategy,
   Component,
   computed,
   contentChild,
@@ -55,7 +54,6 @@ import { ensureSwiperElement } from '@shared/utils/swiper/ensure-swiper-element'
   templateUrl: './swiper-strip.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   host: { class: 'block w-full' },
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SwiperStrip {
   readonly items = input.required<readonly unknown[]>();

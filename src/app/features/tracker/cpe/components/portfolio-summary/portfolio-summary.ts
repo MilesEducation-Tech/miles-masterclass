@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideDownload } from '@ng-icons/lucide';
 import { CpeLedger } from '@features/tracker/cpe/models/cpe-credit.model';
@@ -22,7 +22,6 @@ const LEDGER_BLURB: Record<CpeLedger, string> = {
   imports: [Button, DecimalPipe, NgIcon],
   providers: [provideIcons({ lucideDownload })],
   templateUrl: './portfolio-summary.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class PortfolioSummary {

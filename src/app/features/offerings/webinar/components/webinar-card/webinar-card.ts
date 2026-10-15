@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faSolidInfo } from '@ng-icons/font-awesome/solid';
 import { RouterLink } from '@angular/router';
@@ -41,7 +41,6 @@ export type WebinarCardLayout =
   imports: [DatePipe, NgIcon, RouterLink, JoinCta],
   templateUrl: './webinar-card.html',
   providers: [provideIcons({ faSolidInfo })],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WebinarCard {
   readonly webinar = input.required<FeedCard>();

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FeedCard } from '@features/offerings/webinar/models/webinar.model';
 import { ServerClock } from '@features/offerings/webinar/services/server-clock';
@@ -43,7 +43,6 @@ import { WebinarCountdown } from '@features/offerings/webinar/components/webinar
   host: { class: 'block' },
   imports: [JoinCta, RouterLink, SeatForm, WebinarCountdown],
   templateUrl: './webinar-hero.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WebinarHero {
   readonly webinar = input.required<FeedCard>();
