@@ -32,6 +32,25 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       pages hang there. Verify headless.
     - The course page's title is the literal `{{title}} | Master Class | Miles Masterclass`, from a Supabase
       `seo_pages` row (not in `src/`). The row wins over the course fallback, so there is no `og:video`.
+
+- 🔧 **2026-10-15, NON-REFACTOR — MIL-93, header dropdowns (`prompts/header-nav-dropdowns.md`, approved). DONE,
+  UNCOMMITTED** on `fix/MIL-93-header-nav-dropdowns` (from `master` 3.7.0).
+  - **Causes:** `Header.onDocumentClick` treated only clicks outside the whole header as "outside", so the profile
+    menu and the other nav links never closed an open dropdown; and closing never reset the header's `NavMenuGroup`
+    (the accordion content stays mounted), so Resources reopened with its sub-menu expanded.
+  - **Fix (header only):** an open dropdown closes on any click outside its own `<li>` (found by `data-nav-item`,
+    not ng-primitives' `data-open`); every close or switch releases `NavMenuGroup`; a route change closes it;
+    `document:keydown.escape` closes it and returns focus to its trigger only when focus was inside (new — the
+    `ul` couldn't carry the handler: `interactive-supports-focus`).
+  - **Verified (dev 4101, Playwright, 1440 signed in with a dummy token, 1024 guest, 768 drawer):** Resources +
+    Library open → avatar: Resources closes, sub-menu collapses, profile menu opens; profile menu open → Resources:
+    profile menu closes, Resources opens collapsed; a click inside the panel keeps it; Escape from inside closes
+    and focuses the trigger; reopen → collapsed; an outside click closes; Webinar link closes and navigates; Escape
+    with nothing open does nothing; guest sibling sub-menus close each other and reopen collapsed; the 768 drawer
+    opens, expands Resources → Library, navigates and closes as before. No page errors, no horizontal scroll.
+  - **Gates (local macOS):** tsc 0, Storybook tsc 0, lint 0 errors (105 warnings, `master`'s count), structure ✔,
+    Prettier ✔, `CI=true build:prod` 244.98 kB with only `ai-labs.css`.
+
 - ⏸ **2026-10-15, NON-REFACTOR — library rebind, revision 2, awaiting approval** (`prompts/library-rebind.md`). Working
   tree moved to `master` at `d470717` (#136 bound the course library), so the prompt now covers only what is left:
   PR1 instructor library on `all-instructors-page/`, PR2 instructor page on `instructor-detail/` + `filter/?instructor=`,
@@ -4418,6 +4437,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-15 · NON-REFACTOR · **MIL-93 header dropdowns fixed** (uncommitted, `fix/MIL-93-header-nav-dropdowns`): close outside the open item, reset `NavMenuGroup`, route change + Escape close · Playwright 1440/1024/768 all pass · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod 244.98 kB
+
+- 2026-10-15 · NON-REFACTOR · **MIL-93 planned** (`fix/MIL-93-header-nav-dropdowns`): `prompts/header-nav-dropdowns.md` — close on clicks outside the open item, reset `NavMenuGroup` on close, Escape and route change close (awaiting approval)
 
 - 2026-10-15 · NON-REFACTOR · **Library rebind re-planned on `master` (`d470717`)**: course library already bound by #136; `prompts/library-rebind.md` rev 2 = instructor library, instructor page, badge library retirement · live UAT probe: `course_type` now required on `all-instructors-page/` · MIL-85 needs `master` merged (tabs.ts + STATE.md conflicts, 6 relative-import ratchet failures) · no `src/` changes
 
