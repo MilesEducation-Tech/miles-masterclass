@@ -15,6 +15,7 @@ import { SKIP_LOADING } from '@core/models/http.model';
 import {
   MasterclassCourse,
   MasterclassCourseInfoDialogData,
+  MasterclassLoginType,
 } from '@core/models/masterclass-home.model';
 import type { VideoSource } from '@core/models/video-player.model';
 import { Analytics } from '@core/services/analytics/analytics';
@@ -39,7 +40,7 @@ import {
   INSTRUCTOR_PROMO_TYPES,
 } from '@features/library/instructor/constants/instructor-library';
 import {
-  InstructorCourseType,
+  InstructorContentType,
   InstructorProfile,
   parseInstructorCourses,
   parseInstructorProfile,
@@ -49,7 +50,7 @@ import {
  * `/instructor/:instructorId/:instructorName`: the profile from
  * `instructor-detail/`, and "Courses by …" from `filter/?instructor=`, one read
  * per tab. No facade: nothing here is shared, so the reads live in the page, as
- * on `/masterclass`. The route is sign-in only while `instructor-detail/` is.
+ * on `/masterclass`. Public: both reads serve signed-out visitors.
  */
 @Component({
   selector: 'app-instructor-details',
@@ -89,13 +90,20 @@ export class InstructorDetails {
 
   // ---- Profile -------------------------------------------------------------
 
+  /** From the session's boolean, never the token, so a token rotation doesn't refetch. */
+  private readonly loginType = computed<MasterclassLoginType>(() =>
+    this.auth.isAuthenticated() ? 'post_login' : 'pre_login',
+  );
+
   private readonly profileResource = httpResource<InstructorProfile>(
     () => {
       const id = this.id();
-      // `authGuard` keeps signed-out visitors off the route; the boolean also
-      // idles the read if the session ends while the page is open.
-      if (!this.isBrowser || !id || !this.auth.isAuthenticated()) return undefined;
-      return `${INSTRUCTOR_DETAIL_URL}${id}/`;
+      if (!this.isBrowser || !id) return undefined;
+      return {
+        url: `${INSTRUCTOR_DETAIL_URL}${id}/`,
+        // Required: without it the read is a 400, signed in or not.
+        params: { login_type: this.loginType() },
+      };
     },
     // The trust boundary: an answer that drifted from the contract lands in `error()`.
     { parse: parseInstructorProfile },
@@ -131,9 +139,9 @@ export class InstructorDetails {
 
   protected readonly tabs = INSTRUCTOR_COURSE_TABS;
   protected readonly tabLabels = this.tabs.map((tab) => tab.label);
-  protected readonly activeTab = signal<InstructorCourseType>('course');
+  protected readonly activeTab = signal<InstructorContentType>('masterclass_course');
   protected readonly activeLabel = computed(
-    () => this.tabs.find((tab) => tab.courseType === this.activeTab())?.label ?? '',
+    () => this.tabs.find((tab) => tab.contentType === this.activeTab())?.label ?? '',
   );
 
   private readonly coursesResource = httpResource<MasterclassCourse[]>(
@@ -143,7 +151,7 @@ export class InstructorDetails {
       return {
         url: INSTRUCTOR_COURSES_URL,
         params: {
-          course_type: this.activeTab(),
+          content_type: this.activeTab(),
           instructor: id,
           page_size: INSTRUCTOR_COURSES_PAGE_SIZE,
         },
@@ -180,7 +188,7 @@ export class InstructorDetails {
 
   protected onTabChange(label: string): void {
     const tab = this.tabs.find((t) => t.label === label);
-    if (tab) this.activeTab.set(tab.courseType);
+    if (tab) this.activeTab.set(tab.contentType);
   }
 
   protected reloadProfile(): void {

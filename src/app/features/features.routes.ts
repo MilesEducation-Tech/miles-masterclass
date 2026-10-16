@@ -1,5 +1,4 @@
 import { Route } from '@angular/router';
-import { authGuard } from '@core/guards/auth/auth-guard';
 import { DynamicLayout } from '@layout/dynamic-layout/dynamic-layout';
 import { uaeCairaMatchGuard } from '@core/guards/uae-caira-match-guard';
 import { UaeCairaFacade } from '@features/uae-caira/services/uae-caira-facade';
@@ -90,9 +89,6 @@ export const featuresRoutes: Route[] = [
       },
       {
         path: 'instructor/:instructorId/:instructorName',
-        // Sign-in only while `instructor-detail/` is (IsAuthenticated); it
-        // becomes public again when the backend opens that read.
-        canMatch: [authGuard],
         loadComponent: () =>
           import('@features/library/instructor/pages/instructor-details/instructor-details').then(
             (m) => m.InstructorDetails,

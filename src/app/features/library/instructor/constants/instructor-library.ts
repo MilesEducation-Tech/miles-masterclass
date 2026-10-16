@@ -32,12 +32,19 @@ export const INSTRUCTOR_SOCIAL_ICONS: Readonly<Partial<Record<string, string>>> 
 
 // ---- Instructor page -------------------------------------------------------
 
-/** The profile read; the instructor's UUID and a slash follow. Sign-in only (`IsAuthenticated`). */
+/**
+ * The profile read; the instructor's UUID and a slash follow. `AllowAny` since
+ * 2026-10-15, and `?login_type=` is required: `pre_login` is served anonymously,
+ * `post_login` is a 401 without a token, and leaving it out (or sending any
+ * undeclared parameter) is a 400.
+ */
 export const INSTRUCTOR_DETAIL_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/instructor-detail/`;
 
 /**
- * The course read: the course library's `filter/`, narrowed by `instructor`.
- * Declared here rather than imported from the sibling `course` sub-feature.
+ * The course read: the course library's `filter/`, narrowed by `instructor` and
+ * `content_type`. Public; anything undeclared, such as the retired
+ * `course_type`, is a 400. Declared here rather than imported from the sibling
+ * `course` sub-feature.
  */
 export const INSTRUCTOR_COURSES_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/filter/`;
 
@@ -46,9 +53,9 @@ export const INSTRUCTOR_COURSES_PAGE_SIZE = 100;
 
 /** The tabs under "Courses by …", with production's labels. One `filter/` read per tab. */
 export const INSTRUCTOR_COURSE_TABS: readonly InstructorCourseTab[] = [
-  { courseType: 'course', label: 'Masterclass' },
-  { courseType: 'podcast', label: 'Podcast' },
-  { courseType: 'micro_learning', label: 'Micro Learning' },
+  { contentType: 'masterclass_course', label: 'Masterclass' },
+  { contentType: 'podcast', label: 'Podcast' },
+  { contentType: 'micro_learning', label: 'Micro Learning' },
 ];
 
 /**
