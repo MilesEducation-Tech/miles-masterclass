@@ -2,6 +2,12 @@
   "language": {
     "label": "Langue"
   },
+  "country": {
+    "label": "Pays",
+    "appearIn": "Pays détecté : {{ country }}.",
+    "switchTo": "Passer à {{ country }}",
+    "stayIn": "Rester sur {{ current }}"
+  },
   "common": {
     "scheduleDemo": "Planifier une démo"
   },

@@ -2,6 +2,12 @@
   "language": {
     "label": "اللغة"
   },
+  "country": {
+    "label": "الدولة",
+    "appearIn": "البلد المكتشف: {{ country }}.",
+    "switchTo": "التبديل إلى {{ country }}",
+    "stayIn": "البقاء في {{ current }}"
+  },
   "common": {
     "scheduleDemo": "احجز عرضًا توضيحيًا"
   },

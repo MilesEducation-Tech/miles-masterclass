@@ -2,6 +2,12 @@
   "language": {
     "label": "Language"
   },
+  "country": {
+    "label": "Country",
+    "appearIn": "You appear to be in {{ country }}.",
+    "switchTo": "Switch to {{ country }}",
+    "stayIn": "Stay in {{ current }}"
+  },
   "common": {
     "scheduleDemo": "Schedule a demo"
   },

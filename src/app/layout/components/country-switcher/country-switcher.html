@@ -1,0 +1,17 @@
+<label class="flex w-48 items-center">
+  <span class="sr-only">{{ 'country.label' | transloco }}</span>
+  <!-- `id`: the plan page's "Change country" link scrolls here. -->
+  <select app-select id="country-switcher" class="h-9" (change)="select($event)">
+    @for (option of options; track option.code) {
+      <!-- The attribute too: the property isn't serialized, so without it the server HTML shows
+           the first option until hydration. -->
+      <option
+        [value]="option.code"
+        [selected]="option.code === current()"
+        [attr.selected]="option.code === current() ? '' : null"
+      >
+        {{ option.name }}
+      </option>
+    }
+  </select>
+</label>

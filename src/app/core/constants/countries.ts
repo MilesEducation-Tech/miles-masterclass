@@ -89,3 +89,12 @@ export const GEO_COUNTRY_COOKIE = 'geo_country';
 
 /** Vercel's edge geo header. Vercel sets it on every request; absent locally. */
 export const GEO_COUNTRY_HEADER = 'x-vercel-ip-country';
+
+/**
+ * The learner's explicit choice: the footer switcher, or the mismatch banner's Switch / Stay.
+ * Written ONLY by `CountryContext.prefer()`, never as a side effect of detection, or an auto-saved
+ * guess would outrank the edge's real answer forever. Ranks above geo wherever a URL has no
+ * country (`/`, `/auth/*`, an unsupported `/zz/...`); a supported URL country still wins outright.
+ * Deliberately not the old `country` cookie, which held timezone guesses and is ignored.
+ */
+export const PREFERRED_COUNTRY_COOKIE = 'preferred_country';

@@ -37,7 +37,9 @@ import { Analytics } from '@core/services/analytics/analytics';
 
 /**
  * The CAIRA error envelope's human message (safe to show) and machine reason
- * (`data.reason`, stable to branch on). Some refusals carry only a message.
+ * (`data.reason`, stable to branch on). Some refusals carry only a message. Reasons the
+ * facade branches on: `order_not_payable` (retry), `country_mismatch` (checkout);
+ * `subscription_already_in_cart` (409) is shown as its message only.
  */
 function commerceErrorOf(err: unknown): { reason?: string; message: string } {
   // Status 0 never reached the API (offline, CORS); its `error` is the browser's own
@@ -482,7 +484,12 @@ export class PaymentFacade {
       error: (err) => {
         this.paying.set(false);
         this.logger.error('Checkout failed', err);
-        this.notification.error('Checkout failed', commerceErrorOf(err).message);
+        const { reason, message } = commerceErrorOf(err);
+        this.notification.error('Checkout failed', message);
+        // CAIRA priced the cart for a different country than `X-Country-Code` (the billing
+        // address, card or IP disagree) and re-priced it: re-read it, and stay on the review
+        // page so the learner sees the new total before trying again.
+        if (reason === 'country_mismatch') this.cart.reload();
       },
     });
   }
