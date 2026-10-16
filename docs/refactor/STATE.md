@@ -7,8 +7,26 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🔧 **2026-10-16, NON-REFACTOR — MIL-99 (Bug), `fix(library): show the instructor page without sign-in`
-  (`prompts/public-instructor-page.md` rev 2, approved). DONE, GATES GREEN, UNCOMMITTED** on
+- 🔧 **2026-10-16, NON-REFACTOR: commerce remove routes and an optional billing address**
+  (`prompts/optional-billing-address.md` rev 1, approved in plan mode). Three tickets, three PRs.
+  - **PR 1, `fix(payment): call the POST remove routes for cart lines, coupons and addresses`. DONE,
+    GATES GREEN, UNCOMMITTED** on `fix/MIL-XXX-commerce-remove-routes` (from `master` `2d78a56d`).
+    - CAIRA withdrew `DELETE` on 2026-10-14. C4, D2 and A5 now call `POST …/remove/`. The A5 key is
+      `removeAddress`, typed `{address_id, deleted}`. A4 is unchanged. `docs/COMMERCE_API.md` records it.
+    - **Verified (dev, headless, dummy token, commerce responses stubbed in `fetch`):** each request is a
+      body-less `POST` on the new path, with `?cart_id=` on D2. Removing the last line shows the empty
+      cart. The A5 409 shows its message and keeps the address; a 200 removes it.
+    - **Gates (local macOS):** lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` only
+      `ai-labs.css`.
+  - **PR 2, `feat(payment): make the billing address optional on review`:** next, on its own branch
+    once PR 1 is committed.
+  - **PR 3, `feat(payment): ask for the billing address on the invoice page`:** ⛔ blocked. No route sets
+    an order's billing address (C5 is 409 after checkout). The prompt assumes
+    `PATCH commerce/order/{id}/` until the backend confirms it.
+
+- ✅ **2026-10-16, NON-REFACTOR — MIL-99 (Bug), `fix(library): show the instructor page without sign-in`.
+  MERGED as #152 (`11409b53`).** Notes below are from before the merge.
+  (`prompts/public-instructor-page.md` rev 2, approved), on
   `fix/MIL-99-public-instructor-page` (from `master` `68a672d`).
   - **Two backend changes on 2026-10-15** (App 5 Postman export, refreshed into `postman/`; UAT probes):
     - `instructor-detail/` went `AllowAny` but now **requires `?login_type=`**. With no `login_type` it answers 400,
