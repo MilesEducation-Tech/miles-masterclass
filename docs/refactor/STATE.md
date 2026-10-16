@@ -7,9 +7,44 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🔧 **2026-10-15, NON-REFACTOR — MIL-95, instructor library and page (`prompts/library-rebind.md` rev 3,
-  approved). SUBTASKS 1–2 COMMITTED (`51abea3`, `73f8095`), SUBTASK 3 + BACK FIX DONE, UNCOMMITTED** on
-  `feat/MIL-95-instructor-library-binding` (from `master` `e3fc330`).
+- 🔧 **2026-10-16, NON-REFACTOR — MIL-99 (Bug), `fix(library): show the instructor page without sign-in`
+  (`prompts/public-instructor-page.md` rev 2, approved). DONE, GATES GREEN, UNCOMMITTED** on
+  `fix/MIL-99-public-instructor-page` (from `master` `68a672d`).
+  - **Two backend changes on 2026-10-15** (App 5 Postman export, refreshed into `postman/`; UAT probes):
+    - `instructor-detail/` went `AllowAny` but now **requires `?login_type=`**. With no `login_type` it answers 400,
+      so the page likely failed signed in too.
+    - `filter/` dropped `course_type` for `content_type` (`masterclass_course` / `ai_kit` / `podcast` / `reel` →
+      `nano_learning`, `micro_learning`). The old param is a 400, so every instructor tab said "Couldn't load
+      courses".
+  - **Fix:**
+    - The route loses `canMatch: [authGuard]`.
+    - The profile read sends `login_type` (`post_login` when `isAuthenticated()`, else `pre_login`; core
+      `MasterclassLoginType`) and stays browser-only.
+    - The tabs send `content_type`, and the type and field are renamed `InstructorContentType` / `contentType`.
+    - The tab scope came in after verification found the 400; it was the user's call.
+  - **Verified (dev 4101, headless):**
+    - **Signed out:** library → Adam with no redirect. The detail request is `?login_type=pre_login` with no
+      bearer. The hero, About and LinkedIn show, and the Masterclass tab shows 1 card linking
+      `/masterclass/<uuid>/<slug>`.
+    - **Tabs:** Podcast and Micro Learning say "No … courses yet.", one `content_type` request each. Trailer and
+      Course information open, and Back returns to the library with 20 cards.
+    - **Server render:** answers 200 with "Loading instructor…" (it used to 302).
+    - **Signed in:** with a dummy token, the request is `?login_type=post_login` with the bearer, and the page
+      renders.
+    - **Edge cases:** `/instructor/3665/…` → "Instructor not found" with no request. An unknown UUID →
+      `pre_login` 404 → error with Try Again.
+    - All 63 UAT profiles answer 200 on `pre_login` and pass `parseInstructorProfile`.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 244.99 kB,
+    only `ai-labs.css`.
+  - **Open, not in scope:**
+    - The **course library** (`course-facade.ts`) still sends `course_type` to `filter/` → 400 on UAT. It needs
+      its own bug.
+    - A real `post_login` 200 needs a manual check with a real UAT sign-in.
+    - SEO for the instructor page is still deferred.
+  - **Next:** the user commits; then the PR.
+
+- ✅ **2026-10-15, NON-REFACTOR — MIL-95, instructor library and page (`prompts/library-rebind.md` rev 3,
+  approved). MERGED as #150 (`68a672d`).** Notes below are from before the merge.
   - **Subtask 3, `feat(library): bind the instructor page to instructor-detail`:** the page reads
     `instructor-detail/<uuid>/` (gated on the boolean `isAuthenticated()`) and `filter/?course_type=<tab>&instructor=`
     (one read per tab, `SKIP_LOADING`), both parsed at the boundary; no facade. Masterclass / Podcast / Micro Learning
