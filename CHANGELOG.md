@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.8.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.7.1...v3.8.0) (2026-10-15)
+
+
+### Features
+
+* **offerings:** bind the masterclass chapter page to the web API and save progress ([#137](https://github.com/MilesEducation-Tech/miles-masterclass/issues/137)) ([a76392e](https://github.com/MilesEducation-Tech/miles-masterclass/commit/a76392eed730afa110de684c56ed843f91f24172))
+* **tracker:** rebind the CAIRA tracker to web-api/v1/badges/page/ ([#132](https://github.com/MilesEducation-Tech/miles-masterclass/issues/132)) ([e3fc330](https://github.com/MilesEducation-Tech/miles-masterclass/commit/e3fc330bc3e38f58f1ad511ff1a6f24f9b7ec210))
+
+
+### Bug Fixes
+
+* **layout:** close header dropdowns when another menu or nav link opens ([#148](https://github.com/MilesEducation-Tech/miles-masterclass/issues/148)) ([f582dc3](https://github.com/MilesEducation-Tech/miles-masterclass/commit/f582dc3cb67e6e14e32cc18413b42d0f66974c14))
+
 ## [3.7.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.7.0...v3.7.1) (2026-10-15)
 
 
