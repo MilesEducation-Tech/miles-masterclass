@@ -13,7 +13,7 @@ import { paymentGuard } from '@features/payment/guards/payment-guard';
  *   /payment/                      ← Payment shell (header + breadcrumb)
  *     /                            ← OverviewWrapper (sidebar layout)
  *       /cart                      ← cart contents
- *     /review                      ← guarded: non-empty cart; collects the billing address
+ *     /review                      ← guarded: non-empty cart; the billing address is optional
  */
 export const PAYMENT_ROUTES: Routes = [
   {

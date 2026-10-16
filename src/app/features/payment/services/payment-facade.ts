@@ -30,7 +30,7 @@ import {
   parsePlans,
 } from '@features/payment/models/commerce.model';
 import { AuthSession } from '@core/services/auth-session/auth-session';
-import { NgpDialogManager } from 'ng-primitives/dialog';
+import { NgpDialogManager, type NgpDialogRef } from 'ng-primitives/dialog';
 // Dialog components load lazily (dynamic `import()` in the open* methods below), so
 // they stay out of whichever chunk first injects this root facade.
 import { Analytics } from '@core/services/analytics/analytics';
@@ -189,7 +189,8 @@ export class PaymentFacade {
     if (err) this.logger.error('Failed to load addresses', err);
   });
   /**
-   * The address picked on the billing page. It keeps the learner's pick while that
+   * The billing address picked in the address dialog. Optional: with no saved address it is
+   * `null` and checkout goes ahead without one. It keeps the learner's pick while that
    * address exists, otherwise starts on the one already on the cart, then the default,
    * then the first. It reaches the cart only on Proceed (`attachBillingAddress`).
    */
@@ -208,6 +209,10 @@ export class PaymentFacade {
       return (list.find((a) => a.is_default) ?? list[0])?.id ?? null;
     },
   });
+  /** The picked address itself, for the review page's summary. */
+  readonly selectedAddress = computed<Address | null>(
+    () => this.addresses().find((a) => a.id === this.selectedAddressId()) ?? null,
+  );
   isEditingAddress = signal<boolean>(false);
   /** An address save or update is in flight: the form waits for the answer, so a double click can't add two. */
   readonly savingAddress = signal(false);
@@ -363,7 +368,8 @@ export class PaymentFacade {
 
   /**
    * C5: puts the selected address on the cart as its billing address, then `onAttached`
-   * (the billing page moves on to review). Checkout copies it onto the order.
+   * (review checks out). Checkout copies it onto the order. Review calls this only when an
+   * address is picked, so the error below is a guard, not a requirement.
    */
   attachBillingAddress(onAttached: () => void): void {
     const cartId = this.cart.cart()?.id;
@@ -448,6 +454,16 @@ export class PaymentFacade {
   async openCouponDialog(): Promise<void> {
     const { CouponDialog } = await import('@features/payment/dialogs/coupon-dialog/coupon-dialog');
     this.dialogs.open(CouponDialog, { injector: this.injector });
+  }
+
+  /**
+   * Pick, add or edit the billing address. `afterClosed` emits the picked id on Done or a
+   * save, and nothing on a dismissal.
+   */
+  async openAddressDialog(): Promise<NgpDialogRef<void, string | null>> {
+    const { AddressDialog } =
+      await import('@features/payment/dialogs/address-dialog/address-dialog');
+    return this.dialogs.open<void, string | null>(AddressDialog, { injector: this.injector });
   }
 
   /**

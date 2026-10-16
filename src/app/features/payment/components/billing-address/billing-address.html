@@ -49,11 +49,8 @@
       <!-- Spans, not h3/p: `<button>` takes phrasing content only, and flow
            elements inside it are invalid HTML. -->
       <span class="block text-xl font-medium mt-4 text-gray-200">No billing address saved</span>
-      <!-- Required, not suggested: checkout can't proceed without one, so the
-           copy states that plainly instead of hedging with "please". -->
-      <span class="block text-gray-400 mt-2">
-        A billing address is required to complete your purchase.
-      </span>
+      <!-- Optional: checkout works without one, so the copy says what it is for. -->
+      <span class="block text-gray-400 mt-2">Add one to show it on your invoice.</span>
       <span class="mt-4 text-sm font-medium text-action">+ Add billing address</span>
     </button>
   }
