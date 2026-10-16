@@ -51,11 +51,19 @@ export interface TwitterCard {
   imageAlt?: string;
 }
 
+/** One `<link rel="alternate" hreflang="…" href="…">`. */
+export interface SeoAlternate {
+  hreflang: string;
+  href: string;
+}
+
 export interface SeoConfig {
   title: string;
   description?: string;
   keywords?: string[];
   canonicalUrl?: string;
+  /** The hreflang set of a per-country page (`PER_COUNTRY_SLUGS`); absent or empty removes it. */
+  alternates?: SeoAlternate[];
   language?: string;
   robots?: string;
   author?: string;

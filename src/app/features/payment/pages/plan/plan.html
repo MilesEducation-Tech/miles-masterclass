@@ -17,6 +17,18 @@
           <p class="mt-2 text-sm md:text-base text-neutral-400">
             One plan for you. Custom plans for your firm. Pick yours.
           </p>
+          @if (priceLocale(); as locale) {
+            <!-- The fragment scrolls to the footer's country select (anchorScrolling is on). -->
+            <p class="mt-2 text-sm text-neutral-400">
+              Prices for {{ locale.country }} in {{ locale.currency }}.
+              <a
+                routerLink="."
+                fragment="country-switcher"
+                class="text-accent underline underline-offset-2 transition-colors hover:text-white"
+                >Change country</a
+              >
+            </p>
+          }
         </div>
 
         <app-promo-offer class="w-full lg:max-w-lg lg:shrink-0" (login)="openSignupDialog()" />

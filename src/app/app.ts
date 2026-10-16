@@ -11,6 +11,7 @@ import { Analytics } from '@core/services/analytics/analytics';
 import { EngagementDialog } from '@shared/services/engagement-dialog';
 import {
   isDynamicSlug,
+  routeUrlToAlternates,
   routeUrlToCanonicalUrl,
   routeUrlToSeoSlug,
 } from '@shared/utils/seo/seo-route-slug';
@@ -101,6 +102,8 @@ export class App {
         const seoForRoute = {
           ...this.defaultSeo,
           canonicalUrl,
+          // Empty on every page but the per-country ones (the plan page).
+          alternates: routeUrlToAlternates(event.urlAfterRedirects, this.siteUrl),
           openGraph: { ...this.defaultSeo.openGraph, url: canonicalUrl },
         };
 
