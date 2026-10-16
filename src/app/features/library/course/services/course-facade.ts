@@ -1,120 +1,213 @@
 import { isPlatformBrowser } from '@angular/common';
-import { httpResource } from '@angular/common/http';
+import { HttpContext, httpResource } from '@angular/common/http';
 import {
   computed,
-  effect,
   inject,
-  Service,
   linkedSignal,
   PLATFORM_ID,
+  ResourceSnapshot,
+  Service,
   signal,
   untracked,
 } from '@angular/core';
-import { Content } from '@core/models/course.model';
-import { FeatureApiResponse } from '@core/models/feature.model';
-import {
-  ApiCourseType,
-  CourseFilterSelection,
-  EMPTY_COURSE_FILTERS,
-  LibraryFiltersData,
-} from '@core/models/library-filters.model';
-import { apiUrl } from '@core/services/api-client/api-client';
-import { parseNextPage } from '@core/utils/parse-next-page';
+import { NgpDialogManager } from 'ng-primitives/dialog';
+import { map } from 'rxjs';
+import { SKIP_LOADING } from '@core/models/http.model';
+import { MasterclassCourse } from '@core/models/masterclass-home.model';
+import { ApiClient } from '@core/services/api-client/api-client';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
 import { withPreviousValue } from '@core/utils/with-previous-value';
+import type { UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
+import {
+  AI_KIT_CONTENT_TYPE,
+  COURSE_LIBRARY_PAGE_SIZE,
+  COURSE_LIBRARY_URL,
+  COURSE_RESOURCES_COPY,
+  COURSE_RESOURCES_ROUTE,
+  EMPTY_LIBRARY_SELECTION,
+  LIBRARY_FILTER_GROUPS,
+} from '@features/library/course/constants/course-library';
+import {
+  CourseLibraryPage,
+  CourseResources,
+  LibraryCourseType,
+  LibraryFilterGroup,
+  LibraryFilterSelection,
+  parseCourseLibrary,
+  parseCourseResources,
+} from '@features/library/course/models/course-library.model';
 
 /**
  * Owns course-listing state for `/library/course-library`. Lazy by
- * `providedIn: 'root'` — `v2/library-filters` and `v2/library/` only fire when
- * the Course page injects this facade. Visiting Instructor/Badge libraries
- * does not trigger course requests.
+ * `providedIn: 'root'`: it is created only when the Course page injects it,
+ * so the Instructor and Badge libraries never touch it.
+ *
+ * One read, `filter/`, answers both the sidebar's options and a page of
+ * cards. Browser-only, as the page has always been.
  */
 @Service()
 export class CourseFacade {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly api = inject(ApiClient);
+  private readonly dialogs = inject(NgpDialogManager);
+  private readonly notification = inject(NotificationService);
+  private readonly logger = inject(Logger);
 
-  // ---- Library filters (single fetch, drives the sidebar) ------------------
+  readonly courseType = signal<LibraryCourseType>('course');
+  readonly selection = signal<LibraryFilterSelection>(EMPTY_LIBRARY_SELECTION);
+  private readonly page = signal(1);
 
-  private readonly libraryFiltersResource = httpResource<FeatureApiResponse<LibraryFiltersData>>(
-    () => (this.isBrowser ? apiUrl('v2/library-filters/') : undefined),
+  private readonly rawResource = httpResource<CourseLibraryPage>(
+    () => {
+      if (!this.isBrowser) return undefined;
+      const page = this.page();
+      const params: Record<string, string | number> = {
+        course_type: this.courseType(),
+        page,
+        page_size: COURSE_LIBRARY_PAGE_SIZE,
+      };
+      for (const [key, values] of Object.entries(this.selection())) {
+        if (values.length > 0) params[key] = values.join(',');
+      }
+      return {
+        url: COURSE_LIBRARY_URL,
+        params,
+        // Later pages show their own "Loading…" under the grid.
+        context: page > 1 ? new HttpContext().set(SKIP_LOADING, true) : undefined,
+      };
+    },
+    // The trust boundary: an answer that drifted from the contract lands in `error()`.
+    { parse: parseCourseLibrary },
+  );
+
+  /** Holds the last answer while the next page or selection loads. */
+  private readonly libraryResource = withPreviousValue(this.rawResource);
+
+  private readonly latest = computed(() =>
+    this.libraryResource.hasValue() ? this.libraryResource.value() : undefined,
   );
 
   /**
-   * Guarded: `value()` throws on an errored resource, so a failed `v2/library-filters/`
-   * (a 404 in local/UAT) used to throw on every change detection and take the page down.
-   * Now the sidebar just has no filters.
+   * The sidebar groups, in production's order, from the latest answer. Held
+   * through the next load, since the API does not narrow them by selection. A
+   * group with no options is dropped, and only AI Kit is offered from the
+   * content types: the tabs already cover the rest.
    */
-  readonly libraryFilters = computed(() =>
-    this.libraryFiltersResource.hasValue() ? this.libraryFiltersResource.value()?.data : undefined,
-  );
-  readonly isLibraryFiltersLoading = computed(() => this.libraryFiltersResource.isLoading());
-
-  // ---- Course listing -------------------------------------------------------
-
-  readonly courseType = signal<ApiCourseType>('masterclass');
-  readonly courseFilters = signal<CourseFilterSelection>(EMPTY_COURSE_FILTERS);
-  private readonly coursePage = signal(1);
-
-  private readonly rawCourseResource = httpResource<FeatureApiResponse<Content[]>>(() => {
-    if (!this.isBrowser) return undefined;
-    // Multi-select filters are serialized as comma-separated values per
-    // the backend contract (e.g. `instructor_ids=1361,1522`), not as
-    // repeated query params. Single-value entries are emitted plainly.
-    const params: Record<string, string | number> = {
-      course_type: this.courseType(),
-      page: this.coursePage(),
-    };
-    for (const [key, values] of Object.entries(this.courseFilters())) {
-      if (values.length > 0) params[key] = values.join(',');
-    }
-    return { url: apiUrl('v2/library/'), params };
+  readonly groups = computed<readonly LibraryFilterGroup[]>(() => {
+    const filters = this.latest()?.filters;
+    if (!filters) return [];
+    return LIBRARY_FILTER_GROUPS.map(({ key, label }) => ({
+      key,
+      label,
+      options:
+        key === 'content_type'
+          ? filters.content_type.filter((option) => option.value === AI_KIT_CONTENT_TYPE)
+          : filters[key],
+    })).filter((group) => group.options.length > 0);
   });
 
-  private readonly courseResource = withPreviousValue(this.rawCourseResource);
-
-  readonly courseItems = linkedSignal({
-    source: this.courseResource.snapshot,
-    computation: (snap, previous): Content[] => {
-      if (snap.status !== 'resolved') return previous?.value ?? [];
-      const data = snap.value?.data ?? [];
-      const page = untracked(() => this.coursePage());
-      return page === 1 ? data : [...(previous?.value ?? []), ...data];
+  /** Every page loaded so far; page 1 starts the list over. */
+  readonly courses = linkedSignal<
+    ResourceSnapshot<CourseLibraryPage | undefined>,
+    MasterclassCourse[]
+  >({
+    source: this.libraryResource.snapshot,
+    computation: (snap, previous) => {
+      if (snap.status === 'resolved' && snap.value) {
+        const { page, courses } = snap.value;
+        return page === 1 ? courses : [...(previous?.value ?? []), ...courses];
+      }
+      // A new tab or selection empties the grid while page 1 loads.
+      return untracked(this.page) === 1 ? [] : (previous?.value ?? []);
     },
   });
 
-  /** Guarded like `libraryFilters`: `value()` throws on an errored resource. */
-  readonly coursePagination = computed(() =>
-    this.courseResource.hasValue() ? this.courseResource.value()?.pagination_data : undefined,
+  readonly hasNext = computed(() => this.latest()?.hasNext ?? false);
+  readonly isLoading = computed(() => this.libraryResource.isLoading());
+  readonly error = computed(() => this.libraryResource.error());
+
+  readonly selectedCount = computed(() =>
+    Object.values(this.selection()).reduce((n, values) => n + values.length, 0),
   );
-  readonly isCourseLoading = computed(() => this.courseResource.isLoading());
-  readonly courseError = computed(() => this.courseResource.error());
 
-  constructor() {
-    // Reset pagination + accumulator on type or filter change.
-    effect(() => {
-      this.courseType();
-      this.courseFilters();
-      untracked(() => {
-        this.coursePage.set(1);
-        this.courseItems.set([]);
-      });
-    });
-  }
-
-  selectCourseType(type: ApiCourseType): void {
+  selectCourseType(type: LibraryCourseType): void {
+    if (type === this.courseType()) return;
+    this.page.set(1);
     this.courseType.set(type);
   }
 
-  setCourseFilters(sel: CourseFilterSelection): void {
-    this.courseFilters.set(sel);
+  setSelection(selection: LibraryFilterSelection): void {
+    this.page.set(1);
+    this.selection.set(selection);
   }
 
-  clearCourseFilters(): void {
-    this.courseFilters.set(EMPTY_COURSE_FILTERS);
+  clearSelection(): void {
+    this.setSelection(EMPTY_LIBRARY_SELECTION);
   }
 
-  loadNextCoursePage(): void {
-    if (this.isCourseLoading()) return;
-    const next = parseNextPage(this.coursePagination()?.next_page);
-    if (next !== null) this.coursePage.set(next);
+  loadNextPage(): void {
+    if (this.isLoading() || !this.hasNext()) return;
+    this.page.update((page) => page + 1);
+  }
+
+  reload(): void {
+    this.rawResource.reload();
+  }
+
+  /**
+   * The card's AI Kit button: reads the course's extras and lists them in the
+   * "Additional Resources" dialog, the kit first, as the legacy button did.
+   */
+  openAiKit(course: MasterclassCourse): void {
+    const route = COURSE_RESOURCES_ROUTE;
+    this.api
+      .call({ ...route, path: route.path.replace(':id', course.id) }, undefined, {
+        params: { login_type: 'pre_login' },
+      })
+      .pipe(map(parseCourseResources))
+      .subscribe({
+        next: (resources) => void this.showResources(resources),
+        error: (error: unknown) => {
+          this.logger.error('Failed to fetch additional resources', error);
+          this.notification.error(
+            COURSE_RESOURCES_COPY.errorTitle,
+            COURSE_RESOURCES_COPY.errorMessage,
+          );
+        },
+      });
+  }
+
+  private async showResources({ aiKit, exerciseFiles }: CourseResources): Promise<void> {
+    const links = [
+      ...(aiKit
+        ? [
+            {
+              label: aiKit.name,
+              href: aiKit.url,
+              description: aiKit.description ?? COURSE_RESOURCES_COPY.aiKit,
+            },
+          ]
+        : []),
+      ...exerciseFiles.map(({ name, url }) => ({
+        label: name,
+        href: url,
+        description: COURSE_RESOURCES_COPY.exerciseFile,
+      })),
+    ];
+    if (!links.length) {
+      this.notification.info(COURSE_RESOURCES_COPY.emptyTitle, COURSE_RESOURCES_COPY.emptyMessage);
+      return;
+    }
+    // Loaded on open: only an AI Kit click needs it.
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+    this.dialogs.open<UtilsDialogData>(UtilsDialog, {
+      data: {
+        title: COURSE_RESOURCES_COPY.title,
+        containerClass: 'max-w-lg text-start!',
+        content: [{ type: 'links', items: links }],
+        buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
+      },
+    });
   }
 }

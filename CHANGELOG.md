@@ -1,5 +1,45 @@
 # Changelog
 
+## [3.9.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.8.0...v3.9.0) (2026-10-16)
+
+
+### Features
+
+* **library:** bind the instructor library and instructor page to the web API ([#150](https://github.com/MilesEducation-Tech/miles-masterclass/issues/150)) ([68a672d](https://github.com/MilesEducation-Tech/miles-masterclass/commit/68a672dee10dcd3fea4aa9046278abfd435fc576))
+
+## [3.8.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.7.1...v3.8.0) (2026-10-15)
+
+
+### Features
+
+* **offerings:** bind the masterclass chapter page to the web API and save progress ([#137](https://github.com/MilesEducation-Tech/miles-masterclass/issues/137)) ([a76392e](https://github.com/MilesEducation-Tech/miles-masterclass/commit/a76392eed730afa110de684c56ed843f91f24172))
+* **tracker:** rebind the CAIRA tracker to web-api/v1/badges/page/ ([#132](https://github.com/MilesEducation-Tech/miles-masterclass/issues/132)) ([e3fc330](https://github.com/MilesEducation-Tech/miles-masterclass/commit/e3fc330bc3e38f58f1ad511ff1a6f24f9b7ec210))
+
+
+### Bug Fixes
+
+* **layout:** close header dropdowns when another menu or nav link opens ([#148](https://github.com/MilesEducation-Tech/miles-masterclass/issues/148)) ([f582dc3](https://github.com/MilesEducation-Tech/miles-masterclass/commit/f582dc3cb67e6e14e32cc18413b42d0f66974c14))
+
+## [3.7.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.7.0...v3.7.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **offerings:** send course_type on the masterclass list reads ([#146](https://github.com/MilesEducation-Tech/miles-masterclass/issues/146)) ([06412a4](https://github.com/MilesEducation-Tech/miles-masterclass/commit/06412a48ec66fe3c7ade972e902be95ec7043989))
+
+## [3.7.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.6.0...v3.7.0) (2026-10-15)
+
+
+### Features
+
+* **library:** bind the course library page to the web filter API ([#136](https://github.com/MilesEducation-Tech/miles-masterclass/issues/136)) ([d470717](https://github.com/MilesEducation-Tech/miles-masterclass/commit/d47071772d70179b65c3a1f9afe05d6fb0b83a9b))
+
+
+### Bug Fixes
+
+* **auth:** ask once before leaving the profile with unsaved answers ([#142](https://github.com/MilesEducation-Tech/miles-masterclass/issues/142)) ([55c7599](https://github.com/MilesEducation-Tech/miles-masterclass/commit/55c7599e8cd79c450f48df8261f1f392229471b7))
+* **offerings:** accept webinars without thumbnails in the feed ([#144](https://github.com/MilesEducation-Tech/miles-masterclass/issues/144)) ([07eb0e0](https://github.com/MilesEducation-Tech/miles-masterclass/commit/07eb0e08120c3698254beb19e23ae7e10ebeb9e5))
+
 ## [3.6.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.5.1...v3.6.0) (2026-10-14)
 
 

@@ -28,8 +28,6 @@ export class PodcastChapter {
   readonly isVideoCompleted = signal(false);
   private currentTime = 0;
 
-  private lastFetchedChapterId: number | null = null;
-
   readonly podcastFormat = computed(() => {
     return this.chapterFacade.courseDetails()?.podcast_format ?? null;
   });
@@ -67,11 +65,6 @@ export class PodcastChapter {
       const current = this.chapterFacade.chapterNavigation().current;
       if (current) {
         this.isVideoCompleted.set(current.play_history?.is_completed ?? false);
-
-        if (current.id !== this.lastFetchedChapterId) {
-          this.chapterFacade.fetchQuizReport(current.id);
-          this.lastFetchedChapterId = current.id;
-        }
       }
     });
 

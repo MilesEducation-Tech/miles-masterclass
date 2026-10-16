@@ -38,6 +38,18 @@ export interface MasterclassThumbnails {
   square: string | null;
 }
 
+/**
+ * Which extras a course comes with. Only the flags: the AI Kit and exercise
+ * files themselves are in `course-detail/`. Every card route sends it (checked
+ * live on 2026-10-14: `filter/`, `highlight/`, `ai-labs/`, `tracks-page/`).
+ */
+export interface MasterclassAdditionalResources {
+  has_exercise_files: boolean;
+  has_ai_kit: boolean;
+  has_ai_labs: boolean;
+  has_tools: boolean;
+}
+
 export interface MasterclassFieldOfStudy {
   id: string;
   name: string;
@@ -51,12 +63,14 @@ export interface MasterclassCourse {
   title: string;
   short_description: string | null;
   thumbnails: MasterclassThumbnails;
-  trailer_url: string | null;
+  /** Was `trailer_url` until UAT renamed it on 2026-10-14 (Postman not updated yet). */
+  horizontal_trailer_url: string | null;
   fields_of_study: MasterclassFieldOfStudy[];
   /** The course total, summed by the API. Render it as sent; never re-sum. */
   total_cpe_credits: number | null;
   has_individual_badge: boolean;
   included_for_caira: boolean;
+  has_additional_resources: MasterclassAdditionalResources;
 }
 
 /**
@@ -166,11 +180,25 @@ function isThumbnails(v: unknown): v is MasterclassThumbnails {
   );
 }
 
+function isAdditionalResources(v: unknown): v is MasterclassAdditionalResources {
+  return (
+    isObject(v) &&
+    isBool(v['has_exercise_files']) &&
+    isBool(v['has_ai_kit']) &&
+    isBool(v['has_ai_labs']) &&
+    isBool(v['has_tools'])
+  );
+}
+
 function isFieldOfStudy(v: unknown): v is MasterclassFieldOfStudy {
   return isObject(v) && isStr(v['id']) && isStr(v['name']) && isNum(v['cpe_credit']);
 }
 
-function isCourse(v: unknown): v is MasterclassCourse {
+/**
+ * Exported for other `web-api/` reads that serve the same card (the course
+ * library's `filter/`), so every page checks a card exactly the same way.
+ */
+export function isMasterclassCourse(v: unknown): v is MasterclassCourse {
   return (
     isObject(v) &&
     isStr(v['id']) &&
@@ -178,11 +206,12 @@ function isCourse(v: unknown): v is MasterclassCourse {
     isStr(v['title']) &&
     isStrOrNull(v['short_description']) &&
     isThumbnails(v['thumbnails']) &&
-    isStrOrNull(v['trailer_url']) &&
+    isStrOrNull(v['horizontal_trailer_url']) &&
     listOf(isFieldOfStudy)(v['fields_of_study']) &&
     isNumOrNull(v['total_cpe_credits']) &&
     isBool(v['has_individual_badge']) &&
-    isBool(v['included_for_caira'])
+    isBool(v['included_for_caira']) &&
+    isAdditionalResources(v['has_additional_resources'])
   );
 }
 
@@ -194,7 +223,7 @@ function isApiTrack(v: unknown): v is ApiTrack {
     isStr(v['name']) &&
     isStrOrNull(v['description']) &&
     isNum(v['priority']) &&
-    pageOf(isCourse)(v['courses'])
+    pageOf(isMasterclassCourse)(v['courses'])
   );
 }
 
@@ -255,6 +284,6 @@ export const parseCoursePage =
   (route: string) =>
   (raw: unknown): MasterclassCourse[] => {
     const data = isObject(raw) ? raw['data'] : undefined;
-    if (pageOf(isCourse)(data)) return data.results;
+    if (pageOf(isMasterclassCourse)(data)) return data.results;
     throw contractError(route);
   };

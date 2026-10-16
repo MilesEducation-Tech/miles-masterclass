@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { HOME_HERO_GRID_BASE } from '../../constants/home-assets';
 import { HERO_GRID_COLUMNS } from './hero-grid-columns';
 
@@ -56,7 +56,6 @@ interface Column {
   selector: 'app-home-hero-grid',
   templateUrl: './home-hero-grid.html',
   styleUrl: './home-hero-grid.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     'aria-hidden': 'true',
     class: 'pointer-events-none absolute inset-0 overflow-hidden select-none',

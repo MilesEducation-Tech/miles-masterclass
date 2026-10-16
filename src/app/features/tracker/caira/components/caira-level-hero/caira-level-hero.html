@@ -37,7 +37,7 @@
               [style.opacity]="0.18"
             ></div>
 
-            @for (slide of slides(); track slide.item.id) {
+            @for (slide of slides(); track slide.item.badge_template_id) {
               <div
                 class="absolute inset-0 grid place-items-center will-change-transform motion-safe:transition-all motion-safe:duration-500 motion-safe:ease-out"
                 [style.transform]="slide.transform"
@@ -60,15 +60,12 @@
           <div class="min-w-0">
             <img [ngSrc]="cairaLogo" alt="CAIRA" width="72" height="18" class="h-4 w-auto" />
             <h2 id="caira-level-heading" class="mt-2 text-3xl font-bold text-white">
-              Level {{ level.badge.level_rank }}
+              Level {{ level.level.number }}
             </h2>
-            @if (level.badge.sub_text; as subText) {
+            @if (subtitle(); as text) {
               <p class="mt-1 text-sm font-bold tracking-wide text-accent-premium uppercase">
-                {{ subText }}
+                {{ text }}
               </p>
-            }
-            @if (description(); as text) {
-              <p class="mt-2 max-w-lg text-sm text-muted-foreground">{{ text }}</p>
             }
           </div>
         </div>
@@ -76,11 +73,9 @@
         <!-- Progress -->
         <div class="w-full lg:max-w-md">
           <div class="flex items-baseline justify-between gap-4">
-            <p class="text-sm font-semibold text-white">
-              Level {{ level.badge.level_rank }} Progress
-            </p>
+            <p class="text-sm font-semibold text-white">Level {{ level.level.number }} Progress</p>
             <p class="text-sm font-bold tracking-wide text-accent uppercase">
-              {{ earned() }} CPE Credits
+              {{ earnedCredits() }} CPE Credits
             </p>
           </div>
 
@@ -89,7 +84,7 @@
             class="mt-2 block"
             variant="primary"
             size="sm"
-            [ariaLabel]="'Level ' + level.badge.level_rank + ' progress'"
+            [ariaLabel]="'Level ' + level.level.number + ' progress'"
           />
 
           <p class="mt-2 text-sm text-muted-foreground">{{ progressHint() }}</p>
@@ -103,17 +98,6 @@
               [routerLink]="cpeTrackerLink()"
             >
               CPE Tracker
-            </button>
-            <button
-              app-button
-              type="button"
-              class="text-white"
-              variant="outline"
-              size="icon"
-              aria-label="About this CAIRA badge"
-              (click)="openInfo()"
-            >
-              <ng-icon name="lucideInfo" size="18" aria-hidden="true" />
             </button>
           </div>
         </div>

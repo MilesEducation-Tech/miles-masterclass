@@ -1,0 +1,60 @@
+@let i = instructor();
+<div class="w-full aspect-9/16 overflow-hidden rounded-lg relative group/card">
+  <!-- The name and job title below are the link's text, so the photo is decorative (alt=""). -->
+  <a
+    class="absolute inset-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+    [routerLink]="link()"
+  >
+    @let src = photo();
+    @if (src && !photoFailed()) {
+      <img
+        [ngSrc]="src"
+        alt=""
+        class="object-cover w-full h-full group-hover/card:scale-105 transition-transform duration-300 relative z-0"
+        fill
+        [priority]="priority()"
+        draggable="false"
+        (error)="photoFailed.set(true)"
+      />
+    } @else {
+      <span
+        class="absolute inset-0 bg-secondary flex items-center justify-center text-muted-foreground text-xs"
+        aria-hidden="true"
+      >
+        {{ initials() }}
+      </span>
+    }
+    <span
+      class="absolute start-0 bottom-0 w-full flex flex-col justify-end bg-linear-to-t from-black from-50% to-transparent z-10 p-4 space-y-1"
+    >
+      <span class="text-white text-sm font-bold line-clamp-1">{{ i.name }}</span>
+      @if (i.designation) {
+        <span class="text-slate-200 text-xs font-medium line-clamp-2">{{ i.designation }}</span>
+      }
+    </span>
+  </a>
+  @if (socials().length) {
+    <ul
+      class="absolute top-3 end-3 z-20 flex flex-col gap-2"
+      [attr.aria-label]="i.name + ' social links'"
+    >
+      @for (s of socials(); track s.url) {
+        <li>
+          <a
+            [href]="s.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            [attr.aria-label]="s.label"
+            class="inline-flex items-center justify-center size-8 rounded-full bg-white/90 text-black"
+          >
+            @if (s.icon) {
+              <ng-icon [name]="s.icon" size="16" aria-hidden="true" />
+            } @else if (s.iconUrl) {
+              <img [ngSrc]="s.iconUrl" alt="" width="16" height="16" />
+            }
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</div>

@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   DestroyRef,
+  DOCUMENT,
   effect,
   ElementRef,
   inject,
@@ -97,6 +98,7 @@ const ROUTE_MATCH_OPTIONS: IsActiveMatchOptions = {
   templateUrl: './header.html',
   host: {
     '(document:click)': 'onDocumentClick($event)',
+    '(document:keydown.escape)': 'onNavEscape()',
   },
 })
 export class Header {
@@ -104,8 +106,13 @@ export class Header {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly document = inject(DOCUMENT);
   private readonly injector = inject(Injector);
   private readonly mobileToggler = viewChild<ElementRef<HTMLButtonElement>>('mobileToggler');
+  /** The desktop nav list: its items carry `data-nav-item`, so a click can be placed in one. */
+  private readonly navList = viewChild<ElementRef<HTMLElement>>('navList');
+  /** The sub-menu group the header provides for its dropdowns (and its drawer). */
+  private readonly navGroup = inject(NavMenuGroup);
 
   private readonly dialogs = inject(NgpDialogManager);
   protected readonly utils = inject(Utils);
@@ -216,10 +223,14 @@ export class Header {
         .subscribe((next) => this.isScrolled.set(next));
     }
 
-    // Close the mobile drawer on every navigation completion.
+    // Close the mobile drawer and any desktop dropdown on every navigation completion,
+    // including ones that start outside the header (Back, a link on the page).
     effect(() => {
       void this.currentUrl();
-      untracked(() => this.closeMobileMenu());
+      untracked(() => {
+        this.closeMobileMenu();
+        this.closeNavDropdown();
+      });
     });
   }
 
@@ -318,11 +329,6 @@ export class Header {
   }
 
   /**
-   * Outside-click dismissal for the mobile drawer. The host listener fires
-   * for every document click; we close only when the drawer is open and the
-   * click target sits outside the host element.
-   */
-  /**
    * Which desktop nav dropdown is open, by item label.
    *
    * The dropdowns are a single-select `ngpAccordion` rather than independent
@@ -333,19 +339,59 @@ export class Header {
 
   protected onNavOpenChange(value: string | string[] | null): void {
     this.openNavItem.set(Array.isArray(value) ? (value[0] ?? null) : value);
+    this.collapseSubMenus();
   }
 
   closeNavDropdown(): void {
     this.openNavItem.set(null);
+    this.collapseSubMenus();
   }
 
+  /**
+   * A closed dropdown stays in the DOM (`ngpAccordionContent` only hides it), so its sub-menus
+   * keep their state. Releasing the group makes every dropdown open collapsed.
+   */
+  private collapseSubMenus(): void {
+    this.navGroup.open.set(null);
+  }
+
+  /** The open dropdown's `<li>` (its trigger and panel), or `null`. */
+  private openNavElement(): HTMLElement | null {
+    const open = this.openNavItem();
+    const list = this.navList()?.nativeElement;
+    if (open === null || !list) return null;
+    return (
+      Array.from(list.children).find(
+        (li): li is HTMLElement => li instanceof HTMLElement && li.dataset['navItem'] === open,
+      ) ?? null
+    );
+  }
+
+  /**
+   * Escape closes the open dropdown, as the menu primitive the dropdowns replaced did. Focus goes
+   * back to its trigger only when it was inside the dropdown, so it never jumps from elsewhere on
+   * the page; with nothing open, Escape is left alone.
+   */
+  onNavEscape(): void {
+    const item = this.openNavElement();
+    if (!item) return;
+    const hadFocus = item.contains(this.document.activeElement);
+    this.closeNavDropdown();
+    if (hadFocus) item.querySelector<HTMLElement>('[data-nav-trigger]')?.focus();
+  }
+
+  /**
+   * Outside-click dismissal. An open dropdown closes on any click that isn't on its own trigger
+   * or panel: the profile menu, another nav link, or anywhere else. Not just clicks outside the
+   * header, which is all a disclosure knows. Another dropdown's trigger is left to the accordion,
+   * which opens it in this one's place. The mobile drawer still closes only on a click outside
+   * the header.
+   */
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as Node | null;
     const outside = !target || !this.hostRef.nativeElement.contains(target);
 
-    // Closing on an outside click is also something the menu primitive did on
-    // its own; a disclosure has no notion of "outside".
-    if (outside && this.openNavItem() !== null) {
+    if (this.openNavItem() !== null && !(target && this.openNavElement()?.contains(target))) {
       this.closeNavDropdown();
     }
 

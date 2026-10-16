@@ -1,5 +1,7 @@
 <div class="lg:w-9/12 sm:w-10/12 w-full mx-auto flex flex-col space-y-8 overflow-hidden">
   @for (chapter of chapters(); track chapter.id) {
+    @let completed = isChapterWatched(chapter);
+    @let watched = watchedPercent(chapter);
     <div class="flex sm:space-x-4 max-sm:space-y-4 max-sm:flex-col items-center group">
       <!-- The title below is the keyboard stop for this row; the thumbnail repeats it for the
            mouse, so its image is decorative (alt=""). bg-muted shows if the image fails to load. -->
@@ -11,6 +13,18 @@
       >
         @if (chapter.horizontal_thumbnail_url; as thumbnail) {
           <img [ngSrc]="thumbnail" alt="" fill class="z-0" />
+        }
+        @if (completed) {
+          <div
+            class="absolute top-2 start-2 px-3 py-1 rounded-full z-10 bg-success/90 text-white flex items-center justify-center space-x-1.5"
+          >
+            <ng-icon name="matDownloadDoneRound" size="18" aria-hidden="true" />
+            <p class="text-sm">Completed</p>
+          </div>
+        } @else if (watched > 0) {
+          <div class="absolute bottom-0 start-0 w-full z-10">
+            <app-progress [value]="watched" variant="primary" size="sm" ariaLabel="Watched" />
+          </div>
         }
         <div
           class="absolute bottom-2 end-2 px-3 py-1 rounded-full z-10 bg-background/90 flex items-center justify-center space-x-1.5"
@@ -36,6 +50,12 @@
             >
               {{ chapter.name }}
             </span>
+            <!-- The thumbnail's badge and bar are hidden with it, so the status is said here. -->
+            @if (completed) {
+              <span class="sr-only">, completed</span>
+            } @else if (watched > 0) {
+              <span class="sr-only">, {{ watched }}% watched</span>
+            }
           </h2>
         </a>
         @if (chapter.mini_description) {

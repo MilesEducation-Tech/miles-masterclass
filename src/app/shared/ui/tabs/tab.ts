@@ -1,8 +1,7 @@
-import { ChangeDetectionStrategy, Component, input, TemplateRef, viewChild } from '@angular/core';
+import { Component, input, TemplateRef, viewChild } from '@angular/core';
 
 /** One tab inside `app-tabs`: `value` identifies it, `label` is the button text, content is projected. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-tab',
   template: `
     <ng-template #content>

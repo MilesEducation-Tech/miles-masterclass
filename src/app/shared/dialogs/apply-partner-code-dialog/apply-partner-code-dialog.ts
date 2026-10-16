@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Signal, signal } from '@angular/core';
+import { Component, Signal, signal } from '@angular/core';
 import { AriaSelectOption } from '@core/models/aria.model';
 
 import { Button } from '../../ui/button/button';
@@ -31,7 +31,6 @@ export interface ApplyPartnerCodeDialogResult {
   imports: [Button, Dialog, Field, NgpLabel, Combobox, NgIcon],
   providers: [provideIcons({ heroXMark })],
   templateUrl: './apply-partner-code-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ApplyPartnerCodeDialog {
   private readonly dialogRef = injectDialogRef<

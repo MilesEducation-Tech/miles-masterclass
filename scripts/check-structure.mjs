@@ -198,6 +198,22 @@ export function tokenHexCounts(sourceFiles, tokens) {
   return counts;
 }
 
+/**
+ * Relative import specifiers per `.ts` file. Every import uses a path alias, even inside one feature
+ * (decided 2026-10-14; stricter than the ESLint rule, which only bans crossing a top-level folder).
+ * Static `from './x'` / `from '../x'` only: a dynamic `import('./x')` is left alone, because
+ * `routedOutsidePages` requires exactly that form for a feature's root shell.
+ */
+export function relativeImportCounts(sourceFiles) {
+  const counts = {};
+  for (const [file, src] of sourceFiles) {
+    if (!file.endsWith('.ts')) continue;
+    const n = (src.match(/\bfrom\s+'\.\.?\//g) ?? []).length;
+    if (n) counts[file] = n;
+  }
+  return counts;
+}
+
 // ---------------------------------------------------------------- baseline comparison
 
 /** A list rule: findings must be baseline keys; baseline keys must still be findings. */
@@ -278,6 +294,11 @@ export function check(root = ROOT, baseline = readBaseline(root)) {
       tokenHexCounts(sources, tokens),
       baseline.tokenHex,
     ),
+    compareCounts(
+      'Relative import (use a path alias: @core/*, @shared/*, @layout/*, @features/*, @admin/*)',
+      relativeImportCounts(sources),
+      baseline.relativeImports,
+    ),
   ];
 
   const errors = [...hard, ...lists.flatMap((r) => r.errors), ...counts.flatMap((r) => r.errors)];
@@ -308,6 +329,7 @@ export function prune(root = ROOT) {
     componentStylesheets: keep(baseline.componentStylesheets, componentStylesheets(files)),
     inlineStyles: lower(baseline.inlineStyles, inlineStyleCounts(html)),
     tokenHex: lower(baseline.tokenHex, tokenHexCounts(sources, tokens)),
+    relativeImports: lower(baseline.relativeImports, relativeImportCounts(sources)),
   };
   writeFileSync(path.join(root, BASELINE), JSON.stringify(next, null, 2) + '\n');
 }

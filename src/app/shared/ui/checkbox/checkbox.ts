@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+import { Component, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroCheckMini, heroMinusMini } from '@ng-icons/heroicons/mini';
 import { injectCheckboxState, NgpCheckbox } from 'ng-primitives/checkbox';
@@ -9,7 +9,6 @@ import { injectCheckboxState, NgpCheckbox } from 'ng-primitives/checkbox';
  * primitive wires `aria-labelledby` (a `<label for>` cannot toggle a non-native control).
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-checkbox',
   hostDirectives: [
     {

@@ -22,20 +22,13 @@
       </p>
     </header>
 
-    <div class="mt-6 flex flex-col gap-3">
-      <app-badge-filter-chips
-        ariaLabel="Filter by course type"
-        [options]="types"
-        [value]="courseType()"
-        (valueChange)="onType($event)"
-      />
-      <app-badge-filter-chips
-        ariaLabel="Filter course badges"
-        [options]="filters"
-        [value]="filter()"
-        (valueChange)="onFilter($event)"
-      />
-    </div>
+    <app-badge-filter-chips
+      class="mt-6 block"
+      ariaLabel="Filter course badges"
+      [options]="filters"
+      [value]="filter()"
+      (valueChange)="onFilter($event)"
+    />
 
     @if (hasError() && !items().length) {
       <app-error-state
@@ -51,7 +44,7 @@
       </div>
     } @else {
       <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        @for (card of visible(); track card.id) {
+        @for (card of visible(); track card.badge_template_id) {
           <app-course-badge-card [badge]="card" (activate)="onActivate($event)" />
         } @empty {
           <p class="col-span-full py-8 text-center text-muted-foreground">

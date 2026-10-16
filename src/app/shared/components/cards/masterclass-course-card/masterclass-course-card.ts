@@ -2,7 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
-import { faSolidInfo, faSolidPlay } from '@ng-icons/font-awesome/solid';
+import { faSolidInfo, faSolidPlay, faSolidRobot } from '@ng-icons/font-awesome/solid';
 import { MasterclassCardLayout, MasterclassCourse } from '@core/models/masterclass-home.model';
 import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
 import { CategoriesList } from '@shared/components/categories-list/categories-list';
@@ -16,11 +16,10 @@ import { Button } from '@shared/ui/button/button';
  * Its own component rather than those two because they are bound to the legacy
  * `Content` shape and make their own HTTP calls (about, bookmark) — six other
  * pages still depend on both. This one renders `MasterclassCourse` and decides
- * nothing: the trailer and the "i" button go up as outputs, the card itself is
- * a plain link.
+ * nothing: the trailer, the "i" button and the AI Kit button go up as
+ * outputs, the card itself is a plain link.
  *
- * Not yet here, deliberately: bookmark (no web route in scope) and AI Kit (its
- * route is gone).
+ * Not yet here, deliberately: bookmark (no web route in scope).
  */
 @Component({
   selector: 'app-masterclass-course-card',
@@ -46,10 +45,23 @@ export class MasterclassCourseCard {
    */
   readonly showInfo = input(false);
 
+  /**
+   * The "AI Kit" button, vertical layout only, as on the shared `app-vertical`,
+   * for a page that opens the kit on `aiKit` (the course library). Off by
+   * default for the same reason as `showInfo`. Shown only on a course that has
+   * a kit.
+   */
+  readonly showAiKit = input(false);
+
   readonly trailer = output<MasterclassCourse>();
   readonly info = output<MasterclassCourse>();
+  readonly aiKit = output<MasterclassCourse>();
 
-  protected readonly icons = { faSolidInfo, faSolidPlay };
+  protected readonly icons = { faSolidInfo, faSolidPlay, faSolidRobot };
+
+  protected readonly hasAiKit = computed(
+    () => this.showAiKit() && this.course().has_additional_resources.has_ai_kit,
+  );
 
   /**
    * Absolute, so the card links to the course from any page: a relative

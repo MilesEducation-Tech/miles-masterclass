@@ -60,9 +60,7 @@ docs/refactor/.cache/
 /public/version.json
 /src/app/core/version/app-version.ts
 
-# Postman's local workspace metadata, written by the desktop app next to the exports.
-# The collection and environment exports themselves are tracked: they are the API
-# contract behind docs/AUTH_API.md (AGENTS.md §6), and ignoring the whole folder made
-# lint-staged's `git add` of a staged export fail on commit.
-/postman/.postman/
-/postman/postman/
+# Postman exports and the desktop app's workspace metadata. Each developer keeps the
+# latest backend export locally; the folder is untracked, so lint-staged never stages
+# an export (an ignored-but-tracked export used to fail its `git add` on commit).
+/postman/

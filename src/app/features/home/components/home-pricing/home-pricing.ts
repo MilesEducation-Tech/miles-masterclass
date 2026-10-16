@@ -1,5 +1,5 @@
 import { CurrencyPipe, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCheck } from '@ng-icons/lucide';
@@ -21,7 +21,6 @@ import { HomePrice } from '../../models/home-sections.model';
   imports: [CurrencyPipe, NgIcon, NgOptimizedImage, RouterLink],
   templateUrl: './home-pricing.html',
   providers: [provideIcons({ lucideCheck })],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomePricing {
   private readonly utils = inject(Utils);

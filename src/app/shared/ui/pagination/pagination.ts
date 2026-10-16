@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   heroChevronDoubleLeft,
@@ -24,7 +24,6 @@ const BUTTON =
  * host a `navigation` landmark, so `ariaLabel` names it (two on a page must differ).
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-pagination',
   hostDirectives: [
     {

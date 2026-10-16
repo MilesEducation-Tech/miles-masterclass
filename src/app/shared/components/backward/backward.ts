@@ -1,5 +1,5 @@
-import { Component, inject, input, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Component, DOCUMENT, inject, input, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser, Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matArrowBackRound } from '@ng-icons/material-icons/round';
@@ -24,12 +24,14 @@ import { matArrowBackRound } from '@ng-icons/material-icons/round';
 export class Backward {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly location = inject(Location);
+  private readonly document = inject(DOCUMENT);
   private readonly platformId = inject(PLATFORM_ID);
 
   /** Button label */
   readonly label = input('Back');
 
-  /** Fallback route if no history exists (default: home) */
+  /** Fallback route when no page of this site opened this one (default: home) */
   readonly fallback = input('/');
 
   /** Optional explicit route path to navigate to (takes priority over history-based navigation) */
@@ -38,26 +40,34 @@ export class Backward {
   goBack(): void {
     if (!isPlatformBrowser(this.platformId)) return;
 
+    // If an explicit route path is provided, navigate to it directly
     const explicitPath = this.routePath();
-
-    // If an explicit route path is provided, navigate to it directly
-    // If an explicit route path is provided, navigate to it directly
     if (explicitPath) {
       this.router.navigate([explicitPath], { relativeTo: this.route });
       return;
     }
 
-    // Check if there's navigation history within the app
-    // window.history.length > 1 means there's at least one previous entry
-    // But this includes external pages, so we also check document.referrer
-    const hasAppHistory =
-      window.history.length > 1 && document.referrer.includes(window.location.origin);
-
-    if (hasAppHistory) {
-      window.history.back();
+    if (this.hasPreviousInAppPage()) {
+      this.location.back();
     } else {
-      // No valid history, navigate to fallback route
       this.router.navigate([this.fallback()]);
     }
+  }
+
+  /**
+   * Whether the history entry before this one is a page of this site, so Back
+   * returns to whatever opened this page.
+   *
+   * Not `document.referrer`: the browser sets it only on a full page load, so
+   * after in-app navigation it is usually empty, and Back fell through to the
+   * fallback. The Navigation API lists only this origin's entries, so
+   * `canGoBack` is false when the previous page is another site. Where it is
+   * missing, any earlier router navigation counts.
+   */
+  private hasPreviousInAppPage(): boolean {
+    const navigation: Navigation | undefined = this.document.defaultView?.navigation;
+    return navigation
+      ? navigation.canGoBack
+      : !!this.router.lastSuccessfulNavigation()?.previousNavigation;
   }
 }

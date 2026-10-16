@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { NgpButton } from 'ng-primitives/button';
 import { NgpToggleGroupItem } from 'ng-primitives/toggle-group';
 
 /** One option inside an `app-toggle-group`. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'button[app-toggle-group-item]',
   hostDirectives: [
     {

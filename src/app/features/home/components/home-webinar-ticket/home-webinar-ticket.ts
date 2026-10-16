@@ -1,5 +1,5 @@
 import { DatePipe, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideCalendar, lucideClock } from '@ng-icons/lucide';
 import { LocalTimeZonePipe } from '@shared/pipes/local-time-zone/local-time-zone-pipe';
@@ -19,7 +19,6 @@ import { HomeWebinar } from '../../models/home-sections.model';
   templateUrl: './home-webinar-ticket.html',
   styleUrl: './home-webinar-ticket.css',
   providers: [provideIcons({ lucideCalendar, lucideClock })],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeWebinarTicket {
   readonly webinar = input.required<HomeWebinar>();

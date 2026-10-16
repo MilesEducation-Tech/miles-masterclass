@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { injectToolbarState, NgpToolbar } from 'ng-primitives/toolbar';
 
 /** A row of `button[app-toolbar-button]`s with one tab stop and arrow-key movement. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-toolbar',
   hostDirectives: [{ directive: NgpToolbar, inputs: ['ngpToolbarOrientation:orientation'] }],
   host: {

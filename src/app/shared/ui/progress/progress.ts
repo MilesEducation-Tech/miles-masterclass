@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import {
   NgpProgress,
   NgpProgressIndicator,
@@ -17,7 +17,6 @@ const VARIANTS = { primary: 'bg-primary', success: 'bg-success', accent: 'bg-acc
  * full width). A visible `label` names the bar; a bare bar takes `ariaLabel` instead.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-progress',
   hostDirectives: [
     {

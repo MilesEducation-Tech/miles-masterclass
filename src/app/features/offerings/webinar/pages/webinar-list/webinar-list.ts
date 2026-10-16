@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { Faq } from '@shared/components/faq/faq';
 import { WebinarHero } from '@features/offerings/webinar/components/webinar-hero/webinar-hero';
@@ -19,7 +19,6 @@ import { WebinarRegistration } from '@features/offerings/webinar/services/webina
   selector: 'app-webinar-list',
   imports: [Faq, WebinarHero, WebinarMeetCta, WebinarRail],
   templateUrl: './webinar-list.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WebinarList {
   protected readonly facade = inject(WebinarFacade);

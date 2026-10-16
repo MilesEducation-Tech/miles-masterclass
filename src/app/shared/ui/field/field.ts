@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  ElementRef,
-  inject,
-  input,
-} from '@angular/core';
+import { Component, computed, ElementRef, inject, input } from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
 import { NgpError, NgpFormField } from 'ng-primitives/form-field';
 import { cn } from '../../utils/cn';
@@ -31,7 +24,6 @@ const FALLBACK: Record<string, string> = {
  * validators by hand; explicit `<p ngpError ngpErrorValidator="…">` children still work.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-field',
   hostDirectives: [NgpFormField],
   imports: [NgpError],

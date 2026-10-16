@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+import { Component, output } from '@angular/core';
 import { NgpRadioGroup } from 'ng-primitives/radio';
 
 /**
@@ -6,7 +6,6 @@ import { NgpRadioGroup } from 'ng-primitives/radio';
  * at `null`, never `undefined`. Name it with a `ngpLabel` in an `app-field`.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-radio-group',
   hostDirectives: [
     {

@@ -1,6 +1,5 @@
 import {
   afterNextRender,
-  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   ElementRef,
@@ -25,7 +24,6 @@ import { LiveSessionFacade } from '@features/offerings/webinar/services/live-ses
   selector: 'app-meeting-stage',
   imports: [Button],
   templateUrl: './meeting-stage.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MeetingStage {
   protected readonly facade = inject(LiveSessionFacade);

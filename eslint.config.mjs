@@ -204,6 +204,15 @@ export default [
             message:
               "Banned: the web app does not call `app-api/` routes (that surface is the mobile app's). Use `api/v1/` or `web-api/v1/`; if only an app-api route has the data, ask for a web twin — see docs/WEBINAR_API_QUESTIONS.md.",
           },
+          // Angular 22 ships OnPush as the framework default (`ɵɵdefineComponent` marks a
+          // component onPush unless its strategy is `Eager`), so an explicit OnPush is a
+          // redundant line plus a redundant import. Decided 2026-10-15. `Eager` stays legal.
+          {
+            selector:
+              'Property[key.name="changeDetection"] > MemberExpression[object.name="ChangeDetectionStrategy"][property.name="OnPush"]',
+            message:
+              'OnPush is the Angular 22 default: remove changeDetection and the ChangeDetectionStrategy import. Set Eager only when a component needs it, with a // why: comment.',
+          },
         ],
         '@typescript-eslint/no-restricted-imports': [
           'error',
@@ -275,12 +284,10 @@ export default [
         'src/app/core/models/library-filters.model.ts',
         'src/app/core/services/feature-facade/feature-facade.ts',
         'src/app/core/services/logger/logger.ts',
-        'src/app/features/offerings/components/chapter-quiz/chapter-quiz.ts',
         'src/app/features/offerings/components/course-resources/course-resources.ts',
         'src/app/features/offerings/pages/course-feedback/course-feedback.ts',
         'src/app/features/offerings/pages/final-assessment-exam/final-assessment-exam.ts',
         'src/app/features/offerings/pages/final-assessment-report/final-assessment-report.ts',
-        'src/app/features/offerings/services/chapter-facade.ts',
         'src/app/features/payment/pages/plan/plan.ts',
         'src/app/layout/footer/footer.stories.ts',
         'src/app/layout/header/header.stories.ts',

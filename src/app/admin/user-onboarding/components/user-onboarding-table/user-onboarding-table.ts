@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { Button } from '@shared/ui/button/button';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { InternalUser } from '@admin/user-onboarding/models/user-onboarding.model';
@@ -8,7 +8,6 @@ import { InternalUser } from '@admin/user-onboarding/models/user-onboarding.mode
   selector: 'app-user-onboarding-table',
   imports: [DatePipe, Button, Spinner],
   templateUrl: './user-onboarding-table.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block w-full' },
 })
 export class UserOnboardingTable {

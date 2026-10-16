@@ -7,6 +7,37 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-16, NON-REFACTOR — PR #122 (MIL-62) brought up to date: `master` `a2afc0e` merged into
+  `fix/MIL-62-require-sign-in`. CONFLICTS RESOLVED AND STAGED; the user clicks Continue Merge in Desktop, then pushes.**
+  - **7 conflicts:**
+    - **Route files:** `masterclass.routes.ts` and `micro-learning.routes.ts` keep MIL-62's `authGuard`s and aliases,
+      and drop `ChapterFacade` as `master` (#137) did.
+    - **Webinar files:** `seat-form.ts`, `webinar-detail.ts` and `webinar-list.ts` conflicted on imports only. Each
+      keeps what MIL-62's code uses, minus `ChangeDetectionStrategy` (#139).
+    - **`prompts/masterclass-chapter-binding.md`:** `master`'s shipped version. MIL-62 had carried an early draft.
+    - **`STATE.md`:** both sides' entries kept. The stray `<<<<<<< HEAD` line that is already committed on `master`
+      is left alone.
+  - **Beyond the conflicts:**
+    - `features.routes.ts` had merged with a duplicate `authGuard` import. The kept import is MIL-62's line, after
+      `DynamicLayout`, so the next `master` merge (#152 deletes `master`'s line 2) doesn't drop it silently.
+    - `structure-baseline.json` pruned: MIL-62's alias imports lowered five relative-import entries.
+  - **Found:** #145 reverted #144's null-thumbnail fix on `master` (`horizontal_thumbnail: string` again). MIL-62's
+    `f3c9d88` restores it, and the merge keeps it.
+  - **Side effect:** the merge deleted `postman/` (tracked on MIL-62, untracked on `master`). Recopied from App 5;
+    still ignored.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔ after prune; Prettier ✔;
+    `build:prod` 244.84 kB, only `ai-labs.css`.
+  - **Verified (dev 4101, signed out):**
+    - **Redirects to sign-in:** `cpe-tracker`, `caira-tracker` and `payment/cart` in the browser; chapter and
+      feedback with a server 302.
+    - **Public:** the course page answers 200.
+    - **Webinars:** `/webinar` loads with no feed error. A rail row's Book Now opens that webinar with
+      `#seat-identifier` focused.
+  - **PR #122 vs `master` after the merge:** 23 files, MIL-62's own.
+  - **Next:**
+    - The user continues the merge and pushes.
+    - `master` has moved again (#152, MIL-99), so the next update expects one `STATE.md` conflict.
+
 - 🔧 **2026-10-15, NON-REFACTOR — webinar feed rejected over null thumbnails. DONE, UNCOMMITTED** on
   `fix/MIL-62-require-sign-in` (the user's call: its own commit here, so MIL-62 can be tested on the webinar pages).
   - **Cause:** UAT added `Test webinar-2` (`missed_webinar`, 2026-10-13) with `horizontal_thumbnail` and
@@ -20,6 +51,528 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     box.
   - **Gates:** tsc 0, Storybook tsc 0, ESLint clean on the file, Prettier clean.
   - **Backend:** send `''` as the contract says, or update Postman to `string | null`.
+
+- 🔧 **2026-10-15, NON-REFACTOR — MIL-95, instructor library and page (`prompts/library-rebind.md` rev 3,
+  approved). SUBTASKS 1–2 COMMITTED (`51abea3`, `73f8095`), SUBTASK 3 + BACK FIX DONE, UNCOMMITTED** on
+  `feat/MIL-95-instructor-library-binding` (from `master` `e3fc330`).
+  - **Subtask 3, `feat(library): bind the instructor page to instructor-detail`:** the page reads
+    `instructor-detail/<uuid>/` (gated on the boolean `isAuthenticated()`) and `filter/?course_type=<tab>&instructor=`
+    (one read per tab, `SKIP_LOADING`), both parsed at the boundary; no facade. Masterclass / Podcast / Micro Learning
+    tabs with horizontal `app-masterclass-course-card`s (Trailer, "i"). `instructor-hero` back, retyped, `block` host
+    (the page's `space-y-10` never applied to the inline element: production's gap bug), images left out when they
+    fail. Route `canMatch: [authGuard]`. Old numeric ids are refused before any request; the promo shows only for a
+    playable file; "Courses by …" skips "Dr.". `view_instructor` once per instructor (keyed on a `computed` id).
+  - **Back fix, `fix(shared)`, user-requested:** `app-backward` read in-app history from `document.referrer`, which only
+    a full page load sets, so Back after in-app navigation went to `/`. Now `navigation.canGoBack` (Navigation API,
+    this origin only), else the router's previous navigation; `Location.back()`. Only the library shell and the
+    instructor page use history mode; the rest pass `routePath`. Instructor page fallback: the instructor library.
+  - **Found (prompt Q6):** neither UAT promo video plays — Agnes's `video_url` is a Google Drive viewer page, Michelle's
+    `.mp4` is 403 from `masterclass-bucket-usa2`. Browser title for the page deferred to when it is public (SEO).
+  - **Verified (dev 4101, headless; signed in = dummy `ACCESS_TOKEN`, `instructor-detail/` stubbed from the real list
+    row in the export's shape, `filter/` live with the dummy token stripped):** signed out → `/auth/login?redirect=…`,
+    also as a server 302; webinar → footer Instructor Library → Back lands on `/webinar` (was home); library → Adam →
+    hero, About, LinkedIn, "Courses by Adam", 1 card linking `/masterclass/<uuid>/<slug>`; Podcast / Micro Learning →
+    one request each, "No … courses yet."; Trailer and "i" open; Back → library with its cards; Dr. Roger Mayer →
+    "Courses by Roger", 403 images hidden; Agnes → no Promo; Michelle → Promo shown; `/instructor/3665/…` → "Instructor
+    not found", no API request; unknown UUID → error with Try Again; 375 / 768 / 1440 no horizontal scroll.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 244.79 kB,
+    only `ai-labs.css`.
+  - **Seen, not in scope:** `/webinar` logs "webinar-main-page response does not match the Events contract" again on UAT.
+  - **Subtask 2, `feat(library): bind the instructor library to all-instructors-page`:** new
+    `instructor/models/instructor-library.model.ts` (`InstructorRow`, `parseInstructorLibrary`),
+    `constants/instructor-library.ts`, `utils/instructor-socials.ts` (`socialLinksOf`, shared with the hero in
+    subtask 3), `InstructorFacade` (root, `// why:`; search + page → one `httpResource`, pages in a `linkedSignal`,
+    page 1 on the loading bar), `components/instructor-card` (a real link; LinkedIn chip above it; photo vertical →
+    square → horizontal, then initials when missing **or when it fails to load**). The page says "Loading…" until the
+    first answer, on the server too, so "No instructors found." never shows while loading; the search box is seeded
+    from the facade, so Back keeps the term; Clear applies at once.
+  - **Found: 32 of 63 photos answer 403** from `storage.googleapis.com/miles-usp-bed/`
+    (`UserProjectAccountProblem`: the bucket's billing account is disabled). None has a working S3 alternative, so
+    the card falls back to initials. Backend/devops to fix (prompt Q5).
+  - **Verified (dev 4101, headless, signed out):** 20 cards, then pages 2–4 on scroll to 63 and the sentinel goes,
+    every request with `course_type=course,podcast,micro_learning&page_size=20`; "Loading…" while page 1 is held,
+    never the empty state; "adam" → one request after the debounce, 1 card; Clear → page 1 again, 20 cards; a card
+    opens `/us/accounting/instructor/<uuid>/<slug>`, LinkedIn opens in a new tab; Back keeps "alex" and its card with
+    no new request; a faked 500 → error state, Try Again recovers; SSR HTML carries "Loading…", not the empty
+    state; stubbed row with no photo and an unknown social → initials and the API's icon; 2 / 4 / 5 columns at
+    375 / 768 / 1440, no horizontal scroll, no console error besides the 403 images and the faked 500.
+  - **Known, not changed:** an instant jump past the sentinel (End key) doesn't load the next page; normal
+    scrolling does. Same as the course library.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 244.65 kB,
+    only `ai-labs.css`.
+  - **Subtask 1, `refactor(library): drop the retired instructor bindings`:** deleted `core/models/library.model.ts`
+    (`InstructorListItem`), `shared/components/cards/instructor-card`, `InstructorFacade` and `instructor-hero`, all
+    typed on the legacy `instructor/` contract (404 on UAT). The library page keeps its heading, search box and
+    "No instructors found."; the instructor page keeps its Back link. `structure-baseline.json` pruned (−12, three
+    relative-import entries).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 244.63 kB,
+    only the `ai-labs.css` warning.
+  - **Verified (dev 4101, headless, signed out, 1440):** both routes render, no console error, no request to
+    `instructor/`, no horizontal scroll; the search box takes input and Clear resets it.
+  - **`postman/` refreshed** from the 2026-10-15 export (gitignored). It carries a live-captured `instructor-detail/`
+    200, so the prompt's detail shape is no longer a guess. `docs/AUTH_API.md:5` and `docs/WEBINAR_API_QUESTIONS.md:5`
+    still point at the old folder layout; a docs follow-up.
+  - **Next:** the user commits the Back fix and subtask 3, then the PR (Story MIL-95).
+
+- 🔧 **2026-10-15, NON-REFACTOR — PR #132 review (MIL-62): rebased onto `master` and reshaped off the
+  facade. CODE DONE, GATES GREEN, BROWSER CHECK OPEN, UNCOMMITTED** on `feat/MIL-62-caira-tracker-rebind`.
+  - **Review (me-sachin-singh, CHANGES_REQUESTED, 5 points):** alias imports everywhere; rebase onto
+    master; don't use the facade pattern, keep a simple service; logic in the component; parent/child
+    via input and output.
+  - **Why most of it is not preference:** the branch sat 23 commits behind and the rules changed under
+    it. #139 made imports alias-only even inside a feature and added a `relativeImports` ratchet; #140
+    added a facade harness and skill, then **#145 reverted it**, deleted `profile-facade.ts` and the
+    skill, and added AGENTS.md §3's fourth hard boundary ("A facade only where state is shared"). The
+    stale branch reported lint 0 errors; rebased it reported **5** (explicit `OnPush`, which ESLint now
+    rejects — a rule the review did not mention and CI would have failed on).
+  - **Comment 4 read against #145's own example, not literally:** that commit moved the API call INTO a
+    new `core/services/onboarding-api/onboarding-api.ts` while deleting the facade, and only the page
+    injects it. So "logic in the component" = orchestration in the page, resource still in a service.
+    User chose this reading.
+  - **Done:** rebase (conflicts were master's OnPush removal plus a STATE.md both-sides append; a stray
+    `<<<<<<< HEAD` at STATE.md:917 is **pre-existing on master**, left alone).
+    `CairaBadgesFacade` → `CairaBadgesApi`, a root `@Service()` exposing the resource and the two page
+    signals; route `providers` dropped; paging, filtering, retry and the session redirect moved into the
+    three pages; `redirectOnSessionLoss()` extracted to `caira/utils/` because a root service would
+    redirect from anywhere; hero/rows/cards back on inputs and outputs; every import aliased; explicit
+    `OnPush` stripped; `structure-baseline.json` pruned (−32 lines, removals only).
+  - **Gates (local macOS):** tsc 0; lint **0 errors** (105 warnings); structure ✔ after `--prune`;
+    Prettier ✔; `build:prod` 244.87 kB, only the `ai-labs.css` warning.
+  - **Listing-page render: investigated, NOT a proven regression.** A headless check showed the two
+    listing pages returning a bare 5,439-byte shell (Angular boots, `<router-outlet>` empty, nothing
+    logged) while the home page rendered. A bisect appeared to pin it on `this.api.<section>Page.set(1)`
+    in the page constructor. **That conclusion did not hold up:** re-running the SAME url against
+    UNCHANGED code gave 5,439 twice then 32,176 three times, so the harness is ~60% reliable and every
+    earlier data point sat inside that noise. The cause is environmental — headless Chrome aborts the
+    first navigation in a hidden document (`InvalidStateError: Transition was aborted … Document hidden`
+    is in the dev-server log), which STATE already records for the in-app pane.
+  - **The reset was still moved from the constructor to `DestroyRef.onDestroy`,** on its own merits:
+    writing a signal that re-keys the resource the page's own `linkedSignal` reads, during construction,
+    is worth avoiding regardless, and destroy-time achieves the same thing (leave the shared page at 1
+    so a revisit does not seed the accumulator from page 2). The comment says so without claiming a bug
+    it cannot prove.
+  - **⚠️ Browser verification is therefore OPEN.** Headless is too flaky for this feature and no
+    credentials exist for a signed-in run. The user must confirm: hero + two rows, one `badges/page/`
+    request, webinar list 6 → 10 on scroll, and that leaving and re-entering a listing still shows the
+    full first page.
+  - Not pushed. The rebase is already on origin (`f3b32dd`); the reshape is not.
+
+- 🔧 **2026-10-15, NON-REFACTOR — masterclass homepage on the 2026-10-13 contract** (`prompts/masterclass-course-type.md`,
+  approved). On `fix/MIL-XXX-masterclass-course-type` (from `master` `c2a1194`), uncommitted, three commits' worth:
+  - **A, `course_type`:** `highlight/`, `tracks-page/` and `ai-labs/` answer `400 invalid_query` without it since
+    2026-10-13, so `/masterclass` lost its hero and rails and `/home` its rails and AI Labs ring.
+    `MASTERCLASS_COURSE_TYPE = 'course'` (`core/constants/masterclass.ts`) and the three call sites are #137's
+    lines word for word, so #137 (MIL-65) rebases cleanly.
+  - **B, trailer keys:** `course-detail/` renamed them on 2026-10-14. This is #137's `1d472cea` without its STATE
+    hunk, and it brings back the "i" dialog and the course page.
+  - **C, docs:** `docs/MASTERCLASS_PODCAST_AND_REELS.md` (podcast/reel contract, live UAT snapshot, the gap list for
+    the podcast/reel rebind) and the prompt.
+  - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔, Prettier ✔, `build:prod` 245.04 kB with only
+    `ai-labs.css`.
+  - **Verified on the prod SSR build (:4000), headless, signed out, 375/768/1440:**
+    - `/masterclass`: 13 hero slides and rails of 21/34/13; the SSR HTML carries the track names.
+    - `/home`: the same rails and the AI Labs ring.
+    - All three reads send `course_type=course` and get a 200. The "i" dialog renders. The course page has its
+      poster and trailer. No horizontal scroll.
+  - **Found, not fixed:**
+    - UAT answers `content-encoding: zstd` with a leading skippable frame. The old headless shell (chromium 1217)
+      fails to decode it (`ERR_CONTENT_DECODING_FAILED`, or the guards reject the body); Chrome 152 and the `zstd`
+      CLI decode it fine. Headless runs force `accept-encoding: gzip, deflate, br`.
+    - The browser pane is hidden here, and `withViewTransitions()` then never finishes the first navigation, so
+      pages hang there. Verify headless.
+    - The course page's title is the literal `{{title}} | Master Class | Miles Masterclass`, from a Supabase
+      `seo_pages` row (not in `src/`). The row wins over the course fallback, so there is no `og:video`.
+
+- 🔧 **2026-10-15, NON-REFACTOR — MIL-93, header dropdowns (`prompts/header-nav-dropdowns.md`, approved). DONE,
+  UNCOMMITTED** on `fix/MIL-93-header-nav-dropdowns` (from `master` 3.7.0).
+  - **Causes:** `Header.onDocumentClick` treated only clicks outside the whole header as "outside", so the profile
+    menu and the other nav links never closed an open dropdown; and closing never reset the header's `NavMenuGroup`
+    (the accordion content stays mounted), so Resources reopened with its sub-menu expanded.
+  - **Fix (header only):** an open dropdown closes on any click outside its own `<li>` (found by `data-nav-item`,
+    not ng-primitives' `data-open`); every close or switch releases `NavMenuGroup`; a route change closes it;
+    `document:keydown.escape` closes it and returns focus to its trigger only when focus was inside (new — the
+    `ul` couldn't carry the handler: `interactive-supports-focus`).
+  - **Verified (dev 4101, Playwright, 1440 signed in with a dummy token, 1024 guest, 768 drawer):** Resources +
+    Library open → avatar: Resources closes, sub-menu collapses, profile menu opens; profile menu open → Resources:
+    profile menu closes, Resources opens collapsed; a click inside the panel keeps it; Escape from inside closes
+    and focuses the trigger; reopen → collapsed; an outside click closes; Webinar link closes and navigates; Escape
+    with nothing open does nothing; guest sibling sub-menus close each other and reopen collapsed; the 768 drawer
+    opens, expands Resources → Library, navigates and closes as before. No page errors, no horizontal scroll.
+  - **Gates (local macOS):** tsc 0, Storybook tsc 0, lint 0 errors (105 warnings, `master`'s count), structure ✔,
+    Prettier ✔, `CI=true build:prod` 244.98 kB with only `ai-labs.css`.
+
+- ⏸ **2026-10-15, NON-REFACTOR — library rebind, revision 2, awaiting approval** (`prompts/library-rebind.md`). Working
+  tree moved to `master` at `d470717` (#136 bound the course library), so the prompt now covers only what is left:
+  PR1 instructor library on `all-instructors-page/`, PR2 instructor page on `instructor-detail/` + `filter/?instructor=`,
+  PR3 badge library retired into a `caira-tracker` redirect. D1–D9, Q1–Q6.
+  - **Live UAT, signed out, read-only:** `all-instructors-page/` now **requires `course_type`** and rejects
+    `login_type` (not in the 2026-10-12 export); 63 instructors, 20 with no courses; `instructor-detail/` 401;
+    legacy `instructor/`, `badge-categories/`, `course-badges/` and the tracker's `v2/*-badges/` all 404.
+  - **`refactor/MIL-85-drop-explicit-onpush` (`c7d205f`) is not on `master`** and needs `master` merged in: conflicts
+    in `shared/ui/tabs/tabs.ts` and this file, and #136's relative imports in 6 files fail its ratchet until they are
+    aliases. Merging is the user's step (the git guard blocks it here).
+  - **Uncommitted on `master`:** the facade-warranted bullet in AGENTS.md §3 (re-applied; four hard boundaries) and
+    the prompt. `postman/` is ignored on `master`; the local export was kept.
+- ✅ **2026-10-14/15, NON-REFACTOR — repo hygiene (MIL-85). Committed as `c7d205f` on
+  `refactor/MIL-85-drop-explicit-onpush`; `master` (`d470717`, #136) merged in on 2026-10-15.**
+  - **Merge resolution:** `shared/ui/tabs/tabs.ts` is `master`'s file (the `variant` input) without OnPush. #136's
+    relative imports became aliases in six files (`course-facade`, `course`, `course-filters`, `course-filters-drawer`,
+    `constants/course-library`, `tabs`), including the drawer's dynamic import, and the baseline was pruned. This file
+    kept both sides of its two conflicts.
+  - **Alias-import ratchet (`chore(core): ratchet relative imports in check-structure`):** `check-structure.mjs`
+    counts static relative `from` specifiers per `.ts` file against a new `relativeImports` map in
+    `structure-baseline.json`, seeded with the 191 files / 381 imports that exist today. AGENTS.md §3/§9 and the
+    CLAUDE.md code rule now say aliases everywhere. Dynamic `import('./x')` is exempt (the root-shell rule needs it).
+  - **Explicit OnPush removed (`refactor(core): drop the redundant OnPush change detection`):** Angular 22
+    defaults to OnPush (`Default` is now an alias of `Eager`; the CLI omits the property), so the 75 explicit
+    `changeDetection: ChangeDetectionStrategy.OnPush` lines and their imports are gone. A `no-restricted-syntax`
+    selector in `eslint.config.mjs` rejects a re-added OnPush; `Eager` stays legal. CLAUDE.md rule updated.
+  - **TransferState review:** no change. The three manual uses (`translation-loader`, `language-context`,
+    `seo-manager`) carry data the HTTP transfer cache cannot see (lazy JSON chunks, the request's language,
+    Supabase `fetch`). `withHttpTransferCacheOptions({ includePostRequests: false })` only restates the default.
+  - **Facade audit of the rebound flows (auth/profile, home, masterclass, CAIRA, webinar):** ✅ findings in
+    `prompts/facade-audit.md` (no code changed). P1: the profile page needs a route-scoped `ProfileFacade` absorbing
+    `OnboardingApi`; the chapter page holds the rules while `VideoChapter` injects a second `MasterclassFacade`
+    instance; webinar pages bypass `WebinarFacade` for registration/join; `UaeCairaFacade` is RxJS on legacy
+    `v2/library/`; `ProfileCompletionDialog` is unreachable and PATCHes a legacy route; five `v2/` masterclass
+    route entries are still registered.
+  - **Gates (local macOS):** lint 0 errors (105 warnings), structure ✔, prettier ✔, `build:prod` 245.32 kB with
+    only `ai-labs.css`. Negative tests: a new relative import fails the structure check; a re-added OnPush fails
+    ESLint.
+
+- 🔧 **2026-10-15, NON-REFACTOR — MIL-88, chapter quiz rebound to `quiz-questions` / `quiz-submit`
+  (`prompts/masterclass-chapter-quiz.md`, approved). DONE, UNCOMMITTED** on
+  `feat/MIL-65-masterclass-chapter-page-binding` (PR #137, after MIL-87 `54dd174` + `4e85322`).
+  - **What changed:**
+    - New `models/chapter-quiz.model.ts`: types, `parseChapterQuiz` / `parseQuizSubmit` (extra keys pass; options
+      sorted by `order`; `reset_required` accepted alone), `gradeOfAnswered` / `gradeOfResult`.
+    - `COURSE_DETAIL_API.masterclass` gains `quizQuestions` / `quizSubmit`; `QUIZ_COPY` and
+      `QUIZ_AUTO_ADVANCE_SECONDS` (10). `CourseDetailFacade` gains `quizQuestionsUrl` and `submitQuizAnswer`
+      (`SKIP_LOADING`). `CourseChapterFacade.refuse()` / `backToCourse()` are public.
+    - New page-provided `CourseChapterQuizFacade`: CPE only; opens by itself once per chapter when the video is
+      done and the quiz isn't, again on the video's end, or from "Take the quiz"; resumes at the first unanswered
+      question; one `quiz-submit` per answer; the last answer re-reads `course-detail`, then a 10 s countdown moves
+      on (or back to the course after the last chapter); every refusal per the plan's table.
+    - `chapter-quiz` rebound (same selector): header + "Watch again", "Question n of m", options, the verdict
+      (`role="status"`) and each option's explanation, Back / Next / Proceed with the countdown fill.
+    - `course-chapter-player`: the quiz takes the video's place (the video stays mounted, hidden and paused);
+      sidebar "Take the quiz · N questions".
+  - **Added at the user's request:** Watch Now opens `resumeChapter` (the first chapter not done, via
+    `isChapterDone`); a locked chapter redirects there with the quiz toast and its pending quiz opens; Up Next on a
+    chapter the quiz holds opens the quiz. Verified: chapter 1 done → Watch Now → chapter 2; quiz pending → Watch
+    Now → chapter 1 + quiz; a chapter-2 row → chapter 1 + quiz + toast (no `chapter-start` for 2), then finishing
+    → chapter 2; Up Next (locked) → the quiz.
+  - **Plan deviation:** `single` options are buttons that answer on click/Enter, not an `ngpRadioGroup` — a
+    group that answers on selection would answer on arrow keys. `multiple` is `app-checkbox` + Submit.
+  - **Gates (local macOS):** tsc 0, Storybook tsc 0, `pnpm lint` 0 errors (101 warnings), structure ✔,
+    Prettier ✔, `CI=true build:prod` 245.25 kB with only `ai-labs.css`.
+  - **Verified (dev 4101 after the user restarted it, Playwright, dummy `ACCESS_TOKEN`, `course-detail` edited in
+    flight, quiz routes from Postman-shaped fixtures):**
+    - **Full run:** a chapter with its video done and quiz pending opens on the quiz (video hidden), options in
+      `order`; a wrong answer shows "Not quite" (wrong / correct states), Next focuses the question; the last answer
+      shows "Correct · Quiz complete", one `course-detail` re-read unlocks Up Next, and after 10 s the page moves
+      to chapter 2 (`chapter-start` for it), quiz closed.
+    - **Video end:** a pending quiz with the video not done doesn't auto-open; the video's `ended` opens it.
+      "Watch again" brings the video back and "Take the quiz" reopens it.
+    - **Resume:** an answered question is skipped (starts at "Question 2 of 2"); Back shows it graded.
+    - **Refusals:** `404` → "No quiz" toast, stays; `already_completed` → closes and re-reads; `chapter_locked` →
+      back to the course page with "Chapter locked"; a `500` submit → "Answer not saved", options stay enabled.
+    - **Preview mode:** no quiz, no "Take the quiz", no quiz request.
+    - **Layout:** 375, 768 and 1440 with no horizontal scroll. Fixed on the way: the header title vanished at 375
+      (now `min-w-0 flex-1`, thumbnail hidden below `sm`), and the countdown fill was white on the white button
+      (now `bg-black/15`).
+
+- 🔧 **2026-10-15, NON-REFACTOR — chapter quiz step 1: legacy quiz binding removed everywhere
+  (`prompts/chapter-quiz-remove-legacy.md`, approved). DONE, UNCOMMITTED** on
+  `feat/MIL-65-masterclass-chapter-page-binding` (its own commit, before the rebind).
+  - **Why:** `user-quiz-details/`, `chapter-quiz?chapter_id=` and `masterclass/report_summary/` answer Django's 404
+    on UAT (checked with and without `api/v1/`), so every quiz failed.
+  - **What changed:**
+    - `chapter-quiz` is an unbound frame (same folder and selector); nothing renders it until step 2.
+    - Podcast: `video-chapter` and `audio-chapter` lost the quiz panel, the open-on-load/on-end switch,
+      `isQuizEnabled`, "Track Quiz" and their unread `videoEnded` / `audioEnded` flags; `podcast-chapter` no longer
+      fetches the quiz report. Playback and chapter moves are unchanged.
+    - Micro-learning: `MicroLearningQuizDialog` deleted; `openChapterQuiz`, `launchQuizDialog`, the unused
+      `submitQuizAnswer` and the route's `ChapterFacade` provider removed. `TAKE_QUIZ`, the CPE completed-reel
+      fallback and the end of a `micro_learning` / `ai_lab` reel toast `CHAPTER_QUIZ_UNAVAILABLE` (new
+      `offerings/constants/micro-learning.ts`) and make no request.
+    - `ChapterFacade`: `submitQuizAnswer`, `updateUserSelectedOption`, `fetchQuizReport`, `updateChapterQuestions`
+      removed (`updateChapterStatus` stays for preview completion). `MASTERCLASS_ROUTES` lost the three routes;
+      `ChapterQuizResponse` and `QuizReportItem` deleted. `QuizQuestion` stays (final assessment).
+    - Ratchets tightened: `chapter-quiz.ts` and `chapter-facade.ts` left `LEGACY_ANY_FILES` (no `any` left), and
+      `check-structure --prune` dropped `chapter-quiz.html`'s `tokenHex` entry.
+  - **Verified (dev 4101, Playwright):** the micro-learning and podcast list pages and a micro-learning course
+    route load with no injection error and no quiz request; nothing renders `app-chapter-quiz`. The grep for the
+    three routes and the removed methods finds only explanatory comments.
+  - **Gates (local macOS):** tsc 0, Storybook tsc 0, `pnpm lint` 0 errors (101 warnings, from 105), structure ✔
+    after the prune, Prettier ✔, `CI=true build:prod` 244.94 kB with only `ai-labs.css`.
+
+- 🔧 **2026-10-15, NON-REFACTOR — chapter progress and "Completed" on the course page. DONE, UNCOMMITTED** on
+  `feat/MIL-65-masterclass-chapter-page-binding` (the user asked for it).
+  - `MasterclassChapterProgress` gains `is_chapter_completed` (`boolean | null`), which `course-detail/` and
+    `course-progress-update/` both send; the guard checks it. New `watchedPercent(chapter)`:
+    `max_watched_duration_seconds / duration_seconds`, whole, capped at 100.
+  - `masterclass-chapter-list`: a chapter whose video is done shows the old list's green "Completed" badge (top
+    start, `bg-success/90`); a started one shows a `primary` `app-progress` bar along the thumbnail's foot. The
+    status is also in the title link as `sr-only` text, because the thumbnail is `aria-hidden`. The old list's "In
+    Progress" badge is not ported.
+  - **Revised the same day (the user):** the badge follows the video, `isChapterWatched()` =
+    `is_video_completed || is_chapter_completed`, not `is_chapter_completed` alone. A CPE chapter with its quiz
+    still open had shown a full bar and no badge.
+  - **Next, planned, awaiting approval:** the chapter quiz, in two commits on this branch and PR #137 (the user's
+    choice, 2026-10-15): step 1 removes the dead legacy binding everywhere (`prompts/chapter-quiz-remove-legacy.md`;
+    `user-quiz-details/`, `chapter-quiz?chapter_id=` and `masterclass/report_summary/` all answer Django's 404 on
+    UAT), step 2 rebinds the same `chapter-quiz` to `quiz-questions` / `quiz-submit`
+    (`prompts/masterclass-chapter-quiz.md`).
+  - **Verified (dev 4101, Playwright, `course-detail` edited in flight, client-side navigation so the browser makes
+    the read):** chapter 1 completed → badge, no bar; chapter 2 at 25 % → bar `aria-valuenow` 25; chapter 3 video
+    done, chapter not → full bar; chapter 4 untouched → nothing. 1440 and 375, no horizontal scroll.
+  - **Gates:** tsc 0, Storybook tsc 0, ESLint clean on the three files, Prettier clean, structure check passed.
+
+- 🔧 **2026-10-15, NON-REFACTOR — TEMPORARY testing controls on the chapter player (the user asked for them).
+  ✅ REMOVED the same day (the user asked); never committed** on `feat/MIL-65-masterclass-chapter-page-binding`.
+  `video-js.ts` is back to its committed form; `course-chapter-player.ts` (`playerMode`) and
+  `course-chapter-facade.ts` (`max_watched_duration_seconds` = the continuously watched edge) keep only MIL-88's
+  changes.
+  - `course-chapter-player.ts`: `playerMode` is always `PlayerMode.DEFAULT`, so CPE chapters show the scrubber and the
+    speed menu. Restore `this.facade.canSeek() ? PlayerMode.DEFAULT : PlayerMode.CPE`.
+  - `shared/components/video-js/video-js.ts`: `skipButtons: { forward: 10, backward: 10 }` in every player, and
+    `playbackRates` gains `4` and `8`. Restore `[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]` and drop the skip line.
+  - `course-chapter-facade.ts` `queueSave()`: `max_watched_duration_seconds` is `max(furthest, position)`. A skip
+    past `furthest` otherwise sends a position above the max, which the server refuses with a 400 (`schemas.py:180`,
+    per the backend on 2026-10-15; Postman doesn't document the rule). Restore `Math.floor(tracker.furthest)`.
+    Learners have no skip control after sign-in (the user, 2026-10-15), so the committed code stays as it is.
+  - All three are marked `TEMP(testing)`. Revert with `git checkout --` on the three files before any commit.
+  - **Testing note:** a skip or scrub (a jump of `SEEK_JUMP_SECONDS` = 3 or more) only moves the resume point; 4× and
+    8× play still counts as watched.
+  - **Verified (dev 4101, signed out):** the course page's trailer player shows −10/+10 and 0.5×–8×. The chapter page
+    sends a signed-out visitor back with "Course locked", so the chapter player itself needs a signed-in check.
+  - **Gates:** tsc 0, ESLint clean on both files, Prettier clean.
+  - **Also on 2026-10-15:** this branch was rebased on `master` after MIL-82 (#136) merged (now `1d472ce`, pushed).
+    Gates on the rebased tree: tsc 0, Storybook tsc 0, lint 0 errors (105 warnings), structure ✔, Prettier ✔,
+    `CI=true build:prod` 244.96 kB with only `ai-labs.css`. The masterclass page's tracks and hero load again, and
+    the Advanced Excel course page renders 14 chapters.
+
+- 🔧 **2026-10-14, NON-REFACTOR — `course-detail/` trailer fields renamed on UAT. DONE, UNCOMMITTED** on
+  `feat/MIL-65-masterclass-chapter-page-binding` (the user's call: its own commit here, since this branch owns the
+  course-detail model).
+  - **Cause:** UAT renamed `trailer_video_url` → `horizontal_trailer_url` and `trailer_thumbnail_url` →
+    `trailer_horizontal_thumbnail_image_url` on 2026-10-14; Postman still has the old names. The parser rejected every
+    answer, so the course page and every course-info ("i") dialog showed their error state. Replaying the guard on
+    three live courses found only these two keys.
+  - **Fix:** `MasterclassCourseDetail` and its guard, the hero's poster and trailer, `openTrailer`, and the shared
+    `WebCourseSeoSource` (the og:video tag).
+  - **Verified (dev 4101):** the Advanced Excel course page renders (title, chapters, `ADVANCED_horri.jpg` poster) and
+    the hero's HLS trailer loads (`readyState` 4), with no console error.
+  - **Gates:** tsc 0; `pnpm lint` 0 errors (106 warnings); structure check passed; Prettier clean.
+  - **Not here:** the web course card's own rename (`trailer_url` → `horizontal_trailer_url`) is MIL-82 (#136),
+    merged on 2026-10-15. This branch was rebased on it the same day, so the home and masterclass rails load.
+
+- 🔧 **2026-10-14, NON-REFACTOR — bind the course library page to the web filter API (Story MIL-82)** on
+  `feat/MIL-82-course-library-binding` (from `master`). Two subtasks, one PR. No refactor phase moved.
+  - **Why:** the page's two reads, `v2/library-filters/` and `v2/library/`, answer Django's 404 HTML on UAT, so the
+    sidebar is empty and every tab says "No courses found". Production still serves them. The replacement is
+    `GET web-api/v1/masterclass/filter/`: filter options, the applied selection and paginated cards in one read.
+    `course_type` is required.
+  - **MIL-83, remove the v2 bindings (`prompts/course-library-remove-v2.md`, approved). ✅ Committed by the user as `77968679`.**
+    - **What changed:** `CourseFacade` keeps only the tab state (`courseType`, `selectCourseType`). Both resources,
+      the paging, and the selection keyed by the v2 param names are gone. The page keeps its frame, the tabs and the
+      empty state. `course-filters` and `course-filters-drawer` are unchanged and unused until MIL-84.
+      `core/models/library-filters.model.ts` is untouched, because the carousel filter dialog still uses it.
+    - **Verified (dev 4101, headless Playwright, signed out):** at 1440 and 375, no `uat-api` or `v2/` request and no
+      console error. The tabs switch Podcast → Micro Learning → Master Class with no request, and there's no
+      horizontal scroll at 375. The instructor and badge libraries still make their own (404) reads, unchanged.
+    - **Gates (local macOS):** tsc 0; `pnpm lint` 0 errors (106 warnings); structure check passed; Prettier clean.
+      `CI=true pnpm build:prod` green: initial 245.34 kB, only the `ai-labs.css` warning.
+  - **UAT contract change, own commit (the user's call): `trailer_url` → `horizontal_trailer_url`** on every web
+    course card (`filter/`, `highlight/`, `tracks-page/`, `ai-labs/`), live on 2026-10-14 and not in Postman. Nothing
+    else on the card changed. The shared guard rejected every answer, so the library showed its error state, and the
+    home tracks, masterclass hero and AI Labs ring will too once MIL-65's `course_type` fix lands.
+    - **Fix:** `MasterclassCourse.horizontal_trailer_url` and its guard, read by the home, masterclass and library
+      pages' `openTrailer`, and the card story.
+  - **MIL-84, bind the filters and course list to `filter/` (`prompts/course-library-binding.md`, approved). DONE,
+    UNCOMMITTED.**
+    - **What changed:**
+      - New `course/models/course-library.model.ts` (types, guards, `parseCourseLibrary`) and
+        `course/constants/course-library.ts` (route, page size 12, tabs, group labels).
+      - `CourseFacade`: one `httpResource` on `filter/` (`course_type`, the selection with the new param names, `page`,
+        `page_size`), the sidebar groups in production's order (empty groups hidden; content types reduced to AI Kit),
+        pages accumulated, later pages on `SKIP_LOADING`.
+      - The page: sidebar, pill tabs (Masterclasses → `course`, Podcast → `podcast`, Micro Learning →
+        `micro_learning`; no Nano Learning), mobile Filter button and drawer, `app-masterclass-course-card` grid
+        (first row `priority`), "Loading…", `app-error-state` with retry, and the empty state.
+      - **Matched to production at the user's request** (their screenshots of milesmasterclass.com):
+        - The host is `block py-6`: production's 24px above and below and no side padding, so the sidebar and grid use
+          the container's full width. The tab bar lost `-mx-4 px-4`, which scrolled the page sideways at 768.
+        - The pill tabs are left-aligned with the grid, not centred.
+        - The filter options are production's checkbox rows in a 288px scroll area, on `ngpListbox` directly, instead
+          of the shared `app-listbox` (a bordered popover-style box).
+        - Measured against production at 1000 and 1440: the filter heading, group rows, tabs, grid, card size,
+          checkbox boxes and list height all land on the same pixels.
+      - `course-filters` and the drawer retyped to the library model.
+      - Shared `app-tabs` gained `variant: 'line' | 'pill'` (default `line`, unchanged) and a `Pill` story.
+      - Core: `isMasterclassCourse` exported; `COURSE_TYPE_TABS`, `CourseTypeTab` and `CourseFilterGroup` removed.
+      - Category is gone (no API counterpart). No bookmark and no "i" button on the cards.
+    - **Verified (dev 4101, headless Playwright, signed out, live UAT):**
+      - 12 cards, then pages 2–6 on scroll to all 64, then the sentinel goes. Every answer 200, no `v2/` request.
+      - Groups: Instructor, Field of Study, CAIRA Level, CPE Credits, Track, AI Kit (Additional Category has no options).
+      - AI Kit → 5; + CPE under 2 → 0 and the empty state; Adam Tahir → 1; + a track → 0; Clear all → 12. Each change
+        requests page 1 with exactly the declared params.
+      - Podcast and Micro Learning send `podcast` / `micro_learning` and show "No courses found." (UAT has none).
+      - A faked 500 shows "Failed to Load Courses"; "Try Again" recovers.
+      - 375: Filter button, drawer with the same groups, badge "Filter 1", Done closes, 5 AI Kit cards. No horizontal
+        scroll at 375, 768 or 1440. The active pill stays white on hover.
+      - The login page's line tabs have exactly the old classes.
+      - Left from production, on purpose: no bookmark on the cards (own ticket), no Category group (no API
+        counterpart), and the open group's chevron turns up.
+      - **Added at the user's request (plan revision approved): the "i" and AI Kit buttons.**
+        - "i" opens the course-info dialog through `MASTERCLASS_COURSE_INFO_DIALOG`, as the home page does.
+        - `MasterclassCourse.has_additional_resources` (four booleans, sent by every card route) and the shared card's
+          `showAiKit` / `aiKit`: on an AI Kit course the row is play, AI Kit and "i", as on production.
+        - AI Kit reads `course-detail/{id}/?login_type=pre_login` once and lists the kit's PDF and any exercise files in
+          the "Additional Resources" dialog, as the legacy button did (its `v2/dashboard/…/additional-resources/` is a
+          404). Home and masterclass don't turn it on.
+        - **Verified (dev 4101):** plain card → Trailer and "i"; AI Kit card → play, AI Kit, "i"; AI Kit → one
+          `course-detail` call and the PDF link (new tab); "i" → the dialog. Gates green again, build 245.26 kB.
+      - **Found, UAT, not fixed here:** `course-detail/` renamed `trailer_video_url` → `horizontal_trailer_url` and
+        `trailer_thumbnail_url` → `trailer_horizontal_thumbnail_image_url` on 2026-10-14. The offerings parser rejects
+        it, so the course page and every "i" dialog (home, masterclass, library) show their error state. Readers:
+        `course-detail.model.ts`, `masterclass-course-hero.ts`, `course-detail-facade.ts`, `course-seo-config.ts`.
+        The user's call: fix it in its own commit on `feat/MIL-65-masterclass-chapter-page-binding`, which rewrote
+        those files, once MIL-82's commits are in.
+      - **Found, site-wide, own ticket:** `.container` in `styles.css` only narrows below 640px (`max-sm:w-11/12`);
+        production keeps ~5% side margins up to 1024px. So at 768 every `container` page, this one included, runs
+        to the screen edges, where production has 38px margins.
+      - Found while building, fixed: an `@if` inside `@for … @empty` rendered "No courses found." twice; the empty
+        state now sits outside the loop.
+    - **Found on UAT, backend:** several vertical thumbnails on `storage.googleapis.com/miles-usp-bed` answer 403, as
+      the chapter thumbnails did in MIL-67, so those cards show their alt text.
+    - **Gates (local macOS):** tsc 0; `pnpm lint` 0 errors (106 warnings); structure check passed; Prettier clean.
+      `CI=true pnpm build:prod` green: initial 245.14 kB, only the `ai-labs.css` warning.
+  - **Postman:** `postman/` is untracked and ignored since `71ce016`; the local export is the 2026-10-12 one.
+
+- 🔧 **2026-10-13, NON-REFACTOR — `course_type` on the masterclass list routes. DONE, UNCOMMITTED** on
+  `feat/MIL-65-masterclass-chapter-page-binding` (the user's call: fix it now, its own commit).
+  - **Cause:** UAT made `course_type` required on `highlight/`, `tracks-page/` and `ai-labs/`, with no contract update
+    (Postman still omits it). Every call answered `400 invalid_query` "Field required", so the home page's tracks and
+    AI Labs ring and the masterclass page's hero and tracks were empty. The server render logged both failures.
+  - **Fix:** `core/constants/masterclass.ts` `MASTERCLASS_COURSE_TYPE = 'course'`, sent by `MasterclassHomeFacade`,
+    `MasterclassHighlightFacade` and `surround-carousel`. The response shapes are unchanged.
+  - **Verified (dev 4101):** a fresh server render of home, masterclass, the course page and a chapter page each
+    answer 200 with the courses in the HTML. The browser sees no 4xx; `tracks-page` and `ai-labs` both 200.
+  - **Gates:** tsc 0, lint clean, structure check passed.
+
+- 🔧 **2026-10-13, NON-REFACTOR — bind the masterclass chapter page to the web API (Story MIL-65)** on
+  `feat/MIL-65-masterclass-chapter-page-binding` (from `master`, before MIL-62 merged). Two subtasks, one PR. No
+  refactor phase moved.
+  - **MIL-66, remove the v2 bindings (`prompts/masterclass-chapter-remove-v2.md`, approved). DONE, UNCOMMITTED.**
+    - **Why:** every route the page used answers Django's "Page not found" HTML on UAT, so the routes are gone, not
+      the records. That covers `v2/…/details`, `v2/chapters`, `v2/user/myclassactivity`,
+      `user/customaction/set_cpe_mode`, `masterclass/report_summary`, `user-quiz-details` and `v2/course-content`.
+      The reads also went out as `id=NaN`, because the page ran the UUID through `Number()`.
+    - **What changed:** the page keeps its route inputs, "Back to Course" and an unbound `<app-video-chapter>`, which
+      renders the skeleton. The chapter route no longer provides `ChapterFacade`. `ChapterFacade`, the shared player
+      and `ChapterQuiz` are unchanged, because podcast, micro-learning and AI Labs still use them.
+    - **Verified (dev 4101, headless Playwright, signed out; this branch has no route guard yet):**
+      - Before: `GET v2/masterclass/details/?id=NaN` and `v2/chapters/?id=NaN…`, both 404, plus a logged "Failed to
+        load course".
+      - After, at 1440 and 375: no API request, no console error, back link and skeleton shown. The back link lands
+        on the course page.
+    - **Gates:** tsc 0, lint 0 errors (106 warnings), structure check passed, Prettier clean. `build:prod` not run yet
+      (it stales the running dev server's Vite cache).
+    - **Merge note:** MIL-62 adds `canMatch: [authGuard]` and an import next to the lines this removes in
+      `masterclass.routes.ts`. On sync, keep the guard and drop `ChapterFacade`.
+  - **MIL-67, bind to `course-detail` (`prompts/masterclass-chapter-binding.md`, revised 2026-10-13 and approved; the
+    user chose the new player and `chapter-start` in scope). DONE, UNCOMMITTED.** The user commits MIL-66 and MIL-67
+    together.
+    - **What changed:**
+      - `CourseDetailFacade` moved to the `:courseId/:courseTitle` parent and gained `setMode`, `startChapter`,
+        `coursePath`, `chapterPath` and `analyticsType`.
+      - New route-scoped `CourseChapterFacade`: navigation, the lock redirects, `chapter-start`, the mode dialog, the
+        CPE offer, seek and resume, the transcript and video analytics.
+      - New offering-wide `course-chapter-player`. `video-chapter` stays for podcast.
+      - The model gained the chapter's stream, transcript, lock and progress, and the course's `course_is_locked`,
+        `course_mode` and `course_pop_up_remark`, all with guards.
+      - A `player-card` token replaces `#18232f` in its two existing uses.
+    - **Verified (dev 4101, headless Playwright, dummy cookie):**
+      - **How it was tested:** `course-detail` was served from the live pre-login payload edited to signed-in values,
+        with the course's real HLS trailer as the stream. `chapter-start` was served from the Postman example and each
+        refusal.
+      - **Entitled, CPE:** the stream plays, resumes at the saved 12 s, the player is in CPE mode, "Up Next · Locked"
+        shows with "3 Quiz Questions", and the transcript opens with no request.
+      - **One read:** course page → Watch Now → Next → Previous made one `course-detail` read and three
+        `chapter-start` calls.
+      - **Preview:** seeks freely. After chapter 1, "Switch to CPE Mode?" → `mode=cpe` → CPE rules, rewound and
+        paused. After chapter 2, the next chapter is locked and the "Chapter locked" toast shows.
+      - **CPE seeking:** watched to 95 %, seeking opens.
+      - **Mode `null`:** the dialog shows, the pick is sent as `mode=`, and dismissing it goes back to the course page.
+        A `409 course_mode_locked` shows the server's message.
+      - **Back to the course page with a toast:** a locked course (no `chapter-start`), an unknown chapter, a locked
+        chapter in the payload, `403 chapter_locked`, and a `409` AI Lab lock (server message).
+      - **Stays on the chapter:** `500` (warning toast), and `reset_required` (toast and re-read).
+      - **Layout:** 1440, 768 and 375, with no horizontal scroll and no page errors.
+    - **Gates (local macOS):**
+      - tsc 0; `pnpm lint` 0 errors (106 warnings); structure check passed; Prettier clean.
+      - `CI=true pnpm build:prod` green: initial 245.53 kB, only the `ai-labs.css` warning.
+      - `CI=true` turns off the CLI's persistent cache, so the running dev server's Vite deps were untouched. The dev
+        server served the masterclass page afterwards with no 5xx.
+    - **Found on UAT, backend:** every chapter `horizontal_thumbnail_url` (`storage.googleapis.com/miles-usp-bed/…`)
+      answers 403, so the thumbnails and the poster show as broken images. The course page's chapter list shows the
+      same.
+    - **Not verified:** a real signed-in round trip (no OTP mail on UAT).
+    - **Code size:** +817 / −305 across MIL-66 and MIL-67 (one commit, per the user), over the ~400 guide.
+    - **Added at the user's request: Watch Now is gated on the course page** (`CourseDetailFacade.watch()`), as the
+      legacy launch flow was. Before, a locked course opened the chapter only to bounce back with "Course locked".
+      - Signed out: Watch Now goes to sign-in and back to the course page.
+      - Locked to the learner (`course_is_locked`): the subscription dialog opens through `SUBSCRIPTION_DIALOG`, and
+        no chapter is opened.
+      - **Verified (dev 4101):** signed out → `/auth/login?redirect=<course>`; locked → the dialog, still on the course
+        page, 0 `chapter-start`; entitled → the chapter and 1 `chapter-start`.
+      - **Not covered:** the chapter rows on the course page are still plain links, so they bounce as before.
+    - **Found, payment, own ticket:** the subscription dialog itself shows "Failed to Load Plan" for everyone. It calls
+      `promotion/subscription/?is_recommended=true`, which is gone on UAT (Django "Page not found"). Postman's
+      replacements are `GET api/v1/subscriptions/plans/` and `GET api/v1/subscriptions/my-plans/`.
+    - **✅ Committed by the user as `5ccc7df`:** MIL-66, MIL-67, the Watch Now check and the `course_type` fix, in one
+      commit.
+    - **Temporary free seek for testing (the user asked for it), removed before the MIL-79 commit:** for a while
+      `playerMode` was always `PlayerMode.DEFAULT`, so CPE mode could seek and change speed. The CPE line,
+      `this.facade.canSeek() ? PlayerMode.DEFAULT : PlayerMode.CPE`, is back as committed in `5ccc7df`.
+      - **No skip buttons:** the shared `VideoJs` never configures `skipButtons` in any mode, so "Skip Forward" stays
+        hidden.
+  - **MIL-79, save chapter progress (`prompts/masterclass-chapter-progress.md`, approved; the third subtask, same
+    branch and PR). DONE, UNCOMMITTED.**
+    - **What changed:**
+      - `POST course-progress-update/{course_id}/` with `{chapter_id, last_watched_position_seconds,
+max_watched_duration_seconds}`, without the loading bar.
+      - It saves every 15 s of playback, on pause, at the end, on a chapter change and on leaving the page.
+      - The answer merges each chapter's lock state, `show_quiz` and progress into the held course
+        (`CourseDetailFacade.applyProgress`), so the next card and the course page's list update in place.
+      - A locked next chapter says "Complete this chapter's quiz…" when the quiz is what's holding it.
+      - `chapter_complete` and `course_complete` fire on the server's answer.
+      - The page-only `watchedHere` is gone; seeking opens on the server's `is_video_seekable`.
+    - **Fixed in MIL-67, found while building this:**
+      - `CourseChapterFacade` was route-provided, and the router never destroys route injectors. So it outlived the
+        page, and opening another course's page in the app showed a stray "Chapter not found" toast (reproduced).
+      - It is now provided by the chapter page component. That also makes the save on leaving the page work.
+    - **Verified (dev 4101, headless Playwright, fixtures, every request body recorded):**
+      - **Saves:** one at 15 s of play at 2×, on pause, on chapter change, and on leaving.
+      - **Watched:** a seek from 18 s to 120 s plus play kept `max=17`; seeking back to 15 s and playing raised it
+        to 20.
+      - **Merging:** an unlocking answer turned "Next chapter, locked" into "Go to next chapter" with no reload.
+      - **CPE end:** one save, stays on the chapter, `chapter_complete` once, and the quiz message on Next.
+      - **Failures:** a persistent 500 sends one request per trigger (no loop) and warns once. A 403 goes back to the
+        course page. `reset_required` shows a toast and re-reads. A save before `chapter-start` answers is held, then
+        sent.
+      - **The bug fix:** no toast on another course's page after leaving a chapter.
+    - **Gates (local macOS):** tsc 0; lint 0 errors (106 warnings); structure check passed; Prettier clean;
+      `CI=true build:prod` green at 245.43 kB, with only the `ai-labs.css` warning.
+    - **Not verified:** a real signed-in round trip, including whether UAT accepts the single-chapter body, and the
+      server's threshold for `is_video_completed`.
+    - **Still true:** in CPE mode, chapter 2 stays locked until the chapter quiz (`quiz-questions` / `quiz-submit`),
+      the suggested next subtask.
+    - **Found, not fixed (pre-existing, MIL-25):** the masterclass course page's browser title reads `{{title}} |
+Master Class | Miles Masterclass`, even on a direct signed-out load. `setupCourseSeo` doesn't fill the
+      placeholder from the new course shape. Its own ticket.
 
 - 🔧 **2026-10-13, NON-REFACTOR — commerce API rebind (`prompts/commerce-api-rebind.md`). Approved by the
   user ("use this plan"); D1–D6 = A. The old backend is gone, so no legacy binding, logic or type survives in
@@ -409,6 +962,87 @@ data-press:bg-transparent` in a static `class`; the auto-renew dialog's Close is
     a real ICO with 16/32/48 PNG frames (7 KB), the padding trimmed and the transparency kept.
   - **Gates (local macOS):** lint 0 errors, structure check passed, prettier clean, `build:prod` 245.51 kB
     with only the `ai-labs.css` warning. Dev on 3000 served it as `image/x-icon`, byte-identical.
+- 🔧 **2026-10-13, NON-REFACTOR — CAIRA tracker rebound to `web-api/v1/badges/page/`
+  (`prompts/caira-tracker-rebind.md`, approved). DONE, STAGED, UNCOMMITTED** on
+  `feat/MIL-62-caira-tracker-rebind` (from `master` `f7e73c0`). No refactor phase moved.
+  - **Cause:** the feature was BROKEN, not merely unbound. All four v2 badge routes
+    (`v2/caira-badges/`, `v2/caira-badges/:id/`, `v2/course-badges/`, `v2/webinar-badges/`) and
+    `user-badges/:id/claim/` answer **404** on UAT. `BadgeRow` and `CairaLevelHero` treat a failed
+    fetch as "no data" and hide themselves, so the page rendered an empty shell with no error.
+    The user's pasted curl answers **401** without a token — their capture was authenticated.
+  - **What changed:** five per-component `httpResource` calls collapse into one route-scoped
+    `CairaBadgesFacade` (`services/caira-badges-facade.ts`) over the single `badges/page/` read,
+    with `models/caira-badge-page.model.ts` carrying the wire types, guards and `parse`.
+    `caira-tracker.routes.ts` gains `canMatch: [authGuard]` + `providers: [CairaBadgesFacade]`.
+    Podcast and Nano-Learning rows dropped (no section on the endpoint). The ⓘ dialog,
+    `utils/badge-action.ts` and `core/models/caira-badge.model.ts` are deleted; `UserBadgeStatus`
+    moved to `features/tracker/cpe/models/cpe-credit.model.ts`, its only remaining consumer.
+  - **Design call (A3):** `state`, `cta.action` and `badge_claim.state` are typed as open `string`.
+    The only payload available is a zero-progress learner (everything `LOCKED`/`COMING_SOON`/
+    `NOT_ISSUED`), so closing those unions would make the first learner who earns a badge trip
+    `contractError` and lose the whole page. The UI derives from `badge_claim.awarded`/`claimed`
+    and `cta.enabled` instead. Close them when Q10 is answered.
+  - **Paging:** namespaced per section (`?webinar_badges.page=2`), so `core/utils/parse-next-page.ts`
+    returns `null` for these URLs and is NOT reused — `nextSectionPage()` reads `has_next` + `page`.
+    One request carries every section's page, so the accumulators are keyed by page number
+    (`mergeSection`); a plain append duplicated a page when the other section advanced.
+  - **Gates (local macOS, not CI):** tsc 0; lint **0 errors** (106 warnings); structure check passed;
+    prettier clean; `build:prod` green, initial **245.32 kB vs master's 245.48 kB** (measured by
+    stashing — the 243.44 kB figure in older entries here is stale), only the `ai-labs.css` warning.
+  - **Browser (own `ng serve` on 4199, signed out):** all three routes redirect with the deep link
+    intact, e.g. `/us/accounting/caira-tracker/webinar-badges` →
+    `/auth/login?redirect=%2Fus%2Faccounting%2Fcaira-tracker%2Fwebinar-badges`.
+  - **Contract proof:** compiled the model to plain JS and ran `parseBadgesPage` against the real
+    payload — accepted; `nextSectionPage` → 2 / null / null; invented future values
+    (`EARNED`/`CLAIM_BADGE`/`ISSUED`) accepted and painted as an amber claim card; five contract
+    breaks (renamed key, missing `cta.enabled`, retyped `level.number`, non-array `results`,
+    missing `cpe_summary`) all rejected, each naming its section.
+  - **NOT verified:** the signed-in render and anything involving an earned badge — no credentials.
+    User to check one `badges/page/` request, hero + exactly two rows, and webinar 6 → 10 on scroll.
+  - **Note:** the user's dev server on 4101 was serving STALE code (rendered 4 badge rows, the
+    pre-change build). It needs a restart before they verify.
+  - **2026-10-13 follow-up — silent-blank fix.** User reported "page is still empty, for a moment I
+    could see UI but again it's blank". Reproduced both paths in headless Chrome against a local
+    `ng serve` on 4199 (auth cookie planted from a helper origin on 8099, since cookies are not
+    port-scoped): with a token present and UAT answering 401 the page renders its **error state**,
+    not a blank, and signed out it still redirects to login. So a failed request was never the
+    cause. The real hole was `idle`: a refresh that fails calls `AuthSession.clear()`, the request
+    function then returns `undefined`, and idle is neither loading nor an error — so the hero and
+    both rails hide themselves and the page goes blank with no way out, with `authGuard` (`CanMatch`)
+    not re-running on an already-matched route. `CairaBadgesFacade` now has a second `effect` that
+    redirects to `/auth/login?redirect=…` when the session disappears mid-page. Re-verified both
+    paths after the fix. **Most likely cause of what the user saw is the stale dev server on 4101**
+    (it rendered 4 badge rows, i.e. the pre-change build, whose five dead 404 reads show skeletons
+    and then hide every section — exactly "UI for a moment, then blank"). Gates re-run: lint 0
+    errors (106 warnings), structure ✔, prettier ✔, `build:prod` 245.37 kB, `ai-labs.css` only.
+  - **2026-10-13 follow-up — cards are links, plus a hover highlight bar.** User asked that
+    clicking a badge card open its webinar/course page, and that the title get a highlight line
+    on hover. Cause of the first: `cta.enabled` was gating navigation as well as the CTA, and
+    **every** webinar badge in UAT is `Coming Soon`/`Locked` with `enabled: false`, so every
+    webinar card was a `[disabled]` button — inert, despite `cta.webinar_id` being set on all
+    ten. Navigation no longer consults `cta.enabled`; the destination page owns its own gating.
+    **Matched two existing repo conventions rather than inventing:** the hover bar is the
+    `bg-size-[0%_3px] → group-hover/card:bg-size-[100%_3px]` gradient from
+    `masterclass-chapter-list.html` (`group-hover:underline` is used **zero** times repo-wide),
+    which also solves the fixed `min-h-12` title box because `box-decoration-clone` paints on
+    the text, not the container; and the whole-card link is the `absolute inset-0 z-0` stretched
+    anchor + higher-layer action row from `masterclass-course-card.html` (template
+    `stopPropagation()` appears exactly once repo-wide and is the legacy fallback). Webinar card
+    root is now a plain `<a>` (no nested button, so no overlay needed) and **lost its `activate`
+    output** — when Q11 lands it will need an explicit claim affordance, noted in its doc
+    comment. `localePrefix()` added to `tracker-links.ts`, consolidating the tracker's three
+    inline copies. **Proof beyond the build:** the emitted stylesheet carries
+    `.group-hover\/card\:bg-size-\[100\%_3px\]:is(:where(.group\/card):hover *)` next to the
+    existing `group/title` rule, and an `elementFromPoint` probe of the real markup against the
+    built CSS returns the stretched anchor at the card centre and in the title area but the
+    button at the CTA centre — so the card navigates and the CTA is not swallowed. Gates: lint 0
+    errors (106 warnings), structure ✔, prettier ✔, `build:prod` 245.31 kB, `ai-labs.css` only.
+    **Not verified:** the cards rendering with real data — still no credentials.
+  - **Backend:** Q10 (full enums / an earned-badge sample), Q11 (how a badge is claimed now — no id
+    on `badge_claim`), Q12 (empty `next_session`, no podcast/nano sections, no masterclass credits,
+    no level `content`, namespaced paging) appended to `docs/MASTERCLASS_API_QUESTIONS.md`.
+    **Q9 marked DONE there** — `masterclass/levels/` now answers 200 anonymously (MIL-61 is live).
+
 - 🔧 **2026-10-12, NON-REFACTOR — OTP send/verify take `email` or `mobile` + `country_code`
   (`prompts/auth-otp-contact-fields.md`, approved). DONE, UNCOMMITTED** on
   `fix/MIL-63-otp-contact-fields` (from `master`). No refactor phase moved.
@@ -4376,7 +5010,60 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-10-16 · NON-REFACTOR · **PR #122 (MIL-62): `master` `a2afc0e` merged in** (staged, user continues the merge in Desktop): 7 conflicts resolved, duplicate `authGuard` import removed, baseline pruned; #145's revert of the thumbnail fix found · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod 244.84 kB · guards + webinar Book Now checked signed out
+
+- 2026-10-16 · NON-REFACTOR · **MIL-99 instructor page public** (`fix/MIL-99-public-instructor-page`, merged as #152): `login_type` on `instructor-detail/`, `content_type` on `filter/`, route guard removed · gates green · signed out + dummy signed-in checked
+
 - 2026-10-15 · NON-REFACTOR · **Webinar feed: null `horizontal_thumbnail` / `square_image` accepted** (uncommitted, `fix/MIL-62-require-sign-in`): one UAT card with both null failed the whole feed · tsc 0, Storybook tsc 0, ESLint ✔, prettier ✔ · list + `Test webinar-2` detail render in dev
+
+- 2026-10-15 · NON-REFACTOR · **MIL-93 header dropdowns fixed** (uncommitted, `fix/MIL-93-header-nav-dropdowns`): close outside the open item, reset `NavMenuGroup`, route change + Escape close · Playwright 1440/1024/768 all pass · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod 244.98 kB
+
+- 2026-10-15 · NON-REFACTOR · **MIL-93 planned** (`fix/MIL-93-header-nav-dropdowns`): `prompts/header-nav-dropdowns.md` — close on clicks outside the open item, reset `NavMenuGroup` on close, Escape and route change close (awaiting approval)
+
+- 2026-10-15 · NON-REFACTOR · **MIL-65 rebased on `master` 3.7.0 (`c2a1194`)** (force-pushed as `9fcb4dc`): `STATE.md` conflicts kept both sides (the replayed `98c2e56` alone carries a garbled step-log block; the tip is clean, squash drops it); `verify` failed only on the relative-import ratchet (#139) now being better than its baseline, so `check-structure --prune` dropped/lowered 6 entries · tsc 0, Storybook tsc 0, lint 0 errors (101 warnings), structure ✔, prettier ✔, build:prod 245.12 kB
+
+- 2026-10-15 · NON-REFACTOR · **Library rebind re-planned on `master` (`d470717`)**: course library already bound by #136; `prompts/library-rebind.md` rev 2 = instructor library, instructor page, badge library retirement · live UAT probe: `course_type` now required on `all-instructors-page/` · MIL-85 needs `master` merged (tabs.ts + STATE.md conflicts, 6 relative-import ratchet failures) · no `src/` changes
+
+- 2026-10-15 · NON-REFACTOR · **MIL-85: `master` (`d470717`, #136) merged in, conflicts resolved** (uncommitted merge): `tabs.ts` = master's `variant` file without OnPush; #136's relative imports → aliases in 6 files; baseline pruned (3 entries); STATE.md kept both sides · lint 0 errors (105 warnings), structure ✔, prettier ✔ (local)
+
+- 2026-10-15 · NON-REFACTOR · **Explicit OnPush dropped** (uncommitted, 75 components + `eslint.config.mjs` + CLAUDE.md): Angular 22 defaults to OnPush, so every `changeDetection: ChangeDetectionStrategy.OnPush` and its import went; `no-restricted-syntax` now rejects a re-added OnPush · lint 0 errors (105 warnings), structure ✔, build:prod 245.32 kB (local) · TransferState reviewed, no change (the 3 manual uses carry non-HttpClient data) · facade audit of the rebound flows running
+
+- 2026-10-14 · NON-REFACTOR · **Alias-import ratchet** (uncommitted, `check-structure.mjs` + `structure-baseline.json` + AGENTS.md + CLAUDE.md): per-file `relativeImports` count rule seeded with 191 files / 381 imports; both rule docs say aliases everywhere · structure ✔ after seeding, a new relative import fails it, ng lint 0 errors (local)
+
+- 2026-10-15 · NON-REFACTOR · **MIL-88 plan audit** (`feat/MIL-65-…`): also verified the last chapter ("Back to course", then the course page after 10 s), submit `reset_required` (toast + re-read), submit `400` (one re-read, no loop), read `409` and `caira_access_required` (back to the course page) · open: a real signed-in round trip, `multiple` questions (unseen on UAT); `VIDEOJS: Invalid target for null#trigger` only when the page bounces to the course page mid-load
+
+- 2026-10-15 · NON-REFACTOR · **MIL-88: resume chapter + quiz-first** (`feat/MIL-65-…`): Watch Now → first chapter not done; a locked chapter → the chapter holding it, quiz open; Up Next (locked) → the quiz · Playwright: 4 cases pass
+
+- 2026-10-15 · NON-REFACTOR · **MIL-88 verified** (`feat/MIL-65-…`): Playwright full run (auto-open, grade, resume, re-read, 10 s move-on), video end, Watch again / Take the quiz, refusals (404, already_completed, chapter_locked, 500), preview, 375/768/1440 · two layout fixes (mobile header title, countdown fill)
+
+- 2026-10-15 · NON-REFACTOR · **Testing controls removed** (`feat/MIL-65-…`): CPE `playerMode` gating, the 0.5×–2× rate list and the save's `max_watched_duration_seconds` restored; no skip buttons · no `TEMP(testing)` left in `src/`
+
+- 2026-10-15 · NON-REFACTOR · **MIL-88 chapter quiz rebound** (uncommitted, `feat/MIL-65-…`): `chapter-quiz.model`, `CourseChapterQuizFacade`, `chapter-quiz` bound, player swap + "Take the quiz" · tsc 0, lint 0 errors (101 warnings), structure ✔, prettier ✔, build:prod 245.25 kB · browser check waits on a dev-server restart (504 Outdated Optimize Dep)
+
+- 2026-10-15 · NON-REFACTOR · **MIL-87 follow-up** (`feat/MIL-65-…`): `54dd174` left out `chapter-facade.ts` (still calling the removed routes; `verify` failed on #137) and took in the local testing line in `course-chapter-facade.ts`; the fix-up commit adds the first and restores the second (`max_watched_duration_seconds` = the continuously watched edge) · tsc 0, lint 0 errors
+
+- 2026-10-15 · NON-REFACTOR · **Chapter quiz step 1: legacy binding removed** (uncommitted, `feat/MIL-65-…`): `chapter-quiz` unbound; podcast quiz panel + report fetch, micro-learning quiz dialog + `chapter-quiz` read, `ChapterFacade` quiz methods and three 404 routes removed; ML quiz entry points toast · tsc 0, lint 0 errors (101 warnings), structure ✔ (pruned), prettier ✔, build:prod 244.94 kB
+
+- 2026-10-15 · NON-REFACTOR · **Chapter quiz planned in two steps** (`feat/MIL-65-…`): remove the dead legacy quiz binding everywhere (podcast, micro-learning, `ChapterFacade`, three 404 routes), then rebind `chapter-quiz` to the web API · plans: `prompts/chapter-quiz-remove-legacy.md`, `prompts/masterclass-chapter-quiz.md` (awaiting approval)
+
+- 2026-10-15 · NON-REFACTOR · **Completed badge follows the video** (uncommitted, `feat/MIL-65-…`): `isChapterWatched` = video or chapter completed · ESLint ✔, tsc 0, prettier ✔ · quiz plan written: `prompts/masterclass-chapter-quiz.md` (awaiting approval)
+
+- 2026-10-15 · NON-REFACTOR · **Course page chapter progress + Completed badge** (uncommitted, `feat/MIL-65-…`): `is_chapter_completed` in the model, `watchedPercent`, badge/bar in `masterclass-chapter-list` · tsc 0, ESLint ✔, prettier ✔, structure ✔ · Playwright with an edited `course-detail` at 1440/375
+
+- 2026-10-15 · NON-REFACTOR · **TEMP chapter-player testing controls** (local only, `feat/MIL-65-…`, do not commit): always DEFAULT mode, ±10 s skip, 4×/8×, save max = max(furthest, position) · tsc 0, ESLint ✔, prettier ✔ · trailer player shows them in dev; also MIL-65 rebased on #136 (`1d472ce`), build:prod 244.96 kB
+
+- 2026-10-14 · NON-REFACTOR · **course-detail trailer rename** (`feat/MIL-65-…`, uncommitted): `horizontal_trailer_url` / `trailer_horizontal_thumbnail_image_url` in the model, guard, hero, `openTrailer` and the SEO source · tsc 0, lint 0 errors, structure ✔, prettier ✔ · dev 4101: course page and hero trailer load
+
+- 2026-10-14 · NON-REFACTOR · **MIL-84, course library bound to `filter/`** (`feat/MIL-82-course-library-binding`, uncommitted) plus the `horizontal_trailer_url` rename (own commit): sidebar, pill tabs, grid, paging, states · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod ✔ (local) · dev 4101 headless: 64 courses over 6 pages, each filter and tab narrows, error + retry, 375/768/1440 no horizontal scroll
+
+- 2026-10-14 · NON-REFACTOR · **MIL-83, course library v2 bindings removed** (`feat/MIL-82-course-library-binding`, uncommitted): `CourseFacade` reduced to the tab state; the page keeps its frame, tabs and empty state · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod ✔ (local) · dev 4101 headless: no `v2/` request at 1440 and 375, tabs switch with no request
+
+- 2026-10-13 · NON-REFACTOR · **MIL-79 save chapter progress** (uncommitted, `feat/MIL-65-masterclass-chapter-page-binding`): `course-progress-update` saves (interval, pause, end, chapter change, leave), watched straight through only, answer merged in place; MIL-67 fix: `CourseChapterFacade` page-provided (route injectors outlive the page; stray toast reproduced and gone) · tsc ✔, lint 0 errors, structure ✔, `CI=true build:prod` 245.43 kB (local) · dev 4101 headless with recorded bodies: cadence, seek rule, merge, end, failures, held-until-start
+
+- 2026-10-13 · NON-REFACTOR · **Temporary: CPE mode seeks for testing** (uncommitted, discard before the PR): `course-chapter-player` always uses `PlayerMode.DEFAULT` · verified in dev 4101 with a CPE fixture: progress-bar seek 12 s → 125 s, speed 2× · tsc ✔, lint ✔, prettier ✔
+
+- 2026-10-13 · NON-REFACTOR · **MIL-65 chapter page binding** (`5ccc7df`, `feat/MIL-65-masterclass-chapter-page-binding`): v2 bindings removed (MIL-66); `course-detail` + `chapter-start`, `CourseChapterFacade`, `course-chapter-player` (MIL-67); Watch Now access check; `course_type` on `highlight/`, `tracks-page/`, `ai-labs/` · tsc ✔, lint 0 errors, structure ✔, `CI=true build:prod` 245.53 kB (local) · dev 4101 headless with fixtures from the live payload: play and resume, CPE lock, locks and refusals, mode dialog, one shared read
+
 - 2026-10-14 · NON-REFACTOR · **Payment UI/UX pass + billing step removed** (uncommitted, local `uat`, 22 files +281/−167): gallery capped at 80vh, empty-cart copy + CTA, cart loading/error states, auth guard on invoice/orders, invoice error state/fallbacks/row wrap, `savingAddress`, Cart → Review with the address collected on review (`components/billing-address`), `sm:px-4` gutters, pending copy · lint 0 errors, structure ✔, prettier ✔, build:prod 245.15 kB (local) · signed-in flow verified in dev against UAT at 1440/768/375 up to K1 `payment_error` (no Stripe on UAT)
 - 2026-10-13 · NON-REFACTOR · **Commerce PR7, buy buttons → plan** (uncommitted, `feat/MIL-XXX-offerings-buy-to-plan`): `addCourseToCart`, `v2/user/cart/`, `cartItemRemoved`, `CART_DRAWER_DIALOG` deleted; certificate gate subscriptions-only (+42/−206) · lint 0 errors, structure ✔, build:prod 245.29 kB (local) · gate dialogs verified in dev; legacy sweep of `src/` empty · epic code-complete
 
@@ -4405,6 +5092,13 @@ These are environment and product observations the repair surfaced. None changed
 - 2026-10-13 · NON-REFACTOR · **API request headers** (`feat/MIL-XXX-api-request-headers`, uncommitted): `appInterceptor` sends `X-Country-Code` (URL country, upper-case), `X-Platform: masterclass`, `X-App-Type: WA`; its imports are now `@core/*` aliases (user: aliases everywhere) · lint 0 errors, structure ✔, prettier ✔, build:prod 245.63 kB (local) · dev on 3000: `/in` → `IN`, `/ae` → `AE`, all 200; Supabase untouched · prod `api.milescaira.com` CORS still lacks the headers · commerce implementation prompt in progress (`prompts/commerce-api-rebind.md`)
 
 - 2026-10-13 · NON-REFACTOR · **Favicon** (PR #121, `chore/MIL-64-favicon`, `a207d49`): `public/favicon.ico` is now a real 16/32/48 ICO of the mountain mark · lint 0 errors, structure ✔, prettier ✔, build:prod 245.51 kB (local) · dev on 3000 serves it as `image/x-icon`
+- 2026-10-15 · NON-REFACTOR · **PR #132 review: rebase + facade→service reshape** (uncommitted, `feat/MIL-62-caira-tracker-rebind`): branch was 23 behind and the rules changed under it (#139 alias ratchet + OnPush ban, #145 reverted the facade harness and added "a facade only where state is shared"); stale branch linted 0 errors, rebased it linted 5 · `CairaBadgesApi` root `@Service()`, orchestration into the three pages, children back on inputs/outputs, all imports aliased, OnPush stripped, baseline pruned · tsc ✔, lint 0 errors, structure ✔, build:prod 244.87 kB · listing-page empty-render chased and NOT confirmed: the same url on unchanged code gave 5,439 twice then 32,176 three times, so the headless harness (~60% reliable, View Transitions aborting in a hidden document) produced every data point the bisect rested on; the page reset moved constructor → `DestroyRef.onDestroy` on its own merits, not as a proven fix · browser verification OPEN
+
+- 2026-10-13 · NON-REFACTOR · **CAIRA badge cards link + hover bar** (same branch): navigation stops depending on `cta.enabled`, which had made every webinar card inert; whole card is a link (stretched `absolute inset-0 z-0` anchor on the masterclass card so its CTA keeps its own click, plain `<a>` root on the webinar card); title gains the repo's existing `bg-size-[0%_3px]→[100%_3px]` accent gradient on `group-hover/card`; webinar card loses `activate` (needs a claim affordance when Q11 lands); `localePrefix()` consolidates three inline copies · lint 0 errors, structure ✔, build:prod 245.31 kB · emitted CSS carries the new `group/card` rule; `elementFromPoint` probe confirms card+title hit the link and the CTA does not
+
+- 2026-10-13 · NON-REFACTOR · **CAIRA tracker silent-blank fix** (same branch): a failed refresh clears the token, the read goes `idle` (not loading, not error), every section hides itself and the page blanks; `authGuard` is `CanMatch` so it never re-runs · facade now redirects to login when the session disappears mid-page · reproduced in headless Chrome with a planted cookie: junk token → error state (never blank), signed out → login · lint 0 errors, structure ✔, build:prod 245.37 kB
+
+- 2026-10-13 · NON-REFACTOR · **CAIRA tracker rebind** (staged, `feat/MIL-62-caira-tracker-rebind`): all four v2 badge routes + the claim route are 404, so the feature was broken, not unbound; five component resources collapse into one route-scoped `CairaBadgesFacade` over `web-api/v1/badges/page/`, `authGuard` on the route, Podcast/Nano rows and the ⓘ dialog removed, enums left open (A3), paging keyed by page number because the sections share one request · tsc ✔, lint 0 errors, structure ✔, prettier ✔, build:prod 245.32 kB vs master 245.48 kB (local) · signed-out redirect verified on all three routes with the deep link intact; guard proved against the real payload (accepts it, tolerates unseen enums, rejects five contract breaks); signed-in render NOT verified — no credentials
 
 - 2026-10-12 · NON-REFACTOR · **AI Labs ring thumbnails** (MIL-61, no code yet): S3 `milesone-backend-assets` sends no CORS, so the WebGL ring cannot upload the `ai-labs/` thumbnails; the `<img>` row is unaffected · confirmed in dev at 1440 (browser CORS error + `onTextureBlocked`) · ⏸ user to choose S3 CORS (backend) or a same-origin proxy
 

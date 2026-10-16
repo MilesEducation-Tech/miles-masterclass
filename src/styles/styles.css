@@ -59,12 +59,14 @@
      offerings components.
        player-panel — the chapter player frame and chapter-list rows
        player-thumb — the chapter thumbnail placeholder
+       player-card — the player's "Previous Chapter" card
        quiz-line / quiz-line-hover — assessment borders and the neutral button
        quiz-selected — the selected answer option
        quiz-panel / quiz-panel-hover — the report and feedback panels and their
          row hover (1 unit off player-panel; kept exact) */
   --mm-player-panel: #161e25;
   --mm-player-thumb: #4a5560;
+  --mm-player-card: #18232f;
   --mm-quiz-line: #3e4552;
   --mm-quiz-line-hover: #4b5563;
   --mm-quiz-selected: #2c3442;
@@ -239,6 +241,7 @@
   --color-plan-5: var(--mm-plan-5);
   --color-player-panel: var(--mm-player-panel);
   --color-player-thumb: var(--mm-player-thumb);
+  --color-player-card: var(--mm-player-card);
   --color-quiz-line: var(--mm-quiz-line);
   --color-quiz-line-hover: var(--mm-quiz-line-hover);
   --color-quiz-selected: var(--mm-quiz-selected);

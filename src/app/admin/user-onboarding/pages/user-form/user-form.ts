@@ -1,6 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   PLATFORM_ID,
@@ -92,7 +91,6 @@ function byLabel<T>(options: readonly AriaSelectOption<T>[], label: string | nul
   selector: 'app-user-form',
   imports: [AngularFormField, Button, Field, NgpLabel, Input, Checkbox, Select, Combobox],
   templateUrl: './user-form.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block w-full' },
 })
 export class UserForm {

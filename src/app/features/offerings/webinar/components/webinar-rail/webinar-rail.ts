@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  linkedSignal,
-  output,
-} from '@angular/core';
+import { Component, computed, input, linkedSignal, output } from '@angular/core';
 import { SwiperStrip } from '../swiper-strip/swiper-strip';
 import { swiperConfigEven } from '@core/config/swiper.config';
 import { FeedCard } from '../../models/webinar.model';
@@ -47,7 +40,6 @@ export interface LevelTab {
   selector: 'app-webinar-rail',
   imports: [SwiperStrip, WebinarCard],
   templateUrl: './webinar-rail.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WebinarRail {
   readonly heading = input.required<string>();

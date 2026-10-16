@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { HttpErrorResponse, httpResource } from '@angular/common/http';
+import { HttpContext, HttpErrorResponse, httpResource } from '@angular/common/http';
 import {
   computed,
   DOCUMENT,
@@ -13,29 +13,48 @@ import {
   untracked,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
+import { SKIP_LOADING } from '@core/models/http.model';
 import { Analytics } from '@core/services/analytics/analytics';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
+import { SUBSCRIPTION_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
 import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
 import { withPreviousValue } from '@core/utils/with-previous-value';
 import { Utils } from '@shared/services/utils';
 import {
+  CHAPTER_COPY,
   COURSE_DETAIL_API,
   COURSE_DETAIL_CHAPTERS_PAGE_SIZE,
   COURSE_ID_PATTERN,
 } from '@features/offerings/constants/course-detail';
 import {
+  ChapterStartResult,
+  CourseProgress,
+  CourseProgressChapter,
+  CourseProgressUpdate,
   CourseDetailParams,
   CourseLoginType,
+  CourseMode,
   CourseOffering,
+  isChapterDone,
   MasterclassChapterLink,
   MasterclassCourseDetail,
   MasterclassRelatedCourse,
   MasterclassRelatedRail,
   parseAboutCourseId,
+  parseChapterStart,
   parseCourseDetail,
+  parseCourseProgress,
+  readCourseStepRefusal,
 } from '@features/offerings/models/course-detail.model';
+import {
+  parseQuizSubmit,
+  QuizAnswer,
+  QuizSubmitOutcome,
+} from '@features/offerings/models/chapter-quiz.model';
 // Type-only: the dialog loads with `import()` when opened (AGENTS.md §4.4).
 import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 
@@ -45,18 +64,21 @@ const isMissing = (error: unknown): boolean =>
 
 /**
  * State and actions for one course of an offering, read from its web
- * `course-detail/` route: today the masterclass course page
- * (`:courseId/:courseTitle`) and the course-info dialog the landing page's "i"
- * button opens. Offering-wide on purpose: what differs per offering (routes,
- * URL segment, analytics name) comes from `COURSE_DETAIL_API`, so podcast and
- * micro-learning plug in by adding their entry once their web routes exist.
+ * `course-detail/` route: today the masterclass course page and its chapter
+ * pages (`:courseId/:courseTitle/…`), and the course-info dialog the landing
+ * page's "i" button opens. Offering-wide on purpose: what differs per offering
+ * (routes, URL segment, analytics name) comes from `COURSE_DETAIL_API`, so
+ * podcast and micro-learning plug in by adding their entry once their web
+ * routes exist.
  *
- * Never a root service. The course route lists it in `providers`, and the
- * dialog in its own `providers`, so each has an instance that `connect()`
- * points at its course. The page's sections inject it and read these signals
- * and call these methods themselves; none of them calls the API. It replaces
- * the shared, legacy `MasterclassFacade` for these two only — podcast and the
- * chapter player still use that one until their own APIs move.
+ * Never a root service. The course route lists it in `providers` (on the
+ * parent, so the course page and its chapters share one instance and one read),
+ * and the dialog in its own `providers`, so each has an instance that
+ * `connect()` points at its course. The page's sections inject it and read
+ * these signals and call these methods themselves; none of them calls the API.
+ * The chapter page reaches it through `CourseChapterFacade`. It replaces the
+ * shared, legacy `MasterclassFacade` for these only — podcast still uses that
+ * one until its own API moves.
  */
 @Service({ autoProvided: false })
 export class CourseDetailFacade {
@@ -66,7 +88,9 @@ export class CourseDetailFacade {
   private readonly logger = inject(Logger);
   private readonly auth = inject(AuthSession);
   private readonly dialogs = inject(NgpDialogManager);
+  private readonly subscriptionDialog = inject(SUBSCRIPTION_DIALOG);
   private readonly api = inject(ApiClient);
+  private readonly notification = inject(NotificationService);
   private readonly document = inject(DOCUMENT);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -78,6 +102,9 @@ export class CourseDetailFacade {
     const offering = this.offering();
     return offering ? COURSE_DETAIL_API[offering] : null;
   });
+
+  /** `course_type` on analytics events; `null` until `connect()`. */
+  readonly analyticsType = computed(() => this.routes()?.analyticsType ?? null);
 
   /** The course's id and slug, as a signal; `null` until `connect()`. */
   private readonly params = signal<Signal<CourseDetailParams> | null>(null);
@@ -163,6 +190,17 @@ export class CourseDetailFacade {
       slug: this.utils.slugify(chapter.name),
     })),
   );
+
+  /**
+   * Where the learner picks up: the first chapter not yet done, so Watch Now
+   * skips what's finished and a chapter whose quiz is still open comes before
+   * the chapters it locks. With every chapter done, the first one.
+   */
+  readonly resumeChapter = computed<MasterclassChapterLink | null>(() => {
+    const chapters = this.chapters();
+    const cpe = this.course()?.course_mode === 'cpe';
+    return chapters.find((chapter) => !isChapterDone(chapter, cpe)) ?? chapters[0] ?? null;
+  });
 
   /**
    * The Related section: "Related Courses", then one "More by" rail per
@@ -270,7 +308,7 @@ export class CourseDetailFacade {
   /** The shared video dialog; it toasts "Trailer Not Found" for a course with none. */
   openTrailer(): void {
     const course = this.course();
-    if (course) void this.utils.openVideoDialog(course.trailer_video_url, course.name);
+    if (course) void this.utils.openVideoDialog(course.horizontal_trailer_url, course.name);
   }
 
   openSample(): void {
@@ -300,19 +338,159 @@ export class CourseDetailFacade {
    * Open the course's first chapter (the API returns them in `order`). Resuming
    * where the learner left off comes with the signed-in state. Chapters carry no
    * slug, so the URL's is made from the name, as the legacy flow did.
+   *
+   * Gated here, as the legacy launch flow was, so the learner isn't sent to a
+   * chapter only to be sent back: signed out, they sign in and return here; a
+   * course locked to them (no entitlement, so every stream is stripped) opens
+   * the subscription offer instead.
    */
   watch(): void {
     const course = this.course();
-    const chapter = this.chapters()[0];
+    const chapter = this.resumeChapter();
     if (!course || !chapter) return;
+
+    if (!this.auth.isAuthenticated()) {
+      this.signIn();
+      return;
+    }
+    if (course.course_is_locked) {
+      void this.openSubscription();
+      return;
+    }
 
     this.analytics.trackEvent('start_course', {
       course_id: course.id,
       course_type: this.routes()?.analyticsType,
     });
-    void this.router.navigateByUrl(
-      `${this.coursePagePath(course)}/chapter/${chapter.id}/${chapter.slug}`,
+    void this.router.navigateByUrl(this.chapterPath(chapter) ?? '/');
+  }
+
+  /** The course page's path, once the course has loaded. */
+  coursePath(): string | null {
+    const course = this.course();
+    return course ? this.coursePagePath(course) : null;
+  }
+
+  /** A chapter's page: the course page's path plus `chapter/<uuid>/<slug>`. */
+  chapterPath(chapter: MasterclassChapterLink): string | null {
+    const course = this.coursePath();
+    return course ? `${course}/chapter/${chapter.id}/${chapter.slug}` : null;
+  }
+
+  /**
+   * Begin a chapter (`chapter-start/`), which creates the learner's enrolment on
+   * the first one. Rejects with the `HttpErrorResponse` of a refusal, for the
+   * caller to read with `readCourseStepRefusal`.
+   */
+  async startChapter(chapterId: string): Promise<ChapterStartResult> {
+    const route = this.routes()?.chapterStart;
+    if (!route) throw new Error('[CourseDetail] startChapter before connect()');
+    const raw = await firstValueFrom(
+      this.api.call({ ...route, path: route.path.replace(':id', chapterId) }),
     );
+    return parseChapterStart(raw);
+  }
+
+  /**
+   * Save one chapter's progress (`course-progress-update/`). Sent on the
+   * player's own clock, so it never drives the loading bar. Resolves the whole
+   * course's progress after the write; rejects with the `HttpErrorResponse` of
+   * a refusal, for the caller to read with `readCourseStepRefusal`.
+   */
+  async saveProgress(update: CourseProgressUpdate): Promise<CourseProgress> {
+    const route = this.routes()?.courseProgressUpdate;
+    const id = this.courseId();
+    if (!route || !id) throw new Error('[CourseDetail] saveProgress before the course loaded');
+    const raw = await firstValueFrom(
+      this.api.call({ ...route, path: route.path.replace(':id', id) }, update, {
+        context: new HttpContext().set(SKIP_LOADING, true),
+      }),
+    );
+    return parseCourseProgress(raw);
+  }
+
+  /** `quiz-questions/` for one chapter; `null` before `connect()`. */
+  quizQuestionsUrl(chapterId: string): string | null {
+    const base = this.routes()?.quizQuestions;
+    return base ? `${base}${chapterId}/` : null;
+  }
+
+  /**
+   * Grade one quiz answer (`quiz-submit/`). The quiz shows its own pending
+   * state, so it skips the loading bar. Rejects with the `HttpErrorResponse` of
+   * a refusal, for the caller to read with `readCourseStepRefusal`.
+   */
+  async submitQuizAnswer(chapterId: string, answer: QuizAnswer): Promise<QuizSubmitOutcome> {
+    const route = this.routes()?.quizSubmit;
+    if (!route) throw new Error('[CourseDetail] submitQuizAnswer before connect()');
+    const raw = await firstValueFrom(
+      this.api.call({ ...route, path: route.path.replace(':id', chapterId) }, answer, {
+        context: new HttpContext().set(SKIP_LOADING, true),
+      }),
+    );
+    return parseQuizSubmit(raw);
+  }
+
+  /**
+   * Merge the server's per-chapter progress into the held course, so the lock
+   * ladder, `show_quiz` and the progress move in place: the chapter page's next
+   * card and the course page's list both read them from here.
+   */
+  applyProgress(chapters: CourseProgressChapter[]): void {
+    const byId = new Map(chapters.map((chapter) => [chapter.chapter_id, chapter]));
+    this.detailResource.update((course) =>
+      course
+        ? {
+            ...course,
+            chapters: course.chapters.map((chapter) => {
+              const saved = byId.get(chapter.id);
+              return saved
+                ? {
+                    ...chapter,
+                    is_locked: saved.is_locked,
+                    show_quiz: saved.show_quiz,
+                    user_chapter_progress: saved.progress,
+                  }
+                : chapter;
+            }),
+          }
+        : course,
+    );
+  }
+
+  /**
+   * Store the learner's mode on their enrolment: `course-detail/` re-read with
+   * `mode=`, post-login only. The answer IS the course in its new mode, so it
+   * replaces the held one with no second read. A refusal (`409
+   * course_mode_locked` once the mode can no longer change) toasts the server's
+   * message and keeps the mode as it was. Resolves `true` once the mode is set.
+   */
+  async setMode(mode: CourseMode): Promise<boolean> {
+    const routes = this.routes();
+    const id = this.courseId();
+    if (!routes || !id || !this.auth.isAuthenticated()) return false;
+
+    try {
+      const raw = await firstValueFrom(
+        this.api.get<unknown>(`${routes.courseDetail}${id}/`, {
+          params: {
+            login_type: 'post_login',
+            'chapters.page_size': COURSE_DETAIL_CHAPTERS_PAGE_SIZE,
+            mode,
+          },
+        }),
+      );
+      this.detailResource.set(parseCourseDetail(raw));
+      return true;
+    } catch (error) {
+      this.logger.error('[CourseDetail] mode switch failed', error);
+      const refusal = readCourseStepRefusal(error);
+      this.notification.error(
+        CHAPTER_COPY.modeNotChanged.title,
+        refusal.message ?? CHAPTER_COPY.modeNotChanged.body,
+      );
+      return false;
+    }
   }
 
   /**
@@ -339,7 +517,7 @@ export class CourseDetailFacade {
     if (!course || !route || this.bookmarkPending()) return;
 
     if (!this.auth.isAuthenticated()) {
-      void this.router.navigate(['/auth/login'], { queryParams: { redirect: this.router.url } });
+      this.signIn();
       return;
     }
 
@@ -380,6 +558,20 @@ export class CourseDetailFacade {
     const course = this.course();
     const url = course?.miscellaneous_data.course_navigation_video_url;
     if (course && url) void this.utils.openVideoDialog(url, `${course.name} - Course Navigation`);
+  }
+
+  /** To sign-in and back to this page, as the auth guard does. */
+  private signIn(): void {
+    void this.router.navigate(['/auth/login'], { queryParams: { redirect: this.router.url } });
+  }
+
+  /**
+   * The subscription offer, the same dialog the rest of the app's paywall opens.
+   * It lives in `features/payment`, so it arrives through `SUBSCRIPTION_DIALOG`.
+   */
+  private async openSubscription(): Promise<void> {
+    const SubscriptionDialog = await this.subscriptionDialog();
+    this.dialogs.open(SubscriptionDialog);
   }
 
   /** Rail cards, without the course on screen, each with a URL slug made from its name. */

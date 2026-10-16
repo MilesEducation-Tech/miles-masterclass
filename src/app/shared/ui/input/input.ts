@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { NgpInput } from 'ng-primitives/input';
 
 /** A native `<input>`; bind it with `[formField]` directly. `id` is exposed so `<label for>` can name it. */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'input[app-input]',
   hostDirectives: [{ directive: NgpInput, inputs: ['id', 'disabled'] }],
   host: {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { Component, input, model, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { heroMagnifyingGlass, heroXMark } from '@ng-icons/heroicons/outline';
 import { NgpButton } from 'ng-primitives/button';
@@ -10,7 +10,6 @@ import { NgpSearch, NgpSearchClear } from 'ng-primitives/search';
  * (start the model at `''`). The inner `ngpInput` carries the field's label and validity state.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-search',
   hostDirectives: [NgpSearch],
   imports: [NgIcon, NgpSearchClear, NgpInput, NgpButton],

@@ -1,122 +1,187 @@
-<div class="flex flex-col h-full bg-[#272D37] text-white p-4 md:p-8 overflow-y-auto space-y-4">
-  <div class="flex items-center w-full rounded-lg overflow-hidden h-28 space-x-4 p-4 bg-card">
-    @if (current().chapter_thumbnail) {
-      <div class="h-full aspect-video relative">
-        <img [ngSrc]="current().chapter_thumbnail" [alt]="current().chapter_name" fill />
+@let question = quiz.question();
+@let grade = quiz.grade();
+<div
+  class="flex flex-col h-full bg-[#272D37] text-white p-4 md:p-8 overflow-y-auto gap-4 rounded-lg"
+>
+  <!-- On a phone the thumbnail gives its room to the title. -->
+  <div class="flex items-center w-full rounded-lg sm:h-28 gap-4 p-4 bg-card">
+    @if (chapter()?.horizontal_thumbnail_url; as thumbnail) {
+      <span class="relative h-full aspect-video shrink-0 rounded-md overflow-hidden max-sm:hidden">
+        <img [ngSrc]="thumbnail" alt="" fill class="object-cover" />
+      </span>
+    }
+    <h2 class="title line-clamp-2 min-w-0 flex-1">{{ chapter()?.name }}</h2>
+    <button
+      app-button
+      type="button"
+      variant="link"
+      class="ms-auto shrink-0 underline"
+      (click)="quiz.close()"
+    >
+      {{ copy.watchAgain }}
+    </button>
+  </div>
+
+  @if (quiz.isLoading()) {
+    <div class="flex flex-col gap-3" aria-busy="true">
+      <div class="h-4 w-32 rounded bg-quiz-line animate-pulse"></div>
+      <div class="h-7 w-3/4 rounded bg-quiz-line animate-pulse"></div>
+      @for (row of [1, 2, 3, 4]; track row) {
+        <div class="h-12 rounded-lg border border-quiz-line"></div>
+      }
+    </div>
+  } @else if (question) {
+    <p class="opacity-60 text-sm font-medium">{{ quiz.progressLabel() }}</p>
+    <h3
+      #heading
+      id="quiz-question"
+      tabindex="-1"
+      class="text-xl md:text-2xl font-semibold outline-none"
+    >
+      {{ question.question_text }}
+    </h3>
+
+    @if (question.question_type === 'single') {
+      <!-- One click (or Enter) answers, as the old quiz did. Buttons rather than a radio
+           group, whose arrow keys would answer while moving between options. -->
+      <div role="group" aria-labelledby="quiz-question" class="flex flex-col gap-2">
+        @for (option of question.options; track option.id) {
+          @let state = optionState(option.id);
+          <button
+            type="button"
+            class="flex flex-col gap-2 p-3 rounded-lg border border-quiz-line text-start transition-colors enabled:cursor-pointer enabled:hover:bg-quiz-selected focus-visible:outline-2 focus-visible:outline-ring data-[state=picked]:border-primary data-[state=picked]:bg-quiz-selected data-[state=correct]:border-success data-[state=correct]:bg-success/10 data-[state=wrong]:border-destructive data-[state=wrong]:bg-destructive/10"
+            [attr.data-state]="state"
+            [attr.aria-pressed]="state === 'picked' || !!grade?.selected?.includes(option.id)"
+            [disabled]="!!grade || quiz.submitting()"
+            (click)="answerSingle(option.id)"
+          >
+            <span class="flex items-start gap-3">
+              <span
+                aria-hidden="true"
+                class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-quiz-line-hover"
+                [class.border-primary]="
+                  state === 'picked' || !!grade?.selected?.includes(option.id)
+                "
+              >
+                @if (state === 'picked' || grade?.selected?.includes(option.id)) {
+                  <span class="size-2.5 rounded-full bg-primary"></span>
+                }
+              </span>
+              <span class="text-base leading-relaxed text-gray-200">{{ option.text }}</span>
+            </span>
+            @if (grade) {
+              @let explanation = explanationOf(option.id);
+              @if (state !== 'idle' || explanation) {
+                <span class="ms-8 text-sm text-gray-400 border-t border-quiz-line pt-2">
+                  <span
+                    class="block mb-1 text-xs font-semibold uppercase tracking-wider"
+                    [class.text-success-foreground]="state === 'correct'"
+                    [class.text-destructive]="state === 'wrong'"
+                  >
+                    {{
+                      state === 'correct'
+                        ? copy.correctAnswer
+                        : state === 'wrong'
+                          ? copy.yourAnswer
+                          : copy.explanation
+                    }}
+                  </span>
+                  {{ explanation }}
+                </span>
+              }
+            }
+          </button>
+        }
+      </div>
+    } @else {
+      <div role="group" aria-labelledby="quiz-question" class="flex flex-col gap-2">
+        @for (option of question.options; track option.id) {
+          <div
+            class="flex flex-col gap-2 p-3 rounded-lg border border-quiz-line data-[state=picked]:border-primary data-[state=picked]:bg-quiz-selected data-[state=correct]:border-success data-[state=correct]:bg-success/10 data-[state=wrong]:border-destructive data-[state=wrong]:bg-destructive/10"
+            [attr.data-state]="optionState(option.id)"
+          >
+            <span class="flex items-start gap-3">
+              <app-checkbox
+                [checked]="picked().includes(option.id) || !!grade?.selected?.includes(option.id)"
+                [disabled]="!!grade || quiz.submitting()"
+                [attr.aria-label]="option.text"
+                (checkedChange)="toggle(option.id, $event)"
+              />
+              <span class="text-base leading-relaxed text-gray-200">{{ option.text }}</span>
+            </span>
+            @if (explanationOf(option.id); as explanation) {
+              <span class="ms-8 text-sm text-gray-400 border-t border-quiz-line pt-2">
+                {{ explanation }}
+              </span>
+            }
+          </div>
+        }
+        @if (!grade) {
+          <button
+            app-button
+            type="button"
+            class="self-start"
+            [disabled]="!picked().length || quiz.submitting()"
+            (click)="quiz.answer(picked())"
+          >
+            {{ copy.submit }}
+          </button>
+        }
       </div>
     }
-    <div class="flex flex-col justify-center">
-      <h2 class="title">{{ current().chapter_name }}</h2>
-    </div>
-    <div class="ms-auto flex items-center gap-2">
+
+    <!-- The verdict, announced: the options above only change colour. -->
+    <p role="status" class="text-sm min-h-5">
+      @if (grade) {
+        <span
+          class="font-semibold"
+          [class.text-success-foreground]="grade.is_correct"
+          [class.text-destructive]="!grade.is_correct"
+        >
+          {{ grade.is_correct ? copy.correct : copy.incorrect }}
+        </span>
+        @if (grade.explanation) {
+          <span class="text-gray-400"> {{ grade.explanation }}</span>
+        }
+        @if (quiz.completed()) {
+          <span class="text-gray-300"> · {{ copy.complete }}</span>
+        }
+      }
+    </p>
+
+    <div class="mt-auto flex justify-between items-center gap-4 pt-6 border-t border-quiz-line">
       <button
         app-button
         type="button"
-        class="underline text-accent"
-        variant="link"
-        (click)="togglePreviewMode.emit('video')"
+        variant="secondary"
+        [disabled]="quiz.index() === 0"
+        (click)="previous()"
       >
-        Watch Again
+        {{ copy.back }}
       </button>
-    </div>
-  </div>
-  <!-- Progress -->
-  <div class="opacity-60 text-sm font-medium">
-    {{ progressText() }}
-  </div>
 
-  <!-- Question -->
-  <h2 class="text-xl md:text-2xl font-semibold">
-    {{ currentQuestion().question }}
-  </h2>
-
-  <!-- Options -->
-  <div class="flex flex-col gap-2">
-    @for (option of ['a', 'b', 'c', 'd']; track option) {
-      @if (getOptionText(currentQuestion(), option)) {
+      @if (quiz.completed()) {
         <button
-          class="flex items-start gap-4 p-3 rounded-lg border text-start transition-all"
-          [class.border-quiz-line]="selectedOption() !== option"
-          [class.bg-transparent]="selectedOption() !== option"
-          [class.border-blue-500]="selectedOption() === option && !isSubmitted()"
-          [class.bg-quiz-selected]="selectedOption() === option"
-          [disabled]="isSubmitted()"
-          (click)="selectOption(option)"
+          app-button
+          type="button"
+          class="relative min-w-44 overflow-hidden"
+          [disabled]="quiz.refreshing()"
+          (click)="quiz.proceed()"
         >
-          <div class="flex flex-col w-full gap-2">
-            <div class="flex items-start gap-2">
-              <!-- Radio Indicator -->
-              <div
-                class="relative w-5 h-5 rounded-full border-2 mt-0.5 shrink-0"
-                [class.border-gray-500]="selectedOption() !== option"
-                [class.border-blue-500]="selectedOption() === option"
-              >
-                @if (selectedOption() === option) {
-                  <div class="absolute inset-1 rounded-full bg-blue-500"></div>
-                }
-              </div>
-
-              <span class="text-base leading-relaxed text-gray-200">
-                {{ getOptionText(currentQuestion(), option) }}
-              </span>
-            </div>
-
-            <!-- Description (Visible on submission) -->
-            @if (isSubmitted() && getDescription(currentQuestion(), option)) {
-              <div class="ms-9 text-sm text-gray-400 border-t border-gray-700 pt-2 mt-1">
-                <span
-                  class="font-semibold text-xs uppercase tracking-wider mb-1 block"
-                  [class.text-green-400]="option === currentQuestion().correct_option"
-                  [class.text-red-400]="option !== currentQuestion().correct_option"
-                >
-                  {{
-                    option === currentQuestion().correct_option ? 'Correct Answer' : 'Explanation'
-                  }}
-                </span>
-                {{ getDescription(currentQuestion(), option) }}
-              </div>
-            }
-          </div>
-        </button>
-      }
-    }
-  </div>
-
-  <!-- Footer Actions -->
-  <div class="mt-auto flex justify-between items-center pt-6 border-t border-quiz-line">
-    <button
-      class="px-6 py-2 rounded bg-quiz-line text-white hover:bg-quiz-line-hover disabled:opacity-50"
-      [disabled]="currentQuestionIndex() === 0"
-      (click)="prevQuestion()"
-    >
-      BACK
-    </button>
-
-    @if (isSubmitted()) {
-      <button
-        class="relative min-w-44 text-[#161E25] font-semibold py-3 px-6 rounded-lg text-sm md:text-base hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 overflow-hidden"
-        [class]="isLastQuestion() ? 'bg-gray-400' : 'bg-gray-200'"
-        [disabled]="!selectedOption() || !isSubmitted()"
-        (click)="nextQuestion()"
-      >
-        <span class="relative z-10 font-bold">
-          @if (isLastQuestion()) {
-            @if (isLastChapter()) {
-              START FINAL ASSESSMENT
-            } @else {
-              PROCEED TO NEXT
-            }
-          } @else {
-            NEXT
+          @if (quiz.countdown(); as left) {
+            <span
+              aria-hidden="true"
+              class="absolute inset-y-0 start-0 bg-black/15 transition-all duration-1000 ease-linear"
+              [style.width.%]="((autoAdvanceSeconds - left + 1) / autoAdvanceSeconds) * 100"
+            ></span>
           }
-        </span>
-        @if (isLastQuestion() && autoNavTimer() !== null) {
-          <div
-            class="absolute top-0 bottom-0 start-0 h-full bg-white transition-all duration-1000 ease-linear z-0"
-            [style.width.%]="(10 - autoNavTimer()!) * 10"
-          ></div>
-        }
-      </button>
-    }
-  </div>
+          <span class="relative">
+            {{ quiz.hasNextChapter() ? copy.proceed : copy.backToCourse }}
+          </span>
+        </button>
+      } @else if (grade && !quiz.isLast()) {
+        <button app-button type="button" (click)="next()">{{ copy.next }}</button>
+      }
+    </div>
+  }
 </div>

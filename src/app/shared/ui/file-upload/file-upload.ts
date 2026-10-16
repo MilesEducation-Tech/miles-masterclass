@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { NgpFileUpload } from 'ng-primitives/file-upload';
 
 /**
@@ -8,7 +8,6 @@ import { NgpFileUpload } from 'ng-primitives/file-upload';
  * prompt, or keep the default text.
  */
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'button[app-file-upload]',
   hostDirectives: [
     {

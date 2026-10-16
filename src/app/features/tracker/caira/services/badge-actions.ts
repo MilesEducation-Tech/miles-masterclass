@@ -1,20 +1,39 @@
 import { inject, Service } from '@angular/core';
 import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import { CourseBadgeItem, WebinarBadgeItem } from '@core/models/caira-badge.model';
 import { Analytics } from '@core/services/analytics/analytics';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
-import { BadgeActionSource, badgeActionTarget } from '../utils/badge-action';
+import { BadgeClaim, BadgeCta } from '@features/tracker/caira/models/caira-badge-page.model';
+import { toSlug } from '@features/tracker/utils/slug.util';
+
+/** Everything a CTA needs. Every row shape on `badges/page/` satisfies it structurally. */
+export interface BadgeActionSource {
+  cta: BadgeCta;
+  badge_claim: BadgeClaim;
+  badge_name: string;
+  /** Slug source for a masterclass course URL. Webinar URLs carry no slug. */
+  course_name?: string | null;
+}
+
+/** `cta.url` is only followed when it is absolute — a relative path is ours to build, not theirs. */
+const ABSOLUTE_URL = /^https?:\/\//i;
 
 /**
- * Performs a badge card's CTA. Stateless — it holds no signals and aggregates
- * nothing; it exists only so the three surfaces that render badge cards (the
- * tracker rail and the two listings) share one claim + navigation path instead
- * of three copies of a money-adjacent flow.
+ * Performs a badge card's CTA. Stateless — it exists only so the three surfaces that render
+ * badge cards (the tracker rail and the two listings) share one navigation path.
  *
- * The *decision* lives in the pure `badgeActionTarget()`; this only executes it.
+ * ## There is no claim request any more
+ *
+ * The v2 flow claimed through `GET user-badges/:id/claim/`, keyed on `user_badge.id`. That
+ * route answers **404** and the replacement block, `badge_claim`, carries no id — only
+ * `accept_url` and `assertion_id`. So the server now mints the Credly acceptance URL itself
+ * and the client's whole job is to open it. Nothing here mutates server state, which is why
+ * `run()` returns `void` where the old one returned "should the caller reload?".
+ *
+ * How a learner claims a badge that has NOT been awarded yet is an open question with the
+ * backend — see `docs/MASTERCLASS_API_QUESTIONS.md`. Until it is answered, an enabled CTA
+ * with no target says so rather than silently doing nothing.
  */
 @Service()
 export class BadgeActions {
@@ -24,83 +43,58 @@ export class BadgeActions {
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
 
-  static fromCourse(card: CourseBadgeItem): BadgeActionSource {
-    return {
-      state: card.action_state,
-      courseType: card.course.course_type,
-      courseId: card.course.id,
-      courseTitle: card.course.title,
-      userBadge: card.user_badge,
-    };
-  }
+  async run(source: BadgeActionSource): Promise<void> {
+    const { cta, badge_claim: claim } = source;
 
-  static fromWebinar(card: WebinarBadgeItem): BadgeActionSource {
-    return {
-      state: card.action_state,
-      courseType: 'webinar',
-      courseId: card.session?.id ?? null,
-      courseTitle: card.session?.title ?? card.name,
-      userBadge: card.user_badge,
-    };
-  }
+    // `enabled` is the server's own word for "this click does something".
+    if (!cta.enabled) return;
 
-  /**
-   * Resolves to `true` when the badge's server-side state changed (a successful
-   * claim), so the caller can reload its list rather than leave a stale
-   * "Claim Badge" button on a badge that is now claimed.
-   */
-  async run(source: BadgeActionSource): Promise<boolean> {
-    const prefix = `/${this.utils.country()}/${this.utils.profession()}`;
-    const target = badgeActionTarget(source, prefix, this.router.url);
-
-    switch (target.kind) {
-      case 'navigate':
-        await this.router.navigate(target.commands, { queryParams: target.queryParams });
-        return false;
-
-      case 'external':
-        window.open(target.url, '_blank', 'noopener');
-        return false;
-
-      case 'claim':
-        return this.claim(target.userBadgeId, source);
-
-      case 'none':
-        // The v2 lists can ship `action_state: 'claim_badge'` with `user_badge: null`
-        // (no UserBadge row minted yet), and `user-badges/:id/claim/` needs that id.
-        // Say so rather than swallow the click. Backend owns the real fix — see
-        // `get_course_badge_cards`.
-        if (source.state === 'claim_badge') {
-          this.logger.warn('[caira-tracker] claim_badge card has no user_badge', {
-            course_id: source.courseId,
-            course_type: source.courseType,
-          });
-          this.notification.info(
-            'Badge not ready',
-            'This badge cannot be claimed yet. Please try again later.',
-          );
-        }
-        return false;
-    }
-  }
-
-  private async claim(userBadgeId: number, source: BadgeActionSource): Promise<boolean> {
-    try {
-      const res = await firstValueFrom(this.utils.claimBadge(userBadgeId));
+    // Awarded on Credly: go straight to the acceptance page.
+    if (claim.accept_url) {
       this.analytics.trackEvent('badge_claim', {
-        badge_id: userBadgeId,
-        course_id: source.courseId,
-        course_name: source.courseTitle,
-        course_type: source.courseType,
+        badge_name: source.badge_name,
+        course_name: source.course_name ?? null,
       });
-      const url = this.utils.claimAcceptUrl(res);
-      if (url) window.open(url, '_blank', 'noopener');
-      return true;
-    } catch (err) {
-      // ApiClient's interceptor already surfaces the error toast; just don't
-      // tell the caller to reload on a claim that never happened.
-      this.logger.error('[caira-tracker] badge claim failed', err);
-      return false;
+      this.openExternal(claim.accept_url);
+      return;
     }
+
+    // A destination the server chose — a certificate, or wherever `action` points. Only
+    // absolute URLs: a relative path would have to be interpreted against this app's route
+    // vocabulary, and the two are not the same namespace.
+    if (cta.url && ABSOLUTE_URL.test(cta.url)) {
+      this.openExternal(cta.url);
+      return;
+    }
+
+    const prefix = `/${this.utils.country()}/${this.utils.profession()}`;
+
+    // The course page owns enrolment, purchase and resume, so every "start/continue" action
+    // lands there rather than being re-implemented per state.
+    if (cta.course_id) {
+      await this.router.navigate([
+        prefix,
+        'masterclass',
+        cta.course_id,
+        toSlug(source.course_name ?? source.badge_name),
+      ]);
+      return;
+    }
+
+    if (cta.webinar_id) {
+      await this.router.navigate([prefix, 'webinar', cta.webinar_id]);
+      return;
+    }
+
+    this.logger.warn('[caira-tracker] enabled CTA with no target', {
+      badge_name: source.badge_name,
+      action: cta.action,
+    });
+    this.notification.info('Not available yet', "This badge doesn't have anything to open yet.");
+  }
+
+  /** Click-handler only, so there is no server path to guard. */
+  private openExternal(url: string): void {
+    window.open(url, '_blank', 'noopener');
   }
 }
