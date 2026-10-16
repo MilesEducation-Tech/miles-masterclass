@@ -12,6 +12,14 @@ export const CANONICAL_COUNTRY = 'us';
 export const CANONICAL_PROFESSION = 'accounting';
 export const CANONICAL_LOCALE_PREFIX = `${CANONICAL_COUNTRY}/${CANONICAL_PROFESSION}`;
 
+/**
+ * Slugs whose content differs per country (prices), so each country's URL is its own canonical
+ * and the page lists every supported country as an `hreflang` alternate, `x-default` on the
+ * canonical locale. Every other slug collapses onto `CANONICAL_LOCALE_PREFIX`. The sitemap
+ * (`src/seo.ts`) still lists only the `/us/` URL; the alternates on the page cover the rest.
+ */
+export const PER_COUNTRY_SLUGS: readonly string[] = ['payment/plan'];
+
 export interface SeoDefaultPageDef {
   slug: string;
   name: string;

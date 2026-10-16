@@ -9,12 +9,14 @@ import {
   type StateKey,
 } from '@angular/core';
 import { Meta, MetaDefinition, Title } from '@angular/platform-browser';
-import { SeoConfig, SeoPage, seoPageToConfig } from '../../models/seo.models';
+import { SeoAlternate, SeoConfig, SeoPage, seoPageToConfig } from '../../models/seo.models';
 import { SupabaseSeo } from './supabase-seo';
 
 /** Stable element ids/marker so we always target the SeoManager-owned nodes. */
 const JSON_LD_ID = 'seo-jsonld';
 const CANONICAL_REL = 'canonical';
+/** Only SeoManager writes hreflang links, so every one in the head is ours to replace. */
+const ALTERNATE_SELECTOR = "link[rel='alternate'][hreflang]";
 
 /**
  * Supabase fetch budget. Browser stays tight so the user doesn't see a
@@ -112,6 +114,7 @@ export class SeoManager {
     // 5. Canonical link / JSON-LD: managed via dedicated DOM nodes that we
     // either update in place or remove when no longer applicable.
     this.setCanonicalUrl(config.canonicalUrl);
+    this.setAlternates(config.alternates ?? []);
     this.setJsonLd(config.jsonLd);
 
     this.previousTags = tagsApplied;
@@ -125,6 +128,7 @@ export class SeoManager {
   reset(): void {
     this.removePreviousTags();
     this.removeCanonical();
+    this.setAlternates([]);
     this.removeJsonLd();
   }
 
@@ -278,7 +282,12 @@ export class SeoManager {
   private applyRowConfig(rowConfig: SeoConfig, fallback?: SeoConfig): void {
     const merged: SeoConfig = { ...rowConfig };
 
-    if (!merged.canonicalUrl && fallback?.canonicalUrl) {
+    if (fallback?.alternates?.length) {
+      // A per-country page: one row cannot hold a canonical per country, so the route's wins,
+      // together with its hreflang set.
+      merged.canonicalUrl = fallback.canonicalUrl;
+      merged.alternates = fallback.alternates;
+    } else if (!merged.canonicalUrl && fallback?.canonicalUrl) {
       merged.canonicalUrl = fallback.canonicalUrl;
     }
 
@@ -403,6 +412,19 @@ export class SeoManager {
       this.document.head.appendChild(link);
     }
     link.setAttribute('href', url);
+  }
+
+  /** Replace the hreflang set: drop every link we wrote before, then write the new ones. */
+  private setAlternates(alternates: SeoAlternate[]): void {
+    const head = this.document.head;
+    head.querySelectorAll(ALTERNATE_SELECTOR).forEach((node) => node.parentNode?.removeChild(node));
+    for (const { hreflang, href } of alternates) {
+      const link = this.document.createElement('link');
+      link.setAttribute('rel', 'alternate');
+      link.setAttribute('hreflang', hreflang);
+      link.setAttribute('href', href);
+      head.appendChild(link);
+    }
   }
 
   private removeCanonical(): void {

@@ -1,6 +1,6 @@
 import { Component, DestroyRef, computed, inject, linkedSignal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { PaymentFacade } from '@features/payment/services/payment-facade';
 import { Plan as PlanModel } from '@features/payment/models/commerce.model';
 import { PlanScrollingGallery } from '@shared/components/plan-scrolling-gallery/plan-scrolling-gallery';
@@ -11,6 +11,9 @@ import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { CartStore } from '@core/services/cart/cart-store';
+import { CountryContext } from '@core/services/country-context/country-context';
+import { LanguageContext } from '@core/services/language-context/language-context';
+import { countryName } from '@core/utils/country';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Utils } from '@shared/services/utils';
 // Type-only: UtilsDialog loads with `import()` when opened (PROMPT.md §4.4).
@@ -26,6 +29,7 @@ import { SIGNUP_DIALOG_DATA } from '@features/payment/constants/payment';
     PromoOffer,
     PageLoading,
     ErrorState,
+    RouterLink,
   ],
   templateUrl: './plan.html',
 })
@@ -36,6 +40,8 @@ export class Plan {
   private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly country = inject(CountryContext).current;
+  private readonly locale = inject(LanguageContext).current;
 
   /** One card per plan (a term of the subscription), in CAIRA's `sort_order`. */
   protected readonly plans = this.facade.plans;
@@ -43,6 +49,15 @@ export class Plan {
   protected readonly error = this.facade.plansError;
   // The boolean, never the token.
   protected readonly isLoggedIn = inject(AuthSession).isAuthenticated;
+
+  /**
+   * "Prices for India in INR": the market the plans were priced for and the currency they came back
+   * in. The currency is read off the answer, never assumed from the country: Django decides it.
+   */
+  protected readonly priceLocale = computed(() => {
+    const currency = this.plans()[0]?.price.currency;
+    return currency ? { country: countryName(this.country(), this.locale), currency } : null;
+  });
 
   /** Starts on CAIRA's default plan; a click moves it, and a new plan list resets it. */
   protected readonly selectedPlanId = linkedSignal(() => this.facade.defaultPlan()?.id ?? null);
