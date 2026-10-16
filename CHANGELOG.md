@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.9.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.8.0...v3.9.0) (2026-10-16)
+
+
+### Features
+
+* **library:** bind the instructor library and instructor page to the web API ([#150](https://github.com/MilesEducation-Tech/miles-masterclass/issues/150)) ([68a672d](https://github.com/MilesEducation-Tech/miles-masterclass/commit/68a672dee10dcd3fea4aa9046278abfd435fc576))
+
 ## [3.8.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.7.1...v3.8.0) (2026-10-15)
 
 
