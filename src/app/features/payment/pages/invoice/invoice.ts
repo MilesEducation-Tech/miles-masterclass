@@ -181,9 +181,10 @@ export class Invoice {
       this.facade.loadOrder(orderId);
     });
 
-    // Keep `?status=` in step with the order, so a shared or refreshed URL reads right.
+    // Keep `?status=` in step with the order, so a shared or refreshed URL reads right. Invoice
+    // only: the root facade still holds the last order on review, which shows the cart instead.
     effect(() => {
-      const status = this.order()?.status;
+      const status = this.isInvoice() ? this.order()?.status : undefined;
       if (!status) return;
       this.router.navigate([], {
         relativeTo: this.route,

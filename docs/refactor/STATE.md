@@ -79,6 +79,23 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - SEO for the instructor page is still deferred.
   - **Next:** the user commits; then the PR.
 
+- 🔧 **2026-10-16, NON-REFACTOR: dialogs fit phones, and `?status=` stays off review. DONE, GATES GREEN,
+  UNCOMMITTED** on `fix/MIL-XXX-dialog-overflow-review-status` (from `master` `2d78a56d`). Found while
+  verifying MIL-104 (optional billing address).
+  - **Dialogs:** about 25 dialog cards are sized `w-[95svw]` (or similar) inside `app-dialog`'s 16px gutter,
+    so at 375px the card is 356px in a 343px panel and the panel scrolls sideways. One `@layer base` rule
+    in `styles.css` caps `app-dialog > [ngpDialog] > *` at `max-width: 100%`; a card's own `max-w-*`
+    still wins, so the subscription and AI Lab cards take `max-w-[min(100%,…)]`.
+  - **`?status=`:** the invoice component also renders review, and its status-sync effect ran in both
+    modes, so review gained the root facade's last order status. It runs in invoice mode only now.
+  - **Verified (dev, headless, dummy token, commerce stubbed in `fetch`):** coupon, subscription, AI Lab
+    and profile dialogs fit at 375 (card 343 = panel, no sideways scroll); designed widths unchanged at
+    768 and 1440 (460 / 560 / 730→768 / 640). Invoice keeps `?status=pending`; review after an invoice
+    has none.
+  - **Gates (local macOS):** lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 246.63 kB,
+    only `ai-labs.css`.
+  - **Next:** the user commits (two commits, `fix(shared)` and `fix(payment)`); then the PR.
+
 - ✅ **2026-10-15, NON-REFACTOR — MIL-95, instructor library and page (`prompts/library-rebind.md` rev 3,
   approved). MERGED as #150 (`68a672d`).** Notes below are from before the merge.
   - **Subtask 3, `feat(library): bind the instructor page to instructor-detail`:** the page reads
@@ -4944,6 +4961,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-16 · NON-REFACTOR · **Dialog overflow and review `?status=` fixed** (uncommitted, `fix/MIL-XXX-dialog-overflow-review-status`): `@layer base` cap on `app-dialog` panel children, subscription and AI Lab cards `max-w-[min(100%,…)]`, status-sync effect invoice-only · 375/768/1440 measured · lint 0 errors (101 warnings), structure ✔, prettier ✔, build:prod 246.63 kB
 
 - 2026-10-15 · NON-REFACTOR · **MIL-93 header dropdowns fixed** (uncommitted, `fix/MIL-93-header-nav-dropdowns`): close outside the open item, reset `NavMenuGroup`, route change + Escape close · Playwright 1440/1024/768 all pass · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod 244.98 kB
 
