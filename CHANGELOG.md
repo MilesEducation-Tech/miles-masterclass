@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.11.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.10.0...v3.11.0) (2026-10-16)
+
+
+### Features
+
+* **payment:** make the billing address optional on review ([#157](https://github.com/MilesEducation-Tech/miles-masterclass/issues/157)) ([8b985fb](https://github.com/MilesEducation-Tech/miles-masterclass/commit/8b985fbc0084fd843b4acf4d5db94e83d002ca70))
+
+
+### Bug Fixes
+
+* **payment:** call the POST remove routes for cart lines, coupons and addresses ([#156](https://github.com/MilesEducation-Tech/miles-masterclass/issues/156)) ([ebb4502](https://github.com/MilesEducation-Tech/miles-masterclass/commit/ebb45028d029c45e313409f772da5b7aea6cb9db))
+* **shared:** fit dialogs on phones and keep ?status= off review ([#158](https://github.com/MilesEducation-Tech/miles-masterclass/issues/158)) ([d6d3010](https://github.com/MilesEducation-Tech/miles-masterclass/commit/d6d30106b70b096dd06d45d5b96c23769d59f1ae))
+
 ## [3.10.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.9.0...v3.10.0) (2026-10-16)
 
 
