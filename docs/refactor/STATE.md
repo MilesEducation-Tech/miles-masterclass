@@ -7,6 +7,68 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-15, NON-REFACTOR — MIL-95, instructor library and page (`prompts/library-rebind.md` rev 3,
+  approved). SUBTASKS 1–2 COMMITTED (`51abea3`, `73f8095`), SUBTASK 3 + BACK FIX DONE, UNCOMMITTED** on
+  `feat/MIL-95-instructor-library-binding` (from `master` `e3fc330`).
+  - **Subtask 3, `feat(library): bind the instructor page to instructor-detail`:** the page reads
+    `instructor-detail/<uuid>/` (gated on the boolean `isAuthenticated()`) and `filter/?course_type=<tab>&instructor=`
+    (one read per tab, `SKIP_LOADING`), both parsed at the boundary; no facade. Masterclass / Podcast / Micro Learning
+    tabs with horizontal `app-masterclass-course-card`s (Trailer, "i"). `instructor-hero` back, retyped, `block` host
+    (the page's `space-y-10` never applied to the inline element: production's gap bug), images left out when they
+    fail. Route `canMatch: [authGuard]`. Old numeric ids are refused before any request; the promo shows only for a
+    playable file; "Courses by …" skips "Dr.". `view_instructor` once per instructor (keyed on a `computed` id).
+  - **Back fix, `fix(shared)`, user-requested:** `app-backward` read in-app history from `document.referrer`, which only
+    a full page load sets, so Back after in-app navigation went to `/`. Now `navigation.canGoBack` (Navigation API,
+    this origin only), else the router's previous navigation; `Location.back()`. Only the library shell and the
+    instructor page use history mode; the rest pass `routePath`. Instructor page fallback: the instructor library.
+  - **Found (prompt Q6):** neither UAT promo video plays — Agnes's `video_url` is a Google Drive viewer page, Michelle's
+    `.mp4` is 403 from `masterclass-bucket-usa2`. Browser title for the page deferred to when it is public (SEO).
+  - **Verified (dev 4101, headless; signed in = dummy `ACCESS_TOKEN`, `instructor-detail/` stubbed from the real list
+    row in the export's shape, `filter/` live with the dummy token stripped):** signed out → `/auth/login?redirect=…`,
+    also as a server 302; webinar → footer Instructor Library → Back lands on `/webinar` (was home); library → Adam →
+    hero, About, LinkedIn, "Courses by Adam", 1 card linking `/masterclass/<uuid>/<slug>`; Podcast / Micro Learning →
+    one request each, "No … courses yet."; Trailer and "i" open; Back → library with its cards; Dr. Roger Mayer →
+    "Courses by Roger", 403 images hidden; Agnes → no Promo; Michelle → Promo shown; `/instructor/3665/…` → "Instructor
+    not found", no API request; unknown UUID → error with Try Again; 375 / 768 / 1440 no horizontal scroll.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 244.79 kB,
+    only `ai-labs.css`.
+  - **Seen, not in scope:** `/webinar` logs "webinar-main-page response does not match the Events contract" again on UAT.
+  - **Subtask 2, `feat(library): bind the instructor library to all-instructors-page`:** new
+    `instructor/models/instructor-library.model.ts` (`InstructorRow`, `parseInstructorLibrary`),
+    `constants/instructor-library.ts`, `utils/instructor-socials.ts` (`socialLinksOf`, shared with the hero in
+    subtask 3), `InstructorFacade` (root, `// why:`; search + page → one `httpResource`, pages in a `linkedSignal`,
+    page 1 on the loading bar), `components/instructor-card` (a real link; LinkedIn chip above it; photo vertical →
+    square → horizontal, then initials when missing **or when it fails to load**). The page says "Loading…" until the
+    first answer, on the server too, so "No instructors found." never shows while loading; the search box is seeded
+    from the facade, so Back keeps the term; Clear applies at once.
+  - **Found: 32 of 63 photos answer 403** from `storage.googleapis.com/miles-usp-bed/`
+    (`UserProjectAccountProblem`: the bucket's billing account is disabled). None has a working S3 alternative, so
+    the card falls back to initials. Backend/devops to fix (prompt Q5).
+  - **Verified (dev 4101, headless, signed out):** 20 cards, then pages 2–4 on scroll to 63 and the sentinel goes,
+    every request with `course_type=course,podcast,micro_learning&page_size=20`; "Loading…" while page 1 is held,
+    never the empty state; "adam" → one request after the debounce, 1 card; Clear → page 1 again, 20 cards; a card
+    opens `/us/accounting/instructor/<uuid>/<slug>`, LinkedIn opens in a new tab; Back keeps "alex" and its card with
+    no new request; a faked 500 → error state, Try Again recovers; SSR HTML carries "Loading…", not the empty
+    state; stubbed row with no photo and an unknown social → initials and the API's icon; 2 / 4 / 5 columns at
+    375 / 768 / 1440, no horizontal scroll, no console error besides the 403 images and the faked 500.
+  - **Known, not changed:** an instant jump past the sentinel (End key) doesn't load the next page; normal
+    scrolling does. Same as the course library.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 244.65 kB,
+    only `ai-labs.css`.
+  - **Subtask 1, `refactor(library): drop the retired instructor bindings`:** deleted `core/models/library.model.ts`
+    (`InstructorListItem`), `shared/components/cards/instructor-card`, `InstructorFacade` and `instructor-hero`, all
+    typed on the legacy `instructor/` contract (404 on UAT). The library page keeps its heading, search box and
+    "No instructors found."; the instructor page keeps its Back link. `structure-baseline.json` pruned (−12, three
+    relative-import entries).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 244.63 kB,
+    only the `ai-labs.css` warning.
+  - **Verified (dev 4101, headless, signed out, 1440):** both routes render, no console error, no request to
+    `instructor/`, no horizontal scroll; the search box takes input and Clear resets it.
+  - **`postman/` refreshed** from the 2026-10-15 export (gitignored). It carries a live-captured `instructor-detail/`
+    200, so the prompt's detail shape is no longer a guess. `docs/AUTH_API.md:5` and `docs/WEBINAR_API_QUESTIONS.md:5`
+    still point at the old folder layout; a docs follow-up.
+  - **Next:** the user commits the Back fix and subtask 3, then the PR (Story MIL-95).
+
 - 🔧 **2026-10-15, NON-REFACTOR — PR #132 review (MIL-62): rebased onto `master` and reshaped off the
   facade. CODE DONE, GATES GREEN, BROWSER CHECK OPEN, UNCOMMITTED** on `feat/MIL-62-caira-tracker-rebind`.
   - **Review (me-sachin-singh, CHANGES_REQUESTED, 5 points):** alias imports everywhere; rebase onto

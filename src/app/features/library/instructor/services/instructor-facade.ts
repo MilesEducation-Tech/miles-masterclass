@@ -1,96 +1,114 @@
 import { isPlatformBrowser } from '@angular/common';
-import { httpResource } from '@angular/common/http';
+import { HttpContext, httpResource } from '@angular/common/http';
 import {
   computed,
-  effect,
   inject,
-  Service,
   linkedSignal,
   PLATFORM_ID,
+  ResourceSnapshot,
+  Service,
   signal,
   untracked,
 } from '@angular/core';
-import { FeatureApiResponse } from '@core/models/feature.model';
-import { InstructorListItem } from '@core/models/library.model';
-import { apiUrl } from '@core/services/api-client/api-client';
-import { parseNextPage } from '@core/utils/parse-next-page';
+import { SKIP_LOADING } from '@core/models/http.model';
 import { withPreviousValue } from '@core/utils/with-previous-value';
+import {
+  INSTRUCTOR_LIBRARY_COURSE_TYPES,
+  INSTRUCTOR_LIBRARY_PAGE_SIZE,
+  INSTRUCTOR_LIBRARY_URL,
+} from '@features/library/instructor/constants/instructor-library';
+import {
+  InstructorLibraryPage,
+  InstructorRow,
+  parseInstructorLibrary,
+} from '@features/library/instructor/models/instructor-library.model';
 
 /**
- * Owns instructor-listing state for `/library/instructor-library`. Lazy by
- * `providedIn: 'root'` — the resource only fires on first injection from the
- * Instructor page, so visiting Course/Badge libraries never triggers
- * `instructor/` requests.
+ * Owns instructor-listing state for `/library/instructor-library`: one read,
+ * `all-instructors-page/`, a page of rows at a time, accumulated as the learner
+ * scrolls. Browser-only, as the course library is.
+ *
+ * The search term reaching it is already debounced by the page, so this never
+ * sees keystrokes, which is why it is an `httpResource` and not the §4.2
+ * search pipeline.
  */
+// why: root rather than route-scoped, so the search term and the pages already
+// loaded survive a visit to an instructor and the Back button.
 @Service()
 export class InstructorFacade {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  /** Debounced search term. Pages bind a debounced signal here via `setSearchKey`. */
-  readonly searchKey = signal('');
+  /** The trimmed term the list is filtered by. */
+  readonly search = signal('');
+  private readonly page = signal(1);
 
-  private readonly instructorPage = signal(1);
-
-  /**
-   * A paginated list filtered by an ALREADY-debounced term (the page debounces before
-   * `setSearchKey`), so this never sees keystrokes, which is why it is an `httpResource`
-   * and not the §4.2 search pipeline. The same call was made for leads and user-report.
-   */
-  private readonly rawInstructorResource = httpResource<FeatureApiResponse<InstructorListItem[]>>(
+  private readonly rawResource = httpResource<InstructorLibraryPage>(
     () => {
       if (!this.isBrowser) return undefined;
-      const params: Record<string, string | number> = { page: this.instructorPage() };
-      const search = this.searchKey();
-      if (search) params['search_key'] = search;
-      return { url: apiUrl('instructor/'), params };
+      const page = this.page();
+      const params: Record<string, string | number> = {
+        course_type: INSTRUCTOR_LIBRARY_COURSE_TYPES,
+        page,
+        page_size: INSTRUCTOR_LIBRARY_PAGE_SIZE,
+      };
+      const search = this.search();
+      if (search) params['search'] = search;
+      return {
+        url: INSTRUCTOR_LIBRARY_URL,
+        params,
+        // Later pages show their own "Loading…" under the grid.
+        context: page > 1 ? new HttpContext().set(SKIP_LOADING, true) : undefined,
+      };
     },
+    // The trust boundary: an answer that drifted from the contract lands in `error()`.
+    { parse: parseInstructorLibrary },
   );
 
-  private readonly instructorResource = withPreviousValue(this.rawInstructorResource);
+  /** Holds the last answer while the next page or search loads. */
+  private readonly libraryResource = withPreviousValue(this.rawResource);
 
-  readonly instructorItems = linkedSignal({
-    source: this.instructorResource.snapshot,
-    computation: (snap, previous): InstructorListItem[] => {
-      if (snap.status !== 'resolved') return previous?.value ?? [];
-      const data = snap.value?.data ?? [];
-      const page = untracked(() => this.instructorPage());
-      return page === 1 ? data : [...(previous?.value ?? []), ...data];
+  private readonly latest = computed(() =>
+    this.libraryResource.hasValue() ? this.libraryResource.value() : undefined,
+  );
+
+  /** Every page loaded so far; page 1 starts the list over. */
+  readonly instructors = linkedSignal<
+    ResourceSnapshot<InstructorLibraryPage | undefined>,
+    InstructorRow[]
+  >({
+    source: this.libraryResource.snapshot,
+    computation: (snap, previous) => {
+      if (snap.status === 'resolved' && snap.value) {
+        const { page, instructors } = snap.value;
+        return page === 1 ? instructors : [...(previous?.value ?? []), ...instructors];
+      }
+      // A new search empties the grid while its page 1 loads.
+      return untracked(this.page) === 1 ? [] : (previous?.value ?? []);
     },
   });
 
-  /** Guarded: `value()` throws on an errored resource. */
-  readonly instructorPagination = computed(() =>
-    this.instructorResource.hasValue()
-      ? this.instructorResource.value()?.pagination_data
-      : undefined,
-  );
-  readonly isInstructorLoading = computed(() => this.instructorResource.isLoading());
-  readonly instructorError = computed(() => this.instructorResource.error());
+  /**
+   * Whether any answer has arrived. Until one has, the page says "Loading…"
+   * rather than "No instructors found.", on the server too, where nothing loads.
+   */
+  readonly hasLoaded = computed(() => this.latest() !== undefined);
+  readonly hasNext = computed(() => this.latest()?.hasNext ?? false);
+  readonly isLoading = computed(() => this.libraryResource.isLoading());
+  readonly error = computed(() => this.libraryResource.error());
 
-  constructor() {
-    // Reset pagination + accumulator on search change so a fresh query starts
-    // at page 1 and doesn't append to stale results.
-    effect(() => {
-      this.searchKey();
-      untracked(() => {
-        this.instructorPage.set(1);
-        this.instructorItems.set([]);
-      });
-    });
+  setSearch(term: string): void {
+    const search = term.trim();
+    if (search === this.search()) return;
+    this.page.set(1);
+    this.search.set(search);
   }
 
-  setSearchKey(value: string): void {
-    this.searchKey.set(value.trim());
+  loadNextPage(): void {
+    if (this.isLoading() || !this.hasNext()) return;
+    this.page.update((page) => page + 1);
   }
 
-  loadNextInstructorPage(): void {
-    if (this.isInstructorLoading()) return;
-    const next = parseNextPage(this.instructorPagination()?.next_page);
-    if (next !== null) this.instructorPage.set(next);
-  }
-
-  resetInstructors(): void {
-    this.instructorItems.set([]);
-    this.instructorPage.set(1);
+  reload(): void {
+    this.rawResource.reload();
   }
 }

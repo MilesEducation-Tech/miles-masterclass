@@ -1,37 +1,37 @@
 <div class="container mx-auto px-4 py-6 space-y-10 pt-24">
-  <app-backward label="Back" fallback="/" />
+  <app-backward label="Back" [fallback]="backFallback()" />
 
-  @if (isInstructorLoading() && !instructor()) {
-    <app-page-loading message="Loading instructor…" [fullScreen]="false" />
-  } @else if (instructorError()) {
+  @if (isOldLink()) {
+    <app-error-state
+      title="Instructor not found"
+      message="This link is out of date. Find the instructor in the instructor library."
+      [showRetry]="false"
+    />
+  } @else if (profileError()) {
     <app-error-state
       title="Couldn't load instructor"
       message="We hit a snag fetching this profile. Try again in a moment."
-      (retry)="reload()"
+      (retry)="reloadProfile()"
     />
-  } @else if (instructor(); as i) {
+  } @else if (profile(); as i) {
     <app-instructor-hero [instructor]="i" />
 
-    <!-- <div
-      class="grid max-sm:grid-cols-1 gap-6"
-      [class]="i.about_me && i.promo_video ? 'grid-cols-2' : 'grid-cols-1'"
-    > -->
-    @if (i.about_me) {
+    @if (i.bio) {
       <section class="max-w-5xl space-y-3">
         <h2 class="text-2xl font-semibold text-foreground">About</h2>
         <p class="text-base text-muted-foreground whitespace-pre-line leading-relaxed">
-          {{ i.about_me }}
+          {{ i.bio }}
         </p>
       </section>
     }
 
-    @if (i.promo_video && promoVideoSource().length) {
+    @if (promoSources().length) {
       <section class="space-y-3">
         <h2 class="text-2xl font-semibold text-foreground">Promo</h2>
         <div class="w-full max-w-5xl aspect-video rounded-lg overflow-hidden bg-black">
           <!-- The box above is already aspect-video, so the placeholder fills it: no shift. -->
           @defer (on viewport; prefetch on idle) {
-            <app-video-js [videoSource]="promoVideoSource()" [config]="promoVideoConfig()" />
+            <app-video-js [videoSource]="promoSources()" [config]="promoConfig()" />
           } @placeholder {
             <div class="w-full h-full bg-black"></div>
           } @error {
@@ -42,69 +42,42 @@
         </div>
       </section>
     }
-    <!-- </div> -->
 
     <section class="space-y-4">
-      <h2 class="text-2xl font-semibold text-foreground">Courses by {{ i.first_name }}</h2>
+      <h2 class="text-2xl font-semibold text-foreground">Courses by {{ firstName() }}</h2>
 
-      <app-tabs [value]="currentTabLabel() ?? ''" (valueChange)="onTabChange($event)">
-        @for (tab of courseTypeTabs; track tab) {
+      <app-tabs [value]="activeLabel()" (valueChange)="onTabChange($event)">
+        @for (tab of tabLabels; track tab) {
           <app-tab [value]="tab" [label]="tab" />
         }
       </app-tabs>
 
-      @switch (activeTab()) {
-        @case ('masterclass') {
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-8">
-            @for (c of relatedCourses(); track c.id) {
-              <app-horizontal [card]="c" type="masterclass" />
-            } @empty {
-              @if (!isRelatedCoursesLoading()) {
-                <p class="text-center text-muted-foreground py-8">
-                  No {{ currentTabLabel() }} courses yet.
-                </p>
-              }
-            }
-          </div>
-        }
-        @case ('podcast') {
-          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-4 mt-8">
-            @for (c of relatedCourses(); track c.id) {
-              <div class="relative w-full h-full group/card">
-                <app-square [thumbnail]="c.square_thumbnail!" type="podcast" [index]="$index" />
-                <div
-                  class="absolute top-1/2 left-1/2 opacity-0 pointer-events-none scale-50 w-[110%] min-h-full h-auto -translate-x-1/2 -translate-y-1/2 origin-center group-hover/card:opacity-100 group-hover/card:pointer-events-auto group-hover/card:scale-105 transition-all duration-300 ease-out z-10 group-hover/card:z-100"
-                >
-                  <app-hover [card]="c" type="podcast" />
-                </div>
-              </div>
-            } @empty {
-              @if (!isRelatedCoursesLoading()) {
-                <p class="col-span-full text-center text-muted-foreground py-8">
-                  No {{ currentTabLabel() }} courses yet.
-                </p>
-              }
-            }
-          </div>
-        }
-        @case ('micro-learning') {
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-8">
-            @for (c of relatedCourses(); track c.id) {
-              <app-vertical [card]="c" type="micro-learning" />
-            } @empty {
-              @if (!isRelatedCoursesLoading()) {
-                <p class="col-span-full text-center text-muted-foreground py-8">
-                  No {{ currentTabLabel() }} courses yet.
-                </p>
-              }
-            }
-          </div>
-        }
-      }
-
-      @if (isRelatedCoursesLoading()) {
+      @if (coursesError()) {
+        <app-error-state
+          title="Couldn't load courses"
+          message="We couldn't load these courses. Please try again."
+          (retry)="reloadCourses()"
+        />
+      } @else if (isCoursesLoading()) {
         <div class="text-center py-6 text-muted-foreground">Loading…</div>
+      } @else if (courses().length) {
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-8">
+          @for (course of courses(); track course.id) {
+            <app-masterclass-course-card
+              [course]="course"
+              layout="horizontal"
+              [showInfo]="true"
+              (trailer)="openTrailer($event)"
+              (info)="openCourseInfo($event)"
+            />
+          }
+        </div>
+      } @else {
+        <p class="text-center text-muted-foreground py-8">No {{ activeLabel() }} courses yet.</p>
       }
     </section>
+  } @else {
+    <!-- Loading, and the server render, which never reads (browser-only). -->
+    <app-page-loading message="Loading instructor…" [fullScreen]="false" />
   }
 </div>

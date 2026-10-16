@@ -36,19 +36,22 @@
 </div>
 
 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-  @for (i of facade.instructorItems(); track i.id) {
-    <app-instructor-card [instructor]="i" (cardClicked)="onInstructorClick($event)" />
-  } @empty {
-    <!-- @if (!facade.isInstructorLoading()) { -->
-    <p class="col-span-full text-center text-muted-foreground py-8">No instructors found.</p>
-    <!-- } -->
+  @for (instructor of facade.instructors(); track instructor.id) {
+    <!-- The first row is in the first viewport, and one of its photos is the LCP. -->
+    <app-instructor-card [instructor]="instructor" [priority]="$index < 5" />
   }
 </div>
 
-@if (facade.isInstructorLoading()) {
+@if (facade.error()) {
+  <app-error-state
+    title="Failed to Load Instructors"
+    message="We couldn't load the instructors. Please try again."
+    (retry)="facade.reload()"
+  />
+} @else if (facade.isLoading() || !facade.hasLoaded()) {
   <div class="text-center py-6 text-muted-foreground">Loading…</div>
-}
-
-@if (facade.instructorPagination()?.next_page) {
+} @else if (!facade.instructors().length) {
+  <p class="text-center text-muted-foreground py-8">No instructors found.</p>
+} @else if (facade.hasNext()) {
   <div #sentinel class="h-1 w-full"></div>
 }

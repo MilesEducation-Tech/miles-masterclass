@@ -1,195 +1,207 @@
 import { isPlatformBrowser } from '@angular/common';
-import { httpResource } from '@angular/common/http';
+import { HttpContext, httpResource } from '@angular/common/http';
 import {
   Component,
   computed,
   effect,
   inject,
   input,
-  numberAttribute,
   PLATFORM_ID,
   signal,
+  untracked,
 } from '@angular/core';
+import { NgpDialogManager } from 'ng-primitives/dialog';
+import { SKIP_LOADING } from '@core/models/http.model';
+import {
+  MasterclassCourse,
+  MasterclassCourseInfoDialogData,
+} from '@core/models/masterclass-home.model';
+import type { VideoSource } from '@core/models/video-player.model';
+import { Analytics } from '@core/services/analytics/analytics';
+import { AuthSession } from '@core/services/auth-session/auth-session';
+import { MASTERCLASS_COURSE_INFO_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
 import { Backward } from '@shared/components/backward/backward';
-import { Horizontal } from '@shared/components/cards/horizontal/horizontal';
-import { Hover } from '@shared/components/cards/hover/hover';
-import { Vertical } from '@shared/components/cards/vertical/vertical';
+import { MasterclassCourseCard } from '@shared/components/cards/masterclass-course-card/masterclass-course-card';
+import { VideoJs } from '@shared/components/video-js/video-js';
+import { Utils } from '@shared/services/utils';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
-
-import { VideoJs } from '@shared/components/video-js/video-js';
-import type { VideoSource } from '@core/models/video-player.model';
-import { Content } from '@core/models/course.model';
-import { FeatureApiResponse } from '@core/models/feature.model';
-import { InstructorListItem } from '@core/models/library.model';
-import { apiUrl } from '@core/services/api-client/api-client';
-import { Analytics } from '@core/services/analytics/analytics';
-import { InstructorHero } from '../../components/instructor-hero/instructor-hero';
-import { Square } from '@shared/components/cards/square/square';
-import { Tabs } from '@shared/ui/tabs/tabs';
 import { Tab } from '@shared/ui/tabs/tab';
+import { Tabs } from '@shared/ui/tabs/tabs';
+import { InstructorHero } from '@features/library/instructor/components/instructor-hero/instructor-hero';
+import {
+  INSTRUCTOR_COURSE_TABS,
+  INSTRUCTOR_COURSES_PAGE_SIZE,
+  INSTRUCTOR_COURSES_URL,
+  INSTRUCTOR_DETAIL_URL,
+  INSTRUCTOR_ID_PATTERN,
+  INSTRUCTOR_PROMO_PLAYER,
+  INSTRUCTOR_PROMO_TYPES,
+} from '@features/library/instructor/constants/instructor-library';
+import {
+  InstructorCourseType,
+  InstructorProfile,
+  parseInstructorCourses,
+  parseInstructorProfile,
+} from '@features/library/instructor/models/instructor-library.model';
 
-type ResponseBucket = 'masterclass' | 'nano';
-type TabId = 'masterclass' | 'podcast' | 'micro-learning';
-
-interface InstructorCoursesPaginationBucket {
-  total_count: number;
-  current_page_number: number;
-  next_page: number | string | null;
-  previous_page: number | string | null;
-}
-
-interface InstructorCoursesResponse {
-  status_code: number;
-  message: string;
-  data: Record<ResponseBucket, Content[]>;
-  pagination_data: Record<ResponseBucket, InstructorCoursesPaginationBucket>;
-}
-
+/**
+ * `/instructor/:instructorId/:instructorName`: the profile from
+ * `instructor-detail/`, and "Courses by …" from `filter/?instructor=`, one read
+ * per tab. No facade: nothing here is shared, so the reads live in the page, as
+ * on `/masterclass`. The route is sign-in only while `instructor-detail/` is.
+ */
 @Component({
   selector: 'app-instructor-details',
   imports: [
     Backward,
-    Horizontal,
-    Hover,
-    Vertical,
     ErrorState,
     PageLoading,
     VideoJs,
     InstructorHero,
-    Square,
+    MasterclassCourseCard,
     Tabs,
     Tab,
   ],
   templateUrl: './instructor-details.html',
 })
 export class InstructorDetails {
-  readonly instructorId = input(0, { transform: numberAttribute });
-
-  protected readonly courseTypeTabs = ['Masterclass', 'Podcast', 'Micro Learning'] as const;
-
-  private readonly labelToTab: Record<string, TabId> = {
-    Masterclass: 'masterclass',
-    Podcast: 'podcast',
-    'Micro Learning': 'micro-learning',
-  };
-
-  private readonly tabToLabel: Record<TabId, string> = {
-    masterclass: 'Masterclass',
-    podcast: 'Podcast',
-    'micro-learning': 'Micro Learning',
-  };
-
+  private readonly auth = inject(AuthSession);
   private readonly analytics = inject(Analytics);
+  private readonly utils = inject(Utils);
+  private readonly dialogs = inject(NgpDialogManager);
+  private readonly courseInfoDialog = inject(MASTERCLASS_COURSE_INFO_DIALOG);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  protected readonly activeTab = signal<TabId>('masterclass');
+  /** The `:instructorId` route param. */
+  readonly instructorId = input('');
 
-  private readonly instructorResource = httpResource<FeatureApiResponse<InstructorListItem>>(() => {
-    const id = this.instructorId();
-    return this.isBrowser && id ? apiUrl(`instructor/${id}/`) : undefined;
-  });
+  /** Where Back goes when no page of this site opened this one. */
+  protected readonly backFallback = computed(() =>
+    this.utils.localePath('library/instructor-library'),
+  );
+
+  /** The id when it is a UUID; an old numeric link never reaches the API. */
+  private readonly id = computed(() =>
+    INSTRUCTOR_ID_PATTERN.test(this.instructorId()) ? this.instructorId() : null,
+  );
+  protected readonly isOldLink = computed(() => this.id() === null);
+
+  // ---- Profile -------------------------------------------------------------
+
+  private readonly profileResource = httpResource<InstructorProfile>(
+    () => {
+      const id = this.id();
+      // `authGuard` keeps signed-out visitors off the route; the boolean also
+      // idles the read if the session ends while the page is open.
+      if (!this.isBrowser || !id || !this.auth.isAuthenticated()) return undefined;
+      return `${INSTRUCTOR_DETAIL_URL}${id}/`;
+    },
+    // The trust boundary: an answer that drifted from the contract lands in `error()`.
+    { parse: parseInstructorProfile },
+  );
 
   /** Guarded: `value()` throws on an errored resource. */
-  protected readonly instructor = computed(() =>
-    this.instructorResource.hasValue() ? (this.instructorResource.value()?.data ?? null) : null,
+  protected readonly profile = computed(() =>
+    this.profileResource.hasValue() ? this.profileResource.value() : null,
   );
-  protected readonly isInstructorLoading = computed(() => this.instructorResource.isLoading());
-  protected readonly instructorError = computed(() => this.instructorResource.error());
+  protected readonly profileError = computed(() => this.profileResource.error());
 
-  // Single fetch — response groups courses into `{ masterclass, nano }`. The
-  // `masterclass` bucket further mixes Masterclass and Podcast items, told
-  // apart by each item's `course_type` field ("Audio"/"podcast" → Podcast,
-  // everything else → Masterclass). Tab switching is a client-side filter.
-  private readonly relatedCoursesResource = httpResource<InstructorCoursesResponse>(() => {
-    const id = this.instructorId();
-    if (!this.isBrowser || !id) return undefined;
-    return { url: apiUrl(`instructor/${id}/courses/`), params: { page: 1 } };
+  /** "Courses by …": the first word of the name that is not a title such as "Dr.". */
+  protected readonly firstName = computed(() => {
+    const words = this.profile()?.name.split(/\s+/).filter(Boolean) ?? [];
+    return words.find((word) => !word.endsWith('.')) ?? words[0] ?? '';
   });
 
-  /** The grouped courses, or `undefined`. Guarded: `value()` throws on an errored resource. */
-  private readonly relatedGroups = computed(() =>
-    this.relatedCoursesResource.hasValue() ? this.relatedCoursesResource.value()?.data : undefined,
-  );
-
-  private readonly isPodcast = (c: Content): boolean => {
-    const ct = (c.course_type ?? '').toLowerCase();
-    return ct === 'audio' || ct === 'podcast';
-  };
-
-  private readonly masterclassItems = computed<Content[]>(() => {
-    const items = this.relatedGroups()?.masterclass ?? [];
-    return items.filter((c) => c.course_type.toLowerCase() === 'video');
-  });
-
-  private readonly podcastItems = computed<Content[]>(() => {
-    const items = this.relatedGroups()?.masterclass ?? [];
-    return items.filter((c) => this.isPodcast(c));
-  });
-
-  private readonly microLearningItems = computed<Content[]>(() => this.relatedGroups()?.nano ?? []);
-
-  protected readonly relatedCourses = computed<Content[]>(() => {
-    switch (this.activeTab()) {
-      case 'masterclass':
-        return this.masterclassItems();
-      case 'podcast':
-        return this.podcastItems();
-      case 'micro-learning':
-        return this.microLearningItems();
-    }
-  });
-
-  protected readonly isRelatedCoursesLoading = computed(() =>
-    this.relatedCoursesResource.isLoading(),
-  );
-
-  protected readonly currentTabLabel = computed(() => this.tabToLabel[this.activeTab()]);
-
-  protected readonly promoVideoSource = computed<VideoSource[]>(() => {
-    const url = this.instructor()?.promo_video;
+  /** The promo, when `video_url` is a file the player can play; otherwise none. */
+  protected readonly promoSources = computed<VideoSource[]>(() => {
+    const url = this.profile()?.video_url;
     if (!url) return [];
-    const isHls = url.toLowerCase().endsWith('.m3u8');
-    return [{ src: url, type: isHls ? 'application/x-mpegURL' : 'video/mp4' }];
+    const extension = URL.parse(url)?.pathname.split('.').pop()?.toLowerCase() ?? '';
+    const type = INSTRUCTOR_PROMO_TYPES[extension];
+    return type ? [{ src: url, type }] : [];
   });
 
-  protected readonly promoVideoConfig = computed(() => ({
-    controls: true,
-    autoplay: false,
-    fluid: true,
-    responsive: true,
-    preload: 'metadata' as const,
-    poster: this.instructor()?.horizontal_thumbnail ?? undefined,
+  protected readonly promoConfig = computed(() => ({
+    ...INSTRUCTOR_PROMO_PLAYER,
+    poster: this.profile()?.horizontal_image_url ?? undefined,
   }));
 
+  // ---- Courses -------------------------------------------------------------
+
+  protected readonly tabs = INSTRUCTOR_COURSE_TABS;
+  protected readonly tabLabels = this.tabs.map((tab) => tab.label);
+  protected readonly activeTab = signal<InstructorCourseType>('course');
+  protected readonly activeLabel = computed(
+    () => this.tabs.find((tab) => tab.courseType === this.activeTab())?.label ?? '',
+  );
+
+  private readonly coursesResource = httpResource<MasterclassCourse[]>(
+    () => {
+      const id = this.id();
+      if (!this.isBrowser || !id) return undefined;
+      return {
+        url: INSTRUCTOR_COURSES_URL,
+        params: {
+          course_type: this.activeTab(),
+          instructor: id,
+          page_size: INSTRUCTOR_COURSES_PAGE_SIZE,
+        },
+        // The section shows its own "Loading…".
+        context: new HttpContext().set(SKIP_LOADING, true),
+      };
+    },
+    { parse: parseInstructorCourses },
+  );
+
+  /** Guarded: `value()` throws on an errored resource. */
+  protected readonly courses = computed(() =>
+    this.coursesResource.hasValue() ? this.coursesResource.value() : [],
+  );
+  protected readonly isCoursesLoading = computed(() => this.coursesResource.isLoading());
+  protected readonly coursesError = computed(() => this.coursesResource.error());
+
+  /** Changes only with the instructor, not when the same profile reloads. */
+  private readonly profileId = computed(() => this.profile()?.id ?? null);
+
   constructor() {
-    // Fire `view_instructor` once the instructor profile resolves (guard against
-    // the resource re-emitting for the same instructor).
-    let sentId = 0;
+    // `view_instructor` once per instructor shown.
     effect(() => {
-      const ins = this.instructor() as {
-        id?: number;
-        first_name?: string;
-        last_name?: string;
-        name?: string;
-      } | null;
-      if (!ins?.id || sentId === ins.id) return;
-      sentId = ins.id;
-      this.analytics.trackEvent('view_instructor', {
-        instructor_id: ins.id,
-        instructor_name:
-          [ins.first_name, ins.last_name].filter(Boolean).join(' ').trim() || ins.name || '',
-      });
+      const id = this.profileId();
+      if (!id) return;
+      untracked(() =>
+        this.analytics.trackEvent('view_instructor', {
+          instructor_id: id,
+          instructor_name: this.profile()?.name ?? '',
+        }),
+      );
     });
   }
 
-  onTabChange(label: string) {
-    const tab = this.labelToTab[label];
-    if (tab) this.activeTab.set(tab);
+  protected onTabChange(label: string): void {
+    const tab = this.tabs.find((t) => t.label === label);
+    if (tab) this.activeTab.set(tab.courseType);
   }
 
-  reload() {
-    this.instructorResource.reload();
-    this.relatedCoursesResource.reload();
+  protected reloadProfile(): void {
+    this.profileResource.reload();
+  }
+
+  protected reloadCourses(): void {
+    this.coursesResource.reload();
+  }
+
+  protected openTrailer(course: MasterclassCourse): void {
+    void this.utils.openVideoDialog(course.horizontal_trailer_url, course.title);
+  }
+
+  /**
+   * The "i" dialog, as on the course library: it belongs to the offerings
+   * feature, so it comes through the token `app.config.ts` binds.
+   */
+  protected async openCourseInfo(course: MasterclassCourse): Promise<void> {
+    this.dialogs.open<MasterclassCourseInfoDialogData>(await this.courseInfoDialog(), {
+      data: { course },
+    });
   }
 }
