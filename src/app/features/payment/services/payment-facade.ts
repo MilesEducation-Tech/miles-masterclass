@@ -341,9 +341,9 @@ export class PaymentFacade {
     });
   }
 
-  /** A5. An address any order uses can't be deleted (409); the learner sees why. */
+  /** A5 (`POST …/remove/`). An address any order uses can't be deleted (409); the learner sees why. */
   deleteAddress(id: string): void {
-    const route = COMMERCE_ROUTES.deleteAddress;
+    const route = COMMERCE_ROUTES.removeAddress;
     this.http.call({ ...route, path: route.path.replace(':address_id', id) }).subscribe({
       next: () => {
         // `selectedAddressId` is linked to the list and moves off a deleted address by itself.
