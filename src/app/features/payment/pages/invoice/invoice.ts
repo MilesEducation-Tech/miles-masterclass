@@ -21,7 +21,6 @@ import { formatAddress } from '@features/payment/utils/address-format';
 import { paymentDisplayStatus } from '@features/payment/utils/order-status';
 import { CartDisplayItem, CartItem } from '@features/payment/components/cart-item/cart-item';
 import { PriceOverview } from '@features/payment/components/price-overview/price-overview';
-import { BillingAddress } from '@features/payment/components/billing-address/billing-address';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { Utils } from '@shared/services/utils';
 import { Analytics } from '@core/services/analytics/analytics';
@@ -40,7 +39,6 @@ import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-d
     PaymentStatus,
     CartItem,
     PriceOverview,
-    BillingAddress,
     ErrorState,
     Button,
     NgIconComponent,
@@ -124,6 +122,11 @@ export class Invoice {
     return address ? formatAddress(address) : '';
   });
 
+  /** Review: the address Pay would put on the cart, summarised above the terms. Optional. */
+  protected readonly selectedAddress = this.facade.selectedAddress;
+  protected readonly addressesLoading = this.facade.addressesLoading;
+  protected readonly formatAddress = formatAddress;
+
   readonly currencyCode = computed(() =>
     this.isInvoice() ? (this.order()?.currency ?? '') : (this.cart()?.currency ?? ''),
   );
@@ -152,15 +155,11 @@ export class Invoice {
   readonly termsAccepted = signal(false);
 
   /**
-   * Pay waits for the terms, a billing address (picked or saved on this page), a closed
-   * address form, and no checkout already in flight.
+   * Pay waits for the terms, a closed address form, and no checkout already in flight. The
+   * billing address is optional: CAIRA checks out without one.
    */
   readonly canPay = computed(
-    () =>
-      this.termsAccepted() &&
-      !this.paying() &&
-      !this.facade.isEditingAddress() &&
-      !!this.facade.selectedAddressId(),
+    () => this.termsAccepted() && !this.paying() && !this.facade.isEditingAddress(),
   );
 
   /** Placeholder row count for the loading skeleton — no meaning beyond "a few". */
@@ -274,8 +273,9 @@ export class Invoice {
   }
 
   /**
-   * K1, once the picked address is on the cart (checkout copies it onto the order). Stripe
-   * takes over from there, or the order's own page opens (free, or no session).
+   * K1, once a picked address is on the cart (checkout copies it onto the order); with none
+   * picked, K1 straight away. Stripe takes over from there, or the order's own page opens
+   * (free, or no session).
    */
   private pay(): void {
     const checkout = () =>
@@ -288,6 +288,10 @@ export class Invoice {
     } else {
       checkout();
     }
+  }
+
+  protected openAddressDialog(): void {
+    void this.facade.openAddressDialog();
   }
 
   protected retry(): void {

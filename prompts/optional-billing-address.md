@@ -1,6 +1,7 @@
 # Commerce remove routes, and an optional billing address
 
-**Status:** revision 1, 2026-10-16, approved in plan mode. PR 1 implemented; PR 2 next; PR 3 blocked.
+**Status:** revision 1, 2026-10-16, approved in plan mode. PR 1 committed (MIL-103, `79579185`); PR 2
+implemented; PR 3 blocked.
 
 **Why:** two changes from the backend and product on 2026-10-16.
 
@@ -150,7 +151,9 @@ and re-reads it, so Customer Details and the PDF show it. Closing with X leaves 
 
 - New `features/payment/dialogs/address-dialog/address-dialog.ts|html`: the coupon dialog's shell, heading
   "Billing address", a line "Optional. It appears on your invoice.", a scrolling body with
-  `<app-billing-address (saved)="done()" />`, a Done button. `injectDialogRef<void, string | null>()`.
+  `<app-billing-address (saved)="done()" />`, a Done button (disabled while the form is open).
+  `injectDialogRef<void, string | null>()`. The card is `w-full`: the coupon dialog's `w-[95svw]` card
+  overflows its `p-4` overlay at 375 px and the panel scrolls sideways.
 - `components/billing-address/`: `saved = output<void>()`, emitted after a successful create or update. The
   empty card's "required" copy becomes optional.
 - `services/payment-facade.ts`: `selectedAddress` computed; `openAddressDialog()` returns the dialog ref.

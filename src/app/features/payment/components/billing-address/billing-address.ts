@@ -4,6 +4,7 @@ import {
   computed,
   inject,
   linkedSignal,
+  output,
   resource,
   signal,
 } from '@angular/core';
@@ -86,9 +87,9 @@ function toInput(f: AddressForm): AddressInput {
 }
 
 /**
- * The billing address picker + form, shown on the review step (there is no separate
- * billing step). The pick lives in `PaymentFacade.selectedAddressId`; the review page
- * puts it on the cart when the learner pays.
+ * The billing address picker + form, inside `AddressDialog`. The pick lives in
+ * `PaymentFacade.selectedAddressId`; the review page puts it on the cart when the learner
+ * pays. `saved` fires once the server accepted a new or edited address.
  */
 @Component({
   selector: 'app-billing-address',
@@ -107,6 +108,8 @@ export class BillingAddress {
 
   readonly showForm = this.facade.isEditingAddress;
   readonly editingAddressId = signal<string | null>(null);
+
+  readonly saved = output<void>();
 
   readonly initialFormState = linkedSignal<AddressForm>(() => ({ ...EMPTY_FORM }));
 
@@ -229,10 +232,14 @@ export class BillingAddress {
 
     const input = toInput(this.billingForm().value());
     const editingId = this.editingAddressId();
+    const onDone = () => {
+      this.cancelEditing();
+      this.saved.emit();
+    };
     if (editingId) {
-      this.facade.updateAddress(editingId, input, () => this.cancelEditing());
+      this.facade.updateAddress(editingId, input, onDone);
     } else {
-      this.facade.saveAddress(input, () => this.cancelEditing());
+      this.facade.saveAddress(input, onDone);
     }
   }
 }

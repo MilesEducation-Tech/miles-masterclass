@@ -9,8 +9,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 - 🔧 **2026-10-16, NON-REFACTOR: commerce remove routes and an optional billing address**
   (`prompts/optional-billing-address.md` rev 1, approved in plan mode). Three tickets, three PRs.
-  - **PR 1, `fix(payment): call the POST remove routes for cart lines, coupons and addresses`. DONE,
-    GATES GREEN, UNCOMMITTED** on `fix/MIL-XXX-commerce-remove-routes` (from `master` `2d78a56d`).
+  - **PR 1, `fix(payment): call the POST remove routes for cart lines, coupons and addresses`.
+    COMMITTED** as `79579185` on `fix/MIL-103-commerce-remove-routes` (from `master` `2d78a56d`).
     - CAIRA withdrew `DELETE` on 2026-10-14. C4, D2 and A5 now call `POST …/remove/`. The A5 key is
       `removeAddress`, typed `{address_id, deleted}`. A4 is unchanged. `docs/COMMERCE_API.md` records it.
     - **Verified (dev, headless, dummy token, commerce responses stubbed in `fetch`):** each request is a
@@ -18,8 +18,26 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       cart. The A5 409 shows its message and keeps the address; a 200 removes it.
     - **Gates (local macOS):** lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` only
       `ai-labs.css`.
-  - **PR 2, `feat(payment): make the billing address optional on review`:** next, on its own branch
-    once PR 1 is committed.
+  - **PR 2, `feat(payment): make the billing address optional on review`. DONE, GATES GREEN,
+    UNCOMMITTED** on `feat/MIL-XXX-optional-billing-address` (stacked on `79579185`).
+    - New `dialogs/address-dialog/` wraps the existing `BillingAddress` (new `saved` output). Review
+      shows "Billing address (optional)" above the terms: the picked address with "Change", or
+      "+ Add billing address" once the list has loaded. `canPay` no longer needs an address. The
+      facade has `selectedAddress` and `openAddressDialog()`, whose ref closes with the picked id
+      (Done or a save) or nothing (X), for PR 3.
+    - **Verified (dev, headless, dummy token, commerce stubbed in `fetch`):** no address → Pay
+      enabled → K1 `{cart_id}` with no C5. Add in the dialog → A2 body as typed → dialog closes →
+      row shows it. Change → pick another → Done → row updates → Pay sends C5 then K1. X keeps the
+      pick. Done is disabled while the form is open. 375 / 768 / 1440: no horizontal scroll; the
+      row stacks at 375. The dialog chunk is lazy and separate from the invoice chunk.
+    - **Gates (local macOS):** lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod`
+      246.61 kB, only `ai-labs.css`.
+    - **Seen, not in scope:**
+      - The coupon dialog (and the profile dialog) size their card `w-[95svw]` inside a `p-4`
+        overlay, so at 375 px the panel scrolls sideways and shows a striped scrollbar. The address
+        dialog uses `w-full` to avoid it.
+      - The invoice component's `?status=` effect also runs in review mode, so after visiting an
+        invoice, `/payment/review` gains `?status=<last order>`. Harmless, but wrong.
   - **PR 3, `feat(payment): ask for the billing address on the invoice page`:** ⛔ blocked. No route sets
     an order's billing address (C5 is 409 after checkout). The prompt assumes
     `PATCH commerce/order/{id}/` until the backend confirms it.
