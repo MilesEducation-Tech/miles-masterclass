@@ -222,14 +222,20 @@ export interface WebinarCard {
   /** `subject` as an addressable object. See `WebinarSubjectDetails`. */
   subject_details: WebinarSubjectDetails | null;
   level_details: WebinarLevelDetails | null;
-  /** Full public URL, or `''`. Never null, never a bare storage key. */
-  horizontal_thumbnail: string;
+  /**
+   * Full public URL, `''`, or `null`: Postman says never null, but UAT sends
+   * `null` for both images on a card with none (1 of 7 cards on 2026-10-19),
+   * and a strict guard here rejected the whole feed. Every reader falls through
+   * on a falsy value. Never a bare storage key.
+   */
+  horizontal_thumbnail: string | null;
   /**
    * Postman says `''` when unset, but UAT sends `null` (10 of 14 cards on
    * 2026-10-09). Every reader already falls through on a falsy value.
    */
   vertical_thumbnail: string | null;
-  square_image: string;
+  /** As `horizontal_thumbnail`: `null` on UAT despite the contract. */
+  square_image: string | null;
   fields_of_study: FieldOfStudy[];
   /**
    * The SUM of `fields_of_study[].cpe_credit`. `null` — not `0` — when nothing
@@ -504,9 +510,9 @@ export function isWebinarCard(v: unknown): v is WebinarCard {
     isStrOrNull(v['subject']) &&
     (v['subject_details'] === null || isSubjectDetails(v['subject_details'])) &&
     (v['level_details'] === null || isLevelDetails(v['level_details'])) &&
-    isStr(v['horizontal_thumbnail']) &&
+    isStrOrNull(v['horizontal_thumbnail']) &&
     isStrOrNull(v['vertical_thumbnail']) &&
-    isStr(v['square_image']) &&
+    isStrOrNull(v['square_image']) &&
     Array.isArray(v['fields_of_study']) &&
     v['fields_of_study'].every(isFieldOfStudy) &&
     isNumOrNull(v['total_cpe_credits'])
