@@ -40,10 +40,16 @@
               [style.backgroundColor]="view.accent"
               aria-hidden="true"
             ></span>
-            <!-- `allocated_on` is a bare YYYY-MM-DD in UTC; without the timezone argument every
-                 learner west of Greenwich reads it a day early. -->
+            <!-- Rendered in the viewer's local timezone, by review decision (PR #174): dates and
+                 times across the app read local, and this column follows that rule rather than
+                 being the one exception.
+
+                 Known consequence, accepted: `allocated_on` is a bare YYYY-MM-DD that the API
+                 defines as a UTC calendar date, so west of Greenwich it parses to the previous
+                 day — a 2026-01-01 award returned by `?year=2026` prints "Dec 31, 2025". If that
+                 turns up in a compliance report, the fix is the `: 'UTC'` argument here. -->
             <span class="text-sm whitespace-nowrap text-neutral-200">
-              {{ view.raw.allocated_on | date: 'MMM d, y' : 'UTC' }}
+              {{ view.raw.allocated_on | date: 'MMM d, y' }}
             </span>
           </div>
 
