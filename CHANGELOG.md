@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.13.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.12.0...v3.13.0) (2026-10-19)
+
+
+### Features
+
+* **cpe-tracker:** bind the portfolio summary and credits table to web-api/v1 ([#174](https://github.com/MilesEducation-Tech/miles-masterclass/issues/174)) ([3076278](https://github.com/MilesEducation-Tech/miles-masterclass/commit/307627847c5e36b2fa53db540ce8e397e875702b))
+* **offerings:** bind the masterclass course feedback to the web API ([#178](https://github.com/MilesEducation-Tech/miles-masterclass/issues/178)) ([ad5200a](https://github.com/MilesEducation-Tech/miles-masterclass/commit/ad5200a22fd5cc3e02405aa52988a3e037e4fd45))
+* **offerings:** download the masterclass certificate after feedback ([#179](https://github.com/MilesEducation-Tech/miles-masterclass/issues/179)) ([28d96f1](https://github.com/MilesEducation-Tech/miles-masterclass/commit/28d96f1a648005aef6e4183d881bc176ae09969c))
+* **offerings:** show the masterclass assessment report from the web API ([#177](https://github.com/MilesEducation-Tech/miles-masterclass/issues/177)) ([3d1d4d5](https://github.com/MilesEducation-Tech/miles-masterclass/commit/3d1d4d52e809f4db556bb328d267f3f206b02241))
+* **offerings:** start and submit the masterclass final assessment on the web API ([#175](https://github.com/MilesEducation-Tech/miles-masterclass/issues/175)) ([bf0b434](https://github.com/MilesEducation-Tech/miles-masterclass/commit/bf0b4347fb731a1bffed82c33877365821f96472))
+
 ## [3.12.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.11.0...v3.12.0) (2026-10-19)
 
 
