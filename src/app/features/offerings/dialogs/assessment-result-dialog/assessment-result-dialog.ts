@@ -14,8 +14,8 @@ export interface AssessmentResultData {
   passingScore?: number;
 }
 
-/** A pass goes back to the course; the detailed report joins it with the report page (MIL-109). */
-export type AssessmentResultAction = 'course' | 'retake';
+/** A pass opens the report or goes back to the course; a fail retakes or goes back. */
+export type AssessmentResultAction = 'course' | 'retake' | 'report';
 
 @Component({
   selector: 'app-assessment-result-dialog',

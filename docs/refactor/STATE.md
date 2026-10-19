@@ -7,6 +7,56 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-19, NON-REFACTOR — MIL-109 (Story MIL-107), the masterclass assessment report on the web API.
+  PLAN APPROVED, DONE, GATES GREEN, COMMITTED; REBASED ON `master` `3076278`**
+  (`prompts/masterclass-assessment-report.md` rev 1), on `feat/MIL-109-assessment-report` (cut from `master`
+  `bf0b434`). The only conflict was this file: #174's entry is kept, below this one.
+  - **Reads, both keyed by course, on `FinalAssessmentFacade`, opted into by the report page (`openReport`):**
+    - `assessment-report/` for the state (`passed` / `failed` / `not_attempted`), the score, the counts, the pass
+      mark and `feedback_withheld`. Its `answers[]` is empty in every capture, so it is not read.
+    - `assessment-result/` for the review. It is requested only once the report shows an attempt, because it 404s
+      before one.
+    - `toReviewItems()` drops every correct answer and explanation when `feedback_withheld` is set.
+  - **Route:** `final-assessment/report`, with no `:sessionId`. It is client-rendered (`app.routes.server.ts`) and
+    keeps `authGuard`.
+  - **Page:**
+    - The states: loading, report error (Try again), no assessment, not attempted (Take Final Assessment when
+      allowed), and attempted.
+    - The attempted state shows the summary `dl`, Retake on a fail, and the review: `app-accordion` `multiple`,
+      Correct / Incorrect / Skipped badges, and a "Show wrong answers only" `app-switch`.
+    - A review error shows inline, and the summary stays.
+  - **Entry points:**
+    - The pass dialog: "View Detailed Report" (new `'report'` action).
+    - The hero: "View Report" beside the main button when signed in with `final_assessment_submitted`. That field
+      was added to the course-detail model and guard; it is present `pre_login` on UAT.
+  - **Shared:**
+    - `AccordionItem` gains an optional `[accordionTrailing]` slot, with a story.
+    - `isBoolOrNull` moves to `contract-guards.ts`.
+  - **Size:** +717 / −31 across 17 files, over the plan's ~450 estimate; most of it is the page template and the
+    model.
+  - **Gates (local macOS):** tsc 0; Storybook tsc 0; `pnpm lint` 0 errors (98 warnings); structure ✔; Prettier ✔;
+    `build:prod` 240.65 kB initial, only `ai-labs.css`.
+  - **Verified (dev 4101, headless, dummy token, report and result stubbed from Postman's shapes):**
+    - **Requests:** hero → report makes one report read and one result read.
+    - **Passed:** summary 91.7% / 1/3 / 70% / skipped 1 / Oct 19, 2026 / 2 attempts. A wrong answer shows the
+      correct answer and the explanation. Skipped shows "Not answered". Several items stay open. Wrong-only leaves
+      2, and the empty case says "Every answer was correct."
+    - **Failed + withheld:** the note shows, there is no correct answer or explanation, and Retake shows.
+    - **Not attempted:** no result read, and Take Final Assessment shows.
+    - **Other states:** no assessment; report 500 → Try again recovers; result 409 → the inline message, with the
+      summary kept.
+    - **Navigation:** 375 px with no overflow; Back → course; pass dialog → View Detailed Report → the report.
+    - **Signed out:** no View Report, and the URL goes to `/auth/login?redirect=…`.
+    - **Console:** only the stubbed refusals.
+    - **Not checked:** a live UAT run with a real attempt (the user's step), which should also capture the report's
+      `answers[]`.
+  - **Hand test, 2026-10-19:**
+    - The user has a stubbed window on dev 4101, from `.playwright-mcp/manual-mil109.js`.
+    - The window grades 5 Excel questions (70% passes) and keeps each attempt for the report and the hero flags.
+  - **Contrast fix from the user's review:** the result dialog's "Passing Score: 70%" was `text-xs text-gray-400` on
+    the `bg-gray-50` score box, about 2.5:1. It is now `text-sm font-medium text-gray-600`, about 7:1. Checked in the
+    user's window; Prettier, lint and structure ✔. Same file as before, so the commit 2 file list is unchanged.
+
 - 🔧 **2026-10-19, NON-REFACTOR — PR #174 review: award dates render in LOCAL time, not UTC.
   CHANGED ON YOUR CALL, UNCOMMITTED** on `feat/MIL-100-cpe-tracker`.
   - **Reviewer (me-sachin-singh):** "for all the date and time keep local timezone not explicit UTC".
@@ -33,10 +83,10 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     `ai-labs.css` warning.
   - **Needs a commit + push to reach PR #174** — per your rule I stop at staged.
 
-- 🟡 **2026-10-19, NON-REFACTOR — MIL-108 (Story MIL-107), start and submit the masterclass final assessment
-  on the web API. PLAN APPROVED (`4328b09`); COMMIT 1 COMMITTED (`dbabd75`); COMMIT 2 DONE, GATES GREEN,
-  UNCOMMITTED** (`prompts/masterclass-final-assessment-exam.md` rev 1), on `feat/MIL-108-assessment-exam` (from
-  `master` `795819d`).
+- ✅ **2026-10-19, NON-REFACTOR — MIL-108 (Story MIL-107), start and submit the masterclass final assessment
+  on the web API. MERGED as #175 (`bf0b434`).** History below: plan `4328b09`, commit 1 `dbabd75`, commit 2
+  `b4330e1`, then the `master` merge and the dialog-width fix (`prompts/masterclass-final-assessment-exam.md` rev 1),
+  on `feat/MIL-108-assessment-exam` (from `master` `795819d`).
   - **Commit 2, `feat(offerings): start and submit the masterclass final assessment on the web API`:**
     - **New `models/final-assessment.model.ts`:**
       - paper, start and outcome types
@@ -5260,6 +5310,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-19 · NON-REFACTOR · **MIL-109 rebased on `master` `3076278`** (user runs it in Desktop; STATE.md the only conflict, both "Now" entries kept) · report page on `assessment-report` + `assessment-result`, View Report on the pass dialog and hero, passing-score contrast fix · tsc 0, lint 0 errors, structure ✔, build:prod 240.65 kB · headless scenarios pass; user hand-tested pass → report
 
 - 2026-10-19 · NON-REFACTOR · **MIL-108: `master` `2364aee` merged in** (staged, user continues the merge in Desktop): 6 conflicts (3 routes, facade, STATE.md, baseline); analytics calls dropped with the deleted service · tsc 0, lint 0 errors, structure ✔, build:prod 240.57 kB · headless scenarios pass again; signed-out exam → sign-in
 

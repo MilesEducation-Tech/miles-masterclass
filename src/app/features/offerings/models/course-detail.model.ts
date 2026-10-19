@@ -23,6 +23,7 @@ import { AssessmentSubmitBody } from '@features/offerings/models/final-assessmen
 import {
   contractError,
   isBool,
+  isBoolOrNull,
   isNum,
   isNumOrNull,
   isObject,
@@ -60,6 +61,10 @@ export interface CourseDetailApi {
   assessmentQuestions: string;
   /** `POST`, `:id` is the course UUID: scores a sitting. */
   assessmentSubmit: RouteConfig<AssessmentSubmitBody, unknown>;
+  /** `GET <url><course uuid>/`: the learner's final assessment state and latest score. */
+  assessmentReport: string;
+  /** `GET <url><course uuid>/`: the latest attempt, question by question. */
+  assessmentResult: string;
   /** The course page's URL segment: `/:country/:profession/<segment>/:id/:slug`. */
   urlSegment: string;
 }
@@ -289,6 +294,12 @@ export interface MasterclassCourseDetail {
    * client derives it; it is `false` pre-login and in Preview mode.
    */
   show_final_assessment: boolean;
+  /**
+   * The learner has a scored final assessment, so the report has something to
+   * show. Undocumented whether a fail counts too; the report page renders
+   * either. `false` pre-login.
+   */
+  final_assessment_submitted: boolean;
 }
 
 /** `chapter-start/`'s `data`, as far as the chapter page reads it. */
@@ -392,8 +403,6 @@ function isLearningObjective(v: unknown): v is MasterclassLearningObjective {
 function isTopic(v: unknown): v is MasterclassTopic {
   return isObject(v) && isStr(v['id']) && isStr(v['name']);
 }
-
-const isBoolOrNull = (v: unknown): v is boolean | null => v === null || isBool(v);
 
 function isChapterProgress(v: unknown): v is MasterclassChapterProgress {
   return (
@@ -525,7 +534,8 @@ function isApiCourseDetail(v: unknown): v is ApiCourseDetail {
     isCourseMode(v['course_mode']) &&
     isStrOrNull(v['course_pop_up_remark']) &&
     isStr(v['exam_rules']) &&
-    isBool(v['show_final_assessment'])
+    isBool(v['show_final_assessment']) &&
+    isBool(v['final_assessment_submitted'])
   );
 }
 

@@ -237,6 +237,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
     );
     const action = await firstValueFrom(ref.afterClosed);
     if (action === 'retake') void this.facade.start();
+    else if (action === 'report') this.facade.viewReport();
     else if (action === 'course') this.backToCourse();
   }
 }

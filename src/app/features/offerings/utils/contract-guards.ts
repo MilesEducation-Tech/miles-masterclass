@@ -18,6 +18,7 @@ export const isNum = (v: unknown): v is number => typeof v === 'number' && Numbe
 export const isBool = (v: unknown): v is boolean => typeof v === 'boolean';
 export const isStrOrNull = (v: unknown): v is string | null => v === null || isStr(v);
 export const isNumOrNull = (v: unknown): v is number | null => v === null || isNum(v);
+export const isBoolOrNull = (v: unknown): v is boolean | null => v === null || isBool(v);
 
 export const listOf =
   <T>(guard: (v: unknown) => v is T) =>

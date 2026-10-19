@@ -15,6 +15,11 @@ export const serverRoutes: ServerRoute[] = [
     path: ':country/:profession_type/masterclass/:courseId/:courseTitle/final-assessment/:sessionId/exam',
     renderMode: RenderMode.Client,
   },
+  // The learner's own report: read in the browser only, nothing to index.
+  {
+    path: ':country/:profession_type/masterclass/:courseId/:courseTitle/final-assessment/report',
+    renderMode: RenderMode.Client,
+  },
   {
     path: ':country/:profession_type/cpe-tracker',
     renderMode: RenderMode.Client,

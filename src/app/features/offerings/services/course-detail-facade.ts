@@ -422,6 +422,20 @@ export class CourseDetailFacade {
     return base && id ? `${base}${id}/` : null;
   }
 
+  /** `assessment-report/` for this course; `null` until its id is known. */
+  assessmentReportUrl(): string | null {
+    const base = this.routes()?.assessmentReport;
+    const id = this.courseId();
+    return base && id ? `${base}${id}/` : null;
+  }
+
+  /** `assessment-result/` for this course; `null` until its id is known. */
+  assessmentResultUrl(): string | null {
+    const base = this.routes()?.assessmentResult;
+    const id = this.courseId();
+    return base && id ? `${base}${id}/` : null;
+  }
+
   /**
    * Draw the final assessment's sitting, or resume the open one
    * (`assessment-start/`). Rejects with the `HttpErrorResponse` of a refusal,

@@ -89,8 +89,8 @@
             </div>
             <p class="description text-center">{{ c.mini_description }}</p>
           </div>
-          @if (assessment.canStart()) {
-            <div class="flex justify-center items-center">
+          <div class="flex flex-wrap justify-center items-center gap-3">
+            @if (assessment.canStart()) {
               <button
                 app-button
                 type="button"
@@ -101,9 +101,7 @@
               >
                 {{ takeAssessment }}
               </button>
-            </div>
-          } @else if (c.chapters.length) {
-            <div class="flex justify-center items-center">
+            } @else if (c.chapters.length) {
               <button
                 app-button
                 type="button"
@@ -113,8 +111,19 @@
               >
                 Watch Now
               </button>
-            </div>
-          }
+            }
+            @if (assessment.canViewReport()) {
+              <button
+                app-button
+                type="button"
+                class="rounded-lg"
+                variant="outline"
+                (click)="assessment.viewReport()"
+              >
+                {{ viewReport }}
+              </button>
+            }
+          </div>
           <div class="flex space-x-4">
             @let created = c.nasba_section.created_on;
             @let updated = c.nasba_section.updated_on;

@@ -13,28 +13,36 @@ import {
   ASSESSMENT_COPY,
   ASSESSMENT_DIALOG_WIDTH,
   ASSESSMENT_ENDED_SITTING,
+  ASSESSMENT_REPORT_COPY,
 } from '@features/offerings/constants/course-detail';
 import { readCourseStepRefusal } from '@features/offerings/models/course-detail.model';
 import {
   AssessmentAnswer,
+  AssessmentAttempt,
   AssessmentOutcome,
   AssessmentPaper,
+  AssessmentReport,
+  parseAssessmentAttempt,
   parseAssessmentPaper,
+  parseAssessmentReport,
   readCoolOffEndsAt,
   toExamRules,
+  toReviewItems,
 } from '@features/offerings/models/final-assessment.model';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 
 /**
  * The final assessment of the course on screen: the rules, the start
- * (`assessment-start/`), the sitting's paper (`assessment-questions/`) and the
- * submit (`assessment-submit/`). The server draws the paper, grades it, and
- * decides when the learner may sit it (`show_final_assessment`).
+ * (`assessment-start/`), the sitting's paper (`assessment-questions/`), the
+ * submit (`assessment-submit/`), and afterwards the report
+ * (`assessment-report/` + `assessment-result/`). The server draws the paper,
+ * grades it, and decides when the learner may sit it (`show_final_assessment`).
  *
  * On the course route beside `CourseDetailFacade`, whose course it reads and
  * whose routes it calls through: the course page's hero and the last chapter's
- * quiz start a sitting, and the exam page shows and submits it. Nothing is kept
- * in storage: a reload asks the server for the same sitting again.
+ * quiz start a sitting, the exam page shows and submits it, and the report page
+ * reviews the latest attempt. Nothing is kept in storage: a reload asks the
+ * server again.
  */
 @Service({ autoProvided: false })
 export class FinalAssessmentFacade {
@@ -98,11 +106,87 @@ export class FinalAssessmentFacade {
     return refusal.message ?? ASSESSMENT_COPY.loadFailed.body;
   });
 
+  /** Signed in, with a scored assessment for the report to show. */
+  readonly canViewReport = computed(
+    () => this.auth.isAuthenticated() && !!this.detail.course()?.final_assessment_submitted,
+  );
+
+  /** The report page is on screen: its reads run only then. */
+  private readonly reportOpen = signal(false);
+
+  private readonly reportResource = httpResource<AssessmentReport>(
+    () => {
+      const url = this.detail.assessmentReportUrl();
+      if (!this.isBrowser || !this.reportOpen() || !url || !this.auth.isAuthenticated()) {
+        return undefined;
+      }
+      return url;
+    },
+    { parse: parseAssessmentReport },
+  );
+
+  /** The learner's state and latest score; `null` while it loads, on a failure, or off the report page. */
+  readonly report = computed(() =>
+    this.reportResource.hasValue() ? (this.reportResource.value() ?? null) : null,
+  );
+
+  private readonly attemptResource = httpResource<AssessmentAttempt>(
+    () => {
+      const report = this.report();
+      const url = this.detail.assessmentResultUrl();
+      // `assessment-result/` 404s until there is an attempt, so the report,
+      // which always answers, says first whether there is one.
+      if (!report?.has_final_assessment || report.status === 'not_attempted' || !url) {
+        return undefined;
+      }
+      return url;
+    },
+    { parse: parseAssessmentAttempt },
+  );
+
+  /**
+   * The latest attempt, question by question, as the report lists it; empty
+   * until it loads or when there is none. The report's `feedback_withheld`
+   * decides whether correct answers show, not what the read happened to carry.
+   */
+  readonly review = computed(() => {
+    const report = this.report();
+    const attempt = this.attemptResource.hasValue() ? this.attemptResource.value() : undefined;
+    return report && attempt ? toReviewItems(attempt, report.feedback_withheld) : [];
+  });
+
+  /** Either read is with the server: the page shows the two together. */
+  readonly isReportLoading = computed(
+    () => this.reportResource.isLoading() || this.attemptResource.isLoading(),
+  );
+
+  /** The report read failed: the server's words when it has some. */
+  readonly reportError = computed(() => {
+    const error = this.reportResource.error();
+    if (!error) return null;
+    return readCourseStepRefusal(error).message ?? ASSESSMENT_REPORT_COPY.loadFailed.body;
+  });
+
+  /** The review read failed (`409` AI Lab lock, `403`, a drift): the summary still shows. */
+  readonly attemptError = computed(() => {
+    const error = this.attemptResource.error();
+    if (!error) return null;
+    return readCourseStepRefusal(error).message ?? ASSESSMENT_REPORT_COPY.reviewFailed.body;
+  });
+
   constructor() {
     // A contract drift is a backend conversation, so it must reach the logs too.
     effect(() => {
       const error = this.paperResource.error();
       if (error) this.logger.error('[FinalAssessment] assessment-questions failed', error);
+    });
+    effect(() => {
+      const error = this.reportResource.error();
+      if (error) this.logger.error('[FinalAssessment] assessment-report failed', error);
+    });
+    effect(() => {
+      const error = this.attemptResource.error();
+      if (error) this.logger.error('[FinalAssessment] assessment-result failed', error);
     });
   }
 
@@ -113,6 +197,31 @@ export class FinalAssessmentFacade {
 
   reloadPaper(): void {
     this.paperResource.reload();
+  }
+
+  /** The report page turns its reads on, and off again when it goes. */
+  openReport(open: boolean): void {
+    this.reportOpen.set(open);
+  }
+
+  /** Read the report again; a new report reads the attempt again too. */
+  reloadReport(): void {
+    this.reportResource.reload();
+  }
+
+  reloadAttempt(): void {
+    this.attemptResource.reload();
+  }
+
+  /** The report page's path, once the course has loaded. */
+  reportPath(): string | null {
+    const coursePath = this.detail.coursePath();
+    return coursePath ? `${coursePath}/final-assessment/report` : null;
+  }
+
+  viewReport(): void {
+    const path = this.reportPath();
+    if (path) void this.router.navigateByUrl(path);
   }
 
   /**

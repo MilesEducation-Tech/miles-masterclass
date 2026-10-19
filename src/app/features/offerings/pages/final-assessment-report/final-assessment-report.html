@@ -1,3 +1,182 @@
-<div class="flex w-full min-h-svh flex-col md:px-11 md:pt-8 p-5 space-y-4">
-  <app-backward label="Back to Course" fallback="/" routePath="../../.." />
+<div class="flex w-full min-h-svh flex-col p-5 md:px-11 md:pt-8 space-y-6 text-white">
+  <app-backward [label]="copy.backToCourse" fallback="/" routePath="../.." />
+
+  @if (facade.reportError(); as message) {
+    <app-error-state
+      [title]="copy.loadFailed.title"
+      [message]="message"
+      (retry)="facade.reloadReport()"
+    />
+  } @else if (!facade.isReportLoading() && facade.report(); as report) {
+    @if (!report.has_final_assessment) {
+      <div class="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
+        <h1 class="text-2xl font-semibold">{{ assessmentCopy.noAssessment.title }}</h1>
+        <p class="text-muted-foreground">{{ assessmentCopy.noAssessment.body }}</p>
+      </div>
+    } @else if (report.status === 'not_attempted') {
+      <div class="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
+        <h1 class="text-2xl font-semibold">{{ copy.notAttempted.title }}</h1>
+        <p class="text-muted-foreground">{{ copy.notAttempted.body }}</p>
+        @if (facade.canStart()) {
+          <button app-button type="button" [disabled]="facade.starting()" (click)="facade.start()">
+            {{ assessmentCopy.take }}
+          </button>
+        }
+      </div>
+    } @else {
+      @let passed = report.status === 'passed';
+      <header class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <h1 class="text-3xl font-bold">{{ copy.title }}</h1>
+        @if (!passed && facade.canStart()) {
+          <button
+            app-button
+            type="button"
+            class="rounded-lg"
+            [disabled]="facade.starting()"
+            (click)="facade.start()"
+          >
+            {{ copy.retake }}
+          </button>
+        }
+      </header>
+
+      <dl
+        class="grid grid-cols-2 gap-4 rounded-lg border border-quiz-line bg-quiz-panel p-4 md:grid-cols-3 lg:grid-cols-6"
+      >
+        <div class="flex flex-col gap-1">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            {{ copy.score }}
+          </dt>
+          <dd
+            class="text-2xl font-bold"
+            [class.text-success]="passed"
+            [class.text-destructive]="!passed"
+          >
+            {{ report.score_percent ?? 0 | number: '1.0-1' }}%
+          </dd>
+          <dd>
+            <span
+              class="rounded-full px-3 py-0.5 text-xs font-semibold"
+              [class]="passed ? statuses.correct.badge : statuses.incorrect.badge"
+            >
+              {{ passed ? copy.passed : copy.failed }}
+            </span>
+          </dd>
+        </div>
+        <div class="flex flex-col gap-1">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            {{ copy.correctAnswers }}
+          </dt>
+          <dd class="text-2xl font-bold">
+            {{ report.correct_count }}/{{ report.total_questions }}
+          </dd>
+        </div>
+        <div class="flex flex-col gap-1">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            {{ copy.passMark }}
+          </dt>
+          <dd class="text-2xl font-bold">{{ report.pass_threshold_percent | number: '1.0-1' }}%</dd>
+        </div>
+        @if (report.skipped_count) {
+          <div class="flex flex-col gap-1">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {{ copy.skipped }}
+            </dt>
+            <dd class="text-2xl font-bold">{{ report.skipped_count }}</dd>
+          </div>
+        }
+        @if (report.attempted_at) {
+          <div class="flex flex-col gap-1">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {{ copy.completedOn }}
+            </dt>
+            <dd class="text-base font-semibold">{{ report.attempted_at | date: 'longDate' }}</dd>
+          </div>
+        }
+        <div class="flex flex-col gap-1">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            {{ copy.attempts }}
+          </dt>
+          <dd class="text-2xl font-bold">{{ report.attempt_count }}</dd>
+        </div>
+      </dl>
+
+      <section class="flex flex-col gap-4" aria-labelledby="exam-questions">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="exam-questions" class="text-xl font-semibold">{{ copy.questions }}</h2>
+          @if (!facade.attemptError()) {
+            <app-field class="flex-row items-center gap-3">
+              <span ngpLabel class="text-sm text-gray-400">{{ copy.wrongOnly }}</span>
+              <app-switch [checked]="wrongOnly()" (checkedChange)="wrongOnly.set($event)" />
+            </app-field>
+          }
+        </div>
+
+        @if (report.feedback_withheld) {
+          <p class="rounded-lg border border-quiz-line bg-quiz-panel p-4 text-sm text-gray-300">
+            {{ copy.withheld }}
+          </p>
+        }
+
+        @if (facade.attemptError(); as message) {
+          <app-error-state
+            [title]="copy.reviewFailed.title"
+            [message]="message"
+            (retry)="facade.reloadAttempt()"
+          />
+        } @else if (items().length) {
+          <app-accordion type="multiple">
+            @for (item of items(); track item.id) {
+              @let status = statuses[item.status];
+              <app-accordion-item [value]="item.id" [heading]="item.number + '. ' + item.question">
+                <span
+                  accordionTrailing
+                  class="shrink-0 rounded-full px-3 py-0.5 text-xs font-semibold"
+                  [class]="status.badge"
+                >
+                  {{ status.label }}
+                </span>
+                <div class="flex flex-col gap-4 pt-2">
+                  <div class="flex flex-col gap-1">
+                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                      {{ copy.yourAnswer }}
+                    </span>
+                    @for (text of item.yourAnswer; track $index) {
+                      <p class="text-base" [class]="status.answer">{{ text }}</p>
+                    } @empty {
+                      <p class="text-base text-muted-foreground">{{ copy.notAnswered }}</p>
+                    }
+                  </div>
+                  @if (item.correctAnswer.length) {
+                    <div class="flex flex-col gap-1">
+                      <span class="text-xs font-semibold uppercase tracking-wide text-success">
+                        {{ copy.correctAnswer }}
+                      </span>
+                      @for (text of item.correctAnswer; track $index) {
+                        <p class="text-base text-gray-200">{{ text }}</p>
+                      }
+                    </div>
+                  }
+                  @if (item.explanation) {
+                    <div class="rounded-lg border border-quiz-line bg-quiz-panel p-4">
+                      <span
+                        class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-400"
+                      >
+                        {{ copy.explanation }}
+                      </span>
+                      <p class="leading-relaxed text-gray-300">{{ item.explanation }}</p>
+                    </div>
+                  }
+                </div>
+              </app-accordion-item>
+            }
+          </app-accordion>
+        } @else if (wrongOnly()) {
+          <p class="text-muted-foreground">{{ copy.noneWrong }}</p>
+        }
+      </section>
+    }
+  } @else {
+    <app-page-loading [message]="copy.loading" [fullScreen]="true" />
+  }
 </div>

@@ -27,7 +27,10 @@ import { CategoriesList } from '@shared/components/categories-list/categories-li
 import { VideoJs } from '@shared/components/video-js/video-js';
 import { detectVideoMimeType } from '@shared/services/utils';
 import { Button } from '@shared/ui/button/button';
-import { ASSESSMENT_COPY } from '@features/offerings/constants/course-detail';
+import {
+  ASSESSMENT_COPY,
+  ASSESSMENT_REPORT_COPY,
+} from '@features/offerings/constants/course-detail';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import {
@@ -41,7 +44,7 @@ import {
  * Download); it keeps only the background trailer's own playback state. Once
  * the server says the learner may sit the final assessment, "Take Final
  * Assessment" takes Watch Now's place and starts it through
- * `FinalAssessmentFacade`.
+ * `FinalAssessmentFacade`; once one is scored, "View Report" sits beside it.
  *
  * The background is the trailer, as on production: the poster first (a plain
  * image, server-rendered, the LCP), then after `HERO_TRAILER_DELAY_MS` the HLS
@@ -78,6 +81,7 @@ export class MasterclassCourseHero {
   protected readonly assessment = inject(FinalAssessmentFacade);
   protected readonly course = this.facade.course;
   protected readonly takeAssessment = ASSESSMENT_COPY.take;
+  protected readonly viewReport = ASSESSMENT_REPORT_COPY.viewReport;
 
   private readonly player = viewChild(VideoJs);
 
