@@ -1,12 +1,11 @@
 import { httpResource } from '@angular/common/http';
-import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
+import { computed, inject, Service, signal, untracked } from '@angular/core';
 import { Storage } from '@core/services/storage/storage';
 import { QuizQuestion, ContentDetails } from '@core/models/course.model';
 import { Observable } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Utils } from '@shared/services/utils';
-import { Analytics } from '@core/services/analytics/analytics';
 import { ASSESSMENT_ROUTES } from '@features/offerings/models/assessment.model';
 import { RouteParams, RouteRequest, RouteResponse } from '@core/models/http.model';
 
@@ -35,7 +34,6 @@ export class FinalAssessmentFacade {
   private readonly storage = inject(Storage);
   private readonly apiClient = inject(ApiClient);
   private readonly utils = inject(Utils);
-  private readonly analytics = inject(Analytics);
   readonly sessionId = signal<string>('');
   readonly courseId = signal<string>('');
 
@@ -121,21 +119,6 @@ export class FinalAssessmentFacade {
     () => this.detailsResource.isLoading() || this.questionsResource.isLoading(),
   );
 
-  constructor() {
-    // Once per course the learner is about to sit (the old chain fired it per load).
-    effect(() => {
-      const details = this.courseDetails();
-      if (!details || this.isAssessmentPassed()) return;
-      untracked(() =>
-        this.analytics.trackEvent('assessment_start', {
-          course_id: +this.courseId(),
-          session_id: +this.sessionId(),
-          course_type: details.course_type,
-        }),
-      );
-    });
-  }
-
   getQuestions(): QuizQuestion[] {
     const questions: QuizQuestion[] =
       this.storage.getLocal(`final_assessment_questions_${this.courseId()}`) ?? [];
@@ -160,7 +143,6 @@ export class FinalAssessmentFacade {
       answer: answers[+key],
     }));
 
-    const courseType = this.utils.getCourseType();
     // One mapping point (`Utils.getCourseIdKey`) rather than a second copy of
     // the type → id-key table — that copy is what missed `ai_lab`.
     const courseIdKey = this.utils.getCourseIdKey();
@@ -171,19 +153,10 @@ export class FinalAssessmentFacade {
       answers_list: answersList,
     };
 
-    return this.apiClient
-      .post<SubmitFinalAssessmentResponse>(ASSESSMENT_ROUTES.submitFinalAssessment.path, body)
-      .pipe(
-        tap((res) => {
-          this.analytics.trackEvent('assessment_submit', {
-            course_id: courseId,
-            session_id: sessionId,
-            course_type: courseType,
-            passed: res?.data?.is_passed ?? false,
-            score: res?.data?.result_details?.my_percentage,
-          });
-        }),
-      );
+    return this.apiClient.post<SubmitFinalAssessmentResponse>(
+      ASSESSMENT_ROUTES.submitFinalAssessment.path,
+      body,
+    );
   }
 
   getAssessmentReport(userAssessmentId: number): Observable<SubmitFinalAssessmentResponse['data']> {

@@ -6,7 +6,6 @@ import { svglLinkedin, svglYoutube } from '@ng-icons/svgl';
 import { appStoreIcon, googlePlayIcon, instagramIcon, logo } from '@core/constants/icon';
 import { FooterLink, FooterSection } from '@core/models/footer.model';
 import { Utils } from '@shared/services/utils';
-import { Consent } from '@core/services/consent/consent';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 // Type-only: the dialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { CalendlyDialogData } from '@shared/dialogs/calendly-dialog/calendly-dialog';
@@ -24,8 +23,6 @@ import { CountrySwitcher } from '@layout/components/country-switcher/country-swi
 export class Footer {
   private readonly utils = inject(Utils);
   private readonly dialogs = inject(NgpDialogManager);
-  // Exposed for the footer "Cookie settings" link (reopens the consent panel).
-  protected readonly consent = inject(Consent);
   // The switcher only exists when this build offers more than one language (not production yet).
   protected readonly canSwitchLanguage = inject(LanguageContext).canSwitch;
   private readonly transloco = inject(TranslocoService);

@@ -1,13 +1,10 @@
 import { Component, inject, signal, PendingTasks } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
 import { LoadingService } from '@core/services/loading/loading';
-import { ConsentBanner } from '@shared/components/consent-banner/consent-banner';
 import { Progress } from '@shared/ui/progress/progress';
 import { SeoManager } from '@core/services/seo/seo-manager';
-import { Analytics } from '@core/services/analytics/analytics';
 import { EngagementDialog } from '@shared/services/engagement-dialog';
 import {
   isDynamicSlug,
@@ -20,7 +17,7 @@ import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ConsentBanner, Progress],
+  imports: [RouterOutlet, Progress],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -29,8 +26,6 @@ export class App {
   protected readonly loading = inject(LoadingService);
   private readonly seoManager = inject(SeoManager);
   private readonly engagement = inject(EngagementDialog);
-  private readonly analytics = inject(Analytics);
-  private readonly doc = inject(DOCUMENT);
 
   private readonly pendingTasks = inject(PendingTasks);
 
@@ -85,13 +80,8 @@ export class App {
       )
       .subscribe((event: NavigationEnd) => {
         const slug = routeUrlToSeoSlug(event.urlAfterRedirects);
-        if (isDynamicSlug(slug)) {
-          // Dynamic pages set their own SEO/title in the leaf component. Fire the
-          // pageview here so the route is still tracked (page_path is correct;
-          // page_title may lag one navigation — refine in the leaf if needed).
-          this.analytics.trackPageView(event.urlAfterRedirects);
-          return;
-        }
+        // Dynamic pages set their own SEO/title in the leaf component.
+        if (isDynamicSlug(slug)) return;
 
         // Self-referencing canonical (locale collapsed onto the canonical
         // prefix) + matching og:url, applied to every static route. Passed in
@@ -108,11 +98,7 @@ export class App {
         };
 
         const releaseToken = this.pendingTasks.add();
-        this.seoManager.loadFromSupabase(slug, seoForRoute).finally(() => {
-          // Pageview after SEO resolves so document.title is correct.
-          this.analytics.trackPageView(event.urlAfterRedirects, this.doc.title);
-          releaseToken();
-        });
+        void this.seoManager.loadFromSupabase(slug, seoForRoute).finally(releaseToken);
       });
   }
 }

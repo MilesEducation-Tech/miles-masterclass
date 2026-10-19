@@ -1,4 +1,4 @@
-import { computed, DestroyRef, effect, inject, Service, signal, untracked } from '@angular/core';
+import { computed, DestroyRef, inject, Service, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpContext, HttpResponse } from '@angular/common/http';
 import { catchError, of, tap, type Observable } from 'rxjs';
@@ -28,7 +28,6 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
-import { Analytics } from '@core/services/analytics/analytics';
 
 // Extract types from routes for type safety
 type SetCpeModeRequest = RouteRequest<typeof MASTERCLASS_ROUTES.setCpeMode>;
@@ -48,7 +47,6 @@ export class MasterclassFacade {
   private readonly utils = inject(Utils);
   // Only the cart-removal signal is needed here, and it lives in core so this
   // feature does not have to import the payment feature (PROMPT.md §3).
-  private readonly analytics = inject(Analytics);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly course = courseLoad();
@@ -98,19 +96,6 @@ export class MasterclassFacade {
     return Math.round((totalWatched / totalDuration) * 100);
   });
 
-  /** Once per load, for the course the server just returned (not on local edits). */
-  private readonly viewItemEffect = effect(() => {
-    const details = this.course.loadedDetails();
-    if (!details) return;
-    untracked(() =>
-      this.analytics.trackEvent('view_item', {
-        course_id: details.id,
-        course_name: details.title,
-        course_type: this.course.params()?.course_type,
-      }),
-    );
-  });
-
   /** Point both reads at a course. */
   loadCourse(params: CourseLoadParams): void {
     this.course.load(params);
@@ -123,10 +108,6 @@ export class MasterclassFacade {
       void this.selectCpeModeDialog();
       return;
     }
-    this.analytics.trackEvent('start_course', {
-      course_id: this.courseDetails()?.id,
-      course_type: this.courseDetails()?.course_type,
-    });
     this.navigateToChapter();
   }
 

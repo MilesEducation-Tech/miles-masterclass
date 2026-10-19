@@ -18,7 +18,6 @@ import { injectDialogRef } from 'ng-primitives/dialog';
 
 import { Utils } from '@shared/services/utils';
 import { GlobalSearch } from '@core/services/global-search/global-search';
-import { Analytics } from '@core/services/analytics/analytics';
 import {
   SEARCH_TYPE_TO_URL_SEGMENT,
   SearchCourseType,
@@ -61,7 +60,6 @@ export class GlobalSearchDialog implements AfterViewInit {
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
   private readonly globalSearch = inject(GlobalSearch);
-  private readonly analytics = inject(Analytics);
   private readonly destroyRef = inject(DestroyRef);
 
   @ViewChild('searchInput') private readonly searchInput?: ElementRef<HTMLInputElement>;
@@ -141,11 +139,6 @@ export class GlobalSearchDialog implements AfterViewInit {
   protected selectResult(item: SearchSuggestion): void {
     const segment = SEARCH_TYPE_TO_URL_SEGMENT[item.type] ?? 'masterclass';
     const titleSlug = this.utils.slugify(item.title);
-    this.analytics.trackEvent('search', {
-      search_term: (this.searchControl.value ?? '').trim(),
-      result_id: item.id,
-      result_type: item.type,
-    });
     this.dialogRef.close();
     this.router.navigate([
       '/',

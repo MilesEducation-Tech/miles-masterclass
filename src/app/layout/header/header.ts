@@ -56,7 +56,6 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 import { AccountApi } from '@core/services/account-api/account-api';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { NotificationService } from '@core/services/notification/notification';
-import { Analytics } from '@core/services/analytics/analytics';
 import { displayNameOf, initialsOf } from '@core/models/account.model';
 
 const SCROLL_THRESHOLD_PX = 150;
@@ -120,7 +119,6 @@ export class Header {
   private readonly auth = inject(AuthSession);
   private readonly account = inject(AccountApi);
   private readonly notify = inject(NotificationService);
-  private readonly analytics = inject(Analytics);
   private readonly transloco = inject(TranslocoService);
 
   protected readonly logoIcon = logo;
@@ -293,7 +291,6 @@ export class Header {
    */
   async signOut(): Promise<void> {
     this.closeMobileMenu();
-    this.analytics.trackEvent('logout');
     if (!(await this.auth.logout())) {
       this.notify.error(
         this.transloco.translate('header.signOutFailed'),

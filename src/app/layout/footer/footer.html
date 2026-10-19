@@ -258,17 +258,6 @@
             </a>
           </li>
         }
-        @if (consent.enabled) {
-          <li>
-            <button
-              type="button"
-              (click)="consent.openPreferences()"
-              class="cursor-pointer rounded-sm bg-transparent p-0 text-muted-foreground transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
-            >
-              {{ 'footer.cookieSettings' | transloco }}
-            </button>
-          </li>
-        }
         @if (canSwitchLanguage) {
           <li>
             <app-language-switcher />
