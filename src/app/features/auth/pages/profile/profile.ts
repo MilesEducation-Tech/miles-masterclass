@@ -1,5 +1,5 @@
 import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormField, applyEach, form, hidden, required, validate } from '@angular/forms/signals';
 import { Observable, from, map, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -153,6 +153,7 @@ export class Profile {
   private readonly account = inject(AccountApi);
   private readonly auth = inject(AuthSession);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly notify = inject(NotificationService);
   private readonly logger = inject(Logger);
   private readonly dialogs = inject(NgpDialogManager);
@@ -270,13 +271,15 @@ export class Profile {
       //
       //  - `required` carries the REQUIRED metadata, which is what marks the
       //    control `aria-required` through `[formField]`. It raises no error
-      //    here, because the forms package's emptiness test is
+      //    for a multi-select, because the forms package's emptiness test is
       //    `'' | false | null | undefined | NaN` — an empty ARRAY is not empty
-      //    to it.
-      //  - `validate` is therefore the rule that actually fires, for BOTH
-      //    select kinds, since a single-select holds its one value in this slot.
+      //    to it. An unchosen single-select holds `''`, so there it DOES fire,
+      //    first — hence the message, or the field's error line is blank.
+      //  - `validate` is therefore the rule that fires for a multi-select, and
+      //    it covers both kinds, since a single-select holds its value here too.
       required(item.choices, {
         when: ({ valueOf }) => this.requiresSlot(valueOf(item.code), 'choices'),
+        message: this.t('auth.profile.errors.chooseOption'),
       });
       validate(item.choices, ({ valueOf, value }) =>
         this.requiresSlot(valueOf(item.code), 'choices') && value().length === 0
@@ -405,8 +408,12 @@ export class Profile {
 
     // Errors only show on a touched field, so an untouched required question
     // would otherwise reject the submit with nothing on screen to explain it.
+    // This is the only check: the form is `novalidate` (see the template).
     this.form().markAsTouched();
-    if (this.form().invalid()) return;
+    if (this.form().invalid()) {
+      this.revealFirstError();
+      return;
+    }
 
     this.isSaving.set(true);
     this.fieldErrors.set({});
@@ -451,12 +458,60 @@ export class Profile {
       }
 
       this.notify.success(this.t('auth.profile.toast.saved'), this.t('auth.profile.toast.updated'));
-      if (this.isOnboarding()) await this.router.navigateByUrl('/');
+      // Back to the page that sent them here (a webinar's Register Now, a new
+      // user's sign-in), now that nothing required is left. Inside the save, so
+      // `isSaving` still holds the leave guard open.
+      const back = this.returnUrl();
+      if (back) await this.router.navigateByUrl(back);
+      else if (this.isOnboarding()) await this.router.navigateByUrl('/');
     } catch (err) {
       this.applyFieldErrors(err);
     } finally {
       this.isSaving.set(false);
     }
+  }
+
+  /**
+   * Scrolls the first unanswered required question into view and focuses it.
+   * On a long questionnaire the error messages are otherwise out of sight, so
+   * a refused save looks like a button that did nothing.
+   *
+   * "First" is in `sections()` order, which is what the learner sees. The form
+   * array's order can differ: a section renders its questions together even
+   * when the server interleaves them with another section's.
+   */
+  private revealFirstError(): void {
+    for (const { entries } of this.sections()) {
+      for (const { index } of entries) {
+        const row = this.form[index];
+        // A hidden question is out of the DOM and does not hold the save up.
+        if (!row || row().hidden()) continue;
+        const error = row().errorSummary()[0];
+        if (!error) continue;
+
+        const slot = error.fieldTree();
+        const control = slot.formFieldBindings()[0]?.element;
+        const reduceMotion = control?.ownerDocument.defaultView?.matchMedia(
+          '(prefers-reduced-motion: reduce)',
+        ).matches;
+        // Centred, so the question's label above it is in view too. The card is
+        // its own scroll container (`auth.html`), and `scrollIntoView` scrolls
+        // it where a window scroll would not.
+        control?.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' });
+        slot.focusBoundControl({ preventScroll: true });
+        return;
+      }
+    }
+  }
+
+  /**
+   * The `redirect` query parameter, when it is an in-app path. Set by whatever
+   * sent the learner here to finish their profile, on the same convention
+   * `authGuard` uses for sign-in.
+   */
+  private returnUrl(): string | null {
+    const redirect = this.route.snapshot.queryParamMap.get('redirect');
+    return redirect?.startsWith('/') && !redirect.startsWith('//') ? redirect : null;
   }
 
   // ── Unsaved-changes protection ────────────────────────────────────────────

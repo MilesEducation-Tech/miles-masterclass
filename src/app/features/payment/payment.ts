@@ -5,7 +5,7 @@ import {
   Router,
   RouterOutlet,
 } from '@angular/router';
-import { Component, computed, effect, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import { NgIconComponent } from '@ng-icons/core';
@@ -45,14 +45,6 @@ export class Payment {
     ),
     { initialValue: 'cart' },
   );
-
-  // Fire `cart_view` whenever the journey step changes (cart → review).
-  private readonly trackPageView = effect(() => {
-    const step = this.pathType();
-    if (step === 'cart' || step === 'review') {
-      this.facade.trackCartView(step);
-    }
-  });
 
   protected readonly cartSteps = computed<CartSteps[]>(() => {
     const activeStepId = PATH_TYPE_TO_STEP_ID[this.pathType()] ?? 1;

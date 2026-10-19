@@ -10,13 +10,11 @@ import {
   Service,
   Signal,
   signal,
-  untracked,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { SKIP_LOADING } from '@core/models/http.model';
-import { Analytics } from '@core/services/analytics/analytics';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { SUBSCRIPTION_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
@@ -74,7 +72,7 @@ const isMissing = (error: unknown): boolean =>
  * `course-detail/` route: today the masterclass course page and its chapter
  * pages (`:courseId/:courseTitle/…`), and the course-info dialog the landing
  * page's "i" button opens. Offering-wide on purpose: what differs per offering
- * (routes, URL segment, analytics name) comes from `COURSE_DETAIL_API`, so
+ * (routes, URL segment) comes from `COURSE_DETAIL_API`, so
  * podcast and micro-learning plug in by adding their entry once their web
  * routes exist.
  *
@@ -91,7 +89,6 @@ const isMissing = (error: unknown): boolean =>
 export class CourseDetailFacade {
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
-  private readonly analytics = inject(Analytics);
   private readonly logger = inject(Logger);
   private readonly auth = inject(AuthSession);
   private readonly dialogs = inject(NgpDialogManager);
@@ -109,9 +106,6 @@ export class CourseDetailFacade {
     const offering = this.offering();
     return offering ? COURSE_DETAIL_API[offering] : null;
   });
-
-  /** `course_type` on analytics events; `null` until `connect()`. */
-  readonly analyticsType = computed(() => this.routes()?.analyticsType ?? null);
 
   /** The course's id and slug, as a signal; `null` until `connect()`. */
   private readonly params = signal<Signal<CourseDetailParams> | null>(null);
@@ -283,19 +277,6 @@ export class CourseDetailFacade {
       const error = this.loadError();
       if (error) this.logger.error('[CourseDetail] course-detail load failed', error);
     });
-
-    // Once per loaded course, as the old facade did.
-    effect(() => {
-      const id = this.course()?.id;
-      if (!id) return;
-      untracked(() =>
-        this.analytics.trackEvent('view_item', {
-          course_id: id,
-          course_name: this.course()?.name,
-          course_type: this.routes()?.analyticsType,
-        }),
-      );
-    });
   }
 
   /**
@@ -365,10 +346,6 @@ export class CourseDetailFacade {
       return;
     }
 
-    this.analytics.trackEvent('start_course', {
-      course_id: course.id,
-      course_type: this.routes()?.analyticsType,
-    });
     void this.router.navigateByUrl(this.chapterPath(chapter) ?? '/');
   }
 

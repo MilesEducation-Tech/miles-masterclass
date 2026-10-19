@@ -69,7 +69,11 @@ export class AuthSession {
   private readonly _isOnboardingCompleted = signal<boolean | null>(
     milestoneOf(this.readProfileStatus(), 'onboarding'),
   );
-  /** Carried, not gated on — nothing branches on this yet, by decision. */
+  /**
+   * Not a route gate. Webinar registration reads it: a known `false` sends the
+   * learner to finish their profile before `register-via-zoom`, the one route
+   * that refuses an incomplete profile.
+   */
   private readonly _isProfileCompleted = signal<boolean | null>(
     milestoneOf(this.readProfileStatus(), 'profile'),
   );

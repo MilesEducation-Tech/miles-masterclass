@@ -109,7 +109,6 @@ export const COURSE_DETAIL_API: Record<CourseOffering, CourseDetailApi> = {
     },
 
     urlSegment: 'masterclass',
-    analyticsType: 'masterclass',
   },
 };
 
@@ -134,9 +133,6 @@ export const PROGRESS_SAVE_INTERVAL_SECONDS = 15;
  * so even 2× speed moves well under it.
  */
 export const SEEK_JUMP_SECONDS = 3;
-
-/** `video_progress` fires once per chapter at each of these; `video_start` and `video_complete` bracket them. */
-export const VIDEO_PROGRESS_MILESTONES = [25, 50, 75, 90] as const;
 
 /**
  * The chapter player's own copy, used when the server sends no message of its

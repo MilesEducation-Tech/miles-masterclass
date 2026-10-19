@@ -13,8 +13,6 @@
         @switch (cardKind()) {
           @case ('subscribe') {
             <app-subscribe-card
-              data-click-tag="overlay_subscribe"
-              data-type-tag="cta"
               [title]="subscribeCopy.title"
               [subtitle]="subscribeCopy.subtitle"
               [ctaLabel]="subscribeCopy.cta"
@@ -23,8 +21,6 @@
           }
           @case ('corporate') {
             <app-subscribe-card
-              data-click-tag="overlay_book_demo"
-              data-type-tag="cta"
               [title]="corporateCopy.title"
               [subtitle]="corporateCopy.subtitle"
               [ctaLabel]="corporateCopy.cta"
@@ -36,19 +32,17 @@
     </div>
   }
 
-  @if (!consent.bannerOpen()) {
-    <div
-      class="fixed end-6 z-51 pointer-events-auto transition-[bottom] duration-300 ease-out max-sm:end-4"
-      [class]="
-        cardKind() !== 'none' ? 'bottom-[108px] max-sm:bottom-[160px]' : 'bottom-6 max-sm:bottom-4'
-      "
-    >
-      <app-utils-icon-cluster
-        [cartCount]="cartCount()"
-        [showCart]="isLoggedIn()"
-        (cartClick)="onCartClick()"
-        (searchClick)="openSearch()"
-      />
-    </div>
-  }
+  <div
+    class="fixed end-6 z-51 pointer-events-auto transition-[bottom] duration-300 ease-out max-sm:end-4"
+    [class]="
+      cardKind() !== 'none' ? 'bottom-[108px] max-sm:bottom-[160px]' : 'bottom-6 max-sm:bottom-4'
+    "
+  >
+    <app-utils-icon-cluster
+      [cartCount]="cartCount()"
+      [showCart]="isLoggedIn()"
+      (cartClick)="onCartClick()"
+      (searchClick)="openSearch()"
+    />
+  </div>
 </div>

@@ -13,20 +13,16 @@ import {
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { AnalyticsEvent } from '@core/constants/analytics-events';
-import { Analytics } from '@core/services/analytics/analytics';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import {
   CHAPTER_COPY,
   PROGRESS_SAVE_INTERVAL_SECONDS,
   SEEK_JUMP_SECONDS,
-  VIDEO_PROGRESS_MILESTONES,
 } from '@features/offerings/constants/course-detail';
 import {
   ChapterNavigation,
   ChapterProgressTracker,
-  CourseProgressChapter,
   CourseProgressUpdate,
   MasterclassChapterLink,
   readCourseStepRefusal,
@@ -65,7 +61,6 @@ export class CourseChapterFacade {
   private readonly router = inject(Router);
   private readonly notification = inject(NotificationService);
   private readonly dialogs = inject(NgpDialogManager);
-  private readonly analytics = inject(Analytics);
   private readonly logger = inject(Logger);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -142,10 +137,6 @@ export class CourseChapterFacade {
   private readonly started = new Set<string>();
   /** Chapters already warned about a failed save, so a flaky connection warns once. */
   private readonly warned = new Set<string>();
-
-  // Analytics dedup: each milestone fires once per chapter.
-  private trackedChapterId: string | null = null;
-  private readonly firedMilestones = new Set<number>();
 
   constructor() {
     // Leaving the page saves where the learner got to. The request outlives the
@@ -230,12 +221,6 @@ export class CourseChapterFacade {
     tracker.lastTime = currentTime;
     tracker.position = currentTime;
 
-    const percent = (currentTime / duration) * 100;
-    if (percent > 0) this.track('video_start', chapter.id, 0);
-    for (const milestone of VIDEO_PROGRESS_MILESTONES) {
-      if (percent >= milestone) this.track('video_progress', chapter.id, milestone);
-    }
-
     if (tracker.sincePlayedSave >= PROGRESS_SAVE_INTERVAL_SECONDS) this.queueSave();
   }
 
@@ -256,7 +241,6 @@ export class CourseChapterFacade {
   async videoEnded(): Promise<boolean> {
     const ended = this.current();
     if (!ended) return false;
-    this.track('video_complete', ended.id, 100);
     this.queueSave();
     await this.drain();
 
@@ -408,7 +392,6 @@ export class CourseChapterFacade {
         } else {
           // Applied even after the page has gone: the course page reads the
           // same course, so its chapter list shows the new locks too.
-          this.trackCompletion(progress.chapters);
           this.detail.applyProgress(progress.chapters);
         }
       } catch (error) {
@@ -442,35 +425,6 @@ export class CourseChapterFacade {
       CHAPTER_COPY.progressNotSaved.title,
       CHAPTER_COPY.progressNotSaved.body,
     );
-  }
-
-  /**
-   * `chapter_complete` the first time the server reports a chapter's video
-   * complete, and `course_complete` once it reports every chapter's: compared
-   * with the course as held before the answer is applied.
-   */
-  private trackCompletion(saved: CourseProgressChapter[]): void {
-    const before = new Map(
-      this.detail
-        .chapters()
-        .map((chapter) => [chapter.id, !!chapter.user_chapter_progress.is_video_completed]),
-    );
-    const params = {
-      course_id: this.detail.course()?.id,
-      course_type: this.detail.analyticsType(),
-    };
-    for (const chapter of saved) {
-      if (chapter.progress.is_video_completed && before.get(chapter.chapter_id) === false) {
-        this.analytics.trackEvent('chapter_complete', {
-          ...params,
-          chapter_id: chapter.chapter_id,
-        });
-      }
-    }
-    const wasComplete = before.size > 0 && [...before.values()].every(Boolean);
-    const isComplete =
-      saved.length > 0 && saved.every((chapter) => !!chapter.progress.is_video_completed);
-    if (isComplete && !wasComplete) this.analytics.trackEvent('course_complete', params);
   }
 
   /** No mode stored yet: ask, as the legacy launch flow did. No answer, no chapter. */
@@ -548,21 +502,5 @@ export class CourseChapterFacade {
   backToCourse(): void {
     const path = this.detail.coursePath();
     if (path) void this.router.navigateByUrl(path, { replaceUrl: true });
-  }
-
-  /** One analytics event per chapter and milestone (`0` = start, `100` = complete). */
-  private track(event: AnalyticsEvent, chapterId: string, milestone: number): void {
-    if (chapterId !== this.trackedChapterId) {
-      this.trackedChapterId = chapterId;
-      this.firedMilestones.clear();
-    }
-    if (this.firedMilestones.has(milestone)) return;
-    this.firedMilestones.add(milestone);
-    this.analytics.trackEvent(event, {
-      course_id: this.detail.course()?.id,
-      course_type: this.detail.analyticsType(),
-      chapter_id: chapterId,
-      ...(event === 'video_progress' ? { percent: milestone } : {}),
-    });
   }
 }

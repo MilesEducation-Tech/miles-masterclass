@@ -5,7 +5,6 @@ import { Router } from '@angular/router';
 import { animationFrameScheduler, fromEvent } from 'rxjs';
 import { auditTime, filter, map } from 'rxjs/operators';
 
-import { Consent } from '@core/services/consent/consent';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Utils } from '@shared/services/utils';
@@ -39,9 +38,6 @@ export class FooterOverlay {
   private readonly router = inject(Router);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
-  // Suppress the overlay while the cookie-consent banner is open so the two
-  // fixed bottom UIs don't overlap (no-op unless consent is active in prod).
-  protected readonly consent = inject(Consent);
   // Cart state lives in core, so layout does not import a feature (PROMPT.md §3).
   private readonly cart = inject(CartStore);
   private readonly destroyRef = inject(DestroyRef);
@@ -60,9 +56,7 @@ export class FooterOverlay {
   protected readonly corporateRouteAllowed = computed(() =>
     isExactRoute(this.utils.currentUrl(), CORPORATE_CARD_ROUTES),
   );
-  protected readonly isOverlayVisible = computed(
-    () => this.isScrolled() && this.routeAllowed() && !this.consent.bannerOpen(),
-  );
+  protected readonly isOverlayVisible = computed(() => this.isScrolled() && this.routeAllowed());
 
   // ── Session + subscription state ────────────────────────────────────────
   // The boolean, never the token: a rotation must not re-fire the effects below.

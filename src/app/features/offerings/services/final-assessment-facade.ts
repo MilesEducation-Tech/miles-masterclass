@@ -4,7 +4,6 @@ import { computed, effect, inject, LOCALE_ID, PLATFORM_ID, Service, signal } fro
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { Analytics } from '@core/services/analytics/analytics';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
@@ -43,7 +42,6 @@ export class FinalAssessmentFacade {
   private readonly router = inject(Router);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly notification = inject(NotificationService);
-  private readonly analytics = inject(Analytics);
   private readonly logger = inject(Logger);
   private readonly locale = inject(LOCALE_ID);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -129,12 +127,6 @@ export class FinalAssessmentFacade {
     this.starting.set(true);
     try {
       const sitting = await this.detail.startAssessment();
-      this.analytics.trackEvent('assessment_start', {
-        course_id: course.id,
-        session_id: sitting.session_id,
-        course_type: this.detail.analyticsType(),
-        resumed: sitting.resumed,
-      });
       await this.router.navigateByUrl(`${coursePath}/final-assessment/${sitting.session_id}/exam`);
     } catch (error) {
       this.startRefused(error);
@@ -154,15 +146,6 @@ export class FinalAssessmentFacade {
 
     try {
       const outcome = await this.detail.submitAssessment({ session_id: sessionId, answers });
-      if (!outcome.reset_required) {
-        this.analytics.trackEvent('assessment_submit', {
-          course_id: this.paper()?.course_id,
-          session_id: sessionId,
-          course_type: this.detail.analyticsType(),
-          passed: outcome.passed,
-          score: outcome.score_percent,
-        });
-      }
       this.detail.reload();
       return outcome;
     } catch (error) {

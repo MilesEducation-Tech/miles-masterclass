@@ -23,7 +23,6 @@ import { NgpDialogManager } from 'ng-primitives/dialog';
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import type { ShareDialogData } from '@shared/dialogs/share-dialog/share-dialog';
 import { ApiClient } from '@core/services/api-client/api-client';
-import { Analytics } from '@core/services/analytics/analytics';
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
 import { RouteParams, RouteResponse, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
 import {
@@ -108,7 +107,6 @@ export class Utils {
   private readonly notification = inject(NotificationService);
   private readonly subscriptionDialog = inject(SUBSCRIPTION_DIALOG);
   private readonly featureFacade = inject(FeatureFacade);
-  private readonly analytics = inject(Analytics);
   private readonly logger = inject(Logger);
   private readonly destroyRef = inject(DestroyRef);
   private readonly viewport = inject(Viewport);
@@ -488,7 +486,7 @@ export class Utils {
   /**
    * Claim a Credly badge via `user-badges/:id/claim/`. Single source of truth
    * for every claim surface (badge library, cpe-tracker, certificate dialog);
-   * callers pipe their own error handling / analytics. The server is
+   * callers pipe their own error handling. The server is
    * idempotent, so a repeat claim returns the same badge + `credly_accept_url`.
    */
   claimBadge(badgeId: number): Observable<RouteResponse<typeof MASTERCLASS_ROUTES.claimBadge>> {
@@ -652,10 +650,6 @@ export class Utils {
             // its bookmark icon in lockstep, and the dedicated bookmark listing
             // (if loaded) adds/removes the course locally — no extra round-trip.
             this.featureFacade.applyBookmarkChange(courseId, response.is_bookmarked, courseType);
-            this.analytics.trackEvent(response.is_bookmarked ? 'bookmark_add' : 'bookmark_remove', {
-              course_id: courseId,
-              course_type: courseType,
-            });
           }
         }),
       );

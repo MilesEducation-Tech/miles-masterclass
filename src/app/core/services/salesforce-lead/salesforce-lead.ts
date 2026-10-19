@@ -51,19 +51,17 @@ interface SalesforceLeadResponse {
  *
  * The rule, which keeps this honest as flows change:
  *
- *   > Call `create()` exactly where `Analytics.trackAccountCreate()` is called.
+ *   > Call `create()` exactly where a flow learns it just created an account.
  *
- * Both answer the same question ("was an account just created?"), so the two
- * calls live side by side at all three creation points:
+ * There are three such points:
  *
  *   1. `AuthFacade.verifyOtp`      — inside the `is_existing_user === false` branch
  *   2. `Faculty.completeAutoLogin` — inside the `isNewAccount` branch
  *   3. `WebinarRegistrationForm.maybeTrackNewAccount` — reached only when the
  *      backend returned a populated `user`, i.e. it just created the account
  *
- * If you add a flow that creates users, add both calls together. If a
- * `trackAccountCreate` ever appears without a `create()` beside it, that flow
- * is silently missing its lead.
+ * If you add a flow that creates users, call `create()` there too, or that
+ * flow is silently missing its lead.
  *
  * Strictly fire-and-forget: `create()` returns `void`, never blocks the caller
  * and never surfaces an error. A lead that fails to post is logged and dropped

@@ -1,5 +1,6 @@
 import { Route } from '@angular/router';
 import { DynamicLayout } from '@layout/dynamic-layout/dynamic-layout';
+import { authGuard } from '@core/guards/auth/auth-guard';
 import { uaeCairaMatchGuard } from '@core/guards/uae-caira-match-guard';
 import { UaeCairaFacade } from '@features/uae-caira/services/uae-caira-facade';
 import { HomeFacade } from '@features/home/services/home-facade';
@@ -47,13 +48,18 @@ export const featuresRoutes: Route[] = [
         path: 'library',
         loadChildren: () => import('@features/library/library.routes').then((m) => m.LibraryRoutes),
       },
+      // The trackers are a learner's own records, so both need a session. The
+      // guard sits on the mount, so it covers every page below it (CAIRA's
+      // badge pages included) and their chunks never load for a visitor.
       {
         path: 'cpe-tracker',
+        canMatch: [authGuard],
         loadChildren: () =>
           import('@features/tracker/cpe/cpe-tracker.routes').then((m) => m.CpeTrackerRoutes),
       },
       {
         path: 'caira-tracker',
+        canMatch: [authGuard],
         loadChildren: () =>
           import('@features/tracker/caira/caira-tracker.routes').then((m) => m.CairaTrackerRoutes),
       },

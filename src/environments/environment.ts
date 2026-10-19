@@ -84,8 +84,8 @@ export const environment = {
   },
 
   /**
-   * Miles360 activity mirror — every GA4 event is also posted here so Salesforce
-   * sees the same behavioural signal (see `MilesActivity`). Like the keys above,
+   * Miles360 activity endpoint, where `MilesActivity` posts behavioural events
+   * so Salesforce sees them (no caller until analytics returns). Like the keys above,
    * this one ships in the client bundle; prefer a server-side proxy for a
    * hardened deploy.
    */
@@ -205,43 +205,6 @@ export const environment = {
     // SSR runs server-side (no mixed-content/CORS constraint), so it hits the
     // WordPress HTTPS host directly.
     apiBaseUrlSsr: 'https://wp.milesmasterclass.com/blog/wp-json/wp/v2',
-  },
-
-  /**
-   * Analytics & engagement (PRODUCTION ONLY). The Analytics service is a no-op
-   * unless `production === true` AND `ANALYTICS.enabled` is true, so UAT/local
-   * traffic never reaches GA4 / Clarity / Netcore. Everything is consent-gated
-   * (Consent Mode v2, opt-in) and fully disabled on `/admin/**`.
-   */
-  ANALYTICS: {
-    enabled: true, // master switch for this environment (browser-only at runtime)
-    debug: false, // verbose analytics logging (dev only)
-    // Each vendor is self-contained: `enabled` toggle + its own keys.
-    ga4: {
-      enabled: true, // GA4 tag via the GTM container
-      gtmId: 'GTM-TLGXMQSQ', // Google Tag Manager container (hosts the GA4 tag)
-      measurementId: 'G-F08HZV0NQ3', // GA4 measurement id (configure inside the GTM container)
-    },
-    clarity: {
-      enabled: true, // Microsoft Clarity
-      projectId: 'wltd1dk7wp', // Microsoft Clarity project id
-    },
-    netcore: {
-      enabled: true, // Netcore Smartech
-      scriptUrl: '//cdnt.netcoresmartech.com/smartechclient.js', // default DC
-      siteKey: 'ADGMOT35CHFLVDHBJNIG50K96976B8VTENB58JOU9LNN0KVISGIG', // smartech('create', …) panel id (same across envs)
-      appId: '6c3aae6d023e873fc9bf2863a30bb9e5', // smartech('register', …) Netcore website id (siteid, prod)
-      listId: '', // blank = global list (0): GA4 user properties sync to every contact. Attributes must exist in the panel.
-      swPath: '/sw.js', // SSR server generates this per-build (see src/service-worker.ts)
-      webPush: true,
-      // FCM web-push credentials baked into the dynamically-served /sw.js.
-      push: {
-        apiKey: 'AIzaSyDCJ4wb1HBACCWRzJUGSKjo1YRBFDVJBuw',
-        messagingSenderId: '861360152370',
-        appId: '1:861360152370:web:49927e6471b699b7fc812b', // FCM web app id (≠ netcore siteid above)
-        projectId: 'miles-masterclass',
-      },
-    },
   },
 
   PAYMENT_TEST_SSN: '207646057',

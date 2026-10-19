@@ -62,8 +62,6 @@ export interface CourseDetailApi {
   assessmentSubmit: RouteConfig<AssessmentSubmitBody, unknown>;
   /** The course page's URL segment: `/:country/:profession/<segment>/:id/:slug`. */
   urlSegment: string;
-  /** `course_type` on the analytics events. */
-  analyticsType: string;
 }
 
 /** A course's id and slug, as the route (or a card) carries them. */

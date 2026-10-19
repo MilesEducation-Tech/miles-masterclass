@@ -1,6 +1,5 @@
 import { inject, Service } from '@angular/core';
 import { Router } from '@angular/router';
-import { Analytics } from '@core/services/analytics/analytics';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { Utils } from '@shared/services/utils';
@@ -39,7 +38,6 @@ const ABSOLUTE_URL = /^https?:\/\//i;
 export class BadgeActions {
   private readonly router = inject(Router);
   private readonly utils = inject(Utils);
-  private readonly analytics = inject(Analytics);
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
 
@@ -51,10 +49,6 @@ export class BadgeActions {
 
     // Awarded on Credly: go straight to the acceptance page.
     if (claim.accept_url) {
-      this.analytics.trackEvent('badge_claim', {
-        badge_name: source.badge_name,
-        course_name: source.course_name ?? null,
-      });
       this.openExternal(claim.accept_url);
       return;
     }

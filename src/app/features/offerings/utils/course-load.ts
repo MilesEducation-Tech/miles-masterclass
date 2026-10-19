@@ -92,8 +92,6 @@ export function courseLoad() {
     params: params.asReadonly(),
     details,
     chapters,
-    /** The freshly loaded details, before any local edit — fires once per load. */
-    loadedDetails: computed(() => loaded()?.details ?? null),
     isLoading: computed(() => detailsResource.isLoading() || chaptersResource.isLoading()),
     error: computed<string | null>(() => {
       const err = failure();
