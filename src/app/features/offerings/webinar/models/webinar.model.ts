@@ -222,14 +222,19 @@ export interface WebinarCard {
   /** `subject` as an addressable object. See `WebinarSubjectDetails`. */
   subject_details: WebinarSubjectDetails | null;
   level_details: WebinarLevelDetails | null;
-  /** Full public URL, or `''`. Never null, never a bare storage key. */
-  horizontal_thumbnail: string;
+  /**
+   * Full public URL, never a bare storage key. Postman says `''` when unset and
+   * "never null", but UAT sends `null` (`Test webinar-2`, 2026-10-15), and one
+   * such card failed the whole feed. Every reader falls through on a falsy value.
+   */
+  horizontal_thumbnail: string | null;
   /**
    * Postman says `''` when unset, but UAT sends `null` (10 of 14 cards on
    * 2026-10-09). Every reader already falls through on a falsy value.
    */
   vertical_thumbnail: string | null;
-  square_image: string;
+  /** Like `horizontal_thumbnail`: `null` on UAT despite the contract's `''`. */
+  square_image: string | null;
   fields_of_study: FieldOfStudy[];
   /**
    * The SUM of `fields_of_study[].cpe_credit`. `null` — not `0` — when nothing
@@ -504,9 +509,9 @@ export function isWebinarCard(v: unknown): v is WebinarCard {
     isStrOrNull(v['subject']) &&
     (v['subject_details'] === null || isSubjectDetails(v['subject_details'])) &&
     (v['level_details'] === null || isLevelDetails(v['level_details'])) &&
-    isStr(v['horizontal_thumbnail']) &&
+    isStrOrNull(v['horizontal_thumbnail']) &&
     isStrOrNull(v['vertical_thumbnail']) &&
-    isStr(v['square_image']) &&
+    isStrOrNull(v['square_image']) &&
     Array.isArray(v['fields_of_study']) &&
     v['fields_of_study'].every(isFieldOfStudy) &&
     isNumOrNull(v['total_cpe_credits'])
@@ -621,4 +626,15 @@ function isProduct(v: unknown): v is WebinarProduct {
     isStrOrNull(v['vertical_image']) &&
     isStrOrNull(v['square_image'])
   );
+}
+
+// ---- Sign-in prompt ---------------------------------------------------------
+
+/** The action a signed-out visitor tried, which picks the sign-in prompt's copy. */
+export type SignInPromptAction = 'register' | 'join';
+
+/** The sign-in prompt's copy; the values live in `SIGN_IN_PROMPTS`. */
+export interface SignInPrompt {
+  title: string;
+  body: string;
 }

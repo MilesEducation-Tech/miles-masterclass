@@ -1,4 +1,13 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import {
   FormField as AngularFormField,
   form,
@@ -16,6 +25,7 @@ import {
   GuestRegistration,
   toOtpContact,
 } from '@features/offerings/webinar/services/guest-registration';
+import { WebinarFacade } from '@features/offerings/webinar/services/webinar-facade';
 
 interface IdentifyModel {
   identifier: string;
@@ -42,6 +52,12 @@ export class SeatForm {
   readonly webinarId = input.required<string>();
 
   protected readonly flow = inject(GuestRegistration);
+  private readonly facade = inject(WebinarFacade);
+
+  /** The "Email or phone" field. `read: ElementRef` because `app-input` is a component. */
+  private readonly identifierField = viewChild('identifier', {
+    read: ElementRef<HTMLInputElement>,
+  });
 
   private readonly identifyModel = signal<IdentifyModel>({ identifier: '' });
   private readonly otpModel = signal<OtpModel>({ otp: '' });
@@ -62,6 +78,18 @@ export class SeatForm {
   });
 
   protected readonly isOtpStep = computed(() => this.flow.step() === 'otp');
+
+  constructor() {
+    // A guest who pressed "Book Now" on the list lands here: put them straight
+    // into the field. Scrolled to the centre first, because on a phone the seat
+    // card sits below the ticket, under the router's scroll to the top.
+    afterNextRender(() => {
+      if (!this.facade.takeSeatFocus(this.webinarId())) return;
+      const field = this.identifierField()?.nativeElement;
+      field?.scrollIntoView({ block: 'center' });
+      field?.focus({ preventScroll: true });
+    });
+  }
 
   protected readonly submitDisabled = computed(
     () =>

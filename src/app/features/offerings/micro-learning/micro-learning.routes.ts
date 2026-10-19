@@ -1,10 +1,18 @@
 import { Route } from '@angular/router';
-import { FinalAssessmentFacade } from '../services/final-assessment-facade';
+import { authGuard } from '@core/guards/auth/auth-guard';
+import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
-import { FeedbackFacade } from '../services/feedback-facade';
-import { MicroLearningCourseFacade } from '../services/micro-learning-course-facade';
-import { MicroLearning } from './pages/micro-learning/micro-learning';
+import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
+import { MicroLearningCourseFacade } from '@features/offerings/services/micro-learning-course-facade';
+import { MicroLearning } from '@features/offerings/micro-learning/pages/micro-learning/micro-learning';
 
+/**
+ * The landing and course pages are public. The course page is also the reel
+ * player, but it is that course's only page and guests could browse it in v3,
+ * so it stays open. The final assessment and feedback need a session, so those
+ * routes carry `authGuard`: a visitor is sent to sign-in and back, and the
+ * page's chunk never loads.
+ */
 export const microLearningRoutes: Route[] = [
   { path: '', component: MicroLearning },
   {
@@ -15,34 +23,39 @@ export const microLearningRoutes: Route[] = [
         data: { layout: 'plain' },
         providers: [MicroLearningCourseFacade],
         loadComponent: () =>
-          import('./pages/micro-learning-course/micro-learning-course').then(
+          import('@features/offerings/micro-learning/pages/micro-learning-course/micro-learning-course').then(
             (m) => m.MicroLearningCourse,
           ),
       },
       {
         path: 'final-assessment/:sessionId/exam',
+        canMatch: [authGuard],
         providers: [FinalAssessmentFacade],
         canDeactivate: [canDeactivateExamGuard],
         data: { layout: 'plain' },
         loadComponent: () =>
-          import('../pages/final-assessment-exam/final-assessment-exam').then(
+          import('@features/offerings/pages/final-assessment-exam/final-assessment-exam').then(
             (m) => m.FinalAssessmentExam,
           ),
       },
       {
         path: 'final-assessment/:sessionId/report',
+        canMatch: [authGuard],
         providers: [FinalAssessmentFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
-          import('../pages/final-assessment-report/final-assessment-report').then(
+          import('@features/offerings/pages/final-assessment-report/final-assessment-report').then(
             (m) => m.FinalAssessmentReport,
           ),
       },
       {
         path: 'feedback',
+        canMatch: [authGuard],
         providers: [FeedbackFacade],
         loadComponent: () =>
-          import('../pages/course-feedback/course-feedback').then((m) => m.CourseFeedback),
+          import('@features/offerings/pages/course-feedback/course-feedback').then(
+            (m) => m.CourseFeedback,
+          ),
       },
     ],
   },

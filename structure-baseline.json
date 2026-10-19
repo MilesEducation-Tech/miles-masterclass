@@ -410,10 +410,6 @@
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/features/offerings/micro-learning/micro-learning.routes.ts": {
-      "count": 4,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/features/offerings/micro-learning/pages/micro-learning-course/micro-learning-course.ts": {
       "count": 5,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
@@ -446,10 +442,6 @@
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/features/offerings/podcast/podcast.routes.ts": {
-      "count": 4,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/features/offerings/services/chapter-facade.ts": {
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
@@ -466,20 +458,12 @@
       "count": 5,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/features/offerings/webinar/pages/webinar-detail/webinar-detail.ts": {
-      "count": 7,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/offerings/webinar/pages/webinar-list/webinar-list.ts": {
-      "count": 6,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/features/offerings/webinar/services/guest-registration.ts": {
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/features/offerings/webinar/services/webinar-facade.ts": {
-      "count": 4,
+      "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/features/offerings/webinar/services/webinar-registration.ts": {
