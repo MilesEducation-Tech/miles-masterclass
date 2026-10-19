@@ -66,6 +66,19 @@ export class App {
     jsonLd: this.siteJsonLd,
   };
 
+  /** A page that doesn't exist: no canonical, and kept out of the index. */
+  private readonly notFoundSeo = {
+    title: 'Page not found | Miles Masterclass',
+    robots: 'noindex, follow',
+  };
+
+  /** Whether the route just activated is a 404 page (`data.notFound`). */
+  private isNotFoundRoute(): boolean {
+    let leaf = this.router.routerState.snapshot.root;
+    while (leaf.firstChild) leaf = leaf.firstChild;
+    return leaf.data['notFound'] === true;
+  }
+
   constructor() {
     // this.engagement.start();
 
@@ -79,6 +92,11 @@ export class App {
         takeUntilDestroyed(),
       )
       .subscribe((event: NavigationEnd) => {
+        // No Supabase row can describe a URL that doesn't exist.
+        if (this.isNotFoundRoute()) {
+          this.seoManager.setSeo(this.notFoundSeo);
+          return;
+        }
         const slug = routeUrlToSeoSlug(event.urlAfterRedirects);
         // Dynamic pages set their own SEO/title in the leaf component.
         if (isDynamicSlug(slug)) return;
