@@ -30,7 +30,12 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
           starting in lower case continues the one before.
         - The text's own title line, "QAS Self-Study Course Examination Guidelines", becomes the dialog's heading
           instead of rule 1. All 6 UAT texts come out as that heading plus 5 whole rules.
-        - The default dialog width: v3's `maxWidth: '100%'` drew a screen-wide grey box around the panel.
+        - Dialog width:
+          - v3's `maxWidth: '100%'` drew a screen-wide grey box around the panel.
+          - The default `max-w-lg` (512px) left a 6px dark strip either side of `UtilsDialog`'s 500px navy box.
+          - The rules, exit and incomplete dialogs pass `ASSESSMENT_DIALOG_WIDTH` (500px). Measured: panel = box at
+            1440 (500) and at 375 (338).
+          - A follow-up commit after the `master` merge.
         - `wrap-break-word`, so the support address wraps at 375 px.
       - The paper `httpResource` is browser-only and gated on the boolean.
       - `sittingEnded` / `loadError`.

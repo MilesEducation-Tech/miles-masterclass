@@ -11,6 +11,7 @@ import { NotificationService } from '@core/services/notification/notification';
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import {
   ASSESSMENT_COPY,
+  ASSESSMENT_DIALOG_WIDTH,
   ASSESSMENT_ENDED_SITTING,
 } from '@features/offerings/constants/course-detail';
 import { readCourseStepRefusal } from '@features/offerings/models/course-detail.model';
@@ -183,6 +184,7 @@ export class FinalAssessmentFacade {
           { type: 'list', items: rules, ordered: true },
         ],
         buttons: [{ label: ASSESSMENT_COPY.startExam, variant: 'default', action: 'confirm' }],
+        maxWidth: ASSESSMENT_DIALOG_WIDTH,
       },
     });
     const result = await firstValueFrom(ref.afterClosed);

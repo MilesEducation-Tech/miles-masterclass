@@ -195,6 +195,13 @@ export const QUIZ_COPY = {
 export const QUIZ_AUTO_ADVANCE_SECONDS = 10;
 
 /**
+ * The final assessment's dialogs' panel width: the same as `UtilsDialog`'s navy
+ * box (`md:max-w-[500px]`). The default panel is `max-w-lg` (512px), which left
+ * a 6px strip of the panel showing either side of the box.
+ */
+export const ASSESSMENT_DIALOG_WIDTH = '500px';
+
+/**
  * The paper read's and the submit's refusals that mean the sitting itself is
  * over (submitted, aged out, or not this learner's): only a new start helps.
  */

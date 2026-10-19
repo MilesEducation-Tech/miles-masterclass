@@ -19,7 +19,11 @@ import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-d
 import { Button } from '@shared/ui/button/button';
 import { Checkbox } from '@shared/ui/checkbox/checkbox';
 import { PageLoading } from '@shared/ui/page-loading/page-loading';
-import { ASSESSMENT_COPY, CHAPTER_COPY } from '@features/offerings/constants/course-detail';
+import {
+  ASSESSMENT_COPY,
+  ASSESSMENT_DIALOG_WIDTH,
+  CHAPTER_COPY,
+} from '@features/offerings/constants/course-detail';
 import type {
   AssessmentResultAction,
   AssessmentResultData,
@@ -190,6 +194,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
           { label: 'Cancel', variant: 'outline', action: 'close' },
           { label: 'Exit', variant: 'destructive', action: 'confirm' },
         ],
+        maxWidth: ASSESSMENT_DIALOG_WIDTH,
       },
     });
     const result = await firstValueFrom(ref.afterClosed);
@@ -216,6 +221,7 @@ export class FinalAssessmentExam implements CanDeactivateComponent {
           },
         ],
         buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
+        maxWidth: ASSESSMENT_DIALOG_WIDTH,
       },
     });
     const result = await firstValueFrom(ref.afterClosed);
