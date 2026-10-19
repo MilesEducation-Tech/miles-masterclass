@@ -22,6 +22,7 @@ import {
   parseEvaluationForm,
   parseEvaluationStatus,
 } from '@features/offerings/models/course-evaluation.model';
+import { CourseCertificateFacade } from '@features/offerings/services/course-certificate-facade';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 
 /**
@@ -39,6 +40,7 @@ import { CourseDetailFacade } from '@features/offerings/services/course-detail-f
 @Service({ autoProvided: false })
 export class CourseEvaluationFacade {
   private readonly detail = inject(CourseDetailFacade);
+  private readonly certificate = inject(CourseCertificateFacade);
   private readonly auth = inject(AuthSession);
   private readonly router = inject(Router);
   private readonly dialogs = inject(NgpDialogManager);
@@ -212,6 +214,9 @@ export class CourseEvaluationFacade {
       if (outcome.reset_required) {
         this.notification.info(CHAPTER_COPY.enrolmentReset.title, CHAPTER_COPY.enrolmentReset.body);
         this.leave(undefined);
+      } else {
+        // The submit only triggered the certificate: wait for its link.
+        this.certificate.watch();
       }
       return outcome;
     } catch (error) {

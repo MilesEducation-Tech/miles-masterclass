@@ -32,6 +32,7 @@ import {
   ASSESSMENT_REPORT_COPY,
   FEEDBACK_COPY,
 } from '@features/offerings/constants/course-detail';
+import { CourseCertificateFacade } from '@features/offerings/services/course-certificate-facade';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { CourseEvaluationFacade } from '@features/offerings/services/course-evaluation-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
@@ -56,7 +57,8 @@ import {
  * mounts; if it fails, the poster simply stays.
  *
  * Sample shows only when the API sends `sample_video_url` (null on every UAT
- * course so far); Download is enabled once it sends the certificate URL.
+ * course so far); Download (the certificate, `CourseCertificateFacade`) is
+ * enabled once the course evaluation is in.
  * Held back until the web API covers them (`docs/MASTERCLASS_API_QUESTIONS.md`)
  * or their own PR: the CPE/Preview mode switch, price and Add To Cart, and the
  * signed-in progress and rating.
@@ -83,6 +85,7 @@ export class MasterclassCourseHero {
   protected readonly facade = inject(CourseDetailFacade);
   protected readonly assessment = inject(FinalAssessmentFacade);
   protected readonly evaluation = inject(CourseEvaluationFacade);
+  protected readonly certificate = inject(CourseCertificateFacade);
   protected readonly course = this.facade.course;
   protected readonly takeAssessment = ASSESSMENT_COPY.take;
   protected readonly viewReport = ASSESSMENT_REPORT_COPY.viewReport;

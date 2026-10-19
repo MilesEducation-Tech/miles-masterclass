@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { heroBookOpen, heroCheck } from '@ng-icons/heroicons/outline';
+import { heroArrowDownTray, heroBookOpen, heroCheck } from '@ng-icons/heroicons/outline';
 import { displayNameOf } from '@core/models/account.model';
 import { AccountApi } from '@core/services/account-api/account-api';
 import { RatingStar } from '@shared/components/rating-star/rating-star';
@@ -20,10 +20,12 @@ import { PageLoading } from '@shared/ui/page-loading/page-loading';
 import { Textarea } from '@shared/ui/textarea/textarea';
 import {
   ASSESSMENT_REPORT_COPY,
+  CERTIFICATE_COPY,
   CHAPTER_COPY,
   FEEDBACK_COPY,
 } from '@features/offerings/constants/course-detail';
 import { EvaluationQuestion } from '@features/offerings/models/course-evaluation.model';
+import { CourseCertificateFacade } from '@features/offerings/services/course-certificate-facade';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { CourseEvaluationFacade } from '@features/offerings/services/course-evaluation-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
@@ -38,7 +40,7 @@ import { FinalAssessmentFacade } from '@features/offerings/services/final-assess
   selector: 'app-course-evaluation',
   imports: [DatePipe, NgIcon, RatingStar, Button, ErrorState, Field, PageLoading, Textarea],
   templateUrl: './course-evaluation.html',
-  viewProviders: [provideIcons({ heroBookOpen, heroCheck })],
+  viewProviders: [provideIcons({ heroArrowDownTray, heroBookOpen, heroCheck })],
 })
 export class CourseEvaluation {
   // Route and query params, bound by `withComponentInputBinding`.
@@ -49,12 +51,14 @@ export class CourseEvaluation {
 
   protected readonly facade = inject(CourseEvaluationFacade);
   protected readonly assessment = inject(FinalAssessmentFacade);
+  protected readonly certificate = inject(CourseCertificateFacade);
   private readonly detail = inject(CourseDetailFacade);
   private readonly account = inject(AccountApi);
 
   protected readonly copy = FEEDBACK_COPY;
   protected readonly reportCopy = ASSESSMENT_REPORT_COPY;
   protected readonly resetCopy = CHAPTER_COPY.enrolmentReset;
+  protected readonly certificateCopy = CERTIFICATE_COPY;
 
   protected readonly course = this.detail.course;
   protected readonly instructorNames = computed(

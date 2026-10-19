@@ -58,6 +58,20 @@
               {{ feedbackSubmitted }}
             </button>
           }
+          @if (passed) {
+            <button
+              app-button
+              type="button"
+              class="rounded-lg"
+              [disabled]="!certificate.canDownload() || certificate.waiting()"
+              (click)="certificate.download()"
+            >
+              <span class="flex items-center gap-2">
+                <ng-icon name="heroArrowDownTray" size="1rem" aria-hidden="true" />
+                {{ certificate.waiting() ? certificateCopy.preparing : certificateCopy.download }}
+              </span>
+            </button>
+          }
         </div>
       </header>
 
