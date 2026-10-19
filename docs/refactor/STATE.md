@@ -8,8 +8,71 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 ## Now
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-108 (Story MIL-107), start and submit the masterclass final assessment
-  on the web API. PLAN APPROVED (`4328b09`); COMMIT 1 DONE, GATES GREEN, UNCOMMITTED**
-  (`prompts/masterclass-final-assessment-exam.md` rev 1), on `feat/MIL-108-assessment-exam` (from `master` `795819d`).
+  on the web API. PLAN APPROVED (`4328b09`); COMMIT 1 COMMITTED (`dbabd75`); COMMIT 2 DONE, GATES GREEN,
+  UNCOMMITTED** (`prompts/masterclass-final-assessment-exam.md` rev 1), on `feat/MIL-108-assessment-exam` (from
+  `master` `795819d`).
+  - **Commit 2, `feat(offerings): start and submit the masterclass final assessment on the web API`:**
+    - **New `models/final-assessment.model.ts`:**
+      - paper, start and outcome types
+      - `parseAssessmentPaper` (options sorted by `order`), `parseAssessmentStart`, `parseAssessmentSubmit`
+        (accepts `reset_required`)
+      - `readCoolOffEndsAt`
+    - **`CourseDetailApi`** gains `assessmentStart` / `assessmentQuestions` / `assessmentSubmit`.
+      `MasterclassCourseDetail` gains `exam_rules` and `show_final_assessment`, with guards.
+      `CourseDetailFacade` gains `assessmentQuestionsUrl()`, `startAssessment()` and `submitAssessment()`, beside the
+      quiz's.
+    - **New `FinalAssessmentFacade`** on the course route beside `CourseDetailFacade`:
+      - `canStart`: signed in and `show_final_assessment`.
+      - `start()`: the rules dialog from `exam_rules`, then `assessment-start`, then the exam URL, with each refusal in
+        its own words (`ASSESSMENT_COPY`, cool-off time from `cool_off_ends_at`).
+      - **Rules dialog:**
+        - `toExamRules()` joins the API's mid-sentence wraps: 59 of 64 UAT courses hard-wrap the text, so a line
+          starting in lower case continues the one before.
+        - The text's own title line, "QAS Self-Study Course Examination Guidelines", becomes the dialog's heading
+          instead of rule 1. All 6 UAT texts come out as that heading plus 5 whole rules.
+        - The default dialog width: v3's `maxWidth: '100%'` drew a screen-wide grey box around the panel.
+        - `wrap-break-word`, so the support address wraps at 375 px.
+      - The paper `httpResource` is browser-only and gated on the boolean.
+      - `sittingEnded` / `loadError`.
+      - `submit()` then re-reads the course.
+    - **Exam page rebuilt:**
+      - single = buttons, other types = checkboxes; BACK / SKIP / NEXT / SUBMIT
+      - the incomplete list, the "Exit Assessment?" guard, `beforeunload`
+      - the ended-sitting and error states
+      - it connects `CourseDetailFacade` itself for direct loads
+    - **Result dialog:** `'course' | 'retake'`; a pass offers Back to Course only (the report is MIL-109).
+    - **Entry points:**
+      - The hero's main button becomes "Take Final Assessment" when allowed.
+      - The last chapter's quiz shows it instead of "Back to course"; `proceed()`, and so the 10 s auto-advance,
+        starts it.
+    - +553 / −39 across 14 files, plus 392 new lines.
+  - **Gates (local macOS):** tsc 0; Storybook tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔;
+    `build:prod` 246.72 kB, only `ai-labs.css`.
+  - **Verified (dev 4101, headless):**
+    - **Setup:** signed in with a dummy token. `course-detail` is the real body with `show_final_assessment: true` and
+      CPE mode; the assessment routes follow Postman's shapes.
+    - **Start:**
+      - The hero shows "Take Final Assessment" (no Watch Now). The rules dialog shows 9 items and "Start Exam".
+      - A body-less `POST assessment-start` with the bearer, then one `GET assessment-questions?session_id=sess-1`.
+      - Options are sorted by `order`.
+    - **Answering:** SKIP, the incomplete list naming only Question 2, and a jump to it.
+    - **Submit:** `POST assessment-submit` sends exactly
+      `{session_id, answers:[q1:[o2], q2:[o1,o3], q3:[o1]]}`, then the course is re-read.
+    - **Fail and retake:** the fail dialog shows 33.3% and the 70% pass mark. Retake → rules → `sess-2` with answers
+      cleared.
+    - **Pass:** the dialog offers only Back to Course; back on the course, Watch Now returns.
+    - **Leaving mid-exam:** Exit dialog, Cancel stays, Exit leaves.
+    - **Refusals:**
+      - cool-off → "You can retake the assessment after Oct 19, 6:00 PM."
+      - `chapters_not_complete` → "Finish every chapter and its quiz first."
+      - `409 session_submitted` → the ended state, with Take Final Assessment and Back.
+    - **Signed out:** Watch Now and no assessment button, even with the flag on. The server render also shows Watch
+      Now.
+    - **Last chapter:** the quiz opens, an answer is graded, the course is re-read, and "Take Final Assessment" →
+      rules → start → exam.
+    - **375 px:** no horizontal scroll.
+    - **Console:** no error besides the refusals the checks triggered.
+    - **Not checked:** a live `post_login` run on UAT, which needs a real account (the user's step).
   - **Commit 1, `refactor(offerings): drop the retired final assessment bindings`:**
     - Deleted `models/assessment.model.ts` (`ASSESSMENT_ROUTES`) and the legacy `FinalAssessmentFacade`.
     - The exam and report pages are shells, with a Back to Course link only.
@@ -37,7 +100,10 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - Answers stay in memory.
     - Entry points: the hero CTA and the last chapter's quiz, from `show_final_assessment`.
   - **UAT, 2026-10-19:** all 64 masterclasses send the course-detail assessment fields with stable types.
-  - **Next:** the user commits commit 1, then commit 2 (the rebind).
+  - **Next:**
+    - The user commits commit 2.
+    - Then a live UAT run with a real account: fail once, then pass.
+    - Then the PR (MIL-108).
 
 - 🔧 **2026-10-16, NON-REFACTOR: commerce remove routes and an optional billing address**
   (`prompts/optional-billing-address.md` rev 1, approved in plan mode). Three tickets, three PRs.

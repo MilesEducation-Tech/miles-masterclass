@@ -27,7 +27,9 @@ import { CategoriesList } from '@shared/components/categories-list/categories-li
 import { VideoJs } from '@shared/components/video-js/video-js';
 import { detectVideoMimeType } from '@shared/services/utils';
 import { Button } from '@shared/ui/button/button';
+import { ASSESSMENT_COPY } from '@features/offerings/constants/course-detail';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
+import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import {
   HERO_TRAILER_CONFIG,
   HERO_TRAILER_DELAY_MS,
@@ -36,7 +38,10 @@ import {
 /**
  * The course page's hero. It reads the course from `CourseDetailFacade` and
  * calls it for every action (Watch Now, Trailer, Sample, Bookmark, Share,
- * Download); it keeps only the background trailer's own playback state.
+ * Download); it keeps only the background trailer's own playback state. Once
+ * the server says the learner may sit the final assessment, "Take Final
+ * Assessment" takes Watch Now's place and starts it through
+ * `FinalAssessmentFacade`.
  *
  * The background is the trailer, as on production: the poster first (a plain
  * image, server-rendered, the LCP), then after `HERO_TRAILER_DELAY_MS` the HLS
@@ -48,7 +53,7 @@ import {
  * course so far); Download is enabled once it sends the certificate URL.
  * Held back until the web API covers them (`docs/MASTERCLASS_API_QUESTIONS.md`)
  * or their own PR: the CPE/Preview mode switch, price and Add To Cart, and the
- * signed-in progress, rating and final-assessment actions.
+ * signed-in progress, rating and feedback actions.
  */
 @Component({
   selector: 'app-masterclass-course-hero',
@@ -70,7 +75,9 @@ import {
 })
 export class MasterclassCourseHero {
   protected readonly facade = inject(CourseDetailFacade);
+  protected readonly assessment = inject(FinalAssessmentFacade);
   protected readonly course = this.facade.course;
+  protected readonly takeAssessment = ASSESSMENT_COPY.take;
 
   private readonly player = viewChild(VideoJs);
 

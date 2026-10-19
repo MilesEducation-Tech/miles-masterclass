@@ -2,7 +2,11 @@ import { NgOptimizedImage } from '@angular/common';
 import { Component, ElementRef, inject, linkedSignal, viewChild } from '@angular/core';
 import { Button } from '@shared/ui/button/button';
 import { Checkbox } from '@shared/ui/checkbox/checkbox';
-import { QUIZ_AUTO_ADVANCE_SECONDS, QUIZ_COPY } from '@features/offerings/constants/course-detail';
+import {
+  ASSESSMENT_COPY,
+  QUIZ_AUTO_ADVANCE_SECONDS,
+  QUIZ_COPY,
+} from '@features/offerings/constants/course-detail';
 import { CourseChapterFacade } from '@features/offerings/services/course-chapter-facade';
 import { CourseChapterQuizFacade } from '@features/offerings/services/course-chapter-quiz-facade';
 
@@ -28,6 +32,7 @@ export class ChapterQuiz {
   protected readonly quiz = inject(CourseChapterQuizFacade);
   protected readonly chapter = inject(CourseChapterFacade).current;
   protected readonly copy = QUIZ_COPY;
+  protected readonly takeAssessment = ASSESSMENT_COPY.take;
   protected readonly autoAdvanceSeconds = QUIZ_AUTO_ADVANCE_SECONDS;
 
   /** The options chosen before the grade arrives (ticks, or a single click); cleared per question. */

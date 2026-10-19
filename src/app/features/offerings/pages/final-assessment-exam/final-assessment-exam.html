@@ -1,3 +1,120 @@
 <div class="flex w-full min-h-svh flex-col md:px-11 md:pt-8 p-5 space-y-4">
   <app-backward label="Back to Course" fallback="/" routePath="../../.." />
+
+  @if (facade.sittingEnded()) {
+    <div role="alert" class="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
+      <h2 class="text-2xl font-semibold text-white">{{ copy.sittingEnded.title }}</h2>
+      <p class="text-muted-foreground">{{ copy.sittingEnded.body }}</p>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <button app-button type="button" [disabled]="facade.starting()" (click)="facade.start()">
+          {{ copy.take }}
+        </button>
+        <button app-button type="button" variant="outline" (click)="backToCourse()">
+          Back to Course
+        </button>
+      </div>
+    </div>
+  } @else if (facade.loadError(); as message) {
+    <div role="alert" class="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
+      <h2 class="text-2xl font-semibold text-white">{{ copy.loadFailed.title }}</h2>
+      <p class="text-muted-foreground">{{ message }}</p>
+      <button app-button type="button" variant="outline" (click)="facade.reloadPaper()">
+        Try again
+      </button>
+    </div>
+  } @else if (question(); as question) {
+    <div class="flex flex-col h-full text-white p-4 md:p-8 space-y-4 rounded-lg">
+      <p class="opacity-60 text-sm font-medium">
+        Question {{ index() + 1 }} of {{ questions().length }}
+      </p>
+      <h2 id="assessment-question" class="text-xl md:text-2xl font-semibold">
+        {{ question.question_text }}
+      </h2>
+
+      @if (question.question_type === 'single') {
+        <!-- Buttons rather than a radio group, as the chapter quiz does: a radio
+             group's arrow keys would change the answer while moving through it. -->
+        <div role="group" aria-labelledby="assessment-question" class="flex flex-col gap-2">
+          @for (option of question.options; track option.id) {
+            @let picked = selected().includes(option.id);
+            <button
+              type="button"
+              class="flex items-start gap-3 p-3 rounded-lg border border-quiz-line text-start transition-colors enabled:cursor-pointer enabled:hover:bg-quiz-selected focus-visible:outline-2 focus-visible:outline-ring data-[picked=true]:border-primary data-[picked=true]:bg-quiz-selected"
+              [attr.data-picked]="picked"
+              [attr.aria-pressed]="picked"
+              [disabled]="submitting()"
+              (click)="choose(option.id)"
+            >
+              <span
+                aria-hidden="true"
+                class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-quiz-line-hover"
+                [class.border-primary]="picked"
+              >
+                @if (picked) {
+                  <span class="size-2.5 rounded-full bg-primary"></span>
+                }
+              </span>
+              <span class="text-base leading-relaxed text-gray-200">{{ option.text }}</span>
+            </button>
+          }
+        </div>
+      } @else {
+        <div role="group" aria-labelledby="assessment-question" class="flex flex-col gap-2">
+          @for (option of question.options; track option.id) {
+            @let picked = selected().includes(option.id);
+            <div
+              class="flex items-start gap-3 p-3 rounded-lg border border-quiz-line data-[picked=true]:border-primary data-[picked=true]:bg-quiz-selected"
+              [attr.data-picked]="picked"
+            >
+              <app-checkbox
+                [checked]="picked"
+                [disabled]="submitting()"
+                [attr.aria-label]="option.text"
+                (checkedChange)="toggle(option.id, $event)"
+              />
+              <span class="text-base leading-relaxed text-gray-200">{{ option.text }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      <div class="mt-auto flex justify-between items-center gap-4 pt-6 border-t border-quiz-line">
+        <button
+          app-button
+          type="button"
+          class="bg-quiz-line hover:bg-quiz-line-hover"
+          [disabled]="index() === 0 || submitting()"
+          (click)="previous()"
+        >
+          BACK
+        </button>
+
+        @if (isLast()) {
+          <button
+            app-button
+            type="button"
+            class="min-w-44"
+            [disabled]="submitting()"
+            (click)="submit()"
+          >
+            SUBMIT
+          </button>
+        } @else if (selected().length) {
+          <button app-button type="button" class="min-w-44" (click)="next()">NEXT</button>
+        } @else {
+          <button
+            app-button
+            type="button"
+            class="border-quiz-line text-white hover:bg-quiz-line"
+            variant="outline"
+            (click)="next()"
+          >
+            SKIP
+          </button>
+        }
+      </div>
+    </div>
+  } @else {
+    <app-page-loading [message]="copy.loading" [fullScreen]="true" />
+  }
 </div>

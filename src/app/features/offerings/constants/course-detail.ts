@@ -76,6 +76,38 @@ export const COURSE_DETAIL_API: Record<CourseOffering, CourseDetailApi> = {
      */
     quizSubmit: { path: `${ROOT}web-api/v1/masterclass/quiz-submit/:id/`, method: 'POST' },
 
+    /**
+     * `IsAuthenticated`, no body: draws the final assessment's sitting (`201`),
+     * or returns the open one (`200`, `resumed: true`), so a second start never
+     * redraws. Refusals, in order: `409` AI Lab lock, `403 caira_access_required`,
+     * `403 preview_mode`, `404` no configuration, `403 chapters_not_complete`,
+     * `403 already_passed`, `403 cool_off_active` (with `cool_off_ends_at`), and
+     * `404` for a bank with no active question.
+     */
+    assessmentStart: {
+      path: `${ROOT}web-api/v1/masterclass/assessment-start/:id/`,
+      method: 'POST',
+    },
+
+    /**
+     * `IsAuthenticated`: a sitting's paper again, the same questions in the same
+     * order, and never their answers. Append `<course uuid>/` and send
+     * `?session_id=`. A sitting that is gone answers `404 session_not_found`, `409
+     * session_submitted` or `409 session_expired`.
+     */
+    assessmentQuestions: `${ROOT}web-api/v1/masterclass/assessment-questions/`,
+
+    /**
+     * `IsAuthenticated`, strict body `{session_id, answers}` answering exactly the
+     * sitting's questions: scores it server-side and closes the sitting. `200`
+     * with `passed` and `score_percent`, or `reset_required` for an expired
+     * window; the start's refusals, plus `409 session_submitted` / `expired`.
+     */
+    assessmentSubmit: {
+      path: `${ROOT}web-api/v1/masterclass/assessment-submit/:id/`,
+      method: 'POST',
+    },
+
     urlSegment: 'masterclass',
     analyticsType: 'masterclass',
   },
@@ -165,6 +197,62 @@ export const QUIZ_COPY = {
 
 /** Seconds the finished quiz waits before moving on to the next chapter. */
 export const QUIZ_AUTO_ADVANCE_SECONDS = 10;
+
+/**
+ * The paper read's and the submit's refusals that mean the sitting itself is
+ * over (submitted, aged out, or not this learner's): only a new start helps.
+ */
+export const ASSESSMENT_ENDED_SITTING: readonly string[] = [
+  'session_not_found',
+  'session_submitted',
+  'session_expired',
+];
+
+/** The final assessment's own copy, used when the server sends no message of its own. */
+export const ASSESSMENT_COPY = {
+  take: 'Take Final Assessment',
+  rulesTitle: 'Final Assessment',
+  rulesIntro: 'QAS Self-Study Qualified Assessment Rules:',
+  startExam: 'Start Exam',
+  loading: 'Loading assessment...',
+  passed: (score: number) =>
+    `You have successfully passed the assessment with a score of ${score}%.`,
+  failed: (score: number, passMark: number) =>
+    `You scored ${score}%. Don't give up! Review the material and try again to achieve the passing score of ${passMark}%.`,
+  incomplete: {
+    title: 'Assessment Incomplete',
+    body: 'Please answer the following questions before submitting:',
+  },
+  exit: {
+    title: 'Exit Assessment?',
+    body: 'Are you sure you want to leave the assessment? Your answers will be lost if you leave without submitting.',
+  },
+  notReady: { title: 'Not available yet', body: 'Finish every chapter and its quiz first.' },
+  alreadyPassed: { title: 'Already passed', body: "You've already passed this assessment." },
+  coolOff: {
+    title: 'Retake not open yet',
+    body: 'You can retake the assessment a little later.',
+    until: (time: string) => `You can retake the assessment after ${time}.`,
+  },
+  previewMode: {
+    title: 'CPE Mode only',
+    body: 'Switch to CPE Mode to take the final assessment.',
+  },
+  noAssessment: { title: 'No final assessment', body: 'This course has no final assessment yet.' },
+  cannotStart: { title: 'Could not start the assessment', body: 'Please try again in a moment.' },
+  submitFailed: {
+    title: 'Assessment not submitted',
+    body: "We couldn't submit your answers. Please try again.",
+  },
+  sittingEnded: {
+    title: 'This sitting has ended',
+    body: 'Start the assessment again to get a new set of questions.',
+  },
+  loadFailed: {
+    title: "Couldn't load the assessment",
+    body: 'Please try again in a moment.',
+  },
+} as const;
 
 /**
  * A course id on this API: a UUID, any version. The legacy numeric ids still

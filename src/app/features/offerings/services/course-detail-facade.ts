@@ -51,6 +51,13 @@ import {
   readCourseStepRefusal,
 } from '@features/offerings/models/course-detail.model';
 import {
+  AssessmentOutcome,
+  AssessmentStart,
+  AssessmentSubmitBody,
+  parseAssessmentStart,
+  parseAssessmentSubmit,
+} from '@features/offerings/models/final-assessment.model';
+import {
   parseQuizSubmit,
   QuizAnswer,
   QuizSubmitOutcome,
@@ -429,6 +436,42 @@ export class CourseDetailFacade {
       }),
     );
     return parseQuizSubmit(raw);
+  }
+
+  /** `assessment-questions/` for this course; `null` until its id is known. */
+  assessmentQuestionsUrl(): string | null {
+    const base = this.routes()?.assessmentQuestions;
+    const id = this.courseId();
+    return base && id ? `${base}${id}/` : null;
+  }
+
+  /**
+   * Draw the final assessment's sitting, or resume the open one
+   * (`assessment-start/`). Rejects with the `HttpErrorResponse` of a refusal,
+   * for the caller to read with `readCourseStepRefusal`.
+   */
+  async startAssessment(): Promise<AssessmentStart> {
+    const route = this.routes()?.assessmentStart;
+    const id = this.courseId();
+    if (!route || !id) throw new Error('[CourseDetail] startAssessment before the course loaded');
+    const raw = await firstValueFrom(
+      this.api.call({ ...route, path: route.path.replace(':id', id) }),
+    );
+    return parseAssessmentStart(raw);
+  }
+
+  /**
+   * Score a sitting (`assessment-submit/`). Rejects with the `HttpErrorResponse`
+   * of a refusal, for the caller to read with `readCourseStepRefusal`.
+   */
+  async submitAssessment(body: AssessmentSubmitBody): Promise<AssessmentOutcome> {
+    const route = this.routes()?.assessmentSubmit;
+    const id = this.courseId();
+    if (!route || !id) throw new Error('[CourseDetail] submitAssessment before the course loaded');
+    const raw = await firstValueFrom(
+      this.api.call({ ...route, path: route.path.replace(':id', id) }, body),
+    );
+    return parseAssessmentSubmit(raw);
   }
 
   /**
