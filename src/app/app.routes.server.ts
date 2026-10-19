@@ -16,14 +16,6 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
-    path: ':country/:profession_type/podcast/:courseId/:courseTitle/final-assessment/:session_id/exam',
-    renderMode: RenderMode.Client,
-  },
-  {
-    path: ':country/:profession_type/micro-learning/:courseId/:courseTitle/final-assessment/:session_id/exam',
-    renderMode: RenderMode.Client,
-  },
-  {
     path: ':country/:profession_type/cpe-tracker',
     renderMode: RenderMode.Client,
   },

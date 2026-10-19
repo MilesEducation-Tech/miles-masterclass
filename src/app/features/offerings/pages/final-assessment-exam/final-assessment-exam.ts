@@ -8,301 +8,235 @@ import {
   linkedSignal,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Backward } from '@shared/components/backward/backward';
-import { Button } from '@shared/ui/button/button';
-import { FinalAssessmentFacade } from '../../services/final-assessment-facade';
-import { QuizQuestion } from '@core/models/course.model';
+import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-// Type-only: both dialogs load with `import()` when opened (PROMPT.md §4.4).
-import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
-import { from, Observable } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
 import { CanDeactivateComponent } from '@core/guards/can-deactivate-exam-guard';
+import { NotificationService } from '@core/services/notification/notification';
+import { Backward } from '@shared/components/backward/backward';
+// Type-only: both dialogs load with `import()` when opened (AGENTS.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
+import { Button } from '@shared/ui/button/button';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
+import { PageLoading } from '@shared/ui/page-loading/page-loading';
+import {
+  ASSESSMENT_COPY,
+  ASSESSMENT_DIALOG_WIDTH,
+  CHAPTER_COPY,
+} from '@features/offerings/constants/course-detail';
 import type {
   AssessmentResultAction,
   AssessmentResultData,
 } from '@features/offerings/dialogs/assessment-result-dialog/assessment-result-dialog';
-import { Utils } from '@shared/services/utils';
-import { Logger } from '@core/services/logger/logger';
-import { ActivatedRoute, Router } from '@angular/router';
-import { PageLoading } from '@shared/ui/page-loading/page-loading';
-import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
-  heroCheckCircle,
-  heroXCircle,
-  heroArrowRight,
-  heroArrowPath,
-} from '@ng-icons/heroicons/outline';
+  AssessmentAnswer,
+  AssessmentPaper,
+  AssessmentQuestion,
+} from '@features/offerings/models/final-assessment.model';
+import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
+import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 
+/**
+ * `…/:courseId/:courseTitle/final-assessment/:sessionId/exam`: one sitting of
+ * the final assessment, one question at a time. The paper comes from
+ * `FinalAssessmentFacade` (`assessment-questions/`), so a reload shows the same
+ * questions; the answers live here until they are submitted together, which is
+ * how the API takes them. Leaving before that asks first, and loses them.
+ */
 @Component({
   selector: 'app-final-assessment-exam',
-  imports: [Backward, NgIconComponent, Button, PageLoading],
+  imports: [Backward, Button, Checkbox, PageLoading],
   templateUrl: './final-assessment-exam.html',
-  viewProviders: [provideIcons({ heroCheckCircle, heroXCircle, heroArrowRight, heroArrowPath })],
   host: {
     '(window:beforeunload)': 'onBeforeUnload($event)',
   },
 })
 export class FinalAssessmentExam implements CanDeactivateComponent {
-  courseId = input<string>();
-  sessionId = input<string>();
+  // Route params, bound by `withComponentInputBinding`.
+  readonly courseId = input<string>();
+  readonly courseTitle = input<string>();
+  /** The sitting `assessment-start/` returned. */
+  readonly sessionId = input<string>();
 
-  private readonly facade = inject(FinalAssessmentFacade);
+  protected readonly facade = inject(FinalAssessmentFacade);
   private readonly dialogs = inject(NgpDialogManager);
-  private readonly utils = inject(Utils);
-  private readonly logger = inject(Logger);
+  private readonly notification = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly destroyRef = inject(DestroyRef);
 
-  courseNavigation = signal<string>('../../..');
+  protected readonly copy = ASSESSMENT_COPY;
+  protected readonly questions = computed(() => this.facade.paper()?.questions ?? []);
 
-  // Expose facade signal
-  isAssessmentPassed = this.facade.isAssessmentPassed;
-
-  // State
-  /** The learner's working copy: reset whenever the facade loads a new attempt. */
-  questions = linkedSignal<QuizQuestion[]>(() => this.facade.questions());
-  courseDetails = this.facade.courseDetails;
-  currentQuestionIndex = signal(0);
-  isSubmitted = signal(false);
-  private readonly isSubmitting = signal(false);
-  isLoading = computed(() => this.facade.isLoading() || this.isSubmitting());
-
-  // Computed
-  currentQuestion = computed(() => {
-    const questions = this.questions();
-    const index = this.currentQuestionIndex();
-    return questions[index];
+  /** The learner's choices by question id. A new paper (a retake) starts empty. */
+  protected readonly answers = linkedSignal<AssessmentPaper | null, Record<string, string[]>>({
+    source: this.facade.paper,
+    computation: () => ({}),
   });
-
-  isLastQuestion = computed(() => {
-    return this.currentQuestionIndex() === this.questions().length - 1;
+  protected readonly index = linkedSignal<AssessmentPaper | null, number>({
+    source: this.facade.paper,
+    computation: () => 0,
   });
-
-  progressText = computed(() => {
-    return `Question ${this.currentQuestionIndex() + 1} of ${this.questions().length}`;
+  /** Scored: leaving no longer asks. */
+  private readonly submitted = linkedSignal<AssessmentPaper | null, boolean>({
+    source: this.facade.paper,
+    computation: () => false,
   });
+  protected readonly submitting = signal(false);
 
-  answers = computed(() => {
-    const questions = this.questions();
-    const map: Record<number, string> = {};
-    questions.forEach((q) => {
-      if (q.user_selected_option) {
-        map[q.id] = q.user_selected_option;
-      }
-    });
-    return map;
+  protected readonly question = computed(() => this.questions()[this.index()] ?? null);
+  protected readonly selected = computed(() => {
+    const question = this.question();
+    return question ? (this.answers()[question.id] ?? []) : [];
   });
-
-  selectedOption = computed(() => {
-    // Check if currentQuestion exists to avoid errors when questions array is empty (e.g. passed state)
-    return this.currentQuestion()?.user_selected_option || null;
-  });
+  protected readonly isLast = computed(() => this.index() >= this.questions().length - 1);
 
   constructor() {
-    effect(() => {
-      const courseId = this.courseId();
-      const sessionId = this.sessionId();
-      if (courseId && sessionId) {
-        this.facade.courseId.set(courseId);
-        this.facade.sessionId.set(sessionId);
-        this.currentQuestionIndex.set(0);
-        this.isSubmitted.set(false);
-      } else {
-        this.logger.warn('FinalAssessmentExam: Missing inputs', { courseId, sessionId });
-      }
-    });
-  }
-
-  onBeforeUnload(event: Event) {
-    if (!this.isSubmitted() && !this.isAssessmentPassed()) {
-      event.preventDefault();
-    }
-  }
-
-  canDeactivate(): Observable<boolean> | boolean {
-    if (this.isSubmitted() || this.isAssessmentPassed()) {
-      return true;
-    }
-
-    const opened = import('@shared/dialogs/utils-dialog/utils-dialog').then(({ UtilsDialog }) =>
-      this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
-        data: {
-          title: 'Exit Assessment?',
-          content: [
-            {
-              type: 'text',
-              value:
-                'Are you sure you want to leave the assessment? Your progress will currently be lost if you leave without submitting.',
-            },
-          ],
-          buttons: [
-            { label: 'Cancel', variant: 'outline', action: 'close' },
-            { label: 'Exit', variant: 'destructive', action: 'confirm' }, // using submit to mean 'confirm exit' since mapped to result: true
-          ],
-        },
-      }),
+    // A direct load (or a reload) arrives without the course page, so the course
+    // is connected here too, as the chapter page does.
+    inject(CourseDetailFacade).connect(
+      'masterclass',
+      computed(() => ({ courseId: this.courseId(), slug: this.courseTitle() })),
     );
-
-    return from(opened).pipe(
-      switchMap((ref) => ref.afterClosed),
-      map((result) => {
-        if (result?.action === 'confirm') {
-          this.facade.clearAssessmentData();
-          return true;
-        }
-        return false;
-      }),
-    );
+    effect(() => this.facade.openSitting(this.sessionId() ?? null));
+    inject(DestroyRef).onDestroy(() => this.facade.openSitting(null));
   }
 
-  selectOption(optionKey: string) {
-    if (this.isSubmitted() || this.isLoading()) return;
-
-    // Update local storage via facade
-    const question = this.currentQuestion();
-    if (!question) return;
-
-    this.facade.updateQuestion(question.id, optionKey);
-
-    // Update local state
-    this.questions.update((questions) => {
-      return questions.map((q) => {
-        if (q.id === question.id) {
-          return { ...q, user_selected_option: optionKey };
-        }
-        return q;
-      });
-    });
+  protected onBeforeUnload(event: Event): void {
+    if (this.isInProgress()) event.preventDefault();
   }
 
-  nextQuestion() {
-    if (this.isLastQuestion()) {
+  canDeactivate(): Promise<boolean> | boolean {
+    return this.isInProgress() ? this.confirmExit() : true;
+  }
+
+  /** A `single` question: one option, replacing any earlier pick. */
+  protected choose(optionId: string): void {
+    const question = this.question();
+    if (question && !this.submitting()) this.setAnswer(question, [optionId]);
+  }
+
+  /** Any other type: options tick on and off. */
+  protected toggle(optionId: string, checked: boolean): void {
+    const question = this.question();
+    if (!question || this.submitting()) return;
+    const ids = this.answers()[question.id] ?? [];
+    this.setAnswer(question, checked ? [...ids, optionId] : ids.filter((id) => id !== optionId));
+  }
+
+  protected next(): void {
+    if (!this.isLast()) this.index.update((index) => index + 1);
+  }
+
+  protected previous(): void {
+    if (this.index() > 0) this.index.update((index) => index - 1);
+  }
+
+  /**
+   * Every question needs an answer (the API scores the whole paper), so the
+   * unanswered ones are listed first, each a jump back to it.
+   */
+  protected async submit(): Promise<void> {
+    if (this.submitting()) return;
+    const questions = this.questions();
+    const unanswered = questions.filter((question) => !this.answers()[question.id]?.length);
+    if (unanswered.length) {
+      await this.listUnanswered(unanswered);
       return;
     }
-    this.currentQuestionIndex.update((i) => i + 1);
-  }
 
-  skipQuestion() {
-    if (!this.isLastQuestion()) {
-      this.currentQuestionIndex.update((i) => i + 1);
+    const answers: AssessmentAnswer[] = questions.map((question) => ({
+      question_id: question.id,
+      selected_option_ids: this.answers()[question.id],
+    }));
+    this.submitting.set(true);
+    const outcome = await this.facade.submit(answers);
+    this.submitting.set(false);
+    if (!outcome) return;
+
+    this.submitted.set(true);
+    if (outcome.reset_required) {
+      this.notification.info(CHAPTER_COPY.enrolmentReset.title, CHAPTER_COPY.enrolmentReset.body);
+      this.backToCourse();
+      return;
     }
+
+    const passMark = this.facade.paper()?.pass_threshold_percent ?? 0;
+    const score = outcome.score_percent;
+    await this.showResult({
+      isPassed: outcome.passed,
+      score,
+      passingScore: passMark,
+      message: outcome.passed
+        ? ASSESSMENT_COPY.passed(score)
+        : ASSESSMENT_COPY.failed(score, passMark),
+    });
   }
 
-  prevQuestion() {
-    if (this.currentQuestionIndex() > 0) {
-      this.currentQuestionIndex.update((i) => i - 1);
-    }
+  protected backToCourse(): void {
+    void this.router.navigate(['../../..'], { relativeTo: this.route });
   }
 
-  getOptionText(question: QuizQuestion, option: string): string {
-    return (question as any)[`option_${option}`] || '';
+  private isInProgress(): boolean {
+    return !!this.facade.paper() && !this.submitted();
   }
 
-  async submit(): Promise<void> {
-    // Validate if all questions have answers
+  private setAnswer(question: AssessmentQuestion, optionIds: string[]): void {
+    this.answers.update((answers) => ({ ...answers, [question.id]: optionIds }));
+  }
+
+  private async confirmExit(): Promise<boolean> {
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+    const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: {
+        title: ASSESSMENT_COPY.exit.title,
+        content: [{ type: 'text', value: ASSESSMENT_COPY.exit.body }],
+        buttons: [
+          { label: 'Cancel', variant: 'outline', action: 'close' },
+          { label: 'Exit', variant: 'destructive', action: 'confirm' },
+        ],
+        maxWidth: ASSESSMENT_DIALOG_WIDTH,
+      },
+    });
+    const result = await firstValueFrom(ref.afterClosed);
+    return result?.action === 'confirm';
+  }
+
+  private async listUnanswered(unanswered: AssessmentQuestion[]): Promise<void> {
     const questions = this.questions();
-    const unanswered = questions.filter((q) => !q.user_selected_option);
-
-    if (unanswered.length > 0) {
-      // Show dialog if options are missing
-      const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
-      const dialogRef = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
-        data: {
-          title: 'Assessment Incomplete',
-          content: [
-            { type: 'text', value: 'Please answer the following questions before submitting:' },
-            {
-              type: 'clickable-list',
-              items: unanswered.map((q) => ({
-                label: `Question ${this.questions().indexOf(q) + 1}: ${q.question}`,
-                value: this.questions().indexOf(q),
-              })),
-            },
-          ],
-          buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
-        },
-      });
-
-      dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
-        if (result && result.data !== undefined) {
-          this.currentQuestionIndex.set(result.data);
-        }
-      });
-    } else {
-      this.isSubmitting.set(true);
-      const answersRecord: Record<number, string> = {};
-      questions.forEach((q) => {
-        if (q.user_selected_option) answersRecord[q.id] = q.user_selected_option;
-      });
-
-      this.facade.submitAssessment(answersRecord).subscribe({
-        next: (response) => {
-          this.isSubmitting.set(false);
-          this.isSubmitted.set(true);
-          this.facade.clearAssessmentData();
-
-          if (response.status_code) {
-            const data = response.data;
-            const isPassed = data.is_passed;
-            const score = data.result_details.my_percentage;
-            const passingScore = data.result_details.pass_percentage;
-
-            // Construct message
-            let message: string;
-            if (isPassed) {
-              message = `You have successfully passed the assessment with a score of ${score}%.`;
-            } else {
-              message = `You scored ${score}%. Don't give up! Review the material and try again to achieve the passing score of ${passingScore}%.`;
-            }
-
-            void this.openResultDialog({
-              isPassed,
-              score,
-              message,
-              passingScore,
-            });
-          }
-        },
-        error: () => {
-          this.isSubmitting.set(false);
-        },
-      });
-    }
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+    const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: {
+        title: ASSESSMENT_COPY.incomplete.title,
+        content: [
+          { type: 'text', value: ASSESSMENT_COPY.incomplete.body },
+          {
+            type: 'clickable-list',
+            items: unanswered.map((question) => {
+              const position = questions.indexOf(question);
+              return {
+                label: `Question ${position + 1}: ${question.question_text}`,
+                value: position,
+              };
+            }),
+          },
+        ],
+        buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
+        maxWidth: ASSESSMENT_DIALOG_WIDTH,
+      },
+    });
+    const result = await firstValueFrom(ref.afterClosed);
+    if (typeof result?.data === 'number') this.index.set(result.data);
   }
 
-  private async openResultDialog(data: AssessmentResultData): Promise<void> {
+  private async showResult(data: AssessmentResultData): Promise<void> {
     const { AssessmentResultDialog } =
       await import('@features/offerings/dialogs/assessment-result-dialog/assessment-result-dialog');
-    const dialogRef = this.dialogs.open<AssessmentResultData, AssessmentResultAction>(
+    const ref = this.dialogs.open<AssessmentResultData, AssessmentResultAction>(
       AssessmentResultDialog,
       { data },
     );
-
-    dialogRef.afterClosed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((action) => {
-      this.handleDialogAction(action);
-    });
-  }
-
-  handleDialogAction(action: AssessmentResultAction | undefined) {
-    if (!action) return;
-
-    if (action === 'report') {
-      this.router.navigate(['../report'], { relativeTo: this.route });
-    } else if (action === 'course') {
-      this.router.navigate(['../../..'], { relativeTo: this.route });
-    } else if (action === 'retake') {
-      const details = this.courseDetails();
-      if (details) {
-        this.utils.startFinalAssessment(
-          String(details.id),
-          details.title,
-          details.course_type,
-          details.exam_rules,
-        );
-      }
-    }
+    const action = await firstValueFrom(ref.afterClosed);
+    if (action === 'retake') void this.facade.start();
+    else if (action === 'course') this.backToCourse();
   }
 }

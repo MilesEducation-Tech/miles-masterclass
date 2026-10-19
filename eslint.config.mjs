@@ -286,8 +286,6 @@ export default [
         'src/app/core/services/logger/logger.ts',
         'src/app/features/offerings/components/course-resources/course-resources.ts',
         'src/app/features/offerings/pages/course-feedback/course-feedback.ts',
-        'src/app/features/offerings/pages/final-assessment-exam/final-assessment-exam.ts',
-        'src/app/features/offerings/pages/final-assessment-report/final-assessment-report.ts',
         'src/app/features/payment/pages/plan/plan.ts',
         'src/app/layout/footer/footer.stories.ts',
         'src/app/layout/header/header.stories.ts',

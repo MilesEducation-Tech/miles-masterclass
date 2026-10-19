@@ -19,6 +19,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { MasterclassFieldOfStudy } from '@core/models/masterclass-home.model';
 import { RouteConfig } from '@core/models/http.model';
 import { QuizAnswer } from '@features/offerings/models/chapter-quiz.model';
+import { AssessmentSubmitBody } from '@features/offerings/models/final-assessment.model';
 import {
   contractError,
   isBool,
@@ -53,6 +54,12 @@ export interface CourseDetailApi {
   quizQuestions: string;
   /** `POST`, `:id` is the chapter UUID: grades one answer. */
   quizSubmit: RouteConfig<QuizAnswer, unknown>;
+  /** `POST`, `:id` is the course UUID: draws the final assessment's sitting, or resumes the open one. */
+  assessmentStart: RouteConfig<void, unknown>;
+  /** `GET <url><course uuid>/?session_id=`: a sitting's paper again. */
+  assessmentQuestions: string;
+  /** `POST`, `:id` is the course UUID: scores a sitting. */
+  assessmentSubmit: RouteConfig<AssessmentSubmitBody, unknown>;
   /** The course page's URL segment: `/:country/:profession/<segment>/:id/:slug`. */
   urlSegment: string;
 }
@@ -274,6 +281,14 @@ export interface MasterclassCourseDetail {
   course_mode: CourseMode | null;
   /** The server's own words for why the course is locked, when it has some. */
   course_pop_up_remark: string | null;
+  /** The final assessment's QAS rules, one per line, shown before a sitting starts. */
+  exam_rules: string;
+  /**
+   * Whether the learner may sit the final assessment now. The server computes
+   * it (CPE mode, every chapter and its quiz done, not yet passed), so no
+   * client derives it; it is `false` pre-login and in Preview mode.
+   */
+  show_final_assessment: boolean;
 }
 
 /** `chapter-start/`'s `data`, as far as the chapter page reads it. */
@@ -508,7 +523,9 @@ function isApiCourseDetail(v: unknown): v is ApiCourseDetail {
     isStrOrNull(v['masterclass_certificate_url']) &&
     isBool(v['course_is_locked']) &&
     isCourseMode(v['course_mode']) &&
-    isStrOrNull(v['course_pop_up_remark'])
+    isStrOrNull(v['course_pop_up_remark']) &&
+    isStr(v['exam_rules']) &&
+    isBool(v['show_final_assessment'])
   );
 }
 

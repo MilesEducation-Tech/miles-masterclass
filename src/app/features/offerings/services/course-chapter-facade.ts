@@ -52,7 +52,8 @@ const saveKey = (update: CourseProgressUpdate): string =>
  * Progress is saved as the learner watches (`course-progress-update/`), and
  * the server's answer moves the lock ladder in place. In CPE mode the next
  * chapter opens only after this one's quiz, which `CourseChapterQuizFacade`
- * runs over this facade; the final assessment is its own ticket.
+ * runs over this facade; after the last one, that quiz hands over to
+ * `FinalAssessmentFacade`.
  */
 @Service({ autoProvided: false })
 export class CourseChapterFacade {

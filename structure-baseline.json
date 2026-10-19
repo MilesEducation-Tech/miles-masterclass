@@ -413,14 +413,6 @@
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/features/offerings/pages/final-assessment-exam/final-assessment-exam.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/offerings/pages/final-assessment-report/final-assessment-report.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/features/offerings/podcast/pages/podcast-chapter/podcast-chapter.ts": {
       "count": 3,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"

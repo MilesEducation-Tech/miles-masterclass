@@ -176,7 +176,13 @@
             ></span>
           }
           <span class="relative">
-            {{ quiz.hasNextChapter() ? copy.proceed : copy.backToCourse }}
+            {{
+              quiz.hasNextChapter()
+                ? copy.proceed
+                : quiz.leadsToAssessment()
+                  ? takeAssessment
+                  : copy.backToCourse
+            }}
           </span>
         </button>
       } @else if (grade && !quiz.isLast()) {

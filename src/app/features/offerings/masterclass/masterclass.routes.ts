@@ -1,9 +1,9 @@
 import { Route } from '@angular/router';
 import { authGuard } from '@core/guards/auth/auth-guard';
-import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
+import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import { Masterclass } from '@features/offerings/masterclass/pages/masterclass/masterclass';
 import { MasterclassHighlightFacade } from '@features/offerings/masterclass/services/masterclass-highlight-facade';
 
@@ -18,8 +18,10 @@ export const masterclassRoutes: Route[] = [
   {
     path: ':courseId/:courseTitle',
     // One instance for the course page and its chapters, so Watch Now and moving
-    // between chapters reuse the course read instead of fetching it again.
-    providers: [CourseDetailFacade],
+    // between chapters reuse the course read instead of fetching it again. The
+    // final assessment sits beside it: the hero and the last chapter's quiz start
+    // a sitting, and the exam page shows it.
+    providers: [CourseDetailFacade, FinalAssessmentFacade],
     children: [
       {
         path: '',
@@ -40,7 +42,6 @@ export const masterclassRoutes: Route[] = [
       {
         path: 'final-assessment/:sessionId/exam',
         canMatch: [authGuard],
-        providers: [FinalAssessmentFacade],
         canDeactivate: [canDeactivateExamGuard],
         data: { layout: 'plain' },
         loadComponent: () =>
@@ -51,7 +52,6 @@ export const masterclassRoutes: Route[] = [
       {
         path: 'final-assessment/:sessionId/report',
         canMatch: [authGuard],
-        providers: [FinalAssessmentFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
           import('@features/offerings/pages/final-assessment-report/final-assessment-report').then(

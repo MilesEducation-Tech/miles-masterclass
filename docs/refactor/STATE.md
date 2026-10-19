@@ -7,6 +7,188 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-19, NON-REFACTOR — MIL-108 (Story MIL-107), start and submit the masterclass final assessment
+  on the web API. PLAN APPROVED (`4328b09`); COMMIT 1 COMMITTED (`dbabd75`); COMMIT 2 DONE, GATES GREEN,
+  UNCOMMITTED** (`prompts/masterclass-final-assessment-exam.md` rev 1), on `feat/MIL-108-assessment-exam` (from
+  `master` `795819d`).
+  - **Commit 2, `feat(offerings): start and submit the masterclass final assessment on the web API`:**
+    - **New `models/final-assessment.model.ts`:**
+      - paper, start and outcome types
+      - `parseAssessmentPaper` (options sorted by `order`), `parseAssessmentStart`, `parseAssessmentSubmit`
+        (accepts `reset_required`)
+      - `readCoolOffEndsAt`
+    - **`CourseDetailApi`** gains `assessmentStart` / `assessmentQuestions` / `assessmentSubmit`.
+      `MasterclassCourseDetail` gains `exam_rules` and `show_final_assessment`, with guards.
+      `CourseDetailFacade` gains `assessmentQuestionsUrl()`, `startAssessment()` and `submitAssessment()`, beside the
+      quiz's.
+    - **New `FinalAssessmentFacade`** on the course route beside `CourseDetailFacade`:
+      - `canStart`: signed in and `show_final_assessment`.
+      - `start()`: the rules dialog from `exam_rules`, then `assessment-start`, then the exam URL, with each refusal in
+        its own words (`ASSESSMENT_COPY`, cool-off time from `cool_off_ends_at`).
+      - **Rules dialog:**
+        - `toExamRules()` joins the API's mid-sentence wraps: 59 of 64 UAT courses hard-wrap the text, so a line
+          starting in lower case continues the one before.
+        - The text's own title line, "QAS Self-Study Course Examination Guidelines", becomes the dialog's heading
+          instead of rule 1. All 6 UAT texts come out as that heading plus 5 whole rules.
+        - Dialog width:
+          - v3's `maxWidth: '100%'` drew a screen-wide grey box around the panel.
+          - The default `max-w-lg` (512px) left a 6px dark strip either side of `UtilsDialog`'s 500px navy box.
+          - The rules, exit and incomplete dialogs pass `ASSESSMENT_DIALOG_WIDTH` (500px). Measured: panel = box at
+            1440 (500) and at 375 (338).
+          - A follow-up commit after the `master` merge.
+        - `wrap-break-word`, so the support address wraps at 375 px.
+      - The paper `httpResource` is browser-only and gated on the boolean.
+      - `sittingEnded` / `loadError`.
+      - `submit()` then re-reads the course.
+    - **Exam page rebuilt:**
+      - single = buttons, other types = checkboxes; BACK / SKIP / NEXT / SUBMIT
+      - the incomplete list, the "Exit Assessment?" guard, `beforeunload`
+      - the ended-sitting and error states
+      - it connects `CourseDetailFacade` itself for direct loads
+    - **Result dialog:** `'course' | 'retake'`; a pass offers Back to Course only (the report is MIL-109).
+    - **Entry points:**
+      - The hero's main button becomes "Take Final Assessment" when allowed.
+      - The last chapter's quiz shows it instead of "Back to course"; `proceed()`, and so the 10 s auto-advance,
+        starts it.
+    - +553 / −39 across 14 files, plus 392 new lines.
+  - **Gates (local macOS):** tsc 0; Storybook tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔;
+    `build:prod` 246.72 kB, only `ai-labs.css`.
+  - **Verified (dev 4101, headless):**
+    - **Setup:** signed in with a dummy token. `course-detail` is the real body with `show_final_assessment: true` and
+      CPE mode; the assessment routes follow Postman's shapes.
+    - **Start:**
+      - The hero shows "Take Final Assessment" (no Watch Now). The rules dialog shows 9 items and "Start Exam".
+      - A body-less `POST assessment-start` with the bearer, then one `GET assessment-questions?session_id=sess-1`.
+      - Options are sorted by `order`.
+    - **Answering:** SKIP, the incomplete list naming only Question 2, and a jump to it.
+    - **Submit:** `POST assessment-submit` sends exactly
+      `{session_id, answers:[q1:[o2], q2:[o1,o3], q3:[o1]]}`, then the course is re-read.
+    - **Fail and retake:** the fail dialog shows 33.3% and the 70% pass mark. Retake → rules → `sess-2` with answers
+      cleared.
+    - **Pass:** the dialog offers only Back to Course; back on the course, Watch Now returns.
+    - **Leaving mid-exam:** Exit dialog, Cancel stays, Exit leaves.
+    - **Refusals:**
+      - cool-off → "You can retake the assessment after Oct 19, 6:00 PM."
+      - `chapters_not_complete` → "Finish every chapter and its quiz first."
+      - `409 session_submitted` → the ended state, with Take Final Assessment and Back.
+    - **Signed out:** Watch Now and no assessment button, even with the flag on. The server render also shows Watch
+      Now.
+    - **Last chapter:** the quiz opens, an answer is graded, the course is re-read, and "Take Final Assessment" →
+      rules → start → exam.
+    - **375 px:** no horizontal scroll.
+    - **Console:** no error besides the refusals the checks triggered.
+    - **Not checked:** a live `post_login` run on UAT, which needs a real account (the user's step).
+  - **Commit 1, `refactor(offerings): drop the retired final assessment bindings`:**
+    - Deleted `models/assessment.model.ts` (`ASSESSMENT_ROUTES`) and the legacy `FinalAssessmentFacade`.
+    - The exam and report pages are shells, with a Back to Course link only.
+    - Podcast and micro-learning lose their exam and report routes; `app.routes.server.ts` loses their two entries.
+    - The masterclass exam and report routes drop the facade provider; the exam keeps `canDeactivateExamGuard`.
+    - Both pages leave `LEGACY_ANY_FILES` (their `any`s are gone), and the structure baseline is pruned.
+    - Podcast and micro-learning's legacy start (`Utils.startFinalAssessment`) stays, per D1.
+    - +31 / −1195.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings, from 101); structure ✔ after prune; Prettier ✔;
+    `build:prod` 246.44 kB, only `ai-labs.css`.
+  - **Verified (dev 4101, signed out):**
+    - The course page renders with "Watch Now".
+    - The exam and report URLs show the shell, and Back lands on the course page.
+    - A podcast `…/final-assessment/…` URL goes to `/page-not-found`, like any unknown path.
+    - No legacy request, no console error.
+  - **Input:** `prompts/final-assessment-analysis.md`, restored on this branch. The 2026-10-16 copy was untracked on
+    `master` and was lost in a branch switch.
+  - **Two commits:**
+    - `refactor(offerings): drop the retired final assessment bindings` — legacy exam, report and facade code;
+      podcast and micro-learning exam and report routes
+    - `feat(offerings): start and submit the masterclass final assessment on the web API`
+  - **Key decisions:**
+    - `FinalAssessmentFacade` is scoped to the course route, beside `CourseDetailFacade`.
+    - The rules come from `exam_rules`, then `assessment-start`, then the exam page reads `assessment-questions`.
+    - Answers stay in memory.
+    - Entry points: the hero CTA and the last chapter's quiz, from `show_final_assessment`.
+  - **UAT, 2026-10-19:** all 64 masterclasses send the course-detail assessment fields with stable types.
+  - **Commit 2 committed (`b4330e1`), then `master` `2364aee` merged in. RESOLVED AND STAGED; the user continues the
+    merge in Desktop.**
+    - **Why the merge:** `master` had moved 8 commits:
+      - #122 (MIL-62) guards the learner routes.
+      - #167 is the course-detail SEO change.
+      - #169 / #170 delete the analytics service.
+    - **Routes:**
+      - Masterclass exam and report keep #122's `authGuard`, with no facade provider: it stays on the course route.
+      - Podcast and micro-learning keep this branch's removal of the exam and report routes, plus `master`'s alias
+        imports minus the two that left unused. Their route comments no longer mention the final assessment.
+    - **`final-assessment-facade.ts`:** this branch's version. `master`'s side was the deleted legacy facade with its
+      analytics stripped.
+    - **Analytics:** `assessment_start` / `assessment_submit` are removed with the service, so D9 is gone.
+    - **`STATE.md`:** both sides' entries kept. **Baseline:** `master`'s copy, then pruned for the exam and report
+      shells.
+    - **Auto-merged** `course-detail.model.ts` / `-facade.ts` / `constants`: their diff against `master` is only this
+      branch's additions.
+    - **Gates (local macOS):** tsc 0; Storybook tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔;
+      `build:prod` 240.57 kB, only `ai-labs.css`.
+    - **Verified again (dev 4101, headless, same scenarios):**
+      - start, rules (heading plus 5), exam, incomplete list, the exact submit body, fail, retake, pass, the exit guard
+      - cool-off and not-ready refusals, the ended sitting, signed out, 375 px, the last chapter's quiz
+      - signed out, the exam URL goes to `/auth/login?redirect=…` (browser guard); the report URL answers a server
+        302
+  - **Next:**
+    - The user continues the merge and pushes.
+    - Then a live UAT run with a real account: fail once, then pass.
+    - Then the PR (MIL-108).
+
+- 🔧 **2026-10-16, NON-REFACTOR — PR #122 (MIL-62) brought up to date: `master` `a2afc0e` merged into
+  `fix/MIL-62-require-sign-in`. CONFLICTS RESOLVED AND STAGED; the user clicks Continue Merge in Desktop, then pushes.**
+  - **7 conflicts:**
+    - **Route files:** `masterclass.routes.ts` and `micro-learning.routes.ts` keep MIL-62's `authGuard`s and aliases,
+      and drop `ChapterFacade` as `master` (#137) did.
+    - **Webinar files:** `seat-form.ts`, `webinar-detail.ts` and `webinar-list.ts` conflicted on imports only. Each
+      keeps what MIL-62's code uses, minus `ChangeDetectionStrategy` (#139).
+    - **`prompts/masterclass-chapter-binding.md`:** `master`'s shipped version. MIL-62 had carried an early draft.
+    - **`STATE.md`:** both sides' entries kept. The stray `<<<<<<< HEAD` line that is already committed on `master`
+      is left alone.
+  - **Beyond the conflicts:**
+    - `features.routes.ts` had merged with a duplicate `authGuard` import. The kept import is MIL-62's line, after
+      `DynamicLayout`, so the next `master` merge (#152 deletes `master`'s line 2) doesn't drop it silently.
+    - `structure-baseline.json` pruned: MIL-62's alias imports lowered five relative-import entries.
+  - **Found:** #145 reverted #144's null-thumbnail fix on `master` (`horizontal_thumbnail: string` again). MIL-62's
+    `f3c9d88` restores it, and the merge keeps it.
+  - **Side effect:** the merge deleted `postman/` (tracked on MIL-62, untracked on `master`). Recopied from App 5;
+    still ignored.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔ after prune; Prettier ✔;
+    `build:prod` 244.84 kB, only `ai-labs.css`.
+  - **Verified (dev 4101, signed out):**
+    - **Redirects to sign-in:** `cpe-tracker`, `caira-tracker` and `payment/cart` in the browser; chapter and
+      feedback with a server 302.
+    - **Public:** the course page answers 200.
+    - **Webinars:** `/webinar` loads with no feed error. A rail row's Book Now opens that webinar with
+      `#seat-identifier` focused.
+  - **PR #122 vs `master` after the merge:** 23 files, MIL-62's own.
+  - **2026-10-19, second update: `master` `795819d` (#165) merged in. RESOLVED AND STAGED.**
+    - **`payment.routes.ts`:** the comment only. `master`'s "the billing address is optional" `/review` line, plus
+      MIL-62's note on where `authGuard` sits.
+    - **`STATE.md`:** MIL-62's entries kept, then all of `master`'s. HEAD's stale "UNCOMMITTED" MIL-95 heading gives way
+      to `master`'s "MERGED as #150". Both step logs kept.
+    - **`features.routes.ts` merged clean**, as planned:
+      - one `authGuard` import, so the trackers stay guarded
+      - #152's instructor route stays public
+    - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 246.74 kB, only
+      `ai-labs.css`.
+    - **Server checks, signed out:** the instructor page 200; course feedback 302 to sign-in; `payment/plan` 200.
+    - **PR #122 vs `master`:** still 23 files, MIL-62's own.
+  - **Next:** the user clicks Continue Merge and pushes.
+
+- 🔧 **2026-10-15, NON-REFACTOR — webinar feed rejected over null thumbnails. DONE, UNCOMMITTED** on
+  `fix/MIL-62-require-sign-in` (the user's call: its own commit here, so MIL-62 can be tested on the webinar pages).
+  - **Cause:** UAT added `Test webinar-2` (`missed_webinar`, 2026-10-13) with `horizontal_thumbnail` and
+    `square_image` both `null`. Postman says `''` and "never null", so `isWebinarCard` required strings, and the one
+    card failed the whole `webinar-main-page/` and `webinar-details-page/`. The list and detail pages showed "We could
+    not load the webinars". Replaying the guard on the live feed found only these two keys, on that one card. It is
+    on `master` too.
+  - **Fix:** both are `string | null` in `WebinarCard` and its guard, like `vertical_thumbnail`. Every reader already
+    falls through on a falsy value (`webinar-card`, `webinar-hero`, `webinar-seo`).
+  - **Verified (dev 4101):** the webinar list renders, and `Test webinar-2`'s detail page renders with an empty image
+    box.
+  - **Gates:** tsc 0, Storybook tsc 0, ESLint clean on the file, Prettier clean.
+  - **Backend:** send `''` as the contract says, or update Postman to `string | null`.
+
 - 🔧 **2026-10-16, NON-REFACTOR: commerce remove routes and an optional billing address**
   (`prompts/optional-billing-address.md` rev 1, approved in plan mode). Three tickets, three PRs.
   - **PR 1, `fix(payment): call the POST remove routes for cart lines, coupons and addresses`.
@@ -5052,6 +5234,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-19 · NON-REFACTOR · **MIL-108: `master` `2364aee` merged in** (staged, user continues the merge in Desktop): 6 conflicts (3 routes, facade, STATE.md, baseline); analytics calls dropped with the deleted service · tsc 0, lint 0 errors, structure ✔, build:prod 240.57 kB · headless scenarios pass again; signed-out exam → sign-in
+
+- 2026-10-19 · NON-REFACTOR · **MIL-108 planned** (`feat/MIL-108-assessment-exam`, `prompts/masterclass-final-assessment-exam.md`): remove the legacy start/exam/submit/report bindings, then rebind on `assessment-start` / `-questions` / `-submit`; analysis doc restored
 
 - 2026-10-19 · NON-REFACTOR · **PR #122 (MIL-62): `master` `795819d` merged in** (staged, user continues the merge in Desktop): 2 conflicts (payment-routes comment, STATE.md) · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod 246.74 kB · instructor 200, feedback 302, plan 200 signed out
 
