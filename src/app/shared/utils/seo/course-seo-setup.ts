@@ -3,6 +3,7 @@ import { DestroyRef, effect, inject, PendingTasks, PLATFORM_ID, type Signal } fr
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
+import { environment } from '@env/environment';
 import {
   COURSE_BRAND_NAMES,
   COURSE_DESCRIPTION_VERBS,
@@ -11,7 +12,7 @@ import {
 import { SeoConfig } from '@core/models/seo.models';
 import { SeoManager } from '@core/services/seo/seo-manager';
 import { courseToSeoConfig, type CourseSeoKind, type CourseSeoSource } from './course-seo-config';
-import { routeUrlToSeoSlug } from './seo-route-slug';
+import { routeUrlToCanonicalUrl, routeUrlToSeoSlug } from './seo-route-slug';
 
 export interface CourseSeoSetupOptions {
   /** Course kind — drives brand, description verb, and `courseToSeoConfig` mapping. */
@@ -27,24 +28,24 @@ export interface CourseSeoSetupOptions {
  * podcast / micro-learning). Must be called from a component constructor
  * (injection context).
  *
- * What it does:
- * 1. **Sync early-paint** — Synchronously applies a URL-derived minimum
- *    `setSeo()` so even if SSR serializes before any async work resolves,
- *    the served HTML has full OG/Twitter coverage instead of `index.html`'s
- *    brand defaults.
+ * What it does, all from one effect (the route inputs are bound by the time
+ * it first runs; in the constructor `courseTitle()` is still `undefined`,
+ * which is how every course page shipped the brand name as its title):
+ * 1. **Early paint** — Once per slug, applies the URL-derived fallback
+ *    (title from the slug, canonical, `og:url`) before any async work.
  * 2. **Slug-driven Supabase lookup** — Fires `loadFromSupabase(slug, fallback)`
- *    the moment the slug is known, *without* waiting for `courseDetails()`.
- *    This is critical: a slow or errored course backend used to leave the
- *    SSR gate held until the SSR engine's own timeout; now Supabase ships
- *    its result inside the 4.5s server-side timeout regardless of the
- *    course HTTP state.
+ *    the moment the slug is known, *without* waiting for `courseDetails()`,
+ *    so a slow or errored course backend can't hold SSR past Supabase's own
+ *    4.5s server-side timeout.
  * 3. **Course-driven fallback upgrade** — When `courseDetails()` lands, the
- *    same effect re-fires with a richer fallback (instructor, real
- *    description, trailer). The Supabase row, if any, still wins; only the
- *    no-row fallback path benefits.
- * 4. **SSR gate** — Held server-side via `PendingTasks.add()`. Released
- *    when the first Supabase call resolves (success, no-row, timeout, or
- *    abort) so SSR never blocks past `loadFromSupabase`'s own bounded wait.
+ *    same effect re-fires with a richer fallback (name, description, image,
+ *    trailer). The Supabase row still wins field by field, and `SeoManager`
+ *    fills its `{{tokens}}` and blank fields from this fallback.
+ * 4. **SSR gate** — Each load holds its own `PendingTasks` entry on the
+ *    server until it settles. The course load aborts the URL load, and a
+ *    single shared gate used to be released by that abort, so SSR serialized
+ *    before the course load wrote anything. Now the superseding load keeps
+ *    the app unstable until its own tags are written.
  * 5. On destroy, `seoManager.reset()` clears the page's meta tags so the
  *    next route doesn't inherit stale OG/Twitter values.
  *
@@ -61,80 +62,84 @@ export function setupCourseSeo({ kind, courseTitle, courseDetails }: CourseSeoSe
   const brandName = COURSE_BRAND_NAMES[kind];
   const verb = COURSE_DESCRIPTION_VERBS[kind];
 
-  // SSR gate — server-only. Bounded by `loadFromSupabase`'s own withTimeout
-  // (4.5s on server) so no Zone-tracked task pushes SSR past its budget.
-  const releaseSeoGate: () => void = isServer ? pendingTasks.add() : () => undefined;
-  let seoGateReleased = false;
-  const releaseSeoGateOnce = () => {
-    if (seoGateReleased) return;
-    seoGateReleased = true;
-    releaseSeoGate();
-  };
-
-  // Build the URL-derived fallback once. Used (a) for the sync early-paint
-  // below and (b) as the backup config for the first Supabase load before
-  // `courseDetails` arrives — which on a slow/erroring backend may be never.
-  const titleFromUrl = courseTitleFromSlug(courseTitle()) ?? brandName;
-  const description = `${verb} "${titleFromUrl}" on ${brandName} — AI-driven CPE for accounting professionals.`;
-  const urlDerivedFallback: SeoConfig = {
-    title: titleFromUrl,
-    description,
-    image: SEO_BRAND_DEFAULTS.fallbackImage,
-    openGraph: {
-      title: titleFromUrl,
-      description,
-      type: SEO_BRAND_DEFAULTS.ogType,
-      site_name: brandName,
-    },
-    twitter: {
-      card: SEO_BRAND_DEFAULTS.twitterCard,
-      title: titleFromUrl,
-      description,
-      site: SEO_BRAND_DEFAULTS.twitterSite,
-      creator: SEO_BRAND_DEFAULTS.twitterCreator,
-    },
-  };
-
-  // Sync early-paint so the DOM has full OG/Twitter coverage before any
-  // async work — the floor below the floor.
-  seoManager.setSeo(urlDerivedFallback);
-
-  // Re-derive the SEO slug whenever the URL changes. Lifting the observable
-  // into a signal makes the effect below track it — a `let`-captured closure
-  // value would not be tracked, leading to stale-slug races on route reuse.
-  const currentSlug = toSignal(
+  // The URL, as a signal, so the effect below re-runs on route reuse — a
+  // `let`-captured closure value would not be tracked.
+  const currentUrl = toSignal(
     router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),
-      map((e) => routeUrlToSeoSlug(e.urlAfterRedirects)),
+      map((e) => e.urlAfterRedirects),
     ),
-    { initialValue: routeUrlToSeoSlug(router.url) },
+    { initialValue: router.url },
   );
 
-  // Single effect drives both the slug-change reload AND the
-  // course-fallback-upgrade. The dedup key includes both the slug and
-  // whether `courseDetails` is loaded so we fire:
-  //   1. Once per slug, immediately, with `urlDerivedFallback`. The Supabase
-  //      row (if any) wins; otherwise the URL-derived config is applied.
-  //   2. Again when `courseDetails` lands, with the richer course-derived
-  //      fallback. The Supabase row still wins (idempotent); only the
-  //      no-row path benefits from the upgrade. `SeoManager` aborts the
-  //      previous in-flight call so we don't race.
+  // Fires once per slug with the URL-derived fallback, and again when
+  // `courseDetails` lands with the course-derived one. `SeoManager` aborts the
+  // previous in-flight call and serves both from one Supabase read.
   let lastSeoKey: string | null = null;
+  let paintedSlug: string | null = null;
   effect(() => {
-    const slug = currentSlug();
+    const url = currentUrl();
+    const slug = routeUrlToSeoSlug(url);
     if (!slug) return;
     const course = courseDetails();
     const key = `${slug}|${course ? `c-${course.id}` : 'url'}`;
     if (key === lastSeoKey) return;
     lastSeoKey = key;
 
-    const fallback: SeoConfig = course ? courseToSeoConfig(course, kind) : urlDerivedFallback;
-    seoManager.loadFromSupabase(slug, fallback).finally(() => releaseSeoGateOnce());
+    const canonicalUrl = routeUrlToCanonicalUrl(url, environment.SITE_URL);
+    const fallback = course
+      ? courseToSeoConfig(course, kind, canonicalUrl)
+      : urlDerivedSeo(courseTitle(), canonicalUrl, brandName, verb);
+
+    if (paintedSlug !== slug) {
+      paintedSlug = slug;
+      seoManager.setSeo(fallback);
+    }
+
+    // Server only: hold SSR until THIS load settles. Bounded by
+    // `loadFromSupabase`'s own timeout (4.5s on the server).
+    const settle: () => void = isServer ? pendingTasks.add() : () => undefined;
+    void seoManager.loadFromSupabase(slug, fallback).finally(settle);
   });
 
   // Clear any meta tags this page wrote so the next route doesn't inherit
   // stale OG/Twitter values from the previous course.
   destroyRef.onDestroy(() => seoManager.reset());
+}
+
+/**
+ * The fallback before (or without) the course record: a title read from the
+ * URL slug, the brand image, and the page's canonical. A slow or failing
+ * course backend leaves this as the page's SEO, so it must stand on its own.
+ */
+function urlDerivedSeo(
+  slug: string | undefined,
+  canonicalUrl: string,
+  brandName: string,
+  verb: string,
+): SeoConfig {
+  const title = courseTitleFromSlug(slug) ?? brandName;
+  const description = `${verb} "${title}" on ${brandName} — AI-driven CPE for accounting professionals.`;
+  return {
+    title,
+    description,
+    image: SEO_BRAND_DEFAULTS.fallbackImage,
+    canonicalUrl,
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      type: SEO_BRAND_DEFAULTS.ogType,
+      site_name: brandName,
+    },
+    twitter: {
+      card: SEO_BRAND_DEFAULTS.twitterCard,
+      title,
+      description,
+      site: SEO_BRAND_DEFAULTS.twitterSite,
+      creator: SEO_BRAND_DEFAULTS.twitterCreator,
+    },
+  };
 }
 
 /**

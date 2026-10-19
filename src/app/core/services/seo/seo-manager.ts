@@ -30,6 +30,47 @@ const TIMEOUT_SERVER_MS = 4500;
 type ManagedTagSelector =
   { name: string; property?: undefined } | { property: string; name?: undefined };
 
+/** `{{name}}` in a Supabase row's strings. */
+const SEO_TOKEN = /\{\{(\w+)\}\}/g;
+
+/**
+ * The values a pattern row's `{{tokens}}` stand for, read from the route's
+ * fallback. `{{title}}` is the bare name (`openGraph.title`), because the rows
+ * add their own `| Master Class | …` suffix around it.
+ */
+function seoTokensFrom(fallback: SeoConfig | undefined): Record<string, string> {
+  const url = fallback?.canonicalUrl ?? '';
+  return {
+    title: fallback?.openGraph?.title || fallback?.title || '',
+    description: fallback?.description ?? '',
+    image: fallback?.image ?? '',
+    url,
+    origin: URL.canParse(url) ? new URL(url).origin : '',
+  };
+}
+
+/**
+ * Fill every `{{token}}` in a row config, JSON-LD included. An unknown or
+ * empty token becomes `''`, and a string left empty by that is dropped, so
+ * neither `{{…}}` nor `"image": ""` can reach the page. A row without tokens
+ * (every static page) comes back unchanged.
+ */
+function fillSeoTokens(config: SeoConfig, tokens: Record<string, string>): SeoConfig {
+  const fill = (value: unknown): unknown => {
+    if (typeof value === 'string') {
+      return value.replace(SEO_TOKEN, (_, name: string) => tokens[name] ?? '').trim() || undefined;
+    }
+    if (Array.isArray(value)) return value.map(fill).filter((v) => v !== undefined);
+    if (value && typeof value === 'object') {
+      const entries = Object.entries(value).map(([k, v]) => [k, fill(v)] as const);
+      return Object.fromEntries(entries.filter(([, v]) => v !== undefined));
+    }
+    return value;
+  };
+  if (!JSON.stringify(config).includes('{{')) return config;
+  return { ...(fill(config) as SeoConfig), title: (fill(config.title) as string) ?? '' };
+}
+
 /** Result of `loadFromSupabase`. Lets callers tell apart row-found vs fallback vs failure. */
 export type SeoLoadStatus = 'row' | 'fallback' | 'failed';
 
@@ -277,10 +318,15 @@ export class SeoManager {
    * route's fallback whenever the admin row left those blank. An SEO row that
    * only customizes title/description therefore still keeps a canonical tag and
    * structured data, instead of `setSeo` stripping them (empty → removed).
-   * An explicit value in the row always wins.
+   * The same goes for the image and `og:video`, so a course's own thumbnail
+   * and trailer survive a pattern row that leaves them blank. An explicit
+   * value in the row always wins.
+   *
+   * A pattern row (one row for every course of a type) carries `{{tokens}}`
+   * in its strings and JSON-LD; they are filled from the fallback first.
    */
   private applyRowConfig(rowConfig: SeoConfig, fallback?: SeoConfig): void {
-    const merged: SeoConfig = { ...rowConfig };
+    const merged: SeoConfig = fillSeoTokens(rowConfig, seoTokensFrom(fallback));
 
     if (fallback?.alternates?.length) {
       // A per-country page: one row cannot hold a canonical per country, so the route's wins,
@@ -291,7 +337,9 @@ export class SeoManager {
       merged.canonicalUrl = fallback.canonicalUrl;
     }
 
-    const ogUrl = merged.openGraph?.url || fallback?.openGraph?.url || merged.canonicalUrl;
+    // The canonical (row's or backfilled) before the route's `og:url`, so the
+    // two never disagree when a row sets only its canonical.
+    const ogUrl = merged.openGraph?.url || merged.canonicalUrl || fallback?.openGraph?.url;
     if (ogUrl) {
       merged.openGraph = { ...merged.openGraph, url: ogUrl };
     }
@@ -299,6 +347,10 @@ export class SeoManager {
     if (!merged.jsonLd && fallback?.jsonLd) {
       merged.jsonLd = fallback.jsonLd;
     }
+
+    if (!merged.image && fallback?.image) merged.image = fallback.image;
+    const video = fallback?.openGraph?.video;
+    if (video && !merged.openGraph?.video) merged.openGraph = { ...merged.openGraph, video };
 
     this.setSeo(merged);
   }

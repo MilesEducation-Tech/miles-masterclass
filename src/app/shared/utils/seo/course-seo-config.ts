@@ -38,9 +38,16 @@ export interface WebCourseSeoSource {
  * Build a fallback `SeoConfig` from a populated course/reel record. Used by the
  * masterclass, podcast, and micro-learning detail pages so the page has
  * plausible OG/Twitter metadata even before any Supabase override resolves.
+ *
+ * `canonicalUrl` also becomes `og:url`, and is what `SeoManager` backfills onto
+ * a pattern row that leaves both blank (every `_pattern_*_course` row does).
  */
-export function courseToSeoConfig(course: CourseSeoSource, kind: CourseSeoKind): SeoConfig {
-  if ('mini_description' in course) return webCourseToSeoConfig(course, kind);
+export function courseToSeoConfig(
+  course: CourseSeoSource,
+  kind: CourseSeoKind,
+  canonicalUrl: string,
+): SeoConfig {
+  if ('mini_description' in course) return webCourseToSeoConfig(course, kind, canonicalUrl);
 
   const longOverview = 'course_overview' in course ? course.course_overview : undefined;
   const description = course.course_short_overview || longOverview || undefined;
@@ -54,11 +61,13 @@ export function courseToSeoConfig(course: CourseSeoSource, kind: CourseSeoKind):
     description,
     image,
     author,
+    canonicalUrl,
     openGraph: {
       title: course.title,
       description,
       image,
       video: course.trailer_link || undefined,
+      url: canonicalUrl,
       type: 'website',
     },
     twitter: {
@@ -71,7 +80,11 @@ export function courseToSeoConfig(course: CourseSeoSource, kind: CourseSeoKind):
 }
 
 /** The same fallback, read from the web API's keys. */
-function webCourseToSeoConfig(course: WebCourseSeoSource, kind: CourseSeoKind): SeoConfig {
+function webCourseToSeoConfig(
+  course: WebCourseSeoSource,
+  kind: CourseSeoKind,
+  canonicalUrl: string,
+): SeoConfig {
   const description = course.mini_description || undefined;
   const image = course.horizontal_thumbnail_url || undefined;
   const author = course.instructors.map((instructor) => instructor.name).join(', ') || undefined;
@@ -81,11 +94,13 @@ function webCourseToSeoConfig(course: WebCourseSeoSource, kind: CourseSeoKind): 
     description,
     image,
     author,
+    canonicalUrl,
     openGraph: {
       title: course.name,
       description,
       image,
       video: course.horizontal_trailer_url || undefined,
+      url: canonicalUrl,
       type: 'website',
     },
     twitter: {
