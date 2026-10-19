@@ -21,6 +21,9 @@ export const routes: Routes = [
   },
   {
     path: 'page-not-found',
+    // `notFound` makes the page answer 404 on the server and take the noindex
+    // SEO in `App`; `maintenance` below shares the component without it.
+    data: { notFound: true },
     loadComponent: () =>
       import('@features/page-not-found/pages/page-not-found/page-not-found').then(
         (m) => m.PageNotFound,
@@ -77,5 +80,14 @@ export const routes: Routes = [
     canActivate: [rootRedirectGuard],
     children: [], // Guard handles navigation
   },
-  { path: '**', redirectTo: 'page-not-found' },
+  // Rendered in place, not redirected: the URL a crawler asked for must itself
+  // answer 404, or Google indexes `/page-not-found` and keeps every dead URL.
+  {
+    path: '**',
+    data: { notFound: true },
+    loadComponent: () =>
+      import('@features/page-not-found/pages/page-not-found/page-not-found').then(
+        (m) => m.PageNotFound,
+      ),
+  },
 ];

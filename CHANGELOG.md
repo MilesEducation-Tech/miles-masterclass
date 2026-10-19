@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.12.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.11.0...v3.12.0) (2026-10-19)
+
+
+### Features
+
+* **seo:** list masterclass courses in the sitemap ([#168](https://github.com/MilesEducation-Tech/miles-masterclass/issues/168)) ([d5cacb4](https://github.com/MilesEducation-Tech/miles-masterclass/commit/d5cacb4226c94cbf2a882a6e03aa32966903b225))
+
+
+### Bug Fixes
+
+* **auth:** require sign-in for learner pages and webinar Join, and a full profile to register ([#122](https://github.com/MilesEducation-Tech/miles-masterclass/issues/122)) ([801536c](https://github.com/MilesEducation-Tech/miles-masterclass/commit/801536cb309c1c7dbb29805723ca433acaa1af6e))
+* **seo:** answer 404 for unknown URLs instead of a 200 error page ([#171](https://github.com/MilesEducation-Tech/miles-masterclass/issues/171)) ([3a414ac](https://github.com/MilesEducation-Tech/miles-masterclass/commit/3a414aca2f943c118620082bbab18ca8a0450662))
+* **seo:** give /compliance its own canonical ([#172](https://github.com/MilesEducation-Tech/miles-masterclass/issues/172)) ([248e9c3](https://github.com/MilesEducation-Tech/miles-masterclass/commit/248e9c300feb1dd0cdc6998399d14d7b9f4b6b08))
+* **seo:** give course detail pages their own title, canonical and Course schema ([#167](https://github.com/MilesEducation-Tech/miles-masterclass/issues/167)) ([299c706](https://github.com/MilesEducation-Tech/miles-masterclass/commit/299c706ef33837704643dc6e751a25900f045441))
+
 ## [3.11.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.10.0...v3.11.0) (2026-10-16)
 
 

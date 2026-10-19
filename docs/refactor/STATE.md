@@ -7,76 +7,6 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🔧 **2026-10-19, NON-REFACTOR — CAIRA hero showed 0 credits for a learner with 152. FIXED AGAIN,
-  UNCOMMITTED** on `feat/MIL-100-cpe-tracker`, staged separately from the CPE rebind below.
-  - **This is the same fix as 2026-10-16. It was never committed and was lost when the working tree
-    was reset** — `caira-tracker.ts` was back on `cpe_summary.caira_cpe_credits`. The user reported
-    it again today ("in badges page also i am not able to see any credits"), which is what surfaced
-    the regression. **Commit it this time.**
-  - **Cause and evidence, re-measured on the captured payload** (compiled the model +
-    `level-progress` to JS and ran both sources):
-    `caira_cpe_credits` = 0 → "0 CPE Credits", Level 1 bar 0%, "Earn 30 credits to complete Level 1";
-    `total_cpe_credits` = 152 → "152 CPE Credits", Level 1 bar 100%, "Level 1 complete".
-    The server's own `progress_label` reads `"152/90 Credits"` against Level 3's `cpe_threshold` 90,
-    so the rungs are counted in **total** credits. The old `// CAIRA-only credits, which is what a
-rung's threshold is measured in` comment was simply wrong, and is replaced with the evidence.
-  - **Gates:** lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 246.67 kB, only
-    the `ai-labs.css` warning.
-  - **⚠ Backend question this raises for BOTH trackers:** `caira_cpe_credits` / `caira_credits_earned`
-    is 0 for a learner who has **claimed all three CAIRA level badges** and holds 152 credits. If
-    those credits should be CAIRA-flagged, that is a backend bug — and it also means the CPE
-    tracker's CAIRA chip (its default tab) is empty for this learner while "Others" holds everything.
-    **Unconfirmed on screen:** the user has not yet said whether the Others tab shows rows. If the
-    CAIRA ledger stays empty server-side, the page's default chip should probably flip to Others —
-    a product decision, not taken here.
-
-- 🔧 **2026-10-19, NON-REFACTOR — MIL-100, CPE tracker rebind (`prompts/cpe-tracker-rebind.md`,
-  approved in plan mode). SUBTASK 1 OF 2 DONE, UNCOMMITTED** on `feat/MIL-100-cpe-tracker`.
-  - **The backend shipped the replacement.** `Web_CPE_Tracker_API.md` (MO-2776, commit `3cd7dea`)
-    documents five `web-api/v1/cpe-tracker/` routes. Probed 2026-10-19: **all five answer JSON 401**,
-    as does `api/v1/badges/badge-claimed-by-user/` — live, where every path probed before was an
-    HTML 404. **The page is no longer backend-blocked; the 33-path guessing game is over.**
-  - **Subtask 1, `feat(cpe-tracker): bind the portfolio summary and credits table to web-api/v1`:**
-    `summary/?year=` and `credits/?ledger=&year=&course_type=&page=&page_size=15`, both parsed at the
-    boundary (`parseCpeSummary` / `parseCpeCredits`), both gated on the boolean `isAuthenticated()`,
-    no facade. `canMatch: [authGuard]` added to `cpe-tracker.routes.ts` — it was the one tracker route
-    without it. The compliance gauge takes `required_credits` and the real reporting period from the
-    first configured `state_boards[]` entry, so `DEFAULT_CPE_REQUIREMENT = 40` is deleted and an
-    unconfigured board reads "Requirement not configured" instead of dividing by a guess.
-  - **Three contract traps, all handled:**
-    1. **`allocated_on` is a bare `YYYY-MM-DD` in UTC.** Measured: `new Date('2026-09-14')` formats as
-       **Sep 13** in `America/New_York` and `America/Los_Angeles`, Sep 14 in UTC and Kolkata. The pipe
-       now takes `'UTC'`. Every US learner would have read every date a day early.
-    2. **`course_type` was re-spelled** — `masterclass` → `course`, plus a new `micro_learning`
-       beside `nano_learning`. Unknown query params are a **400**, so `page_count` had to go too.
-    3. **All ids are UUIDs**, which is what killed the per-row certificate path (below).
-  - **Verified without credentials** (still none here for a signed-in run): 22 runtime guard checks
-    against the doc's own payloads — envelope peeled, `data.credits` paging lifted, `cpe_credit`
-    renamed to `cpe_credits`, retyped/missing keys rejected, extra keys and unseen enum values
-    accepted, archived rows with null `course_type`/`slug`/`id` parsed, `?course_type=` tokens
-    correct. Signed out, `/us/accounting/cpe-tracker` now returns byte-identically to the
-    already-guarded `/us/accounting/caira-tracker` (200, 4839 bytes, no page shell).
-  - **Gates (local macOS):** tsc 0; lint **0 errors** (101 warnings); structure ✔ after
-    `--prune` (two files improved); Prettier ✔; `build:prod` initial total 1.07 MB / 246.58 kB
-    transfer, only the `ai-labs.css` warning; `build-storybook` ✔.
-  - **Deliberately not in subtask 1 — the table has no Download button.** The per-row flow opened the
-    shared `CertificateDownloadDialog`, which is keyed on a **numeric** course id; the new rows carry
-    UUIDs, so the two cannot meet. `downloadForRow` and the orchestrator's
-    `openCertificateDownloadDialog` are deleted rather than left pointing at a 404. The replacement is
-    `credits/<award_id>/certificate/` in subtask 2.
-  - **Subtask 2, next:** `credits/<id>/certificate/`, `certificates/?year=` (paged, follow `next`),
-    `nasba-template/?year=` (**success is an .xlsx, errors are JSON — check the status first**), and
-    badge claim via `POST api/v1/badges/badge-claimed-by-user/ {badge_id}`, which answers **Q11**.
-  - **Still to raise with the backend:** what distinguishes `nano_learning` from `micro_learning` as
-    course types? Both are accepted and this app has only ever had one such concept. "Reels" sends
-    both until it is answered — that cannot under-count, picking one could.
-  - **Found, out of scope, worth its own ticket:** `CertificateAccessPolicy.decideBulk(null)` returns
-    `upsellTrial`, so **"All Certificate" shows the upgrade dialog to every learner regardless of
-    plan** — the plan source was lost with the removed session service (two `ponytail` comments say
-    so). And the four other `CertificateDownloadDialog` callers (final-assessment report, masterclass
-    facade, micro-learning facade, badge page) are still on the 404'd
-    `user-assessment/download_certificate/` with no award id to migrate to.
-
 - 🔧 **2026-10-16, NON-REFACTOR: commerce remove routes and an optional billing address**
   (`prompts/optional-billing-address.md` rev 1, approved in plan mode). Three tickets, three PRs.
   - **PR 1, `fix(payment): call the POST remove routes for cart lines, coupons and addresses`.
@@ -1175,6 +1105,97 @@ data-press:bg-transparent` in a static `class`; the auto-renew dialog's Close is
     - **Not done:** a successful sign-in, which needs a real inbox or phone.
   - **Backend:** Postman still shows the old bodies; ask for a regenerated collection. Prod must take
     the new contract before this ships.
+- 🔧 **2026-10-12, NON-REFACTOR — require sign-in for learner pages and webinar Join
+  (`prompts/require-sign-in.md`, approved). DONE, UNCOMMITTED** on `fix/MIL-62-require-sign-in` (Bug MIL-62,
+  from `master`). No refactor phase moved.
+  - **Guarded (17 routes, `canMatch: [authGuard]`):**
+    - masterclass and podcast chapter, exam, report and feedback
+    - micro-learning exam, report and feedback
+    - webinar feedback
+    - the `cpe-tracker` and `caira-tracker` mounts
+    - payment `invoice`, `order-history` and the cart/billing/review shell (`plan` stays public)
+  - **Join:** `WebinarFacade.join()` owns it now and asks a signed-out user to sign in ("Sign in to join").
+    Before, a stale detail or feed row could open the Zoom `join_url` with no session. The prompt copy for
+    Register and Join is in `webinar/constants/sign-in-prompts.ts`.
+  - **Left public on purpose:** the micro-learning course page. It is that course's only page and guests
+    browsed it in v3; this is a product call.
+  - **Gates (local macOS):** tsc 0; `pnpm lint` 0 errors (106 warnings); structure check passed; Prettier
+    clean; `build:prod` green, initial 245.54 kB, with only the `ai-labs.css` warning.
+  - **SSR (prod build, 4000):**
+    - Signed out, the server-rendered guarded routes answer 302 to `/auth/login?redirect=…`; the
+      client-rendered ones send an empty `<app-root>`.
+    - With a dummy `ACCESS_TOKEN` cookie, a chapter answers 200.
+    - All 16 public pages checked answer 200 signed out.
+  - **Browser (the user's dev server, 4101):**
+    - **Signed out:** all 22 guarded URLs land on sign-in with the right `redirect`, and no page chunk loads.
+      The public podcast course page does load `podcast-course-*.js`, which shows the check can see page
+      chunks.
+    - **Join, signed out:** the prompt shows on the list and detail pages, with no `/live` navigation and no
+      Zoom tab. "Sign in" goes to `/auth/login?redirect=/us/accounting/webinar`; "Not now" closes it.
+      Register still says "Sign in to register".
+    - **Dummy cookie (removed afterwards):** the guarded pages open, and Join reaches the "not ready yet"
+      toast.
+  - **Not verified:**
+    - The real return after signing in, because UAT sends no OTP mail to temp domains.
+    - A real Join (embedded or Zoom).
+  - **Found in review, fixed:** "Back to Home" on `/auth/login` navigated to `redirect`, which is now a
+    guarded page, so it bounced back to the login page. `Auth.handleBackOrLogout()` now returns to the page
+    sign-in was asked from (`currentNavigation().previousNavigation`, recorded when the shell opens), or `/`.
+    - **Verified (dev 4101, plus headless Playwright once the browser pane was hidden):**
+      - Course page → Watch Now → sign-in → Back returns to the course page.
+      - A direct chapter link → Back goes to home.
+      - The webinar Join prompt → Sign in → Back returns to the webinar page.
+      - A session ended on a guarded page → Back falls through to home. This case logs one harmless
+        `AbortError` for a skipped view transition.
+  - **Same PR, user's call: a guest's "Book Now" opens that webinar's page with its seat form focused**
+    (`prompts/webinar-book-now-detail.md`, approved).
+    - **Bug fixed:** the list page focused the hero's seat form, which belongs to the hero webinar. A row's
+      Book Now therefore booked the hero, not the row.
+    - **How:** `WebinarFacade.book()`: a member registers in place; a guest gets a one-shot `seatFocusFor`
+      and navigates to the detail page. `SeatForm` calls `takeSeatFocus()` after its first render, then
+      scrolls to the field and focuses it. `webinarPath()` is shared with `join()`.
+    - **Verified (dev 4101 via headless Playwright):**
+      - At 1440, 768 and 375, Book Now on a row opens that webinar's page. Its seat form carries that id, and
+        the field is focused and in view for 2 s after arrival.
+      - A direct load and More Info do not focus the field.
+    - **Not clicked signed in:** that would POST a registration. The member branch is the unchanged
+      `register()`.
+  - **Second commit, same branch: complete the profile before webinar registration**
+    (`prompts/profile-before-register.md`, approved). DONE, UNCOMMITTED.
+    - **Scope:** only `register-via-zoom` refuses an incomplete profile (checked in Postman), and every caller goes
+      through `WebinarFacade.register()`.
+    - **What changed:**
+      - **The gate:** when `AuthSession.isProfileCompleted() === false`, Register Now toasts "Complete your profile
+        first" and opens `/auth/profile?redirect=<page>`, with no call.
+      - **The fallback:** the API's own profile refusal does the same, with the server's copy.
+      - **The profile page:** after a complete save, it goes to an in-app `redirect`.
+      - **Sign-in:** a `new_user` keeps `redirect` on the way to `/auth/profile`.
+    - **Verified (dev 4101, headless Playwright, dummy cookies; the save and the refusal intercepted, test-only):**
+      - Incomplete: the toast, `/auth/profile?redirect=/us/accounting/webinar/<id>`, and 0 register calls.
+      - Complete, but the API refuses with `missing_first_name`: 1 call, the server copy, then the profile page.
+      - A complete save lands on the webinar detail; a partial save stays, with "Still to answer: 1 question".
+      - A `//evil…` redirect is ignored.
+    - **Gates:** tsc 0, lint 0 errors (106 warnings), structure check passed, `build:prod` green.
+    - **Needs the user's real round trip.** If the backend still doesn't set `first_name` from the profile's name
+      answer (MIL-52 note), a complete profile keeps getting `missing_first_name`. That is a backend fix.
+    - **Same commit, the user's report: Save Changes did nothing with a required question unanswered.**
+      - **Cause:** the form had two validators. `[formField]` puts a native `required` attribute on the text inputs, so
+        the browser blocked the submit before `save()` ran. Once those were filled, `save()` refused because of an empty
+        select, and the browser couldn't see selects. Its error sat out of view in the scrolling card.
+      - **Second cause:** a required single-select's error line was blank, because the `required` rule fires first on
+        `''` and had no message.
+      - **Fix:** the form is `novalidate`. `save()` marks every field and calls `revealFirstError()`, which scrolls the
+        first unanswered question in display order to the centre of the card and focuses it. The rule now has the
+        "Choose an option." message. The text input and textarea now take the shared controls'
+        `data-invalid:data-touched:border-destructive`, so they turn red like the select (the user asked for this).
+      - **Verified (dev 4101, headless Playwright, stubbed `questions/` with sections out of order and a gated child):**
+        - Every case went to the right question, including a select and a child question revealed by a "Yes".
+        - Every error showed its message. A complete form sent one PATCH.
+        - At 1440, 768 and 375, the question, its label and its error are in view, with no horizontal scroll.
+      - **Gates:** tsc 0, lint 0 errors (106 warnings), structure check passed, Prettier clean. `build:prod` was not
+        run, because it breaks the running dev server's Vite cache.
+  - **Follow-up, own ticket:** `payment/pages/plan/plan.ts:61` hardcodes `isLoggedIn = signal(false)`, so a
+    signed-in learner picking a plan is sent to sign-in.
 - 🔧 **2026-10-12, NON-REFACTOR — CAIRA levels before login. ✅ Committed by the user as `b495aa4`** on
   `feat/MIL-61-caira-levels-pre-login` (from `master`). No refactor phase moved.
   - **Open, same PR (user asked): the AI Labs WebGL ring shows no thumbnails (⏸ awaiting decision).**
@@ -5031,6 +5052,14 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-19 · NON-REFACTOR · **PR #122 (MIL-62): `master` `795819d` merged in** (staged, user continues the merge in Desktop): 2 conflicts (payment-routes comment, STATE.md) · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod 246.74 kB · instructor 200, feedback 302, plan 200 signed out
+
+- 2026-10-16 · NON-REFACTOR · **PR #122 (MIL-62): `master` `a2afc0e` merged in** (staged, user continues the merge in Desktop): 7 conflicts resolved, duplicate `authGuard` import removed, baseline pruned; #145's revert of the thumbnail fix found · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod 244.84 kB · guards + webinar Book Now checked signed out
+
+- 2026-10-16 · NON-REFACTOR · **MIL-99 instructor page public** (`fix/MIL-99-public-instructor-page`, merged as #152): `login_type` on `instructor-detail/`, `content_type` on `filter/`, route guard removed · gates green · signed out + dummy signed-in checked
+
+- 2026-10-15 · NON-REFACTOR · **Webinar feed: null `horizontal_thumbnail` / `square_image` accepted** (uncommitted, `fix/MIL-62-require-sign-in`): one UAT card with both null failed the whole feed · tsc 0, Storybook tsc 0, ESLint ✔, prettier ✔ · list + `Test webinar-2` detail render in dev
 
 - 2026-10-16 · NON-REFACTOR · **Dialog overflow and review `?status=` fixed** (uncommitted, `fix/MIL-XXX-dialog-overflow-review-status`): `@layer base` cap on `app-dialog` panel children, subscription and AI Lab cards `max-w-[min(100%,…)]`, status-sync effect invoice-only · 375/768/1440 measured · lint 0 errors (101 warnings), structure ✔, prettier ✔, build:prod 246.63 kB
 

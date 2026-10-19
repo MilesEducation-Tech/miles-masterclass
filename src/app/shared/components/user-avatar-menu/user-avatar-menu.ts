@@ -8,7 +8,6 @@ import { lucideChevronDown, lucideLogOut, lucideShoppingBag, lucideUser } from '
 import { NgpMenu, NgpMenuItem, NgpMenuTrigger } from 'ng-primitives/menu';
 import { cn } from '../../utils/cn';
 import { Utils } from '@shared/services/utils';
-import { Analytics } from '@core/services/analytics/analytics';
 import { AccountApi } from '@core/services/account-api/account-api';
 import { displayNameOf, initialsOf } from '@core/models/account.model';
 import { AuthSession } from '@core/services/auth-session/auth-session';
@@ -25,7 +24,6 @@ export class UserAvatarMenu {
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
   protected readonly utils = inject(Utils);
-  private readonly analytics = inject(Analytics);
   private readonly account = inject(AccountApi);
   private readonly auth = inject(AuthSession);
   private readonly notify = inject(NotificationService);
@@ -61,7 +59,6 @@ export class UserAvatarMenu {
    * current route and flushes route-scoped state.
    */
   async onLogout(): Promise<void> {
-    this.analytics.trackEvent('logout');
     if (!(await this.auth.logout())) {
       this.notify.error('Sign out failed', 'We could not sign you out. Please try again.');
       return;

@@ -15,7 +15,6 @@ import { catchError, of } from 'rxjs';
 import { BadgeCard, BadgeCardActionEvent } from '@shared/components/cards/badge-card/badge-card';
 
 import {
-  badgeClaimCourse,
   BadgeCardData,
   BadgeCourseItem,
   BadgeStatusFilter,
@@ -171,7 +170,7 @@ export class Badge {
     // ponytail: gated on an active subscription, read from the removed
     // session service. Claiming is open until a plan source is re-attached.
     this.facade
-      .claimBadge(card.badgeId, badgeClaimCourse(card.raw))
+      .claimBadge(card.badgeId)
       .pipe(
         catchError(() => of(null)),
         takeUntilDestroyed(this.destroyRef),

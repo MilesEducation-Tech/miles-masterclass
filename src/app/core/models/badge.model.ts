@@ -121,27 +121,6 @@ export function badgeInstructorName(
   );
 }
 
-/** Course identity for the `badge_claim` analytics event (null for level badges). */
-export function badgeClaimCourse(item: BadgeItem): {
-  course_id: number | null;
-  course_name: string | null;
-  course_type: string | null;
-} {
-  if (isBadgeLevelItem(item)) return { course_id: null, course_name: null, course_type: null };
-  if (item.webinar)
-    return {
-      course_id: item.webinar.id,
-      course_name: item.webinar.webinar_title,
-      course_type: 'webinar',
-    };
-  const course = item.master_class ?? item.nano_learning;
-  return {
-    course_id: course?.id ?? null,
-    course_name: course?.title ?? null,
-    course_type: item.master_class ? 'masterclass' : 'nano_learning',
-  };
-}
-
 export interface BadgePaginationData {
   total_count: number;
   current_page_number: number;

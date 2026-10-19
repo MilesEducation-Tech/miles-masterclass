@@ -23,7 +23,6 @@ import { CartDisplayItem, CartItem } from '@features/payment/components/cart-ite
 import { PriceOverview } from '@features/payment/components/price-overview/price-overview';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { Utils } from '@shared/services/utils';
-import { Analytics } from '@core/services/analytics/analytics';
 import { Button } from '@shared/ui/button/button';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { heroArrowDownTray, heroChevronLeft } from '@ng-icons/heroicons/outline';
@@ -56,7 +55,6 @@ export class Invoice {
   private readonly auth = inject(AuthSession);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly analytics = inject(Analytics);
   private readonly destroyRef = inject(DestroyRef);
   private readonly utils = inject(Utils);
   private readonly notification = inject(NotificationService);
@@ -197,30 +195,6 @@ export class Invoice {
     // ponytail: two effects here needed the session layer — one bounced the
     // user home on logout, the other refreshed the current plan on the
     // payment-success edge so the header's `hasActivePlan` flipped at once.
-
-    // Fire GA4/Netcore `purchase` once the order is paid. trackPurchase dedupes by
-    // transaction_id, so a refresh of the success URL can't double-count revenue.
-    let purchaseSent: string | null = null;
-    effect(() => {
-      const order = this.order();
-      if (!order || order.status !== 'paid' || purchaseSent === order.id) return;
-      purchaseSent = order.id;
-      // GA needs numbers; the server's figures are converted here and nothing is summed.
-      this.analytics.trackPurchase({
-        transaction_id: order.id,
-        value: Number(order.money.price_after_gst),
-        currency: order.currency,
-        base_price: Number(order.money.price_before_discount),
-        selling_price: Number(order.money.price_after_gst),
-        product_discount: Number(order.money.discount_amount),
-        paid_amount: Number(order.money.amount_paid),
-        items: order.lines.map((line) => ({
-          course_id: line.product_id,
-          course_type: 'subscription',
-          price: Number(line.money.final_amount),
-        })),
-      });
-    });
   }
 
   /** Only subscriptions are sold, so any cart line means the auto-renewal terms apply. */

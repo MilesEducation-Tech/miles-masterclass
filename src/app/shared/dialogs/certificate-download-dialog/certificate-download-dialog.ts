@@ -14,7 +14,6 @@ import { DownloadCertificateItem, MASTERCLASS_ROUTES } from '@core/models/master
 import { CommonResponse, RouteRequest } from '@core/models/http.model';
 import { phosphorDownloadSimpleFill, phosphorShareFatFill } from '@ng-icons/phosphor-icons/fill';
 import { BlobDownloadItem, buildPdfFileName, downloadFiles } from '../../utils/blob-download';
-import { Analytics } from '@core/services/analytics/analytics';
 import { Utils } from '@shared/services/utils';
 import { Dialog } from '@shared/ui/dialog/dialog';
 
@@ -100,7 +99,6 @@ export class CertificateDownloadDialog implements OnInit {
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly analytics = inject(Analytics);
   private readonly utils = inject(Utils);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
@@ -280,12 +278,6 @@ export class CertificateDownloadDialog implements OnInit {
     }));
     try {
       await downloadFiles(items, this.zipBaseName(variant));
-      this.analytics.trackEvent('certificate_download', {
-        course_id: this.data.courseId,
-        course_type: this.data.courseType,
-        certificate_type: variant,
-        count: certs.length,
-      });
     } catch (err) {
       this.logger.error('CertificateDownloadDialog.runDownload failed', err);
       this.notification.error(

@@ -2,7 +2,6 @@ import { httpResource } from '@angular/common/http';
 import { computed, inject, Service, signal } from '@angular/core';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
 import {
   FEEDBACK_ROUTES,
   FeedbackCategory,
@@ -11,7 +10,6 @@ import {
 import { ContentDetails } from '@core/models/course.model';
 import { RouteRequest, RouteResponse } from '@core/models/http.model';
 import { Utils } from '@shared/services/utils';
-import { Analytics } from '@core/services/analytics/analytics';
 
 // Type aliases for cleaner usage
 type FeedbackListResponse = RouteResponse<typeof FEEDBACK_ROUTES.getFeedbackCategory>;
@@ -32,7 +30,6 @@ type UserFeedbackResponse = RouteResponse<typeof FEEDBACK_ROUTES.userFeedback>;
 export class FeedbackFacade {
   private readonly apiClient = inject(ApiClient);
   private readonly utils = inject(Utils);
-  private readonly analytics = inject(Analytics);
 
   private readonly courseId = signal<number | null>(null);
 
@@ -100,16 +97,6 @@ export class FeedbackFacade {
   );
 
   submitFeedback(body: FeedbackSubmitRequest): Observable<FeedbackSubmitResponse> {
-    return this.apiClient
-      .post<FeedbackSubmitResponse>(FEEDBACK_ROUTES.submitFeedback.path, body)
-      .pipe(
-        tap(() => {
-          this.analytics.trackEvent('feedback_submit', {
-            course_id: body.masterclass_id ?? body.podcast_id ?? body.nano_learning_id ?? '',
-            course_type: this.utils.getCourseType(),
-            feedback_count: body.feedbacks?.length ?? 0,
-          });
-        }),
-      );
+    return this.apiClient.post<FeedbackSubmitResponse>(FEEDBACK_ROUTES.submitFeedback.path, body);
   }
 }

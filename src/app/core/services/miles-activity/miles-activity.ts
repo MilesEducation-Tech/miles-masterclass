@@ -6,18 +6,16 @@ import { ApiClient } from '../api-client/api-client';
 import { Logger } from '../logger/logger';
 
 /**
- * Mirrors every GA4 event to Miles360 (Salesforce), so CRM journeys can be
- * built on the same behavioural signal the web app already emits.
+ * Posts behavioural events to Miles360 (Salesforce), so CRM journeys can be
+ * built on what learners do in the web app.
  *
- * There is exactly one caller: {@link Analytics}. It invokes `send()` from the
- * three methods every GA4 hit funnels through — `trackEvent`, `trackPageView`
- * and `emitLifecycle` — so no individual call site knows this exists. Add a new
- * `dataLayer.push` path to Analytics and you must add a `send()` beside it, or
- * that event is silently missing from the CRM.
+ * No caller today: it mirrored every GA4 event, and its only caller was the
+ * Analytics service, removed until analytics is set up again with new accounts
+ * (`prompts/remove-analytics.md`). Wire `send()` into that new event pipeline
+ * when it lands.
  *
- * Deliberately NOT consent-gated, unlike the GA4 / Clarity / Netcore hits it
- * rides alongside: this is first-party CRM data, not third-party analytics. It
- * therefore carries its own guards rather than inheriting Analytics'.
+ * Deliberately NOT consent-gated: this is first-party CRM data, not
+ * third-party analytics, so it carries its own guards.
  *
  * Strictly fire-and-forget: `send()` returns `void`, never blocks the caller
  * and never surfaces an error. A dropped event is logged and forgotten — the

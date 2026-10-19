@@ -435,9 +435,15 @@ export class AuthFacade {
 
       // Rule 4: the milestone, not a token claim.
       const redirect = this.route.snapshot.queryParamMap.get('redirect');
-      await this.router.navigateByUrl(
-        session.profile_status === 'new_user' ? '/auth/profile' : (redirect ?? '/'),
-      );
+      if (session.profile_status === 'new_user') {
+        // The profile page returns to `redirect` once it is complete, so a new
+        // learner who signed in to register for a webinar lands back on it.
+        await this.router.navigate(['/auth/profile'], {
+          queryParams: redirect ? { redirect } : {},
+        });
+      } else {
+        await this.router.navigateByUrl(redirect ?? '/');
+      }
     } catch (err) {
       const failure = this.renderFailure(err);
       if (failure.kind === 'bad_code') {

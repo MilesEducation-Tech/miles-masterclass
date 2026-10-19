@@ -9,7 +9,6 @@ import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { Utils } from '@shared/services/utils';
-import { Analytics } from '@core/services/analytics/analytics';
 import {
   CommonResponse,
   RouteParams,
@@ -115,7 +114,6 @@ export class MicroLearningCourseFacade {
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   private readonly utils = inject(Utils);
-  private readonly analytics = inject(Analytics);
   // Only the cart-removal signal is needed here, and it lives in core so this
   // feature does not have to import the payment feature (PROMPT.md §3).
   private readonly destroyRef = inject(DestroyRef);
@@ -245,14 +243,6 @@ export class MicroLearningCourseFacade {
       this.hydrateFromArray(page.reels);
       this.nextCursor.set(page.nextCursor);
       this.paginationPath = NANO_LEARNING_ROUTES.getCourseList.path;
-      const reel = this.activeReel();
-      if (reel) {
-        this.analytics.trackEvent('view_item', {
-          course_id: reel.id,
-          course_name: reel.title,
-          course_type: 'nano_learning',
-        });
-      }
       return;
     }
     if (details && canSeedReel(details)) {
@@ -282,14 +272,6 @@ export class MicroLearningCourseFacade {
         tap((res) => {
           this.hydrateFromArray(res?.data ?? []);
           this.nextCursor.set(res?.pagination_data?.next_cursor ?? null);
-          const reel = this.activeReel();
-          if (reel) {
-            this.analytics.trackEvent('view_item', {
-              course_id: reel.id,
-              course_name: reel.title,
-              course_type: 'nano_learning',
-            });
-          }
         }),
         catchError((err) => {
           this.logger.error('Failed to load micro-learning course details', err);
