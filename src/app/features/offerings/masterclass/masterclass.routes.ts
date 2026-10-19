@@ -1,6 +1,7 @@
 import { Route } from '@angular/router';
 import { authGuard } from '@core/guards/auth/auth-guard';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
+import { CourseCertificateFacade } from '@features/offerings/services/course-certificate-facade';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { CourseEvaluationFacade } from '@features/offerings/services/course-evaluation-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
@@ -21,8 +22,15 @@ export const masterclassRoutes: Route[] = [
     // between chapters reuse the course read instead of fetching it again. The
     // final assessment sits beside it (the hero and the last chapter's quiz start
     // a sitting, and the exam page shows it), and so does the course evaluation
-    // (the hero and the report open it, and the feedback page submits it).
-    providers: [CourseDetailFacade, FinalAssessmentFacade, CourseEvaluationFacade],
+    // (the hero and the report open it, and the feedback page submits it), and
+    // so does the certificate it triggers (the hero, the report and the
+    // feedback page's thank-you view download it).
+    providers: [
+      CourseDetailFacade,
+      FinalAssessmentFacade,
+      CourseEvaluationFacade,
+      CourseCertificateFacade,
+    ],
     children: [
       {
         path: '',

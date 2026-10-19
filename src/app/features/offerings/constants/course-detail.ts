@@ -152,6 +152,14 @@ export const COURSE_DETAIL_API: Record<CourseOffering, CourseDetailApi> = {
      */
     feedbackResponses: `${ROOT}web-api/v1/masterclass/feedback-responses/`,
 
+    /**
+     * `IsAuthenticated`: the GET twin of `courseProgressUpdate`. Append `<course
+     * uuid>/`. Its top level carries the same completion flags as
+     * `course-detail/`, `masterclass_certificate_url` included, in a lighter
+     * read, so the wait for a freshly triggered certificate asks this one.
+     */
+    courseProgress: `${ROOT}web-api/v1/masterclass/course-progress/`,
+
     urlSegment: 'masterclass',
   },
 };
@@ -375,6 +383,24 @@ export const FEEDBACK_COPY = {
     button: 'Complete Profile',
   },
 } as const;
+
+/** The certificate's own copy. */
+export const CERTIFICATE_COPY = {
+  download: 'Download Certificate',
+  preparing: 'Preparing Certificate...',
+  notReady: {
+    title: 'Certificate on its way',
+    body: 'Your certificate is being generated. Please try again in a minute.',
+  },
+} as const;
+
+/**
+ * The feedback triggers the certificate; the server generates the PDF on its
+ * own time and only then sends its link. The page asks again this often, this
+ * many times (2 minutes), before it stops and lets a click ask again.
+ */
+export const CERTIFICATE_POLL_SECONDS = 5;
+export const CERTIFICATE_POLL_ATTEMPTS = 24;
 
 /** Each reviewed question's badge, and the colour its answer takes. */
 export const ASSESSMENT_REVIEW_STATUS: Record<

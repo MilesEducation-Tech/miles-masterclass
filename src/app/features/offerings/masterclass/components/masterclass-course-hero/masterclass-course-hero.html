@@ -202,14 +202,14 @@
               <ng-icon name="phosphorShareFatFill" size="24" aria-hidden="true" />
               <span>Share</span>
             </button>
-            <!-- Enabled once the API returns the learner's certificate URL. -->
+            <!-- The certificate: enabled once the course evaluation is in. -->
             <button
               app-button
               type="button"
               class="text-white rounded-lg flex gap-1 h-auto flex-col justify-end items-center p-1"
               variant="ghost"
-              [disabled]="!c.masterclass_certificate_url"
-              (click)="facade.downloadCertificate()"
+              [disabled]="!certificate.canDownload() || certificate.waiting()"
+              (click)="certificate.download()"
             >
               <ng-icon name="phosphorDownloadSimpleFill" size="24" aria-hidden="true" />
               <span>Download</span>

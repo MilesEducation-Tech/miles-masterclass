@@ -441,6 +441,13 @@ export class CourseDetailFacade {
     return base && id ? `${base}${id}/` : null;
   }
 
+  /** `course-progress/` for this course; `null` until its id is known. */
+  courseProgressUrl(): string | null {
+    const base = this.routes()?.courseProgress;
+    const id = this.courseId();
+    return base && id ? `${base}${id}/` : null;
+  }
+
   /** `feedback-questions/` for this course; `null` until its id is known. */
   feedbackQuestionsUrl(): string | null {
     const base = this.routes()?.feedbackQuestions;
@@ -601,12 +608,6 @@ export class CourseDetailFacade {
         this.bookmarkOverride.set(null);
       },
     });
-  }
-
-  /** The learner's certificate, once the API has generated it. */
-  downloadCertificate(): void {
-    const url = this.course()?.masterclass_certificate_url;
-    if (url) this.document.defaultView?.open(url, '_blank', 'noopener');
   }
 
   /** The course's glossary, authored as HTML in the admin. */

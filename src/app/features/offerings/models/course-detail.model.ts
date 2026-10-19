@@ -72,6 +72,8 @@ export interface CourseDetailApi {
   feedbackSubmit: RouteConfig<EvaluationSubmitBody, unknown>;
   /** `GET <url>?course_id=`: whether, and when, the learner submitted it. */
   feedbackResponses: string;
+  /** `GET <url><course uuid>/`: the course's progress and completion flags. */
+  courseProgress: string;
   /** The course page's URL segment: `/:country/:profession/<segment>/:id/:slug`. */
   urlSegment: string;
 }
@@ -592,6 +594,19 @@ export function parseCourseProgress(raw: unknown): CourseProgress {
     }
   }
   throw contractError('course-progress-update');
+}
+
+/**
+ * `course-progress/`'s `{ success, message, data }` envelope, read for one key
+ * only while a freshly triggered certificate is generated: its link, `null`
+ * until the PDF exists.
+ */
+export function parseCertificateLink(raw: unknown): string | null {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  if (isObject(data) && isStrOrNull(data['masterclass_certificate_url'])) {
+    return data['masterclass_certificate_url'];
+  }
+  throw contractError('course-progress');
 }
 
 /**

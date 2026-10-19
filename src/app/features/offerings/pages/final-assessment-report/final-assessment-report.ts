@@ -1,5 +1,7 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { heroArrowDownTray } from '@ng-icons/heroicons/outline';
 import { NgpLabel } from 'ng-primitives/form-field';
 import { Backward } from '@shared/components/backward/backward';
 import { Accordion } from '@shared/ui/accordion/accordion';
@@ -13,8 +15,10 @@ import {
   ASSESSMENT_COPY,
   ASSESSMENT_REPORT_COPY,
   ASSESSMENT_REVIEW_STATUS,
+  CERTIFICATE_COPY,
   FEEDBACK_COPY,
 } from '@features/offerings/constants/course-detail';
+import { CourseCertificateFacade } from '@features/offerings/services/course-certificate-facade';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 import { CourseEvaluationFacade } from '@features/offerings/services/course-evaluation-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
@@ -27,13 +31,16 @@ import { FinalAssessmentFacade } from '@features/offerings/services/final-assess
  * course, so the URL carries no session.
  *
  * The page keeps only its view state, the "wrong answers only" filter. After a
- * pass, "Submit Feedback" opens the course evaluation (`CourseEvaluationFacade`).
+ * pass, "Submit Feedback" opens the course evaluation (`CourseEvaluationFacade`),
+ * and "Download Certificate" opens its PDF once that is in
+ * (`CourseCertificateFacade`).
  */
 @Component({
   selector: 'app-final-assessment-report',
   imports: [
     DatePipe,
     DecimalPipe,
+    NgIcon,
     NgpLabel,
     Backward,
     Accordion,
@@ -45,6 +52,7 @@ import { FinalAssessmentFacade } from '@features/offerings/services/final-assess
     Switch,
   ],
   templateUrl: './final-assessment-report.html',
+  viewProviders: [provideIcons({ heroArrowDownTray })],
 })
 export class FinalAssessmentReport {
   // Route params, bound by `withComponentInputBinding`.
@@ -53,12 +61,14 @@ export class FinalAssessmentReport {
 
   protected readonly facade = inject(FinalAssessmentFacade);
   protected readonly evaluation = inject(CourseEvaluationFacade);
+  protected readonly certificate = inject(CourseCertificateFacade);
 
   protected readonly copy = ASSESSMENT_REPORT_COPY;
   protected readonly assessmentCopy = ASSESSMENT_COPY;
   protected readonly statuses = ASSESSMENT_REVIEW_STATUS;
   protected readonly submitFeedback = FEEDBACK_COPY.submitFeedback;
   protected readonly feedbackSubmitted = FEEDBACK_COPY.feedbackSubmitted;
+  protected readonly certificateCopy = CERTIFICATE_COPY;
 
   protected readonly wrongOnly = signal(false);
   protected readonly items = computed(() => {

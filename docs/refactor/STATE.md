@@ -7,6 +7,51 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
+  GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
+  `feat/MIL-111-certificate-download`, stacked on MIL-110 (`46bdfc7`).
+  - **Built:**
+    - **New `CourseCertificateFacade`** on the course route: `canDownload` (signed in and `feedback_submitted`),
+      `link`, `waiting`, `watch()` and `download()`.
+      - `watch()`: `timer(0, 5 s)` → `take(24)` → `exhaustMap` (a `course-progress` GET with `SKIP_LOADING`) →
+        `parseCertificateLink`. It stops at the first link, on sign-out, or once the address bar leaves the course's
+        pages; the route's services outlive them, so the URL is the signal.
+      - `download()`: opens the link with `noopener` inside the click, or toasts "being generated" and watches.
+    - **`CourseEvaluationFacade.submit()`** calls `watch()` after a successful submit.
+    - **`COURSE_DETAIL_API.courseProgress`** and `CourseDetailFacade.courseProgressUrl()`. Its old
+      `downloadCertificate()` moves out.
+    - **UI:**
+      - The report header: "Download Certificate" after a pass.
+      - The thank-you view: Download first, with Continue / View Report outlined.
+      - The hero's Download follows the same rule.
+  - **Size:** ~235 lines of source.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.63 kB,
+    only `ai-labs.css`.
+  - **Verified (dev 4101, headless; UAT answered 503, so the course body is a synthetic one that passes the guard):**
+    - **Before feedback:** report `[Submit Feedback, Download Certificate (disabled)]`; hero Download disabled.
+    - **After a submit:**
+      - The thank-you view shows "Preparing Certificate..." (disabled).
+      - 3 `course-progress` calls 5 s apart, and no loading bar.
+      - Then "Download Certificate" is enabled, with no more calls (6 s later), and the click opens the PDF URL in a
+        new tab.
+    - **Once the course has the link:** the report and the hero are both enabled and open it.
+    - **Feedback in, no link yet:** enabled. A click toasts "Certificate on its way…" and shows "Preparing…", then
+      enabled once the link is found (2 calls).
+    - **Leaving:**
+      - Report → course page (Back to Course) keeps the wait going.
+      - The header's Masterclasses link → the landing page gives 0 calls in the next 12 s.
+      - An earlier "8 calls" run was an artefact: the report's plain layout has no header link, and the full-page
+        fallback was slow with UAT down.
+  - **Hand test:** `.playwright-mcp/manual-mil111.js` is in the user's window. The certificate "generates" 10 s
+    after the feedback.
+  - **The user's rule:** the button is disabled until `feedback_submitted`, then enabled.
+  - **The link:** `masterclass_certificate_url`. After a feedback submit, a quiet `course-progress` check every 5 s,
+    up to 24 times, waits for it.
+  - **Where:** the report header, the thank-you view and the hero (existing).
+  - **Triggers mapped** (plan: "Where the certificate is downloaded"):
+    - **Previous app:** the hero, the report, the thank-you view, the CPE tracker and the badge library.
+    - **Here:** the tracker and badge download are out of scope.
+
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-110 (Story MIL-107), masterclass course feedback on the web API. PLAN
   APPROVED, DONE, GATES GREEN, UNCOMMITTED** (`prompts/masterclass-course-feedback.md` rev 1), on
   `feat/MIL-110-course-feedback`, stacked on `feat/MIL-109-assessment-report` (`d81d5b5`).
@@ -5373,6 +5418,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-19 · NON-REFACTOR · **MIL-111 built** (uncommitted): `CourseCertificateFacade` (disabled until feedback, quiet `course-progress` wait for `masterclass_certificate_url`), Download Certificate on report + thank-you, hero Download on the same rule · tsc 0, lint 0 errors, structure ✔, build:prod 240.63 kB · headless scenarios pass
+
+- 2026-10-19 · NON-REFACTOR · **MIL-111 planned** (`feat/MIL-111-certificate-download`, stacked on MIL-110; `prompts/masterclass-certificate-download.md`): Download Certificate disabled until feedback, quiet `course-progress` wait for the PDF link; awaiting approval
 
 - 2026-10-19 · NON-REFACTOR · **MIL-110 built** (uncommitted): `course-evaluation` page + `CourseEvaluationFacade` on `feedback-questions` / `-submit` / `-responses`, Submit Feedback on hero and report · tsc 0, lint 0 errors, structure ✔, build:prod 240.58 kB · headless scenarios pass; hand-test window ready
 
