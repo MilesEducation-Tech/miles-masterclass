@@ -40,22 +40,30 @@
               [style.backgroundColor]="view.accent"
               aria-hidden="true"
             ></span>
+            <!-- `allocated_on` is a bare YYYY-MM-DD in UTC; without the timezone argument every
+                 learner west of Greenwich reads it a day early. -->
             <span class="text-sm whitespace-nowrap text-neutral-200">
-              {{ view.raw.allocated_on | date: 'MMM d, y' }}
+              {{ view.raw.allocated_on | date: 'MMM d, y' : 'UTC' }}
             </span>
           </div>
 
-          <button
-            app-button
-            type="button"
-            class="h-auto max-w-full min-w-0 justify-start truncate px-0 py-0 text-start text-sm text-neutral-100 underline-offset-4 hover:text-white hover:underline"
-            variant="ghost"
-            size="sm"
-            [attr.aria-label]="'Open ' + view.raw.course.title"
-            (click)="titleClick.emit(view.raw)"
-          >
-            {{ view.raw.course.title }}
-          </button>
+          @if (view.isLinkable) {
+            <button
+              app-button
+              type="button"
+              class="h-auto max-w-full min-w-0 justify-start truncate px-0 py-0 text-start text-sm text-neutral-100 underline-offset-4 hover:text-white hover:underline"
+              variant="ghost"
+              size="sm"
+              [attr.aria-label]="'Open ' + view.raw.course.title"
+              (click)="titleClick.emit(view.raw)"
+            >
+              {{ view.raw.course.title }}
+            </button>
+          } @else {
+            <span class="min-w-0 truncate text-sm text-neutral-100">
+              {{ view.raw.course.title }}
+            </span>
+          }
 
           <app-categories-list
             class="min-w-0 overflow-hidden text-sm text-neutral-400"
@@ -63,7 +71,7 @@
           />
 
           <span class="text-sm font-medium" [style.color]="view.deliveryColor">
-            {{ view.deliveryMethod }}
+            {{ view.raw.delivery_method }}
           </span>
 
           <span class="text-sm tabular-nums text-neutral-200">
@@ -79,9 +87,6 @@
                 [class]="actionClass(action)"
                 (click)="onAction(view.raw, action)"
               >
-                @if (actionUi[action].icon) {
-                  <ng-icon name="lucideDownload" aria-hidden="true" />
-                }
                 {{ actionUi[action].label }}
               </button>
             }

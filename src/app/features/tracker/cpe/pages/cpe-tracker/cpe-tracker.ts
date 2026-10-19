@@ -14,50 +14,53 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft } from '@ng-icons/lucide';
 import {
   CPE_COURSE_TYPE_OPTIONS,
+  CPE_COURSE_TYPE_TOKENS,
+  CPE_CREDITS_PATH,
   CPE_LEDGER_OPTIONS,
-  CpeCourseType,
+  CPE_PAGE_SIZE,
+  CPE_SUMMARY_PATH,
+  CpeCourseChoice,
   CpeCreditWire,
   CpeLedger,
   CpeRowAction,
-  CpeSummaryWire,
-  CpeTrackerResponse,
-  toCertificateTarget,
+  EMPTY_CREDITS_PAGE,
+  parseCpeCredits,
+  parseCpeSummary,
+  primaryStateBoard,
 } from '@features/tracker/cpe/models/cpe-credit.model';
 import { CreditsSummary } from '@core/models/cpe-tracker.model';
 import { apiUrl } from '@core/services/api-client/api-client';
+import { AuthSession } from '@core/services/auth-session/auth-session';
 import { Utils } from '@shared/services/utils';
 
 import { AriaSelectOption } from '@core/models/aria.model';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { withPreviousValue } from '@core/utils/with-previous-value';
-import { localeLink } from '../../../utils/tracker-links';
-import { BadgeFilterChips } from '../../../components/badge-filter-chips/badge-filter-chips';
-import { PortfolioSummary } from '../../components/portfolio-summary/portfolio-summary';
-import { TrackerTable } from '../../components/tracker-table/tracker-table';
-import type { CertificateDownload } from '../../services/certificate-download';
+import { localeLink } from '@features/tracker/utils/tracker-links';
+import { BadgeFilterChips } from '@features/tracker/components/badge-filter-chips/badge-filter-chips';
+import { PortfolioSummary } from '@features/tracker/cpe/components/portfolio-summary/portfolio-summary';
+import { TrackerTable } from '@features/tracker/cpe/components/tracker-table/tracker-table';
+import type { CertificateDownload } from '@features/tracker/cpe/services/certificate-download';
 import { NotificationService } from '@core/services/notification/notification';
-import { TrackerDialogOrchestrator } from '../../services/tracker-dialog-orchestrator';
-import { DEFAULT_CPE_REQUIREMENT } from '../../constants/cpe-tracker.constants';
-import { courseCommands, feedbackCommands } from '../../utils/credit-row';
+import { TrackerDialogOrchestrator } from '@features/tracker/cpe/services/tracker-dialog-orchestrator';
+import { courseCommands, feedbackCommands } from '@features/tracker/cpe/utils/credit-row';
 import { Field } from '@shared/ui/field/field';
 import { NgpLabel } from 'ng-primitives/form-field';
 import { Select } from '@shared/ui/select/select';
 
-/** The API's page-size param is `page_count`, **not** `page_size`. */
-const PAGE_COUNT = 15;
 const YEAR_SPAN = 5;
-
-const EMPTY_LIST: CpeTrackerResponse<CpeCreditWire[]> = { data: [] };
-
-/** Course-type filter value, with a sentinel for "every type". */
-type CourseTypeChoice = CpeCourseType | 'all';
 
 /**
  * "Your CPE Portfolio" — Figma `51200-36347`.
  *
- * Reads the two v2 endpoints directly; there is no facade, and no shared state
- * to scope to the route. The CAIRA badge swiper that used to sit above this
- * page is gone — badges live on `/caira-tracker` now.
+ * Reads `web-api/v1/cpe-tracker/` directly; there is no facade, and no shared state to scope to the
+ * route. The CAIRA badge swiper that used to sit above this page is gone — badges live on
+ * `/caira-tracker` now.
+ *
+ * Both reads gate on the **boolean** `isAuthenticated()`, never the token string: a request
+ * function tracks every signal it reads, so reading the token would re-fire both resources on
+ * every rotation. The route is `authGuard`-ed as well, which is what keeps a signed-out visitor
+ * from seeing a shell and two 401s.
  */
 @Component({
   selector: 'app-cpe-tracker',
@@ -77,11 +80,15 @@ type CourseTypeChoice = CpeCourseType | 'all';
 })
 export class CpeTracker {
   private readonly utils = inject(Utils);
+  private readonly auth = inject(AuthSession);
   private readonly router = inject(Router);
   // Lazy (PROMPT.md §4.5): only used after a download click. Prefetched on idle
   // because downloading is this page's main action.
   private readonly certificates = injectAsync(
-    () => import('../../services/certificate-download').then((m) => m.CertificateDownload),
+    () =>
+      import('@features/tracker/cpe/services/certificate-download').then(
+        (m) => m.CertificateDownload,
+      ),
     { prefetch: onIdle },
   );
   private readonly notification = inject(NotificationService);
@@ -91,14 +98,8 @@ export class CpeTracker {
   protected readonly trackerHome = localeLink('caira-tracker');
   protected readonly ledgerOptions = CPE_LEDGER_OPTIONS;
 
-  /**
-   * `AriaSelect` treats a `null` commit as listbox bookkeeping and drops it
-   * (options pruned before async data lands, explicit-mode re-toggles), so the
-   * "All" entry cannot carry `null` as its value or it would be unselectable.
-   * `'all'` is the sentinel; `courseTypeParam` maps it back for the request.
-   */
-  protected readonly courseTypeOptions: readonly AriaSelectOption<CourseTypeChoice>[] =
-    CPE_COURSE_TYPE_OPTIONS.map((o) => ({ value: o.value ?? 'all', label: o.label }));
+  protected readonly courseTypeOptions: readonly AriaSelectOption<CpeCourseChoice>[] =
+    CPE_COURSE_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
 
   private readonly currentYear = new Date().getFullYear();
   protected readonly yearOptions: readonly AriaSelectOption<number>[] = Array.from(
@@ -109,14 +110,8 @@ export class CpeTracker {
   // ---- Filters -----------------------------------------------------------
 
   protected readonly ledger = linkedSignal<CpeLedger>(() => 'caira');
-  protected readonly courseType = linkedSignal<CourseTypeChoice>(() => 'all');
+  protected readonly courseType = linkedSignal<CpeCourseChoice>(() => 'all');
   protected readonly year = linkedSignal<number>(() => this.currentYear);
-
-  /** `'all'` means "omit `course_type` from the request". */
-  private readonly courseTypeParam = computed<CpeCourseType | null>(() => {
-    const choice = this.courseType();
-    return choice === 'all' ? null : choice;
-  });
 
   /**
    * Resets whenever any filter moves. A `linkedSignal` rather than a `signal`
@@ -135,15 +130,17 @@ export class CpeTracker {
    * that flipping the CAIRA/Others tab doesn't refetch — don't add `ledger()`
    * to these params.
    */
-  private readonly summaryResource = httpResource<CpeTrackerResponse<CpeSummaryWire>>(() =>
-    this.isBrowser
-      ? { url: apiUrl('v2/cpe-tracker/summary/'), params: { year: this.year() } }
-      : undefined,
+  private readonly summaryResource = httpResource(
+    () =>
+      this.isBrowser && this.auth.isAuthenticated()
+        ? { url: apiUrl(CPE_SUMMARY_PATH), params: { year: this.year() } }
+        : undefined,
+    { parse: parseCpeSummary },
   );
 
   /** Guarded: `value()` throws on an errored resource. */
   private readonly summary = computed(() =>
-    this.summaryResource.hasValue() ? (this.summaryResource.value()?.data ?? null) : null,
+    this.summaryResource.hasValue() ? this.summaryResource.value() : null,
   );
   protected readonly isSummaryLoading = computed(() => this.summaryResource.isLoading());
 
@@ -155,20 +152,23 @@ export class CpeTracker {
 
   // ---- Credit list -------------------------------------------------------
 
-  private readonly listResource = httpResource<CpeTrackerResponse<CpeCreditWire[]>>(
+  private readonly listResource = httpResource(
     () => {
-      if (!this.isBrowser) return undefined;
+      if (!this.isBrowser || !this.auth.isAuthenticated()) return undefined;
+
+      // Every key is validated server-side and an unknown one is a 400, so the parameter map is
+      // built explicitly rather than spread from the filter state.
       const params: Record<string, string | number> = {
         ledger: this.ledger(),
         year: this.year(),
         page: this.page(),
-        page_count: PAGE_COUNT,
+        page_size: CPE_PAGE_SIZE,
       };
-      const courseType = this.courseTypeParam();
-      if (courseType) params['course_type'] = courseType;
-      return { url: apiUrl('v2/cpe-tracker/'), params };
+      const tokens = CPE_COURSE_TYPE_TOKENS[this.courseType()];
+      if (tokens.length) params['course_type'] = tokens.join(',');
+      return { url: apiUrl(CPE_CREDITS_PATH), params };
     },
-    { defaultValue: EMPTY_LIST },
+    { defaultValue: EMPTY_CREDITS_PAGE, parse: parseCpeCredits },
   );
 
   /** Stale-while-revalidate, so paging never blanks the table mid-request. */
@@ -182,22 +182,20 @@ export class CpeTracker {
     this.list.hasValue() ? this.list.value() : undefined,
   );
 
-  protected readonly rows = computed(() => this.listPage()?.data ?? []);
+  protected readonly rows = computed(() => this.listPage()?.results ?? []);
   protected readonly isListLoading = computed(() => this.list.isLoading());
   protected readonly hasListError = computed(() => !!this.list.error());
   protected readonly currentPage = computed(() => this.page());
 
-  private readonly totalRows = computed(() => this.listPage()?.pagination_data?.total_count ?? 0);
+  private readonly totalRows = computed(() => this.listPage()?.count ?? 0);
 
-  protected readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.totalRows() / PAGE_COUNT)),
-  );
+  protected readonly totalPages = computed(() => this.listPage()?.total_pages ?? 1);
 
   protected readonly pageWindow = computed(() => {
     const total = this.totalRows();
     const count = this.rows().length;
     if (!count) return { from: 0, to: 0, total };
-    const from = (this.page() - 1) * PAGE_COUNT + 1;
+    const from = (this.page() - 1) * CPE_PAGE_SIZE + 1;
     return { from, to: from + count - 1, total };
   });
 
@@ -207,7 +205,7 @@ export class CpeTracker {
     this.ledger.set((value ?? 'caira') as CpeLedger);
   }
 
-  protected onCourseType(value: CourseTypeChoice | null): void {
+  protected onCourseType(value: CpeCourseChoice | null): void {
     if (value !== null) this.courseType.set(value);
   }
 
@@ -231,19 +229,19 @@ export class CpeTracker {
   }
 
   protected onTitleClick(row: CpeCreditWire): void {
-    this.router.navigate(courseCommands(row, this.localePrefix));
+    const commands = courseCommands(row, this.localePrefix);
+    if (commands) this.router.navigate(commands);
   }
 
   protected onRowAction({ row, action }: { row: CpeCreditWire; action: CpeRowAction }): void {
     switch (action) {
-      case 'download':
-        void this.withCertificates((c) => c.downloadForRow(toCertificateTarget(row)));
+      case 'feedback': {
+        const commands = feedbackCommands(row, this.localePrefix);
+        if (commands) {
+          this.router.navigate(commands, { queryParams: { redirect: this.router.url } });
+        }
         return;
-      case 'feedback':
-        this.router.navigate(feedbackCommands(row, this.localePrefix), {
-          queryParams: { redirect: this.router.url },
-        });
-        return;
+      }
       case 'view_badge':
         if (row.badge?.accept_url) window.open(row.badge.accept_url, '_blank', 'noopener');
         return;
@@ -273,19 +271,22 @@ export class CpeTracker {
   }
 
   /**
-   * The gauge's earned side comes from v2; its denominator does not exist in any
-   * API, and the board name comes off the user's profile rather than the credits
-   * payload — see `DEFAULT_CPE_REQUIREMENT`.
+   * The gauge's requirement comes from the learner's own state board now, replacing the hard-coded
+   * 40. `required` stays `null` when no board is configured — the dialog says so rather than
+   * dividing by a number nobody chose.
    */
   protected openCompliance(): void {
     const summary = this.summary();
     if (!summary) return;
 
-    const earned = summary.credits_earned.total_credit_earned;
+    const board = primaryStateBoard(summary);
+    // A board's progress counts its whole reporting period, which may span more years than the one
+    // the selector shows; without a board there is only the selected year's total.
+    const earned = board?.period?.credits_earned ?? summary.credits_earned.total_credit_earned;
     const credits: CreditsSummary = {
-      total: earned,
+      total: summary.credits_earned.total_credit_earned,
       earned,
-      required: DEFAULT_CPE_REQUIREMENT,
+      required: board?.required_credits ?? null,
       pending: 0,
     };
     const fields = summary.credits_earned.course_credits;
@@ -299,8 +300,10 @@ export class CpeTracker {
           { id: 2, name: 'Ethics', credits: fields.ethics },
           { id: 3, name: 'Others', credits: fields.others },
         ],
-        // ponytail: was the signed-in user's first state board.
-        stateBoardName: undefined,
+        stateBoardName: board?.name,
+        period: board?.period
+          ? { start_year: board.period.start_year, end_year: board.period.end_year }
+          : undefined,
       })
       .subscribe();
   }

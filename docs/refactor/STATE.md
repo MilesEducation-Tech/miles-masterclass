@@ -7,6 +7,76 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-19, NON-REFACTOR — CAIRA hero showed 0 credits for a learner with 152. FIXED AGAIN,
+  UNCOMMITTED** on `feat/MIL-100-cpe-tracker`, staged separately from the CPE rebind below.
+  - **This is the same fix as 2026-10-16. It was never committed and was lost when the working tree
+    was reset** — `caira-tracker.ts` was back on `cpe_summary.caira_cpe_credits`. The user reported
+    it again today ("in badges page also i am not able to see any credits"), which is what surfaced
+    the regression. **Commit it this time.**
+  - **Cause and evidence, re-measured on the captured payload** (compiled the model +
+    `level-progress` to JS and ran both sources):
+    `caira_cpe_credits` = 0 → "0 CPE Credits", Level 1 bar 0%, "Earn 30 credits to complete Level 1";
+    `total_cpe_credits` = 152 → "152 CPE Credits", Level 1 bar 100%, "Level 1 complete".
+    The server's own `progress_label` reads `"152/90 Credits"` against Level 3's `cpe_threshold` 90,
+    so the rungs are counted in **total** credits. The old `// CAIRA-only credits, which is what a
+rung's threshold is measured in` comment was simply wrong, and is replaced with the evidence.
+  - **Gates:** lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 246.67 kB, only
+    the `ai-labs.css` warning.
+  - **⚠ Backend question this raises for BOTH trackers:** `caira_cpe_credits` / `caira_credits_earned`
+    is 0 for a learner who has **claimed all three CAIRA level badges** and holds 152 credits. If
+    those credits should be CAIRA-flagged, that is a backend bug — and it also means the CPE
+    tracker's CAIRA chip (its default tab) is empty for this learner while "Others" holds everything.
+    **Unconfirmed on screen:** the user has not yet said whether the Others tab shows rows. If the
+    CAIRA ledger stays empty server-side, the page's default chip should probably flip to Others —
+    a product decision, not taken here.
+
+- 🔧 **2026-10-19, NON-REFACTOR — MIL-100, CPE tracker rebind (`prompts/cpe-tracker-rebind.md`,
+  approved in plan mode). SUBTASK 1 OF 2 DONE, UNCOMMITTED** on `feat/MIL-100-cpe-tracker`.
+  - **The backend shipped the replacement.** `Web_CPE_Tracker_API.md` (MO-2776, commit `3cd7dea`)
+    documents five `web-api/v1/cpe-tracker/` routes. Probed 2026-10-19: **all five answer JSON 401**,
+    as does `api/v1/badges/badge-claimed-by-user/` — live, where every path probed before was an
+    HTML 404. **The page is no longer backend-blocked; the 33-path guessing game is over.**
+  - **Subtask 1, `feat(cpe-tracker): bind the portfolio summary and credits table to web-api/v1`:**
+    `summary/?year=` and `credits/?ledger=&year=&course_type=&page=&page_size=15`, both parsed at the
+    boundary (`parseCpeSummary` / `parseCpeCredits`), both gated on the boolean `isAuthenticated()`,
+    no facade. `canMatch: [authGuard]` added to `cpe-tracker.routes.ts` — it was the one tracker route
+    without it. The compliance gauge takes `required_credits` and the real reporting period from the
+    first configured `state_boards[]` entry, so `DEFAULT_CPE_REQUIREMENT = 40` is deleted and an
+    unconfigured board reads "Requirement not configured" instead of dividing by a guess.
+  - **Three contract traps, all handled:**
+    1. **`allocated_on` is a bare `YYYY-MM-DD` in UTC.** Measured: `new Date('2026-09-14')` formats as
+       **Sep 13** in `America/New_York` and `America/Los_Angeles`, Sep 14 in UTC and Kolkata. The pipe
+       now takes `'UTC'`. Every US learner would have read every date a day early.
+    2. **`course_type` was re-spelled** — `masterclass` → `course`, plus a new `micro_learning`
+       beside `nano_learning`. Unknown query params are a **400**, so `page_count` had to go too.
+    3. **All ids are UUIDs**, which is what killed the per-row certificate path (below).
+  - **Verified without credentials** (still none here for a signed-in run): 22 runtime guard checks
+    against the doc's own payloads — envelope peeled, `data.credits` paging lifted, `cpe_credit`
+    renamed to `cpe_credits`, retyped/missing keys rejected, extra keys and unseen enum values
+    accepted, archived rows with null `course_type`/`slug`/`id` parsed, `?course_type=` tokens
+    correct. Signed out, `/us/accounting/cpe-tracker` now returns byte-identically to the
+    already-guarded `/us/accounting/caira-tracker` (200, 4839 bytes, no page shell).
+  - **Gates (local macOS):** tsc 0; lint **0 errors** (101 warnings); structure ✔ after
+    `--prune` (two files improved); Prettier ✔; `build:prod` initial total 1.07 MB / 246.58 kB
+    transfer, only the `ai-labs.css` warning; `build-storybook` ✔.
+  - **Deliberately not in subtask 1 — the table has no Download button.** The per-row flow opened the
+    shared `CertificateDownloadDialog`, which is keyed on a **numeric** course id; the new rows carry
+    UUIDs, so the two cannot meet. `downloadForRow` and the orchestrator's
+    `openCertificateDownloadDialog` are deleted rather than left pointing at a 404. The replacement is
+    `credits/<award_id>/certificate/` in subtask 2.
+  - **Subtask 2, next:** `credits/<id>/certificate/`, `certificates/?year=` (paged, follow `next`),
+    `nasba-template/?year=` (**success is an .xlsx, errors are JSON — check the status first**), and
+    badge claim via `POST api/v1/badges/badge-claimed-by-user/ {badge_id}`, which answers **Q11**.
+  - **Still to raise with the backend:** what distinguishes `nano_learning` from `micro_learning` as
+    course types? Both are accepted and this app has only ever had one such concept. "Reels" sends
+    both until it is answered — that cannot under-count, picking one could.
+  - **Found, out of scope, worth its own ticket:** `CertificateAccessPolicy.decideBulk(null)` returns
+    `upsellTrial`, so **"All Certificate" shows the upgrade dialog to every learner regardless of
+    plan** — the plan source was lost with the removed session service (two `ponytail` comments say
+    so). And the four other `CertificateDownloadDialog` callers (final-assessment report, masterclass
+    facade, micro-learning facade, badge page) are still on the 404'd
+    `user-assessment/download_certificate/` with no award id to migrate to.
+
 - 🔧 **2026-10-16, NON-REFACTOR: commerce remove routes and an optional billing address**
   (`prompts/optional-billing-address.md` rev 1, approved in plan mode). Three tickets, three PRs.
   - **PR 1, `fix(payment): call the POST remove routes for cart lines, coupons and addresses`.

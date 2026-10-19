@@ -6,23 +6,20 @@ export const FIELD_COLORS = {
   default: '#64748B',
 } as const;
 
-/** Brand hexes for the delivery-method column + badges. */
+/**
+ * Brand hexes for the delivery-method column + badges.
+ *
+ * The server sends the method as a string now, and `Group Live` is a fourth value the v2 contract
+ * never produced — it shares the webinar blue, because it is the other half of the same bucket
+ * (`study_credits.webinar` counts both).
+ */
 export const DELIVERY_COLORS = {
   'Group Internet Based': '#214FE6',
+  'Group Live': '#214FE6',
   'QAS Self Study': '#00B64D',
   'Nano Learning': '#7765FF',
   default: '#94A3B8',
 } as const;
-
-/**
- * Total CPE credits a reporting cycle requires.
- *
- * Hardcoded deliberately: no API models per-state-board requirements, and the
- * v2 summary returns only the earned side of the gauge. `Auth.currentUser()`
- * gives the board *name* but not its threshold. Replace with a real per-board
- * lookup once backend has one.
- */
-export const DEFAULT_CPE_REQUIREMENT = 40;
 
 export const DOWNLOAD_DEBOUNCE_MS = 2000;
 
