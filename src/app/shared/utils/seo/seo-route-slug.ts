@@ -15,7 +15,7 @@ import { toCountry } from '@core/utils/country';
  * special-cases in `routeUrlToSeoSlug`, plus `blog` whose leaf pages set their
  * own absolute canonical.
  */
-const NON_LOCALE_ROOTS = new Set(['auth', 'admin', 'page-not-found', 'blog']);
+const NON_LOCALE_ROOTS = new Set(['auth', 'admin', 'page-not-found', 'compliance', 'blog']);
 
 /**
  * Convert a router URL into the slug used to look up an SEO row.
@@ -24,7 +24,9 @@ const NON_LOCALE_ROOTS = new Set(['auth', 'admin', 'page-not-found', 'blog']);
  * - Strip any query string.
  * - Empty path → 'home'.
  * - Top-level prefixes that own their own SEO outside the locale chain
- *   (`auth`, `admin`, `page-not-found`) are returned verbatim/joined.
+ *   (`auth`, `admin`, `page-not-found`, `compliance`) are returned verbatim/joined.
+ *   `compliance` is a root route; without this it fell through to `home` and
+ *   took the home page's row and canonical.
  * - Anything else assumes a `/<country>/<profession>/...` locale prefix and
  *   strips the first two segments (e.g. `/in/student/library/course-library`
  *   → `library/course-library`).
@@ -40,7 +42,7 @@ export function routeUrlToSeoSlug(url: string): string {
 
   if (segments[0] === 'auth') return segments.join('/');
 
-  if (segments[0] === 'admin' || segments[0] === 'page-not-found') {
+  if (segments[0] === 'admin' || segments[0] === 'page-not-found' || segments[0] === 'compliance') {
     return segments[0];
   }
 
