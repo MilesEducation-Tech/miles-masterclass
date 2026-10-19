@@ -112,6 +112,25 @@
                 Watch Now
               </button>
             }
+            @if (evaluation.canGiveFeedback()) {
+              <button
+                app-button
+                type="button"
+                class="rounded-lg bg-accent-premium text-black hover:bg-accent-premium/90"
+                (click)="evaluation.openFeedback()"
+              >
+                {{ submitFeedback }}
+              </button>
+            } @else if (evaluation.feedbackGiven()) {
+              <button
+                app-button
+                type="button"
+                class="rounded-lg bg-accent-premium text-black"
+                disabled
+              >
+                {{ feedbackSubmitted }}
+              </button>
+            }
             @if (assessment.canViewReport()) {
               <button
                 app-button

@@ -30,8 +30,10 @@ import { Button } from '@shared/ui/button/button';
 import {
   ASSESSMENT_COPY,
   ASSESSMENT_REPORT_COPY,
+  FEEDBACK_COPY,
 } from '@features/offerings/constants/course-detail';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
+import { CourseEvaluationFacade } from '@features/offerings/services/course-evaluation-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import {
   HERO_TRAILER_CONFIG,
@@ -44,7 +46,8 @@ import {
  * Download); it keeps only the background trailer's own playback state. Once
  * the server says the learner may sit the final assessment, "Take Final
  * Assessment" takes Watch Now's place and starts it through
- * `FinalAssessmentFacade`; once one is scored, "View Report" sits beside it.
+ * `FinalAssessmentFacade`; once one is scored, "View Report" sits beside it,
+ * and after a pass "Submit Feedback" opens the course evaluation until it is in.
  *
  * The background is the trailer, as on production: the poster first (a plain
  * image, server-rendered, the LCP), then after `HERO_TRAILER_DELAY_MS` the HLS
@@ -56,7 +59,7 @@ import {
  * course so far); Download is enabled once it sends the certificate URL.
  * Held back until the web API covers them (`docs/MASTERCLASS_API_QUESTIONS.md`)
  * or their own PR: the CPE/Preview mode switch, price and Add To Cart, and the
- * signed-in progress, rating and feedback actions.
+ * signed-in progress and rating.
  */
 @Component({
   selector: 'app-masterclass-course-hero',
@@ -79,9 +82,12 @@ import {
 export class MasterclassCourseHero {
   protected readonly facade = inject(CourseDetailFacade);
   protected readonly assessment = inject(FinalAssessmentFacade);
+  protected readonly evaluation = inject(CourseEvaluationFacade);
   protected readonly course = this.facade.course;
   protected readonly takeAssessment = ASSESSMENT_COPY.take;
   protected readonly viewReport = ASSESSMENT_REPORT_COPY.viewReport;
+  protected readonly submitFeedback = FEEDBACK_COPY.submitFeedback;
+  protected readonly feedbackSubmitted = FEEDBACK_COPY.feedbackSubmitted;
 
   private readonly player = viewChild(VideoJs);
 

@@ -19,6 +19,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { MasterclassFieldOfStudy } from '@core/models/masterclass-home.model';
 import { RouteConfig } from '@core/models/http.model';
 import { QuizAnswer } from '@features/offerings/models/chapter-quiz.model';
+import { EvaluationSubmitBody } from '@features/offerings/models/course-evaluation.model';
 import { AssessmentSubmitBody } from '@features/offerings/models/final-assessment.model';
 import {
   contractError,
@@ -65,6 +66,12 @@ export interface CourseDetailApi {
   assessmentReport: string;
   /** `GET <url><course uuid>/`: the latest attempt, question by question. */
   assessmentResult: string;
+  /** `GET <url><course uuid>/`: the post-course evaluation form. */
+  feedbackQuestions: string;
+  /** `POST`, `:id` is the course UUID: records the evaluation and closes the course. */
+  feedbackSubmit: RouteConfig<EvaluationSubmitBody, unknown>;
+  /** `GET <url>?course_id=`: whether, and when, the learner submitted it. */
+  feedbackResponses: string;
   /** The course page's URL segment: `/:country/:profession/<segment>/:id/:slug`. */
   urlSegment: string;
 }
@@ -300,6 +307,13 @@ export interface MasterclassCourseDetail {
    * either. `false` pre-login.
    */
   final_assessment_submitted: boolean;
+  /**
+   * Whether the learner may give the course evaluation now: computed by the
+   * server (a pass, and no evaluation yet). `false` pre-login.
+   */
+  show_feedback: boolean;
+  /** The evaluation is in; it is never edited. `false` pre-login. */
+  feedback_submitted: boolean;
 }
 
 /** `chapter-start/`'s `data`, as far as the chapter page reads it. */
@@ -535,7 +549,9 @@ function isApiCourseDetail(v: unknown): v is ApiCourseDetail {
     isStrOrNull(v['course_pop_up_remark']) &&
     isStr(v['exam_rules']) &&
     isBool(v['show_final_assessment']) &&
-    isBool(v['final_assessment_submitted'])
+    isBool(v['final_assessment_submitted']) &&
+    isBool(v['show_feedback']) &&
+    isBool(v['feedback_submitted'])
   );
 }
 

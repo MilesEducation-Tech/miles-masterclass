@@ -126,6 +126,32 @@ export const COURSE_DETAIL_API: Record<CourseOffering, CourseDetailApi> = {
      */
     assessmentResult: `${ROOT}web-api/v1/masterclass/assessment-result/`,
 
+    /**
+     * `IsAuthenticated`: the post-course evaluation. Append `<course uuid>/`.
+     * Gated on a pass: `403 assessment_not_passed` before one, `403
+     * feedback_already_submitted` after the form is in, `403
+     * caira_access_required`, `409` AI Lab lock, and `200 reset_required` for an
+     * expired window.
+     */
+    feedbackQuestions: `${ROOT}web-api/v1/masterclass/feedback-questions/`,
+
+    /**
+     * `IsAuthenticated`, strict body `{responses, optional_feedback_text}`:
+     * records the evaluation once (never edited) and runs the course closure
+     * (CPE, Credly badge, certificate). The questions read's refusals, plus `400`.
+     */
+    feedbackSubmit: {
+      path: `${ROOT}web-api/v1/masterclass/feedback-submit/:id/`,
+      method: 'POST',
+    },
+
+    /**
+     * `IsAuthenticated`, `?course_id=<uuid>`: the learner's own evaluation.
+     * Always answers (`submitted: false` before one). Its paged `responses` are
+     * empty in every capture, so only the submission's date is read.
+     */
+    feedbackResponses: `${ROOT}web-api/v1/masterclass/feedback-responses/`,
+
     urlSegment: 'masterclass',
   },
 };
@@ -308,6 +334,46 @@ export const ASSESSMENT_REPORT_COPY = {
   },
   loadFailed: { title: "Couldn't load the report", body: 'Please try again in a moment.' },
   reviewFailed: { title: "Couldn't load the questions", body: 'Please try again in a moment.' },
+} as const;
+
+/** The course evaluation's own copy, used when the server sends no message of its own. */
+export const FEEDBACK_COPY = {
+  submitFeedback: 'Submit Feedback',
+  feedbackSubmitted: 'Feedback Submitted',
+  title: 'Course Evaluation Feedback',
+  name: 'Name-',
+  formTitle: 'Course Evaluation Form',
+  formIntro:
+    'Thank you for participating in this self study course. Please take a moment to offer your feedback. Please rank each item below, with 1 being the lowest and 5 being the highest score.',
+  ratingsHeading: '1. Presenters and Course Content',
+  scale: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'],
+  commentsHeading: '2. Other Comments',
+  commentsPlaceholder: 'Type here',
+  submit: 'Submit',
+  submitting: 'Submitting...',
+  loading: 'Loading feedback form...',
+  thanks: { title: 'Thank You!', body: 'Your feedback has been submitted successfully.' },
+  cpeAwarded: (credits: number) => `${credits} CPE credits have been awarded for this course.`,
+  submitted: {
+    title: 'Thanks, your feedback is in',
+    body: 'You have already submitted feedback for this course.',
+    on: 'Submitted on',
+  },
+  notPassed: {
+    title: 'Pass the final assessment first',
+    body: 'Course feedback opens once you have passed the final assessment.',
+  },
+  continue: 'Continue',
+  loadFailed: { title: "Couldn't load the feedback form", body: 'Please try again in a moment.' },
+  submitFailed: {
+    title: 'Feedback not submitted',
+    body: "We couldn't submit your feedback. Please try again.",
+  },
+  profile: {
+    title: 'Complete Your Profile to Continue',
+    body: 'Before submitting feedback, please finish setting up your profile. We use it to issue your CPE certificate and personalise your learning path.',
+    button: 'Complete Profile',
+  },
 } as const;
 
 /** Each reviewed question's badge, and the colour its answer takes. */

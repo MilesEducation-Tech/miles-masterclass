@@ -13,8 +13,10 @@ import {
   ASSESSMENT_COPY,
   ASSESSMENT_REPORT_COPY,
   ASSESSMENT_REVIEW_STATUS,
+  FEEDBACK_COPY,
 } from '@features/offerings/constants/course-detail';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
+import { CourseEvaluationFacade } from '@features/offerings/services/course-evaluation-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 
 /**
@@ -24,7 +26,8 @@ import { FinalAssessmentFacade } from '@features/offerings/services/final-assess
  * `assessment-result/`, read only once there is an attempt. Both are keyed by
  * course, so the URL carries no session.
  *
- * The page keeps only its view state, the "wrong answers only" filter.
+ * The page keeps only its view state, the "wrong answers only" filter. After a
+ * pass, "Submit Feedback" opens the course evaluation (`CourseEvaluationFacade`).
  */
 @Component({
   selector: 'app-final-assessment-report',
@@ -49,10 +52,13 @@ export class FinalAssessmentReport {
   readonly courseTitle = input<string>();
 
   protected readonly facade = inject(FinalAssessmentFacade);
+  protected readonly evaluation = inject(CourseEvaluationFacade);
 
   protected readonly copy = ASSESSMENT_REPORT_COPY;
   protected readonly assessmentCopy = ASSESSMENT_COPY;
   protected readonly statuses = ASSESSMENT_REVIEW_STATUS;
+  protected readonly submitFeedback = FEEDBACK_COPY.submitFeedback;
+  protected readonly feedbackSubmitted = FEEDBACK_COPY.feedbackSubmitted;
 
   protected readonly wrongOnly = signal(false);
   protected readonly items = computed(() => {
