@@ -1,5 +1,4 @@
 import { Route } from '@angular/router';
-import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
@@ -31,7 +30,6 @@ export const masterclassRoutes: Route[] = [
       },
       {
         path: 'final-assessment/:sessionId/exam',
-        providers: [FinalAssessmentFacade],
         canDeactivate: [canDeactivateExamGuard],
         data: { layout: 'plain' },
         loadComponent: () =>
@@ -41,7 +39,6 @@ export const masterclassRoutes: Route[] = [
       },
       {
         path: 'final-assessment/:sessionId/report',
-        providers: [FinalAssessmentFacade],
         data: { layout: 'plain' },
         loadComponent: () =>
           import('@features/offerings/pages/final-assessment-report/final-assessment-report').then(

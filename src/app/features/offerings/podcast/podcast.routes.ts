@@ -1,6 +1,4 @@
 import { Route } from '@angular/router';
-import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
-import { FinalAssessmentFacade } from '../services/final-assessment-facade';
 import { FeedbackFacade } from '../services/feedback-facade';
 import { ChapterFacade } from '../services/chapter-facade';
 import { Podcast } from './pages/podcast/podcast';
@@ -22,25 +20,9 @@ export const podcastRoutes: Route[] = [
         loadComponent: () =>
           import('./pages/podcast-chapter/podcast-chapter').then((m) => m.PodcastChapter),
       },
-      {
-        path: 'final-assessment/:sessionId/exam',
-        providers: [FinalAssessmentFacade],
-        canDeactivate: [canDeactivateExamGuard],
-        data: { layout: 'plain' },
-        loadComponent: () =>
-          import('../pages/final-assessment-exam/final-assessment-exam').then(
-            (m) => m.FinalAssessmentExam,
-          ),
-      },
-      {
-        path: 'final-assessment/:sessionId/report',
-        providers: [FinalAssessmentFacade],
-        data: { layout: 'plain' },
-        loadComponent: () =>
-          import('../pages/final-assessment-report/final-assessment-report').then(
-            (m) => m.FinalAssessmentReport,
-          ),
-      },
+      // No final-assessment routes: the exam and report pages are on the web API,
+      // keyed by course UUID, which podcasts don't have yet. They return with the
+      // podcast rebind.
       {
         path: 'feedback',
         providers: [FeedbackFacade],

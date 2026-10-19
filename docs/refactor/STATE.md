@@ -7,9 +7,24 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- ⏸ **2026-10-19, NON-REFACTOR — MIL-108 (Story MIL-107), start and submit the masterclass final assessment
-  on the web API. PLAN WRITTEN, AWAITING APPROVAL** (`prompts/masterclass-final-assessment-exam.md` rev 1), on
-  `feat/MIL-108-assessment-exam` (from `master` `795819d`).
+- 🟡 **2026-10-19, NON-REFACTOR — MIL-108 (Story MIL-107), start and submit the masterclass final assessment
+  on the web API. PLAN APPROVED (`4328b09`); COMMIT 1 DONE, GATES GREEN, UNCOMMITTED**
+  (`prompts/masterclass-final-assessment-exam.md` rev 1), on `feat/MIL-108-assessment-exam` (from `master` `795819d`).
+  - **Commit 1, `refactor(offerings): drop the retired final assessment bindings`:**
+    - Deleted `models/assessment.model.ts` (`ASSESSMENT_ROUTES`) and the legacy `FinalAssessmentFacade`.
+    - The exam and report pages are shells, with a Back to Course link only.
+    - Podcast and micro-learning lose their exam and report routes; `app.routes.server.ts` loses their two entries.
+    - The masterclass exam and report routes drop the facade provider; the exam keeps `canDeactivateExamGuard`.
+    - Both pages leave `LEGACY_ANY_FILES` (their `any`s are gone), and the structure baseline is pruned.
+    - Podcast and micro-learning's legacy start (`Utils.startFinalAssessment`) stays, per D1.
+    - +31 / −1195.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings, from 101); structure ✔ after prune; Prettier ✔;
+    `build:prod` 246.44 kB, only `ai-labs.css`.
+  - **Verified (dev 4101, signed out):**
+    - The course page renders with "Watch Now".
+    - The exam and report URLs show the shell, and Back lands on the course page.
+    - A podcast `…/final-assessment/…` URL goes to `/page-not-found`, like any unknown path.
+    - No legacy request, no console error.
   - **Input:** `prompts/final-assessment-analysis.md`, restored on this branch. The 2026-10-16 copy was untracked on
     `master` and was lost in a branch switch.
   - **Two commits:**
@@ -22,7 +37,7 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - Answers stay in memory.
     - Entry points: the hero CTA and the last chapter's quiz, from `show_final_assessment`.
   - **UAT, 2026-10-19:** all 64 masterclasses send the course-detail assessment fields with stable types.
-  - **Next:** the user approves or flips D1–D9, then implementation.
+  - **Next:** the user commits commit 1, then commit 2 (the rebind).
 
 - 🔧 **2026-10-16, NON-REFACTOR: commerce remove routes and an optional billing address**
   (`prompts/optional-billing-address.md` rev 1, approved in plan mode). Three tickets, three PRs.

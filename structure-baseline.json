@@ -411,7 +411,7 @@
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/features/offerings/micro-learning/micro-learning.routes.ts": {
-      "count": 4,
+      "count": 3,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/features/offerings/micro-learning/pages/micro-learning-course/micro-learning-course.ts": {
@@ -423,14 +423,6 @@
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/features/offerings/pages/course-feedback/course-feedback.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/offerings/pages/final-assessment-exam/final-assessment-exam.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/offerings/pages/final-assessment-report/final-assessment-report.ts": {
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
@@ -447,7 +439,7 @@
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/features/offerings/podcast/podcast.routes.ts": {
-      "count": 4,
+      "count": 3,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/features/offerings/services/chapter-facade.ts": {

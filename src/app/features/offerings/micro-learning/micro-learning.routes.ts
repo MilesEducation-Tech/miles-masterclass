@@ -1,6 +1,4 @@
 import { Route } from '@angular/router';
-import { FinalAssessmentFacade } from '../services/final-assessment-facade';
-import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { FeedbackFacade } from '../services/feedback-facade';
 import { MicroLearningCourseFacade } from '../services/micro-learning-course-facade';
 import { MicroLearning } from './pages/micro-learning/micro-learning';
@@ -19,25 +17,9 @@ export const microLearningRoutes: Route[] = [
             (m) => m.MicroLearningCourse,
           ),
       },
-      {
-        path: 'final-assessment/:sessionId/exam',
-        providers: [FinalAssessmentFacade],
-        canDeactivate: [canDeactivateExamGuard],
-        data: { layout: 'plain' },
-        loadComponent: () =>
-          import('../pages/final-assessment-exam/final-assessment-exam').then(
-            (m) => m.FinalAssessmentExam,
-          ),
-      },
-      {
-        path: 'final-assessment/:sessionId/report',
-        providers: [FinalAssessmentFacade],
-        data: { layout: 'plain' },
-        loadComponent: () =>
-          import('../pages/final-assessment-report/final-assessment-report').then(
-            (m) => m.FinalAssessmentReport,
-          ),
-      },
+      // No final-assessment routes: the exam and report pages are on the web API,
+      // keyed by course UUID, which reels don't have yet. They return with the
+      // micro-learning rebind.
       {
         path: 'feedback',
         providers: [FeedbackFacade],
