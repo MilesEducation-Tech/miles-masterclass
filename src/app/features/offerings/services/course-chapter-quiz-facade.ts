@@ -32,6 +32,7 @@ import {
 } from '@features/offerings/models/course-detail.model';
 import { CourseChapterFacade } from '@features/offerings/services/course-chapter-facade';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
+import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 
 /**
  * The chapter quiz on the chapter page: `quiz-questions/` and `quiz-submit/`.
@@ -41,12 +42,14 @@ import { CourseDetailFacade } from '@features/offerings/services/course-detail-f
  * chapter's video is done and its quiz isn't, and again when the video ends;
  * "Take the quiz" opens it by hand. The server grades every answer. After the
  * last one the course is re-read, which opens the next chapter, and the quiz
- * moves on to it after `QUIZ_AUTO_ADVANCE_SECONDS`.
+ * moves on to it after `QUIZ_AUTO_ADVANCE_SECONDS`. After the last chapter's
+ * quiz, once the re-read course offers the final assessment, it starts that.
  */
 @Service({ autoProvided: false })
 export class CourseChapterQuizFacade {
   private readonly chapters = inject(CourseChapterFacade);
   private readonly detail = inject(CourseDetailFacade);
+  private readonly assessment = inject(FinalAssessmentFacade);
   private readonly notification = inject(NotificationService);
   private readonly logger = inject(Logger);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -134,6 +137,8 @@ export class CourseChapterQuizFacade {
   /** The course re-read that follows the last answer: moving on waits for its locks. */
   readonly refreshing = computed(() => this.completed() && this.detail.isLoading());
   readonly hasNextChapter = computed(() => !!this.chapters.navigation().next);
+  /** The last chapter's quiz is done, and the server now offers the final assessment. */
+  readonly leadsToAssessment = computed(() => !this.hasNextChapter() && this.assessment.canStart());
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.stopCountdown());
@@ -247,12 +252,17 @@ export class CourseChapterQuizFacade {
     if (this.index() > 0) this.index.update((index) => index - 1);
   }
 
-  /** On to the next chapter, or back to the course page after the last one. */
+  /**
+   * On to the next chapter. After the last one, the final assessment when the
+   * server offers it (its rules dialog asks first), else back to the course page.
+   */
   proceed(): void {
     if (this.refreshing()) return;
     const next = this.chapters.navigation().next;
+    const toAssessment = this.leadsToAssessment();
     this.reset();
     if (next) this.chapters.goTo(next);
+    else if (toAssessment) void this.assessment.start();
     else this.chapters.backToCourse();
   }
 

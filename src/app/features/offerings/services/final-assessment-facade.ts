@@ -1,175 +1,236 @@
+import { formatDate, isPlatformBrowser } from '@angular/common';
 import { httpResource } from '@angular/common/http';
-import { computed, inject, Service, signal, untracked } from '@angular/core';
-import { Storage } from '@core/services/storage/storage';
-import { QuizQuestion, ContentDetails } from '@core/models/course.model';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
-import { Utils } from '@shared/services/utils';
-import { ASSESSMENT_ROUTES } from '@features/offerings/models/assessment.model';
-import { RouteParams, RouteRequest, RouteResponse } from '@core/models/http.model';
-
-type CourseDetailsResponse = RouteResponse<typeof ASSESSMENT_ROUTES.getCourseDetails>;
-type CourseDetailsParams = RouteParams<typeof ASSESSMENT_ROUTES.getCourseDetails>;
-
-type FinalAssessmentQuestionsResponse = RouteResponse<
-  typeof ASSESSMENT_ROUTES.getFinalAssessmentQuestions
->;
-type FinalAssessmentQuestionsParams = RouteParams<
-  typeof ASSESSMENT_ROUTES.getFinalAssessmentQuestions
->;
-
-type SubmitFinalAssessmentResponse = RouteResponse<typeof ASSESSMENT_ROUTES.submitFinalAssessment>;
-type SubmitFinalAssessmentRequest = RouteRequest<typeof ASSESSMENT_ROUTES.submitFinalAssessment>;
-
-type AssessmentReportResponse = RouteResponse<typeof ASSESSMENT_ROUTES.finalAssessmentReport>;
-type AssessmentReportRequest = RouteRequest<typeof ASSESSMENT_ROUTES.finalAssessmentReport>;
+import { computed, effect, inject, LOCALE_ID, PLATFORM_ID, Service, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { NgpDialogManager } from 'ng-primitives/dialog';
+import { AuthSession } from '@core/services/auth-session/auth-session';
+import { Logger } from '@core/services/logger/logger';
+import { NotificationService } from '@core/services/notification/notification';
+// Type-only: the dialog loads with `import()` when opened (AGENTS.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
+import {
+  ASSESSMENT_COPY,
+  ASSESSMENT_DIALOG_WIDTH,
+  ASSESSMENT_ENDED_SITTING,
+} from '@features/offerings/constants/course-detail';
+import { readCourseStepRefusal } from '@features/offerings/models/course-detail.model';
+import {
+  AssessmentAnswer,
+  AssessmentOutcome,
+  AssessmentPaper,
+  parseAssessmentPaper,
+  readCoolOffEndsAt,
+  toExamRules,
+} from '@features/offerings/models/final-assessment.model';
+import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
 
 /**
- * The final assessment for one course and session. Provided per route (exam and
- * report); the pages set `courseId`/`sessionId` and every read follows them.
+ * The final assessment of the course on screen: the rules, the start
+ * (`assessment-start/`), the sitting's paper (`assessment-questions/`) and the
+ * submit (`assessment-submit/`). The server draws the paper, grades it, and
+ * decides when the learner may sit it (`show_final_assessment`).
+ *
+ * On the course route beside `CourseDetailFacade`, whose course it reads and
+ * whose routes it calls through: the course page's hero and the last chapter's
+ * quiz start a sitting, and the exam page shows and submits it. Nothing is kept
+ * in storage: a reload asks the server for the same sitting again.
  */
 @Service({ autoProvided: false })
 export class FinalAssessmentFacade {
-  private readonly storage = inject(Storage);
-  private readonly apiClient = inject(ApiClient);
-  private readonly utils = inject(Utils);
-  readonly sessionId = signal<string>('');
-  readonly courseId = signal<string>('');
+  private readonly detail = inject(CourseDetailFacade);
+  private readonly auth = inject(AuthSession);
+  private readonly router = inject(Router);
+  private readonly dialogs = inject(NgpDialogManager);
+  private readonly notification = inject(NotificationService);
+  private readonly logger = inject(Logger);
+  private readonly locale = inject(LOCALE_ID);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  private readonly detailsResource = httpResource<ContentDetails>(
+  /** Signed in, and the server says the learner may sit the assessment now. */
+  readonly canStart = computed(
+    () => this.auth.isAuthenticated() && !!this.detail.course()?.show_final_assessment,
+  );
+
+  /** A start is with the server: whatever calls `start()` waits for it. */
+  readonly starting = signal(false);
+
+  /** The sitting the exam page shows; `null` everywhere else. */
+  private readonly sessionId = signal<string | null>(null);
+
+  private readonly paperResource = httpResource<AssessmentPaper>(
     () => {
-      const id = +this.courseId();
-      if (!id) return undefined;
-      const params: CourseDetailsParams = { id };
-      return {
-        url: apiUrl(
-          ASSESSMENT_ROUTES.getCourseDetails.path.replace(
-            ':course_type',
-            this.utils.getCourseDetailsSegment(),
-          ),
-        ),
-        params,
-      };
-    },
-    { parse: (raw) => (raw as CourseDetailsResponse).data },
-  );
-
-  /** The course, or `null` while loading and on failure. */
-  readonly courseDetails = computed<ContentDetails | null>(() =>
-    this.detailsResource.hasValue() ? (this.detailsResource.value() ?? null) : null,
-  );
-
-  readonly isAssessmentPassed = computed(
-    () => this.courseDetails()?.user_assessment_details?.status === 'Exam_Passed',
-  );
-
-  private readonly questionsKey = computed(() => `final_assessment_questions_${this.courseId()}`);
-
-  /**
-   * Questions answered so far are cached in localStorage, so a reload resumes the
-   * attempt. Not reactive — it is read when the course's details land, which is
-   * when the old chain read it too.
-   */
-  private cachedQuestions(): QuizQuestion[] | null {
-    const local = this.storage.getLocal<QuizQuestion[]>(this.questionsKey());
-    return local && local.length > 0 ? local : null;
-  }
-
-  private readonly questionsResource = httpResource<QuizQuestion[]>(
-    () => {
-      const details = this.courseDetails();
-      // No exam to fetch for a passed course, or when the attempt is cached.
-      if (!details || this.isAssessmentPassed() || untracked(() => this.cachedQuestions())) {
+      const sessionId = this.sessionId();
+      const url = this.detail.assessmentQuestionsUrl();
+      // The exam renders in the browser only, and the read needs the learner's
+      // token; the boolean, never the token, so a rotation doesn't refetch.
+      if (!this.isBrowser || !sessionId || !url || !this.auth.isAuthenticated()) {
         return undefined;
       }
-      const courseId = +this.courseId();
-      const params: FinalAssessmentQuestionsParams = { session_id: +this.sessionId() };
-      if (details.course_type === 'masterclass') params.masterclass_id = courseId;
-      else if (details.course_type === 'podcast') params.podcast_id = courseId;
-      // Response-driven: AI Lab courses are nano-learning rows, so they
-      // share the id key with both spellings of micro-learning.
-      else if (
-        details.course_type === 'nano_learning' ||
-        details.course_type === 'micro_learning' ||
-        details.course_type === 'ai_lab'
-      )
-        params.nano_learning_id = courseId;
-      return { url: apiUrl(ASSESSMENT_ROUTES.getFinalAssessmentQuestions.path), params };
+      return { url, params: { session_id: sessionId } };
     },
-    {
-      defaultValue: [],
-      parse: (raw) => {
-        const questions = (raw as FinalAssessmentQuestionsResponse).data;
-        // Cache the fresh attempt, as the old `tap` did.
-        this.storage.setLocal(untracked(this.questionsKey), questions);
-        return questions;
-      },
-    },
+    // The trust boundary: a paper that drifted from the contract lands in `error()`.
+    { parse: parseAssessmentPaper },
   );
 
-  /** The exam's questions: none once passed, else the cached attempt or a fresh one. */
-  readonly questions = computed<QuizQuestion[]>(() => {
-    if (!this.courseDetails() || this.isAssessmentPassed()) return [];
-    const fetched = this.questionsResource.hasValue() ? this.questionsResource.value() : [];
-    return fetched.length ? fetched : (untracked(() => this.cachedQuestions()) ?? []);
+  /** The sitting's paper; `null` while it loads, on a refusal, or off the exam page. */
+  readonly paper = computed(() =>
+    this.paperResource.hasValue() ? (this.paperResource.value() ?? null) : null,
+  );
+
+  readonly isLoading = computed(() => this.paperResource.isLoading());
+
+  private readonly refusal = computed(() => {
+    const error = this.paperResource.error();
+    return error ? readCourseStepRefusal(error) : null;
   });
 
-  readonly isLoading = computed(
-    () => this.detailsResource.isLoading() || this.questionsResource.isLoading(),
-  );
+  /** The sitting is over (submitted, aged out, or not this learner's): only a new start helps. */
+  readonly sittingEnded = computed(() => {
+    const reason = this.refusal()?.reason;
+    return !!reason && ASSESSMENT_ENDED_SITTING.includes(reason);
+  });
 
-  getQuestions(): QuizQuestion[] {
-    const questions: QuizQuestion[] =
-      this.storage.getLocal(`final_assessment_questions_${this.courseId()}`) ?? [];
-    return questions.length ? questions : [];
+  /** Any other failed read, a contract mismatch included: the server's words when it has some. */
+  readonly loadError = computed(() => {
+    const refusal = this.refusal();
+    if (!refusal || this.sittingEnded()) return null;
+    return refusal.message ?? ASSESSMENT_COPY.loadFailed.body;
+  });
+
+  constructor() {
+    // A contract drift is a backend conversation, so it must reach the logs too.
+    effect(() => {
+      const error = this.paperResource.error();
+      if (error) this.logger.error('[FinalAssessment] assessment-questions failed', error);
+    });
   }
 
-  updateQuestion(questionId: number, selectedOption: string): void {
-    const questions = this.getQuestions();
-    const index = questions.findIndex((q) => q.id === questionId);
-    if (index !== -1) {
-      questions[index] = { ...questions[index], user_selected_option: selectedOption };
-      this.storage.setLocal(`final_assessment_questions_${this.courseId()}`, questions);
+  /** The exam page's sitting, from its route; `null` when the page goes. */
+  openSitting(sessionId: string | null): void {
+    this.sessionId.set(sessionId);
+  }
+
+  reloadPaper(): void {
+    this.paperResource.reload();
+  }
+
+  /**
+   * The rules, then a sitting: drawn, or the open one resumed, so a learner who
+   * left mid-exam gets the same questions back. Then the exam page.
+   */
+  async start(): Promise<void> {
+    const course = this.detail.course();
+    const coursePath = this.detail.coursePath();
+    if (!course || !coursePath || this.starting() || !this.auth.isAuthenticated()) return;
+    if (!(await this.confirmRules(course.exam_rules))) return;
+
+    this.starting.set(true);
+    try {
+      const sitting = await this.detail.startAssessment();
+      await this.router.navigateByUrl(`${coursePath}/final-assessment/${sitting.session_id}/exam`);
+    } catch (error) {
+      this.startRefused(error);
+    } finally {
+      this.starting.set(false);
     }
   }
 
-  submitAssessment(answers: Record<number, string>): Observable<SubmitFinalAssessmentResponse> {
-    const courseId = +this.courseId();
-    const sessionId = +this.sessionId();
+  /**
+   * Score the open sitting. Every question must be answered: the server takes
+   * the whole paper at once. Then the course is read again, so its flags follow
+   * (a pass hides the hero's button). Resolves `null` when it was refused.
+   */
+  async submit(answers: AssessmentAnswer[]): Promise<AssessmentOutcome | null> {
+    const sessionId = this.sessionId();
+    if (!sessionId) return null;
 
-    const answersList = Object.keys(answers).map((key) => ({
-      question_id: +key,
-      answer: answers[+key],
-    }));
-
-    // One mapping point (`Utils.getCourseIdKey`) rather than a second copy of
-    // the type → id-key table — that copy is what missed `ai_lab`.
-    const courseIdKey = this.utils.getCourseIdKey();
-
-    const body: SubmitFinalAssessmentRequest = {
-      [courseIdKey]: courseId,
-      session_id: sessionId,
-      answers_list: answersList,
-    };
-
-    return this.apiClient.post<SubmitFinalAssessmentResponse>(
-      ASSESSMENT_ROUTES.submitFinalAssessment.path,
-      body,
-    );
+    try {
+      const outcome = await this.detail.submitAssessment({ session_id: sessionId, answers });
+      this.detail.reload();
+      return outcome;
+    } catch (error) {
+      this.logger.error('[FinalAssessment] assessment-submit refused', error);
+      const refusal = readCourseStepRefusal(error);
+      if (refusal.reason && ASSESSMENT_ENDED_SITTING.includes(refusal.reason)) {
+        this.notification.error(
+          ASSESSMENT_COPY.sittingEnded.title,
+          ASSESSMENT_COPY.sittingEnded.body,
+        );
+      } else {
+        this.notification.error(
+          ASSESSMENT_COPY.submitFailed.title,
+          ASSESSMENT_COPY.submitFailed.body,
+        );
+      }
+      return null;
+    }
   }
 
-  getAssessmentReport(userAssessmentId: number): Observable<SubmitFinalAssessmentResponse['data']> {
-    const body: AssessmentReportRequest = { userassessment_id: userAssessmentId };
-    return this.apiClient
-      .post<AssessmentReportResponse>(ASSESSMENT_ROUTES.finalAssessmentReport.path, body)
-      .pipe(map((res) => res.data));
+  /**
+   * The QAS rules, one whole rule per item, before anything is drawn; the text's
+   * own title, when it has one, introduces them. Resolves `true` on "Start Exam".
+   */
+  private async confirmRules(text: string): Promise<boolean> {
+    const { heading, rules } = toExamRules(text);
+    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+    const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+      data: {
+        title: ASSESSMENT_COPY.rulesTitle,
+        // The support address is one long word: it wraps rather than leave a phone's panel.
+        containerClass: 'flex flex-col space-y-4 text-start wrap-break-word',
+        content: [
+          { type: 'text', value: heading ?? ASSESSMENT_COPY.rulesIntro },
+          { type: 'list', items: rules, ordered: true },
+        ],
+        buttons: [{ label: ASSESSMENT_COPY.startExam, variant: 'default', action: 'confirm' }],
+        maxWidth: ASSESSMENT_DIALOG_WIDTH,
+      },
+    });
+    const result = await firstValueFrom(ref.afterClosed);
+    return !!result?.result && result.action === 'confirm';
   }
 
-  clearAssessmentData(): void {
-    if (this.courseId()) {
-      this.storage.removeLocal(`final_assessment_questions_${this.courseId()}`);
-      this.storage.removeLocal(`session_id`);
+  /** A refused `assessment-start/`, each reason in its own words. */
+  private startRefused(error: unknown): void {
+    this.logger.error('[FinalAssessment] assessment-start refused', error);
+    const refusal = readCourseStepRefusal(error);
+
+    switch (refusal.reason) {
+      case 'chapters_not_complete':
+        this.notification.info(ASSESSMENT_COPY.notReady.title, ASSESSMENT_COPY.notReady.body);
+        this.detail.reload();
+        return;
+      case 'already_passed':
+        this.notification.info(
+          ASSESSMENT_COPY.alreadyPassed.title,
+          ASSESSMENT_COPY.alreadyPassed.body,
+        );
+        this.detail.reload();
+        return;
+      case 'cool_off_active': {
+        const endsAt = readCoolOffEndsAt(error);
+        this.notification.info(
+          ASSESSMENT_COPY.coolOff.title,
+          endsAt
+            ? ASSESSMENT_COPY.coolOff.until(formatDate(endsAt, 'MMM d, h:mm a', this.locale))
+            : ASSESSMENT_COPY.coolOff.body,
+        );
+        return;
+      }
+      case 'preview_mode':
+        this.notification.info(ASSESSMENT_COPY.previewMode.title, ASSESSMENT_COPY.previewMode.body);
+        return;
+    }
+
+    if (refusal.status === 404) {
+      this.notification.info(ASSESSMENT_COPY.noAssessment.title, ASSESSMENT_COPY.noAssessment.body);
+    } else {
+      // An AI Lab lock (409) explains itself; the generic refusals don't.
+      this.notification.error(
+        ASSESSMENT_COPY.cannotStart.title,
+        (refusal.status === 409 && refusal.message) || ASSESSMENT_COPY.cannotStart.body,
+      );
     }
   }
 }

@@ -1,12 +1,7 @@
 import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import {
-  heroCheckCircle,
-  heroXCircle,
-  heroArrowRight,
-  heroArrowPath,
-} from '@ng-icons/heroicons/outline';
+import { heroCheckCircle, heroXCircle, heroArrowPath } from '@ng-icons/heroicons/outline';
 import { Button } from '@shared/ui/button/button';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
@@ -19,14 +14,15 @@ export interface AssessmentResultData {
   passingScore?: number;
 }
 
-export type AssessmentResultAction = 'report' | 'course' | 'retake';
+/** A pass goes back to the course; the detailed report joins it with the report page (MIL-109). */
+export type AssessmentResultAction = 'course' | 'retake';
 
 @Component({
   selector: 'app-assessment-result-dialog',
   standalone: true,
   imports: [CommonModule, NgIconComponent, Button, Dialog],
   templateUrl: './assessment-result-dialog.html',
-  viewProviders: [provideIcons({ heroCheckCircle, heroXCircle, heroArrowRight, heroArrowPath })],
+  viewProviders: [provideIcons({ heroCheckCircle, heroXCircle, heroArrowPath })],
 })
 export class AssessmentResultDialog implements OnInit {
   private readonly dialogRef = injectDialogRef<AssessmentResultData, AssessmentResultAction>();

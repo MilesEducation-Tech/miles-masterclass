@@ -89,7 +89,20 @@
             </div>
             <p class="description text-center">{{ c.mini_description }}</p>
           </div>
-          @if (c.chapters.length) {
+          @if (assessment.canStart()) {
+            <div class="flex justify-center items-center">
+              <button
+                app-button
+                type="button"
+                class="rounded-lg"
+                variant="default"
+                [disabled]="assessment.starting()"
+                (click)="assessment.start()"
+              >
+                {{ takeAssessment }}
+              </button>
+            </div>
+          } @else if (c.chapters.length) {
             <div class="flex justify-center items-center">
               <button
                 app-button
