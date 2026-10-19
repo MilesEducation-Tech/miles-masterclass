@@ -6,11 +6,11 @@
  *   - `robots.txt` is **host-aware** — only the production hostnames advertise
  *     themselves as indexable; every preview / UAT / localhost host returns
  *     `Disallow: /` so Google never indexes a `*.vercel.app` duplicate.
- *   - `sitemap.xml` lists the static pages plus the **live webinars** from the
- *     web API, so a newly scheduled webinar shows up without a redeploy
- *     (cached in-memory, see `SITEMAP_TTL_MS`). Course and instructor URLs are
- *     not listed: their legacy feeds (`v2/library/`, `instructor/`) are gone,
- *     and the web replacements are a follow-up (docs/LEGACY_API_ROADMAP.md).
+ *   - `sitemap.xml` lists the static pages plus the **live webinars** and the
+ *     **masterclass courses** from the web API, so a new webinar or course
+ *     shows up without a redeploy (cached in-memory, see `SITEMAP_TTL_MS`).
+ *     Podcast, micro-learning and instructor URLs are not listed: those pages
+ *     still run on legacy ids with no public web feed.
  *
  * Both routes are registered before `express.static` + the Angular catch-all so
  * they win over the SPA shell (which is why the SEO audit saw HTML at these
@@ -155,7 +155,56 @@ async function fetchWebinars(): Promise<WebinarLoc[]> {
   return [...ids].map((id) => ({ id }));
 }
 
-/** Gather every crawlable absolute URL. A webinar API failure degrades gracefully. */
+/** A masterclass course's sitemap entry: `masterclass/:id/:slug`. */
+interface CourseLoc {
+  id: string;
+  slug: string;
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+/** 100 per page; 10 pages is ten times today's catalogue (64 on 2026-10-19). */
+const COURSE_PAGE_SIZE = 100;
+const COURSE_PAGE_LIMIT = 10;
+/** Per request, so a hung API can't hold the sitemap (and the crawler) open. */
+const COURSE_FETCH_TIMEOUT_MS = 8000;
+
+/**
+ * Public masterclass courses, from the web course filter. It is `AllowAny` and
+ * takes no `login_type`, so it needs no token.
+ *
+ * The URL uses the feed's `slug`, which the course page keeps in its canonical
+ * (`setupCourseSeo`), so each `<loc>` equals its page's canonical. A row whose
+ * id or slug doesn't look like one is dropped rather than put into a URL.
+ */
+async function fetchCourses(): Promise<CourseLoc[]> {
+  const courses: CourseLoc[] = [];
+  for (let page = 1; page <= COURSE_PAGE_LIMIT; page++) {
+    const response = await fetch(
+      `${API_BASE}/web-api/v1/masterclass/filter/?content_type=masterclass_course` +
+        `&page_size=${COURSE_PAGE_SIZE}&page=${page}`,
+      {
+        headers: { accept: 'application/json' },
+        signal: AbortSignal.timeout(COURSE_FETCH_TIMEOUT_MS),
+      },
+    );
+    if (!response.ok) break;
+    const json = (await response.json()) as {
+      data?: { courses?: { has_next?: boolean; results?: { id?: unknown; slug?: unknown }[] } };
+    };
+    const block = json.data?.courses;
+    for (const row of block?.results ?? []) {
+      const { id, slug } = row;
+      if (typeof id === 'string' && UUID.test(id) && typeof slug === 'string' && SLUG.test(slug)) {
+        courses.push({ id, slug });
+      }
+    }
+    if (!block?.has_next) break;
+  }
+  return courses;
+}
+
+/** Gather every crawlable absolute URL. An API failure degrades gracefully. */
 async function collectLocs(): Promise<string[]> {
   const locs = new Set<string>(staticLocs());
 
@@ -165,6 +214,11 @@ async function collectLocs(): Promise<string[]> {
   const webinars = await fetchWebinars().catch(() => [] as WebinarLoc[]);
   for (const webinar of webinars) {
     locs.add(`${SITE_ORIGIN}${PREFIX}/webinar/${webinar.id}`);
+  }
+
+  const courses = await fetchCourses().catch(() => [] as CourseLoc[]);
+  for (const course of courses) {
+    locs.add(`${SITE_ORIGIN}${PREFIX}/masterclass/${course.id}/${course.slug}`);
   }
 
   return [...locs];
