@@ -13,7 +13,7 @@ import { paymentGuard } from '@features/payment/guards/payment-guard';
  *   /payment/                      ← Payment shell (header + breadcrumb) [signed in]
  *     /                            ← OverviewWrapper (sidebar layout)
  *       /cart                      ← cart contents
- *     /review                      ← guarded: non-empty cart; collects the billing address
+ *     /review                      ← guarded: non-empty cart; the billing address is optional
  *
  * `authGuard` sits on each signed-in route rather than on the `payment` mount
  * in `features.routes.ts`, because `plan` must stay open to visitors.

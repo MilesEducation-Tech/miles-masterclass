@@ -8,6 +8,14 @@
   {{ 'header.skipToContent' | transloco }}
 </button>
 <app-header />
+<!-- Browser-only: the server renders just the placeholder, so hydration has nothing to mismatch.
+     The banner is fixed under the header and takes no layout space, so the placeholder's size is
+     zero: nothing shifts when it appears. -->
+@defer (on idle) {
+  <app-country-banner />
+} @placeholder {
+  <span class="hidden"></span>
+}
 <!-- Skip-link target. Not a <main> wrapper: some pages already render their own <main>. -->
 <span #contentStart tabindex="-1" class="outline-none"></span>
 <router-outlet />

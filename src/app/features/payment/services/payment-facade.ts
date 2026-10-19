@@ -30,14 +30,16 @@ import {
   parsePlans,
 } from '@features/payment/models/commerce.model';
 import { AuthSession } from '@core/services/auth-session/auth-session';
-import { NgpDialogManager } from 'ng-primitives/dialog';
+import { NgpDialogManager, type NgpDialogRef } from 'ng-primitives/dialog';
 // Dialog components load lazily (dynamic `import()` in the open* methods below), so
 // they stay out of whichever chunk first injects this root facade.
 import { Analytics } from '@core/services/analytics/analytics';
 
 /**
  * The CAIRA error envelope's human message (safe to show) and machine reason
- * (`data.reason`, stable to branch on). Some refusals carry only a message.
+ * (`data.reason`, stable to branch on). Some refusals carry only a message. Reasons the
+ * facade branches on: `order_not_payable` (retry), `country_mismatch` (checkout);
+ * `subscription_already_in_cart` (409) is shown as its message only.
  */
 function commerceErrorOf(err: unknown): { reason?: string; message: string } {
   // Status 0 never reached the API (offline, CORS); its `error` is the browser's own
@@ -187,7 +189,8 @@ export class PaymentFacade {
     if (err) this.logger.error('Failed to load addresses', err);
   });
   /**
-   * The address picked on the billing page. It keeps the learner's pick while that
+   * The billing address picked in the address dialog. Optional: with no saved address it is
+   * `null` and checkout goes ahead without one. It keeps the learner's pick while that
    * address exists, otherwise starts on the one already on the cart, then the default,
    * then the first. It reaches the cart only on Proceed (`attachBillingAddress`).
    */
@@ -206,6 +209,10 @@ export class PaymentFacade {
       return (list.find((a) => a.is_default) ?? list[0])?.id ?? null;
     },
   });
+  /** The picked address itself, for the review page's summary. */
+  readonly selectedAddress = computed<Address | null>(
+    () => this.addresses().find((a) => a.id === this.selectedAddressId()) ?? null,
+  );
   isEditingAddress = signal<boolean>(false);
   /** An address save or update is in flight: the form waits for the answer, so a double click can't add two. */
   readonly savingAddress = signal(false);
@@ -339,9 +346,9 @@ export class PaymentFacade {
     });
   }
 
-  /** A5. An address any order uses can't be deleted (409); the learner sees why. */
+  /** A5 (`POST …/remove/`). An address any order uses can't be deleted (409); the learner sees why. */
   deleteAddress(id: string): void {
-    const route = COMMERCE_ROUTES.deleteAddress;
+    const route = COMMERCE_ROUTES.removeAddress;
     this.http.call({ ...route, path: route.path.replace(':address_id', id) }).subscribe({
       next: () => {
         // `selectedAddressId` is linked to the list and moves off a deleted address by itself.
@@ -361,7 +368,8 @@ export class PaymentFacade {
 
   /**
    * C5: puts the selected address on the cart as its billing address, then `onAttached`
-   * (the billing page moves on to review). Checkout copies it onto the order.
+   * (review checks out). Checkout copies it onto the order. Review calls this only when an
+   * address is picked, so the error below is a guard, not a requirement.
    */
   attachBillingAddress(onAttached: () => void): void {
     const cartId = this.cart.cart()?.id;
@@ -449,6 +457,16 @@ export class PaymentFacade {
   }
 
   /**
+   * Pick, add or edit the billing address. `afterClosed` emits the picked id on Done or a
+   * save, and nothing on a dismissal.
+   */
+  async openAddressDialog(): Promise<NgpDialogRef<void, string | null>> {
+    const { AddressDialog } =
+      await import('@features/payment/dialogs/address-dialog/address-dialog');
+    return this.dialogs.open<void, string | null>(AddressDialog, { injector: this.injector });
+  }
+
+  /**
    * K1: turns the reviewed cart into a pending order and starts its first Stripe session.
    * Exactly one outcome comes back, tested in this order:
    * - `free_order`: a coupon covered it and the order is already paid;
@@ -482,7 +500,12 @@ export class PaymentFacade {
       error: (err) => {
         this.paying.set(false);
         this.logger.error('Checkout failed', err);
-        this.notification.error('Checkout failed', commerceErrorOf(err).message);
+        const { reason, message } = commerceErrorOf(err);
+        this.notification.error('Checkout failed', message);
+        // CAIRA priced the cart for a different country than `X-Country-Code` (the billing
+        // address, card or IP disagree) and re-priced it: re-read it, and stay on the review
+        // page so the learner sees the new total before trying again.
+        if (reason === 'country_mismatch') this.cart.reload();
       },
     });
   }

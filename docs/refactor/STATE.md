@@ -34,9 +34,19 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - **Webinars:** `/webinar` loads with no feed error. A rail row's Book Now opens that webinar with
       `#seat-identifier` focused.
   - **PR #122 vs `master` after the merge:** 23 files, MIL-62's own.
-  - **Next:**
-    - The user continues the merge and pushes.
-    - `master` has moved again (#152, MIL-99), so the next update expects one `STATE.md` conflict.
+  - **2026-10-19, second update: `master` `795819d` (#165) merged in. RESOLVED AND STAGED.**
+    - **`payment.routes.ts`:** the comment only. `master`'s "the billing address is optional" `/review` line, plus
+      MIL-62's note on where `authGuard` sits.
+    - **`STATE.md`:** MIL-62's entries kept, then all of `master`'s. HEAD's stale "UNCOMMITTED" MIL-95 heading gives way
+      to `master`'s "MERGED as #150". Both step logs kept.
+    - **`features.routes.ts` merged clean**, as planned:
+      - one `authGuard` import, so the trackers stay guarded
+      - #152's instructor route stays public
+    - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 246.74 kB, only
+      `ai-labs.css`.
+    - **Server checks, signed out:** the instructor page 200; course feedback 302 to sign-in; `payment/plan` 200.
+    - **PR #122 vs `master`:** still 23 files, MIL-62's own.
+  - **Next:** the user clicks Continue Merge and pushes.
 
 - 🔧 **2026-10-15, NON-REFACTOR — webinar feed rejected over null thumbnails. DONE, UNCOMMITTED** on
   `fix/MIL-62-require-sign-in` (the user's call: its own commit here, so MIL-62 can be tested on the webinar pages).
@@ -52,9 +62,97 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - **Gates:** tsc 0, Storybook tsc 0, ESLint clean on the file, Prettier clean.
   - **Backend:** send `''` as the contract says, or update Postman to `string | null`.
 
-- 🔧 **2026-10-15, NON-REFACTOR — MIL-95, instructor library and page (`prompts/library-rebind.md` rev 3,
-  approved). SUBTASKS 1–2 COMMITTED (`51abea3`, `73f8095`), SUBTASK 3 + BACK FIX DONE, UNCOMMITTED** on
-  `feat/MIL-95-instructor-library-binding` (from `master` `e3fc330`).
+- 🔧 **2026-10-16, NON-REFACTOR: commerce remove routes and an optional billing address**
+  (`prompts/optional-billing-address.md` rev 1, approved in plan mode). Three tickets, three PRs.
+  - **PR 1, `fix(payment): call the POST remove routes for cart lines, coupons and addresses`.
+    COMMITTED** as `79579185` on `fix/MIL-103-commerce-remove-routes` (from `master` `2d78a56d`).
+    - CAIRA withdrew `DELETE` on 2026-10-14. C4, D2 and A5 now call `POST …/remove/`. The A5 key is
+      `removeAddress`, typed `{address_id, deleted}`. A4 is unchanged. `docs/COMMERCE_API.md` records it.
+    - **Verified (dev, headless, dummy token, commerce responses stubbed in `fetch`):** each request is a
+      body-less `POST` on the new path, with `?cart_id=` on D2. Removing the last line shows the empty
+      cart. The A5 409 shows its message and keeps the address; a 200 removes it.
+    - **Gates (local macOS):** lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` only
+      `ai-labs.css`.
+  - **PR 2, `feat(payment): make the billing address optional on review`. DONE, GATES GREEN,
+    UNCOMMITTED** on `feat/MIL-XXX-optional-billing-address` (stacked on `79579185`).
+    - New `dialogs/address-dialog/` wraps the existing `BillingAddress` (new `saved` output). Review
+      shows "Billing address (optional)" above the terms: the picked address with "Change", or
+      "+ Add billing address" once the list has loaded. `canPay` no longer needs an address. The
+      facade has `selectedAddress` and `openAddressDialog()`, whose ref closes with the picked id
+      (Done or a save) or nothing (X), for PR 3.
+    - **Verified (dev, headless, dummy token, commerce stubbed in `fetch`):** no address → Pay
+      enabled → K1 `{cart_id}` with no C5. Add in the dialog → A2 body as typed → dialog closes →
+      row shows it. Change → pick another → Done → row updates → Pay sends C5 then K1. X keeps the
+      pick. Done is disabled while the form is open. 375 / 768 / 1440: no horizontal scroll; the
+      row stacks at 375. The dialog chunk is lazy and separate from the invoice chunk.
+    - **Gates (local macOS):** lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod`
+      246.61 kB, only `ai-labs.css`.
+    - **Seen, not in scope:**
+      - The coupon dialog (and the profile dialog) size their card `w-[95svw]` inside a `p-4`
+        overlay, so at 375 px the panel scrolls sideways and shows a striped scrollbar. The address
+        dialog uses `w-full` to avoid it.
+      - The invoice component's `?status=` effect also runs in review mode, so after visiting an
+        invoice, `/payment/review` gains `?status=<last order>`. Harmless, but wrong.
+  - **PR 3, `feat(payment): ask for the billing address on the invoice page`:** ⛔ blocked. No route sets
+    an order's billing address (C5 is 409 after checkout). The prompt assumes
+    `PATCH commerce/order/{id}/` until the backend confirms it.
+
+- ✅ **2026-10-16, NON-REFACTOR — MIL-99 (Bug), `fix(library): show the instructor page without sign-in`.
+  MERGED as #152 (`11409b53`).** Notes below are from before the merge.
+  (`prompts/public-instructor-page.md` rev 2, approved), on
+  `fix/MIL-99-public-instructor-page` (from `master` `68a672d`).
+  - **Two backend changes on 2026-10-15** (App 5 Postman export, refreshed into `postman/`; UAT probes):
+    - `instructor-detail/` went `AllowAny` but now **requires `?login_type=`**. With no `login_type` it answers 400,
+      so the page likely failed signed in too.
+    - `filter/` dropped `course_type` for `content_type` (`masterclass_course` / `ai_kit` / `podcast` / `reel` →
+      `nano_learning`, `micro_learning`). The old param is a 400, so every instructor tab said "Couldn't load
+      courses".
+  - **Fix:**
+    - The route loses `canMatch: [authGuard]`.
+    - The profile read sends `login_type` (`post_login` when `isAuthenticated()`, else `pre_login`; core
+      `MasterclassLoginType`) and stays browser-only.
+    - The tabs send `content_type`, and the type and field are renamed `InstructorContentType` / `contentType`.
+    - The tab scope came in after verification found the 400; it was the user's call.
+  - **Verified (dev 4101, headless):**
+    - **Signed out:** library → Adam with no redirect. The detail request is `?login_type=pre_login` with no
+      bearer. The hero, About and LinkedIn show, and the Masterclass tab shows 1 card linking
+      `/masterclass/<uuid>/<slug>`.
+    - **Tabs:** Podcast and Micro Learning say "No … courses yet.", one `content_type` request each. Trailer and
+      Course information open, and Back returns to the library with 20 cards.
+    - **Server render:** answers 200 with "Loading instructor…" (it used to 302).
+    - **Signed in:** with a dummy token, the request is `?login_type=post_login` with the bearer, and the page
+      renders.
+    - **Edge cases:** `/instructor/3665/…` → "Instructor not found" with no request. An unknown UUID →
+      `pre_login` 404 → error with Try Again.
+    - All 63 UAT profiles answer 200 on `pre_login` and pass `parseInstructorProfile`.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 244.99 kB,
+    only `ai-labs.css`.
+  - **Open, not in scope:**
+    - The **course library** (`course-facade.ts`) still sends `course_type` to `filter/` → 400 on UAT. It needs
+      its own bug.
+    - A real `post_login` 200 needs a manual check with a real UAT sign-in.
+    - SEO for the instructor page is still deferred.
+  - **Next:** the user commits; then the PR.
+
+- 🔧 **2026-10-16, NON-REFACTOR: dialogs fit phones, and `?status=` stays off review. DONE, GATES GREEN,
+  UNCOMMITTED** on `fix/MIL-XXX-dialog-overflow-review-status` (from `master` `2d78a56d`). Found while
+  verifying MIL-104 (optional billing address).
+  - **Dialogs:** about 25 dialog cards are sized `w-[95svw]` (or similar) inside `app-dialog`'s 16px gutter,
+    so at 375px the card is 356px in a 343px panel and the panel scrolls sideways. One `@layer base` rule
+    in `styles.css` caps `app-dialog > [ngpDialog] > *` at `max-width: 100%`; a card's own `max-w-*`
+    still wins, so the subscription and AI Lab cards take `max-w-[min(100%,…)]`.
+  - **`?status=`:** the invoice component also renders review, and its status-sync effect ran in both
+    modes, so review gained the root facade's last order status. It runs in invoice mode only now.
+  - **Verified (dev, headless, dummy token, commerce stubbed in `fetch`):** coupon, subscription, AI Lab
+    and profile dialogs fit at 375 (card 343 = panel, no sideways scroll); designed widths unchanged at
+    768 and 1440 (460 / 560 / 730→768 / 640). Invoice keeps `?status=pending`; review after an invoice
+    has none.
+  - **Gates (local macOS):** lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` 246.63 kB,
+    only `ai-labs.css`.
+  - **Next:** the user commits (two commits, `fix(shared)` and `fix(payment)`); then the PR.
+
+- ✅ **2026-10-15, NON-REFACTOR — MIL-95, instructor library and page (`prompts/library-rebind.md` rev 3,
+  approved). MERGED as #150 (`68a672d`).** Notes below are from before the merge.
   - **Subtask 3, `feat(library): bind the instructor page to instructor-detail`:** the page reads
     `instructor-detail/<uuid>/` (gated on the boolean `isAuthenticated()`) and `filter/?course_type=<tab>&instructor=`
     (one read per tab, `SKIP_LOADING`), both parsed at the boundary; no facade. Masterclass / Podcast / Micro Learning
@@ -5010,11 +5108,15 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-10-19 · NON-REFACTOR · **PR #122 (MIL-62): `master` `795819d` merged in** (staged, user continues the merge in Desktop): 2 conflicts (payment-routes comment, STATE.md) · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod 246.74 kB · instructor 200, feedback 302, plan 200 signed out
+
 - 2026-10-16 · NON-REFACTOR · **PR #122 (MIL-62): `master` `a2afc0e` merged in** (staged, user continues the merge in Desktop): 7 conflicts resolved, duplicate `authGuard` import removed, baseline pruned; #145's revert of the thumbnail fix found · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod 244.84 kB · guards + webinar Book Now checked signed out
 
 - 2026-10-16 · NON-REFACTOR · **MIL-99 instructor page public** (`fix/MIL-99-public-instructor-page`, merged as #152): `login_type` on `instructor-detail/`, `content_type` on `filter/`, route guard removed · gates green · signed out + dummy signed-in checked
 
 - 2026-10-15 · NON-REFACTOR · **Webinar feed: null `horizontal_thumbnail` / `square_image` accepted** (uncommitted, `fix/MIL-62-require-sign-in`): one UAT card with both null failed the whole feed · tsc 0, Storybook tsc 0, ESLint ✔, prettier ✔ · list + `Test webinar-2` detail render in dev
+
+- 2026-10-16 · NON-REFACTOR · **Dialog overflow and review `?status=` fixed** (uncommitted, `fix/MIL-XXX-dialog-overflow-review-status`): `@layer base` cap on `app-dialog` panel children, subscription and AI Lab cards `max-w-[min(100%,…)]`, status-sync effect invoice-only · 375/768/1440 measured · lint 0 errors (101 warnings), structure ✔, prettier ✔, build:prod 246.63 kB
 
 - 2026-10-15 · NON-REFACTOR · **MIL-93 header dropdowns fixed** (uncommitted, `fix/MIL-93-header-nav-dropdowns`): close outside the open item, reset `NavMenuGroup`, route change + Escape close · Playwright 1440/1024/768 all pass · tsc 0, lint 0 errors, structure ✔, prettier ✔, build:prod 244.98 kB
 

@@ -1,0 +1,36 @@
+<app-dialog ariaLabel="Billing address" panelClass="p-0 w-[560px] max-w-full">
+  <!-- Header and footer stay put; the list and form scroll between them. The comboboxes'
+       dropdowns are portaled to <body>, so the scrolling body doesn't clip them. The card fills
+       the panel (`w-full`, not a viewport width), or the panel scrolls sideways at 375 px. -->
+  <div
+    class="bg-linear-to-l from-plan-1 to-plan-4 flex flex-col w-full max-h-[85svh] overflow-hidden relative rounded-xl"
+  >
+    <div class="flex items-start justify-between gap-4 px-5 py-4 border-b border-white/10 shrink-0">
+      <div>
+        <h2 class="text-lg font-bold text-white">Billing address</h2>
+        <p class="text-sm text-gray-400">Optional. It appears on your invoice.</p>
+      </div>
+      <button
+        app-button
+        type="button"
+        class="rounded-full text-gray-300 data-hover:bg-transparent data-press:bg-transparent data-hover:text-white"
+        aria-label="Close dialog"
+        variant="ghost"
+        size="icon"
+        (click)="dismiss()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-5">
+      <app-billing-address (saved)="done()" />
+    </div>
+
+    <div class="flex justify-end px-5 py-4 border-t border-white/10 shrink-0">
+      <button app-button type="button" variant="default" [disabled]="editing()" (click)="done()">
+        Done
+      </button>
+    </div>
+  </div>
+</app-dialog>

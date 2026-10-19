@@ -327,10 +327,14 @@ export const COMMERCE_ROUTES = {
     { product_id: string; plan_id: string; cart_id?: string },
     CommonResponse<AddLineResult>
   >,
-  /** Answers with the whole cart; removing the last line answers it `cancelled`. */
+  /**
+   * C4, no body (a body is a 400). Answers with the whole cart; removing the last line answers it
+   * `cancelled`. 404 for a line that isn't this learner's; 409 `order_partially_paid` once money
+   * is captured on its order. `DELETE` on the line was withdrawn 2026-10-14.
+   */
   removeLine: {
-    path: 'api/v1/commerce/cart/line/:line_id/',
-    method: 'DELETE',
+    path: 'api/v1/commerce/cart/line/:line_id/remove/',
+    method: 'POST',
   } as RouteConfig<void, CommonResponse<Cart>>,
   /** One coupon per cart; a new code replaces the old. A refusal is a 409 with a showable `message`. */
   /**
@@ -350,9 +354,14 @@ export const COMMERCE_ROUTES = {
     path: 'api/v1/commerce/cart/coupon/',
     method: 'POST',
   } as RouteConfig<{ code: string; cart_id?: string }, CommonResponse<Cart>>,
+  /**
+   * D2, no body (`cart_id` goes in the query; a body is a 400). Answers with the whole cart, also
+   * when no coupon was applied; 409 `cart_not_open` / `order_partially_paid`. `DELETE` on
+   * `cart/coupon/` was withdrawn 2026-10-14.
+   */
   removeCoupon: {
-    path: 'api/v1/commerce/cart/coupon/',
-    method: 'DELETE',
+    path: 'api/v1/commerce/cart/coupon/remove/',
+    method: 'POST',
   } as RouteConfig<void, CommonResponse<Cart>, Record<string, never>, { cart_id?: string }>,
   /** Unpaginated, default address first. */
   addresses: {
@@ -368,11 +377,15 @@ export const COMMERCE_ROUTES = {
     path: 'api/v1/commerce/address/:address_id/',
     method: 'PATCH',
   } as RouteConfig<Partial<AddressInput>, CommonResponse<Address>>,
-  /** 204, or 409 (with a showable `message`) when any order references the address. */
-  deleteAddress: {
-    path: 'api/v1/commerce/address/:address_id/',
-    method: 'DELETE',
-  } as RouteConfig<void, null>,
+  /**
+   * A5, no body (a body is a 400). 200 `{address_id, deleted}` (it answered 204 until
+   * 2026-10-15), or 409 with a showable `message` while any order references the address.
+   * `DELETE` on the address was withdrawn 2026-10-14.
+   */
+  removeAddress: {
+    path: 'api/v1/commerce/address/:address_id/remove/',
+    method: 'POST',
+  } as RouteConfig<void, CommonResponse<{ address_id: string; deleted: boolean }>>,
   /** C5: attaches the billing address to the cart; checkout copies it onto the order. */
   attachAddress: {
     path: 'api/v1/commerce/cart/',

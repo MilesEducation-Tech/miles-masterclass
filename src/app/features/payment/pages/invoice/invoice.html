@@ -167,8 +167,8 @@
       <div class="flex w-full justify-end">
         <app-price-overview />
       </div>
-      <div class="flex w-full flex-col space-y-4">
-        @if (isInvoice()) {
+      @if (isInvoice()) {
+        <div class="flex w-full flex-col space-y-4">
           <p class="text-2xl text-white font-semibold">Customer Details</p>
           <div class="flex w-full sm:space-x-6 space-y-4 max-sm:flex-col">
             @if (billingAddress(); as address) {
@@ -183,15 +183,48 @@
               </div>
             }
           </div>
-        } @else {
-          <!-- Review collects the billing address (there is no separate step). Checkout copies
-               the cart's address onto the order, so Pay puts the pick on the cart first. -->
-          <p class="text-2xl text-white font-semibold">Billing Address</p>
-          <app-billing-address />
-        }
-      </div>
+        </div>
+      }
     }
     @if (!isInvoice()) {
+      <!-- The billing address is optional. Checkout copies the cart's address onto the order,
+           so Pay puts the pick on the cart first; with none picked it checks out without one. -->
+      <div class="flex w-full flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <p class="text-gray-300 font-semibold">
+          Billing address <span class="font-normal text-gray-400">(optional)</span>
+        </p>
+        <div class="flex min-w-0 flex-col sm:items-end sm:text-end">
+          @if (selectedAddress(); as address) {
+            @if (address.name; as name) {
+              <p class="font-medium">{{ name }}</p>
+            }
+            @if (address.phone; as phone) {
+              <p class="text-sm text-gray-300">{{ phone }}</p>
+            }
+            <p class="text-sm text-gray-300 break-words">{{ formatAddress(address) }}</p>
+            <button
+              app-button
+              type="button"
+              variant="link"
+              class="h-auto w-auto px-0 text-action"
+              (click)="openAddressDialog()"
+            >
+              Change
+            </button>
+          } @else if (!addressesLoading()) {
+            <!-- Not while the list loads, or a learner with a saved address sees "Add" flash first. -->
+            <button
+              app-button
+              type="button"
+              variant="link"
+              class="h-auto w-auto px-0 text-action"
+              (click)="openAddressDialog()"
+            >
+              + Add billing address
+            </button>
+          }
+        </div>
+      </div>
       <div class="flex w-full flex-col space-y-4">
         <p class="text-2xl text-white font-semibold">Terms & Conditions</p>
         <div class="flex space-x-1 items-center justify-start m-0">

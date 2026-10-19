@@ -491,6 +491,20 @@ swiper-container {
 }
 
 /*
+ * Dialog cards size themselves to the viewport (`w-[95svw]` and similar), but `app-dialog` keeps a
+ * 16px gutter round the panel. On a 375px phone the card is 356px in a 343px panel, so the panel
+ * scrolls sideways and shows its scrollbar under the dialog. A card is a cross-axis child of the
+ * panel's flex column, so it never shrinks by itself: cap the panel's direct children at its width.
+ * That fixes every dialog at once and changes nothing where a card already fits. In @layer base so a
+ * card's own `max-w-*` utility still wins (give that one a `min(100%, …)` instead).
+ */
+@layer base {
+  app-dialog > [ngpDialog] > * {
+    max-width: 100%;
+  }
+}
+
+/*
  * Ticket-card mask utilities. Registered via Tailwind v4's `@utility` so the
  * usual variants (`md:`, `hover:`, etc.) attach naturally — e.g.
  * `class="md:x-ticket y-ticket"` swaps the silhouette at the `md` breakpoint,

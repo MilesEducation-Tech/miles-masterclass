@@ -3,6 +3,7 @@ import {
   DEFAULT_COUNTRY,
   GEO_COUNTRY_COOKIE,
   GEO_COUNTRY_HEADER,
+  PREFERRED_COUNTRY_COOKIE,
 } from './app/core/constants/countries';
 import type { CountryCode } from './app/core/models/route-params.model';
 import { toCountry } from './app/core/utils/country';
@@ -19,9 +20,14 @@ import { asHeader } from './legacy-redirects';
 /** One day: no `Set-Cookie` on every page, yet a visitor who moves is followed within a day. */
 const GEO_COOKIE_MAX_AGE_SECONDS = 86_400;
 
-/** Same precedence as `CountryContext.detect()`: edge header, then our own cookie, then `us`. */
+/**
+ * Same precedence as `CountryContext.detect()`: the learner's own choice (`preferred_country`,
+ * written only by the switcher and the banner), then the edge header, then our own geo cookie,
+ * then `us`.
+ */
 export function detectCountry(req: Request): CountryCode {
   return (
+    toCountry(readCookie(req.headers.cookie, PREFERRED_COUNTRY_COOKIE)) ??
     toCountry(asHeader(req.headers[GEO_COUNTRY_HEADER])) ??
     toCountry(readCookie(req.headers.cookie, GEO_COUNTRY_COOKIE)) ??
     DEFAULT_COUNTRY

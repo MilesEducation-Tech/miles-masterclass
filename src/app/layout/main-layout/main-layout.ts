@@ -3,10 +3,11 @@ import { RouterOutlet } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Header } from '@layout/header/header';
 import { Footer } from '@layout/footer/footer';
+import { CountryBanner } from '@layout/components/country-banner/country-banner';
 
 @Component({
   selector: 'app-main-layout',
-  imports: [Header, Footer, RouterOutlet, TranslocoPipe],
+  imports: [Header, Footer, CountryBanner, RouterOutlet, TranslocoPipe],
   templateUrl: './main-layout.html',
 })
 export class MainLayout {

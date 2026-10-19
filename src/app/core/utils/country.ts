@@ -26,3 +26,13 @@ export function countryFromUrl(url: string): CountryCode | undefined {
   const isProfession = PROFESSIONS.some((p) => p.toLowerCase() === profession?.toLowerCase());
   return isProfession ? toCountry(country) : undefined;
 }
+
+/**
+ * A country's name in `locale` (`'en'` → "India", `'fr'` → "Inde") from the platform's own CLDR
+ * data, so there is no 57-entry map to keep in step with `SUPPORTED_COUNTRIES`. Node and every
+ * supported browser ship `Intl.DisplayNames`; the upper-case code is the fallback if ICU has no name.
+ */
+export function countryName(code: CountryCode, locale: string): string {
+  const region = code.toUpperCase();
+  return new Intl.DisplayNames([locale], { type: 'region' }).of(region) ?? region;
+}

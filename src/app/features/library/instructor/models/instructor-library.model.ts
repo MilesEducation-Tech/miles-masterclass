@@ -62,11 +62,14 @@ export interface InstructorProfile extends InstructorRow {
   video_url: string | null;
 }
 
-/** The `course_type` each tab sends to `filter/`. */
-export type InstructorCourseType = 'course' | 'podcast' | 'micro_learning';
+/**
+ * The `content_type` each tab sends to `filter/`. `masterclass_course` already
+ * includes the AI Kit courses (`ai_kit` is a subset of it).
+ */
+export type InstructorContentType = 'masterclass_course' | 'podcast' | 'micro_learning';
 
 export interface InstructorCourseTab {
-  courseType: InstructorCourseType;
+  contentType: InstructorContentType;
   label: string;
 }
 

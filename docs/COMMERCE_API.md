@@ -28,6 +28,19 @@ below.
 
 ## Endpoint by endpoint
 
+**Contract change, 2026-10-14 (Postman export of 2026-10-15): `DELETE` was withdrawn.** The three
+removals are `POST` twins now, and the app calls these:
+
+- D2 `POST commerce/cart/coupon/remove/` (optional `?cart_id=`), 200 = the whole cart, also when no
+  coupon was applied; 409 `cart_not_open` / `order_partially_paid`.
+- C4 `POST commerce/cart/line/{id}/remove/`, 200 = the whole cart (`cancelled` on the last line);
+  404; 409 `order_partially_paid`.
+- A5 `POST commerce/address/{id}/remove/`, 200 `{address_id, deleted}` (204 until 2026-10-15);
+  409 while an order references the address.
+
+All three refuse a request body (400 `invalid_body`). The `DELETE` rows below are the 2026-10-13
+captures; the `POST` twins are not captured on UAT yet.
+
 | Call                                  | Status | Observed                                                                                                                          |
 | ------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | C1 `GET commerce/cart/`               | 200    | Creates an empty cart when none exists. **An empty US cart reports `currency: "INR"`** (see below).                               |
@@ -58,7 +71,8 @@ below.
 4. **UAT CORS doesn't allow `DELETE`** (checked 2026-10-14, from localhost and the UAT Vercel URL):
    preflight answers `access-control-allow-methods: GET, OPTIONS, PATCH, POST, PUT`. In a browser, D2
    (remove coupon), C4 (remove from cart) and A5 (delete address) all fail as status 0, which the app
-   shows as "We couldn't reach the server". The calls are right; the backend must add `DELETE`.
+   shows as "We couldn't reach the server". **Moot since 2026-10-14:** the backend withdrew `DELETE`
+   and the app calls the `POST …/remove/` twins (see above).
 5. **`GET commerce/coupons/` isn't in Postman** (the 2026-10-14 export has only D1/D2). Captured below.
 
 ## Client rules these observations add

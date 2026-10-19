@@ -1,5 +1,31 @@
 # Changelog
 
+## [3.11.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.10.0...v3.11.0) (2026-10-16)
+
+
+### Features
+
+* **payment:** make the billing address optional on review ([#157](https://github.com/MilesEducation-Tech/miles-masterclass/issues/157)) ([8b985fb](https://github.com/MilesEducation-Tech/miles-masterclass/commit/8b985fbc0084fd843b4acf4d5db94e83d002ca70))
+
+
+### Bug Fixes
+
+* **payment:** call the POST remove routes for cart lines, coupons and addresses ([#156](https://github.com/MilesEducation-Tech/miles-masterclass/issues/156)) ([ebb4502](https://github.com/MilesEducation-Tech/miles-masterclass/commit/ebb45028d029c45e313409f772da5b7aea6cb9db))
+* **shared:** fit dialogs on phones and keep ?status= off review ([#158](https://github.com/MilesEducation-Tech/miles-masterclass/issues/158)) ([d6d3010](https://github.com/MilesEducation-Tech/miles-masterclass/commit/d6d30106b70b096dd06d45d5b96c23769d59f1ae))
+
+## [3.10.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.9.0...v3.10.0) (2026-10-16)
+
+
+### Features
+
+* **core:** remember the learner's country and let them switch it ([#154](https://github.com/MilesEducation-Tech/miles-masterclass/issues/154)) ([9d20b7f](https://github.com/MilesEducation-Tech/miles-masterclass/commit/9d20b7fb27570b8b85d33fa0b525fd39a4d5af35))
+* **seo:** per-country canonical and hreflang on the plan page ([#155](https://github.com/MilesEducation-Tech/miles-masterclass/issues/155)) ([1615772](https://github.com/MilesEducation-Tech/miles-masterclass/commit/161577247fbf20e9a3788d69474f765f9085a4de))
+
+
+### Bug Fixes
+
+* **library:** show the instructor page without sign-in ([#152](https://github.com/MilesEducation-Tech/miles-masterclass/issues/152)) ([11409b5](https://github.com/MilesEducation-Tech/miles-masterclass/commit/11409b5371f79cf9e4d22d825165cc0c3b3c191b))
+
 ## [3.9.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.8.0...v3.9.0) (2026-10-16)
 
 

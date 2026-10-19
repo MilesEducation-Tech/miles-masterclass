@@ -95,9 +95,6 @@ export const featuresRoutes: Route[] = [
       },
       {
         path: 'instructor/:instructorId/:instructorName',
-        // Sign-in only while `instructor-detail/` is (IsAuthenticated); it
-        // becomes public again when the backend opens that read.
-        canMatch: [authGuard],
         loadComponent: () =>
           import('@features/library/instructor/pages/instructor-details/instructor-details').then(
             (m) => m.InstructorDetails,

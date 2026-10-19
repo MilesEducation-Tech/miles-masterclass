@@ -14,10 +14,11 @@ import { AuthSession } from '@core/services/auth-session/auth-session';
 import { LanguageContext } from '@core/services/language-context/language-context';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { LanguageSwitcher } from '../components/language-switcher/language-switcher';
+import { CountrySwitcher } from '@layout/components/country-switcher/country-switcher';
 
 @Component({
   selector: 'app-footer',
-  imports: [RouterLink, NgIcon, NgOptimizedImage, LanguageSwitcher, TranslocoPipe],
+  imports: [RouterLink, NgIcon, NgOptimizedImage, LanguageSwitcher, CountrySwitcher, TranslocoPipe],
   templateUrl: './footer.html',
 })
 export class Footer {

@@ -1,4 +1,13 @@
-import { CANONICAL_LOCALE_PREFIX, DYNAMIC_SLUG_PREFIXES } from '@core/models/seo.constants';
+import { SUPPORTED_COUNTRIES } from '@core/constants/countries';
+import {
+  CANONICAL_COUNTRY,
+  CANONICAL_LOCALE_PREFIX,
+  CANONICAL_PROFESSION,
+  DYNAMIC_SLUG_PREFIXES,
+  PER_COUNTRY_SLUGS,
+} from '@core/models/seo.constants';
+import type { SeoAlternate } from '@core/models/seo.models';
+import { toCountry } from '@core/utils/country';
 
 /**
  * Top-level URL areas that live OUTSIDE the `/<country>/<profession>` locale
@@ -71,9 +80,31 @@ export function routeUrlToCanonicalUrl(url: string, origin: string): string {
     return `${cleanOrigin}/${segments.join('/')}`;
   }
 
-  // Locale-prefixed path → normalize onto the canonical locale.
+  // Locale-prefixed path → normalize onto the canonical locale. A per-country page keeps its
+  // country, since its content differs there, and collapses only the profession.
   const slug = routeUrlToSeoSlug(path);
+  const country = PER_COUNTRY_SLUGS.includes(slug) ? toCountry(segments[0]) : undefined;
+  if (country) return `${cleanOrigin}/${country}/${CANONICAL_PROFESSION}/${slug}`;
   return `${cleanOrigin}/${CANONICAL_LOCALE_PREFIX}/${slug}`;
+}
+
+/**
+ * The `<link rel="alternate" hreflang>` set for a router URL: one per supported country plus
+ * `x-default` on the canonical locale for a per-country page (`PER_COUNTRY_SLUGS`), and empty for
+ * every other page, so the canonical stays the only locale signal there.
+ *
+ * ponytail: `en-<CC>` for every country, since production is English-only; becomes language ×
+ * country once `I18N.enabled` ships.
+ */
+export function routeUrlToAlternates(url: string, origin: string): SeoAlternate[] {
+  const slug = routeUrlToSeoSlug(url.split('?')[0].split('#')[0]);
+  if (!PER_COUNTRY_SLUGS.includes(slug)) return [];
+  const cleanOrigin = origin.replace(/\/+$/, '');
+  const href = (country: string) => `${cleanOrigin}/${country}/${CANONICAL_PROFESSION}/${slug}`;
+  return [
+    ...SUPPORTED_COUNTRIES.map((c) => ({ hreflang: `en-${c.toUpperCase()}`, href: href(c) })),
+    { hreflang: 'x-default', href: href(CANONICAL_COUNTRY) },
+  ];
 }
 
 /**
