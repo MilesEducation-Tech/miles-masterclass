@@ -1,0 +1,173 @@
+<div class="min-h-screen bg-background text-white p-6 md:p-12 pt-28! flex flex-col items-center">
+  @if (thanks(); as done) {
+    <div
+      class="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 max-w-2xl mx-auto"
+    >
+      <div
+        class="w-20 h-20 rounded-full bg-success/15 text-success flex items-center justify-center mb-4"
+      >
+        <ng-icon name="heroCheck" size="2.5rem" aria-hidden="true" />
+      </div>
+      <h1 class="text-3xl font-bold">{{ copy.thanks.title }}</h1>
+      <p class="text-gray-400 text-lg">{{ copy.thanks.body }}</p>
+      @if (done.cpeAwarded) {
+        <p class="text-gray-300">{{ copy.cpeAwarded(done.cpeAwarded) }}</p>
+      }
+      <div class="flex flex-col gap-3 sm:flex-row mt-4">
+        @if (redirect()) {
+          <button app-button type="button" (click)="leave()">{{ copy.continue }}</button>
+        } @else {
+          <button app-button type="button" (click)="assessment.viewReport()">
+            {{ reportCopy.viewReport }}
+          </button>
+          <button app-button type="button" variant="outline" (click)="leave()">
+            {{ reportCopy.backToCourse }}
+          </button>
+        }
+      </div>
+    </div>
+  } @else if (facade.windowReset()) {
+    <div role="alert" class="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
+      <h1 class="text-2xl font-semibold">{{ resetCopy.title }}</h1>
+      <p class="text-muted-foreground">{{ resetCopy.body }}</p>
+      <button app-button type="button" variant="outline" (click)="leave()">
+        {{ reportCopy.backToCourse }}
+      </button>
+    </div>
+  } @else if (facade.alreadySubmitted()) {
+    <div class="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
+      <div
+        class="w-16 h-16 rounded-full bg-success/15 text-success flex items-center justify-center"
+      >
+        <ng-icon name="heroCheck" size="2rem" aria-hidden="true" />
+      </div>
+      <h1 class="text-2xl font-semibold">{{ copy.submitted.title }}</h1>
+      <p class="text-muted-foreground">{{ copy.submitted.body }}</p>
+      @if (facade.submittedAt(); as submittedAt) {
+        <p class="text-sm text-gray-400">
+          {{ copy.submitted.on }} {{ submittedAt | date: 'longDate' }}
+        </p>
+      }
+      <button app-button type="button" variant="outline" (click)="leave()">
+        {{ redirect() ? copy.continue : reportCopy.backToCourse }}
+      </button>
+    </div>
+  } @else if (facade.notPassed()) {
+    <div class="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
+      <h1 class="text-2xl font-semibold">{{ copy.notPassed.title }}</h1>
+      <p class="text-muted-foreground">{{ copy.notPassed.body }}</p>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <button app-button type="button" (click)="assessment.viewReport()">
+          {{ reportCopy.viewReport }}
+        </button>
+        <button app-button type="button" variant="outline" (click)="leave()">
+          {{ reportCopy.backToCourse }}
+        </button>
+      </div>
+    </div>
+  } @else if (facade.loadError(); as message) {
+    <app-error-state
+      [title]="copy.loadFailed.title"
+      [message]="message"
+      (retry)="facade.reloadForm()"
+    />
+  } @else if (facade.questions().length) {
+    <header class="mb-10 text-center space-y-2">
+      <h1 class="text-4xl font-bold tracking-tight mb-2">{{ copy.title }}</h1>
+      @if (course(); as c) {
+        <p class="text-gray-300 text-lg">
+          {{ c.name }}
+          @if (instructorNames()) {
+            by {{ instructorNames() }}
+          }
+        </p>
+      }
+      @if (learnerName()) {
+        <p class="text-blue-500 text-base font-medium mt-4">{{ copy.name }} {{ learnerName() }}</p>
+      }
+    </header>
+
+    <form
+      class="w-full max-w-5xl bg-quiz-panel border border-quiz-line rounded-xl p-8 shadow-2xl"
+      novalidate
+      (submit)="$event.preventDefault(); submit()"
+    >
+      <div class="flex items-start gap-4 mb-8 border-b border-quiz-line pb-6">
+        <div class="p-2 bg-gray-700/50 rounded text-gray-400">
+          <ng-icon name="heroBookOpen" size="2rem" aria-hidden="true" />
+        </div>
+        <div>
+          <h2 class="text-xl font-bold mb-1">{{ copy.formTitle }}</h2>
+          <p class="text-gray-400 text-sm">{{ copy.formIntro }}</p>
+        </div>
+      </div>
+
+      <div class="mb-10">
+        <div class="hidden md:grid grid-cols-2 gap-4 mb-4 px-4">
+          <h3 class="flex items-center text-blue-500 font-semibold">{{ copy.ratingsHeading }}</h3>
+          <div
+            class="grid grid-cols-5 text-blue-500 text-xs font-medium text-center items-end"
+            aria-hidden="true"
+          >
+            @for (label of copy.scale; track label) {
+              <span>{{ label }}</span>
+            }
+          </div>
+        </div>
+        <h3 class="md:hidden text-blue-500 font-semibold mb-4 px-4">{{ copy.ratingsHeading }}</h3>
+
+        <div class="space-y-6">
+          @for (question of facade.questions(); track question.id) {
+            <div
+              class="md:grid md:grid-cols-2 gap-4 items-center px-4 py-3 border-b border-quiz-line/50 last:border-0 hover:bg-quiz-panel-hover/50 transition-colors"
+            >
+              <p class="text-gray-200 text-sm mb-2 md:mb-0 pe-4">{{ question.text }}</p>
+              <div class="flex justify-center md:justify-end">
+                <app-rating-star
+                  [value]="ratings()[question.id] ?? 0"
+                  (valueChange)="rate(question.id, $event)"
+                  [isReadonly]="facade.submitting()"
+                  [ariaLabel]="question.text"
+                  size="1.5rem"
+                  containerClass="grid grid-cols-5 w-full"
+                  starClass="flex justify-center items-center"
+                />
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="mb-8 p-4">
+        <h3 id="evaluation-comments" class="text-blue-500 font-semibold mb-4">
+          {{ copy.commentsHeading }}
+        </h3>
+        <app-field class="w-full">
+          <textarea
+            app-textarea
+            id="evaluation-comments-input"
+            aria-labelledby="evaluation-comments"
+            [placeholder]="copy.commentsPlaceholder"
+            [disabled]="facade.submitting()"
+            [value]="comments()"
+            (input)="typed($event)"
+            [rows]="4"
+          ></textarea>
+        </app-field>
+      </div>
+
+      <div class="flex justify-center pt-4">
+        <button
+          app-button
+          type="submit"
+          variant="default"
+          [disabled]="!isComplete() || facade.submitting()"
+        >
+          {{ facade.submitting() ? copy.submitting : copy.submit }}
+        </button>
+      </div>
+    </form>
+  } @else {
+    <app-page-loading [message]="copy.loading" [fullScreen]="true" />
+  }
+</div>

@@ -7,6 +7,69 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-19, NON-REFACTOR — MIL-110 (Story MIL-107), masterclass course feedback on the web API. PLAN
+  APPROVED, DONE, GATES GREEN, UNCOMMITTED** (`prompts/masterclass-course-feedback.md` rev 1), on
+  `feat/MIL-110-course-feedback`, stacked on `feat/MIL-109-assessment-report` (`d81d5b5`).
+  - **Built:**
+    - **Model:** `models/course-evaluation.model.ts` (form, submit, status parsers).
+    - **`COURSE_DETAIL_API`:** `feedbackQuestions` / `feedbackSubmit` / `feedbackResponses`.
+    - **`CourseDetailFacade`:** `feedbackQuestionsUrl()`, `feedbackResponsesRequest()`, `submitFeedback()`.
+    - **Course-detail model:** `show_feedback` and `feedback_submitted`.
+    - **New `CourseEvaluationFacade`** on the course route:
+      - `canGiveFeedback`, `openFeedback()` (with `?redirect=`), `leave(redirect)` (in-app paths only).
+      - The form read, opted in by the page; already submitted / not passed / window reset / error states.
+      - `submit()`: the profile gate on a known `false`, an exact body, then a course re-read.
+    - **New page `pages/course-evaluation/`** in the old layout. The masterclass `feedback` route points at it,
+      renders client-side and keeps `authGuard`.
+    - **Entry points:** "Submit Feedback" (`bg-accent-premium`) on the hero and the report header.
+    - **Not touched:** the old `course-feedback` page and `FeedbackFacade`.
+  - **Size:** ~820 lines of source (643 new across 4 files, ~177 changed), over the plan's ~600. The facade and the
+    page carry most of it.
+  - **Gates (local macOS):** tsc 0; `pnpm lint` 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod`
+    240.58 kB initial, only `ai-labs.css`.
+  - **Verified (dev 4101, headless, stubs from Postman's shapes):**
+    - **Hero:** Watch Now, Submit Feedback, View Report.
+    - **Form:** → `feedback?redirect=<course>`. One `feedback-questions` read. Questions sorted by `order` (served
+      3,1,5,2,4). Header "Advanced Excel Masterclass by Cristiano Galvao / Name- Asha Verma". Scale labels shown;
+      Submit disabled until all 5 are rated.
+    - **Submit:** the body is exactly `{responses:[{question_id, rating, text_response:""}×5],
+optional_feedback_text:"Great course."}` (trimmed). Then a course re-read, and the thank-you view with "2 CPE
+      credits…".
+    - **After submit:** Continue → the course, and the hero loses Submit Feedback.
+    - **Report header:** Submit Feedback → `feedback?redirect=<report>`.
+    - **States:** already submitted ("Submitted on October 19, 2026" from `feedback-responses?course_id`); not
+      passed; window reset (course re-read); 409 → error → Try again.
+    - **Profile gate:** a known-incomplete profile opens the dialog, sends nothing, and goes to
+      `/auth/profile?redirect=…feedback`.
+    - **Submit refusals:** a 500 toasts and keeps the answers.
+    - **Redirect:** from the CPE tracker → Continue lands on `/us/accounting/cpe-tracker`.
+    - **Layout:** 375 px with no overflow.
+    - **Other offerings:** the podcast feedback URL still renders the old page.
+    - **Signed out:** → `/auth/login?redirect=…`.
+    - **Console:** only the stubbed refusals, plus the old podcast page's existing 404s.
+  - **Hand test:** `.playwright-mcp/manual-mil110.js` (assessment + feedback) is running in the user's window.
+  - **The user's call after the hand test:** once feedback is in, the button stays, disabled.
+    - `CourseEvaluationFacade.feedbackGiven` (signed in and `feedback_submitted`) shows "Feedback Submitted"
+      (disabled, amber) on the hero and the report header, in place of "Submit Feedback".
+    - Checked in the user's window: report `[Feedback Submitted, disabled]`; hero
+      `Watch Now, Feedback Submitted (disabled), View Report…`.
+    - Gates re-run: lint 0 errors, structure ✔, Prettier ✔, `build:prod` 240.60 kB.
+  - **Next (the user's call):** a read-only "View Feedback" replaces the disabled button once the user pastes a real
+    `feedback-responses` capture with answers in it. Its `results` row shape is unknown until then.
+  - **The user's call:** "in the similar format, the way it was before". The masterclass gets a new
+    `course-evaluation` page in the old page's layout, on `feedback-questions` / `feedback-submit` /
+    `feedback-responses`.
+  - **Other offerings:** podcast, micro-learning and webinar keep the old `course-feedback` page and `FeedbackFacade`,
+    untouched. Every legacy feedback call 404s on UAT (checked 2026-10-19).
+  - **Entry points:** "Submit Feedback" on the report header and the hero when `show_feedback`.
+  - **Triggers mapped** (plan: "Where feedback is triggered"):
+    - **Previous app:** the hero, the report header, the CPE tracker row, and the badge / CAIRA cards. All navigate to
+      `…/feedback?redirect=`.
+    - **Here:** the CPE tracker (#174) and the badge library already link to the route and need no change.
+  - **Open:**
+    - The `feedback-responses` `results` shape, so a submitted form shows a "thanks + date" state until it's captured.
+    - Whether the server enforces a complete profile (Q6). The client gates on a known `false` only.
+
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-109 (Story MIL-107), the masterclass assessment report on the web API.
   PLAN APPROVED, DONE, GATES GREEN, COMMITTED; REBASED ON `master` `3076278`**
   (`prompts/masterclass-assessment-report.md` rev 1), on `feat/MIL-109-assessment-report` (cut from `master`
@@ -5310,6 +5373,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-19 · NON-REFACTOR · **MIL-110 built** (uncommitted): `course-evaluation` page + `CourseEvaluationFacade` on `feedback-questions` / `-submit` / `-responses`, Submit Feedback on hero and report · tsc 0, lint 0 errors, structure ✔, build:prod 240.58 kB · headless scenarios pass; hand-test window ready
+
+- 2026-10-19 · NON-REFACTOR · **MIL-110 planned** (`feat/MIL-110-course-feedback`, stacked on MIL-109; `prompts/masterclass-course-feedback.md`): new masterclass `course-evaluation` page in the old layout on the web API; podcast / micro-learning / webinar keep the old page; awaiting approval
 
 - 2026-10-19 · NON-REFACTOR · **MIL-109 rebased on `master` `3076278`** (user runs it in Desktop; STATE.md the only conflict, both "Now" entries kept) · report page on `assessment-report` + `assessment-result`, View Report on the pass dialog and hero, passing-score contrast fix · tsc 0, lint 0 errors, structure ✔, build:prod 240.65 kB · headless scenarios pass; user hand-tested pass → report
 

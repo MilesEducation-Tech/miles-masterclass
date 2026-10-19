@@ -49,6 +49,11 @@ import {
   readCourseStepRefusal,
 } from '@features/offerings/models/course-detail.model';
 import {
+  EvaluationOutcome,
+  EvaluationSubmitBody,
+  parseEvaluationSubmit,
+} from '@features/offerings/models/course-evaluation.model';
+import {
   AssessmentOutcome,
   AssessmentStart,
   AssessmentSubmitBody,
@@ -434,6 +439,35 @@ export class CourseDetailFacade {
     const base = this.routes()?.assessmentResult;
     const id = this.courseId();
     return base && id ? `${base}${id}/` : null;
+  }
+
+  /** `feedback-questions/` for this course; `null` until its id is known. */
+  feedbackQuestionsUrl(): string | null {
+    const base = this.routes()?.feedbackQuestions;
+    const id = this.courseId();
+    return base && id ? `${base}${id}/` : null;
+  }
+
+  /** `feedback-responses/?course_id=` for this course; `null` until its id is known. */
+  feedbackResponsesRequest(): { url: string; params: { course_id: string } } | null {
+    const url = this.routes()?.feedbackResponses;
+    const id = this.courseId();
+    return url && id ? { url, params: { course_id: id } } : null;
+  }
+
+  /**
+   * Record the learner's evaluation (`feedback-submit/`), which closes the
+   * course. Rejects with the `HttpErrorResponse` of a refusal, for the caller to
+   * read with `readCourseStepRefusal`.
+   */
+  async submitFeedback(body: EvaluationSubmitBody): Promise<EvaluationOutcome> {
+    const route = this.routes()?.feedbackSubmit;
+    const id = this.courseId();
+    if (!route || !id) throw new Error('[CourseDetail] submitFeedback before the course loaded');
+    const raw = await firstValueFrom(
+      this.api.call({ ...route, path: route.path.replace(':id', id) }, body),
+    );
+    return parseEvaluationSubmit(raw);
   }
 
   /**

@@ -1,8 +1,8 @@
 import { Route } from '@angular/router';
 import { authGuard } from '@core/guards/auth/auth-guard';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
-import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
 import { CourseDetailFacade } from '@features/offerings/services/course-detail-facade';
+import { CourseEvaluationFacade } from '@features/offerings/services/course-evaluation-facade';
 import { FinalAssessmentFacade } from '@features/offerings/services/final-assessment-facade';
 import { Masterclass } from '@features/offerings/masterclass/pages/masterclass/masterclass';
 import { MasterclassHighlightFacade } from '@features/offerings/masterclass/services/masterclass-highlight-facade';
@@ -19,9 +19,10 @@ export const masterclassRoutes: Route[] = [
     path: ':courseId/:courseTitle',
     // One instance for the course page and its chapters, so Watch Now and moving
     // between chapters reuse the course read instead of fetching it again. The
-    // final assessment sits beside it: the hero and the last chapter's quiz start
-    // a sitting, and the exam page shows it.
-    providers: [CourseDetailFacade, FinalAssessmentFacade],
+    // final assessment sits beside it (the hero and the last chapter's quiz start
+    // a sitting, and the exam page shows it), and so does the course evaluation
+    // (the hero and the report open it, and the feedback page submits it).
+    providers: [CourseDetailFacade, FinalAssessmentFacade, CourseEvaluationFacade],
     children: [
       {
         path: '',
@@ -60,12 +61,13 @@ export const masterclassRoutes: Route[] = [
           ),
       },
       {
+        // The course evaluation on the web API; podcast, micro-learning and
+        // webinar keep the legacy `course-feedback` page until their own rebinds.
         path: 'feedback',
         canMatch: [authGuard],
-        providers: [FeedbackFacade],
         loadComponent: () =>
-          import('@features/offerings/pages/course-feedback/course-feedback').then(
-            (m) => m.CourseFeedback,
+          import('@features/offerings/pages/course-evaluation/course-evaluation').then(
+            (m) => m.CourseEvaluation,
           ),
       },
     ],
