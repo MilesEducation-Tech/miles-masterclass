@@ -1,5 +1,6 @@
 import { environment } from '@env/environment';
 import { CourseDetailApi, CourseOffering } from '@features/offerings/models/course-detail.model';
+import { AssessmentReviewStatus } from '@features/offerings/models/final-assessment.model';
 
 /**
  * Absolute URLs off `BASE_API_URL`, which is the ORIGIN ROOT (trailing slash,
@@ -107,6 +108,23 @@ export const COURSE_DETAIL_API: Record<CourseOffering, CourseDetailApi> = {
       path: `${ROOT}web-api/v1/masterclass/assessment-submit/:id/`,
       method: 'POST',
     },
+
+    /**
+     * `IsAuthenticated`: the learner's final assessment for one course. Append
+     * `<course uuid>/`. ALWAYS answers (`passed`, `failed` or `not_attempted`);
+     * the only 404 is an unknown course. Its `answers[]` is empty in every
+     * captured example, so the review reads `assessmentResult` instead.
+     */
+    assessmentReport: `${ROOT}web-api/v1/masterclass/assessment-report/`,
+
+    /**
+     * `IsAuthenticated`: the latest attempt, question by question. Append
+     * `<course uuid>/`. `404` for an unknown course, no configuration or no
+     * attempt yet; `403 caira_access_required`; `409` AI Lab lock. Correct
+     * answers are withheld on a failed attempt against a bank-less assessment
+     * (NASBA 6.01.2(1)(ii)), which the report flags as `feedback_withheld`.
+     */
+    assessmentResult: `${ROOT}web-api/v1/masterclass/assessment-result/`,
 
     urlSegment: 'masterclass',
   },
@@ -256,6 +274,63 @@ export const ASSESSMENT_COPY = {
     body: 'Please try again in a moment.',
   },
 } as const;
+
+/** The assessment report's own copy, used when the server sends no message of its own. */
+export const ASSESSMENT_REPORT_COPY = {
+  title: 'Exam Report',
+  loading: 'Loading report...',
+  backToCourse: 'Back to Course',
+  viewReport: 'View Report',
+  retake: 'Retake Assessment',
+  passed: 'Passed',
+  failed: 'Not passed',
+  score: 'Score',
+  correctAnswers: 'Correct answers',
+  skipped: 'Skipped',
+  passMark: 'Pass mark',
+  completedOn: 'Completed on',
+  attempts: 'Attempts',
+  questions: 'Exam Questions',
+  wrongOnly: 'Show wrong answers only',
+  noneWrong: 'Every answer was correct.',
+  correct: 'Correct',
+  incorrect: 'Incorrect',
+  skippedBadge: 'Skipped',
+  yourAnswer: 'Your answer',
+  notAnswered: 'Not answered',
+  correctAnswer: 'Correct answer',
+  explanation: 'Explanation',
+  withheld:
+    "Correct answers aren't shown for a failed attempt on this course. Review the material and try again.",
+  notAttempted: {
+    title: 'No attempt yet',
+    body: "You haven't taken the final assessment for this course.",
+  },
+  loadFailed: { title: "Couldn't load the report", body: 'Please try again in a moment.' },
+  reviewFailed: { title: "Couldn't load the questions", body: 'Please try again in a moment.' },
+} as const;
+
+/** Each reviewed question's badge, and the colour its answer takes. */
+export const ASSESSMENT_REVIEW_STATUS: Record<
+  AssessmentReviewStatus,
+  { label: string; badge: string; answer: string }
+> = {
+  correct: {
+    label: ASSESSMENT_REPORT_COPY.correct,
+    badge: 'bg-success/15 text-success',
+    answer: 'text-success',
+  },
+  incorrect: {
+    label: ASSESSMENT_REPORT_COPY.incorrect,
+    badge: 'bg-destructive/15 text-destructive',
+    answer: 'text-destructive',
+  },
+  skipped: {
+    label: ASSESSMENT_REPORT_COPY.skippedBadge,
+    badge: 'bg-muted text-muted-foreground',
+    answer: 'text-muted-foreground',
+  },
+};
 
 /**
  * A course id on this API: a UUID, any version. The legacy numeric ids still

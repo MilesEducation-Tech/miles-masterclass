@@ -50,7 +50,8 @@ export const masterclassRoutes: Route[] = [
           ),
       },
       {
-        path: 'final-assessment/:sessionId/report',
+        // The latest attempt, read by course: no session id in the URL.
+        path: 'final-assessment/report',
         canMatch: [authGuard],
         data: { layout: 'plain' },
         loadComponent: () =>

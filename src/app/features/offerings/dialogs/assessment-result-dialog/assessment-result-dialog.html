@@ -42,7 +42,9 @@
         {{ data.score }}%
       </div>
       @if (data.passingScore) {
-        <div class="text-xs text-gray-400 mt-1">Passing Score: {{ data.passingScore }}%</div>
+        <div class="text-sm font-medium text-gray-600 mt-1">
+          Passing Score: {{ data.passingScore }}%
+        </div>
       }
     </div>
 
@@ -54,6 +56,16 @@
           type="button"
           class="w-full"
           variant="default"
+          (click)="onAction('report')"
+        >
+          View Detailed Report
+        </button>
+
+        <button
+          app-button
+          type="button"
+          class="w-full"
+          variant="outline"
           (click)="onAction('course')"
         >
           Back to Course

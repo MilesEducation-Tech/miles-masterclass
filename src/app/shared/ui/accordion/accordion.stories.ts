@@ -33,3 +33,24 @@ type Story = StoryObj<Accordion>;
 export const Single: Story = {};
 
 export const Multiple: Story = { args: { type: 'multiple' } };
+
+/** A badge in the heading, through the `accordionTrailing` slot. */
+export const WithTrailing: Story = {
+  args: { type: 'multiple' },
+  render: (args) => ({
+    props: args,
+    moduleMetadata: { imports: [Accordion, AccordionItem] },
+    template: `
+      <app-accordion class="w-96" [type]="type">
+        <app-accordion-item value="q1" heading="1. Which standard sets the CPE rules?">
+          <span accordionTrailing class="rounded-full bg-success/15 px-3 py-0.5 text-xs font-semibold text-success">Correct</span>
+          Your answer: the NASBA/AICPA Statement on Standards for CPE Programs.
+        </app-accordion-item>
+        <app-accordion-item value="q2" heading="2. How many minutes make one CPE credit?">
+          <span accordionTrailing class="rounded-full bg-destructive/15 px-3 py-0.5 text-xs font-semibold text-destructive">Incorrect</span>
+          Your answer: 60. Correct answer: 50.
+        </app-accordion-item>
+      </app-accordion>
+    `,
+  }),
+};
