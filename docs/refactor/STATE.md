@@ -7,6 +7,23 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- ⏸ **2026-10-19, NON-REFACTOR — MIL-108 (Story MIL-107), start and submit the masterclass final assessment
+  on the web API. PLAN WRITTEN, AWAITING APPROVAL** (`prompts/masterclass-final-assessment-exam.md` rev 1), on
+  `feat/MIL-108-assessment-exam` (from `master` `795819d`).
+  - **Input:** `prompts/final-assessment-analysis.md`, restored on this branch. The 2026-10-16 copy was untracked on
+    `master` and was lost in a branch switch.
+  - **Two commits:**
+    - `refactor(offerings): drop the retired final assessment bindings` — legacy exam, report and facade code;
+      podcast and micro-learning exam and report routes
+    - `feat(offerings): start and submit the masterclass final assessment on the web API`
+  - **Key decisions:**
+    - `FinalAssessmentFacade` is scoped to the course route, beside `CourseDetailFacade`.
+    - The rules come from `exam_rules`, then `assessment-start`, then the exam page reads `assessment-questions`.
+    - Answers stay in memory.
+    - Entry points: the hero CTA and the last chapter's quiz, from `show_final_assessment`.
+  - **UAT, 2026-10-19:** all 64 masterclasses send the course-detail assessment fields with stable types.
+  - **Next:** the user approves or flips D1–D9, then implementation.
+
 - 🔧 **2026-10-16, NON-REFACTOR: commerce remove routes and an optional billing address**
   (`prompts/optional-billing-address.md` rev 1, approved in plan mode). Three tickets, three PRs.
   - **PR 1, `fix(payment): call the POST remove routes for cart lines, coupons and addresses`.
@@ -4961,6 +4978,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-19 · NON-REFACTOR · **MIL-108 planned** (`feat/MIL-108-assessment-exam`, `prompts/masterclass-final-assessment-exam.md`): remove the legacy start/exam/submit/report bindings, then rebind on `assessment-start` / `-questions` / `-submit`; analysis doc restored
 
 - 2026-10-16 · NON-REFACTOR · **Dialog overflow and review `?status=` fixed** (uncommitted, `fix/MIL-XXX-dialog-overflow-review-status`): `@layer base` cap on `app-dialog` panel children, subscription and AI Lab cards `max-w-[min(100%,…)]`, status-sync effect invoice-only · 375/768/1440 measured · lint 0 errors (101 warnings), structure ✔, prettier ✔, build:prod 246.63 kB
 
