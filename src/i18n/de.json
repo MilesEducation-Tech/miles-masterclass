@@ -74,7 +74,6 @@
     "india": "Indien",
     "social": "Social Media",
     "sponsorId": "Sponsor-ID - {{ id }}",
-    "copyright": "© {{ year }} Miles Masterclass Inc. Alle Rechte vorbehalten.",
-    "cookieSettings": "Cookie-Einstellungen"
+    "copyright": "© {{ year }} Miles Masterclass Inc. Alle Rechte vorbehalten."
   }
 }

@@ -53,8 +53,8 @@ export const environment = {
   },
 
   /**
-   * Miles360 activity mirror — every GA4 event is also posted here so Salesforce
-   * sees the same behavioural signal (see `MilesActivity`). Like the keys above,
+   * Miles360 activity endpoint, where `MilesActivity` posts behavioural events
+   * so Salesforce sees them (no caller until analytics returns). Like the keys above,
    * this one ships in the client bundle; prefer a server-side proxy for a
    * hardened deploy.
    */
@@ -168,38 +168,6 @@ export const environment = {
     // SSR runs server-side (no mixed-content/CORS constraint), so it hits the
     // WordPress HTTPS host directly.
     apiBaseUrlSsr: 'https://wp.milesmasterclass.com/blog/wp-json/wp/v2',
-  },
-
-  // Same shape as environment.ts so the Analytics service type-checks.
-  ANALYTICS: {
-    enabled: true, // dev build runs analytics for testing
-    debug: true, // verbose analytics logging in dev
-    // Each vendor is self-contained: `enabled` toggle + its own keys.
-    ga4: {
-      enabled: true, // GA4 tag via the GTM container
-      gtmId: 'GTM-53VZ4GW2', // dev GTM container
-      measurementId: 'G-CDJF28ZGXT', // dev GA4 measurement id
-    },
-    clarity: {
-      enabled: false, // Microsoft Clarity — OFF in dev (key present but not loaded)
-      projectId: 'wltd1dk7wp',
-    },
-    netcore: {
-      enabled: true, // Netcore Smartech
-      scriptUrl: '//cdnt.netcoresmartech.com/smartechclient.js',
-      siteKey: 'ADGMOT35CHFLVDHBJNIG50K96976B8VTENB58JOU9LNN0KVISGIG', // same across envs
-      appId: 'ef86e2c70627d3e863c7fe3381488e05', // UAT Netcore website id (siteid)
-      listId: '', // blank = global list (0): GA4 user properties sync to every contact
-      swPath: '/sw.js', // SSR server generates this per-build (see src/service-worker.ts)
-      webPush: true, // on for UAT push testing
-      // FCM web-push credentials baked into the dynamically-served /sw.js (UAT).
-      push: {
-        apiKey: 'AIzaSyAO_n0F8wZc6tCabFNfVSZs5yKOR77Lfvw',
-        messagingSenderId: '861360152370',
-        appId: '1:861360152370:web:10c1f04bae627da2fc812b', // FCM web app id (≠ netcore siteid above)
-        projectId: 'miles-masterclass',
-      },
-    },
   },
 
   /**

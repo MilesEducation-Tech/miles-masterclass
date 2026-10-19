@@ -74,7 +74,6 @@
     "india": "الهند",
     "social": "تابعنا",
     "sponsorId": "رقم الجهة الراعية - {{ id }}",
-    "copyright": "© {{ year }} جميع الحقوق محفوظة لشركة Miles Masterclass Inc.",
-    "cookieSettings": "إعدادات ملفات تعريف الارتباط"
+    "copyright": "© {{ year }} جميع الحقوق محفوظة لشركة Miles Masterclass Inc."
   }
 }
