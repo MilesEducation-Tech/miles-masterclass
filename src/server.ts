@@ -8,7 +8,6 @@ import express from 'express';
 import { join } from 'node:path';
 import { APP_BUILT_AT, APP_SEMVER, APP_SHA, APP_VERSION } from './app/core/version/app-version';
 import { registerSeoRoutes } from './seo';
-import { registerServiceWorkerRoute } from './service-worker';
 import { registerLegacyRedirects } from './legacy-redirects';
 import { geoCountryCookie, geoRootRedirect } from './geo-country';
 
@@ -71,13 +70,6 @@ app.get('/version.json', (_req, res) => {
  * the real files instead of the SPA shell. See `src/seo.ts`.
  */
 registerSeoRoutes(app);
-
-/**
- * Netcore/FCM web-push service worker at `/sw.js`, generated per-build from
- * `environment.ANALYTICS.netcore`. Registered before the static + Angular
- * catch-all so it wins over any static file. See `src/service-worker.ts`.
- */
-registerServiceWorkerRoute(app);
 
 /**
  * 30x redirects from the legacy CPE-Masterclass URL shape (`/accounting/*`,

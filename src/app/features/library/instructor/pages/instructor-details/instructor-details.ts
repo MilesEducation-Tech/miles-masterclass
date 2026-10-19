@@ -1,15 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { HttpContext, httpResource } from '@angular/common/http';
-import {
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  PLATFORM_ID,
-  signal,
-  untracked,
-} from '@angular/core';
+import { Component, computed, inject, input, PLATFORM_ID, signal } from '@angular/core';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { SKIP_LOADING } from '@core/models/http.model';
 import {
@@ -18,7 +9,6 @@ import {
   MasterclassLoginType,
 } from '@core/models/masterclass-home.model';
 import type { VideoSource } from '@core/models/video-player.model';
-import { Analytics } from '@core/services/analytics/analytics';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { MASTERCLASS_COURSE_INFO_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
 import { Backward } from '@shared/components/backward/backward';
@@ -68,7 +58,6 @@ import {
 })
 export class InstructorDetails {
   private readonly auth = inject(AuthSession);
-  private readonly analytics = inject(Analytics);
   private readonly utils = inject(Utils);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly courseInfoDialog = inject(MASTERCLASS_COURSE_INFO_DIALOG);
@@ -168,23 +157,6 @@ export class InstructorDetails {
   );
   protected readonly isCoursesLoading = computed(() => this.coursesResource.isLoading());
   protected readonly coursesError = computed(() => this.coursesResource.error());
-
-  /** Changes only with the instructor, not when the same profile reloads. */
-  private readonly profileId = computed(() => this.profile()?.id ?? null);
-
-  constructor() {
-    // `view_instructor` once per instructor shown.
-    effect(() => {
-      const id = this.profileId();
-      if (!id) return;
-      untracked(() =>
-        this.analytics.trackEvent('view_instructor', {
-          instructor_id: id,
-          instructor_name: this.profile()?.name ?? '',
-        }),
-      );
-    });
-  }
 
   protected onTabChange(label: string): void {
     const tab = this.tabs.find((t) => t.label === label);

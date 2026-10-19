@@ -24,7 +24,6 @@ import { placeSuggestions } from '@core/services/location-autocomplete/location-
 import { logo, mcGrawHillLogo } from '@core/constants/icon';
 import { User } from '@core/models/profile.model';
 import { CountryCodeOption } from '@core/constants/dial-code';
-import { Analytics } from '@core/services/analytics/analytics';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { NotificationService } from '@core/services/notification/notification';
@@ -190,7 +189,6 @@ interface FacultyRegisterResponse {
 export class Faculty {
   private readonly http = inject(ApiClient);
   private readonly salesforceLead = inject(SalesforceLead);
-  private readonly analytics = inject(Analytics);
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly router = inject(Router);
@@ -548,7 +546,7 @@ export class Faculty {
   }
 
   /**
-   * Post-verification analytics.
+   * Post-verification CRM lead.
    *
    * ponytail: was the auto-login — it mirrored `AuthFacade.verifyOtp` so both
    * entry points left identical auth state behind. The token pair is still
@@ -562,12 +560,9 @@ export class Faculty {
   ): void {
     // ponytail: stored the token pair and opened the session here. Without an
     // auth layer the OTP now only proves the address — it logs nobody in, and
-    // the analytics below is all that is left of this path.
-    this.analytics.flushIdentity();
+    // the CRM lead below is all that is left of this path.
     const isNewAccount = (user as { is_existing_user?: boolean })?.is_existing_user === false;
-    this.analytics.trackEvent(isNewAccount ? 'sign_up' : 'login', { method: 'email' });
     if (isNewAccount) {
-      this.analytics.trackAccountCreate(user);
       // CRM lead — account creation only. This is the sole path on which a
       // faculty submission creates an account; the no-OTP `DONE` branch is an
       // already-signed-in visitor, so it never mints a lead. Identity comes

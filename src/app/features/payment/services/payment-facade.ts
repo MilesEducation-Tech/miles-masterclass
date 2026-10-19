@@ -33,7 +33,6 @@ import { AuthSession } from '@core/services/auth-session/auth-session';
 import { NgpDialogManager, type NgpDialogRef } from 'ng-primitives/dialog';
 // Dialog components load lazily (dynamic `import()` in the open* methods below), so
 // they stay out of whichever chunk first injects this root facade.
-import { Analytics } from '@core/services/analytics/analytics';
 
 /**
  * The CAIRA error envelope's human message (safe to show) and machine reason
@@ -84,7 +83,6 @@ export class PaymentFacade {
   private readonly dialogs = inject(NgpDialogManager);
   private readonly injector = inject(Injector);
   private readonly country = inject(CountryContext).current;
-  private readonly analytics = inject(Analytics);
   private readonly document = inject(DOCUMENT);
 
   /** The commerce cart. `CartStore` (core) owns it because the footer badge reads it too. */
@@ -482,10 +480,6 @@ export class PaymentFacade {
 
     this.http.call(COMMERCE_ROUTES.checkout, { cart_id: cartId }).subscribe({
       next: ({ data }) => {
-        this.analytics.trackEvent('begin_checkout', {
-          cart_id: cartId,
-          ...this.cartAnalyticsParams(),
-        });
         if (data.free_order) {
           this.paying.set(false);
           onOrder(data.result.id);
@@ -568,17 +562,6 @@ export class PaymentFacade {
         next: ({ data }) => {
           this.cart.set(data.result);
           this.notification.success('Added to cart', `${plan.product.title} is in your cart.`);
-          // GA needs numbers; this is the only place a price leaves its string.
-          const listPrice = Number(plan.price.price);
-          const sellingPrice = Number(plan.price.discount_price ?? plan.price.price);
-          this.analytics.trackEvent('add_to_cart', {
-            course_id: plan.id,
-            course_type: 'subscription',
-            currency: plan.price.currency,
-            base_price: listPrice,
-            selling_price: sellingPrice,
-            items: [{ course_id: plan.id, course_type: 'subscription', price: sellingPrice }],
-          });
           if (onAdded) onAdded();
           else this.openCartDrawer();
         },
@@ -587,32 +570,6 @@ export class PaymentFacade {
           this.notification.error('Could not add to cart', commerceErrorOf(err).message);
         },
       });
-  }
-
-  /**
-   * Pricing + items snapshot of the cart, shared by the `cart_view` and `begin_checkout`
-   * events. GA needs numbers, so the server's figures are converted here and only here;
-   * nothing is summed.
-   */
-  private cartAnalyticsParams(pageName?: string): Record<string, unknown> {
-    const cart = this.cart.cart();
-    return {
-      ...(pageName ? { page_name: pageName } : {}),
-      currency: cart?.currency,
-      base_price: Number(cart?.money.price_before_discount ?? 0),
-      selling_price: Number(cart?.money.checkout_amount ?? 0),
-      product_discount: Number(cart?.money.discount_amount ?? 0),
-      items: (cart?.lines ?? []).map((line) => ({
-        course_id: line.product_id,
-        course_type: 'subscription',
-        price: Number(line.money.final_amount),
-      })),
-    };
-  }
-
-  /** Fire `cart_view` for a payment-journey step (`cart` / `billing` / `review`). */
-  trackCartView(pageName: string): void {
-    this.analytics.trackEvent('cart_view', this.cartAnalyticsParams(pageName));
   }
 
   async openCartDrawer(): Promise<void> {

@@ -20,7 +20,6 @@ import { AudioJs } from '@shared/components/audio-js/audio-js';
 import { PlayerMode, VideoConfig, VideoSource } from '@core/models/video-player.model';
 import { ChapterSkeleton } from '@shared/components/skeleton/chapter-skeleton/chapter-skeleton';
 import { RecordDisk } from '@shared/components/record-disk/record-disk';
-import { Analytics } from '@core/services/analytics/analytics';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faClipboard } from '@ng-icons/font-awesome/regular';
 
@@ -55,18 +54,11 @@ export class AudioChapter {
   // --- Private ---
   private readonly audioPlayer = viewChild(AudioJs);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly analytics = inject(Analytics);
 
   readonly currentProgress = signal(0);
   private lastTime = 0;
   private lastDuration = 0;
   private lastChapterId = 0;
-
-  // Analytics: per-chapter media-milestone dedup (reset on chapter change).
-  private mediaTrackedChapter: number | null = null;
-  private mediaStartFired = false;
-  private readonly firedMediaMilestones = new Set<number>();
-  private static readonly MEDIA_MILESTONES = [25, 50, 75, 90] as const;
 
   // --- Computed State ---
   readonly trackLabel = computed(() => {
@@ -166,38 +158,8 @@ export class AudioChapter {
     if (event.duration > 0) {
       const progress = (event.currentTime / event.duration) * 100;
       this.currentProgress.set(progress);
-      this.trackMediaProgress(progress);
     }
     this.timeUpdate.emit(event);
-  }
-
-  /** Reset milestone dedup when the active chapter changes. */
-  private syncMediaTracking(): void {
-    const id = this.current()?.id ?? null;
-    if (id !== this.mediaTrackedChapter) {
-      this.mediaTrackedChapter = id;
-      this.mediaStartFired = false;
-      this.firedMediaMilestones.clear();
-    }
-  }
-
-  private mediaEventParams(): Record<string, unknown> {
-    return { course_type: 'podcast', chapter_id: this.current()?.id };
-  }
-
-  /** video_start once, then video_progress at 25/50/75/90% — each once per chapter. */
-  private trackMediaProgress(progress: number): void {
-    this.syncMediaTracking();
-    if (!this.mediaStartFired && progress > 0) {
-      this.mediaStartFired = true;
-      this.analytics.trackEvent('video_start', this.mediaEventParams());
-    }
-    for (const m of AudioChapter.MEDIA_MILESTONES) {
-      if (progress >= m && !this.firedMediaMilestones.has(m)) {
-        this.firedMediaMilestones.add(m);
-        this.analytics.trackEvent('video_progress', { ...this.mediaEventParams(), percent: m });
-      }
-    }
   }
 
   handleMetadataLoaded(_event: { duration: number }) {
@@ -214,11 +176,6 @@ export class AudioChapter {
 
   handleAudioEnded() {
     this.ended.emit();
-    this.syncMediaTracking();
-    if (!this.firedMediaMilestones.has(100)) {
-      this.firedMediaMilestones.add(100);
-      this.analytics.trackEvent('video_complete', this.mediaEventParams());
-    }
 
     // The chapter quiz that followed in CPE mode is unbound until the web API's
     // quiz is wired in, so CPE mode stays on the chapter.

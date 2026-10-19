@@ -2,7 +2,6 @@ import { computed, inject, Service, signal } from '@angular/core';
 import { Logger } from '@core/services/logger/logger';
 import { ApiClient } from '@core/services/api-client/api-client';
 import { NotificationService } from '@core/services/notification/notification';
-import { Analytics } from '@core/services/analytics/analytics';
 import { HttpContext } from '@angular/common/http';
 import { RouteResponse, RouteRequest, SKIP_LOADING } from '@core/models/http.model';
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
@@ -22,7 +21,6 @@ export class ChapterFacade {
   private readonly notification = inject(NotificationService);
   private readonly http = inject(ApiClient);
   private readonly router = inject(Router);
-  private readonly analytics = inject(Analytics);
 
   private readonly course = courseLoad();
   readonly courseDetails = this.course.details;
@@ -88,28 +86,7 @@ export class ChapterFacade {
       })
       .pipe(
         tap(() => {
-          if (event === 'completed') {
-            const before = this.courseChapters();
-            const wasAllComplete =
-              before.length > 0 && before.every((ch) => ch.play_history?.is_completed);
-            this.updateLocalChapterCompletion(chapterId);
-            const course = this.courseDetails();
-            this.analytics.trackEvent('chapter_complete', {
-              course_id: course?.id,
-              chapter_id: chapterId,
-              course_type: course?.course_type,
-            });
-            // Course completes the moment the final outstanding chapter does.
-            const after = this.courseChapters();
-            const nowAllComplete =
-              after.length > 0 && after.every((ch) => ch.play_history?.is_completed);
-            if (!wasAllComplete && nowAllComplete) {
-              this.analytics.trackEvent('course_complete', {
-                course_id: course?.id,
-                course_type: course?.course_type,
-              });
-            }
-          }
+          if (event === 'completed') this.updateLocalChapterCompletion(chapterId);
         }),
       );
 

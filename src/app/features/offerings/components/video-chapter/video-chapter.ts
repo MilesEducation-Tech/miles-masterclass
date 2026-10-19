@@ -24,7 +24,6 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { faClipboard } from '@ng-icons/font-awesome/regular';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { MasterclassFacade } from '../../services/masterclass-facade';
-import { Analytics } from '@core/services/analytics/analytics';
 // Type-only: HtmlContentDialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { HtmlContentDialogData } from '@features/offerings/dialogs/html-content-dialog/html-content-dialog';
 
@@ -63,7 +62,6 @@ export class VideoChapter {
   private readonly destroyRef = inject(DestroyRef);
   private readonly masterclassFacade = inject(MasterclassFacade);
   private readonly dialogs = inject(NgpDialogManager);
-  private readonly analytics = inject(Analytics);
 
   private transcriptCache = new Map<number, string>();
 
@@ -73,12 +71,6 @@ export class VideoChapter {
   private lastTime = 0;
   private lastDuration = 0;
   private lastChapterId = 0;
-
-  // Analytics: per-chapter video-milestone dedup (reset on chapter change).
-  private videoTrackedChapter: number | null = null;
-  private videoStartFired = false;
-  private readonly firedVideoMilestones = new Set<number>();
-  private static readonly VIDEO_MILESTONES = [25, 50, 75, 90] as const;
 
   readonly progressUnlocked = computed(() => {
     const currentChapter = this.current();
@@ -131,43 +123,9 @@ export class VideoChapter {
     if (event.duration > 0) {
       const progress = (event.currentTime / event.duration) * 100;
       this.currentProgress.set(progress);
-      this.trackVideoProgress(progress);
     }
 
     this.timeUpdate.emit(event);
-  }
-
-  /** Reset milestone dedup when the active chapter changes. */
-  private syncVideoTracking(): void {
-    const id = this.current()?.id ?? null;
-    if (id !== this.videoTrackedChapter) {
-      this.videoTrackedChapter = id;
-      this.videoStartFired = false;
-      this.firedVideoMilestones.clear();
-    }
-  }
-
-  private videoEventParams(): Record<string, unknown> {
-    return {
-      course_id: this.courseId(),
-      course_type: this.courseType(),
-      chapter_id: this.current()?.id,
-    };
-  }
-
-  /** video_start once, then video_progress at 25/50/75/90% — each once per chapter. */
-  private trackVideoProgress(progress: number): void {
-    this.syncVideoTracking();
-    if (!this.videoStartFired && progress > 0) {
-      this.videoStartFired = true;
-      this.analytics.trackEvent('video_start', this.videoEventParams());
-    }
-    for (const m of VideoChapter.VIDEO_MILESTONES) {
-      if (progress >= m && !this.firedVideoMilestones.has(m)) {
-        this.firedVideoMilestones.add(m);
-        this.analytics.trackEvent('video_progress', { ...this.videoEventParams(), percent: m });
-      }
-    }
   }
 
   handleMetadataLoaded() {
@@ -217,11 +175,6 @@ export class VideoChapter {
 
   handleVideoEnded() {
     this.ended.emit();
-    this.syncVideoTracking();
-    if (!this.firedVideoMilestones.has(100)) {
-      this.firedVideoMilestones.add(100);
-      this.analytics.trackEvent('video_complete', this.videoEventParams());
-    }
 
     // The chapter quiz that followed in CPE mode is unbound until the web API's
     // quiz is wired in, so CPE mode stays on the chapter.

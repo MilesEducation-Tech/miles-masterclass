@@ -10,7 +10,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { tap } from 'rxjs';
 import {
   BADGE_STATUS_OPTIONS,
   BadgeApiResponse,
@@ -18,7 +17,6 @@ import {
   BadgeStatusFilter,
 } from '@core/models/badge.model';
 import { apiUrl } from '@core/services/api-client/api-client';
-import { Analytics } from '@core/services/analytics/analytics';
 import { Utils } from '@shared/services/utils';
 import { parseNextPage } from '@core/utils/parse-next-page';
 import { withPreviousValue } from '@core/utils/with-previous-value';
@@ -31,7 +29,6 @@ import { withPreviousValue } from '@core/utils/with-previous-value';
  */
 @Service()
 export class BadgeFacade {
-  private readonly analytics = inject(Analytics);
   private readonly utils = inject(Utils);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -123,14 +120,7 @@ export class BadgeFacade {
    * ready; consumers typically `window.open(url, '_blank')` on success.
    * Mirrors the cpe-tracker route at `user-badges/:id/claim/`.
    */
-  claimBadge(
-    badgeId: number,
-    course: { course_id: number | null; course_name: string | null; course_type: string | null },
-  ) {
-    return this.utils.claimBadge(badgeId).pipe(
-      tap((res) => {
-        if (res) this.analytics.trackEvent('badge_claim', { badge_id: badgeId, ...course });
-      }),
-    );
+  claimBadge(badgeId: number) {
+    return this.utils.claimBadge(badgeId);
   }
 }

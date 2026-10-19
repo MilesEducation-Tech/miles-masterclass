@@ -32,7 +32,6 @@ import { adminTokenInterceptor } from '@admin/core/interceptors/admin-token-inte
 import { devInterceptors } from '@core/interceptors/dev/dev-interceptors';
 import { Network } from '@core/services/network/network';
 import { UpdateChecker } from '@shared/services/update-checker';
-import { Analytics } from '@core/services/analytics/analytics';
 import { TOAST_COMPONENT } from '@core/services/notification/notification';
 import {
   MASTERCLASS_COURSE_INFO_DIALOG,
@@ -151,11 +150,6 @@ export const appConfig: ApplicationConfig = {
     // Detects when a newer build is live and prompts the user to update.
     provideEnvironmentInitializer(() => {
       inject(UpdateChecker).init();
-    }),
-    // Boot analytics — production-only, consent-gated, admin-excluded; a no-op
-    // during SSR and in non-prod builds (see Analytics.init / environment.ANALYTICS).
-    provideEnvironmentInitializer(() => {
-      inject(Analytics).init();
     }),
   ],
 };
