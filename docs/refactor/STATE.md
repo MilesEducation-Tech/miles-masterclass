@@ -7,6 +7,32 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-19, NON-REFACTOR — PR #174 review: award dates render in LOCAL time, not UTC.
+  CHANGED ON YOUR CALL, UNCOMMITTED** on `feat/MIL-100-cpe-tracker`.
+  - **Reviewer (me-sachin-singh):** "for all the date and time keep local timezone not explicit UTC".
+    You chose to follow it. `tracker-table.html` drops the `: 'UTC'` argument.
+  - **The consequence is real and is now a recorded decision, not an accident.** `allocated_on` is a
+    bare `YYYY-MM-DD` that the API defines as a UTC **calendar date**, and §1.3 of
+    `docs/CPE_TRACKER_API.md` says years are "calendar years in UTC (1 Jan 00:00 UTC to 31 Dec 23:59
+    UTC)". Measured:
+
+    | `allocated_on` | UTC          | America/New_York | America/Los_Angeles | Asia/Kolkata |
+    | -------------- | ------------ | ---------------- | ------------------- | ------------ |
+    | 2026-01-01     | Jan 1, 2026  | **Dec 31, 2025** | **Dec 31, 2025**    | Jan 1, 2026  |
+    | 2026-09-14     | Sep 14, 2026 | Sep 13, 2026     | Sep 13, 2026        | Sep 14, 2026 |
+    | 2026-12-31     | Dec 31, 2026 | Dec 30, 2026     | Dec 30, 2026        | Dec 31, 2026 |
+
+    So a credit the `?year=2026` request returned prints **"Dec 31, 2025"** for a US learner — the
+    table contradicting its own year filter on a CPE compliance record. **If that is ever reported as
+    a bug, the one-token fix is `: 'UTC'` on the pipe in `tracker-table.html`;** the reasoning is in a
+    comment beside it so nobody has to rediscover this.
+
+  - The reviewer's rule is right for genuine timestamps (webinar session times carry a `timezone`);
+    `allocated_on` is date-only, which is why it was the exception. Noted, not re-litigated.
+  - **Gates:** lint 0 errors (101 warnings); structure ✔; Prettier ✔; `build:prod` only the
+    `ai-labs.css` warning.
+  - **Needs a commit + push to reach PR #174** — per your rule I stop at staged.
+
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-108 (Story MIL-107), start and submit the masterclass final assessment
   on the web API. PLAN APPROVED (`4328b09`); COMMIT 1 COMMITTED (`dbabd75`); COMMIT 2 DONE, GATES GREEN,
   UNCOMMITTED** (`prompts/masterclass-final-assessment-exam.md` rev 1), on `feat/MIL-108-assessment-exam` (from

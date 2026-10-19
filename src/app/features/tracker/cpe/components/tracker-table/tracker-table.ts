@@ -5,7 +5,6 @@ import {
   lucideAlignLeft,
   lucideCalendar,
   lucideCoins,
-  lucideDownload,
   lucideLink,
   lucideMonitor,
   lucideSparkles,
@@ -13,21 +12,24 @@ import {
 import {
   CPE_ACTION_UI,
   CpeCreditWire,
+  CpeFieldOfStudy,
   CpeRowAction,
   cpeRowActions,
-  DELIVERY_METHOD,
 } from '@features/tracker/cpe/models/cpe-credit.model';
-import { FieldOfStudy } from '@core/models/course.model';
 import { Button } from '@shared/ui/button/button';
 import { CategoriesList } from '@shared/components/categories-list/categories-list';
 import { Spinner } from '@shared/ui/spinner/spinner';
 import { cn } from '@shared/utils/cn';
-import { DELIVERY_COLORS, FIELD_COLORS } from '../../constants/cpe-tracker.constants';
+import {
+  DELIVERY_COLORS,
+  FIELD_COLORS,
+} from '@features/tracker/cpe/constants/cpe-tracker.constants';
+import { canOpenCourse } from '@features/tracker/cpe/utils/credit-row';
 
 const ACTION_BUTTON_CLASS = 'min-w-[120px] gap-2 text-xs font-medium h-9 rounded-md px-4';
 
 /** Row accent by leading field of study — the same three buckets the compliance gauge uses. */
-function fieldAccent(fields: FieldOfStudy[]): string {
+function fieldAccent(fields: CpeFieldOfStudy[]): string {
   const name = fields[0]?.name.toLowerCase() ?? '';
   if (name.includes('account')) return FIELD_COLORS.Accounting;
   if (name.includes('ethic')) return FIELD_COLORS.Ethics;
@@ -37,9 +39,10 @@ function fieldAccent(fields: FieldOfStudy[]): string {
 export interface TrackerRowView {
   raw: CpeCreditWire;
   accent: string;
-  deliveryMethod: string;
   deliveryColor: string;
   actions: CpeRowAction[];
+  /** A row with no page to open renders its title as plain text. */
+  isLinkable: boolean;
 }
 
 /**
@@ -62,7 +65,6 @@ export interface TrackerRowView {
       lucideMonitor,
       lucideCoins,
       lucideLink,
-      lucideDownload,
     }),
   ],
   templateUrl: './tracker-table.html',
@@ -87,18 +89,15 @@ export class TrackerTable {
   protected readonly actionUi = CPE_ACTION_UI;
 
   protected readonly viewRows = computed<TrackerRowView[]>(() =>
-    this.rows().map((raw) => {
-      const deliveryMethod = DELIVERY_METHOD[raw.course.course_type] ?? '—';
-      return {
-        raw,
-        accent: fieldAccent(raw.course.fields_of_study),
-        deliveryMethod,
-        deliveryColor:
-          DELIVERY_COLORS[deliveryMethod as keyof typeof DELIVERY_COLORS] ??
-          DELIVERY_COLORS.default,
-        actions: cpeRowActions(raw),
-      };
-    }),
+    this.rows().map((raw) => ({
+      raw,
+      accent: fieldAccent(raw.course.fields_of_study),
+      deliveryColor:
+        DELIVERY_COLORS[raw.delivery_method as keyof typeof DELIVERY_COLORS] ??
+        DELIVERY_COLORS.default,
+      actions: cpeRowActions(raw),
+      isLinkable: canOpenCourse(raw),
+    })),
   );
 
   protected readonly canPrev = computed(() => this.currentPage() > 1);

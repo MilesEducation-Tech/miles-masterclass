@@ -8,8 +8,6 @@ import type {
   UtilsDialogResult,
 } from '@shared/dialogs/utils-dialog/utils-dialog';
 import type { ComplianceDialogData } from '@features/tracker/cpe/dialogs/cpe-compliance-dialog/cpe-compliance-dialog';
-import type { CertificateDialogData } from '@shared/dialogs/certificate-download-dialog/certificate-download-dialog';
-import { CertificateTarget } from '@features/tracker/cpe/models/cpe-credit.model';
 
 export interface DialogResult<T = unknown> {
   action?: DialogButton['action'];
@@ -29,30 +27,6 @@ export interface DialogResult<T = unknown> {
 @Service()
 export class TrackerDialogOrchestrator {
   private readonly dialogs = inject(NgpDialogManager);
-
-  /**
-   * Per-row certificate dialog — the same one the masterclass / podcast /
-   * micro-learning course-hero sections open. It fetches the certificate URL(s)
-   * on download click and handles single-PDF vs. zipped-multi internally; the
-   * share button surfaces the Credly accept URL when the row carries a badge.
-   *
-   * Takes a resolved `CertificateTarget` rather than a wire row, so this stays
-   * independent of whichever API shape the tracker is reading this month.
-   */
-  openCertificateDownloadDialog(target: CertificateTarget): Observable<unknown> {
-    const data: CertificateDialogData = {
-      courseId: target.courseId,
-      courseType: target.courseType,
-      courseTitle: target.courseTitle,
-      badge: target.badge,
-    };
-
-    return from(
-      import('@shared/dialogs/certificate-download-dialog/certificate-download-dialog').then(
-        ({ CertificateDownloadDialog }) => this.dialogs.open(CertificateDownloadDialog, { data }),
-      ),
-    ).pipe(switchMap((ref) => ref.afterClosed));
-  }
 
   openDownloadRestricted(message: string): Observable<DialogResult | undefined> {
     const data: UtilsDialogData = {

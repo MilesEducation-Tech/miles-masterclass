@@ -517,20 +517,8 @@
       "count": 3,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/features/tracker/cpe/components/tracker-table/tracker-table.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/tracker/cpe/pages/cpe-tracker/cpe-tracker.ts": {
-      "count": 8,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/features/tracker/cpe/services/certificate-download.ts": {
       "count": 3,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/features/tracker/cpe/utils/credit-row.ts": {
-      "count": 2,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/features/uae-caira/components/caira-levels-section/caira-levels-section.ts": {

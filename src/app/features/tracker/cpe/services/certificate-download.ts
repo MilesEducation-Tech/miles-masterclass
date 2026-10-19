@@ -1,5 +1,4 @@
-import { DestroyRef, Service, PLATFORM_ID, inject } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { DestroyRef, Service, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpContext } from '@angular/common/http';
 import { Subject, from, of } from 'rxjs';
@@ -9,7 +8,6 @@ import { NotificationService } from '@core/services/notification/notification';
 import { Logger } from '@core/services/logger/logger';
 import { CommonResponse, SKIP_ERROR_NOTIFICATION } from '@core/models/http.model';
 import { BulkCertificateItem, CPE_TRACKER_ROUTES } from '@core/models/cpe-tracker.model';
-import { CertificateTarget } from '@features/tracker/cpe/models/cpe-credit.model';
 import { CertificateAccessPolicy } from './certificate-access-policy';
 import { TrackerDialogOrchestrator } from './tracker-dialog-orchestrator';
 import { DOWNLOAD_DEBOUNCE_MS } from '../constants/cpe-tracker.constants';
@@ -23,17 +21,21 @@ import {
 /**
  * Certificate download operations:
  *   - NASBA template (xlsx blob).
- *   - Per-course certificate(s): fetch URLs from `user-assessment/download_certificate/`,
- *     download single PDF directly or zip multiple via JSZip.
  *   - Bulk year zip: fetch URLs from `user-assessment/download_bulk_certificate/`,
- *     same single/zip branching.
+ *     single/zip branching.
+ *
+ * The per-row flow is gone from here. It opened the shared `CertificateDownloadDialog`, which is
+ * keyed on a NUMERIC course id, and `web-api/v1/cpe-tracker/credits/` returns UUIDs — the two
+ * cannot meet. The replacement is `credits/<award_id>/certificate/`, which lands with the rest of
+ * the certificate rebind; until then the table offers no download rather than a dead button.
  *
  * Every entry point is serialized through a debounced exhaustMap stream to
  * avoid duplicate network calls when a user rapid-clicks. The actual
  * fetch+blob+save plumbing lives in `shared/utils/blob-download.ts` so the
  * dialog and the cpe-tracker service share one implementation.
  *
- * SSR-safe: any `window`/`fetch`/DOM access is guarded by `isPlatformBrowser`.
+ * SSR-safe without a platform check of its own: every entry point is a click handler, and the
+ * DOM work is guarded inside `blob-download.ts` (`saveBlob` no-ops when there is no `document`).
  */
 @Service()
 export class CertificateDownload {
@@ -42,9 +44,7 @@ export class CertificateDownload {
   private readonly logger = inject(Logger);
   private readonly dialogs = inject(TrackerDialogOrchestrator);
   private readonly accessPolicy = inject(CertificateAccessPolicy);
-  private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   private readonly nasbaTrigger = new Subject<void>();
   private readonly bulkTrigger = new Subject<{ year: number }>();
@@ -145,29 +145,5 @@ export class CertificateDownload {
       return;
     }
     this.bulkTrigger.next({ year });
-  }
-
-  /**
-   * Per-row certificate flow from the CPE tracker table.
-   *
-   * Mirrors the masterclass / podcast / micro-learning hero behavior: on
-   * "allow", open the shared `CertificateDownloadDialog` (which handles its
-   * own fetch + single-PDF / zipped-multi download + LinkedIn share button)
-   * via the tracker orchestrator. On "upsellTrial", show the upgrade gate.
-   *
-   * Plan/access gating uses `accessPolicy.decide(plan)` — the per-row
-   * variant, distinct from the bulk variant used by `downloadAllCertificates`.
-   */
-  downloadForRow(target: CertificateTarget): void {
-    if (!this.isBrowser) return;
-    // ponytail: see `downloadAllCertificates` — no plan to pass.
-    const decision = this.accessPolicy.decide(null);
-    if (decision !== 'allow') {
-      this.dialogs
-        .openDownloadRestricted('Upgrade to an active subscription to download this certificate.')
-        .subscribe();
-      return;
-    }
-    this.dialogs.openCertificateDownloadDialog(target);
   }
 }

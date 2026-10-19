@@ -13,13 +13,15 @@ export interface ComplianceDialogData {
   credits: CreditsSummary;
   fieldsOfStudy: StudyModeBreakdown[];
   stateBoardName?: string;
+  /** The board's real reporting window. Absent when no board is configured. */
+  period?: { start_year: number; end_year: number };
 }
 
 interface FieldCard {
   id: number;
   name: string;
   earned: number;
-  required: number;
+  required: number | null;
   percent: number;
   color: string;
 }
@@ -45,9 +47,24 @@ export class CpeComplianceDialog {
   protected readonly year = computed(() => this._data()?.year ?? new Date().getFullYear());
   protected readonly stateBoardName = computed(() => this._data()?.stateBoardName || 'State Board');
 
+  /** Without a configured requirement there is no denominator, so there is no gauge to draw. */
+  protected readonly hasRequirement = computed(() => (this.credits()?.required ?? null) !== null);
+
+  /**
+   * The board's own reporting window. The old `{{ year }} - {{ year + 1 }}` was a guess that
+   * printed a two-year cycle for every learner, including boards that report annually.
+   */
+  protected readonly periodLabel = computed(() => {
+    const period = this._data()?.period;
+    if (!period) return String(this.year());
+    return period.start_year === period.end_year
+      ? String(period.start_year)
+      : `${period.start_year} - ${period.end_year}`;
+  });
+
   protected readonly percent = computed(() => {
     const c = this.credits();
-    if (!c || c.required <= 0) return 0;
+    if (!c?.required) return 0;
     return Math.min(100, Math.round((c.earned / c.required) * 100));
   });
 
@@ -60,7 +77,8 @@ export class CpeComplianceDialog {
       name: f.name,
       earned: f.credits,
       required,
-      percent: required > 0 ? Math.min(100, Math.round((f.credits / required) * 100)) : 0,
+      percent:
+        required && required > 0 ? Math.min(100, Math.round((f.credits / required) * 100)) : 0,
       color: FIELD_CARD_COLORS[f.name] ?? '#94A3B8',
     }));
   });

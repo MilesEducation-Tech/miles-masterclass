@@ -16,7 +16,12 @@ export type TransactionType = 'masterclass' | 'nano_learning' | 'webinar' | 'pod
 export interface CreditsSummary {
   total: number;
   earned: number;
-  required: number;
+  /**
+   * What the learner's state board requires. `null` means no board is configured — which is not
+   * zero, and not the old hard-coded 40 either. The gauge says so rather than inventing a
+   * denominator.
+   */
+  required: number | null;
   pending?: number;
 }
 

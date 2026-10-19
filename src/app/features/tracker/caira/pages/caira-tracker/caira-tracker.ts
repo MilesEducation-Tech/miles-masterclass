@@ -57,8 +57,19 @@ export class CairaTracker {
   protected readonly webinarBadges = computed(() => this.api.data().webinar_badges.results);
   protected readonly masterclassBadges = computed(() => this.api.data().masterclass_badges.results);
 
-  /** CAIRA-only credits, which is what a rung's threshold is measured in. */
-  protected readonly earnedCredits = computed(() => this.api.data().cpe_summary.caira_cpe_credits);
+  /**
+   * The credits a rung's threshold is measured in — **total**, not `caira_cpe_credits`.
+   *
+   * The payload settles it: a learner with `total_cpe_credits: 152` and all three rungs `CLAIMED`
+   * has `caira_cpe_credits: 0`, while the server's own `progress_label` reads `"152/90 Credits"`
+   * against Level 3's threshold of 90. Feeding the hero `caira_cpe_credits` showed that learner
+   * "0 CPE Credits" and an empty Level 1 bar.
+   *
+   * `caira_cpe_credits: 0` for someone who has claimed every CAIRA badge looks wrong backend-side
+   * and is logged with them; this reads the field the thresholds are actually counted in rather
+   * than waiting on that answer.
+   */
+  protected readonly earnedCredits = computed(() => this.api.data().cpe_summary.total_cpe_credits);
 
   /**
    * Which rung the hero opens on: the learner's current level, else the one they are working
