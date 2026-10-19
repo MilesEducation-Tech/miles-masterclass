@@ -165,38 +165,6 @@ export const environment = {
     apiBaseUrlSsr: 'https://wp.milesmasterclass.com/blog/wp-json/wp/v2',
   },
 
-  // Same shape as environment.ts so the Analytics service type-checks.
-  ANALYTICS: {
-    enabled: false, // off on local machine; flip to true to test locally
-    debug: true, // verbose analytics logging when enabled locally
-    // Each vendor is self-contained: `enabled` toggle + its own keys.
-    ga4: {
-      enabled: true, // GA4 tag via the GTM container
-      gtmId: '',
-      measurementId: '',
-    },
-    clarity: {
-      enabled: false, // Microsoft Clarity — OFF
-      projectId: '',
-    },
-    netcore: {
-      enabled: true, // Netcore Smartech
-      scriptUrl: '//cdnt.netcoresmartech.com/smartechclient.js',
-      siteKey: '',
-      appId: '',
-      listId: '',
-      swPath: '/sw.js', // SSR server generates this per-build (see src/service-worker.ts)
-      webPush: false, // no push on localhost
-      // FCM web-push credentials baked into the dynamically-served /sw.js.
-      push: {
-        apiKey: 'AIzaSyAO_n0F8wZc6tCabFNfVSZs5yKOR77Lfvw',
-        messagingSenderId: '861360152370',
-        appId: '1:861360152370:web:10c1f04bae627da2fc812b',
-        projectId: 'miles-masterclass',
-      },
-    },
-  },
-
   /**
    * Languages this build may resolve a visitor to (`LanguageContext`). Anything else in a cookie or
    * `Accept-Language` is skipped, so a half-translated language never reaches real users.
