@@ -404,6 +404,12 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - **Pointer for Q3:** the block held `copilotUrl: 'https://copilotstudio.microsoft.com/'`,
       upstream's Launch AI target after Entra sign-in. The lab page's hint already reads "Opens
       Copilot Studio in a new tab". Offered to the user as the answer to Q3; not wired.
+  - **Chore committed** as `01f563e`. **Launch AI wired (user said go), UNCOMMITTED:**
+    `AiLabCourseFacade.launchLab()` opens `https://copilotstudio.microsoft.com/` in a `noopener`
+    tab (the facade's `openTab`). The page's button calls it and is still disabled until the exam
+    is passed; the story stub has `launchLab`. 14 lines. Gates: lint 0 errors; structure ✔;
+    `build:prod` 239.19 kB; `build-storybook` ✔. Not clicked in-app (needs a learner past the
+    exam). This closes Q3 on our side unless the backend wants a per-lab deep link.
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
@@ -5816,6 +5822,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-20 · NON-REFACTOR · **MIL-117 Launch AI wired** (uncommitted): opens Copilot Studio in a new tab · lint 0 errors, structure ✔, build:prod ✔, storybook ✔
 
 - 2026-10-20 · NON-REFACTOR · **MIL-117 chore built** (uncommitted, deletions staged): removed the dead AI Labs mock grader + its two core models + the `AI_LABS` env block · lint 0 errors, structure ✔, build:prod 239.19 kB, storybook ✔
 

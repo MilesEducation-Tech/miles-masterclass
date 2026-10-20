@@ -684,7 +684,7 @@ export class AiLabCourse {
   // ---- The practical's actions -------------------------------------------
 
   protected launchLab(): void {
-    // ponytail: opens the lab once a launch target is known — no read carries one (Q3).
+    this.facade.launchLab();
   }
 
   protected refreshArtefacts(): void {
