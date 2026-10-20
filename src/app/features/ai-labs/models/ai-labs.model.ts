@@ -647,3 +647,112 @@ export interface AiLabMaterial {
   hint: string;
   url: string;
 }
+
+/* =====================================================================
+   The lab quiz.
+
+   Wire types from `docs/AI_LABS_API.md` §5: `course-quiz-questions/<uuid>/`
+   and `course-quiz-submit/`. Formative — one answer per call, graded
+   server-side, with every option's explanation in the answer.
+   ===================================================================== */
+
+/** One option. Graded fields arrive only on a resumed form's answered questions. */
+export interface AiLabQuizOption {
+  id: string;
+  /** May carry HTML (`<p>…</p>`) — rendered through Angular's sanitiser. */
+  text: string;
+  order: number;
+  is_correct?: boolean;
+  explanation?: string | null;
+}
+
+export interface AiLabQuizQuestion {
+  id: string;
+  /** May carry HTML — rendered through Angular's sanitiser. */
+  question_text: string;
+  /** `single` answers on one click; anything else is a set of checkboxes. */
+  question_type: string;
+  options: AiLabQuizOption[];
+  is_answered: boolean;
+  /** On an answered question of a resumed form. */
+  explanation?: string | null;
+  is_correct?: boolean | null;
+  selected_option_ids?: string[];
+}
+
+/** `data` of `GET web-api/v1/ai-labs/course-quiz-questions/<uuid>/`. */
+export interface AiLabQuiz {
+  ai_lab_course_id: string;
+  ai_lab_chapter_id: string;
+  questions_to_show: number;
+  /** Some questions were answered on an earlier visit; their grades come back with them. */
+  resumed: boolean;
+  answered_count: number;
+  questions: AiLabQuizQuestion[];
+}
+
+/** Body of `POST api/v1/ai-labs/course-quiz-submit/`. Strict: no other keys. */
+export interface AiLabQuizAnswerBody {
+  ai_lab_course_id: string;
+  question_id: string;
+  selected_option_ids: string[];
+}
+
+/** `data` of `course-quiz-submit/`: the verdict on one answer, and where the attempt stands. */
+export interface AiLabQuizAnswerResult {
+  question_id: string;
+  is_correct: boolean;
+  correct_option_ids: string[];
+  explanation: string | null;
+  options_feedback: { id: string; text: string; is_correct: boolean; explanation: string | null }[];
+  answers_submitted: number;
+  total_questions: number;
+  is_quiz_completed: boolean;
+  score_percent: number | null;
+}
+
+/**
+ * One question's grade, as the panel shows it. `is_correct` is null for a resumed question whose
+ * verdict the form didn't carry — the options still show their explanations.
+ */
+export interface AiLabQuizGrade {
+  selected: string[];
+  is_correct: boolean | null;
+  explanation: string | null;
+  options: Record<string, { is_correct: boolean; explanation: string | null }>;
+}
+
+/** A resumed form's answered question, as a grade — or null if it isn't answered. */
+export function gradeOfAnsweredLabQuestion(question: AiLabQuizQuestion): AiLabQuizGrade | null {
+  if (!question.is_answered) return null;
+  return {
+    selected: question.selected_option_ids ?? [],
+    is_correct: question.is_correct ?? null,
+    explanation: question.explanation ?? null,
+    options: Object.fromEntries(
+      question.options.map((o) => [
+        o.id,
+        { is_correct: o.is_correct === true, explanation: o.explanation ?? null },
+      ]),
+    ),
+  };
+}
+
+/** A submit's verdict, as a grade. */
+export function gradeOfLabQuizResult(
+  selected: string[],
+  result: AiLabQuizAnswerResult,
+): AiLabQuizGrade {
+  const correct = new Set(result.correct_option_ids);
+  return {
+    selected,
+    is_correct: result.is_correct,
+    explanation: result.explanation,
+    options: Object.fromEntries(
+      result.options_feedback.map((o) => [
+        o.id,
+        { is_correct: o.is_correct || correct.has(o.id), explanation: o.explanation },
+      ]),
+    ),
+  };
+}

@@ -42,28 +42,34 @@
       <!-- ============================== HERO ============================== -->
       <section class="grid gap-8 lg:grid-cols-[1.55fr_1fr] lg:items-start">
         <div class="overflow-hidden rounded-2xl border border-border bg-card">
-          <!-- Flex + aspect-video is the sizing contract `app-video-js` expects
+          <!-- While the quiz is open it takes the frame's place, as the masterclass chapter quiz
+               takes the player's. It is taller than 16:9, so it drops the aspect lock. -->
+          @if (quiz.isOpen()) {
+            <app-ai-lab-quiz class="min-h-96" />
+          } @else {
+            <!-- Flex + aspect-video is the sizing contract `app-video-js` expects
                (same wrapper as `video-chapter`): its host is inline, so it needs
                a flex parent to stretch to. -->
-          <div class="relative flex aspect-video w-full justify-center overflow-hidden bg-black">
-            @if (videoSources().length) {
-              <app-video-js
-                [videoSource]="videoSources()"
-                [config]="videoConfig()"
-                [mode]="playerMode()"
-                (timeUpdate)="onTimeUpdate($event.currentTime)"
-                (playing)="playing.set(true)"
-                (paused)="playing.set(false)"
-                (ended)="onEnded()"
-              />
-            } @else if (poster(); as art) {
-              <img
-                [src]="art"
-                [alt]="reel.ai_lab_course_name"
-                class="absolute inset-0 h-full w-full object-cover"
-              />
-            }
-          </div>
+            <div class="relative flex aspect-video w-full justify-center overflow-hidden bg-black">
+              @if (videoSources().length) {
+                <app-video-js
+                  [videoSource]="videoSources()"
+                  [config]="videoConfig()"
+                  [mode]="playerMode()"
+                  (timeUpdate)="onTimeUpdate($event.currentTime)"
+                  (playing)="playing.set(true)"
+                  (paused)="playing.set(false)"
+                  (ended)="onEnded()"
+                />
+              } @else if (poster(); as art) {
+                <img
+                  [src]="art"
+                  [alt]="reel.ai_lab_course_name"
+                  class="absolute inset-0 h-full w-full object-cover"
+                />
+              }
+            </div>
+          }
         </div>
 
         <div class="flex flex-col">

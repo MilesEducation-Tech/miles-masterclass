@@ -2,6 +2,7 @@ import { environment } from '@env/environment';
 import { CommonResponse, RouteConfig } from '@core/models/http.model';
 import {
   AiLabAccountState,
+  AiLabQuizAnswerBody,
   AiLabSubmitBody,
   AiLabTokenRequestBody,
   AiLabVideoProgressBody,
@@ -125,4 +126,19 @@ export const AI_LABS_API = {
    * attempted on AI Labs. Supplementary; it gates nothing.
    */
   practicalProgress: `${ROOT}web-api/v1/ai-labs/practical-progress/`,
+
+  /**
+   * `IsAuthenticated`: the lab quiz, resumable. Append `<uuid>/`. 403 `video_not_complete`, 404
+   * `no_quiz_config`, 409 `already_completed`.
+   */
+  quizQuestions: `${ROOT}web-api/v1/ai-labs/course-quiz-questions/`,
+
+  /**
+   * `IsAuthenticated`, strict body: ONE answer, graded server-side. The last one completes the
+   * quiz (`is_quiz_completed`). 409 `already_answered` / `already_completed`.
+   */
+  quizSubmit: {
+    path: `${ROOT}api/v1/ai-labs/course-quiz-submit/`,
+    method: 'POST',
+  } as RouteConfig<AiLabQuizAnswerBody, CommonResponse<unknown>>,
 } as const;

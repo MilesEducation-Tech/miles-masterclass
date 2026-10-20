@@ -91,6 +91,9 @@ export class AiLabCourseFacade {
 
   private readonly courseId = signal<string | null>(null);
 
+  /** The lab the page is on, for the services beside this one on the route (the quiz). */
+  readonly id = this.courseId.asReadonly();
+
   // ---- Reads -----------------------------------------------------------------
 
   private readonly detailRes = httpResource<AiLabCourseDetail | null>(
@@ -245,6 +248,11 @@ export class AiLabCourseFacade {
     this.courseId.set(courseId);
     this.lastReported = 0;
     this.videoDuration.set(null);
+  }
+
+  /** Re-read the gate flags — after the quiz completes, so the CTA moves on to the exam. */
+  refreshProgress(): void {
+    this.progressRes.reload();
   }
 
   /** The error state's Retry. */

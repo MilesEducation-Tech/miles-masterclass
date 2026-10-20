@@ -4,6 +4,7 @@ import { provideMotion } from '@code_with_sachin/ngx-motion';
 import { authGuard } from '@core/guards/auth/auth-guard';
 import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
 import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
+import { AiLabQuizFacade } from '@features/ai-labs/services/ai-lab-quiz-facade';
 import { AiLabsFacade } from '@features/ai-labs/services/ai-labs-facade';
 
 /**
@@ -53,7 +54,7 @@ export const AI_LABS_ROUTES: Route[] = [
   {
     path: ':courseId/:courseTitle',
     canMatch: [authGuard],
-    providers: [AiLabCourseFacade, AiLabCredits],
+    providers: [AiLabCourseFacade, AiLabQuizFacade, AiLabCredits],
     loadComponent: () => import('./pages/ai-lab-course/ai-lab-course').then((m) => m.AiLabCourse),
   },
 ];

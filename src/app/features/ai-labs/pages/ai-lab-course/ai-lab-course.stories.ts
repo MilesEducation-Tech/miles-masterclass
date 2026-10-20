@@ -12,6 +12,8 @@ import {
   MOCK_AI_LAB_EVALUATING,
   MOCK_AI_LAB_FLOWS,
   MOCK_AI_LAB_NOT_STARTED,
+  MOCK_AI_LAB_QUIZ,
+  MOCK_AI_LAB_QUIZ_GRADE,
   MOCK_AI_LAB_STARTED,
   mockAiLabProgress,
   provideStoryAiLabCourse,
@@ -72,6 +74,19 @@ export const Watching = withState({
   progress: mockAiLabProgress('video'),
   ctaStage: null,
   brief: MOCK_AI_LAB_BRIEF,
+});
+
+/**
+ * The quiz open in the video frame, first question answered wrong: the verdict, the right option
+ * and each option's explanation, as the masterclass chapter quiz shows them.
+ */
+export const QuizOpen = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('quiz'),
+  ctaStage: 'TAKE_QUIZ',
+  brief: MOCK_AI_LAB_BRIEF,
+  quiz: { questions: MOCK_AI_LAB_QUIZ, index: 0, grade: MOCK_AI_LAB_QUIZ_GRADE },
 });
 
 /** Video done, assessment still to pass — the lab stays shut and says why. */

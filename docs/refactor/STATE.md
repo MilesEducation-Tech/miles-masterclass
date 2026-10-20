@@ -312,6 +312,34 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       panel and meter are absent, and **no `tokens/` or `practical-progress/` request** is made.
       Gates: lint 0 errors; structure ✔; `build:prod` 239.55 kB; `build-storybook` ✔. **The
       signed-in branches were not exercised.**
+  - **PR 5: copy, don't share (user's call, 2026-10-20).** The lab quiz, exam and feedback screens
+    are built in `features/ai-labs` with the offerings markup, kept in step by hand. Extracting
+    to `shared/` was offered and declined. Split into **5a quiz**, **5b final assessment + result
+    - review** (submit returns per-option feedback, so no report read), and **5c feedback**.
+  - **PR 5a DONE, UNCOMMITTED (lab quiz):**
+    - **Wire types:** `AiLabQuiz` / `Question` / `Option` / `AnswerBody` / `AnswerResult` /
+      `Grade`, with `gradeOfAnsweredLabQuestion` and `gradeOfLabQuizResult`. Routes:
+      `quizQuestions`, `quizSubmit`.
+    - **`AiLabQuizFacade`**, route-scoped beside `AiLabCourseFacade`, mirrors
+      `CourseChapterQuizFacade`:
+      - Questions are read only while the panel is open. A resumed form seeds the grades and the
+        panel opens on the first unanswered question.
+      - One answer per POST. Completion re-reads progress (CTA → Take Final Assessment), then
+        a 10 s countdown closes the panel.
+      - Refusals: `already_completed` re-reads progress; `already_answered` re-reads the form.
+        Others show the server's sentence.
+    - **`AiLabCourseFacade`** gains `id` and `refreshProgress()`.
+    - **`components/ai-lab-quiz`:** chapter-quiz markup with the lab's name and thumbnail.
+      Question and option text go through `[innerHTML]`, because the guide's samples are HTML.
+      The verdict is hidden when a resumed question carries none (`is_correct: null`). The
+      completed button reads "Take Final Assessment" and closes (5b points it at the exam).
+    - **Page:** TAKE_QUIZ → `quiz.open()`. While open, the quiz replaces the 16:9 frame
+      (`min-h-96`). Not auto-opened on video end: there's no video yet (Q1).
+    - **Stories:** stand-in `AiLabQuizFacade` plus a `QuizOpen` story (`MOCK_AI_LAB_QUIZ`, a
+      wrong answer graded).
+    - **Verified:** a screenshot of `QuizOpen` matches the masterclass chapter quiz. Gates: lint
+      0 errors; structure ✔; `build:prod` 239.44 kB; `build-storybook` ✔. **Not exercised
+      in-app**: reaching the quiz needs a watched video, and no lab has a video URL (Q1).
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
@@ -5724,6 +5752,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-20 · NON-REFACTOR · **MIL-117 PR 5a built** (uncommitted): lab quiz — `AiLabQuizFacade` + `ai-lab-quiz` panel (chapter-quiz markup copied per the user's call), opened in the video frame from Take Quiz · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · story screenshot checked; unreachable in-app until a lab has a video
 
 - 2026-10-20 · NON-REFACTOR · **MIL-117 PR 4b built** (uncommitted): `AiLabCredits` (tokens + top-up dialog → tokens-request, on both routes), `practical-progress/` → landing progress panel, floating meter on landing · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · guest path verified (no vendor calls); signed-in unverified
 

@@ -9,11 +9,14 @@ import {
   AiLabCtaStage,
   AiLabFlow,
   AiLabPracticalProgress,
+  AiLabQuizGrade,
+  AiLabQuizQuestion,
   AiLabTokenBalance,
   AiLabTokenRequest,
 } from '@features/ai-labs/models/ai-labs.model';
 import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
 import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
+import { AiLabQuizFacade } from '@features/ai-labs/services/ai-lab-quiz-facade';
 
 /**
  * Sample data for the AI Labs progress panel and token meter stories.
@@ -345,7 +348,51 @@ export interface AiLabCourseStoryState {
   assignment?: AiLabAssignmentStatus | null;
   gradeCardBusy?: boolean;
   balance?: AiLabTokenBalance | null;
+  /** Shows the quiz panel in the video frame, on this question. */
+  quiz?: { questions: AiLabQuizQuestion[]; index: number; grade: AiLabQuizGrade | null };
 }
+
+/** Two lab quiz questions, as `course-quiz-questions/` sends them (HTML text, as in the guide). */
+export const MOCK_AI_LAB_QUIZ: AiLabQuizQuestion[] = [
+  {
+    id: '10450851-df15-4b15-9135-1dc3ae4b0c7a',
+    question_text:
+      '<p>Which control best reduces the risk of an AI agent posting unapproved journal entries?</p>',
+    question_type: 'single',
+    is_answered: false,
+    options: [
+      { id: 'ba24cb7b', text: '<p>Require human approval before entries are posted</p>', order: 1 },
+      { id: '9785bd80', text: "<p>Increase the model's temperature setting</p>", order: 2 },
+      { id: '4c1d9e2a', text: '<p>Let the agent post below a value threshold</p>', order: 3 },
+    ],
+  },
+  {
+    id: '3ab00f3b-262b-47e6-87d4-c9a80cbdaad5',
+    question_text: '<p>In Copilot Studio, what does a topic trigger phrase do?</p>',
+    question_type: 'single',
+    is_answered: false,
+    options: [
+      { id: 'daa71dbf', text: '<p>Routes a user message to the matching topic</p>', order: 1 },
+      { id: '3ba86c08', text: '<p>Encrypts the conversation transcript</p>', order: 2 },
+    ],
+  },
+];
+
+/** The first question, answered wrong: the verdict, the right option and each explanation. */
+export const MOCK_AI_LAB_QUIZ_GRADE: AiLabQuizGrade = {
+  selected: ['9785bd80'],
+  is_correct: false,
+  explanation:
+    'Posting rights stay with a human approver, so an agent can prepare an entry but not post it.',
+  options: {
+    ba24cb7b: { is_correct: true, explanation: 'A maker-checker step is a preventive control.' },
+    '9785bd80': { is_correct: false, explanation: 'Temperature changes randomness, not posting.' },
+    '4c1d9e2a': {
+      is_correct: false,
+      explanation: 'A threshold still lets entries post unreviewed.',
+    },
+  },
+};
 
 /**
  * Provides a stand-in `AiLabCourseFacade` and `AiLabCredits` holding fixed state, so a story
@@ -398,8 +445,29 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[
     submitting: signal(false),
     requestTopUp: () => undefined,
   };
+  const q = state.quiz;
+  const quiz = {
+    isOpen: signal(!!q),
+    isLoading: signal(false),
+    questions: signal(q?.questions ?? []),
+    question: signal(q?.questions[q.index] ?? null),
+    grade: signal(q?.grade ?? null),
+    index: signal(q?.index ?? 0),
+    isLast: signal(!!q && q.index >= q.questions.length - 1),
+    progressLabel: signal(q ? `Question ${q.index + 1} of ${q.questions.length}` : ''),
+    submitting: signal(false),
+    completed: signal(false),
+    countdown: signal(null),
+    open: () => undefined,
+    close: () => undefined,
+    answer: () => Promise.resolve(),
+    next: () => undefined,
+    previous: () => undefined,
+    proceed: () => undefined,
+  };
   return [
     { provide: AiLabCourseFacade, useValue: stub },
+    { provide: AiLabQuizFacade, useValue: quiz },
     { provide: AiLabCredits, useValue: credits },
   ];
 }

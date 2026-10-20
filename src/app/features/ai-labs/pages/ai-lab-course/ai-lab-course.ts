@@ -39,6 +39,8 @@ import {
 } from '@features/ai-labs/models/ai-labs.model';
 import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
 import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
+import { AiLabQuizFacade } from '@features/ai-labs/services/ai-lab-quiz-facade';
+import { AiLabQuiz } from '@features/ai-labs/components/ai-lab-quiz/ai-lab-quiz';
 import { AriaSelectOption } from '@core/models/aria.model';
 import { Backward } from '@shared/components/backward/backward';
 import { AiLabCourseSkeleton } from '@shared/components/skeleton/ai-lab-course-skeleton/ai-lab-course-skeleton';
@@ -77,6 +79,7 @@ interface LabPick {
   selector: 'app-ai-lab-course',
   imports: [
     AiLabCourseSkeleton,
+    AiLabQuiz,
     AiLabTokenMeter,
     Backward,
     Button,
@@ -156,6 +159,9 @@ export class AiLabCourse {
   protected readonly statusLoading = this.facade.statusLoading;
   protected readonly submitting = this.facade.submitting;
   protected readonly gradeCardBusy = this.facade.gradeCardBusy;
+  /** The lab quiz, shown in the video frame while it's open. */
+  protected readonly quiz = inject(AiLabQuizFacade);
+
   /** Copilot Credits, shared with the landing page's meter. */
   protected readonly credits = inject(AiLabCredits);
   protected readonly labProvisioned = this.facade.labProvisioned;
@@ -300,6 +306,9 @@ export class AiLabCourse {
       case 'START':
         this.facade.start();
         return;
+      case 'TAKE_QUIZ':
+        this.quiz.open();
+        return;
       case 'AI_LAB':
         this.scrollToLab();
         return;
@@ -307,8 +316,8 @@ export class AiLabCourse {
         this.togglePlayback();
         return;
       default:
-      // ponytail: TAKE_QUIZ / TAKE_EXAM / RETAKE_EXAM / FEEDBACK / DOWNLOAD open screens that
-      // arrive with the quiz, exam and feedback ticket.
+      // ponytail: TAKE_EXAM / RETAKE_EXAM / FEEDBACK / DOWNLOAD open the exam and feedback
+      // screens, which arrive with their tickets.
     }
   }
 
