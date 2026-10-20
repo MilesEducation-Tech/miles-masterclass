@@ -48,17 +48,12 @@
 
     <main class="mx-auto flex max-w-[1240px] flex-col gap-16 px-5 py-8 lg:px-8 lg:py-12">
       <!-- ============================== HERO ============================== -->
-      <section
-        class="grid gap-8 lg:items-start"
-        [class]="theater() ? 'lg:grid-cols-1' : 'lg:grid-cols-[1.55fr_1fr]'"
-      >
+      <section class="grid gap-8 lg:grid-cols-[1.55fr_1fr] lg:items-start">
         <div class="overflow-hidden rounded-2xl border border-border bg-card">
           <!-- Flex + aspect-video is the sizing contract `app-video-js` expects
                (same wrapper as `video-chapter`): its host is inline, so it needs
                a flex parent to stretch to. -->
-          <div
-            class="relative flex aspect-video w-full justify-center overflow-hidden border-b border-border bg-black"
-          >
+          <div class="relative flex aspect-video w-full justify-center overflow-hidden bg-black">
             @if (videoSources().length) {
               <app-video-js
                 [videoSource]="videoSources()"
@@ -75,40 +70,6 @@
                 [alt]="reel.title"
                 class="absolute inset-0 h-full w-full object-cover"
               />
-            }
-          </div>
-
-          <!-- Under-player row. Playback controls belong to video.js — this row
-               only carries course progress, the layout toggle and fullscreen. -->
-          <div class="flex flex-wrap items-center gap-4 px-4 py-3">
-            <span class="flex-1 font-mono text-[11.5px] text-muted-foreground">
-              {{ progress() }}%
-              @if (reel.total_duration) {
-                &middot; {{ reel.total_duration | duration }}
-              }
-            </span>
-            <button
-              app-button
-              type="button"
-              variant="outline"
-              size="sm"
-              class="shrink-0 text-muted-foreground"
-              [attr.aria-label]="theater() ? 'Exit theater mode' : 'Enter theater mode'"
-              (click)="toggleTheater()"
-            >
-              {{ theater() ? 'Exit theater mode' : 'Theater mode' }}
-            </button>
-            @if (videoSources().length) {
-              <button
-                app-button
-                type="button"
-                variant="outline"
-                size="sm"
-                class="shrink-0 text-muted-foreground"
-                (click)="enterFullscreen()"
-              >
-                Full screen
-              </button>
             }
           </div>
         </div>
@@ -148,10 +109,12 @@
             </p>
           }
 
-          <!-- The one CTA. Label and behaviour both come from the facade's
-               action_status dispatcher, so quiz → exam → feedback → certificate
-               is the same sequence a micro-learning reel runs. The AI Lab runs
-               alongside it, never as a gate — hence the second button. -->
+          <!-- The one CTA. Label and behaviour both come from `ctaStage`, so
+               quiz → exam → feedback → certificate is the same sequence a
+               micro-learning reel runs. The AI Lab sits alongside (the outline
+               button). Unlike upstream, it does hold the feedback tail back:
+               our backend opens feedback only once the lab is graded
+               (`course-feedback-gate/`), and the host's `ctaStage` follows it. -->
           <div class="mt-6 flex flex-wrap gap-3">
             @if (playbackCta()) {
               <button
@@ -432,18 +395,37 @@
         }
 
         <div class="rounded-2xl border border-border bg-card p-6 lg:p-8">
-          <!-- The assignment brief, straight from `ai-lab/assignments/brief/`.
-               A course with no assignment configured (400) or one missing on AI
-               Labs (404) renders nothing here — no toast, no error state, no
-               stand-in copy. The lab controls below stay live either way, so a
-               misconfigured course can still be worked and submitted. -->
+          <!-- The assignment brief, straight from `web-api/v1/ai-labs/assignment-brief/`.
+               A lab whose practical isn't set up yet says so in one line
+               (`briefUnavailable`); any other failure renders nothing here — no
+               toast, no error state. The lab controls below stay live either way. -->
           @if (brief(); as b) {
-            <h3 class="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="text-[15px] font-semibold text-foreground">{{ b.name }}</h3>
+              @if (b.difficulty) {
+                <span
+                  class="rounded-full border border-border bg-white/5 px-2 py-0.5 text-[10.5px] font-semibold tracking-[0.08em] text-muted-foreground uppercase"
+                >
+                  {{ b.difficulty }}
+                </span>
+              }
+            </div>
+            @if (b.details) {
+              <p
+                class="mt-2 text-[13.5px] leading-relaxed whitespace-pre-line text-muted-foreground"
+              >
+                {{ b.details }}
+              </p>
+            }
+
+            <h3
+              class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+            >
               Problem statement
             </h3>
-            <!-- Three lines collapsed, the rest on request. `line-clamp-3` is
-                 the clamp itself; whether it's actually hiding anything is
-                 measured, not guessed — see `statementClamped`. -->
+            <!-- Two lines collapsed, the rest on request. Whether the clamp is
+                 actually hiding anything is measured, not guessed — see
+                 `statementClamped`. -->
             <p
               #briefStatement
               id="lab-brief-statement"
@@ -453,49 +435,60 @@
               {{ b.problem_statement }}
             </p>
 
-            @if (briefRequirements().length) {
-              <h3
-                class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
-              >
-                Requirements
-                <!-- The total, so a list collapsed to three doesn't look like
-                     the whole list. Replaces the count the toggle used to carry. -->
-                @if (briefRequirements().length > visibleRequirements().length) {
-                  <span class="font-normal text-muted-foreground/70">
-                    &middot; {{ briefRequirements().length }}
-                  </span>
+            @if (briefExpanded()) {
+              <div id="lab-brief-more">
+                @if (b.logic_flow) {
+                  <h3
+                    class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+                  >
+                    Logic flow
+                  </h3>
+                  <p
+                    class="mt-3 text-[13.5px] leading-relaxed whitespace-pre-line text-muted-foreground"
+                  >
+                    {{ b.logic_flow }}
+                  </p>
                 }
-              </h3>
-              <ul id="lab-brief-requirements" class="mt-3 flex flex-col gap-2">
-                @for (requirement of visibleRequirements(); track $index) {
-                  <li class="flex gap-3 text-[13.5px] leading-relaxed text-muted-foreground">
-                    <span
-                      class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-success-bg text-success"
-                    >
-                      <ng-icon name="lucideCheck" class="text-[11px]" aria-hidden="true" />
-                    </span>
-                    {{ requirement }}
-                  </li>
+                @if (b.guardrails) {
+                  <h3
+                    class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+                  >
+                    Guardrails
+                  </h3>
+                  <p
+                    class="mt-3 text-[13.5px] leading-relaxed whitespace-pre-line text-muted-foreground"
+                  >
+                    {{ b.guardrails }}
+                  </p>
                 }
-              </ul>
+                <!-- The guide's scenarios are plain sentences: upstream's marks and
+                     expected-behaviour lines have nothing to read from. -->
+                @if (briefScenarios().length) {
+                  <h3
+                    class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+                  >
+                    Test scenarios
+                  </h3>
+                  <ul class="mt-3 flex flex-col gap-3">
+                    @for (scenario of briefScenarios(); track $index) {
+                      <li class="rounded-lg border border-border bg-black/25 p-4">
+                        <p class="text-[13.5px] leading-relaxed text-foreground">{{ scenario }}</p>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
             }
 
             <!-- One control for the whole brief: the statement and the
-                 requirements are one piece of reading, and two separate toggles
-                 on the same card read as clutter. Expands in place — the brief
-                 belongs in the section it describes.
-                 Deliberately quiet: it sits under a scannable checklist, where
-                 an accent-coloured bold link competes with the CTA below it. -->
+                 sections behind it are one piece of reading. Expands in place —
+                 the brief belongs in the section it describes. -->
             @if (briefTruncated()) {
               <button
                 type="button"
                 class="mt-5 inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:text-foreground"
                 [attr.aria-expanded]="briefExpanded()"
-                [attr.aria-controls]="
-                  briefRequirements().length
-                    ? 'lab-brief-statement lab-brief-requirements'
-                    : 'lab-brief-statement'
-                "
+                aria-controls="lab-brief-statement lab-brief-more"
                 (click)="toggleBrief()"
               >
                 {{ briefExpanded() ? 'Show less' : 'Read full brief' }}
@@ -507,12 +500,50 @@
                 />
               </button>
             }
+
+            <!-- Always visible: the files are what the learner builds against.
+                 Each click goes out as `openInputFile`, so the host can re-fetch
+                 the brief when its signed links have gone stale. -->
+            @if (briefFiles().length) {
+              <h3
+                class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+              >
+                Input files
+              </h3>
+              <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                @for (file of briefFiles(); track file.name) {
+                  <button
+                    type="button"
+                    class="flex items-center gap-3 rounded-lg border border-border bg-black/25 p-4 text-start transition-colors hover:bg-card-hover"
+                    [attr.aria-label]="'Download ' + file.name"
+                    (click)="openInputFile.emit(file)"
+                  >
+                    <span
+                      class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary text-muted-foreground"
+                    >
+                      <ng-icon name="lucideDownload" class="text-lg" aria-hidden="true" />
+                    </span>
+                    <span class="min-w-0 flex-1">
+                      <span class="block truncate text-[13.5px] font-semibold text-foreground">
+                        {{ file.name }}
+                      </span>
+                      <!-- The guide sends no size, so the second line is the file type. -->
+                      <span class="block text-[11.5px] text-muted-foreground">
+                        {{ fileKind(file.name) }}
+                      </span>
+                    </span>
+                  </button>
+                }
+              </div>
+            }
           } @else if (briefLoading()) {
             <div class="flex flex-col gap-2.5" role="status" aria-label="Loading your assignment">
               <div class="h-3.5 w-11/12 animate-pulse rounded bg-secondary"></div>
               <div class="h-3.5 w-10/12 animate-pulse rounded bg-secondary"></div>
               <div class="h-3.5 w-7/12 animate-pulse rounded bg-secondary"></div>
             </div>
+          } @else if (briefUnavailable(); as reason) {
+            <p class="text-[13px] text-muted-foreground" role="note">{{ reason }}</p>
           }
 
           <div class="mt-6 flex flex-wrap items-center gap-4">
@@ -526,22 +557,6 @@
               <span>{{ signInLabel() }}</span>
               <ng-icon name="lucideArrowUpRight" class="text-lg" aria-hidden="true" />
             </button>
-            <!-- Seeds the learner's lab mailbox with the assignment's test emails.
-                 Only offered when the brief says the assignment uses them; locked
-                 alongside Launch AI, since the mailbox is only used once the lab opens. -->
-            @if (testEmailsEnabled()) {
-              <button
-                app-button
-                type="button"
-                variant="outline"
-                class="gap-2"
-                [disabled]="!labUnlocked() || sendingTestEmails()"
-                (click)="sendTestEmails.emit()"
-              >
-                <ng-icon name="lucideMail" class="text-lg" aria-hidden="true" />
-                <span>{{ sendingTestEmails() ? 'Sending…' : 'Send test emails' }}</span>
-              </button>
-            }
             <span class="text-[12px] text-muted-foreground">{{ labLockHint() }}</span>
           </div>
 
@@ -610,16 +625,19 @@
                 </div>
 
                 <!-- What actually goes to the evaluator, so the pick is checkable.
-                     The flow's UUID is shown on purpose — it is literally the
-                     `agent_schema` the POST carries. -->
+                     The id is shown on purpose — it is literally the
+                     `agent_ref` the POST carries. -->
                 @if (selectedAgent(); as agent) {
                   <p class="mt-2 font-mono text-[11.5px] text-muted-foreground">
-                    {{ agent.schemaName }} &middot; {{ agent.envLabel }}
+                    {{ agent.id }} &middot; updated {{ agent.modified_on | date: 'd MMM y' }}
                   </p>
                 } @else if (selectedFlow(); as flow) {
                   <p class="mt-2 font-mono text-[11.5px] text-muted-foreground">
-                    {{ flow.id }} &middot; {{ flow.environment }}
+                    {{ flow.id }} &middot; updated {{ flow.modified_on | date: 'd MMM y' }}
                   </p>
+                  @if (flow.description) {
+                    <p class="mt-1 text-[12px] text-muted-foreground">{{ flow.description }}</p>
+                  }
                 }
 
                 <div
@@ -759,7 +777,7 @@
             Evaluation &amp; scores
           </h2>
           <span class="text-[12px] text-muted-foreground">Automated</span>
-          <!-- Manual re-read, no polling: the learner checks when they're ready. -->
+          <!-- Manual re-read on top of the poll that runs while grading. -->
           @if (labUnlocked()) {
             <button
               app-button
@@ -792,8 +810,8 @@
               <div class="min-w-0 flex-1">
                 <p class="text-[14px] font-semibold">Evaluation in progress</p>
                 <p class="mt-1 max-w-[62ch] text-[13px] leading-relaxed text-muted-foreground">
-                  Usually a few minutes. Use the refresh button above to check for your scores — you
-                  can leave this page and come back.
+                  Usually a few minutes. Your scores appear here automatically — you can leave this
+                  page and come back.
                 </p>
               </div>
             </div>
@@ -801,8 +819,9 @@
           @case ('completed') {
             @if (assignment(); as result) {
               <!-- ponytail: placeholder panel — the designed grade card replaces
-                   this once the design lands. Shows every field the status
-                   endpoint returns, nothing more. -->
+                   this once the design lands. Upstream's layout (the percentage as
+                   the headline), fed from `assignment-status/`, which also carries
+                   the evaluator's two comments. -->
               <div class="overflow-hidden rounded-2xl border border-border bg-card">
                 <div class="border-b-2 border-accent bg-card-hover px-6 py-5 lg:px-8">
                   <p class="text-[11px] font-semibold tracking-[0.16em] text-accent uppercase">
@@ -813,22 +832,26 @@
                   >
                     Your scores
                   </h3>
-                  @if (result.evaluated_at) {
+                  @if (result.submitted_at) {
                     <p class="mt-1 text-[13px] text-muted-foreground">
-                      Evaluated {{ result.evaluated_at | date: 'd MMM y, HH:mm' }}
+                      Submitted {{ result.submitted_at | date: 'd MMM y, HH:mm' }}
                     </p>
                   }
                 </div>
 
-                <div class="flex flex-col gap-5 p-6 lg:flex-row lg:p-8">
+                <div class="flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:p-8">
                   <div
                     class="flex shrink-0 flex-col items-center justify-center rounded-xl border-t-4 bg-card-hover px-8 py-6"
                     [class]="(result.percentage ?? 0) >= 70 ? 'border-success' : 'border-accent'"
                   >
                     <p class="font-serif text-[54px] leading-none font-semibold">
-                      {{ result.score ?? '–' }}
+                      @if (result.percentage === null) {
+                        –
+                      } @else {
+                        {{ result.percentage | number: '1.0-1' }}%
+                      }
                     </p>
-                    <p class="mt-1 text-[12px] text-muted-foreground">out of 10</p>
+                    <p class="mt-1 text-[12px] text-muted-foreground">latest score</p>
                   </div>
                   <div class="min-w-0 flex-1">
                     <!-- The evaluator's verdict as heading + subheading, the
@@ -847,7 +870,7 @@
                         {{ result.minor_comment }}
                       </p>
                     }
-                    @if (result.percentage !== null && result.percentage !== undefined) {
+                    @if (result.percentage !== null) {
                       <div class="mt-5 flex items-center gap-3">
                         <app-progress
                           class="w-full max-w-[220px]"
@@ -857,21 +880,27 @@
                           ariaLabel="Evaluation percentage"
                         />
                         <span class="shrink-0 font-mono text-[13px] text-muted-foreground">
-                          {{ result.percentage }}%
+                          {{ result.percentage | number: '1.0-1' }}%
                         </span>
                       </div>
                     }
                     <div class="mt-6 flex flex-wrap items-center gap-3">
-                      @if (result.grade_card_pdf_url; as pdf) {
-                        <a
-                          [href]="pdf"
-                          target="_blank"
-                          rel="noreferrer"
-                          class="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-[13.5px] font-semibold text-primary-foreground no-underline"
+                      <!-- The signed link expires (`grade_card_expires_at`), so it goes
+                           out through `downloadGradeCard` and the host re-reads the
+                           status first when `grade_card_is_expired`. -->
+                      @if (result.grade_card_pdf_url) {
+                        <button
+                          app-button
+                          type="button"
+                          variant="primary"
+                          class="gap-2"
+                          [disabled]="gradeCardBusy()"
+                          [attr.aria-busy]="gradeCardBusy()"
+                          (click)="downloadGradeCard.emit()"
                         >
                           <ng-icon name="lucideDownload" class="text-base" aria-hidden="true" />
-                          Download grade card
-                        </a>
+                          {{ gradeCardBusy() ? 'Preparing…' : 'Download grade card' }}
+                        </button>
                       }
                     </div>
                   </div>

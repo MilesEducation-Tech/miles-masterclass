@@ -446,73 +446,99 @@ export const AI_LAB_QUIZ_BEHIND: readonly AiLabCtaStage[] = [
   'DOWNLOAD',
 ];
 
-/** One agent the learner has built in Copilot Studio. */
+/** One Copilot Studio agent — a row of `agents` on `web-api/v1/ai-labs/agents/`. */
 export interface AiLabAgent {
+  kind: 'agent';
+  /** What `assignment-submit/` takes as `agent_ref`. */
   id: string;
   name: string;
-  schemaName: string;
   published: boolean;
-  envId: string;
-  /** Human name of the environment, e.g. "the shared Miles AI Labs environment". */
-  envLabel: string;
+  /** ISO timestamp. */
+  modified_on: string;
 }
 
-/**
- * One flow the learner has built — `AiLabAgent` minus `schemaName`, since a flow has no schema.
- */
+/** One Power Automate flow — a row of `flows` on `web-api/v1/ai-labs/flows/`. */
 export interface AiLabFlow {
+  kind: 'flow';
   id: string;
   name: string;
   /** A disabled flow cannot run, so it cannot be evaluated — the picker skips it. */
   enabled: boolean;
-  envId: string;
-  /** Human name of the environment — `AiLabAgent.envLabel` under another name. */
-  environment: string;
-  shared: boolean;
-}
-
-/** `in_progress` is the only live state — a status poll would run while it holds. */
-export type AiLabLabStatus = 'not_started' | 'in_progress' | 'completed' | 'error';
-
-/** Everything past `lab_status` is null / empty until the evaluation completes. */
-export interface AiLabAssignmentStatus {
-  lab_status: AiLabLabStatus;
-  submission_id?: string;
-  /** Headline mark, out of 10. */
-  score?: number | null;
-  percentage?: number | null;
-  /** The evaluator's verdict. */
-  master_comment?: string;
-  /** Secondary remarks — smaller points that didn't change the verdict. */
-  minor_comment?: string;
-  grade_card_pdf_url?: string | null;
-  evaluated_at?: string | null;
-}
-
-/** Optional lab tooling the brief switches on per assignment. */
-export interface AiLabAssignmentTools {
-  /** The assignment ships seed emails for the learner's lab mailbox. */
-  test_emails: boolean;
+  modified_on: string;
+  /** In upstream's design, not in the guide's sample — rendered only when sent. */
+  description?: string;
 }
 
 /**
- * What the learner is asked to build, in their own words rather than the grader's.
- *
- * Absent by design when the course has no lab assignment configured — the page then renders no
- * brief block at all instead of an empty heading.
+ * Body of `POST api/v1/ai-labs/assignment-submit/<uuid>/`: the picked row's `id` and which list it
+ * came from. Strict — the old `artefact_env_id` / `artefact_schema` are refused.
  */
-export interface AiLabAssignmentBrief {
-  /** Prose. May carry newlines — rendered with `whitespace-pre-line`. */
-  problem_statement: string;
-  requirements: string[];
-  /** Absent on a backend that predates tools — treated as everything off. */
-  tools?: AiLabAssignmentTools;
+export interface AiLabSubmitBody {
+  artefact_kind: 'agent' | 'flow';
+  agent_ref: string;
 }
 
-/** What the learner picked to submit: one agent, or one flow, never both. */
-export interface AiLabPick {
-  kind: 'agent' | 'flow';
-  id: string;
+/** Which panel the evaluation section shows. Derived from `assessment_status` on the page. */
+export type AiLabLabStatus = 'not_started' | 'in_progress' | 'completed' | 'error';
+
+/**
+ * `data` of `GET web-api/v1/ai-labs/assignment-status/<uuid>/` (`docs/AI_LABS_API.md` §8).
+ *
+ * `assessment_status` is an open string: the guide evidences `in_progress` and `completed`.
+ * Everything past it is null until the evaluation completes. A learner who hasn't started the lab
+ * gets a 404 `no_ai_lab_enrollment` instead of this body.
+ */
+export interface AiLabAssignmentStatus {
+  assessment_status: string;
+  /** Latched once graded — stays true while a resubmission is being evaluated. */
+  ai_assessment_completed: boolean;
+  submission_id: string | null;
+  artefact_kind: 'agent' | 'flow' | null;
+  submitted_at: string | null;
+  completed_at: string | null;
+  evaluated_at: string | null;
+  /** Raw marks — not out of 10, and not what the page leads with. */
+  score: number | null;
+  percentage: number | null;
+  /** The evaluator's verdict. */
+  master_comment: string | null;
+  /** Secondary remarks — smaller points that didn't change the verdict. */
+  minor_comment: string | null;
+  grade_card_pdf_url: string | null;
+  grade_card_expires_at: string | null;
+  grade_card_is_expired: boolean;
+  /** The backend refuses another submit (409 `practical_already_completed`) unless this is true. */
+  can_resubmit: boolean;
+}
+
+/** One file the learner builds against. The URL is signed and expires (~1 h). */
+export interface AiLabInputFile {
+  name: string;
+  url: string;
+}
+
+/**
+ * `brief` of `GET web-api/v1/ai-labs/assignment-brief/<uuid>/` — what the learner is asked to
+ * build. The mark scheme is stripped server-side.
+ *
+ * Absent by design when the lab has no practical configured (409 `ai_lab_assignment_not_configured`)
+ * — the page then renders one line instead of a brief block.
+ */
+export interface AiLabAssignmentBrief {
+  slug: string;
+  name: string;
+  details: string | null;
+  /** Prose. May carry newlines — rendered with `whitespace-pre-line`. */
+  problem_statement: string;
+  logic_flow: string | null;
+  guardrails: string | null;
+  difficulty: string | null;
+  version: number;
+  published_date: string | null;
+  input_files: AiLabInputFile[];
+  /** Plain sentences on our backend; upstream's design had marks and expected behaviour too. */
+  scenarios: string[];
+  tools: string[];
 }
 
 /**

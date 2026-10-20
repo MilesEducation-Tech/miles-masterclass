@@ -1,16 +1,19 @@
 import {
+  afterRenderEffect,
   Component,
   computed,
   DOCUMENT,
+  effect,
   ElementRef,
   inject,
   input,
   linkedSignal,
   output,
+  PLATFORM_ID,
   signal,
   viewChild,
 } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe, isPlatformBrowser } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matPlayArrowRound } from '@ng-icons/material-icons/round';
 import {
@@ -20,7 +23,6 @@ import {
   lucideDownload,
   lucideExternalLink,
   lucideLock,
-  lucideMail,
   lucidePause,
   lucideRefreshCw,
 } from '@ng-icons/lucide';
@@ -35,9 +37,10 @@ import {
   AiLabAssignmentStatus,
   AiLabCtaStage,
   AiLabFlow,
+  AiLabInputFile,
   AiLabLabStatus,
   AiLabMaterial,
-  AiLabPick,
+  AiLabSubmitBody,
   AiLabTokenBalance,
 } from '@features/ai-labs/models/ai-labs.model';
 import { AriaSelectOption } from '@core/models/aria.model';
@@ -52,8 +55,11 @@ import { Progress } from '@shared/ui/progress/progress';
 import { Select } from '@shared/ui/select/select';
 import { Spinner } from '@shared/ui/spinner/spinner';
 
-/** How much of the brief is shown before the learner asks for the rest. */
-const BRIEF_PREVIEW_REQUIREMENTS = 3;
+/** What the learner picked: one agent, or one flow, never both. */
+interface LabPick {
+  kind: AiLabSubmitBody['artefact_kind'];
+  id: string;
+}
 
 /**
  * One AI Lab course, end to end: watch the video, pass the final assessment, then build an agent
@@ -91,6 +97,7 @@ const BRIEF_PREVIEW_REQUIREMENTS = 3;
     Backward,
     Button,
     DatePipe,
+    DecimalPipe,
     DurationPipe,
     ErrorState,
     NgIcon,
@@ -127,7 +134,6 @@ const BRIEF_PREVIEW_REQUIREMENTS = 3;
       lucideDownload,
       lucideExternalLink,
       lucideLock,
-      lucideMail,
       lucidePause,
       lucideRefreshCw,
     }),
@@ -158,7 +164,7 @@ export class AiLabCourse {
   readonly completed = input(false);
 
   /**
-   * Percentage watched, 0–100 — drives the progress bar under the player.
+   * Percentage watched, 0–100 — drives the hero's Play / Resume label and hint.
    *
    * An input rather than a computed: upstream derives it from `last_activity`, which is watched
    * seconds on their payload and an ISO timestamp on ours. Deriving it here would silently
@@ -183,6 +189,12 @@ export class AiLabCourse {
   /** The brief is still being fetched. */
   readonly briefLoading = input(false);
 
+  /**
+   * Why there is no brief, when it's worth saying — e.g. the lab's practical isn't set up yet
+   * (409 `ai_lab_assignment_not_configured`). Null renders no brief block at all.
+   */
+  readonly briefUnavailable = input<string | null>(null);
+
   /** The agent / workflow lists are still being fetched. */
   readonly artefactsLoading = input(false);
 
@@ -192,7 +204,8 @@ export class AiLabCourse {
   readonly ctaLoading = input(false);
   readonly submitting = input(false);
   readonly statusLoading = input(false);
-  readonly sendingTestEmails = input(false);
+  /** A grade-card link is being re-read before it opens. */
+  readonly gradeCardBusy = input(false);
   readonly downloadingExerciseFiles = input(false);
   readonly signInLabel = input('Sign in & launch AI');
 
@@ -200,11 +213,13 @@ export class AiLabCourse {
 
   readonly cta = output<void>();
   readonly launchLab = output<void>();
-  readonly submitLab = output<AiLabPick>();
+  readonly submitLab = output<AiLabSubmitBody>();
   readonly resubmit = output<void>();
   readonly refreshStatus = output<void>();
   readonly refreshArtefacts = output<void>();
-  readonly sendTestEmails = output<void>();
+  /** A brief input file was clicked. The host re-fetches the brief first if its links are stale. */
+  readonly openInputFile = output<AiLabInputFile>();
+  readonly downloadGradeCard = output<void>();
   readonly openMaterial = output<AiLabMaterial>();
   readonly topUp = output<void>();
   readonly videoEnded = output<void>();
@@ -222,7 +237,6 @@ export class AiLabCourse {
 
   private readonly player = viewChild(VideoJs);
   protected readonly playing = signal(false);
-  protected readonly theater = signal(false);
   protected readonly PlayerMode = PlayerMode;
 
   protected readonly videoSources = computed<VideoSource[]>(() => {
@@ -271,15 +285,6 @@ export class AiLabCourse {
       top: el.getBoundingClientRect().top + window.scrollY - 128,
       behavior: 'smooth',
     });
-  }
-
-  protected toggleTheater(): void {
-    this.theater.update((on) => !on);
-  }
-
-  /** Native fullscreen on the player — exit is Esc or video.js's own control. */
-  protected enterFullscreen(): void {
-    this.player()?.requestFullscreen();
   }
 
   // ---- The single CTA ----------------------------------------------------
@@ -434,43 +439,78 @@ export class AiLabCourse {
   // Deliberately NOT gated on `labUnlocked()`: reading the brief while the lab is still locked is
   // the reason to go and pass the exam.
 
-  protected readonly briefRequirements = computed(() =>
-    (this.brief()?.requirements ?? []).map((r) => r.trim()).filter(Boolean),
-  );
+  /** Sorted as sent; a file list is what the learner builds against, so it is always visible. */
+  protected readonly briefFiles = computed(() => this.brief()?.input_files ?? []);
 
-  /** The brief says this assignment ships seed emails for the lab mailbox. */
-  protected readonly testEmailsEnabled = computed(() => this.brief()?.tools?.test_emails === true);
+  protected readonly briefScenarios = computed(() =>
+    (this.brief()?.scenarios ?? []).map((s) => s.trim()).filter(Boolean),
+  );
 
   /** Expanded in place — the brief belongs in the section it describes, not in a dialog. */
   protected readonly briefExpanded = signal(false);
 
-  protected readonly visibleRequirements = computed(() =>
-    this.briefExpanded()
-      ? this.briefRequirements()
-      : this.briefRequirements().slice(0, BRIEF_PREVIEW_REQUIREMENTS),
-  );
+  /** Sections only the expanded brief shows: logic flow, guardrails, scenarios. */
+  private readonly briefHasMore = computed(() => {
+    const b = this.brief();
+    return (
+      !!b && (!!b.logic_flow?.trim() || !!b.guardrails?.trim() || this.briefScenarios().length > 0)
+    );
+  });
 
-  protected readonly hiddenRequirements = computed(() =>
-    Math.max(0, this.briefRequirements().length - BRIEF_PREVIEW_REQUIREMENTS),
-  );
-
-  /** The problem statement's 3-line clamp is actually cutting text off. */
+  /** The problem statement's 2-line clamp is actually cutting text off. */
   private readonly statementClamped = signal(false);
 
   /**
    * Whether there is anything behind the fold at all. Measured rather than guessed: a "Read more"
-   * that expands to the same three lines is worse than no button, and the statement's length in
+   * that expands to the same lines is worse than no button, and the statement's length in
    * characters says nothing about how many lines it wraps to.
    */
   protected readonly briefTruncated = computed(
-    () => this.statementClamped() || this.hiddenRequirements() > 0,
+    () => this.statementClamped() || this.briefHasMore(),
   );
+
+  /** `FY2026_AP_Ledger_Extract.xlsx` → `XLSX file`. The guide sends no size to show instead. */
+  protected fileKind(name: string): string {
+    const dot = name.lastIndexOf('.');
+    return dot > 0 ? `${name.slice(dot + 1).toUpperCase()} file` : 'File';
+  }
 
   protected toggleBrief(): void {
     this.briefExpanded.update((open) => !open);
   }
 
-  protected readonly briefStatement = viewChild<ElementRef<HTMLElement>>('briefStatement');
+  private readonly briefStatement = viewChild<ElementRef<HTMLElement>>('briefStatement');
+
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  constructor() {
+    // Whether the statement's clamp is cutting text off, measured twice over.
+    // Content: new brief text re-measures after it renders — a clamped box keeps
+    // the same height when the text changes, so no resize is reported.
+    afterRenderEffect(() => {
+      const el = this.briefStatement()?.nativeElement;
+      // Tracked so new brief text re-measures; skipped while expanded, where
+      // scrollHeight === clientHeight would reset the flag and take the
+      // "Show less" control away with it.
+      this.brief();
+      if (!el || this.briefExpanded()) return;
+      this.statementClamped.set(el.scrollHeight - el.clientHeight > 1);
+    });
+
+    // Geometry: a viewport change rewraps the text without any signal moving.
+    effect((onCleanup) => {
+      const el = this.briefStatement()?.nativeElement;
+      if (!el || !this.isBrowser) return;
+      const observer = new ResizeObserver(() => {
+        if (this.briefExpanded()) return;
+        this.statementClamped.set(el.scrollHeight - el.clientHeight > 1);
+      });
+      observer.observe(el);
+      // The paragraph unmounts and remounts whenever the brief reloads, so this
+      // has to drop the old observer on every re-run, not just on destroy.
+      onCleanup(() => observer.disconnect());
+    });
+  }
 
   // ---- The artefact picker -----------------------------------------------
 
@@ -496,7 +536,7 @@ export class AiLabCourse {
    */
   protected readonly pick = linkedSignal<
     { agents: readonly AiLabAgent[]; flows: readonly AiLabFlow[] },
-    AiLabPick | null
+    LabPick | null
   >({
     source: () => ({ agents: this.agents(), flows: this.offerableFlows() }),
     computation: ({ agents, flows }, prev) => {
@@ -535,23 +575,38 @@ export class AiLabCourse {
     () => this.agents().length > 0 || this.offerableFlows().length > 0,
   );
 
-  protected choose(kind: AiLabPick['kind'], id: string | null): void {
+  protected choose(kind: LabPick['kind'], id: string | null): void {
     this.pick.set(id ? { kind, id } : null);
   }
 
+  /** Exactly what the submit POST carries: the picked row's `id` as `agent_ref`, and its list. */
   protected submit(): void {
     const picked = this.pick();
-    if (picked) this.submitLab.emit(picked);
+    if (picked) this.submitLab.emit({ artefact_kind: picked.kind, agent_ref: picked.id });
   }
 
   // ---- Submission + evaluation -------------------------------------------
 
-  protected readonly phase = computed<AiLabLabStatus>(
-    () => this.assignment()?.lab_status ?? 'not_started',
-  );
+  /**
+   * `assessment_status` as a panel. An open string on the wire: `in_progress` and `completed` are
+   * evidenced, and a failed grading reads as the error panel rather than as "not started".
+   */
+  protected readonly phase = computed<AiLabLabStatus>(() => {
+    switch (this.assignment()?.assessment_status) {
+      case 'completed':
+        return 'completed';
+      case 'in_progress':
+        return 'in_progress';
+      case 'failed':
+      case 'error':
+        return 'error';
+      default:
+        return 'not_started';
+    }
+  });
 
   /**
-   * A submission exists on the server. `submission_id` is the proof — not `lab_status`, which the
+   * A submission exists on the server. `submission_id` is the proof — not the status, which the
    * backend can report as `in_progress` for a lab the learner has merely opened.
    */
   protected readonly hasSubmission = computed(() => !!this.assignment()?.submission_id);
@@ -568,11 +623,22 @@ export class AiLabCourse {
   protected readonly labDone = computed(() => this.phase() === 'completed');
 
   /**
-   * An attempt is with the evaluator. The picker stays on screen showing what was sent, but
-   * nothing about it can be changed. A scored attempt doesn't lock it — the learner can submit
-   * again to better the score.
+   * The lab has been graded at least once. Keeps its step ticked while a resubmission is with the
+   * evaluator, when `labDone()` reads false again. `ai_assessment_completed` is the server's latch.
    */
-  protected readonly alreadySubmitted = computed(() => this.evaluating());
+  private readonly labEverGraded = computed(
+    () => this.labDone() || !!this.assignment()?.ai_assessment_completed,
+  );
+
+  /**
+   * Nothing about the pick can be changed: an attempt is with the evaluator, or a graded one the
+   * backend won't take again. Upstream reopens the picker on every graded lab; ours answers 409
+   * `practical_already_completed` unless `can_resubmit`, so the picker follows that flag. Either
+   * way it stays on screen, showing what was sent.
+   */
+  protected readonly alreadySubmitted = computed(
+    () => this.evaluating() || (this.labDone() && !this.assignment()?.can_resubmit),
+  );
 
   /** Everything the picker can't do right now. */
   protected readonly pickerLocked = computed(
@@ -595,7 +661,8 @@ export class AiLabCourse {
 
   protected readonly stepsDone = computed(
     () =>
-      [this.completed(), this.quizDone(), this.examPassed(), this.labDone()].filter(Boolean).length,
+      [this.completed(), this.quizDone(), this.examPassed(), this.labEverGraded()].filter(Boolean)
+        .length,
   );
 
   /** Three without a mapped lab — otherwise a finished course sticks at 75%. */
@@ -609,12 +676,19 @@ export class AiLabCourse {
   protected readonly finalHint = computed(() => {
     if (!this.completed()) return 'Finish the video first.';
     if (!this.examPassed()) return 'Pass the assessment to unlock the AI Lab.';
-    return 'Passed — leave feedback and download your certificate. The AI Lab is open below.';
+    // Our backend opens feedback only once the lab is graded — upstream opens it on the pass.
+    if (!this.labEverGraded())
+      return 'Passed — the AI Lab is open below. Feedback opens once it is graded.';
+    return 'Passed and graded — leave feedback and download your certificate.';
   });
 
   /** Status line under the picker. */
   protected readonly labHint = computed(() => {
-    if (this.labDone()) return 'Evaluated — your scores are below. Submit again to improve them.';
+    if (this.labDone()) {
+      return this.assignment()?.can_resubmit
+        ? 'Evaluated — your scores are below. Submit again to improve them.'
+        : 'Evaluated — your scores are below.';
+    }
     if (this.evaluating()) return 'Submitted — the evaluation is running.';
     const name = this.pickedName();
     return name ? `Ready to submit ${name}.` : 'Select the agent or workflow to submit.';
@@ -630,6 +704,9 @@ export class AiLabCourse {
     if (!this.examPassed()) {
       return 'Video complete — pass the final assessment to unlock the AI Lab.';
     }
-    return 'Assessment passed — leave feedback and download your certificate. Try the AI Lab anytime.';
+    if (!this.labEverGraded()) {
+      return 'Assessment passed — submit your AI Lab build; feedback and the certificate follow its grade.';
+    }
+    return 'Lab graded — leave feedback and download your certificate.';
   });
 }

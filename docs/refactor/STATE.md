@@ -141,6 +141,40 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       `provideExitAnimationManager()` (from `ng-primitives/internal`) and a `config: {}` on the
       ref; proven by a temporary edit, then reverted.
     - **Size:** ~775 changed lines, about half of it mocks and stories. Over the ~400 guideline.
+  - **PR 1a committed** as `6bf8810`.
+  - **PR 1b DONE, UNCOMMITTED (UI catch-up: course page, to upstream `ce0194a4`):**
+    - **Removed:** the under-player bar, Theater mode (`theater`, `toggleTheater`,
+      `enterFullscreen`) and the "Send test emails" button with its input/output (Divergence 3).
+    - **Brief:** name + difficulty, details, a 2-line statement, and logic flow / guardrails /
+      test scenarios behind "Read full brief". Input-file cards emit `openInputFile`; a new
+      `briefUnavailable` input carries the one-line "not set up" note.
+      - Our scenarios are plain strings, so there are no marks or expected-behaviour lines.
+      - Files carry no size, so the cards show the file type.
+    - **Picker:** `{kind, id, name, modified_on}` rows. `submitLab` now emits the
+      `assignment-submit/` body `{artefact_kind, agent_ref}`. The hint line reads
+      `id · updated <date>`.
+    - **Evaluation:** `phase` comes from `assessment_status` (`failed` → error panel). Upstream's
+      results layout: the percentage as the headline ("latest score") and "Submitted <date>".
+      The comments are kept because `assignment-status/` carries them. The grade card is a
+      button: `downloadGradeCard` output + `gradeCardBusy` input. The in-progress copy says the
+      scores appear automatically.
+    - **Resubmit:** the picker stays locked after grading unless `can_resubmit`. The backend
+      409s `practical_already_completed` otherwise; upstream always reopens.
+    - **Steps:** the lab step stays ticked via `ai_assessment_completed` during a resubmission.
+    - **Hints:** feedback is described as following the lab's grade (Divergence 1).
+    - **Also ported:** upstream's clamp measurement (`afterRenderEffect` + `ResizeObserver`).
+      `statementClamped` was never set in our first port, so a long statement with nothing else
+      behind the fold had no "Read full brief".
+    - **Deferred to PR 3, against the plan:** the `ContentDetails` → lab-detail model swap. The
+      lab's gates come from `course-progress/` there, and the swap would double this PR.
+    - **Stories:** 12 course stories (+4: evaluated-resubmittable, grade-card-preparing,
+      evaluation-failed, brief-unavailable). `LabUnlocked` now uses `ctaStage: 'REWATCH'`, not
+      `FEEDBACK`. **Open for PR 3:** which stage `next_step: ai_assessment` maps to; upstream has
+      no stage for it.
+    - **Verified:** headless-Chrome screenshots of lab-unlocked and evaluated at 1440. lint 0
+      errors (98 warnings); structure ✔; `build:prod` 1.05 MB, `ai-labs.css` 15.86 kB;
+      `build-storybook` ✔. Not checked at 375 / 768.
+    - **Size:** ~711 changed lines across 5 files, about a third of it mocks and stories.
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
@@ -5553,6 +5587,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-20 · NON-REFACTOR · **MIL-117 PR 1b built** (uncommitted): course page caught up to upstream `ce0194a4` — no under-player bar / theater / test emails, full brief + input files, `{kind,id}` picker emitting the submit body, percentage-led results + grade-card button, resubmit on `can_resubmit`, clamp measurement ported · lint 0 errors, structure ✔, build:prod 1.05 MB, storybook ✔ · screenshots at 1440
 
 - 2026-10-20 · NON-REFACTOR · **MIL-117 PR 1a built** (uncommitted): landing account states (Resend Credential, polled-status copy), token meter + progress panel on the guide's `tokens/` / `practical-progress/` shapes, new top-up dialog · lint 0 errors, structure ✔, build:prod 1.05 MB, storybook ✔ · screenshots checked; hero branches unseen
 

@@ -8,6 +8,7 @@ import {
   MOCK_AI_LAB_BALANCE,
   MOCK_AI_LAB_BRIEF,
   MOCK_AI_LAB_EVALUATED,
+  MOCK_AI_LAB_EVALUATING,
   MOCK_AI_LAB_FLOWS,
 } from '@testing/mocks/ai-labs.mock';
 
@@ -62,7 +63,9 @@ export const AwaitingExam: Story = {
 
 /**
  * Exam passed, lab open, artefacts listed. The disabled flow in the fixture must not appear in
- * the workflow select.
+ * the workflow select. Feedback is not offered yet: our backend opens it only once the lab is
+ * graded, so the stage stays short of `FEEDBACK` — which stage maps from `course-progress/`'s
+ * `next_step: ai_assessment` is the lab-page binding's call.
  */
 export const LabUnlocked: Story = {
   args: {
@@ -75,7 +78,7 @@ export const LabUnlocked: Story = {
     labMapped: true,
     completed: true,
     progress: 100,
-    ctaStage: 'FEEDBACK',
+    ctaStage: 'REWATCH',
     agents: MOCK_AI_LAB_AGENTS,
     flows: MOCK_AI_LAB_FLOWS,
     balance: MOCK_AI_LAB_BALANCE,
@@ -84,15 +87,42 @@ export const LabUnlocked: Story = {
 
 /** An attempt is with the evaluator: the picker stays visible but nothing can be changed. */
 export const Evaluating: Story = {
+  args: { ...LabUnlocked.args, assignment: MOCK_AI_LAB_EVALUATING },
+};
+
+/** Graded, and the backend won't take another submit: the picker stays locked. Feedback opens. */
+export const Evaluated: Story = {
+  args: { ...LabUnlocked.args, ctaStage: 'FEEDBACK', assignment: MOCK_AI_LAB_EVALUATED },
+};
+
+/** Graded with `can_resubmit`: the picker reopens so the learner can try for a better score. */
+export const EvaluatedResubmittable: Story = {
   args: {
-    ...LabUnlocked.args,
-    assignment: { lab_status: 'in_progress', submission_id: 'sub-9f21c8' },
+    ...Evaluated.args,
+    assignment: { ...MOCK_AI_LAB_EVALUATED, can_resubmit: true },
   },
 };
 
-/** Scored. The learner can submit again to better it. */
-export const Evaluated: Story = {
-  args: { ...LabUnlocked.args, assignment: MOCK_AI_LAB_EVALUATED },
+/** The grade card's link expired and the host is re-reading the status before it opens. */
+export const GradeCardPreparing: Story = {
+  args: { ...Evaluated.args, gradeCardBusy: true },
+};
+
+/** Grading failed — the error panel offers a resubmit. */
+export const EvaluationFailed: Story = {
+  args: {
+    ...LabUnlocked.args,
+    assignment: { ...MOCK_AI_LAB_EVALUATING, assessment_status: 'failed' },
+  },
+};
+
+/** The lab's practical isn't set up: one line in place of the brief, the rest still live. */
+export const BriefUnavailable: Story = {
+  args: {
+    ...LabUnlocked.args,
+    brief: null,
+    briefUnavailable: "This AI Lab's practical is not set up yet. Our team has been notified.",
+  },
 };
 
 /** No assignment mapped — the lab is shut for a different reason, and says so. */

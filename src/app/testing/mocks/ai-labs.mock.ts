@@ -119,69 +119,102 @@ export const MOCK_AI_LAB_PENDING_REQUEST: AiLabTokenRequest = {
    --------------------------------------------------------------------------- */
 
 export const MOCK_AI_LAB_BRIEF: AiLabAssignmentBrief = {
+  slug: 'lease-audit-agent-la-01',
+  name: 'Lease Audit Agent',
+  details:
+    'Use the lease contracts and the lease schedule provided below. The agent must work only ' +
+    'from these files.',
   problem_statement:
     'Build an agent that reads a lease contract, extracts the payment schedule, and flags any ' +
     'clause that would change the ASC 842 classification.\n\n' +
     'It should hand back a short summary a reviewer can act on — not a transcript of the ' +
     'contract, and not a pass/fail verdict.',
-  requirements: [
-    'Accept a PDF or Word lease as the input.',
-    'Extract commencement date, term, and the full payment schedule.',
-    'Flag any renewal or termination option that affects classification.',
-    'Return a reviewer-ready summary of no more than ten lines.',
-    'Log every clause it could not parse, rather than dropping it silently.',
+  logic_flow:
+    'Load each contract, extract commencement date, term and payments, compare them to the ' +
+    'schedule, then route every mismatch to a reviewer before any memo is drafted.',
+  guardrails:
+    'The agent must not rewrite a contract or post to the ledger, and must not invent schedule ' +
+    'rows that are not in the file.',
+  difficulty: 'medium',
+  version: 3,
+  published_date: '2026-09-30',
+  input_files: [
+    { name: 'FY2026_Lease_Schedule.xlsx', url: 'https://example.com/FY2026_Lease_Schedule.xlsx' },
+    { name: 'Lease_Contracts_Bundle.pdf', url: 'https://example.com/Lease_Contracts_Bundle.pdf' },
   ],
-  tools: { test_emails: true },
+  scenarios: [
+    'A contract whose commencement date differs from the schedule by one month.',
+    'A lease with a termination-for-convenience clause and no renewal option.',
+  ],
+  tools: ['Copilot Studio', 'SharePoint'],
 };
 
 export const MOCK_AI_LAB_AGENTS: AiLabAgent[] = [
   {
-    id: 'agent-lease-01',
+    kind: 'agent',
+    id: 'cr7a2_leasereviewassistant',
     name: 'Lease Review Assistant',
-    schemaName: 'crxxx_leaseReviewAssistant',
     published: true,
-    envId: 'env-miles-shared',
-    envLabel: 'the shared Miles AI Labs environment',
+    modified_on: '2026-10-18T14:22:10Z',
   },
   {
-    id: 'agent-lease-02',
+    kind: 'agent',
+    id: 'cr7a2_leasereviewassistantv2',
     name: 'Lease Review Assistant (v2)',
-    schemaName: 'crxxx_leaseReviewAssistantV2',
     published: false,
-    envId: 'env-miles-shared',
-    envLabel: 'the shared Miles AI Labs environment',
+    modified_on: '2026-10-16T09:05:47Z',
   },
 ];
 
 export const MOCK_AI_LAB_FLOWS: AiLabFlow[] = [
   {
-    id: 'flow-intake-01',
+    kind: 'flow',
+    id: 'f3c9_leaseintakesharepoint',
     name: 'Lease intake → SharePoint',
     enabled: true,
-    envId: 'env-miles-shared',
-    environment: 'the shared Miles AI Labs environment',
-    shared: true,
+    modified_on: '2026-10-17T11:40:02Z',
   },
   // Disabled: the picker must skip it, so it never appears in the select.
   {
-    id: 'flow-archive-02',
+    kind: 'flow',
+    id: 'f3c9_archiveprocessedleases',
     name: 'Archive processed leases',
     enabled: false,
-    envId: 'env-miles-shared',
-    environment: 'the shared Miles AI Labs environment',
-    shared: false,
+    modified_on: '2026-10-15T16:28:39Z',
   },
 ];
 
-export const MOCK_AI_LAB_EVALUATED: AiLabAssignmentStatus = {
-  lab_status: 'completed',
-  submission_id: 'sub-9f21c8',
-  score: 7,
-  percentage: 70,
-  master_comment:
-    'The agent extracts the schedule reliably and the summary is the right length. Classification ' +
-    'flags fire on renewal options but miss termination-for-convenience.',
-  minor_comment: 'Unparsed clauses are logged but not surfaced to the reviewer.',
+/** `assignment-status/` while the evaluator is still working. */
+export const MOCK_AI_LAB_EVALUATING: AiLabAssignmentStatus = {
+  assessment_status: 'in_progress',
+  ai_assessment_completed: false,
+  submission_id: '3d7e9b42-6c1a-4f85-9e2b-7a4c1d8f0e63',
+  artefact_kind: 'agent',
+  submitted_at: '2026-10-20T10:12:04.318265Z',
+  completed_at: null,
+  evaluated_at: null,
+  score: null,
+  percentage: null,
+  master_comment: null,
+  minor_comment: null,
   grade_card_pdf_url: null,
-  evaluated_at: '2026-10-11T16:20:00.000000+00:00',
+  grade_card_expires_at: null,
+  grade_card_is_expired: false,
+  can_resubmit: false,
+};
+
+/** `assignment-status/` once graded — the guide's sample, with the comments shortened. */
+export const MOCK_AI_LAB_EVALUATED: AiLabAssignmentStatus = {
+  ...MOCK_AI_LAB_EVALUATING,
+  assessment_status: 'completed',
+  ai_assessment_completed: true,
+  completed_at: '2026-10-20T10:14:41.902117Z',
+  evaluated_at: '2026-10-20T10:14:41.901884Z',
+  score: 39.25,
+  percentage: 78.5,
+  master_comment: 'Solid lease agent with a clear exception summary.',
+  minor_comment:
+    'Classification flags fire on renewal options but miss termination-for-convenience.',
+  grade_card_pdf_url: 'https://example.com/grade-card.pdf',
+  grade_card_expires_at: '2026-10-27T10:15:30Z',
 };
