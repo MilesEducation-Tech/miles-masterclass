@@ -118,10 +118,10 @@
                 type="button"
                 class="h-14 w-full shrink-0 rounded-xl text-sm sm:w-[9.5rem]"
                 variant="outline"
-                [disabled]="account.loading()"
+                [disabled]="accountLoading()"
                 (click)="refreshStatus()"
               >
-                {{ account.loading() ? 'Checking…' : 'Refresh' }}
+                {{ accountLoading() ? 'Checking…' : 'Refresh' }}
               </button>
             } @else if (showResend) {
               <button
@@ -833,11 +833,11 @@
 
                   <!-- Pill badges — duration and quiz size. -->
                   <div class="mt-4 flex flex-wrap gap-2">
-                    @if (agent.durationSeconds) {
+                    @if (agent.duration) {
                       <span
                         class="inline-flex items-center rounded-full border border-border bg-white/5 px-3 py-1 text-xs text-white/70 backdrop-blur-sm"
                       >
-                        {{ agent.durationSeconds | duration: 'compact' }}
+                        {{ agent.duration }}
                       </span>
                     }
                     @if (agent.questionCount) {

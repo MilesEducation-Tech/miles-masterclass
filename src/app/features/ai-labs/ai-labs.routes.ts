@@ -1,6 +1,7 @@
 import { Route } from '@angular/router';
 import { provideGsap } from '@code_with_sachin/ngx-gsap';
 import { provideMotion } from '@code_with_sachin/ngx-motion';
+import { AiLabsFacade } from '@features/ai-labs/services/ai-labs-facade';
 
 /**
  * AI Labs is the one page that pulls in GSAP + motion.dev for its landing-page
@@ -23,8 +24,9 @@ export const AI_LABS_ROUTES: Route[] = [
   {
     path: '',
     // `reducedMotion: 'user'` — honour the OS setting; the directives then jump
-    // to their final state instead of animating.
-    providers: [provideGsap(), provideMotion({ reducedMotion: 'user' })],
+    // to their final state instead of animating. `AiLabsFacade` is route-scoped so
+    // its provisioning poll stops when the learner leaves the page.
+    providers: [provideGsap(), provideMotion({ reducedMotion: 'user' }), AiLabsFacade],
     loadComponent: () => import('./pages/ai-labs/ai-labs').then((m) => m.AiLabs),
   },
   /**

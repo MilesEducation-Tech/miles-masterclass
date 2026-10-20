@@ -175,6 +175,48 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       errors (98 warnings); structure ✔; `build:prod` 1.05 MB, `ai-labs.css` 15.86 kB;
       `build-storybook` ✔. Not checked at 375 / 768.
     - **Size:** ~711 changed lines across 5 files, about a third of it mocks and stories.
+  - **PR 1b committed** as `c789cca`.
+  - **PR 2 DONE, UNCOMMITTED (landing binding):**
+    - **New:** `constants/ai-labs-api.ts` (`AI_LABS_API`: rail, courses, account-ensure /
+      -create / -reset-password) and `services/ai-labs-facade.ts`, route-scoped on the landing
+      route.
+    - **Model:** lab-list, lock-state, web-page and account wire types. `AiLabAgentCard` has
+      `route` (locale-relative commands) and a `duration` label. `AI_LAB_ROUTES`,
+      `AiLabCreateAccountRequest`, `AiLabChapter`, `AiLabSection` and `AI_LAB_SECTIONS` are
+      deleted.
+    - **Catalogue:** guests get the rail as one section, "Masterclasses with AI Labs", via core's
+      `MasterclassCourse` + `parseCoursePage('ai-labs')`, with `pre_login` always. Cards open the
+      masterclass page. Learners get `ai-labs/courses/`, grouped by
+      `lock_state.masterclass_course_id` under the rail's titles, with "More AI Labs" for
+      orphans. Cards open `/ai-labs/<uuid>/<slug>`, which is still unbound (PR 3). An empty or
+      failed lab list falls back to the rail. The fan deals 5 cards round-robin.
+    - **Account:** `account-ensure/` is browser-only, `SKIP_LOADING`, and gated on
+      `isAuthenticated()`.
+      - A 202 sets the session flag and polls every 12 s for up to 5 min; a reload resumes the
+        poll. Timeout → "taking longer" + Refresh.
+      - `activate()` gates, in order: sign in (`/auth/login?redirect=`); `NO_CAIRA_ENROLLMENT` →
+        plans; `MISSING_REQUIRED_FIELDS` → `/auth/profile?redirect=`; no account → terms →
+        create; account exists → scroll to the catalogue (Launch AI lives on the lab page, Q3).
+      - `ACCOUNT_EXISTS` + `entitlement_refresh_required` → `signInAgain()` (logout → login).
+      - Reset maps `RESET_EMAIL_SENT`, `RATE_LIMITED` and `ACCOUNT_NOT_CREATED` to toasts.
+      - Account POSTs send no body, so the terms consent isn't recorded anywhere (Q5).
+    - **Left unused:** `environment.AI_LABS.catalogueCourses` (env files untouched).
+    - **Verified (dev 4103, headless Chrome over CDP, guest):** client-navigated home → AI Labs
+      shows the rail with both UAT courses, the fan has 2 cards, and the CTA reads "Login to
+      Miles AI Labs". Only the rail is requested (no `courses/` or `account-ensure/` as a guest).
+      A card click lands on `/us/accounting/masterclass/7158ee5b-…/design-audit-workflows-…`.
+      **The signed-in branches were not exercised** (needs an OTP login). Gates: tsc 0; lint 0
+      errors (98 warnings); structure ✔; `build:prod` 239.49 kB transfer.
+    - **⚠ FINDING, environment, not code: SSR on this machine reads EMPTY bodies from UAT.** UAT
+      (uvicorn) answers `content-encoding: zstd` with a 99-byte skippable frame before the data
+      frame. This machine runs **Node v26.9** (the project pins 24.x: `engines`, CI). Node 26's
+      zstd decoder stops after the skippable frame and returns 0 bytes, so every server-side read
+      parses `null`. It's not AI Labs-specific: `highlight/` is empty too. Contract guards throw
+      (`[masterclass] ai-labs response does not match the contract`), and the transfer cache
+      carries the failure to the browser, which does not refetch on a hard load. Browsers decode
+      it fine. Decoding from the data frame (offset 107) gives the full 5,732-byte JSON. **Fix:
+      run Node 24 locally**; the backend could also drop the skippable frame.
+    - **Size:** ~610 changed lines plus 385 new; most of the page diff is deletions.
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
@@ -5587,6 +5629,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-20 · NON-REFACTOR · **MIL-117 PR 2 built** (uncommitted): `AiLabsFacade` + `AI_LABS_API` — guest rail / learner lab catalogue, account-ensure poll, create / reset with reason-mapped prompts, re-login on `entitlement_refresh_required` · lint 0 errors, structure ✔, build:prod ✔ · guest path verified in a CDP-driven browser; signed-in unverified · found Node 26 + UAT zstd empties every SSR read locally
 
 - 2026-10-20 · NON-REFACTOR · **MIL-117 PR 1b built** (uncommitted): course page caught up to upstream `ce0194a4` — no under-player bar / theater / test emails, full brief + input files, `{kind,id}` picker emitting the submit body, percentage-led results + grade-card button, resubmit on `can_resubmit`, clamp measurement ported · lint 0 errors, structure ✔, build:prod 1.05 MB, storybook ✔ · screenshots at 1440
 

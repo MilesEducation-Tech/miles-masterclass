@@ -1,84 +1,92 @@
 import { lucideLayers } from '@ng-icons/lucide';
-import { environment } from '@env/environment';
-import { CommonResponse, RouteConfig } from '@core/models/http.model';
 import { iconCopilotOutline } from '@core/constants/icon';
 
+/* =====================================================================
+   Catalogue + lab account.
+
+   Wire types from `docs/AI_LABS_API.md` §3 and §7. The guest catalogue is
+   core's `MasterclassCourse` (the rail serves the `tracks-page/` card), so
+   only the lab-side shapes live here.
+   ===================================================================== */
+
 /**
- * Body of `POST ai-lab/account/`.
- *
- * BACKEND CONTRACT — this is the only field the frontend sends, and the name is
- * final on this side:
- *
- *   `ai_lab_terms_accepted: boolean`
- *
- * It records that the user ticked "I have read and agree to these terms, and
- * consent to registration with the University and to the processing of my
- * personal data as described" on the Miles AI Labs Participant Agreement, having
- * scrolled it to the end. Always sent as `true` — the request is not made at all
- * unless the box is ticked, so the field is the consent record, not a toggle.
- *
- * It names the AI Lab agreement specifically so it can never be confused with
- * the account-level `terms_accepted` already on the user profile: the two cover
- * different documents and are given at different times.
- *
- * Please persist it with a timestamp — the agreement carries DPDP 2023 / GDPR
- * consent and University registration, so "when" matters as much as "whether".
+ * Why a lab can't be started. The lock is keyed on the lab's PARENT masterclass course, whose id
+ * is always sent — it is also what the catalogue groups labs under.
  */
-export interface AiLabCreateAccountRequest {
-  ai_lab_terms_accepted: boolean;
+export interface AiLabLockState {
+  locked: boolean;
+  /** `credit_already_earned_via_course` | `started_via_masterclass_course` when locked. */
+  lock_reason: string | null;
+  /** The sentence to show for it. */
+  lock_remark: string | null;
+  masterclass_course_id: string | null;
+  credit_source: string | null;
 }
 
-/**
- * Account-provisioning endpoints. `BASE_API_URL` already ends in `/api/`, so the
- * paths drop that prefix — same as every other `*_ROUTES` table.
- *
- * The user is derived from the auth token, so the body carries consent only.
- */
-export const AI_LAB_ROUTES = {
-  createAccount: {
-    path: 'ai-lab/account/',
-    method: 'POST',
-  } as RouteConfig<AiLabCreateAccountRequest, CommonResponse<null>>,
+/** One row of `GET web-api/v1/ai-labs/courses/`. */
+export interface AiLabCourseListItem {
+  id: string;
+  ai_lab_course_name: string;
+  ai_lab_course_agent_flow_name: string | null;
+  ai_lab_course_mini_description: string | null;
+  ai_lab_course_horizontal_thumbnail_url: string | null;
+  ai_lab_course_vertical_thumbnail_url: string | null;
+  ai_lab_course_square_thumbnail_url: string | null;
+  /** Display text ("44 minutes"). Preferred over the seconds field, which disagrees with it on UAT. */
+  ai_lab_course_total_duration: string | null;
+  ai_lab_course_order: number;
+  ai_lab_course_access_duration_days: number;
+  ai_lab_course_total_duration_seconds: number;
+  lock_state: AiLabLockState;
+}
 
+/** The web pagination block — `data` itself, with the list under `results`. */
+export interface AiLabWebPage<T> {
+  slug: string;
+  count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  has_next: boolean;
+  has_previous: boolean;
+  results: T[];
+}
+
+/** Every `reason` the three account routes answer, success and error alike. */
+export type AiLabAccountReason =
+  | 'OK'
+  | 'NO_CAIRA_ENROLLMENT'
+  | 'MISSING_REQUIRED_FIELDS'
+  | 'ACCOUNT_EXISTS'
+  | 'ACCOUNT_NOT_CREATED'
+  | 'PROVISIONING_STARTED'
+  | 'PROVISIONING_IN_PROGRESS'
+  | 'RESET_EMAIL_SENT'
+  | 'RESET_EMAIL_RATE_LIMITED'
+  | 'RESET_EMAIL_FAILED'
+  | 'AI_LABS_DISABLED';
+
+/**
+ * `data` of `account-ensure/`, `account-create/` and `account-reset-password/` — on their error
+ * statuses too (422, 429, 502, 503), so a caller reads `reason` off the error body as well.
+ */
+export interface AiLabAccountState {
+  eligible: boolean;
+  reason: AiLabAccountReason;
+  account_created: boolean;
   /**
-   * Resets the AI Lab password and re-sends the set-password email. Separate
-   * endpoint from `createAccount` because it acts on an account that already
-   * exists — the UI confirms before calling it, since it invalidates whatever
-   * password the user is currently holding.
+   * On `ACCOUNT_EXISTS`: the learner's token predates the AI Labs entitlement, which only a fresh
+   * token carries. The guide's instruction is to force a re-login.
    */
-  resendAccountEmail: {
-    path: 'ai-lab/account/retrigger-email/',
-    method: 'POST',
-  } as RouteConfig<void, CommonResponse<null>>,
-} as const;
-
-/**
- * The subset of `v2/chapters/` this page reads.
- *
- * Deliberately NOT `CourseChapter` (course.model.ts): the serializer behind
- * these courses returns a lean row — no `updated_at`, `square_thumbnail`,
- * `mobile_video_url` or `no_of_questions` — so claiming the full type would
- * promise fields that aren't in the payload.
- */
-export interface AiLabChapter {
-  id: number;
-  chapter_name: string;
-  chapter_thumbnail: string | null;
-  description: string;
-  video_duration: number;
-  quiz_details?: { total_questions?: number } | null;
+  entitlement_refresh_required?: boolean;
 }
 
 /**
- * One catalogue tile, flattened from a masterclass chapter.
+ * One catalogue tile: a masterclass course from the rail for a guest, a lab for a learner.
  *
- * Every tile has a course page behind it, so `courseId` is what the click navigates to. The
- * optional fields are the ones a course may simply not carry — the card renders without them
- * rather than with a placeholder.
- *
- * It used to live beside `AiLabAgentDialog` in `shared/dialogs/`; that dialog is retired now that a
- * card opens the course page, and the type moved down to the one feature that uses it (AGENTS.md
- * §3: code lives at the lowest level that uses it).
+ * `route` is what the click navigates to, relative to the locale prefix — the masterclass course
+ * page, or the lab's own page. The optional fields are the ones a row may simply not carry — the
+ * card renders without them rather than with a placeholder.
  */
 export interface AiLabAgentCard {
   name: string;
@@ -89,37 +97,19 @@ export interface AiLabAgentCard {
   portraitThumbnail?: string | null;
   thumbnail?: string | null;
   thumbnailAlt?: string;
-  /** Runtime in seconds, from the chapter's `video_duration`. */
-  durationSeconds?: number;
+  /** Display text, as the API sends it ("44 minutes"). */
+  duration?: string | null;
   questionCount?: number;
-  /** The course this tile came from — the page the tile opens. */
-  courseId?: number;
+  /** Router commands after the locale prefix, e.g. `['masterclass', id, slug]`. */
+  route: readonly string[];
 }
 
-export interface AiLabSection {
+/** One catalogue rail: a heading and its cards. */
+export interface AiLabCatalogueSection {
   heading: string;
-  /**
-   * Masterclass course whose chapters are this section's cards, read from `v2/chapters/`. The
-   * heading stays editorial, since the course titles read as course titles ("Copilot Studio - AI
-   * Agents for Audits") rather than section labels.
-   *
-   * There is no static fallback any more. A section with no `courseId`, or whose fetch settles
-   * empty, is dropped from the page entirely — heading included.
-   */
-  courseId?: number;
+  cards: AiLabAgentCard[];
 }
 
-/**
- * The catalogue, section by section.
- *
- * Audit and CFO Teams are served from their masterclass courses, so the cards (name, blurb,
- * thumbnail, runtime, quiz size) track whatever the course team publishes. Tax has no course yet.
- *
- * The ten hand-written fallback tiles that used to back these headings are gone, matching the
- * source design. The API is now the only source of cards, so **a section whose fetch settles empty
- * renders nothing at all** — on UAT, where the production course ids don't resolve, that is the
- * whole catalogue. Binding the catalogue read is what brings it back.
- */
 /* =====================================================================
    Landing-page static content.
 
@@ -316,20 +306,6 @@ export const AI_LAB_TOOLS: string[] = ['Microsoft 365 Copilot', 'Copilot Studio'
 
 /** Tech strip, row 2 — the credentialing partners. */
 // export const AI_LAB_CREDENTIALS: string[] = ['CAIRA credential'];
-
-export const AI_LAB_SECTIONS: AiLabSection[] = [
-  {
-    heading: 'AI Agents & Workflows for Audit',
-    courseId: environment.AI_LABS.catalogueCourses.audit,
-  },
-  {
-    heading: 'AI Agents & Workflows for Tax',
-  },
-  {
-    heading: 'AI Agents & Workflows for CFO Teams',
-    courseId: environment.AI_LABS.catalogueCourses.cfoTeams,
-  },
-];
 
 /* =====================================================================
    Learner progress + Copilot Credits.
