@@ -375,6 +375,7 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider 
     flows: signal(state.flows ?? []),
     artefactsLoading: signal(false),
     artefactsError: signal(false),
+    artefactsErrorMessage: signal('We hit a snag reaching your Copilot environment.'),
     assignment: signal(state.assignment ?? null),
     statusLoading: signal(false),
     submitting: signal(false),
@@ -386,6 +387,10 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider 
     start: () => undefined,
     reportVideoProgress: () => undefined,
     submitPractical: () => undefined,
+    refreshArtefacts: () => undefined,
+    refreshStatus: () => undefined,
+    downloadGradeCard: () => undefined,
+    openInputFile: () => undefined,
   };
   return { provide: AiLabCourseFacade, useValue: stub };
 }

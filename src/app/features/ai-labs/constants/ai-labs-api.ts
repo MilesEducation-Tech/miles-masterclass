@@ -1,6 +1,10 @@
 import { environment } from '@env/environment';
 import { CommonResponse, RouteConfig } from '@core/models/http.model';
-import { AiLabAccountState, AiLabVideoProgressBody } from '@features/ai-labs/models/ai-labs.model';
+import {
+  AiLabAccountState,
+  AiLabSubmitBody,
+  AiLabVideoProgressBody,
+} from '@features/ai-labs/models/ai-labs.model';
 
 /**
  * Absolute URLs off `BASE_API_URL`, which is the ORIGIN ROOT (trailing slash, no `api/` segment).
@@ -72,4 +76,34 @@ export const AI_LABS_API = {
     path: `${ROOT}api/v1/ai-labs/course-video-progress/`,
     method: 'POST',
   } as RouteConfig<AiLabVideoProgressBody, CommonResponse<unknown>>,
+
+  // ---- The practical. These call AI Labs: `200 is_provisioned: false` means "no AI Labs account
+  // yet" and is not an error; 403 AI_LABS_ACCESS_DENIED / AI_LABS_TOKEN_REJECTED means the login
+  // token predates the account (sign in again). See `docs/AI_LABS_API.md` §2.
+
+  /** `IsAuthenticated`: `{status, is_provisioned, brief}`. Append `<uuid>/`. 409 if no practical. */
+  assignmentBrief: `${ROOT}web-api/v1/ai-labs/assignment-brief/`,
+
+  /** `IsAuthenticated`: `{status, is_provisioned, agents}` — the picker's agents. */
+  agents: `${ROOT}web-api/v1/ai-labs/agents/`,
+
+  /** `IsAuthenticated`: `{status, is_provisioned, flows}` — the picker's flows. */
+  flows: `${ROOT}web-api/v1/ai-labs/flows/`,
+
+  /**
+   * `IsAuthenticated`: the practical's state. Append `<uuid>/`. Polled while grading — it also
+   * reconciles a missed webhook, so polling is what heals one. 404 `no_ai_lab_enrollment` before a
+   * start.
+   */
+  assignmentStatus: `${ROOT}web-api/v1/ai-labs/assignment-status/`,
+
+  /**
+   * `IsAuthenticated`, strict body `{artefact_kind, agent_ref}`: 202 `in_progress`. Refusals carry
+   * a learner-facing message (`final_assessment_not_passed`, `practical_already_completed`,
+   * `AI_LABS_ALREADY_IN_PROGRESS`, …).
+   */
+  assignmentSubmit: {
+    path: `${ROOT}api/v1/ai-labs/assignment-submit/:id/`,
+    method: 'POST',
+  } as RouteConfig<AiLabSubmitBody, CommonResponse<unknown>>,
 } as const;

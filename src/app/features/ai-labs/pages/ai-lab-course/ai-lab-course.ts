@@ -150,6 +150,7 @@ export class AiLabCourse {
   protected readonly flows = this.facade.flows;
   protected readonly artefactsLoading = this.facade.artefactsLoading;
   protected readonly artefactsError = this.facade.artefactsError;
+  protected readonly artefactsErrorMessage = this.facade.artefactsErrorMessage;
   protected readonly assignment = this.facade.assignment;
   protected readonly statusLoading = this.facade.statusLoading;
   protected readonly submitting = this.facade.submitting;
@@ -660,31 +661,30 @@ export class AiLabCourse {
   });
 
   // ---- The practical's actions -------------------------------------------
-  // ponytail: launching the lab, picking and submitting, the evaluation's refresh and grade card,
-  // the brief's input files and the credits top-up are bound with the practical ticket.
 
   protected launchLab(): void {
-    // ponytail: opens the lab once a launch target is known (backend question Q3).
+    // ponytail: opens the lab once a launch target is known — no read carries one (Q3).
   }
 
   protected refreshArtefacts(): void {
-    // ponytail: re-reads `agents/` and `flows/`.
+    this.facade.refreshArtefacts();
   }
 
   protected refreshStatus(): void {
-    // ponytail: re-reads `assignment-status/`.
+    this.facade.refreshStatus();
   }
 
+  /** "Submit again" after a failed evaluation: the picker is open again, so take the learner to it. */
   protected resubmit(): void {
-    // ponytail: reopens the picker after a failed evaluation.
+    this.scrollToLab();
   }
 
   protected downloadGradeCard(): void {
-    // ponytail: opens `grade_card_pdf_url`, re-reading the status first when it has expired.
+    this.facade.downloadGradeCard();
   }
 
-  protected openInputFile(_file: AiLabInputFile): void {
-    // ponytail: opens the file's url, re-fetching the brief first when its signed links are stale.
+  protected openInputFile(file: AiLabInputFile): void {
+    this.facade.openInputFile(file);
   }
 
   protected topUp(): void {

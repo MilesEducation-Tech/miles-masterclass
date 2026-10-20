@@ -542,7 +542,7 @@
                 <app-error-state
                   class="mt-3 block"
                   title="Couldn't load your agents"
-                  message="We hit a snag reaching your Copilot environment. Try again in a moment."
+                  [message]="artefactsErrorMessage()"
                   retryLabel="Try again"
                   (retry)="refreshArtefacts()"
                 />
@@ -630,7 +630,8 @@
                     @if (labProvisioned()) {
                       No agents or workflows yet — build one in Copilot Studio, then refresh.
                     } @else {
-                      Your AI Lab environment is still being set up. Refresh in a minute.
+                      You don't have an AI Labs account yet. Create it from the AI Labs page — it
+                      takes a few minutes — then sign in again and refresh.
                     }
                   </p>
                   <button

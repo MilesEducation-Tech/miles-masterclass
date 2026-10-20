@@ -260,6 +260,34 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       (98 warnings); structure ✔; `build:prod` 239.53 kB; `build-storybook` ✔.
     - **Size:** ~1,500 changed lines across 8 files: the page conversion, the model, and the
       story fixtures and stub. Well over the guideline; most of it is mechanical.
+  - **PR 4 split: 4a = the course page's practical, 4b = credits and progress** (tokens,
+    top-up dialog, `practical-progress/`, mounting the meter and the panel).
+  - **PR 4a DONE, UNCOMMITTED:**
+    - **Routes:** `AI_LABS_API` gains `assignmentBrief`, `agents`, `flows`, `assignmentStatus`
+      and `assignmentSubmit`.
+    - **`AiLabCourseFacade`'s idle signals are now reads,** all `QUIET`.
+      - The brief is read once started. Its 409 `ai_lab_assignment_not_configured` drives
+        `labMapped`, and `briefUnavailable` relays its message.
+      - Agents and flows are read once the exam is passed and the lab is mapped. Both failing
+        means `artefactsError`, with a re-login message for `AI_LABS_ACCESS_DENIED` /
+        `TOKEN_REJECTED`. `is_provisioned: false` means `labProvisioned` is false.
+      - The status is read once started.
+    - **Grading poll:** every 12 s while `submission_id` is set and the status is `in_progress`,
+      capped at 30 min. When it settles, progress is re-read so the CTA moves to feedback.
+    - **Actions:**
+      - `submitPractical` POSTs, toasts the server's message, and re-reads the status, which
+        starts the poll.
+      - `downloadGradeCard`: an expired link is re-read from the status first, into a tab opened
+        inside the click.
+      - `openInputFile` re-fetches the brief when its signed links are older than 50 min and
+        matches the file by name.
+      - `refreshArtefacts` and `refreshStatus` re-read.
+    - **Page:** the actions call the facade. Resubmit scrolls to the reopened picker. The picker
+      error takes `artefactsErrorMessage`. The unprovisioned copy now says "no AI Labs account
+      yet — create it from the AI Labs page". `launchLab` stays inert (Q3); `topUp` waits for 4b.
+    - **Verified:** tsc 0; lint 0 errors (98 warnings); structure ✔; `build:prod` 239.52 kB;
+      `build-storybook` ✔. **Not exercised in the app** — it needs a signed-in learner past a
+      lab's exam.
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
@@ -5672,6 +5700,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-20 · NON-REFACTOR · **MIL-117 PR 4a built** (uncommitted): the course page's practical on `web-api/v1` — brief, agents/flows, submit, 12 s grading poll, grade card + input-file re-signing · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · not exercised in-app (needs a signed-in learner past the exam)
 
 - 2026-10-20 · NON-REFACTOR · **MIL-117 PR 3 built** (uncommitted): `AiLabCourseFacade` on the lab route (behind `authGuard`) — detail / started / progress reads, start, video-progress reports; page converted from inputs to the facade and from `ContentDetails` to the lab detail; START and AI_LAB CTA stages · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · guest 302 to login verified; signed-in unverified
 
