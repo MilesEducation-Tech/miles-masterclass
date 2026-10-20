@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { argsToTemplate } from '@storybook/angular';
 import { AiLabTokenMeter } from './ai-lab-token-meter';
-import { MOCK_AI_LAB_BALANCE } from '@testing/mocks/ai-labs.mock';
+import { MOCK_AI_LAB_BALANCE, MOCK_AI_LAB_PENDING_REQUEST } from '@testing/mocks/ai-labs.mock';
 
 /**
  * The floating Copilot Credits pill. It positions itself `fixed` at the bottom-start corner, so
@@ -24,19 +24,26 @@ export const Default: Story = {
   args: { balance: MOCK_AI_LAB_BALANCE },
 };
 
-/** Past 75% of the allotment the bar warns. */
+/** Past 75% of the cap the bar warns. */
 export const Warning: Story = {
-  args: { balance: { allotted: 5000, used: 4000, remaining: 1000, pendingTokens: null } },
+  args: { balance: { ...MOCK_AI_LAB_BALANCE, used: '2000.00', remaining: '500.00' } },
 };
 
 /** Past 90% it alarms. */
 export const Critical: Story = {
-  args: { balance: { allotted: 5000, used: 4800, remaining: 200, pendingTokens: null } },
+  args: { balance: { ...MOCK_AI_LAB_BALANCE, used: '2400.50', remaining: '99.50' } },
+};
+
+/** AI Labs paused the account: the pill reads "Paused" instead of a remaining figure. */
+export const Locked: Story = {
+  args: {
+    balance: { ...MOCK_AI_LAB_BALANCE, used: '2500.00', remaining: '0.00', locked: true },
+  },
 };
 
 /** While a request is open the Top up control is replaced, not disabled — one at a time. */
 export const PendingRequest: Story = {
-  args: { balance: { ...MOCK_AI_LAB_BALANCE, pendingTokens: 2000 } },
+  args: { balance: { ...MOCK_AI_LAB_BALANCE, pending_request: MOCK_AI_LAB_PENDING_REQUEST } },
 };
 
 export const Submitting: Story = {

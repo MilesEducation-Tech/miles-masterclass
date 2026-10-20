@@ -14,9 +14,13 @@
     >
       <div class="flex items-baseline justify-between gap-2">
         <p class="truncate text-[12px] font-semibold text-foreground">
-          {{ tokens.remaining | number }} tokens left
+          @if (tokens.locked) {
+            Paused &middot; credits used up
+          } @else {
+            {{ tokens.remaining | number: '1.0-2' }} credits left
+          }
         </p>
-        @if (tokens.pendingTokens === null) {
+        @if (!tokens.pending_request) {
           <button
             app-button
             type="button"
@@ -36,12 +40,12 @@
         size="sm"
         [value]="usedPercent()"
         [variant]="meterVariant()"
-        [ariaLabel]="tokens.used + ' of ' + tokens.allotted + ' AI Lab tokens used'"
+        [ariaLabel]="tokens.used + ' of ' + tokens.cap + ' AI Lab credits used'"
       />
 
-      @if (tokens.pendingTokens !== null) {
+      @if (tokens.pending_request; as pending) {
         <p class="mt-1.5 text-[10.5px] text-muted-foreground" role="status" aria-live="polite">
-          +{{ tokens.pendingTokens | number }} requested — awaiting approval
+          +{{ pending.credits_requested | number }} requested — pending
         </p>
       }
     </div>

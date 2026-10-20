@@ -1,0 +1,91 @@
+<app-dialog ariaLabel="Request more credits" panelClass="p-0 max-w-full">
+  <!-- Dark card built from site tokens, matching ai-lab-terms-dialog. -->
+  <div
+    class="relative flex max-h-[85vh] w-[min(560px,92vw)] flex-col overflow-hidden rounded-2xl border border-border bg-muted"
+  >
+    <div class="absolute top-3 end-3 z-10">
+      <button
+        app-button
+        type="button"
+        class="rounded-full"
+        variant="ghost"
+        size="icon"
+        aria-label="Close"
+        (click)="dialogRef.close()"
+      >
+        <ng-icon name="heroXMark" aria-hidden="true" />
+      </button>
+    </div>
+
+    <div class="shrink-0 px-6 pt-6 pb-4">
+      <h2 class="pe-10 text-lg font-semibold text-foreground">Request more credits</h2>
+      <p class="mt-2 text-sm text-muted-foreground">
+        You have {{ data.remaining | number: '1.0-2' }} of {{ data.cap | number }} credits left.
+        Pick an add-on and we'll send it for approval — you can have one open request at a time.
+      </p>
+    </div>
+
+    <div class="min-h-0 flex-1 space-y-4 overflow-y-auto border-y border-border px-6 py-5">
+      <fieldset class="space-y-3">
+        <legend class="sr-only">Add-on size</legend>
+
+        @for (option of options; track option.tokens) {
+          <label
+            class="flex cursor-pointer gap-3 rounded-xl border-2 p-4 transition-colors"
+            [class]="
+              selected() === option.tokens
+                ? 'border-accent bg-accent/10'
+                : 'border-border bg-black/20 hover:border-accent/50'
+            "
+          >
+            <input
+              type="radio"
+              name="ai-lab-token-add-on"
+              class="mt-0.5 size-4 shrink-0 accent-accent"
+              autocomplete="off"
+              [checked]="selected() === option.tokens"
+              (change)="selected.set(option.tokens)"
+            />
+            <span class="flex-1">
+              <span class="block text-sm font-semibold text-foreground">{{ option.label }}</span>
+              <span class="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                {{ option.hint }}
+              </span>
+            </span>
+          </label>
+        }
+      </fieldset>
+
+      <app-field>
+        <label ngpLabel for="ai-lab-token-reason">Why do you need more credits? (optional)</label>
+        <textarea
+          app-textarea
+          id="ai-lab-token-reason"
+          rows="3"
+          placeholder="A line of context helps whoever reviews the request."
+          [attr.aria-invalid]="reasonTooLong() || null"
+          [value]="reason()"
+          (input)="typed($event)"
+        ></textarea>
+        <!-- `!`: the field's own `[ngpDescription]` colour is a descendant selector and outranks a
+             plain utility. -->
+        <p ngpDescription [class]="reasonTooLong() ? 'text-destructive!' : ''">
+          {{ reasonLength() }} / {{ reasonMax }}
+        </p>
+      </app-field>
+    </div>
+
+    <div class="flex shrink-0 flex-col gap-3 px-6 pt-4 pb-6 sm:flex-row sm:justify-end">
+      <button app-button type="button" variant="outline" (click)="dialogRef.close()">Cancel</button>
+      <button
+        app-button
+        type="button"
+        variant="primary"
+        [disabled]="!canSubmit()"
+        (click)="submit()"
+      >
+        Send request
+      </button>
+    </div>
+  </div>
+</app-dialog>

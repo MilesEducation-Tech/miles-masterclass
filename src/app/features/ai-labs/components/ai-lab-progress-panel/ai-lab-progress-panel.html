@@ -23,7 +23,7 @@
       }
     </div>
   </section>
-} @else if (totals(); as p) {
+} @else if (progress(); as p) {
   <section
     id="your-progress"
     class="w-11/12 max-w-6xl mx-auto scroll-mt-24"
@@ -98,10 +98,11 @@
       />
     }
 
-    <!-- Copilot Credits. The floating pill shows the same balance as a glanceable minimum; this is
-         the full picture — used against allotted, the burn bar, and whatever request is open.
-         Gated exactly as the pill is: no balance means no allotment, which renders as nothing
-         rather than a row of zeros. -->
+    <!-- Copilot Credits, from `web-api/v1/ai-labs/tokens/`. The floating pill shows the same balance
+         as a glanceable minimum; this is the full picture — used against the cap, the burn bar,
+         sync dates, and whatever request is open. Gated exactly as the pill is: no balance means
+         no allotment, which renders as nothing rather than a row of zeros. Amounts are decimal
+         strings, formatted by DecimalPipe and never computed with. -->
     @if (balance(); as tokens) {
       <div class="mt-4 rounded-2xl border border-border bg-card/40 p-4 sm:p-6">
         <div class="flex flex-wrap items-start justify-between gap-3">
@@ -118,9 +119,9 @@
                 Copilot Credits
               </p>
               <p class="mt-0.5 font-mono text-xl font-bold text-foreground">
-                {{ tokens.remaining | number }}
+                {{ tokens.remaining | number: '1.0-2' }}
                 <span class="text-[12.5px] font-normal text-muted-foreground">
-                  left of {{ tokens.allotted | number }}
+                  left of {{ tokens.cap | number }}
                 </span>
               </p>
             </div>
@@ -128,13 +129,17 @@
 
           <!-- While a request is open the control is replaced, not disabled: one at a time is the
                server's rule, so there is nothing to click. -->
-          @if (tokens.pendingTokens !== null) {
+          @if (tokens.pending_request; as pending) {
             <span
               class="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-[11.5px] font-medium text-accent"
               role="status"
               aria-live="polite"
             >
-              +{{ tokens.pendingTokens | number }} requested &middot; awaiting approval
+              +{{ pending.credits_requested | number }} requested &middot; pending
+              <!-- The guide's request carries no timestamp yet; "since" shows once it does. -->
+              @if (pending.created_at) {
+                since {{ pending.created_at | date: 'd MMM' }}
+              }
             </span>
           } @else {
             <button
@@ -155,14 +160,38 @@
           size="sm"
           [value]="usedPercent()"
           [variant]="meterVariant()"
-          [ariaLabel]="tokens.used + ' of ' + tokens.allotted + ' AI Lab tokens used'"
+          [ariaLabel]="tokens.used + ' of ' + tokens.cap + ' AI Lab credits used'"
         />
         <!-- Rounded for reading only. `usedPercent` stays unrounded so the bar and the warning
              thresholds keep their precision. -->
         <p class="mt-2 text-[12px] text-muted-foreground">
-          {{ tokens.used | number }} used &middot; {{ usedPercent() | number: '1.0-0' }}% of your
-          allotment
+          {{ tokens.used | number: '1.0-2' }} used &middot; {{ usedPercent() | number: '1.0-0' }}%
+          of your cap
+          @if (hasStat(tokens.non_billable)) {
+            &middot; +{{ tokens.non_billable | number: '1.0-2' }} non-billable
+          }
         </p>
+        <!-- `as_of` is the day the usage covers; `synced_at` is when AI Labs last pulled it from
+             Microsoft. Both null until the first sync. -->
+        @if (tokens.as_of || tokens.synced_at) {
+          <p class="mt-1 text-[11.5px] text-muted-foreground/80">
+            @if (tokens.as_of; as asOf) {
+              Usage as of {{ asOf | date: 'd MMM' }}
+            }
+            @if (tokens.as_of && tokens.synced_at) {
+              &middot;
+            }
+            @if (tokens.synced_at; as syncedAt) {
+              last updated {{ syncedAt | date: 'd MMM, HH:mm' }}
+            }
+          </p>
+        }
+        <!-- Shown as AI Labs reports it — "0.00" left is not the same as locked. -->
+        @if (tokens.locked) {
+          <p class="mt-3 text-[12.5px] text-destructive" role="status">
+            Your lab access is paused — credits used up. Request more to continue.
+          </p>
+        }
       </div>
     }
 
@@ -189,7 +218,7 @@
           <div class="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">
-                <h3 class="text-[15px] font-semibold text-foreground">{{ row.title }}</h3>
+                <h3 class="text-[15px] font-semibold text-foreground">{{ title(row) }}</h3>
                 <span
                   class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold"
                   [class]="status.class"
@@ -199,10 +228,7 @@
               </div>
               <p class="mt-1.5 text-[12.5px] text-muted-foreground">
                 {{ row.attempts | number }} {{ row.attempts === 1 ? 'attempt' : 'attempts' }}
-                @if (row.last_submitted_at) {
-                  &middot; last submitted {{ row.last_submitted_at | date: 'd MMM y' }}
-                }
-                @if (!row.course) {
+                @if (!row.ai_lab_course_id) {
                   &middot; not yet available on Masterclass
                 }
               </p>
@@ -211,26 +237,30 @@
             <div class="flex items-center gap-5 sm:shrink-0">
               <div class="text-end">
                 <p class="font-mono text-lg font-bold text-foreground">
-                  {{ row.best_percentage === null ? '—' : row.best_percentage + '%' }}
+                  @if (row.best_percentage === null) {
+                    —
+                  } @else {
+                    {{ row.best_percentage | number: '1.0-2' }}%
+                  }
                 </p>
                 <p class="text-[11px] text-muted-foreground">
                   @if (
                     row.latest_percentage !== null && row.latest_percentage !== row.best_percentage
                   ) {
-                    Best &middot; latest {{ row.latest_percentage }}%
+                    Best &middot; latest {{ row.latest_percentage | number: '1.0-2' }}%
                   } @else {
                     Best score
                   }
                 </p>
               </div>
 
-              @if (row.course) {
+              @if (row.ai_lab_course_id) {
                 <button
                   app-button
                   type="button"
                   class="shrink-0"
                   variant="outline"
-                  [attr.aria-label]="ctaLabel(row) + ': ' + row.title"
+                  [attr.aria-label]="ctaLabel(row) + ': ' + title(row)"
                   (click)="openAssignment.emit(row)"
                 >
                   {{ ctaLabel(row) }}

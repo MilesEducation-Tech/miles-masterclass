@@ -332,73 +332,91 @@ export const AI_LAB_SECTIONS: AiLabSection[] = [
 ];
 
 /* =====================================================================
-   Learner progress + token allotment.
+   Learner progress + Copilot Credits.
 
-   View models for `ai-lab-progress-panel` and `ai-lab-token-meter`. Both
-   components are presentational and take these as inputs, so the shapes
-   describe what the UI renders rather than what any endpoint returns — the
-   reads behind them are not bound yet.
+   Wire types, straight from `docs/AI_LABS_API.md` §8: `progress` of
+   `GET web-api/v1/ai-labs/practical-progress/` and `tokens` of
+   `GET web-api/v1/ai-labs/tokens/`. The panel and the meter take them as
+   inputs unchanged, so binding them is passing the field through.
    ===================================================================== */
-
-/**
- * The course behind an assignment row, or `null` when the assignment exists on AI Labs but isn't
- * mapped to a Masterclass course yet. A null course has no page, so the row renders without a link.
- *
- * Deliberately lean rather than the full `Content`: the row shows a thumbnail, a title and opens a
- * page, and claiming the whole type would promise fields this surface never reads.
- */
-export interface AiLabAssignmentCourse {
-  id: number;
-  title: string;
-  /** Portrait (9:16) crop — the row tile is poster-shaped. */
-  thumbnail?: string | null;
-  /** The 16:9 twin, used only when the portrait crop is missing. */
-  horizontal_thumbnail?: string | null;
-}
 
 /**
  * One row of the assignment list.
  *
- * `status` is an open union: only a handful of values are evidenced, so one the backend adds later
- * renders as itself rather than vanishing — see `statusUi` in the panel.
+ * `status` is an open string: the guide shows `graded`, and upstream's design names `not_started`,
+ * `draft`, `submitted`, `grading` and `failed`. One the backend adds later renders as itself rather
+ * than vanishing — see `statusUi` in the panel.
+ *
+ * The `ai_lab_*` trio is stamped only on rows that match a lab in this catalogue. The read spans every
+ * assignment the learner ever attempted, so a row without them has no page to open.
  */
-export interface AiLabAssignmentProgress {
+export interface AiLabPracticalAssignment {
   assignment_id: string;
-  title: string;
+  slug: string;
   status: string;
   attempts: number;
-  course: AiLabAssignmentCourse | null;
-  /** Null until the first graded submission — render a dash, never 0%. */
-  best_percentage: number | null;
-  latest_percentage: number | null;
-  /** ISO timestamp. */
-  last_submitted_at: string | null;
+  /** Decimal strings (`"78.50"`), null until the first graded submission — render a dash, never 0%. */
+  best_percentage: string | null;
+  latest_percentage: string | null;
+  latest_submission_id: string | null;
+  ai_lab_course_id?: string;
+  ai_lab_course_name?: string;
+  ai_lab_square_thumbnail_url?: string | null;
 }
 
 /**
- * The learner's totals. `average_percentage` is server-owned — never recompute it from the rows,
- * for the same reason `remaining` tokens aren't derived from `allotted - used`.
+ * The learner's totals and rows. `average_percentage` is server-owned — never recompute it from the
+ * rows, for the same reason `remaining` credits aren't derived from `cap - used`.
+ *
+ * `total_submissions` and `last_activity_at` are in upstream's design but not in the guide's
+ * payload. They stay optional so the tile and the "Last active" line drop out rather than read 0.
  */
-export interface AiLabProgressTotals {
+export interface AiLabPracticalProgress {
   assignments_available: number;
   assignments_attempted: number;
   assignments_completed: number;
-  total_submissions: number;
-  average_percentage: number;
-  /** ISO timestamp, or null when nothing has been attempted. */
-  last_activity_at: string | null;
+  average_percentage: string;
+  assignments: AiLabPracticalAssignment[];
+  total_submissions?: number;
+  last_activity_at?: string | null;
+}
+
+/** An open top-up request. Only `credits_requested` and `status` are evidenced in the guide. */
+export interface AiLabTokenRequest {
+  id: string;
+  credits_requested: number;
+  status: 'pending' | 'approved' | 'rejected';
+  source: 'learner' | 'admin';
+  /** ISO timestamp; not in the guide's sample, so "pending since" only shows when it is sent. */
+  created_at?: string;
 }
 
 /**
- * The Copilot Credits allotment. `null` anywhere one of these is expected means "no allotment",
- * which both surfaces render as absence rather than a row of zeros.
+ * The Copilot Credits balance. Amounts are decimal strings — formatted by `DecimalPipe` and never
+ * computed with, except the meter's percentage. `null` where one of these is expected means "no
+ * allotment", which both surfaces render as absence rather than a row of zeros.
  */
 export interface AiLabTokenBalance {
-  allotted: number;
-  used: number;
-  remaining: number;
-  /** Tokens on an open top-up request, or `null` when none is pending. */
-  pendingTokens: number | null;
+  cap: number;
+  used: string;
+  remaining: string;
+  non_billable: string;
+  /** The day the usage covers. Null until the first sync. */
+  as_of: string | null;
+  /** When AI Labs last pulled usage from Microsoft. Null until the first sync. */
+  synced_at: string | null;
+  /** Lab access paused. Reported, not derived — "0.00" left is not the same as locked. */
+  locked: boolean;
+  pending_request: AiLabTokenRequest | null;
+}
+
+/** The two add-on sizes `tokens-request/` accepts. */
+export type AiLabTokenAddOn = 500 | 1000;
+
+/** Body of `POST api/v1/ai-labs/tokens-request/`. Strict: no other keys. */
+export interface AiLabTokenRequestBody {
+  tokens: AiLabTokenAddOn;
+  reason?: string;
 }
 
 /* =====================================================================

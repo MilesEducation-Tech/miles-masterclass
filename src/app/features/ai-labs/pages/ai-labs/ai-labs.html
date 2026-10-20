@@ -91,7 +91,7 @@
          from the original; every path still runs through activate(). -->
         <div class="mt-4 w-full max-w-md sm:mt-10">
           @let awaitingAccount = accountRequested() && !hasLabAccount();
-          <!-- @let showResend = hasLabAccount() && !auth.isSignedIn(); -->
+          @let showResend = hasLabAccount() && !auth.isSignedIn();
 
           <div class="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <button
@@ -109,21 +109,21 @@
               <span>{{ ctaLabel() }}</span>
             </button>
 
-            <!-- Provisioning takes ~a minute, so while we wait the secondary slot is a manual
-             profile refresh; it becomes the resend once the account exists. -->
-            @if (awaitingAccount) {
+            <!-- Provisioning takes ~a minute and the status is polled, so the secondary slot is a
+             manual fallback — needed once the poll gives up. It becomes the resend once the
+             account exists. -->
+            @if (awaitingAccount || (stillPending() && !hasLabAccount())) {
               <button
                 app-button
                 type="button"
                 class="h-14 w-full shrink-0 rounded-xl text-sm sm:w-[9.5rem]"
                 variant="outline"
-                [disabled]="milesAuth.isLoadingProfile()"
+                [disabled]="account.loading()"
                 (click)="refreshStatus()"
               >
-                {{ milesAuth.isLoadingProfile() ? 'Checking…' : 'Refresh' }}
+                {{ account.loading() ? 'Checking…' : 'Refresh' }}
               </button>
-            }
-            <!-- @else if (showResend) {
+            } @else if (showResend) {
               <button
                 app-button
                 type="button"
@@ -134,25 +134,28 @@
               >
                 {{ submitting() ? 'Sending…' : 'Resend Credential' }}
               </button>
-            } -->
+            }
           </div>
 
           @if (awaitingAccount) {
-            <p class="mt-2 text-center text-xs text-muted-foreground" role="status">
-              Check your email — we've sent your Miles AI Lab email and password. It can take up to
-              a minute to arrive.
+            <p
+              class="mt-2 text-center text-xs text-muted-foreground"
+              role="status"
+              aria-live="polite"
+            >
+              Setting up your lab… Check your email — we'll send your Miles AI Lab email and
+              password. It can take up to a minute to arrive.
             </p>
-            @if (stillPending()) {
-              <p class="mt-1 text-center text-xs text-muted-foreground" role="status">
-                Your account isn't ready yet. Give it a moment and hit refresh.
-              </p>
-            }
-          }
-          <!-- @else if (showResend) {
+          } @else if (stillPending() && !hasLabAccount()) {
+            <p class="mt-2 text-center text-xs text-muted-foreground" role="status">
+              This is taking longer than expected. Hit refresh, or contact support if it doesn't
+              clear.
+            </p>
+          } @else if (showResend) {
             <p class="mt-2 text-center text-xs text-muted-foreground">
               Resending emails you a brand-new password — your current one stops working.
             </p>
-          } -->
+          }
 
           @if (auth.error(); as err) {
             <p class="mt-3 text-center text-xs text-destructive" role="alert">{{ err }}</p>

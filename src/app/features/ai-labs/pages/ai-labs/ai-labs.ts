@@ -210,8 +210,14 @@ export class AiLabs {
     identity: signal<string | null>(null),
   };
   protected readonly milesAuth = {
-    isLoadingProfile: signal(false),
     isLoggedIn: signal(false),
+  };
+  /**
+   * ponytail: the lab-account status read, inert until the `account-ensure/` binding lands. Named
+   * as upstream names it so the template is theirs line for line.
+   */
+  protected readonly account = {
+    loading: signal(false),
   };
   private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
@@ -406,8 +412,8 @@ export class AiLabs {
   /**
    * A refresh finished and the account still isn't there. Without this the
    * button reads as dead — nothing on screen changes when the answer is "not
-   * yet". Derived rather than timed: `isLoadingProfile` is set synchronously by
-   * `fetchMyProfile`, so this can't flash true between click and response.
+   * yet". Derived rather than timed, so it can't flash true between click and
+   * response. It also keeps the Refresh fallback on screen once the poll gives up.
    */
   protected readonly stillPending = computed(
     () => this.refreshAttempted() && !this.hasLabAccount(),

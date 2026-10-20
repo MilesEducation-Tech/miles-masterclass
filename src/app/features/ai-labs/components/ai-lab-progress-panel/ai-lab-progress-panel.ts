@@ -10,8 +10,8 @@ import {
 } from '@ng-icons/lucide';
 import { InViewDirective, HoverSpringDirective } from '@code_with_sachin/ngx-motion';
 import {
-  AiLabAssignmentProgress,
-  AiLabProgressTotals,
+  AiLabPracticalAssignment,
+  AiLabPracticalProgress,
   AiLabTokenBalance,
 } from '@features/ai-labs/models/ai-labs.model';
 import { hasStatValue, labCompletionPercent } from '@features/ai-labs/utils/progress-stats';
@@ -27,10 +27,11 @@ import { Progress } from '@shared/ui/progress/progress';
  */
 const STATUS_UI: Record<string, { label: string; class: string }> = {
   not_started: { label: 'Not started', class: 'border-border bg-white/5 text-muted-foreground' },
-  in_progress: { label: 'In progress', class: 'border-accent/40 bg-accent/10 text-accent' },
+  draft: { label: 'Draft', class: 'border-border bg-white/5 text-muted-foreground' },
   submitted: { label: 'Submitted', class: 'border-accent/40 bg-accent/10 text-accent' },
+  grading: { label: 'Grading', class: 'border-accent/40 bg-accent/10 text-accent' },
   graded: { label: 'Graded', class: 'border-success/40 bg-success-bg text-success' },
-  error: {
+  failed: {
     label: 'Needs attention',
     class: 'border-destructive/40 bg-destructive/10 text-destructive',
   },
@@ -56,9 +57,10 @@ function humanise(status: string): string {
  * "How it works" rail on the AI Labs landing page.
  *
  * **Presentational, and not yet mounted anywhere.** The source design injects a progress store and
- * a token service; here everything arrives as inputs, because the reads are not bound. Nothing
- * fabricated is shown to a learner in the meantime — `*.stories.ts` is where the design is
- * reviewed, with sample data from `@testing/`.
+ * a token service; here everything arrives as inputs. `progress` is the `progress` object of
+ * `web-api/v1/ai-labs/practical-progress/` and `balance` the `tokens` object of `tokens/`, both as
+ * sent, so binding is passing them through. Nothing fabricated is shown to a learner in the
+ * meantime — `*.stories.ts` is where the design is reviewed, with sample data from `@testing/`.
  *
  * Self-gating, like `AiLabTokenMeter`: with no totals it renders nothing, so a host page drops it
  * in without an `@if`. A failed read should render nothing too — this is supplementary content on
@@ -86,10 +88,8 @@ function humanise(status: string): string {
   ],
 })
 export class AiLabProgressPanel {
-  /** The learner's totals. `null` renders the section as absent. */
-  readonly totals = input<AiLabProgressTotals | null>(null);
-
-  readonly assignments = input<readonly AiLabAssignmentProgress[]>([]);
+  /** Totals and rows. `null` renders the section as absent. */
+  readonly progress = input<AiLabPracticalProgress | null>(null);
 
   /** Copilot Credits. `null` means no allotment — the card is dropped, not zeroed. */
   readonly balance = input<AiLabTokenBalance | null>(null);
@@ -100,7 +100,9 @@ export class AiLabProgressPanel {
   readonly submitting = input(false);
 
   readonly topUp = output<void>();
-  readonly openAssignment = output<AiLabAssignmentProgress>();
+  readonly openAssignment = output<AiLabPracticalAssignment>();
+
+  protected readonly assignments = computed(() => this.progress()?.assignments ?? []);
 
   /**
    * The header tiles.
@@ -111,7 +113,7 @@ export class AiLabProgressPanel {
    * denominator, since a catalogue of 0 makes the whole ratio meaningless.
    */
   protected readonly stats = computed<ProgressStat[]>(() => {
-    const p = this.totals();
+    const p = this.progress();
     if (!p) return [];
     return [
       {
@@ -134,7 +136,8 @@ export class AiLabProgressPanel {
       },
       {
         icon: 'lucideGauge',
-        value: `${p.average_percentage}%`,
+        // A decimal string ("49.00"); `Number` drops the trailing zeros, as the old numeric field read.
+        value: `${Number(p.average_percentage)}%`,
         label: 'Average score',
         figure: p.average_percentage,
       },
@@ -144,13 +147,13 @@ export class AiLabProgressPanel {
   });
 
   protected readonly completionPercent = computed(() => {
-    const p = this.totals();
+    const p = this.progress();
     return p ? labCompletionPercent(p.assignments_completed, p.assignments_available) : 0;
   });
 
   protected readonly usedPercent = computed(() => {
     const b = this.balance();
-    return b ? tokenUsedPercent(b.allotted, b.used) : 0;
+    return b ? tokenUsedPercent(b.cap, b.used) : 0;
   });
 
   protected readonly meterVariant = computed(() => tokenMeterVariant(this.usedPercent()));
@@ -163,16 +166,23 @@ export class AiLabProgressPanel {
   }
 
   /**
-   * Portrait crop first — the row tile is 9:16, and `thumbnail` is the crop cut for that shape.
-   * `horizontal_thumbnail` is the 16:9 twin and only stands in when the portrait one is missing.
-   * Empty strings count as missing.
+   * The lab's square crop, the only art the payload stamps on a row. The tile stays 9:16 as
+   * designed, so `object-cover` trims its sides. Empty strings count as missing.
    */
-  protected thumbnail(row: AiLabAssignmentProgress): string | null {
-    return row.course?.thumbnail || row.course?.horizontal_thumbnail || null;
+  protected thumbnail(row: AiLabPracticalAssignment): string | null {
+    return row.ai_lab_square_thumbnail_url || null;
+  }
+
+  /**
+   * The lab's name when the row matches a lab in this catalogue; otherwise the assignment's slug,
+   * humanised, because the payload carries no other title for it.
+   */
+  protected title(row: AiLabPracticalAssignment): string {
+    return row.ai_lab_course_name || humanise(row.slug);
   }
 
   /** A lab with no attempts has nothing to continue. */
-  protected ctaLabel(row: AiLabAssignmentProgress): string {
+  protected ctaLabel(row: AiLabPracticalAssignment): string {
     return row.attempts > 0 ? 'Continue' : 'Start lab';
   }
 }

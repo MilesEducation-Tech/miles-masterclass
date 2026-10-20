@@ -108,11 +108,39 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       bar removed. Its data layer calls `v2/ai-lab/*`, which is **404 on our UAT**, so only its UI
       ports. The user wants it ported exactly, bound to the backend's FE guide, now saved as
       **`docs/AI_LABS_API.md`**.
-  - **Next: `prompts/ai-labs-api-binding.md` (rewritten 2026-10-20), awaiting approval + MIL
-    numbers.** 6 PRs: 1a landing/widgets UI, 1b course-page UI, 2 landing binding, 3 lab-page
+  - **Plan approved 2026-10-20 (`prompts/ai-labs-api-binding.md`).** The parity commit
+    `4234fc4` is pushed on **`feat/MIL-117-ai-labs-refactor`** — one MIL number for the whole
+    plan so far. 6 PRs: 1a landing/widgets UI, 1b course-page UI, 2 landing binding, 3 lab-page
     reads (blocked on the missing video URL), 4 practical, 5 quiz/exam/feedback. Five divergences
     from upstream, all forced by the guide. The main one: feedback stays gated on the AI practical
     (`ai_assessment_not_completed`), not opened on the exam pass.
+  - **PR 1a DONE, UNCOMMITTED (UI catch-up: landing + widgets, to upstream `ce0194a4`):**
+    - **Landing hero:** Resend Credential is live in the template; "Setting up your lab…" and
+      "taking longer than expected" copy; Refresh stays as the fallback after the poll. A new
+      inert `account.loading` stub replaces `milesAuth.isLoadingProfile`, named as upstream names
+      it.
+    - **Wire types:** `AiLabTokenBalance` / `AiLabTokenRequest` are the guide's `tokens/` shape (=
+      upstream V2); `AiLabPracticalProgress` / `AiLabPracticalAssignment` replace
+      `AiLabProgressTotals` / `AiLabAssignmentProgress` / `AiLabAssignmentCourse`. The panel takes
+      one `progress` input (the payload's `progress` object as sent).
+    - **Token meter + panel:** credits-left / cap, non-billable, as-of / synced, locked; status
+      labels draft / grading / failed. `tokenUsedPercent(cap, used: string)`.
+    - **New dialog:** `features/ai-labs/dialogs/ai-lab-token-request-dialog/` (500/1000, 500-char
+      reason) on `app-dialog` + `Field` + `Textarea`. Not opened from anywhere yet; PR 4 wires it.
+    - **Divergences:**
+      - The row title is `ai_lab_course_name`, or the humanised slug.
+      - The "last submitted" line is gone (not in the guide).
+      - "Pending since" shows only when `created_at` is sent.
+      - The thumbnail is the square crop in the 9:16 tile.
+    - **Verified:** headless-Chrome screenshots of the panel (pending top-up), the locked pill
+      and the dialog. tsc 0; lint 0 errors (98 warnings); structure ✔; `build:prod` 1.05 MB,
+      `ai-labs.css` 15.86 kB; `build-storybook` ✔. **The landing hero's new branches were not
+      seen in a browser** (the stubs can't reach them).
+    - **Finding, not fixed (shared testing infra):** every story that wraps `app-dialog` fails
+      with NG0201 (`dialog-share--default` too). `provideStoryDialogRef` needs
+      `provideExitAnimationManager()` (from `ng-primitives/internal`) and a `config: {}` on the
+      ref; proven by a temporary edit, then reverted.
+    - **Size:** ~775 changed lines, about half of it mocks and stories. Over the ~400 guideline.
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
@@ -5525,6 +5553,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-20 · NON-REFACTOR · **MIL-117 PR 1a built** (uncommitted): landing account states (Resend Credential, polled-status copy), token meter + progress panel on the guide's `tokens/` / `practical-progress/` shapes, new top-up dialog · lint 0 errors, structure ✔, build:prod 1.05 MB, storybook ✔ · screenshots checked; hero branches unseen
 
 - 2026-10-20 · NON-REFACTOR · **AI Labs: header spotlight ported + catch-up planned.** Header "AI Labs" pill + dot (upstream `1056a2b3`), Beta badge and underline removed · lint 0 errors, structure ✔, build:prod 1.05 MB · found upstream's UI is ahead on `feat/ai-labs-refactor@ce0194a4`; FE guide saved as `docs/AI_LABS_API.md`; `prompts/ai-labs-api-binding.md` rewritten as a 6-PR UI-catch-up + `web-api/v1` binding plan; awaiting approval
 

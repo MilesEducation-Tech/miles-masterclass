@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { argsToTemplate } from '@storybook/angular';
 import { AiLabProgressPanel } from './ai-lab-progress-panel';
 import {
-  MOCK_AI_LAB_ASSIGNMENTS,
   MOCK_AI_LAB_BALANCE,
-  MOCK_AI_LAB_TOTALS,
+  MOCK_AI_LAB_PENDING_REQUEST,
+  MOCK_AI_LAB_PROGRESS,
 } from '@testing/mocks/ai-labs.mock';
 
 /**
@@ -28,23 +28,26 @@ export default meta;
 type Story = StoryObj<AiLabProgressPanel>;
 
 export const Default: Story = {
-  args: {
-    totals: MOCK_AI_LAB_TOTALS,
-    assignments: MOCK_AI_LAB_ASSIGNMENTS,
-    balance: MOCK_AI_LAB_BALANCE,
-  },
+  args: { progress: MOCK_AI_LAB_PROGRESS, balance: MOCK_AI_LAB_BALANCE },
 };
 
 /** No allotment: the Copilot Credits card is dropped rather than zeroed. */
 export const WithoutCredits: Story = {
-  args: { totals: MOCK_AI_LAB_TOTALS, assignments: MOCK_AI_LAB_ASSIGNMENTS, balance: null },
+  args: { progress: MOCK_AI_LAB_PROGRESS, balance: null },
 };
 
 export const PendingTopUp: Story = {
   args: {
-    totals: MOCK_AI_LAB_TOTALS,
-    assignments: MOCK_AI_LAB_ASSIGNMENTS,
-    balance: { ...MOCK_AI_LAB_BALANCE, pendingTokens: 2000 },
+    progress: MOCK_AI_LAB_PROGRESS,
+    balance: { ...MOCK_AI_LAB_BALANCE, pending_request: MOCK_AI_LAB_PENDING_REQUEST },
+  },
+};
+
+/** AI Labs paused the account: the card says so, whatever the remaining figure reads. */
+export const Locked: Story = {
+  args: {
+    progress: MOCK_AI_LAB_PROGRESS,
+    balance: { ...MOCK_AI_LAB_BALANCE, used: '2500.00', remaining: '0.00', locked: true },
   },
 };
 
@@ -54,15 +57,13 @@ export const PendingTopUp: Story = {
  */
 export const NothingReported: Story = {
   args: {
-    totals: {
+    progress: {
       assignments_available: 0,
       assignments_attempted: 0,
       assignments_completed: 0,
-      total_submissions: 0,
-      average_percentage: 0,
-      last_activity_at: null,
+      average_percentage: '0.00',
+      assignments: [],
     },
-    assignments: [],
     balance: null,
   },
 };
@@ -71,7 +72,7 @@ export const Loading: Story = {
   args: { isLoading: true },
 };
 
-/** No totals at all — the whole section renders as absence. */
+/** No progress at all — the whole section renders as absence. */
 export const Absent: Story = {
-  args: { totals: null },
+  args: { progress: null },
 };
