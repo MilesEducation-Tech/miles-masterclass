@@ -4,6 +4,7 @@ import { provideMotion } from '@code_with_sachin/ngx-motion';
 import { authGuard } from '@core/guards/auth/auth-guard';
 import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
 import { AiLabAssessmentFacade } from '@features/ai-labs/services/ai-lab-assessment-facade';
+import { AiLabFeedbackFacade } from '@features/ai-labs/services/ai-lab-feedback-facade';
 import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
 import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
 import { AiLabQuizFacade } from '@features/ai-labs/services/ai-lab-quiz-facade';
@@ -51,8 +52,8 @@ export const AI_LABS_ROUTES: Route[] = [
    * of 401s. `CanMatch`, so the chunk isn't even downloaded for them. `AiLabCourseFacade` is
    * route-scoped; the page hands it `:courseId` through `withComponentInputBinding()`.
    *
-   * The quiz opens in this page's video frame; the exam has its own route below, and feedback
-   * joins with its ticket.
+   * The quiz opens in this page's video frame; the exam and the feedback have their own routes
+   * below.
    */
   {
     path: ':courseId/:courseTitle',
@@ -72,5 +73,16 @@ export const AI_LABS_ROUTES: Route[] = [
     providers: [AiLabAssessmentFacade],
     data: { layout: 'plain' },
     loadComponent: () => import('./pages/ai-lab-exam/ai-lab-exam').then((m) => m.AiLabExam),
+  },
+  /**
+   * The lab's feedback, which closes it. Open only once the AI practical is graded — the page reads
+   * the gate and says so otherwise.
+   */
+  {
+    path: ':courseId/:courseTitle/feedback',
+    canMatch: [authGuard],
+    providers: [AiLabFeedbackFacade],
+    loadComponent: () =>
+      import('./pages/ai-lab-feedback/ai-lab-feedback').then((m) => m.AiLabFeedback),
   },
 ];

@@ -363,6 +363,33 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       masterclass screens. A guest on `…/final-assessment` gets 302 → login. Gates: lint 0
       errors; structure ✔; `build:prod` 239.53 kB; `build-storybook` ✔. **Not exercised
       in-app** (blocked behind the video, Q1).
+  - **PR 5c DONE, UNCOMMITTED (feedback — the last screen):**
+    - **Wire types:** `AiLabFeedbackGate` / `Question` / `Response` / `Body` / `Result`. Routes:
+      `feedbackGate`, `feedbackQuestions`, `feedbackSubmit`.
+    - **`AiLabFeedbackFacade`** (route-scoped):
+      - Reads the gate, then the questions only if allowed, plus the lab detail (header) and
+        `learnerName` (`AccountApi`).
+      - `notYet` is the gate's `remark` (our backend opens feedback only after the practical is
+        graded).
+      - The submit sets `done`. A 409 `nasba_conditions_unmet` still lands on the thank-you view,
+        with the server's explanation (the feedback was recorded).
+    - **New route `:courseId/:courseTitle/feedback`** (authGuard).
+    - **`pages/ai-lab-feedback`:** the masterclass course-evaluation markup.
+      - The lab may ask `text` questions: each gets an optional box under the star grid. Every
+        rating is required. The body sends `rating` for ratings and `text_response` for non-empty
+        text answers.
+      - The thank-you view shows the credits and, when `lab_certificate_url` is set, a download
+        link (styled as a link, because `app-button` matches `<button>` only); otherwise a
+        "being generated" note.
+    - **Lab page:** FEEDBACK → `feedback`. DOWNLOAD stays inert (no read carries the
+      certificate link).
+    - **Stories:** `AI Labs/Feedback` — Form, NotYet, ThankYou, RecordedNotClosed.
+    - **Verified:** screenshots of Form and ThankYou match the masterclass evaluation. A guest on
+      `…/feedback` gets 302 → login. Gates: lint 0 errors; structure ✔; `build:prod` 239.45 kB;
+      `build-storybook` ✔.
+  - **The plan's six PRs are all built.** Open for the backend: Q1 the lab video URL (blocks the
+    real flow from the quiz onward), Q3 the launch target, Q5 consent storage, Q4 rubric areas,
+    Q2 test emails. Local SSR needs Node 24 (zstd finding above).
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
@@ -5775,6 +5802,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-20 · NON-REFACTOR · **MIL-117 PR 5c built** (uncommitted): lab feedback — `AiLabFeedbackFacade`, guarded `feedback` route, course-evaluation markup with text questions, thank-you with CPE + certificate link; lab FEEDBACK CTA points at it · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · story screenshots + guest redirect checked · **all six plan PRs built**
 
 - 2026-10-20 · NON-REFACTOR · **MIL-117 PR 5b built** (uncommitted): lab final assessment — `AiLabAssessmentFacade`, `final-assessment` route (guarded, plain layout), exam page + copied result dialog + in-page review from the submit; lab CTA and quiz proceed point at it · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · story screenshots + guest redirect checked
 

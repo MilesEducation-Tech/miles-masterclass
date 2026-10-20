@@ -861,3 +861,61 @@ export function labExamReview(
     };
   });
 }
+
+/* =====================================================================
+   Feedback, which closes the lab.
+
+   Wire types from `docs/AI_LABS_API.md` §9: `course-feedback-gate/<uuid>/`,
+   `course-feedback-questions/<uuid>/` and `course-feedback-submit/<uuid>/`.
+   ===================================================================== */
+
+/**
+ * `data` of `GET web-api/v1/ai-labs/course-feedback-gate/<uuid>/`. A refusal is a 200 with
+ * `allowed: false`: `reason` is `no_ai_lab_enrollment` or `ai_assessment_not_completed`, and
+ * `remark` is the sentence to show.
+ */
+export interface AiLabFeedbackGate {
+  ai_lab_course_id: string;
+  allowed: boolean;
+  reason: string | null;
+  remark: string | null;
+  ai_assessment_completed: boolean;
+  already_submitted: boolean;
+}
+
+export interface AiLabFeedbackQuestion {
+  id: string;
+  feedback_question: string;
+  /** `rating` (1–5 stars) or `text`. */
+  feedback_question_type: string;
+  feedback_question_order: number;
+}
+
+/** One response. A rating question sends `rating`; a text question sends `text_response`. */
+export interface AiLabFeedbackResponse {
+  question_id: string;
+  rating?: number;
+  text_response?: string;
+}
+
+/** Body of `POST api/v1/ai-labs/course-feedback-submit/<uuid>/`. Strict: no other keys. */
+export interface AiLabFeedbackBody {
+  responses: AiLabFeedbackResponse[];
+  optional_feedback_text: string;
+}
+
+/**
+ * `data` of `course-feedback-submit/`: the lab is closed. `lab_certificate_url` is null while the
+ * certificate is generated (`lab_certificate_triggered`).
+ */
+export interface AiLabFeedbackResult {
+  feedback_submitted: boolean;
+  already_submitted: boolean;
+  cpe_awarded: number;
+  lab_certificate_triggered?: boolean;
+  lab_certificate_url?: string | null;
+  badge_issued?: boolean;
+  certificate_triggered?: boolean;
+  masterclass_course_closed?: boolean;
+  next_step: AiLabNextStep;
+}

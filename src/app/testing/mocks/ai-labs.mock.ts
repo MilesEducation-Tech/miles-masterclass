@@ -9,6 +9,8 @@ import {
   AiLabCtaStage,
   AiLabExamPaper,
   AiLabExamResult,
+  AiLabFeedbackQuestion,
+  AiLabFeedbackResult,
   AiLabFlow,
   AiLabPracticalProgress,
   AiLabQuizGrade,
@@ -20,6 +22,7 @@ import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-faca
 import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
 import { AiLabQuizFacade } from '@features/ai-labs/services/ai-lab-quiz-facade';
 import { AiLabAssessmentFacade } from '@features/ai-labs/services/ai-lab-assessment-facade';
+import { AiLabFeedbackFacade } from '@features/ai-labs/services/ai-lab-feedback-facade';
 
 /**
  * Sample data for the AI Labs progress panel and token meter stories.
@@ -571,4 +574,55 @@ export function provideStoryAiLabExam(state: AiLabExamStoryState): Provider {
     submit: () => Promise.resolve(null),
   };
   return { provide: AiLabAssessmentFacade, useValue: stub };
+}
+
+/* ---------------------------------------------------------------------------
+   The lab's feedback, and a stand-in facade for its page's stories.
+   --------------------------------------------------------------------------- */
+
+/** `course-feedback-questions/` — four NASBA ratings and one text question. */
+export const MOCK_AI_LAB_FEEDBACK_QUESTIONS: AiLabFeedbackQuestion[] = [
+  'Were the stated learning objectives met?',
+  'Was the lab content relevant and up to date?',
+  'Were the materials and the brief clear?',
+  'Was the time allotted to the lab appropriate?',
+]
+  .map((text, i) => ({
+    id: `rating-${i + 1}`,
+    feedback_question: text,
+    feedback_question_type: 'rating',
+    feedback_question_order: i + 1,
+  }))
+  .concat({
+    id: 'text-1',
+    feedback_question: 'What one change would make this lab more useful in your accounting work?',
+    feedback_question_type: 'text',
+    feedback_question_order: 5,
+  });
+
+/** What the feedback page's stories set on the stand-in facade. */
+export interface AiLabFeedbackStoryState {
+  questions?: AiLabFeedbackQuestion[];
+  notYet?: string | null;
+  alreadySubmitted?: boolean;
+  done?: { result: AiLabFeedbackResult | null; notice: string | null } | null;
+}
+
+/** Provides a stand-in `AiLabFeedbackFacade` holding fixed state. Its actions do nothing. */
+export function provideStoryAiLabFeedback(state: AiLabFeedbackStoryState): Provider {
+  const stub = {
+    lab: signal(MOCK_AI_LAB_DETAIL),
+    learnerName: signal('Priya Sharma'),
+    questions: signal(state.questions ?? []),
+    alreadySubmitted: signal(state.alreadySubmitted ?? false),
+    notYet: signal(state.notYet ?? null),
+    isLoading: signal(false),
+    loadError: signal(null),
+    submitting: signal(false),
+    done: signal(state.done ?? null),
+    open: () => undefined,
+    reload: () => undefined,
+    submit: () => Promise.resolve(),
+  };
+  return { provide: AiLabFeedbackFacade, useValue: stub };
 }

@@ -316,6 +316,9 @@ export class AiLabCourse {
       case 'RETAKE_EXAM':
         void this.router.navigate(['final-assessment'], { relativeTo: this.route });
         return;
+      case 'FEEDBACK':
+        void this.router.navigate(['feedback'], { relativeTo: this.route });
+        return;
       case 'AI_LAB':
         this.scrollToLab();
         return;
@@ -323,7 +326,8 @@ export class AiLabCourse {
         this.togglePlayback();
         return;
       default:
-      // ponytail: FEEDBACK / DOWNLOAD open the feedback screen, which arrives with its ticket.
+      // ponytail: DOWNLOAD has nothing to open — no read carries the lab certificate's link; it is
+      // in the feedback submit's answer and in the CPE tracker.
     }
   }
 

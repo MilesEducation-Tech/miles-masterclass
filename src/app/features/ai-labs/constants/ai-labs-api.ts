@@ -3,6 +3,7 @@ import { CommonResponse, RouteConfig } from '@core/models/http.model';
 import {
   AiLabAccountState,
   AiLabExamAnswer,
+  AiLabFeedbackBody,
   AiLabQuizAnswerBody,
   AiLabSubmitBody,
   AiLabTokenRequestBody,
@@ -159,4 +160,20 @@ export const AI_LABS_API = {
     path: `${ROOT}api/v1/ai-labs/course-assessment-submit/:id/`,
     method: 'POST',
   } as RouteConfig<{ answers: AiLabExamAnswer[] }, CommonResponse<unknown>>,
+
+  /** `IsAuthenticated`: may the learner give feedback? A refusal is a 200 with `allowed: false`. */
+  feedbackGate: `${ROOT}web-api/v1/ai-labs/course-feedback-gate/`,
+
+  /** `IsAuthenticated`: the lab's feedback form — `rating` and `text` questions. */
+  feedbackQuestions: `${ROOT}web-api/v1/ai-labs/course-feedback-questions/`,
+
+  /**
+   * `IsAuthenticated`, strict body: records the feedback and CLOSES the lab — CPE, the lab's
+   * certificate, and the parent course if this was its last lab. 409 `nasba_conditions_unmet`
+   * means the feedback was recorded but the lab couldn't close; its message says why.
+   */
+  feedbackSubmit: {
+    path: `${ROOT}api/v1/ai-labs/course-feedback-submit/:id/`,
+    method: 'POST',
+  } as RouteConfig<AiLabFeedbackBody, CommonResponse<unknown>>,
 } as const;
