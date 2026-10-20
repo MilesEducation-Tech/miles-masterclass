@@ -390,6 +390,20 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - **The plan's six PRs are all built.** Open for the backend: Q1 the lab video URL (blocks the
     real flow from the quiz onward), Q3 the launch target, Q5 consent storage, Q4 rubric areas,
     Q2 test emails. Local SSR needs Node 24 (zstd finding above).
+  - **Dead-code chore DONE, UNCOMMITTED (deletions staged via `git rm`):**
+    - **Deleted:** `core/services/ai-lab-submission/` (the old client-side mock grader — canned
+      workflows, localStorage scores; no importers), plus `core/models/ai-lab-assessment.model.ts`
+      and `core/models/ai-lab.model.ts` (only it imported them).
+    - **Removed:** the `AI_LABS` env block, with its comment, from `environment.ts` / `.local` /
+      `.development` (Entra tenant/client ids, the second Supabase project's URL and anon key,
+      `catalogueCourses`, `assessmentEnabled`, channel names — nothing read any of it). ~164
+      lines out.
+    - **Gates:** lint 0 errors; structure ✔ (no baseline entries referenced them); `build:prod`
+      initial transfer **239.19 kB** (was 239.45 — the block shipped in the initial bundle);
+      `build-storybook` ✔.
+    - **Pointer for Q3:** the block held `copilotUrl: 'https://copilotstudio.microsoft.com/'`,
+      upstream's Launch AI target after Entra sign-in. The lab page's hint already reads "Opens
+      Copilot Studio in a new tab". Offered to the user as the answer to Q3; not wired.
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
@@ -5802,6 +5816,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-20 · NON-REFACTOR · **MIL-117 chore built** (uncommitted, deletions staged): removed the dead AI Labs mock grader + its two core models + the `AI_LABS` env block · lint 0 errors, structure ✔, build:prod 239.19 kB, storybook ✔
 
 - 2026-10-20 · NON-REFACTOR · **MIL-117 PR 5c built** (uncommitted): lab feedback — `AiLabFeedbackFacade`, guarded `feedback` route, course-evaluation markup with text questions, thank-you with CPE + certificate link; lab FEEDBACK CTA points at it · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · story screenshots + guest redirect checked · **all six plan PRs built**
 

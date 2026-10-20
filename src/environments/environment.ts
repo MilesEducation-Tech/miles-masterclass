@@ -135,66 +135,6 @@ export const environment = {
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvZHprdHZueHVwcnBvZ2Vsb2RtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0MzE1NDYsImV4cCI6MjA3ODAwNzU0Nn0.ychDwrqAURLnKyAkP4MHGwpcH7VwE4WcRt2E7oHoEL4',
   },
 
-  /**
-   * MilesAI Labs — Entra sign-in + Copilot Studio deep link.
-   *
-   * Everything here is a PUBLIC identifier and safe in the browser bundle:
-   * tenant/client IDs are public by design, and the anon key is RLS-scoped.
-   * The Entra **client secret** is NOT here and must never be — it lives in
-   * the Supabase dashboard (Auth → Providers → Azure), which performs the
-   * token exchange server-side. Same for the service-role key, DirectLine
-   * secret, and the provisioning secret: those belong to the lab backend.
-   *
-   * `redirectPath` is resolved against SITE_URL rather than
-   * `window.location.origin` so the OAuth allowlist is a fixed, per-environment
-   * value that SSR can also produce.
-   */
-  AI_LABS: {
-    supabaseUrl: 'https://nhohkxpcoeyerzsybipo.supabase.co',
-    // TODO: paste the anon key for the nhohkxpcoeyerzsybipo project. Sign-in
-    // is disabled (button shows a config error) until this is set.
-    supabaseAnonKey:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ob2hreHBjb2V5ZXJ6c3liaXBvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMzYxMDYsImV4cCI6MjEwMDgxMjEwNn0.Dk5XMoNG3oBVXhlUbh_zqzbJX3uMbf8h2kjNwjGXJ2c',
-
-    tenantId: 'f133522a-779a-4a85-bebb-e72cd0daaa1d',
-    clientId: 'b717025f-1163-4efb-a3f2-a6336d4fee07',
-    /**
-     * Home realm hint for lab accounts (`domain_hint`, forwarded verbatim to
-     * Entra by Supabase). Entra accepts either a verified domain or the tenant
-     * id; this is the tenant id of the directory that owns the app registration
-     * behind Supabase's Azure provider — mileslabs.ai. Pointing it at any other
-     * tenant sends users to the wrong home realm, where they can only sign in
-     * as a guest of that app rather than as the account the labs backend
-     * provisioned.
-     */
-    domainHint: 'f133522a-779a-4a85-bebb-e72cd0daaa1d',
-    copilotUrl: 'https://copilotstudio.microsoft.com/',
-    redirectPath: '/auth/ai-labs-callback',
-    /** localStorage key — kept distinct from the admin client's session. */
-    storageKey: 'AI_LABS_SUPABASE_SESSION',
-    /**
-     * Masterclass courses whose chapters are the agent catalogue on /ai-labs.
-     * Per-environment because course ids are not portable: these exist on
-     * production only, and UAT answers "MasterClass not found" for them — so a
-     * shared constant would silently empty the catalogue on every lower
-     * environment. Point these at the UAT equivalents once they're published.
-     */
-    catalogueCourses: {
-      audit: 440,
-      cfoTeams: 442,
-    },
-
-    /**
-     * Gates the evaluation/assessment layer on /ai-labs: the workflow-submission
-     * panel in the agent dialog, the per-card score badge, and the hero "your
-     * progress" strip. Off until the grading backend is ready — flip to true to
-     * make the (currently mocked) flow visible for evaluation.
-     */
-    assessmentEnabled: false,
-    AI_LABS_CHANNEL: 'AI_LAB_AUTH',
-    AI_LABS_CALLBACK_DONE: 'CALLBACK_DONE',
-  },
-
   // WordPress blog (headless via WP REST API).
   WP_BLOG: {
     // Browser calls a same-origin path that the `/blog-api` reverse proxy
