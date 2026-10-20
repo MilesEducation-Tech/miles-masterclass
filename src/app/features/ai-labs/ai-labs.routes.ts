@@ -2,6 +2,8 @@ import { Route } from '@angular/router';
 import { provideGsap } from '@code_with_sachin/ngx-gsap';
 import { provideMotion } from '@code_with_sachin/ngx-motion';
 import { authGuard } from '@core/guards/auth/auth-guard';
+import { canDeactivateExamGuard } from '@core/guards/can-deactivate-exam-guard';
+import { AiLabAssessmentFacade } from '@features/ai-labs/services/ai-lab-assessment-facade';
 import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
 import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
 import { AiLabQuizFacade } from '@features/ai-labs/services/ai-lab-quiz-facade';
@@ -49,12 +51,26 @@ export const AI_LABS_ROUTES: Route[] = [
    * of 401s. `CanMatch`, so the chunk isn't even downloaded for them. `AiLabCourseFacade` is
    * route-scoped; the page hands it `:courseId` through `withComponentInputBinding()`.
    *
-   * The quiz, exam and feedback screens join as children with their ticket.
+   * The quiz opens in this page's video frame; the exam has its own route below, and feedback
+   * joins with its ticket.
    */
   {
     path: ':courseId/:courseTitle',
     canMatch: [authGuard],
     providers: [AiLabCourseFacade, AiLabQuizFacade, AiLabCredits],
     loadComponent: () => import('./pages/ai-lab-course/ai-lab-course').then((m) => m.AiLabCourse),
+  },
+  /**
+   * The lab's final assessment, on the plain layout like the masterclass exam. Leaving with an
+   * unsubmitted paper asks first (`canDeactivateExamGuard`). A sibling of the lab page rather than
+   * a child, so the lab page's chunk and facades aren't loaded underneath it.
+   */
+  {
+    path: ':courseId/:courseTitle/final-assessment',
+    canMatch: [authGuard],
+    canDeactivate: [canDeactivateExamGuard],
+    providers: [AiLabAssessmentFacade],
+    data: { layout: 'plain' },
+    loadComponent: () => import('./pages/ai-lab-exam/ai-lab-exam').then((m) => m.AiLabExam),
   },
 ];

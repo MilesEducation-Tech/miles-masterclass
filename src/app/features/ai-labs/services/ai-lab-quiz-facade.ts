@@ -9,6 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { CommonResponse, SKIP_ERROR_NOTIFICATION, SKIP_LOADING } from '@core/models/http.model';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
@@ -66,6 +67,7 @@ export class AiLabQuizFacade {
   private readonly api = inject(ApiClient);
   private readonly course = inject(AiLabCourseFacade);
   private readonly notification = inject(NotificationService);
+  private readonly router = inject(Router);
 
   private readonly openFor = signal<string | null>(null);
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -191,11 +193,14 @@ export class AiLabQuizFacade {
   }
 
   /**
-   * The completed quiz's button and the countdown's end. Closes the panel; the CTA has already
-   * moved on to Take Final Assessment, and the exam screen takes it from there.
+   * The completed quiz's button and the countdown's end: on to the final assessment, as the
+   * masterclass quiz does after the last chapter. The exam route sits beside the lab page, one
+   * segment deeper, so it's this URL plus `final-assessment`.
    */
   proceed(): void {
     this.close();
+    const here = this.router.url.split(/[?#]/)[0];
+    void this.router.navigateByUrl(`${here}/final-assessment`);
   }
 
   private startCountdown(): void {

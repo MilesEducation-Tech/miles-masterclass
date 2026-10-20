@@ -756,3 +756,108 @@ export function gradeOfLabQuizResult(
     ),
   };
 }
+
+/* =====================================================================
+   The lab's final assessment.
+
+   Wire types from `docs/AI_LABS_API.md` §6: `course-assessment-questions/<uuid>/`
+   and `course-assessment-submit/<uuid>/`. No sittings: one read, one submit,
+   and the submit's answer carries the whole review.
+   ===================================================================== */
+
+export interface AiLabExamOption {
+  id: string;
+  /** May carry HTML — rendered through Angular's sanitiser. */
+  text: string;
+  order: number;
+}
+
+export interface AiLabExamQuestion {
+  id: string;
+  /** May carry HTML — rendered through Angular's sanitiser. */
+  question_text: string;
+  /** `single`, or `multi` (checkboxes). */
+  question_type: string;
+  options: AiLabExamOption[];
+}
+
+/** `data` of `GET web-api/v1/ai-labs/course-assessment-questions/<uuid>/`. */
+export interface AiLabExamPaper {
+  ai_lab_course_id: string;
+  questions_to_show: number;
+  pass_threshold_percent: number;
+  /** May carry HTML. */
+  exam_rules: string | null;
+  previous_attempts: number;
+  questions: AiLabExamQuestion[];
+}
+
+/** One answer of `POST course-assessment-submit/<uuid>/`. Every answer must carry a selection. */
+export interface AiLabExamAnswer {
+  question_id: string;
+  selected_option_ids: string[];
+}
+
+/** `data` of `course-assessment-submit/`: the score, and the review of every answer. */
+export interface AiLabExamResult {
+  passed: boolean;
+  score_percent: number;
+  pass_threshold_percent: number;
+  answers: {
+    question_id: string;
+    is_correct: boolean;
+    explanation: string | null;
+    correct_option_ids: string[];
+    options_feedback: {
+      id: string;
+      text: string;
+      is_correct: boolean;
+      explanation: string | null;
+    }[];
+  }[];
+  next_step: AiLabNextStep;
+  ai_assessment_completed?: boolean;
+}
+
+/** One question as the review lists it — the masterclass report's item, without "skipped". */
+export interface AiLabExamReviewItem {
+  id: string;
+  /** Its position in the paper, from 1. */
+  number: number;
+  question: string;
+  status: 'correct' | 'incorrect';
+  yourAnswer: string[];
+  /** The correct options' texts, for a missed question. */
+  correctAnswer: string[];
+  /** The question's explanation, else the correct option's. */
+  explanation: string | null;
+}
+
+/** The review, in paper order, from the paper, what was sent, and the submit's answer. */
+export function labExamReview(
+  paper: AiLabExamPaper,
+  sent: Record<string, string[]>,
+  result: AiLabExamResult,
+): AiLabExamReviewItem[] {
+  const graded = new Map(result.answers.map((a) => [a.question_id, a]));
+  return paper.questions.map((question, i) => {
+    const answer = graded.get(question.id);
+    const textOf = (id: string) =>
+      question.options.find((o) => o.id === id)?.text ??
+      answer?.options_feedback.find((o) => o.id === id)?.text ??
+      '';
+    const correct = answer?.correct_option_ids ?? [];
+    const correctExplanation =
+      answer?.options_feedback.find((o) => o.is_correct)?.explanation ?? null;
+    return {
+      id: question.id,
+      number: i + 1,
+      // A heading is plain text; the question may carry HTML.
+      question: question.question_text.replace(/<[^>]*>/g, '').trim(),
+      status: answer?.is_correct ? 'correct' : 'incorrect',
+      yourAnswer: (sent[question.id] ?? []).map(textOf),
+      correctAnswer: answer?.is_correct ? [] : correct.map(textOf),
+      explanation: answer?.explanation ?? correctExplanation,
+    };
+  });
+}

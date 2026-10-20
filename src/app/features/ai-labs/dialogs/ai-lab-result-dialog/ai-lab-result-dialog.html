@@ -1,0 +1,88 @@
+<!-- The masterclass result dialog (offerings/dialogs/assessment-result-dialog), for the lab. -->
+<app-dialog
+  ariaLabel="Final assessment result"
+  [dismissible]="false"
+  panelClass="p-0 max-w-[500px]"
+>
+  <div class="relative p-6 text-center max-w-md mx-auto">
+    <!-- Status Icon -->
+    <div class="mb-6 flex justify-center">
+      @if (data.isPassed) {
+        <div
+          class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center text-green-600"
+        >
+          <ng-icon name="heroCheckCircle" size="3rem"></ng-icon>
+        </div>
+      } @else {
+        <div
+          class="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center text-red-600"
+        >
+          <ng-icon name="heroXCircle" size="3rem"></ng-icon>
+        </div>
+      }
+    </div>
+
+    <!-- Title -->
+    <h2 class="text-2xl font-bold mb-2 text-gray-200">
+      {{ data.isPassed ? 'Congratulations!' : 'Keep Going!' }}
+    </h2>
+
+    <!-- Description -->
+    <p class="text-gray-400 mb-6">
+      {{ data.message }}
+    </p>
+
+    <!-- Score Display -->
+    <div class="bg-gray-50 rounded-lg p-4 mb-8">
+      <div class="text-sm text-gray-500 mb-1">Your Score</div>
+      <div
+        class="text-3xl font-bold"
+        [class.text-green-600]="data.isPassed"
+        [class.text-red-600]="!data.isPassed"
+      >
+        {{ data.score }}%
+      </div>
+      @if (data.passingScore) {
+        <div class="text-sm font-medium text-gray-600 mt-1">
+          Passing Score: {{ data.passingScore }}%
+        </div>
+      }
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-col gap-3">
+      @if (data.isPassed) {
+        <button
+          app-button
+          type="button"
+          class="w-full"
+          variant="default"
+          (click)="onAction('report')"
+        >
+          Review Your Answers
+        </button>
+
+        <button app-button type="button" class="w-full" variant="outline" (click)="onAction('lab')">
+          Back to the Lab
+        </button>
+      } @else {
+        <button
+          app-button
+          type="button"
+          class="w-full"
+          variant="default"
+          (click)="onAction('retake')"
+        >
+          <div class="flex items-center justify-center gap-2">
+            <ng-icon name="heroArrowPath"></ng-icon>
+            Retake Assessment
+          </div>
+        </button>
+
+        <button app-button type="button" class="w-full" variant="outline" (click)="onAction('lab')">
+          Return to the Lab
+        </button>
+      }
+    </div>
+  </div>
+</app-dialog>

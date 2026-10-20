@@ -14,6 +14,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { DatePipe, DecimalPipe, isPlatformBrowser } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { matPlayArrowRound } from '@ng-icons/material-icons/round';
 import {
@@ -126,6 +127,8 @@ interface LabPick {
 export class AiLabCourse {
   // `DOCUMENT` from `@angular/core`: the `common` re-export is deprecated in v22.
   private readonly document = inject(DOCUMENT);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   // ---- Roots -------------------------------------------------------------
 
@@ -309,6 +312,10 @@ export class AiLabCourse {
       case 'TAKE_QUIZ':
         this.quiz.open();
         return;
+      case 'TAKE_EXAM':
+      case 'RETAKE_EXAM':
+        void this.router.navigate(['final-assessment'], { relativeTo: this.route });
+        return;
       case 'AI_LAB':
         this.scrollToLab();
         return;
@@ -316,8 +323,7 @@ export class AiLabCourse {
         this.togglePlayback();
         return;
       default:
-      // ponytail: TAKE_EXAM / RETAKE_EXAM / FEEDBACK / DOWNLOAD open the exam and feedback
-      // screens, which arrive with their tickets.
+      // ponytail: FEEDBACK / DOWNLOAD open the feedback screen, which arrives with its ticket.
     }
   }
 

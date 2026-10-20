@@ -2,6 +2,7 @@ import { environment } from '@env/environment';
 import { CommonResponse, RouteConfig } from '@core/models/http.model';
 import {
   AiLabAccountState,
+  AiLabExamAnswer,
   AiLabQuizAnswerBody,
   AiLabSubmitBody,
   AiLabTokenRequestBody,
@@ -141,4 +142,21 @@ export const AI_LABS_API = {
     path: `${ROOT}api/v1/ai-labs/course-quiz-submit/`,
     method: 'POST',
   } as RouteConfig<AiLabQuizAnswerBody, CommonResponse<unknown>>,
+
+  /**
+   * `IsAuthenticated`: the final assessment's paper. Append `<uuid>/`. 403 `cool_off_active`
+   * (with `cool_off_ends_at`), `quiz_not_complete`, `video_not_complete`; 404
+   * `no_assessment_config`; 409 `already_passed`.
+   */
+  assessmentQuestions: `${ROOT}web-api/v1/ai-labs/course-assessment-questions/`,
+
+  /**
+   * `IsAuthenticated`, strict body `{answers: [{question_id, selected_option_ids}]}` — every answer
+   * with a selection. 200 carries the score and the per-answer review; a pass moves `next_step`
+   * on to `ai_assessment`.
+   */
+  assessmentSubmit: {
+    path: `${ROOT}api/v1/ai-labs/course-assessment-submit/:id/`,
+    method: 'POST',
+  } as RouteConfig<{ answers: AiLabExamAnswer[] }, CommonResponse<unknown>>,
 } as const;

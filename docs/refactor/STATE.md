@@ -340,6 +340,29 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - **Verified:** a screenshot of `QuizOpen` matches the masterclass chapter quiz. Gates: lint
       0 errors; structure ✔; `build:prod` 239.44 kB; `build-storybook` ✔. **Not exercised
       in-app**: reaching the quiz needs a watched video, and no lab has a video URL (Q1).
+  - **PR 5b DONE, UNCOMMITTED (final assessment):**
+    - **Wire types:** `AiLabExamPaper` / `Question` / `Option` / `Answer` / `Result` /
+      `ReviewItem`, plus `labExamReview(paper, sent, result)`; headings are tag-stripped. Routes:
+      `assessmentQuestions`, `assessmentSubmit`.
+    - **`AiLabAssessmentFacade`** (route-scoped): the paper read. A refusal becomes `loadError` in
+      the server's words; `cool_off_active` becomes "retake after <time>". `submit()` keeps
+      `sent` + `result`, and `retake()` clears them and re-reads.
+    - **New route `:courseId/:courseTitle/final-assessment`:** a sibling of the lab page, with
+      `authGuard`, `canDeactivateExamGuard`, `layout: 'plain'` and the facade.
+    - **`pages/ai-lab-exam`:** the masterclass exam markup for the paper. Every answer is
+      required (the API 400s a blank one), so unanswered questions are listed first. Then the
+      copied **`dialogs/ai-lab-result-dialog`** (confetti on a pass; `afterNextRender` instead of
+      `OnInit`/`CommonModule`). Then the masterclass report markup as an in-page review from the
+      submit's answer — no report read exists on the lab API. "Back to the Lab" is the page's own
+      URL minus `/final-assessment`.
+    - **Wiring:** the lab page's TAKE_EXAM / RETAKE_EXAM navigate to `final-assessment`. The
+      quiz's proceed (button and countdown) goes there too.
+    - **Stories:** `AI Labs/Final assessment` — Paper, FailedReview, PassedReview, CoolOff — on
+      `provideStoryAiLabExam`.
+    - **Verified:** screenshots of Paper and FailedReview (accordions opened over CDP) match the
+      masterclass screens. A guest on `…/final-assessment` gets 302 → login. Gates: lint 0
+      errors; structure ✔; `build:prod` 239.53 kB; `build-storybook` ✔. **Not exercised
+      in-app** (blocked behind the video, Q1).
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
@@ -5752,6 +5775,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-20 · NON-REFACTOR · **MIL-117 PR 5b built** (uncommitted): lab final assessment — `AiLabAssessmentFacade`, `final-assessment` route (guarded, plain layout), exam page + copied result dialog + in-page review from the submit; lab CTA and quiz proceed point at it · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · story screenshots + guest redirect checked
 
 - 2026-10-20 · NON-REFACTOR · **MIL-117 PR 5a built** (uncommitted): lab quiz — `AiLabQuizFacade` + `ai-lab-quiz` panel (chapter-quiz markup copied per the user's call), opened in the video frame from Take Quiz · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · story screenshot checked; unreachable in-app until a lab has a video
 

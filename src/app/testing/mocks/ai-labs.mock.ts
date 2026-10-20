@@ -7,6 +7,8 @@ import {
   AiLabCourseProgress,
   AiLabCourseStarted,
   AiLabCtaStage,
+  AiLabExamPaper,
+  AiLabExamResult,
   AiLabFlow,
   AiLabPracticalProgress,
   AiLabQuizGrade,
@@ -17,6 +19,7 @@ import {
 import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
 import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
 import { AiLabQuizFacade } from '@features/ai-labs/services/ai-lab-quiz-facade';
+import { AiLabAssessmentFacade } from '@features/ai-labs/services/ai-lab-assessment-facade';
 
 /**
  * Sample data for the AI Labs progress panel and token meter stories.
@@ -470,4 +473,102 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[
     { provide: AiLabQuizFacade, useValue: quiz },
     { provide: AiLabCredits, useValue: credits },
   ];
+}
+
+/* ---------------------------------------------------------------------------
+   The lab's final assessment, and a stand-in facade for its page's stories.
+   --------------------------------------------------------------------------- */
+
+/** `course-assessment-questions/` — the guide's sample, options completed. */
+export const MOCK_AI_LAB_EXAM_PAPER: AiLabExamPaper = {
+  ai_lab_course_id: MOCK_AI_LAB_DETAIL.id,
+  questions_to_show: 2,
+  pass_threshold_percent: 70,
+  exam_rules: '<p>Answer all 2 questions. You need 70% to pass.</p>',
+  previous_attempts: 0,
+  questions: [
+    {
+      id: 'b4fcae42',
+      question_text:
+        '<p>An AI agent reconciles bank statements. Which evidence best supports reliance on its output during an audit?</p>',
+      question_type: 'single',
+      options: [
+        {
+          id: '756fcf51',
+          text: "<p>Documented testing of the agent's matching logic</p>",
+          order: 1,
+        },
+        { id: 'a01d062e', text: "<p>The vendor's marketing brochure</p>", order: 2 },
+        { id: 'c3e9a1f7', text: "<p>The agent's own confidence score</p>", order: 3 },
+      ],
+    },
+    {
+      id: 'c0f57881',
+      question_text:
+        '<p>Which TWO practices reduce hallucination risk when an agent drafts variance commentary?</p>',
+      question_type: 'multi',
+      options: [
+        {
+          id: '82b00e71',
+          text: '<p>Ground the agent on the trial balance and budget files</p>',
+          order: 1,
+        },
+        {
+          id: '584d6a2c',
+          text: '<p>Require the agent to cite the source line for each figure</p>',
+          order: 2,
+        },
+        { id: '9a7b3c5d', text: '<p>Raise the model temperature</p>', order: 3 },
+      ],
+    },
+  ],
+};
+
+/** A failed attempt: the first answer wrong, the second right. */
+export const MOCK_AI_LAB_EXAM_RESULT: AiLabExamResult = {
+  passed: false,
+  score_percent: 50,
+  pass_threshold_percent: 70,
+  next_step: 'final_assessment',
+  answers: [
+    {
+      question_id: 'b4fcae42',
+      is_correct: false,
+      explanation:
+        "Testing the agent's matching logic against known exceptions is direct evidence that its output can be relied on.",
+      correct_option_ids: ['756fcf51'],
+      options_feedback: [],
+    },
+    {
+      question_id: 'c0f57881',
+      is_correct: true,
+      explanation:
+        'Grounding the agent in source data and requiring citations both reduce unsupported statements.',
+      correct_option_ids: ['82b00e71', '584d6a2c'],
+      options_feedback: [],
+    },
+  ],
+};
+
+/** What the exam page's stories set on the stand-in facade. */
+export interface AiLabExamStoryState {
+  paper?: AiLabExamPaper | null;
+  result?: AiLabExamResult | null;
+  sent?: Record<string, string[]>;
+  loadError?: string | null;
+}
+
+/** Provides a stand-in `AiLabAssessmentFacade` holding fixed state. Its actions do nothing. */
+export function provideStoryAiLabExam(state: AiLabExamStoryState): Provider {
+  const stub = {
+    paper: signal(state.paper ?? null),
+    isLoading: signal(false),
+    loadError: signal(state.loadError ?? null),
+    result: signal(state.result ?? null),
+    sent: signal(state.sent ?? {}),
+    open: () => undefined,
+    retake: () => undefined,
+    submit: () => Promise.resolve(null),
+  };
+  return { provide: AiLabAssessmentFacade, useValue: stub };
 }
