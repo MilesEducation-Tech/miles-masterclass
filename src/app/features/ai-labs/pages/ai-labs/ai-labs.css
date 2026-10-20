@@ -227,7 +227,7 @@
 
 .ai-fan-head {
   position: absolute;
-  top: clamp(1.25rem, 6vh, 3.5rem);
+  top: clamp(1.25rem, 3vh, 2rem);
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;
@@ -247,7 +247,7 @@
      set it here — a value on the item shadows the inherited one and the active
      card's opacity would divide by the wrong count. Fallback 5 for safety. */
   --width: clamp(160px, 24vw, 300px);
-  --height: clamp(230px, 38vw, 420px);
+  --height: clamp(284.44px, 42.67vw, 533.33px);
   /* Per-card spread. --active is (i - active)/items, so multiplying back by
      --items gives a fixed step per neighbour (±62% x, ±15% y, ±11deg) that no
      longer depends on the card count. The old raw 800%/200%/120deg were tuned
@@ -259,7 +259,7 @@
      but the top two). This keeps every fan card visible, fading with depth. */
   --opacity: calc(var(--zi) / var(--items, 5));
   position: absolute;
-  top: 50%;
+  top: 52%;
   left: 50%;
   width: var(--width);
   height: var(--height);
@@ -383,7 +383,7 @@
 .ai-fan-caption {
   position: absolute;
   left: 50%;
-  bottom: clamp(3.25rem, 9vh, 5.5rem);
+  bottom: clamp(3.25rem, 7vh, 3rem);
   transform: translateX(-50%);
   z-index: 30;
   width: min(92%, 34rem);

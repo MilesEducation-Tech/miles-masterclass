@@ -1,5 +1,7 @@
+import { lucideLayers } from '@ng-icons/lucide';
 import { environment } from '@env/environment';
 import { CommonResponse, RouteConfig } from '@core/models/http.model';
+import { iconCopilotOutline } from '@core/constants/icon';
 
 /**
  * Body of `POST ai-lab/account/`.
@@ -51,26 +53,6 @@ export const AI_LAB_ROUTES = {
 } as const;
 
 /**
- * One prebuilt agent tile in the catalogue grid.
- *
- * Every name in the design ends in "Agent", and the card renders that suffix in
- * a lighter weight than the name itself — so `name` holds just the distinctive
- * part and the template appends the word.
- */
-export interface AiLabAgent {
-  name: string;
-  description: string;
-  /**
-   * Image filename, snake_case. Falls back to a gradient placeholder when
-   * absent. Note this is a bare filename, not a resolvable URL — see the
-   * comment on `AI_LAB_SECTIONS`.
-   */
-  thumbnail?: string;
-  /** Alt text for `thumbnail`. Required whenever a thumbnail is set. */
-  thumbnailAlt?: string;
-}
-
-/**
  * The subset of `v2/chapters/` this page reads.
  *
  * Deliberately NOT `CourseChapter` (course.model.ts): the serializer behind
@@ -87,40 +69,56 @@ export interface AiLabChapter {
   quiz_details?: { total_questions?: number } | null;
 }
 
+/**
+ * One catalogue tile, flattened from a masterclass chapter.
+ *
+ * Every tile has a course page behind it, so `courseId` is what the click navigates to. The
+ * optional fields are the ones a course may simply not carry — the card renders without them
+ * rather than with a placeholder.
+ *
+ * It used to live beside `AiLabAgentDialog` in `shared/dialogs/`; that dialog is retired now that a
+ * card opens the course page, and the type moved down to the one feature that uses it (AGENTS.md
+ * §3: code lives at the lowest level that uses it).
+ */
+export interface AiLabAgentCard {
+  name: string;
+  /** Muted suffix after the name, for titles that read as "<name> Agent". */
+  nameSuffix?: string;
+  description: string;
+  /** Portrait (9:16) crop — both catalogue surfaces are poster-shaped. */
+  portraitThumbnail?: string | null;
+  thumbnail?: string | null;
+  thumbnailAlt?: string;
+  /** Runtime in seconds, from the chapter's `video_duration`. */
+  durationSeconds?: number;
+  questionCount?: number;
+  /** The course this tile came from — the page the tile opens. */
+  courseId?: number;
+}
+
 export interface AiLabSection {
   heading: string;
   /**
-   * Masterclass course whose chapters are this section's cards. When set,
-   * `agents` is ignored and the catalogue comes from `v2/chapters/`; the
-   * heading stays editorial either way, since the course titles read as course
-   * titles ("Copilot Studio - AI Agents for Audits") rather than section labels.
+   * Masterclass course whose chapters are this section's cards, read from `v2/chapters/`. The
+   * heading stays editorial, since the course titles read as course titles ("Copilot Studio - AI
+   * Agents for Audits") rather than section labels.
+   *
+   * There is no static fallback any more. A section with no `courseId`, or whose fetch settles
+   * empty, is dropped from the page entirely — heading included.
    */
   courseId?: number;
-  /**
-   * Fallback catalogue. Used when there is no `courseId`, and when the course
-   * fetch fails or comes back empty — the page always has something to show.
-   */
-  agents?: AiLabAgent[];
 }
 
 /**
  * The catalogue, section by section.
  *
- * Audit and CFO Teams are served from their masterclass courses, so the cards
- * (name, blurb, thumbnail, runtime, quiz size) track whatever the course team
- * publishes. Their `agents` arrays stay as the fallback for a failed or empty
- * fetch — which is the normal case on UAT, where the production course ids
- * don't resolve. Tax has no course at all and always renders from `agents`.
+ * Audit and CFO Teams are served from their masterclass courses, so the cards (name, blurb,
+ * thumbnail, runtime, quiz size) track whatever the course team publishes. Tax has no course yet.
  *
- * Because the fallback is a second copy of the same tiles, it WILL drift from
- * the course once the course changes. Treat the API as the source of truth and
- * this list as the safety net, not as content to keep in sync line by line.
- *
- * `thumbnail` on the static entries holds a bare filename, which the browser
- * resolves against the CURRENT ROUTE — so these request
- * `/us/accounting/revenue_recognition.webp` and 404. The project's convention
- * for image assets is `environment.GCS_URL + 'folder/file.webp'` (see
- * offerings.config.ts); once the artwork is uploaded, prefix these the same way.
+ * The ten hand-written fallback tiles that used to back these headings are gone, matching the
+ * source design. The API is now the only source of cards, so **a section whose fetch settles empty
+ * renders nothing at all** — on UAT, where the production course ids don't resolve, that is the
+ * whole catalogue. Binding the catalogue read is what brings it back.
  */
 /* =====================================================================
    Landing-page static content.
@@ -148,11 +146,14 @@ export interface AiLabFeature {
   icon: string;
 }
 
-/** One count-up stat. Values are true by construction (counts, not metrics). */
+/** One hero tile: either a count-up number or a logo glyph, never both. */
 export interface AiLabStat {
-  value: number;
+  /** Count-up number. Omitted when the tile shows a `logo` instead. */
+  value?: number;
   suffix?: string;
   label: string;
+  /** Raw SVG markup shown in place of the number, via `ng-icon [svg]`. */
+  logo?: string;
 }
 
 /** One FAQ entry, rendered as a native <details>. */
@@ -236,11 +237,14 @@ export const AI_LAB_FEATURES: AiLabFeature[] = [
   },
 ];
 
-/** Honest counts, not invented metrics — safe to animate up. */
+/**
+ * Logo tiles. The third numeric tile (Microsoft tools) was dropped with the move to glyphs, so
+ * the grid renders two columns — see `heroStats` in `ai-labs.ts`.
+ */
 export const AI_LAB_STATS: AiLabStat[] = [
-  { value: 3, label: 'tracks: Audit, Tax, CFO Teams' },
-  { value: 10, label: 'agents you can launch and rebuild' },
-  { value: 3, label: 'Microsoft tools: Copilot, Copilot Studio, Power Automate' },
+  { logo: iconCopilotOutline, label: '3 Tracks: Audit, Tax, CFO Teams' },
+  { logo: lucideLayers, label: '10 Courses Agents you can launch and rebuild' },
+  // { value: 3, label: 'Microsoft tools: Copilot, Copilot Studio, Power Automate' },
   // { value: 12, label: 'Months of access included' },
 ];
 
@@ -317,89 +321,186 @@ export const AI_LAB_SECTIONS: AiLabSection[] = [
   {
     heading: 'AI Agents & Workflows for Audit',
     courseId: environment.AI_LABS.catalogueCourses.audit,
-    agents: [
-      {
-        name: 'Revenue Recognition',
-        thumbnailAlt: 'Revenue Recognition',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image1.webp',
-        description:
-          'Reads the contract, builds the ASC 606 schedule, and ties it back to the ledger. Surfaces the variances worth a conversation.',
-      },
-      {
-        name: 'Lease Assurance',
-        thumbnailAlt: 'Lease Assurance',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image2.webp',
-        description:
-          'Compares every lease against its schedule and pulls out the exceptions. Turns a full-population test into a review of what actually broke.',
-      },
-      {
-        name: 'AR Confirmation',
-        thumbnailAlt: 'AR Confirmation',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image3.webp',
-        description:
-          'Sends the requests, logs what comes back, and chases the rest without being asked twice.',
-      },
-      {
-        name: 'PBC',
-        thumbnailAlt: 'PBC',
-        // ponytail: no artwork yet → gradient placeholder. Add the S3 webp
-        // (…/miles-ai-labs/pbc.webp) once the tile art is uploaded.
-        description:
-          'Tracks every open request, files what arrives, and sends the reminder you keep forgetting to send.',
-      },
-    ],
+  },
+  {
+    heading: 'AI Agents & Workflows for Tax',
   },
   {
     heading: 'AI Agents & Workflows for CFO Teams',
     courseId: environment.AI_LABS.catalogueCourses.cfoTeams,
-    agents: [
-      {
-        name: 'AR Reminder',
-        thumbnailAlt: 'AR Reminder',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image4.webp',
-        description:
-          'Watches the ageing, sends the reminder at the right moment, and keeps the ledger current behind it.',
-      },
-      {
-        name: 'AP',
-        thumbnailAlt: 'AP',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image5.webp',
-        description:
-          'Pulls the invoice data, runs the three-way match, and holds back only what fails.',
-      },
-      {
-        name: 'Employee Reimbursement',
-        thumbnailAlt: 'Employee Reimbursement',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image6.webp',
-        description:
-          'Checks the receipt against policy, routes what needs a human, and tells the claimant where things stand.',
-      },
-    ],
-  },
-  {
-    heading: 'AI Agents & Workflows for Tax',
-    agents: [
-      {
-        name: 'Tax PBC',
-        thumbnailAlt: 'Tax PBC',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image7.webp',
-        description:
-          "Builds each client's expected document list from last year's return, tracks what lands, and chases the gaps. Catches the missing item and the unexpected one.",
-      },
-      {
-        name: 'K-1 Tracker',
-        thumbnailAlt: 'K-1 Tracker',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image8.webp',
-        description:
-          'Logs every K-1 across partnerships, S corporations and trusts and keeps the tracker current. Answers whose return is genuinely waiting on somebody else.',
-      },
-      {
-        name: 'Trial Balance Classification',
-        thumbnailAlt: 'Trial Balance Classification',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image9.webp',
-        description:
-          "Carries last year's approved tax-line map forward and flags only what changed. Renamed, renumbered, newly opened, quietly closed.",
-      },
-    ],
   },
 ];
+
+/* =====================================================================
+   Learner progress + token allotment.
+
+   View models for `ai-lab-progress-panel` and `ai-lab-token-meter`. Both
+   components are presentational and take these as inputs, so the shapes
+   describe what the UI renders rather than what any endpoint returns — the
+   reads behind them are not bound yet.
+   ===================================================================== */
+
+/**
+ * The course behind an assignment row, or `null` when the assignment exists on AI Labs but isn't
+ * mapped to a Masterclass course yet. A null course has no page, so the row renders without a link.
+ *
+ * Deliberately lean rather than the full `Content`: the row shows a thumbnail, a title and opens a
+ * page, and claiming the whole type would promise fields this surface never reads.
+ */
+export interface AiLabAssignmentCourse {
+  id: number;
+  title: string;
+  /** Portrait (9:16) crop — the row tile is poster-shaped. */
+  thumbnail?: string | null;
+  /** The 16:9 twin, used only when the portrait crop is missing. */
+  horizontal_thumbnail?: string | null;
+}
+
+/**
+ * One row of the assignment list.
+ *
+ * `status` is an open union: only a handful of values are evidenced, so one the backend adds later
+ * renders as itself rather than vanishing — see `statusUi` in the panel.
+ */
+export interface AiLabAssignmentProgress {
+  assignment_id: string;
+  title: string;
+  status: string;
+  attempts: number;
+  course: AiLabAssignmentCourse | null;
+  /** Null until the first graded submission — render a dash, never 0%. */
+  best_percentage: number | null;
+  latest_percentage: number | null;
+  /** ISO timestamp. */
+  last_submitted_at: string | null;
+}
+
+/**
+ * The learner's totals. `average_percentage` is server-owned — never recompute it from the rows,
+ * for the same reason `remaining` tokens aren't derived from `allotted - used`.
+ */
+export interface AiLabProgressTotals {
+  assignments_available: number;
+  assignments_attempted: number;
+  assignments_completed: number;
+  total_submissions: number;
+  average_percentage: number;
+  /** ISO timestamp, or null when nothing has been attempted. */
+  last_activity_at: string | null;
+}
+
+/**
+ * The Copilot Credits allotment. `null` anywhere one of these is expected means "no allotment",
+ * which both surfaces render as absence rather than a row of zeros.
+ */
+export interface AiLabTokenBalance {
+  allotted: number;
+  used: number;
+  remaining: number;
+  /** Tokens on an open top-up request, or `null` when none is pending. */
+  pendingTokens: number | null;
+}
+
+/* =====================================================================
+   AI Lab course page.
+
+   View models for `pages/ai-lab-course`. As with the progress panel, these
+   describe what the page renders rather than what any endpoint returns — the
+   reads behind them are not bound.
+   ===================================================================== */
+
+/**
+ * Where the learner is in the course, which is what the primary CTA reads from.
+ *
+ * A local union rather than offerings' `ActionStatus` enum: a feature may not import another
+ * feature (AGENTS.md §3), and promoting that enum to `core/` would be a refactor riding on a
+ * feature change. The spellings match the API's `action_status` so the binding ticket is a cast,
+ * not a translation.
+ */
+export type AiLabCtaStage =
+  'TAKE_QUIZ' | 'TAKE_EXAM' | 'REWATCH' | 'RETAKE_EXAM' | 'FEEDBACK' | 'DOWNLOAD';
+
+/** The stages that sit past the chapter quiz — reaching any of them means it is behind the learner. */
+export const AI_LAB_QUIZ_BEHIND: readonly AiLabCtaStage[] = [
+  'TAKE_EXAM',
+  'RETAKE_EXAM',
+  'FEEDBACK',
+  'DOWNLOAD',
+];
+
+/** One agent the learner has built in Copilot Studio. */
+export interface AiLabAgent {
+  id: string;
+  name: string;
+  schemaName: string;
+  published: boolean;
+  envId: string;
+  /** Human name of the environment, e.g. "the shared Miles AI Labs environment". */
+  envLabel: string;
+}
+
+/**
+ * One flow the learner has built — `AiLabAgent` minus `schemaName`, since a flow has no schema.
+ */
+export interface AiLabFlow {
+  id: string;
+  name: string;
+  /** A disabled flow cannot run, so it cannot be evaluated — the picker skips it. */
+  enabled: boolean;
+  envId: string;
+  /** Human name of the environment — `AiLabAgent.envLabel` under another name. */
+  environment: string;
+  shared: boolean;
+}
+
+/** `in_progress` is the only live state — a status poll would run while it holds. */
+export type AiLabLabStatus = 'not_started' | 'in_progress' | 'completed' | 'error';
+
+/** Everything past `lab_status` is null / empty until the evaluation completes. */
+export interface AiLabAssignmentStatus {
+  lab_status: AiLabLabStatus;
+  submission_id?: string;
+  /** Headline mark, out of 10. */
+  score?: number | null;
+  percentage?: number | null;
+  /** The evaluator's verdict. */
+  master_comment?: string;
+  /** Secondary remarks — smaller points that didn't change the verdict. */
+  minor_comment?: string;
+  grade_card_pdf_url?: string | null;
+  evaluated_at?: string | null;
+}
+
+/** Optional lab tooling the brief switches on per assignment. */
+export interface AiLabAssignmentTools {
+  /** The assignment ships seed emails for the learner's lab mailbox. */
+  test_emails: boolean;
+}
+
+/**
+ * What the learner is asked to build, in their own words rather than the grader's.
+ *
+ * Absent by design when the course has no lab assignment configured — the page then renders no
+ * brief block at all instead of an empty heading.
+ */
+export interface AiLabAssignmentBrief {
+  /** Prose. May carry newlines — rendered with `whitespace-pre-line`. */
+  problem_statement: string;
+  requirements: string[];
+  /** Absent on a backend that predates tools — treated as everything off. */
+  tools?: AiLabAssignmentTools;
+}
+
+/** What the learner picked to submit: one agent, or one flow, never both. */
+export interface AiLabPick {
+  kind: 'agent' | 'flow';
+  id: string;
+}
+
+/**
+ * One row of the lab-materials block: either a plain outbound link carried by the course payload,
+ * or an action that has to go through a service.
+ */
+export type AiLabMaterial =
+  | { kind: 'link'; label: string; hint: string; url: string }
+  | { kind: 'action'; label: string; hint: string; action: 'exercise' | 'workspace' };

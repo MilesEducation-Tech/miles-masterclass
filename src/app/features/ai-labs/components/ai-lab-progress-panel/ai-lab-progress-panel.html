@@ -1,0 +1,245 @@
+<!-- Not provisioned, a failed read, or nothing assigned yet all render as absence: this is
+     supplementary content on a public marketing page, so a hiccup costs the section rather than
+     showing an error state to someone who is just reading.
+
+     The skeleton is safe to show because the host only leaves its idle state for a signed-in
+     learner who is already known to be a lab user — so it never flashes a ghost section at a
+     visitor who will never see one. -->
+@if (isLoading()) {
+  <section
+    class="w-11/12 max-w-6xl mx-auto"
+    role="status"
+    aria-label="Loading your AI Labs progress"
+  >
+    <div class="h-8 w-64 animate-pulse rounded bg-secondary"></div>
+    <div class="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="h-[118px] animate-pulse rounded-2xl bg-secondary sm:h-[148px]"></div>
+      }
+    </div>
+    <div class="mt-8 flex flex-col gap-3">
+      @for (i of [1, 2]; track i) {
+        <div class="h-[104px] animate-pulse rounded-2xl bg-secondary sm:h-[90px]"></div>
+      }
+    </div>
+  </section>
+} @else if (totals(); as p) {
+  <section
+    id="your-progress"
+    class="w-11/12 max-w-6xl mx-auto scroll-mt-24"
+    aria-labelledby="your-progress-heading"
+  >
+    <div class="max-w-2xl">
+      <span
+        class="inline-flex items-center gap-2 rounded-full border border-border bg-card/40 px-3.5 py-1.5 text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase"
+      >
+        <ng-icon name="lucideGauge" class="text-accent" aria-hidden="true" /> Your progress
+      </span>
+      <h2
+        id="your-progress-heading"
+        class="ai-metal-text mt-4 text-2xl font-bold sm:text-3xl lg:text-4xl"
+        ngxInView
+        preset="fade-up"
+      >
+        Where your labs stand
+      </h2>
+      <!-- "0 of 0 labs complete" is noise; without a catalogue size there is nothing to say, so
+           the line goes rather than reading as a score — and with neither half to say, the
+           paragraph itself goes. -->
+      @let hasCatalogue = hasStat(p.assignments_available);
+      @if (hasCatalogue || p.last_activity_at) {
+        <p class="mt-3 text-muted-foreground" ngxInView preset="fade-up" [delay]="0.1">
+          @if (hasCatalogue) {
+            {{ p.assignments_completed | number }} of {{ p.assignments_available | number }} labs
+            complete.
+          }
+          @if (p.last_activity_at) {
+            Last active {{ p.last_activity_at | date: 'd MMM y' }}.
+          }
+        </p>
+      }
+    </div>
+
+    <!-- Totals. Server-owned figures, shown as sent — `average_percentage` in particular is never
+         recomputed from the rows below.
+         Two-up on a phone: one tile per row puts four cards and ~1300px between the heading and
+         the first lab, which is the thing people came for.
+         Every figure came back null / NaN / 0 — no grid rather than an empty one. -->
+    @if (stats().length) {
+      <dl class="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        @for (stat of stats(); track stat.label) {
+          <div
+            class="flex h-full flex-col rounded-2xl border border-border bg-card/40 p-4 shadow-[inset_0_1px_0_rgb(255_255_255/0.05)] transition-[box-shadow,border-color] duration-300 hover:border-accent/45 hover:shadow-[0_16px_48px_rgb(var(--accent-rgb)/0.16)] sm:p-6"
+            ngxHoverSpring
+            [lift]="-4"
+          >
+            <span
+              class="inline-flex size-9 items-center justify-center rounded-lg border border-accent/35 bg-linear-[140deg] from-accent/30 to-accent/5 text-[1.15rem] text-accent shadow-[inset_0_1px_0_rgb(255_255_255/0.08),inset_0_0_14px_rgb(var(--accent-rgb)/0.18),0_6px_16px_rgb(var(--accent-rgb)/0.12)] sm:size-11 sm:text-[1.4rem]"
+            >
+              <ng-icon [name]="stat.icon" aria-hidden="true" />
+            </span>
+            <dt class="mt-3 font-mono text-xl font-bold text-foreground sm:mt-4 sm:text-2xl">
+              {{ stat.value }}
+            </dt>
+            <dd class="mt-1 text-[12.5px] text-muted-foreground sm:text-sm">{{ stat.label }}</dd>
+          </div>
+        }
+      </dl>
+    }
+
+    <!-- A 0% bar says nothing a missing bar doesn't. -->
+    @if (hasStat(completionPercent())) {
+      <app-progress
+        class="mt-6 block"
+        size="sm"
+        variant="info"
+        [value]="completionPercent()"
+        [ariaLabel]="completionPercent() + '% of your AI Labs complete'"
+      />
+    }
+
+    <!-- Copilot Credits. The floating pill shows the same balance as a glanceable minimum; this is
+         the full picture — used against allotted, the burn bar, and whatever request is open.
+         Gated exactly as the pill is: no balance means no allotment, which renders as nothing
+         rather than a row of zeros. -->
+    @if (balance(); as tokens) {
+      <div class="mt-4 rounded-2xl border border-border bg-card/40 p-4 sm:p-6">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <span
+              class="inline-flex size-9 items-center justify-center rounded-lg border border-accent/35 bg-linear-[140deg] from-accent/30 to-accent/5 text-[1.15rem] text-accent"
+            >
+              <ng-icon name="lucideZap" aria-hidden="true" />
+            </span>
+            <div>
+              <p
+                class="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+              >
+                Copilot Credits
+              </p>
+              <p class="mt-0.5 font-mono text-xl font-bold text-foreground">
+                {{ tokens.remaining | number }}
+                <span class="text-[12.5px] font-normal text-muted-foreground">
+                  left of {{ tokens.allotted | number }}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <!-- While a request is open the control is replaced, not disabled: one at a time is the
+               server's rule, so there is nothing to click. -->
+          @if (tokens.pendingTokens !== null) {
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-[11.5px] font-medium text-accent"
+              role="status"
+              aria-live="polite"
+            >
+              +{{ tokens.pendingTokens | number }} requested &middot; awaiting approval
+            </span>
+          } @else {
+            <button
+              app-button
+              type="button"
+              class="shrink-0"
+              variant="outline"
+              [disabled]="submitting()"
+              (click)="topUp.emit()"
+            >
+              {{ submitting() ? 'Requesting…' : 'Top up' }}
+            </button>
+          }
+        </div>
+
+        <app-progress
+          class="mt-4 block"
+          size="sm"
+          [value]="usedPercent()"
+          [variant]="meterVariant()"
+          [ariaLabel]="tokens.used + ' of ' + tokens.allotted + ' AI Lab tokens used'"
+        />
+        <!-- Rounded for reading only. `usedPercent` stays unrounded so the bar and the warning
+             thresholds keep their precision. -->
+        <p class="mt-2 text-[12px] text-muted-foreground">
+          {{ tokens.used | number }} used &middot; {{ usedPercent() | number: '1.0-0' }}% of your
+          allotment
+        </p>
+      </div>
+    }
+
+    <!-- One row per assignment. A row whose assignment isn't mapped to a course yet has no page to
+         open, so it renders without a link rather than with a dead one. -->
+    <ul class="mt-8 flex flex-col gap-3">
+      @for (row of assignments(); track row.assignment_id) {
+        @let status = statusUi(row.status);
+        <li
+          class="flex items-center gap-4 rounded-2xl border border-border bg-card/40 p-4 sm:gap-5 sm:p-5"
+        >
+          <!-- Portrait tile: the catalogue art is 9:16, so a landscape crop here would slice the
+               middle out of every one of them. -->
+          @if (thumbnail(row); as art) {
+            <img
+              [src]="art"
+              alt=""
+              class="aspect-9/16 h-20 shrink-0 rounded-lg object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+          }
+
+          <div class="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="text-[15px] font-semibold text-foreground">{{ row.title }}</h3>
+                <span
+                  class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold"
+                  [class]="status.class"
+                >
+                  {{ status.label }}
+                </span>
+              </div>
+              <p class="mt-1.5 text-[12.5px] text-muted-foreground">
+                {{ row.attempts | number }} {{ row.attempts === 1 ? 'attempt' : 'attempts' }}
+                @if (row.last_submitted_at) {
+                  &middot; last submitted {{ row.last_submitted_at | date: 'd MMM y' }}
+                }
+                @if (!row.course) {
+                  &middot; not yet available on Masterclass
+                }
+              </p>
+            </div>
+
+            <div class="flex items-center gap-5 sm:shrink-0">
+              <div class="text-end">
+                <p class="font-mono text-lg font-bold text-foreground">
+                  {{ row.best_percentage === null ? '—' : row.best_percentage + '%' }}
+                </p>
+                <p class="text-[11px] text-muted-foreground">
+                  @if (
+                    row.latest_percentage !== null && row.latest_percentage !== row.best_percentage
+                  ) {
+                    Best &middot; latest {{ row.latest_percentage }}%
+                  } @else {
+                    Best score
+                  }
+                </p>
+              </div>
+
+              @if (row.course) {
+                <button
+                  app-button
+                  type="button"
+                  class="shrink-0"
+                  variant="outline"
+                  [attr.aria-label]="ctaLabel(row) + ': ' + row.title"
+                  (click)="openAssignment.emit(row)"
+                >
+                  {{ ctaLabel(row) }}
+                </button>
+              }
+            </div>
+          </div>
+        </li>
+      }
+    </ul>
+  </section>
+}

@@ -84,83 +84,75 @@
           preset="fade-up"
           [delay]="0.1"
         >
-          Our master classes teach the thinking. The Labs are where you build it.
+          Our Masterclasses teach the thinking. The Labs are where you build it.
         </p>
 
         <!-- CTA cluster = the auth-card state machine, centred. Logic is UNCHANGED
          from the original; every path still runs through activate(). -->
         <div class="mt-4 w-full max-w-md sm:mt-10">
-          @if (!hasLabAccount() && accountRequested()) {
-            <div class="rounded-xl border border-border bg-muted p-5 text-start">
-              <p class="text-sm text-foreground">Check your email</p>
-              <p class="mt-2 text-sm text-muted-foreground">
-                We've sent you a link to set your Miles AI Lab password. It can take up to a minute
-                to arrive. Once you've set it, come back here and continue.
-              </p>
-              <div class="mt-4">
-                <button
-                  app-button
-                  type="button"
-                  class="h-12 w-full rounded-xl bg-accent text-base"
-                  variant="ghost"
-                  [disabled]="milesAuth.isLoadingProfile()"
-                  (click)="refreshStatus()"
-                >
-                  {{ milesAuth.isLoadingProfile() ? 'Checking…' : "I've set my password" }}
-                </button>
-              </div>
-              @if (stillPending()) {
-                <p class="mt-3 text-center text-xs text-muted-foreground" role="status">
-                  Your account isn't ready yet. Give it a moment and try again.
-                </p>
-              }
-            </div>
-          } @else {
-            @let showResend = hasLabAccount() && !auth.isSignedIn();
+          @let awaitingAccount = accountRequested() && !hasLabAccount();
+          <!-- @let showResend = hasLabAccount() && !auth.isSignedIn(); -->
 
-            <div class="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <div class="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <button
+              app-button
+              type="button"
+              class="h-11 flex-1 gap-2 rounded-xl bg-accent text-sm sm:h-14 sm:text-base"
+              variant="ghost"
+              ngxPress
+              [disabled]="submitting()"
+              (click)="activate()"
+            >
+              @if (!auth.isSignedIn()) {
+                <ng-icon [svg]="copilotIcon" class="text-xl" />
+              }
+              <span>{{ ctaLabel() }}</span>
+            </button>
+
+            <!-- Provisioning takes ~a minute, so while we wait the secondary slot is a manual
+             profile refresh; it becomes the resend once the account exists. -->
+            @if (awaitingAccount) {
               <button
                 app-button
                 type="button"
-                class="h-11 flex-1 gap-2 rounded-xl bg-accent text-sm sm:h-14 sm:text-base"
-                variant="ghost"
-                ngxPress
-                [disabled]="submitting()"
-                (click)="activate()"
+                class="h-14 w-full shrink-0 rounded-xl text-sm sm:w-[9.5rem]"
+                variant="outline"
+                [disabled]="milesAuth.isLoadingProfile()"
+                (click)="refreshStatus()"
               >
-                @if (!auth.isSignedIn()) {
-                  <ng-icon [svg]="copilotIcon" class="text-xl" />
-                }
-                <span>{{ ctaLabel() }}</span>
+                {{ milesAuth.isLoadingProfile() ? 'Checking…' : 'Refresh' }}
               </button>
+            }
+            <!-- @else if (showResend) {
+              <button
+                app-button
+                type="button"
+                class="h-14 w-full shrink-0 rounded-xl text-sm sm:w-[9.5rem]"
+                variant="outline"
+                [disabled]="submitting()"
+                (click)="confirmResend()"
+              >
+                {{ submitting() ? 'Sending…' : 'Resend Credential' }}
+              </button>
+            } -->
+          </div>
 
-              @if (showResend) {
-                <button
-                  app-button
-                  type="button"
-                  class="h-14 w-full shrink-0 rounded-xl text-sm sm:w-[9.5rem]"
-                  variant="outline"
-                  [disabled]="submitting()"
-                  (click)="confirmResend()"
-                >
-                  {{ submitting() ? 'Sending…' : 'Resend email' }}
-                </button>
-              } @else {
-                <!-- Secondary CTA only when it doesn't crowd the resend action. -->
-                <!-- <button app-button type="button" class="h-14 gap-2 rounded-xl text-base" variant="outline" ngxPress (click)="scrollTo('showcase')">
-                  <ng-icon name="lucidePlay" class="text-lg" />
-                  <span>See it in action</span>
-                </button> -->
-              }
-            </div>
-
-            @if (showResend) {
-              <p class="mt-2 text-center text-xs text-muted-foreground">
-                Resending sets a new password for your AI Lab account — your current one stops
-                working.
+          @if (awaitingAccount) {
+            <p class="mt-2 text-center text-xs text-muted-foreground" role="status">
+              Check your email — we've sent your Miles AI Lab email and password. It can take up to
+              a minute to arrive.
+            </p>
+            @if (stillPending()) {
+              <p class="mt-1 text-center text-xs text-muted-foreground" role="status">
+                Your account isn't ready yet. Give it a moment and hit refresh.
               </p>
             }
           }
+          <!-- @else if (showResend) {
+            <p class="mt-2 text-center text-xs text-muted-foreground">
+              Resending emails you a brand-new password — your current one stops working.
+            </p>
+          } -->
 
           @if (auth.error(); as err) {
             <p class="mt-3 text-center text-xs text-destructive" role="alert">{{ err }}</p>
@@ -201,21 +193,30 @@
             </li>
           }
         </ul>
-        <!-- Marketing counts until the learner submits; then their own progress
-         (submitted · overall score · passed), animated up on change. -->
+        <!-- Marketing counts, the same for everyone. The learner's own figures are in the
+         progress panel below the fold, not here. A tile shows either a logo glyph or a count-up
+         number, and the column count follows the tile count so two tiles don't leave a gap. -->
         <div class="mt-4 w-full max-w-3xl sm:mt-14" ngxInView preset="fade-up" [delay]="0.1">
           <p
             class="mb-1 text-center text-[0.62rem] font-medium tracking-[0.16em] text-muted-foreground uppercase sm:mb-4 sm:text-[0.7rem]"
           >
-            {{ hasSubmissions() ? 'Your progress' : "What's inside" }}
+            What's inside
           </p>
-          <dl class="grid grid-cols-3 gap-2 sm:gap-6">
-            @for (stat of heroStats(); track stat.label) {
+          <dl
+            class="grid gap-2 sm:gap-6"
+            [class.grid-cols-2]="heroStats.length <= 2"
+            [class.grid-cols-3]="heroStats.length > 2"
+          >
+            @for (stat of heroStats; track stat.label) {
               <div class="text-center">
                 <dt class="text-base font-bold text-foreground sm:text-4xl">
-                  <span [ngxCountUp]="stat.value" [suffix]="stat.suffix ?? ''"
-                    >{{ stat.value }}{{ stat.suffix }}</span
-                  >
+                  @if (stat.logo) {
+                    <ng-icon class="text-3xl sm:text-5xl" [svg]="stat.logo" aria-hidden="true" />
+                  } @else {
+                    <span [ngxCountUp]="stat.value ?? 0" [suffix]="stat.suffix ?? ''"
+                      >{{ stat.value }}{{ stat.suffix }}</span
+                    >
+                  }
                 </dt>
                 <dd
                   class="mt-0.5 text-[0.6rem] leading-tight text-muted-foreground sm:mt-1 sm:text-sm"
@@ -627,7 +628,7 @@
        Driven by GSAP scroll instead of drag/wheel: buildCardFan() recomputes those
        vars from the pinned ngxScrub progress; the CSS transition does the fan.
        Cards flattened across the three tracks; each card labels its own track.
-       Whole-card click still opens the detail dialog (openAgent). SSR renders the
+       Whole-card click opens the card's course page (viewAgent). SSR renders the
        cards (indexable) with an inline fan fallback; the scroll math is browser-only. -->
     <section id="catalogue" class="relative">
       <ng-template #catalogueHead>
@@ -657,15 +658,15 @@
               [style.--zi]="fanCards().length - i"
               [style.--active]="i / (fanCards().length || 1)"
               [attr.aria-label]="entry.card.name"
-              (click)="openAgent(entry.card)"
-              (keydown.enter)="openAgent(entry.card)"
+              (click)="viewAgent(entry.card)"
+              (keydown.enter)="viewAgent(entry.card)"
               tabindex="0"
             >
               <div class="ai-fan-box">
-                @if (entry.card.thumbnail) {
+                @if (entry.card.portraitThumbnail) {
                   <img
                     class="ai-fan-img"
-                    [src]="entry.card.thumbnail"
+                    [src]="entry.card.portraitThumbnail"
                     [alt]="entry.card.thumbnailAlt ?? entry.card.name"
                     loading="lazy"
                     decoding="async"
@@ -759,9 +760,9 @@
                  differs: the grid adds the scroll reveal, the rail cannot (motion
                  on a slide fights Swiper's own transforms on the loop clones). -->
             <ng-template #trackCard let-agent>
-              <!-- Swiss-Chalet card structure (image-dominant · badges · big CTA),
-                   in Miles tokens. `report` drives the score badge + CTA label. -->
-              @let report = agent.chapterId !== undefined ? reports()[agent.chapterId] : null;
+              <!-- Swiss-Chalet card structure (image-dominant · badges · big CTA), in Miles
+                   tokens. The score badge and "Submitted" pill that used to sit here went with
+                   the assessment layer — feedback now happens on the course page. -->
               <!-- Hover is CSS-only (no ngxHoverSpring): a JS spring on this same
                    element fights the group-hover transform AND breaks the
                    backdrop-blur while it animates. One driver, one transform. -->
@@ -813,14 +814,6 @@
                     class="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-muted to-transparent"
                     aria-hidden="true"
                   ></div> -->
-                  @if (report) {
-                    <span
-                      class="absolute top-3 end-3 inline-flex items-center gap-1 rounded-full border border-accent/40 bg-background/70 px-2.5 py-1 text-xs font-semibold text-accent backdrop-blur-sm"
-                    >
-                      <ng-icon name="lucideCircleCheck" class="text-sm" />
-                      {{ report.scorePercent }}%
-                    </span>
-                  }
                 </div>
 
                 <div class="flex flex-1 flex-col px-5 pt-4 pb-5">
@@ -835,7 +828,7 @@
                     {{ agent.description }}
                   </p>
 
-                  <!-- Pill badges — duration, quiz size, and the submitted score. -->
+                  <!-- Pill badges — duration and quiz size. -->
                   <div class="mt-4 flex flex-wrap gap-2">
                     @if (agent.durationSeconds) {
                       <span
@@ -852,13 +845,6 @@
                         {{ agent.questionCount === 1 ? 'question' : 'questions' }}
                       </span>
                     }
-                    @if (report) {
-                      <span
-                        class="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-medium text-accent"
-                      >
-                        <ng-icon name="lucideCircleCheck" class="text-sm" /> Submitted
-                      </span>
-                    }
                   </div>
 
                   <div class="mt-auto pt-5">
@@ -867,10 +853,10 @@
                       type="button"
                       class="h-11 w-full gap-2"
                       ngxPress
-                      [attr.aria-label]="(report ? 'View score for ' : 'More about ') + agent.name"
-                      (click)="openAgent(agent)"
+                      [attr.aria-label]="'View course: ' + agent.name"
+                      (click)="viewAgent(agent)"
                     >
-                      <span>{{ report ? 'View score' : 'More info' }}</span>
+                      <span>View Course</span>
                       <ng-icon [svg]="sparkleIcon" class="text-base" />
                     </button>
                   </div>
@@ -878,52 +864,24 @@
               </div>
             </ng-template>
 
-            <!-- Phone: one looping rail per track. The wrapper owns Swiper
-                 (registration, teardown, skeletons) and `section.slides` pads a
-                 short track so loop mode survives — see resolvedSections(). -->
-            @if (isMobile()) {
-              <app-carousel
-                class="mt-6"
-                [cards]="section.slides"
-                [swiperConfig]="trackConfig"
-                [isLoading]="section.loading"
-                skeletonClass="h-[340px] w-full"
-              >
-                <ng-template let-agent>
-                  <article class="group h-full">
-                    <ng-container *ngTemplateOutlet="trackCard; context: { $implicit: agent }" />
-                  </article>
-                </ng-template>
-              </app-carousel>
-            } @else {
-              <div class="mt-6 grid grid-cols-1 gap-[19px] md:grid-cols-2 lg:grid-cols-3">
-                @if (section.loading) {
-                  @for (placeholder of [1, 2, 3]; track placeholder) {
-                    <div
-                      class="h-[340px] animate-pulse rounded-2xl border border-border bg-muted"
-                      aria-hidden="true"
-                    ></div>
-                  }
-                } @else {
-                  @for (agent of section.cards; track agent.name; let i = $index) {
-                    <article
-                      class="group h-full"
-                      ngxInView
-                      preset="fade-up"
-                      [delay]="(i % 3) * 0.08"
-                    >
-                      <ng-container *ngTemplateOutlet="trackCard; context: { $implicit: agent }" />
-                    </article>
-                  }
-                }
-              </div>
-            }
-
-            @if (!section.loading && !section.cards.length) {
-              <p class="text-sm text-muted-foreground">
-                This catalogue isn't available right now. Please try again shortly.
-              </p>
-            }
+            <!-- One rail per track at every width. The wrapper owns Swiper (registration,
+                 teardown, skeletons); `trackConfig` steps 1.15 → 2 → 3 per view and rewinds at
+                 the end, so a short track needs no padding to keep the rail alive. The desktop
+                 grid and its staggered fade-up reveals are gone with it — motion on a slide
+                 fights Swiper's own transforms. -->
+            <app-carousel
+              class="mt-6"
+              [cards]="section.cards"
+              [swiperConfig]="trackConfig"
+              [isLoading]="section.loading"
+              skeletonClass="h-[340px] w-full"
+            >
+              <ng-template let-agent>
+                <article class="group h-full">
+                  <ng-container *ngTemplateOutlet="trackCard; context: { $implicit: agent }" />
+                </article>
+              </ng-template>
+            </app-carousel>
           </div>
         }
       </div>

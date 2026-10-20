@@ -27,4 +27,18 @@ export const AI_LABS_ROUTES: Route[] = [
     providers: [provideGsap(), provideMotion({ reducedMotion: 'user' })],
     loadComponent: () => import('./pages/ai-labs/ai-labs').then((m) => m.AiLabs),
   },
+  /**
+   * The course a catalogue card opens.
+   *
+   * Deliberately OUTSIDE the `providers` above: `provideGsap()` / `provideMotion()` are what pin
+   * gsap, lenis and motion to the landing route's chunk, and the course page does not animate.
+   * Nesting it under them would drag all three into its chunk for nothing.
+   *
+   * The exam, report and feedback children are not here: they are offerings pages behind
+   * `authGuard` with their own facades, and this page is not bound to a data layer yet.
+   */
+  {
+    path: ':courseId/:courseTitle',
+    loadComponent: () => import('./pages/ai-lab-course/ai-lab-course').then((m) => m.AiLabCourse),
+  },
 ];

@@ -53,11 +53,6 @@ import {
 import type { SwiperOptions } from 'swiper/types';
 import { Button } from '@shared/ui/button/button';
 import { Carousel } from '@shared/components/carousel/carousel';
-import {
-  AiLabAgentCard,
-  AiLabAgentDialog,
-  AiLabAgentDialogResult,
-} from '@shared/dialogs/ai-lab-agent-dialog/ai-lab-agent-dialog';
 import { AiLabTermsDialog } from '@shared/dialogs/ai-lab-terms-dialog/ai-lab-terms-dialog';
 import {
   UtilsDialog,
@@ -82,10 +77,10 @@ import {
   AI_LAB_STATS,
   AI_LAB_STEPS,
   AI_LAB_TESTIMONIALS,
+  AiLabAgentCard,
   AiLabChapter,
   AiLabStat,
-} from '../../models/ai-labs.model';
-import { AiLabSubmission } from '@core/services/ai-lab-submission/ai-lab-submission';
+} from '@features/ai-labs/models/ai-labs.model';
 import { HttpContext } from '@angular/common/http';
 import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import { iconCopilot, iconSparkle } from '@core/constants/icon';
@@ -216,6 +211,7 @@ export class AiLabs {
   };
   protected readonly milesAuth = {
     isLoadingProfile: signal(false),
+    isLoggedIn: signal(false),
   };
   private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
@@ -228,7 +224,6 @@ export class AiLabs {
   private readonly apiClient = inject(ApiClient);
   private readonly notification = inject(NotificationService);
   private readonly storage = inject(Storage);
-  protected readonly submission = inject(AiLabSubmission);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /**
@@ -285,42 +280,14 @@ export class AiLabs {
   protected readonly tools = AI_LAB_TOOLS;
 
   /**
-   * Env gate for the whole evaluation/assessment layer — the submit panel, the
-   * per-card score badge, and the hero "your progress" strip. Off until the
-   * grading backend is ready (see environment.ts `AI_LABS.assessmentEnabled`).
+   * The hero tiles — marketing counts, the same for everyone.
+   *
+   * A plain array, not a `computed`: the learner's own figures used to flip in here once they had
+   * submitted something, and that surface now lives in the progress panel below the fold instead.
+   * The assessment layer went with it — the `AI_LABS.assessmentEnabled` env gate, the per-card
+   * score badge and the "Submitted" pill are all gone from this page.
    */
-  protected readonly assessmentEnabled = environment.AI_LABS.assessmentEnabled;
-
-  /** True once the learner has submitted at least one workflow (gated). */
-  protected readonly hasSubmissions = computed(
-    () => this.assessmentEnabled && this.submission.overall().submitted > 0,
-  );
-
-  /**
-   * The hero's three count-up tiles. Before the first submission they carry the
-   * marketing counts (`AI_LAB_STATS`); once the learner has submitted anything
-   * they flip to that learner's own progress — submitted, overall score, passed
-   * — which is the "overall score in the hero" surface. Same shape either way,
-   * so the template's `ngxCountUp` strip just re-animates on the switch.
-   */
-  protected readonly heroStats = computed<AiLabStat[]>(() => {
-    const o = this.submission.overall();
-    if (!this.assessmentEnabled || !o.submitted) return AI_LAB_STATS;
-    return [
-      { value: o.submitted, label: 'Agents submitted' },
-      { value: o.avgScore, suffix: '%', label: 'Overall score' },
-      { value: o.passed, label: 'Passed' },
-    ];
-  });
-
-  /**
-   * Chapter id → its submitted report, for the per-card score badge. A computed
-   * (not a method) so the template reads a signal by index instead of calling a
-   * method on every change-detection pass.
-   */
-  protected readonly reports = computed(() =>
-    this.assessmentEnabled ? this.submission.submissions() : {},
-  );
+  protected readonly heroStats: AiLabStat[] = AI_LAB_STATS;
 
   /**
    * Chapters per course id. `undefined` means still loading; `[]` means the
@@ -331,65 +298,40 @@ export class AiLabs {
   private readonly chapters = signal<Record<number, AiLabChapter[] | undefined>>({});
 
   /**
-   * The catalogue the template renders. Both origins produce the same card
-   * shape, so the grid and the detail dialog never branch on where a tile came
-   * from.
+   * The catalogue the template renders — one rail per section, cards straight from the course.
    *
-   * The course wins whenever it returns anything. A failed fetch and an empty
-   * course are treated identically — both mean "no live catalogue" — and fall
-   * back to the section's static agents, so the page is never a bare heading
-   * over an empty grid. That fallback is also what renders on UAT, where the
-   * production course ids don't resolve.
+   * Three things the static fallback used to hide are now visible by design:
+   *
+   *  - **A settled-empty section is dropped entirely, heading included.** There are no
+   *    hand-written tiles left to fall back to, so a heading with nothing under it would be a bare
+   *    strip. On UAT, where the production course ids don't resolve, that is the whole catalogue.
+   *  - **No three-card cap.** A section renders every chapter the course publishes.
+   *  - **No `slides` padding.** That duplicated a short set so Swiper's `loop` would engage; the
+   *    rail rewinds now, which needs no padding.
    */
   protected readonly resolvedSections = computed(() =>
-    this.sections.map((section) => {
-      const loaded = section.courseId === undefined ? undefined : this.chapters()[section.courseId];
-      const chapters = loaded ?? [];
-      // At most three cards per section, whichever source they come from.
-      const cards = (
-        chapters.length
-          ? chapters.map((c, i): AiLabAgentCard => ({
-              name: c.chapter_name,
-              description: c.description,
-              // Static webp artwork, positionally (agents mirror the chapters in
-              // order), not the API's chapter_thumbnail. No fallback: a tile with
-              // no static image (e.g. PBC) is meant to show the gradient placeholder.
-              thumbnail: section.agents?.[i]?.thumbnail,
-              thumbnailAlt: section.agents?.[i]?.thumbnailAlt ?? c.chapter_name,
-              durationSeconds: c.video_duration,
-              questionCount: c.quiz_details?.total_questions,
-              // Lets the detail dialog pull the course-level "about" payload.
-              courseId: section.courseId,
-              // The exercise key: the submit panel and its score store against this.
-              chapterId: c.id,
-            }))
-          : (section.agents ?? []).map((a): AiLabAgentCard => ({
-              name: a.name,
-              // The design sets the shared "Agent" suffix in a lighter weight
-              // than the distinctive name. Chapter titles don't take it.
-              nameSuffix: ' Agent',
-              description: a.description,
-              thumbnail: a.thumbnail,
-              thumbnailAlt: a.thumbnailAlt ?? `${a.name} Agent`,
-            }))
-      ).slice(0, 3);
+    this.sections
+      .map((section) => {
+        const loaded =
+          section.courseId === undefined ? undefined : this.chapters()[section.courseId];
+        const chapters = loaded ?? [];
 
-      return {
-        heading: section.heading,
-        loading: section.courseId !== undefined && loaded === undefined,
-        cards,
-        /**
-         * What the phone's track rail renders (the desktop grid uses `cards`).
-         * Swiper turns `loop` off when a rail has no more slides than it shows,
-         * which three cards at 1.15 per view is — so render the set twice.
-         *
-         * ponytail: this only exists because of the three-card cap above. Lift
-         * the cap and `slides` collapses back to `cards`. Same padding trick the
-         * powered-by marquee uses for its short list.
-         */
-        slides: cards.length < 4 ? [...cards, ...cards] : cards,
-      };
-    }),
+        return {
+          heading: section.heading,
+          loading: section.courseId !== undefined && loaded === undefined,
+          cards: chapters.map((c): AiLabAgentCard => ({
+            name: c.chapter_name,
+            description: c.description,
+            thumbnail: c.chapter_thumbnail,
+            thumbnailAlt: c.chapter_name,
+            durationSeconds: c.video_duration,
+            questionCount: c.quiz_details?.total_questions,
+            // The page a card opens.
+            courseId: section.courseId,
+          })),
+        };
+      })
+      .filter((section) => section.loading || section.cards.length > 0),
   );
 
   /**
@@ -423,15 +365,22 @@ export class AiLabs {
   };
 
   /**
-   * Catalogue track rails. Phone only — from `md` up the tracks go back to the
-   * 2/3-column grid — so there are no breakpoints to declare here.
+   * Catalogue track rails, now at every width — the desktop grid is gone.
+   *
+   * `rewind` rather than `loop`: loop mode needs more slides than it shows and silently disables
+   * itself below that, which is why the old config had to pad short tracks with a duplicated set.
+   * Rewind just jumps back to the first slide at the end and works with any count.
    */
   protected readonly trackConfig: SwiperOptions = {
-    loop: true,
+    rewind: true,
     spaceBetween: 19,
     slidesPerView: 1.15,
     freeMode: { enabled: false },
     pagination: false,
+    breakpoints: {
+      768: { slidesPerView: 2 },
+      1024: { slidesPerView: 3 },
+    },
   };
 
   /**
@@ -465,12 +414,22 @@ export class AiLabs {
   );
 
   /**
-   * Guests keep the neutral label: account state isn't knowable until they log
-   * in, so promising them "Create account" would be guessing.
+   * Guests keep the neutral label: account state isn't knowable until they log in, so promising
+   * them "Create account" would be guessing.
+   *
+   * The `Create AI Lab account` branch cannot fire today — `milesAuth` is an inert stub left
+   * behind when the auth layer was removed, so `isLoggedIn()` is always false. It is here for
+   * parity with the source design, and it starts working the moment the real service is
+   * re-injected.
    */
   protected readonly ctaLabel = computed(() => {
     if (this.auth.isSignedIn()) return 'Launch AI Lab';
     if (this.auth.signingIn()) return 'Waiting for sign-in…';
+    // Once the request is out the account is on its way, so the CTA becomes the login the emailed
+    // credentials are for — not a second create.
+    if (this.milesAuth.isLoggedIn() && !this.hasLabAccount() && !this.accountRequested()) {
+      return 'Create AI Lab account';
+    }
     return 'Login to Miles AI Labs';
   });
 
@@ -534,16 +493,17 @@ export class AiLabs {
   }
 
   /**
-   * Card detail. The dialog is read-only; its Launch button routes back through
-   * `activate()` so the login / plan / agreement gate stays in one place.
+   * Card click — the course page behind the tile.
+   *
+   * This used to open `AiLabAgentDialog`, a read-only detail sheet that duplicated what a course
+   * page shows. The dialog is retired: every tile now has a real page, so the catalogue links to
+   * it rather than describing it in a modal.
+   *
+   * A tile with no `courseId` has nothing to open and is inert.
    */
-  protected openAgent(card: AiLabAgentCard): void {
-    this.dialogs
-      .open<AiLabAgentCard, AiLabAgentDialogResult>(AiLabAgentDialog, { data: card })
-      .afterClosed.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        if (result === 'launch') this.activate();
-      });
+  protected viewAgent(card: AiLabAgentCard): void {
+    if (card.courseId === undefined) return;
+    this.utils.navigateToCourse('ai_lab', card.courseId, card.name);
   }
 
   /**

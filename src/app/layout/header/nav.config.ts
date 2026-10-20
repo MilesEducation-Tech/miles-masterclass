@@ -22,7 +22,7 @@ export const LOGGED_IN_NAV: readonly NavItem[] = [
     type: 'link',
     route: 'masterclass',
   },
-  { label: 'nav.aiLabs', type: 'link', route: 'ai-labs', badge: 'nav.beta', highlight: true },
+  { label: 'nav.aiLabs', type: 'link', route: 'ai-labs', highlight: true },
   // { label: 'CAIRA', type: 'link', route: 'caira' },
   { label: 'nav.webinar', subLabel: 'nav.webinarSub', type: 'link', route: 'webinar' },
   { label: 'nav.reels', subLabel: 'nav.reelsSub', type: 'link', route: 'micro-learning' },
@@ -47,7 +47,7 @@ export const LOGGED_IN_NAV: readonly NavItem[] = [
 /** Nav for unauthenticated visitors. */
 export const GUEST_NAV: readonly NavItem[] = [
   { label: 'nav.home', type: 'link', route: 'home' },
-  { label: 'nav.aiLabs', type: 'link', route: 'ai-labs', badge: 'nav.beta', highlight: true },
+  { label: 'nav.aiLabs', type: 'link', route: 'ai-labs', highlight: true },
   { label: 'nav.webinar', subLabel: 'nav.webinarSub', type: 'link', route: 'webinar' },
   { label: 'nav.plans', type: 'link', route: 'payment/plan' },
   // {

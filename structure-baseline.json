@@ -317,10 +317,6 @@
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/features/ai-labs/pages/ai-labs/ai-labs.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/features/auth/auth.routes.ts": {
       "count": 3,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
@@ -623,10 +619,6 @@
     },
     "src/app/shared/components/user-avatar-menu/user-avatar-menu.ts": {
       "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/dialogs/ai-lab-agent-dialog/ai-lab-agent-dialog.ts": {
-      "count": 3,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/shared/dialogs/ai-lab-dialog/ai-lab-dialog.ts": {

@@ -7,6 +7,113 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🔧 **2026-10-20, NON-REFACTOR — AI Labs UI parity with `miles-masterclass-v3@master`
+  (`prompts/ai-labs-ui-parity.md`, approved in plan mode). SUBTASK 1 OF 3 DONE, UNCOMMITTED** on
+  `feat/ai-labs-ui-parity` (branched from `master` `28d96f1`).
+  - **Branch has no ticket number** — `feat/ai-labs-ui-parity`. The husky guard and CI only require
+    `type/description`, but CLAUDE.md asks for `type/TICKET-description`; rename if there is a MIL
+    number for this.
+  - **Source of truth is that repo's `master`.** It is checked out on `feat/ai-labs-refactor`, which
+    is ~1678 lines ahead on AI Labs; read master with `git show master:<path>` and ignore the branch.
+  - **Subtask 1, the landing page.** Hero stats are 2 logo tiles instead of 3 count-ups (grid column
+    count now follows tile count); the eyebrow is always "What's inside"; the CTA cluster is their
+    inline `Refresh` pill + helper text with `Resend email` commented out and a third
+    `Create AI Lab account` state; the catalogue is one rewinding rail at every width (1.15/2/3);
+    the fan is re-proportioned to true 9:16 and reads a new `portraitThumbnail`; cards navigate to
+    the course page. **Removals ported as instructed** ("do as theirs exactly"): the assessment
+    layer (`AI_LABS.assessmentEnabled`, score badge, Submitted pill, `reports`), the 10 static
+    catalogue agents, `AiLabAgent`, and `shared/dialogs/ai-lab-agent-dialog/` (deleted —
+    `AiLabAgentCard` moved down into the feature model per AGENTS.md §3).
+  - **⚠ The catalogue is now empty on UAT, by design, and this is worth seeing before it surprises
+    someone.** Their catalogue is API-fed, which is why the static tiles could go. Ours is not bound
+    and **`v2/chapters/?id=440` and `?id=442` both answer HTTP 404** (probed 2026-10-20). So the fan
+    falls to its `@empty` message and `#catalogue-grid` renders nothing at all. Binding the
+    catalogue read is what brings it back; keeping the fallback was offered and declined.
+  - **Hero CTA work is structural only.** `auth`/`milesAuth` are inert stubs left from the auth
+    removal, so `isSignedIn()`/`isLoggedIn()` are permanently false and no ported branch can fire.
+  - **RTL is ours alone and was deliberately kept** — `dir="ltr"` on marquee and fan,
+    `rtl:-scale-x-100` arrows, logical-property CSS, the `:dir(rtl)` progress fill, the `this.rtl`
+    ternaries in `buildShowcase()`. None of it exists upstream; it is not drift.
+  - **Verified (dev 4103, SSR'd hero):** `<dl class="grid gap-2 sm:gap-6 grid-cols-2">` with
+    **2 `<dt>` tiles, 2 `<svg>` glyphs and 0 count-up spans**; eyebrow "What's inside" with no
+    "Your progress"; "Masterclasses" with no "master classes"; CTA "Login to Miles AI Labs". The
+    catalogue sits inside `@defer (on viewport)` so it is NOT in the SSR HTML — **the rail,
+    the 9:16 fan and the empty catalogue still need a real browser pass at 375 / 768 / 1440.**
+  - **Gates (local macOS):** tsc 0; lint **0 errors** (98 warnings); structure ✔ after `--prune`
+    (two entries improved: the model import was aliased, the dialog deleted); Prettier ✔;
+    `build:prod` 1.05 MB initial / 240.57 kB transfer, `ai-labs.css` **still 15.86 kB** — the four
+    fan values were byte-neutral, so the known warning did not become the 16 kB build error;
+    `build-storybook` ✔.
+  - **Orphaned, left in place on purpose:** `core/services/ai-lab-submission/` and
+    `core/models/ai-lab-assessment.model.ts` lost their last consumer with the dialog. Subtask 3's
+    course page handles lab submissions and will likely want them — delete if that proves false.
+  - **Subtask 2 DONE, UNCOMMITTED (`prompts/ai-labs-progress-widgets.md`):**
+    `ai-lab-progress-panel` + `ai-lab-token-meter` ported as presentational components under
+    `features/ai-labs/components/`, with `utils/progress-stats.ts` and `utils/token-usage.ts` as
+    plain arithmetic modules and view-model types on the feature model. **Neither is mounted** —
+    both render real learner numbers (credits, attempts, best scores) and nothing is bound, so
+    mounting them would put invented balances in front of a learner. Upstream's `progress-sample.ts`
+    became story-only `testing/mocks/ai-labs.mock.ts`. Wiring them up later is feeding inputs and
+    handling `topUp` / `openAssignment`; no component file changes.
+  - **One shared change, additive:** `shared/ui/progress` gained `info` / `warning` / `error`
+    variants (mapped to `--color-info`, `--color-accent-premium`, `--color-destructive`) and now
+    exports `ProgressVariant`. The meter warns at 75% of the allotment and alarms at 90%, which the
+    old `primary | success | accent` set could not express. No existing consumer changes. Upstream's
+    `size="xs"` maps to our `sm`; its `label="none"` is dropped, since our `Progress` hides the
+    label by omitting the input and would otherwise render the word "none".
+  - **Subtask 2 verified:** `pnpm build-storybook` emits **14 entries** under _AI Labs/Progress
+    panel_ and _AI Labs/Token meter_ — warning and critical thresholds, a pending top-up, an
+    all-zero payload (tiles and bar correctly drop out), loading, and absent. Gates: tsc 0; lint 0
+    errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 1.05 MB initial, `ai-labs.css` still
+    15.86 kB.
+  - **Subtask 3 DONE, UNCOMMITTED (`prompts/ai-labs-course-page.md`): the course page.** Template
+    ported nearly verbatim (ten edits, all service references); the component rewritten so every
+    root is an input and every action an output. New route `:courseId/:courseTitle`, the ported
+    `ai-lab-course-skeleton` (with `ml-auto` → `ms-auto` for RTL), and 9 stories.
+  - **Four things could not come across as-is**, each for a boundary or data reason, all now
+    inputs: `ctaStage` (upstream's `deriveActionStatus`/`ActionStatus` lives in
+    `features/offerings`, and a feature may not import another feature), `completed` (same),
+    `labMapped` (our `ContentDetails` has no `lab_assignment_id`), and `progress` — upstream
+    derives watched percentage from `last_activity`, which is **watched seconds** on their payload
+    and an **ISO timestamp** on ours, so deriving it here would compute nonsense from a date.
+  - **The gsap separation held, and was checked rather than assumed.** The course route sits
+    outside the landing route's `provideGsap()`/`provideMotion()`; the built course chunk is 53 kB
+    with **zero** gsap references, and the landing chunk is unchanged.
+  - **⚠ The course route renders blank.** It returns 200 and mounts `app-ai-lab-course`, which then
+    renders nothing — the whole page is gated on `@if (course())` and nothing is bound. It is also
+    unreachable by clicking, since subtask 1's catalogue is empty without its API. An invented
+    "not available" state was deliberately not added (not in the source design); the stories are
+    where the design can be seen until the reads are bound.
+  - **Subtask 3 verified:** `build-storybook` emits **23 AI Labs entries** in total, 9 of them the
+    course page stepping the four gates (not-started → awaiting-exam → lab-unlocked → evaluating →
+    evaluated, plus lab-not-mapped, loading, errored). Gates: tsc 0; lint 0 errors (98 warnings);
+    structure ✔; Prettier ✔; `build:prod` 1.05 MB initial, `ai-labs.css` still 15.86 kB.
+  - **Shared substitutions:** upstream's `app-aria-select` → our `app-select`; its `size="xs"`
+    progress → our `sm`. The exam / report / feedback child routes are **not** ported — offerings
+    pages behind `authGuard` with their own facades.
+  - **Open for review across all three subtasks:** the empty catalogue (subtask 1), the blank
+    course route (subtask 3), the branch with no ticket number, and the orphaned
+    `core/services/ai-lab-submission/` — which subtask 3 did **not** adopt, since the page's
+    submission flow is an output now, so it remains unused.
+  - **Header spotlight ported (2026-10-20, upstream `1056a2b3`), uncommitted, part of this parity
+    commit:** "AI Lab" → "AI Labs" in all 5 locales; the Beta badge dropped from both navs; the
+    hand-drawn `#navUnderline` replaced by `#navSpotlight` (label + accent dot; hairline pill on
+    desktop, `font-semibold` in the drawer); the `navUnderlineDraw` keyframe deleted. `nav.beta`
+    stays in the i18n files, now unused. Gates (local macOS): lint 0 errors (98 warnings),
+    structure ✔, `build:prod` 1.05 MB initial, `ai-labs.css` still 15.86 kB. **Not yet seen in a
+    browser.**
+  - **⚠ "Parity" was against the wrong ref.** Upstream's newest AI Labs work is on
+    `feat/ai-labs-refactor` @ `ce0194a4` (9 commits, +2,354/−831 past `master`): V2 account flow
+    - Resend Credential, credits meter + top-up dialog, full brief, grading/resubmit, under-player
+      bar removed. Its data layer calls `v2/ai-lab/*`, which is **404 on our UAT**, so only its UI
+      ports. The user wants it ported exactly, bound to the backend's FE guide, now saved as
+      **`docs/AI_LABS_API.md`**.
+  - **Next: `prompts/ai-labs-api-binding.md` (rewritten 2026-10-20), awaiting approval + MIL
+    numbers.** 6 PRs: 1a landing/widgets UI, 1b course-page UI, 2 landing binding, 3 lab-page
+    reads (blocked on the missing video URL), 4 practical, 5 quiz/exam/feedback. Five divergences
+    from upstream, all forced by the guide. The main one: feedback stays gated on the AI practical
+    (`ai_assessment_not_completed`), not opened on the exam pass.
+
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
   `feat/MIL-111-certificate-download`, stacked on MIL-110 (`46bdfc7`).
@@ -5418,6 +5525,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-20 · NON-REFACTOR · **AI Labs: header spotlight ported + catch-up planned.** Header "AI Labs" pill + dot (upstream `1056a2b3`), Beta badge and underline removed · lint 0 errors, structure ✔, build:prod 1.05 MB · found upstream's UI is ahead on `feat/ai-labs-refactor@ce0194a4`; FE guide saved as `docs/AI_LABS_API.md`; `prompts/ai-labs-api-binding.md` rewritten as a 6-PR UI-catch-up + `web-api/v1` binding plan; awaiting approval
 
 - 2026-10-19 · NON-REFACTOR · **MIL-111 built** (uncommitted): `CourseCertificateFacade` (disabled until feedback, quiet `course-progress` wait for `masterclass_certificate_url`), Download Certificate on report + thank-you, hero Download on the same rule · tsc 0, lint 0 errors, structure ✔, build:prod 240.63 kB · headless scenarios pass
 
