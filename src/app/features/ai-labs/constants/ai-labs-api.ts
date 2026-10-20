@@ -3,6 +3,7 @@ import { CommonResponse, RouteConfig } from '@core/models/http.model';
 import {
   AiLabAccountState,
   AiLabSubmitBody,
+  AiLabTokenRequestBody,
   AiLabVideoProgressBody,
 } from '@features/ai-labs/models/ai-labs.model';
 
@@ -106,4 +107,22 @@ export const AI_LABS_API = {
     path: `${ROOT}api/v1/ai-labs/assignment-submit/:id/`,
     method: 'POST',
   } as RouteConfig<AiLabSubmitBody, CommonResponse<unknown>>,
+
+  /** `IsAuthenticated`: `{status, is_provisioned, tokens}` — the Copilot Credits balance. */
+  tokens: `${ROOT}web-api/v1/ai-labs/tokens/`,
+
+  /**
+   * `IsAuthenticated`, strict body `{tokens: 500 | 1000, reason?}`. 200 `{status, request}`; 409
+   * `tokens_request_open` means one is already pending — its message is written for the learner.
+   */
+  tokensRequest: {
+    path: `${ROOT}api/v1/ai-labs/tokens-request/`,
+    method: 'POST',
+  } as RouteConfig<AiLabTokenRequestBody, CommonResponse<unknown>>,
+
+  /**
+   * `IsAuthenticated`: `{status, is_provisioned, progress}` — every assignment the learner has
+   * attempted on AI Labs. Supplementary; it gates nothing.
+   */
+  practicalProgress: `${ROOT}web-api/v1/ai-labs/practical-progress/`,
 } as const;

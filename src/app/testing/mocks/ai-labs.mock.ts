@@ -13,6 +13,7 @@ import {
   AiLabTokenRequest,
 } from '@features/ai-labs/models/ai-labs.model';
 import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
+import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
 
 /**
  * Sample data for the AI Labs progress panel and token meter stories.
@@ -347,10 +348,11 @@ export interface AiLabCourseStoryState {
 }
 
 /**
- * Provides a stand-in `AiLabCourseFacade` holding fixed state, so a story renders the page without
- * HTTP. Its actions do nothing. Only the members the page reads are present.
+ * Provides a stand-in `AiLabCourseFacade` and `AiLabCredits` holding fixed state, so a story
+ * renders the page without HTTP. Their actions do nothing. Only the members the page reads are
+ * present.
  */
-export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider {
+export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[] {
   const progress = state.progress ?? null;
   const watched = progress?.video_watched_seconds ?? 0;
   const total = state.lab?.ai_lab_course_total_duration_seconds ?? 0;
@@ -380,7 +382,6 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider 
     statusLoading: signal(false),
     submitting: signal(false),
     gradeCardBusy: signal(state.gradeCardBusy ?? false),
-    balance: signal(state.balance ?? null),
     labProvisioned: signal(true),
     open: () => undefined,
     retry: () => undefined,
@@ -392,5 +393,13 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider 
     downloadGradeCard: () => undefined,
     openInputFile: () => undefined,
   };
-  return { provide: AiLabCourseFacade, useValue: stub };
+  const credits = {
+    balance: signal(state.balance ?? null),
+    submitting: signal(false),
+    requestTopUp: () => undefined,
+  };
+  return [
+    { provide: AiLabCourseFacade, useValue: stub },
+    { provide: AiLabCredits, useValue: credits },
+  ];
 }

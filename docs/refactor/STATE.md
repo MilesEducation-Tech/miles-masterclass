@@ -288,6 +288,30 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     - **Verified:** tsc 0; lint 0 errors (98 warnings); structure ✔; `build:prod` 239.52 kB;
       `build-storybook` ✔. **Not exercised in the app** — it needs a signed-in learner past a
       lab's exam.
+  - **PR 4b DONE, UNCOMMITTED (credits + progress):**
+    - **Routes:** `AI_LABS_API` gains `tokens`, `tokensRequest` and `practicalProgress`.
+    - **New `services/ai-lab-credits.ts` (`AiLabCredits`)**, route-scoped and provided on both
+      AI Labs routes.
+      - It reads `tokens/` (browser only, auth-gated, quiet). `balance` is null unless
+        `is_provisioned`.
+      - The balance is re-read on `visibilitychange` back to visible, as upstream does.
+      - `requestTopUp()` dynamically imports `AiLabTokenRequestDialog` (its own 4.9 kB chunk),
+        then POSTs. A 409 shows an info toast with the server's message. The balance is re-read
+        after either outcome.
+    - **`AiLabCourseFacade`'s idle `balance` is removed.** The lab page's meter binds
+      `credits.*`.
+    - **`AiLabsFacade.practicalProgress`** comes from `practical-progress/`, read only once
+      `hasLabAccount()`. `is_provisioned: false` → null.
+    - **Landing:**
+      - The progress panel is mounted after "How it works", inside the `@defer`. It's wrapped in
+        an `@if` because an empty host would still add a `gap-20` flex gap.
+      - `openAssignment` → `/ai-labs/<id>/<slug>`.
+      - The floating token meter is at the end, outside the `@defer`, as upstream places it.
+    - **Stories:** `provideStoryAiLabCourse` also provides a stand-in `AiLabCredits`.
+    - **Verified (your dev 4101, CDP, guest):** the landing page still renders the rail. The
+      panel and meter are absent, and **no `tokens/` or `practical-progress/` request** is made.
+      Gates: lint 0 errors; structure ✔; `build:prod` 239.55 kB; `build-storybook` ✔. **The
+      signed-in branches were not exercised.**
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
@@ -5700,6 +5724,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-20 · NON-REFACTOR · **MIL-117 PR 4b built** (uncommitted): `AiLabCredits` (tokens + top-up dialog → tokens-request, on both routes), `practical-progress/` → landing progress panel, floating meter on landing · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · guest path verified (no vendor calls); signed-in unverified
 
 - 2026-10-20 · NON-REFACTOR · **MIL-117 PR 4a built** (uncommitted): the course page's practical on `web-api/v1` — brief, agents/flows, submit, 12 s grading poll, grade card + input-file re-signing · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · not exercised in-app (needs a signed-in learner past the exam)
 

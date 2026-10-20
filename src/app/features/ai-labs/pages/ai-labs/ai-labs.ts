@@ -72,9 +72,13 @@ import {
   AI_LAB_TESTIMONIALS,
   AiLabAccountState,
   AiLabAgentCard,
+  AiLabPracticalAssignment,
   AiLabStat,
 } from '@features/ai-labs/models/ai-labs.model';
 import { AiLabsFacade } from '@features/ai-labs/services/ai-labs-facade';
+import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
+import { AiLabProgressPanel } from '@features/ai-labs/components/ai-lab-progress-panel/ai-lab-progress-panel';
+import { AiLabTokenMeter } from '@features/ai-labs/components/ai-lab-token-meter/ai-lab-token-meter';
 import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import { iconCopilot, iconSparkle } from '@core/constants/icon';
 import { environment } from '@env/environment';
@@ -143,6 +147,8 @@ const FAN_SIZE = 5;
 @Component({
   selector: 'app-ai-labs',
   imports: [
+    AiLabProgressPanel,
+    AiLabTokenMeter,
     Button,
     NgIcon,
     NgTemplateOutlet,
@@ -198,6 +204,8 @@ export class AiLabs {
   };
   /** The catalogue and the learner's lab account — see the facade for both reads. */
   protected readonly facade = inject(AiLabsFacade);
+  /** Copilot Credits, for the floating meter and the progress panel. */
+  protected readonly credits = inject(AiLabCredits);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly router = inject(Router);
   // The showcase's log and progress bar move along the reading direction.
@@ -404,6 +412,16 @@ export class AiLabs {
    * Card click — the page behind the tile: the masterclass course for a guest card, the lab's own
    * page for a learner's. `route` is relative to the locale prefix.
    */
+  /**
+   * A progress-panel row: its lab's page. The panel only offers the button on rows that carry an
+   * `ai_lab_course_id`, so a row from outside this catalogue never gets here.
+   */
+  protected openAssignment(row: AiLabPracticalAssignment): void {
+    if (!row.ai_lab_course_id) return;
+    const slug = this.utils.slugify(row.ai_lab_course_name ?? row.slug);
+    void this.router.navigate([this.utils.localePath(), 'ai-labs', row.ai_lab_course_id, slug]);
+  }
+
   protected viewAgent(card: AiLabAgentCard): void {
     void this.router.navigate([this.utils.localePath(), ...card.route]);
   }

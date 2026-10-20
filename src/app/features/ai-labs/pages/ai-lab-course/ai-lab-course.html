@@ -1005,5 +1005,9 @@
   }
 
   <!-- Floating; gates itself on having a balance. See the component template. -->
-  <app-ai-lab-token-meter [balance]="balance()" (topUp)="topUp()" />
+  <app-ai-lab-token-meter
+    [balance]="credits.balance()"
+    [submitting]="credits.submitting()"
+    (topUp)="credits.requestTopUp()"
+  />
 </div>

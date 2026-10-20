@@ -27,7 +27,6 @@ import {
   AiLabFlow,
   AiLabInputFile,
   AiLabSubmitBody,
-  AiLabTokenBalance,
 } from '@features/ai-labs/models/ai-labs.model';
 
 /** How often watched seconds go to the server while the video plays. */
@@ -79,8 +78,8 @@ const unwrap =
  *
  * **The practical** — the brief, the agents and flows to pick from, the submission and its
  * status — is read once the lab is started (the picker's lists once the exam is passed), and the
- * status is polled every 12 s while a submission is being graded. Copilot Credits join with their
- * own ticket.
+ * status is polled every 12 s while a submission is being graded. Copilot Credits are
+ * `AiLabCredits`, shared with the landing page.
  */
 @Service({ autoProvided: false })
 export class AiLabCourseFacade {
@@ -238,9 +237,6 @@ export class AiLabCourseFacade {
 
   readonly submitting = signal(false);
   readonly gradeCardBusy = signal(false);
-
-  // ponytail: Copilot Credits are bound with the credits ticket.
-  readonly balance = signal<AiLabTokenBalance | null>(null);
 
   // ---- Actions ---------------------------------------------------------------
 

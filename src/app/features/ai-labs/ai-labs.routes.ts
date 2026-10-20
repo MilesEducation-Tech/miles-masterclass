@@ -3,6 +3,7 @@ import { provideGsap } from '@code_with_sachin/ngx-gsap';
 import { provideMotion } from '@code_with_sachin/ngx-motion';
 import { authGuard } from '@core/guards/auth/auth-guard';
 import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
+import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
 import { AiLabsFacade } from '@features/ai-labs/services/ai-labs-facade';
 
 /**
@@ -28,7 +29,12 @@ export const AI_LABS_ROUTES: Route[] = [
     // `reducedMotion: 'user'` — honour the OS setting; the directives then jump
     // to their final state instead of animating. `AiLabsFacade` is route-scoped so
     // its provisioning poll stops when the learner leaves the page.
-    providers: [provideGsap(), provideMotion({ reducedMotion: 'user' }), AiLabsFacade],
+    providers: [
+      provideGsap(),
+      provideMotion({ reducedMotion: 'user' }),
+      AiLabsFacade,
+      AiLabCredits,
+    ],
     loadComponent: () => import('./pages/ai-labs/ai-labs').then((m) => m.AiLabs),
   },
   /**
@@ -47,7 +53,7 @@ export const AI_LABS_ROUTES: Route[] = [
   {
     path: ':courseId/:courseTitle',
     canMatch: [authGuard],
-    providers: [AiLabCourseFacade],
+    providers: [AiLabCourseFacade, AiLabCredits],
     loadComponent: () => import('./pages/ai-lab-course/ai-lab-course').then((m) => m.AiLabCourse),
   },
 ];

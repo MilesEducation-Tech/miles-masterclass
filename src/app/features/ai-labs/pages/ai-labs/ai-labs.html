@@ -364,6 +364,21 @@
       </ol>
     </section>
 
+    <!-- ====================== YOUR PROGRESS (learner) ======================
+         From `practical-progress/`: absent for guests, for learners without a lab account, and
+         whenever the read fails. The `@if` is for the flex gap — an empty panel host would still
+         be a flex item and open an extra gap above the next section. -->
+    @if (facade.practicalProgress() || facade.practicalProgressLoading()) {
+      <app-ai-lab-progress-panel
+        [progress]="facade.practicalProgress()"
+        [isLoading]="facade.practicalProgressLoading()"
+        [balance]="credits.balance()"
+        [submitting]="credits.submitting()"
+        (topUp)="credits.requestTopUp()"
+        (openAssignment)="openAssignment($event)"
+      />
+    }
+
     <!-- ========================= VALUE GRID ========================= -->
     <!-- <section id="features" class="w-11/12 max-w-6xl mx-auto scroll-mt-24 sr-only">
     <div class="max-w-2xl">
@@ -997,3 +1012,11 @@
 } @placeholder {
   <div class="min-h-[60vh]" aria-hidden="true"></div>
 }
+
+<!-- Token meter — floating, and deliberately OUTSIDE the pinned hero and the `@defer` above: a lab
+     user sees their balance without scrolling. It gates itself on having a balance. -->
+<app-ai-lab-token-meter
+  [balance]="credits.balance()"
+  [submitting]="credits.submitting()"
+  (topUp)="credits.requestTopUp()"
+/>

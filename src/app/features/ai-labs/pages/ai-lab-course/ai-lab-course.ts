@@ -38,6 +38,7 @@ import {
   AiLabSubmitBody,
 } from '@features/ai-labs/models/ai-labs.model';
 import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
+import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
 import { AriaSelectOption } from '@core/models/aria.model';
 import { Backward } from '@shared/components/backward/backward';
 import { AiLabCourseSkeleton } from '@shared/components/skeleton/ai-lab-course-skeleton/ai-lab-course-skeleton';
@@ -155,7 +156,8 @@ export class AiLabCourse {
   protected readonly statusLoading = this.facade.statusLoading;
   protected readonly submitting = this.facade.submitting;
   protected readonly gradeCardBusy = this.facade.gradeCardBusy;
-  protected readonly balance = this.facade.balance;
+  /** Copilot Credits, shared with the landing page's meter. */
+  protected readonly credits = inject(AiLabCredits);
   protected readonly labProvisioned = this.facade.labProvisioned;
 
   protected readonly signInLabel = signal('Sign in & launch AI');
@@ -685,9 +687,5 @@ export class AiLabCourse {
 
   protected openInputFile(file: AiLabInputFile): void {
     this.facade.openInputFile(file);
-  }
-
-  protected topUp(): void {
-    // ponytail: opens `AiLabTokenRequestDialog`, then POSTs `tokens-request/`.
   }
 }

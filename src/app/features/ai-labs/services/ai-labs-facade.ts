@@ -17,6 +17,7 @@ import {
   AiLabAgentCard,
   AiLabCatalogueSection,
   AiLabCourseListItem,
+  AiLabPracticalProgress,
   AiLabWebPage,
 } from '@features/ai-labs/models/ai-labs.model';
 import { Utils } from '@shared/services/utils';
@@ -139,6 +140,37 @@ export class AiLabsFacade {
   readonly accountState = computed(() => (this.account.hasValue() ? this.account.value() : null));
   readonly accountLoading = computed(() => this.account.isLoading());
   readonly hasLabAccount = computed(() => !!this.accountState()?.account_created);
+
+  /**
+   * The learner's practical record across every lab, for the progress panel. Calls AI Labs, so it
+   * waits for the account to exist; `is_provisioned: false` or a failure means no panel.
+   */
+  private readonly practicalProgressRes = httpResource<AiLabPracticalProgress | null>(
+    () =>
+      this.isBrowser && this.auth.isAuthenticated() && this.hasLabAccount()
+        ? {
+            url: apiUrl(AI_LABS_API.practicalProgress),
+            context: new HttpContext().set(SKIP_LOADING, true).set(SKIP_ERROR_NOTIFICATION, true),
+          }
+        : undefined,
+    {
+      defaultValue: null,
+      parse: (raw) => {
+        const data = (
+          raw as CommonResponse<{
+            is_provisioned: boolean;
+            progress: AiLabPracticalProgress;
+          }> | null
+        )?.data;
+        return data?.is_provisioned ? data.progress : null;
+      },
+    },
+  );
+
+  readonly practicalProgress = computed(() =>
+    this.practicalProgressRes.hasValue() ? this.practicalProgressRes.value() : null,
+  );
+  readonly practicalProgressLoading = computed(() => this.practicalProgressRes.isLoading());
 
   /** A create or a reset is in flight. */
   readonly submitting = signal(false);
