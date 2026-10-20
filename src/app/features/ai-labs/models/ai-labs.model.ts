@@ -396,28 +396,148 @@ export interface AiLabTokenRequestBody {
 }
 
 /* =====================================================================
+   The lab page.
+
+   Wire types from `docs/AI_LABS_API.md` §3–4: `course/<uuid>/`,
+   `course-started/<uuid>/`, `course-start/<uuid>/`, `course-progress/<uuid>/`
+   and `course-video-progress/`.
+   ===================================================================== */
+
+/** A field of study and the credit it carries. */
+export interface AiLabFieldOfStudy {
+  id: string;
+  name: string;
+  cpe_credit: number;
+}
+
+/** The parent masterclass course a lab hangs off. */
+export interface AiLabParentCourse {
+  id: string;
+  name: string;
+  mini_description: string | null;
+  thumbnail: string | null;
+  duration: string | null;
+  duration_seconds: number;
+}
+
+/**
+ * `data` of `GET web-api/v1/ai-labs/course/<uuid>/`. Carries no playable video — see the plan's
+ * backend question Q1 — so the page shows the artwork where the player would be.
+ */
+export interface AiLabCourseDetail extends AiLabCourseListItem {
+  ai_lab_course_description: string | null;
+  ai_lab_course_problem_statement: string | null;
+  /** The SharePoint workspace the learner builds in, once configured. */
+  ai_lab_course_sharepoint_artefact_url: string | null;
+  ai_lab_course_trailer_url: string | null;
+  ai_lab_course_trailer_thumbnail: string | null;
+  ai_lab_course_exam_rules: string | null;
+  ai_lab_course_prerequisite_education: string | null;
+  ai_lab_course_advance_preparation: string | null;
+  ai_lab_course_created_at: string;
+  levels: string[];
+  tracks: string[];
+  fields_of_study: AiLabFieldOfStudy[];
+  /** The total, summed by the API. Render it as sent; never re-sum. */
+  total_cpe_credits: number;
+  instructors: string[];
+  skills: string[];
+  tools: string[];
+  learning_objectives: string[];
+  masterclass_courses: AiLabParentCourse[];
+}
+
+/** The learner's enrolment on one lab, as `course-started/` reports it. */
+export interface AiLabEnrollment {
+  id: string;
+  ai_lab_enrollment_started_at: string;
+  ai_lab_enrollment_expires_at: string;
+  ai_lab_enrollment_active: boolean;
+  ai_lab_enrollment_is_course_closed: boolean;
+  released_from_ai_lab: boolean;
+}
+
+/** `data` of `GET web-api/v1/ai-labs/course-started/<uuid>/`. Start vs Continue. */
+export interface AiLabCourseStarted {
+  ai_lab_course_id: string;
+  started: boolean;
+  can_start: boolean;
+  enrollment: AiLabEnrollment | null;
+  lock_state: AiLabLockState;
+}
+
+/** Which step the backend says comes next. An open string beyond the evidenced ones. */
+export type AiLabNextStep =
+  'video' | 'quiz' | 'final_assessment' | 'ai_assessment' | 'feedback' | 'done' | (string & {});
+
+/** One NASBA condition still outstanding before credit can be awarded. */
+export interface AiLabNasbaOutstanding {
+  rule: string;
+  code: string;
+  message: string;
+}
+
+/**
+ * `data` of `GET web-api/v1/ai-labs/course-progress/<uuid>/` — the gate flags the whole page runs
+ * on. A learner who hasn't started gets a 404 `no_ai_lab_enrollment` instead of this body.
+ */
+export interface AiLabCourseProgress {
+  ai_lab_course_id: string;
+  video_watched_seconds: number;
+  video_completed: boolean;
+  quiz_required: boolean;
+  quiz_passed: boolean;
+  quiz_questions_to_show: number;
+  assessment_required?: boolean;
+  final_assessment_passed: boolean;
+  ai_assessment_completed: boolean;
+  feedback_submitted: boolean;
+  cpe_awarded: boolean;
+  is_course_closed: boolean;
+  next_step: AiLabNextStep;
+  nasba: {
+    eligible: boolean;
+    delivery_method: string | null;
+    outstanding: AiLabNasbaOutstanding[];
+  };
+}
+
+/** Body of `POST api/v1/ai-labs/course-video-progress/`. Strict: no other keys. */
+export interface AiLabVideoProgressBody {
+  ai_lab_course_id: string;
+  watched_duration_seconds: number;
+}
+
+/* =====================================================================
    AI Lab course page.
 
-   View models for `pages/ai-lab-course`. As with the progress panel, these
-   describe what the page renders rather than what any endpoint returns — the
-   reads behind them are not bound.
+   View models and the practical's wire types for `pages/ai-lab-course`.
    ===================================================================== */
 
 /**
- * Where the learner is in the course, which is what the primary CTA reads from.
+ * Where the learner is in the lab, which is what the primary CTA reads from. Derived from
+ * `course-progress/`'s `next_step` by `AiLabCourseFacade`.
  *
- * A local union rather than offerings' `ActionStatus` enum: a feature may not import another
- * feature (AGENTS.md §3), and promoting that enum to `core/` would be a refactor riding on a
- * feature change. The spellings match the API's `action_status` so the binding ticket is a cast,
- * not a translation.
+ * The first six are upstream's, from the micro-learning `action_status`. Two are ours:
+ *  - `START` — no enrolment yet; `course-start/` creates it.
+ *  - `AI_LAB` — exam passed, practical not graded (`next_step: ai_assessment`). Upstream opens
+ *    feedback here; our backend refuses it until the lab is graded, so the CTA points at the lab.
  */
 export type AiLabCtaStage =
-  'TAKE_QUIZ' | 'TAKE_EXAM' | 'REWATCH' | 'RETAKE_EXAM' | 'FEEDBACK' | 'DOWNLOAD';
+  | 'START'
+  | 'TAKE_QUIZ'
+  | 'TAKE_EXAM'
+  | 'REWATCH'
+  | 'RETAKE_EXAM'
+  | 'AI_LAB'
+  | 'FEEDBACK'
+  | 'DOWNLOAD';
 
 /** The stages that sit past the chapter quiz — reaching any of them means it is behind the learner. */
 export const AI_LAB_QUIZ_BEHIND: readonly AiLabCtaStage[] = [
   'TAKE_EXAM',
   'RETAKE_EXAM',
+  'AI_LAB',
   'FEEDBACK',
   'DOWNLOAD',
 ];
@@ -518,9 +638,12 @@ export interface AiLabAssignmentBrief {
 }
 
 /**
- * One row of the lab-materials block: either a plain outbound link carried by the course payload,
- * or an action that has to go through a service.
+ * One row of the lab-materials block: an outbound link the lab payload carries. The masterclass
+ * page's service-backed rows (exercise-file zip, workspace lookup) have no counterpart on a lab.
  */
-export type AiLabMaterial =
-  | { kind: 'link'; label: string; hint: string; url: string }
-  | { kind: 'action'; label: string; hint: string; action: 'exercise' | 'workspace' };
+export interface AiLabMaterial {
+  kind: 'link';
+  label: string;
+  hint: string;
+  url: string;
+}

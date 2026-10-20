@@ -1,146 +1,171 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { applicationConfig, argsToTemplate } from '@storybook/angular';
+import { applicationConfig, moduleMetadata } from '@storybook/angular';
 import { provideRouter } from '@angular/router';
 import { AiLabCourse } from './ai-lab-course';
-import { MOCK_CONTENT_DETAILS } from '@testing/mocks/content.mock';
 import {
+  AiLabCourseStoryState,
   MOCK_AI_LAB_AGENTS,
   MOCK_AI_LAB_BALANCE,
   MOCK_AI_LAB_BRIEF,
+  MOCK_AI_LAB_DETAIL,
   MOCK_AI_LAB_EVALUATED,
   MOCK_AI_LAB_EVALUATING,
   MOCK_AI_LAB_FLOWS,
+  MOCK_AI_LAB_NOT_STARTED,
+  MOCK_AI_LAB_STARTED,
+  mockAiLabProgress,
+  provideStoryAiLabCourse,
 } from '@testing/mocks/ai-labs.mock';
 
 /**
- * The AI Lab course page.
+ * The AI Lab course page, on a stand-in `AiLabCourseFacade` (`provideStoryAiLabCourse`), so each
+ * story is one state of the page without HTTP.
  *
- * Nothing routes real data to it yet, so these stories are the only place the design can be seen.
- * The four gates — watch → quiz → exam → lab — are what the stories step through, because every
- * section below the hero is gated on one of them.
+ * The stories step through the gates — start → watch → quiz → exam → lab → feedback — because
+ * every section below the hero is gated on one of them. The lab has no playable video on any read
+ * yet, so the hero frame shows its artwork throughout.
  */
 const meta: Meta<AiLabCourse> = {
   title: 'AI Labs/Course page',
   component: AiLabCourse,
   tags: ['autodocs'],
-  // The exam-report link is a `routerLink`, so the stories need a router to resolve it.
+  // `app-backward` resolves its fallback through the router.
   decorators: [applicationConfig({ providers: [provideRouter([])] })],
-  render: (args) => ({
-    props: args,
-    template: `<app-ai-lab-course ${argsToTemplate(args)}></app-ai-lab-course>`,
-  }),
+  render: () => ({ template: `<app-ai-lab-course courseId="${MOCK_AI_LAB_DETAIL.id}" />` }),
 };
 
 export default meta;
 type Story = StoryObj<AiLabCourse>;
 
-const course = MOCK_CONTENT_DETAILS;
+const withState = (state: AiLabCourseStoryState): Story => ({
+  decorators: [moduleMetadata({ providers: [provideStoryAiLabCourse(state)] })],
+});
 
-/** Fresh start: video unwatched, everything downstream locked. */
-export const NotStarted: Story = {
-  args: {
-    course,
-    details: course,
-    brief: MOCK_AI_LAB_BRIEF,
-    labMapped: true,
-    balance: MOCK_AI_LAB_BALANCE,
-  },
+const lab = MOCK_AI_LAB_DETAIL;
+const practical = {
+  brief: MOCK_AI_LAB_BRIEF,
+  agents: MOCK_AI_LAB_AGENTS,
+  flows: MOCK_AI_LAB_FLOWS,
+  balance: MOCK_AI_LAB_BALANCE,
 };
+
+/** No enrolment yet: the CTA starts the lab and the hint says what starting opens. */
+export const NotStarted = withState({
+  lab,
+  started: MOCK_AI_LAB_NOT_STARTED,
+  ctaStage: 'START',
+  brief: MOCK_AI_LAB_BRIEF,
+});
+
+/** The parent masterclass course holds the lab: the CTA is disabled and says why. */
+export const Locked = withState({
+  lab,
+  started: MOCK_AI_LAB_NOT_STARTED,
+  ctaStage: 'START',
+  lockRemark: 'You have already earned credit for this content through its masterclass course.',
+});
+
+/** Started, video half-watched. With no video on the read, the CTA has nothing to play. */
+export const Watching = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('video'),
+  ctaStage: null,
+  brief: MOCK_AI_LAB_BRIEF,
+});
 
 /** Video done, assessment still to pass — the lab stays shut and says why. */
-export const AwaitingExam: Story = {
-  args: {
-    course,
-    details: course,
-    brief: MOCK_AI_LAB_BRIEF,
-    labMapped: true,
-    completed: true,
-    progress: 100,
-    ctaStage: 'TAKE_EXAM',
-    balance: MOCK_AI_LAB_BALANCE,
-  },
-};
+export const AwaitingExam = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('final_assessment'),
+  ctaStage: 'TAKE_EXAM',
+  brief: MOCK_AI_LAB_BRIEF,
+});
 
 /**
- * Exam passed, lab open, artefacts listed. The disabled flow in the fixture must not appear in
- * the workflow select. Feedback is not offered yet: our backend opens it only once the lab is
- * graded, so the stage stays short of `FEEDBACK` — which stage maps from `course-progress/`'s
- * `next_step: ai_assessment` is the lab-page binding's call.
+ * Exam passed, lab open, artefacts listed (`next_step: ai_assessment`). Feedback isn't offered:
+ * our backend opens it only once the lab is graded, so the CTA points at the lab instead.
  */
-export const LabUnlocked: Story = {
-  args: {
-    course: {
-      ...course,
-      user_assessment_details: { ...course.user_assessment_details, status: 'Exam_Passed' },
-    },
-    details: course,
-    brief: MOCK_AI_LAB_BRIEF,
-    labMapped: true,
-    completed: true,
-    progress: 100,
-    ctaStage: 'REWATCH',
-    agents: MOCK_AI_LAB_AGENTS,
-    flows: MOCK_AI_LAB_FLOWS,
-    balance: MOCK_AI_LAB_BALANCE,
-  },
-};
+export const LabUnlocked = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('ai_assessment'),
+  ctaStage: 'AI_LAB',
+  ...practical,
+});
 
 /** An attempt is with the evaluator: the picker stays visible but nothing can be changed. */
-export const Evaluating: Story = {
-  args: { ...LabUnlocked.args, assignment: MOCK_AI_LAB_EVALUATING },
-};
+export const Evaluating = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('ai_assessment'),
+  ctaStage: 'AI_LAB',
+  ...practical,
+  assignment: MOCK_AI_LAB_EVALUATING,
+});
 
 /** Graded, and the backend won't take another submit: the picker stays locked. Feedback opens. */
-export const Evaluated: Story = {
-  args: { ...LabUnlocked.args, ctaStage: 'FEEDBACK', assignment: MOCK_AI_LAB_EVALUATED },
-};
+export const Evaluated = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('feedback'),
+  ctaStage: 'FEEDBACK',
+  ...practical,
+  assignment: MOCK_AI_LAB_EVALUATED,
+});
 
 /** Graded with `can_resubmit`: the picker reopens so the learner can try for a better score. */
-export const EvaluatedResubmittable: Story = {
-  args: {
-    ...Evaluated.args,
-    assignment: { ...MOCK_AI_LAB_EVALUATED, can_resubmit: true },
-  },
-};
+export const EvaluatedResubmittable = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('feedback'),
+  ctaStage: 'FEEDBACK',
+  ...practical,
+  assignment: { ...MOCK_AI_LAB_EVALUATED, can_resubmit: true },
+});
 
-/** The grade card's link expired and the host is re-reading the status before it opens. */
-export const GradeCardPreparing: Story = {
-  args: { ...Evaluated.args, gradeCardBusy: true },
-};
+/** The grade card's link expired and the status is being re-read before it opens. */
+export const GradeCardPreparing = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('feedback'),
+  ctaStage: 'FEEDBACK',
+  ...practical,
+  assignment: MOCK_AI_LAB_EVALUATED,
+  gradeCardBusy: true,
+});
 
 /** Grading failed — the error panel offers a resubmit. */
-export const EvaluationFailed: Story = {
-  args: {
-    ...LabUnlocked.args,
-    assignment: { ...MOCK_AI_LAB_EVALUATING, assessment_status: 'failed' },
-  },
-};
+export const EvaluationFailed = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('ai_assessment'),
+  ctaStage: 'AI_LAB',
+  ...practical,
+  assignment: { ...MOCK_AI_LAB_EVALUATING, assessment_status: 'failed' },
+});
 
 /** The lab's practical isn't set up: one line in place of the brief, the rest still live. */
-export const BriefUnavailable: Story = {
-  args: {
-    ...LabUnlocked.args,
-    brief: null,
-    briefUnavailable: "This AI Lab's practical is not set up yet. Our team has been notified.",
-  },
-};
+export const BriefUnavailable = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('ai_assessment'),
+  ctaStage: 'AI_LAB',
+  ...practical,
+  brief: null,
+  briefUnavailable: "This AI Lab's practical is not set up yet. Our team has been notified.",
+});
 
-/** No assignment mapped — the lab is shut for a different reason, and says so. */
-export const LabNotMapped: Story = {
-  args: {
-    course,
-    details: course,
-    labMapped: false,
-    completed: true,
-    progress: 100,
-    ctaStage: 'FEEDBACK',
-  },
-};
+/** No practical mapped — the lab is shut for a different reason, and says so. */
+export const LabNotMapped = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('ai_assessment'),
+  ctaStage: 'AI_LAB',
+  labMapped: false,
+});
 
-export const Loading: Story = {
-  args: { isLoading: true },
-};
+export const Loading = withState({ isLoading: true });
 
-export const Errored: Story = {
-  args: { error: true },
-};
+export const Errored = withState({ error: true });

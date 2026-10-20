@@ -2,7 +2,7 @@
      the sub-bar sits under the floating nav pill. -->
 <div class="pt-20 sm:pt-24">
   @if (course(); as reel) {
-    @let credits = reel.fields_of_study | totalCpeCredits: reel.class_credits;
+    @let credits = reel.total_cpe_credits;
 
     <!-- ================= SUB-BAR: back / four-step progress / mode ================= -->
     <div class="border-y border-border bg-black/40 backdrop-blur">
@@ -26,21 +26,13 @@
           </span>
         </div>
 
-        @if (reel.cpe_mode_details; as cpe) {
+        <!-- A lab has no Preview mode: every enrolment is on the CPE path. -->
+        @if (credits) {
           <div
-            class="ml-auto flex shrink-0 items-center gap-2 rounded-full border px-3 py-1"
-            [class]="cpe.cpe_mode ? 'border-border bg-success-bg' : 'border-accent/40 bg-accent/15'"
+            class="ms-auto flex shrink-0 items-center gap-2 rounded-full border border-border bg-success-bg px-3 py-1"
           >
-            <span
-              class="h-1.5 w-1.5 rounded-full"
-              [class]="cpe.cpe_mode ? 'bg-success' : 'bg-accent'"
-            ></span>
-            <span class="text-[11.5px] font-semibold">
-              {{ cpe.cpe_mode ? 'CPE Mode' : 'Preview Mode' }}
-              @if (credits) {
-                &middot; {{ credits }} credits
-              }
-            </span>
+            <span class="h-1.5 w-1.5 rounded-full bg-success"></span>
+            <span class="text-[11.5px] font-semibold">CPE &middot; {{ credits }} credits</span>
           </div>
         }
       </div>
@@ -59,15 +51,15 @@
                 [videoSource]="videoSources()"
                 [config]="videoConfig()"
                 [mode]="playerMode()"
-                (timeUpdate)="timeUpdate.emit($event.currentTime)"
+                (timeUpdate)="onTimeUpdate($event.currentTime)"
                 (playing)="playing.set(true)"
                 (paused)="playing.set(false)"
-                (ended)="playing.set(false); videoEnded.emit()"
+                (ended)="onEnded()"
               />
-            } @else if (reel.horizontal_thumbnail || reel.thumbnail) {
+            } @else if (poster(); as art) {
               <img
-                [src]="reel.horizontal_thumbnail || reel.thumbnail"
-                [alt]="reel.title"
+                [src]="art"
+                [alt]="reel.ai_lab_course_name"
                 class="absolute inset-0 h-full w-full object-cover"
               />
             }
@@ -81,31 +73,27 @@
           <h1
             class="mt-3 font-serif text-[30px] leading-[1.12] font-semibold tracking-[-0.02em] lg:text-[36px]"
           >
-            {{ reel.title }}
+            {{ reel.ai_lab_course_name }}
           </h1>
 
-          <!-- Course facts. Each is hidden when the payload doesn't carry it —
-               AI Lab rows come off the nano serializer, which is sparser than
-               the masterclass one. -->
+          <!-- Lab facts. Each is hidden when the payload doesn't carry it. -->
           <div
             class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12.5px] text-muted-foreground"
           >
-            @if (reel.instructor_details; as instructor) {
-              <span class="font-medium text-foreground">
-                {{ instructor.first_name }} {{ instructor.last_name }}
-              </span>
+            @if (reel.instructors.length) {
+              <span class="font-medium text-foreground">{{ reel.instructors.join(', ') }}</span>
             }
-            @if (reel.total_duration) {
-              <span>{{ reel.total_duration | duration }}</span>
+            @if (reel.ai_lab_course_total_duration) {
+              <span>{{ reel.ai_lab_course_total_duration }}</span>
             }
             @if (credits) {
               <span>{{ credits }} CPE credits</span>
             }
           </div>
 
-          @if (reel.course_short_overview) {
+          @if (reel.ai_lab_course_mini_description) {
             <p class="mt-4 max-w-[52ch] text-[14px] leading-relaxed text-muted-foreground">
-              {{ reel.course_short_overview }}
+              {{ reel.ai_lab_course_mini_description }}
             </p>
           }
 
@@ -114,7 +102,7 @@
                micro-learning reel runs. The AI Lab sits alongside (the outline
                button). Unlike upstream, it does hold the feedback tail back:
                our backend opens feedback only once the lab is graded
-               (`course-feedback-gate/`), and the host's `ctaStage` follows it. -->
+               (`course-feedback-gate/`), and `ctaStage` follows `next_step`. -->
           <div class="mt-6 flex flex-wrap gap-3">
             @if (playbackCta()) {
               <button
@@ -146,23 +134,26 @@
                 type="button"
                 [class]="'h-12 gap-2 ' + feedbackClass()"
                 [variant]="feedbackCta() ? 'ghost' : 'default'"
-                [disabled]="ctaLoading()"
-                (click)="cta.emit()"
+                [disabled]="ctaDisabled()"
+                (click)="runCta()"
               >
                 @if (!feedbackCta()) {
                   <ng-icon name="matPlayArrowRound" class="text-xl" aria-hidden="true" />
                 }
                 <span>{{ ctaLabel() }}</span>
               </button>
-              <button
-                app-button
-                type="button"
-                variant="outline"
-                class="h-12 px-5"
-                (click)="scrollToLab()"
-              >
-                Go to the AI Lab
-              </button>
+              <!-- At the lab stage the main button already goes there. -->
+              @if (ctaStage() !== 'AI_LAB') {
+                <button
+                  app-button
+                  type="button"
+                  variant="outline"
+                  class="h-12 px-5"
+                  (click)="scrollToLab()"
+                >
+                  Go to the AI Lab
+                </button>
+              }
             }
           </div>
 
@@ -178,19 +169,17 @@
                 Duration
               </dt>
               <dd class="mt-1 text-[16px] font-semibold">
-                {{ reel.total_duration ? (reel.total_duration | duration) : '—' }}
+                {{ reel.ai_lab_course_total_duration || '—' }}
               </dd>
             </div>
             <div class="border-r border-border p-3.5">
               <dt
                 class="text-[10.5px] font-semibold tracking-[0.12em] text-muted-foreground uppercase"
               >
-                Structure
+                Access
               </dt>
               <dd class="mt-1 text-[16px] font-semibold">
-                {{ details()?.no_of_chapters ?? 1 }} chapter{{
-                  (details()?.no_of_chapters ?? 1) === 1 ? '' : 's'
-                }}
+                {{ reel.ai_lab_course_access_duration_days }} days
               </dd>
             </div>
             <div class="p-3.5">
@@ -199,26 +188,27 @@
               >
                 Level
               </dt>
-              <dd class="mt-1 text-[16px] font-semibold">{{ details()?.program_level || '—' }}</dd>
+              <dd class="mt-1 text-[16px] font-semibold">{{ reel.levels[0] || '—' }}</dd>
             </div>
           </dl>
         </div>
       </section>
 
       <!-- ================= DESCRIPTION + LEARNING OBJECTIVES ================= -->
-      @if (details(); as about) {
+      @if (reel.ai_lab_course_description || reel.learning_objectives.length) {
         <section class="grid gap-10 lg:grid-cols-2">
           <div>
             <h2 class="font-serif text-[24px] font-semibold tracking-[-0.015em]">
               Course description
             </h2>
             <p class="mt-3 max-w-[62ch] text-[14.5px] leading-relaxed text-muted-foreground">
-              {{ about.course_overview || reel.course_short_overview }}
+              {{ reel.ai_lab_course_description || reel.ai_lab_course_mini_description }}
             </p>
-            @if (about.topics?.length) {
+            <!-- The lab's tools — the closest thing it carries to the course page's topics. -->
+            @if (reel.tools.length) {
               <div class="mt-5 flex flex-wrap items-center gap-2">
-                <span class="mr-1 text-[12.5px] font-semibold text-muted-foreground">Topics</span>
-                @for (topic of about.topics; track topic) {
+                <span class="me-1 text-[12.5px] font-semibold text-muted-foreground">Tools</span>
+                @for (topic of reel.tools; track topic) {
                   <span
                     class="rounded-md border border-border bg-secondary px-2.5 py-1 text-[12.5px] text-muted-foreground"
                   >
@@ -229,13 +219,13 @@
             }
           </div>
 
-          @if (about.learning_objective_list?.length) {
+          @if (reel.learning_objectives.length) {
             <div>
               <h2 class="font-serif text-[24px] font-semibold tracking-[-0.015em]">
                 Learning objectives
               </h2>
               <ol class="mt-4 flex flex-col gap-4">
-                @for (objective of about.learning_objective_list; track $index) {
+                @for (objective of reel.learning_objectives; track $index) {
                   <li class="flex gap-4">
                     <span class="font-mono text-[13px] text-accent">
                       {{ ($index + 1).toString().padStart(2, '0') }}
@@ -268,37 +258,15 @@
               feedback and your certificate.
             </p>
 
-            <!-- Facts off the payload. Each hides when the serializer doesn't
-                 send it — the micro-learning one is sparser than masterclass. -->
-            @let attempt = reel.user_assessment_details;
+            <!-- Facts off `course-progress/`. Question count and pass mark live on
+                 the assessment read, which joins with the exam screen. -->
             <dl class="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[12.5px]">
               <div class="flex items-center gap-2">
                 <dt class="text-muted-foreground">Status</dt>
                 <dd class="font-semibold" [class.text-success]="examPassed()">
-                  @if (examPassed()) {
-                    Passed
-                    @if (attempt?.exam_passes_date; as passedOn) {
-                      on {{ passedOn | date: 'd MMM y' }}
-                    }
-                  } @else if (examRetake()) {
-                    Retake required
-                  } @else {
-                    Not attempted
-                  }
+                  {{ examPassed() ? 'Passed' : 'Not passed yet' }}
                 </dd>
               </div>
-              @if (details()?.total_assessment_questions; as questionCount) {
-                <div class="flex items-center gap-2">
-                  <dt class="text-muted-foreground">Questions</dt>
-                  <dd class="font-semibold">{{ questionCount }}</dd>
-                </div>
-              }
-              @if (details()?.pass_percentage; as passMark) {
-                <div class="flex items-center gap-2">
-                  <dt class="text-muted-foreground">Pass mark</dt>
-                  <dd class="font-semibold">{{ passMark }}%</dd>
-                </div>
-              }
               @if (credits) {
                 <div class="flex items-center gap-2">
                   <dt class="text-muted-foreground">Credits</dt>
@@ -333,14 +301,6 @@
           <!-- The exam is reached through the same action_status dispatcher as
                the hero CTA, so it can't drift out of step with it. -->
           <div class="flex shrink-0 flex-wrap items-center gap-3">
-            @if (examPassed() && attempt?.session_id; as sessionId) {
-              <a
-                [routerLink]="['final-assessment', sessionId, 'report']"
-                class="inline-flex h-10 items-center rounded-lg border border-border px-4 text-[13.5px] font-semibold no-underline transition-colors hover:bg-card-hover"
-              >
-                View report
-              </a>
-            }
             @if (!completed()) {
               <span
                 class="flex items-center gap-2 rounded-lg border border-border bg-black/25 px-5 py-3 text-[13.5px] font-semibold text-muted-foreground"
@@ -354,8 +314,8 @@
                 type="button"
                 [class]="feedbackClass()"
                 [variant]="feedbackCta() ? 'ghost' : 'default'"
-                [disabled]="ctaLoading()"
-                (click)="cta.emit()"
+                [disabled]="ctaDisabled()"
+                (click)="runCta()"
               >
                 {{ ctaLabel() }}
               </button>
@@ -384,7 +344,7 @@
         <!-- No `lab_assignment_id` on the course: nothing to build against and
              nothing to submit to, so say that plainly rather than leaving the
              learner to work out why a lab they passed the exam for won't open. -->
-        @if (details() && !labMapped()) {
+        @if (!labMapped()) {
           <p
             class="mb-3 rounded-lg border border-border bg-black/25 px-4 py-3 text-[12.5px] text-muted-foreground"
             role="note"
@@ -516,7 +476,7 @@
                     type="button"
                     class="flex items-center gap-3 rounded-lg border border-border bg-black/25 p-4 text-start transition-colors hover:bg-card-hover"
                     [attr.aria-label]="'Download ' + file.name"
-                    (click)="openInputFile.emit(file)"
+                    (click)="openInputFile(file)"
                   >
                     <span
                       class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary text-muted-foreground"
@@ -552,7 +512,7 @@
               type="button"
               class="gap-2"
               [disabled]="!labUnlocked()"
-              (click)="launchLab.emit()"
+              (click)="launchLab()"
             >
               <span>{{ signInLabel() }}</span>
               <ng-icon name="lucideArrowUpRight" class="text-lg" aria-hidden="true" />
@@ -584,7 +544,7 @@
                   title="Couldn't load your agents"
                   message="We hit a snag reaching your Copilot environment. Try again in a moment."
                   retryLabel="Try again"
-                  (retry)="refreshArtefacts.emit()"
+                  (retry)="refreshArtefacts()"
                 />
               } @else if (hasArtefacts()) {
                 <div class="mt-3 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
@@ -618,7 +578,7 @@
                     variant="outline"
                     class="h-14"
                     [disabled]="pickerLocked() || artefactsLoading()"
-                    (click)="refreshArtefacts.emit()"
+                    (click)="refreshArtefacts()"
                   >
                     Refresh list
                   </button>
@@ -679,7 +639,7 @@
                     variant="outline"
                     class="shrink-0"
                     [disabled]="artefactsLoading()"
-                    (click)="refreshArtefacts.emit()"
+                    (click)="refreshArtefacts()"
                   >
                     Refresh list
                   </button>
@@ -697,6 +657,7 @@
               </h3>
               <div class="mt-3 grid gap-3 sm:grid-cols-2">
                 @for (item of labMaterials(); track item.label) {
+                  <!-- Links only: the lab payload carries no exercise-file download. -->
                   @if (item.kind === 'link') {
                     <a
                       [href]="item.url"
@@ -718,49 +679,6 @@
                         </span>
                       </span>
                     </a>
-                  } @else {
-                    <!-- No `@let` here: the button must stay this view's first
-                         node. A leading `@let` makes SSR locate the button by a
-                         path from the component host, and hydrating that path
-                         after the page above has changed throws
-                         "reading 'nextSibling'". Busy/disabled live in the class. -->
-                    <button
-                      type="button"
-                      [disabled]="materialDisabled(item)"
-                      (click)="openMaterial.emit(item)"
-                      class="flex items-center gap-3 rounded-lg border border-border bg-black/25 p-4 text-left transition-colors hover:bg-card-hover disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <span
-                        class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary text-muted-foreground"
-                      >
-                        @if (materialBusy(item)) {
-                          <span
-                            class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
-                            aria-hidden="true"
-                          ></span>
-                        } @else {
-                          <ng-icon
-                            [name]="
-                              item.action === 'exercise' ? 'lucideDownload' : 'lucideExternalLink'
-                            "
-                            class="text-lg"
-                            aria-hidden="true"
-                          />
-                        }
-                      </span>
-                      <span class="min-w-0 flex-1">
-                        <span class="block truncate text-[13.5px] font-semibold text-foreground">
-                          {{ item.label }}
-                        </span>
-                        <span class="block text-[11.5px] text-muted-foreground">
-                          {{
-                            item.action === 'exercise' && materialBusy(item)
-                              ? 'Preparing your download…'
-                              : item.hint
-                          }}
-                        </span>
-                      </span>
-                    </button>
                   }
                 }
               </div>
@@ -787,7 +705,7 @@
               class="ml-auto"
               [disabled]="statusLoading()"
               ariaLabel="Refresh evaluation status"
-              (click)="refreshStatus.emit()"
+              (click)="refreshStatus()"
             >
               <ng-icon
                 name="lucideRefreshCw"
@@ -896,7 +814,7 @@
                           class="gap-2"
                           [disabled]="gradeCardBusy()"
                           [attr.aria-busy]="gradeCardBusy()"
-                          (click)="downloadGradeCard.emit()"
+                          (click)="downloadGradeCard()"
                         >
                           <ng-icon name="lucideDownload" class="text-base" aria-hidden="true" />
                           {{ gradeCardBusy() ? 'Preparing…' : 'Download grade card' }}
@@ -914,7 +832,7 @@
               title="Evaluation failed"
               message="Something went wrong while evaluating your submission. Submit it again, or try a different agent or workflow."
               retryLabel="Submit again"
-              (retry)="resubmit.emit()"
+              (retry)="resubmit()"
             />
           }
           @default {
@@ -931,193 +849,148 @@
         }
       </section>
 
-      <!-- ============================= INSTRUCTOR ============================= -->
-      <!-- Only worth its own section when there's more than a name — the name
-           alone is already in the hero meta row, and an empty card reads as a
-           bug rather than as missing data. -->
-      @if (reel.instructor_details; as instructor) {
-        @if (instructor.designation || instructor.about_me || instructor.profile_image) {
-          <section>
-            <h2 class="font-serif text-[24px] font-semibold tracking-[-0.015em]">
-              Your instructor
-            </h2>
-            <div
-              class="mt-5 flex flex-col gap-6 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center lg:p-6"
-            >
-              @if (instructor.profile_image) {
-                <img
-                  [src]="instructor.profile_image"
-                  [alt]="instructor.first_name + ' ' + instructor.last_name"
-                  class="h-[132px] w-[132px] shrink-0 rounded-lg border border-border object-cover"
-                />
-              }
-              <div class="min-w-0 flex-1">
-                <p class="text-[19px] font-semibold tracking-[-0.01em]">
-                  {{ instructor.first_name }} {{ instructor.last_name }}
-                </p>
-                @if (instructor.designation) {
-                  <p class="mt-0.5 text-[13px] text-muted-foreground">
-                    {{ instructor.designation }}
-                  </p>
-                }
-                @if (instructor.about_me) {
-                  <p class="mt-3 max-w-[62ch] text-[13.5px] leading-relaxed text-muted-foreground">
-                    {{ instructor.about_me }}
-                  </p>
-                }
-                @if (instructor.linkedin) {
-                  <a
-                    [href]="instructor.linkedin"
-                    target="_blank"
-                    rel="noreferrer"
-                    class="mt-3 inline-block text-[13px] font-semibold"
-                  >
-                    Full profile &#8599;
-                  </a>
-                }
-              </div>
-            </div>
-          </section>
-        }
-      }
-
       <!-- ====================== CPE CREDIT & ACCREDITATION ====================== -->
-      @if (details(); as about) {
-        @if (credits) {
-          <section>
-            <h2 class="font-serif text-[24px] font-semibold tracking-[-0.015em]">
-              CPE credit &amp; accreditation
-            </h2>
+      @if (credits) {
+        <section>
+          <h2 class="font-serif text-[24px] font-semibold tracking-[-0.015em]">
+            CPE credit &amp; accreditation
+          </h2>
 
-            <div
-              class="mt-5 flex flex-wrap items-center gap-4 rounded-xl border border-border bg-black/25 p-4"
-            >
-              <div class="min-w-0 flex-1">
-                <p class="text-[14px] font-semibold">
-                  National Association of State Boards of Accountancy (NASBA)
-                </p>
-                <p class="mt-0.5 text-[12.5px] text-muted-foreground">
-                  Registered sponsor &middot; QAS Self-Study &middot; Sponsor ID 149174
-                </p>
-              </div>
+          <div
+            class="mt-5 flex flex-wrap items-center gap-4 rounded-xl border border-border bg-black/25 p-4"
+          >
+            <div class="min-w-0 flex-1">
+              <p class="text-[14px] font-semibold">
+                National Association of State Boards of Accountancy (NASBA)
+              </p>
+              <p class="mt-0.5 text-[12.5px] text-muted-foreground">
+                Registered sponsor &middot; QAS Self-Study &middot; Sponsor ID 149174
+              </p>
             </div>
+          </div>
 
-            <dl class="mt-4 grid gap-x-10 sm:grid-cols-2">
+          <dl class="mt-4 grid gap-x-10 sm:grid-cols-2">
+            <div class="flex justify-between gap-4 border-b border-border py-3">
+              <dt class="text-[13px] text-muted-foreground">CPE credit</dt>
+              <dd class="text-[13px] font-semibold">{{ credits }}</dd>
+            </div>
+            @if (reel.fields_of_study.length) {
               <div class="flex justify-between gap-4 border-b border-border py-3">
-                <dt class="text-[13px] text-muted-foreground">CPE credit</dt>
-                <dd class="text-[13px] font-semibold">{{ credits }}</dd>
-              </div>
-              @if (about.fields_of_study?.length) {
-                <div class="flex justify-between gap-4 border-b border-border py-3">
-                  <dt class="text-[13px] text-muted-foreground">Field of study</dt>
-                  <dd class="text-[13px] font-semibold">
-                    {{ about.fields_of_study![0].name }}
-                  </dd>
-                </div>
-              }
-              @if (about.int_delivery_method) {
-                <div class="flex justify-between gap-4 border-b border-border py-3">
-                  <dt class="text-[13px] text-muted-foreground">Delivery method</dt>
-                  <dd class="text-[13px] font-semibold">{{ about.int_delivery_method }}</dd>
-                </div>
-              }
-              @if (about.program_level) {
-                <div class="flex justify-between gap-4 border-b border-border py-3">
-                  <dt class="text-[13px] text-muted-foreground">Program level</dt>
-                  <dd class="text-[13px] font-semibold">{{ about.program_level }}</dd>
-                </div>
-              }
-              <div class="flex justify-between gap-4 border-b border-border py-3">
-                <dt class="text-[13px] text-muted-foreground">Prerequisites</dt>
+                <dt class="text-[13px] text-muted-foreground">Field of study</dt>
                 <dd class="text-[13px] font-semibold">
-                  {{ about.prerequisite_education || 'None' }}
+                  {{ reel.fields_of_study[0].name }}
                 </dd>
               </div>
+            }
+            <!-- On the progress read, so it shows once the lab is started. -->
+            @if (deliveryMethod(); as method) {
               <div class="flex justify-between gap-4 border-b border-border py-3">
-                <dt class="text-[13px] text-muted-foreground">Advance preparation</dt>
-                <dd class="text-[13px] font-semibold">{{ about.advance_preparation || 'None' }}</dd>
+                <dt class="text-[13px] text-muted-foreground">Delivery method</dt>
+                <dd class="text-[13px] font-semibold">{{ method }}</dd>
               </div>
-              @if (about.course_expiry) {
-                <div class="flex justify-between gap-4 border-b border-border py-3">
-                  <dt class="text-[13px] text-muted-foreground">Access</dt>
-                  <dd class="text-[13px] font-semibold">{{ about.course_expiry }}</dd>
-                </div>
-              }
+            }
+            @if (reel.levels[0]; as level) {
               <div class="flex justify-between gap-4 border-b border-border py-3">
-                <dt class="text-[13px] text-muted-foreground">Certificate</dt>
-                <dd class="text-[13px] font-semibold">Miles Learning Certificate</dd>
+                <dt class="text-[13px] text-muted-foreground">Program level</dt>
+                <dd class="text-[13px] font-semibold">{{ level }}</dd>
               </div>
-            </dl>
+            }
+            <div class="flex justify-between gap-4 border-b border-border py-3">
+              <dt class="text-[13px] text-muted-foreground">Prerequisites</dt>
+              <dd class="text-[13px] font-semibold">
+                {{ reel.ai_lab_course_prerequisite_education || 'None' }}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-4 border-b border-border py-3">
+              <dt class="text-[13px] text-muted-foreground">Advance preparation</dt>
+              <dd class="text-[13px] font-semibold">
+                {{ reel.ai_lab_course_advance_preparation || 'None' }}
+              </dd>
+            </div>
+            <!-- The learner's own window once enrolled; the lab's length before that. -->
+            <div class="flex justify-between gap-4 border-b border-border py-3">
+              <dt class="text-[13px] text-muted-foreground">Access</dt>
+              <dd class="text-[13px] font-semibold">
+                @if (accessEndsAt(); as ends) {
+                  Until {{ ends | date: 'd MMM y' }}
+                } @else {
+                  {{ reel.ai_lab_course_access_duration_days }} days from start
+                }
+              </dd>
+            </div>
+            <div class="flex justify-between gap-4 border-b border-border py-3">
+              <dt class="text-[13px] text-muted-foreground">Certificate</dt>
+              <dd class="text-[13px] font-semibold">Miles Learning Certificate</dd>
+            </div>
+          </dl>
 
-            <div class="mt-6 grid gap-4 lg:grid-cols-2">
-              <div class="rounded-xl border border-border bg-card p-5">
-                <p class="text-[13.5px] font-semibold">To earn CPE credit you must</p>
-                <ul class="mt-3 flex flex-col gap-2">
-                  @for (requirement of cpeRequirements; track requirement) {
-                    <li class="flex gap-3 text-[13.5px] leading-relaxed text-muted-foreground">
-                      <span
-                        class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-success-bg text-success"
-                      >
-                        <ng-icon name="lucideCheck" class="text-[11px]" aria-hidden="true" />
-                      </span>
-                      {{ requirement }}
-                    </li>
-                  }
-                </ul>
-                <p
-                  class="mt-4 border-t border-border pt-3 text-[12.5px] leading-relaxed text-muted-foreground"
+          <div class="mt-6 grid gap-4 lg:grid-cols-2">
+            <div class="rounded-xl border border-border bg-card p-5">
+              <p class="text-[13.5px] font-semibold">To earn CPE credit you must</p>
+              <ul class="mt-3 flex flex-col gap-2">
+                @for (requirement of cpeRequirements; track requirement) {
+                  <li class="flex gap-3 text-[13.5px] leading-relaxed text-muted-foreground">
+                    <span
+                      class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-success-bg text-success"
+                    >
+                      <ng-icon name="lucideCheck" class="text-[11px]" aria-hidden="true" />
+                    </span>
+                    {{ requirement }}
+                  </li>
+                }
+              </ul>
+              <p
+                class="mt-4 border-t border-border pt-3 text-[12.5px] leading-relaxed text-muted-foreground"
+              >
+                Taking this course for CPE? Leave your closing comments in Feedback — they form part
+                of the sponsor record.
+              </p>
+            </div>
+
+            <!-- Native disclosure: no JS, no component, correct semantics. -->
+            <details class="group h-fit rounded-xl border border-border bg-black/25">
+              <summary
+                class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4"
+              >
+                <span class="text-[13.5px] font-semibold">
+                  Registry statement, refunds &amp; complaint resolution
+                </span>
+                <span
+                  class="font-mono text-[11px] tracking-widest text-muted-foreground uppercase group-open:hidden"
+                  >show</span
                 >
-                  Taking this course for CPE? Leave your closing comments in Feedback — they form
-                  part of the sponsor record.
+                <span
+                  class="hidden font-mono text-[11px] tracking-widest text-muted-foreground uppercase group-open:inline"
+                  >hide</span
+                >
+              </summary>
+              <div class="flex flex-col gap-3 border-t border-border px-5 py-4">
+                <p class="text-[12.5px] leading-relaxed text-muted-foreground">
+                  Miles Masterclass Inc. is registered with the National Association of State Boards
+                  of Accountancy (NASBA) as a sponsor of continuing professional education on the
+                  National Registry of CPE Sponsors. State boards of accountancy have final
+                  authority on the acceptance of individual courses for CPE credit. Complaints
+                  regarding registered sponsors may be submitted to the National Registry of CPE
+                  Sponsors through its website:
+                  <a href="https://www.nasbaregistry.org" target="_blank" rel="noreferrer"
+                    >www.nasbaregistry.org</a
+                  >.
+                </p>
+                <p class="text-[12.5px] leading-relaxed text-muted-foreground">
+                  For refund policy, issue resolution and additional information, see the FAQs on
+                  the Overview tab. For administrative policies such as complaint and refund,
+                  contact
+                  <a href="mailto:support@milesmasterclass.com">support&#64;milesmasterclass.com</a
+                  >.
+                </p>
+                <p class="text-[12.5px] leading-relaxed text-muted-foreground">
+                  To earn the Miles Learning Certificate, the learner is expected to complete all
+                  videos and chapter quizzes.
                 </p>
               </div>
-
-              <!-- Native disclosure: no JS, no component, correct semantics. -->
-              <details class="group h-fit rounded-xl border border-border bg-black/25">
-                <summary
-                  class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4"
-                >
-                  <span class="text-[13.5px] font-semibold">
-                    Registry statement, refunds &amp; complaint resolution
-                  </span>
-                  <span
-                    class="font-mono text-[11px] tracking-widest text-muted-foreground uppercase group-open:hidden"
-                    >show</span
-                  >
-                  <span
-                    class="hidden font-mono text-[11px] tracking-widest text-muted-foreground uppercase group-open:inline"
-                    >hide</span
-                  >
-                </summary>
-                <div class="flex flex-col gap-3 border-t border-border px-5 py-4">
-                  <p class="text-[12.5px] leading-relaxed text-muted-foreground">
-                    Miles Masterclass Inc. is registered with the National Association of State
-                    Boards of Accountancy (NASBA) as a sponsor of continuing professional education
-                    on the National Registry of CPE Sponsors. State boards of accountancy have final
-                    authority on the acceptance of individual courses for CPE credit. Complaints
-                    regarding registered sponsors may be submitted to the National Registry of CPE
-                    Sponsors through its website:
-                    <a href="https://www.nasbaregistry.org" target="_blank" rel="noreferrer"
-                      >www.nasbaregistry.org</a
-                    >.
-                  </p>
-                  <p class="text-[12.5px] leading-relaxed text-muted-foreground">
-                    For refund policy, issue resolution and additional information, see the FAQs on
-                    the Overview tab. For administrative policies such as complaint and refund,
-                    contact
-                    <a href="mailto:support@milesmasterclass.com"
-                      >support&#64;milesmasterclass.com</a
-                    >.
-                  </p>
-                  <p class="text-[12.5px] leading-relaxed text-muted-foreground">
-                    To earn the Miles Learning Certificate, the learner is expected to complete all
-                    videos and chapter quizzes.
-                  </p>
-                </div>
-              </details>
-            </div>
-          </section>
-        }
+            </details>
+          </div>
+        </section>
       }
     </main>
   } @else if (isLoading()) {
@@ -1126,10 +999,10 @@
     <app-error-state
       class="mt-8 block"
       message="We couldn't load this lab."
-      (retry)="retry.emit()"
+      (retry)="facade.retry()"
     />
   }
 
   <!-- Floating; gates itself on having a balance. See the component template. -->
-  <app-ai-lab-token-meter [balance]="balance()" (topUp)="topUp.emit()" />
+  <app-ai-lab-token-meter [balance]="balance()" (topUp)="topUp()" />
 </div>

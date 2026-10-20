@@ -8,9 +8,9 @@ import {
   inject,
   input,
   linkedSignal,
-  output,
   PLATFORM_ID,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { DatePipe, DecimalPipe, isPlatformBrowser } from '@angular/common';
@@ -26,29 +26,22 @@ import {
   lucidePause,
   lucideRefreshCw,
 } from '@ng-icons/lucide';
-import { RouterLink } from '@angular/router';
-import { ContentDetails } from '@core/models/course.model';
 import { PlayerMode, VideoConfig, VideoSource } from '@core/models/video-player.model';
 import { AiLabTokenMeter } from '@features/ai-labs/components/ai-lab-token-meter/ai-lab-token-meter';
 import {
   AI_LAB_QUIZ_BEHIND,
   AiLabAgent,
-  AiLabAssignmentBrief,
-  AiLabAssignmentStatus,
-  AiLabCtaStage,
   AiLabFlow,
   AiLabInputFile,
   AiLabLabStatus,
   AiLabMaterial,
   AiLabSubmitBody,
-  AiLabTokenBalance,
 } from '@features/ai-labs/models/ai-labs.model';
+import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
 import { AriaSelectOption } from '@core/models/aria.model';
 import { Backward } from '@shared/components/backward/backward';
 import { AiLabCourseSkeleton } from '@shared/components/skeleton/ai-lab-course-skeleton/ai-lab-course-skeleton';
 import { VideoJs } from '@shared/components/video-js/video-js';
-import { DurationPipe } from '@shared/pipes/duration/duration-pipe';
-import { TotalCpeCreditsPipe } from '@shared/pipes/total-cpe-credits/total-cpe-credits-pipe';
 import { Button } from '@shared/ui/button/button';
 import { ErrorState } from '@shared/ui/error-state/error-state';
 import { Progress } from '@shared/ui/progress/progress';
@@ -68,26 +61,16 @@ interface LabPick {
  * FOUR-STEP COMPLETION — watch → quiz → final assessment → AI Lab. The lab opens only once the
  * exam is passed, and feedback / certificate open only once the lab reports `completed`.
  *
- * ## Presentational, and why
+ * ## Data
  *
- * Upstream this page injects four facades (`MicroLearningCourseFacade`, `ChapterFacade`,
- * `FinalAssessmentFacade`, `FeedbackFacade`), four `resource()`s and a submission service; the
- * TypeScript is mostly that wiring. None of it is bound here, so **every root is an input and
- * every action is an output**, and what is left is the derivation the design actually encodes —
- * the gates, the CTA labels, the picker's either/or rule, the brief's clamp.
+ * Everything comes from `AiLabCourseFacade`, route-scoped and keyed by `:courseId`: the lab
+ * (`course/<uuid>/`), whether it's started (`course-started/`) and the gate flags
+ * (`course-progress/`). The page reads the facade's signals under its own names, so the template
+ * stays upstream's; what is left here is presentation — the CTA labels, the picker's either/or
+ * rule, the brief's clamp.
  *
- * Three things could not come across as-is, each for a boundary reason rather than a design one:
- *
- *  - **`ctaStage`** is an input rather than `deriveActionStatus(reel)`. That helper and its
- *    `ActionStatus` enum live in `features/offerings`, and a feature may not import another
- *    feature (AGENTS.md §3). The spellings match the API so binding is a cast.
- *  - **`completed`** is an input rather than `isReelCompleted(reel)`, same reason.
- *  - **`labMapped`** is an input rather than reading `lab_assignment_id` off the payload, which
- *    our `ContentDetails` does not carry yet. Adding a field to a core model for a page that
- *    cannot use it yet would be speculative.
- *
- * Binding this page means feeding these inputs and handling the outputs. Nothing in this file has
- * to change for that.
+ * The lab has no playable video on any read yet (backend question Q1), so the frame shows the
+ * lab's artwork, and with no video the "keep watching" stage has nothing to play.
  */
 @Component({
   selector: 'app-ai-lab-course',
@@ -98,14 +81,11 @@ interface LabPick {
     Button,
     DatePipe,
     DecimalPipe,
-    DurationPipe,
     ErrorState,
     NgIcon,
     Progress,
-    RouterLink,
     Select,
     Spinner,
-    TotalCpeCreditsPipe,
     VideoJs,
   ],
   templateUrl: './ai-lab-course.html',
@@ -145,86 +125,39 @@ export class AiLabCourse {
 
   // ---- Roots -------------------------------------------------------------
 
-  /** The course payload. `null` renders the skeleton or the error state. */
-  readonly course = input<ContentDetails | null>(null);
+  /** Bound from the `:courseId` route param by `withComponentInputBinding()`. */
+  readonly courseId = input.required<string>();
 
-  /** The "about" payload — topics, objectives, exam rules, lab materials. */
-  readonly details = input<ContentDetails | null>(null);
+  protected readonly facade = inject(AiLabCourseFacade);
 
-  readonly brief = input<AiLabAssignmentBrief | null>(null);
-  readonly agents = input<readonly AiLabAgent[]>([]);
-  readonly flows = input<readonly AiLabFlow[]>([]);
-  readonly assignment = input<AiLabAssignmentStatus | null>(null);
-  readonly balance = input<AiLabTokenBalance | null>(null);
+  /** The lab. `null` renders the skeleton or the error state. */
+  protected readonly course = this.facade.lab;
+  protected readonly isLoading = this.facade.isLoading;
+  protected readonly error = this.facade.error;
 
-  /** Where the learner is in the course — see the class doc for why this is an input. */
-  readonly ctaStage = input<AiLabCtaStage | null>(null);
+  protected readonly ctaStage = this.facade.ctaStage;
+  protected readonly ctaLoading = this.facade.ctaLoading;
+  protected readonly completed = this.facade.completed;
+  /** Percentage watched, 0–100 — drives the hero's Play / Resume label and hint. */
+  protected readonly progress = this.facade.progressPercent;
+  protected readonly labMapped = this.facade.labMapped;
 
-  /** The video has been watched through. */
-  readonly completed = input(false);
+  // The practical — idle in the facade until its ticket binds it.
+  protected readonly brief = this.facade.brief;
+  protected readonly briefLoading = this.facade.briefLoading;
+  protected readonly briefUnavailable = this.facade.briefUnavailable;
+  protected readonly agents = this.facade.agents;
+  protected readonly flows = this.facade.flows;
+  protected readonly artefactsLoading = this.facade.artefactsLoading;
+  protected readonly artefactsError = this.facade.artefactsError;
+  protected readonly assignment = this.facade.assignment;
+  protected readonly statusLoading = this.facade.statusLoading;
+  protected readonly submitting = this.facade.submitting;
+  protected readonly gradeCardBusy = this.facade.gradeCardBusy;
+  protected readonly balance = this.facade.balance;
+  protected readonly labProvisioned = this.facade.labProvisioned;
 
-  /**
-   * Percentage watched, 0–100 — drives the hero's Play / Resume label and hint.
-   *
-   * An input rather than a computed: upstream derives it from `last_activity`, which is watched
-   * seconds on their payload and an ISO timestamp on ours. Deriving it here would silently
-   * compute nonsense from a date.
-   */
-  readonly progress = input(0);
-
-  /** The course is mapped to an AI Labs assignment. Without one there is nothing to submit against. */
-  readonly labMapped = input(false);
-
-  /** False while the learner's Copilot environment is still being created. */
-  readonly labProvisioned = input(true);
-
-  /** The SharePoint workspace link, once resolved. */
-  readonly workspaceUrl = input<string | null>(null);
-
-  /** Why the workspace row isn't a link yet — loading, failed, or simply not configured. */
-  readonly workspaceHint = input('No workspace link for this lab');
-
-  readonly isLoading = input(false);
-
-  /** The brief is still being fetched. */
-  readonly briefLoading = input(false);
-
-  /**
-   * Why there is no brief, when it's worth saying — e.g. the lab's practical isn't set up yet
-   * (409 `ai_lab_assignment_not_configured`). Null renders no brief block at all.
-   */
-  readonly briefUnavailable = input<string | null>(null);
-
-  /** The agent / workflow lists are still being fetched. */
-  readonly artefactsLoading = input(false);
-
-  /** The agent list failed to load — the picker says so rather than reading as empty. */
-  readonly artefactsError = input(false);
-  readonly error = input(false);
-  readonly ctaLoading = input(false);
-  readonly submitting = input(false);
-  readonly statusLoading = input(false);
-  /** A grade-card link is being re-read before it opens. */
-  readonly gradeCardBusy = input(false);
-  readonly downloadingExerciseFiles = input(false);
-  readonly signInLabel = input('Sign in & launch AI');
-
-  // ---- Actions -----------------------------------------------------------
-
-  readonly cta = output<void>();
-  readonly launchLab = output<void>();
-  readonly submitLab = output<AiLabSubmitBody>();
-  readonly resubmit = output<void>();
-  readonly refreshStatus = output<void>();
-  readonly refreshArtefacts = output<void>();
-  /** A brief input file was clicked. The host re-fetches the brief first if its links are stale. */
-  readonly openInputFile = output<AiLabInputFile>();
-  readonly downloadGradeCard = output<void>();
-  readonly openMaterial = output<AiLabMaterial>();
-  readonly topUp = output<void>();
-  readonly videoEnded = output<void>();
-  readonly timeUpdate = output<number>();
-  readonly retry = output<void>();
+  protected readonly signInLabel = signal('Sign in & launch AI');
 
   /** The CPE conditions this course is credited under. Fixed copy, not payload. */
   protected readonly cpeRequirements: readonly string[] = [
@@ -239,36 +172,52 @@ export class AiLabCourse {
   protected readonly playing = signal(false);
   protected readonly PlayerMode = PlayerMode;
 
-  protected readonly videoSources = computed<VideoSource[]>(() => {
-    const url = this.course()?.video_url;
-    if (!url) return [];
-    const isHls = url.toLowerCase().endsWith('.m3u8');
-    return [{ src: url, type: isHls ? 'application/x-mpegURL' : 'video/mp4' }];
+  /**
+   * ponytail: empty until a read carries the lab's video. `course/<uuid>/` has only a trailer
+   * (null on UAT), and `course-video-progress/` measures a video no field names — Q1. The
+   * reporting below is wired, so the source is the only missing piece.
+   */
+  protected readonly videoSources = computed<VideoSource[]>(() => []);
+
+  /** The 16:9 frame's artwork, while there is no video to play. */
+  protected readonly poster = computed(() => {
+    const lab = this.course();
+    return lab?.ai_lab_course_horizontal_thumbnail_url || lab?.ai_lab_course_square_thumbnail_url;
   });
 
   /**
-   * CPE mode locks the seekbar and the speed menu until the course is watched through; Preview
-   * mode is an ordinary player. The same rule as the reel card.
+   * Every lab enrolment is on the CPE path, so the seekbar and speed menu stay locked until the
+   * video is watched through — the reel card's CPE rule, without a Preview mode to fall back to.
    */
-  protected readonly playerMode = computed<PlayerMode>(() => {
-    const inCpe = !!this.course()?.cpe_mode_details?.cpe_mode;
-    return inCpe && !this.completed() ? PlayerMode.CPE : PlayerMode.DEFAULT;
-  });
+  protected readonly playerMode = computed<PlayerMode>(() =>
+    this.completed() ? PlayerMode.DEFAULT : PlayerMode.CPE,
+  );
 
   protected readonly videoConfig = computed<VideoConfig>(() => ({
     controls: true,
     autoplay: false,
-    // AI Lab videos come from the reel library, so the source can be portrait (720x1280) even
-    // though the artwork is landscape. `fluid` would size the player to the source and blow the
-    // 16:9 frame open, so size it from the frame instead and let the tech letterbox inside.
+    // `fluid` would size the player to the source and blow the 16:9 frame open for a portrait
+    // source, so size it from the frame instead and let the tech letterbox inside.
     fluid: false,
     responsive: false,
-    // Never loop: `ended` has to fire so the post-video flow (quiz → exam) can open. The reel card
-    // loops because it's a feed; a course page isn't.
+    // Never loop: `ended` has to fire so the last progress report goes out.
     loop: false,
-    poster: this.course()?.horizontal_thumbnail || this.course()?.thumbnail || undefined,
+    poster: this.poster() || undefined,
     preload: 'auto',
   }));
+
+  /** The last playback position, so `ended` can send the final report. */
+  private lastTime = 0;
+
+  protected onTimeUpdate(seconds: number): void {
+    this.lastTime = seconds;
+    this.facade.reportVideoProgress(seconds);
+  }
+
+  protected onEnded(): void {
+    this.playing.set(false);
+    this.facade.reportVideoProgress(this.lastTime, true);
+  }
 
   protected togglePlayback(): void {
     this.player()?.togglePlay();
@@ -296,12 +245,9 @@ export class AiLabCourse {
     this.feedbackCta() ? 'text-black rounded-lg bg-amber-400' : '',
   );
 
-  /**
-   * No stage yet in CPE mode means "keep watching" — on this page playback follows this button
-   * rather than the scroll, so the CTA drives the player.
-   */
+  /** No stage means "keep watching" — on this page playback follows this button, not the scroll. */
   protected readonly playbackCta = computed(
-    () => !!this.course()?.cpe_mode_details?.cpe_mode && this.ctaStage() === null,
+    () => this.ctaStage() === null && this.videoSources().length > 0,
   );
 
   protected readonly playbackLabel = computed(() => {
@@ -310,15 +256,17 @@ export class AiLabCourse {
   });
 
   protected readonly ctaLabel = computed(() => {
-    const reel = this.course();
-    if (!reel) return 'Play';
     switch (this.ctaStage()) {
+      case 'START':
+        return 'Start AI Lab';
       case 'TAKE_QUIZ':
         return 'Take Quiz';
       case 'TAKE_EXAM':
         return 'Take Final Assessment';
       case 'RETAKE_EXAM':
         return 'Retake Final Assessment';
+      case 'AI_LAB':
+        return 'Continue to AI Lab';
       case 'FEEDBACK':
         return 'Submit Feedback';
       case 'DOWNLOAD':
@@ -326,101 +274,84 @@ export class AiLabCourse {
       case 'REWATCH':
         return 'Rewatch';
     }
-    return reel.cpe_mode_details?.cpe_mode ? 'Continue' : 'Watch in CPE Mode';
+    return 'Watch the lab video';
   });
+
+  /**
+   * Nothing to do yet: a start in flight, the parent course's lock, or "keep watching" with no
+   * video to watch.
+   */
+  protected readonly ctaDisabled = computed(
+    () =>
+      this.ctaLoading() ||
+      !!this.facade.lockRemark() ||
+      (this.ctaStage() === null && !this.playbackCta()),
+  );
+
+  /**
+   * The hero CTA. Start and the lab are this page's; the quiz, exam, feedback and certificate
+   * screens join with their ticket.
+   */
+  protected runCta(): void {
+    switch (this.ctaStage()) {
+      case 'START':
+        this.facade.start();
+        return;
+      case 'AI_LAB':
+        this.scrollToLab();
+        return;
+      case 'REWATCH':
+        this.togglePlayback();
+        return;
+      default:
+      // ponytail: TAKE_QUIZ / TAKE_EXAM / RETAKE_EXAM / FEEDBACK / DOWNLOAD open screens that
+      // arrive with the quiz, exam and feedback ticket.
+    }
+  }
 
   // ---- Lab materials -----------------------------------------------------
 
   /**
-   * Lab material carried by the course payload: three links, plus the two resource options — the
-   * exercise-file download and the SharePoint workspace.
+   * What the lab payload links to. Only the SharePoint workspace survives on the lab read — the
+   * masterclass page's navigation video, glossary, sample and exercise-file download have no
+   * counterpart here.
    */
   protected readonly labMaterials = computed<AiLabMaterial[]>(() => {
-    const d = this.details();
-    if (!d) return [];
-
-    const links: AiLabMaterial[] = (
-      [
-        { label: 'Course navigation', hint: 'Walkthrough video', url: d.navigation_link },
-        { label: 'Glossary', hint: 'Terms used in this lab', url: d.glossary_doc },
-        { label: 'Sample', hint: 'Worked example', url: d.sample_link },
-      ] as const
-    )
-      .filter((m) => !!m.url)
-      .map((m) => ({ kind: 'link', label: m.label, hint: m.hint, url: m.url }) as AiLabMaterial);
-
-    const actions: AiLabMaterial[] = [];
-    if (d.has_exercise_files) {
-      actions.push({
-        kind: 'action',
-        label: 'Exercise files',
-        hint: 'Download the lab files as a zip',
-        action: 'exercise',
-      });
-    }
-    if (d.has_additional_resources) {
-      const url = this.workspaceUrl();
-      // A resolved URL renders as a real anchor — middle-click, "open in new tab", the lot. The
-      // button is only the not-yet / couldn't state.
-      if (url) {
-        links.push({
-          kind: 'link',
-          label: 'Resource workspace',
-          hint: 'Opens SharePoint in a new tab',
-          url,
-        });
-      } else {
-        actions.push({
-          kind: 'action',
-          label: 'Resource workspace',
-          hint: this.workspaceHint(),
-          action: 'workspace',
-        });
-      }
-    }
-
-    return [...links, ...actions];
+    const url = this.course()?.ai_lab_course_sharepoint_artefact_url;
+    return url
+      ? [{ kind: 'link', label: 'Resource workspace', hint: 'Opens SharePoint in a new tab', url }]
+      : [];
   });
-
-  /** Exercise files spin while the zip streams; the workspace row while its link resolves. */
-  protected materialBusy(material: AiLabMaterial): boolean {
-    if (material.kind === 'link') return false;
-    return material.action === 'exercise' ? this.downloadingExerciseFiles() : this.isLoading();
-  }
-
-  /**
-   * The workspace row is only ever the not-yet / couldn't state — a resolved link renders as an
-   * anchor — so it is inert unless the fetch failed, where a click retries.
-   */
-  protected materialDisabled(material: AiLabMaterial): boolean {
-    return material.kind === 'action' && material.action === 'workspace' && !this.workspaceUrl();
-  }
 
   // ---- Gates: watch → quiz → exam → lab ----------------------------------
 
-  protected readonly examPassed = computed(
-    () => this.course()?.user_assessment_details?.status === 'Exam_Passed',
-  );
+  protected readonly examPassed = this.facade.examPassed;
 
   /**
-   * The quiz is behind the learner once the CTA has moved past it. Read off the stage rather than
-   * `quiz_details`, which isn't on the payload until the quiz is opened.
+   * The quiz is behind the learner once `course-progress/` says so, or once the CTA has moved
+   * past it.
    */
   protected readonly quizDone = computed(() => {
     const stage = this.ctaStage();
-    return this.examPassed() || (stage !== null && AI_LAB_QUIZ_BEHIND.includes(stage));
+    return this.facade.quizDone() || (stage !== null && AI_LAB_QUIZ_BEHIND.includes(stage));
   });
 
-  protected readonly examRetake = computed(
-    () => this.course()?.user_assessment_details?.status === 'Retake',
-  );
-
-  /** The QAS rules, one per line on the payload — the same list the start dialog shows. */
+  /** The lab's exam rules, one per line on the payload. */
   protected readonly examRules = computed(() =>
-    (this.course()?.exam_rules ?? this.details()?.exam_rules ?? '')
+    (this.course()?.ai_lab_course_exam_rules ?? '')
       .split(/\r?\n/)
       .map((rule) => rule.trim())
       .filter(Boolean),
+  );
+
+  /** Shown once started: the delivery method lives on the progress read's NASBA block. */
+  protected readonly deliveryMethod = computed(
+    () => this.facade.progress()?.nasba?.delivery_method ?? null,
+  );
+
+  /** The learner's own access window, once enrolled. */
+  protected readonly accessEndsAt = computed(
+    () => this.facade.started()?.enrollment?.ai_lab_enrollment_expires_at ?? null,
   );
 
   /** The lab opens on a mapped assignment plus a passed exam. Everything stays readable while locked. */
@@ -484,6 +415,12 @@ export class AiLabCourse {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   constructor() {
+    // The id comes off the URL; a new one re-keys every read in the facade.
+    effect(() => {
+      const id = this.courseId();
+      untracked(() => this.facade.open(id));
+    });
+
     // Whether the statement's clamp is cutting text off, measured twice over.
     // Content: new brief text re-measures after it renders — a clamped box keeps
     // the same height when the text changes, so no resize is reported.
@@ -582,7 +519,7 @@ export class AiLabCourse {
   /** Exactly what the submit POST carries: the picked row's `id` as `agent_ref`, and its list. */
   protected submit(): void {
     const picked = this.pick();
-    if (picked) this.submitLab.emit({ artefact_kind: picked.kind, agent_ref: picked.id });
+    if (picked) this.facade.submitPractical({ artefact_kind: picked.kind, agent_ref: picked.id });
   }
 
   // ---- Submission + evaluation -------------------------------------------
@@ -627,7 +564,10 @@ export class AiLabCourse {
    * evaluator, when `labDone()` reads false again. `ai_assessment_completed` is the server's latch.
    */
   private readonly labEverGraded = computed(
-    () => this.labDone() || !!this.assignment()?.ai_assessment_completed,
+    () =>
+      this.labDone() ||
+      !!this.assignment()?.ai_assessment_completed ||
+      !!this.facade.progress()?.ai_assessment_completed,
   );
 
   /**
@@ -695,11 +635,20 @@ export class AiLabCourse {
   });
 
   protected readonly heroHint = computed(() => {
+    const locked = this.facade.lockRemark();
+    if (locked) return locked;
+    if (this.ctaStage() === 'START') {
+      const days = this.course()?.ai_lab_course_access_duration_days;
+      return days
+        ? `Starting opens your ${days}-day lab window and records your CPE progress.`
+        : 'Starting opens the lab and records your CPE progress.';
+    }
     if (!this.completed()) {
       const pct = this.progress();
+      if (!this.videoSources().length) return "The lab video isn't available yet.";
       return pct > 0
         ? `${pct}% viewed — finish the video, then take the final assessment.`
-        : 'Credit is recorded only for sessions started in CPE Mode.';
+        : 'Watch the lab video through to unlock the quiz and the final assessment.';
     }
     if (!this.examPassed()) {
       return 'Video complete — pass the final assessment to unlock the AI Lab.';
@@ -709,4 +658,36 @@ export class AiLabCourse {
     }
     return 'Lab graded — leave feedback and download your certificate.';
   });
+
+  // ---- The practical's actions -------------------------------------------
+  // ponytail: launching the lab, picking and submitting, the evaluation's refresh and grade card,
+  // the brief's input files and the credits top-up are bound with the practical ticket.
+
+  protected launchLab(): void {
+    // ponytail: opens the lab once a launch target is known (backend question Q3).
+  }
+
+  protected refreshArtefacts(): void {
+    // ponytail: re-reads `agents/` and `flows/`.
+  }
+
+  protected refreshStatus(): void {
+    // ponytail: re-reads `assignment-status/`.
+  }
+
+  protected resubmit(): void {
+    // ponytail: reopens the picker after a failed evaluation.
+  }
+
+  protected downloadGradeCard(): void {
+    // ponytail: opens `grade_card_pdf_url`, re-reading the status first when it has expired.
+  }
+
+  protected openInputFile(_file: AiLabInputFile): void {
+    // ponytail: opens the file's url, re-fetching the brief first when its signed links are stale.
+  }
+
+  protected topUp(): void {
+    // ponytail: opens `AiLabTokenRequestDialog`, then POSTs `tokens-request/`.
+  }
 }

@@ -1,12 +1,18 @@
+import { Provider, signal } from '@angular/core';
 import {
   AiLabAgent,
   AiLabAssignmentBrief,
   AiLabAssignmentStatus,
+  AiLabCourseDetail,
+  AiLabCourseProgress,
+  AiLabCourseStarted,
+  AiLabCtaStage,
   AiLabFlow,
   AiLabPracticalProgress,
   AiLabTokenBalance,
   AiLabTokenRequest,
 } from '@features/ai-labs/models/ai-labs.model';
+import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
 
 /**
  * Sample data for the AI Labs progress panel and token meter stories.
@@ -218,3 +224,168 @@ export const MOCK_AI_LAB_EVALUATED: AiLabAssignmentStatus = {
   grade_card_pdf_url: 'https://example.com/grade-card.pdf',
   grade_card_expires_at: '2026-10-27T10:15:30Z',
 };
+
+/* ---------------------------------------------------------------------------
+   The lab page's reads, and a stand-in facade for its stories.
+   --------------------------------------------------------------------------- */
+
+/** `course/<uuid>/` — the guide's real local capture, objectives trimmed. */
+export const MOCK_AI_LAB_DETAIL: AiLabCourseDetail = {
+  id: 'f6570df7-0ad9-4463-9a4d-75df10e14d59',
+  ai_lab_course_name: 'Lease Audit Agent',
+  ai_lab_course_agent_flow_name: 'Lease Audit Agent',
+  ai_lab_course_mini_description:
+    'Build a lease assurance agent that compares lease contracts to schedules and flags exceptions for review.',
+  ai_lab_course_horizontal_thumbnail_url:
+    'https://milesone-backend-assets.s3.ap-south-1.amazonaws.com/MilesOne/Masterclass/Chapter_Thumbnails/Horizontal/Episode_02_Vtgw3oB.jpg',
+  ai_lab_course_vertical_thumbnail_url: null,
+  ai_lab_course_square_thumbnail_url: null,
+  ai_lab_course_total_duration: '44 minutes',
+  ai_lab_course_order: 1,
+  ai_lab_course_access_duration_days: 30,
+  ai_lab_course_total_duration_seconds: 2640,
+  ai_lab_course_description:
+    'Build a lease assurance agent that compares lease contracts to schedules and flags exceptions for review.',
+  ai_lab_course_problem_statement:
+    "Build a lease assurance agent that compares lease contracts to schedules and flags exceptions for review. This lab is the hands-on build behind 'Smarter Lease Testing'.",
+  ai_lab_course_sharepoint_artefact_url: 'https://example.sharepoint.com/sites/miles-ai-labs',
+  ai_lab_course_trailer_url: null,
+  ai_lab_course_trailer_thumbnail: null,
+  ai_lab_course_exam_rules:
+    'Complete the lab video, clear the AI assessment and submit the feedback form.\nThe assessment is scored by the Miles AI Labs service; a pass is required before credit is issued.',
+  ai_lab_course_prerequisite_education: 'None.',
+  ai_lab_course_advance_preparation: 'None.',
+  ai_lab_course_created_at: '2026-10-12T11:04:12.732249Z',
+  levels: [],
+  tracks: ['Applied AI Across Functions'],
+  fields_of_study: [
+    { id: '0c199ae8-74c7-4f03-ba25-6474685901e2', name: 'Information Technology', cpe_credit: 3 },
+  ],
+  total_cpe_credits: 3,
+  instructors: ['Uttam Pai'],
+  skills: [],
+  tools: ['Copilot'],
+  learning_objectives: [
+    'Identify appropriate uses of generative AI in audit, focusing on validation, documentation, and regulatory compliance.',
+    'Distinguish the core controls, decision points, and review boundaries in an AI-enabled lease assurance workflow.',
+  ],
+  masterclass_courses: [],
+  lock_state: {
+    locked: false,
+    lock_reason: null,
+    lock_remark: null,
+    masterclass_course_id: '7158ee5b-5cff-442c-b217-9703379e2cf8',
+    credit_source: null,
+  },
+};
+
+const lockFree = MOCK_AI_LAB_DETAIL.lock_state;
+
+/** `course-started/` before a start. */
+export const MOCK_AI_LAB_NOT_STARTED: AiLabCourseStarted = {
+  ai_lab_course_id: MOCK_AI_LAB_DETAIL.id,
+  started: false,
+  can_start: true,
+  enrollment: null,
+  lock_state: lockFree,
+};
+
+/** `course-started/` once enrolled. */
+export const MOCK_AI_LAB_STARTED: AiLabCourseStarted = {
+  ...MOCK_AI_LAB_NOT_STARTED,
+  started: true,
+  can_start: false,
+  enrollment: {
+    id: 'b248d5ff-1911-48a4-921d-0ecaaa166596',
+    ai_lab_enrollment_started_at: '2026-10-16T15:08:56.484018Z',
+    ai_lab_enrollment_expires_at: '2026-11-15T15:08:56.484018Z',
+    ai_lab_enrollment_active: true,
+    ai_lab_enrollment_is_course_closed: false,
+    released_from_ai_lab: false,
+  },
+};
+
+/** `course-progress/` at a given step. The flags follow from it, as the backend's would. */
+export function mockAiLabProgress(step: AiLabCourseProgress['next_step']): AiLabCourseProgress {
+  const order = ['video', 'quiz', 'final_assessment', 'ai_assessment', 'feedback', 'done'];
+  const past = (s: string) => order.indexOf(step) > order.indexOf(s);
+  return {
+    ai_lab_course_id: MOCK_AI_LAB_DETAIL.id,
+    video_watched_seconds: past('video') ? 2640 : 1320,
+    video_completed: past('video'),
+    quiz_required: true,
+    quiz_passed: past('quiz'),
+    quiz_questions_to_show: 2,
+    assessment_required: true,
+    final_assessment_passed: past('final_assessment'),
+    ai_assessment_completed: past('ai_assessment'),
+    feedback_submitted: past('feedback'),
+    cpe_awarded: step === 'done',
+    is_course_closed: step === 'done',
+    next_step: step,
+    nasba: { eligible: step === 'done', delivery_method: 'QAS Self Study', outstanding: [] },
+  };
+}
+
+/** What a story sets on the stand-in facade. Anything left out takes the idle default. */
+export interface AiLabCourseStoryState {
+  lab?: AiLabCourseDetail | null;
+  started?: AiLabCourseStarted | null;
+  progress?: AiLabCourseProgress | null;
+  ctaStage?: AiLabCtaStage | null;
+  isLoading?: boolean;
+  error?: boolean;
+  lockRemark?: string | null;
+  labMapped?: boolean;
+  brief?: AiLabAssignmentBrief | null;
+  briefUnavailable?: string | null;
+  agents?: AiLabAgent[];
+  flows?: AiLabFlow[];
+  assignment?: AiLabAssignmentStatus | null;
+  gradeCardBusy?: boolean;
+  balance?: AiLabTokenBalance | null;
+}
+
+/**
+ * Provides a stand-in `AiLabCourseFacade` holding fixed state, so a story renders the page without
+ * HTTP. Its actions do nothing. Only the members the page reads are present.
+ */
+export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider {
+  const progress = state.progress ?? null;
+  const watched = progress?.video_watched_seconds ?? 0;
+  const total = state.lab?.ai_lab_course_total_duration_seconds ?? 0;
+  const stub = {
+    lab: signal(state.lab ?? null),
+    started: signal(state.started ?? null),
+    progress: signal(progress),
+    isLoading: signal(state.isLoading ?? false),
+    error: signal(state.error ?? false),
+    ctaStage: signal(state.ctaStage ?? null),
+    ctaLoading: signal(false),
+    completed: signal(!!progress?.video_completed),
+    progressPercent: signal(total ? Math.min(100, Math.round((watched / total) * 100)) : 0),
+    quizDone: signal(!!progress && (!progress.quiz_required || progress.quiz_passed)),
+    examPassed: signal(!!progress?.final_assessment_passed),
+    lockRemark: signal(state.lockRemark ?? null),
+    labMapped: signal(state.labMapped ?? true),
+    brief: signal(state.brief ?? null),
+    briefLoading: signal(false),
+    briefUnavailable: signal(state.briefUnavailable ?? null),
+    agents: signal(state.agents ?? []),
+    flows: signal(state.flows ?? []),
+    artefactsLoading: signal(false),
+    artefactsError: signal(false),
+    assignment: signal(state.assignment ?? null),
+    statusLoading: signal(false),
+    submitting: signal(false),
+    gradeCardBusy: signal(state.gradeCardBusy ?? false),
+    balance: signal(state.balance ?? null),
+    labProvisioned: signal(true),
+    open: () => undefined,
+    retry: () => undefined,
+    start: () => undefined,
+    reportVideoProgress: () => undefined,
+    submitPractical: () => undefined,
+  };
+  return { provide: AiLabCourseFacade, useValue: stub };
+}

@@ -217,6 +217,49 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       it fine. Decoding from the data frame (offset 107) gives the full 5,732-byte JSON. **Fix:
       run Node 24 locally**; the backend could also drop the skippable frame.
     - **Size:** ~610 changed lines plus 385 new; most of the page diff is deletions.
+  - **PR 3 DONE, UNCOMMITTED (lab page reads):**
+    - **New `AiLabCourseFacade`**, route-scoped on `:courseId/:courseTitle`, which is now behind
+      `canMatch: [authGuard]`.
+      - It reads `course/`, `course-started/` and `course-progress/`. Progress waits for
+        `started`, because it 404s before then.
+      - `start()` POSTs `course-start/:id/` and relays a 409 lock message.
+      - `reportVideoProgress()` reports every 15 s and on `ended`, `SKIP_LOADING`, re-reading
+        progress on `just_completed`.
+      - The practical's state is declared idle (brief, agents, flows, assignment, credits).
+        `submitPractical()` is inert for PR 4.
+    - **The page now injects the facade** (AGENTS.md: a facade-backed page doesn't relay inputs).
+      Its inputs and outputs are gone; it keeps upstream's member names as facade-backed fields,
+      so the template barely moved. `courseId` is a route-bound input, opened in an effect (the
+      `WebinarLive` shape).
+    - **Model swap:** `ContentDetails` → `AiLabCourseDetail` (+ started / progress / enrolment
+      types).
+      - The sub-bar's CPE/Preview pill becomes "CPE · N credits"; a lab has no Preview mode.
+      - The "Structure" tile becomes "Access N days". Topics → `tools`.
+      - The Instructor section is removed: the lab carries names only, shown in the hero.
+      - Delivery method comes from `progress.nasba`; Access shows the enrolment's expiry once
+        started.
+      - Lab materials are just the SharePoint link (`AiLabMaterial` narrowed to links).
+      - The exam card loses its masterclass attempt fields (pass date, retake, question count,
+        pass mark, View report); PR 5 brings the assessment read.
+    - **CTA:** `next_step` maps to the stage — video→null, quiz→TAKE_QUIZ,
+      final_assessment→TAKE_EXAM, ai_assessment→**AI_LAB** (new; scrolls to the lab),
+      feedback→FEEDBACK, done→REWATCH (no certificate link on any read).
+      - No enrolment → **START** (new; "Start AI Lab").
+      - Disabled while starting, while locked (hint = `lock_remark`), or on "keep watching" with
+        no video.
+      - Quiz, exam, feedback and download are inert until PR 5.
+    - **Video:** `videoSources` is empty (Q1). The frame shows the horizontal thumbnail, and the
+      hero hint says the video isn't available. Reporting is wired and waits only on a source.
+    - **Stories:** `provideStoryAiLabCourse(state)` in `testing/mocks/ai-labs.mock.ts` is a
+      stand-in facade, with `MOCK_AI_LAB_DETAIL` (the guide's capture), started / not-started
+      fixtures and `mockAiLabProgress(step)`. 14 stories, adding not-started, locked and
+      watching.
+    - **Verified:** headless screenshots of not-started, locked and lab-unlocked. A guest request
+      to `/us/accounting/ai-labs/<uuid>/…` returns **302 → `/auth/login?redirect=…`**. **The
+      signed-in reads were not exercised** (needs an OTP login). Gates: tsc 0; lint 0 errors
+      (98 warnings); structure ✔; `build:prod` 239.53 kB; `build-storybook` ✔.
+    - **Size:** ~1,500 changed lines across 8 files: the page conversion, the model, and the
+      story fixtures and stub. Well over the guideline; most of it is mechanical.
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
@@ -5629,6 +5672,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-20 · NON-REFACTOR · **MIL-117 PR 3 built** (uncommitted): `AiLabCourseFacade` on the lab route (behind `authGuard`) — detail / started / progress reads, start, video-progress reports; page converted from inputs to the facade and from `ContentDetails` to the lab detail; START and AI_LAB CTA stages · lint 0 errors, structure ✔, build:prod ✔, storybook ✔ · guest 302 to login verified; signed-in unverified
 
 - 2026-10-20 · NON-REFACTOR · **MIL-117 PR 2 built** (uncommitted): `AiLabsFacade` + `AI_LABS_API` — guest rail / learner lab catalogue, account-ensure poll, create / reset with reason-mapped prompts, re-login on `entitlement_refresh_required` · lint 0 errors, structure ✔, build:prod ✔ · guest path verified in a CDP-driven browser; signed-in unverified · found Node 26 + UAT zstd empties every SSR read locally
 

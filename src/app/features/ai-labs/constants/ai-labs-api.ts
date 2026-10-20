@@ -1,6 +1,6 @@
 import { environment } from '@env/environment';
 import { CommonResponse, RouteConfig } from '@core/models/http.model';
-import { AiLabAccountState } from '@features/ai-labs/models/ai-labs.model';
+import { AiLabAccountState, AiLabVideoProgressBody } from '@features/ai-labs/models/ai-labs.model';
 
 /**
  * Absolute URLs off `BASE_API_URL`, which is the ORIGIN ROOT (trailing slash, no `api/` segment).
@@ -41,4 +41,35 @@ export const AI_LABS_API = {
     path: `${ROOT}api/v1/ai-labs/account-reset-password/`,
     method: 'POST',
   } as RouteConfig<void, CommonResponse<AiLabAccountState>>,
+
+  /** `IsAuthenticated`: one lab's page. Append `<uuid>/`; an unknown or inactive lab is 404. */
+  courseDetail: `${ROOT}web-api/v1/ai-labs/course/`,
+
+  /** `IsAuthenticated`: Start vs Continue — `started`, `can_start`, `enrollment`, `lock_state`. */
+  courseStarted: `${ROOT}web-api/v1/ai-labs/course-started/`,
+
+  /**
+   * `IsAuthenticated`: the gate flags and `next_step`. Append `<uuid>/`. 404
+   * `no_ai_lab_enrollment` until the lab is started — read only once `course-started/` says so.
+   */
+  courseProgress: `${ROOT}web-api/v1/ai-labs/course-progress/`,
+
+  /**
+   * `IsAuthenticated`, no body, idempotent: creates (or revives) the enrolment. 409 when the
+   * parent masterclass course holds the lock (`credit_already_earned_via_course`,
+   * `started_via_masterclass_course`); 403 `caira_access_required`.
+   */
+  courseStart: {
+    path: `${ROOT}api/v1/ai-labs/course-start/:id/`,
+    method: 'POST',
+  } as RouteConfig<void, CommonResponse<unknown>>,
+
+  /**
+   * `IsAuthenticated`, strict body: watched seconds on the lab's one video. Completion is derived
+   * server-side at 95%, so the client never asserts it.
+   */
+  courseVideoProgress: {
+    path: `${ROOT}api/v1/ai-labs/course-video-progress/`,
+    method: 'POST',
+  } as RouteConfig<AiLabVideoProgressBody, CommonResponse<unknown>>,
 } as const;
