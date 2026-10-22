@@ -10,6 +10,15 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const STATUS = /^[a-z_]{1,32}$/;
 
 export const routes: Routes = [
+  /**
+   * The AI Labs Microsoft sign-in popup lands here (`AiLabAuth`). Declared BEFORE `auth` so the
+   * prefix match doesn't hand it to the auth feature's routes. Client-rendered, under `auth/**`.
+   */
+  {
+    path: 'auth/ai-labs-callback',
+    loadComponent: () =>
+      import('@features/auth/pages/ai-lab-callback/ai-lab-callback').then((m) => m.AiLabCallback),
+  },
   {
     path: 'auth',
     loadChildren: () => import('@features/auth/auth.routes').then((m) => m.authRoutes),

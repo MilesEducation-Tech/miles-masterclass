@@ -225,13 +225,15 @@
   background: var(--background);
 }
 
+/* Below the floating site header (80px), and wide enough that the heading stays
+   on one line from `lg` up — the card's fixed top in .ai-fan-item assumes it. */
 .ai-fan-head {
   position: absolute;
-  top: clamp(1.25rem, 3vh, 2rem);
+  top: 6rem;
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;
-  width: min(90%, 42rem);
+  width: min(90%, 56rem);
   text-align: center;
   pointer-events: none;
 }
@@ -246,8 +248,12 @@
   /* --items comes from the .ai-fan container ([style.--items]=count). Do NOT
      set it here — a value on the item shadows the inherited one and the active
      card's opacity would divide by the wrong count. Fallback 5 for safety. */
-  --width: clamp(160px, 24vw, 300px);
-  --height: clamp(284.44px, 42.67vw, 533.33px);
+  /* 9:16, capped by the height left under the head (16rem) plus 5rem for the
+     hint; the caption overlays the card's dark lower edge by design. `top` below
+     keeps the 52% centring only while the card's top clears the head — plain 52%
+     put a full-size card under the head on any screen shorter than ~1000px. */
+  --height: min(clamp(284.44px, 42.67vw, 533.33px), 100vh - 21rem);
+  --width: calc(var(--height) * 0.5625);
   /* Per-card spread. --active is (i - active)/items, so multiplying back by
      --items gives a fixed step per neighbour (±62% x, ±15% y, ±11deg) that no
      longer depends on the card count. The old raw 800%/200%/120deg were tuned
@@ -259,7 +265,7 @@
      but the top two). This keeps every fan card visible, fading with depth. */
   --opacity: calc(var(--zi) / var(--items, 5));
   position: absolute;
-  top: 52%;
+  top: max(52%, 16rem + var(--height) / 2);
   left: 50%;
   width: var(--width);
   height: var(--height);
@@ -464,7 +470,10 @@
     font-size: 0.75rem;
   }
 
+  /* The phone head ends near 218px (two-line heading, three-line copy); the extra
+     2rem is for the tilted neighbours, whose top corners ride above the centre card. */
   .ai-fan-item {
+    top: max(52%, 16.5rem + var(--height) / 2);
     --x: calc(var(--active) * var(--items, 5) * 45%);
     --y: calc(var(--active) * var(--items, 5) * 14%);
     --rot: calc(var(--active) * var(--items, 5) * 8deg);

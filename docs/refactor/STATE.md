@@ -410,6 +410,83 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
     is passed; the story stub has `launchLab`. 14 lines. Gates: lint 0 errors; structure ✔;
     `build:prod` 239.19 kB; `build-storybook` ✔. Not clicked in-app (needs a learner past the
     exam). This closes Q3 on our side unless the backend wants a per-lab deep link.
+  - **Launch AI committed** as `aea57a0`.
+  - **PR A DONE, GATES GREEN, UNCOMMITTED (2026-10-22): the Microsoft (Entra) sign-in,
+    `prompts/ai-labs-entra-signin.md`** (approved: "sure go ahead").
+    - **The user's flow:** account exists → Login to Miles AI Labs → Microsoft popup → **Launch AI Lab** + "Signed
+      in as `<lab email>`" + Log out → Copilot Studio. Never a direct jump.
+    - **Built:** upstream's `AiLabAuth` ported to `core/services/ai-lab-auth/` (`@Service()`, `Storage` instead of
+      bare browser storage; labs Supabase project, Azure provider, popup + BroadcastChannel callback, restore /
+      expiry / popup-blocked / closed / provider-error messages), `ai-lab-session.ts` (`clearAiLabSession`),
+      `features/auth/pages/ai-lab-callback/` + the `auth/ai-labs-callback` route (before `auth`).
+      `AuthSession.logout()` lazily calls `signOutEverywhere()`; `clear()` drops the lab keys. The `AI_LABS`
+      env block (deleted by my `01f563e` chore) is restored, trimmed to public identifiers.
+    - **Hero `activate()`:** guest → Login Required; lab-signed-in → Copilot Studio; checking / failed;
+      CAIRA / profile; no account → terms (or "being set up"); account → `auth.signIn()`. The lab page's
+      button signs in or launches by the same rule. Yesterday's direct `openCopilotStudio()` /
+      `launchLab()` are gone and `COPILOT_STUDIO_URL` moved to core.
+    - **Verified on the user's dev 4101 over CDP** (signed-in cookie, `account-ensure/` intercepted with
+      `account_created:true`, trusted clicks):
+      - No lab session → "Login to Miles AI Labs"; click → "Waiting for sign-in…" and a popup at
+        `login.microsoftonline.com/f133522a…/oauth2/v2.0/authorize` with `domain_hint` + `prompt=select_account`.
+      - Seeded lab session → **Launch AI Lab**, "Signed in as charitha.e1@mileslabs.ai", **Log out**.
+      - Log out → back to "Login to Miles AI Labs"; the stored lab session is removed.
+      - `/auth/ai-labs-callback` → 200.
+      - **Not verified:** completing the real Microsoft login (needs a person) and the callback's code
+        exchange, which needs the allowlist below.
+    - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; `build:prod` 239.65 kB
+      initial transfer (supabase-js stays lazy; only the known `ai-labs.css` warning); `build-storybook` ✔.
+    - **⚠ Local caveat:** the labs Supabase project must allowlist `http://localhost:4101/auth/ai-labs-callback`
+      (upstream's local was 4100). Prod and UAT site URLs match upstream.
+    - **PR B (the `pinionglobal.com` email-domain gate) is ⛔ BLOCKED on the backend (2026-10-22).** Upstream
+      reads `currentUser().email`; we have no Miles email anywhere. `user-details/` has none (already open as
+      backend ask #5 in `docs/AUTH_API.md`), `GET profile/` is deliberately not read, and there is no
+      documented email claim in the access token. The lab session's email is always `@mileslabs.ai`, so it
+      can't stand in. Options put to the user: `email` (or an `ai_lab_enabled` flag) on `user-details/`, or
+      `account-ensure/` answering a new ineligible reason for those domains (a real gate, unlike upstream's).
+      Nothing written yet.
+  - **PLANNED, AWAITING "go" (2026-10-22): the lab course video, `prompts/ai-labs-course-video.md`.** The backend
+    pasted the revised `course/<id>/` contract: `chapter.hls_video_link` (closes Q1), `instructors` as objects
+    (today's `join(', ')` would print `[object Object]`), `ai_kit`. Plan: trailer before start (no progress
+    reports, free seek), re-read the detail after Start, chapter in CPE mode with the existing reporting,
+    `chapter.duration_seconds` as the 95% denominator, instructor names, the kit in materials. ~120 lines.
+  - **FIX DONE, UNCOMMITTED (2026-10-22): the catalogue fan's front card covered its heading** (user
+    screenshot at ~1512×861). Only `pages/ai-labs/ai-labs.css`; commit apart from PR A as
+    `fix(ai-labs): keep the catalogue cards clear of the heading`.
+    - **Cause:** `.ai-fan-head` sat at a fixed top and `.ai-fan-item` was centred at `top: 52%`, so on any
+      viewport shorter than ~1000px a full-size card's top ran under the head (−92px at 1280×720). The
+      head's chip also sat under the 80px floating site header. Identical upstream (`ce0194a4`).
+    - **Fix:** head `top: 6rem`, `width: min(90%, 56rem)` (one-line h2 from `lg`); card
+      `--height: min(clamp(…), 100vh - 21rem)`, `--width` = height × 0.5625 (same 9:16), and
+      `top: max(52%, 16rem + h/2)` (phone `16.5rem`), so tall screens keep the original centring.
+    - **Verified on dev 4101 over CDP** at 8 viewports: head→card gap 22px at 1512×861 / 1440×900 /
+      1280×720 / 1024×768, 46px at 375×667 / 360×640, original centring at 1920×1080 / 768×1024 /
+      390×844; screenshots at 1512×861, 375×667 and 360×640 show the heading, subtitle and tilted
+      neighbours clear. `build:prod` ✔, `ai-labs.css` 15.94 kB (under the 16 kB error); Prettier ✔;
+      structure ✔.
+    - **Local-only noise seen while measuring:** a hard load of `/ai-labs` hydrates the catalogue from
+      the SSR transfer cache, which comes back empty under Node 26 + UAT zstd, so the parser throws
+      "ai-labs response does not match the contract" and the fan shows its `@empty`. Client navigation
+      loads it fine; the live payload passes the contract.
+  - **Superseded by PR A (2026-10-22): the "Login to Miles AI Labs did nothing" quick fix.** Its checking /
+    failed / being-set-up messages survive in PR A; its direct `openCopilotStudio()` was the wrong flow and
+    is gone. Its files are part of PR A's file list.
+  - **Storybook dialog stories fix, IN PROGRESS, UNCOMMITTED** (not MIL-117 work — belongs in its
+    own branch/PR):
+    - **`testing/mocks/dialog.mock.ts`:** `provideStoryDialogRef` returns `Provider[]`:
+      `provideExitAnimationManager()` (only exported from `ng-primitives/internal`; story-only
+      code) plus the ref with `config: {}`, which the overlay reads.
+    - **Root cause for 6 of the 7 dialog story files:** their meta-level wrapper decorator rebuilt
+      the story as `{template, props}`, dropping the story-level `moduleMetadata` (so the ref
+      provider never arrived). They now spread the story result. 10 non-dialog story files share
+      the pattern; they are left alone (harmless without story-level metadata).
+    - **`.storybook/preview.ts`:** a global `applicationConfig` provides
+      `TOAST_COMPONENT: Toast`, as `app.config.ts` does, so stories reaching `NotificationService`
+      stop failing (Certificate download).
+    - **Result so far:** dialog stories went from 1/20 to 18/20 rendering; the two Certificate
+      download stories were the `TOAST_COMPONENT` failure. A full probe of all 220 stories (CDP,
+      error-display check) is running in the background to confirm the global change regresses
+      nothing. Lint 0 errors; `build-storybook` ✔.
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
@@ -5822,6 +5899,18 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-22 · NON-REFACTOR · **MIL-117 catalogue fan overlap fixed** (uncommitted, `ai-labs.css` only): head below the site header + one-line h2; card `top: max(52%, head + h/2)`, height capped by the viewport · measured at 8 viewports over CDP, screenshots clean · build:prod ✔ (ai-labs.css 15.94 kB), structure ✔
+
+- 2026-10-22 · NON-REFACTOR · **MIL-117 PR B blocked**: no Miles email on our side (`user-details/` has none, `GET profile/` unread) · options to the user: `account-ensure/` refuses the domain, or `email` / `ai_lab_enabled` on `user-details/`
+
+- 2026-10-22 · NON-REFACTOR · **MIL-117 PR A built** (uncommitted): Entra popup sign-in ported to `core/services/ai-lab-auth/`, callback route, Miles logout clears the lab · CDP on dev 4101: popup reaches login.microsoftonline.com, signed-in / log-out states render · lint 0 errors, build:prod ✔, storybook ✔
+
+- 2026-10-22 · NON-REFACTOR · **MIL-117 Entra sign-in planned** (`prompts/ai-labs-entra-signin.md`): port upstream's AiLabAuth popup sign-in → Launch AI Lab / Signed in as / Log out; restore the env block `01f563e` removed; domain gate as PR B · Q1/Q2 decided; awaiting go
+
+- 2026-10-22 · NON-REFACTOR · **MIL-117 fix built** (uncommitted): hero "Login to Miles AI Labs" was a dead click when signed in (silent return / scroll to an unrendered `@defer` target) — every branch now answers; an existing account opens Copilot Studio · reproduced and verified over CDP on dev 4101 with mocked account states · lint 0 errors, build:prod ✔
+
+- 2026-10-20 · NON-REFACTOR · **Storybook dialog stories fix** (uncommitted, own PR): story dialog-ref helper + exit-animation provider, 7 dialog wrappers keep story metadata, global TOAST_COMPONENT in preview · dialog stories 1/20 → 18/20 so far; full 220-story probe running
 
 - 2026-10-20 · NON-REFACTOR · **MIL-117 Launch AI wired** (uncommitted): opens Copilot Studio in a new tab · lint 0 errors, structure ✔, build:prod ✔, storybook ✔
 

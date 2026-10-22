@@ -41,13 +41,6 @@ const STATUS_POLL_TIMEOUT_MS = 30 * 60_000;
 /** Brief file links are signed for an hour — re-fetch the brief before handing out an older one. */
 const BRIEF_LINK_MAX_AGE_MS = 50 * 60_000;
 
-/**
- * Where Launch AI goes: the learner builds in Copilot Studio, signed in with the AI Labs account
- * whose credentials were emailed at provisioning. The same URL in every environment — upstream's
- * `copilotUrl`. No API route names a per-lab target (backend question Q3), so it's the studio home.
- */
-const COPILOT_STUDIO_URL = 'https://copilotstudio.microsoft.com/';
-
 /** AI Labs refused this login token: it predates the account, and only a fresh login fixes it. */
 const SESSION_REFUSED = new Set(['AI_LABS_ACCESS_DENIED', 'AI_LABS_TOKEN_REJECTED']);
 
@@ -358,11 +351,6 @@ export class AiLabCourseFacade {
           this.statusRes.reload();
         },
       });
-  }
-
-  /** Launch AI: Copilot Studio in a new tab, where the learner builds the agent they submit. */
-  launchLab(): void {
-    this.openTab(COPILOT_STUDIO_URL);
   }
 
   /** The picker's Refresh — after building something new in Copilot Studio. */

@@ -441,7 +441,6 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[
     start: () => undefined,
     reportVideoProgress: () => undefined,
     submitPractical: () => undefined,
-    launchLab: () => undefined,
     refreshArtefacts: () => undefined,
     refreshStatus: () => undefined,
     downloadGradeCard: () => undefined,

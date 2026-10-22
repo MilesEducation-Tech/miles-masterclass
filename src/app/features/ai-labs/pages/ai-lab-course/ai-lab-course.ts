@@ -38,6 +38,7 @@ import {
   AiLabMaterial,
   AiLabSubmitBody,
 } from '@features/ai-labs/models/ai-labs.model';
+import { AiLabAuth } from '@core/services/ai-lab-auth/ai-lab-auth';
 import { AiLabCourseFacade } from '@features/ai-labs/services/ai-lab-course-facade';
 import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
 import { AiLabQuizFacade } from '@features/ai-labs/services/ai-lab-quiz-facade';
@@ -169,7 +170,12 @@ export class AiLabCourse {
   protected readonly credits = inject(AiLabCredits);
   protected readonly labProvisioned = this.facade.labProvisioned;
 
-  protected readonly signInLabel = signal('Sign in & launch AI');
+  /** The Microsoft sign-in to the lab — Launch AI signs in first, then opens Copilot Studio. */
+  protected readonly labAuth = inject(AiLabAuth);
+
+  protected readonly signInLabel = computed(() =>
+    this.labAuth.isSignedIn() ? 'Launch AI Lab' : 'Sign in & launch AI',
+  );
 
   /** The CPE conditions this course is credited under. Fixed copy, not payload. */
   protected readonly cpeRequirements: readonly string[] = [
@@ -437,6 +443,9 @@ export class AiLabCourse {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   constructor() {
+    // A lab session from an earlier visit; a no-op on the server.
+    void this.labAuth.restoreSession();
+
     // The id comes off the URL; a new one re-keys every read in the facade.
     effect(() => {
       const id = this.courseId();
@@ -683,8 +692,13 @@ export class AiLabCourse {
 
   // ---- The practical's actions -------------------------------------------
 
+  /**
+   * Upstream's rule: not signed in to the lab → the Microsoft popup (straight from the click, or
+   * it's blocked); signed in → Copilot Studio as that account.
+   */
   protected launchLab(): void {
-    this.facade.launchLab();
+    if (this.labAuth.isSignedIn()) this.labAuth.launchCopilot();
+    else void this.labAuth.signIn();
   }
 
   protected refreshArtefacts(): void {

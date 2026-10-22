@@ -75,6 +75,7 @@ import {
   AiLabPracticalAssignment,
   AiLabStat,
 } from '@features/ai-labs/models/ai-labs.model';
+import { AiLabAuth } from '@core/services/ai-lab-auth/ai-lab-auth';
 import { AiLabsFacade } from '@features/ai-labs/services/ai-labs-facade';
 import { AiLabCredits } from '@features/ai-labs/services/ai-lab-credits';
 import { AiLabProgressPanel } from '@features/ai-labs/components/ai-lab-progress-panel/ai-lab-progress-panel';
@@ -190,18 +191,11 @@ const FAN_SIZE = 5;
 })
 export class AiLabs {
   /**
-   * ponytail: `AiLabsAuth`, the Microsoft/Entra sign-in that used to front Copilot Studio, went
-   * with the auth layer. AI Labs now reads the Miles login token itself (`docs/AI_LABS_API.md` §2),
-   * so this stub only keeps the hero's Entra branches compiling; `isSignedIn` is always false.
-   * The Miles session and the lab account are `AiLabsFacade`'s.
+   * The Microsoft (Entra) sign-in to the lab itself — "Login to Miles AI Labs" opens it, and once
+   * it lands the hero reads Launch AI Lab / Signed in as / Log out. The Miles session and the lab
+   * account are `AiLabsFacade`'s.
    */
-  protected readonly auth = {
-    isSignedIn: signal(false),
-    signingIn: signal(false),
-    error: signal<string | null>(null),
-    hint: signal<string | null>(null),
-    identity: signal<string | null>(null),
-  };
+  protected readonly auth = inject(AiLabAuth);
   /** The catalogue and the learner's lab account — see the facade for both reads. */
   protected readonly facade = inject(AiLabsFacade);
   /** Copilot Credits, for the floating meter and the progress panel. */
@@ -388,6 +382,8 @@ export class AiLabs {
   });
 
   constructor() {
+    // A lab session from an earlier visit; a no-op on the server.
+    void this.auth.restoreSession();
     // Browser-only, after the canvas is in the DOM. afterNextRender never runs on
     // the server, so the hero SSRs as a static (dark) stage. Sets up the reveal
     // canvas (poster + frame loading) independently of the scroll scrub, so a
@@ -433,8 +429,12 @@ export class AiLabs {
    *  2. Eligible — `account-ensure/` says `NO_CAIRA_ENROLLMENT` (point at plans) or
    *     `MISSING_REQUIRED_FIELDS` (point at the profile, which brings them back).
    *  3. An account — none yet and none on its way opens the participant agreement, then creates.
-   *  4. Otherwise the account exists. AI Labs is entered from a lab's own page (Launch AI there),
-   *     so the hero sends the learner to the catalogue to pick one.
+   *     One on its way (provisioning takes minutes) says so rather than offering a second create.
+   *  4. Signed in to the lab (Microsoft) → Launch AI Lab: Copilot Studio, as that account.
+   *  5. Otherwise the account exists → the Microsoft sign-in popup (`AiLabAuth.signIn`). Once it
+   *     lands, the hero reads Launch AI Lab, "Signed in as …" and Log out — upstream's flow.
+   *
+   * Every branch answers the click — none returns silently or scrolls to the deferred catalogue.
    *
    * The page stays public — it's in the guest nav as a marketing page — so the gate is on the
    * action, not the route.
@@ -450,18 +450,44 @@ export class AiLabs {
       return;
     }
 
-    const state = this.facade.accountState();
-    // The read is still out (or failed): say nothing rather than guess.
-    if (!state) return;
-
-    if (this.blockedBy(state)) return;
-
-    if (!this.hasLabAccount() && !this.accountRequested()) {
-      this.openTerms();
+    // Signed in to the lab: Launch AI Lab opens Copilot Studio as that account. Ahead of the account
+    // read, as upstream — a live lab session is enough, whatever `account-ensure/` is doing.
+    if (this.auth.isSignedIn()) {
+      this.auth.launchCopilot();
       return;
     }
 
-    this.scrollTo('catalogue-grid');
+    const state = this.facade.accountState();
+    if (!state) {
+      if (this.accountLoading()) {
+        this.notification.info('One moment', 'Checking your AI Labs account…');
+      } else {
+        this.notification.error(
+          "Couldn't check your AI Labs account",
+          "We're trying again — click once more in a moment.",
+        );
+        this.facade.refresh();
+      }
+      return;
+    }
+
+    if (this.blockedBy(state)) return;
+
+    if (!this.hasLabAccount()) {
+      if (this.accountRequested()) {
+        this.notification.info(
+          'Your AI Lab is being set up',
+          "We'll email your Miles AI Lab email and password — it can take a few minutes. Hit Refresh to check.",
+        );
+      } else {
+        this.openTerms();
+      }
+      return;
+    }
+
+    // The account exists but this browser isn't signed in to it: the Microsoft popup. Straight
+    // from the click — the popup must open before any await, or it's blocked.
+    void this.auth.signIn();
   }
 
   /** Participant agreement; the POST only happens if the user accepted. */
@@ -654,13 +680,14 @@ export class AiLabs {
       });
   }
 
-  // ponytail: both drove the Entra session — inert without `AiLabsAuth`.
+  /** Sign in as a different Microsoft account: the picker, not the remembered one. */
   protected switchAccount(): void {
-    // ponytail: inert
+    void this.auth.signIn({ switchAccount: true });
   }
 
+  /** The hero's Log out — the lab session only; the Miles login stays. */
   protected signOut(): void {
-    // ponytail: inert
+    void this.auth.signOut();
   }
 
   /**

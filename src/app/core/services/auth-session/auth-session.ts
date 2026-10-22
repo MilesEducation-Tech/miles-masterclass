@@ -1,4 +1,4 @@
-import { PLATFORM_ID, Service, computed, inject, signal } from '@angular/core';
+import { Injector, PLATFORM_ID, Service, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { firstValueFrom, map } from 'rxjs';
 
@@ -15,6 +15,7 @@ import { SKIP_ERROR_NOTIFICATION, SKIP_LOADING } from '../../models/http.model';
 import { ApiClient } from '../api-client/api-client';
 import { Storage } from '../storage/storage';
 import { HttpContext, HttpErrorResponse } from '@angular/common/http';
+import { clearAiLabSession } from '@core/services/ai-lab-auth/ai-lab-session';
 
 /**
  * Renew this many seconds BEFORE the access token expires.
@@ -48,6 +49,7 @@ export class AuthSession {
   private readonly api = inject(ApiClient);
   private readonly storage = inject(Storage);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly injector = inject(Injector);
 
   // ── State ─────────────────────────────────────────────────────────────────
 
@@ -163,8 +165,25 @@ export class AuthSession {
     } catch (err) {
       if (!(err instanceof HttpErrorResponse && err.status === 401)) return false;
     }
+    await this.signOutOfAiLabs();
     this.clear();
     return true;
+  }
+
+  /**
+   * Leaving the platform leaves AI Labs too: the lab's Supabase session and, best-effort, the
+   * Microsoft session behind Copilot Studio. Before `clear()`, which drops the stored lab session
+   * and would leave nothing to tell Microsoft about. Loaded on demand and only when a lab session
+   * exists, so the sign-in service stays out of the eager bundle; capped at 2 s inside.
+   */
+  private async signOutOfAiLabs(): Promise<void> {
+    if (!this.isBrowser || this.storage.getLocal(environment.AI_LABS.storageKey) === null) return;
+    try {
+      const { AiLabAuth } = await import('@core/services/ai-lab-auth/ai-lab-auth');
+      await this.injector.get(AiLabAuth).signOutEverywhere();
+    } catch {
+      // The local lab session still goes in `clear()`; a failed Microsoft logout can't block this one.
+    }
   }
 
   /**
@@ -293,6 +312,8 @@ export class AuthSession {
     this._isProfileCompleted.set(null);
 
     if (!this.isBrowser) return;
+    // A lab session outliving its Miles login would show the next person "Signed in as" someone else.
+    clearAiLabSession(this.storage);
     this.storage.deleteCookie(environment.AUTH.accessToken);
     this.storage.deleteCookie(environment.AUTH.refreshToken);
     this.storage.deleteCookie(environment.AUTH.profileStatus);
