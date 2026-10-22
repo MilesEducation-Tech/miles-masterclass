@@ -1,6 +1,6 @@
 {
   "name": "miles-masterclass-v3",
-  "version": "3.13.1",
+  "version": "3.14.0",
   "scripts": {
     "ng": "ng",
     "generate:version": "node scripts/generate-version.mjs",
