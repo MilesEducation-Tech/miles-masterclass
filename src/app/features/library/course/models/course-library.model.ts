@@ -1,11 +1,17 @@
 import { isMasterclassCourse, MasterclassCourse } from '@core/models/masterclass-home.model';
 
 /**
- * Types for the course library's one read, `GET web-api/v1/masterclass/filter/`
- * (Postman `web-masterclass-filter-v1`, checked live on UAT 2026-10-14).
+ * Types for the course library's two reads (Postman, checked live on UAT
+ * 2026-10-22):
+ * - `GET web-api/v1/masterclass/filter/` (`web-masterclass-filter-v1`): the
+ *   sidebar's options, from `data.filters`.
+ * - `GET web-api/v1/masterclass/filter-based-masterclass-list/`
+ *   (`web-masterclass-filter-based-masterclass-list-v1`): the cards, from
+ *   `data.courses`. `filter/` carries the same block, which is what an AI Kit
+ *   selection reads.
  *
- * These are the keys the page READS, not a mirror of the payload. The response
- * also carries `applied` (the selection, normalised) and paging metadata beyond
+ * These are the keys the page READS, not a mirror of the payload. Both also
+ * carry `applied` (the selection, normalised) and paging metadata beyond
  * `page` / `has_next`; neither is read. Every course card is the `tracks-page/`
  * card (`MasterclassCourse`), checked with the same guard.
  */
@@ -13,8 +19,8 @@ import { isMasterclassCourse, MasterclassCourse } from '@core/models/masterclass
 // ---- Tabs ------------------------------------------------------------------
 
 /**
- * The `course_type` values the tabs send. The API also takes `nano_learning`,
- * which the library deliberately has no tab for.
+ * The `course_type` values the tabs send to the list route. It also takes
+ * `nano_learning` and `ai_lab`, which the library deliberately has no tab for.
  */
 export type LibraryCourseType = 'course' | 'podcast' | 'micro_learning';
 
@@ -63,9 +69,8 @@ export type LibraryFilterOptions = Readonly<
 
 // ---- Page ------------------------------------------------------------------
 
-/** One answer of `filter/`, unwrapped. */
-export interface CourseLibraryPage {
-  filters: LibraryFilterOptions;
+/** One page of cards, from either route's `data.courses`, unwrapped. */
+export interface CourseListPage {
   courses: MasterclassCourse[];
   /** The page this answer is, 1-based. */
   page: number;
@@ -134,13 +139,19 @@ function parseFilters(v: unknown): LibraryFilterOptions | null {
   };
 }
 
-/** `parse` for `filter/`: the envelope, the filter options and one page of cards. */
-export function parseCourseLibrary(raw: unknown): CourseLibraryPage {
+/** `parse` for the sidebar's `filter/` read: the envelope and the filter options. */
+export function parseLibraryFilters(raw: unknown): LibraryFilterOptions {
   const data = isObject(raw) ? raw['data'] : undefined;
   const filters = isObject(data) ? parseFilters(data['filters']) : null;
+  if (filters) return filters;
+  throw new Error('[library] filter response does not match the contract.');
+}
+
+/** `parse` for the cards' read, on either route: the envelope and one page of cards. */
+export function parseCourseList(raw: unknown): CourseListPage {
+  const data = isObject(raw) ? raw['data'] : undefined;
   const courses = isObject(data) ? data['courses'] : undefined;
   if (
-    filters &&
     isObject(courses) &&
     Array.isArray(courses['results']) &&
     courses['results'].every(isMasterclassCourse) &&
@@ -148,13 +159,12 @@ export function parseCourseLibrary(raw: unknown): CourseLibraryPage {
     typeof courses['has_next'] === 'boolean'
   ) {
     return {
-      filters,
       courses: courses['results'],
       page: courses['page'],
       hasNext: courses['has_next'],
     };
   }
-  throw new Error('[library] filter response does not match the contract.');
+  throw new Error('[library] course list response does not match the contract.');
 }
 
 // ---- AI Kit ----------------------------------------------------------------
