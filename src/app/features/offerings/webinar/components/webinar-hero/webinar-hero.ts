@@ -18,6 +18,7 @@ import {
 import { JoinCta } from '@features/offerings/webinar/components/join-cta/join-cta';
 import { SeatForm } from '@features/offerings/webinar/components/seat-form/seat-form';
 import { WebinarCountdown } from '@features/offerings/webinar/components/webinar-countdown/webinar-countdown';
+import { LocalTimeZonePipe } from '@shared/pipes/local-time-zone/local-time-zone-pipe';
 
 /**
  * The banner, in the two layouts the v3 design draws.
@@ -41,7 +42,7 @@ import { WebinarCountdown } from '@features/offerings/webinar/components/webinar
 @Component({
   selector: 'app-webinar-hero',
   host: { class: 'block' },
-  imports: [JoinCta, RouterLink, SeatForm, WebinarCountdown],
+  imports: [JoinCta, LocalTimeZonePipe, RouterLink, SeatForm, WebinarCountdown],
   templateUrl: './webinar-hero.html',
 })
 export class WebinarHero {
@@ -109,12 +110,12 @@ export class WebinarHero {
     return w.horizontal_thumbnail || w.square_image || w.vertical_thumbnail || null;
   });
 
-  /** `1st Jan 2026 | 7:00 PM (EST)` — the design's exact shape. */
+  /** `1st Jan 2026 | 7:00 PM`, in the viewer's zone; the template adds `(IST)`. */
   protected readonly sessionLabel = computed(() =>
     formatSessionLabel(this.webinar().start_date_time),
   );
 
-  /** `NOV` / `12` / `7:00 PM` / `EST`, for the guest ticket's date pill. */
+  /** `NOV` / `12` / `7:00 PM`, for the guest ticket's date pill. */
   protected readonly session = computed(() => sessionParts(this.webinar().start_date_time));
 
   protected readonly startsAt = computed(() => parseIso(this.webinar().start_date_time));

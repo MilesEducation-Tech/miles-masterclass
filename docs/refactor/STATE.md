@@ -7,6 +7,30 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-22, NON-REFACTOR — MIL-118 (bug), webinar session times in the viewer's local timezone. PLAN
+  APPROVED, DONE, GATES GREEN, UNCOMMITTED** (`prompts/webinar-local-timezone.md`), on
+  `fix/MIL-118-webinar-local-timezone` off `master` (`5fa11a28`).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.63 kB.
+  - **Verified (dev 4101, browser zone emulated; UAT has no upcoming webinars, so the feed was stubbed in the
+    browser only):**
+    - 12:00Z reads 5:30 PM (IST), 8:00 AM (EDT), 4:00 PM (GST), 1:00 PM (BST) on the hero, the pill and the
+      mobile label.
+    - 23:30Z on 30 Oct reads 31st Oct in India and 30th Oct in New York, including the guest row's month.
+    - 5 Nov reads EST in New York.
+    - The home ticket and the webinar hero print the same label.
+    - No overflow at 375 / 768 / 1440.
+    - London in winter prints "GMT+00:00": Playwright's Chromium has no long name for it, and the shared pipe
+      passes offsets through. Pre-existing pipe behaviour.
+  - **SSR (`TZ=UTC`, `pnpm build` + `serve:ssr`, real past webinar):** the server HTML reads "11:45 AM (UTC)";
+    the browser hydrates it to "5:15 PM (IST)" / "7:45 AM (EDT)" with no hydration warning.
+  - **Cause:** `SESSION_TIMEZONE = 'America/New_York'` in `webinar/utils/session-time.ts` pins the card and hero
+    labels to Eastern; the API's `start_date_time` is UTC.
+  - **Plan:** drop the pin; resolve the parts in the runtime's zone; print the label with the existing shared
+    `localTimeZone` pipe, which home, UAE CAIRA and the details dialog already use. The server HTML shows the
+    server's zone and hydration switches it to the viewer's. The pipe gets a "UTC" label for a UTC host, which
+    today reads "CUT".
+  - MIL-107's tickets (MIL-108 to MIL-111) are merged (#175, #177, #178, #179); their entries below are history.
+
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on
   `feat/MIL-111-certificate-download`, stacked on MIL-110 (`46bdfc7`).

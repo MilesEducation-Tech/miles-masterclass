@@ -10,6 +10,7 @@ import { WebinarFacade } from '@features/offerings/webinar/services/webinar-faca
 import { formatSessionLabel, sessionParts } from '@features/offerings/webinar/utils/session-time';
 import { ctaFor, WebinarBucket } from '@features/offerings/webinar/utils/webinar-status';
 import { JoinCta } from '@features/offerings/webinar/components/join-cta/join-cta';
+import { LocalTimeZonePipe } from '@shared/pipes/local-time-zone/local-time-zone-pipe';
 
 /** How a card presents itself. */
 export type WebinarCardLayout =
@@ -38,7 +39,7 @@ export type WebinarCardLayout =
  */
 @Component({
   selector: 'app-webinar-card',
-  imports: [DatePipe, NgIcon, RouterLink, JoinCta],
+  imports: [DatePipe, LocalTimeZonePipe, NgIcon, RouterLink, JoinCta],
   templateUrl: './webinar-card.html',
   providers: [provideIcons({ faSolidInfo })],
 })
@@ -175,10 +176,10 @@ export class WebinarCard {
     return w.horizontal_thumbnail || w.square_image || null;
   });
 
-  /** `NOV` / `12` / `7:00 PM` / `EST` for the desktop date pill. */
+  /** `NOV` / `12` / `7:00 PM` for the desktop date pill, in the viewer's zone. */
   protected readonly session = computed(() => sessionParts(this.webinar().start_date_time));
 
-  /** `12th Nov 2026 | 7:00 PM (EST)` for the mobile card. */
+  /** `12th Nov 2026 | 7:00 PM` for the mobile card; the template adds the zone. */
   protected readonly sessionLabel = computed(() =>
     formatSessionLabel(this.webinar().start_date_time),
   );
