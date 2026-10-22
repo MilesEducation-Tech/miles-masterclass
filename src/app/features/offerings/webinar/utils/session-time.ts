@@ -86,18 +86,17 @@ export function formatCountdownLong(parts: CountdownParts): string {
 /**
  * Ordinal suffix for a date's day-of-month — the `st` in "1st Jan 2026".
  *
- * `timeZone` must match whatever zone the surrounding date is being RENDERED
- * in. A suffix derived from UTC beside a pill formatted in the viewer's local
- * zone reads "31st" next to a "1", which is the kind of defect nobody reports
- * and everybody notices. Pass the same zone you pass `DatePipe`, or omit it
- * when the date is rendered locally.
+ * Resolved in the runtime's own zone, the same one `sessionParts` and a
+ * zone-less `DatePipe` render in. A suffix derived from any other zone beside a
+ * locally rendered day reads "31st" next to a "1", which is the kind of defect
+ * nobody reports and everybody notices.
  */
-export function dayOrdinal(iso: string | null | undefined, timeZone?: string): string {
+export function dayOrdinal(iso: string | null | undefined): string {
   const parsed = parseIso(iso);
   if (parsed === null) return '';
 
   const day = Number.parseInt(
-    new Intl.DateTimeFormat('en-US', { day: 'numeric', timeZone }).format(new Date(parsed)),
+    new Intl.DateTimeFormat('en-US', { day: 'numeric' }).format(new Date(parsed)),
     10,
   );
   if (Number.isNaN(day)) return '';
@@ -111,17 +110,12 @@ export function dayOrdinal(iso: string | null | undefined, timeZone?: string): s
 }
 
 /**
- * The timezone every session time on the webinar surfaces is quoted in.
+ * A start time broken into the pieces the designs actually arrange.
  *
- * An IANA name, not the `EST` abbreviation `DatePipe` takes: `EST` is a fixed
- * −5 zone that never observes DST, so a July webinar would be advertised an
- * hour early. `Intl` resolves the real offset for the date in hand, and does it
- * identically under Node and in the browser — so the string SSR renders is the
- * one hydration finds, with no mismatch.
+ * There is no zone part: templates print it with the shared `localTimeZone`
+ * pipe, so a webinar card and the home page's webinar ticket can never label
+ * the same viewer's zone two different ways.
  */
-export const SESSION_TIMEZONE = 'America/New_York';
-
-/** A start time broken into the pieces the designs actually arrange. */
 export interface SessionParts {
   /** `NOV` — already upper-cased, as the date pill renders it. */
   month: string;
@@ -132,16 +126,20 @@ export interface SessionParts {
   year: string;
   /** `7:00 PM`, with no zone appended. */
   time: string;
-  /** `EST` / `EDT`, whichever applies on that date. */
-  zone: string;
 }
 
 /**
- * Split a start time into display parts, all resolved in `SESSION_TIMEZONE`.
+ * Split a start time into display parts, all resolved in the runtime's own
+ * zone: the viewer's in the browser.
+ *
+ * The API sends a UTC instant and no zone of its own, so the viewer's zone is
+ * the only one that saves them a conversion. On the server this is the host's
+ * zone (UTC on Vercel); hydration re-evaluates the bindings and the browser's
+ * value replaces it, as it does for the home page's webinar ticket.
  *
  * One function rather than a formatter per surface: the date pill, the hero
  * line and the card all quote the same instant, and the only way they cannot
- * disagree about the zone is to derive from the same place.
+ * disagree about the day is to derive from the same place.
  */
 export function sessionParts(iso: string | null | undefined): SessionParts | null {
   const ms = parseIso(iso);
@@ -149,32 +147,23 @@ export function sessionParts(iso: string | null | undefined): SessionParts | nul
 
   const at = new Date(ms);
   const format = (options: Intl.DateTimeFormatOptions) =>
-    new Intl.DateTimeFormat('en-US', { ...options, timeZone: SESSION_TIMEZONE }).format(at);
+    new Intl.DateTimeFormat('en-US', options).format(at);
 
   return {
     month: format({ month: 'short' }).toUpperCase(),
     day: format({ day: 'numeric' }),
-    ordinal: dayOrdinal(iso, SESSION_TIMEZONE),
+    ordinal: dayOrdinal(iso),
     year: format({ year: 'numeric' }),
     time: format({ hour: 'numeric', minute: '2-digit' }),
-    // `timeZoneName` has to come off `formatToParts` — asking for it inline
-    // glues it to the time ("7:00 PM EST") and every design brackets it.
-    zone:
-      new Intl.DateTimeFormat('en-US', {
-        timeZone: SESSION_TIMEZONE,
-        timeZoneName: 'short',
-      })
-        .formatToParts(at)
-        .find((part) => part.type === 'timeZoneName')?.value ?? 'ET',
   };
 }
 
-/** `1st Jan 2026 | 7:00 PM (EST)` — the full session line. */
+/** `1st Jan 2026 | 7:00 PM` — the session line; the template adds the zone. */
 export function formatSessionLabel(iso: string | null | undefined): string | null {
   const parts = sessionParts(iso);
   if (!parts) return null;
   const month = parts.month.charAt(0) + parts.month.slice(1).toLowerCase();
-  return `${parts.day}${parts.ordinal} ${month} ${parts.year} | ${parts.time} (${parts.zone})`;
+  return `${parts.day}${parts.ordinal} ${month} ${parts.year} | ${parts.time}`;
 }
 
 /**
