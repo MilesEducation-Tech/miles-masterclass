@@ -7,6 +7,23 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-23, NON-REFACTOR — MIL-122 (bug), feedback gate + content-dialog sanitizing + tabnabbing. DONE,
+  GATES GREEN, UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md` T3), on `fix/MIL-122-feedback-gate-and-html-sanitize`
+  off `master` (`7aae2472`). MIL-120/121 are committed on their own branches.
+  - **Feedback gate:** `course-feedback.ts` gated on an inert `currentUser = signal(null)`, so podcast, webinar and
+    micro-learning feedback always opened "Complete Profile". It now uses `AuthSession.isProfileCompleted() === false`,
+    the same rule as `CourseEvaluationFacade.submit` (unknown goes through). The never-rendered user-info block is
+    removed.
+  - **Content dialog:** `HtmlContentDialog` dropped `bypassSecurityTrustHtml`, so the HTML is now sanitized by
+    Angular. The sanitizer strips the CMS's inline `style`s, so the container restores them with Tailwind
+    descendant utilities. Measured: `h3` 24px/20px gap, `p` 14px/1.6/20px gap, logo 150px.
+  - **Tabnabbing:** `course-resources.ts` `window.open(..., 'noopener')`.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.66 kB,
+    only `ai-labs.css`.
+  - **Verified (dev, UAT data):** "AI: It's All About the Prompt" glossary renders sanitized, with no scripts. The
+    console's "sanitizing HTML stripped some content" is the `style` attributes.
+  - **Not verified in the browser:** the feedback submit, which needs a signed-in learner. Steps are in the hand-off.
+
 - 🟡 **2026-10-22, NON-REFACTOR — MIL-119 (bug), course library "Failed to Load Courses". PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/course-library-filter-list.md`), on `fix/MIL-119-course-library-filter-api`
   off `master` (`db43a117`, which has MIL-118 #180).
@@ -5467,6 +5484,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-23 · NON-REFACTOR · **MIL-122 built** (uncommitted): feedback profile gate on `AuthSession`, `HtmlContentDialog` sanitized (CMS styles restored with utilities), resource links `noopener` · tsc 0, lint 0 errors, structure ✔, build:prod 240.66 kB · glossary checked in browser
 
 - 2026-10-19 · NON-REFACTOR · **MIL-111 built** (uncommitted): `CourseCertificateFacade` (disabled until feedback, quiet `course-progress` wait for `masterclass_certificate_url`), Download Certificate on report + thank-you, hero Download on the same rule · tsc 0, lint 0 errors, structure ✔, build:prod 240.63 kB · headless scenarios pass
 
