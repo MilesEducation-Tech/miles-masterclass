@@ -2,9 +2,6 @@
   "$comment": "Ratchet baseline for scripts/check-structure.mjs (MIL-240). Only shrink it: run the script with --prune after fixing. Adding an entry needs a reason and a CODEOWNERS review.",
   "routedOutsidePages": {},
   "componentStylesheets": {
-    "src/app/admin/layout/admin-sidebar/admin-sidebar.css": ".active-nav-item, applied by routerLinkActive; kept lazy (Phase 12 decision b)",
-    "src/app/admin/partner-platform-v2/dialogs/partner-report-preview-dialog/partner-report-preview-dialog.css": "PDF DOM captured by html2canvas-pro, which cannot parse color-mix()/oklch",
-    "src/app/admin/seat-tracker/components/seat-tracker-table/seat-tracker-table.css": ".drill-btn / .send-input; kept lazy (Phase 12 decision b)",
     "src/app/features/ai-labs/pages/ai-labs/ai-labs.css": "not reviewed: feature outside the Phase 12 tracker",
     "src/app/features/connect-us/pages/connect-us/connect-us.css": "EMPTY or comment-only — delete with its styleUrl (feature outside the Phase 12 tracker)",
     "src/app/features/faculty/pages/faculty/faculty.css": "not reviewed: feature outside the Phase 12 tracker",
@@ -41,30 +38,6 @@
     "src/app/shared/ui/toast/toast.css": ":host[data-*] stacking maths (Sonner model driven by ng-primitives --ngp-toast-* vars) and the enter/leave @keyframes"
   },
   "inlineStyles": {
-    "src/app/admin/partner-platform/dialogs/network-firms-dialog/network-firms-dialog.html": {
-      "count": 4,
-      "reason": "unrouted v1 partner platform (retirement pending)"
-    },
-    "src/app/admin/partner-platform/pages/network-tracker/network-tracker.html": {
-      "count": 3,
-      "reason": "unrouted v1 partner platform (retirement pending)"
-    },
-    "src/app/admin/partner-platform/pages/networks/networks.html": {
-      "count": 7,
-      "reason": "unrouted v1 partner platform (retirement pending)"
-    },
-    "src/app/admin/partner-platform/pages/partner-codes/partner-codes.html": {
-      "count": 6,
-      "reason": "unrouted v1 partner platform (retirement pending)"
-    },
-    "src/app/admin/partner-platform/pages/partner-dashboard/partner-dashboard.html": {
-      "count": 3,
-      "reason": "unrouted v1 partner platform (retirement pending)"
-    },
-    "src/app/admin/partner-platform/pages/reports/reports.html": {
-      "count": 7,
-      "reason": "unrouted v1 partner platform (retirement pending)"
-    },
     "src/app/features/library/badge/components/badge-spot-animation/badge-spot-animation.html": {
       "count": 3,
       "reason": "animation-delay: the component CSS animation shorthand is unlayered and would reset a utility"
@@ -97,30 +70,6 @@
     }
   },
   "relativeImports": {
-    "src/app/admin/core/interceptors/admin-token-interceptor.ts": {
-      "count": 3,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/admin/core/services/admin-auth.ts": {
-      "count": 2,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/admin/core/services/audit-log.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/admin/core/services/partner-network-facade.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/admin/layout/admin-layout/admin-layout.ts": {
-      "count": 2,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/admin/partner-platform-v2/dialogs/partner-report-preview-dialog/partner-report-preview-dialog.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/app.config.server.ts": {
       "count": 2,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
@@ -298,7 +247,7 @@
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/core/services/seo/supabase-seo.ts": {
-      "count": 4,
+      "count": 3,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/core/services/storage/storage.ts": {
@@ -641,14 +590,6 @@
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
-    "src/app/shared/dialogs/apply-partner-code-dialog/apply-partner-code-dialog.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/shared/dialogs/block-status-dialog/block-status-dialog.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
     "src/app/shared/dialogs/calendly-dialog/calendly-dialog.ts": {
       "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
@@ -727,18 +668,6 @@
     },
     "src/app/shared/utils/seo/course-seo-setup.ts": {
       "count": 2,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/testing/partner-mock/dev-interceptors.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/testing/partner-mock/partner-mock-handlers.ts": {
-      "count": 1,
-      "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
-    },
-    "src/app/testing/partner-mock/partner-mock-interceptor.ts": {
-      "count": 1,
       "reason": "pre-ratchet relative imports (2026-10-14): convert to aliases in a refactor PR"
     },
     "src/app/testing/transloco.ts": {

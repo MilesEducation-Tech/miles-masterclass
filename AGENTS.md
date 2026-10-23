@@ -38,7 +38,8 @@ Routing is locale-scoped: `/:country/:profession_type/...` (e.g. `/us/cpa/master
 - Five content types: Masterclass, Micro-Learning (reels), Podcast, Webinar, and the Final Assessment that certifies them.
 - Learner surface: home, course library, CPE tracker, badges, payment/subscription, profile, auth.
 - Marketing surface: partner landing pages, CAIRA, blog (headless WordPress), FAQ/legal pages.
-- Admin surface: SEO console, leads, user reports, RBAC, Partner Platform (B2B network licensing).
+- The admin panel (SEO console, leads, user reports, RBAC, Partner Platform) was removed on 2026-10-23 (MIL-120).
+  `/admin/**` answers 404. Restoring it means reverting that PR.
 
 **Out of scope — do not build unless explicitly asked**
 
@@ -77,11 +78,7 @@ src/app/
       models/<name>.model.ts
       guards/ utils/ constants/ data/
       <sub-feature>/              Same shape, only when a feature genuinely has sub-areas
-  admin/         Same shape as a feature, plus:
-    core/          Admin guards, auth, interceptors, models (incl. PERM), services
-    layout/        admin-layout, admin-sidebar, admin-topbar
-    <admin-feature>/
-  testing/       Story mocks and the dev-only partner mock. Importable from stories only.
+  testing/       Story mocks. Importable from stories only.
 ```
 
 **Placement: code lives at the lowest level that uses it.**
@@ -94,14 +91,13 @@ src/app/
 
 | Folder     | May import from                                                                         |
 | ---------- | --------------------------------------------------------------------------------------- |
-| `core`     | nothing in `shared`, `layout`, `features` or `admin`                                    |
+| `core`     | nothing in `shared`, `layout` or `features`                                             |
 | `shared`   | `core` only (plus itself)                                                               |
 | `layout`   | `core`, `shared`                                                                        |
 | `features` | `core`, `shared`, **itself**; `layout` only in route configs; **never another feature** |
-| `admin`    | `core`, `shared`, itself                                                                |
-| `testing`  | only from `*.stories.ts` (plus `angular.json` dev `fileReplacements`)                   |
+| `testing`  | only from `*.stories.ts`                                                                |
 
-**Aliases:** `@core/*`, `@shared/*`, `@layout/*`, `@features/*`, `@admin/*`, `@testing/*`, `@env/*`.
+**Aliases:** `@core/*`, `@shared/*`, `@layout/*`, `@features/*`, `@testing/*`, `@env/*`.
 
 - Every import uses an alias, even inside the same feature. ESLint bans a relative import that crosses a
   top-level folder; `check-structure` ratchets the remaining same-folder ones (`relativeImports` in the baseline).
@@ -112,20 +108,19 @@ src/app/
 - v20+ file names, with no `.component`/`.service` suffixes.
 - Services and models are flat files.
 - Folder names are plural.
-- No `.scss`, and no `-v2` names after a cutover. `admin/partner-platform-v2` keeps its name until the v1 → v2
-  cutover decision is made.
+- No `.scss`, and no `-v2` names after a cutover.
 
 **Where each kind of logic lives:**
 
-| Layer                          | Lives in                                                                             | Rule                                                                                                 |
-| ------------------------------ | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| Presentation                   | components (`*.ts` / `*.html`)                                                       | Renders state. No HTTP, no business rules, no `HttpClient`.                                          |
-| Feature state + business logic | **Facades**: `features/<f>/services/<name>-facade.ts` (admin: `admin/<a>/services/`) | Signals and resources for state, methods for actions. This is where HTTP, dialogs and routing live.  |
-| HTTP                           | `ApiClient` (`core/services/api-client/`)                                            | Prepends `BASE_API_URL`. Reads use `httpResource` with `apiUrl()`; mutations use `ApiClient.call()`. |
-| Cross-cutting singletons       | `core/services/`                                                                     | Auth session, Storage, Dialog, Notification, Logger, Analytics, SEO, Viewport, Network…              |
-| Route protection               | `core/guards/` + `admin/core/guards/`                                                | Guards decide access. Components never check auth inline.                                            |
-| Domain types                   | `core/models/` when shared; `features/<f>/models/` when one feature owns them        | Move a model up only when a second feature needs it.                                                 |
-| Reusable UI                    | `shared/ui/`, `shared/components/`, `shared/dialogs/`                                | Generic only. A dialog one feature opens lives in that feature's `dialogs/`.                         |
+| Layer                          | Lives in                                                                      | Rule                                                                                                 |
+| ------------------------------ | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Presentation                   | components (`*.ts` / `*.html`)                                                | Renders state. No HTTP, no business rules, no `HttpClient`.                                          |
+| Feature state + business logic | **Facades**: `features/<f>/services/<name>-facade.ts`                         | Signals and resources for state, methods for actions. This is where HTTP, dialogs and routing live.  |
+| HTTP                           | `ApiClient` (`core/services/api-client/`)                                     | Prepends `BASE_API_URL`. Reads use `httpResource` with `apiUrl()`; mutations use `ApiClient.call()`. |
+| Cross-cutting singletons       | `core/services/`                                                              | Auth session, Storage, Dialog, Notification, Logger, Analytics, SEO, Viewport, Network…              |
+| Route protection               | `core/guards/`                                                                | Guards decide access. Components never check auth inline.                                            |
+| Domain types                   | `core/models/` when shared; `features/<f>/models/` when one feature owns them | Move a model up only when a second feature needs it.                                                 |
+| Reusable UI                    | `shared/ui/`, `shared/components/`, `shared/dialogs/`                         | Generic only. A dialog one feature opens lives in that feature's `dialogs/`.                         |
 
 Four hard boundaries:
 
@@ -152,10 +147,11 @@ Four hard boundaries:
     `computed`s. Its mutations are `ApiClient` methods followed by `.reload()`.
   - The 855 KB-gzip `constants/location-min.ts` loads through `import()` only when the address form opens.
   - Dialogs are opened with a dynamic `import()`.
-- **`admin/leads/`, the smallest complete admin slice:**
-  - `pages/leads/`, `components/leads-table/`, `models/firm-inquiry.model.ts` and `services/leads-facade.ts`.
-  - The facade is an `@Service({ autoProvided: false })` listed in `providers` on its route in `admin.routes.ts`, and
-    that route is gated by `permissionGuard(PERM.*)`.
+- **`features/offerings/masterclass/` course tree, route-scoped facades:**
+  - `CourseDetailFacade`, `FinalAssessmentFacade`, `CourseEvaluationFacade` and `CourseCertificateFacade` are
+    `@Service({ autoProvided: false })`, listed in `providers` on the `:courseId/:courseTitle` route in
+    `masterclass.routes.ts`, so the course page, its chapters, the exam and the feedback page share one instance.
+  - The hero, chapter list and dialogs inject those facades directly; the pages don't relay their state.
 - **`features/partners/`, config-driven pages:**
   - Two pages, `partner-landing` and `partner-showcase`, render all partner routes.
   - Each partner's content is a typed config in `data/<partner>.ts`, loaded per route by
@@ -180,7 +176,7 @@ Full detail — versions, scripts, build configs, environments — lives in the 
 - **ng-primitives:** every headless, accessible primitive, including dialog, select, menu, tabs, tooltip, popover,
   accordion, switch, radio and OTP. `@angular/cdk` stays only where it is already used and ng-primitives has no
   equivalent (`BreakpointObserver`).
-- **Supabase:** SEO rows, admin auth and lead capture, through two separate clients (see the `supabase` skill).
+- **Supabase:** read-only `seo_pages` rows, through one stateless, anonymous client (see the `supabase` skill).
 - **Django REST API** (`BASE_API_URL`): courses, users, payment, CPE, and everything else learner-facing.
 - **Video.js 8** (+ HLS, YouTube plugin) for video and audio. **`@ng-icons`** for icons. **Swiper 12** for carousels.
   **jsPDF + html2canvas-pro** for certificates and reports.
@@ -296,7 +292,7 @@ anything in the header or layout, facades that own page-load resources, or small
 - **Prefetch:**
   - Use `{ prefetch: onIdle }` when most users on the page will trigger it.
   - Use `{ prefetch: () => onIdle({ timeout: 2000 }) }` on pages that never go idle.
-  - Use none for rare or admin-only actions.
+  - Use none for rare actions.
   - Hover/focus prefetching goes through one shared helper, `core/utils/prefetch-triggers.ts`. Create that helper the
     first time it is needed; never hand-roll triggers.
 - **SSR:** never call it during SSR.
@@ -350,7 +346,6 @@ Domain types live in `src/app/core/models/`, or in `features/<f>/models/` when o
 | `account.model.ts` — `UserDetails`, `AnswerMap`, `Question`                                            | `profile/` is questionnaire answers **only** (changed 2026-09-09); the user row is `user_details/`. `profile_status` is the onboarding milestone and is **not** the token claim `miles.onboarding_required` — opposite polarity. |
 | `features/offerings/models/assessment.model.ts`                                                        | An exam session needs a session id. Masterclass uses `:sessionId`, podcast/micro-learning use `:session_id` — both are live, do not "normalise" without fixing every consumer.                                                   |
 | `seo.models.ts` / `seo.constants.ts`                                                                   | A Supabase `seo_pages` slug excludes the locale prefix. `DYNAMIC_SLUG_PREFIXES` decides who owns a route's SEO.                                                                                                                  |
-| `admin/core/models/admin-rbac.model.ts` — `PERM`                                                       | Every admin route is gated by a `PERM` constant. Never hardcode a permission string.                                                                                                                                             |
 | `http.model.ts` — `CommonResponse<T>`                                                                  | Django responses are wrapped. Unwrap in the facade, not the component.                                                                                                                                                           |
 
 ---
@@ -368,11 +363,9 @@ Two backends. Do not cross the wires.
 
 **Supabase** — direct client access, RLS-enforced (the `supabase` skill has the split).
 
-- `seo_pages` — read on both server and browser; written only from the admin SEO console.
-- Admin auth session — the `Supabase` client, persisted.
-- Lead / enquiry capture — the `SupabasePublic` client, anonymous, never persisted.
-
-**Partner Platform** — Django `/partner-admin/...`, tagged with the `IS_ADMIN_REQUEST` context token so `adminTokenInterceptor` attaches the admin token instead of the learner token.
+- `seo_pages` — read anonymously on both server and browser by the stateless `Supabase` client. Nothing in the app
+  writes it: RLS allows `select` only (`supabase/migrations/20261023000000_seo_pages_rls.sql`), and rows are edited
+  in the Supabase dashboard.
 
 **Surfaces: this app uses `api/v1/` and `web-api/v1/` only — never `app-api/`.** That surface belongs to the mobile app. An ESLint rule (`no-restricted-syntax`) fails the build on an `app-api/` string, because the temptation is real and specific: some fields exist on an app route and nowhere else. When that happens, ask the backend for a `web-api` twin — do not cross the surface. Open cases are in `docs/WEBINAR_API_QUESTIONS.md`.
 
@@ -388,12 +381,12 @@ Never invent a path. For auth and account routes the contract is `docs/AUTH_API.
 
 **Never expose to the browser**: the Supabase service-role key, Django admin credentials, the Entra client secret, DirectLine secrets, the AI-Labs provisioning secret, or any partner-provisioning token. The publishable anon key and the public client/tenant IDs in `environment*.ts` are public by design and RLS-scoped — everything else is not.
 
-**Never run from the browser**: privileged Supabase writes (RLS must be the gate, not a client-side check), admin provisioning, or any bulk operation that bypasses a permission guard.
+**Never run from the browser**: privileged Supabase writes (RLS must be the gate, not a client-side check), provisioning, or any bulk operation that bypasses a permission guard.
 
 **Always**:
 
-- Gate every admin route with `permissionGuard(PERM.*)`. Hiding the nav link is not guarding the route.
-- Keep the two Supabase clients separate. `SupabasePublic` must stay session-free, or public form submissions inherit the signed-in admin's identity and break RLS.
+- Gate every signed-in route with a guard (`authGuard`). Hiding the nav link is not guarding the route.
+- Keep the `Supabase` client session-free. Nothing signs in to Supabase, so no request carries an identity RLS could trust.
 - Send tokens through the interceptors. Never hand-attach an `Authorization` header.
 - Read cookies through `Storage` on the server path — it parses them off the request. Touching `document.cookie` during SSR throws.
 - Validate anything a user typed at the boundary before it reaches an API call.
@@ -478,7 +471,7 @@ Tool and module knowledge lives in `.claude/skills/`, not here. Name the ones yo
 | `angular-conventions` | Writing any component, service, signal, effect, or template in this repo.               |
 | `core-services`       | ApiClient, Auth, Storage, Dialog, Notification, Logger, Utils, Analytics, interceptors. |
 | `routing-and-guards`  | Adding a route, guard, redirect, or changing an SSR render mode.                        |
-| `seo`                 | Meta tags, canonical, JSON-LD, the Supabase `seo_pages` table, the admin SEO console.   |
+| `seo`                 | Meta tags, canonical, JSON-LD, the Supabase `seo_pages` table.                          |
 | `ui-components`       | Building UI — `ui/` primitives, cards, dialogs, Tailwind, Storybook, a11y.              |
 | `media-players`       | Video.js / audio player, HLS, CPE vs Preview mode, playback progress.                   |
 | `supabase`            | Any Supabase read/write, RLS, or the two-client split.                                  |
@@ -499,13 +492,6 @@ Tool and module knowledge lives in `.claude/skills/`, not here. Name the ones yo
 | `home-and-landing` | Home, CPA landing, UAE CAIRA, FAQ and legal pages.                     |
 | `partners`         | CPA-society and firm landing pages, CAIRA marketing.                   |
 | `blog`             | Headless WordPress blog via the WP REST API.                           |
-
-**Admin**
-
-| Skill              | Owns                                                                |
-| ------------------ | ------------------------------------------------------------------- |
-| `admin-panel`      | Admin shell, RBAC, admin auth, users, leads, user reports.          |
-| `partner-platform` | B2B network licensing, partner codes, network / sub-company admins. |
 
 ---
 

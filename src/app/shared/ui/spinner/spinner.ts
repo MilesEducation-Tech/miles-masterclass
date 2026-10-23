@@ -4,7 +4,7 @@ const SIZES = { xs: 'size-3', sm: 'size-4', md: 'size-5', lg: 'size-8', xl: 'siz
 
 /**
  * The spinning arc. `current` takes the surrounding text colour, so the spinner
- * reads on any surface: the dark pages, a white button, the admin theme.
+ * reads on any surface: the dark pages or a white button.
  */
 const COLORS = { current: 'fill-current', primary: 'fill-primary', white: 'fill-white' } as const;
 
