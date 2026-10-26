@@ -5,7 +5,7 @@ import { from, switchMap } from 'rxjs';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { CountryContext } from '@core/services/country-context/country-context';
 import { LanguageContext } from '@core/services/language-context/language-context';
-import { IS_ADMIN_REQUEST, IS_EXTERNAL_REQUEST, SKIP_AUTH_TOKEN } from '@core/models/http.model';
+import { IS_EXTERNAL_REQUEST, SKIP_AUTH_TOKEN } from '@core/models/http.model';
 import { SESSION_MINTING_PATHS } from '@core/models/auth.model';
 
 /**
@@ -51,12 +51,7 @@ export const appInterceptor: HttpInterceptorFn = (original, next) => {
 
   const auth = inject(AuthSession);
 
-  // The admin panel authenticates against a different identity provider
-  // entirely; `adminTokenInterceptor` owns those requests.
-  const skipToken =
-    req.context.get(SKIP_AUTH_TOKEN) ||
-    req.context.get(IS_ADMIN_REQUEST) ||
-    isSessionMintingRoute(req.url);
+  const skipToken = req.context.get(SKIP_AUTH_TOKEN) || isSessionMintingRoute(req.url);
 
   return skipToken
     ? next(req)

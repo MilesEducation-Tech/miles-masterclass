@@ -62,7 +62,7 @@ const PRODUCTION_HOSTS = new Set([
 /**
  * Public, crawlable static pages (relative to `PREFIX`). Authenticated or
  * no-SEO-value routes (chapters, exams, feedback, payment checkout, mobile
- * webviews, admin, auth) are intentionally excluded and also blocked in
+ * webviews, auth) are intentionally excluded and also blocked in
  * robots.txt — except the public `payment/plan` pricing page, which is
  * included here and carved out of the robots `payment` disallow.
  */
@@ -291,7 +291,6 @@ const PROD_ROBOTS = `User-agent: *
 Allow: /
 
 # Authenticated / no-SEO-value areas
-Disallow: /admin
 Disallow: /api/
 Disallow: /blog-test
 Allow: /*/payment/plan
