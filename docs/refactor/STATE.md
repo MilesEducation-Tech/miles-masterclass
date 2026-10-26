@@ -7,6 +7,18 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-26, NON-REFACTOR — MIL-124 (security), client-bundle secrets. DONE, GATES GREEN, UNCOMMITTED**
+  (`prompts/review-2026-10-23-tickets.md` T5), on `chore/MIL-124-remove-client-secrets` off `master` (`7aae2472`).
+  - **Removed:**
+    - `MILES_ACTIVITY` (AWS API Gateway URL + `x-api-key`) from the 3 environment files
+    - `PAYMENT_TEST_SSN` from `environment.ts`
+    - the dead `core/services/miles-activity/` (no importers)
+  - The baseline is pruned (−1 entry).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.60 kB,
+    only `ai-labs.css`.
+  - **Bundle scan:** the old key and SSN values match 0 files in `dist/` and `src/`.
+  - **Still open (backend):** the key is in shipped bundles and in git history, so it must be rotated.
+
 - 🟡 **2026-10-23, NON-REFACTOR — MIL-120 (remove admin) + MIL-121 (seo_pages RLS). PLAN APPROVED, IN PROGRESS,
   UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md`, T1 + T2), working tree on `fix/MIL-121-seo-pages-rls` off
   `master` (`7aae2472`). Commit T2's paths there, then `git switch -c chore/MIL-120-remove-admin` for the rest.
@@ -5504,6 +5516,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-26 · NON-REFACTOR · **MIL-124 built** (uncommitted): Miles360 API key, test SSN and the dead `MilesActivity` removed · tsc 0, lint 0 errors, structure ✔ (pruned), build:prod 240.60 kB · dist/src scan: 0 hits · backend must rotate the key
 
 - 2026-10-23 · NON-REFACTOR · **MIL-120 + MIL-121 built** (uncommitted, on `fix/MIL-121-seo-pages-rls`): admin panel and everything only it used removed, `/admin/**` → 404 + noindex, Supabase client stateless; admin migrations deleted, `seo_pages` RLS in its own migration · tsc 0, lint 0 errors (98 warnings), structure ✔ (pruned), Prettier ✔, build:prod 226.96 kB (was 240.6) · SSR: admin URLs 404, SEO rows match live, robots has no /admin · scratch Postgres: anon writes rejected
 
