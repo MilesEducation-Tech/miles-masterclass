@@ -94,3 +94,8 @@ export const VerticalWithAiKit: Story = {
     showAiKit: true,
   },
 };
+
+/** The same course on a horizontal rail (the masterclass page): Trailer, AI Kit and "i". */
+export const HorizontalWithAiKit: Story = {
+  args: { ...VerticalWithAiKit.args, layout: 'horizontal' },
+};

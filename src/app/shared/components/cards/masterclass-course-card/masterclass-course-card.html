@@ -161,6 +161,23 @@
           <ng-icon [svg]="icons.faSolidPlay" class="size-4" />
           Trailer
         </button>
+        @if (hasAiKit()) {
+          <!-- The vertical layout's gradient ring: the wrapper's 1px padding. -->
+          <div
+            class="flex items-center rounded-full bg-linear-to-r from-white to-transparent to-70% p-px overflow-hidden"
+          >
+            <button
+              app-button
+              type="button"
+              class="bg-background rounded-full gap-2"
+              variant="ghost"
+              (click)="aiKit.emit(c)"
+            >
+              <ng-icon [svg]="icons.faSolidRobot" class="size-4" />
+              AI Kit
+            </button>
+          </div>
+        }
         @if (showInfo()) {
           <!-- `outline-solid` keeps the ring; see the vertical layout's "i" button. -->
           <button
