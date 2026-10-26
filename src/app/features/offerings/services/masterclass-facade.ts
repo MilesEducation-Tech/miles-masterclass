@@ -7,7 +7,7 @@ import {
   sanitizeFileName,
   saveBlob,
 } from '@shared/utils/blob-download';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import {
   RouteParams,
   RouteRequest,
@@ -42,7 +42,6 @@ export class MasterclassFacade {
   private readonly notification = inject(NotificationService);
   private readonly http = inject(ApiClient);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   private readonly dialogs = inject(NgpDialogManager);
   private readonly utils = inject(Utils);
   // Only the cart-removal signal is needed here, and it lives in core so this

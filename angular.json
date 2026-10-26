@@ -116,10 +116,6 @@
                 {
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.development.ts"
-                },
-                {
-                  "replace": "src/app/core/interceptors/dev/dev-interceptors.ts",
-                  "with": "src/app/testing/partner-mock/dev-interceptors.ts"
                 }
               ]
             },
@@ -133,10 +129,6 @@
                 {
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.local.ts"
-                },
-                {
-                  "replace": "src/app/core/interceptors/dev/dev-interceptors.ts",
-                  "with": "src/app/testing/partner-mock/dev-interceptors.ts"
                 }
               ]
             }

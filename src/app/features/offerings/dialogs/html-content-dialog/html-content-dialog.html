@@ -21,7 +21,13 @@
 
     <!-- Content -->
     <div class="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-      <div [innerHTML]="safeHtml"></div>
+      <!-- API/CMS HTML, bound as-is so Angular sanitizes it (no bypass). The sanitizer drops the
+           CMS's inline `style` attributes, so the look they set (14px / 1.6 body, 24px headings,
+           20px gaps, the closing logo divider) is restored here. -->
+      <div
+        class="text-sm leading-[1.6] text-white [&_h3]:mb-5 [&_h3]:text-2xl [&_h3]:leading-[1.2] [&_hr]:my-5 [&_hr]:h-px [&_hr]:border-0 [&_hr]:bg-white [&_img]:mx-auto [&_img]:h-auto [&_img]:w-37.5 [&_p]:mb-5"
+        [innerHTML]="data.htmlContent"
+      ></div>
     </div>
   </div>
 </app-dialog>

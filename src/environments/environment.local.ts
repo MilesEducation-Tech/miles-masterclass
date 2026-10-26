@@ -52,16 +52,6 @@ export const environment = {
     vertical: 'US Accounting',
   },
 
-  /**
-   * Miles360 activity mirror — see `MilesActivity`. Same endpoint in every
-   * environment; the gate is `environment.production`, so this build never
-   * posts regardless of what is configured here.
-   */
-  MILES_ACTIVITY: {
-    url: 'https://hn19ywvvng.execute-api.ap-south-1.amazonaws.com/Miles360/masterclass-activity',
-    apiKey: 'AWqdnzaOrP86BUGsbjQFl6piZFOaBOQzaqaJ8b6b',
-  },
-
   S3_BUCKET_URL: 'https://d1pp0977rsxmiq.cloudfront.net/',
   GCS_URL: 'https://asset.milesmasterclass.com/media/web-app/',
 
@@ -97,7 +87,6 @@ export const environment = {
   },
 
   SUPABASE: {
-    SupabaseUser: 'LOCAL_SUPABASE_USER',
     url: 'https://lodzktvnxuprpogelodm.supabase.co',
     anonKey:
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvZHprdHZueHVwcnBvZ2Vsb2RtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0MzE1NDYsImV4cCI6MjA3ODAwNzU0Nn0.ychDwrqAURLnKyAkP4MHGwpcH7VwE4WcRt2E7oHoEL4',
@@ -123,7 +112,7 @@ export const environment = {
     tenantId: 'f133522a-779a-4a85-bebb-e72cd0daaa1d',
     domainHint: 'f133522a-779a-4a85-bebb-e72cd0daaa1d',
     redirectPath: '/auth/ai-labs-callback',
-    /** localStorage key — kept distinct from the admin client's session. */
+    /** localStorage key for the AI Labs Supabase session. */
     storageKey: 'AI_LABS_SUPABASE_SESSION',
     /** The popup callback tells the opener it's done on this same-origin BroadcastChannel. */
     AI_LABS_CHANNEL: 'AI_LAB_AUTH_LOCAL',

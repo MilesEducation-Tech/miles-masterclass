@@ -62,7 +62,7 @@ const PRODUCTION_HOSTS = new Set([
 /**
  * Public, crawlable static pages (relative to `PREFIX`). Authenticated or
  * no-SEO-value routes (chapters, exams, feedback, payment checkout, mobile
- * webviews, admin, auth) are intentionally excluded and also blocked in
+ * webviews, auth) are intentionally excluded and also blocked in
  * robots.txt — except the public `payment/plan` pricing page, which is
  * included here and carved out of the robots `payment` disallow.
  */
@@ -173,8 +173,9 @@ const COURSE_FETCH_TIMEOUT_MS = 8000;
  * Public masterclass courses, from the web course filter. It is `AllowAny` and
  * takes no `login_type`, so it needs no token.
  *
- * The URL uses the feed's `slug`, which the course page keeps in its canonical
- * (`setupCourseSeo`), so each `<loc>` equals its page's canonical. A row whose
+ * The URL uses the feed's `slug`. The course page builds its canonical from the
+ * same course's name with the same slugify (`setupCourseSeo`), whatever title the
+ * address bar carries, so each `<loc>` equals its page's canonical. A row whose
  * id or slug doesn't look like one is dropped rather than put into a URL.
  */
 async function fetchCourses(): Promise<CourseLoc[]> {
@@ -291,7 +292,6 @@ const PROD_ROBOTS = `User-agent: *
 Allow: /
 
 # Authenticated / no-SEO-value areas
-Disallow: /admin
 Disallow: /api/
 Disallow: /blog-test
 Allow: /*/payment/plan

@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.14.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.14.0...v3.14.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **offerings:** let learners submit course feedback and sanitize content dialogs ([#192](https://github.com/MilesEducation-Tech/miles-masterclass/issues/192)) ([fe7526d](https://github.com/MilesEducation-Tech/miles-masterclass/commit/fe7526d778f86cf1e2ea4131084c2ba68361009c))
+* **seo:** canonicalize course pages to one URL and validate the SEO slug ([#194](https://github.com/MilesEducation-Tech/miles-masterclass/issues/194)) ([f9b7b65](https://github.com/MilesEducation-Tech/miles-masterclass/commit/f9b7b65a00468939ca019e1a249c636f45806185))
+* **seo:** lock seo_pages writes in a standalone migration and drop admin migrations ([#188](https://github.com/MilesEducation-Tech/miles-masterclass/issues/188)) ([4f06260](https://github.com/MilesEducation-Tech/miles-masterclass/commit/4f06260b6e6259f65beb905db963461091c5c8b2))
+* **shared:** ask signed-out visitors to sign in before bookmarking ([#191](https://github.com/MilesEducation-Tech/miles-masterclass/issues/191)) ([4b1f6ab](https://github.com/MilesEducation-Tech/miles-masterclass/commit/4b1f6abdb3e67a3d139dea1a422a2fd9b6b45591))
+
 ## [3.14.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.13.1...v3.14.0) (2026-10-22)
 
 

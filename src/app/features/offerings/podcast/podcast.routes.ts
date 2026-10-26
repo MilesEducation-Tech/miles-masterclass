@@ -2,6 +2,7 @@ import { Route } from '@angular/router';
 import { authGuard } from '@core/guards/auth/auth-guard';
 import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
 import { ChapterFacade } from '@features/offerings/services/chapter-facade';
+import { MasterclassFacade } from '@features/offerings/services/masterclass-facade';
 import { Podcast } from '@features/offerings/podcast/pages/podcast/podcast';
 
 /**
@@ -14,6 +15,9 @@ export const podcastRoutes: Route[] = [
   { path: '', component: Podcast },
   {
     path: ':courseId/:courseTitle',
+    // Podcast is the last user of the legacy `MasterclassFacade` (masterclass moved to
+    // `CourseDetailFacade`). One instance for the course page and its chapters.
+    providers: [MasterclassFacade],
     children: [
       {
         path: '',

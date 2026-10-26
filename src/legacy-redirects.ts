@@ -193,10 +193,6 @@ const RULES: readonly Rule[] = [
   [/^\/partnerships\/hscpa\/?$/, () => '/{c}/{p}/partners/hawaii-society-of-cpas', true],
   [/^\/partnerships\/?$/, () => '/{c}/{p}', false],
 
-  // ---- admin section renames (internal; 307) -----------------------------
-  [/^\/admin\/dashboard\/reports\/?$/, () => '/admin/reports/users', false],
-  [/^\/admin\/dashboard\/seo-manager\/?$/, () => '/admin/seo', false],
-
   // ---- retired auth routes (301) -----------------------------------------
   // Sign-in is OTP-only against the MilesCAIRA Accounts API, so there is no
   // password to forget; and `auth-identify/` answers identically for a known
@@ -211,7 +207,6 @@ function isLegacyPath(path: string): boolean {
     /^\/(accounting|partnerships)(\/|$)/.test(path) ||
     // v3-prefixed but stale `premiere` name: /<cc>/accounting/premiere/...
     /^\/[a-z]{2}\/accounting\/premiere(\/|$)/.test(path) ||
-    /^\/admin\/dashboard\/(reports|seo-manager)\/?$/.test(path) ||
     /^\/auth\/(signup|forget-password)\/?$/.test(path)
   );
 }
