@@ -65,26 +65,6 @@ export class SectionFiltersFacade {
     this.cache.set(key, stream);
     return stream;
   }
-
-  /**
-   * Drop cached filter universes so subsequent `fetch` calls hit the network.
-   * Call with no args to clear everything, or pass `courseType`/`section` to
-   * scope the eviction. Useful when the backend signals the universe changed
-   * (e.g. an instructor was added) without forcing a full page reload.
-   */
-  clear(courseType?: ApiCourseType, section?: SectionApiKey): void {
-    if (!courseType && !section) {
-      this.cache.clear();
-      return;
-    }
-    const cPrefix = courseType ?? '';
-    for (const key of Array.from(this.cache.keys())) {
-      const [c, s] = key.split(':');
-      if (courseType && c !== cPrefix) continue;
-      if (section && s !== section) continue;
-      this.cache.delete(key);
-    }
-  }
 }
 
 function isAllEmpty(data: Partial<LibraryFiltersData>): boolean {

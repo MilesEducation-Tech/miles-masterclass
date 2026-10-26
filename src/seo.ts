@@ -173,8 +173,9 @@ const COURSE_FETCH_TIMEOUT_MS = 8000;
  * Public masterclass courses, from the web course filter. It is `AllowAny` and
  * takes no `login_type`, so it needs no token.
  *
- * The URL uses the feed's `slug`, which the course page keeps in its canonical
- * (`setupCourseSeo`), so each `<loc>` equals its page's canonical. A row whose
+ * The URL uses the feed's `slug`. The course page builds its canonical from the
+ * same course's name with the same slugify (`setupCourseSeo`), whatever title the
+ * address bar carries, so each `<loc>` equals its page's canonical. A row whose
  * id or slug doesn't look like one is dropped rather than put into a URL.
  */
 async function fetchCourses(): Promise<CourseLoc[]> {

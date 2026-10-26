@@ -62,7 +62,6 @@ export class WebinarHero {
    */
   readonly bucket = input<WebinarBucket>('highlight');
   readonly isRegistering = input(false);
-  readonly isLockedElsewhere = input(false);
 
   readonly register = output<string>();
   readonly join = output<string>();
@@ -82,7 +81,6 @@ export class WebinarHero {
       now: this.now(),
       bucket: this.bucket(),
       isRegistering: this.isRegistering(),
-      isLockedElsewhere: this.isLockedElsewhere(),
     }),
   );
 

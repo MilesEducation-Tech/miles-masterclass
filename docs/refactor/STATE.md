@@ -55,6 +55,94 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - **Open:** Coming Soon is held back (no rows on UAT, no documented shape); a signed-in capture would confirm the
     row shape.
 
+- 🟡 **2026-10-26, NON-REFACTOR — MIL-126 (SEO bug), course canonicals + SEO slug guard. DONE, GATES GREEN,
+  UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md` T7), on `fix/MIL-126-course-canonical` off `master`
+  (`7aae2472`).
+  - **Open question answered on UAT:**
+    - `course-detail/` still sends no slug.
+    - For all 64 masterclass courses, `slugify(course_details.name)` equals the sitemap feed's `slug`, so no
+      backend change is needed.
+    - The sitemap feed (`filter/?content_type=masterclass_course`) still answers: 64 rows, one page.
+  - **Canonical:** `setupCourseSeo` builds the canonical (and so `og:url`) from the URL until the course loads,
+    then from the record: `…/<course.id>/<Utils.slugify(name | title)>`. It covers masterclass, podcast and
+    micro-learning. The visible URL isn't redirected.
+  - **Slug guard:** `SupabaseSeo.getBySlug` refuses a slug that isn't word characters and `-` segments, so URL
+    text never reaches PostgREST's `.or()`. The `src/seo.ts` sitemap comment now says how the canonical matches.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.65 kB,
+    only `ai-labs.css`.
+  - **SSR (`build:prod` on :4000):** `masterclass/9cf29a8c…/` with the right slug, `buy-cheap-pills-here`,
+    `x%2Cpage_slug.eq.home` and `x(y)` all answer 200 with canonical and `og:url` equal to the sitemap `<loc>`.
+    The comma case is refused before the query and gets the fallback title; no server errors.
+  - **Browser:** hydration keeps the corrected canonical. On dev, landing → course A → back → course B keeps og at
+    7 / 8 / 7 / 8 and one canonical.
+
+- 🟡 **2026-10-26, NON-REFACTOR — MIL-125 (tech debt), facade scoping + dead facade code. DONE, GATES GREEN,
+  UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md` T6), on `refactor/MIL-125-facade-scoping` off `master`
+  (`7aae2472`).
+  - **`FeedbackFacade`:** was provided on 3 routes and on the component. The component entry is dropped, so the
+    route entries apply (AGENTS §3: route-scoped facades live in route `providers`). This is the reverse of the
+    ticket's wording, with the same result.
+  - **`MasterclassFacade`:** moved from `features.routes.ts` (above every offering) to podcast's
+    `:courseId/:courseTitle`. Grep shows its only real users are `podcast-course` (hero, chapter list, resources)
+    and `podcast-chapter` (`video-chapter`). The micro-learning and masterclass hits are comments.
+  - **`AuthFacade`:** moved from the auth shell to the `login` route. `Login` keeps its `clear()` on destroy:
+    without router injector auto-cleanup, a route's injector outlives the page wherever the provider sits. The
+    ticket's premise was wrong.
+  - **Dead code removed:**
+    - `MasterclassFacade.route`, `ChapterFacade.router`
+    - `WebinarFacade.isRegistering()`, `SectionFiltersFacade.clear()`
+    - the unbound `isLockedElsewhere` inputs on webinar-hero and webinar-card
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.60 kB,
+    only `ai-labs.css`; `build-storybook` ✔.
+  - **Verified (dev, UAT):**
+    - `/podcast/190/think-plan-grow-with-ai` builds the page. `course-resources` renders and `MasterclassFacade`
+      runs its load, which then fails on UAT's 404 `v2/podcast/details/` (pre-existing). No injector error.
+    - Login renders, and leaving and coming back works.
+    - Webinar shows no hero or cards (UAT has no webinars).
+  - **Noted, not changed:** the login phone number survives leaving and returning because `AuthFacade.clear()`
+    resets `otpModel` but not `authModel`. It was the same on `master`.
+
+- 🟡 **2026-10-23, NON-REFACTOR — MIL-122 (bug), feedback gate + content-dialog sanitizing + tabnabbing. DONE,
+  GATES GREEN, UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md` T3), on `fix/MIL-122-feedback-gate-and-html-sanitize`
+  off `master` (`7aae2472`). MIL-120/121 are committed on their own branches.
+  - **Feedback gate:** `course-feedback.ts` gated on an inert `currentUser = signal(null)`, so podcast, webinar and
+    micro-learning feedback always opened "Complete Profile". It now uses `AuthSession.isProfileCompleted() === false`,
+    the same rule as `CourseEvaluationFacade.submit` (unknown goes through). The never-rendered user-info block is
+    removed.
+  - **Content dialog:** `HtmlContentDialog` dropped `bypassSecurityTrustHtml`, so the HTML is now sanitized by
+    Angular. The sanitizer strips the CMS's inline `style`s, so the container restores them with Tailwind
+    descendant utilities. Measured: `h3` 24px/20px gap, `p` 14px/1.6/20px gap, logo 150px.
+  - **Tabnabbing:** `course-resources.ts` `window.open(..., 'noopener')`.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.66 kB,
+    only `ai-labs.css`.
+  - **Verified (dev, UAT data):** "AI: It's All About the Prompt" glossary renders sanitized, with no scripts. The
+    console's "sanitizing HTML stripped some content" is the `style` attributes.
+  - **Not verified in the browser:** the feedback submit, which needs a signed-in learner. Steps are in the hand-off.
+
+- 🟡 **2026-10-23, NON-REFACTOR — MIL-123 (bug), signed-out bookmark POSTs. DONE, GATES GREEN, UNCOMMITTED**
+  (`prompts/review-2026-10-23-tickets.md` T4), on `fix/MIL-123-bookmark-sign-in-guard` off `master` (`7aae2472`).
+  - **Change:** `Utils.toggleBookmarkCourse` checks `AuthSession.isAuthenticated()` first. When signed out it sends no
+    request, redirects to `/auth/login?redirect=<current url>` (the same as `CourseDetailFacade.toggleBookmark`) and
+    returns `EMPTY`. All 7 callers react only to a successful response, so none changes.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.59 kB,
+    only `ai-labs.css`.
+  - **Not verified in the browser:** on UAT today, no page renders the cards that reach this path. Podcast,
+    micro-learning, UAE CAIRA home and the partner pages show no `app-hover`/`app-vertical`/`app-horizontal`/
+    `app-coming-soon`. The dev build's `ng.getComponent` only exposes `app-root`, so it couldn't be called from the
+    console either.
+
+- 🟡 **2026-10-26, NON-REFACTOR — MIL-124 (security), client-bundle secrets. DONE, GATES GREEN, UNCOMMITTED**
+  (`prompts/review-2026-10-23-tickets.md` T5), on `chore/MIL-124-remove-client-secrets` off `master` (`7aae2472`).
+  - **Removed:**
+    - `MILES_ACTIVITY` (AWS API Gateway URL + `x-api-key`) from the 3 environment files
+    - `PAYMENT_TEST_SSN` from `environment.ts`
+    - the dead `core/services/miles-activity/` (no importers)
+  - The baseline is pruned (−1 entry).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.60 kB,
+    only `ai-labs.css`.
+  - **Bundle scan:** the old key and SSN values match 0 files in `dist/` and `src/`.
+  - **Still open (backend):** the key is in shipped bundles and in git history, so it must be rotated.
+
 - 🟡 **2026-10-23, NON-REFACTOR — MIL-120 (remove admin) + MIL-121 (seo_pages RLS). PLAN APPROVED, IN PROGRESS,
   UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md`, T1 + T2), working tree on `fix/MIL-121-seo-pages-rls` off
   `master` (`7aae2472`). Commit T2's paths there, then `git switch -c chore/MIL-120-remove-admin` for the rest.
@@ -5556,6 +5644,16 @@ These are environment and product observations the repair surfaced. None changed
 - 2026-10-26 · NON-REFACTOR · **MIL-127 wording pass**: comments no longer point at the old app ("legacy button", "live" rows); the commit's added lines and new files name neither the old app nor the public site · Prettier ✔
 
 - 2026-10-26 · NON-REFACTOR · **MIL-127 built** (uncommitted, on `fix/MIL-127-masterclass-signed-in-rails`): signed-in rails from `library/` + `completed-course-section/`, AI Kit moved to `shared/services/course-ai-kit.ts` and on for every masterclass rail, `UtilsDialog` close circle + full-width panel · tsc 0, lint 0 errors (98 warnings), structure ✔, Prettier ✔, build:prod 226.91 kB · headless scenarios pass; hand-test `.playwright-mcp/manual-mil127.js` · Coming Soon story repaired for a preview (not MIL-127; keep out of its commit)
+
+- 2026-10-26 · NON-REFACTOR · **MIL-126 built** (uncommitted): course canonical from the record (`<id>/<slugify(name)>`, equal to the sitemap URL for all 64 UAT courses), `getBySlug` refuses unsafe slugs · tsc 0, lint 0 errors, structure ✔, build:prod 240.65 kB · SSR + browser canonical checks pass
+
+- 2026-10-26 · NON-REFACTOR · **MIL-125 built** (uncommitted): FeedbackFacade provided once per route, MasterclassFacade scoped to podcast, AuthFacade on `login`, dead facade members removed · tsc 0, lint 0 errors, structure ✔, build:prod 240.60 kB, storybook ✔ · podcast page and login checked in browser
+
+- 2026-10-23 · NON-REFACTOR · **MIL-122 built** (uncommitted): feedback profile gate on `AuthSession`, `HtmlContentDialog` sanitized (CMS styles restored with utilities), resource links `noopener` · tsc 0, lint 0 errors, structure ✔, build:prod 240.66 kB · glossary checked in browser
+
+- 2026-10-23 · NON-REFACTOR · **MIL-123 built** (uncommitted): `toggleBookmarkCourse` redirects signed-out visitors to sign-in and sends nothing · tsc 0, lint 0 errors, structure ✔, build:prod 240.59 kB · not clickable on UAT (no card lists render)
+
+- 2026-10-26 · NON-REFACTOR · **MIL-124 built** (uncommitted): Miles360 API key, test SSN and the dead `MilesActivity` removed · tsc 0, lint 0 errors, structure ✔ (pruned), build:prod 240.60 kB · dist/src scan: 0 hits · backend must rotate the key
 
 - 2026-10-23 · NON-REFACTOR · **MIL-120 + MIL-121 built** (uncommitted, on `fix/MIL-121-seo-pages-rls`): admin panel and everything only it used removed, `/admin/**` → 404 + noindex, Supabase client stateless; admin migrations deleted, `seo_pages` RLS in its own migration · tsc 0, lint 0 errors (98 warnings), structure ✔ (pruned), Prettier ✔, build:prod 226.96 kB (was 240.6) · SSR: admin URLs 404, SEO rows match live, robots has no /admin · scratch Postgres: anon writes rejected
 

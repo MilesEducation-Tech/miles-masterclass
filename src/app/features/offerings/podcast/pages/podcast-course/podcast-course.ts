@@ -7,9 +7,6 @@ import { PodcastCourseHeroSkeleton } from '@shared/components/skeleton/podcast-c
 import { Faq } from '@shared/components/faq/faq';
 import { AppDownloadPrompt } from '@features/offerings/services/app-download-prompt';
 import { setupCourseSeo } from '@shared/utils/seo/course-seo-setup';
-// NOTE: Podcast detail currently shares MasterclassFacade with the masterclass
-// page. That cross-feature reuse is pre-existing — see code-review notes; out
-// of scope for this SEO pass.
 import { MasterclassFacade } from '../../../services/masterclass-facade';
 import { PodcastCourseHero } from '../../components/podcast-course-hero/podcast-course-hero';
 
