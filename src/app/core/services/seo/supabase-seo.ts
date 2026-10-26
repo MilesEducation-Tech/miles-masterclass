@@ -6,6 +6,8 @@ import { Logger } from '../logger/logger';
 import { Supabase } from '../supabase/supabase';
 
 const TABLE_NAME = 'seo_pages';
+/** Word-character and `-` segments joined by `/`: all a real page slug is (`Utils.slugify` keeps `_`). */
+const SAFE_SLUG = /^[\w-]+(\/[\w-]+)*$/;
 const STORAGE_BUCKET = 'seo-images';
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 // SVG intentionally excluded — it can carry inline `<script>` and would
@@ -71,10 +73,13 @@ export class SupabaseSeo {
    * `slug_pattern` arm stays bounded by the URL's first segment so the query
    * remains index-friendly, with the precise structural match done in JS.
    *
-   * `slug` is always slug-safe (`[a-z0-9-]` segments joined by `/`), so it
-   * carries no `,`/`.`/`()` that would confuse PostgREST's `.or()` grammar.
+   * The slug goes into PostgREST's `.or()` grammar, where `,` `.` `(` `)` are
+   * syntax, and a course page's title segment is whatever the URL says. So a
+   * slug that isn't `SAFE_SLUG` never reaches the query: it has no row, and the
+   * page keeps its fallback SEO.
    */
   async getBySlug(slug: string): Promise<SeoPage | null> {
+    if (!SAFE_SLUG.test(slug)) return null;
     const client = await this.getClientSafe();
     if (!client) return null;
 

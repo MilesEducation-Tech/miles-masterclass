@@ -11,6 +11,7 @@ import {
 } from '@core/models/seo.constants';
 import { SeoConfig } from '@core/models/seo.models';
 import { SeoManager } from '@core/services/seo/seo-manager';
+import { Utils } from '@shared/services/utils';
 import { courseToSeoConfig, type CourseSeoKind, type CourseSeoSource } from './course-seo-config';
 import { routeUrlToCanonicalUrl, routeUrlToSeoSlug } from './seo-route-slug';
 
@@ -49,6 +50,10 @@ export interface CourseSeoSetupOptions {
  * 5. On destroy, `seoManager.reset()` clears the page's meta tags so the
  *    next route doesn't inherit stale OG/Twitter values.
  *
+ * The canonical comes from the URL until the course loads, then from the
+ * course itself (`courseUrl`), so every title text after the id collapses onto
+ * the one URL the sitemap lists.
+ *
  * The component remains responsible for triggering the actual
  * `facade.loadCourse(...)` call — that's a facade concern, not a SEO one.
  */
@@ -57,6 +62,7 @@ export function setupCourseSeo({ kind, courseTitle, courseDetails }: CourseSeoSe
   const router = inject(Router);
   const pendingTasks = inject(PendingTasks);
   const destroyRef = inject(DestroyRef);
+  const utils = inject(Utils);
   const isServer = isPlatformServer(inject(PLATFORM_ID));
 
   const brandName = COURSE_BRAND_NAMES[kind];
@@ -86,7 +92,10 @@ export function setupCourseSeo({ kind, courseTitle, courseDetails }: CourseSeoSe
     if (key === lastSeoKey) return;
     lastSeoKey = key;
 
-    const canonicalUrl = routeUrlToCanonicalUrl(url, environment.SITE_URL);
+    const canonicalUrl = routeUrlToCanonicalUrl(
+      course ? courseUrl(url, course, (text) => utils.slugify(text)) : url,
+      environment.SITE_URL,
+    );
     const fallback = course
       ? courseToSeoConfig(course, kind, canonicalUrl)
       : urlDerivedSeo(courseTitle(), canonicalUrl, brandName, verb);
@@ -105,6 +114,21 @@ export function setupCourseSeo({ kind, courseTitle, courseDetails }: CourseSeoSe
   // Clear any meta tags this page wrote so the next route doesn't inherit
   // stale OG/Twitter values from the previous course.
   destroyRef.onDestroy(() => seoManager.reset());
+}
+
+/**
+ * The course page's own URL rebuilt from its record: the last two segments
+ * (`:courseId/:courseTitle`) become the record's id and its slugified name. The
+ * sitemap (`src/seo.ts`) lists `masterclass/<id>/<feed slug>`, and the feed's
+ * slug is the same slugify of the same name: checked on UAT for all 64
+ * masterclass courses on 2026-10-26. A legacy numeric link canonicalizes onto
+ * the course's UUID the same way.
+ */
+function courseUrl(url: string, course: CourseSeoSource, slugify: (text: string) => string) {
+  const segments = url.split(/[?#]/)[0].split('/');
+  const name = 'name' in course ? course.name : course.title;
+  segments.splice(-2, 2, String(course.id), slugify(name));
+  return segments.join('/');
 }
 
 /**
