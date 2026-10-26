@@ -46,10 +46,11 @@ export class MasterclassCourseCard {
   readonly showInfo = input(false);
 
   /**
-   * The "AI Kit" button, vertical layout only, as on the shared `app-vertical`,
-   * for a page that opens the kit on `aiKit` (the course library). Off by
-   * default for the same reason as `showInfo`. Shown only on a course that has
-   * a kit.
+   * The "AI Kit" button, for a page that opens the kit on `aiKit` (the course
+   * library, the masterclass page). In the vertical layout it shares the row
+   * with an icon-only trailer, as on the shared `app-vertical`; in the
+   * horizontal one it sits between Trailer and "i". Off by default for the same
+   * reason as `showInfo`. Shown only on a course that has a kit.
    */
   readonly showAiKit = input(false);
 

@@ -11,6 +11,17 @@
       <app-slider-skeleton />
     }
   </section>
+  <!-- Signed in only: Continue Watching, Recommended, Complimentary, Because You Watched. -->
+  @if (library.railsAboveTracks().length) {
+    <div class="flex flex-col w-11/12 mx-auto md:space-y-20 space-y-10 md:mb-20 mb-10">
+      @for (rail of library.railsAboveTracks(); track rail.id) {
+        <ng-container
+          [ngTemplateOutlet]="railTpl"
+          [ngTemplateOutletContext]="{ $implicit: rail }"
+        />
+      }
+    </div>
+  }
   <section
     id="masterclass-tracks"
     class="flex flex-col w-11/12 mx-auto md:space-y-20 space-y-10 scroll-mt-20"
@@ -35,8 +46,10 @@
                 [course]="course"
                 [layout]="'horizontal'"
                 [showInfo]="true"
+                [showAiKit]="true"
                 (trailer)="openTrailer($event)"
                 (info)="openCourseInfo($event)"
+                (aiKit)="openAiKit($event)"
               />
             </ng-template>
           </app-carousel>
@@ -75,7 +88,57 @@
       }
     }
   </section>
+  <!-- Signed in only: My List and the completed courses. -->
+  @if (library.railsBelowTracks().length) {
+    <div class="flex flex-col w-11/12 mx-auto md:space-y-20 space-y-10 md:mt-20 mt-10">
+      @for (rail of library.railsBelowTracks(); track rail.id) {
+        <ng-container
+          [ngTemplateOutlet]="railTpl"
+          [ngTemplateOutletContext]="{ $implicit: rail }"
+        />
+      }
+    </div>
+  }
   <section id="masterclass-faq" class="scroll-mt-20">
     <app-faq [standalone]="false" />
   </section>
 </div>
+
+<!-- One signed-in rail: the track rails' carousel, card and placeholder. -->
+<ng-template #railTpl let-rail>
+  <section [id]="rail.id" class="scroll-mt-20">
+    @defer (on viewport; prefetch on idle) {
+      <app-carousel
+        [cards]="rail.courses"
+        [heading]="{ text: rail.heading, subText: '' }"
+        [swiperConfig]="swiperConfigEven"
+      >
+        <ng-template let-course>
+          <app-masterclass-course-card
+            [course]="course"
+            [layout]="'horizontal'"
+            [showInfo]="true"
+            [showAiKit]="true"
+            (trailer)="openTrailer($event)"
+            (info)="openCourseInfo($event)"
+            (aiKit)="openAiKit($event)"
+          />
+        </ng-template>
+      </app-carousel>
+    } @placeholder {
+      <div class="animate-pulse" aria-hidden="true">
+        <div class="h-11 md:h-[54px] w-72 max-w-full rounded bg-white/5"></div>
+        <div class="mt-4 pb-10 flex gap-[30px] overflow-hidden">
+          @for (i of [1, 2, 3]; track i) {
+            <div
+              class="shrink-0 basis-[calc((100%-3px)/1.1)] md:basis-[calc((100%-30px)/2)] lg:basis-[calc((100%-54px)/2.8)]"
+            >
+              <div class="aspect-video rounded-lg bg-muted"></div>
+              <div class="h-[140px]"></div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </section>
+</ng-template>
