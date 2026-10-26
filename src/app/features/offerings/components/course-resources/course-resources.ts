@@ -89,7 +89,7 @@ export class CourseResources {
     } else if (resource.action === 'ai-kit') {
       this.masterclassFacade.openAdditionalResources();
     } else if (resource.url) {
-      window.open(resource.url, '_blank');
+      window.open(resource.url, '_blank', 'noopener');
     }
   }
 
