@@ -6,8 +6,7 @@ import { AuthSession } from '../../services/auth-session/auth-session';
  * Requires a signed-in learner, and preserves where they were going.
  *
  * `CanMatch` rather than `CanActivate` so a guarded lazy chunk is never even
- * downloaded by a user who cannot reach it — the same choice the admin guards
- * make.
+ * downloaded by a user who cannot reach it.
  *
  * The redirect target comes from the in-flight navigation, NOT from the
  * `segments` argument: on a child route `segments` holds only this route's own

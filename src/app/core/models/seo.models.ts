@@ -1,4 +1,4 @@
-import { SEO_BRAND_DEFAULTS, SeoPageType } from './seo.constants';
+import { SeoPageType } from './seo.constants';
 
 /** Runtime-validated values for the `og:type` meta. */
 const OG_TYPES: readonly NonNullable<OpenGraph['type']>[] = [
@@ -203,45 +203,5 @@ export function seoPageToConfig(page: SeoPage): SeoConfig {
       imageAlt: page.twitter_image_alt || undefined,
     },
     jsonLd: page.json_ld && Object.keys(page.json_ld).length > 0 ? page.json_ld : undefined,
-  };
-}
-
-/**
- * Create a blank SeoPage with defaults.
- */
-export function createDefaultSeoPage(
-  slug: string,
-  name: string,
-  type: SeoPageType = 'static',
-): SeoPage {
-  return {
-    page_slug: slug,
-    page_name: name,
-    page_type: type,
-    is_active: true,
-    slug_pattern: null,
-    title: '',
-    description: '',
-    keywords: [],
-    robots: SEO_BRAND_DEFAULTS.robots,
-    canonical_url: '',
-    author: '',
-    publisher: SEO_BRAND_DEFAULTS.publisher,
-    og_title: '',
-    og_description: '',
-    og_image: '',
-    og_type: SEO_BRAND_DEFAULTS.ogType,
-    og_site_name: SEO_BRAND_DEFAULTS.ogSiteName,
-    og_locale: SEO_BRAND_DEFAULTS.ogLocale,
-    twitter_card: SEO_BRAND_DEFAULTS.twitterCard,
-    twitter_site: SEO_BRAND_DEFAULTS.twitterSite,
-    twitter_creator: SEO_BRAND_DEFAULTS.twitterCreator,
-    twitter_title: '',
-    twitter_description: '',
-    twitter_image: '',
-    twitter_image_alt: '',
-    json_ld: {},
-    updated_by: 'system',
-    notes: '',
   };
 }

@@ -8,28 +8,12 @@ import { HttpContext, HttpContextToken, HttpHeaders, HttpParams } from '@angular
 export const SKIP_ERROR_NOTIFICATION = new HttpContextToken<boolean>(() => false);
 
 /**
- * When set to `true` on a request's HttpContext, the request is treated as an
- * admin-panel call: the public-app auth interceptor skips its handling, and
- * the admin token interceptor attaches the Supabase access token instead.
- */
-export const IS_ADMIN_REQUEST = new HttpContextToken<boolean>(() => false);
-
-/**
  * When set to `true` on a request's HttpContext, NO `Authorization` header is
- * attached by any interceptor — neither the public-app JWT from cookies nor
- * the Supabase admin token. Use this for backend endpoints that do their own
+ * attached — not even the public-app JWT from cookies. Use this for backend endpoints that do their own
  * auth (or are intentionally open) and where attaching an unrelated token
  * would cause a 401.
  */
 export const SKIP_AUTH_TOKEN = new HttpContextToken<boolean>(() => false);
-
-/**
- * When set to `true` on a request's HttpContext, an admin request is NOT
- * recorded in the admin audit log. Only for calls that would be pure noise —
- * polling, or a request the audit logger itself makes. Never set it on a
- * mutation: the point of the log is that writes cannot opt out quietly.
- */
-export const SKIP_AUDIT_LOG = new HttpContextToken<boolean>(() => false);
 
 /**
  * When set to `true` on a request's HttpContext, the request is treated as a

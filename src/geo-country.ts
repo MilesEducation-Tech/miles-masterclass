@@ -54,7 +54,7 @@ export function geoRootRedirect(req: Request, res: Response, next: NextFunction)
 
 /**
  * Hands the edge's country to the browser in the `geo_country` cookie, so client-rendered routes
- * (`auth/**`, `payment/**`, admin) and in-app navigations resolve the same country the server did.
+ * (`auth/**`, `payment/**`) and in-app navigations resolve the same country the server did.
  * Register it in front of the Angular handler only, so static assets never carry a `Set-Cookie`;
  * it is skipped when the request already holds the same value, so repeat visits carry none either.
  * Not `HttpOnly`: the browser has to read it. It holds a country code, nothing personal.

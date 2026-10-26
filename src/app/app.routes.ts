@@ -16,8 +16,20 @@ export const routes: Routes = [
   },
 
   {
+    // The admin panel was removed (MIL-120). Its old URLs answer 404 here:
+    // without this, `/admin/users` matches `:country/:profession_type` below and
+    // the profession guard redirects it home, a soft 404.
     path: 'admin',
-    loadChildren: () => import('@admin/admin.routes').then((m) => m.adminRoutes),
+    children: [
+      {
+        path: '**',
+        data: { notFound: true },
+        loadComponent: () =>
+          import('@features/page-not-found/pages/page-not-found/page-not-found').then(
+            (m) => m.PageNotFound,
+          ),
+      },
+    ],
   },
   {
     path: 'page-not-found',

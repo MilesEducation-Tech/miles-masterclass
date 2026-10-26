@@ -1,4 +1,4 @@
-import { PlatformLocation, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import {
   DOCUMENT,
   InjectionToken,
@@ -53,12 +53,9 @@ const LANGUAGE_KEY = makeStateKey<string>('language');
  * - Server: `lang` cookie → `Accept-Language` (q-ordered) → `en`, then saved to `TransferState`.
  * - Browser: the server's answer from `TransferState` (every server-rendered page) → `lang` cookie
  *   → `navigator.languages` → `en`. The last three only matter on client-rendered routes
- *   (`auth/**`, `payment/**`, admin), which have no server render to inherit from.
+ *   (`auth/**`, `payment/**`), which have no server render to inherit from.
  *
  * The country plays no part: any language can be used in any country.
- *
- * The admin panel is always English: it is internal, untranslated, and laid out left-to-right. So a
- * page load under `/admin` resolves `en` whatever the cookie or browser says.
  */
 @Service()
 export class LanguageContext {
@@ -69,8 +66,6 @@ export class LanguageContext {
   private readonly transferState = inject(TransferState);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly document = inject(DOCUMENT);
-  // `PlatformLocation` holds the requested path on the server too.
-  private readonly isAdmin = inject(PlatformLocation).pathname.startsWith('/admin');
 
   readonly current: Language = this.resolve();
 
@@ -91,7 +86,6 @@ export class LanguageContext {
   }
 
   private resolve(): Language {
-    if (this.isAdmin) return DEFAULT_LANGUAGE;
     const cookie = toLanguage(this.storage.getCookie(LANGUAGE_COOKIE), this.enabled);
 
     if (!this.isBrowser) {
