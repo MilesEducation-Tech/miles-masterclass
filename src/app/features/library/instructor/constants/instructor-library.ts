@@ -5,7 +5,7 @@ import { InstructorCourseTab } from '@features/library/instructor/models/instruc
 /**
  * The instructor library's one read. Public (`AllowAny`, the learner token adds
  * only bookmark state); `course_type` is required and anything undeclared is a
- * 400. Built whole off `BASE_API_URL`, like `COURSE_LIBRARY_URL`.
+ * 400. Built whole off `BASE_API_URL`, like `COURSE_LIBRARY_LIST_URL`.
  */
 export const INSTRUCTOR_LIBRARY_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/all-instructors-page/`;
 

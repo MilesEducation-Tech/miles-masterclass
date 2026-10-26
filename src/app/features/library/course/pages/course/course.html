@@ -10,7 +10,18 @@
         (selectionChange)="facade.setSelection($event)"
         (clear)="facade.clearSelection()"
       />
-    } @else if (facade.isLoading()) {
+    } @else if (facade.filtersError()) {
+      <p class="text-sm text-muted-foreground">
+        Filters couldn't load.
+        <button
+          type="button"
+          class="cursor-pointer underline underline-offset-2 hover:text-foreground"
+          (click)="facade.reload()"
+        >
+          Try again
+        </button>
+      </p>
+    } @else if (facade.filtersLoading()) {
       <div class="text-sm text-muted-foreground">Loading filters…</div>
     }
   </aside>

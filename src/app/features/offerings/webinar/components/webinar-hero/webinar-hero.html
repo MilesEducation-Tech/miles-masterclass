@@ -103,7 +103,7 @@
             <p
               class="inline-flex w-max items-center rounded-xl bg-muted px-4 py-2 text-sm font-semibold text-white"
             >
-              {{ session }}
+              {{ session }} ({{ w.start_date_time | localTimeZone }})
             </p>
           }
 
@@ -238,7 +238,7 @@
             {{ phaseCaption() }}
           </p>
           <p class="mt-1.5 text-lg font-semibold text-accent-premium md:text-xl">
-            {{ session }}
+            {{ session }} ({{ w.start_date_time | localTimeZone }})
           </p>
         }
 

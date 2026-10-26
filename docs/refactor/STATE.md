@@ -487,6 +487,54 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
       download stories were the `TOAST_COMPONENT` failure. A full probe of all 220 stories (CDP,
       error-display check) is running in the background to confirm the global change regresses
       nothing. Lint 0 errors; `build-storybook` ✔.
+- 🟡 **2026-10-22, NON-REFACTOR — MIL-119 (bug), course library "Failed to Load Courses". PLAN APPROVED, DONE,
+  GATES GREEN, UNCOMMITTED** (`prompts/course-library-filter-list.md`), on `fix/MIL-119-course-library-filter-api`
+  off `master` (`db43a117`, which has MIL-118 #180).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.62 kB,
+    only `ai-labs.css`.
+  - **Verified (dev 4101, live UAT, Playwright):**
+    - **First load:** 6 groups (Additional Category hidden, empty on UAT); 12 cards; scrolling loads all 64.
+    - **Filters:** an instructor 1, Level 1 22, a track 21, CPE 2–5 63, AI Kit 5 (read from `filter/`); AI Kit +
+      CPE under 2 shows "No courses found."; Clear All restores 64.
+    - **Tabs:** Podcast drops the AI Kit group and selection, keeps Level 1 (badge 1), and shows "No courses
+      found."; Micro Learning has no error; Masterclasses brings AI Kit back.
+    - **Requests:** 38, all 200. The sidebar `filter/?page_size=1` is read once. No `course_type`/`login_type`
+      goes to `filter/`, and no `content_type` to the list route.
+    - **Errors (stubbed 500, browser only):** list → "Failed to Load Courses", and Try Again recovers. Sidebar →
+      "Filters couldn't load. Try again" with the cards still showing, and it recovers.
+    - **Layout and sign-in:** 375 drawer has the same 6 groups, badge "Filter 1", no overflow. Signed in: the same
+      two reads, `pre_login`. 768 has no overflow.
+  - **Instructor library** also sends `course_type` (to `all-instructors-page/`), which still answers 200, so it's
+    unaffected.
+  - **Cause:** the backend dropped `course_type` from `web-api/v1/masterclass/filter/` (now a 400) and added
+    `filter-based-masterclass-list/` (requires `course_type` + `login_type`, rejects `content_type`).
+  - **Plan:** the sidebar from `filter/?page_size=1` once; the cards from the new list route with `pre_login`; an
+    AI Kit selection reads `filter/?content_type=ai_kit` instead, and the AI Kit group shows on Masterclasses only.
+  - MIL-118 merged as #180.
+
+- 🟡 **2026-10-22, NON-REFACTOR — MIL-118 (bug), webinar session times in the viewer's local timezone. PLAN
+  APPROVED, DONE, GATES GREEN, UNCOMMITTED** (`prompts/webinar-local-timezone.md`), on
+  `fix/MIL-118-webinar-local-timezone` off `master` (`5fa11a28`).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.63 kB.
+  - **Verified (dev 4101, browser zone emulated; UAT has no upcoming webinars, so the feed was stubbed in the
+    browser only):**
+    - 12:00Z reads 5:30 PM (IST), 8:00 AM (EDT), 4:00 PM (GST), 1:00 PM (BST) on the hero, the pill and the
+      mobile label.
+    - 23:30Z on 30 Oct reads 31st Oct in India and 30th Oct in New York, including the guest row's month.
+    - 5 Nov reads EST in New York.
+    - The home ticket and the webinar hero print the same label.
+    - No overflow at 375 / 768 / 1440.
+    - London in winter prints "GMT+00:00": Playwright's Chromium has no long name for it, and the shared pipe
+      passes offsets through. Pre-existing pipe behaviour.
+  - **SSR (`TZ=UTC`, `pnpm build` + `serve:ssr`, real past webinar):** the server HTML reads "11:45 AM (UTC)";
+    the browser hydrates it to "5:15 PM (IST)" / "7:45 AM (EDT)" with no hydration warning.
+  - **Cause:** `SESSION_TIMEZONE = 'America/New_York'` in `webinar/utils/session-time.ts` pins the card and hero
+    labels to Eastern; the API's `start_date_time` is UTC.
+  - **Plan:** drop the pin; resolve the parts in the runtime's zone; print the label with the existing shared
+    `localTimeZone` pipe, which home, UAE CAIRA and the details dialog already use. The server HTML shows the
+    server's zone and hydration switches it to the viewer's. The pipe gets a "UTC" label for a UTC host, which
+    today reads "CUT".
+  - MIL-107's tickets (MIL-108 to MIL-111) are merged (#175, #177, #178, #179); their entries below are history.
 
 - 🟡 **2026-10-19, NON-REFACTOR — MIL-111 (Story MIL-107), masterclass certificate download. PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/masterclass-certificate-download.md` rev 1), on

@@ -23,9 +23,12 @@ export class LocalTimeZonePipe implements PipeTransform {
     const date = value instanceof Date ? value : new Date(value);
     if (Number.isNaN(date.getTime())) return '';
 
-    const longName = new Intl.DateTimeFormat(this.locale, { timeZoneName: 'long' })
-      .formatToParts(date)
-      .find((p) => p.type === 'timeZoneName')?.value;
+    const formatter = new Intl.DateTimeFormat(this.locale, { timeZoneName: 'long' });
+    // A UTC host (the SSR server on Vercel) is named "Coordinated Universal
+    // Time", which the initials rule below would print as "CUT".
+    if (formatter.resolvedOptions().timeZone === 'UTC') return 'UTC';
+
+    const longName = formatter.formatToParts(date).find((p) => p.type === 'timeZoneName')?.value;
     if (!longName) return '';
 
     // Multi-word descriptive name → initials ("India Standard Time" → "IST").

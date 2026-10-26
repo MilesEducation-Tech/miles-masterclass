@@ -55,7 +55,7 @@ export const environment = {
      * the whole production cutover; each webinar still needs the backend's own
      * `registration.route_to_web_lms` switch.
      */
-    liveEnabled: false,
+    liveEnabled: true,
     /** Custom (non-Zoom) poll surface. Flip on once the poll API ships. */
     pollsEnabled: false,
     /** Lease heartbeat cadence. Server TTL is 45s — three misses before eviction. */

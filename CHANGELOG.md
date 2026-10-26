@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.14.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.13.1...v3.14.0) (2026-10-22)
+
+
+### Features
+
+* **offerings:** enable the in-app live webinar page in production ([#183](https://github.com/MilesEducation-Tech/miles-masterclass/issues/183)) ([01f84b1](https://github.com/MilesEducation-Tech/miles-masterclass/commit/01f84b13f59e2ae994434ca7f27767dc3115a070))
+
+## [3.13.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.13.0...v3.13.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* **library:** load the course library from the filter-based course list API ([#182](https://github.com/MilesEducation-Tech/miles-masterclass/issues/182)) ([a95b36e](https://github.com/MilesEducation-Tech/miles-masterclass/commit/a95b36e2948bd13eb9633dc41541fb8f0e6583ab))
+* **offerings:** show webinar session times in the viewer's local timezone ([#180](https://github.com/MilesEducation-Tech/miles-masterclass/issues/180)) ([db43a11](https://github.com/MilesEducation-Tech/miles-masterclass/commit/db43a11726430c948f3463f051bc71d6d0acbc64))
+
 ## [3.13.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.12.0...v3.13.0) (2026-10-19)
 
 
