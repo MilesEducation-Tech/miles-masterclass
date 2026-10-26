@@ -4,27 +4,11 @@
   @if (course(); as reel) {
     @let credits = reel.total_cpe_credits;
 
-    <!-- ================= SUB-BAR: back / four-step progress / mode ================= -->
+    <!-- ===================== SUB-BAR: back / mode ===================== -->
+    <!-- The step progress it used to carry lives in the journey sidebar now. -->
     <div class="border-y border-border bg-black/40 backdrop-blur">
       <div class="mx-auto flex max-w-[1240px] items-center gap-4 px-5 py-2 lg:px-8">
         <app-backward label="Back to AI Labs" fallback="/" class="shrink-0 text-[12.5px]" />
-
-        <!-- watch → quiz → final → lab. Hidden on small screens where it would
-             crowd the back link out of the row. -->
-        <div class="hidden flex-1 items-center gap-3 sm:flex">
-          <app-progress
-            class="min-w-[80px] flex-1"
-            [value]="stepsPercent()"
-            size="sm"
-            variant="success"
-            ariaLabel="Course completion steps"
-          />
-          <span
-            class="shrink-0 font-mono text-[11px] tracking-widest text-muted-foreground uppercase"
-          >
-            {{ stepsDone() }} / {{ stepsTotal() }} complete
-          </span>
-        </div>
 
         <!-- A lab has no Preview mode: every enrolment is on the CPE path. -->
         @if (credits) {
@@ -42,34 +26,28 @@
       <!-- ============================== HERO ============================== -->
       <section class="grid gap-8 lg:grid-cols-[1.55fr_1fr] lg:items-start">
         <div class="overflow-hidden rounded-2xl border border-border bg-card">
-          <!-- While the quiz is open it takes the frame's place, as the masterclass chapter quiz
-               takes the player's. It is taller than 16:9, so it drops the aspect lock. -->
-          @if (quiz.isOpen()) {
-            <app-ai-lab-quiz class="min-h-96" />
-          } @else {
-            <!-- Flex + aspect-video is the sizing contract `app-video-js` expects
+          <!-- Flex + aspect-video is the sizing contract `app-video-js` expects
                (same wrapper as `video-chapter`): its host is inline, so it needs
                a flex parent to stretch to. -->
-            <div class="relative flex aspect-video w-full justify-center overflow-hidden bg-black">
-              @if (videoSources().length) {
-                <app-video-js
-                  [videoSource]="videoSources()"
-                  [config]="videoConfig()"
-                  [mode]="playerMode()"
-                  (timeUpdate)="onTimeUpdate($event.currentTime)"
-                  (playing)="playing.set(true)"
-                  (paused)="playing.set(false)"
-                  (ended)="onEnded()"
-                />
-              } @else if (poster(); as art) {
-                <img
-                  [src]="art"
-                  [alt]="reel.ai_lab_course_name"
-                  class="absolute inset-0 h-full w-full object-cover"
-                />
-              }
-            </div>
-          }
+          <div class="relative flex aspect-video w-full justify-center overflow-hidden bg-black">
+            @if (videoSources().length) {
+              <app-video-js
+                [videoSource]="videoSources()"
+                [config]="videoConfig()"
+                [mode]="playerMode()"
+                (timeUpdate)="onTimeUpdate($event.currentTime)"
+                (playing)="playing.set(true)"
+                (paused)="playing.set(false)"
+                (ended)="onEnded()"
+              />
+            } @else if (poster(); as art) {
+              <img
+                [src]="art"
+                [alt]="reel.ai_lab_course_name"
+                class="absolute inset-0 h-full w-full object-cover"
+              />
+            }
+          </div>
         </div>
 
         <div class="flex flex-col">
@@ -86,8 +64,8 @@
           <div
             class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12.5px] text-muted-foreground"
           >
-            @if (reel.instructors.length) {
-              <span class="font-medium text-foreground">{{ reel.instructors.join(', ') }}</span>
+            @if (instructorNames(); as names) {
+              <span class="font-medium text-foreground">{{ names }}</span>
             }
             @if (reel.ai_lab_course_total_duration) {
               <span>{{ reel.ai_lab_course_total_duration }}</span>
@@ -135,19 +113,31 @@
                 Go to the AI Lab
               </button>
             } @else {
-              <button
-                app-button
-                type="button"
-                [class]="'h-12 gap-2 ' + feedbackClass()"
-                [variant]="feedbackCta() ? 'ghost' : 'default'"
-                [disabled]="ctaDisabled()"
-                (click)="runCta()"
-              >
-                @if (!feedbackCta()) {
+              <!-- Feedback is amber, as on every course hero. Its own branch with static classes:
+                   `app-button` merges its `class` attribute once, so a bound class loses to the
+                   variant's background. -->
+              @if (feedbackCta()) {
+                <button
+                  app-button
+                  type="button"
+                  class="h-12 gap-2 rounded-lg bg-accent-premium text-black hover:bg-accent-premium/90"
+                  [disabled]="ctaDisabled()"
+                  (click)="runCta()"
+                >
+                  <span>{{ ctaLabel() }}</span>
+                </button>
+              } @else {
+                <button
+                  app-button
+                  type="button"
+                  class="h-12 gap-2"
+                  [disabled]="ctaDisabled()"
+                  (click)="runCta()"
+                >
                   <ng-icon name="matPlayArrowRound" class="text-xl" aria-hidden="true" />
-                }
-                <span>{{ ctaLabel() }}</span>
-              </button>
+                  <span>{{ ctaLabel() }}</span>
+                </button>
+              }
               <!-- At the lab stage the main button already goes there. -->
               @if (ctaStage() !== 'AI_LAB') {
                 <button
@@ -245,616 +235,1895 @@
         </section>
       }
 
-      <!-- ======================= 01 — FINAL MCQ ASSESSMENT ======================= -->
-      <section id="final" class="scroll-mt-32">
-        <div class="mb-3 flex items-center gap-3">
-          <span class="font-mono text-[12px] text-accent">01</span>
-          <h2 class="font-serif text-[24px] font-semibold tracking-[-0.015em]">
-            Final MCQ assessment
-          </h2>
-          <span class="text-[12px] text-muted-foreground">Separate page</span>
-        </div>
-
-        <div
-          class="flex flex-col gap-5 rounded-2xl border border-border bg-card p-6 lg:flex-row lg:items-center lg:justify-between lg:p-8"
-        >
-          <div class="min-w-0 flex-1">
-            <p class="max-w-[62ch] text-[14px] leading-relaxed text-muted-foreground">
-              The assessment opens on its own page so you can focus. Pass it to unlock the AI Lab,
-              feedback and your certificate.
+      <!-- ============================ COURSE JOURNEY ============================ -->
+      <!-- Desktop: a sticky sidebar beside the five steps — where the learner is
+           across the whole course (surface, ring and copy follow the stage, see
+           `courseProgress`) and a step navigator that tracks the section in
+           view. Phone: the same panel on top, the navigator as a swipeable
+           strip. `data-reveal="shown"` lets the ring fill on load. -->
+      @let overviewNow = overview();
+      <div class="grid gap-8 lg:grid-cols-[272px_minmax(0,1fr)] lg:gap-12">
+        <aside class="flex min-w-0 flex-col gap-4 lg:sticky lg:top-28 lg:self-start">
+          <section
+            aria-label="Your progress"
+            data-reveal="shown"
+            class="relative isolate rounded-2xl border p-5 transition-colors duration-500"
+            [class]="overviewNow.view.surface"
+          >
+            <!-- The bloom is clipped by its own box, not the panel, so the panel's
+                 glow border (drawn just outside its edge) isn't cut off. -->
+            <span
+              class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]"
+              aria-hidden="true"
+            >
+              <span
+                class="absolute -end-16 -top-20 size-52 rounded-full blur-3xl transition-colors duration-700"
+                [class]="overviewNow.view.orb"
+              ></span>
+            </span>
+            <div class="flex items-center gap-4">
+              <div
+                class="ai-gauge grid size-16 shrink-0 place-items-center rounded-full"
+                [style.--ai-gauge-pct]="overviewNow.percent"
+                [style.--ai-gauge-color]="overviewNow.view.ring"
+              >
+                <div class="grid size-[54px] place-items-center rounded-full bg-card text-center">
+                  @if (overviewNow.view.icon; as icon) {
+                    <ng-icon
+                      [name]="icon"
+                      class="text-[20px]"
+                      [class]="overviewNow.view.eyebrow"
+                      aria-hidden="true"
+                    />
+                  } @else {
+                    <span class="font-serif text-[17px] leading-none font-semibold">
+                      {{ overviewNow.percent }}%
+                    </span>
+                  }
+                </div>
+              </div>
+              <div class="min-w-0">
+                <p
+                  class="flex items-center gap-1.5 text-[10.5px] font-semibold tracking-[0.16em] uppercase"
+                  [class]="overviewNow.view.eyebrow"
+                >
+                  <ng-icon name="lucideFlag" class="text-[12px]" aria-hidden="true" />
+                  Your progress
+                  <span class="sr-only">: {{ overviewNow.percent }}% complete</span>
+                </p>
+                <h2 class="mt-1 font-serif text-[19px] leading-tight font-semibold">
+                  {{ overviewNow.title }}
+                </h2>
+              </div>
+            </div>
+            <p class="mt-3 text-[12.5px] leading-relaxed text-muted-foreground">
+              {{ overviewNow.detail }}
             </p>
 
-            <!-- Facts off `course-progress/`. Question count and pass mark live on
-                 the assessment read, which joins with the exam screen. -->
-            <dl class="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[12.5px]">
-              <div class="flex items-center gap-2">
-                <dt class="text-muted-foreground">Status</dt>
-                <dd class="font-semibold" [class.text-success]="examPassed()">
-                  {{ examPassed() ? 'Passed' : 'Not passed yet' }}
-                </dd>
-              </div>
-              @if (credits) {
-                <div class="flex items-center gap-2">
-                  <dt class="text-muted-foreground">Credits</dt>
-                  <dd class="font-semibold">{{ credits }} CPE</dd>
-                </div>
-              }
-            </dl>
-
-            <!-- Native disclosure, same list the start dialog shows. -->
-            @if (examRules().length) {
-              <details class="group mt-3">
-                <summary class="cursor-pointer list-none text-[12.5px] font-semibold">
-                  Exam rules
-                  <span class="font-normal text-muted-foreground group-open:hidden">(show)</span>
-                  <span class="hidden font-normal text-muted-foreground group-open:inline">
-                    (hide)
+            <!-- The video, step one, on its own line: how much has been watched. -->
+            <div class="mt-4">
+              <div class="flex items-center justify-between gap-2 text-[11.5px]">
+                <span class="flex items-center gap-2 font-semibold text-foreground">
+                  <span
+                    class="grid size-6 place-items-center rounded-md border border-border bg-black/30 text-accent"
+                  >
+                    <ng-icon name="matPlayArrowRound" class="text-[13px]" aria-hidden="true" />
                   </span>
-                </summary>
-                <ol
-                  class="mt-2 flex max-w-[70ch] list-decimal flex-col gap-1 pl-5 text-[12.5px] leading-relaxed text-muted-foreground"
-                >
-                  @for (rule of examRules(); track $index) {
-                    <li>{{ rule }}</li>
-                  }
-                </ol>
-              </details>
-            }
-
-            <p class="mt-3 text-[12.5px] text-muted-foreground">{{ finalHint() }}</p>
-          </div>
-
-          <!-- The exam is reached through the same action_status dispatcher as
-               the hero CTA, so it can't drift out of step with it. -->
-          <div class="flex shrink-0 flex-wrap items-center gap-3">
-            @if (!completed()) {
-              <span
-                class="flex items-center gap-2 rounded-lg border border-border bg-black/25 px-5 py-3 text-[13.5px] font-semibold text-muted-foreground"
-              >
-                <ng-icon name="lucideLock" class="text-base" aria-hidden="true" />
-                Finish the video first
-              </span>
-            } @else {
+                  Video
+                </span>
+                <span class="font-mono text-muted-foreground">
+                  {{ completed() ? 'Watched' : progress() + '% watched' }}
+                </span>
+              </div>
+              <app-progress
+                class="mt-2 block"
+                [value]="completed() ? 100 : progress()"
+                size="sm"
+                variant="info"
+                ariaLabel="Video watched"
+              />
+            </div>
+            <div class="mt-4">
               <button
                 app-button
                 type="button"
-                [class]="feedbackClass()"
-                [variant]="feedbackCta() ? 'ghost' : 'default'"
-                [disabled]="ctaDisabled()"
-                (click)="runCta()"
+                size="sm"
+                class="w-full gap-2"
+                (click)="goTo(overviewNow.next.target)"
               >
-                {{ ctaLabel() }}
-              </button>
-            }
-          </div>
-        </div>
-      </section>
-
-      <!-- ============================ 02 — AI LAB ============================ -->
-      <section id="lab" class="scroll-mt-32">
-        <div class="mb-3 flex items-center gap-3">
-          <span class="font-mono text-[12px] text-accent">02</span>
-          <h2 class="font-serif text-[24px] font-semibold tracking-[-0.015em]">Miles AI Lab</h2>
-          @if (labUnlocked()) {
-            <span class="text-[12px] text-muted-foreground">Hands-on</span>
-          } @else {
-            <span
-              class="flex items-center gap-1.5 rounded-full border border-border bg-black/25 px-2.5 py-0.5 text-[11.5px] font-semibold text-muted-foreground"
-            >
-              <ng-icon name="lucideLock" class="text-[13px]" aria-hidden="true" />
-              Locked
-            </span>
-          }
-        </div>
-
-        <!-- No `lab_assignment_id` on the course: nothing to build against and
-             nothing to submit to, so say that plainly rather than leaving the
-             learner to work out why a lab they passed the exam for won't open. -->
-        @if (!labMapped()) {
-          <p
-            class="mb-3 rounded-lg border border-border bg-black/25 px-4 py-3 text-[12.5px] text-muted-foreground"
-            role="note"
-          >
-            Note: the assessment for this lab hasn't been mapped yet. The lab will open once one is
-            assigned — the rest of the course is unaffected.
-          </p>
-        }
-
-        <div class="rounded-2xl border border-border bg-card p-6 lg:p-8">
-          <!-- The assignment brief, straight from `web-api/v1/ai-labs/assignment-brief/`.
-               A lab whose practical isn't set up yet says so in one line
-               (`briefUnavailable`); any other failure renders nothing here — no
-               toast, no error state. The lab controls below stay live either way. -->
-          @if (brief(); as b) {
-            <div class="flex flex-wrap items-center gap-2">
-              <h3 class="text-[15px] font-semibold text-foreground">{{ b.name }}</h3>
-              @if (b.difficulty) {
-                <span
-                  class="rounded-full border border-border bg-white/5 px-2 py-0.5 text-[10.5px] font-semibold tracking-[0.08em] text-muted-foreground uppercase"
-                >
-                  {{ b.difficulty }}
-                </span>
-              }
-            </div>
-            @if (b.details) {
-              <p
-                class="mt-2 text-[13.5px] leading-relaxed whitespace-pre-line text-muted-foreground"
-              >
-                {{ b.details }}
-              </p>
-            }
-
-            <h3
-              class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
-            >
-              Problem statement
-            </h3>
-            <!-- Two lines collapsed, the rest on request. Whether the clamp is
-                 actually hiding anything is measured, not guessed — see
-                 `statementClamped`. -->
-            <p
-              #briefStatement
-              id="lab-brief-statement"
-              class="mt-3 text-[14px] leading-relaxed whitespace-pre-line text-muted-foreground"
-              [class.line-clamp-2]="!briefExpanded()"
-            >
-              {{ b.problem_statement }}
-            </p>
-
-            @if (briefExpanded()) {
-              <div id="lab-brief-more">
-                @if (b.logic_flow) {
-                  <h3
-                    class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
-                  >
-                    Logic flow
-                  </h3>
-                  <p
-                    class="mt-3 text-[13.5px] leading-relaxed whitespace-pre-line text-muted-foreground"
-                  >
-                    {{ b.logic_flow }}
-                  </p>
-                }
-                @if (b.guardrails) {
-                  <h3
-                    class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
-                  >
-                    Guardrails
-                  </h3>
-                  <p
-                    class="mt-3 text-[13.5px] leading-relaxed whitespace-pre-line text-muted-foreground"
-                  >
-                    {{ b.guardrails }}
-                  </p>
-                }
-                <!-- The guide's scenarios are plain sentences: upstream's marks and
-                     expected-behaviour lines have nothing to read from. -->
-                @if (briefScenarios().length) {
-                  <h3
-                    class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
-                  >
-                    Test scenarios
-                  </h3>
-                  <ul class="mt-3 flex flex-col gap-3">
-                    @for (scenario of briefScenarios(); track $index) {
-                      <li class="rounded-lg border border-border bg-black/25 p-4">
-                        <p class="text-[13.5px] leading-relaxed text-foreground">{{ scenario }}</p>
-                      </li>
-                    }
-                  </ul>
-                }
-              </div>
-            }
-
-            <!-- One control for the whole brief: the statement and the
-                 sections behind it are one piece of reading. Expands in place —
-                 the brief belongs in the section it describes. -->
-            @if (briefTruncated()) {
-              <button
-                type="button"
-                class="mt-5 inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:text-foreground"
-                [attr.aria-expanded]="briefExpanded()"
-                aria-controls="lab-brief-statement lab-brief-more"
-                (click)="toggleBrief()"
-              >
-                {{ briefExpanded() ? 'Show less' : 'Read full brief' }}
+                {{ overviewNow.next.label }}
                 <ng-icon
-                  name="lucideChevronDown"
-                  class="text-sm transition-transform duration-200"
-                  [class.rotate-180]="briefExpanded()"
+                  name="lucideArrowRight"
+                  class="text-base rtl:-scale-x-100"
                   aria-hidden="true"
                 />
               </button>
-            }
+            </div>
+          </section>
 
-            <!-- Always visible: the files are what the learner builds against.
-                 Each click goes out as `openInputFile`, so the host can re-fetch
-                 the brief when its signed links have gone stale. -->
-            @if (briefFiles().length) {
-              <h3
-                class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
-              >
-                Input files
-              </h3>
-              <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                @for (file of briefFiles(); track file.name) {
+          <!-- The navigator: each step with its state, the one in view marked.
+               A click scrolls to it. -->
+          <nav aria-label="Course steps">
+            <ol
+              class="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] lg:flex-col lg:gap-0.5 lg:overflow-visible lg:pb-0 [&::-webkit-scrollbar]:hidden"
+            >
+              @for (item of navSteps(); track item.id) {
+                @let active = activeStep() === item.id;
+                <li class="shrink-0">
                   <button
                     type="button"
-                    class="flex items-center gap-3 rounded-lg border border-border bg-black/25 p-4 text-start transition-colors hover:bg-card-hover"
-                    [attr.aria-label]="'Download ' + file.name"
-                    (click)="openInputFile(file)"
+                    class="relative flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-start transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring lg:border-0"
+                    [class]="
+                      active
+                        ? 'border-accent/40 bg-white/[0.06] text-foreground'
+                        : 'border-border text-muted-foreground hover:bg-white/[0.03] hover:text-foreground'
+                    "
+                    [attr.aria-current]="active ? 'step' : null"
+                    (click)="scrollToSection(item.id)"
                   >
+                    @if (active) {
+                      <span
+                        class="absolute inset-y-2 start-0 hidden w-0.5 rounded-full bg-accent lg:block"
+                        aria-hidden="true"
+                      ></span>
+                    }
                     <span
-                      class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary text-muted-foreground"
+                      class="grid size-7 shrink-0 place-items-center rounded-lg border border-border bg-black/30 text-[11px]"
+                      [class]="item.iconClass"
+                      aria-hidden="true"
                     >
-                      <ng-icon name="lucideDownload" class="text-lg" aria-hidden="true" />
+                      @switch (item.step.state) {
+                        @case ('done') {
+                          <ng-icon name="lucideCheck" class="text-[12px]" />
+                        }
+                        @case ('locked') {
+                          <ng-icon name="lucideLock" class="text-[11px]" />
+                        }
+                        @case ('attention') {
+                          <ng-icon name="lucideTriangleAlert" class="text-[11px]" />
+                        }
+                        @case ('current') {
+                          <span
+                            class="size-2 rounded-full bg-accent motion-safe:animate-pulse"
+                          ></span>
+                        }
+                        @default {
+                          <span class="font-mono font-semibold">{{ item.index }}</span>
+                        }
+                      }
                     </span>
                     <span class="min-w-0 flex-1">
-                      <span class="block truncate text-[13.5px] font-semibold text-foreground">
-                        {{ file.name }}
-                      </span>
-                      <!-- The guide sends no size, so the second line is the file type. -->
-                      <span class="block text-[11.5px] text-muted-foreground">
-                        {{ fileKind(file.name) }}
-                      </span>
+                      <span class="block truncate text-[13px] font-semibold">{{ item.label }}</span>
+                      @if (item.step.status; as status) {
+                        <span class="hidden truncate text-[11px] text-muted-foreground lg:block">
+                          {{ status }}
+                        </span>
+                      }
                     </span>
                   </button>
-                }
-              </div>
-            }
-          } @else if (briefLoading()) {
-            <div class="flex flex-col gap-2.5" role="status" aria-label="Loading your assignment">
-              <div class="h-3.5 w-11/12 animate-pulse rounded bg-secondary"></div>
-              <div class="h-3.5 w-10/12 animate-pulse rounded bg-secondary"></div>
-              <div class="h-3.5 w-7/12 animate-pulse rounded bg-secondary"></div>
-            </div>
-          } @else if (briefUnavailable(); as reason) {
-            <p class="text-[13px] text-muted-foreground" role="note">{{ reason }}</p>
-          }
+                </li>
+              }
+            </ol>
+          </nav>
+        </aside>
 
-          <div class="mt-6 flex flex-wrap items-center gap-4">
-            <button
-              app-button
-              type="button"
-              class="gap-2"
-              [disabled]="!labUnlocked()"
-              (click)="launchLab()"
+        <div class="flex min-w-0 flex-col gap-14">
+          <!-- ======================= 01 — FINAL MCQ ASSESSMENT ======================= -->
+          <!-- Sections 01–05 sit on one rail (`app-ai-lab-step`): each node says
+               done / up next / locked before the learner reads the card. -->
+          <section id="final" class="scroll-mt-32">
+            <app-ai-lab-step
+              index="01"
+              heading="Final MCQ assessment"
+              caption="Pass it to open the AI Lab."
+              [step]="journey().final"
             >
-              <span>{{ signInLabel() }}</span>
-              <ng-icon name="lucideArrowUpRight" class="text-lg" aria-hidden="true" />
-            </button>
-            <span class="text-[12px] text-muted-foreground">{{ labLockHint() }}</span>
-          </div>
+              @let view = finalView();
+              <div class="rounded-2xl border p-5 lg:p-6" [class]="view.surface">
+                <!-- Status on the left, the way forward on the right. -->
+                <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                  <div class="flex min-w-0 items-start gap-4">
+                    <span
+                      class="grid size-10 shrink-0 place-items-center rounded-xl border border-border bg-black/30"
+                      [class]="view.tile"
+                    >
+                      <ng-icon [name]="view.icon" class="text-xl" aria-hidden="true" />
+                    </span>
+                    <div class="min-w-0">
+                      <p class="text-[16px] font-semibold text-foreground">{{ view.title }}</p>
+                      <p
+                        class="mt-1 max-w-[52ch] text-[12.5px] leading-relaxed text-muted-foreground"
+                      >
+                        {{ finalHint() }}
+                      </p>
+                    </div>
+                  </div>
 
-          <!-- Artefact picker, alongside Launch AI. Each select renders only
-               when the API returned that kind — a learner with no flows sees
-               the agent-only picker unchanged. Picking in one clears the
-               other: one submission, one artefact. Once an attempt is with
-               the evaluator everything is disabled rather than hidden, so the
-               learner can still see what was sent. -->
-          @if (pickerOpen()) {
-            <div class="mt-7 border-t border-border pt-6">
-              <h3
-                class="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
-              >
-                Submit your {{ flows().length ? 'agent or workflow' : 'agent' }}
-              </h3>
-
-              @if (artefactsLoading() && !agents().length) {
-                <p class="mt-3 text-[13px] text-muted-foreground" role="status">
-                  Loading your agents…
-                </p>
-              } @else if (artefactsError()) {
-                <app-error-state
-                  class="mt-3 block"
-                  title="Couldn't load your agents"
-                  [message]="artefactsErrorMessage()"
-                  retryLabel="Try again"
-                  (retry)="refreshArtefacts()"
-                />
-              } @else if (hasArtefacts()) {
-                <div class="mt-3 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-                  <!-- Both selects share one column so Refresh stays a single
-                       button beside them however many kinds are on offer. -->
-                  <div class="grid gap-4">
-                    @if (agents().length) {
-                      <app-select
-                        id="lab-agent"
-                        label="Select your agent"
-                        [options]="agentOptions()"
-                        [value]="agentId()"
-                        (valueChange)="choose('agent', $event)"
-                        [disabled]="pickerLocked()"
-                      />
-                    }
-                    @if (flows().length) {
-                      <app-select
-                        id="lab-flow"
-                        label="Select your workflow"
-                        [options]="flowOptions()"
-                        [value]="flowId()"
-                        (valueChange)="choose('flow', $event)"
-                        [disabled]="pickerLocked()"
-                      />
+                  <!-- The exam is reached through the same CTA stage as the hero, so
+                       it can't drift out of step with it. Before the video is done
+                       the way forward is the video, not a dead button. -->
+                  <div class="flex shrink-0 flex-col gap-2 sm:items-end">
+                    <div class="flex flex-wrap gap-3 sm:justify-end">
+                      @if (!completed()) {
+                        <button
+                          app-button
+                          type="button"
+                          variant="outline"
+                          class="gap-2"
+                          (click)="scrollToVideo()"
+                        >
+                          <ng-icon name="matPlayArrowRound" class="text-lg" aria-hidden="true" />
+                          Back to the video
+                        </button>
+                      } @else {
+                        @if (feedbackCta()) {
+                          <button
+                            app-button
+                            type="button"
+                            class="gap-2 rounded-lg bg-accent-premium text-black hover:bg-accent-premium/90"
+                            [disabled]="ctaDisabled()"
+                            (click)="runCta()"
+                          >
+                            {{ ctaLabel() }}
+                          </button>
+                        } @else {
+                          <button
+                            app-button
+                            type="button"
+                            class="gap-2"
+                            [disabled]="ctaDisabled()"
+                            (click)="runCta()"
+                          >
+                            {{ ctaLabel() }}
+                            <ng-icon
+                              name="lucideArrowRight"
+                              class="text-base rtl:-scale-x-100"
+                              aria-hidden="true"
+                            />
+                          </button>
+                        }
+                      }
+                    </div>
+                    @if (examCta()) {
+                      <p class="text-[11.5px] text-muted-foreground sm:text-end">
+                        Opens on its own page
+                      </p>
                     }
                   </div>
-                  <button
-                    app-button
-                    type="button"
-                    variant="outline"
-                    class="h-14"
-                    [disabled]="pickerLocked() || artefactsLoading()"
-                    (click)="refreshArtefacts()"
-                  >
-                    Refresh list
-                  </button>
                 </div>
 
-                <!-- What actually goes to the evaluator, so the pick is checkable.
-                     The id is shown on purpose — it is literally the
-                     `agent_ref` the POST carries. -->
-                @if (selectedAgent(); as agent) {
-                  <p class="mt-2 font-mono text-[11.5px] text-muted-foreground">
-                    {{ agent.id }} &middot; updated {{ agent.modified_on | date: 'd MMM y' }}
-                  </p>
-                } @else if (selectedFlow(); as flow) {
-                  <p class="mt-2 font-mono text-[11.5px] text-muted-foreground">
-                    {{ flow.id }} &middot; updated {{ flow.modified_on | date: 'd MMM y' }}
-                  </p>
-                  @if (flow.description) {
-                    <p class="mt-1 text-[12px] text-muted-foreground">{{ flow.description }}</p>
+                <!-- Facts, one quiet line. Question count and pass mark live on the
+                     assessment read, which only the exam screen makes. -->
+                <dl class="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[12.5px]">
+                  @if (credits) {
+                    <div class="flex items-center gap-1.5">
+                      <ng-icon
+                        name="lucideAward"
+                        class="text-[14px] text-accent"
+                        aria-hidden="true"
+                      />
+                      <dt class="text-muted-foreground">Credits</dt>
+                      <dd class="font-semibold text-foreground">{{ credits }} CPE</dd>
+                    </div>
                   }
+                  <div class="flex items-center gap-1.5">
+                    <ng-icon
+                      name="lucideListChecks"
+                      class="text-[14px] text-accent"
+                      aria-hidden="true"
+                    />
+                    <dt class="text-muted-foreground">Format</dt>
+                    <dd class="font-semibold text-foreground">MCQ</dd>
+                  </div>
+                </dl>
+
+                <!-- Footer line: what a pass opens (facts, not controls) and the
+                     exam rules toggle — the same list the start dialog shows. -->
+                <div
+                  class="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border pt-3"
+                >
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span
+                      class="me-1 text-[10.5px] font-semibold tracking-[0.12em] text-muted-foreground uppercase"
+                    >
+                      Passing unlocks
+                    </span>
+                    <ul class="flex flex-wrap gap-1.5" aria-label="Passing unlocks">
+                      @for (unlock of examUnlocks(); track unlock.label) {
+                        <li
+                          class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11.5px] font-semibold"
+                          [class]="
+                            unlock.open
+                              ? 'border-accent/30 bg-accent/10 text-accent'
+                              : 'border-border bg-black/25 text-muted-foreground'
+                          "
+                        >
+                          <ng-icon [name]="unlock.icon" class="text-[13px]" aria-hidden="true" />
+                          {{ unlock.label }}
+                          <ng-icon
+                            [name]="unlock.open ? 'lucideCheck' : 'lucideLock'"
+                            class="text-[11px]"
+                            aria-hidden="true"
+                          />
+                          <span class="sr-only">{{ unlock.open ? '— unlocked' : '— locked' }}</span>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                  @if (examRules().length) {
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-2 rounded-md text-[12.5px] font-semibold text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      [attr.aria-expanded]="rulesOpen()"
+                      aria-controls="exam-rules"
+                      (click)="rulesOpen.set(!rulesOpen())"
+                    >
+                      <ng-icon name="lucideScrollText" class="text-base" aria-hidden="true" />
+                      Exam rules
+                      <span
+                        class="rounded-full bg-secondary px-1.5 py-px font-mono text-[10.5px] font-normal"
+                      >
+                        {{ examRules().length }}
+                      </span>
+                      <ng-icon
+                        name="lucideChevronDown"
+                        class="text-sm transition-transform duration-200"
+                        [class.rotate-180]="rulesOpen()"
+                        aria-hidden="true"
+                      />
+                    </button>
+                  }
+                </div>
+                @if (rulesOpen() && examRules().length) {
+                  <ol
+                    id="exam-rules"
+                    class="mt-3 list-decimal ps-5 text-[12.5px] leading-relaxed text-muted-foreground lg:columns-2 lg:gap-10"
+                  >
+                    @for (rule of examRules(); track $index) {
+                      <li class="mb-1 break-inside-avoid">{{ rule }}</li>
+                    }
+                  </ol>
+                }
+              </div>
+            </app-ai-lab-step>
+          </section>
+
+          <!-- ============================ 02 — AI LAB ============================ -->
+          <section id="lab" class="scroll-mt-32">
+            <app-ai-lab-step
+              index="02"
+              heading="Miles AI Lab"
+              caption="Hands-on — build it in Copilot Studio"
+              [step]="journey().lab"
+            >
+              <!-- No assignment mapped: nothing to build against and nothing to
+                   submit to, so say that plainly rather than leaving the learner
+                   to work out why a lab they passed the exam for won't open. -->
+              @if (!labMapped()) {
+                <p
+                  class="mb-3 rounded-lg border border-border bg-black/25 px-4 py-3 text-[12.5px] text-muted-foreground"
+                  role="note"
+                >
+                  Note: the assessment for this lab hasn't been mapped yet. The lab will open once
+                  one is assigned — the rest of the course is unaffected.
+                </p>
+              }
+
+              <div class="rounded-2xl border border-border bg-card p-5 lg:p-6">
+                <!-- The assignment brief, from `web-api/v1/ai-labs/assignment-brief/`.
+                     A lab whose practical isn't set up yet says so in one line
+                     (`briefUnavailable`); a failure a retry can fix says so with a Retry
+                     (`briefProblem`) — no toast, no error state. The lab controls below stay
+                     live either way. -->
+                @if (brief(); as b) {
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="text-[11px] font-semibold tracking-[0.14em] text-accent uppercase">
+                      Assignment
+                    </p>
+                  </div>
+                  <h3 class="mt-1 text-[19px] font-semibold tracking-[-0.01em] text-foreground">
+                    {{ b.name }}
+                  </h3>
+                  @if (b.details) {
+                    <p
+                      class="mt-2 text-[13.5px] leading-relaxed whitespace-pre-line text-muted-foreground"
+                    >
+                      {{ b.details }}
+                    </p>
+                  }
+
+                  <h3
+                    class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+                  >
+                    Problem statement
+                  </h3>
+                  <!-- Escaped and converted by `renderBriefMarkdown`; Angular's
+                       sanitizer runs on top. Three lines collapsed — whether the clamp
+                       hides anything is measured (`statementClamped`); only then does
+                       the last line fade. -->
+                  <div
+                    #briefStatement
+                    id="lab-brief-statement"
+                    class="mt-3 border-s-2 border-accent/50 ps-4 text-[14px] leading-relaxed text-muted-foreground [&_a]:text-accent [&_a]:underline [&_code]:rounded [&_code]:bg-secondary [&_code]:px-1 [&_h4]:mt-4 [&_h4]:mb-1 [&_h4]:text-[14.5px] [&_h4]:font-semibold [&_h4]:text-foreground [&_h4:first-child]:mt-0 [&_h5]:mt-3 [&_h5]:mb-1 [&_h5]:font-semibold [&_h5]:text-foreground [&_li]:mt-1 [&_ol]:mt-2 [&_ol]:list-decimal [&_ol]:ps-5 [&_p+p]:mt-2 [&_strong]:text-foreground [&_ul]:mt-2 [&_ul]:list-disc [&_ul]:ps-5"
+                    [class.line-clamp-3]="!briefExpanded()"
+                    [class.brief-fade]="!briefExpanded() && statementClamped()"
+                    [innerHTML]="briefStatementHtml()"
+                  ></div>
+
+                  @if (briefExpanded()) {
+                    <div id="lab-brief-more">
+                      @if (briefRequirements().length) {
+                        <h3
+                          class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+                        >
+                          Before you start
+                        </h3>
+                        <ul class="mt-3 flex flex-col gap-2">
+                          @for (requirement of briefRequirements(); track $index) {
+                            <li
+                              class="flex gap-3 text-[13.5px] leading-relaxed text-muted-foreground"
+                            >
+                              <span
+                                class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-success-bg text-success"
+                              >
+                                <ng-icon
+                                  name="lucideCheck"
+                                  class="text-[11px]"
+                                  aria-hidden="true"
+                                />
+                              </span>
+                              {{ requirement }}
+                            </li>
+                          }
+                        </ul>
+                      }
+                      @if (b.guardrails) {
+                        <h3
+                          class="mt-6 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+                        >
+                          Guardrails
+                        </h3>
+                        <p
+                          class="mt-3 rounded-lg border border-amber-400/25 bg-amber-400/5 px-4 py-3 text-[13.5px] leading-relaxed whitespace-pre-line text-muted-foreground"
+                        >
+                          {{ b.guardrails }}
+                        </p>
+                      }
+                    </div>
+                  }
+
+                  <!-- One control for the whole brief: the statement and the
+                       sections behind it are one piece of reading. -->
+                  @if (briefTruncated()) {
+                    <button
+                      type="button"
+                      class="mt-4 inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:text-foreground"
+                      [attr.aria-expanded]="briefExpanded()"
+                      aria-controls="lab-brief-statement lab-brief-more"
+                      (click)="toggleBrief()"
+                    >
+                      {{ briefExpanded() ? 'Show less' : 'Read full brief' }}
+                      <ng-icon
+                        name="lucideChevronDown"
+                        class="text-sm transition-transform duration-200"
+                        [class.rotate-180]="briefExpanded()"
+                        aria-hidden="true"
+                      />
+                    </button>
+                  }
+                } @else if (briefLoading()) {
+                  <div
+                    class="flex flex-col gap-2.5"
+                    role="status"
+                    aria-label="Loading your assignment"
+                  >
+                    <div class="h-3.5 w-11/12 animate-pulse rounded bg-secondary"></div>
+                    <div class="h-3.5 w-10/12 animate-pulse rounded bg-secondary"></div>
+                    <div class="h-3.5 w-7/12 animate-pulse rounded bg-secondary"></div>
+                  </div>
+                } @else if (briefUnavailable(); as reason) {
+                  <p class="text-[13px] text-muted-foreground" role="note">{{ reason }}</p>
+                } @else if (briefProblem(); as problem) {
+                  <p class="text-[13px] text-muted-foreground" role="status">
+                    {{ problem }}
+                    <button
+                      type="button"
+                      class="ms-1 font-medium text-accent underline-offset-2 hover:underline"
+                      (click)="facade.retryBrief()"
+                    >
+                      Retry
+                    </button>
+                  </p>
                 }
 
-                <div
-                  class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <p class="text-[12.5px] text-muted-foreground">{{ labHint() }}</p>
-                  <button
-                    app-button
-                    type="button"
-                    class="shrink-0"
-                    [disabled]="submitDisabled()"
-                    (click)="submit()"
-                  >
-                    @if (submitting()) {
-                      Submitting…
-                    } @else if (alreadySubmitted()) {
-                      Submitted
-                    } @else if (labDone()) {
-                      Submit again
-                    } @else {
-                      Submit for evaluation
-                    }
-                  </button>
-                </div>
-              } @else {
-                <div
-                  class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <p class="max-w-[62ch] text-[12.5px] text-muted-foreground">
-                    @if (labProvisioned()) {
-                      No agents or workflows yet — build one in Copilot Studio, then refresh.
-                    } @else {
-                      You don't have an AI Labs account yet. Create it from the AI Labs page — it
-                      takes a few minutes — then sign in again and refresh.
-                    }
-                  </p>
-                  <button
-                    app-button
-                    type="button"
-                    variant="outline"
-                    class="shrink-0"
-                    [disabled]="artefactsLoading()"
-                    (click)="refreshArtefacts()"
-                  >
-                    Refresh list
-                  </button>
-                </div>
-              }
-            </div>
-          }
-
-          @if (labMaterials().length) {
-            <div class="mt-7 border-t border-border pt-6">
-              <h3
-                class="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
-              >
-                Lab materials
-              </h3>
-              <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                @for (item of labMaterials(); track item.label) {
-                  <!-- Links only: the lab payload carries no exercise-file download. -->
-                  @if (item.kind === 'link') {
-                    <a
-                      [href]="item.url"
-                      target="_blank"
-                      rel="noreferrer"
-                      class="flex items-center gap-3 rounded-lg border border-border bg-black/25 p-4 no-underline transition-colors hover:bg-card-hover"
+                <!-- Read, then build: the build guides and Launch AI as rows of one
+                     panel — icon, title and caption on the left, the action on the
+                     right — the guide first since it's the walkthrough to keep open
+                     while building. Without a guide, Launch is the only row. -->
+                <div [class]="launchPanelClass()">
+                  @for (guide of buildGuides(); track guide.sort_order; let only = $count) {
+                    <button
+                      type="button"
+                      class="group relative flex w-full items-center gap-3 px-5 py-4 text-start transition-colors outline-none hover:bg-accent/[0.06] focus-visible:bg-accent/[0.06] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset lg:px-6"
+                      [attr.aria-label]="
+                        'Open ' + (guide.filename ?? 'the build guide') + ' in a new tab'
+                      "
+                      (click)="openFile(guide)"
                     >
                       <span
-                        class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary text-muted-foreground"
+                        class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-accent transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6 motion-reduce:transition-none"
                       >
-                        <ng-icon name="lucideExternalLink" class="text-lg" aria-hidden="true" />
+                        <ng-icon name="lucideBookOpen" class="text-lg" aria-hidden="true" />
                       </span>
                       <span class="min-w-0 flex-1">
-                        <span class="block truncate text-[13.5px] font-semibold text-foreground">
-                          {{ item.label }}
+                        <span
+                          class="block text-[14px] font-semibold text-foreground transition-colors group-hover:text-accent"
+                        >
+                          {{ only === 1 ? 'Build guide' : (guide.filename ?? 'Build guide') }}
                         </span>
-                        <span class="block text-[11.5px] text-muted-foreground">
-                          {{ item.hint }}
+                        <span
+                          class="mt-0.5 block max-w-[70ch] text-[12.5px] leading-relaxed text-muted-foreground"
+                        >
+                          {{ buildGuideDescription }}
                         </span>
                       </span>
-                    </a>
+                      <span
+                        class="grid size-10 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-muted-foreground transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-accent/50 group-hover:text-foreground motion-reduce:transition-none"
+                        aria-hidden="true"
+                      >
+                        <ng-icon name="lucideExternalLink" class="text-base" />
+                      </span>
+                    </button>
                   }
-                }
-              </div>
-            </div>
-          }
-        </div>
-      </section>
 
-      <!-- ======================= 03 — EVALUATION & SCORES ======================= -->
-      <section id="grade" class="scroll-mt-32">
-        <div class="mb-3 flex items-center gap-3">
-          <span class="font-mono text-[12px] text-accent">03</span>
-          <h2 class="font-serif text-[24px] font-semibold tracking-[-0.015em]">
-            Evaluation &amp; scores
-          </h2>
-          <span class="text-[12px] text-muted-foreground">Automated</span>
-          <!-- Manual re-read on top of the poll that runs while grading. -->
-          @if (labUnlocked()) {
-            <button
-              app-button
-              type="button"
-              variant="ghost"
-              size="icon"
-              class="ml-auto"
-              [disabled]="statusLoading()"
-              ariaLabel="Refresh evaluation status"
-              (click)="refreshStatus()"
-            >
-              <ng-icon
-                name="lucideRefreshCw"
-                class="text-lg"
-                [class.animate-spin]="statusLoading()"
-                aria-hidden="true"
-              />
-            </button>
-          }
-        </div>
-
-        @switch (evaluationView()) {
-          @case ('in_progress') {
-            <div
-              class="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 sm:flex-row sm:items-center lg:p-8"
-              role="status"
-              aria-live="polite"
-            >
-              <app-spinner size="sm" />
-              <div class="min-w-0 flex-1">
-                <p class="text-[14px] font-semibold">Evaluation in progress</p>
-                <p class="mt-1 max-w-[62ch] text-[13px] leading-relaxed text-muted-foreground">
-                  Usually a few minutes. Your scores appear here automatically — you can leave this
-                  page and come back.
-                </p>
-              </div>
-            </div>
-          }
-          @case ('completed') {
-            @if (assignment(); as result) {
-              <!-- ponytail: placeholder panel — the designed grade card replaces
-                   this once the design lands. Upstream's layout (the percentage as
-                   the headline), fed from `assignment-status/`, which also carries
-                   the evaluator's two comments. -->
-              <div class="overflow-hidden rounded-2xl border border-border bg-card">
-                <div class="border-b-2 border-accent bg-card-hover px-6 py-5 lg:px-8">
-                  <p class="text-[11px] font-semibold tracking-[0.16em] text-accent uppercase">
-                    Miles Masterclass &middot; Miles AI Lab
-                  </p>
-                  <h3
-                    class="mt-1.5 font-serif text-[28px] leading-tight font-semibold tracking-[-0.02em]"
+                  <!-- Launch: the whole row is the button. Hovering sweeps a soft light
+                       across it, tilts the sparkle and lifts the Copilot Studio tile;
+                       signing in swaps that tile for a spinner. Locked, it's disabled —
+                       no hover — and the caption says why. The label (which carries the
+                       sign-in state) is the aria-label and the tooltip. -->
+                  <button
+                    type="button"
+                    class="group relative flex w-full items-center gap-3 overflow-hidden px-5 py-4 text-start outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:pointer-events-none lg:px-6"
+                    [class.opacity-80]="!labUnlocked()"
+                    [attr.aria-label]="launchLabel()"
+                    [title]="launchLabel()"
+                    [disabled]="!labUnlocked() || labAuth.restoring() || labAuth.signingIn()"
+                    (click)="launchLab()"
                   >
-                    Your scores
-                  </h3>
-                  @if (result.submitted_at) {
-                    <p class="mt-1 text-[13px] text-muted-foreground">
-                      Submitted {{ result.submitted_at | date: 'd MMM y, HH:mm' }}
-                    </p>
-                  }
+                    <!-- Copilot Studio's colours: a cyan → purple → pink wash that fades
+                         in, and a tinted light sweeping across. -->
+                    <span
+                      class="pointer-events-none absolute inset-0 bg-linear-to-r from-copilot-cyan/10 via-copilot-purple/10 to-copilot-pink/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100"
+                      aria-hidden="true"
+                    ></span>
+                    <span
+                      class="pointer-events-none absolute inset-y-0 -start-1/3 w-1/3 -skew-x-12 bg-linear-to-r from-transparent via-copilot-purple/20 to-transparent opacity-0 transition-[translate,opacity] duration-700 ease-out group-hover:translate-x-[420%] group-hover:opacity-100 motion-reduce:hidden rtl:group-hover:-translate-x-[420%]"
+                      aria-hidden="true"
+                    ></span>
+                    <span
+                      class="relative grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12 group-hover:border-copilot-purple/50 group-hover:text-copilot-purple motion-reduce:transition-none"
+                      [class]="labUnlocked() ? 'text-accent' : 'text-muted-foreground'"
+                    >
+                      <ng-icon
+                        [name]="labUnlocked() ? 'lucideSparkles' : 'lucideLock'"
+                        class="text-lg"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <span class="relative min-w-0 flex-1">
+                      <span
+                        class="block w-fit bg-linear-to-r from-copilot-cyan via-copilot-purple to-copilot-pink bg-clip-text text-[14px] font-semibold text-foreground group-hover:text-transparent"
+                      >
+                        Launch the AI Lab
+                      </span>
+                      <span
+                        class="mt-0.5 block text-[12.5px] leading-relaxed text-muted-foreground"
+                      >
+                        {{ labLockHint() }}
+                      </span>
+                    </span>
+                    <span
+                      class="relative grid size-10 shrink-0 place-items-center rounded-xl border border-border bg-black/30 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-copilot-purple/60 motion-reduce:transition-none"
+                      aria-hidden="true"
+                    >
+                      @if (labAuth.restoring() || labAuth.signingIn()) {
+                        <span
+                          class="size-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent"
+                        ></span>
+                      } @else {
+                        <ng-icon [svg]="copilotIcon" class="text-[22px]" />
+                      }
+                    </span>
+                  </button>
                 </div>
 
-                <div class="flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:p-8">
-                  <div
-                    class="flex shrink-0 flex-col items-center justify-center rounded-xl border-t-4 bg-card-hover px-8 py-6"
-                    [class]="(result.percentage ?? 0) >= 70 ? 'border-success' : 'border-accent'"
+                <!-- Sign-in outcome, same surface the landing hero uses. -->
+                @if (labAuth.error(); as err) {
+                  <p class="mt-3 text-[12.5px] text-destructive" role="alert">{{ err }}</p>
+                } @else if (labAuth.hint(); as hint) {
+                  <p class="mt-3 text-[12.5px] text-muted-foreground">{{ hint }}</p>
+                }
+              </div>
+            </app-ai-lab-step>
+          </section>
+
+          <!-- =========================== 03 — LAB MATERIALS =========================== -->
+          <!-- Everything to build with, from the brief: the SharePoint workspace and the
+               exercise files (the lab's zip) under Resources, then the test-email tool under
+               Tools for assignments whose brief turns it on. One compact list — a row per
+               item, a slim label per group. -->
+          <section id="materials" class="scroll-mt-32">
+            <app-ai-lab-step
+              index="03"
+              heading="Lab materials"
+              caption="Tools & files to build your agents"
+              [step]="journey().materials"
+            >
+              <div class="overflow-hidden rounded-2xl border border-border bg-card">
+                <!-- Locked (no lab mapped, or the assessment not passed yet) there's no brief to
+                     build with yet, so the list shows what a lab carries, locked, rather than
+                     nothing. -->
+                @if (journey().materials.state === 'locked') {
+                  <h3
+                    class="bg-black/15 px-5 py-2 text-[10.5px] font-semibold tracking-[0.14em] text-muted-foreground uppercase lg:px-6"
                   >
-                    <p class="font-serif text-[54px] leading-none font-semibold">
-                      @if (result.percentage === null) {
-                        –
-                      } @else {
-                        {{ result.percentage | number: '1.0-1' }}%
+                    Resources
+                  </h3>
+                  <ul class="divide-y divide-white/5" aria-label="Resources, locked for now">
+                    <li class="flex items-center gap-3 px-5 py-2.5 opacity-60 lg:px-6">
+                      <span
+                        class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-accent"
+                      >
+                        <ng-icon name="lucideFolderOpen" class="text-base" aria-hidden="true" />
+                      </span>
+                      <span class="min-w-0 flex-1 leading-tight">
+                        <span class="block truncate text-[13.5px] font-semibold text-foreground">
+                          Resource workspace
+                        </span>
+                        <span class="block text-[11.5px] text-muted-foreground"
+                          >Opens SharePoint in a new tab</span
+                        >
+                      </span>
+                      <span
+                        class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-muted-foreground"
+                        aria-hidden="true"
+                      >
+                        <ng-icon name="lucideLock" class="text-base" />
+                      </span>
+                    </li>
+                    <li class="flex items-center gap-3 px-5 py-2.5 opacity-60 lg:px-6">
+                      <span
+                        class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-accent"
+                      >
+                        <ng-icon name="lucideFileArchive" class="text-base" aria-hidden="true" />
+                      </span>
+                      <span class="min-w-0 flex-1 leading-tight">
+                        <span class="block truncate text-[13.5px] font-semibold text-foreground">
+                          Exercise files
+                        </span>
+                        <span class="block text-[11.5px] text-muted-foreground"
+                          >Download the lab files as a zip</span
+                        >
+                      </span>
+                      <span
+                        class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-muted-foreground"
+                        aria-hidden="true"
+                      >
+                        <ng-icon name="lucideLock" class="text-base" />
+                      </span>
+                    </li>
+                  </ul>
+                  <h3
+                    class="border-t border-white/5 bg-black/15 px-5 py-2 text-[10.5px] font-semibold tracking-[0.14em] text-muted-foreground uppercase lg:px-6"
+                  >
+                    Tools
+                  </h3>
+                  <ul aria-label="Tools, locked for now">
+                    <li class="flex items-center gap-3 px-5 py-2.5 opacity-60 lg:px-6">
+                      <span
+                        class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-accent"
+                      >
+                        <ng-icon name="lucideMail" class="text-base" aria-hidden="true" />
+                      </span>
+                      <span class="min-w-0 flex-1 leading-tight">
+                        <span class="block truncate text-[13.5px] font-semibold text-foreground">
+                          Test emails
+                        </span>
+                        <span class="block text-[11.5px] text-muted-foreground"
+                          >Sends sample emails with attachments to your lab mailbox (Outlook).</span
+                        >
+                      </span>
+                      <span
+                        class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-muted-foreground"
+                        aria-hidden="true"
+                      >
+                        <ng-icon name="lucideLock" class="text-base" />
+                      </span>
+                    </li>
+                  </ul>
+                } @else if (workspaceLink() || exerciseZip() || triggerEmailEnabled()) {
+                  @if (workspaceLink() || exerciseZip()) {
+                    <h3
+                      class="bg-black/15 px-5 py-2 text-[10.5px] font-semibold tracking-[0.14em] text-muted-foreground uppercase lg:px-6"
+                    >
+                      Resources
+                    </h3>
+                    <ul class="divide-y divide-white/5">
+                      @if (workspaceLink(); as url) {
+                        <!-- The row opens SharePoint; the icon beside it copies the link (as a
+                             guest there, SharePoint offers no Copy link). -->
+                        <li class="flex items-center">
+                          <a
+                            [href]="url"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="group flex min-w-0 flex-1 items-center gap-3 py-2.5 ps-5 pe-2 no-underline transition-colors outline-none hover:bg-white/[0.03] focus-visible:bg-white/[0.03] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset lg:ps-6"
+                          >
+                            <span
+                              class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-accent"
+                            >
+                              <ng-icon
+                                name="lucideFolderOpen"
+                                class="text-base"
+                                aria-hidden="true"
+                              />
+                            </span>
+                            <span class="min-w-0 flex-1 leading-tight">
+                              <span
+                                class="block truncate text-[13.5px] font-semibold text-foreground"
+                              >
+                                Resource workspace
+                              </span>
+                              <span class="block text-[11.5px] text-muted-foreground">
+                                Opens SharePoint in a new tab
+                              </span>
+                            </span>
+                            <span
+                              class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-muted-foreground transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-accent/50 group-hover:text-foreground motion-reduce:transition-none"
+                              aria-hidden="true"
+                            >
+                              <ng-icon
+                                name="lucideArrowUpRight"
+                                class="text-base rtl:-scale-x-100"
+                              />
+                            </span>
+                          </a>
+                          <button
+                            type="button"
+                            class="me-5 grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-muted-foreground transition-all duration-300 outline-none hover:-translate-y-0.5 hover:border-accent/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none lg:me-6"
+                            aria-label="Copy the resource workspace link"
+                            title="Copy link"
+                            (click)="copyWorkspaceLink(url)"
+                          >
+                            <ng-icon name="lucideCopy" class="text-base" aria-hidden="true" />
+                          </button>
+                        </li>
                       }
-                    </p>
-                    <p class="mt-1 text-[12px] text-muted-foreground">latest score</p>
+                      @if (exerciseZip(); as zip) {
+                        <li>
+                          <button
+                            type="button"
+                            class="group flex w-full items-center gap-3 px-5 py-2.5 text-start transition-colors outline-none hover:bg-white/[0.03] focus-visible:bg-white/[0.03] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset lg:px-6"
+                            aria-label="Download the lab files as a zip"
+                            (click)="openFile(zip)"
+                          >
+                            <span
+                              class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-accent"
+                            >
+                              <ng-icon
+                                name="lucideFileArchive"
+                                class="text-base"
+                                aria-hidden="true"
+                              />
+                            </span>
+                            <span class="min-w-0 flex-1 leading-tight">
+                              <span
+                                class="block truncate text-[13.5px] font-semibold text-foreground"
+                              >
+                                Exercise files
+                              </span>
+                              <span class="block text-[11.5px] text-muted-foreground">
+                                Download the lab files as a zip
+                              </span>
+                            </span>
+                            <span
+                              class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-muted-foreground transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-accent/50 group-hover:text-foreground motion-reduce:transition-none"
+                              aria-hidden="true"
+                            >
+                              <ng-icon name="lucideDownload" class="text-base" />
+                            </span>
+                          </button>
+                        </li>
+                      }
+                    </ul>
+                  }
+
+                  <!-- Test emails, last. Only for assignments whose brief turns the tool on. -->
+                  @if (triggerEmailEnabled()) {
+                    <h3
+                      class="bg-black/15 px-5 py-2 text-[10.5px] font-semibold tracking-[0.14em] text-muted-foreground uppercase lg:px-6"
+                      [class.border-t]="workspaceLink() || exerciseZip()"
+                      [class.border-white/5]="workspaceLink() || exerciseZip()"
+                    >
+                      Tools
+                    </h3>
+                    <!-- Same row as the resources above: the whole row is the action, a trailing
+                         icon says what it does. -->
+                    <button
+                      type="button"
+                      class="group flex w-full items-center gap-3 px-5 py-2.5 text-start transition-colors outline-none hover:bg-white/[0.03] focus-visible:bg-white/[0.03] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset lg:px-6"
+                      aria-label="Send test emails to your lab mailbox"
+                      (click)="sendTestEmails()"
+                    >
+                      <span
+                        class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-accent"
+                      >
+                        <ng-icon name="lucideMail" class="text-base" aria-hidden="true" />
+                      </span>
+                      <span class="min-w-0 flex-1 leading-tight">
+                        <span class="block text-[13.5px] font-semibold text-foreground">
+                          Test emails
+                        </span>
+                        <span class="mt-0.5 block text-[11.5px] leading-snug text-muted-foreground">
+                          Sends sample emails with attachments to your lab mailbox (Outlook). They
+                          can take a few minutes to arrive.
+                        </span>
+                      </span>
+                      <span
+                        class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-muted-foreground transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-accent/50 group-hover:text-foreground motion-reduce:transition-none"
+                        aria-hidden="true"
+                      >
+                        <ng-icon name="lucideSend" class="text-base rtl:-scale-x-100" />
+                      </span>
+                    </button>
+                  }
+                } @else {
+                  <p class="px-5 py-4 text-[13px] text-muted-foreground lg:px-6">
+                    No lab materials for this lab yet.
+                  </p>
+                }
+              </div>
+            </app-ai-lab-step>
+          </section>
+
+          <!-- ============================== 04 — HINTS ============================== -->
+          <section id="hints" class="scroll-mt-32">
+            <app-ai-lab-step
+              index="04"
+              heading="Hints"
+              caption="Optimize your agents and workflows"
+              [step]="journey().hints"
+            >
+              <div class="rounded-2xl border border-border bg-card p-5 lg:p-6">
+                <!-- Locked the same way, the hint card shows with its text blurred out. -->
+                @if (journey().hints.state === 'locked') {
+                  <div class="flex items-center gap-x-3">
+                    <span
+                      class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-amber-400"
+                    >
+                      <ng-icon name="lucideLightbulb" class="text-lg" aria-hidden="true" />
+                    </span>
+                    <p class="text-[13.5px] font-semibold text-foreground">Hints</p>
                   </div>
-                  <div class="min-w-0 flex-1">
-                    <!-- The evaluator's verdict as heading + subheading, the
-                         way the grade card leads with its headline. -->
-                    @if (result.master_comment) {
+                  <div class="relative mt-3 pb-[14px]">
+                    @for (depth of [2, 1]; track depth) {
+                      <span
+                        class="absolute top-3 rounded-xl border border-border bg-secondary"
+                        [style.left.px]="depth * 12"
+                        [style.right.px]="depth * 12"
+                        [style.bottom.px]="(2 - depth) * 7"
+                        [style.opacity]="1.1 - depth * 0.3"
+                        aria-hidden="true"
+                      ></span>
+                    }
+                    <div
+                      class="relative overflow-hidden rounded-xl border border-border bg-muted px-5 py-4 lg:px-6"
+                    >
+                      <div class="space-y-2.5 blur-[3px] select-none" aria-hidden="true">
+                        <div class="h-3 w-11/12 rounded-full bg-white/15"></div>
+                        <div class="h-3 w-4/5 rounded-full bg-white/15"></div>
+                        <div class="h-3 w-2/3 rounded-full bg-white/15"></div>
+                      </div>
+                      <div class="absolute inset-0 grid place-items-center bg-muted/40">
+                        <span
+                          class="grid size-9 place-items-center rounded-xl border border-border bg-black/30 text-muted-foreground"
+                          role="img"
+                          aria-label="Hints locked"
+                        >
+                          <ng-icon name="lucideLock" class="text-base" aria-hidden="true" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                } @else if (hints().length) {
+                  <!-- One hint at a time. The header says where you are, its segments
+                       are the tabs (arrow keys move between them), and the arrows step
+                       through. The open hint sits on a small stack — one card peeking
+                       out per hint still ahead — so "there's more" reads without a word. -->
+                  <div
+                    ngpTabset
+                    [ngpTabsetValue]="hintTab()"
+                    (ngpTabsetValueChange)="selectHint($event)"
+                  >
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <span
+                        class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-amber-400"
+                      >
+                        <ng-icon name="lucideLightbulb" class="text-lg" aria-hidden="true" />
+                      </span>
+                      <p class="text-[13.5px] font-semibold text-foreground" aria-live="polite">
+                        Hint {{ hintIndex() + 1 }}
+                        <span class="font-normal text-muted-foreground"
+                          >of {{ hints().length }}</span
+                        >
+                      </p>
+
+                      @if (hints().length > 1) {
+                        <div class="ms-auto flex items-center gap-2">
+                          <div ngpTabList class="flex items-center gap-1" aria-label="Hints">
+                            @for (hint of hints(); track hint.id; let i = $index) {
+                              <button
+                                ngpTabButton
+                                type="button"
+                                [ngpTabButtonValue]="'' + hint.id"
+                                class="group flex cursor-pointer items-center rounded-full px-0.5 py-2.5 outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring"
+                                [attr.aria-label]="'Hint ' + (i + 1)"
+                              >
+                                <span
+                                  class="block h-1.5 rounded-full transition-all duration-300 motion-reduce:transition-none"
+                                  [class]="hintTabClass()[i]"
+                                ></span>
+                              </button>
+                            }
+                          </div>
+                          <button
+                            app-button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            [disabled]="hintIndex() === 0"
+                            aria-label="Previous hint"
+                            (click)="stepHint(-1)"
+                          >
+                            <ng-icon
+                              name="lucideChevronLeft"
+                              class="text-lg rtl:-scale-x-100"
+                              aria-hidden="true"
+                            />
+                          </button>
+                          <button
+                            app-button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            [disabled]="hintIndex() === hints().length - 1"
+                            aria-label="Next hint"
+                            (click)="stepHint(1)"
+                          >
+                            <ng-icon
+                              name="lucideChevronRight"
+                              class="text-lg rtl:-scale-x-100"
+                              aria-hidden="true"
+                            />
+                          </button>
+                        </div>
+                      }
+                    </div>
+
+                    <!-- The stack: room under the card for each peeking edge, the edges
+                         drawn deepest first, the open hint on top. -->
+                    <div
+                      class="relative mt-3"
+                      [style.padding-bottom.px]="hintStack().length * 11 + 4"
+                    >
+                      @for (card of hintStack(); track card.depth) {
+                        <span
+                          class="absolute inset-x-0 top-0 origin-bottom rounded-xl border border-white/10 bg-muted shadow-[0_10px_24px_-12px] shadow-black/70 transition-all duration-500 motion-reduce:transition-none"
+                          [style.bottom.px]="hintStack().length * 11 + 4"
+                          [style.transform]="card.transform"
+                          [style.opacity]="card.opacity"
+                          aria-hidden="true"
+                        ></span>
+                      }
+                      @for (hint of hints(); track hint.id; let i = $index) {
+                        <div ngpTabPanel [ngpTabPanelValue]="'' + hint.id" class="outline-none">
+                          @if (i === hintIndex()) {
+                            <div
+                              class="relative rounded-xl border border-white/10 bg-muted px-5 py-4 shadow-[0_12px_28px_-14px] shadow-black/80 animate-in fade-in duration-300 motion-reduce:animate-none lg:px-6"
+                              [class]="
+                                hintDirection() > 0
+                                  ? 'slide-in-from-right-3'
+                                  : 'slide-in-from-left-3'
+                              "
+                            >
+                              <p
+                                class="max-w-[72ch] text-[15px] leading-relaxed whitespace-pre-line text-foreground/90"
+                              >
+                                {{ hint.hint }}
+                              </p>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                @if (journey().hints.state !== 'locked' && flowChart(); as chart) {
+                  <div [class]="hints().length ? 'mt-5 border-t border-border pt-5' : ''">
+                    @if (flowChartIsImage()) {
+                      <!-- The flow chart fills its frame edge to edge; the whole frame
+                           opens the real thing. -->
+                      <button
+                        type="button"
+                        class="group relative block w-full overflow-hidden rounded-xl border border-border bg-black/25 transition-colors hover:border-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        aria-label="Open the flow chart full size"
+                        (click)="openFile(chart)"
+                      >
+                        <img
+                          [src]="chart.url"
+                          [alt]="'Expected flow for ' + (brief()?.name ?? 'this lab')"
+                          loading="lazy"
+                          class="block h-auto w-full"
+                        />
+                        <span
+                          class="absolute end-3 top-3 inline-flex items-center gap-1 rounded-full border border-border bg-background/90 px-2.5 py-1 text-[11.5px] font-semibold text-foreground backdrop-blur transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100"
+                          aria-hidden="true"
+                        >
+                          View full size
+                          <ng-icon name="lucideArrowUpRight" class="text-sm rtl:-scale-x-100" />
+                        </span>
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="flex items-center gap-3 rounded-lg border border-border bg-black/25 p-4 text-start transition-colors hover:bg-card-hover"
+                        aria-label="Open the flow chart"
+                        (click)="openFile(chart)"
+                      >
+                        <span
+                          class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary text-muted-foreground"
+                        >
+                          <ng-icon name="lucideDownload" class="text-lg" aria-hidden="true" />
+                        </span>
+                        <span class="min-w-0 flex-1">
+                          <span class="block truncate text-[13.5px] font-semibold text-foreground">
+                            Flow chart
+                          </span>
+                          <span class="block text-[11.5px] text-muted-foreground"
+                            >Expected flow</span
+                          >
+                        </span>
+                      </button>
+                    }
+                  </div>
+                }
+
+                @if (journey().hints.state !== 'locked' && !hints().length && !flowChart()) {
+                  <p class="text-[13px] text-muted-foreground">No hints for this lab yet.</p>
+                }
+              </div>
+            </app-ai-lab-step>
+          </section>
+
+          <!-- ======================= 05 — EVALUATION & SCORES ======================= -->
+          <section id="grade" class="scroll-mt-32">
+            <app-ai-lab-step
+              index="05"
+              heading="Your evaluation &amp; scores"
+              caption="Submit your agents and see how they score"
+              [step]="journey().grade"
+            >
+              <!-- Manual "check result" on top of the poll that runs while grading. -->
+              @if (labUnlocked()) {
+                <button
+                  app-button
+                  stepAction
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  [disabled]="statusLoading()"
+                  aria-label="Refresh evaluation status"
+                  (click)="refreshStatus()"
+                >
+                  <ng-icon
+                    name="lucideRefreshCw"
+                    class="text-lg"
+                    [class.animate-spin]="statusLoading()"
+                    aria-hidden="true"
+                  />
+                </button>
+              }
+
+              <!-- Status first: a running or failed evaluation, above the grade card. -->
+              @if (evaluating()) {
+                <div class="mb-4">
+                  <div
+                    class="ai-glow flex flex-col gap-4 rounded-2xl border border-accent/40 bg-linear-to-br from-accent/10 via-card to-card p-6 sm:flex-row sm:items-center lg:p-8"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <app-spinner size="sm" />
+                    <div class="min-w-0 flex-1">
+                      <p class="text-[14px] font-semibold">Evaluation in progress</p>
+                      <p
+                        class="mt-1 max-w-[62ch] text-[13px] leading-relaxed text-muted-foreground"
+                      >
+                        Usually a few minutes. Your scores appear here automatically — you can leave
+                        this page and come back.
+                      </p>
+                      <app-progress
+                        class="mt-4 block max-w-[320px]"
+                        [value]="null"
+                        size="sm"
+                        ariaLabel="Evaluation in progress"
+                      />
+                    </div>
+                  </div>
+                </div>
+              } @else if (evaluationView() === 'error') {
+                <div class="mb-4">
+                  <app-error-state
+                    class="block rounded-2xl border border-border bg-card"
+                    title="Evaluation failed"
+                    message="Something went wrong while evaluating your submission. Submit it again, or try a different agent or workflow."
+                    retryLabel="Submit again"
+                    (retry)="resubmit()"
+                  />
+                </div>
+              }
+
+              @if (bestAttempt(); as best) {
+                <!-- The grade card: the best attempt (the list arrives best first),
+                     with the allowance when the lab sets one. -->
+                <div class="overflow-hidden rounded-2xl border border-border bg-card">
+                  <div
+                    class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b-2 border-accent bg-card-hover px-6 py-3 lg:px-8"
+                  >
+                    @if (allowedAttempts(); as allowed) {
+                      <p class="text-[13px] text-muted-foreground">
+                        <span class="font-semibold text-foreground">Best score</span>
+                        from attempt {{ best.attempt_number }}
+                      </p>
+                      <p class="flex items-baseline gap-1.5">
+                        <span
+                          class="text-[10.5px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+                        >
+                          Attempts
+                        </span>
+                        <span class="font-serif text-[22px] leading-none font-semibold">
+                          {{ totalAttempts() }}
+                        </span>
+                        <span class="text-[13px] text-muted-foreground">of {{ allowed }}</span>
+                        <span
+                          class="ms-1 self-center rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+                          [class]="
+                            attemptsLeft()
+                              ? 'bg-accent/15 text-accent'
+                              : 'bg-white/5 text-muted-foreground'
+                          "
+                        >
+                          {{ attemptsLeft() ? attemptsLeft() + ' left' : 'None left' }}
+                        </span>
+                      </p>
+                    } @else {
+                      <p class="text-[13px] font-semibold text-foreground">Best score</p>
+                      <p class="flex items-baseline gap-1.5">
+                        <span
+                          class="text-[10.5px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+                        >
+                          Attempt
+                        </span>
+                        <span class="font-serif text-[22px] leading-none font-semibold">
+                          {{ best.attempt_number }}
+                        </span>
+                        <span class="text-[13px] text-muted-foreground"
+                          >of {{ totalAttempts() }}</span
+                        >
+                      </p>
+                    }
+                  </div>
+                  <div class="flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:p-8">
+                    <!-- Ring gauge: a conic fill to the percentage around the score. -->
+                    <div
+                      class="ai-gauge grid size-[132px] shrink-0 place-items-center self-center rounded-full lg:self-auto"
+                      [style.--ai-gauge-pct]="+(best.percentage ?? 0)"
+                      [style.--ai-gauge-color]="
+                        attemptPassed(best) ? 'var(--mm-success)' : 'var(--accent)'
+                      "
+                    >
+                      <div
+                        class="flex size-[116px] flex-col items-center justify-center rounded-full bg-card text-center"
+                      >
+                        <p class="font-serif text-[36px] leading-none font-semibold">
+                          {{
+                            best.score !== null
+                              ? (best.score | number: '1.0-2')
+                              : best.percentage !== null
+                                ? (best.percentage | number: '1.0-0') + '%'
+                                : '–'
+                          }}
+                        </p>
+                        <p class="mt-1 text-[11px] text-muted-foreground">
+                          {{
+                            best.score !== null && best.max_score !== null
+                              ? 'out of ' + (best.max_score | number: '1.0-0')
+                              : 'best score'
+                          }}
+                        </p>
+                      </div>
+                    </div>
+                    <div class="min-w-0 flex-1">
                       <p
                         class="max-w-[62ch] font-serif text-[19px] leading-snug font-semibold lg:text-[21px]"
                       >
-                        {{ result.master_comment }}
+                        {{ best.master_comment || 'Your best attempt so far' }}
                       </p>
-                    }
-                    @if (result.minor_comment) {
                       <p
                         class="mt-2 max-w-[74ch] text-[13.5px] leading-relaxed text-muted-foreground"
                       >
-                        {{ result.minor_comment }}
+                        {{
+                          best.minor_comment ||
+                            'Attempt ' +
+                              best.attempt_number +
+                              ', your highest-scoring evaluation of ' +
+                              totalAttempts() +
+                              '. Submit again any time to try for a better score.'
+                        }}
                       </p>
-                    }
-                    @if (result.percentage !== null) {
                       <div class="mt-5 flex items-center gap-3">
                         <app-progress
                           class="w-full max-w-[220px]"
-                          [value]="result.percentage"
+                          [value]="+(best.percentage ?? 0)"
                           size="sm"
-                          [variant]="result.percentage >= 70 ? 'success' : 'warning'"
+                          [variant]="attemptPassed(best) ? 'success' : 'warning'"
+                          ariaLabel="Best evaluation percentage"
+                        />
+                        <span class="shrink-0 font-mono text-[13px] text-muted-foreground">
+                          {{ +(best.percentage ?? 0) | number: '1.0-0' }}%
+                        </span>
+                      </div>
+                      <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
+                        @if (best.grade_card_url) {
+                          <button
+                            app-button
+                            type="button"
+                            variant="primary"
+                            class="gap-2"
+                            (click)="openAttemptGradeCard(best)"
+                          >
+                            <ng-icon name="lucideDownload" class="text-base" aria-hidden="true" />
+                            Download grade card
+                          </button>
+                        }
+                        <span class="text-[12.5px] text-muted-foreground">
+                          Evaluated {{ best.graded_at | date: 'd MMM y, HH:mm' }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- My Evaluation History, the card's footer: one attempt at a time,
+                       switched like the hints — "Attempt N of M", a segment per attempt
+                       (the tabs) and previous / next. Opens on the latest. -->
+                  @if (historyAttempts().length > 1) {
+                    <div
+                      class="border-t border-border bg-black/15 px-6 py-4 lg:px-8"
+                      ngpTabset
+                      [ngpTabsetValue]="historyTab()"
+                      (ngpTabsetValueChange)="selectHistory($event)"
+                    >
+                      <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                        <h4
+                          class="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+                        >
+                          My Evaluation History
+                        </h4>
+                        <div class="flex items-center gap-2">
+                          <p class="text-[13px] font-semibold text-foreground" aria-live="polite">
+                            Attempt {{ historyRows()[historyIndex()]?.attempt?.attempt_number }}
+                            <span class="font-normal text-muted-foreground">
+                              of {{ attemptsHidden() || historyRows().length }}
+                            </span>
+                          </p>
+                          <div
+                            ngpTabList
+                            class="ms-1 flex items-center gap-1"
+                            aria-label="Attempts"
+                          >
+                            @for (
+                              row of historyRows();
+                              track row.attempt.attempt_number;
+                              let i = $index
+                            ) {
+                              <button
+                                ngpTabButton
+                                type="button"
+                                [ngpTabButtonValue]="'' + row.attempt.attempt_number"
+                                class="group flex cursor-pointer items-center rounded-full px-0.5 py-2.5 outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring"
+                                [attr.aria-label]="'Attempt ' + row.attempt.attempt_number"
+                              >
+                                <span
+                                  class="block h-1.5 rounded-full transition-all duration-300 motion-reduce:transition-none"
+                                  [class]="historyTabClass()[i]"
+                                ></span>
+                              </button>
+                            }
+                          </div>
+                          <button
+                            app-button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            [disabled]="historyIndex() === 0"
+                            aria-label="Previous attempt"
+                            (click)="stepHistory(-1)"
+                          >
+                            <ng-icon
+                              name="lucideChevronLeft"
+                              class="text-lg rtl:-scale-x-100"
+                              aria-hidden="true"
+                            />
+                          </button>
+                          <button
+                            app-button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            [disabled]="historyIndex() === historyRows().length - 1"
+                            aria-label="Next attempt"
+                            (click)="stepHistory(1)"
+                          >
+                            <ng-icon
+                              name="lucideChevronRight"
+                              class="text-lg rtl:-scale-x-100"
+                              aria-hidden="true"
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Column headings (from sm up; on a phone the row reads on its own). -->
+                      <div
+                        class="mt-2 hidden grid-cols-[132px_minmax(0,1fr)_128px_40px] gap-4 border-b border-white/5 pb-2 text-[10.5px] font-semibold tracking-[0.12em] text-muted-foreground uppercase sm:grid"
+                        aria-hidden="true"
+                      >
+                        <span>Attempt</span>
+                        <span>Feedback</span>
+                        <span>Score</span>
+                        <span class="sr-only">Grade card</span>
+                      </div>
+
+                      @for (
+                        row of historyRows();
+                        track row.attempt.attempt_number;
+                        let i = $index
+                      ) {
+                        <div
+                          ngpTabPanel
+                          [ngpTabPanelValue]="'' + row.attempt.attempt_number"
+                          class="outline-none"
+                        >
+                          @if (i === historyIndex()) {
+                            @let attempt = row.attempt;
+                            <div
+                              class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-start gap-x-4 gap-y-2 py-3 animate-in fade-in duration-300 motion-reduce:animate-none sm:grid-cols-[132px_minmax(0,1fr)_128px_40px] sm:items-center"
+                              [class]="
+                                historyDirection() > 0
+                                  ? 'slide-in-from-right-3'
+                                  : 'slide-in-from-left-3'
+                              "
+                            >
+                              <div class="min-w-0">
+                                <p class="text-[13.5px] font-semibold text-foreground">
+                                  Attempt {{ attempt.attempt_number }}
+                                </p>
+                                <p class="mt-0.5 text-[11.5px] text-muted-foreground">
+                                  {{ attempt.graded_at | date: 'd MMM y' }}
+                                </p>
+                                @if (row.best || row.latest) {
+                                  <div class="mt-1.5 flex flex-wrap gap-1">
+                                    @if (row.best) {
+                                      <span
+                                        class="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[10.5px] font-semibold text-amber-400"
+                                      >
+                                        <ng-icon
+                                          name="lucideTrophy"
+                                          class="text-[11px]"
+                                          aria-hidden="true"
+                                        />
+                                        Best
+                                      </span>
+                                    }
+                                    @if (row.latest) {
+                                      <span
+                                        class="rounded-full bg-accent/15 px-2 py-0.5 text-[10.5px] font-semibold text-accent"
+                                      >
+                                        Latest
+                                      </span>
+                                    }
+                                  </div>
+                                }
+                              </div>
+
+                              <div
+                                class="order-last col-span-3 min-w-0 sm:order-none sm:col-span-1"
+                              >
+                                <p class="text-[13.5px] leading-snug font-semibold text-foreground">
+                                  {{
+                                    attempt.master_comment ||
+                                      'No feedback recorded for this attempt'
+                                  }}
+                                </p>
+                                @if (attempt.minor_comment) {
+                                  <p
+                                    class="mt-0.5 text-[12.5px] leading-relaxed text-muted-foreground"
+                                  >
+                                    {{ attempt.minor_comment }}
+                                  </p>
+                                }
+                              </div>
+
+                              <!-- Score: the number, a bar, and pass / below in words. -->
+                              <div class="w-[112px] sm:w-auto">
+                                @if (row.pct !== null) {
+                                  <p class="font-serif text-[20px] leading-none font-semibold">
+                                    {{ row.pct | number: '1.0-0' }}%
+                                  </p>
+                                  <span
+                                    class="mt-1.5 block h-1 rounded-full bg-white/10"
+                                    aria-hidden="true"
+                                  >
+                                    <span
+                                      class="block h-full rounded-full"
+                                      [class]="row.passed ? 'bg-success' : 'bg-accent'"
+                                      [style.width.%]="row.pct"
+                                    ></span>
+                                  </span>
+                                  <p
+                                    class="mt-1 text-[11px] font-semibold"
+                                    [class]="row.passed ? 'text-success' : 'text-muted-foreground'"
+                                  >
+                                    {{ row.passed ? 'Pass' : 'Below ' + passMark + '%' }}
+                                  </p>
+                                } @else {
+                                  <p class="text-[12.5px] text-muted-foreground">Not scored</p>
+                                }
+                              </div>
+
+                              <div class="flex justify-end">
+                                @if (attempt.grade_card_url) {
+                                  <button
+                                    app-button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    class="rounded-xl border-border bg-black/30"
+                                    [attr.aria-label]="
+                                      'Download grade card for attempt ' + attempt.attempt_number
+                                    "
+                                    [title]="'Grade card — attempt ' + attempt.attempt_number"
+                                    (click)="openAttemptGradeCard(attempt)"
+                                  >
+                                    <ng-icon
+                                      name="lucideDownload"
+                                      class="text-base"
+                                      aria-hidden="true"
+                                    />
+                                  </button>
+                                }
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
+
+                      @if (attemptsHidden(); as total) {
+                        <p class="mt-1 text-[11px] text-muted-foreground">
+                          Your best {{ historyRows().length }} of {{ total }} attempts
+                        </p>
+                      }
+                    </div>
+                  }
+                </div>
+              } @else if (latestGrade(); as result) {
+                <!-- No attempts list yet: the latest grade off `assignment-status/`,
+                     in the same card. -->
+                <div class="overflow-hidden rounded-2xl border border-border bg-card">
+                  <div
+                    class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b-2 border-accent bg-card-hover px-6 py-3 lg:px-8"
+                  >
+                    <p class="text-[13px] font-semibold text-foreground">Latest evaluation</p>
+                    @if (result.evaluated_at ?? result.submitted_at; as when) {
+                      <p class="text-[12.5px] text-muted-foreground">
+                        {{ when | date: 'd MMM y, HH:mm' }}
+                      </p>
+                    }
+                  </div>
+                  <div class="flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:p-8">
+                    <div
+                      class="ai-gauge grid size-[132px] shrink-0 place-items-center self-center rounded-full lg:self-auto"
+                      [style.--ai-gauge-pct]="result.percentage ?? 0"
+                      [style.--ai-gauge-color]="
+                        (result.percentage ?? 0) >= passMark ? 'var(--mm-success)' : 'var(--accent)'
+                      "
+                    >
+                      <div
+                        class="flex size-[116px] flex-col items-center justify-center rounded-full bg-card text-center"
+                      >
+                        <p class="font-serif text-[36px] leading-none font-semibold">
+                          {{ result.percentage | number: '1.0-0' }}%
+                        </p>
+                        <p class="mt-1 text-[11px] text-muted-foreground">latest score</p>
+                      </div>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <p
+                        class="max-w-[62ch] font-serif text-[19px] leading-snug font-semibold lg:text-[21px]"
+                      >
+                        {{ result.master_comment || 'Your agent has been evaluated' }}
+                      </p>
+                      @if (result.minor_comment) {
+                        <p
+                          class="mt-2 max-w-[74ch] text-[13.5px] leading-relaxed text-muted-foreground"
+                        >
+                          {{ result.minor_comment }}
+                        </p>
+                      }
+                      <div class="mt-5 flex items-center gap-3">
+                        <app-progress
+                          class="w-full max-w-[220px]"
+                          [value]="result.percentage ?? 0"
+                          size="sm"
+                          [variant]="(result.percentage ?? 0) >= passMark ? 'success' : 'warning'"
                           ariaLabel="Evaluation percentage"
                         />
                         <span class="shrink-0 font-mono text-[13px] text-muted-foreground">
-                          {{ result.percentage | number: '1.0-1' }}%
+                          {{ result.percentage ?? 0 | number: '1.0-0' }}%
                         </span>
                       </div>
-                    }
-                    <div class="mt-6 flex flex-wrap items-center gap-3">
-                      <!-- The signed link expires (`grade_card_expires_at`), so it goes
-                           out through `downloadGradeCard` and the host re-reads the
-                           status first when `grade_card_is_expired`. -->
+                      <!-- The signed link expires (`grade_card_expires_at`), so it goes out
+                           through `downloadGradeCard`, which re-reads the status first when
+                           `grade_card_is_expired`. -->
                       @if (result.grade_card_pdf_url) {
+                        <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
+                          <button
+                            app-button
+                            type="button"
+                            variant="primary"
+                            class="gap-2"
+                            [disabled]="gradeCardBusy()"
+                            [attr.aria-busy]="gradeCardBusy()"
+                            (click)="downloadGradeCard()"
+                          >
+                            <ng-icon name="lucideDownload" class="text-base" aria-hidden="true" />
+                            {{ gradeCardBusy() ? 'Preparing…' : 'Download grade card' }}
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <!-- Before a first grade: the grade card filled with sample data and
+                     tagged — and watermarked — as such, so the learner sees what
+                     they'll get without mistaking it for a result. -->
+                <div class="relative overflow-hidden rounded-2xl border border-border bg-card">
+                  <span
+                    class="pointer-events-none absolute end-6 bottom-4 -rotate-12 font-serif text-[72px] leading-none font-semibold tracking-[0.08em] text-foreground/[0.04] uppercase select-none lg:end-10"
+                    aria-hidden="true"
+                  >
+                    Sample
+                  </span>
+                  <div
+                    class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b-2 border-accent bg-card-hover px-6 py-3 lg:px-8"
+                  >
+                    <p class="text-[13px] text-muted-foreground">
+                      A sample grade card — yours appears here once your agent is evaluated.
+                    </p>
+                    <span
+                      class="rounded-full border border-border bg-white/5 px-2 py-0.5 text-[10.5px] font-semibold tracking-wide text-muted-foreground uppercase"
+                    >
+                      Sample
+                    </span>
+                  </div>
+                  <div class="flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:p-8">
+                    <div
+                      class="ai-gauge grid size-[132px] shrink-0 place-items-center self-center rounded-full lg:self-auto"
+                      [style.--ai-gauge-pct]="samplePercent()"
+                      [style.--ai-gauge-color]="
+                        samplePercent() >= passMark ? 'var(--mm-success)' : 'var(--accent)'
+                      "
+                    >
+                      <div
+                        class="flex size-[116px] flex-col items-center justify-center rounded-full bg-card text-center"
+                      >
+                        <p class="font-serif text-[36px] leading-none font-semibold">
+                          {{ +sampleGrade() | number: '1.0-2' }}
+                        </p>
+                        <p class="mt-1 text-[11px] text-muted-foreground">out of 10</p>
+                      </div>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <p
+                        class="max-w-[62ch] font-serif text-[19px] leading-snug font-semibold lg:text-[21px]"
+                      >
+                        {{ sampleVerdict.title }}
+                      </p>
+                      <p
+                        class="mt-2 max-w-[74ch] text-[13.5px] leading-relaxed text-muted-foreground"
+                      >
+                        {{ sampleVerdict.detail }}
+                      </p>
+                      <div class="mt-5 flex items-center gap-3">
+                        <app-progress
+                          class="w-full max-w-[220px]"
+                          [value]="samplePercent()"
+                          size="sm"
+                          [variant]="samplePercent() >= passMark ? 'success' : 'warning'"
+                          ariaLabel="Sample evaluation percentage"
+                        />
+                        <span class="shrink-0 font-mono text-[13px] text-muted-foreground">
+                          {{ samplePercent() | number: '1.0-0' }}%
+                        </span>
+                      </div>
+                      <!-- The sample PDF downloads; a lab that ships none keeps the button,
+                           disabled, and says so. -->
+                      <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
                         <button
                           app-button
                           type="button"
                           variant="primary"
                           class="gap-2"
-                          [disabled]="gradeCardBusy()"
-                          [attr.aria-busy]="gradeCardBusy()"
-                          (click)="downloadGradeCard()"
+                          [disabled]="!sampleCard()"
+                          (click)="openSampleCard()"
                         >
                           <ng-icon name="lucideDownload" class="text-base" aria-hidden="true" />
-                          {{ gradeCardBusy() ? 'Preparing…' : 'Download grade card' }}
+                          Download sample grade card
                         </button>
-                      }
+                        <span class="text-[12.5px] text-muted-foreground">
+                          @if (sampleCard()) {
+                            How work is marked
+                          } @else {
+                            No sample grade card for this lab yet
+                          }
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
+              }
+
+              @if (!attempts().length && attemptsProblem(); as problem) {
+                <p class="mt-4 text-[12.5px] text-muted-foreground" role="status">
+                  {{ problem }}
+                  <button
+                    type="button"
+                    class="ms-1 font-medium text-accent underline-offset-2 hover:underline"
+                    (click)="facade.retryAttempts()"
+                  >
+                    Retry
+                  </button>
+                </p>
+              }
+
+              <!-- Submitting, as one card: what this is on top (a re-evaluation once
+                   there's a grade), the pick and its actions in a tinted strip below.
+                   Each select renders only when that kind came back; picking in one
+                   clears the other — one submission, one artefact. -->
+              @if (pickerOpen()) {
+                <div class="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
+                  <div class="flex items-start gap-3 px-5 py-4 lg:px-6">
+                    <span
+                      class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-accent"
+                    >
+                      <ng-icon
+                        name="lucideSend"
+                        class="text-base rtl:-scale-x-100"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <div class="min-w-0">
+                      <h3 class="text-[14px] font-semibold text-foreground">
+                        @if (hasAttempts()) {
+                          Re-evaluate your {{ flows().length ? 'agent or workflow' : 'agent' }}
+                        } @else {
+                          Submit your {{ flows().length ? 'agent or workflow' : 'agent' }}
+                        }
+                      </h3>
+                      @if (hasAttempts()) {
+                        <p class="mt-0.5 max-w-[70ch] text-[12.5px] text-muted-foreground">
+                          Improved it in the AI Lab? Submit it again for a fresh evaluation.
+                        </p>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="border-t border-white/5 bg-black/15 px-5 py-4 lg:px-6">
+                    @if (artefactsLoading() && !agents().length) {
+                      <p class="text-[13px] text-muted-foreground" role="status">
+                        Loading your agents…
+                      </p>
+                    } @else if (artefactsError()) {
+                      <app-error-state
+                        class="block"
+                        title="Couldn't load your agents"
+                        [message]="artefactsErrorMessage()"
+                        retryLabel="Try again"
+                        (retry)="refreshArtefacts()"
+                      />
+                    } @else if (hasArtefacts()) {
+                      <!-- One row: the pick (both selects share a column when both kinds
+                           are on offer), then refresh and submit right beside it. -->
+                      <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <div class="grid min-w-0 flex-1 gap-3">
+                          @if (agents().length) {
+                            <app-select
+                              id="lab-agent"
+                              label="Select your agent"
+                              [options]="agentOptions()"
+                              [value]="agentId()"
+                              (valueChange)="choose('agent', $event)"
+                              [disabled]="pickerLocked()"
+                            />
+                          }
+                          @if (flows().length) {
+                            <app-select
+                              id="lab-flow"
+                              label="Select your workflow"
+                              [options]="flowOptions()"
+                              [value]="flowId()"
+                              (valueChange)="choose('flow', $event)"
+                              [disabled]="pickerLocked()"
+                            />
+                          }
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <button
+                            app-button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            class="h-14 w-14"
+                            aria-label="Refresh the list of agents and workflows"
+                            title="Refresh list"
+                            [disabled]="pickerLocked() || artefactsLoading()"
+                            (click)="refreshArtefacts()"
+                          >
+                            <ng-icon
+                              name="lucideRefreshCw"
+                              class="text-lg"
+                              [class.animate-spin]="artefactsLoading()"
+                              aria-hidden="true"
+                            />
+                          </button>
+                          <button
+                            app-button
+                            type="button"
+                            class="h-14 px-5"
+                            [variant]="hasAttempts() ? 'outline' : 'default'"
+                            [disabled]="submitDisabled()"
+                            (click)="submit()"
+                          >
+                            @if (submitting()) {
+                              Submitting…
+                            } @else if (alreadySubmitted()) {
+                              Submitted
+                            } @else if (labDone()) {
+                              Submit again
+                            } @else {
+                              Submit for evaluation
+                            }
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- What actually goes to the evaluator, so the pick is checkable.
+                           The id is shown on purpose — it is literally the `agent_ref`
+                           the POST carries. Then the status line. -->
+                      <div
+                        class="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-muted-foreground"
+                      >
+                        @if (selectedAgent(); as agent) {
+                          <span class="font-mono">
+                            {{ agent.id }} &middot; updated
+                            {{ agent.modified_on | date: 'd MMM y' }}
+                          </span>
+                          <span aria-hidden="true">·</span>
+                        } @else if (selectedFlow(); as flow) {
+                          <span class="font-mono">
+                            {{ flow.id }} &middot; updated {{ flow.modified_on | date: 'd MMM y' }}
+                          </span>
+                          <span aria-hidden="true">·</span>
+                        }
+                        <span>{{ labHint() }}</span>
+                      </div>
+                      @if (selectedFlow()?.description; as description) {
+                        <p class="mt-1 text-[12px] text-muted-foreground">{{ description }}</p>
+                      }
+                    } @else {
+                      <div
+                        class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <p class="max-w-[62ch] text-[12.5px] text-muted-foreground">
+                          @if (labProvisioned()) {
+                            No agents or workflows yet — build one in Copilot Studio, then refresh.
+                          } @else {
+                            You don't have an AI Labs account yet. Create it from the AI Labs page —
+                            it takes a few minutes — then sign in again and refresh.
+                          }
+                        </p>
+                        <button
+                          app-button
+                          type="button"
+                          variant="outline"
+                          class="shrink-0"
+                          [disabled]="artefactsLoading()"
+                          (click)="refreshArtefacts()"
+                        >
+                          Refresh list
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </app-ai-lab-step>
+          </section>
+        </div>
+      </div>
+
+      <!-- ============================= INSTRUCTOR ============================= -->
+      <!-- Only worth its own section when there's more than a name — the name
+           alone is already in the hero meta row, and an empty card reads as a
+           bug rather than as missing data. -->
+      @if (instructorProfiles().length) {
+        <section>
+          <h2 class="font-serif text-[24px] font-semibold tracking-[-0.015em]">
+            {{ instructorProfiles().length === 1 ? 'Your instructor' : 'Your instructors' }}
+          </h2>
+          <div class="mt-5 flex flex-col gap-4">
+            @for (instructor of instructorProfiles(); track instructor.id) {
+              <div
+                class="flex flex-col gap-6 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center lg:p-6"
+              >
+                @if (instructor.image; as image) {
+                  <img
+                    [src]="image"
+                    [alt]="instructor.name"
+                    class="h-[132px] w-[132px] shrink-0 rounded-lg border border-border object-cover"
+                  />
+                }
+                <div class="min-w-0 flex-1">
+                  <p class="text-[19px] font-semibold tracking-[-0.01em]">{{ instructor.name }}</p>
+                  @if (instructor.designation) {
+                    <p class="mt-0.5 text-[13px] text-muted-foreground">
+                      {{ instructor.designation }}
+                    </p>
+                  }
+                  @if (instructor.bio) {
+                    <p
+                      class="mt-3 max-w-[62ch] text-[13.5px] leading-relaxed text-muted-foreground"
+                    >
+                      {{ instructor.bio }}
+                    </p>
+                  }
+                  @if (instructor.linkedin_url) {
+                    <a
+                      [href]="instructor.linkedin_url"
+                      target="_blank"
+                      rel="noreferrer"
+                      class="mt-3 inline-block text-[13px] font-semibold"
+                    >
+                      Full profile &#8599;
+                    </a>
+                  }
+                </div>
               </div>
             }
-          }
-          @case ('error') {
-            <app-error-state
-              class="block rounded-2xl border border-border bg-card"
-              title="Evaluation failed"
-              message="Something went wrong while evaluating your submission. Submit it again, or try a different agent or workflow."
-              retryLabel="Submit again"
-              (retry)="resubmit()"
-            />
-          }
-          @default {
-            <div class="rounded-2xl border border-dashed border-border bg-black/25 p-8 text-center">
-              <p class="text-[14px] font-semibold">Your scores appear here</p>
-              <p
-                class="mx-auto mt-2 max-w-[52ch] text-[13px] leading-relaxed text-muted-foreground"
-              >
-                Submit your agent or workflow from the AI Lab above. The evaluation runs
-                automatically and usually finishes within a few minutes.
-              </p>
-            </div>
-          }
-        }
-      </section>
+          </div>
+        </section>
+      }
 
       <!-- ====================== CPE CREDIT & ACCREDITATION ====================== -->
       @if (credits) {

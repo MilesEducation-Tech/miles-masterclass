@@ -193,11 +193,17 @@ export class AiLabExam implements CanDeactivateComponent {
 
     const score = result.score_percent;
     const passMark = result.pass_threshold_percent;
+    const retakeAfter = this.facade.retakeAfter();
     await this.showResult({
       isPassed: result.passed,
       score,
       passingScore: passMark,
-      message: result.passed ? LAB_EXAM_COPY.passed(score) : LAB_EXAM_COPY.failed(score, passMark),
+      retakeAfter,
+      message: result.passed
+        ? LAB_EXAM_COPY.passed(score)
+        : retakeAfter
+          ? `${LAB_EXAM_COPY.failed(score, passMark)} ${LAB_EXAM_COPY.coolOff(retakeAfter)}`
+          : LAB_EXAM_COPY.failed(score, passMark),
     });
   }
 

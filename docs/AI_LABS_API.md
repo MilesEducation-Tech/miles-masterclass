@@ -1,7 +1,7 @@
 # AI Labs APIs - Frontend Guide
 
-Every AI Labs route the merged backend serves (43 routes), with the request, a full success response and
-the errors each one can answer. App and web twins are documented together when they answer the same
+Every AI Labs route the merged backend serves (45 routes), with the request, a full success response and
+the errors each one can answer. **Last updated 2026-10-26** against the backend at commit `21a0042`. App and web twins are documented together when they answer the same
 body; where they differ, both are shown.
 
 |            |                                                                                                                                                              |
@@ -12,6 +12,20 @@ body; where they differ, both are shown.
 | Path id    | `{ai_lab_course_id}` = the AI Lab's UUID from the list / detail response                                                                                     |
 | Responses  | **real local capture** = taken from the backend; **sample data** = built from the code with invented values. Keys, nesting and types are the code's in both. |
 | Long lists | trimmed to 2 items; a `"_more"` entry says how many were cut                                                                                                 |
+
+### What changed since the 2026-10-20 edition (bind these first)
+
+| #   | Route(s)                                                                   | Change                                                                                                                                                                                                                                                                                                                                                                            | Action for FE                                           |
+| --- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| 1   | **NEW** `GET {app,web}-api/v1/ai-labs/assignment-attempts/<id>/`           | The learner's most recent graded practical attempts (up to `allowed_attempt`), best score first, each with a grade-card PDF link and the grader's comments. Scores out of 10.                                                                                                                                                                                                     | New screen / section - see section 8.                   |
+| 2   | `GET .../assignment-brief/<id>/`                                           | The brief now carries the full learner brief: `slug, name, details, problem_statement, guardrails, requirements, exercise_files, build_guides, sharepoint_links, sample_grade_card, flow_chart, tools`. `input_files`, `logic_flow`, `difficulty`, `version`, `published_date`, `scenarios` are GONE. `problem_statement` is **Markdown**. Response is `Cache-Control: no-store`. | Re-bind the brief screen; render Markdown; never cache. |
+| 3   | `GET .../course/<id>/` (lab detail)                                        | `instructors` is now a list of **objects** (was a list of names). New `chapter` object (the lab video). New `final_assessment_status` block. `chapter.hls_video_link` / `transcript_*` are `null` until the learner has started the lab.                                                                                                                                          | Re-bind instructors; play the video from `chapter`.     |
+| 4   | `GET .../course-progress/<id>/`, `POST .../course-assessment-submit/<id>/` | New `final_assessment_status` block, always the LAST key.                                                                                                                                                                                                                                                                                                                         | Drive the assessment button from it (section 1a).       |
+| 5   | Vendor error vocabulary                                                    | New `AI_LABS_STORAGE_UNAVAILABLE` (503, retry) and `AI_LABS_CONFIGURATION_REJECTED` (502, backend config). On brief / attempts a vendor validation error now answers `409 ai_lab_assignment_not_configured`.                                                                                                                                                                      | Add the two codes to your error switch (section 2).     |
+| 6   | `GET api/v1/ai-labs/account-ensure/`                                       | Optional `?include=labs_account` adds the AI Labs side (`exists, entitled, enrolled, provisioned, lab_email, environment_url`).                                                                                                                                                                                                                                                   | Use it on the AI Labs account screen only.              |
+| 7   | Quiz / assessment questions                                                | Question rows now come from the AI Labs' own serializer. Same keys (`id, question_text, question_type, options[{id,text,order}]`).                                                                                                                                                                                                                                                | None.                                                   |
+| 8   | `POST api/v1/ai-labs/account-reset-password/`                              | New reason `PROVISIONING_IN_PROGRESS` (200) while the lab is still being built; `RESET_EMAIL_FAILED` (502) now also when the password was reset but the mail failed.                                                                                                                                                                                                              | Add the new reason to the reset screen.                 |
+| 9   | `GET .../assignment-attempts/<id>/`                                        | New `allowed_attempt`; scores out of 10; per-attempt `master_comment` / `minor_comment`.                                                                                                                                                                                                                                                                                          | Read `allowed_attempt`, never hard-code 3.              |
 
 ---
 
@@ -28,6 +42,7 @@ AI Labs account ...... GET  account-ensure/  ->  POST account-create/  (202, wai
 AI practical ......... GET  assignment-brief/<id>/  +  agents/ | flows/
                        POST assignment-submit/<id>/  (202)
                        GET  assignment-status/<id>/   (poll until graded, then STOP polling)
+                       GET  assignment-attempts/<id>/ (last 3 graded attempts + grade cards)
 Feedback ............. GET  course-feedback-gate/<id>/ -> course-feedback-questions/<id>/
                        POST course-feedback-submit/<id>/   (closes the lab, awards CPE)
 Credits .............. GET  tokens/   POST tokens-request/
@@ -54,19 +69,52 @@ Empty strings never arrive - an absent value is `null`.
 
 ---
 
+## 1a. `final_assessment_status` - one block that draws the final-assessment button
+
+Sent on **lab detail**, **lab progress** and **assessment submit**, always as the last key:
+
+```json
+"final_assessment_status": {
+  "final_assessment_enum_values": "start",
+  "final_assessment_cool_off_ends_at": null
+}
+```
+
+| Value      | Meaning                                                                                                                       | Button                    |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| `locked`   | Not started the lab, video not complete, quiz not passed (where the lab has one), or the lab has no MCQ assessment configured | Disabled                  |
+| `start`    | Video done (and quiz passed if any), no attempt yet                                                                           | "Take final assessment"   |
+| `cool_off` | Last attempt failed and the wait is still running; `final_assessment_cool_off_ends_at` (UTC) says until when                  | Disabled with a countdown |
+| `retake`   | Last attempt failed and any wait is over                                                                                      | "Retake"                  |
+| `passed`   | Only in the SUBMIT response that scored the pass                                                                              | Show the pass screen      |
+| `ended`    | Passed earlier - no more attempts                                                                                             | Hidden / "Passed"         |
+
+It is descriptive only - the questions and submit routes still enforce every rule, so a stale value can only
+show a wrong button, never let a learner skip a step. An AI Lab never sends `in_progress` (that value exists for
+Masterclass courses only).
+
+---
+
 ## 2. AI practical: the AI Labs vendor states
 
 The practical routes (agents, flows, brief, submit, status, practical-progress, tokens, tokens-request)
 call AI Labs. Their extra answers:
 
-| Status  | `data.reason`                                                                         | What to show                                                                                                                                  |
-| ------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| **200** | `AI_LABS_NOT_PROVISIONED` with **`is_provisioned: false`**                            | **Not an error.** The learner has no AI Labs account yet - show "Create AI Labs account" (section 7). Always check `is_provisioned` on a 200. |
-| 403     | `AI_LABS_ACCESS_DENIED` / `AI_LABS_TOKEN_REJECTED`                                    | AI Labs refused this session - usually the login token is older than the account. Ask the learner to **sign out and in again**.               |
-| 429     | `AI_LABS_RATE_LIMITED`                                                                | Busy - retry shortly.                                                                                                                         |
-| 502     | `AI_LABS_CALL_FAILED` / `AI_LABS_RESPONSE_UNREADABLE` / `AI_LABS_ASSIGNMENT_MISMATCH` | AI Labs could not be reached / answered oddly. Nothing was changed.                                                                           |
-| 503     | `AI_LABS_LMS_UNCONFIGURED`                                                            | AI Labs is switched off in this environment.                                                                                                  |
-| 400     | `no_sso_handle`                                                                       | The learner's account has no SSO id - a backend data issue, report it.                                                                        |
+| Status  | `data.reason`                                                                         | What to show                                                                                                                                            |
+| ------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **200** | `AI_LABS_NOT_PROVISIONED` with **`is_provisioned: false`**                            | **Not an error.** The learner has no AI Labs account yet - show "Create AI Labs account" (section 7). Always check `is_provisioned` on a 200.           |
+| 403     | `AI_LABS_ACCESS_DENIED` / `AI_LABS_TOKEN_REJECTED`                                    | AI Labs refused this session - usually the login token is older than the account. Ask the learner to **sign out and in again**.                         |
+| 429     | `AI_LABS_RATE_LIMITED`                                                                | Busy - retry shortly.                                                                                                                                   |
+| 502     | `AI_LABS_CALL_FAILED` / `AI_LABS_RESPONSE_UNREADABLE` / `AI_LABS_ASSIGNMENT_MISMATCH` | AI Labs could not be reached / answered oddly. Nothing was changed.                                                                                     |
+| 502     | `AI_LABS_CONFIGURATION_REJECTED`                                                      | **New.** AI Labs refused OUR platform key (brief only). A backend configuration fault - show a generic "try later"; do not ask the learner to re-login. |
+| 503     | `AI_LABS_LMS_UNCONFIGURED`                                                            | AI Labs is switched off in this environment.                                                                                                            |
+| 503     | `AI_LABS_STORAGE_UNAVAILABLE`                                                         | **New.** AI Labs could not sign the file / grade-card links (brief, attempts). Transient - retry in a moment.                                           |
+| 409     | `ai_lab_assignment_not_configured`                                                    | The lab has no AI Labs assignment set, or AI Labs does not recognise it (brief, attempts, submit). A content issue on our side.                         |
+| 400     | `no_sso_handle`                                                                       | The learner's account has no SSO id - a backend data issue, report it.                                                                                  |
+
+**Signed links expire.** Every file `url` in the brief and every `grade_card_url` in attempts is a signed link that
+dies in about 15 minutes. Those two responses are sent with `Cache-Control: no-store`: do not cache them, and
+re-fetch the route when the learner clicks a file after sitting on the page, instead of retrying the dead URL.
 
 **After `account-create`, the learner must sign in again** before agents / flows / submit work: AI Labs reads
 the AI Labs entitlement from the login token, and only a fresh token carries it. If `account-create` answers
@@ -83,7 +131,7 @@ the AI Labs entitlement from the login token, and only a fresh token carries it.
 - **When:** The AI Labs listing screen. Paged.
 - **Replaces legacy:** `/ai-labs/courses/`
 - **Changed from legacy:** Keys snake_cased (AI_Lab_Course_Name -> ai_lab_course_name), cpe_credit/cpe_credit_label dropped from cards, ai_lab_course_total_duration_seconds added, undeclared query params now 400; app keeps {count,page,page_size,results} inside the envelope.
-- **Backend:** `AppAILabCourseListViewV1` (AILabs/views.py:3395)
+- **Backend:** `AppAILabCourseListViewV1` (AILabs/views.py:3463)
 
 **Request**
 
@@ -231,7 +279,7 @@ No body.
 - **Web:** `GET /web-api/v1/ai-labs/tracks/`
 - **When:** Filter chips / track headers on the listing.
 - **Changed from legacy:** New in merged: no legacy counterpart (legacy only offered ?track= as a filter on ai-labs/courses/). Returns [{id,name,priority}] of tracks used by visible labs.
-- **Backend:** `AppAILabTrackListViewV1` (AILabs/views.py:3526)
+- **Backend:** `AppAILabTrackListViewV1` (AILabs/views.py:3594)
 
 **Request**
 
@@ -303,7 +351,8 @@ No body.
 - **When:** The lab's detail page: content, chapters, CPE, lock state.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/`
 - **Changed from legacy:** Path app-api/v1/ai-labs/course/<uuid>/ (was ai-labs/course/<uuid>/); keys snake_cased; exercise_files, glossary fields and cpe_credit/cpe_credit_label dropped; fields_of_study now objects plus total_cpe_credits; ai_lab_course_total_duration_seconds and child duration_seconds added; enveloped.
-- **Backend:** `AppAILabCourseDetailViewV1` (AILabs/views.py:3576)
+- **Changed 2026-10-22/23:** `instructors` is a list of OBJECTS (was names); new `chapter` (the lab's single video, `null` while the lab is still being authored); `chapter.hls_video_link`, `transcript_url` and `transcript_text` are `null` until THIS learner has started the lab (the public preview is `ai_lab_course_trailer_url`); new `final_assessment_status` (section 1a). `lock_state` and `final_assessment_status` are per learner; the rest is shared.
+- **Backend:** `AppAILabCourseDetailViewV1` (AILabs/views.py:3644)
 
 **Request**
 
@@ -349,7 +398,27 @@ No body.
       }
     ],
     "total_cpe_credits": 3.0,
-    "instructors": ["Uttam Pai"],
+    "instructors": [
+      {
+        "id": "2d0f6b8e-4c1a-4b7e-9a35-6f1e8c2b9d40",
+        "name": "Uttam Pai",
+        "designation": "Partner, Audit Technology",
+        "bio": "Uttam leads audit automation engagements and builds Copilot Studio agents for assurance teams.",
+        "profile_image": "https://milesone-backend-assets.s3.ap-south-1.amazonaws.com/MilesOne/Instructors/Square/uttam-pai.jpg",
+        "horizontal_image_url": null,
+        "vertical_image_url": null,
+        "square_image_url": "https://milesone-backend-assets.s3.ap-south-1.amazonaws.com/MilesOne/Instructors/Square/uttam-pai.jpg",
+        "video_url": null,
+        "social_links": [
+          {
+            "title": "LinkedIn",
+            "url": "https://www.linkedin.com/in/example-uttam-pai",
+            "icon_url": null
+          }
+        ],
+        "linkedin_url": "https://www.linkedin.com/in/example-uttam-pai"
+      }
+    ],
     "skills": [],
     "tools": ["Copilot"],
     "learning_objectives": [
@@ -369,14 +438,49 @@ No body.
         "duration_seconds": 9559
       }
     ],
+    "chapter": {
+      "id": "a4e39360-3fed-44aa-973e-7065cdd22350",
+      "name": "Lease Audit Agent - Build Walkthrough",
+      "mini_description": "Build the lease assurance agent end to end.",
+      "description": "Walk through the agent's topics, knowledge sources and exception routing, then test it against the sample lease pack.",
+      "hls_video_link": "https://d1example.cloudfront.net/ailabs/lease-audit-agent/master.m3u8",
+      "duration_seconds": 2613,
+      "transcript_url": "https://milesone-backend-assets.s3.ap-south-1.amazonaws.com/MilesOne/AILabs/Transcripts/lease-audit-agent.vtt",
+      "transcript_text": null,
+      "order": 1
+    },
     "lock_state": {
       "locked": false,
       "lock_reason": null,
       "lock_remark": null,
       "masterclass_course_id": "7158ee5b-5cff-442c-b217-9703379e2cf8",
       "credit_source": null
+    },
+    "final_assessment_status": {
+      "final_assessment_enum_values": "start",
+      "final_assessment_cool_off_ends_at": null
     }
   }
+}
+```
+
+**Learner has NOT started the lab** - same body, but the video and transcript are withheld and the assessment is locked:
+
+```json
+"chapter": {
+  "id": "a4e39360-3fed-44aa-973e-7065cdd22350",
+  "name": "Lease Audit Agent - Build Walkthrough",
+  "mini_description": "Build the lease assurance agent end to end.",
+  "description": "Walk through the agent's topics, knowledge sources and exception routing, then test it against the sample lease pack.",
+  "hls_video_link": null,
+  "duration_seconds": 2613,
+  "transcript_url": null,
+  "transcript_text": null,
+  "order": 1
+},
+"final_assessment_status": {
+  "final_assessment_enum_values": "locked",
+  "final_assessment_cool_off_ends_at": null
 }
 ```
 
@@ -398,7 +502,7 @@ No body.
 - **When:** The learner taps Start. Creates the enrolment.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/start/`
 - **Changed from legacy:** Path moved from ai-labs/course/<uuid>/start/ to api/v1/ai-labs/course-start/<uuid>/; response wrapped in {success,message,data}; 409 reasons now credit_already_earned_via_course | started_via_masterclass_course (lock keyed on the PARENT course).
-- **Backend:** `AILabCourseStartViewV1` (AILabs/views.py:956)
+- **Backend:** `AILabCourseStartViewV1` (AILabs/views.py:1009)
 
 **Request**
 
@@ -445,7 +549,7 @@ No body.
 - **When:** Decide Start vs Continue on the detail page.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/started/`
 - **Changed from legacy:** Path app-api/v1/ai-labs/course-started/<uuid>/ (was ai-labs/course/<uuid>/started/); same {started, can_start, enrollment, lock_state} body with snake_case enrollment keys, inside the envelope; lock_reason vocabulary changed (parent-course lock).
-- **Backend:** `AppAILabCourseStartedStatusViewV1` (AILabs/views.py:3628)
+- **Backend:** `AppAILabCourseStartedStatusViewV1` (AILabs/views.py:3696)
 
 **Request**
 
@@ -500,7 +604,8 @@ No body.
 - **When:** The progress bar / which step is next.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/progress/`
 - **Changed from legacy:** Path app-api/v1/ai-labs/course-progress/<uuid>/ (was ai-labs/course/<uuid>/progress/); same flow keys plus a new nasba block {eligible, delivery_method, outstanding:[{rule,code,message,required,actual}]}; enveloped.
-- **Backend:** `AppAILabCourseProgressViewV1` (AILabs/views.py:3680)
+- **Changed 2026-10-23:** new `final_assessment_status` block as the last key.
+- **Backend:** `AppAILabCourseProgressViewV1` (AILabs/views.py:3748)
 
 **Request**
 
@@ -532,10 +637,17 @@ No body.
       "eligible": true,
       "delivery_method": "QAS Self Study",
       "outstanding": []
+    },
+    "final_assessment_status": {
+      "final_assessment_enum_values": "ended",
+      "final_assessment_cool_off_ends_at": null
     }
   }
 }
 ```
+
+`next_step` is one of `video`, `quiz`, `final_assessment`, `ai_assessment`, `feedback`, `done`.
+`final_assessment_status` is section 1a.
 
 **Errors**
 
@@ -553,7 +665,7 @@ No body.
 - **When:** Every few seconds while the video plays.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/video-progress/`
 - **Changed from legacy:** Lab id moved from the URL path into the body (ai_lab_course_id); path api/v1/ai-labs/course-video-progress/; undeclared body keys now 400; enveloped.
-- **Backend:** `AILabCourseVideoProgressViewV1` (AILabs/views.py:1435)
+- **Backend:** `AILabCourseVideoProgressViewV1` (AILabs/views.py:1488)
 
 **Request**
 
@@ -603,7 +715,7 @@ Body:
 - **When:** Admin/QA tool - a learner gets 403.
 - **Replaces legacy:** `/ai-labs/course/release/`
 - **Changed from legacy:** Now ADMIN ONLY (IsAdminUser) - a learner who called legacy ai-labs/course/release/ now gets 403; response drops final_assessment_restored/masterclass_course_id for released_masterclass_course_id.
-- **Backend:** `AILabCourseReleaseViewV1` (AILabs/views.py:1244)
+- **Backend:** `AILabCourseReleaseViewV1` (AILabs/views.py:1297)
 
 **Request**
 
@@ -654,8 +766,8 @@ Body:
 - **Web:** `GET /web-api/v1/ai-labs/course-quiz-questions/<uuid:ai_lab_course_id>/`
 - **When:** After the video is complete.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/quiz/questions/`
-- **Changed from legacy:** Path app-api/v1/ai-labs/course-quiz-questions/<uuid>/ (was ai-labs/course/<uuid>/quiz/questions/); question keys come from MasterclassQuizQuestionSerializer (snake_case) instead of CAIRA_Masterclass_Question_*; enveloped.
-- **Backend:** `AppAILabQuizQuestionsViewV1` (AILabs/views.py:3732)
+- **Changed from legacy:** Path app-api/v1/ai-labs/course-quiz-questions/<uuid>/ (was ai-labs/course/<uuid>/quiz/questions/); question keys come from the AI Labs' own `AILabsQuizQuestionSerializer` since 2026-10-23 (same keys as before: id, question_text, question_type, options[{id,text,order}] - correct answers are never sent) instead of CAIRA_Masterclass_Question_*; enveloped.
+- **Backend:** `AppAILabQuizQuestionsViewV1` (AILabs/views.py:3800)
 
 **Request**
 
@@ -742,7 +854,7 @@ No body.
 - **When:** One call per question; the last one completes the quiz.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/quiz/submit/`
 - **Changed from legacy:** Lab id moved from the path (ai-labs/course/<uuid>/quiz/submit/) into the body; enveloped; strict body (undeclared keys 400).
-- **Backend:** `AILabQuizSubmitViewV1` (AILabs/views.py:2015)
+- **Backend:** `AILabQuizSubmitViewV1` (AILabs/views.py:2076)
 
 **Request**
 
@@ -820,7 +932,7 @@ Body:
 - **When:** After the quiz is complete.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/assessment/questions/`
 - **Changed from legacy:** Path app-api/v1/ai-labs/course-assessment-questions/<uuid>/ (was ai-labs/course/<uuid>/assessment/questions/); same top-level keys, question objects snake_cased; enveloped.
-- **Backend:** `AppAILabAssessmentQuestionsViewV1` (AILabs/views.py:3784)
+- **Backend:** `AppAILabAssessmentQuestionsViewV1` (AILabs/views.py:3852)
 
 **Request**
 
@@ -907,7 +1019,8 @@ No body.
 - **When:** All answers in one call.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/assessment/submit/`
 - **Changed from legacy:** Path api/v1/ai-labs/course-assessment-submit/<uuid>/ (was ai-labs/course/<uuid>/assessment/submit/); every answer must now carry a selection (blank answers 400) and undeclared keys 400; enveloped.
-- **Backend:** `AILabAssessmentSubmitViewV1` (AILabs/views.py:2373)
+- **Changed 2026-10-23:** new `final_assessment_status` block as the last key (`passed`, `cool_off` or `retake`).
+- **Backend:** `AILabAssessmentSubmitViewV1` (AILabs/views.py:2434)
 
 **Request**
 
@@ -995,7 +1108,49 @@ Body:
       }
     ],
     "next_step": "ai_assessment",
-    "ai_assessment_completed": false
+    "ai_assessment_completed": false,
+    "final_assessment_status": {
+      "final_assessment_enum_values": "passed",
+      "final_assessment_cool_off_ends_at": null
+    }
+  }
+}
+```
+
+`next_step` is `feedback` when the AI practical is already graded, else `ai_assessment`.
+
+**Response 200 - failed attempt** (sample data). Still a 200: `passed: false`. With a cool-off configured the
+status is `cool_off` and carries when it ends; without one it is `retake`.
+
+```json
+{
+  "success": true,
+  "message": "Request completed successfully.",
+  "data": {
+    "passed": false,
+    "score_percent": 50.0,
+    "pass_threshold_percent": 70.0,
+    "answers": [
+      {
+        "question_id": "b4fcae42-a90a-445f-bb4c-611f380c3efe",
+        "is_correct": false,
+        "explanation": "Testing the agent's matching logic against known exceptions is direct evidence that its output can be relied on.",
+        "correct_option_ids": ["756fcf51-317e-4cd0-84ad-1803455e8a40"],
+        "options_feedback": [
+          {
+            "_more": "3 item(s) with the same shape as the pass example"
+          }
+        ]
+      },
+      {
+        "_more": "1 more item(s) with the same shape"
+      }
+    ],
+    "next_step": "final_assessment",
+    "final_assessment_status": {
+      "final_assessment_enum_values": "cool_off",
+      "final_assessment_cool_off_ends_at": "2026-10-26T11:42:10.512334Z"
+    }
   }
 }
 ```
@@ -1026,13 +1181,15 @@ Body:
 - **When:** Page load - cheap, no call to AI Labs.
 - **Replaces legacy:** `/ai-labs/account/ensure`
 - **Changed from legacy:** Path api/v1/ai-labs/account-ensure/ (was ai-labs/account/ensure, no trailing slash); same {eligible, reason, account_created} body inside {success,message,data}.
-- **Backend:** `AILabsAccountEnsureViewV1` (AILabs/views_practical.py:2142)
+- **Backend:** `AILabsAccountEnsureViewV1` (AILabs/views_practical.py:2432)
 
 **Request**
 
-`GET /api/v1/ai-labs/account-ensure/`
+`GET /api/v1/ai-labs/account-ensure/` or `GET /api/v1/ai-labs/account-ensure/?include=labs_account`
 
-No body.
+No body. Without `include` this makes no call to AI Labs (cheap, use on page load). With
+`?include=labs_account` it also asks AI Labs and adds a `labs_account` block - use it on the AI Labs account
+screen, where you need the learner's lab e-mail / environment link.
 
 **Response 200** (sample data)
 
@@ -1047,6 +1204,32 @@ No body.
   }
 }
 ```
+
+**Response 200 - with `?include=labs_account`** (sample data)
+
+```json
+{
+  "success": true,
+  "message": "Data retrieved successfully.",
+  "data": {
+    "eligible": true,
+    "reason": "OK",
+    "account_created": true,
+    "labs_account": {
+      "exists": true,
+      "entitled": true,
+      "enrolled": true,
+      "provisioned": true,
+      "lab_email": "learner.4f2a@milesailabs.onmicrosoft.com",
+      "environment_url": "https://copilotstudio.microsoft.com/environments/Default-4f2a"
+    }
+  }
+}
+```
+
+`labs_account` is absent when AI Labs could not be asked. `provisioned: false` (with `lab_email` null) means the
+account is still being built - keep showing "Setting up". `entitled: false` means the learner's login token
+predates the account - force a re-login.
 
 **Errors**
 
@@ -1066,7 +1249,7 @@ No body.
 - **When:** "Create account" button. Returns at once (202).
 - **Replaces legacy:** `/ai-labs/account/create`
 - **Changed from legacy:** Path api/v1/ai-labs/account-create/ (was ai-labs/account/create); provisioning runs on an asyncio task instead of a thread; same reason/status matrix inside the envelope.
-- **Backend:** `AILabsAccountCreateViewV1` (AILabs/views_practical.py:2201)
+- **Backend:** `AILabsAccountCreateViewV1` (AILabs/views_practical.py:2491)
 
 **Request**
 
@@ -1090,16 +1273,40 @@ No body.
 
 **Errors**
 
-| Status | `data.reason`              | Meaning                                                                         |
-| ------ | -------------------------- | ------------------------------------------------------------------------------- |
-| 202    | `PROVISIONING_STARTED`     | first call - account is being created in the background (2-3 min)               |
-| 202    | `PROVISIONING_IN_PROGRESS` | a create is already running for this learner                                    |
-| 200    | `ACCOUNT_EXISTS`           | already has an account; carries `labs_account` + `entitlement_refresh_required` |
-| 200    | `NO_CAIRA_ENROLLMENT`      | `eligible: false` - not a CAIRA learner                                         |
-| 422    | `MISSING_REQUIRED_FIELDS`  | profile is missing name / email / SSO id                                        |
-| 503    | `AI_LABS_DISABLED`         | AI Labs is switched off in this environment                                     |
-| 401    | -                          | no / expired token                                                              |
-| 500    | -                          | unexpected error                                                                |
+| Status | `data.reason`              | Meaning                                                                                                 |
+| ------ | -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 202    | `PROVISIONING_STARTED`     | first call - account is being created in the background (2-3 min)                                       |
+| 202    | `PROVISIONING_IN_PROGRESS` | a create is already running for this learner                                                            |
+| 200    | `ACCOUNT_EXISTS`           | already has an account; carries `labs_account` + `entitlement_refresh_required` (see the example below) |
+| 200    | `NO_CAIRA_ENROLLMENT`      | `eligible: false` - not a CAIRA learner                                                                 |
+| 422    | `MISSING_REQUIRED_FIELDS`  | profile is missing name / email / SSO id                                                                |
+| 503    | `AI_LABS_DISABLED`         | AI Labs is switched off in this environment                                                             |
+| 401    | -                          | no / expired token                                                                                      |
+| 500    | -                          | unexpected error                                                                                        |
+
+**Response 200 - `ACCOUNT_EXISTS`** (sample data). When `entitlement_refresh_required` is `true`, sign the learner
+out and back in before calling agents / flows / submit.
+
+```json
+{
+  "success": true,
+  "message": "Request completed successfully.",
+  "data": {
+    "eligible": true,
+    "reason": "ACCOUNT_EXISTS",
+    "account_created": true,
+    "entitlement_refresh_required": true,
+    "labs_account": {
+      "exists": true,
+      "entitled": false,
+      "enrolled": true,
+      "provisioned": true,
+      "lab_email": "learner.4f2a@milesailabs.onmicrosoft.com",
+      "environment_url": "https://copilotstudio.microsoft.com/environments/Default-4f2a"
+    }
+  }
+}
+```
 
 ---
 
@@ -1109,7 +1316,8 @@ No body.
 - **When:** "Forgot AI Labs password" button.
 - **Replaces legacy:** `/ai-labs/account/reset-password`
 - **Changed from legacy:** Path api/v1/ai-labs/account-reset-password/ (was ai-labs/account/reset-password); same reason/status matrix inside the envelope.
-- **Backend:** `AILabsAccountResetPasswordViewV1` (AILabs/views_practical.py:2285)
+- **Note:** every successful call **replaces** the learner's lab password (AI Labs stores none), so "send my credentials again" always means "give me new ones". Do not call it automatically.
+- **Backend:** `AILabsAccountResetPasswordViewV1` (AILabs/views_practical.py:2575)
 
 **Request**
 
@@ -1133,17 +1341,18 @@ No body.
 
 **Errors**
 
-| Status | `data.reason`              | Meaning                                     |
-| ------ | -------------------------- | ------------------------------------------- |
-| 200    | `RESET_EMAIL_SENT`         | AI Labs sent the reset e-mail               |
-| 200    | `ACCOUNT_NOT_CREATED`      | no AI Labs account yet - nothing to reset   |
-| 200    | `NO_CAIRA_ENROLLMENT`      | `eligible: false`                           |
-| 422    | `MISSING_REQUIRED_FIELDS`  | profile is missing name / email / SSO id    |
-| 429    | `RESET_EMAIL_RATE_LIMITED` | too many reset requests; try later          |
-| 502    | `RESET_EMAIL_FAILED`       | AI Labs did not send it                     |
-| 503    | `AI_LABS_DISABLED`         | AI Labs is switched off in this environment |
-| 401    | -                          | no / expired token                          |
-| 500    | -                          | unexpected error                            |
+| Status | `data.reason`              | Meaning                                                                                                                                                                                                                               |
+| ------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 200    | `RESET_EMAIL_SENT`         | AI Labs reset the lab password and e-mailed the new credentials                                                                                                                                                                       |
+| 200    | `ACCOUNT_NOT_CREATED`      | no AI Labs account yet - nothing to reset                                                                                                                                                                                             |
+| 200    | `PROVISIONING_IN_PROGRESS` | **New 2026-10-26.** The account exists but its Microsoft side is still being built (`account_created: true`). Nothing was reset - show "Your lab is being set up, try again in a few minutes".                                        |
+| 200    | `NO_CAIRA_ENROLLMENT`      | `eligible: false`                                                                                                                                                                                                                     |
+| 422    | `MISSING_REQUIRED_FIELDS`  | profile is missing name / email / SSO id                                                                                                                                                                                              |
+| 429    | `RESET_EMAIL_RATE_LIMITED` | too many reset requests; try later                                                                                                                                                                                                    |
+| 502    | `RESET_EMAIL_FAILED`       | AI Labs did not send it. **Since 2026-10-26 this also covers "password reset, but the e-mail failed"** - the old password no longer works, so tell the learner to try again (each retry issues a new password; limit 3 per 5 minutes) |
+| 503    | `AI_LABS_DISABLED`         | AI Labs is switched off in this environment                                                                                                                                                                                           |
+| 401    | -                          | no / expired token                                                                                                                                                                                                                    |
+| 500    | -                          | unexpected error                                                                                                                                                                                                                      |
 
 ---
 
@@ -1153,10 +1362,11 @@ No body.
 
 - **App:** `GET /app-api/v1/ai-labs/assignment-brief/<uuid:ai_lab_course_id>/`
 - **Web:** `GET /web-api/v1/ai-labs/assignment-brief/<uuid:ai_lab_course_id>/`
-- **When:** The practical's instructions screen.
+- **When:** The practical's instructions screen. Fetch when the learner opens it, and again when they click a file after a while (links expire).
 - **Replaces legacy:** `/api/ai-lab/assignments/brief/`
-- **Changed from legacy:** Lab addressed by UUID in the path (app-api/v1/ai-labs/assignment-brief/<uuid>/) instead of legacy ?course_id=<int NanoLearning id>; response {status, is_provisioned, brief} with the mark scheme stripped, vs legacy {problem_statement, requirements}; unknown lab 404, unconfigured 409.
-- **Backend:** `AppAILabAssignmentBriefViewV1` (AILabs/views_practical.py:796)
+- **Changed from legacy:** Lab addressed by UUID in the path instead of legacy ?course_id=<int NanoLearning id>; response {status, is_provisioned, brief}; unknown lab 404, unconfigured 409.
+- **Changed 2026-10-22/23:** `brief` now relays AI Labs' full learner brief (12 keys below). Withdrawn by AI Labs and no longer sent: `input_files` (read `exercise_files`), `logic_flow`, `difficulty`, `version`, `published_date`, `scenarios`. The marking scheme (expected logic / outcome, rubric, statics, hard rules) is never sent. `Cache-Control: no-store`.
+- **Backend:** `AppAILabAssignmentBriefViewV1` (AILabs/views_practical.py:839)
 
 **Request**
 
@@ -1164,7 +1374,7 @@ No body.
 
 No body.
 
-**Response 200** (sample data)
+**Response 200** (sample data - the `brief` contents are AI Labs' own, relayed unchanged)
 
 ```json
 {
@@ -1174,53 +1384,253 @@ No body.
     "status": "ok",
     "is_provisioned": true,
     "brief": {
-      "slug": "audit-sampling-agent-aa-01",
-      "name": "Audit Sampling Agent",
-      "details": "Use the AP ledger extract and the firm sampling policy provided below. The agent must work only from these two files.",
-      "problem_statement": "Build a Copilot Studio agent that selects a statistically valid sample of AP invoices from the ledger extract and explains why each item was selected.",
-      "logic_flow": "Load the ledger extract, stratify invoices by value band, apply the sampling policy thresholds, select the sample, then produce a selection rationale per item.",
-      "guardrails": "The agent must refuse to approve or reject invoices and must not invent ledger rows that are not in the extract.",
-      "difficulty": "medium",
-      "version": 3,
-      "published_date": "2026-09-30",
-      "input_files": [
+      "slug": "lease-audit-agent",
+      "name": "Lease Audit Agent",
+      "details": "Build an agent that compares lease contracts to schedules and flags exceptions.",
+      "problem_statement": "## Scenario\n\nThe audit team tests 40 leases a quarter against the lease schedule. Build a Copilot Studio agent that reads each contract, compares it to the schedule and routes every mismatch to a reviewer.",
+      "guardrails": "The agent must not approve or reject a lease, and must not invent figures that are not in the files provided.",
+      "requirements": ["A Copilot Studio trial", "The lease schedule CSV"],
+      "exercise_files": [
         {
-          "name": "FY2026_AP_Ledger_Extract.xlsx",
-          "url": "https://ai-labs-assignment-files.s3.amazonaws.com/audit-sampling-agent-aa-01/FY2026_AP_Ledger_Extract.xlsx?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAEXAMPLEKEY%2F20261020%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261020T101530Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=8c1f0e5a7b3d9f2e4a6c8b0d1e3f5a7c9b1d3e5f7a9c1b3d5e7f9a1c3b5d7e9f"
-        },
-        {
-          "name": "Sampling_Policy_v2.pdf",
-          "url": "https://ai-labs-assignment-files.s3.amazonaws.com/audit-sampling-agent-aa-01/Sampling_Policy_v2.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAEXAMPLEKEY%2F20261020%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261020T101530Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=2a4c6e8f0b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d1f3a"
+          "url": "https://milesai-lab-attachments.s3.amazonaws.com/lease-audit-agent/lease-schedule.csv?X-Amz-Expires=900&X-Amz-Signature=0aac...",
+          "doc_type": "csv",
+          "filename": "lease-schedule.csv",
+          "content_type": "text/csv",
+          "size_bytes": 4096,
+          "sort_order": 0
         }
       ],
-      "scenarios": [
-        "A ledger with three duplicate invoice numbers above the high-value threshold.",
-        "A ledger in which no invoice exceeds the high-value threshold."
+      "build_guides": [
+        {
+          "url": "https://cdn.milesailabs.com/lease-audit-agent/build-guide.pdf",
+          "doc_type": "pdf",
+          "filename": "build-guide.pdf",
+          "content_type": "application/pdf",
+          "size_bytes": 182044,
+          "sort_order": 1
+        }
       ],
-      "tools": ["Copilot Studio", "SharePoint"]
+      "sharepoint_links": [
+        {
+          "url": "https://contoso.sharepoint.com/sites/leases",
+          "label": "Lease library",
+          "sort_order": 2
+        }
+      ],
+      "sample_grade_card": {
+        "url": "https://milesai-lab-attachments.s3.amazonaws.com/lease-audit-agent/sample-grade-card.pdf?X-Amz-Expires=900&X-Amz-Signature=48a8...",
+        "doc_type": "pdf",
+        "filename": "sample-grade-card.pdf",
+        "content_type": "application/pdf",
+        "size_bytes": 96211,
+        "sort_order": 3,
+        "sample_grade": "7.85"
+      },
+      "flow_chart": {
+        "url": "https://milesai-lab-attachments.s3.amazonaws.com/lease-audit-agent/flow-chart.png?X-Amz-Expires=900&X-Amz-Signature=c885...",
+        "doc_type": "image",
+        "filename": "flow-chart.png",
+        "content_type": "image/png",
+        "size_bytes": 55302,
+        "sort_order": 4
+      },
+      "tools": {
+        "trigger_email": true
+      }
     }
+  }
+}
+```
+
+**The `brief` fields**
+
+| Field               | Type            | Notes                                                                                                                                                                                                            |
+| ------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `slug`              | string          | The exercise's key at AI Labs.                                                                                                                                                                                   |
+| `name`              | string          | Display title.                                                                                                                                                                                                   |
+| `details`           | string / null   | One-line summary for cards.                                                                                                                                                                                      |
+| `problem_statement` | string          | **Markdown** - render it, do not show raw.                                                                                                                                                                       |
+| `guardrails`        | string / null   | What the agent must NOT do.                                                                                                                                                                                      |
+| `requirements`      | string[] / null | Short checklist of what the exercise needs.                                                                                                                                                                      |
+| `exercise_files`    | array           | Files the learner downloads. May be empty. Each: `url` (**signed, expires in ~15 min**), `doc_type` (`excel`/`csv`/`pdf`/`text`/`json`/`image`/`other`), `filename`, `content_type`, `size_bytes`, `sort_order`. |
+| `build_guides`      | array           | Walkthroughs on PUBLIC links (do not expire). Same entry shape.                                                                                                                                                  |
+| `sharepoint_links`  | array           | `url`, `label` (may be null - fall back to the url), `sort_order`.                                                                                                                                               |
+| `sample_grade_card` | object / null   | Same shape as a file, plus `sample_grade` (a decimal STRING out of 10, like `"7.85"`).                                                                                                                           |
+| `flow_chart`        | object / null   | Same shape as a file.                                                                                                                                                                                            |
+| `tools`             | object          | `{"trigger_email": true/false}` - whether to offer the "send me test e-mails" helper.                                                                                                                            |
+
+Every key is always present; a value AI Labs did not send arrives as `null`. Sort each array by `sort_order`.
+
+**Response 200 - learner has no AI Labs account yet** (`brief` is empty - show "Create AI Labs account"):
+
+```json
+{
+  "success": true,
+  "message": "Set up your AI Labs account to continue.",
+  "data": {
+    "status": "ok",
+    "is_provisioned": false,
+    "reason": "AI_LABS_NOT_PROVISIONED",
+    "brief": {}
   }
 }
 ```
 
 **Errors**
 
-| Status | `data.reason`                      |
-| ------ | ---------------------------------- |
-| 403    | `AI_LABS_ACCESS_DENIED`            |
-| 403    | `AI_LABS_TOKEN_REJECTED`           |
-| 403    | `caira_access_required`            |
-| 404    | `ai_lab_not_found`                 |
-| 404    | `no_ai_lab_enrollment`             |
-| 409    | `ai_lab_assignment_not_configured` |
-| 429    | `AI_LABS_RATE_LIMITED`             |
-| 502    | `AI_LABS_CALL_FAILED`              |
-| 502    | `AI_LABS_RESPONSE_UNREADABLE`      |
-| 503    | `AI_LABS_LMS_UNCONFIGURED`         |
-| 401    | - (no / expired token)             |
-| 500    | - (unexpected error)               |
+| Status | `data.reason`                                         | What to show                                                             |
+| ------ | ----------------------------------------------------- | ------------------------------------------------------------------------ |
+| 403    | `caira_access_required`                               | CAIRA upsell                                                             |
+| 404    | `ai_lab_not_found`                                    | Wrong / inactive lab id                                                  |
+| 404    | `no_ai_lab_enrollment`                                | "Start this AI Lab before reading its brief."                            |
+| 409    | `ai_lab_assignment_not_configured`                    | "This AI Lab's practical is not set up yet." (content issue on our side) |
+| 429    | `AI_LABS_RATE_LIMITED`                                | Busy - retry shortly                                                     |
+| 502    | `AI_LABS_CONFIGURATION_REJECTED`                      | AI Labs refused our platform key - generic "try later"                   |
+| 502    | `AI_LABS_CALL_FAILED` / `AI_LABS_RESPONSE_UNREADABLE` | AI Labs unreachable - retry                                              |
+| 503    | `AI_LABS_STORAGE_UNAVAILABLE`                         | File links could not be signed - retry in a moment                       |
+| 503    | `AI_LABS_LMS_UNCONFIGURED`                            | AI Labs is off in this environment                                       |
+| 401    | - (no / expired token)                                |                                                                          |
+| 500    | - (unexpected error)                                  |                                                                          |
 
-`is_provisioned: false` (200) is also possible - see section 2.
+The brief is read with OUR platform key, so `AI_LABS_ACCESS_DENIED` / `AI_LABS_TOKEN_REJECTED` (re-login) never
+come from this route.
+
+---
+
+### Practical attempts (NEW 2026-10-23)
+
+- **App:** `GET /app-api/v1/ai-labs/assignment-attempts/<uuid:ai_lab_course_id>/`
+- **Web:** `GET /web-api/v1/ai-labs/assignment-attempts/<uuid:ai_lab_course_id>/`
+- **When:** "How did I do?" on the practical / progress screen: the learner's last graded attempts with a grade-card PDF each.
+- **Replaces legacy:** none - new in merged.
+- **Rules:** the newest **`allowed_attempt`** graded attempts (3 today - read the field, do not hard-code 3), shown **best score first** (not the all-time best). Scores are **out of 10**. `total_attempts` counts every submission, including ones still grading, so you can say "3 of 5". Scores are decimal **strings** (`"8.80"` out of `"10.00"`, percentage `"88.00"`) - display as-is or parse as decimal, never `parseFloat`. `grade_card_url` is a signed link that stops working at `grade_card_urls_expire_at`; `null` means no PDF for that attempt (not an error). `Cache-Control: no-store`.
+- **Backend:** `AppAILabAssignmentAttemptsViewV1` (AILabs/views_practical.py:1068)
+
+**Request**
+
+`GET /app-api/v1/ai-labs/assignment-attempts/{ai_lab_course_id}/`
+
+No body, no query parameters.
+
+**Response 200** (sample data - the attempt rows are AI Labs' own, relayed unchanged)
+
+```json
+{
+  "success": true,
+  "message": "Data retrieved successfully.",
+  "data": {
+    "status": "ok",
+    "is_provisioned": true,
+    "ai_lab_course_id": "f6570df7-0ad9-4463-9a4d-75df10e14d59",
+    "total_attempts": 5,
+    "allowed_attempt": 3,
+    "grade_card_urls_expire_at": "2026-10-26T10:26:31.254795Z",
+    "attempts": [
+      {
+        "attempt_number": 3,
+        "status": "graded",
+        "score": "8.80",
+        "max_score": "10.00",
+        "percentage": "88.00",
+        "submitted_at": "2026-10-24T10:00:00Z",
+        "graded_at": "2026-10-24T10:07:00Z",
+        "grade_card_url": "https://s3.ap-south-1.amazonaws.com/milesai-lab-attachments/grade-cards/lease-audit-agent/3.pdf?X-Amz-Signature=...",
+        "master_comment": "Routes every lease exception to a reviewer with the right evidence.",
+        "minor_comment": "Cite the schedule row for each flagged field."
+      },
+      {
+        "attempt_number": 4,
+        "status": "graded",
+        "score": "6.10",
+        "max_score": "10.00",
+        "percentage": "61.00",
+        "submitted_at": "2026-10-25T10:00:00Z",
+        "graded_at": "2026-10-25T10:07:00Z",
+        "grade_card_url": null,
+        "master_comment": "Flags most mismatches but misses the renewal-option path.",
+        "minor_comment": "Guardrails need work before the live tests."
+      },
+      {
+        "attempt_number": 2,
+        "status": "graded",
+        "score": "4.00",
+        "max_score": "10.00",
+        "percentage": "40.00",
+        "submitted_at": "2026-10-23T10:00:00Z",
+        "graded_at": "2026-10-23T10:07:00Z",
+        "grade_card_url": null,
+        "master_comment": null,
+        "minor_comment": null
+      }
+    ]
+  }
+}
+```
+
+| Field                                           | Notes                                                                                                                                               |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `total_attempts`                                | Every submission, still-grading ones included. Can be larger than `attempts.length` and than `allowed_attempt`.                                     |
+| `allowed_attempt`                               | The attempt allowance and the cap on `attempts`. Not enforced at submit - show it as the allowance. `null` when the learner has no AI Labs account. |
+| `grade_card_urls_expire_at`                     | When every `grade_card_url` in THIS response stops working. `null` when none was signed.                                                            |
+| `attempts[].attempt_number`                     | The learner's own 1-based numbering. Stable.                                                                                                        |
+| `attempts[].status`                             | Always `graded` today; still-grading attempts are not rows.                                                                                         |
+| `attempts[].score` / `max_score` / `percentage` | Decimal **strings**; score out of `max_score` (`"10.00"`).                                                                                          |
+| `attempts[].master_comment` / `minor_comment`   | The grader's headline and the line under it, as on the PDF. Either may be `null`.                                                                   |
+| `attempts[].submitted_at` / `graded_at`         | UTC ISO-8601.                                                                                                                                       |
+| `attempts[].grade_card_url`                     | Signed PDF link or `null`.                                                                                                                          |
+
+**Response 200 - no graded attempt yet** (show "No attempts yet"):
+
+```json
+{
+  "success": true,
+  "message": "Data retrieved successfully.",
+  "data": {
+    "status": "ok",
+    "is_provisioned": true,
+    "ai_lab_course_id": "f6570df7-0ad9-4463-9a4d-75df10e14d59",
+    "total_attempts": 0,
+    "allowed_attempt": 3,
+    "grade_card_urls_expire_at": null,
+    "attempts": []
+  }
+}
+```
+
+**Response 200 - no AI Labs account yet** (show "Create AI Labs account"). Note: this variant has no
+`ai_lab_course_id`.
+
+```json
+{
+  "success": true,
+  "message": "Set up your AI Labs account to continue.",
+  "data": {
+    "status": "ok",
+    "is_provisioned": false,
+    "reason": "AI_LABS_NOT_PROVISIONED",
+    "total_attempts": 0,
+    "allowed_attempt": null,
+    "grade_card_urls_expire_at": null,
+    "attempts": []
+  }
+}
+```
+
+**Errors**
+
+| Status | `data.reason`                                                                            | What to show                                      |
+| ------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| 403    | `caira_access_required`                                                                  | CAIRA upsell                                      |
+| 403    | `AI_LABS_ACCESS_DENIED` / `AI_LABS_TOKEN_REJECTED`                                       | Sign out and back in                              |
+| 404    | `ai_lab_not_found`                                                                       | Wrong / inactive lab id                           |
+| 404    | `no_ai_lab_enrollment`                                                                   | "Start this AI Lab before viewing your attempts." |
+| 409    | `ai_lab_assignment_not_configured`                                                       | Practical not set up yet (content issue)          |
+| 429    | `AI_LABS_RATE_LIMITED`                                                                   | Busy - retry shortly                              |
+| 502    | `AI_LABS_CALL_FAILED` / `AI_LABS_RESPONSE_UNREADABLE` / `AI_LABS_CONFIGURATION_REJECTED` | AI Labs unreachable - retry                       |
+| 503    | `AI_LABS_STORAGE_UNAVAILABLE`                                                            | Grade-card links could not be signed - retry      |
+| 503    | `AI_LABS_LMS_UNCONFIGURED`                                                               | AI Labs is off in this environment                |
+| 401    | - (no / expired token)                                                                   |                                                   |
+| 500    | - (unexpected error)                                                                     |                                                   |
 
 ---
 
@@ -1231,7 +1641,7 @@ No body.
 - **When:** The picker of agents to submit.
 - **Replaces legacy:** `/api/ai-lab/agents/`
 - **Changed from legacy:** Ported from Legacy Miles Masterclass api/ai-lab/agents/ (not a MilesOne route); body {status, is_provisioned, agents} inside {success,message,data} instead of {status_code, data, message}; adds a CAIRA 403 gate.
-- **Backend:** `AppAILabAgentsViewV1` (AILabs/views_practical.py:396)
+- **Backend:** `AppAILabAgentsViewV1` (AILabs/views_practical.py:407)
 
 **Request**
 
@@ -1294,7 +1704,7 @@ No body.
 - **When:** The picker of flows to submit.
 - **Replaces legacy:** `/api/ai-lab/flows/`
 - **Changed from legacy:** Ported from Legacy Miles Masterclass api/ai-lab/flows/; {status, is_provisioned, flows} inside the envelope; CAIRA 403 gate.
-- **Backend:** `AppAILabFlowsViewV1` (AILabs/views_practical.py:572)
+- **Backend:** `AppAILabFlowsViewV1` (AILabs/views_practical.py:583)
 
 **Request**
 
@@ -1356,7 +1766,7 @@ No body.
 - **When:** Learner picks an agent/flow and submits.
 - **Replaces legacy:** `/api/ai-lab/assignments/submit/`
 - **Changed from legacy:** Lab moved from body course_id (int) to the URL UUID. Body is now {artefact_kind, agent_ref}: artefact_kind is 'agent' or 'flow' (required), agent_ref is the `id` of the row the learner picked from agents/ or flows/. The old artefact_env_id / artefact_schema fields are refused with 400 invalid_body. Answers 202 inside the envelope.
-- **Backend:** `AILabAssignmentSubmitViewV1` (AILabs/views_practical.py:1140)
+- **Backend:** `AILabAssignmentSubmitViewV1` (AILabs/views_practical.py:1406)
 
 **Request**
 
@@ -1388,27 +1798,27 @@ Body:
 
 **Errors**
 
-| Status | `data.reason`                                           |
-| ------ | ------------------------------------------------------- |
-| 400    | `AI_LABS_NOT_PROVISIONED`                               |
-| 400    | `AI_LABS_VALIDATION_REJECTED (message is AI Labs' own)` |
-| 400    | `invalid_body`                                          |
-| 400    | `no_sso_handle`                                         |
-| 403    | `AI_LABS_ACCESS_DENIED`                                 |
-| 403    | `AI_LABS_TOKEN_REJECTED`                                |
-| 403    | `caira_access_required`                                 |
-| 403    | `final_assessment_not_passed`                           |
-| 404    | `ai_lab_not_found`                                      |
-| 404    | `no_ai_lab_enrollment`                                  |
-| 409    | `AI_LABS_ALREADY_IN_PROGRESS`                           |
-| 409    | `ai_lab_assignment_not_configured`                      |
-| 409    | `practical_already_completed`                           |
-| 429    | `AI_LABS_RATE_LIMITED`                                  |
-| 502    | `AI_LABS_ASSIGNMENT_MISMATCH`                           |
-| 502    | `AI_LABS_CALL_FAILED`                                   |
-| 503    | `AI_LABS_LMS_UNCONFIGURED`                              |
-| 401    | - (no / expired token)                                  |
-| 500    | - (unexpected error)                                    |
+| Status | `data.reason`                                                                                                                                                        |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 400    | `AI_LABS_NOT_PROVISIONED`                                                                                                                                            |
+| 400    | `AI_LABS_VALIDATION_REJECTED (message is AI Labs' own)`                                                                                                              |
+| 400    | `invalid_body`                                                                                                                                                       |
+| 400    | `no_sso_handle`                                                                                                                                                      |
+| 403    | `AI_LABS_ACCESS_DENIED`                                                                                                                                              |
+| 403    | `AI_LABS_TOKEN_REJECTED`                                                                                                                                             |
+| 403    | `caira_access_required`                                                                                                                                              |
+| 403    | `final_assessment_not_passed`                                                                                                                                        |
+| 404    | `ai_lab_not_found`                                                                                                                                                   |
+| 404    | `no_ai_lab_enrollment`                                                                                                                                               |
+| 409    | `AI_LABS_ALREADY_IN_PROGRESS` (any 409 from AI Labs; `reason` may read `AI_LABS_ASSIGNMENT_MISMATCH` - treat every 409 here as "already being graded, check status") |
+| 409    | `ai_lab_assignment_not_configured`                                                                                                                                   |
+| 409    | `practical_already_completed`                                                                                                                                        |
+| 429    | `AI_LABS_RATE_LIMITED`                                                                                                                                               |
+| 502    | `AI_LABS_ASSIGNMENT_MISMATCH` ("practical is misconfigured")                                                                                                         |
+| 502    | `AI_LABS_CALL_FAILED`                                                                                                                                                |
+| 503    | `AI_LABS_LMS_UNCONFIGURED`                                                                                                                                           |
+| 401    | - (no / expired token)                                                                                                                                               |
+| 500    | - (unexpected error)                                                                                                                                                 |
 
 ---
 
@@ -1419,7 +1829,8 @@ Body:
 - **When:** Poll after submitting until graded; then stop.
 - **Replaces legacy:** `/api/ai-lab/assignments/status/`
 - **Changed from legacy:** UUID path (app-api/v1/ai-labs/assignment-status/<uuid>/) instead of ?course_id=<int>; result keys gain grade_card_expires_at, grade_card_is_expired, can_resubmit, artefact_kind, submitted_at and a reconciled flag; no-enrollment is 404 rather than lab_status 'not_started'.
-- **Backend:** `AppAILabAssignmentStatusViewV1` (AILabs/views_practical.py:1411)
+- **Backend:** `AppAILabAssignmentStatusViewV1` (AILabs/views_practical.py:1697)
+- **Notes:** `assessment_status` is `not_started`, `in_progress`, `completed` or `error`. While it is `in_progress` this read also asks AI Labs once (so a missed result heals itself) - poll every ~10 s and stop at `completed`. Once completed, each read fetches a FRESH grade-card link (`grade_card_pdf_url` + `grade_card_expires_at`), so re-read rather than reusing an old link. `can_resubmit` is `true` only for `not_started` / `error`. Unlike brief and attempts this response is not marked `no-store`, but do not cache it either.
 
 **Request**
 
@@ -1473,7 +1884,7 @@ No body.
 - **When:** Manual "Check result" button.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/ai-assessment/refresh/`
 - **Changed from legacy:** Path api/v1/ai-labs/assessment-refresh/<uuid>/ (was .../ai-assessment/refresh/); no more 503 POLL_DISABLED - failures are reported in outcome with 200; adds a CAIRA 403 gate.
-- **Backend:** `AILabAIAssessmentRefreshViewV1` (AILabs/views.py:2835)
+- **Backend:** `AILabAIAssessmentRefreshViewV1` (AILabs/views.py:2903)
 
 **Request**
 
@@ -1517,7 +1928,7 @@ No body.
 - **When:** The learner's AI Labs progress screen.
 - **Replaces legacy:** `/api/ai-lab/progress/`
 - **Changed from legacy:** Ported from Legacy Miles Masterclass api/ai-lab/progress/, renamed practical-progress; passes their progress body through (snake-cased) and stamps ai_lab_course_id/name/thumbnail per row instead of embedding a NanoLearning course object and recomputing summary totals.
-- **Backend:** `AppAILabPracticalProgressViewV1` (AILabs/views_practical.py:1678)
+- **Backend:** `AppAILabPracticalProgressViewV1` (AILabs/views_practical.py:1968)
 
 **Request**
 
@@ -1593,7 +2004,7 @@ No body.
 - **When:** Show the learner's AI Labs credits.
 - **Replaces legacy:** `/api/ai-lab/tokens/`
 - **Changed from legacy:** Ported from Legacy Miles Masterclass api/ai-lab/tokens/; balance moves under the merged envelope's data with a CAIRA gate.
-- **Backend:** `AppAILabTokensViewV1` (AILabs/views_practical.py:1860)
+- **Backend:** `AppAILabTokensViewV1` (AILabs/views_practical.py:2150)
 
 **Request**
 
@@ -1648,8 +2059,8 @@ No body.
 - **POST** `/api/v1/ai-labs/tokens-request/` (shared by app and web)
 - **When:** "Request credits" button.
 - **Replaces legacy:** `/api/ai-lab/tokens/request/`
-- **Changed from legacy:** Path api/v1/ai-labs/tokens-request/ (was api/ai-lab/tokens/request/); same {tokens 500|1000, reason} body but strict; an open request is 409 tokens_request_open; response {status, request} in the envelope.
-- **Backend:** `AILabTokensRequestViewV1` (AILabs/views_practical.py:1989)
+- **Changed from legacy:** Path api/v1/ai-labs/tokens-request/ (was api/ai-lab/tokens/request/); same {tokens 500|1000, reason} body but strict - `tokens` must be exactly 500 or 1000 (anything else is 400), `reason` optional, max 500 chars; any 409 from AI Labs is answered 409 tokens_request_open; response {status, request} in the envelope.
+- **Backend:** `AILabTokensRequestViewV1` (AILabs/views_practical.py:2279)
 
 **Request**
 
@@ -1709,7 +2120,7 @@ Body:
 - **When:** AI Labs calls us. Listed for completeness.
 - **Replaces legacy:** `/api/webhook/ai-labs/assessment/`
 - **Changed from legacy:** Moved from api/webhook/ai-labs/assessment/ to api/v1/ai-labs/assessment-result/; secret header renamed X-Webhook-Secret -> X-AI-Labs-Secret and a bad secret is 401 not 403.
-- **Backend:** `AILabAIAssessmentWebhookViewV1` (AILabs/views.py:2725)
+- **Backend:** `AILabAIAssessmentWebhookViewV1` (AILabs/views.py:2793)
 
 **Request**
 
@@ -1767,7 +2178,7 @@ Body:
 - **When:** Before showing the feedback form.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/feedback/gate/`
 - **Changed from legacy:** Path app-api/v1/ai-labs/course-feedback-gate/<uuid>/ (was ai-labs/course/<uuid>/feedback/gate/); same gate dict inside the envelope.
-- **Backend:** `AppAILabFeedbackGateViewV1` (AILabs/views.py:3836)
+- **Backend:** `AppAILabFeedbackGateViewV1` (AILabs/views.py:3904)
 
 **Request**
 
@@ -1810,7 +2221,7 @@ No body.
 - **When:** The feedback form.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/feedback/questions/`
 - **Changed from legacy:** Path app-api/v1/ai-labs/course-feedback-questions/<uuid>/ (was ai-labs/course/<uuid>/feedback/questions/); questions now come from BadgeCertificateCPE.AILabFeedbackQuestionModule (different ids and snake_case keys) instead of CAIRA_Masterclass_Feedback_Question; enveloped.
-- **Backend:** `AppAILabFeedbackQuestionsViewV1` (AILabs/views.py:3888)
+- **Backend:** `AppAILabFeedbackQuestionsViewV1` (AILabs/views.py:3956)
 
 **Request**
 
@@ -1863,7 +2274,7 @@ No body.
 - **When:** Last step of the lab.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/feedback/submit/`
 - **Changed from legacy:** Path api/v1/ai-labs/course-feedback-submit/<uuid>/; feedback questions/answers now live in BadgeCertificateCPE (AILabFeedbackQuestionModule ids, not CAIRA_Masterclass_Feedback_Question ids); new 409 nasba_conditions_unmet; enveloped.
-- **Backend:** `AILabFeedbackSubmitViewV1` (AILabs/views.py:3115)
+- **Backend:** `AILabFeedbackSubmitViewV1` (AILabs/views.py:3183)
 
 **Request**
 
@@ -1923,24 +2334,55 @@ Body:
 
 ## 10. Reason code dictionary
 
-| `data.reason`                                                         | Route(s)                             | Meaning                                                                        |
-| --------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------ |
-| `video_not_complete`                                                  | quiz / assessment questions + submit | Finish the video first                                                         |
-| `quiz_not_complete`                                                   | assessment questions + submit        | Finish the quiz first                                                          |
-| `no_quiz_config` / `no_assessment_config`                             | quiz / assessment                    | The lab has no quiz / assessment set up (content issue)                        |
-| `already_answered` / `already_completed`                              | quiz                                 | That question / the whole quiz is already done                                 |
-| `already_passed`                                                      | assessment                           | Final assessment already passed - move on                                      |
-| `cool_off_active`                                                     | assessment                           | Failed recently - wait for the cool-off before retrying                        |
-| `answer_count_mismatch` / `invalid_question_id` / `invalid_question`  | quiz / assessment / feedback         | The answers sent do not match the questions                                    |
-| `final_assessment_not_passed`                                         | feedback, assignment submit          | Pass the final assessment first                                                |
-| `ai_assessment_not_completed`                                         | feedback                             | The AI practical is not graded yet                                             |
-| `feedback_already_submitted`                                          | feedback                             | Already given - the lab is done                                                |
-| `nasba_conditions_unmet`                                              | feedback submit (409)                | CPE rules not met - the lab stays open                                         |
-| `credit_already_earned_via_course` / `started_via_masterclass_course` | course start (409)                   | The parent Masterclass course already covers this credit / was started instead |
-| `ai_lab_assignment_not_configured`                                    | brief, submit (409)                  | The lab has no AI Labs assignment set (content issue)                          |
-| `tokens_request_open`                                                 | tokens request (409)                 | A credits request is already pending                                           |
-| `enrollment_not_found`                                                | release                              | Nothing to release                                                             |
+| `data.reason`                                                                                                                                                        | Route(s)                                                                | Meaning                                                                        |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `video_not_complete`                                                                                                                                                 | quiz / assessment questions + submit                                    | Finish the video first                                                         |
+| `quiz_not_complete`                                                                                                                                                  | assessment questions + submit                                           | Finish the quiz first                                                          |
+| `no_quiz_config` / `no_assessment_config`                                                                                                                            | quiz / assessment                                                       | The lab has no quiz / assessment set up (content issue)                        |
+| `already_answered` / `already_completed`                                                                                                                             | quiz                                                                    | That question / the whole quiz is already done                                 |
+| `already_passed`                                                                                                                                                     | assessment                                                              | Final assessment already passed - move on                                      |
+| `cool_off_active`                                                                                                                                                    | assessment                                                              | Failed recently - wait for the cool-off before retrying                        |
+| `answer_count_mismatch` / `invalid_question_id` / `invalid_question`                                                                                                 | quiz / assessment / feedback                                            | The answers sent do not match the questions                                    |
+| `final_assessment_not_passed`                                                                                                                                        | feedback, assignment submit                                             | Pass the final assessment first                                                |
+| `ai_assessment_not_completed`                                                                                                                                        | feedback                                                                | The AI practical is not graded yet                                             |
+| `feedback_already_submitted`                                                                                                                                         | feedback                                                                | Already given - the lab is done                                                |
+| `nasba_conditions_unmet`                                                                                                                                             | feedback submit (409)                                                   | CPE rules not met - the lab stays open                                         |
+| `credit_already_earned_via_course` / `started_via_masterclass_course`                                                                                                | course start (409)                                                      | The parent Masterclass course already covers this credit / was started instead |
+| `ai_lab_assignment_not_configured`                                                                                                                                   | brief, submit (409)                                                     | The lab has no AI Labs assignment set (content issue)                          |
+| `tokens_request_open`                                                                                                                                                | tokens request (409)                                                    | A credits request is already pending                                           |
+| `enrollment_not_found`                                                                                                                                               | release                                                                 | Nothing to release                                                             |
+| `ai_lab_not_found`                                                                                                                                                   | detail, start, brief, attempts, submit                                  | Wrong / inactive lab id                                                        |
+| `no_ai_lab_enrollment`                                                                                                                                               | progress, quiz, assessment, brief, attempts, status, feedback           | Learner has not started this lab                                               |
+| `caira_access_required`                                                                                                                                              | start, practical routes                                                 | No CAIRA access - upsell                                                       |
+| `practical_already_completed`                                                                                                                                        | assignment submit (409)                                                 | Practical already graded - nothing to submit                                   |
+| `no_sso_handle`                                                                                                                                                      | agents, flows, practical-progress, tokens, submit, tokens request (400) | Account not linked to Miles SSO - support issue                                |
+| `AI_LABS_NOT_PROVISIONED`                                                                                                                                            | practical routes (200 with `is_provisioned: false`; 400 on submit)      | No AI Labs account - show "Create AI Labs account"                             |
+| `AI_LABS_ACCESS_DENIED` / `AI_LABS_TOKEN_REJECTED`                                                                                                                   | learner-token practical routes (403)                                    | Sign out and back in                                                           |
+| `AI_LABS_ALREADY_IN_PROGRESS`                                                                                                                                        | assignment submit (409)                                                 | Already being graded - poll status                                             |
+| `AI_LABS_VALIDATION_REJECTED`                                                                                                                                        | assignment submit (400)                                                 | AI Labs refused the submission; `message` is theirs                            |
+| `AI_LABS_RATE_LIMITED`                                                                                                                                               | practical routes (429)                                                  | Busy - retry shortly                                                           |
+| `AI_LABS_CALL_FAILED` / `AI_LABS_RESPONSE_UNREADABLE`                                                                                                                | practical routes (502)                                                  | AI Labs unreachable - retry                                                    |
+| `AI_LABS_ASSIGNMENT_MISMATCH`                                                                                                                                        | assignment submit (502)                                                 | Practical misconfigured on our side                                            |
+| `AI_LABS_CONFIGURATION_REJECTED`                                                                                                                                     | brief (502)                                                             | **New.** Our platform key refused - backend config                             |
+| `AI_LABS_STORAGE_UNAVAILABLE`                                                                                                                                        | brief, attempts (503)                                                   | **New.** File / grade-card links could not be signed - retry                   |
+| `AI_LABS_LMS_UNCONFIGURED` / `AI_LABS_DISABLED`                                                                                                                      | practical routes / account routes (503)                                 | AI Labs is off in this environment                                             |
+| `PROVISIONING_STARTED` / `PROVISIONING_IN_PROGRESS` / `ACCOUNT_EXISTS` / `ACCOUNT_NOT_CREATED` / `MISSING_REQUIRED_FIELDS` / `NO_CAIRA_ENROLLMENT` / `RESET_EMAIL_*` | account routes                                                          | See section 7                                                                  |
 
-_Generated from the backend code on 2026-10-20: success bodies are the published API-migration page's AI Labs
+`final_assessment_status.final_assessment_enum_values`: `locked`, `start`, `cool_off`, `retake`, `passed`, `ended`
+(section 1a).
+
+---
+
+## 11. Related route outside AI Labs
+
+- `GET /web-api/v1/masterclass/ai-labs/?login_type=pre_login|post_login&page=&page_size=` - the AI Labs rail on the
+  web Masterclass home page. It lists the **Masterclass courses that have an AI Lab**, as standard course cards
+  (paginated block under `data`, slug `masterclass_ai_labs_courses_web`, default 6). Served by the Masterclass app
+  (`WebMasterclassAILabsViewV1`), not counted in the 45 above.
+
+_Updated 2026-10-26 from the backend at `21a0042`: new attempts route, re-cut brief, lab detail `chapter` /
+instructor objects, `final_assessment_status`, the two new vendor codes and current backend line numbers;
+samples for those are code-derived (vendor-relayed bodies follow AI Labs' published contracts). First generated
+on 2026-10-20: success bodies are the published API-migration page's AI Labs
 blocks (real local captures where marked, otherwise code-derived sample data); error codes are traced from every
 `Response(...)` each route can reach in `AILabs/views.py` / `views_practical.py`._

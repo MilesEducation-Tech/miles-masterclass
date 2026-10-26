@@ -2,6 +2,7 @@
   "$comment": "Ratchet baseline for scripts/check-structure.mjs (MIL-240). Only shrink it: run the script with --prune after fixing. Adding an entry needs a reason and a CODEOWNERS review.",
   "routedOutsidePages": {},
   "componentStylesheets": {
+    "src/app/features/ai-labs/pages/ai-lab-course/ai-lab-course.css": "Angular-scoped @keyframes + @property (score ring fill, border glow), a ::before mask, and the video.js width/height override",
     "src/app/features/ai-labs/pages/ai-labs/ai-labs.css": "not reviewed: feature outside the Phase 12 tracker",
     "src/app/features/connect-us/pages/connect-us/connect-us.css": "EMPTY or comment-only — delete with its styleUrl (feature outside the Phase 12 tracker)",
     "src/app/features/faculty/pages/faculty/faculty.css": "not reviewed: feature outside the Phase 12 tracker",

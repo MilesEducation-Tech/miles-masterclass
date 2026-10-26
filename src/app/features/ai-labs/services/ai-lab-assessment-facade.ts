@@ -90,6 +90,18 @@ export class AiLabAssessmentFacade {
 
   /** The last submit's answer, until a retake clears it. */
   readonly result = signal<AiLabExamResult | null>(null);
+
+  /**
+   * After a failed submit with a wait configured (`final_assessment_status: cool_off`): when the
+   * retake opens, as a time of day. `null` when a retake is open now.
+   */
+  readonly retakeAfter = computed(() => {
+    const status = this.result()?.final_assessment_status;
+    const ends = status?.final_assessment_cool_off_ends_at;
+    return status?.final_assessment_enum_values === 'cool_off' && ends
+      ? formatDate(ends, 'shortTime', 'en-US')
+      : null;
+  });
   /** What that submit sent, by question — the review's "your answer". */
   readonly sent = signal<Record<string, string[]>>({});
 

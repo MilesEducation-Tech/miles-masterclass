@@ -3,6 +3,7 @@ import {
   AiLabAgent,
   AiLabAssignmentBrief,
   AiLabAssignmentStatus,
+  AiLabAttempts,
   AiLabCourseDetail,
   AiLabCourseProgress,
   AiLabCourseStarted,
@@ -12,6 +13,7 @@ import {
   AiLabFeedbackQuestion,
   AiLabFeedbackResult,
   AiLabFlow,
+  AiLabHint,
   AiLabPracticalProgress,
   AiLabQuizGrade,
   AiLabQuizQuestion,
@@ -135,34 +137,78 @@ export const MOCK_AI_LAB_PENDING_REQUEST: AiLabTokenRequest = {
    --------------------------------------------------------------------------- */
 
 export const MOCK_AI_LAB_BRIEF: AiLabAssignmentBrief = {
-  slug: 'lease-audit-agent-la-01',
+  slug: 'lease-audit-agent',
   name: 'Lease Audit Agent',
-  details:
-    'Use the lease contracts and the lease schedule provided below. The agent must work only ' +
-    'from these files.',
+  details: 'Build an agent that compares lease contracts to schedules and flags exceptions.',
   problem_statement:
-    'Build an agent that reads a lease contract, extracts the payment schedule, and flags any ' +
-    'clause that would change the ASC 842 classification.\n\n' +
-    'It should hand back a short summary a reviewer can act on — not a transcript of the ' +
-    'contract, and not a pass/fail verdict.',
-  logic_flow:
-    'Load each contract, extract commencement date, term and payments, compare them to the ' +
-    'schedule, then route every mismatch to a reviewer before any memo is drafted.',
+    '## Scenario\n\nThe audit team tests 40 leases a quarter against the lease schedule. Build a ' +
+    'Copilot Studio agent that reads each contract, compares it to the schedule and routes every ' +
+    'mismatch to a reviewer.\n\n- Extract commencement date, term and payments\n' +
+    '- Flag any clause that changes the **ASC 842** classification\n' +
+    '- Hand back a short summary a reviewer can act on',
   guardrails:
-    'The agent must not rewrite a contract or post to the ledger, and must not invent schedule ' +
-    'rows that are not in the file.',
-  difficulty: 'medium',
-  version: 3,
-  published_date: '2026-09-30',
-  input_files: [
-    { name: 'FY2026_Lease_Schedule.xlsx', url: 'https://example.com/FY2026_Lease_Schedule.xlsx' },
-    { name: 'Lease_Contracts_Bundle.pdf', url: 'https://example.com/Lease_Contracts_Bundle.pdf' },
+    'The agent must not approve or reject a lease, and must not invent figures that are not in ' +
+    'the files provided.',
+  requirements: null,
+  exercise_files: [
+    {
+      url: 'https://example.com/ai-labs/lease-schedule.csv',
+      doc_type: 'csv',
+      filename: 'lease-schedule.csv',
+      content_type: 'text/csv',
+      size_bytes: 4096,
+      sort_order: 0,
+    },
+    {
+      url: 'https://example.com/ai-labs/lease-contracts.pdf',
+      doc_type: 'pdf',
+      filename: 'lease-contracts.pdf',
+      content_type: 'application/pdf',
+      size_bytes: 812_000,
+      sort_order: 1,
+    },
   ],
-  scenarios: [
-    'A contract whose commencement date differs from the schedule by one month.',
-    'A lease with a termination-for-convenience clause and no renewal option.',
+  build_guides: [],
+  sharepoint_links: [
+    { url: 'https://example.sharepoint.com/sites/leases', label: 'Lease library', sort_order: 2 },
   ],
-  tools: ['Copilot Studio', 'SharePoint'],
+  sample_grade_card: null,
+  flow_chart: null,
+  tools: { trigger_email: false },
+};
+
+/** The same brief with every optional part AI Labs can send. */
+export const MOCK_AI_LAB_BRIEF_FULL: AiLabAssignmentBrief = {
+  ...MOCK_AI_LAB_BRIEF,
+  requirements: ['A Copilot Studio trial', 'The lease schedule CSV'],
+  build_guides: [
+    {
+      url: 'https://example.com/ai-labs/build-guide.pdf',
+      doc_type: 'pdf',
+      filename: 'build-guide.pdf',
+      content_type: 'application/pdf',
+      size_bytes: 182_044,
+      sort_order: 1,
+    },
+  ],
+  sample_grade_card: {
+    url: 'https://example.com/ai-labs/sample-grade-card.pdf',
+    doc_type: 'pdf',
+    filename: 'sample-grade-card.pdf',
+    content_type: 'application/pdf',
+    size_bytes: 96_211,
+    sort_order: 3,
+    sample_grade: '7.85',
+  },
+  flow_chart: {
+    url: 'https://example.com/ai-labs/flow-chart.pdf',
+    doc_type: 'pdf',
+    filename: 'flow-chart.pdf',
+    content_type: 'application/pdf',
+    size_bytes: 55_302,
+    sort_order: 4,
+  },
+  tools: { trigger_email: true },
 };
 
 export const MOCK_AI_LAB_AGENTS: AiLabAgent[] = [
@@ -272,7 +318,21 @@ export const MOCK_AI_LAB_DETAIL: AiLabCourseDetail = {
     { id: '0c199ae8-74c7-4f03-ba25-6474685901e2', name: 'Information Technology', cpe_credit: 3 },
   ],
   total_cpe_credits: 3,
-  instructors: ['Uttam Pai'],
+  instructors: [
+    {
+      id: 'bd07c788-8f7d-4baa-a258-52d8b35f7a2b',
+      name: 'Uttam Pai',
+      designation: null,
+      bio: null,
+      profile_image: null,
+      horizontal_image_url: null,
+      vertical_image_url: null,
+      square_image_url: null,
+      video_url: null,
+      social_links: [],
+      linkedin_url: null,
+    },
+  ],
   skills: [],
   tools: ['Copilot'],
   learning_objectives: [
@@ -280,6 +340,19 @@ export const MOCK_AI_LAB_DETAIL: AiLabCourseDetail = {
     'Distinguish the core controls, decision points, and review boundaries in an AI-enabled lease assurance workflow.',
   ],
   masterclass_courses: [],
+  ai_kit: null,
+  // Not started: the link arrives on the detail re-read after `course-start/`.
+  chapter: {
+    id: '7944dd60-185b-42bd-be66-233019a8b61b',
+    name: 'Building the Lease Assurance Agent',
+    mini_description: null,
+    description: null,
+    hls_video_link: null,
+    duration_seconds: 2640,
+    transcript_url: null,
+    transcript_text: null,
+    order: 1,
+  },
   lock_state: {
     locked: false,
     lock_reason: null,
@@ -287,6 +360,22 @@ export const MOCK_AI_LAB_DETAIL: AiLabCourseDetail = {
     masterclass_course_id: '7158ee5b-5cff-442c-b217-9703379e2cf8',
     credit_source: null,
   },
+};
+
+/** A real UAT HLS rendition, so the player stories actually play. */
+const MOCK_HLS =
+  'https://d1n6nz3tw8nobo.cloudfront.net/videos/Uttam_Pai_Copilot_Studio_AI_Agents_for_Audits_Topic_Content/Uttam_Pai_Copilot_Studio_AI_Agents_for_Audits_Topic_Content.m3u8';
+
+/** Before the start: a trailer, and no lab video link yet. */
+export const MOCK_AI_LAB_DETAIL_WITH_TRAILER: AiLabCourseDetail = {
+  ...MOCK_AI_LAB_DETAIL,
+  ai_lab_course_trailer_url: MOCK_HLS,
+};
+
+/** The detail re-read after `course-start/`: the lab video link is filled in. */
+export const MOCK_AI_LAB_DETAIL_WITH_VIDEO: AiLabCourseDetail = {
+  ...MOCK_AI_LAB_DETAIL_WITH_TRAILER,
+  chapter: { ...MOCK_AI_LAB_DETAIL.chapter!, hls_video_link: MOCK_HLS },
 };
 
 const lockFree = MOCK_AI_LAB_DETAIL.lock_state;
@@ -356,6 +445,13 @@ export interface AiLabCourseStoryState {
   balance?: AiLabTokenBalance | null;
   /** Shows the quiz panel in the video frame, on this question. */
   quiz?: { questions: AiLabQuizQuestion[]; index: number; grade: AiLabQuizGrade | null };
+  /** Build hints — no route serves them yet; set only to show the filled design. */
+  hints?: AiLabHint[];
+  attempts?: AiLabAttempts | null;
+  /** A running cool-off's end — pair it with `ctaStage: 'COOL_OFF'`. */
+  coolOffEndsAt?: string | null;
+  briefProblem?: string | null;
+  attemptsProblem?: string | null;
 }
 
 /** Two lab quiz questions, as `course-quiz-questions/` sends them (HTML text, as in the guide). */
@@ -400,6 +496,74 @@ export const MOCK_AI_LAB_QUIZ_GRADE: AiLabQuizGrade = {
   },
 };
 
+/* ---- The redesign's slots, filled — stories only; no route of ours serves these yet. ---- */
+
+export const MOCK_AI_LAB_HINTS: AiLabHint[] = [
+  {
+    id: 1,
+    title: 'Lease Audit Agent',
+    hint: 'Start from the lease schedule, not the contracts: match each schedule row to its contract first, then compare terms.',
+  },
+  {
+    id: 2,
+    title: 'Lease Audit Agent',
+    hint: 'Treat a missing commencement date as an exception for review, not a zero — the agent should never guess it.',
+  },
+  {
+    id: 3,
+    title: 'Lease Audit Agent',
+    hint: 'Keep the reviewer in the loop: post a summary of every flagged lease to the review channel before closing.',
+  },
+];
+
+const MOCK_FILE_URL = 'https://example.com/ai-labs/grade-cards/attempt.pdf';
+
+/** Three graded attempts, best first, scored out of 10; five submitted against an allowance of 3. */
+export const MOCK_AI_LAB_ATTEMPTS: AiLabAttempts = {
+  is_provisioned: true,
+  total_attempts: 5,
+  allowed_attempt: 3,
+  grade_card_urls_expire_at: '2099-01-01T00:00:00Z',
+  attempts: [
+    {
+      attempt_number: 2,
+      status: 'graded',
+      score: '8.80',
+      max_score: '10.00',
+      percentage: '88.00',
+      submitted_at: '2026-10-20T09:12:00Z',
+      graded_at: '2026-10-20T09:16:00Z',
+      grade_card_url: MOCK_FILE_URL,
+      master_comment: 'Reconciles the schedule cleanly and escalates every unmatched lease.',
+      minor_comment: 'Add a confidence threshold before auto-matching low-value items.',
+    },
+    {
+      attempt_number: 3,
+      status: 'graded',
+      score: '7.60',
+      max_score: '10.00',
+      percentage: '76.00',
+      submitted_at: '2026-10-21T14:02:00Z',
+      graded_at: '2026-10-21T14:07:00Z',
+      grade_card_url: MOCK_FILE_URL,
+      master_comment: 'Solid, but the guardrail on missing dates regressed.',
+      minor_comment: null,
+    },
+    {
+      attempt_number: 1,
+      status: 'graded',
+      score: '5.40',
+      max_score: '10.00',
+      percentage: '54.00',
+      submitted_at: '2026-10-19T11:40:00Z',
+      graded_at: '2026-10-19T11:45:00Z',
+      grade_card_url: null,
+      master_comment: null,
+      minor_comment: null,
+    },
+  ],
+};
+
 /**
  * Provides a stand-in `AiLabCourseFacade` and `AiLabCredits` holding fixed state, so a story
  * renders the page without HTTP. Their actions do nothing. Only the members the page reads are
@@ -408,7 +572,8 @@ export const MOCK_AI_LAB_QUIZ_GRADE: AiLabQuizGrade = {
 export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[] {
   const progress = state.progress ?? null;
   const watched = progress?.video_watched_seconds ?? 0;
-  const total = state.lab?.ai_lab_course_total_duration_seconds ?? 0;
+  const total =
+    state.lab?.chapter?.duration_seconds ?? state.lab?.ai_lab_course_total_duration_seconds ?? 0;
   const stub = {
     lab: signal(state.lab ?? null),
     started: signal(state.started ?? null),
@@ -417,6 +582,9 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[
     error: signal(state.error ?? false),
     ctaStage: signal(state.ctaStage ?? null),
     ctaLoading: signal(false),
+    labVideoUrl: signal(
+      state.started?.started ? (state.lab?.chapter?.hls_video_link ?? null) : null,
+    ),
     completed: signal(!!progress?.video_completed),
     progressPercent: signal(total ? Math.min(100, Math.round((watched / total) * 100)) : 0),
     quizDone: signal(!!progress && (!progress.quiz_required || progress.quiz_passed)),
@@ -436,6 +604,17 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[
     submitting: signal(false),
     gradeCardBusy: signal(state.gradeCardBusy ?? false),
     labProvisioned: signal(true),
+    hints: signal(state.hints ?? []),
+    requirements: signal(state.brief?.requirements ?? []),
+    buildGuides: signal(state.brief?.build_guides ?? []),
+    exerciseFiles: signal(state.brief?.exercise_files ?? []),
+    workspaceLinks: signal(state.brief?.sharepoint_links ?? []),
+    flowChart: signal(state.brief?.flow_chart ?? null),
+    sampleGradeCard: signal(state.brief?.sample_grade_card ?? null),
+    briefProblem: signal(state.briefProblem ?? null),
+    attempts: signal(state.attempts ?? null),
+    attemptsProblem: signal(state.attemptsProblem ?? null),
+    coolOffEndsAt: signal(state.coolOffEndsAt ?? null),
     open: () => undefined,
     retry: () => undefined,
     start: () => undefined,
@@ -444,7 +623,11 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[
     refreshArtefacts: () => undefined,
     refreshStatus: () => undefined,
     downloadGradeCard: () => undefined,
-    openInputFile: () => undefined,
+    openFile: () => undefined,
+    openAttemptGradeCard: () => undefined,
+    retryBrief: () => undefined,
+    retryAttempts: () => undefined,
+    sendTestEmails: () => undefined,
   };
   const credits = {
     balance: signal(state.balance ?? null),

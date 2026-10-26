@@ -167,9 +167,27 @@ export class AiLabsFacade {
     },
   );
 
-  readonly practicalProgress = computed(() =>
-    this.practicalProgressRes.hasValue() ? this.practicalProgressRes.value() : null,
-  );
+  /**
+   * The practical record, cut to the labs a learner can start here. AI Labs reports every
+   * assignment it holds; a row without `ai_lab_course_id` isn't mapped to a lab on Masterclass, so
+   * it has no page and no Start, and is dropped. The counts are re-taken from the rows that remain
+   * so "N of M labs" matches the list — `graded` is what AI Labs counts as completed.
+   * `average_percentage` stays as sent: it is a server-owned score, not a count.
+   */
+  readonly practicalProgress = computed<AiLabPracticalProgress | null>(() => {
+    const progress = this.practicalProgressRes.hasValue()
+      ? this.practicalProgressRes.value()
+      : null;
+    if (!progress) return null;
+    const assignments = progress.assignments.filter((row) => !!row.ai_lab_course_id);
+    return {
+      ...progress,
+      assignments,
+      assignments_available: assignments.length,
+      assignments_attempted: assignments.filter((row) => row.attempts > 0).length,
+      assignments_completed: assignments.filter((row) => row.status === 'graded').length,
+    };
+  });
   readonly practicalProgressLoading = computed(() => this.practicalProgressRes.isLoading());
 
   /** A create or a reset is in flight. */

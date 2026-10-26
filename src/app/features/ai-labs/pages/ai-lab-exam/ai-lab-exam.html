@@ -11,8 +11,19 @@
         <h1 class="text-3xl font-bold">{{ reviewCopy.title }}</h1>
         <div class="flex flex-col gap-3 sm:flex-row">
           @if (!result.passed) {
-            <button app-button type="button" class="rounded-lg" (click)="facade.retake()">
-              {{ reviewCopy.retake }}
+            <!-- A cool-off shuts the retake until it ends; the button says until when. -->
+            <button
+              app-button
+              type="button"
+              class="rounded-lg"
+              [disabled]="!!facade.retakeAfter()"
+              (click)="facade.retake()"
+            >
+              @if (facade.retakeAfter(); as time) {
+                Retake after {{ time }}
+              } @else {
+                {{ reviewCopy.retake }}
+              }
             </button>
           }
           <button

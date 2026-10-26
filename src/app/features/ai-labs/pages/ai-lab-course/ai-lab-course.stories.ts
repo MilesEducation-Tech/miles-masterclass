@@ -5,15 +5,18 @@ import { AiLabCourse } from './ai-lab-course';
 import {
   AiLabCourseStoryState,
   MOCK_AI_LAB_AGENTS,
+  MOCK_AI_LAB_ATTEMPTS,
   MOCK_AI_LAB_BALANCE,
   MOCK_AI_LAB_BRIEF,
+  MOCK_AI_LAB_BRIEF_FULL,
   MOCK_AI_LAB_DETAIL,
+  MOCK_AI_LAB_DETAIL_WITH_TRAILER,
+  MOCK_AI_LAB_DETAIL_WITH_VIDEO,
   MOCK_AI_LAB_EVALUATED,
   MOCK_AI_LAB_EVALUATING,
   MOCK_AI_LAB_FLOWS,
+  MOCK_AI_LAB_HINTS,
   MOCK_AI_LAB_NOT_STARTED,
-  MOCK_AI_LAB_QUIZ,
-  MOCK_AI_LAB_QUIZ_GRADE,
   MOCK_AI_LAB_STARTED,
   mockAiLabProgress,
   provideStoryAiLabCourse,
@@ -24,8 +27,12 @@ import {
  * story is one state of the page without HTTP.
  *
  * The stories step through the gates — start → watch → quiz → exam → lab → feedback — because
- * every section below the hero is gated on one of them. The lab has no playable video on any read
- * yet, so the hero frame shows its artwork throughout.
+ * every section below the hero is gated on one of them. Before the start the frame plays the
+ * trailer; once started, the lab video. Stories without either show the lab's artwork.
+ *
+ * The page is the v3 redesign: a journey sidebar (progress overview + step navigator) beside five
+ * numbered steps. Build hints are the one part no route serves yet — only the `Redesign…` stories
+ * fill them.
  */
 const meta: Meta<AiLabCourse> = {
   title: 'AI Labs/Course page',
@@ -51,9 +58,9 @@ const practical = {
   balance: MOCK_AI_LAB_BALANCE,
 };
 
-/** No enrolment yet: the CTA starts the lab and the hint says what starting opens. */
+/** No enrolment yet: the trailer plays (free seek, no progress), and the CTA starts the lab. */
 export const NotStarted = withState({
-  lab,
+  lab: MOCK_AI_LAB_DETAIL_WITH_TRAILER,
   started: MOCK_AI_LAB_NOT_STARTED,
   ctaStage: 'START',
   brief: MOCK_AI_LAB_BRIEF,
@@ -67,9 +74,9 @@ export const Locked = withState({
   lockRemark: 'You have already earned credit for this content through its masterclass course.',
 });
 
-/** Started, video half-watched. With no video on the read, the CTA has nothing to play. */
+/** Started, video half-watched: the lab video in CPE mode, and the CTA plays / resumes it. */
 export const Watching = withState({
-  lab,
+  lab: MOCK_AI_LAB_DETAIL_WITH_VIDEO,
   started: MOCK_AI_LAB_STARTED,
   progress: mockAiLabProgress('video'),
   ctaStage: null,
@@ -77,16 +84,15 @@ export const Watching = withState({
 });
 
 /**
- * The quiz open in the video frame, first question answered wrong: the verdict, the right option
- * and each option's explanation, as the masterclass chapter quiz shows them.
+ * Video watched, quiz next: the CTA reads Take Quiz. The quiz itself opens as a pop-up — see
+ * _AI Labs/Quiz dialog_.
  */
-export const QuizOpen = withState({
+export const QuizNext = withState({
   lab,
   started: MOCK_AI_LAB_STARTED,
   progress: mockAiLabProgress('quiz'),
   ctaStage: 'TAKE_QUIZ',
   brief: MOCK_AI_LAB_BRIEF,
-  quiz: { questions: MOCK_AI_LAB_QUIZ, index: 0, grade: MOCK_AI_LAB_QUIZ_GRADE },
 });
 
 /** Video done, assessment still to pass — the lab stays shut and says why. */
@@ -96,6 +102,39 @@ export const AwaitingExam = withState({
   progress: mockAiLabProgress('final_assessment'),
   ctaStage: 'TAKE_EXAM',
   brief: MOCK_AI_LAB_BRIEF,
+});
+
+/** The assessment failed: step 01 turns amber and asks for a retake; the lab stays shut. */
+export const ExamRetake = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('final_assessment'),
+  ctaStage: 'RETAKE_EXAM',
+  brief: MOCK_AI_LAB_BRIEF,
+});
+
+/**
+ * Failed with a wait configured (`final_assessment_status: cool_off`): the CTA is disabled and says
+ * when the retake opens; it flips to Retake by itself when the wait ends.
+ */
+export const ExamCoolOff = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('final_assessment'),
+  ctaStage: 'COOL_OFF',
+  coolOffEndsAt: new Date(Date.now() + 25 * 60_000).toISOString(),
+  brief: MOCK_AI_LAB_BRIEF,
+});
+
+/** AI Labs couldn't sign the brief's file links (503 `AI_LABS_STORAGE_UNAVAILABLE`): a Retry line. */
+export const BriefRetry = withState({
+  lab,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('ai_assessment'),
+  ctaStage: 'AI_LAB',
+  ...practical,
+  brief: null,
+  briefProblem: "AI Labs couldn't prepare the file links. Try again in a moment.",
 });
 
 /**
@@ -179,6 +218,32 @@ export const LabNotMapped = withState({
   progress: mockAiLabProgress('ai_assessment'),
   ctaStage: 'AI_LAB',
   labMapped: false,
+});
+
+/**
+ * The full 2026-10-26 brief — requirements, a build guide above Launch AI, a flow chart, the
+ * sample card (7.85 / 10) with its PDF — plus three hints, the one slot no route serves yet.
+ */
+export const RedesignLabOpen = withState({
+  lab: MOCK_AI_LAB_DETAIL_WITH_VIDEO,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('ai_assessment'),
+  ctaStage: 'AI_LAB',
+  ...practical,
+  brief: MOCK_AI_LAB_BRIEF_FULL,
+  hints: MOCK_AI_LAB_HINTS,
+});
+
+/** Graded three times of five allowed: the best attempt's card and the history beneath it. */
+export const RedesignGradedWithHistory = withState({
+  lab: MOCK_AI_LAB_DETAIL_WITH_VIDEO,
+  started: MOCK_AI_LAB_STARTED,
+  progress: mockAiLabProgress('feedback'),
+  ctaStage: 'FEEDBACK',
+  ...practical,
+  assignment: { ...MOCK_AI_LAB_EVALUATED, can_resubmit: true },
+  hints: MOCK_AI_LAB_HINTS,
+  attempts: MOCK_AI_LAB_ATTEMPTS,
 });
 
 export const Loading = withState({ isLoading: true });

@@ -1,0 +1,95 @@
+/* video.js writes width/height inline when `fluid` is off, so these have to win with
+   !important — the same override the reel card needs. `contain` then letterboxes a portrait
+   source inside the 16:9 frame. */
+:host ::ng-deep .video-js {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+:host ::ng-deep .video-js .vjs-tech {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
+}
+
+/* The clamped problem statement fades out rather than cutting mid-line.
+   A mask, not an overlay, so it works on any card surface. */
+.brief-fade {
+  -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent);
+  mask-image: linear-gradient(to bottom, black 55%, transparent);
+}
+
+/* Registered so they interpolate — an unregistered custom property can't be
+   animated, it only flips at the end. Prefixed: @property is global. */
+@property --ai-gauge-pct {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --ai-glow-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* Score ring: a conic fill to the percentage, with a soft halo in the same
+   colour. `--ai-gauge-pct` and `--ai-gauge-color` are bound per gauge. */
+.ai-gauge {
+  background: conic-gradient(var(--ai-gauge-color) calc(var(--ai-gauge-pct) * 1%), var(--border) 0);
+  box-shadow: 0 0 44px -14px var(--ai-gauge-color);
+}
+
+/* The ring fills from empty once its step scrolls into view (`data-reveal`
+   is set by `app-ai-lab-step`; the progress overview in the sidebar sets it
+   statically, so its ring fills on load). Steps that never reach `shown`
+   — server render, no JS — keep the static, already-filled ring. */
+[data-reveal='shown'] .ai-gauge {
+  animation: ai-gauge-fill 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes ai-gauge-fill {
+  from {
+    --ai-gauge-pct: 0;
+  }
+}
+
+/* A light sweeping round the border of whatever is live: the step that's up
+   next, a running evaluation. Masked to the 1px border ring. */
+.ai-glow {
+  position: relative;
+}
+
+.ai-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--ai-glow-angle),
+    transparent 0 62%,
+    var(--accent) 80%,
+    transparent 96%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: ai-glow-spin 5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes ai-glow-spin {
+  to {
+    --ai-glow-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal='shown'] .ai-gauge,
+  .ai-glow::before {
+    animation: none;
+  }
+}

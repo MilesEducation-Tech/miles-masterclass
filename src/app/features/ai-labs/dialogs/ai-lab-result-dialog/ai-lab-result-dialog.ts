@@ -10,6 +10,8 @@ export interface AiLabResultData {
   score: number;
   message: string;
   passingScore?: number;
+  /** A failed attempt's cool-off end, as a time of day — the retake is shut until then. */
+  retakeAfter?: string | null;
 }
 
 /** Back to the lab page, a fresh paper, or the review below the dialog. */

@@ -1,0 +1,29 @@
+<header class="mb-4" [class]="revealClass()">
+  <!-- Index, a rule tinted by the step's state, then its status. -->
+  <div class="flex min-h-7 items-center gap-3">
+    <span class="font-mono text-[11.5px] font-semibold tracking-[0.12em]" [class]="indexClass()">
+      {{ index() }}
+    </span>
+    <span class="h-px min-w-6 flex-1" [class]="ruleClass()" aria-hidden="true"></span>
+    @if (step().status; as status) {
+      <span [class]="chipClass()">
+        <span [class]="dotClass()" aria-hidden="true"></span>
+        {{ status }}
+      </span>
+    }
+    <ng-content select="[stepAction]" />
+  </div>
+  <h2
+    class="mt-1.5 font-serif text-[22px] leading-tight font-semibold tracking-[-0.015em] sm:text-[24px]"
+  >
+    <span class="sr-only">Step {{ index() }}: </span>{{ heading() }}
+  </h2>
+  @if (caption()) {
+    <p class="mt-0.5 text-[12.5px] text-muted-foreground">{{ caption() }}</p>
+  }
+</header>
+
+<!-- The body trails the header slightly as it rises in. -->
+<div class="delay-150" [class]="revealClass()">
+  <ng-content />
+</div>

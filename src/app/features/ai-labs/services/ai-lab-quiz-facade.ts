@@ -4,12 +4,13 @@ import {
   DestroyRef,
   effect,
   inject,
+  Injector,
   linkedSignal,
   Service,
   signal,
   untracked,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { NgpDialogManager, NgpDialogRef } from 'ng-primitives/dialog';
 import { firstValueFrom } from 'rxjs';
 import { CommonResponse, SKIP_ERROR_NOTIFICATION, SKIP_LOADING } from '@core/models/http.model';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
@@ -67,7 +68,11 @@ export class AiLabQuizFacade {
   private readonly api = inject(ApiClient);
   private readonly course = inject(AiLabCourseFacade);
   private readonly notification = inject(NotificationService);
-  private readonly router = inject(Router);
+  private readonly dialogs = inject(NgpDialogManager);
+  private readonly injector = inject(Injector);
+
+  /** The quiz pop-up while it's open — `isOpen` and it move together. */
+  private dialogRef: NgpDialogRef | null = null;
 
   private readonly openFor = signal<string | null>(null);
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -136,7 +141,7 @@ export class AiLabQuizFacade {
     });
   }
 
-  /** The CTA's Take Quiz. Re-reads when it's already open on this lab. */
+  /** The CTA's Take Quiz, and the video's end. Re-reads when it's already open on this lab. */
   open(): void {
     const id = this.course.id();
     if (!id) return;
@@ -144,13 +149,36 @@ export class AiLabQuizFacade {
     this.stopCountdown();
     if (this.openFor() === id) this.questionsRes.reload();
     else this.openFor.set(id);
+    void this.showDialog();
   }
 
-  /** "Watch again", and the end of the countdown. */
+  /** "Watch again", the pop-up's own close, and on to the assessment. */
   close(): void {
     this.stopCountdown();
     this.completed.set(false);
     this.openFor.set(null);
+    const ref = this.dialogRef;
+    this.dialogRef = null;
+    ref?.close();
+  }
+
+  /**
+   * The quiz in a pop-up, as micro-learning shows it. Loaded on demand; opened with this facade's
+   * injector so the dialog's `AiLabQuiz` reads this instance. Closed from inside (backdrop, Esc, ×),
+   * it closes the quiz too.
+   */
+  private async showDialog(): Promise<void> {
+    if (this.dialogRef) return;
+    const { AiLabQuizDialog } =
+      await import('@features/ai-labs/dialogs/ai-lab-quiz-dialog/ai-lab-quiz-dialog');
+    if (!this.isOpen() || this.dialogRef) return;
+    const ref = this.dialogs.open(AiLabQuizDialog, { injector: this.injector });
+    this.dialogRef = ref;
+    ref.afterClosed.subscribe(() => {
+      if (this.dialogRef !== ref) return;
+      this.dialogRef = null;
+      this.close();
+    });
   }
 
   async answer(optionIds: string[]): Promise<void> {
@@ -194,13 +222,11 @@ export class AiLabQuizFacade {
 
   /**
    * The completed quiz's button and the countdown's end: on to the final assessment, as the
-   * masterclass quiz does after the last chapter. The exam route sits beside the lab page, one
-   * segment deeper, so it's this URL plus `final-assessment`.
+   * masterclass quiz does after the last chapter — through the same rules pop-up the CTA opens.
    */
   proceed(): void {
     this.close();
-    const here = this.router.url.split(/[?#]/)[0];
-    void this.router.navigateByUrl(`${here}/final-assessment`);
+    void this.course.startExam();
   }
 
   private startCountdown(): void {

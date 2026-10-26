@@ -1,33 +1,51 @@
 import { HttpContext, HttpErrorResponse, httpResource } from '@angular/common/http';
+import { isPlatformBrowser } from '@angular/common';
 import {
   computed,
   DestroyRef,
   DOCUMENT,
   effect,
   inject,
+  PLATFORM_ID,
   Service,
   signal,
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subscription, takeWhile, timer } from 'rxjs';
+import { Router } from '@angular/router';
+import { NgpDialogManager } from 'ng-primitives/dialog';
+import { firstValueFrom, Subscription, takeWhile, timer } from 'rxjs';
 import { CommonResponse, SKIP_ERROR_NOTIFICATION, SKIP_LOADING } from '@core/models/http.model';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { NotificationService } from '@core/services/notification/notification';
 import { AI_LABS_API } from '@features/ai-labs/constants/ai-labs-api';
+// Type-only: the rules dialog loads with `import()` when the exam is started (AGENTS.md §4.4).
+import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import {
   AiLabAgent,
   AiLabAssignmentBrief,
   AiLabAssignmentStatus,
+  AiLabAttempts,
   AiLabCourseDetail,
   AiLabCourseProgress,
   AiLabCourseStarted,
   AiLabCtaStage,
+  AiLabFile,
   AiLabFlow,
-  AiLabInputFile,
+  AiLabAttempt,
+  AiLabHint,
   AiLabSubmitBody,
 } from '@features/ai-labs/models/ai-labs.model';
+
+/** The rules pop-up before the exam — masterclass's `ASSESSMENT_COPY`, which a feature can't import. */
+const EXAM_RULES_COPY = {
+  title: 'Final Assessment',
+  intro: 'QAS Self-Study Qualified Assessment Rules:',
+  start: 'Start Exam',
+  /** Masterclass's `ASSESSMENT_DIALOG_WIDTH`. */
+  maxWidth: '500px',
+} as const;
 
 /** How often watched seconds go to the server while the video plays. */
 const VIDEO_REPORT_EVERY_S = 15;
@@ -38,8 +56,32 @@ const STATUS_POLL_MS = 12_000;
 /** Grading takes minutes; a poll still running after this won't settle by itself. */
 const STATUS_POLL_TIMEOUT_MS = 30 * 60_000;
 
-/** Brief file links are signed for an hour — re-fetch the brief before handing out an older one. */
-const BRIEF_LINK_MAX_AGE_MS = 50 * 60_000;
+/** Brief file links are signed for ~15 minutes — re-read the brief before handing out an older one. */
+const BRIEF_LINK_MAX_AGE_MS = 10 * 60_000;
+
+/**
+ * Brief / attempts failures a retry can fix, in AI Labs' vocabulary (`docs/AI_LABS_API.md` §2).
+ * `CONFIGURATION_REJECTED` is our platform key — a backend fault, so "try later", never "sign in".
+ */
+const VENDOR_RETRY: Record<string, string> = {
+  AI_LABS_STORAGE_UNAVAILABLE: "AI Labs couldn't prepare the file links. Try again in a moment.",
+  AI_LABS_RATE_LIMITED: 'AI Labs is busy right now. Try again shortly.',
+  AI_LABS_CALL_FAILED: "We couldn't reach AI Labs. Try again in a moment.",
+  AI_LABS_RESPONSE_UNREADABLE: "We couldn't reach AI Labs. Try again in a moment.",
+  AI_LABS_CONFIGURATION_REJECTED: 'AI Labs is unavailable right now. Please try again later.',
+  AI_LABS_LMS_UNCONFIGURED: 'AI Labs is switched off right now. Please try again later.',
+};
+
+const byOrder = <T extends { sort_order: number }>(list: readonly T[] | null | undefined): T[] =>
+  [...(list ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+
+/** Every file in a brief, signed or not — `openFile` finds the fresh copy of a stale link here. */
+const briefFiles = (b: AiLabAssignmentBrief): AiLabFile[] => [
+  ...(b.exercise_files ?? []),
+  ...(b.build_guides ?? []),
+  ...(b.flow_chart ? [b.flow_chart] : []),
+  ...(b.sample_grade_card ? [b.sample_grade_card] : []),
+];
 
 /** AI Labs refused this login token: it predates the account, and only a fresh login fixes it. */
 const SESSION_REFUSED = new Set(['AI_LABS_ACCESS_DENIED', 'AI_LABS_TOKEN_REJECTED']);
@@ -88,6 +130,9 @@ export class AiLabCourseFacade {
   private readonly notification = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  private readonly router = inject(Router);
+  private readonly dialogs = inject(NgpDialogManager);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly courseId = signal<string | null>(null);
 
@@ -131,10 +176,27 @@ export class AiLabCourseFacade {
 
   readonly completed = computed(() => !!this.progress()?.video_completed);
 
-  /** Watched share of the video, 0–100. The detail's seconds until a progress report says better. */
+  /**
+   * The lab video, once there is an enrolment to report against. The link is `null` before
+   * `course-start/` anyway; gating on `started` as well keeps an early link from playing seconds
+   * that `reportVideoProgress` would drop.
+   */
+  readonly labVideoUrl = computed(() =>
+    this.started()?.started ? (this.lab()?.chapter?.hls_video_link ?? null) : null,
+  );
+
+  /**
+   * Watched share of the video, 0–100. The progress report's duration, then the chapter's — the
+   * length the 95% check measures against — then the lab's total.
+   */
   readonly progressPercent = computed(() => {
     const watched = this.progress()?.video_watched_seconds ?? 0;
-    const total = this.videoDuration() ?? this.lab()?.ai_lab_course_total_duration_seconds ?? 0;
+    const lab = this.lab();
+    const total =
+      this.videoDuration() ??
+      lab?.chapter?.duration_seconds ??
+      lab?.ai_lab_course_total_duration_seconds ??
+      0;
     return total > 0 ? Math.min(100, Math.round((watched / total) * 100)) : 0;
   });
 
@@ -154,11 +216,86 @@ export class AiLabCourseFacade {
     if (!started) return null;
     if (!started.started) return 'START';
     const step = this.progress()?.next_step;
+    if (step === 'final_assessment') return this.examStage();
     return step === undefined ? null : (STAGE_FOR_STEP[step] ?? null);
   });
 
+  /**
+   * `final_assessment_status`, off `course-progress/` once started (it tracks attempts), else the
+   * detail's. Descriptive only — the exam routes enforce every rule themselves.
+   */
+  readonly finalAssessment = computed(
+    () => this.progress()?.final_assessment_status ?? this.lab()?.final_assessment_status ?? null,
+  );
+
+  /**
+   * When a failed attempt's wait ends, while it is running. A wait already past (a stale read)
+   * counts as over — the timer below re-reads progress at the end of a live one.
+   */
+  readonly coolOffEndsAt = computed(() => {
+    const status = this.finalAssessment();
+    const ends = status?.final_assessment_cool_off_ends_at;
+    return status?.final_assessment_enum_values === 'cool_off' &&
+      ends &&
+      Date.parse(ends) > Date.now()
+      ? ends
+      : null;
+  });
+
+  /** The exam CTA: Take, Retake, or the cool-off's disabled wait. */
+  private examStage(): AiLabCtaStage {
+    switch (this.finalAssessment()?.final_assessment_enum_values) {
+      case 'retake':
+        return 'RETAKE_EXAM';
+      case 'cool_off':
+        return this.coolOffEndsAt() ? 'COOL_OFF' : 'RETAKE_EXAM';
+      default:
+        return 'TAKE_EXAM';
+    }
+  }
+
   /** `course-start/` is in flight. */
   readonly ctaLoading = signal(false);
+
+  /** The rules pop-up is open — a second click doesn't stack another. */
+  private readonly examStarting = signal(false);
+
+  /**
+   * Take or retake the final assessment, as masterclass does (`FinalAssessmentFacade.start`): the
+   * lab's exam rules in a pop-up first, then — on "Start Exam" — the exam page, one segment below
+   * this lab's URL. The exam routes still enforce every gate, cool-off included.
+   */
+  async startExam(): Promise<void> {
+    if (this.examStarting()) return;
+    const coursePath = this.router.url.split(/[?#]/)[0];
+    const rules = (this.lab()?.ai_lab_course_exam_rules ?? '')
+      .split(/\r?\n/)
+      .map((rule) => rule.trim())
+      .filter(Boolean);
+    this.examStarting.set(true);
+    try {
+      const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
+      const ref = this.dialogs.open<UtilsDialogData, UtilsDialogResult>(UtilsDialog, {
+        data: {
+          title: EXAM_RULES_COPY.title,
+          // A long address in the rules wraps rather than leave a phone's panel.
+          containerClass: 'flex flex-col space-y-4 text-start wrap-break-word',
+          content: [
+            { type: 'text', value: EXAM_RULES_COPY.intro },
+            ...(rules.length ? [{ type: 'list' as const, items: rules, ordered: true }] : []),
+          ],
+          buttons: [{ label: EXAM_RULES_COPY.start, variant: 'default', action: 'confirm' }],
+          maxWidth: EXAM_RULES_COPY.maxWidth,
+        },
+      });
+      const result = await firstValueFrom(ref.afterClosed);
+      if (result?.result && result.action === 'confirm') {
+        await this.router.navigateByUrl(`${coursePath}/final-assessment`);
+      }
+    } finally {
+      this.examStarting.set(false);
+    }
+  }
 
   // ---- The practical -----------------------------------------------------------
   // These call AI Labs. A `200 is_provisioned: false` means "no AI Labs account yet" and is not
@@ -171,9 +308,14 @@ export class AiLabCourseFacade {
     { defaultValue: null, parse: unwrap<AiLabVendorBody<'brief', AiLabAssignmentBrief>>() },
   );
 
-  readonly brief = computed(() =>
-    this.briefRes.hasValue() ? (this.briefRes.value()?.brief ?? null) : null,
-  );
+  /**
+   * The brief, or `null`. A learner with no AI Labs account answers `200 is_provisioned: false` with
+   * `brief: {}` — no brief at all, not an empty one.
+   */
+  readonly brief = computed(() => {
+    const body = this.briefRes.hasValue() ? this.briefRes.value() : null;
+    return body?.is_provisioned && body.brief?.name ? body.brief : null;
+  });
   readonly briefLoading = computed(() => this.briefRes.isLoading());
   private readonly briefReason = computed(() => reasonOf(this.briefRes.error()));
 
@@ -184,6 +326,26 @@ export class AiLabCourseFacade {
   readonly briefUnavailable = computed(() =>
     this.labMapped() ? null : messageOf(this.briefRes.error()),
   );
+
+  /** A failed brief read a retry can fix, as one line with a Retry beside it. */
+  readonly briefProblem = computed(() => {
+    const err = this.briefRes.error();
+    if (!err || !this.labMapped()) return null;
+    return (
+      VENDOR_RETRY[this.briefReason() ?? ''] ?? "We couldn't load the brief. Try again in a moment."
+    );
+  });
+
+  /** What the learner needs before starting. `null` on the wire reads as none. */
+  readonly requirements = computed<readonly string[]>(() => this.brief()?.requirements ?? []);
+  /** Walkthroughs on public links — rows above Launch AI. */
+  readonly buildGuides = computed(() => byOrder(this.brief()?.build_guides));
+  /** The files the learner builds against (signed). */
+  readonly exerciseFiles = computed(() => byOrder(this.brief()?.exercise_files));
+  /** SharePoint workspaces, in order. */
+  readonly workspaceLinks = computed(() => byOrder(this.brief()?.sharepoint_links));
+  readonly flowChart = computed(() => this.brief()?.flow_chart ?? null);
+  readonly sampleGradeCard = computed(() => this.brief()?.sample_grade_card ?? null);
 
   /** The picker's lists, once the exam is passed — the lab is open from then on. */
   private readonly agentsRes = httpResource<AiLabVendorBody<'agents', AiLabAgent[]> | null>(
@@ -230,7 +392,9 @@ export class AiLabCourseFacade {
   );
 
   readonly assignment = computed(() => (this.statusRes.hasValue() ? this.statusRes.value() : null));
-  readonly statusLoading = computed(() => this.statusRes.isLoading());
+  /** `assessment-refresh/` is in flight. */
+  private readonly checkingResult = signal(false);
+  readonly statusLoading = computed(() => this.statusRes.isLoading() || this.checkingResult());
 
   /** A submission is with the evaluator — the grading poll runs while this holds. */
   private readonly grading = computed(() => {
@@ -240,6 +404,48 @@ export class AiLabCourseFacade {
 
   readonly submitting = signal(false);
   readonly gradeCardBusy = signal(false);
+
+  // ---- Not served yet ----------------------------------------------------------
+  // ponytail: the redesigned page shows build hints, one at a time, and no route serves them yet.
+  // Empty until one does — step 04 then says there are none. Binding is swapping this for a read.
+
+  readonly hints = signal<readonly AiLabHint[]>([]).asReadonly();
+
+  // ---- Attempts ----------------------------------------------------------------
+
+  /**
+   * `assignment-attempts/`: the newest graded attempts, best first. Read once the lab is open (its
+   * practical exists only past the exam); `is_provisioned: false` answers an empty list.
+   */
+  private readonly attemptsRes = httpResource<AiLabAttempts | null>(
+    () =>
+      this.examPassed() && this.labMapped()
+        ? this.labRequest(AI_LABS_API.assignmentAttempts)
+        : undefined,
+    { defaultValue: null, parse: unwrap<AiLabAttempts>() },
+  );
+
+  readonly attempts = computed(() =>
+    this.attemptsRes.hasValue() ? this.attemptsRes.value() : null,
+  );
+
+  /** Attempts failed to load for a reason a retry can fix — said in one line, never a toast. */
+  readonly attemptsProblem = computed(() => {
+    const err = this.attemptsRes.error();
+    const reason = reasonOf(err);
+    if (!err || reason === 'ai_lab_assignment_not_configured') return null;
+    return SESSION_REFUSED.has(reason ?? '')
+      ? 'AI Labs didn’t accept your session. Sign out and back in to see your attempts.'
+      : (VENDOR_RETRY[reason ?? ''] ?? "We couldn't load your attempts.");
+  });
+
+  retryAttempts(): void {
+    this.attemptsRes.reload();
+  }
+
+  retryBrief(): void {
+    this.briefRes.reload();
+  }
 
   // ---- Actions ---------------------------------------------------------------
 
@@ -263,8 +469,9 @@ export class AiLabCourseFacade {
 
   /**
    * `course-start/`: creates the enrolment (idempotent), then re-reads `course-started/`, which
-   * re-keys `course-progress/`. A 409 is the parent course's lock — its message is the sentence to
-   * show, so it is relayed as-is.
+   * re-keys `course-progress/`, and the detail, which only carries `chapter.hls_video_link` once
+   * started. A 409 is the parent course's lock — its message is the sentence to show, so it is
+   * relayed as-is.
    */
   start(): void {
     const id = this.courseId();
@@ -280,6 +487,7 @@ export class AiLabCourseFacade {
         next: () => {
           this.ctaLoading.set(false);
           this.startedRes.reload();
+          this.detailRes.reload();
         },
         error: (err: unknown) => {
           this.ctaLoading.set(false);
@@ -359,9 +567,33 @@ export class AiLabCourseFacade {
     this.flowsRes.reload();
   }
 
-  /** The evaluation section's manual re-read, on top of the poll. */
+  /**
+   * The evaluation section's manual "check result", on top of the poll: `assessment-refresh/`
+   * reconciles the grade with AI Labs, then the status and the gate flags are re-read, so a missed
+   * webhook moves the CTA on to feedback. Whatever the outcome, the re-reads show the truth.
+   */
   refreshStatus(): void {
+    const id = this.courseId();
+    if (!id || this.checkingResult()) return;
+    this.checkingResult.set(true);
+    const route = AI_LABS_API.assessmentRefresh;
+    this.api
+      .call({ ...route, path: route.path.replace(':id', id) }, undefined, { context: QUIET() })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.afterResultCheck(),
+        error: (err: unknown) => {
+          this.notification.error("Couldn't check your result", messageOf(err));
+          this.afterResultCheck();
+        },
+      });
+  }
+
+  private afterResultCheck(): void {
+    this.checkingResult.set(false);
     this.statusRes.reload();
+    this.progressRes.reload();
+    this.attemptsRes.reload();
   }
 
   /**
@@ -401,11 +633,25 @@ export class AiLabCourseFacade {
   }
 
   /**
-   * Open one of the brief's input files. The links are signed for an hour, so a brief older than
-   * that is re-fetched and the file's fresh link used — matched by name, the only key it has.
+   * The Test emails row. ponytail: the brief carries `tools.trigger_email`, but our backend has no
+   * route to send them yet (upstream posts `v2/ai-lab/assignments/trigger-email/`) — bind it here
+   * when one lands; until then the click says so rather than pretend to send.
    */
-  openInputFile(file: AiLabInputFile): void {
-    if (Date.now() - this.briefFetchedAt < BRIEF_LINK_MAX_AGE_MS) {
+  sendTestEmails(): void {
+    this.notification.info(
+      'Test emails',
+      "Sending test emails to your lab mailbox isn't available yet. Please check back soon.",
+    );
+  }
+
+  /**
+   * Open a brief file. Build guides are public; the rest are signed for ~15 minutes, so a brief
+   * older than 10 is re-read and the file's fresh link used — matched by `sort_order` and name. The
+   * tab opens inside the click; pointing it after the read is what keeps it from being blocked.
+   */
+  openFile(file: AiLabFile): void {
+    const fresh = Date.now() - this.briefFetchedAt < BRIEF_LINK_MAX_AGE_MS;
+    if (fresh || this.buildGuides().some((g) => g.url === file.url)) {
       this.openTab(file.url);
       return;
     }
@@ -418,8 +664,13 @@ export class AiLabCourseFacade {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
-          const fresh = res.data?.brief?.input_files.find((f) => f.name === file.name);
-          if (fresh && tab) tab.location.href = fresh.url;
+          const brief = res.data?.brief;
+          const match = brief?.name
+            ? briefFiles(brief).find(
+                (f) => f.sort_order === file.sort_order && f.filename === file.filename,
+              )
+            : undefined;
+          if (match && tab) tab.location.href = match.url;
           else tab?.close();
           this.briefRes.reload();
         },
@@ -430,15 +681,59 @@ export class AiLabCourseFacade {
       });
   }
 
+  /**
+   * Open an attempt's grade card. Its link dies at `grade_card_urls_expire_at`, so past that the
+   * attempts are re-read and the same attempt's fresh link used.
+   */
+  openAttemptGradeCard(attempt: AiLabAttempt): void {
+    const expires = this.attempts()?.grade_card_urls_expire_at;
+    if (attempt.grade_card_url && (!expires || Date.parse(expires) > Date.now() + 30_000)) {
+      this.openTab(attempt.grade_card_url);
+      return;
+    }
+    const tab = this.openTab('');
+    this.api
+      .get<CommonResponse<AiLabAttempts>>(`${AI_LABS_API.assignmentAttempts}${this.courseId()}/`, {
+        context: QUIET(),
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          const url = res.data?.attempts.find(
+            (a) => a.attempt_number === attempt.attempt_number,
+          )?.grade_card_url;
+          if (url && tab) tab.location.href = url;
+          else tab?.close();
+          this.attemptsRes.reload();
+        },
+        error: () => {
+          tab?.close();
+          this.notification.error('Grade card unavailable', 'Please try again in a moment.');
+        },
+      });
+  }
+
   // ---- Internals -------------------------------------------------------------
 
-  /** When the brief's signed links were issued — see `openInputFile`. */
+  /** When the brief's signed links were issued — see `openFile`. */
   private briefFetchedAt = 0;
   private statusPoll: Subscription | null = null;
 
   constructor() {
     effect(() => {
       if (this.brief()) untracked(() => (this.briefFetchedAt = Date.now()));
+    });
+
+    // A running cool-off ends on its own: re-read progress just after it, so "Retake after …"
+    // turns into Retake without a reload.
+    effect((onCleanup) => {
+      const ends = this.coolOffEndsAt();
+      if (!ends || !this.isBrowser) return;
+      const timer = setTimeout(
+        () => this.progressRes.reload(),
+        Date.parse(ends) - Date.now() + 1000,
+      );
+      onCleanup(() => clearTimeout(timer));
     });
 
     // Poll while a submission is being graded; stop when it settles, then re-read progress so the
@@ -469,7 +764,10 @@ export class AiLabCourseFacade {
     if (!this.statusPoll) return;
     this.statusPoll.unsubscribe();
     this.statusPoll = null;
-    if (settled) this.progressRes.reload();
+    if (settled) {
+      this.progressRes.reload();
+      this.attemptsRes.reload();
+    }
   }
 
   /** A new tab, `noopener` by hand so a blank one can still be pointed at a link later. */

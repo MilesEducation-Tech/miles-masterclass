@@ -102,6 +102,13 @@ export const AI_LABS_API = {
   assignmentStatus: `${ROOT}web-api/v1/ai-labs/assignment-status/`,
 
   /**
+   * `IsAuthenticated`: the newest `allowed_attempt` graded attempts, best score first, each with a
+   * signed grade-card link. Append `<uuid>/`. `no-store`; 409 `ai_lab_assignment_not_configured`
+   * when the lab has no practical.
+   */
+  assignmentAttempts: `${ROOT}web-api/v1/ai-labs/assignment-attempts/`,
+
+  /**
    * `IsAuthenticated`, strict body `{artefact_kind, agent_ref}`: 202 `in_progress`. Refusals carry
    * a learner-facing message (`final_assessment_not_passed`, `practical_already_completed`,
    * `AI_LABS_ALREADY_IN_PROGRESS`, …).
@@ -110,6 +117,16 @@ export const AI_LABS_API = {
     path: `${ROOT}api/v1/ai-labs/assignment-submit/:id/`,
     method: 'POST',
   } as RouteConfig<AiLabSubmitBody, CommonResponse<unknown>>,
+
+  /**
+   * `IsAuthenticated`, no body: the learner's manual "check result". Reconciles the grade with AI
+   * Labs; a failure is reported in `outcome` with a 200, not as an error. 403
+   * `caira_access_required`, 404 `no_ai_lab_enrollment`.
+   */
+  assessmentRefresh: {
+    path: `${ROOT}api/v1/ai-labs/assessment-refresh/:id/`,
+    method: 'POST',
+  } as RouteConfig<void, CommonResponse<unknown>>,
 
   /** `IsAuthenticated`: `{status, is_provisioned, tokens}` — the Copilot Credits balance. */
   tokens: `${ROOT}web-api/v1/ai-labs/tokens/`,

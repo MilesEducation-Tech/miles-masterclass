@@ -100,6 +100,22 @@ const FAN_SWIPE_THRESHOLD = 40;
 /** Cards in the scroll-driven fan showcase. */
 const FAN_SIZE = 5;
 
+/** Headline counts read as words up to twelve, as the copy did; past that, digits. */
+const COUNT_WORDS: Record<number, string> = {
+  1: 'One',
+  2: 'Two',
+  3: 'Three',
+  4: 'Four',
+  5: 'Five',
+  6: 'Six',
+  7: 'Seven',
+  8: 'Eight',
+  9: 'Nine',
+  10: 'Ten',
+  11: 'Eleven',
+  12: 'Twelve',
+};
+
 /**
  * AI Labs landing page — dark editorial marketing page fronting the prebuilt
  * agent catalogue.
@@ -301,6 +317,34 @@ export class AiLabs {
       }
     }
     return fan;
+  });
+
+  /**
+   * How many agents the catalogue holds — every card, not just the fan's five, since the grid below
+   * shows them all. Deduplicated by route in case a lab sits in two sections.
+   */
+  private readonly agentCount = computed(
+    () =>
+      new Set(this.facade.sections().flatMap((s) => s.cards.map((card) => card.route.join('/'))))
+        .size,
+  );
+
+  /** "Five agents" / "One agent"; `null` until the catalogue lands, so no wrong number flashes. */
+  private readonly agentsPhrase = computed(() => {
+    const n = this.agentCount();
+    if (!n) return null;
+    return `${COUNT_WORDS[n] ?? n} ${n === 1 ? 'agent' : 'agents'}`;
+  });
+
+  protected readonly catalogueTitle = computed(
+    () => `${this.agentsPhrase() ?? 'Agents'} across audit, tax, and CFO teams`,
+  );
+
+  protected readonly storiesLine = computed(() => {
+    const agents = this.agentsPhrase();
+    return agents
+      ? `${agents} and not a line of code between them.`
+      : 'Working agents, and not a line of code between them.';
   });
 
   /** Testimonials rail: one centred quote, neighbours shrunk and faded. */
@@ -561,7 +605,10 @@ export class AiLabs {
     );
   }
 
-  /** `account-reset-password/`: AI Labs mails a reset link. Only reached through `confirmResend`. */
+  /**
+   * `account-reset-password/`: AI Labs issues a new password and mails it. Every success replaces the
+   * old one, so it is only reached through `confirmResend`, never on its own.
+   */
   private resendEmail(): void {
     this.facade
       .resetPassword()
@@ -571,7 +618,14 @@ export class AiLabs {
           case 'RESET_EMAIL_SENT':
             this.notification.success(
               'Email sent',
-              'Check your inbox for the link to set a new AI Lab password.',
+              'Check your inbox for your new AI Lab credentials.',
+            );
+            return;
+          // The account exists but its Microsoft side is still being built; nothing was reset.
+          case 'PROVISIONING_IN_PROGRESS':
+            this.notification.info(
+              'Your lab is being set up',
+              'Try again in a few minutes, once your AI Lab is ready.',
             );
             return;
           case 'RESET_EMAIL_RATE_LIMITED':
@@ -586,11 +640,19 @@ export class AiLabs {
               "Your AI Lab account hasn't been created yet, so there is no password to reset.",
             );
             return;
+          // Can mean the password was reset and only the email failed — the old one no longer
+          // works, so a retry (which issues another) is the way back in.
+          case 'RESET_EMAIL_FAILED':
+            this.notification.error(
+              'Email not sent',
+              "AI Labs couldn't send your new credentials, and your previous password may no longer work. Please try again — each try issues a new password (up to 3 every 5 minutes).",
+            );
+            return;
           default:
             if (state && this.blockedBy(state)) return;
             this.notification.error(
               'Email not sent',
-              "AI Labs couldn't send the reset email. Please try again shortly.",
+              "AI Labs couldn't send the email. Please try again shortly.",
             );
         }
       });

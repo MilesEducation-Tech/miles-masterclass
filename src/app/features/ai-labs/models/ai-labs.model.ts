@@ -420,9 +420,59 @@ export interface AiLabParentCourse {
   duration_seconds: number;
 }
 
+/** One of an instructor's profile links. */
+export interface AiLabSocialLink {
+  title: string;
+  url: string;
+  icon_url: string | null;
+}
+
+/** An instructor on the lab. Only the detail read carries these; unfilled fields are `null`. */
+export interface AiLabInstructor {
+  id: string;
+  name: string;
+  designation: string | null;
+  bio: string | null;
+  profile_image: string | null;
+  horizontal_image_url: string | null;
+  vertical_image_url: string | null;
+  square_image_url: string | null;
+  video_url: string | null;
+  social_links: AiLabSocialLink[];
+  linkedin_url: string | null;
+}
+
 /**
- * `data` of `GET web-api/v1/ai-labs/course/<uuid>/`. Carries no playable video — see the plan's
- * backend question Q1 — so the page shows the artwork where the player would be.
+ * The lab's one video. `hls_video_link` is what `course-video-progress/` measures, against
+ * `duration_seconds` — and it is `null` until the lab is started, so the detail is re-read after
+ * `course-start/`.
+ */
+export interface AiLabChapter {
+  id: string;
+  name: string;
+  mini_description: string | null;
+  description: string | null;
+  hls_video_link: string | null;
+  duration_seconds: number;
+  transcript_url: string | null;
+  transcript_text: string | null;
+  order: number;
+}
+
+/** The starter kit that ships with a lab: prompts, sample files. */
+export interface AiLabKit {
+  id: string;
+  name: string;
+  description: string | null;
+  icon_url: string | null;
+  url: string | null;
+  pdf_url: string | null;
+}
+
+/**
+ * `data` of `GET web-api/v1/ai-labs/course/<uuid>/`. The trailer plays before the start; the lab
+ * video is `chapter.hls_video_link`. Video, trailer and instructor fields are on this read only —
+ * the list and card reads don't carry them.
  */
 export interface AiLabCourseDetail extends AiLabCourseListItem {
   ai_lab_course_description: string | null;
@@ -440,11 +490,16 @@ export interface AiLabCourseDetail extends AiLabCourseListItem {
   fields_of_study: AiLabFieldOfStudy[];
   /** The total, summed by the API. Render it as sent; never re-sum. */
   total_cpe_credits: number;
-  instructors: string[];
+  /** Can be `[]`. */
+  instructors: AiLabInstructor[];
   skills: string[];
   tools: string[];
   learning_objectives: string[];
   masterclass_courses: AiLabParentCourse[];
+  ai_kit: AiLabKit | null;
+  chapter: AiLabChapter | null;
+  /** Per learner: `locked` until started. */
+  final_assessment_status?: AiLabFinalAssessmentStatus;
 }
 
 /** The learner's enrolment on one lab, as `course-started/` reports it. */
@@ -478,6 +533,20 @@ export interface AiLabNasbaOutstanding {
 }
 
 /**
+ * `final_assessment_status` — what the final-assessment button should be (`docs/AI_LABS_API.md`
+ * §1a). On the lab detail, `course-progress/` and the assessment submit. Descriptive only: the
+ * routes still enforce every rule.
+ */
+export type AiLabFinalAssessmentState =
+  'locked' | 'start' | 'cool_off' | 'retake' | 'passed' | 'ended' | (string & {});
+
+export interface AiLabFinalAssessmentStatus {
+  final_assessment_enum_values: AiLabFinalAssessmentState;
+  /** UTC; set while `cool_off`. */
+  final_assessment_cool_off_ends_at: string | null;
+}
+
+/**
  * `data` of `GET web-api/v1/ai-labs/course-progress/<uuid>/` — the gate flags the whole page runs
  * on. A learner who hasn't started gets a 404 `no_ai_lab_enrollment` instead of this body.
  */
@@ -500,6 +569,7 @@ export interface AiLabCourseProgress {
     delivery_method: string | null;
     outstanding: AiLabNasbaOutstanding[];
   };
+  final_assessment_status?: AiLabFinalAssessmentStatus;
 }
 
 /** Body of `POST api/v1/ai-labs/course-video-progress/`. Strict: no other keys. */
@@ -522,6 +592,8 @@ export interface AiLabVideoProgressBody {
  *  - `START` — no enrolment yet; `course-start/` creates it.
  *  - `AI_LAB` — exam passed, practical not graded (`next_step: ai_assessment`). Upstream opens
  *    feedback here; our backend refuses it until the lab is graded, so the CTA points at the lab.
+ *  - `COOL_OFF` — the last exam attempt failed and the wait is still running
+ *    (`final_assessment_status: cool_off`): the button is disabled and says until when.
  */
 export type AiLabCtaStage =
   | 'START'
@@ -529,6 +601,7 @@ export type AiLabCtaStage =
   | 'TAKE_EXAM'
   | 'REWATCH'
   | 'RETAKE_EXAM'
+  | 'COOL_OFF'
   | 'AI_LAB'
   | 'FEEDBACK'
   | 'DOWNLOAD';
@@ -537,6 +610,7 @@ export type AiLabCtaStage =
 export const AI_LAB_QUIZ_BEHIND: readonly AiLabCtaStage[] = [
   'TAKE_EXAM',
   'RETAKE_EXAM',
+  'COOL_OFF',
   'AI_LAB',
   'FEEDBACK',
   'DOWNLOAD',
@@ -607,45 +681,105 @@ export interface AiLabAssignmentStatus {
   can_resubmit: boolean;
 }
 
-/** One file the learner builds against. The URL is signed and expires (~1 h). */
-export interface AiLabInputFile {
-  name: string;
+/**
+ * One brief file. Exercise files, the flow chart and the sample card are signed links that die in
+ * ~15 minutes; build guides are public. Every key is always present.
+ */
+export interface AiLabFile {
   url: string;
+  /** `excel` / `csv` / `pdf` / `text` / `json` / `image` / `other`. */
+  doc_type: string;
+  filename: string | null;
+  content_type: string | null;
+  size_bytes: number | null;
+  sort_order: number;
+}
+
+/** An external (SharePoint) link. Not signed. */
+export interface AiLabLink {
+  url: string;
+  /** Link text; fall back to the URL when null. */
+  label: string | null;
+  sort_order: number;
+}
+
+/** A worked example of how work is marked — not the learner's own grade card. */
+export interface AiLabSampleGradeCard extends AiLabFile {
+  /** Decimal string out of 10, e.g. `"7.85"`. */
+  sample_grade: string | null;
 }
 
 /**
- * `brief` of `GET web-api/v1/ai-labs/assignment-brief/<uuid>/` — what the learner is asked to
- * build. The mark scheme is stripped server-side.
+ * `brief` of `GET web-api/v1/ai-labs/assignment-brief/<uuid>/` — AI Labs' learner brief, relayed
+ * as is (`docs/AI_LABS_API.md` §8, re-cut 2026-10-22/23). The marking scheme is never sent.
  *
- * Absent by design when the lab has no practical configured (409 `ai_lab_assignment_not_configured`)
- * — the page then renders one line instead of a brief block.
+ * `Cache-Control: no-store`, and its file links expire — re-read it rather than reuse an old link.
+ * A learner with no AI Labs account gets `brief: {}` (`is_provisioned: false`); a lab with no
+ * practical configured gets a 409 `ai_lab_assignment_not_configured` instead of this body.
  */
 export interface AiLabAssignmentBrief {
   slug: string;
   name: string;
   details: string | null;
-  /** Prose. May carry newlines — rendered with `whitespace-pre-line`. */
+  /** Markdown — rendered, never shown raw. */
   problem_statement: string;
-  logic_flow: string | null;
   guardrails: string | null;
-  difficulty: string | null;
-  version: number;
-  published_date: string | null;
-  input_files: AiLabInputFile[];
-  /** Plain sentences on our backend; upstream's design had marks and expected behaviour too. */
-  scenarios: string[];
-  tools: string[];
+  requirements: string[] | null;
+  exercise_files: AiLabFile[];
+  build_guides: AiLabFile[];
+  sharepoint_links: AiLabLink[];
+  sample_grade_card: AiLabSampleGradeCard | null;
+  flow_chart: AiLabFile | null;
+  /** Whether AI Labs' "send me test e-mails" helper applies. No route sends them yet. */
+  tools: { trigger_email: boolean } | null;
+}
+
+/* ---------------------------------------------------------------------
+   Not served by our API yet.
+
+   The course page redesign (miles-masterclass-v3) shows build hints, revealed one at a time. No
+   route carries them, so the facade holds an empty slot of this shape until one does.
+   --------------------------------------------------------------------- */
+
+/** One build hint, revealed one at a time. `hint` may carry newlines. */
+export interface AiLabHint {
+  id: number;
+  title: string;
+  hint: string;
 }
 
 /**
- * One row of the lab-materials block: an outbound link the lab payload carries. The masterclass
- * page's service-backed rows (exercise-file zip, workspace lookup) have no counterpart on a lab.
+ * One graded practical attempt, from `assignment-attempts/`. Decimals are strings: `score` out of
+ * `max_score` (`"8.80"` of `"10.00"`) and `percentage` (`"88.00"`).
  */
-export interface AiLabMaterial {
-  kind: 'link';
-  label: string;
-  hint: string;
-  url: string;
+export interface AiLabAttempt {
+  attempt_number: number;
+  status: string;
+  score: string | null;
+  max_score: string | null;
+  percentage: string | null;
+  submitted_at: string;
+  graded_at: string;
+  /** Signed grade-card PDF, dead at `grade_card_urls_expire_at`; `null` means no PDF. */
+  grade_card_url: string | null;
+  /** The grader's headline and the line under it, as on the PDF. Either may be `null`. */
+  master_comment: string | null;
+  minor_comment: string | null;
+}
+
+/**
+ * `data` of `GET web-api/v1/ai-labs/assignment-attempts/<uuid>/`: the newest `allowed_attempt`
+ * graded attempts, best score first. `is_provisioned: false` answers an empty list.
+ */
+export interface AiLabAttempts {
+  is_provisioned: boolean;
+  /** Every submission, still-grading ones included — can exceed the list and the allowance. */
+  total_attempts: number;
+  /** The allowance and the list's cap. Not enforced at submit. `null` without a lab account. */
+  allowed_attempt: number | null;
+  /** When every `grade_card_url` in this response stops working. */
+  grade_card_urls_expire_at: string | null;
+  attempts: AiLabAttempt[];
 }
 
 /* =====================================================================
@@ -817,6 +951,8 @@ export interface AiLabExamResult {
   }[];
   next_step: AiLabNextStep;
   ai_assessment_completed?: boolean;
+  /** `passed`, or `cool_off` (with its end) / `retake` after a fail. */
+  final_assessment_status?: AiLabFinalAssessmentStatus;
 }
 
 /** One question as the review lists it — the masterclass report's item, without "skipped". */

@@ -655,7 +655,7 @@
           ><ng-icon name="lucideSparkles" class="text-accent" /> The catalogue</span
         >
         <h2 class="ai-metal-text mt-4 text-2xl font-bold sm:text-3xl lg:text-4xl">
-          Ten agents across audit, tax, and CFO teams
+          {{ catalogueTitle() }}
         </h2>
         <p class="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
           Every one is a working build, not a demo. Start from ours, then rebuild it around how your
@@ -917,7 +917,7 @@
           Built by accountants, not engineers
         </h2>
         <p class="mt-3 text-muted-foreground" ngxInView preset="fade-up" [delay]="0.1">
-          Ten agents, three tracks, and not a line of code between them.
+          {{ storiesLine() }}
         </p>
       </div>
 

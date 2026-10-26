@@ -171,6 +171,11 @@
   --color-quiz-panel: var(--mm-quiz-panel);
   --color-quiz-panel-hover: var(--mm-quiz-panel-hover);
   --color-accent-foreground: var(--accent-foreground);
+  --color-miles: var(--mm-yellow);
+  /* Copilot Studio's brand wash, for the AI Lab's Launch row. Theirs, not ours — no light/dark pair. */
+  --color-copilot-cyan: #00aeff;
+  --color-copilot-purple: #8c48ff;
+  --color-copilot-pink: #f2598a;
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);

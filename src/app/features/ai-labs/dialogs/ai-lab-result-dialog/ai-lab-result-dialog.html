@@ -71,11 +71,12 @@
           type="button"
           class="w-full"
           variant="default"
+          [disabled]="!!data.retakeAfter"
           (click)="onAction('retake')"
         >
           <div class="flex items-center justify-center gap-2">
             <ng-icon name="heroArrowPath"></ng-icon>
-            Retake Assessment
+            {{ data.retakeAfter ? 'Retake after ' + data.retakeAfter : 'Retake Assessment' }}
           </div>
         </button>
 
