@@ -1,5 +1,4 @@
-import { Component, inject } from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Component } from '@angular/core';
 import { injectDialogRef } from 'ng-primitives/dialog';
 
 import { Button } from '@shared/ui/button/button';
@@ -22,12 +21,6 @@ export interface HtmlContentDialogData {
 export class HtmlContentDialog {
   private readonly dialogRef = injectDialogRef<HtmlContentDialogData>();
   protected readonly data = this.dialogRef.data;
-
-  private readonly sanitizer = inject(DomSanitizer);
-
-  get safeHtml(): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(this.data.htmlContent);
-  }
 
   close(): void {
     this.dialogRef.close();

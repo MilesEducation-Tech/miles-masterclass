@@ -11,7 +11,6 @@ export const authRoutes: Route[] = [
   {
     path: '',
     component: Auth,
-    providers: [AuthFacade], // Scoped to auth routes - destroyed when leaving
     // The auth dictionary, merged under `auth.*` before the shell or any page renders.
     resolve: {
       i18n: featureTranslations('auth', en, {
@@ -26,6 +25,9 @@ export const authRoutes: Route[] = [
       {
         path: 'login',
         canMatch: [guestGuard],
+        // Login is the facade's only user. A route's injector outlives the page,
+        // so `Login` resets the OTP flow itself when it is destroyed.
+        providers: [AuthFacade],
         loadComponent: () => import('./pages/login/login').then((m) => m.Login),
       },
       // `signup` and `forget-password` are gone. Sign-in is OTP-only, so there

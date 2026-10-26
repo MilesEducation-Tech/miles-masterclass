@@ -37,7 +37,7 @@ export class EnquiryService {
 
     return this.api
       .post<EnquiryResponse>(LEADS_URL, payload, {
-        // Public endpoint: no learner cookie token, no admin token. The form
+        // Public endpoint: no learner cookie token. The form
         // toasts its own error, and the global toast would only show Angular's
         // generic text instead of the DRF field message.
         context: new HttpContext().set(SKIP_AUTH_TOKEN, true).set(SKIP_ERROR_NOTIFICATION, true),

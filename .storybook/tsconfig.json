@@ -19,7 +19,6 @@
       "@shared/*": ["../src/app/shared/*"],
       "@layout/*": ["../src/app/layout/*"],
       "@features/*": ["../src/app/features/*"],
-      "@admin/*": ["../src/app/admin/*"],
       "@testing/*": ["../src/app/testing/*"],
       "@env/*": ["../src/environments/*"]
     }

@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { HttpContext } from '@angular/common/http';
 import { Router, NavigationEnd, Event as RouterEvent } from '@angular/router';
-import { Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 import { filter, tap } from 'rxjs/operators';
 import { DynamicRouteParams, ProfessionType } from '@core/models/route-params.model';
 import { CountryContext } from '@core/services/country-context/country-context';
@@ -39,6 +39,7 @@ import { Viewport, ScreenInfo } from '@core/services/viewport/viewport';
 import { SUBSCRIPTION_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
 import { FeatureFacade } from '@core/services/feature-facade/feature-facade';
 import { Logger } from '@core/services/logger/logger';
+import { AuthSession } from '@core/services/auth-session/auth-session';
 import { canAccessCpeMode, CpeModeGateContent } from '@shared/utils/cpe-mode-access';
 
 type StartFinalAssessmentParams = RouteParams<typeof MASTERCLASS_ROUTES.startFinalAssessment>;
@@ -110,6 +111,7 @@ export class Utils {
   private readonly logger = inject(Logger);
   private readonly destroyRef = inject(DestroyRef);
   private readonly viewport = inject(Viewport);
+  private readonly auth = inject(AuthSession);
 
   private readonly _profession = signal<ProfessionType>('accounting');
   private readonly _currentUrl = signal<string>('');
@@ -189,7 +191,7 @@ export class Utils {
   /**
    * Extract the profession from URL path (country is tracked by `CountryContext`).
    * Pattern: /:country/:profession_type/...
-   * URLs outside that tree (e.g. `/`, `/auth/login`, `/admin/users`, `/blog/x`)
+   * URLs outside that tree (e.g. `/`, `/auth/login`, `/blog/x`)
    * intentionally preserve the last known value so downstream consumers stay on
    * the correct scope while the user navigates through scope-less routes. The
    * second segment must be a real profession, otherwise `/auth/login` would set
@@ -626,9 +628,14 @@ export class Utils {
 
   toggleBookmarkCourse(courseId: number, options?: { course_type: string }) {
     // Guarded centrally so every bookmark surface (cards, Remind Me, dialog)
-    // gets the same login prompt — callers don't need to repeat the check.
+    // gets the same sign-in redirect — callers don't need to repeat the check.
     // Returning EMPTY (instead of throwing) keeps `.subscribe(...)` quiet at
-    // call sites; the toast is the user-facing feedback.
+    // call sites. Same redirect as the masterclass page's bookmark
+    // (`CourseDetailFacade.toggleBookmark`).
+    if (!this.auth.isAuthenticated()) {
+      void this.router.navigate(['/auth/login'], { queryParams: { redirect: this.router.url } });
+      return EMPTY;
+    }
     const rawCourseType = options?.course_type ?? this.getApiCourseType();
     // Content tagged as `video` is served from the masterclass bookmark
     // endpoint — the bookmark API doesn't recognize a `video` course type, so

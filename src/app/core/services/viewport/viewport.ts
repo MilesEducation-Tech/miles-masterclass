@@ -31,7 +31,7 @@ const PORTRAIT_QUERY = '(orientation: portrait)';
  *
  * Replaces the per-component `window.matchMedia` / `(window:resize)` /
  * `window.innerWidth` observers that were scattered across the app (header,
- * slider, admin layout, section nav) — each with its own breakpoint constant
+ * slider, section nav) — each with its own breakpoint constant
  * and its own subscription to clean up.
  *
  * Implementation notes:

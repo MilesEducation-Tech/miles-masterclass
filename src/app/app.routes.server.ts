@@ -1,15 +1,14 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 
-// FAQ and page-not-found used to be Prerender; switched to Server so admin
-// SEO edits in the `seo_pages` table propagate without a rebuild. Prerender
+// FAQ and page-not-found used to be Prerender; switched to Server so SEO
+// edits in the `seo_pages` table propagate without a rebuild. Prerender
 // freezes HTML at build time and the Supabase row is never re-read after.
 export const serverRoutes: ServerRoute[] = [
-  { path: 'admin/**', renderMode: RenderMode.Client },
   // Auth pages (login/otp/profile) render per-user content gated on
   // the signed-in user, which was empty during SSR — server-rendering them
   // produced a DOM the client couldn't hydrate (NG0500,
   // e.g. the profile form's `@if (isExistingUser())` block). No SEO value here,
-  // so render client-side like admin/payment/cpe-tracker.
+  // so render client-side like payment/cpe-tracker.
   { path: 'auth/**', renderMode: RenderMode.Client },
   {
     path: ':country/:profession_type/masterclass/:courseId/:courseTitle/final-assessment/:sessionId/exam',

@@ -14,7 +14,6 @@ const CROSS_FOLDER_RELATIVE_IMPORTS = [
   'shared',
   'layout',
   'features',
-  'admin',
   'testing',
   'environments',
 ].map((folder) => `../**/${folder}/**`);
@@ -60,9 +59,9 @@ export default [
         },
         // `partialMatch: false` on every descriptor is mandatory, not stylistic. The v7
         // default matches patterns right-to-left against path suffixes, which would classify
-        // src/app/admin/core/** as element `core` and src/app/admin/layout/** as `layout` —
-        // inverting the admin rules and inventing false core-imports-shared errors. It is
-        // also the plugin's announced future default.
+        // any nested `…/core/**` or `…/layout/**` folder as element `core` or `layout` —
+        // inventing false core-imports-shared errors. It is also the plugin's announced
+        // future default.
         //
         // Order is precedence. The last two are catch-alls and must stay last:
         //   app-root  -> app.*.ts, configuration/, features/features.routes.ts
@@ -73,10 +72,6 @@ export default [
           { type: 'shared', pattern: 'src/app/shared', partialMatch: false },
           { type: 'layout', pattern: 'src/app/layout', partialMatch: false },
           { type: 'testing', pattern: 'src/app/testing', partialMatch: false },
-          // One element, not one per admin feature: §3 lets admin import itself, so
-          // admin-to-admin edges are intra-element and free. To ban them later, change this
-          // to `pattern: "src/app/admin/*", capture: ["adminFeature"]`.
-          { type: 'admin', pattern: 'src/app/admin', partialMatch: false },
           {
             type: 'feature',
             pattern: 'src/app/features/*',
@@ -142,13 +137,13 @@ export default [
               {
                 from: { element: { type: 'core' } },
                 disallow: {
-                  to: { element: { types: { anyOf: ['shared', 'layout', 'feature', 'admin'] } } },
+                  to: { element: { types: { anyOf: ['shared', 'layout', 'feature'] } } },
                 },
               },
               {
                 from: { element: { type: 'shared' } },
                 disallow: {
-                  to: { element: { types: { anyOf: ['feature', 'admin', 'layout'] } } },
+                  to: { element: { types: { anyOf: ['feature', 'layout'] } } },
                 },
               },
               {
@@ -156,19 +151,15 @@ export default [
                 // relationship `internal` and are skipped by `checkInternals: false`.
                 from: { element: { type: 'feature' } },
                 disallow: {
-                  to: { element: { types: { anyOf: ['feature', 'admin', 'layout'] } } },
+                  to: { element: { types: { anyOf: ['feature', 'layout'] } } },
                 },
               },
               {
-                from: { element: { type: 'admin' } },
-                disallow: { to: { element: { types: { anyOf: ['feature', 'layout'] } } } },
-              },
-              {
-                // Extends §3, which states outbound rules for core, shared, features, admin
+                // Extends §3, which states outbound rules for core, shared, features
                 // and testing but is silent on layout. Without this, layout importing a
                 // feature goes unreported.
                 from: { element: { type: 'layout' } },
-                disallow: { to: { element: { types: { anyOf: ['feature', 'admin'] } } } },
+                disallow: { to: { element: { types: { anyOf: ['feature'] } } } },
               },
               {
                 to: { element: { type: 'testing' } },
@@ -266,7 +257,7 @@ export default [
               {
                 group: CROSS_FOLDER_RELATIVE_IMPORTS,
                 message:
-                  'Relative imports must not cross a top-level folder (PROMPT.md §3). Use @core/*, @shared/*, @layout/*, @features/*, @admin/*, @testing/* or @env/*.',
+                  'Relative imports must not cross a top-level folder (PROMPT.md §3). Use @core/*, @shared/*, @layout/*, @features/*, @testing/* or @env/*.',
               },
             ],
           },

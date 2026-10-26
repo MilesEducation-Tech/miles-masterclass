@@ -83,17 +83,6 @@ export const environment = {
     vertical: 'US Accounting',
   },
 
-  /**
-   * Miles360 activity endpoint, where `MilesActivity` posts behavioural events
-   * so Salesforce sees them (no caller until analytics returns). Like the keys above,
-   * this one ships in the client bundle; prefer a server-side proxy for a
-   * hardened deploy.
-   */
-  MILES_ACTIVITY: {
-    url: 'https://hn19ywvvng.execute-api.ap-south-1.amazonaws.com/Miles360/masterclass-activity',
-    apiKey: 'AWqdnzaOrP86BUGsbjQFl6piZFOaBOQzaqaJ8b6b',
-  },
-
   S3_BUCKET_URL: 'https://d1pp0977rsxmiq.cloudfront.net/',
   GCS_URL: 'https://asset.milesmasterclass.com/media/web-app/',
 
@@ -129,7 +118,6 @@ export const environment = {
   },
 
   SUPABASE: {
-    SupabaseUser: 'PRODUCTION_SUPABASE_USER',
     url: 'https://lodzktvnxuprpogelodm.supabase.co',
     anonKey:
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvZHprdHZueHVwcnBvZ2Vsb2RtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0MzE1NDYsImV4cCI6MjA3ODAwNzU0Nn0.ychDwrqAURLnKyAkP4MHGwpcH7VwE4WcRt2E7oHoEL4',
@@ -170,7 +158,7 @@ export const environment = {
     domainHint: 'f133522a-779a-4a85-bebb-e72cd0daaa1d',
     copilotUrl: 'https://copilotstudio.microsoft.com/',
     redirectPath: '/auth/ai-labs-callback',
-    /** localStorage key — kept distinct from the admin client's session. */
+    /** localStorage key for the AI Labs Supabase session. */
     storageKey: 'AI_LABS_SUPABASE_SESSION',
     /**
      * Masterclass courses whose chapters are the agent catalogue on /ai-labs.
@@ -206,8 +194,6 @@ export const environment = {
     // WordPress HTTPS host directly.
     apiBaseUrlSsr: 'https://wp.milesmasterclass.com/blog/wp-json/wp/v2',
   },
-
-  PAYMENT_TEST_SSN: '207646057',
 
   /**
    * Languages this build may resolve a visitor to (`LanguageContext`). Anything else in a cookie or

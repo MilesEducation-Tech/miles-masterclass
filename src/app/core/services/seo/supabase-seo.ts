@@ -1,18 +1,11 @@
 import { inject, Service } from '@angular/core';
-import { DEFAULT_SEO_PAGES } from '../../models/seo.constants';
-import { createDefaultSeoPage, SeoPage } from '../../models/seo.models';
-import { generateUUID } from '@core/utils/uuid';
+import { SeoPage } from '../../models/seo.models';
 import { Logger } from '../logger/logger';
 import { Supabase } from '../supabase/supabase';
 
 const TABLE_NAME = 'seo_pages';
 /** Word-character and `-` segments joined by `/`: all a real page slug is (`Utils.slugify` keeps `_`). */
 const SAFE_SLUG = /^[\w-]+(\/[\w-]+)*$/;
-const STORAGE_BUCKET = 'seo-images';
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
-// SVG intentionally excluded — it can carry inline `<script>` and would
-// execute when fetched and rendered inline from the public bucket.
-const ALLOWED_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif']);
 
 @Service()
 export class SupabaseSeo {
@@ -33,30 +26,10 @@ export class SupabaseSeo {
     } catch (err) {
       if (!this.clientWarned) {
         this.clientWarned = true;
-        this.logger.warn(
-          '[SupabaseSeo] Supabase client unavailable; SEO read/write/upload will no-op.',
-          err,
-        );
+        this.logger.warn('[SupabaseSeo] Supabase client unavailable; SEO reads will no-op.', err);
       }
       return null;
     }
-  }
-
-  /** Fetch all SEO pages, ordered by page_name. */
-  async getAll(): Promise<SeoPage[]> {
-    const client = await this.getClientSafe();
-    if (!client) return [];
-
-    const { data, error } = await client
-      .from(TABLE_NAME)
-      .select('*')
-      .order('page_name', { ascending: true });
-
-    if (error) {
-      this.logger.error('[SupabaseSeo] Error fetching pages:', error.message);
-      return [];
-    }
-    return (data as SeoPage[]) ?? [];
   }
 
   /**
@@ -111,151 +84,6 @@ export class SupabaseSeo {
       }
     }
     return null;
-  }
-
-  /**
-   * Create or update a page's SEO configuration. Strips `id` from the payload:
-   * with `onConflict: 'page_slug'` the row is matched by slug and the existing
-   * id is preserved. Including a stale id from the caller risks a PK conflict
-   * on inserts.
-   */
-  async upsert(page: SeoPage): Promise<SeoPage | null> {
-    const client = await this.getClientSafe();
-    if (!client) return null;
-
-    // Drop `id` from the payload: with onConflict='page_slug' the existing
-    // row is matched by slug, and including a stale id risks a PK conflict
-    // on inserts. Supabase preserves/auto-generates the id on its side.
-    const payload: Omit<SeoPage, 'id'> & { updated_at: string } = (() => {
-      const copy = { ...page, updated_at: new Date().toISOString() };
-      delete (copy as Partial<SeoPage>).id;
-      return copy as Omit<SeoPage, 'id'> & { updated_at: string };
-    })();
-
-    const { data, error } = await client
-      .from(TABLE_NAME)
-      .upsert(payload, { onConflict: 'page_slug' })
-      .select()
-      .single();
-
-    if (error) {
-      this.logger.error('[SupabaseSeo] Error upserting page:', error.message);
-      return null;
-    }
-    return data as SeoPage;
-  }
-
-  /**
-   * Batch create/update SEO pages, matched by `page_slug`. Mirrors `upsert`'s
-   * id-strip + `updated_at` stamp + `onConflict` so overwriting existing slugs
-   * behaves identically to a single-page save, in one round trip.
-   * Returns the saved rows, or `null` on failure.
-   */
-  async bulkUpsert(pages: SeoPage[]): Promise<SeoPage[] | null> {
-    const client = await this.getClientSafe();
-    if (!client) return null;
-
-    const now = new Date().toISOString();
-    const payload = pages.map((page) => {
-      const copy = { ...page, updated_at: now };
-      delete (copy as Partial<SeoPage>).id;
-      return copy as Omit<SeoPage, 'id'> & { updated_at: string };
-    });
-
-    const { data, error } = await client
-      .from(TABLE_NAME)
-      .upsert(payload, { onConflict: 'page_slug' })
-      .select();
-
-    if (error) {
-      this.logger.error('[SupabaseSeo] Error bulk upserting pages:', error.message);
-      return null;
-    }
-    return (data as SeoPage[]) ?? [];
-  }
-
-  /** Delete a page's SEO configuration by ID. */
-  async deleteById(id: string): Promise<boolean> {
-    const client = await this.getClientSafe();
-    if (!client) return false;
-
-    const { error } = await client.from(TABLE_NAME).delete().eq('id', id);
-
-    if (error) {
-      this.logger.error('[SupabaseSeo] Error deleting page:', error.message);
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Seed default pages into Supabase if the table is empty. The check-then-
-   * insert here is a TOCTOU race in theory; in practice this is admin-only
-   * and the unique constraint on `page_slug` catches double-inserts.
-   * Returns the seeded pages, an empty array if already seeded, or null on
-   * failure.
-   */
-  async seedDefaults(): Promise<SeoPage[] | null> {
-    const client = await this.getClientSafe();
-    if (!client) return null;
-
-    const existing = await this.getAll();
-    if (existing.length > 0) return [];
-
-    const pages = DEFAULT_SEO_PAGES.map((p) => createDefaultSeoPage(p.slug, p.name, p.type));
-
-    const { data, error } = await client.from(TABLE_NAME).insert(pages).select();
-    if (error) {
-      this.logger.error('[SupabaseSeo] Error seeding defaults:', error.message);
-      return null;
-    }
-    return data as SeoPage[];
-  }
-
-  /**
-   * Upload an image to the SEO storage bucket. Validates type/size on the
-   * client and uses a UUID-based filename so collisions are effectively
-   * impossible. Returns the public URL on success.
-   */
-  async uploadImage(file: File): Promise<string | null> {
-    const client = await this.getClientSafe();
-    if (!client) return null;
-
-    if (!file.type.startsWith('image/')) {
-      this.logger.warn(`[SupabaseSeo] Rejected non-image upload: ${file.type}`);
-      return null;
-    }
-    // SVG is XSS-prone — block by MIME and by extension so a renamed file
-    // can't sneak through the bucket.
-    if (file.type === 'image/svg+xml') {
-      this.logger.warn('[SupabaseSeo] Rejected SVG upload — SVG can carry inline scripts.');
-      return null;
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      this.logger.warn(
-        `[SupabaseSeo] Rejected oversized upload (${file.size} > ${MAX_IMAGE_BYTES} bytes).`,
-      );
-      return null;
-    }
-
-    const ext = (file.name.split('.').pop() ?? '').toLowerCase();
-    if (!ALLOWED_EXTENSIONS.has(ext)) {
-      this.logger.warn(`[SupabaseSeo] Rejected upload with disallowed extension: .${ext}`);
-      return null;
-    }
-    const filePath = `seo/${generateUUID()}.${ext}`;
-
-    const { error } = await client.storage
-      .from(STORAGE_BUCKET)
-      .upload(filePath, file, { upsert: false, contentType: file.type });
-
-    if (error) {
-      this.logger.error('[SupabaseSeo] Error uploading image:', error.message);
-      return null;
-    }
-
-    const { data: publicUrlData } = client.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
-    return publicUrlData.publicUrl;
   }
 }
 
