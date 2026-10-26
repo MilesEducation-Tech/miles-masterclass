@@ -340,10 +340,6 @@ export class WebinarFacade {
    */
   private readonly seatFocusFor = signal<string | null>(null);
 
-  isRegistering(webinarId: string): boolean {
-    return this.registration.isRegistering(webinarId);
-  }
-
   /**
    * Register for a webinar, then refresh the feed so the card picks up its new
    * `registration` block.
