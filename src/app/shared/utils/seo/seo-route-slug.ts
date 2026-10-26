@@ -15,7 +15,7 @@ import { toCountry } from '@core/utils/country';
  * special-cases in `routeUrlToSeoSlug`, plus `blog` whose leaf pages set their
  * own absolute canonical.
  */
-const NON_LOCALE_ROOTS = new Set(['auth', 'admin', 'page-not-found', 'compliance', 'blog']);
+const NON_LOCALE_ROOTS = new Set(['auth', 'page-not-found', 'compliance', 'blog']);
 
 /**
  * Convert a router URL into the slug used to look up an SEO row.
@@ -24,7 +24,7 @@ const NON_LOCALE_ROOTS = new Set(['auth', 'admin', 'page-not-found', 'compliance
  * - Strip any query string.
  * - Empty path → 'home'.
  * - Top-level prefixes that own their own SEO outside the locale chain
- *   (`auth`, `admin`, `page-not-found`, `compliance`) are returned verbatim/joined.
+ *   (`auth`, `page-not-found`, `compliance`) are returned verbatim/joined.
  *   `compliance` is a root route; without this it fell through to `home` and
  *   took the home page's row and canonical.
  * - Anything else assumes a `/<country>/<profession>/...` locale prefix and
@@ -42,7 +42,7 @@ export function routeUrlToSeoSlug(url: string): string {
 
   if (segments[0] === 'auth') return segments.join('/');
 
-  if (segments[0] === 'admin' || segments[0] === 'page-not-found' || segments[0] === 'compliance') {
+  if (segments[0] === 'page-not-found' || segments[0] === 'compliance') {
     return segments[0];
   }
 
@@ -63,7 +63,7 @@ export function routeUrlToSeoSlug(url: string): string {
  * `CANONICAL_LOCALE_PREFIX` (e.g. `/in/accounting/home` and `/us/accounting/home`
  * both canonicalize to `<origin>/us/accounting/home`). This dedupes the
  * duplicate-locale URLs the SEO audit flagged and matches the sitemap, which
- * lists only that one locale. Non-locale areas (auth/admin/blog/page-not-found)
+ * lists only that one locale. Non-locale areas (auth/blog/page-not-found)
  * keep their path verbatim. Query strings and fragments are dropped.
  *
  * @param url    Router URL (e.g. `event.urlAfterRedirects`).
@@ -111,7 +111,7 @@ export function routeUrlToAlternates(url: string, origin: string): SeoAlternate[
 
 /**
  * Whether the slug points at a "dynamic" page whose SEO is owned by a leaf
- * component (course detail, admin), not the global router-driven loader.
+ * component (course detail), not the global router-driven loader.
  */
 export function isDynamicSlug(slug: string): boolean {
   return DYNAMIC_SLUG_PREFIXES.some((prefix) =>

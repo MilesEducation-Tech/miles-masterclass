@@ -7,7 +7,7 @@ import { Button } from '@shared/ui/button/button';
 
 import { Utils } from '@shared/services/utils';
 import { NgpDialogManager } from 'ng-primitives/dialog';
-import { User } from '@core/models/profile.model';
+import { AuthSession } from '@core/services/auth-session/auth-session';
 // Type-only: UtilsDialog loads with `import()` when opened (PROMPT.md §4.4).
 import type { UtilsDialogData, UtilsDialogResult } from '@shared/dialogs/utils-dialog/utils-dialog';
 import { Field } from '@shared/ui/field/field';
@@ -40,9 +40,8 @@ export class CourseFeedback {
   readonly route = inject(ActivatedRoute);
   private readonly utils = inject(Utils);
   private readonly dialogs = inject(NgpDialogManager);
+  private readonly auth = inject(AuthSession);
 
-  // ponytail: inert — was `auth.currentUser`.
-  currentUser = signal<User | null>(null);
   protected readonly categories = this.facade.categories;
   protected readonly courseDetails = this.facade.courseDetails;
   /** A submitted course is shown read-only, with the learner's answers filled in. */
@@ -96,10 +95,11 @@ export class CourseFeedback {
   submit() {
     if (!this.isValid || this.isSubmitting()) return;
 
-    // Gate: the feedback flow issues a CPE certificate, which requires a
-    // completed profile. Anything other than literal `true` is treated as
-    // not-completed so legacy responses that omit the field still prompt.
-    if (this.currentUser()?.is_profile_completed !== true) {
+    // The certificate the submit triggers carries the learner's name, so a
+    // profile known to be incomplete is finished first. Unknown (`null`) goes
+    // through: the server has the last word. Same rule as the masterclass
+    // evaluation (`CourseEvaluationFacade.submit`).
+    if (this.auth.isProfileCompleted() === false) {
       void this.openProfileIncompleteDialog();
       return;
     }

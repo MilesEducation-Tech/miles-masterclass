@@ -68,7 +68,7 @@ The feedback loops run at three speeds:
 3. **Copy the kit** into the repo root. If you already have `.claude/settings.json` or `CLAUDE.md`, merge them
    rather than overwriting.
 4. **Ignore the cache:** add `docs/refactor/.cache/` to `.gitignore`.
-5. **Fill in `docs/refactor/smoke-routes.json`** with one partner landing route, one course route, and the admin
+5. **Fill in `docs/refactor/smoke-routes.json`** with one partner landing route, one course route, and the
    login route. Check that `src/server.ts` reads `process.env['PORT']`. The default Angular SSR template does.
 6. **Check the typecheck:** make sure `pnpm exec tsc -p tsconfig.app.json --noEmit` passes on untouched code.
    It's the fast gate used by `--quick` and the stop hook. If it doesn't work for your setup, tell Claude and
@@ -122,7 +122,7 @@ But a clean restart at a step boundary is better.
 | 6 Admin           | 1                     | normal        | Ends with a v1/v2 decision request.                                                                                                                                                       |
 | 7 Boundaries      | 1                     | normal        | Lint violations surface everything Part A missed.                                                                                                                                         |
 | —                 | —                     | —             | **Merge Part A, deploy, let it soak.** New branch `refactor/modernize` for Part B.                                                                                                        |
-| 8 Services        | 1–3                   | normal        | Split into core / features / admin if large.                                                                                                                                              |
+| 8 Services        | 1–3                   | normal        | Split into core / features if large.                                                                                                                                                      |
 | 9 Data            | 1 per feature         | normal        | Order comes from the Part B tracker.                                                                                                                                                      |
 | 10 UI             | 1 per primitive group | normal        | Check keyboard/focus in Storybook yourself.                                                                                                                                               |
 | 11 Defer + lazy   | 1 per page/feature    | normal        | Watch the bundle deltas in each report.                                                                                                                                                   |

@@ -108,7 +108,7 @@ export class SeoManager {
    * render gets a fresh instance, so there's no cross-request leakage.
    *
    * A `null` value (no usable row) is cached too — that's the normal outcome
-   * for a course page with no admin row, and caching it is what lets the
+   * for a course page with no Supabase row, and caching it is what lets the
    * course page's two-phase setup avoid a second fetch. Trade-off: a transient
    * read error (which `getBySlug` also surfaces as `null`) is remembered as
    * "no custom row" until a full reload — acceptable since the fallback meta is
@@ -315,7 +315,7 @@ export class SeoManager {
   /**
    * Apply a Supabase-row-derived config, backfilling the self-referencing
    * canonical, the matching `og:url`, and the site-wide JSON-LD from the
-   * route's fallback whenever the admin row left those blank. An SEO row that
+   * route's fallback whenever the row left those blank. An SEO row that
    * only customizes title/description therefore still keeps a canonical tag and
    * structured data, instead of `setSeo` stripping them (empty → removed).
    * The same goes for the image and `og:video`, so a course's own thumbnail
@@ -497,7 +497,7 @@ export class SeoManager {
       script.setAttribute('id', JSON_LD_ID);
       this.document.head.appendChild(script);
     }
-    // Escape `<` so an admin-supplied string containing `</script>` cannot
+    // Escape `<` so a row-supplied string containing `</script>` cannot
     // break out of the JSON-LD block. Crawlers parse the JSON, where the
     // `<` sequence decodes back to `<`.
     script.textContent = JSON.stringify(data).replace(/</g, '\\u003c');
