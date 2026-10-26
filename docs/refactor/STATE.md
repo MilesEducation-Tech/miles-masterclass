@@ -7,6 +7,18 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-23, NON-REFACTOR — MIL-123 (bug), signed-out bookmark POSTs. DONE, GATES GREEN, UNCOMMITTED**
+  (`prompts/review-2026-10-23-tickets.md` T4), on `fix/MIL-123-bookmark-sign-in-guard` off `master` (`7aae2472`).
+  - **Change:** `Utils.toggleBookmarkCourse` checks `AuthSession.isAuthenticated()` first. When signed out it sends no
+    request, redirects to `/auth/login?redirect=<current url>` (the same as `CourseDetailFacade.toggleBookmark`) and
+    returns `EMPTY`. All 7 callers react only to a successful response, so none changes.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.59 kB,
+    only `ai-labs.css`.
+  - **Not verified in the browser:** on UAT today, no page renders the cards that reach this path. Podcast,
+    micro-learning, UAE CAIRA home and the partner pages show no `app-hover`/`app-vertical`/`app-horizontal`/
+    `app-coming-soon`. The dev build's `ng.getComponent` only exposes `app-root`, so it couldn't be called from the
+    console either.
+
 - 🟡 **2026-10-26, NON-REFACTOR — MIL-124 (security), client-bundle secrets. DONE, GATES GREEN, UNCOMMITTED**
   (`prompts/review-2026-10-23-tickets.md` T5), on `chore/MIL-124-remove-client-secrets` off `master` (`7aae2472`).
   - **Removed:**
@@ -5516,6 +5528,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-23 · NON-REFACTOR · **MIL-123 built** (uncommitted): `toggleBookmarkCourse` redirects signed-out visitors to sign-in and sends nothing · tsc 0, lint 0 errors, structure ✔, build:prod 240.59 kB · not clickable on UAT (no card lists render)
 
 - 2026-10-26 · NON-REFACTOR · **MIL-124 built** (uncommitted): Miles360 API key, test SSN and the dead `MilesActivity` removed · tsc 0, lint 0 errors, structure ✔ (pruned), build:prod 240.60 kB · dist/src scan: 0 hits · backend must rotate the key
 
