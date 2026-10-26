@@ -83,17 +83,6 @@ export const environment = {
     vertical: 'US Accounting',
   },
 
-  /**
-   * Miles360 activity endpoint, where `MilesActivity` posts behavioural events
-   * so Salesforce sees them (no caller until analytics returns). Like the keys above,
-   * this one ships in the client bundle; prefer a server-side proxy for a
-   * hardened deploy.
-   */
-  MILES_ACTIVITY: {
-    url: 'https://hn19ywvvng.execute-api.ap-south-1.amazonaws.com/Miles360/masterclass-activity',
-    apiKey: 'AWqdnzaOrP86BUGsbjQFl6piZFOaBOQzaqaJ8b6b',
-  },
-
   S3_BUCKET_URL: 'https://d1pp0977rsxmiq.cloudfront.net/',
   GCS_URL: 'https://asset.milesmasterclass.com/media/web-app/',
 
@@ -205,8 +194,6 @@ export const environment = {
     // WordPress HTTPS host directly.
     apiBaseUrlSsr: 'https://wp.milesmasterclass.com/blog/wp-json/wp/v2',
   },
-
-  PAYMENT_TEST_SSN: '207646057',
 
   /**
    * Languages this build may resolve a visitor to (`LanguageContext`). Anything else in a cookie or

@@ -7,43 +7,6 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-10-23, NON-REFACTOR — MIL-120 (remove admin) + MIL-121 (seo_pages RLS). PLAN APPROVED, IN PROGRESS,
-  UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md`, T1 + T2), working tree on `fix/MIL-121-seo-pages-rls` off
-  `master` (`7aae2472`). Commit T2's paths there, then `git switch -c chore/MIL-120-remove-admin` for the rest.
-  - **MIL-121 (done, verified):**
-    - Deleted 16 admin migrations and added `20261023000000_seo_pages_rls.sql`: RLS on, public select, admin
-      write policies and the audit trigger dropped.
-    - Scratch Postgres (local, Homebrew pg): all 3 migrations apply, and a re-run is clean. anon reads 18 rows;
-      anon insert is rejected by RLS; authenticated update changes 0 rows; anon delete leaves 18.
-  - **MIL-120 (done, verified):**
-    - **Deleted:**
-      - `src/app/admin/`, `testing/partner-mock/`, `core/interceptors/dev/`
-      - deprecation-banner, block-status-dialog, apply-partner-code-dialog
-      - the SupabaseSeo write API and `DEFAULT_SEO_PAGES`
-      - `IS_ADMIN_REQUEST` / `SKIP_AUDIT_LOG`
-      - `.admin-theme` and the admin-only tokens
-      - `SupabaseUser` env keys
-      - `@admin/*` aliases and the eslint `admin` element
-    - **Edited:**
-      - `/admin/**` → a 404 route with `notFound` (else `/admin/x` soft-redirects home through the profession
-        guard)
-      - `Disallow: /admin` and the admin legacy redirects dropped
-      - Supabase client is stateless
-      - AGENTS.md and README updated
-      - structure baseline pruned
-    - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 226.96 kB
-      initial (was 240.6), only `ai-labs.css`.
-    - **SSR (`build:prod` served on :4000):**
-      - `/admin`, `/admin/users`, `/admin/seo`, `/admin/dashboard/seo-manager` → 404, "Page not found",
-        `noindex`, no canonical.
-      - `/us/accounting/{masterclass,home,library/course-library}` → titles + canonicals identical to live
-        production; the `seo:masterclass` row is in TransferState (read by the stateless client).
-      - Prod robots has no `/admin`; the sitemap has 85 locs, none admin.
-    - **Browser (dev):** no localStorage keys on a learner page; og count stays 7 home → masterclass → back;
-      `/admin/users` renders the 404 page.
-  - **Flag:** `docs/refactor/smoke-routes.json` still lists `/admin/login`, which now answers 404. Yours to change
-    (harness input).
-
 - 🟡 **2026-10-22, NON-REFACTOR — MIL-119 (bug), course library "Failed to Load Courses". PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/course-library-filter-list.md`), on `fix/MIL-119-course-library-filter-api`
   off `master` (`db43a117`, which has MIL-118 #180).
@@ -5504,8 +5467,6 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
-
-- 2026-10-23 · NON-REFACTOR · **MIL-120 + MIL-121 built** (uncommitted, on `fix/MIL-121-seo-pages-rls`): admin panel and everything only it used removed, `/admin/**` → 404 + noindex, Supabase client stateless; admin migrations deleted, `seo_pages` RLS in its own migration · tsc 0, lint 0 errors (98 warnings), structure ✔ (pruned), Prettier ✔, build:prod 226.96 kB (was 240.6) · SSR: admin URLs 404, SEO rows match live, robots has no /admin · scratch Postgres: anon writes rejected
 
 - 2026-10-19 · NON-REFACTOR · **MIL-111 built** (uncommitted): `CourseCertificateFacade` (disabled until feedback, quiet `course-progress` wait for `masterclass_certificate_url`), Download Certificate on report + thank-you, hero Download on the same rule · tsc 0, lint 0 errors, structure ✔, build:prod 240.63 kB · headless scenarios pass
 
