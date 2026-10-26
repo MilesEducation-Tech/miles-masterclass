@@ -7,6 +7,32 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-26, NON-REFACTOR — MIL-125 (tech debt), facade scoping + dead facade code. DONE, GATES GREEN,
+  UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md` T6), on `refactor/MIL-125-facade-scoping` off `master`
+  (`7aae2472`).
+  - **`FeedbackFacade`:** was provided on 3 routes and on the component. The component entry is dropped, so the
+    route entries apply (AGENTS §3: route-scoped facades live in route `providers`). This is the reverse of the
+    ticket's wording, with the same result.
+  - **`MasterclassFacade`:** moved from `features.routes.ts` (above every offering) to podcast's
+    `:courseId/:courseTitle`. Grep shows its only real users are `podcast-course` (hero, chapter list, resources)
+    and `podcast-chapter` (`video-chapter`). The micro-learning and masterclass hits are comments.
+  - **`AuthFacade`:** moved from the auth shell to the `login` route. `Login` keeps its `clear()` on destroy:
+    without router injector auto-cleanup, a route's injector outlives the page wherever the provider sits. The
+    ticket's premise was wrong.
+  - **Dead code removed:**
+    - `MasterclassFacade.route`, `ChapterFacade.router`
+    - `WebinarFacade.isRegistering()`, `SectionFiltersFacade.clear()`
+    - the unbound `isLockedElsewhere` inputs on webinar-hero and webinar-card
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.60 kB,
+    only `ai-labs.css`; `build-storybook` ✔.
+  - **Verified (dev, UAT):**
+    - `/podcast/190/think-plan-grow-with-ai` builds the page. `course-resources` renders and `MasterclassFacade`
+      runs its load, which then fails on UAT's 404 `v2/podcast/details/` (pre-existing). No injector error.
+    - Login renders, and leaving and coming back works.
+    - Webinar shows no hero or cards (UAT has no webinars).
+  - **Noted, not changed:** the login phone number survives leaving and returning because `AuthFacade.clear()`
+    resets `otpModel` but not `authModel`. It was the same on `master`.
+
 - 🟡 **2026-10-22, NON-REFACTOR — MIL-119 (bug), course library "Failed to Load Courses". PLAN APPROVED, DONE,
   GATES GREEN, UNCOMMITTED** (`prompts/course-library-filter-list.md`), on `fix/MIL-119-course-library-filter-api`
   off `master` (`db43a117`, which has MIL-118 #180).
@@ -5467,6 +5493,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-26 · NON-REFACTOR · **MIL-125 built** (uncommitted): FeedbackFacade provided once per route, MasterclassFacade scoped to podcast, AuthFacade on `login`, dead facade members removed · tsc 0, lint 0 errors, structure ✔, build:prod 240.60 kB, storybook ✔ · podcast page and login checked in browser
 
 - 2026-10-19 · NON-REFACTOR · **MIL-111 built** (uncommitted): `CourseCertificateFacade` (disabled until feedback, quiet `course-progress` wait for `masterclass_certificate_url`), Download Certificate on report + thank-you, hero Download on the same rule · tsc 0, lint 0 errors, structure ✔, build:prod 240.63 kB · headless scenarios pass
 

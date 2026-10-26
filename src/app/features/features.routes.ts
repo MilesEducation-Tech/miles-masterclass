@@ -7,7 +7,6 @@ import { HomeFacade } from '@features/home/services/home-facade';
 import { Faq } from '@shared/components/faq/faq';
 import { TermsOfService } from '@features/legal/pages/terms-of-service/terms-of-service';
 import { PrivacyPolicy } from '@features/legal/pages/privacy-policy/privacy-policy';
-import { MasterclassFacade } from '@features/offerings/services/masterclass-facade';
 import { Compliance } from '@features/legal/pages/compliance/compliance';
 
 export const featuresRoutes: Route[] = [
@@ -161,7 +160,6 @@ export const featuresRoutes: Route[] = [
       },
       {
         path: '',
-        providers: [MasterclassFacade],
         loadChildren: () =>
           import('@features/offerings/offerings.routes').then((m) => m.offeringsRoutes),
       },

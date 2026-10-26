@@ -30,7 +30,6 @@ const PROFILE_INCOMPLETE_DIALOG_DATA: UtilsDialogData = {
   selector: 'app-course-feedback',
   imports: [RatingStar, Button, Field, Textarea],
   templateUrl: './course-feedback.html',
-  providers: [FeedbackFacade],
 })
 export class CourseFeedback {
   courseId = input<string>();

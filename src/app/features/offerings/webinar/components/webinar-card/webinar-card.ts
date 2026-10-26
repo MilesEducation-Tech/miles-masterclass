@@ -48,7 +48,6 @@ export class WebinarCard {
   readonly bucket = input.required<WebinarBucket>();
   readonly layout = input<WebinarCardLayout>('responsive');
   readonly isRegistering = input(false);
-  readonly isLockedElsewhere = input(false);
 
   readonly register = output<string>();
   readonly join = output<string>();
@@ -167,7 +166,6 @@ export class WebinarCard {
       now: (this.clock.tick(), this.clock.now()),
       bucket: this.bucket(),
       isRegistering: this.isRegistering(),
-      isLockedElsewhere: this.isLockedElsewhere(),
     }),
   );
 

@@ -7,7 +7,6 @@ import { RouteResponse, RouteRequest, SKIP_LOADING } from '@core/models/http.mod
 import { MASTERCLASS_ROUTES } from '@core/models/masterclass.model';
 import { courseLoad, CourseLoadParams } from '../utils/course-load';
 import { catchError, of, tap } from 'rxjs';
-import { Router } from '@angular/router';
 
 type SetCpeModeRequest = RouteRequest<typeof MASTERCLASS_ROUTES.setCpeMode>;
 type SetCpeModeResponse = RouteResponse<typeof MASTERCLASS_ROUTES.setCpeMode>;
@@ -20,7 +19,6 @@ export class ChapterFacade {
   private readonly logger = inject(Logger);
   private readonly notification = inject(NotificationService);
   private readonly http = inject(ApiClient);
-  private readonly router = inject(Router);
 
   private readonly course = courseLoad();
   readonly courseDetails = this.course.details;
