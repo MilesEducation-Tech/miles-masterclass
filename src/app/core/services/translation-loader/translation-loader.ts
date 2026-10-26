@@ -29,7 +29,7 @@ const LAZY_DICTIONARIES: LazyDictionaries = {
  * - English, the default and production's only language today, is bundled: no request, ever.
  * - Any other language is a lazy chunk. The server puts what it loaded into `TransferState`, so a
  *   server-rendered page hydrates without fetching it again; only client-rendered routes
- *   (`auth/**`, `payment/**`, admin) download the chunk, once.
+ *   (`auth/**`, `payment/**`) download the chunk, once.
  */
 @Service()
 export class TranslationLoader implements TranslocoLoader {

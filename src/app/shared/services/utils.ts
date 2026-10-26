@@ -191,7 +191,7 @@ export class Utils {
   /**
    * Extract the profession from URL path (country is tracked by `CountryContext`).
    * Pattern: /:country/:profession_type/...
-   * URLs outside that tree (e.g. `/`, `/auth/login`, `/admin/users`, `/blog/x`)
+   * URLs outside that tree (e.g. `/`, `/auth/login`, `/blog/x`)
    * intentionally preserve the last known value so downstream consumers stay on
    * the correct scope while the user navigates through scope-less routes. The
    * second segment must be a real profession, otherwise `/auth/login` would set

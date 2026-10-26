@@ -26,9 +26,6 @@ type DialogKind = 'aiLab' | 'profile' | 'subscription';
 /** Priority order — `resolveNext` returns the first eligible entry. */
 const DIALOG_KINDS = ['aiLab', 'profile', 'subscription'] as const satisfies readonly DialogKind[];
 
-/** Admin panel. Root-mounted, so this stays anchored. */
-const ADMIN_ROUTE = /^\/admin(\/|\?|$)/;
-
 /**
  * Checkout. Payment is mounted *under* the `/:country/:profession_type` prefix
  * — `/us/accounting/payment/cart` — so this matches `payment` as a whole path
@@ -163,7 +160,7 @@ export class EngagementDialog {
   }
 
   /**
-   * Routes no engagement dialog may sit on: the admin panel, checkout, the
+   * Routes no engagement dialog may sit on: checkout, the
    * immersive AI Labs experience, the auth pages (login, signup,
    * forgot-password, profile) and the in-course chapter / assessment /
    * feedback steps. Used both to decide whether to open and to close one we
@@ -171,7 +168,6 @@ export class EngagementDialog {
    */
   isSuppressed(url: string): boolean {
     return (
-      ADMIN_ROUTE.test(url) ||
       PAYMENT_ROUTE.test(url) ||
       IMMERSIVE_ROUTE.test(url) ||
       AUTH_ROUTE.test(url) ||

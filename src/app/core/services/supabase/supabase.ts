@@ -1,33 +1,26 @@
-import { Service, PLATFORM_ID, inject } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Service } from '@angular/core';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { environment } from '@env/environment';
-
-const ADMIN_STORAGE_KEY = environment.SUPABASE.SupabaseUser;
 
 @Service()
 export class Supabase {
   private client: SupabaseClient | null = null;
   private clientPromise: Promise<SupabaseClient> | null = null;
-  private readonly platformId = inject(PLATFORM_ID);
 
   /**
-   * Returns the per-platform Supabase client. The client persists the admin
-   * auth session in localStorage on the browser and is stateless on the
-   * server (so SSR doesn't try to touch localStorage).
+   * Returns the Supabase client. It is stateless on both platforms: nothing
+   * signs in to Supabase (the app only reads `seo_pages` anonymously), so it
+   * never persists or refreshes a session and never touches localStorage.
    *
    * `@supabase/supabase-js` is ~150 kB; importing it eagerly from a
    * `providedIn: 'root'` service pulls the whole thing into the initial
    * bundle. The dynamic `import()` below keeps it in its own lazy chunk so
-   * users who never touch a Supabase-backed feature (SEO loads, admin auth)
+   * users who never touch a Supabase-backed feature (SEO loads)
    * never pay for it. The promise is memoised so repeat callers share one
    * resolution and one client instance.
    *
-   * Important: Angular SSR creates **separate injectors** for the server and
-   * the browser, so the `client` field is effectively per-platform — the
-   * `isBrowser` snapshot taken at construction time is correct for that
-   * injector's lifetime. If we ever provided this service in a shared
-   * injector the snapshot would become a footgun.
+   * Angular SSR creates **separate injectors** for the server and the
+   * browser, so the `client` field is per-platform.
    */
   async getClient(): Promise<SupabaseClient> {
     if (this.client) return this.client;
@@ -42,16 +35,9 @@ export class Supabase {
       );
     }
 
-    const isBrowser = isPlatformBrowser(this.platformId);
-
     this.clientPromise = import('@supabase/supabase-js').then(({ createClient }) => {
       this.client = createClient(url, key, {
-        auth: {
-          persistSession: isBrowser,
-          autoRefreshToken: isBrowser,
-          detectSessionInUrl: isBrowser,
-          storageKey: ADMIN_STORAGE_KEY,
-        },
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       });
       return this.client;
     });
