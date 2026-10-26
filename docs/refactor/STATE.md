@@ -7,6 +7,27 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-26, NON-REFACTOR — MIL-126 (SEO bug), course canonicals + SEO slug guard. DONE, GATES GREEN,
+  UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md` T7), on `fix/MIL-126-course-canonical` off `master`
+  (`7aae2472`).
+  - **Open question answered on UAT:**
+    - `course-detail/` still sends no slug.
+    - For all 64 masterclass courses, `slugify(course_details.name)` equals the sitemap feed's `slug`, so no
+      backend change is needed.
+    - The sitemap feed (`filter/?content_type=masterclass_course`) still answers: 64 rows, one page.
+  - **Canonical:** `setupCourseSeo` builds the canonical (and so `og:url`) from the URL until the course loads,
+    then from the record: `…/<course.id>/<Utils.slugify(name | title)>`. It covers masterclass, podcast and
+    micro-learning. The visible URL isn't redirected.
+  - **Slug guard:** `SupabaseSeo.getBySlug` refuses a slug that isn't word characters and `-` segments, so URL
+    text never reaches PostgREST's `.or()`. The `src/seo.ts` sitemap comment now says how the canonical matches.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 240.65 kB,
+    only `ai-labs.css`.
+  - **SSR (`build:prod` on :4000):** `masterclass/9cf29a8c…/` with the right slug, `buy-cheap-pills-here`,
+    `x%2Cpage_slug.eq.home` and `x(y)` all answer 200 with canonical and `og:url` equal to the sitemap `<loc>`.
+    The comma case is refused before the query and gets the fallback title; no server errors.
+  - **Browser:** hydration keeps the corrected canonical. On dev, landing → course A → back → course B keeps og at
+    7 / 8 / 7 / 8 and one canonical.
+
 - 🟡 **2026-10-26, NON-REFACTOR — MIL-125 (tech debt), facade scoping + dead facade code. DONE, GATES GREEN,
   UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md` T6), on `refactor/MIL-125-facade-scoping` off `master`
   (`7aae2472`).
@@ -5571,6 +5592,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-26 · NON-REFACTOR · **MIL-126 built** (uncommitted): course canonical from the record (`<id>/<slugify(name)>`, equal to the sitemap URL for all 64 UAT courses), `getBySlug` refuses unsafe slugs · tsc 0, lint 0 errors, structure ✔, build:prod 240.65 kB · SSR + browser canonical checks pass
 
 - 2026-10-26 · NON-REFACTOR · **MIL-125 built** (uncommitted): FeedbackFacade provided once per route, MasterclassFacade scoped to podcast, AuthFacade on `login`, dead facade members removed · tsc 0, lint 0 errors, structure ✔, build:prod 240.60 kB, storybook ✔ · podcast page and login checked in browser
 
