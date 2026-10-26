@@ -484,6 +484,11 @@ export interface AiLabCourseDetail extends AiLabCourseListItem {
   ai_lab_course_exam_rules: string | null;
   ai_lab_course_prerequisite_education: string | null;
   ai_lab_course_advance_preparation: string | null;
+  /**
+   * The Hints card, in display order — plain text, the same for every learner, sent whether or
+   * not the lab is started. Always present; `[]` when the lab has none (then the card is hidden).
+   */
+  ai_lab_course_hints: string[];
   ai_lab_course_created_at: string;
   levels: string[];
   tracks: string[];
@@ -734,17 +739,12 @@ export interface AiLabAssignmentBrief {
   tools: { trigger_email: boolean } | null;
 }
 
-/* ---------------------------------------------------------------------
-   Not served by our API yet.
-
-   The course page redesign (miles-masterclass-v3) shows build hints, revealed one at a time. No
-   route carries them, so the facade holds an empty slot of this shape until one does.
-   --------------------------------------------------------------------- */
-
-/** One build hint, revealed one at a time. `hint` may carry newlines. */
+/**
+ * One build hint as the Hints card shows it: an entry of the detail's `ai_lab_course_hints`, numbered
+ * by its place (the API sends plain strings). Plain text — rendered as text, never as HTML.
+ */
 export interface AiLabHint {
   id: number;
-  title: string;
   hint: string;
 }
 

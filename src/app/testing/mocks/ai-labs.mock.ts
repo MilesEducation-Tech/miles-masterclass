@@ -13,7 +13,6 @@ import {
   AiLabFeedbackQuestion,
   AiLabFeedbackResult,
   AiLabFlow,
-  AiLabHint,
   AiLabPracticalProgress,
   AiLabQuizGrade,
   AiLabQuizQuestion,
@@ -311,6 +310,7 @@ export const MOCK_AI_LAB_DETAIL: AiLabCourseDetail = {
     'Complete the lab video, clear the AI assessment and submit the feedback form.\nThe assessment is scored by the Miles AI Labs service; a pass is required before credit is issued.',
   ai_lab_course_prerequisite_education: 'None.',
   ai_lab_course_advance_preparation: 'None.',
+  ai_lab_course_hints: [],
   ai_lab_course_created_at: '2026-10-12T11:04:12.732249Z',
   levels: [],
   tracks: ['Applied AI Across Functions'],
@@ -445,8 +445,6 @@ export interface AiLabCourseStoryState {
   balance?: AiLabTokenBalance | null;
   /** Shows the quiz panel in the video frame, on this question. */
   quiz?: { questions: AiLabQuizQuestion[]; index: number; grade: AiLabQuizGrade | null };
-  /** Build hints — no route serves them yet; set only to show the filled design. */
-  hints?: AiLabHint[];
   attempts?: AiLabAttempts | null;
   /** A running cool-off's end — pair it with `ctaStage: 'COOL_OFF'`. */
   coolOffEndsAt?: string | null;
@@ -498,22 +496,11 @@ export const MOCK_AI_LAB_QUIZ_GRADE: AiLabQuizGrade = {
 
 /* ---- The redesign's slots, filled — stories only; no route of ours serves these yet. ---- */
 
-export const MOCK_AI_LAB_HINTS: AiLabHint[] = [
-  {
-    id: 1,
-    title: 'Lease Audit Agent',
-    hint: 'Start from the lease schedule, not the contracts: match each schedule row to its contract first, then compare terms.',
-  },
-  {
-    id: 2,
-    title: 'Lease Audit Agent',
-    hint: 'Treat a missing commencement date as an exception for review, not a zero — the agent should never guess it.',
-  },
-  {
-    id: 3,
-    title: 'Lease Audit Agent',
-    hint: 'Keep the reviewer in the loop: post a summary of every flagged lease to the review channel before closing.',
-  },
+/** `ai_lab_course_hints` as the detail sends it: plain strings in display order. */
+export const MOCK_AI_LAB_HINTS: string[] = [
+  'Start from the lease schedule, not the contracts: match each schedule row to its contract first, then compare terms.',
+  'Treat a missing commencement date as an exception for review, not a zero — the agent should never guess it.',
+  'Keep the reviewer in the loop: post a summary of every flagged lease to the review channel before closing.',
 ];
 
 const MOCK_FILE_URL = 'https://example.com/ai-labs/grade-cards/attempt.pdf';
@@ -604,7 +591,7 @@ export function provideStoryAiLabCourse(state: AiLabCourseStoryState): Provider[
     submitting: signal(false),
     gradeCardBusy: signal(state.gradeCardBusy ?? false),
     labProvisioned: signal(true),
-    hints: signal(state.hints ?? []),
+    hints: signal((state.lab?.ai_lab_course_hints ?? []).map((hint, i) => ({ id: i + 1, hint }))),
     requirements: signal(state.brief?.requirements ?? []),
     buildGuides: signal(state.brief?.build_guides ?? []),
     exerciseFiles: signal(state.brief?.exercise_files ?? []),

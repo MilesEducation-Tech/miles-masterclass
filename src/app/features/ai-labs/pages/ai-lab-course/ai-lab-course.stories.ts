@@ -31,8 +31,8 @@ import {
  * trailer; once started, the lab video. Stories without either show the lab's artwork.
  *
  * The page is the v3 redesign: a journey sidebar (progress overview + step navigator) beside five
- * numbered steps. Build hints are the one part no route serves yet — only the `Redesign…` stories
- * fill them.
+ * numbered steps. Step 04 (Hints) shows only when the lab carries hints — or, once open, a flow
+ * chart — so most stories here number four steps.
  */
 const meta: Meta<AiLabCourse> = {
   title: 'AI Labs/Course page',
@@ -51,6 +51,8 @@ const withState = (state: AiLabCourseStoryState): Story => ({
 });
 
 const lab = MOCK_AI_LAB_DETAIL;
+/** The lab video plus three hints — the redesign with every section filled. */
+const withHints = { ...MOCK_AI_LAB_DETAIL_WITH_VIDEO, ai_lab_course_hints: MOCK_AI_LAB_HINTS };
 const practical = {
   brief: MOCK_AI_LAB_BRIEF,
   agents: MOCK_AI_LAB_AGENTS,
@@ -222,27 +224,25 @@ export const LabNotMapped = withState({
 
 /**
  * The full 2026-10-26 brief — requirements, a build guide above Launch AI, a flow chart, the
- * sample card (7.85 / 10) with its PDF — plus three hints, the one slot no route serves yet.
+ * sample card (7.85 / 10) with its PDF — plus three hints off the detail's `ai_lab_course_hints`.
  */
 export const RedesignLabOpen = withState({
-  lab: MOCK_AI_LAB_DETAIL_WITH_VIDEO,
+  lab: withHints,
   started: MOCK_AI_LAB_STARTED,
   progress: mockAiLabProgress('ai_assessment'),
   ctaStage: 'AI_LAB',
   ...practical,
   brief: MOCK_AI_LAB_BRIEF_FULL,
-  hints: MOCK_AI_LAB_HINTS,
 });
 
 /** Graded three times of five allowed: the best attempt's card and the history beneath it. */
 export const RedesignGradedWithHistory = withState({
-  lab: MOCK_AI_LAB_DETAIL_WITH_VIDEO,
+  lab: withHints,
   started: MOCK_AI_LAB_STARTED,
   progress: mockAiLabProgress('feedback'),
   ctaStage: 'FEEDBACK',
   ...practical,
   assignment: { ...MOCK_AI_LAB_EVALUATED, can_resubmit: true },
-  hints: MOCK_AI_LAB_HINTS,
   attempts: MOCK_AI_LAB_ATTEMPTS,
 });
 

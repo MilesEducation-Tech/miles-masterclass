@@ -1,7 +1,7 @@
 # AI Labs APIs - Frontend Guide
 
 Every AI Labs route the merged backend serves (45 routes), with the request, a full success response and
-the errors each one can answer. **Last updated 2026-10-26** against the backend at commit `21a0042`. App and web twins are documented together when they answer the same
+the errors each one can answer. **Last updated 2026-10-26** against the backend at commit `6a5c42d`. App and web twins are documented together when they answer the same
 body; where they differ, both are shown.
 
 |            |                                                                                                                                                              |
@@ -26,6 +26,7 @@ body; where they differ, both are shown.
 | 7   | Quiz / assessment questions                                                | Question rows now come from the AI Labs' own serializer. Same keys (`id, question_text, question_type, options[{id,text,order}]`).                                                                                                                                                                                                                                                | None.                                                   |
 | 8   | `POST api/v1/ai-labs/account-reset-password/`                              | New reason `PROVISIONING_IN_PROGRESS` (200) while the lab is still being built; `RESET_EMAIL_FAILED` (502) now also when the password was reset but the mail failed.                                                                                                                                                                                                              | Add the new reason to the reset screen.                 |
 | 9   | `GET .../assignment-attempts/<id>/`                                        | New `allowed_attempt`; scores out of 10; per-attempt `master_comment` / `minor_comment`.                                                                                                                                                                                                                                                                                          | Read `allowed_attempt`, never hard-code 3.              |
+| 10  | `GET .../course/<id>/` (lab detail)                                        | **New 2026-10-26:** `ai_lab_course_hints` - the lab's hints, a list of plain-text strings in display order (`[]` when the lab has none).                                                                                                                                                                                                                                          | Build the Hints card from it (section 3, "One AI Lab"). |
 
 ---
 
@@ -352,6 +353,7 @@ No body.
 - **Replaces legacy:** `/ai-labs/course/<uuid:ai_lab_course_id>/`
 - **Changed from legacy:** Path app-api/v1/ai-labs/course/<uuid>/ (was ai-labs/course/<uuid>/); keys snake_cased; exercise_files, glossary fields and cpe_credit/cpe_credit_label dropped; fields_of_study now objects plus total_cpe_credits; ai_lab_course_total_duration_seconds and child duration_seconds added; enveloped.
 - **Changed 2026-10-22/23:** `instructors` is a list of OBJECTS (was names); new `chapter` (the lab's single video, `null` while the lab is still being authored); `chapter.hls_video_link`, `transcript_url` and `transcript_text` are `null` until THIS learner has started the lab (the public preview is `ai_lab_course_trailer_url`); new `final_assessment_status` (section 1a). `lock_state` and `final_assessment_status` are per learner; the rest is shared.
+- **Changed 2026-10-26:** new `ai_lab_course_hints` - the Hints card (see "Hints card" below the response).
 - **Backend:** `AppAILabCourseDetailViewV1` (AILabs/views.py:3644)
 
 **Request**
@@ -385,6 +387,13 @@ No body.
     "ai_lab_course_exam_rules": "Complete the lab video, clear the AI assessment and submit the feedback form. The assessment is scored by the Miles AI Labs service; a pass is required before credit is issued.",
     "ai_lab_course_prerequisite_education": "None.",
     "ai_lab_course_advance_preparation": "None.",
+    "ai_lab_course_hints": [
+      "Test freely in the Preview tab, since only publishing and running the published agent use tokens. If you change anything after publishing, publish again, or the Submit button stays grey.",
+      "Name each topic after the question a reviewer would ask, so the agent routes lease exceptions to the right topic.",
+      "Upload the lease schedule as a knowledge source before testing, or the agent will answer without the figures.",
+      "Check every flagged mismatch against the schedule row it cites before you submit.",
+      "Submit only after the agent passes the sample lease pack end to end."
+    ],
     "ai_lab_course_created_at": "2026-10-12T11:04:12.732249Z",
     "ai_kit": null,
     "ai_lab_course_total_duration_seconds": 9559,
@@ -463,6 +472,18 @@ No body.
   }
 }
 ```
+
+**Hints card** (`ai_lab_course_hints`, new 2026-10-26)
+
+|           |                                                                                                                                                              |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Type      | list of strings, always present; `[]` when the lab has no hints                                                                                              |
+| Order     | display order as authored in the admin - hint 1 is `[0]`                                                                                                     |
+| Card      | "Hint N of M": M = list length, one dot per hint, arrows step through it. Title / subtitle ("Hints", "Optimize your agents and workflows") are fixed FE text |
+| Empty     | `[]` -> hide the card                                                                                                                                        |
+| Text      | plain text - render as text, not HTML                                                                                                                        |
+| Who       | the same for every learner (not per learner), sent whether or not the lab is started                                                                         |
+| Freshness | an admin edit reaches the API within 30 seconds                                                                                                              |
 
 **Learner has NOT started the lab** - same body, but the video and transcript are withheld and the assessment is locked:
 
@@ -2380,7 +2401,7 @@ Body:
   (paginated block under `data`, slug `masterclass_ai_labs_courses_web`, default 6). Served by the Masterclass app
   (`WebMasterclassAILabsViewV1`), not counted in the 45 above.
 
-_Updated 2026-10-26 from the backend at `21a0042`: new attempts route, re-cut brief, lab detail `chapter` /
+_Updated 2026-10-26 from the backend at `6a5c42d`: lab detail `ai_lab_course_hints` (Hints card); earlier the same day at `21a0042`: new attempts route, re-cut brief, lab detail `chapter` /
 instructor objects, `final_assessment_status`, the two new vendor codes and current backend line numbers;
 samples for those are code-derived (vendor-relayed bodies follow AI Labs' published contracts). First generated
 on 2026-10-20: success bodies are the published API-migration page's AI Labs

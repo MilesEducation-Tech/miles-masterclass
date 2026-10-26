@@ -6063,6 +6063,8 @@ These are environment and product observations the repair surfaced. None changed
 
 ## Step log (latest first; keep the last 30 lines)
 
+- 2026-10-26 · NON-REFACTOR · **MIL-117 hints bound (guide rev 3, `6a5c42d`)**, uncommitted on top of `9133259`: `ai_lab_course_hints` → `AiLabCourseFacade.hints` (numbered by place); no hints (and no flow chart) hides step 04 from page + navigator and renumbers (05 → 04); `docs/AI_LABS_API.md` → rev 3 · verified in Storybook + dev 4101 (with hints: 5 steps, "Hint 1 of 3"; `[]`: 4 steps) · lint 0 errors, structure ✔, build:prod ✔ (227.65 kB)
+
 - 2026-10-26 · NON-REFACTOR · **MIL-117 stash-pop conflicts after the master merge (`2af357a`) resolved**: `structure-baseline.json` keeps only `ai-lab-course.css` (master removed the admin entries, MIL-120); `styles.css` had no markers left (our 3 Copilot tokens); STATE step-log markers dropped, both sides kept · structure ✔, tsc 0, lint 0 errors, build:prod ✔ (227.61 kB)
 
 - 2026-10-26 · NON-REFACTOR · **MIL-117 dev server restart**: removed the stash-pop markers from `styles.css` (kept the stashed tokens), which had broken the Tailwind `@theme` build · 4101 serves `/us/accounting/home` with HTTP 200

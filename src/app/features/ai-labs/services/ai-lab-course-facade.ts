@@ -405,11 +405,18 @@ export class AiLabCourseFacade {
   readonly submitting = signal(false);
   readonly gradeCardBusy = signal(false);
 
-  // ---- Not served yet ----------------------------------------------------------
-  // ponytail: the redesigned page shows build hints, one at a time, and no route serves them yet.
-  // Empty until one does — step 04 then says there are none. Binding is swapping this for a read.
+  // ---- Hints -------------------------------------------------------------------
 
-  readonly hints = signal<readonly AiLabHint[]>([]).asReadonly();
+  /**
+   * The Hints card, off the detail's `ai_lab_course_hints` — plain strings in display order, each
+   * numbered by its place so the card's tabs have a stable value. Blank entries are dropped.
+   */
+  readonly hints = computed<readonly AiLabHint[]>(() =>
+    (this.lab()?.ai_lab_course_hints ?? [])
+      .map((hint) => hint.trim())
+      .filter(Boolean)
+      .map((hint, i) => ({ id: i + 1, hint })),
+  );
 
   // ---- Attempts ----------------------------------------------------------------
 

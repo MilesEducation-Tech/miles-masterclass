@@ -413,7 +413,7 @@
                done / up next / locked before the learner reads the card. -->
           <section id="final" class="scroll-mt-32">
             <app-ai-lab-step
-              index="01"
+              [index]="stepIndex('final')"
               heading="Final MCQ assessment"
               caption="Pass it to open the AI Lab."
               [step]="journey().final"
@@ -591,7 +591,7 @@
           <!-- ============================ 02 — AI LAB ============================ -->
           <section id="lab" class="scroll-mt-32">
             <app-ai-lab-step
-              index="02"
+              [index]="stepIndex('lab')"
               heading="Miles AI Lab"
               caption="Hands-on — build it in Copilot Studio"
               [step]="journey().lab"
@@ -854,7 +854,7 @@
                item, a slim label per group. -->
           <section id="materials" class="scroll-mt-32">
             <app-ai-lab-step
-              index="03"
+              [index]="stepIndex('materials')"
               heading="Lab materials"
               caption="Tools & files to build your agents"
               [step]="journey().materials"
@@ -1087,229 +1087,230 @@
           </section>
 
           <!-- ============================== 04 — HINTS ============================== -->
-          <section id="hints" class="scroll-mt-32">
-            <app-ai-lab-step
-              index="04"
-              heading="Hints"
-              caption="Optimize your agents and workflows"
-              [step]="journey().hints"
-            >
-              <div class="rounded-2xl border border-border bg-card p-5 lg:p-6">
-                <!-- Locked the same way, the hint card shows with its text blurred out. -->
-                @if (journey().hints.state === 'locked') {
-                  <div class="flex items-center gap-x-3">
-                    <span
-                      class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-amber-400"
-                    >
-                      <ng-icon name="lucideLightbulb" class="text-lg" aria-hidden="true" />
-                    </span>
-                    <p class="text-[13.5px] font-semibold text-foreground">Hints</p>
-                  </div>
-                  <div class="relative mt-3 pb-[14px]">
-                    @for (depth of [2, 1]; track depth) {
-                      <span
-                        class="absolute top-3 rounded-xl border border-border bg-secondary"
-                        [style.left.px]="depth * 12"
-                        [style.right.px]="depth * 12"
-                        [style.bottom.px]="(2 - depth) * 7"
-                        [style.opacity]="1.1 - depth * 0.3"
-                        aria-hidden="true"
-                      ></span>
-                    }
-                    <div
-                      class="relative overflow-hidden rounded-xl border border-border bg-muted px-5 py-4 lg:px-6"
-                    >
-                      <div class="space-y-2.5 blur-[3px] select-none" aria-hidden="true">
-                        <div class="h-3 w-11/12 rounded-full bg-white/15"></div>
-                        <div class="h-3 w-4/5 rounded-full bg-white/15"></div>
-                        <div class="h-3 w-2/3 rounded-full bg-white/15"></div>
-                      </div>
-                      <div class="absolute inset-0 grid place-items-center bg-muted/40">
-                        <span
-                          class="grid size-9 place-items-center rounded-xl border border-border bg-black/30 text-muted-foreground"
-                          role="img"
-                          aria-label="Hints locked"
-                        >
-                          <ng-icon name="lucideLock" class="text-base" aria-hidden="true" />
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                } @else if (hints().length) {
-                  <!-- One hint at a time. The header says where you are, its segments
-                       are the tabs (arrow keys move between them), and the arrows step
-                       through. The open hint sits on a small stack — one card peeking
-                       out per hint still ahead — so "there's more" reads without a word. -->
-                  <div
-                    ngpTabset
-                    [ngpTabsetValue]="hintTab()"
-                    (ngpTabsetValueChange)="selectHint($event)"
-                  >
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <!-- No hints (and no flow chart to show) hides the step: the guide's "[] -> hide the card". -->
+          @if (hasHintsStep()) {
+            <section id="hints" class="scroll-mt-32">
+              <app-ai-lab-step
+                [index]="stepIndex('hints')"
+                heading="Hints"
+                caption="Optimize your agents and workflows"
+                [step]="journey().hints"
+              >
+                <div class="rounded-2xl border border-border bg-card p-5 lg:p-6">
+                  <!-- Locked the same way, the hint card shows with its text blurred out. -->
+                  @if (journey().hints.state === 'locked') {
+                    <div class="flex items-center gap-x-3">
                       <span
                         class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-amber-400"
                       >
                         <ng-icon name="lucideLightbulb" class="text-lg" aria-hidden="true" />
                       </span>
-                      <p class="text-[13.5px] font-semibold text-foreground" aria-live="polite">
-                        Hint {{ hintIndex() + 1 }}
-                        <span class="font-normal text-muted-foreground"
-                          >of {{ hints().length }}</span
-                        >
-                      </p>
-
-                      @if (hints().length > 1) {
-                        <div class="ms-auto flex items-center gap-2">
-                          <div ngpTabList class="flex items-center gap-1" aria-label="Hints">
-                            @for (hint of hints(); track hint.id; let i = $index) {
-                              <button
-                                ngpTabButton
-                                type="button"
-                                [ngpTabButtonValue]="'' + hint.id"
-                                class="group flex cursor-pointer items-center rounded-full px-0.5 py-2.5 outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring"
-                                [attr.aria-label]="'Hint ' + (i + 1)"
-                              >
-                                <span
-                                  class="block h-1.5 rounded-full transition-all duration-300 motion-reduce:transition-none"
-                                  [class]="hintTabClass()[i]"
-                                ></span>
-                              </button>
-                            }
-                          </div>
-                          <button
-                            app-button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            [disabled]="hintIndex() === 0"
-                            aria-label="Previous hint"
-                            (click)="stepHint(-1)"
-                          >
-                            <ng-icon
-                              name="lucideChevronLeft"
-                              class="text-lg rtl:-scale-x-100"
-                              aria-hidden="true"
-                            />
-                          </button>
-                          <button
-                            app-button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            [disabled]="hintIndex() === hints().length - 1"
-                            aria-label="Next hint"
-                            (click)="stepHint(1)"
-                          >
-                            <ng-icon
-                              name="lucideChevronRight"
-                              class="text-lg rtl:-scale-x-100"
-                              aria-hidden="true"
-                            />
-                          </button>
-                        </div>
-                      }
+                      <p class="text-[13.5px] font-semibold text-foreground">Hints</p>
                     </div>
-
-                    <!-- The stack: room under the card for each peeking edge, the edges
-                         drawn deepest first, the open hint on top. -->
-                    <div
-                      class="relative mt-3"
-                      [style.padding-bottom.px]="hintStack().length * 11 + 4"
-                    >
-                      @for (card of hintStack(); track card.depth) {
+                    <div class="relative mt-3 pb-[14px]">
+                      @for (depth of [2, 1]; track depth) {
                         <span
-                          class="absolute inset-x-0 top-0 origin-bottom rounded-xl border border-white/10 bg-muted shadow-[0_10px_24px_-12px] shadow-black/70 transition-all duration-500 motion-reduce:transition-none"
-                          [style.bottom.px]="hintStack().length * 11 + 4"
-                          [style.transform]="card.transform"
-                          [style.opacity]="card.opacity"
+                          class="absolute top-3 rounded-xl border border-border bg-secondary"
+                          [style.left.px]="depth * 12"
+                          [style.right.px]="depth * 12"
+                          [style.bottom.px]="(2 - depth) * 7"
+                          [style.opacity]="1.1 - depth * 0.3"
                           aria-hidden="true"
                         ></span>
                       }
-                      @for (hint of hints(); track hint.id; let i = $index) {
-                        <div ngpTabPanel [ngpTabPanelValue]="'' + hint.id" class="outline-none">
-                          @if (i === hintIndex()) {
-                            <div
-                              class="relative rounded-xl border border-white/10 bg-muted px-5 py-4 shadow-[0_12px_28px_-14px] shadow-black/80 animate-in fade-in duration-300 motion-reduce:animate-none lg:px-6"
-                              [class]="
-                                hintDirection() > 0
-                                  ? 'slide-in-from-right-3'
-                                  : 'slide-in-from-left-3'
-                              "
-                            >
-                              <p
-                                class="max-w-[72ch] text-[15px] leading-relaxed whitespace-pre-line text-foreground/90"
-                              >
-                                {{ hint.hint }}
-                              </p>
-                            </div>
-                          }
+                      <div
+                        class="relative overflow-hidden rounded-xl border border-border bg-muted px-5 py-4 lg:px-6"
+                      >
+                        <div class="space-y-2.5 blur-[3px] select-none" aria-hidden="true">
+                          <div class="h-3 w-11/12 rounded-full bg-white/15"></div>
+                          <div class="h-3 w-4/5 rounded-full bg-white/15"></div>
+                          <div class="h-3 w-2/3 rounded-full bg-white/15"></div>
                         </div>
+                        <div class="absolute inset-0 grid place-items-center bg-muted/40">
+                          <span
+                            class="grid size-9 place-items-center rounded-xl border border-border bg-black/30 text-muted-foreground"
+                            role="img"
+                            aria-label="Hints locked"
+                          >
+                            <ng-icon name="lucideLock" class="text-base" aria-hidden="true" />
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  } @else if (hints().length) {
+                    <!-- One hint at a time. The header says where you are, its segments
+                       are the tabs (arrow keys move between them), and the arrows step
+                       through. The open hint sits on a small stack — one card peeking
+                       out per hint still ahead — so "there's more" reads without a word. -->
+                    <div
+                      ngpTabset
+                      [ngpTabsetValue]="hintTab()"
+                      (ngpTabsetValueChange)="selectHint($event)"
+                    >
+                      <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                        <span
+                          class="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-black/30 text-amber-400"
+                        >
+                          <ng-icon name="lucideLightbulb" class="text-lg" aria-hidden="true" />
+                        </span>
+                        <p class="text-[13.5px] font-semibold text-foreground" aria-live="polite">
+                          Hint {{ hintIndex() + 1 }}
+                          <span class="font-normal text-muted-foreground"
+                            >of {{ hints().length }}</span
+                          >
+                        </p>
+
+                        @if (hints().length > 1) {
+                          <div class="ms-auto flex items-center gap-2">
+                            <div ngpTabList class="flex items-center gap-1" aria-label="Hints">
+                              @for (hint of hints(); track hint.id; let i = $index) {
+                                <button
+                                  ngpTabButton
+                                  type="button"
+                                  [ngpTabButtonValue]="'' + hint.id"
+                                  class="group flex cursor-pointer items-center rounded-full px-0.5 py-2.5 outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring"
+                                  [attr.aria-label]="'Hint ' + (i + 1)"
+                                >
+                                  <span
+                                    class="block h-1.5 rounded-full transition-all duration-300 motion-reduce:transition-none"
+                                    [class]="hintTabClass()[i]"
+                                  ></span>
+                                </button>
+                              }
+                            </div>
+                            <button
+                              app-button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              [disabled]="hintIndex() === 0"
+                              aria-label="Previous hint"
+                              (click)="stepHint(-1)"
+                            >
+                              <ng-icon
+                                name="lucideChevronLeft"
+                                class="text-lg rtl:-scale-x-100"
+                                aria-hidden="true"
+                              />
+                            </button>
+                            <button
+                              app-button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              [disabled]="hintIndex() === hints().length - 1"
+                              aria-label="Next hint"
+                              (click)="stepHint(1)"
+                            >
+                              <ng-icon
+                                name="lucideChevronRight"
+                                class="text-lg rtl:-scale-x-100"
+                                aria-hidden="true"
+                              />
+                            </button>
+                          </div>
+                        }
+                      </div>
+
+                      <!-- The stack: room under the card for each peeking edge, the edges
+                         drawn deepest first, the open hint on top. -->
+                      <div
+                        class="relative mt-3"
+                        [style.padding-bottom.px]="hintStack().length * 11 + 4"
+                      >
+                        @for (card of hintStack(); track card.depth) {
+                          <span
+                            class="absolute inset-x-0 top-0 origin-bottom rounded-xl border border-white/10 bg-muted shadow-[0_10px_24px_-12px] shadow-black/70 transition-all duration-500 motion-reduce:transition-none"
+                            [style.bottom.px]="hintStack().length * 11 + 4"
+                            [style.transform]="card.transform"
+                            [style.opacity]="card.opacity"
+                            aria-hidden="true"
+                          ></span>
+                        }
+                        @for (hint of hints(); track hint.id; let i = $index) {
+                          <div ngpTabPanel [ngpTabPanelValue]="'' + hint.id" class="outline-none">
+                            @if (i === hintIndex()) {
+                              <div
+                                class="relative rounded-xl border border-white/10 bg-muted px-5 py-4 shadow-[0_12px_28px_-14px] shadow-black/80 animate-in fade-in duration-300 motion-reduce:animate-none lg:px-6"
+                                [class]="
+                                  hintDirection() > 0
+                                    ? 'slide-in-from-right-3'
+                                    : 'slide-in-from-left-3'
+                                "
+                              >
+                                <p
+                                  class="max-w-[72ch] text-[15px] leading-relaxed whitespace-pre-line text-foreground/90"
+                                >
+                                  {{ hint.hint }}
+                                </p>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  @if (journey().hints.state !== 'locked' && flowChart(); as chart) {
+                    <div [class]="hints().length ? 'mt-5 border-t border-border pt-5' : ''">
+                      @if (flowChartIsImage()) {
+                        <!-- The flow chart fills its frame edge to edge; the whole frame
+                           opens the real thing. -->
+                        <button
+                          type="button"
+                          class="group relative block w-full overflow-hidden rounded-xl border border-border bg-black/25 transition-colors hover:border-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                          aria-label="Open the flow chart full size"
+                          (click)="openFile(chart)"
+                        >
+                          <img
+                            [src]="chart.url"
+                            [alt]="'Expected flow for ' + (brief()?.name ?? 'this lab')"
+                            loading="lazy"
+                            class="block h-auto w-full"
+                          />
+                          <span
+                            class="absolute end-3 top-3 inline-flex items-center gap-1 rounded-full border border-border bg-background/90 px-2.5 py-1 text-[11.5px] font-semibold text-foreground backdrop-blur transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100"
+                            aria-hidden="true"
+                          >
+                            View full size
+                            <ng-icon name="lucideArrowUpRight" class="text-sm rtl:-scale-x-100" />
+                          </span>
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          class="flex items-center gap-3 rounded-lg border border-border bg-black/25 p-4 text-start transition-colors hover:bg-card-hover"
+                          aria-label="Open the flow chart"
+                          (click)="openFile(chart)"
+                        >
+                          <span
+                            class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary text-muted-foreground"
+                          >
+                            <ng-icon name="lucideDownload" class="text-lg" aria-hidden="true" />
+                          </span>
+                          <span class="min-w-0 flex-1">
+                            <span
+                              class="block truncate text-[13.5px] font-semibold text-foreground"
+                            >
+                              Flow chart
+                            </span>
+                            <span class="block text-[11.5px] text-muted-foreground"
+                              >Expected flow</span
+                            >
+                          </span>
+                        </button>
                       }
                     </div>
-                  </div>
-                }
-
-                @if (journey().hints.state !== 'locked' && flowChart(); as chart) {
-                  <div [class]="hints().length ? 'mt-5 border-t border-border pt-5' : ''">
-                    @if (flowChartIsImage()) {
-                      <!-- The flow chart fills its frame edge to edge; the whole frame
-                           opens the real thing. -->
-                      <button
-                        type="button"
-                        class="group relative block w-full overflow-hidden rounded-xl border border-border bg-black/25 transition-colors hover:border-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                        aria-label="Open the flow chart full size"
-                        (click)="openFile(chart)"
-                      >
-                        <img
-                          [src]="chart.url"
-                          [alt]="'Expected flow for ' + (brief()?.name ?? 'this lab')"
-                          loading="lazy"
-                          class="block h-auto w-full"
-                        />
-                        <span
-                          class="absolute end-3 top-3 inline-flex items-center gap-1 rounded-full border border-border bg-background/90 px-2.5 py-1 text-[11.5px] font-semibold text-foreground backdrop-blur transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100"
-                          aria-hidden="true"
-                        >
-                          View full size
-                          <ng-icon name="lucideArrowUpRight" class="text-sm rtl:-scale-x-100" />
-                        </span>
-                      </button>
-                    } @else {
-                      <button
-                        type="button"
-                        class="flex items-center gap-3 rounded-lg border border-border bg-black/25 p-4 text-start transition-colors hover:bg-card-hover"
-                        aria-label="Open the flow chart"
-                        (click)="openFile(chart)"
-                      >
-                        <span
-                          class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary text-muted-foreground"
-                        >
-                          <ng-icon name="lucideDownload" class="text-lg" aria-hidden="true" />
-                        </span>
-                        <span class="min-w-0 flex-1">
-                          <span class="block truncate text-[13.5px] font-semibold text-foreground">
-                            Flow chart
-                          </span>
-                          <span class="block text-[11.5px] text-muted-foreground"
-                            >Expected flow</span
-                          >
-                        </span>
-                      </button>
-                    }
-                  </div>
-                }
-
-                @if (journey().hints.state !== 'locked' && !hints().length && !flowChart()) {
-                  <p class="text-[13px] text-muted-foreground">No hints for this lab yet.</p>
-                }
-              </div>
-            </app-ai-lab-step>
-          </section>
+                  }
+                </div>
+              </app-ai-lab-step>
+            </section>
+          }
 
           <!-- ======================= 05 — EVALUATION & SCORES ======================= -->
           <section id="grade" class="scroll-mt-32">
             <app-ai-lab-step
-              index="05"
+              [index]="stepIndex('grade')"
               heading="Your evaluation &amp; scores"
               caption="Submit your agents and see how they score"
               [step]="journey().grade"

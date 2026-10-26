@@ -622,9 +622,7 @@ export class AiLabCourse {
 
   // ---- 04 Hints ----------------------------------------------------------
 
-  protected readonly hints = computed(() =>
-    this.facade.hints().filter((hint) => !!hint.hint?.trim()),
-  );
+  protected readonly hints = this.facade.hints;
 
   /**
    * The open hint, as its tab value. One at a time on purpose: the next one is a click away when
@@ -1204,13 +1202,34 @@ export class AiLabCourse {
   protected readonly navSteps = computed(() => {
     const journey = this.journey();
     return [
-      { id: 'final', index: '01', label: 'Final MCQ assessment', step: journey.final },
-      { id: 'lab', index: '02', label: 'Miles AI Lab', step: journey.lab },
-      { id: 'materials', index: '03', label: 'Lab materials', step: journey.materials },
-      { id: 'hints', index: '04', label: 'Hints', step: journey.hints },
-      { id: 'grade', index: '05', label: 'Your evaluation & scores', step: journey.grade },
-    ].map((item) => ({ ...item, iconClass: NAV_ICON[item.step.state] }));
+      { id: 'final', label: 'Final MCQ assessment', step: journey.final },
+      { id: 'lab', label: 'Miles AI Lab', step: journey.lab },
+      { id: 'materials', label: 'Lab materials', step: journey.materials },
+      { id: 'hints', label: 'Hints', step: journey.hints },
+      { id: 'grade', label: 'Your evaluation & scores', step: journey.grade },
+    ]
+      .filter((item) => item.id !== 'hints' || this.hasHintsStep())
+      .map((item, i) => ({
+        ...item,
+        index: String(i + 1).padStart(2, '0'),
+        iconClass: NAV_ICON[item.step.state],
+      }));
   });
+
+  /**
+   * Step 04 has something to show: hints (locked or not), or — once the lab is open — the flow
+   * chart. Otherwise the guide's rule ("`[]` → hide the card") takes the whole step, and the steps
+   * after it renumber.
+   */
+  protected readonly hasHintsStep = computed(
+    () =>
+      this.hints().length > 0 || (!!this.flowChart() && this.journey().hints.state !== 'locked'),
+  );
+
+  /** A step's number as the navigator counts it — "05" becomes "04" when the hints step is gone. */
+  protected stepIndex(id: string): string {
+    return this.navSteps().find((item) => item.id === id)?.index ?? '';
+  }
 
   /** The step section in view, marked in the navigator — see the scrollspy in the constructor. */
   protected readonly activeStep = signal('final');

@@ -1,4 +1,4 @@
-# AI Labs: bind the 2026-10-26 API additions (rev 2)
+# AI Labs: bind the 2026-10-26 API additions (rev 3)
 
 ## Goal
 
@@ -91,10 +91,25 @@ course page we just redesigned — filling the empty slots it was built with whe
   - every success replaces the password, so the copy says "your new AI Lab credentials", not "a link to set a new
     password". The existing confirm dialog stays (never called automatically).
 
+### Revision 3 of the guide (backend `6a5c42d`, item 10 — re-sent by the user)
+
+The only change: **`ai_lab_course_hints`** on the lab detail — `string[]`, always present, `[]` when none, in display
+order, plain text, the same for every learner and sent whether or not the lab is started. The guide's card spec ("Hint
+N of M", one dot per hint, arrows, fixed "Hints" / "Optimize your agents and workflows") is what step 04 already
+renders.
+
+- **Model:** `ai_lab_course_hints: string[]` on `AiLabCourseDetail`; `AiLabHint` drops `title` (no source).
+- **Facade:** the `hints` slot becomes a `computed` off the detail — each string as `{ id: index + 1, hint }`, blanks
+  dropped. The "not served yet" section goes (nothing is left in it).
+- **Empty → hide the card.** No hints → the Hints card is gone. With no flow chart either, step 04 has nothing, so the
+  whole step leaves the page **and** the sidebar navigator, and the steps after it renumber (05 → 04). Locked stays as
+  designed: when hints exist and the lab isn't open, the blurred, padlocked card.
+- **Docs / mocks:** `docs/AI_LABS_API.md` → this edition; the mock detail gets hints; stories stop filling the slot.
+
 ## Not in this change
 
-- Hints (no route in the guide — the slot stays empty), the trigger-email tool (flag only, no route), the
-  `labs_account` block (no account screen).
+the trigger-email tool (flag only, no route), the
+`labs_account` block (no account screen).
 
 ## Acceptance
 
