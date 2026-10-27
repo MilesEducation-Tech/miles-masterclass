@@ -107,9 +107,12 @@
             [layout]="'horizontal'"
             [showInfo]="true"
             [showAiKit]="true"
+            [showBookmark]="true"
+            [bookmarked]="bookmarks.isBookmarked(course)"
             (trailer)="openTrailer($event)"
             (info)="openCourseInfo($event)"
             (aiKit)="openAiKit($event)"
+            (bookmark)="bookmarks.toggle($event)"
           />
         </ng-template>
       </app-carousel>

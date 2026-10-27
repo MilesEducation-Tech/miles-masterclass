@@ -58,6 +58,7 @@ const meta: Meta<MasterclassCourseCard> = {
     trailer: { action: 'trailer' },
     info: { action: 'info' },
     aiKit: { action: 'aiKit' },
+    bookmark: { action: 'bookmark' },
   },
 };
 export default meta;
@@ -98,4 +99,14 @@ export const VerticalWithAiKit: Story = {
 /** The same course on a horizontal rail (the masterclass page): Trailer, AI Kit and "i". */
 export const HorizontalWithAiKit: Story = {
   args: { ...VerticalWithAiKit.args, layout: 'horizontal' },
+};
+
+/** A bookmarked course, on a page that toggles it (the masterclass page). */
+export const VerticalBookmarked: Story = {
+  args: { course, layout: 'vertical', showBookmark: true, bookmarked: true },
+};
+
+/** The same on a horizontal rail, not yet bookmarked. */
+export const HorizontalBookmark: Story = {
+  args: { course, layout: 'horizontal', showBookmark: true, showInfo: true },
 };

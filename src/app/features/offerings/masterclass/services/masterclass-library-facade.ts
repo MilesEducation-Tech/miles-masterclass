@@ -1,10 +1,12 @@
 import { isPlatformBrowser } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 import { computed, effect, inject, PLATFORM_ID, Service } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MASTERCLASS_COURSE_TYPE } from '@core/constants/masterclass';
 import { MasterclassCourse } from '@core/models/masterclass-home.model';
 import { apiUrl } from '@core/services/api-client/api-client';
 import { AuthSession } from '@core/services/auth-session/auth-session';
+import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/masterclass-bookmarks';
 import { Logger } from '@core/services/logger/logger';
 import {
   complimentaryHeading,
@@ -31,12 +33,14 @@ import {
  *
  * Both reads run only signed in and only in the browser: the token lives
  * there, and signed out `library/` sends these rails empty. Signing in or out
- * re-runs them by itself, off the session's boolean.
+ * re-runs them by itself, off the session's boolean. A bookmark changed
+ * anywhere re-reads `library/`, so My List follows it.
  */
 @Service({ autoProvided: false })
 export class MasterclassLibraryFacade {
   private readonly auth = inject(AuthSession);
   private readonly logger = inject(Logger);
+  private readonly bookmarks = inject(MasterclassBookmarks);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly signedIn = computed(() => this.isBrowser && this.auth.isAuthenticated());
@@ -102,6 +106,13 @@ export class MasterclassLibraryFacade {
   readonly sectionIds = computed(
     () => new Set([...this.railsAboveTracks(), ...this.railsBelowTracks()].map((rail) => rail.id)),
   );
+
+  // From a card or the course page. Route injectors outlive the page, so this
+  // runs on the course page too and My List is current on the way back.
+  // `reload()` keeps the rails on screen while it reads.
+  private readonly myListSync = this.bookmarks.changed$
+    .pipe(takeUntilDestroyed())
+    .subscribe(() => this.library.reload());
 
   // The rails hide on failure, so the log is the only place a drift shows.
   private readonly libraryErrorLog = effect(() => {

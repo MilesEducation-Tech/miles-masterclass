@@ -3,6 +3,7 @@
 @if (layout() === 'vertical') {
   <!-- The shared `app-vertical` design. -->
   <div class="w-full aspect-9/16 overflow-hidden rounded-lg flex flex-col relative group/card">
+    <ng-container [ngTemplateOutlet]="bookmarkButton" />
     <div
       class="absolute bottom-0 left-1/2 -translate-x-1/2 text-xs px-2 py-0.5 flex items-center justify-center gap-0.5 w-max h-max z-20 rounded-t-lg overflow-hidden text-white group-hover/card:opacity-0 transition-opacity duration-300 opacity-100"
     >
@@ -106,7 +107,9 @@
   </div>
 } @else {
   <!-- The shared `app-horizontal` design (its course branch, not the webinar one). -->
-  <div class="flex flex-col space-y-2 group/card">
+  <!-- `relative` places the bookmark on the artwork, which is the first row. -->
+  <div class="relative flex flex-col space-y-2 group/card">
+    <ng-container [ngTemplateOutlet]="bookmarkButton" />
     <a
       class="w-full aspect-video overflow-hidden rounded-lg flex flex-col relative"
       [routerLink]="courseLink()"
@@ -205,3 +208,20 @@
     </div>
   </div>
 }
+
+<!-- Top right of the artwork in both layouts, inside the hover group so the card stays lit. -->
+<ng-template #bookmarkButton>
+  @if (showBookmark()) {
+    <button
+      type="button"
+      class="absolute top-3 end-3 z-30 size-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center cursor-pointer transition-colors"
+      [attr.aria-label]="bookmarked() ? 'Remove bookmark' : 'Add bookmark'"
+      (click)="bookmark.emit(course())"
+    >
+      <ng-icon
+        [svg]="bookmarked() ? icons.matBookmarkRound : icons.matBookmarkBorderRound"
+        class="size-5"
+      />
+    </button>
+  }
+</ng-template>
