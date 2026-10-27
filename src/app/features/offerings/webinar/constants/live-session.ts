@@ -4,9 +4,11 @@ import { RouteConfig, SKIP_LOADING } from '@core/models/http.model';
 import {
   ClaimRequest,
   DeviceMatcher,
+  JoinRefusal,
   JoinRefusalKind,
   SessionIdRequest,
   SignatureRequest,
+  ZoomJoinOutcome,
 } from '@features/offerings/webinar/models/meeting-session.model';
 import type { KnownWebinarErrorCode } from '@features/offerings/webinar/utils/webinar-error';
 
@@ -77,6 +79,63 @@ export const JOIN_REFUSAL_KINDS: Readonly<Record<string, JoinRefusalKind | undef
   authentication_required: 'signed-out',
   authentication_failed: 'signed-out',
 } satisfies Partial<Record<KnownWebinarErrorCode, JoinRefusalKind>>;
+
+/**
+ * What a Zoom join rejection means, by the SDK's numeric `errorCode`
+ * (developers.zoom.us/docs/meeting-sdk/web/error-codes). A code missing here is
+ * `failed`: generic copy, a retry, and an `error` log so it gets a row.
+ */
+export const ZOOM_ERROR_OUTCOMES: Readonly<Record<number, ZoomJoinOutcome | undefined>> = {
+  /** MEETING_NOT_START: the host has not started the webinar, or is still in its practice session. */
+  3008: 'not-started',
+  /** BE_REMOVED: the host removed this learner, and Zoom will not let them back. */
+  3009: 'removed',
+  /** REGISTRATION_REQUIRED: Zoom has no registrant behind this `tk`. */
+  3099: 'not-registered',
+  /** TOKEN_ERROR, SIGNATURE_EXPIRED, TOKEN_ERROR (alt), SIGNATURE_INVALID: mint a fresh one. */
+  3265: 'bad-signature',
+  3623: 'bad-signature',
+  3705: 'bad-signature',
+  3712: 'bad-signature',
+  /** NOT_SUPPORT_WEBCLIENT, USE_DESKTOP_OR_MOBILE: the webinar refuses browser joins. */
+  3603: 'web-unsupported',
+  3611: 'web-unsupported',
+  /** MEETING_ENDED. */
+  4004: 'meeting-ended',
+  /** MEETING_CAPACITY_REACHED. */
+  4005: 'full',
+};
+
+/**
+ * The room's copy for the refusals only Zoom can give. The server's refusals
+ * carry their own `detail`; these never show Zoom's raw `reason` text.
+ */
+export const ZOOM_REFUSALS: Readonly<
+  Record<Extract<ZoomJoinOutcome, 'full' | 'not-registered' | 'web-unsupported'>, JoinRefusal>
+> = {
+  full: {
+    kind: 'full',
+    message: 'This webinar has reached its attendee limit. Please try again in a moment.',
+    opensAt: null,
+  },
+  'not-registered': {
+    kind: 'not-registered',
+    message: 'Zoom could not find your registration for this webinar.',
+    opensAt: null,
+  },
+  'web-unsupported': {
+    kind: 'web-unsupported',
+    message:
+      'This webinar can only be joined in the Zoom app. Your attendance is still recorded for CPE.',
+    opensAt: null,
+  },
+};
+
+/**
+ * How often the room tries Zoom again while the host has not started the
+ * webinar. Each try mints a fresh signature, so a long wait never outlives it.
+ */
+export const WAITING_FOR_HOST_RETRY_MS = 15_000;
 
 /**
  * The Web Lock every tab of this origin contends for. One name for the whole

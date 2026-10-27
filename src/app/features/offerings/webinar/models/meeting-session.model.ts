@@ -106,9 +106,36 @@ export type DeviceMatcher = readonly [pattern: RegExp, name: string];
  *
  * `preflight` covers claiming the lease and minting the signature — both happen
  * before the SDK is even imported, so a refusal costs no bandwidth.
+ *
+ * `on-hold`, `in-meeting` and `reconnecting` are the in-room phases: Zoom has
+ * accepted the join, and the learner is waiting to be admitted, attending, or
+ * riding out a dropped connection.
  */
 export type JoinPhase =
-  'idle' | 'preflight' | 'joining' | 'in-meeting' | 'left' | 'ejected' | 'failed';
+  | 'idle'
+  | 'preflight'
+  | 'joining'
+  | 'on-hold'
+  | 'in-meeting'
+  | 'reconnecting'
+  | 'left'
+  | 'ejected'
+  | 'failed';
+
+/**
+ * How a Zoom join ended, decided by Zoom's `errorCode` (`ZOOM_ERROR_OUTCOMES`),
+ * never by its free-text `reason`. `failed` is every code the table leaves out.
+ */
+export type ZoomJoinOutcome =
+  | 'joined'
+  | 'not-started'
+  | 'bad-signature'
+  | 'removed'
+  | 'meeting-ended'
+  | 'full'
+  | 'not-registered'
+  | 'web-unsupported'
+  | 'failed';
 
 /** The SDK's `connection-change` payload, read field by field: the SDK types it as `any`. */
 export interface ConnectionChangePayload {
@@ -121,13 +148,17 @@ export type ZoomEmbeddedClient = ReturnType<typeof ZoomMtgEmbedded.createClient>
 
 /** Why this surface lost the session. Drives which copy the exit screen shows. */
 export type EjectionReason =
-  'taken-over-locally' | 'superseded-remotely' | 'meeting-ended' | 'connection-lost';
+  'taken-over-locally' | 'superseded-remotely' | 'meeting-ended' | 'removed' | 'connection-lost';
 
 /**
- * How Zoom itself ended the connection: the host ended the webinar (final), or
- * the connection failed (the learner can rejoin).
+ * How Zoom itself ended the connection: the host ended the webinar (final), the
+ * host removed this learner (final), or the connection failed (the learner can
+ * rejoin).
  */
-export type ZoomCloseReason = Extract<EjectionReason, 'meeting-ended' | 'connection-lost'>;
+export type ZoomCloseReason = Extract<
+  EjectionReason,
+  'meeting-ended' | 'removed' | 'connection-lost'
+>;
 
 /** How the single-session rule is currently blocking this surface. */
 export type SessionConflict =
@@ -137,16 +168,27 @@ export type SessionConflict =
   | { source: 'remote'; holder: LeaseHolder | null; detail: string };
 
 /**
- * Why the server would not let this learner in, grouped by what the room
- * offers next. `failed` is everything else: network, 5xx, an unknown code, or
- * a response that broke the contract.
+ * Why the server, or Zoom, would not let this learner in, grouped by what the
+ * room offers next. `full` and `web-unsupported` come from Zoom only. `failed`
+ * is everything else: network, 5xx, an unknown code, or a response that broke
+ * the contract.
  */
 export type JoinRefusalKind =
-  'not-registered' | 'not-open' | 'ended' | 'not-found' | 'signed-out' | 'failed';
+  | 'not-registered'
+  | 'not-open'
+  | 'ended'
+  | 'not-found'
+  | 'signed-out'
+  | 'full'
+  | 'web-unsupported'
+  | 'failed';
 
 export interface JoinRefusal {
   kind: JoinRefusalKind;
-  /** The server's own copy for the known codes; `null` for `failed`. */
+  /**
+   * The server's copy for its known codes, or the room's copy for a Zoom
+   * refusal; `null` for `failed`.
+   */
   message: string | null;
   /** When the join window opens, if a `join_window_not_open` refusal said so. */
   opensAt: string | null;

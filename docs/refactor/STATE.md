@@ -7,6 +7,34 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-27, NON-REFACTOR — webinar live room states + retry fixes (PR 2 of `prompts/webinar-live-states.md`,
+  B1–B4). DONE, GATES GREEN, UNCOMMITTED**, in the same working tree as the Zoom CSP fix below. Split them with the
+  saved PR 1 patch before committing (steps in the hand-off).
+  - **States:** `JoinPhase` gains `on-hold` (Zoom `isHold`, read after join and on `user-updated`/`user-added`) and
+    `reconnecting` (`connection-change`). Error 3008 sets `waitingForHost`: the lease is held and the room re-joins
+    every 15 s with a fresh signature until the host starts.
+  - **Zoom error codes** are mapped by `ZOOM_ERROR_OUTCOMES`, never by `reason` text: 3009 → exit `removed`, 4004 → exit
+    `meeting-ended`, 4005 → refusal `full`, 3099 → `not-registered`, 3603/3611 → `web-unsupported` (Open in Zoom),
+    3265/3623/3705/3712 → one re-mint. Any other code → `failed`, which also releases the lease.
+  - **B1:** `MeetingSession.acquire()` skips the Web Lock and the claim when the lease is already ours for that webinar,
+    so a retry no longer conflicts with its own tab. **B2:** `ZoomMeetingClient.join()` destroys any previous client
+    first. The free-text `zoomError` banner is gone; failures render as refusals.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); Prettier ✔; `build:prod` 226.99 kB, only
+    `ai-labs.css`; the Zoom SDK is still only in lazy chunks.
+  - **Not verified in the browser:** it needs a signed-in learner and a UAT Zoom webinar with the host account. The
+    steps are in the prompt's "How to verify".
+  - **Size:** ~540 changed lines in `src`, over the ~400 guide; much of it is comments and template copy.
+
+- 🟡 **2026-10-27, NON-REFACTOR — Zoom webinar media fails to load (bug). DONE, GATES GREEN, UNCOMMITTED**, on
+  `fix/MIL-000-zoom-csp-blob` off `master` (`b473f6c0`). The ticket number is a placeholder; rename the branch.
+  - **Cause:** Zoom SDK 6.5's `js_media` loads `wmsc.min.js` as a `blob:` script. The `vercel.json` CSP
+    `script-src` had no `blob:`, so chunk 557 failed on every retry and ended in `WMSC_JS_LOAD_FAIL_FAILOVER`.
+  - **Change:** `blob:` added to `script-src`. `sdkKey` is no longer passed to `client.join()` (removed from join
+    options since SDK v4) or kept in `ZoomJoinParams`. `sdk_key` stays in the contract parser.
+  - **Gates (local macOS):** lint 0 errors; structure ✔; `build:prod` 227.03 kB, only `ai-labs.css`.
+  - **Not verified:** the CSP is a Vercel header, so the fix only shows on a preview deploy's `/live` page.
+  - **Backend:** the signature JWT should add an `appKey` claim (the SDK warns that `sdkKey` there is deprecated).
+
 - 🟡 **2026-10-27, NON-REFACTOR — MIL-129 (feature), a bookmark on the masterclass course cards. PLAN APPROVED,
   DONE, GATES GREEN, UNCOMMITTED** (`prompts/masterclass-card-bookmark.md`), on `feat/MIL-129-course-card-bookmark`
   off `master` (`f59c576d`).
@@ -5700,6 +5728,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-27 · NON-REFACTOR · **Webinar live states built** (uncommitted): waiting-for-host auto re-join, on-hold, reconnecting, Zoom error-code outcomes, retry no longer self-conflicts, SDK client torn down before re-join · tsc 0, lint 0 errors, build:prod 226.99 kB · not run in a browser (needs a signed-in learner + Zoom host)
+
+- 2026-10-27 · NON-REFACTOR · **Zoom CSP fix built** (uncommitted): `blob:` in `script-src` so the Zoom media chunk loads, `sdkKey` dropped from `join()` · lint 0 errors, structure ✔, build:prod 227.03 kB · needs a Vercel preview to verify
 
 - 2026-10-26 · NON-REFACTOR · **MIL-127 wording pass**: comments no longer point at the old app ("legacy button", "live" rows); the commit's added lines and new files name neither the old app nor the public site · Prettier ✔
 
