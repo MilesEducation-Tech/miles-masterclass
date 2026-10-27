@@ -6,6 +6,7 @@ import {
   MasterclassCourseInfoDialogData,
 } from '@core/models/masterclass-home.model';
 import { MASTERCLASS_COURSE_INFO_DIALOG } from '@core/services/dialog/feature-dialog-tokens';
+import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/masterclass-bookmarks';
 import { MasterclassHomeFacade } from '@core/services/masterclass-home-facade/masterclass-home-facade';
 import { NgpDialogManager } from 'ng-primitives/dialog';
 import { AppDownload } from '@shared/components/app-download/app-download';
@@ -60,6 +61,7 @@ export class Home {
 
   protected readonly home = inject(MasterclassHomeFacade);
   protected readonly facade = inject(HomeFacade);
+  protected readonly bookmarks = inject(MasterclassBookmarks);
 
   // Every rail is horizontal cards, so one swiper preset serves them all.
   protected readonly swiperConfigEven = swiperConfigEven;
