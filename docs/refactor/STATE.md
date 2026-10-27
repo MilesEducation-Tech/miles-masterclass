@@ -7,6 +7,17 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- ⏸ **2026-10-27 — Zoom + environment stack: #200–#205 merged; #206 (MIL-145) is the last one open.** Each squash
+  merge left the next PR conflicting with `master`: the STATE.md and prompt status lines, plus `course-library.ts` and
+  the environment files for #205. Each was resolved by merging `origin/master` into the next branch; no rebases or
+  force-pushes.
+
+- 🟡 **2026-10-27, NON-REFACTOR — orphaned `/blog-api` proxy removed. DONE, UNCOMMITTED** (patch 3 of 3). The blog
+  feature was deleted in `890e52d`; nothing in `src/app` called `/blog-api`. Removed the Express handler in
+  `src/server.ts` (with `WP_BLOG_UPSTREAM` and `WP_FORWARDED_HEADERS`), `proxy.conf.json`, and the dev-server
+  `proxyConfig` in `angular.json`. The `vercel.json` `/blog` rewrites to the WordPress site stay: that's the live blog,
+  served by WordPress itself.
+
 - 🟡 **2026-10-27, NON-REFACTOR — URL keys grouped. DONE, UNCOMMITTED** (patch 2 of 3).
   `BASE_API_URL` → `API.baseUrl`, `S3_BUCKET_URL` → `ASSETS.s3Url`, `GCS_URL` → `ASSETS.gcsUrl`, in the
   `Environment` type, all three files, every `environment.*` access in `src/` (41 files) and the comments, `AGENTS.md`
@@ -5783,6 +5794,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-27 · NON-REFACTOR · **Stack merged through #205**: each squash merge left the next PR conflicting with `master`; resolved by merging `origin/master` into the next branch, no rebases or force-pushes
 
 - 2026-10-27 · NON-REFACTOR · **Environment cleanup built** (uncommitted): 15 dead keys removed, 9 app constants moved to readers, `Environment` type with `satisfies` in all three files · tsc 0, lint 0 errors, build:prod 226.83 kB, dev + local configs build · home and AI Labs checked in browser
 

@@ -88,66 +88,6 @@ registerLegacyRedirects(app);
 app.use(geoRootRedirect);
 
 /**
- * Reverse-proxy the headless WordPress blog REST API.
- *
- * The browser calls the same-origin `/blog-api/*` path (`proxy.conf.json`
- * does the same in dev) and we forward it to WordPress over HTTPS. Keeping it same-origin means the browser never deals with CORS or
- * mixed-content, and the `X-WP-Total*` pagination headers stay readable.
- *
- * In `ng serve` this is handled by `proxy.conf.json`; this handler is what
- * runs in production (the Vercel function mounts this Express app). It must be
- * registered BEFORE the static + Angular catch-all handlers so `/blog-api`
- * wins. Read-only: only GET/HEAD are forwarded.
- *
- * Override the upstream without a redeploy via the `WP_BLOG_UPSTREAM` env var.
- */
-const WP_BLOG_UPSTREAM =
-  process.env['WP_BLOG_UPSTREAM'] ?? 'https://wp.milesmasterclass.com/blog/wp-json';
-
-// Response headers worth forwarding to the client (esp. WP pagination).
-const WP_FORWARDED_HEADERS = [
-  'content-type',
-  'cache-control',
-  'last-modified',
-  'etag',
-  'x-wp-total',
-  'x-wp-totalpages',
-];
-
-app.use('/blog-api', async (req, res) => {
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    res.status(405).set('Allow', 'GET, HEAD').end();
-    return;
-  }
-
-  // `req.url` is already stripped of the `/blog-api` mount prefix, so it holds
-  // the WordPress sub-path plus query string (e.g. `/wp/v2/posts?per_page=9`).
-  const upstreamUrl = `${WP_BLOG_UPSTREAM}${req.url}`;
-
-  try {
-    const upstream = await fetch(upstreamUrl, {
-      method: req.method,
-      headers: { accept: 'application/json' },
-      redirect: 'follow',
-    });
-
-    res.status(upstream.status);
-    for (const name of WP_FORWARDED_HEADERS) {
-      const value = upstream.headers.get(name);
-      if (value) {
-        res.setHeader(name, value);
-      }
-    }
-
-    const body = Buffer.from(await upstream.arrayBuffer());
-    res.send(body);
-  } catch (error) {
-    console.error('[blog-api] upstream request failed:', error);
-    res.status(502).json({ error: 'Blog upstream unavailable' });
-  }
-});
-
-/**
  * Serve static files from /browser
  */
 app.use(
