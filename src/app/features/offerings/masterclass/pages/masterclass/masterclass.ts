@@ -6,6 +6,7 @@ import {
   MasterclassCourse,
   MasterclassCourseInfoDialogData,
 } from '@core/models/masterclass-home.model';
+import { MasterclassBookmarks } from '@core/services/masterclass-bookmarks/masterclass-bookmarks';
 import { MasterclassHomeFacade } from '@core/services/masterclass-home-facade/masterclass-home-facade';
 import { NgIcon } from '@ng-icons/core';
 import { NgpDialogManager } from 'ng-primitives/dialog';
@@ -34,7 +35,8 @@ import { MasterclassRailFilterFacade } from '@features/offerings/masterclass/ser
  * from the root `MasterclassHomeFacade`, which the home page shares, so
  * navigating between the two does not refetch. Signed in, the learner's own
  * rails sit around the tracks (`MasterclassLibraryFacade`). Every rail, tracks
- * included, has a filter (`MasterclassRailFilterFacade`).
+ * included, has a filter (`MasterclassRailFilterFacade`), and every card a
+ * bookmark (`MasterclassBookmarks`).
  */
 @Component({
   selector: 'app-masterclass',
@@ -60,6 +62,7 @@ export class Masterclass {
   protected readonly home = inject(MasterclassHomeFacade);
   protected readonly library = inject(MasterclassLibraryFacade);
   protected readonly railFilter = inject(MasterclassRailFilterFacade);
+  protected readonly bookmarks = inject(MasterclassBookmarks);
 
   constructor() {
     // MIL-23: this page renders the tracks on the server (a crawler gets the

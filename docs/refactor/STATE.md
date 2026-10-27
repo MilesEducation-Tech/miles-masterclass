@@ -7,8 +7,39 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
-- 🟡 **2026-10-27, NON-REFACTOR — MIL-128 (feature), a filter on every masterclass rail. PLAN APPROVED, DONE,
-  GATES GREEN, UNCOMMITTED** (`prompts/masterclass-rail-filter.md`), on `feat/MIL-128-masterclass-rail-filter` off
+- 🟡 **2026-10-27, NON-REFACTOR — MIL-129 (feature), a bookmark on the masterclass course cards. PLAN APPROVED,
+  DONE, GATES GREEN, UNCOMMITTED** (`prompts/masterclass-card-bookmark.md`), on `feat/MIL-129-course-card-bookmark`
+  off `master` (`f59c576d`).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 228.06 kB,
+    only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright; signed-in answers stubbed, since a real sign-in isn't possible here):**
+    - **Signed out:** 68 icons on the masterclass page and 55 on the home page, all outline. A click goes to
+      `/auth/login?redirect=…` and makes no `bookmark/` request.
+    - **Signed in, masterclass page:**
+      - A click fills the icon at once, then makes one `POST bookmark/<uuid>/` and one `library/` re-read.
+      - "Added to My List" toasts, every card of that course fills, and My List matches the server.
+      - Removing it from My List reverses all of that.
+    - **Course page round trip:** its Bookmark button records into the store and re-reads `library/` in the
+      background. Back on the masterclass page, the card is filled and in My List, with no extra reads.
+    - **Home page:** the icons match the server; a toggle makes only the `POST`.
+    - **`bookmark/` 500:** the icon flips back, "Bookmark not saved" toasts, the failure is logged, and there's no
+      `library/` re-read.
+    - **Layout:** the icon sits 12 px from the artwork's top right at 375 / 768 / 1440, covers no button, and there's
+      no overflow. Storybook's two new stories render.
+  - **Plan:** a root `MasterclassBookmarks` store in `core/services/` toggles through
+    `web-api/v1/masterclass/bookmark/<uuid>/`. Its per-visit answers reset on sign-in or sign-out.
+    - The card gets `showBookmark` / `bookmarked` / `(bookmark)`, wired on the masterclass page and the home page's
+      tracks.
+    - `library/` re-reads after a confirmed toggle, so My List follows.
+    - The course page records its own toggles in the store and reads the store's answers.
+  - **Revision, the course page's toast (the user's screenshot):** its Bookmark button showed no toast. The success
+    toast moved into `MasterclassBookmarks.record()`, which the cards and the course page both call, so it reads
+    "Added to My List" / "Removed from My List" with the course name everywhere. The course page also toasts "Bookmark
+    not saved" and logs on failure; before, a failure there was silent. Verified: course page add, remove and 500; a
+    card click still toasts once. `build:prod` 228.02 kB.
+
+- ✅ **2026-10-27, NON-REFACTOR — MIL-128 (feature), a filter on every masterclass rail. MERGED (#199,
+  `f59c576d`)** (`prompts/masterclass-rail-filter.md`), on `feat/MIL-128-masterclass-rail-filter` off
   `master` (`2f493dde`).
   - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 228.09 kB,
     only `ai-labs.css`.

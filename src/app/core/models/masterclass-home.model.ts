@@ -71,7 +71,16 @@ export interface MasterclassCourse {
   has_individual_badge: boolean;
   included_for_caira: boolean;
   has_additional_resources: MasterclassAdditionalResources;
+  /**
+   * The learner's bookmark; `false` on every anonymous read. Optional because
+   * `completed-course-section/` has no captured body to confirm it; every other
+   * card route sends it (UAT and Postman, 2026-10-27).
+   */
+  is_bookmarked?: boolean;
 }
+
+/** What a bookmark is read off: a card, or the course page's course. */
+export type MasterclassBookmarkable = Pick<MasterclassCourse, 'id' | 'is_bookmarked'>;
 
 /**
  * What the course-info ("i") dialog opens with: the card the learner clicked.
@@ -211,7 +220,8 @@ export function isMasterclassCourse(v: unknown): v is MasterclassCourse {
     isNumOrNull(v['total_cpe_credits']) &&
     isBool(v['has_individual_badge']) &&
     isBool(v['included_for_caira']) &&
-    isAdditionalResources(v['has_additional_resources'])
+    isAdditionalResources(v['has_additional_resources']) &&
+    (v['is_bookmarked'] === undefined || isBool(v['is_bookmarked']))
   );
 }
 
@@ -238,6 +248,14 @@ function isLevel(v: unknown): v is MasterclassLevel {
     isStrOrNull(v['image_url']) &&
     isStr(v['subject_name'])
   );
+}
+
+/** `parse` for the bookmark toggle: where it landed, `data.bookmarked`. */
+export function parseBookmarkToggle(raw: unknown): boolean {
+  const data = isObject(raw) ? raw['data'] : undefined;
+  const bookmarked = isObject(data) ? data['bookmarked'] : undefined;
+  if (isBool(bookmarked)) return bookmarked;
+  throw contractError('bookmark');
 }
 
 /** `parse` for `levels/`: `data` is a bare list (the ladder is not paginated). */

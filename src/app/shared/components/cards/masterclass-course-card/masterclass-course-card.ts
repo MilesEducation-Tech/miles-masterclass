@@ -1,8 +1,9 @@
-import { NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
 import { faSolidInfo, faSolidPlay, faSolidRobot } from '@ng-icons/font-awesome/solid';
+import { matBookmarkBorderRound, matBookmarkRound } from '@ng-icons/material-icons/round';
 import { MasterclassCardLayout, MasterclassCourse } from '@core/models/masterclass-home.model';
 import { CairaCredlyBadge } from '@shared/components/cards/caira-credly-badge/caira-credly-badge';
 import { CategoriesList } from '@shared/components/categories-list/categories-list';
@@ -16,14 +17,20 @@ import { Button } from '@shared/ui/button/button';
  * Its own component rather than those two because they are bound to the legacy
  * `Content` shape and make their own HTTP calls (about, bookmark) — six other
  * pages still depend on both. This one renders `MasterclassCourse` and decides
- * nothing: the trailer, the "i" button and the AI Kit button go up as
- * outputs, the card itself is a plain link.
- *
- * Not yet here, deliberately: bookmark (no web route in scope).
+ * nothing: the trailer, the "i" button, the AI Kit button and the bookmark go
+ * up as outputs, the card itself is a plain link.
  */
 @Component({
   selector: 'app-masterclass-course-card',
-  imports: [NgOptimizedImage, RouterLink, NgIcon, Button, CategoriesList, CairaCredlyBadge],
+  imports: [
+    NgOptimizedImage,
+    NgTemplateOutlet,
+    RouterLink,
+    NgIcon,
+    Button,
+    CategoriesList,
+    CairaCredlyBadge,
+  ],
   templateUrl: './masterclass-course-card.html',
 })
 export class MasterclassCourseCard {
@@ -54,11 +61,26 @@ export class MasterclassCourseCard {
    */
   readonly showAiKit = input(false);
 
+  /**
+   * The bookmark icon, for a page that toggles it on `bookmark` and passes the
+   * state in `bookmarked` (the home page and the masterclass page). Off by
+   * default for the same reason as `showInfo`.
+   */
+  readonly showBookmark = input(false);
+  readonly bookmarked = input(false);
+
   readonly trailer = output<MasterclassCourse>();
   readonly info = output<MasterclassCourse>();
   readonly aiKit = output<MasterclassCourse>();
+  readonly bookmark = output<MasterclassCourse>();
 
-  protected readonly icons = { faSolidInfo, faSolidPlay, faSolidRobot };
+  protected readonly icons = {
+    faSolidInfo,
+    faSolidPlay,
+    faSolidRobot,
+    matBookmarkRound,
+    matBookmarkBorderRound,
+  };
 
   protected readonly hasAiKit = computed(
     () => this.showAiKit() && this.course().has_additional_resources.has_ai_kit,
