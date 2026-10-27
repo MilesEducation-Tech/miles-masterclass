@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.15.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.14.1...v3.15.0) (2026-10-27)
+
+
+### Features
+
+* **offerings:** add a filter to every rail on the masterclass page ([#199](https://github.com/MilesEducation-Tech/miles-masterclass/issues/199)) ([f59c576](https://github.com/MilesEducation-Tech/miles-masterclass/commit/f59c576d5f5c094f6e7ea88caa4a0531833937c4))
+* **shared:** add the bookmark button to course cards ([#207](https://github.com/MilesEducation-Tech/miles-masterclass/issues/207)) ([f848dcb](https://github.com/MilesEducation-Tech/miles-masterclass/commit/f848dcb8f072361bcb7f444d0a312c0e40e4dfac))
+
+
+### Bug Fixes
+
+* **core:** log only warnings and errors in production ([#204](https://github.com/MilesEducation-Tech/miles-masterclass/issues/204)) ([56d9c62](https://github.com/MilesEducation-Tech/miles-masterclass/commit/56d9c62eaa1f36f568f10edfb268b81c598cafa6))
+* **offerings:** allow blob scripts so the Zoom media layer loads ([#200](https://github.com/MilesEducation-Tech/miles-masterclass/issues/200)) ([d674e4a](https://github.com/MilesEducation-Tech/miles-masterclass/commit/d674e4a865f57fa93606bba318d539f1dd90d736))
+* **offerings:** load the live room as its own page so cross-origin isolation applies ([#202](https://github.com/MilesEducation-Tech/miles-masterclass/issues/202)) ([c373285](https://github.com/MilesEducation-Tech/miles-masterclass/commit/c37328566038827d442604d836cd21ffabb9315a))
+* **offerings:** show the signed-in rails and AI Kit on the masterclass page ([#197](https://github.com/MilesEducation-Tech/miles-masterclass/issues/197)) ([2f493dd](https://github.com/MilesEducation-Tech/miles-masterclass/commit/2f493dde8674922b09cc63d4127841f9825ac5fd))
+* **offerings:** track Zoom waiting, on-hold and reconnecting states in the live room ([#201](https://github.com/MilesEducation-Tech/miles-masterclass/issues/201)) ([a105229](https://github.com/MilesEducation-Tech/miles-masterclass/commit/a105229158400e9fe18373e464eca927cad3b7cb))
+
 ## [3.14.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.14.0...v3.14.1) (2026-10-26)
 
 
