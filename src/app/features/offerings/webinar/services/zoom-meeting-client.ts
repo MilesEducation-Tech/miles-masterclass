@@ -99,7 +99,8 @@ export class ZoomMeetingClient {
       assertExecuted(
         await client.join({
           signature: params.signature,
-          sdkKey: params.sdkKey,
+          // No `sdkKey`: the SDK dropped it from join options in v4 and reads it
+          // from the signature.
           meetingNumber: params.meetingNumber,
           // Empty string is correct when the session only gates on the waiting
           // room — it must still be passed.
@@ -221,7 +222,6 @@ function readConnectionChange(payload: unknown): ConnectionChangePayload {
 export function toJoinParams(signature: SignatureResponse): ZoomJoinParams {
   return {
     signature: signature.signature,
-    sdkKey: signature.sdk_key,
     meetingNumber: signature.meeting_number,
     password: signature.password,
     userName: signature.user_name || signature.user_email.split('@')[0] || 'Learner',
