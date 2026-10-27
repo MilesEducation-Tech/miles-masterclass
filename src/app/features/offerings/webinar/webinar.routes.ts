@@ -2,6 +2,10 @@ import { Routes } from '@angular/router';
 import { authGuard } from '@core/guards/auth/auth-guard';
 import { environment } from '@env/environment';
 import { FeedbackFacade } from '@features/offerings/services/feedback-facade';
+import {
+  liveDocumentEnterGuard,
+  liveDocumentLeaveGuard,
+} from '@features/offerings/webinar/guards/live-document-guard';
 import { GuestRegistration } from '@features/offerings/webinar/services/guest-registration';
 import { LiveSessionFacade } from '@features/offerings/webinar/services/live-session-facade';
 import { MeetingSession } from '@features/offerings/webinar/services/meeting-session';
@@ -59,6 +63,11 @@ export const webinarRoutes: Routes = [
         // without a valid token regardless, so that one is for the redirect,
         // not the security.
         canMatch: [() => environment.WEBINAR.liveEnabled, authGuard],
+        // The room always runs in a document of its own, so the COOP/COEP
+        // headers `vercel.json` sends for `/live` apply in it and nowhere else.
+        // See `live-document-guard.ts`.
+        canActivate: [liveDocumentEnterGuard],
+        canDeactivate: [liveDocumentLeaveGuard],
         providers: [MeetingSession, ZoomMeetingClient, LiveSessionFacade],
         loadComponent: () =>
           import('@features/offerings/webinar/pages/webinar-live/webinar-live').then(
