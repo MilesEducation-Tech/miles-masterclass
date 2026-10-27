@@ -1,16 +1,17 @@
 import { isPlatformBrowser } from '@angular/common';
 import { DestroyRef, inject, Service, PLATFORM_ID, signal } from '@angular/core';
 import { Logger } from '@core/services/logger/logger';
-import { isObject, isStr } from '@features/offerings/utils/contract-guards';
+import { isNum, isObject, isStr } from '@features/offerings/utils/contract-guards';
+import { ZOOM_ERROR_OUTCOMES } from '@features/offerings/webinar/constants/live-session';
 import {
   ConnectionChangePayload,
   JoinPhase,
   SignatureResponse,
   ZoomCloseReason,
   ZoomEmbeddedClient,
+  ZoomJoinOutcome,
   ZoomJoinParams,
 } from '@features/offerings/webinar/models/meeting-session.model';
-import { WebinarError } from '@features/offerings/webinar/utils/webinar-error';
 
 /**
  * Thin wrapper around the Zoom Meeting SDK's Component View.
@@ -34,6 +35,10 @@ import { WebinarError } from '@features/offerings/webinar/utils/webinar-error';
  *    triggering change detection on every frame. With no `zone.js` in this app
  *    there is nothing to patch and nothing to opt out of.
  *
+ * It reports what Zoom is doing as `phase`, and how each join ended as a
+ * `ZoomJoinOutcome`. What the room does about an outcome is
+ * `LiveSessionFacade`'s call, not this file's.
+ *
  * Route-scoped — provided on `/live`, destroyed with it.
  */
 @Service({ autoProvided: false })
@@ -43,7 +48,6 @@ export class ZoomMeetingClient {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly phase = signal<JoinPhase>('idle');
-  readonly error = signal<WebinarError | null>(null);
 
   /**
    * Fired when Zoom itself ends the connection — the host ended the webinar
@@ -65,12 +69,17 @@ export class ZoomMeetingClient {
    * `root` must be an element that Tailwind's preflight does not reach into:
    * the SDK injects its own stylesheet, and resets applied inside the container
    * fight it.
+   *
+   * Never throws. A rejection comes back as the outcome its `errorCode` maps to,
+   * with the SDK already torn down, so the next call starts clean.
    */
-  async join(root: HTMLElement, params: ZoomJoinParams): Promise<void> {
-    if (!this.isBrowser) return;
+  async join(root: HTMLElement, params: ZoomJoinParams): Promise<ZoomJoinOutcome> {
+    if (!this.isBrowser) return 'failed';
 
+    // The Component View client is a singleton: a second `init()` on the one a
+    // failed or abandoned join left behind is refused as a duplicate operation.
+    this.teardown();
     this.phase.set('joining');
-    this.error.set(null);
 
     try {
       // Everything about the SDK stays behind this boundary.
@@ -114,23 +123,33 @@ export class ZoomMeetingClient {
         }),
       );
 
-      this.phase.set('in-meeting');
+      // A resolved join is not "attending": the learner may be in the waiting
+      // room. Read it now, not only on the next `user-updated` — the host can
+      // admit them before the SDK has finished drawing the waiting room, and
+      // that event is then already gone.
+      this.syncHold(client);
+      return 'joined';
     } catch (err) {
+      const code = errorCodeOf(err);
+      const outcome = (code !== null && ZOOM_ERROR_OUTCOMES[code]) || 'failed';
+      // An outcome the table names is an answer; only the unmapped ones are faults.
+      if (outcome === 'failed') this.logger.error('[ZoomMeetingClient] join failed', code, err);
+      else this.logger.warn('[ZoomMeetingClient] join refused', code, outcome);
+
+      this.teardown();
       this.phase.set('failed');
-      this.error.set(this.toSdkError(err));
-      this.logger.error('[ZoomMeetingClient] join failed', err);
+      return outcome;
     }
   }
 
   /** Leave and tear the SDK down. Safe to call when never joined. */
   async leave(): Promise<void> {
-    // Cleared FIRST: the `connection-change` handler ignores events from a
-    // client that is no longer current, so our own leave is never reported as
-    // the host ending the webinar.
+    // Cleared FIRST: the event handlers ignore a client that is no longer
+    // current, so our own leave is never reported as the host ending the webinar.
     const client = this.client;
     this.client = null;
 
-    if (client) {
+    if (client && isInRoom(this.phase())) {
       try {
         await client.leaveMeeting();
       } catch (err) {
@@ -141,14 +160,8 @@ export class ZoomMeetingClient {
       }
     }
 
-    try {
-      this.destroyClient?.();
-    } catch (err) {
-      this.logger.warn('[ZoomMeetingClient] destroyClient failed', err);
-    }
-    this.destroyClient = null;
-
-    if (this.phase() === 'in-meeting' || this.phase() === 'joining') this.phase.set('left');
+    this.teardown();
+    if (isInRoom(this.phase()) || this.phase() === 'joining') this.phase.set('left');
   }
 
   /** Mark this surface ejected by the session lock, then tear the SDK down. */
@@ -157,52 +170,77 @@ export class ZoomMeetingClient {
     this.phase.set('ejected');
   }
 
+  /** Destroy the SDK client, if there is one. Leaves `phase` to the caller. */
+  private teardown(): void {
+    this.client = null;
+    try {
+      this.destroyClient?.();
+    } catch (err) {
+      this.logger.warn('[ZoomMeetingClient] destroyClient failed', err);
+    }
+    this.destroyClient = null;
+  }
+
   private wireEvents(client: ZoomEmbeddedClient): void {
     client.on('connection-change', (payload: unknown) => {
       if (this.client !== client) return;
       const { state, reason } = readConnectionChange(payload);
+
+      if (state === 'Reconnecting') {
+        if (isInRoom(this.phase())) this.phase.set('reconnecting');
+        return;
+      }
+      if (state === 'Connected') {
+        if (this.phase() === 'reconnecting') this.syncHold(client);
+        return;
+      }
       if (state !== 'Closed' && state !== 'Fail') return;
 
       // Zoom ended it, not the learner: `Closed` is the host ending (or
       // removing us from) the webinar, which is final; `Fail` is a dropped
       // connection, which the learner can rejoin.
       this.logger.warn('[ZoomMeetingClient] connection closed', state, reason);
-      if (this.phase() === 'in-meeting') this.phase.set('left');
+      if (isInRoom(this.phase())) this.phase.set('left');
       this.onConnectionClosed?.(state === 'Closed' ? 'meeting-ended' : 'connection-lost');
     });
+
+    // Admission out of the waiting room (and being put back into it) arrives as
+    // an update to our own participant. Joining the room proper can also report
+    // us as added, so both re-read the one flag that decides it.
+    const onParticipantChange = () => {
+      if (this.client !== client) return;
+      if (this.phase() === 'on-hold' || this.phase() === 'in-meeting') this.syncHold(client);
+    };
+    client.on('user-updated', onParticipantChange);
+    client.on('user-added', onParticipantChange);
   }
 
-  /**
-   * Zoom rejects with its own `{ type, reason, errorCode }` rather than an
-   * `Error`, so map it into the shape the rest of the module renders.
-   */
-  private toSdkError(err: unknown): WebinarError {
-    const zoom = isObject(err) ? err : {};
-    const reason = zoom['reason'];
-    const message = zoom['message'];
-    const errorCode = zoom['errorCode'];
-    return {
-      code: 'zoom_join_failed',
-      message:
-        (isStr(reason) && reason) ||
-        (isStr(message) && message) ||
-        'We could not connect you to the session. Please try again.',
-      status: typeof errorCode === 'number' ? errorCode : null,
-      isProfileProblem: false,
-      isRetryable: true,
-    };
+  /** `on-hold` while Zoom holds us in the waiting room, otherwise `in-meeting`. */
+  private syncHold(client: ZoomEmbeddedClient): void {
+    this.phase.set(client.getCurrentUser()?.isHold ? 'on-hold' : 'in-meeting');
   }
+}
+
+/** Zoom has accepted the join: waiting to be admitted, attending, or reconnecting. */
+function isInRoom(phase: JoinPhase): boolean {
+  return phase === 'on-hold' || phase === 'in-meeting' || phase === 'reconnecting';
 }
 
 /**
  * The SDK types `init`/`join` as RESOLVING to `string | { type, reason }`, and
  * in practice rejects on failure. Treat a resolved failure object the same as a
- * rejection, so neither path reports a failed join as `in-meeting`.
+ * rejection, so neither path reports a failed join as `in-meeting`. The object
+ * itself is thrown so an `errorCode` on it survives to `errorCodeOf`.
  */
 function assertExecuted(result: unknown): void {
   if (isObject(result) && isStr(result['type']) && isStr(result['reason'])) {
-    throw new Error(result['reason']);
+    throw result;
   }
+}
+
+/** Zoom rejects with its own `{ type, reason, errorCode }` rather than an `Error`. */
+function errorCodeOf(err: unknown): number | null {
+  return isObject(err) && isNum(err['errorCode']) ? err['errorCode'] : null;
 }
 
 /** Read the SDK's `any`-typed `connection-change` payload field by field. */

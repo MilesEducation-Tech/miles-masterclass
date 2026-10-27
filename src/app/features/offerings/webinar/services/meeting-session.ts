@@ -115,30 +115,40 @@ export class MeetingSession {
    * Order matters: the local lock is checked first because it costs nothing and
    * answers instantly, then the server lease, then the signature. A user who
    * already has this webinar open in another tab never generates a request.
+   *
+   * When this surface already holds the lease for this webinar (a retry after a
+   * failed Zoom join, or the wait for the host), only the signature is new. Web
+   * Locks are not re-entrant: asking again would find THIS tab holding the lock
+   * and report a conflict with itself.
    */
   async acquire(webinarId: string, takeover = false): Promise<SignatureResponse | null> {
     if (!this.isBrowser) return null;
+    const alreadyOurs = this.holdsLease() && this.currentWebinarId === webinarId;
     this.currentWebinarId = webinarId;
     this.conflict.set(null);
     this.ejection.set(null);
 
-    const gotLocalLock = await this.acquireWebLock();
-    if (!gotLocalLock) {
-      if (!takeover) {
-        this.conflict.set({ source: 'local-tab' });
-        return null;
+    if (!alreadyOurs) {
+      const gotLocalLock = await this.acquireWebLock();
+      if (!gotLocalLock) {
+        if (!takeover) {
+          this.conflict.set({ source: 'local-tab' });
+          return null;
+        }
+        // Ask the holding tab to stand down, then wait for it to let go. If it
+        // never does (it is wedged), the server lease still arbitrates below.
+        this.post({ type: 'takeover-requested', sessionId: this.sessionId, webinarId });
+        await this.waitForWebLock();
       }
-      // Ask the holding tab to stand down, then wait for it to let go. If it
-      // never does (it is wedged), the server lease still arbitrates below.
-      this.post({ type: 'takeover-requested', sessionId: this.sessionId, webinarId });
-      await this.waitForWebLock();
     }
 
     try {
-      const claim = await this.claimLease(webinarId, takeover);
-      this.holdsLease.set(true);
-      this.startHeartbeat(claim.heartbeat_interval_seconds);
-      this.post({ type: 'claimed', sessionId: this.sessionId, webinarId });
+      if (!alreadyOurs) {
+        const claim = await this.claimLease(webinarId, takeover);
+        this.holdsLease.set(true);
+        this.startHeartbeat(claim.heartbeat_interval_seconds);
+        this.post({ type: 'claimed', sessionId: this.sessionId, webinarId });
+      }
 
       return await this.mintSignature(webinarId);
     } catch (err) {
