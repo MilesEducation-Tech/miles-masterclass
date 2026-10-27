@@ -12,9 +12,9 @@
     }
   </section>
   <!-- Signed in only: Continue Watching, Recommended, Complimentary, Because You Watched. -->
-  @if (library.railsAboveTracks().length) {
+  @if (railsAboveTracks().length) {
     <div class="flex flex-col w-11/12 mx-auto md:space-y-20 space-y-10 md:mb-20 mb-10">
-      @for (rail of library.railsAboveTracks(); track rail.id) {
+      @for (rail of railsAboveTracks(); track rail.id) {
         <ng-container
           [ngTemplateOutlet]="railTpl"
           [ngTemplateOutletContext]="{ $implicit: rail }"
@@ -34,40 +34,11 @@
         </button>
       </div>
     } @else {
-      @for (track of home.tracks(); track track.id; let even = $even) {
-        @defer (on viewport; prefetch on idle) {
-          <app-carousel
-            [cards]="track.courses"
-            [heading]="{ text: track.name, subText: track.description ?? '' }"
-            [swiperConfig]="swiperConfigEven"
-          >
-            <ng-template let-course>
-              <app-masterclass-course-card
-                [course]="course"
-                [layout]="'horizontal'"
-                [showInfo]="true"
-                [showAiKit]="true"
-                (trailer)="openTrailer($event)"
-                (info)="openCourseInfo($event)"
-                (aiKit)="openAiKit($event)"
-              />
-            </ng-template>
-          </app-carousel>
-        } @placeholder {
-          <div class="animate-pulse" aria-hidden="true">
-            <div class="h-11 md:h-[54px] w-72 max-w-full rounded bg-white/5"></div>
-            <div class="mt-4 pb-10 flex gap-[30px] overflow-hidden">
-              @for (i of [1, 2, 3]; track i) {
-                <div
-                  class="shrink-0 basis-[calc((100%-3px)/1.1)] md:basis-[calc((100%-30px)/2)] lg:basis-[calc((100%-54px)/2.8)]"
-                >
-                  <div class="aspect-video rounded-lg bg-muted"></div>
-                  <div class="h-[140px]"></div>
-                </div>
-              }
-            </div>
-          </div>
-        }
+      @for (rail of trackRails(); track rail.id) {
+        <ng-container
+          [ngTemplateOutlet]="railTpl"
+          [ngTemplateOutletContext]="{ $implicit: rail }"
+        />
       } @empty {
         @if (home.isLoading()) {
           <!-- The carousel's own placeholder row, so the first rail lands in place. -->
@@ -89,9 +60,9 @@
     }
   </section>
   <!-- Signed in only: My List and the completed courses. -->
-  @if (library.railsBelowTracks().length) {
+  @if (railsBelowTracks().length) {
     <div class="flex flex-col w-11/12 mx-auto md:space-y-20 space-y-10 md:mt-20 mt-10">
-      @for (rail of library.railsBelowTracks(); track rail.id) {
+      @for (rail of railsBelowTracks(); track rail.id) {
         <ng-container
           [ngTemplateOutlet]="railTpl"
           [ngTemplateOutletContext]="{ $implicit: rail }"
@@ -104,15 +75,32 @@
   </section>
 </div>
 
-<!-- One signed-in rail: the track rails' carousel, card and placeholder. -->
+<!-- One rail, a track or a signed-in one: its filter, carousel, card and placeholder. -->
 <ng-template #railTpl let-rail>
   <section [id]="rail.id" class="scroll-mt-20">
     @defer (on viewport; prefetch on idle) {
       <app-carousel
-        [cards]="rail.courses"
-        [heading]="{ text: rail.heading, subText: '' }"
+        [cards]="rail.shown"
+        [heading]="{ text: rail.heading, subText: rail.subText ?? '' }"
         [swiperConfig]="swiperConfigEven"
       >
+        <button
+          carouselAction
+          type="button"
+          class="relative bg-transparent border-0 p-0 cursor-pointer outline-none focus:outline-none focus:ring-2 focus:ring-blue-500/40 rounded disabled:cursor-wait"
+          [attr.aria-label]="'Filter ' + rail.heading"
+          [disabled]="railFilter.opening()"
+          (click)="railFilter.open(rail)"
+        >
+          <ng-icon [svg]="filterIcon" class="size-6! text-white" aria-hidden="true" />
+          @if (rail.selectedCount) {
+            <span
+              class="size-4 rounded-full bg-primary text-white text-xs text-center flex justify-center items-center bottom-0 -end-2 absolute"
+            >
+              {{ rail.selectedCount }}
+            </span>
+          }
+        </button>
         <ng-template let-course>
           <app-masterclass-course-card
             [course]="course"
@@ -125,6 +113,9 @@
           />
         </ng-template>
       </app-carousel>
+      @if (!rail.shown.length) {
+        <p class="-mt-6 mb-10 text-sm text-muted-foreground">{{ railFilterEmpty }}</p>
+      }
     } @placeholder {
       <div class="animate-pulse" aria-hidden="true">
         <div class="h-11 md:h-[54px] w-72 max-w-full rounded bg-white/5"></div>

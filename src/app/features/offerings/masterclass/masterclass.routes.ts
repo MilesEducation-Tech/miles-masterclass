@@ -8,6 +8,7 @@ import { FinalAssessmentFacade } from '@features/offerings/services/final-assess
 import { Masterclass } from '@features/offerings/masterclass/pages/masterclass/masterclass';
 import { MasterclassHighlightFacade } from '@features/offerings/masterclass/services/masterclass-highlight-facade';
 import { MasterclassLibraryFacade } from '@features/offerings/masterclass/services/masterclass-library-facade';
+import { MasterclassRailFilterFacade } from '@features/offerings/masterclass/services/masterclass-rail-filter-facade';
 
 /**
  * The landing and course pages are public. Everything a learner does inside a
@@ -19,7 +20,7 @@ export const masterclassRoutes: Route[] = [
   {
     path: '',
     component: Masterclass,
-    providers: [MasterclassHighlightFacade, MasterclassLibraryFacade],
+    providers: [MasterclassHighlightFacade, MasterclassLibraryFacade, MasterclassRailFilterFacade],
   },
   {
     path: ':courseId/:courseTitle',
