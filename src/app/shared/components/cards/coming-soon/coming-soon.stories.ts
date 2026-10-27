@@ -1,6 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular';
+import { Utils } from '@shared/services/utils';
 import { ComingSoon } from './coming-soon';
 import { MOCK_MASTERCLASS_CARD, MOCK_PODCAST_CARD } from '@testing/mocks/content.mock';
+import { MockUtils } from '@testing/mocks/services.mock';
 
 const meta: Meta<ComingSoon> = {
   title: 'Cards/ComingSoon',
@@ -11,6 +13,9 @@ const meta: Meta<ComingSoon> = {
       template: `<div style="width: 300px;">${story().template ?? ''}</div>`,
       props: story().props,
     }),
+    // After the wrapper above, which keeps only `template` and `props`. The real
+    // `Utils` needs app-level tokens a story doesn't bind, as the other cards' stories do.
+    moduleMetadata({ providers: [{ provide: Utils, useClass: MockUtils }] }),
   ],
   argTypes: {
     card: { control: 'object', description: 'Card content data' },
