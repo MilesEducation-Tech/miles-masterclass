@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.15.1](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.15.0...v3.15.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **offerings:** render the webinar live room in the plain layout ([#208](https://github.com/MilesEducation-Tech/miles-masterclass/issues/208)) ([091ae34](https://github.com/MilesEducation-Tech/miles-masterclass/commit/091ae34540dc9820c9cd33f592340f1bc2a465ee))
+
 ## [3.15.0](https://github.com/MilesEducation-Tech/miles-masterclass/compare/v3.14.1...v3.15.0) (2026-10-27)
 
 
