@@ -8,5 +8,5 @@ import { BadgeSpotAnimation } from '../badge-spot-animation/badge-spot-animation
   templateUrl: './badge-library-hero.html',
 })
 export class BadgeLibraryHero {
-  protected readonly S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  protected readonly S3_BUCKET_URL = environment.ASSETS.s3Url;
 }

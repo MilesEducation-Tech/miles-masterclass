@@ -28,7 +28,7 @@ import { ButtonVariant } from '@core/models/button.model';
  */
 
 /** The origin root carries the trailing slash; `web-api/` and `api/` are siblings under it. */
-export const BADGES_PAGE_URL = `${environment.BASE_API_URL}web-api/v1/badges/page/`;
+export const BADGES_PAGE_URL = `${environment.API.baseUrl}web-api/v1/badges/page/`;
 
 /**
  * The three paged sections, spelled exactly as the API namespaces their query parameters:

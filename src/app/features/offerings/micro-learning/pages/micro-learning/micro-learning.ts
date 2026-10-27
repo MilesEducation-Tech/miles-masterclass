@@ -32,7 +32,7 @@ import { PartnerContentList } from '@shared/components/partner-content-list/part
   templateUrl: './micro-learning.html',
 })
 export class MicroLearning {
-  S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  S3_BUCKET_URL = environment.ASSETS.s3Url;
   readonly feature: FeatureFacade = inject(FeatureFacade);
   private readonly utils = inject(Utils);
   private readonly platformId = inject(PLATFORM_ID);

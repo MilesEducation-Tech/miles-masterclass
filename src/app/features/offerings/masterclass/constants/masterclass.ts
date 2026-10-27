@@ -34,10 +34,10 @@ export const HERO_TRAILER_CONFIG: VideoConfig = {
  * needs a token (a 401 otherwise). Built whole off `BASE_API_URL`, like
  * `HIGHLIGHT_URL`. Postman `web-masterclass-library-v1`.
  */
-export const MASTERCLASS_LIBRARY_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/library/`;
+export const MASTERCLASS_LIBRARY_URL = `${environment.API.baseUrl}web-api/v1/masterclass/library/`;
 
 /** The completed courses, per learner (a 401 without a token). Postman `web-masterclass-completed-course-section-v1`. */
-export const MASTERCLASS_COMPLETED_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/completed-course-section/`;
+export const MASTERCLASS_COMPLETED_URL = `${environment.API.baseUrl}web-api/v1/masterclass/completed-course-section/`;
 
 /** Rows asked for per rail: every course in one read, as the track rails do (the API's ceiling). */
 const RAIL_PAGE_SIZE = 100;
@@ -104,7 +104,7 @@ export const MASTERCLASS_RAIL_HEADINGS = {
  * `login_type` with a 400.
  */
 export const MASTERCLASS_FILTER_ROUTE = {
-  path: `${environment.BASE_API_URL}web-api/v1/masterclass/filter/`,
+  path: `${environment.API.baseUrl}web-api/v1/masterclass/filter/`,
   method: 'GET',
 } as RouteConfig<
   void,

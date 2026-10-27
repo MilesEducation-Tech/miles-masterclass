@@ -7,9 +7,13 @@ export const environment = {
   SITE_URL: 'https://uat.milesmasterclass.com',
 
   // ---- Core ----------------------------------------------------------------
-  BASE_API_URL: 'https://uat-api.milescaira.com/',
-  S3_BUCKET_URL: 'https://d1pp0977rsxmiq.cloudfront.net/',
-  GCS_URL: 'https://asset.milesmasterclass.com/media/web-app/',
+  API: {
+    baseUrl: 'https://uat-api.milescaira.com/',
+  },
+  ASSETS: {
+    s3Url: 'https://d1pp0977rsxmiq.cloudfront.net/',
+    gcsUrl: 'https://asset.milesmasterclass.com/media/web-app/',
+  },
   LOGGER: {
     LogLevel: LogLevel.DEBUG,
   },

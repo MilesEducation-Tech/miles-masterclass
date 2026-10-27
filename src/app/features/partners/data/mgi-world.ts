@@ -2,7 +2,7 @@ import { MGI_PARTNER_OFFERINGS } from '@core/constants/offerings.config';
 import { environment } from '@env/environment';
 import type { PartnerLandingConfig } from '../models/partner-landing.model';
 
-const S3_BUCKET_URL = environment.S3_BUCKET_URL;
+const S3_BUCKET_URL = environment.ASSETS.s3Url;
 
 export const MGI_WORLD: PartnerLandingConfig = {
   pill: { brand: 'MGI' },

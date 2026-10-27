@@ -19,7 +19,7 @@ export const MASTERCLASS_COURSE_TYPE = 'course';
  * Postman `web-masterclass-bookmark-v1`.
  */
 export const MASTERCLASS_BOOKMARK_ROUTE = {
-  path: `${environment.BASE_API_URL}web-api/v1/masterclass/bookmark/:id/`,
+  path: `${environment.API.baseUrl}web-api/v1/masterclass/bookmark/:id/`,
   method: 'POST',
 } as RouteConfig<void, unknown>;
 

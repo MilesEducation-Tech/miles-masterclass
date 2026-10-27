@@ -36,7 +36,7 @@ export class AiLabDialog {
    * Base path for the Figma-exported orbit artwork, served from the CDN like
    * every other static image in the app rather than bundled into `public/`.
    */
-  protected readonly asset = `${environment.S3_BUCKET_URL}static-assests/web-app/miles-ai-labs`;
+  protected readonly asset = `${environment.ASSETS.s3Url}static-assests/web-app/miles-ai-labs`;
 
   protected readonly labRoute = computed(
     () => `/${this.utils.country()}/${this.utils.profession()}/ai-labs`,

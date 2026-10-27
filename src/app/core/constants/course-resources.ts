@@ -7,7 +7,7 @@ import { RouteConfig } from '@core/models/http.model';
  * public, and the signed-in variant adds nothing they need.
  */
 export const COURSE_RESOURCES_ROUTE = {
-  path: `${environment.BASE_API_URL}web-api/v1/masterclass/course-detail/:id/`,
+  path: `${environment.API.baseUrl}web-api/v1/masterclass/course-detail/:id/`,
   method: 'GET',
 } as RouteConfig<void, unknown, Record<string, string>, { login_type: 'pre_login' }>;
 

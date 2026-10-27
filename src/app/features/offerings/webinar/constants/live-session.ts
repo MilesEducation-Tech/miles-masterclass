@@ -18,11 +18,11 @@ import type { KnownWebinarErrorCode } from '@features/offerings/webinar/utils/we
  */
 
 /**
- * Absolute URLs off `BASE_API_URL` (the origin root), built whole like
+ * Absolute URLs off `environment.API.baseUrl` (the origin root), built whole like
  * `WEBINAR_ENDPOINTS` so `apiUrl()` passes them through untouched. These are the
  * `api/v1/` surface: the same routes serve the app and the web.
  */
-const ROOT = environment.BASE_API_URL;
+const ROOT = environment.API.baseUrl;
 
 /**
  * The four live-session routes. Responses are typed `unknown` because each one

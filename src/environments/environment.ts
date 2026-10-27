@@ -10,11 +10,15 @@ export const environment = {
   SITE_URL: 'https://www.milesmasterclass.com',
 
   // ---- Core ----------------------------------------------------------------
-  // why: the live API isn't up yet, so production points at UAT for now.
-  // Switch back to 'https://api.milescaira.com/' once it is.
-  BASE_API_URL: 'https://uat-api.milescaira.com/',
-  S3_BUCKET_URL: 'https://d1pp0977rsxmiq.cloudfront.net/',
-  GCS_URL: 'https://asset.milesmasterclass.com/media/web-app/',
+  API: {
+    // why: the live API isn't up yet, so production points at UAT for now.
+    // Switch back to 'https://api.milescaira.com/' once it is.
+    baseUrl: 'https://uat-api.milescaira.com/',
+  },
+  ASSETS: {
+    s3Url: 'https://d1pp0977rsxmiq.cloudfront.net/',
+    gcsUrl: 'https://asset.milesmasterclass.com/media/web-app/',
+  },
   LOGGER: {
     // why: learners' consoles get warnings and errors only; debug and info
     // output stays on UAT and local.
