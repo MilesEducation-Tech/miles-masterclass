@@ -1,8 +1,8 @@
 # Webinar live room: Zoom meeting states, SDK review and fixes
 
-Status: **approved.** PR 1 (`1365de31`) and PR 2 (`6c295260`, `fix/MIL-139-webinar-live-states`) are committed. PR 3
-(§8) is built and uncommitted. It uses route guards (`webinar/guards/live-document-guard.ts`) rather than editing each
-Join and Back call site, so every way in and out of `/live` is covered.
+Status: **approved.** PR 1 (#200, MIL-141) and PR 2 (#201, MIL-139) are merged. PR 3 (§8, #202, MIL-140) uses route
+guards (`webinar/guards/live-document-guard.ts`) rather than editing each Join and Back call site, so every way in and
+out of `/live` is covered.
 
 ## Goal
 
