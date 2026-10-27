@@ -50,8 +50,11 @@
                   layout="horizontal"
                   [priority]="first && index < 3"
                   [showInfo]="true"
+                  [showBookmark]="true"
+                  [bookmarked]="bookmarks.isBookmarked(course)"
                   (trailer)="openTrailer($event)"
                   (info)="openCourseInfo($event)"
+                  (bookmark)="bookmarks.toggle($event)"
                 />
               </ng-template>
             </app-carousel>

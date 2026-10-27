@@ -5,24 +5,27 @@
   [dismissible]="!data.disableClose"
   panelClass="p-0"
 >
+  <!-- `md:max-w-lg` is `app-dialog`'s own panel cap: any narrower and the panel's grey
+       background shows as a strip down each side of the gradient. -->
   <div
     class="bg-linear-to-br from-[#0d1a2d] to-[#1a2332] shadow-2xl flex flex-col w-[95svw] mx-auto overflow-hidden relative"
-    [class]="showAppDownload ? 'md:w-[640px] xl:w-[800px]' : 'md:max-w-[500px]'"
+    [class]="showAppDownload ? 'md:w-[640px] xl:w-[800px]' : 'md:max-w-lg'"
   >
     <!-- Close Button -->
     <div class="absolute top-4 end-4 z-30">
-      <!-- No hover fill: the ghost variant's navy `bg-muted` reads as a stray block on these
-           gradient panels. Colour is the hover cue (`data-hover:`, to beat the variant's own). -->
+      <!-- A dark filled circle over the gradient panel. The fill stays put on hover (the ghost
+           variant's navy `bg-muted` reads as a stray block here); colour is the hover cue
+           (`data-hover:`, to beat the variant's own). -->
       <button
         app-button
         type="button"
-        class="rounded-full text-gray-300 data-hover:bg-transparent data-press:bg-transparent data-hover:text-white"
+        class="rounded-full bg-background/80 backdrop-blur-sm text-gray-300 data-hover:bg-background/80 data-press:bg-background/80 data-hover:text-white"
         variant="ghost"
         size="icon"
         aria-label="Close"
         (click)="close()"
       >
-        <ng-icon name="heroXMark" aria-hidden="true" />
+        <ng-icon name="heroXMark" size="20" strokeWidth="2" aria-hidden="true" />
       </button>
     </div>
 
