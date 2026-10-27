@@ -7,6 +7,11 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-27, NON-REFACTOR — URL keys grouped. DONE, UNCOMMITTED** (patch 2 of 3).
+  `BASE_API_URL` → `API.baseUrl`, `S3_BUCKET_URL` → `ASSETS.s3Url`, `GCS_URL` → `ASSETS.gcsUrl`, in the
+  `Environment` type, all three files, every `environment.*` access in `src/` (41 files) and the comments, `AGENTS.md`
+  and `docs/AUTH_API.md`. Component fields that happen to be named `S3_BUCKET_URL` are left alone. Values unchanged.
+
 - 🟡 **2026-10-27, NON-REFACTOR — production log level `WARN`. DONE, UNCOMMITTED** (patch 1 of 3; see the hand-off).
   `environment.ts` `LOGGER.LogLevel` changed from `DEBUG` to `WARN`, so `Logger.debug`/`info` stay silent in production.
   UAT and local stay `DEBUG`.

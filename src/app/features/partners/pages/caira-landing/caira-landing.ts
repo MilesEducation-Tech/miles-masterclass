@@ -38,7 +38,7 @@ import { Faq } from '@shared/components/faq/faq';
   templateUrl: './caira-landing.html',
 })
 export class CairaLanding {
-  private readonly S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  private readonly S3_BUCKET_URL = environment.ASSETS.s3Url;
 
   // Reuses the home-hero clip so CAIRA's hero stays visually consistent with
   // the landing page CTA module. The portrait `hero-bg-mob` swaps in below md

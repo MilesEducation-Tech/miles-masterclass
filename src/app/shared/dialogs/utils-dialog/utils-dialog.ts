@@ -83,7 +83,7 @@ export class UtilsDialog {
 
   protected readonly APP_STORE_URL = APP_STORE_URL;
   protected readonly PLAY_STORE_URL = PLAY_STORE_URL;
-  protected readonly S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  protected readonly S3_BUCKET_URL = environment.ASSETS.s3Url;
   /** Shared brand SVGs reused from the footer + app-download component. */
   protected readonly appStoreIcon = appStoreIcon;
   protected readonly googlePlayIcon = googlePlayIcon;

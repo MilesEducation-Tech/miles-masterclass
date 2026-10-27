@@ -27,7 +27,7 @@ export interface AiLabCreateAccountRequest {
 }
 
 /**
- * Account-provisioning endpoints. `BASE_API_URL` already ends in `/api/`, so the
+ * Account-provisioning endpoints. `environment.API.baseUrl` already ends in `/api/`, so the
  * paths drop that prefix — same as every other `*_ROUTES` table.
  *
  * The user is derived from the auth token, so the body carries consent only.
@@ -119,7 +119,7 @@ export interface AiLabSection {
  * `thumbnail` on the static entries holds a bare filename, which the browser
  * resolves against the CURRENT ROUTE — so these request
  * `/us/accounting/revenue_recognition.webp` and 404. The project's convention
- * for image assets is `environment.GCS_URL + 'folder/file.webp'` (see
+ * for image assets is `environment.ASSETS.gcsUrl + 'folder/file.webp'` (see
  * offerings.config.ts); once the artwork is uploaded, prefix these the same way.
  */
 /* =====================================================================
@@ -321,21 +321,21 @@ export const AI_LAB_SECTIONS: AiLabSection[] = [
       {
         name: 'Revenue Recognition',
         thumbnailAlt: 'Revenue Recognition',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image1.webp',
+        thumbnail: environment.ASSETS.s3Url + 'static-assests/web-app/miles-ai-labs/image1.webp',
         description:
           'Reads the contract, builds the ASC 606 schedule, and ties it back to the ledger. Surfaces the variances worth a conversation.',
       },
       {
         name: 'Lease Assurance',
         thumbnailAlt: 'Lease Assurance',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image2.webp',
+        thumbnail: environment.ASSETS.s3Url + 'static-assests/web-app/miles-ai-labs/image2.webp',
         description:
           'Compares every lease against its schedule and pulls out the exceptions. Turns a full-population test into a review of what actually broke.',
       },
       {
         name: 'AR Confirmation',
         thumbnailAlt: 'AR Confirmation',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image3.webp',
+        thumbnail: environment.ASSETS.s3Url + 'static-assests/web-app/miles-ai-labs/image3.webp',
         description:
           'Sends the requests, logs what comes back, and chases the rest without being asked twice.',
       },
@@ -356,21 +356,21 @@ export const AI_LAB_SECTIONS: AiLabSection[] = [
       {
         name: 'AR Reminder',
         thumbnailAlt: 'AR Reminder',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image4.webp',
+        thumbnail: environment.ASSETS.s3Url + 'static-assests/web-app/miles-ai-labs/image4.webp',
         description:
           'Watches the ageing, sends the reminder at the right moment, and keeps the ledger current behind it.',
       },
       {
         name: 'AP',
         thumbnailAlt: 'AP',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image5.webp',
+        thumbnail: environment.ASSETS.s3Url + 'static-assests/web-app/miles-ai-labs/image5.webp',
         description:
           'Pulls the invoice data, runs the three-way match, and holds back only what fails.',
       },
       {
         name: 'Employee Reimbursement',
         thumbnailAlt: 'Employee Reimbursement',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image6.webp',
+        thumbnail: environment.ASSETS.s3Url + 'static-assests/web-app/miles-ai-labs/image6.webp',
         description:
           'Checks the receipt against policy, routes what needs a human, and tells the claimant where things stand.',
       },
@@ -382,21 +382,21 @@ export const AI_LAB_SECTIONS: AiLabSection[] = [
       {
         name: 'Tax PBC',
         thumbnailAlt: 'Tax PBC',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image7.webp',
+        thumbnail: environment.ASSETS.s3Url + 'static-assests/web-app/miles-ai-labs/image7.webp',
         description:
           "Builds each client's expected document list from last year's return, tracks what lands, and chases the gaps. Catches the missing item and the unexpected one.",
       },
       {
         name: 'K-1 Tracker',
         thumbnailAlt: 'K-1 Tracker',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image8.webp',
+        thumbnail: environment.ASSETS.s3Url + 'static-assests/web-app/miles-ai-labs/image8.webp',
         description:
           'Logs every K-1 across partnerships, S corporations and trusts and keeps the tracker current. Answers whose return is genuinely waiting on somebody else.',
       },
       {
         name: 'Trial Balance Classification',
         thumbnailAlt: 'Trial Balance Classification',
-        thumbnail: environment.S3_BUCKET_URL + 'static-assests/web-app/miles-ai-labs/image9.webp',
+        thumbnail: environment.ASSETS.s3Url + 'static-assests/web-app/miles-ai-labs/image9.webp',
         description:
           "Carries last year's approved tax-line map forward and flags only what changed. Renamed, renumbered, newly opened, quietly closed.",
       },

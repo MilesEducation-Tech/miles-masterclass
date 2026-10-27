@@ -14,7 +14,7 @@ import type { WebinarErrorCode } from '@features/offerings/webinar/utils/webinar
 // ---- Endpoints -------------------------------------------------------------
 
 /**
- * Absolute URLs off `BASE_API_URL`, which is the ORIGIN ROOT — trailing slash,
+ * Absolute URLs off `environment.API.baseUrl`, which is the ORIGIN ROOT — trailing slash,
  * no `api/` segment.
  *
  * The contract splits writes (`api/v1/events/`, shared with the mobile app)
@@ -23,7 +23,7 @@ import type { WebinarErrorCode } from '@features/offerings/webinar/utils/webinar
  * why these are built absolute and handed to `ApiClient` whole — it passes an
  * absolute URL through untouched.
  */
-const ROOT = environment.BASE_API_URL;
+const ROOT = environment.API.baseUrl;
 
 export const WEBINAR_ENDPOINTS = {
   /** Web-only read: the five-bucket landing feed. */

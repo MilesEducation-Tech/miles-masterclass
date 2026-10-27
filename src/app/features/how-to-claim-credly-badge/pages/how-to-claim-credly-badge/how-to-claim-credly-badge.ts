@@ -24,7 +24,7 @@ export class HowToClaimCredlyBadge implements OnInit {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  protected readonly S3_BUCKET_URL = environment.ASSETS.s3Url;
 
   /** Promo reel rendered by the shared partners video carousel. */
   protected readonly videoList: VideoListItem[] = [

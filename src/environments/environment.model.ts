@@ -28,12 +28,17 @@ export interface Environment {
 
   // ---- Core ----------------------------------------------------------------
 
-  /** Django REST API origin, with a trailing slash. `ApiClient` prepends it. */
-  BASE_API_URL: string;
-  /** CloudFront origin for static assets, with a trailing slash. */
-  S3_BUCKET_URL: string;
-  /** GCS asset base for web-app media, with a trailing slash. */
-  GCS_URL: string;
+  API: {
+    /** Django REST API origin, with a trailing slash. `ApiClient` prepends it. */
+    baseUrl: string;
+  };
+
+  ASSETS: {
+    /** CloudFront origin for static assets, with a trailing slash. */
+    s3Url: string;
+    /** GCS asset base for web-app media, with a trailing slash. */
+    gcsUrl: string;
+  };
 
   LOGGER: {
     /** The lowest level `Logger` prints; `OFF` prints nothing. */

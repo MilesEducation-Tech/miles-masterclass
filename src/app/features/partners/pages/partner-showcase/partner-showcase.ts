@@ -16,7 +16,7 @@ import {
 } from '../../components/partnership-content/partnership-content';
 import type { PartnerShowcaseConfig } from '../../models/partner-showcase.model';
 
-const S3_BUCKET_URL = environment.S3_BUCKET_URL;
+const S3_BUCKET_URL = environment.ASSETS.s3Url;
 
 /**
  * The long-form partner page (corporate, BKN, Illinois). The route resolves the partner's

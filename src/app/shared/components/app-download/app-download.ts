@@ -6,7 +6,7 @@ import { appStoreIcon, googlePlayIcon } from '@core/constants/icon';
 import { environment } from '@env/environment';
 
 /** Figma "Learning on the go" (`2175:26203`): the phone-in-hand render (`2175:26213`). */
-const PHONE_RENDER = `${environment.S3_BUCKET_URL}static-assests/web-app/home-v3/app-phone-in-hand.webp`;
+const PHONE_RENDER = `${environment.ASSETS.s3Url}static-assests/web-app/home-v3/app-phone-in-hand.webp`;
 const QR_CODE = 'https://asset.milesmasterclass.com/media/web-app/home/qr-code-styling.png';
 
 interface StoreLink {

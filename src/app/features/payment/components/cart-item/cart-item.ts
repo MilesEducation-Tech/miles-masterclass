@@ -85,5 +85,5 @@ export class CartItem {
       this.S3_BUCKET_URL + 'static-assests/web-app/payment/cart-subscription.webp',
   );
 
-  S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  S3_BUCKET_URL = environment.ASSETS.s3Url;
 }

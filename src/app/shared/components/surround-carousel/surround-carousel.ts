@@ -50,7 +50,7 @@ export interface CarouselCard {
  * on every host. `pre_login` always: that branch ignores the token, and the
  * ring reads nothing per-user, so signing in never refetches it.
  */
-const AI_LABS_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/ai-labs/`;
+const AI_LABS_URL = `${environment.API.baseUrl}web-api/v1/masterclass/ai-labs/`;
 
 /**
  * Below this there is no ring to build. Deliberately low because the list is

@@ -5,9 +5,9 @@ import { InstructorCourseTab } from '@features/library/instructor/models/instruc
 /**
  * The instructor library's one read. Public (`AllowAny`, the learner token adds
  * only bookmark state); `course_type` is required and anything undeclared is a
- * 400. Built whole off `BASE_API_URL`, like `COURSE_LIBRARY_LIST_URL`.
+ * 400. Built whole off `environment.API.baseUrl`, like `COURSE_LIBRARY_LIST_URL`.
  */
-export const INSTRUCTOR_LIBRARY_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/all-instructors-page/`;
+export const INSTRUCTOR_LIBRARY_URL = `${environment.API.baseUrl}web-api/v1/masterclass/all-instructors-page/`;
 
 /**
  * Every type the course library has a tab for, so a row's courses count all an
@@ -38,7 +38,7 @@ export const INSTRUCTOR_SOCIAL_ICONS: Readonly<Partial<Record<string, string>>> 
  * `post_login` is a 401 without a token, and leaving it out (or sending any
  * undeclared parameter) is a 400.
  */
-export const INSTRUCTOR_DETAIL_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/instructor-detail/`;
+export const INSTRUCTOR_DETAIL_URL = `${environment.API.baseUrl}web-api/v1/masterclass/instructor-detail/`;
 
 /**
  * The course read: the course library's `filter/`, narrowed by `instructor` and
@@ -46,7 +46,7 @@ export const INSTRUCTOR_DETAIL_URL = `${environment.BASE_API_URL}web-api/v1/mast
  * `course_type`, is a 400. Declared here rather than imported from the sibling
  * `course` sub-feature.
  */
-export const INSTRUCTOR_COURSES_URL = `${environment.BASE_API_URL}web-api/v1/masterclass/filter/`;
+export const INSTRUCTOR_COURSES_URL = `${environment.API.baseUrl}web-api/v1/masterclass/filter/`;
 
 /** One page holds everything an instructor teaches. The API caps it at 100. */
 export const INSTRUCTOR_COURSES_PAGE_SIZE = 100;

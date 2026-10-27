@@ -43,7 +43,7 @@ const PREFIX = `/${COUNTRY}/${PROFESSION}`;
  * Backend API base. Defaults to the build's environment (so a UAT build hits
  * the UAT API), with a trailing slash trimmed. Override via `SITEMAP_API_BASE`.
  */
-const API_BASE = (process.env['SITEMAP_API_BASE'] ?? environment.BASE_API_URL).replace(/\/+$/, '');
+const API_BASE = (process.env['SITEMAP_API_BASE'] ?? environment.API.baseUrl).replace(/\/+$/, '');
 
 /** How long a generated sitemap is reused before regeneration (default 6h). */
 const SITEMAP_TTL_MS = Number(process.env['SITEMAP_TTL_MS'] ?? 6 * 60 * 60 * 1000);

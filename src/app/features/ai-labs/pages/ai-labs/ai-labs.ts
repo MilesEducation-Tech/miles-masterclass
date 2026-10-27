@@ -781,7 +781,7 @@ export class AiLabs {
 
   /** S3 URL for hero frame `i` (0-based). Frames are 0001.webp … NNNN.webp. */
   private frameSrc(i: number): string {
-    return `${environment.S3_BUCKET_URL}static-assests/web-app/miles-ai-labs/hero-frames/${String(
+    return `${environment.ASSETS.s3Url}static-assests/web-app/miles-ai-labs/hero-frames/${String(
       i + 1,
     ).padStart(4, '0')}.webp`;
   }

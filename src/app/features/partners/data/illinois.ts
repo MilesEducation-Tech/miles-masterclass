@@ -21,7 +21,7 @@ import {
 import type { PlanPointer } from '@shared/components/plan-benefits/plan-benefits';
 import type { PartnerShowcaseConfig } from '../models/partner-showcase.model';
 
-const S3_BUCKET_URL = environment.S3_BUCKET_URL;
+const S3_BUCKET_URL = environment.ASSETS.s3Url;
 
 const level1Cards: PartnerLevelCard[] = [
   {

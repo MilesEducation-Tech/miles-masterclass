@@ -22,7 +22,7 @@ import { logo } from '@core/constants/icon';
 export class Auth {
   private readonly router = inject(Router);
 
-  S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  S3_BUCKET_URL = environment.ASSETS.s3Url;
 
   icons = signal({
     logo: logo,

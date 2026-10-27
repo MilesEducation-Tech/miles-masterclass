@@ -18,7 +18,7 @@ import { PartnerContentList } from '@shared/components/partner-content-list/part
   },
 })
 export class Podcast {
-  S3_BUCKET_URL = environment.S3_BUCKET_URL;
+  S3_BUCKET_URL = environment.ASSETS.s3Url;
   readonly feature: FeatureFacade = inject(FeatureFacade);
 
   // Swiper configurations for templates

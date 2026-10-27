@@ -3,12 +3,12 @@ import { CourseDetailApi, CourseOffering } from '@features/offerings/models/cour
 import { AssessmentReviewStatus } from '@features/offerings/models/final-assessment.model';
 
 /**
- * Absolute URLs off `BASE_API_URL`, which is the ORIGIN ROOT (trailing slash,
+ * Absolute URLs off `environment.API.baseUrl`, which is the ORIGIN ROOT (trailing slash,
  * no `api/` segment). Built whole, the same way as `WEBINAR_ENDPOINTS`, so
  * `apiUrl()` passes them through untouched and the `web-api/` surface is
  * spelled out where a reviewer can see it. These pages never call `app-api/`.
  */
-const ROOT = environment.BASE_API_URL;
+const ROOT = environment.API.baseUrl;
 
 /**
  * `CourseDetailFacade`'s routes and names, per offering. An offering joins by
