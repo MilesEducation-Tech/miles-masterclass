@@ -50,6 +50,114 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
   - **Not verified:** the CSP is a Vercel header, so the fix only shows on a preview deploy's `/live` page.
   - **Backend:** the signature JWT should add an `appKey` claim (the SDK warns that `sdkKey` there is deprecated).
 
+- 🟡 **2026-10-27, NON-REFACTOR — MIL-129 (feature), a bookmark on the masterclass course cards. PLAN APPROVED,
+  DONE, GATES GREEN, UNCOMMITTED** (`prompts/masterclass-card-bookmark.md`), on `feat/MIL-129-course-card-bookmark`
+  off `master` (`f59c576d`).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 228.06 kB,
+    only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright; signed-in answers stubbed, since a real sign-in isn't possible here):**
+    - **Signed out:** 68 icons on the masterclass page and 55 on the home page, all outline. A click goes to
+      `/auth/login?redirect=…` and makes no `bookmark/` request.
+    - **Signed in, masterclass page:**
+      - A click fills the icon at once, then makes one `POST bookmark/<uuid>/` and one `library/` re-read.
+      - "Added to My List" toasts, every card of that course fills, and My List matches the server.
+      - Removing it from My List reverses all of that.
+    - **Course page round trip:** its Bookmark button records into the store and re-reads `library/` in the
+      background. Back on the masterclass page, the card is filled and in My List, with no extra reads.
+    - **Home page:** the icons match the server; a toggle makes only the `POST`.
+    - **`bookmark/` 500:** the icon flips back, "Bookmark not saved" toasts, the failure is logged, and there's no
+      `library/` re-read.
+    - **Layout:** the icon sits 12 px from the artwork's top right at 375 / 768 / 1440, covers no button, and there's
+      no overflow. Storybook's two new stories render.
+  - **Plan:** a root `MasterclassBookmarks` store in `core/services/` toggles through
+    `web-api/v1/masterclass/bookmark/<uuid>/`. Its per-visit answers reset on sign-in or sign-out.
+    - The card gets `showBookmark` / `bookmarked` / `(bookmark)`, wired on the masterclass page and the home page's
+      tracks.
+    - `library/` re-reads after a confirmed toggle, so My List follows.
+    - The course page records its own toggles in the store and reads the store's answers.
+  - **Revision, the course page's toast (the user's screenshot):** its Bookmark button showed no toast. The success
+    toast moved into `MasterclassBookmarks.record()`, which the cards and the course page both call, so it reads
+    "Added to My List" / "Removed from My List" with the course name everywhere. The course page also toasts "Bookmark
+    not saved" and logs on failure; before, a failure there was silent. Verified: course page add, remove and 500; a
+    card click still toasts once. `build:prod` 228.02 kB.
+
+- ✅ **2026-10-27, NON-REFACTOR — MIL-128 (feature), a filter on every masterclass rail. MERGED (#199,
+  `f59c576d`)** (`prompts/masterclass-rail-filter.md`), on `feat/MIL-128-masterclass-rail-filter` off
+  `master` (`2f493dde`).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 228.09 kB,
+    only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright):**
+    - **Signed out:** the 3 tracks have the icon. The first click makes 4 `filter/` reads, and none happen before
+      it.
+    - **Track 2, Adam Tahir:** 34 → 1, matching UAT's own instructor tags. The badge shows 1, and reopening shows
+      the tick.
+    - **Empty:** adding "Greater than 5 credits" shows the empty line, and the other tracks are untouched. Clear All
+      brings back all 34.
+    - **Signed in (stubbed rails):** all 9 rails have the icon. My List's dialog lists only its own courses'
+      options. A second rail makes no new reads, and Escape changes nothing.
+    - **`filter/` 500:** the dialog shows Field of Study and Credit, the failure is logged, and the next open
+      retries.
+    - **Layout:** no overflow at 375 / 768 / 1440.
+  - **Two shared fixes found while verifying (in the plan's "Changes from the plan"):**
+    - `Carousel`'s card query is now `{ descendants: false }`. The badge's `@if` had been rendering in every slide.
+    - `FilterDialog`'s panel is now `md:w-auto`. It had been filling the screen with a grey band.
+  - **Size:** about 600 changed source lines, over the ~400 guideline. 428 of them are the three new files.
+  - **Groups:** Instructor, Field of Study, Additional Category, CAIRA Level and Credit. There's no Category group:
+    the backend confirmed it's the same as Field of Study.
+  - **Data:** Field of Study and Credit come from the cards. Instructor and Additional Category come from one
+    `filter/?content_type=masterclass_course&page_size=100` read. CAIRA Level comes from one
+    `filter/?…&level=<id>` read per level (UAT: 22 + 31 + 11 = 64 courses).
+  - **Loading:** the reads run on the first dialog open and are shared by every rail.
+  - **Open:** whether a new route-scoped `MasterclassRailFilterFacade` is OK (plan assumption 1).
+
+- 🟡 **2026-10-26, NON-REFACTOR — MIL-127 (bug), signed-in rails on the masterclass page. PLAN APPROVED, DONE,
+  GATES GREEN, UNCOMMITTED** (`prompts/masterclass-signed-in-rails.md`), on `fix/MIL-127-masterclass-signed-in-rails`
+  off `master` (`70ec9353`).
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 227.01 kB,
+    only `ai-labs.css`.
+  - **Verified (dev 4101, Playwright; signed-in answers filled in the browser only, from real signed-out cards):**
+    - **Signed out:** no `library/` or `completed-course-section/` request; hero, 3 tracks, FAQ; sidenav Home,
+      Tracker, FAQ.
+    - **Signed in, full:** one `library/` with the 7 per-rail page sizes and one `completed-course-section/`.
+      - Rails in order: Continue Watching, Recommended For You, "Complimentary Courses for Miles Education
+        Employees", Because You Watched, 3 tracks, My List, Courses you've mastered.
+      - A bookmarked podcast is kept out of My List.
+      - Sidenav: Home, Continue Watching, Tracker, My List, Completed Courses, FAQ. No console errors.
+    - **Signed in, empty:** looks as signed out.
+    - **Both reads 500:** the rails hide, the hero stays, and both failures are logged.
+    - **Layout:** no overflow at 375 / 768 / 1440.
+  - **Not done:** Coming Soon (held back), and a real signed-in capture to confirm the row shape.
+  - **Revision, AI Kit (the user's call):**
+    - The click logic moves from the course library to `core/models/course-resources.model.ts`,
+      `core/constants/course-resources.ts` and `shared/services/course-ai-kit.ts`; the library delegates.
+    - The card's horizontal layout gains the button, and the masterclass page turns it on for every rail.
+    - **Verified:** 6 buttons on the track rails (5 kit courses on UAT), each opening its PDF; a signed-in rail
+      too; the library's kit unchanged; the home page shows none. `build:prod` 227.00 kB.
+  - **Revision, the AI Kit dialog's close button (the user's screenshot):** `UtilsDialog`'s X is a dark filled
+    circle again (`bg-background/80 backdrop-blur-sm`, size 40), with a 20 px, stroke-2 X. The fill was dropped
+    in #133, and it holds on hover. The gradient panel's cap is `md:max-w-lg`, matching `app-dialog`'s frame; at
+    500 px it left a 6 px grey strip down each side. This affects every `UtilsDialog`. UAT's 5 kits have `description: null`, so the row reads "AI Kit";
+    a kit with a description shows it.
+  - **Separate tickets (the user's call):** the card bookmark icon, and the footer "Continue Learning" bar
+    (blocked on backend Q8).
+  - **Coming Soon preview (the user asked to see it):**
+    - UAT `coming-soon/` has 0 rows, so the shared card is shown in Storybook (`Cards/ComingSoon`, port 6006,
+      running in the background).
+    - Its story errored (NG0201: the real `Utils` needs app-level tokens); it now provides `MockUtils` as the
+      other card stories do, in `coming-soon.stories.ts`.
+    - That fix is **not MIL-127**: leave it out of that commit.
+    - **Open:** whether to bind Coming Soon now on a guessed row shape, or wait for a backend sample.
+  - **Wording pass (the user's naming rule for commit files):** "legacy button" removed from
+    `course-resources.ts` and `course-ai-kit.ts`, and "live `library/` rows" in the plan now reads "UAT's". The
+    added lines and the new files name neither the old app nor the public site. This file's older mentions are
+    already on `master` and untouched.
+  - **Old bindings:** none left on the page. The hero (`highlight/`) and tracks (`tracks-page/`) match Postman and
+    answer 200. `FeatureFacade`'s `v2/` routes still feed podcast and micro-learning, so they stay.
+  - **Plan:** a route-scoped `MasterclassLibraryFacade` with `library/?login_type=post_login` (per-rail
+    `page_size=100`) and `completed-course-section/`, signed in and browser only.
+  - **Open:** Coming Soon is held back (no rows on UAT, no documented shape); a signed-in capture would confirm the
+    row shape.
+
 - 🟡 **2026-10-26, NON-REFACTOR — MIL-126 (SEO bug), course canonicals + SEO slug guard. DONE, GATES GREEN,
   UNCOMMITTED** (`prompts/review-2026-10-23-tickets.md` T7), on `fix/MIL-126-course-canonical` off `master`
   (`7aae2472`).
@@ -5641,6 +5749,10 @@ These are environment and product observations the repair surfaced. None changed
 - 2026-10-27 · NON-REFACTOR · **Webinar live states built** (uncommitted): waiting-for-host auto re-join, on-hold, reconnecting, Zoom error-code outcomes, retry no longer self-conflicts, SDK client torn down before re-join · tsc 0, lint 0 errors, build:prod 226.99 kB · not run in a browser (needs a signed-in learner + Zoom host)
 
 - 2026-10-27 · NON-REFACTOR · **Zoom CSP fix built** (uncommitted): `blob:` in `script-src` so the Zoom media chunk loads, `sdkKey` dropped from `join()` · lint 0 errors, structure ✔, build:prod 227.03 kB · needs a Vercel preview to verify
+
+- 2026-10-26 · NON-REFACTOR · **MIL-127 wording pass**: comments no longer point at the old app ("legacy button", "live" rows); the commit's added lines and new files name neither the old app nor the public site · Prettier ✔
+
+- 2026-10-26 · NON-REFACTOR · **MIL-127 built** (uncommitted, on `fix/MIL-127-masterclass-signed-in-rails`): signed-in rails from `library/` + `completed-course-section/`, AI Kit moved to `shared/services/course-ai-kit.ts` and on for every masterclass rail, `UtilsDialog` close circle + full-width panel · tsc 0, lint 0 errors (98 warnings), structure ✔, Prettier ✔, build:prod 226.91 kB · headless scenarios pass; hand-test `.playwright-mcp/manual-mil127.js` · Coming Soon story repaired for a preview (not MIL-127; keep out of its commit)
 
 - 2026-10-26 · NON-REFACTOR · **MIL-126 built** (uncommitted): course canonical from the record (`<id>/<slugify(name)>`, equal to the sitemap URL for all 64 UAT courses), `getBySlug` refuses unsafe slugs · tsc 0, lint 0 errors, structure ✔, build:prod 240.65 kB · SSR + browser canonical checks pass
 
