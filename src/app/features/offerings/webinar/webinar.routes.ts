@@ -53,11 +53,11 @@ export const webinarRoutes: Routes = [
         // Two `CanMatch` guards, so neither the Zoom chunk nor the lease client
         // is ever downloaded by someone who cannot use them.
         //
-        // `liveEnabled` is the ship gate, off in production until QA signs off:
-        // with it off this route must not match at all — `resolveJoinTarget`
-        // sends Join to the registrant's `join_url` instead, and a stale deep
-        // link falls through to the detail page rather than opening a room
-        // nobody has signed off.
+        // `liveEnabled` is the kill switch for the in-app room (on in every
+        // build, production included): with it off this route must not match
+        // at all — `resolveJoinTarget` sends Join to the registrant's `join_url`
+        // instead, and a stale deep link falls through to the detail page
+        // rather than opening a room that is switched off.
         //
         // `authGuard` handles the redirect. The server refuses a signature
         // without a valid token regardless, so that one is for the redirect,

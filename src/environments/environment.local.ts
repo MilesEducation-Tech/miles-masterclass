@@ -1,168 +1,51 @@
 import { LogLevel } from '@core/models/log.model';
+import { Environment } from '@env/environment.model';
 
+/**
+ * Local: `ng serve --configuration local`. Same backends as UAT; `SITE_URL`
+ * matches the dev-server port so canonical/og:url and sitemap links resolve
+ * locally.
+ */
 export const environment = {
   production: false,
-
-  /**
-   * Canonical public origin (no trailing slash) for local dev. Matches the
-   * `ng serve` port so canonical/og:url + sitemap links resolve locally. See
-   * app.ts + src/seo.ts.
-   */
   SITE_URL: 'http://localhost:4101',
 
+  // ---- Core ----------------------------------------------------------------
   BASE_API_URL: 'https://uat-api.milescaira.com/',
-
-  /**
-   * Dev-only key for the Miles SSO support OTP-reveal endpoint, used by the
-   * hidden QA login route (`DEV_LOGIN_PATH`).
-   *
-   * Never copy this into `environment.ts`: the endpoint returns the login OTP
-   * for ANY identifier, so a production bundle carrying it would hand every
-   * visitor a way into any account. Non-prod builds only.
-   */
-  SSO_SUPPORT_API_KEY: '',
-
-  WEBINAR: {
-    joinWindowMinutes: 15,
-    /**
-     * In-app `/live` page (Zoom Meeting SDK + session lease). ON here, so every
-     * Vercel preview (`build:dev`) and local run can be QA'd; production stays
-     * off until QA signs off. Each webinar still needs `route_to_web_lms`.
-     */
-    liveEnabled: true,
-    /** Flip to `true` locally once the poll API exists, to exercise the panel. */
-    pollsEnabled: false,
-    leaseHeartbeatSeconds: 15,
-    registrationPollCapSeconds: 45,
-  },
-
-  /**
-   * Miles360 Salesforce lead endpoint (AWS API Gateway). Fired fire-and-forget
-   * when a new account is created — see `SalesforceLead`. `courseId` and
-   * `vertical` are fixed per environment; the rest of the payload comes from
-   * the form.
-   *
-   * The `/mmc` route needs no API key and no auth header, so nothing secret
-   * ships in the bundle. An empty `url` disables the integration — `create()`
-   * no-ops rather than posting.
-   */
-  SALESFORCE_LEAD: {
-    url: 'https://hn19ywvvng.execute-api.ap-south-1.amazonaws.com/Miles360/create-net-enquiry/mmc',
-    courseId: 1,
-    vertical: 'US Accounting',
-  },
-
   S3_BUCKET_URL: 'https://d1pp0977rsxmiq.cloudfront.net/',
   GCS_URL: 'https://asset.milesmasterclass.com/media/web-app/',
-
-  appType: 'WA',
-  platform: 'masterclass',
-
   LOGGER: {
     LogLevel: LogLevel.DEBUG,
   },
 
+  // ---- Features --------------------------------------------------------------
   AUTH: {
-    accessToken: 'ACCESS_TOKEN',
-    refreshToken: 'REFRESH_TOKEN',
-    /**
-     * Caches `profile_status` so `onboardingGuard` can answer synchronously on
-     * a hard refresh, and during SSR, without waiting on `user-details/`.
-     * Only the status string — never the user record.
-     */
-    profileStatus: 'PROFILE_STATUS',
-    /**
-     * The pre-rename name of the `profileStatus` cookie. Never read; deleted on
-     * load, write and sign-out so an older build's copy can't linger.
-     * ponytail: drop once the longest-lived pre-rename session has expired.
-     */
-    legacyProfileStatus: 'USER_DATA',
-    /**
-     * Digits in a one-time code. The SSO sets it server-side and no route
-     * reports it, so it lives here — per environment — rather than in each
-     * form. Drives both the `<app-otp>` boxes and the length validator.
-     */
     otpLength: 6,
-    browserSessionId: 'BROWSER_SESSION_ID',
   },
-
   SUPABASE: {
     url: 'https://lodzktvnxuprpogelodm.supabase.co',
     anonKey:
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvZHprdHZueHVwcnBvZ2Vsb2RtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0MzE1NDYsImV4cCI6MjA3ODAwNzU0Nn0.ychDwrqAURLnKyAkP4MHGwpcH7VwE4WcRt2E7oHoEL4',
   },
-
-  /**
-   * MilesAI Labs — Entra sign-in + Copilot Studio deep link.
-   *
-   * Everything here is a PUBLIC identifier and safe in the browser bundle:
-   * tenant/client IDs are public by design, and the anon key is RLS-scoped.
-   * The Entra **client secret** is NOT here and must never be — it lives in
-   * the Supabase dashboard (Auth → Providers → Azure), which performs the
-   * token exchange server-side. Same for the service-role key, DirectLine
-   * secret, and the provisioning secret: those belong to the lab backend.
-   *
-   * `redirectPath` is resolved against SITE_URL rather than
-   * `window.location.origin` so the OAuth allowlist is a fixed, per-environment
-   * value that SSR can also produce.
-   */
+  SALESFORCE_LEAD: {
+    url: 'https://hn19ywvvng.execute-api.ap-south-1.amazonaws.com/Miles360/create-net-enquiry/mmc',
+    courseId: 1,
+    vertical: 'US Accounting',
+  },
+  WEBINAR: {
+    liveEnabled: true,
+  },
   AI_LABS: {
-    supabaseUrl: 'https://nhohkxpcoeyerzsybipo.supabase.co',
-    // TODO: paste the anon key for the nhohkxpcoeyerzsybipo project. Sign-in
-    // is disabled (button shows a config error) until this is set.
-    supabaseAnonKey:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ob2hreHBjb2V5ZXJ6c3liaXBvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMzYxMDYsImV4cCI6MjEwMDgxMjEwNn0.Dk5XMoNG3oBVXhlUbh_zqzbJX3uMbf8h2kjNwjGXJ2c',
-
-    tenantId: 'f133522a-779a-4a85-bebb-e72cd0daaa1d',
-    clientId: 'b717025f-1163-4efb-a3f2-a6336d4fee07',
-    /**
-     * Home realm hint for lab accounts (`domain_hint`, forwarded verbatim to
-     * Entra by Supabase). Entra accepts either a verified domain or the tenant
-     * id; this is the tenant id of the directory that owns the app registration
-     * behind Supabase's Azure provider — mileslabs.ai. Pointing it at any other
-     * tenant sends users to the wrong home realm, where they can only sign in
-     * as a guest of that app rather than as the account the labs backend
-     * provisioned.
-     */
-    domainHint: 'f133522a-779a-4a85-bebb-e72cd0daaa1d',
-    copilotUrl: 'https://copilotstudio.microsoft.com/',
-    redirectPath: '/auth/ai-labs-callback',
-    /** localStorage key for the AI Labs Supabase session. */
-    storageKey: 'AI_LABS_SUPABASE_SESSION',
-    /** See the note in environment.development.ts — UAT has no 440/442 yet. */
+    // UAT has no 440/442 yet — see environment.development.ts.
     catalogueCourses: {
       audit: 440,
       cfoTeams: 442,
     },
-
-    /** Gates the /ai-labs evaluation/assessment layer — see environment.ts. On
-     *  in local so the (mocked) submission + scoring flow is visible to evaluate. */
     assessmentEnabled: false,
-    AI_LABS_CHANNEL: 'AI_LAB_AUTH_LOCAL',
-    AI_LABS_CALLBACK_DONE: 'CALLBACK_DONE_LOCAL',
   },
-
-  // WordPress blog (headless via WP REST API).
-  WP_BLOG: {
-    // Browser calls a same-origin path that the `/blog-api` reverse proxy
-    // (proxy.conf.json in dev, Express handler in src/server.ts in prod)
-    // forwards to WordPress. Same-origin avoids CORS + mixed-content and keeps
-    // the X-WP-Total pagination headers readable.
-    apiBaseUrlBrowser: '/blog-api/wp/v2',
-    // SSR runs server-side (no mixed-content/CORS constraint), so it hits the
-    // WordPress HTTPS host directly.
-    apiBaseUrlSsr: 'https://wp.milesmasterclass.com/blog/wp-json/wp/v2',
-  },
-
-  /**
-   * Languages this build may resolve a visitor to (`LanguageContext`). Anything else in a cookie or
-   * `Accept-Language` is skipped, so a half-translated language never reaches real users.
-   * Local: every language, including the ones still being translated.
-   * `enabled: false` turns the feature off without editing the list: every visitor gets English
-   * and no switcher renders.
-   */
   I18N: {
-    enabled: true, // master switch for this environment
+    // Every language, including the ones still being translated.
+    enabled: true,
     languages: ['en', 'ar', 'fr', 'de', 'es'],
   },
-};
+} satisfies Environment;
