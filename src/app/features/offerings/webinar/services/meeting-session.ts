@@ -2,13 +2,13 @@ import { isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, inject, Service, PLATFORM_ID, signal } from '@angular/core';
 import { firstValueFrom, map } from 'rxjs';
-import { environment } from '@env/environment';
 import { ApiClient, apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
 import { isObject } from '@features/offerings/utils/contract-guards';
 import {
   HEARTBEAT_MAX_SECONDS,
   HEARTBEAT_MIN_SECONDS,
+  LEASE_HEARTBEAT_SECONDS,
   LIVE_SESSION_BACKGROUND,
   LIVE_SESSION_CHANNEL,
   LIVE_SESSION_LOCK,
@@ -476,13 +476,13 @@ export class MeetingSession {
 }
 
 /**
- * The server's heartbeat cadence when it is a sane one, else the environment
- * default. A `0` or a string must never become `setInterval(fn, 0)`.
+ * The server's heartbeat cadence when it is a sane one, else
+ * `LEASE_HEARTBEAT_SECONDS`. A `0` or a string must never become `setInterval(fn, 0)`.
  */
 function heartbeatSeconds(fromServer: number | null): number {
   return fromServer !== null &&
     fromServer >= HEARTBEAT_MIN_SECONDS &&
     fromServer <= HEARTBEAT_MAX_SECONDS
     ? fromServer
-    : environment.WEBINAR.leaseHeartbeatSeconds;
+    : LEASE_HEARTBEAT_SECONDS;
 }

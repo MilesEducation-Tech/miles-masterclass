@@ -25,6 +25,24 @@ import { HttpContext, HttpErrorResponse } from '@angular/common/http';
  */
 const REFRESH_SKEW_SECONDS = 120;
 
+/**
+ * The session cookies.
+ *
+ * `profileStatus` caches `profile_status` so `onboardingGuard` can answer
+ * synchronously on a hard refresh, and during SSR, without waiting on
+ * `user-details/`. Only the status string — never the user record.
+ *
+ * `legacyProfileStatus` is the pre-rename name of that cookie. Never read;
+ * deleted on load, write and sign-out so an older build's copy can't linger.
+ * ponytail: drop once the longest-lived pre-rename session has expired.
+ */
+const AUTH_COOKIES = {
+  accessToken: 'ACCESS_TOKEN',
+  refreshToken: 'REFRESH_TOKEN',
+  profileStatus: 'PROFILE_STATUS',
+  legacyProfileStatus: 'USER_DATA',
+} as const;
+
 /** Errors here are rendered by the caller, never by a global toast. */
 const QUIET = new HttpContext().set(SKIP_ERROR_NOTIFICATION, true);
 
@@ -51,8 +69,8 @@ export class AuthSession {
 
   // ── State ─────────────────────────────────────────────────────────────────
 
-  private readonly _accessToken = signal<string>(this.readCookie(environment.AUTH.accessToken));
-  private readonly _refreshToken = signal<string>(this.readCookie(environment.AUTH.refreshToken));
+  private readonly _accessToken = signal<string>(this.readCookie(AUTH_COOKIES.accessToken));
+  private readonly _refreshToken = signal<string>(this.readCookie(AUTH_COOKIES.refreshToken));
   private readonly _profileStatus = signal<ProfileStatus | null>(this.readProfileStatus());
   private readonly _isTestUser = signal<boolean>(false);
 
@@ -96,7 +114,7 @@ export class AuthSession {
 
   constructor() {
     // An older build's copy goes on the first load, not at the next rotation.
-    if (this.isBrowser) this.storage.deleteCookie(environment.AUTH.legacyProfileStatus);
+    if (this.isBrowser) this.storage.deleteCookie(AUTH_COOKIES.legacyProfileStatus);
   }
 
   /**
@@ -278,10 +296,10 @@ export class AuthSession {
     this._isOnboardingCompleted.set(milestoneOf(session.profile_status, 'onboarding'));
     this._isProfileCompleted.set(milestoneOf(session.profile_status, 'profile'));
 
-    this.writeCookie(environment.AUTH.accessToken, session.accessToken);
-    this.writeCookie(environment.AUTH.refreshToken, session.refreshToken);
-    this.writeCookie(environment.AUTH.profileStatus, session.profile_status);
-    if (this.isBrowser) this.storage.deleteCookie(environment.AUTH.legacyProfileStatus);
+    this.writeCookie(AUTH_COOKIES.accessToken, session.accessToken);
+    this.writeCookie(AUTH_COOKIES.refreshToken, session.refreshToken);
+    this.writeCookie(AUTH_COOKIES.profileStatus, session.profile_status);
+    if (this.isBrowser) this.storage.deleteCookie(AUTH_COOKIES.legacyProfileStatus);
   }
 
   clear(): void {
@@ -293,10 +311,10 @@ export class AuthSession {
     this._isProfileCompleted.set(null);
 
     if (!this.isBrowser) return;
-    this.storage.deleteCookie(environment.AUTH.accessToken);
-    this.storage.deleteCookie(environment.AUTH.refreshToken);
-    this.storage.deleteCookie(environment.AUTH.profileStatus);
-    this.storage.deleteCookie(environment.AUTH.legacyProfileStatus);
+    this.storage.deleteCookie(AUTH_COOKIES.accessToken);
+    this.storage.deleteCookie(AUTH_COOKIES.refreshToken);
+    this.storage.deleteCookie(AUTH_COOKIES.profileStatus);
+    this.storage.deleteCookie(AUTH_COOKIES.legacyProfileStatus);
   }
 
   private readCookie(key: string): string {
@@ -304,7 +322,7 @@ export class AuthSession {
   }
 
   private readProfileStatus(): ProfileStatus | null {
-    const raw = this.readCookie(environment.AUTH.profileStatus);
+    const raw = this.readCookie(AUTH_COOKIES.profileStatus);
     return raw === 'new_user' || raw === 'onboard_completed' || raw === 'profile_completed'
       ? raw
       : null;

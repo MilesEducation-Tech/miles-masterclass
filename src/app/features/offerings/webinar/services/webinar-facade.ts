@@ -14,7 +14,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { environment } from '@env/environment';
 import { AuthSession } from '@core/services/auth-session/auth-session';
 import { apiUrl } from '@core/services/api-client/api-client';
 import { Logger } from '@core/services/logger/logger';
@@ -28,6 +27,7 @@ import {
   PROFILE_REQUIRED_PROMPT,
   SIGN_IN_PROMPTS,
 } from '@features/offerings/webinar/constants/sign-in-prompts';
+import { JOIN_WINDOW_MINUTES } from '@features/offerings/webinar/constants/live-session';
 import {
   FeedCard,
   LoginType,
@@ -388,7 +388,7 @@ export class WebinarFacade {
       case 'registered':
         this.notification.success(
           'You are registered',
-          `We will open the session ${environment.WEBINAR.joinWindowMinutes} minutes before it starts.`,
+          `We will open the session ${JOIN_WINDOW_MINUTES} minutes before it starts.`,
         );
         break;
       case 'already-registered':

@@ -161,10 +161,25 @@ export const TAKEOVER_POLL_MS = 150;
 /**
  * The server sends the heartbeat cadence so it can be tuned without a release,
  * but the lease TTL is 45s: anything outside this range is a bad value, not a
- * tuning, and falls back to `environment.WEBINAR.leaseHeartbeatSeconds`.
+ * tuning, and falls back to `LEASE_HEARTBEAT_SECONDS`.
  */
 export const HEARTBEAT_MIN_SECONDS = 5;
 export const HEARTBEAT_MAX_SECONDS = 30;
+
+/** Lease heartbeat cadence when the server sends none. Server TTL is 45s — three misses before eviction. */
+export const LEASE_HEARTBEAT_SECONDS = 15;
+
+/**
+ * How long before the start the Join button appears.
+ *
+ * Fallback only IN PRINCIPLE: `joinOpensAt()` would prefer a server-sent
+ * `join_opens_at`, but that field appears NOWHERE in `EVENTS_API_CONTRACT_V1`,
+ * so today this value is the whole rule and it is computed in the browser. A
+ * skewed clock can therefore show Join early and have the server refuse it —
+ * `ServerClock` syncs off the feed's `server_time` to bound that. Ask the
+ * backend for `join_opens_at`.
+ */
+export const JOIN_WINDOW_MINUTES = 15;
 
 /** `device_label` length cap, and what it says when nothing in the user agent matched. */
 export const DEVICE_LABEL_MAX_LENGTH = 64;

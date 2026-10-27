@@ -315,8 +315,8 @@ non-wildcard origin.
   on 2026-10-13.
 - `X-Country-Code`, upper-case ISO2 from `CountryContext`. The commerce, catalogue and plans APIs price by
   it.
-- `X-Platform`, from `environment.platform`.
-- `X-App-Type`, from `environment.appType`.
+- `X-Platform`, from `CLIENT_PLATFORM` in `app-interceptor.ts` (`masterclass`).
+- `X-App-Type`, from `CLIENT_APP_TYPE` in `app-interceptor.ts` (`WA`).
 
 None of the four is CORS-safelisted, so each must be listed in `Access-Control-Allow-Headers`, or the
 browser blocks the request. Checked 2026-10-13:

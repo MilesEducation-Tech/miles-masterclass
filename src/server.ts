@@ -90,9 +90,8 @@ app.use(geoRootRedirect);
 /**
  * Reverse-proxy the headless WordPress blog REST API.
  *
- * The browser calls the same-origin `/blog-api/*` path (see
- * `environment.WP_BLOG.apiBaseUrlBrowser`) and we forward it to WordPress over
- * HTTPS. Keeping it same-origin means the browser never deals with CORS or
+ * The browser calls the same-origin `/blog-api/*` path (`proxy.conf.json`
+ * does the same in dev) and we forward it to WordPress over HTTPS. Keeping it same-origin means the browser never deals with CORS or
  * mixed-content, and the `X-WP-Total*` pagination headers stay readable.
  *
  * In `ng serve` this is handled by `proxy.conf.json`; this handler is what

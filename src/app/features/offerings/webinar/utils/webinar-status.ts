@@ -1,4 +1,4 @@
-import { environment } from '@env/environment';
+import { JOIN_WINDOW_MINUTES } from '@features/offerings/webinar/constants/live-session';
 import {
   eligibleOf,
   FeedCard,
@@ -104,7 +104,7 @@ export function isPendingHostApproval(registration: WebinarRegistrationInfo | un
 export function joinOpensAt(card: WebinarCard): number | null {
   const start = parseIso(card.start_date_time);
   if (start === null) return null;
-  return start - environment.WEBINAR.joinWindowMinutes * 60_000;
+  return start - JOIN_WINDOW_MINUTES * 60_000;
 }
 
 /**

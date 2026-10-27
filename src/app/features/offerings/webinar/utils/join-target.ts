@@ -15,11 +15,10 @@ import { FeedCard, registrationOf } from '@features/offerings/webinar/models/web
  *
  * `embedded` requires BOTH the backend and the row to agree:
  *
- *  1. `environment.WEBINAR.liveEnabled`, the ship gate for the in-app room.
+ *  1. `environment.WEBINAR.liveEnabled`, the kill switch for the in-app room.
  *     The backend routes it needs (`attendance-session/claim|heartbeat|release`
  *     and `meeting-sdk-signature`) are in the Events v1 contract; the flag is
- *     on in the development and local builds and off in production until QA
- *     signs off.
+ *     on in every build, production included.
  *  2. `registration.route_to_web_lms`, the backend's own per-row switch. Even
  *     once the endpoints ship, a row can say "send this one to Zoom".
  */

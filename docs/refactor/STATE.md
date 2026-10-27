@@ -7,6 +7,34 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-27, NON-REFACTOR — environment cleanup (`prompts/environment-cleanup.md`). DONE, GATES GREEN,
+  UNCOMMITTED**, in the working tree on top of `fix/MIL-140-live-room-isolation`, together with the uncommitted
+  `liveEnabled` comment edits. Branch it off as `refactor/MIL-<n>-environment-cleanup` before committing.
+  - **Removed (no readers):** `SSO_SUPPORT_API_KEY`, `WEBINAR.pollsEnabled`, `WP_BLOG`, and every `AI_LABS` key except
+    `catalogueCourses` and `assessmentEnabled` (the Entra/Supabase sign-in fields and the two channel names).
+  - **Moved to their readers:**
+    - `appType`/`platform` → `CLIENT_APP_TYPE`/`CLIENT_PLATFORM` in `app-interceptor.ts`
+    - the four auth cookie names → `AUTH_COOKIES` in `auth-session.ts`
+    - `browserSessionId` → `BROWSER_SESSION_KEY` in `storage.ts`
+    - `leaseHeartbeatSeconds`/`joinWindowMinutes` → `constants/live-session.ts`
+    - `registrationPollCapSeconds` → `webinar-registration.ts`
+  - **New `src/environments/environment.model.ts`:** the `Environment` interface, documented once. All three files
+    end `satisfies Environment`; deleting `otpLength` from the local file alone fails `tsc`. The files went from 546
+    to 254 lines (110 of them the type).
+  - **Values unchanged** in all three builds (checked against `HEAD`). Every remaining leaf has a reader. The
+    removed values (AI Labs Supabase project, Entra ids, channel names, WP URL) are absent from `dist/`.
+    `docs/AUTH_API.md` header lines updated. No skill or agent file mentions a removed key.
+  - **Gates (local macOS):** tsc 0; lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` initial
+    975.04 kB raw / 226.83 kB (was 976.00 / 226.94), only `ai-labs.css`; `development` and `local` configs build.
+  - **Browser (dev):** home renders its CDN images (71 loaded, 0 broken) with the canonical from `SITE_URL`; AI Labs
+    renders its Audit and CFO sections. The OTP screen wasn't opened (it would send a real code).
+
+- 🟡 **2026-10-27, NON-REFACTOR — stale `liveEnabled` comments. DONE, UNCOMMITTED**, on
+  `fix/MIL-140-live-room-isolation` (comments only). The user confirmed that `liveEnabled` stays `true` in production:
+  production has no learners yet and is where the room is tested before a soft launch. The comments in
+  `environment*.ts`, `webinar.routes.ts` and `join-target.ts` no longer say the room is off in production; they call
+  the flag a kill switch. Lint 0 errors, structure ✔.
+
 - 🟡 **2026-10-27, NON-REFACTOR — `/live` cross-origin isolation (PR 3 of `prompts/webinar-live-states.md`, B5). DONE,
   GATES GREEN, UNCOMMITTED**, in the working tree on top of `fix/MIL-139-webinar-live-states` (`6c295260`). Branch it
   off before committing. PR 1 (`1365de31`) and PR 2 (`6c295260`) are committed.
@@ -5743,6 +5771,10 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-27 · NON-REFACTOR · **Environment cleanup built** (uncommitted): 15 dead keys removed, 9 app constants moved to readers, `Environment` type with `satisfies` in all three files · tsc 0, lint 0 errors, build:prod 226.83 kB, dev + local configs build · home and AI Labs checked in browser
+
+- 2026-10-27 · NON-REFACTOR · **`liveEnabled` comments corrected** (uncommitted, on MIL-140): on in production by decision (pre-launch, prod is the test bed) · lint 0 errors
 
 - 2026-10-27 · NON-REFACTOR · **`/live` isolation guards built** (uncommitted): page load into and out of the room so COOP/COEP apply only there; Zoom leave + lease release before leaving · lint 0 errors, structure ✔, build:prod 226.94 kB · needs a Vercel preview + signed-in learner to verify
 
