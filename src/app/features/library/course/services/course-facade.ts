@@ -10,35 +10,26 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { NgpDialogManager } from 'ng-primitives/dialog';
-import { map } from 'rxjs';
 import { SKIP_LOADING } from '@core/models/http.model';
 import { MasterclassCourse } from '@core/models/masterclass-home.model';
-import { ApiClient } from '@core/services/api-client/api-client';
-import { Logger } from '@core/services/logger/logger';
-import { NotificationService } from '@core/services/notification/notification';
 import { withPreviousValue } from '@core/utils/with-previous-value';
-import type { UtilsDialogData } from '@shared/dialogs/utils-dialog/utils-dialog';
+import { CourseAiKit } from '@shared/services/course-ai-kit';
 import {
   AI_KIT_CONTENT_TYPE,
   AI_KIT_COURSE_TYPE,
   COURSE_LIBRARY_FILTERS_URL,
   COURSE_LIBRARY_LIST_URL,
   COURSE_LIBRARY_PAGE_SIZE,
-  COURSE_RESOURCES_COPY,
-  COURSE_RESOURCES_ROUTE,
   EMPTY_LIBRARY_SELECTION,
   LIBRARY_FILTER_GROUPS,
 } from '@features/library/course/constants/course-library';
 import {
   CourseListPage,
-  CourseResources,
   LibraryCourseType,
   LibraryFilterGroup,
   LibraryFilterOptions,
   LibraryFilterSelection,
   parseCourseList,
-  parseCourseResources,
   parseLibraryFilters,
 } from '@features/library/course/models/course-library.model';
 
@@ -54,10 +45,7 @@ import {
 @Service()
 export class CourseFacade {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  private readonly api = inject(ApiClient);
-  private readonly dialogs = inject(NgpDialogManager);
-  private readonly notification = inject(NotificationService);
-  private readonly logger = inject(Logger);
+  private readonly aiKit = inject(CourseAiKit);
 
   readonly courseType = signal<LibraryCourseType>('course');
   readonly selection = signal<LibraryFilterSelection>(EMPTY_LIBRARY_SELECTION);
@@ -196,59 +184,8 @@ export class CourseFacade {
     if (this.filtersResource.error()) this.filtersResource.reload();
   }
 
-  /**
-   * The card's AI Kit button: reads the course's extras and lists them in the
-   * "Additional Resources" dialog, the kit first, as the legacy button did.
-   */
+  /** The card's AI Kit button: the shared "Additional Resources" dialog. */
   openAiKit(course: MasterclassCourse): void {
-    const route = COURSE_RESOURCES_ROUTE;
-    this.api
-      .call({ ...route, path: route.path.replace(':id', course.id) }, undefined, {
-        params: { login_type: 'pre_login' },
-      })
-      .pipe(map(parseCourseResources))
-      .subscribe({
-        next: (resources) => void this.showResources(resources),
-        error: (error: unknown) => {
-          this.logger.error('Failed to fetch additional resources', error);
-          this.notification.error(
-            COURSE_RESOURCES_COPY.errorTitle,
-            COURSE_RESOURCES_COPY.errorMessage,
-          );
-        },
-      });
-  }
-
-  private async showResources({ aiKit, exerciseFiles }: CourseResources): Promise<void> {
-    const links = [
-      ...(aiKit
-        ? [
-            {
-              label: aiKit.name,
-              href: aiKit.url,
-              description: aiKit.description ?? COURSE_RESOURCES_COPY.aiKit,
-            },
-          ]
-        : []),
-      ...exerciseFiles.map(({ name, url }) => ({
-        label: name,
-        href: url,
-        description: COURSE_RESOURCES_COPY.exerciseFile,
-      })),
-    ];
-    if (!links.length) {
-      this.notification.info(COURSE_RESOURCES_COPY.emptyTitle, COURSE_RESOURCES_COPY.emptyMessage);
-      return;
-    }
-    // Loaded on open: only an AI Kit click needs it.
-    const { UtilsDialog } = await import('@shared/dialogs/utils-dialog/utils-dialog');
-    this.dialogs.open<UtilsDialogData>(UtilsDialog, {
-      data: {
-        title: COURSE_RESOURCES_COPY.title,
-        containerClass: 'max-w-lg text-start!',
-        content: [{ type: 'links', items: links }],
-        buttons: [{ label: 'Close', variant: 'default', action: 'close' }],
-      },
-    });
+    this.aiKit.open(course);
   }
 }
