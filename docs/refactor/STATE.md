@@ -7,6 +7,21 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- 🟡 **2026-10-27, NON-REFACTOR — `/live` cross-origin isolation (PR 3 of `prompts/webinar-live-states.md`, B5). DONE,
+  GATES GREEN, UNCOMMITTED**, in the working tree on top of `fix/MIL-139-webinar-live-states` (`6c295260`). Branch it
+  off before committing. PR 1 (`1365de31`) and PR 2 (`6c295260`) are committed.
+  - **Change:** new `webinar/guards/live-document-guard.ts` on the `:id/live` route.
+    - `liveDocumentEnterGuard` (`canActivate`) turns any in-app navigation into `/live` into a real page load,
+      so the COOP/COEP headers apply. It lets through the document's first navigation (`!router.navigated`), never
+      `crossOriginIsolated`, which would loop forever in Safari.
+    - `liveDocumentLeaveGuard` (`canDeactivate`) runs `ZoomMeetingClient.leave()` + `MeetingSession.release()`, then
+      loads the destination as a fresh page. It uses `location.replace` on back/forward so history doesn't stack.
+  - **Gates (local macOS):** lint 0 errors (98 warnings); structure ✔; Prettier ✔; `build:prod` 226.94 kB, only
+    `ai-labs.css`.
+  - **Not verified in the browser:** `/live` needs a signed-in learner (its `authGuard` runs before these guards), and
+    the COOP/COEP headers exist only on Vercel. Check on a preview: Join → `crossOriginIsolated === true` on `/live`;
+    Back to webinar → `false`; Back button from `/live` → the detail page, and Back again doesn't land in the room.
+
 - 🟡 **2026-10-27, NON-REFACTOR — webinar live room states + retry fixes (PR 2 of `prompts/webinar-live-states.md`,
   B1–B4). DONE, GATES GREEN, UNCOMMITTED**, in the same working tree as the Zoom CSP fix below. Split them with the
   saved PR 1 patch before committing (steps in the hand-off).
@@ -5728,6 +5743,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-27 · NON-REFACTOR · **`/live` isolation guards built** (uncommitted): page load into and out of the room so COOP/COEP apply only there; Zoom leave + lease release before leaving · lint 0 errors, structure ✔, build:prod 226.94 kB · needs a Vercel preview + signed-in learner to verify
 
 - 2026-10-27 · NON-REFACTOR · **Webinar live states built** (uncommitted): waiting-for-host auto re-join, on-hold, reconnecting, Zoom error-code outcomes, retry no longer self-conflicts, SDK client torn down before re-join · tsc 0, lint 0 errors, build:prod 226.99 kB · not run in a browser (needs a signed-in learner + Zoom host)
 

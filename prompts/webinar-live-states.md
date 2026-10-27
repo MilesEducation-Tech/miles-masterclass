@@ -1,7 +1,8 @@
 # Webinar live room: Zoom meeting states, SDK review and fixes
 
-Status: **awaiting approval**. Nothing below is implemented yet. Only the CSP fix is in the working tree, on
-`fix/MIL-000-zoom-csp-blob`.
+Status: **approved.** PR 1 (#200, MIL-141) and PR 2 (#201, MIL-139) are merged. PR 3 (§8, #202, MIL-140) uses route
+guards (`webinar/guards/live-document-guard.ts`) rather than editing each Join and Back call site, so every way in and
+out of `/live` is covered.
 
 ## Goal
 
