@@ -7,6 +7,22 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ done (verified, report
 
 ## Now
 
+- ⏸ **2026-10-27 — Zoom + environment chain: waiting on the user to push.** Nothing has a PR yet. Before the PRs can
+  open:
+  - finish the blog-proxy commit (`git rm -f proxy.conf.json`)
+  - rename the three `MIL-XXX` branches to real tickets, and delete the two pushed `MIL-XXX` remotes
+  - reset `fix/MIL-141-zoom-csp-blob` to `1365de31` (it holds all three Zoom commits) and force-push it
+  - push MIL-142 and the renamed branches
+
+  Then open stacked PRs in this order: 141 → master, 139 → 141, 140 → 139, 142 → 140, log level → 142,
+  URL groups → log level, blog proxy → URL groups.
+
+- 🟡 **2026-10-27, NON-REFACTOR — orphaned `/blog-api` proxy removed. DONE, UNCOMMITTED** (patch 3 of 3). The blog
+  feature was deleted in `890e52d`; nothing in `src/app` called `/blog-api`. Removed the Express handler in
+  `src/server.ts` (with `WP_BLOG_UPSTREAM` and `WP_FORWARDED_HEADERS`), `proxy.conf.json`, and the dev-server
+  `proxyConfig` in `angular.json`. The `vercel.json` `/blog` rewrites to the WordPress site stay: that's the live blog,
+  served by WordPress itself.
+
 - 🟡 **2026-10-27, NON-REFACTOR — URL keys grouped. DONE, UNCOMMITTED** (patch 2 of 3).
   `BASE_API_URL` → `API.baseUrl`, `S3_BUCKET_URL` → `ASSETS.s3Url`, `GCS_URL` → `ASSETS.gcsUrl`, in the
   `Environment` type, all three files, every `environment.*` access in `src/` (41 files) and the comments, `AGENTS.md`
@@ -5672,6 +5688,8 @@ These are environment and product observations the repair surfaced. None changed
    **Fix:** narrow the guard to write-style commands, or allow-list the verify script.
 
 ## Step log (latest first; keep the last 30 lines)
+
+- 2026-10-27 · NON-REFACTOR · **PR prep blocked on the user**: the branch fixes, renames and pushes are listed in "Now"; the PRs will be stacked and opened with `gh` once the branches are on GitHub
 
 - 2026-10-27 · NON-REFACTOR · **Environment cleanup built** (uncommitted): 15 dead keys removed, 9 app constants moved to readers, `Environment` type with `satisfies` in all three files · tsc 0, lint 0 errors, build:prod 226.83 kB, dev + local configs build · home and AI Labs checked in browser
 
