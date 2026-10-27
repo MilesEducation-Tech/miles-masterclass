@@ -159,7 +159,6 @@ export interface JoinRefusal {
  */
 export interface ZoomJoinParams {
   signature: string;
-  sdkKey: string;
   meetingNumber: string;
   password: string;
   userName: string;
